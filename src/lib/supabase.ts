@@ -1,0 +1,65 @@
+import { AppState, Platform } from "react-native";
+import * as SecureStore from "expo-secure-store";
+import { createClient, processLock, type Session, type SupportedStorage } from "@supabase/supabase-js";
+import "react-native-url-polyfill/auto";
+
+import { appEnv, hasSupabaseConfig } from "@/src/lib/env";
+
+const webStorage: SupportedStorage = {
+  getItem: (key) => Promise.resolve(globalThis.localStorage?.getItem(key) ?? null),
+  setItem: (key, value) => Promise.resolve(globalThis.localStorage?.setItem(key, value)),
+  removeItem: (key) => Promise.resolve(globalThis.localStorage?.removeItem(key)),
+};
+
+const secureStoreAdapter: SupportedStorage = {
+  getItem: (key) => SecureStore.getItemAsync(key),
+  setItem: (key, value) => SecureStore.setItemAsync(key, value),
+  removeItem: (key) => SecureStore.deleteItemAsync(key),
+};
+
+const storage = Platform.OS === "web" ? webStorage : secureStoreAdapter;
+
+export const supabase = hasSupabaseConfig
+  ? createClient(appEnv.supabaseUrl, appEnv.supabaseKey, {
+      auth: {
+        storage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+        lock: processLock,
+      },
+    })
+  : null;
+
+let autoRefreshListenerRegistered = false;
+
+export function initializeSupabaseAutoRefresh() {
+  if (!supabase || Platform.OS === "web" || autoRefreshListenerRegistered) {
+    return;
+  }
+
+  autoRefreshListenerRegistered = true;
+
+  AppState.addEventListener("change", (state) => {
+    if (state === "active") {
+      supabase.auth.startAutoRefresh();
+      return;
+    }
+
+    supabase.auth.stopAutoRefresh();
+  });
+}
+
+export function requireSupabase() {
+  if (!supabase) {
+    throw new Error(
+      "Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY to your environment.",
+    );
+  }
+
+  return supabase;
+}
+
+export function getCurrentUserId(session: Session | null) {
+  return session?.user.id ?? null;
+}

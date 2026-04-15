@@ -1,0 +1,18 @@
+- name: bug
+  color: d73a4a
+  description: Something is broken.
+- name: feature
+  color: 0e8a16
+  description: Proposed product or engineering capability.
+- name: docs
+  color: 1d76db
+  description: Documentation or contributor-process work.
+- name: privacy
+  color: 5319e7
+  description: Privacy-sensitive change or discussion.
+- name: safety
+  color: b60205
+  description: Safety, crisis, or child-safety review needed.
+- name: accessibility
+  color: 0052cc
+  description: Accessibility work or review.

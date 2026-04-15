@@ -1,0 +1,18 @@
+name: Docs or process
+description: Improve contributor workflow, documentation, or project operations.
+title: "[Docs]: "
+labels:
+  - docs
+body:
+  - type: textarea
+    id: change
+    attributes:
+      label: What should change?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does it matter?
+    validations:
+      required: true
