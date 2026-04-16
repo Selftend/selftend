@@ -26,7 +26,7 @@ The MVP is not "everything mental health." It is a focused foundation that prove
 
 ### MVP features
 
-- [ ] account creation, sign-in, password reset, email verification
+- [ ] Google sign-in, email magic link, sign-out, and session restore
 - [ ] onboarding that sets expectations and allows feature selection
 - [ ] daily or on-demand mood check-in
 - [ ] lightweight journaling
@@ -74,12 +74,13 @@ Before app implementation, complete the planning and operating groundwork:
 7. [ ] create a real Supabase project
 8. [ ] add real `.env` values
 9. [ ] apply the first migration
-10. [ ] verify live sign up / sign in / password reset on web
+10. [ ] verify live Google sign-in on web
 11. [ ] verify live CBT thought-record persistence on web
 12. [ ] verify live auth and persistence on device builds
 13. [ ] verify local reminders on real devices
-14. [ ] manually review the scaffolded codebase once before the initial push
-15. [ ] push the initial setup after the manual review
+14. [x] link the Expo project to EAS and add Android development-build workflow for device testing
+15. [ ] manually review the scaffolded codebase once before the initial push
+16. [ ] push the initial setup after the manual review
 
 Ship a usable product on iOS, Android, and browser with these pillars:
 
@@ -109,8 +110,11 @@ Initial scaffold work completed in this first commit:
 - [x] first CBT module scaffold
 - [x] settings / support / legal stubs
 - [x] Supabase schema draft
+- [x] Google OAuth sign-in wired for web and native app flows
+- [x] passwordless email magic-link sign-in wired for web and native app flows
 - [x] CI and test harness
 - [x] local web smoke test of the scaffold
+- [x] Expo project linked to EAS and Android development-build workflow added for native reminder testing
 
 ### Phase 2: Ready-for-public-product pass
 

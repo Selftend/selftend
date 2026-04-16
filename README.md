@@ -2,7 +2,7 @@
 
 Working title for a free, non-profit, cross-platform mental health product.
 
-This repository started as docs-first planning and now includes the first implementation scaffold: an Expo Router app with account/auth foundations, a CBT section, private thought records, settings, support stubs, tests, and CI.
+This repository started as docs-first planning and now includes the first implementation scaffold: an Expo Router app with Google OAuth and passwordless email auth foundations, a CBT section, private thought records, settings, support stubs, tests, and CI.
 
 ## Mission
 
@@ -26,7 +26,7 @@ Included now:
 
 - Expo + React Native + TypeScript scaffold
 - Expo Router app shell
-- Supabase auth wiring and protected routes
+- Supabase Google OAuth and magic-link auth wiring
 - CBT learn surface and guided thought record flow
 - thought history, edit, and archive flow
 - quiet reminder settings, default-off
@@ -60,7 +60,7 @@ cp .env.example .env
 
 - `EXPO_PUBLIC_SUPABASE_URL`
 - `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- `EXPO_PUBLIC_EAS_PROJECT_ID` when EAS is configured
+- `EXPO_PUBLIC_EAS_PROJECT_ID` only if you need to override the linked Expo project ID
 
 4. Run the app:
 
@@ -72,9 +72,35 @@ Useful commands:
 
 ```bash
 npm run web
+npm run start:dev-client
+npm run build:android:development
 npm run typecheck
 npm test -- --runInBand
 ```
+
+## Android development build
+
+Use a development build for Android reminder and notification testing. Expo Go is fine for quick UI checks, but it does not support this app's notification path on Android.
+
+1. Create or update `.env` with your real Supabase values.
+2. The linked Expo project ID is already configured in `app.config.ts`. Only set `EXPO_PUBLIC_EAS_PROJECT_ID` if you need to override it.
+3. If the project is not yet linked in EAS for your account, run `npx eas-cli init`.
+4. Build the Android development client:
+
+```bash
+npm run build:android:development
+```
+
+5. Install the resulting build on the Android device or emulator.
+6. Start Metro for the development client:
+
+```bash
+npm run start:dev-client
+```
+
+7. Open the installed development build and connect it to the Metro server.
+
+Once the development build is installed, use it instead of Expo Go when testing reminders or any other native-only behavior.
 
 ## Repo map
 

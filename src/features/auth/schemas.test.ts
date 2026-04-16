@@ -1,28 +1,23 @@
-import { resetPasswordSchema, signInSchema, signUpSchema } from "@/src/features/auth/schemas";
+import { magicLinkSignInSchema } from "@/src/features/auth/schemas";
 
-describe("auth schemas", () => {
-  it("accepts a valid sign-in payload", () => {
-    expect(() =>
-      signInSchema.parse({
-        email: "hello@example.com",
-        password: "password123",
-      }),
-    ).not.toThrow();
+describe("magicLinkSignInSchema", () => {
+  it("accepts a valid email and trims surrounding whitespace", () => {
+    const result = magicLinkSignInSchema.safeParse({
+      email: "  person@example.com  ",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({
+      email: "person@example.com",
+    });
   });
 
-  it("rejects mismatched signup passwords", () => {
-    expect(() =>
-      signUpSchema.parse({
-        email: "hello@example.com",
-        password: "password123",
-        confirmPassword: "password456",
-      }),
-    ).toThrow("Passwords do not match.");
-  });
+  it("rejects invalid email addresses", () => {
+    const result = magicLinkSignInSchema.safeParse({
+      email: "not-an-email",
+    });
 
-  it("rejects an invalid reset email", () => {
-    expect(() => resetPasswordSchema.parse({ email: "not-an-email" })).toThrow(
-      "Enter a valid email address.",
-    );
+    expect(result.success).toBe(false);
+    expect(result.error?.flatten().fieldErrors.email).toEqual(["Enter a valid email address."]);
   });
 });

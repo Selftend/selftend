@@ -1,23 +1,33 @@
 import * as Linking from "expo-linking";
+import { Platform } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 
+import { completeAuthRedirect } from "@/src/features/auth/callback";
 import { requireSupabase } from "@/src/lib/supabase";
 
-export async function signInWithPassword(email: string, password: string) {
-  const client = requireSupabase();
-  const { error } = await client.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    throw error;
+export function getOAuthRedirectUrl() {
+  if (Platform.OS === "web") {
+    return Linking.createURL("/auth-callback");
   }
+
+  return Linking.createURL("/");
 }
 
-export async function signUpWithPassword(email: string, password: string) {
+export function getMagicLinkRedirectUrl() {
+  return Linking.createURL("/auth-callback");
+}
+
+export async function signInWithGoogle() {
   const client = requireSupabase();
-  const { data, error } = await client.auth.signUp({
-    email,
-    password,
+  const redirectTo = getOAuthRedirectUrl();
+  const { data, error } = await client.auth.signInWithOAuth({
+    provider: "google",
     options: {
-      emailRedirectTo: Linking.createURL("/sign-in"),
+      redirectTo,
+      skipBrowserRedirect: Platform.OS !== "web",
+      queryParams: {
+        prompt: "select_account",
+      },
     },
   });
 
@@ -25,13 +35,31 @@ export async function signUpWithPassword(email: string, password: string) {
     throw error;
   }
 
-  return data;
+  if (Platform.OS === "web") {
+    return false;
+  }
+
+  const authUrl = data?.url;
+  if (!authUrl) {
+    throw new Error("Unable to start Google sign-in.");
+  }
+
+  const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectTo);
+  if (result.type !== "success") {
+    return false;
+  }
+
+  await completeAuthRedirect(result.url);
+  return true;
 }
 
-export async function resetPassword(email: string) {
+export async function signInWithMagicLink(email: string) {
   const client = requireSupabase();
-  const { error } = await client.auth.resetPasswordForEmail(email, {
-    redirectTo: Linking.createURL("/sign-in"),
+  const { error } = await client.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: getMagicLinkRedirectUrl(),
+    },
   });
 
   if (error) {
@@ -42,7 +70,6 @@ export async function resetPassword(email: string) {
 export async function signOut() {
   const client = requireSupabase();
   const { error } = await client.auth.signOut();
-
   if (error) {
     throw error;
   }

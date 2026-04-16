@@ -2,6 +2,8 @@ import type { ExpoConfig } from "expo/config";
 
 const appName = "mental-health";
 const appSlug = "mental-health";
+const easProjectId =
+  process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? "6f95348d-9f04-436a-aaf8-f8f20f71d6d9";
 
 const config: ExpoConfig = {
   name: appName,
@@ -50,7 +52,7 @@ const config: ExpoConfig = {
   },
   extra: {
     eas: {
-      projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
+      projectId: easProjectId,
     },
   },
 };

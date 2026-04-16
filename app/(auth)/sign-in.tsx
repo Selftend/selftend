@@ -1,52 +1,96 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, Redirect, router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { Text, View } from "react-native";
 import { useState } from "react";
 
-import { signInWithPassword } from "@/src/features/auth/api";
-import { type SignInValues, signInSchema } from "@/src/features/auth/schemas";
 import { Button } from "@/src/components/button";
 import { FieldShell } from "@/src/components/field-shell";
 import { NoticeCard } from "@/src/components/notice-card";
 import { Screen } from "@/src/components/screen";
 import { TextField } from "@/src/components/text-field";
+import { signInWithGoogle, signInWithMagicLink } from "@/src/features/auth/api";
+import {
+  magicLinkSignInSchema,
+  type MagicLinkSignInSchema,
+} from "@/src/features/auth/schemas";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function SignInScreen() {
   const { hasSupabaseConfig, session } = useSession();
   const [submitError, setSubmitError] = useState("");
+  const [magicLinkSentTo, setMagicLinkSentTo] = useState("");
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
   const {
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     handleSubmit,
-  } = useForm<SignInValues>({
+  } = useForm<MagicLinkSignInSchema>({
     defaultValues: {
       email: "",
-      password: "",
     },
-    resolver: zodResolver(signInSchema),
+    resolver: zodResolver(magicLinkSignInSchema),
   });
 
   if (session) {
     return <Redirect href="/(app)/(tabs)" />;
   }
 
-  const onSubmit = handleSubmit(async (values) => {
+  const onGoogleSubmit = async () => {
     try {
       setSubmitError("");
-      await signInWithPassword(values.email, values.password);
-      router.replace("/(app)/(tabs)");
+      setIsGoogleSubmitting(true);
+      const didCompleteInApp = await signInWithGoogle();
+      if (didCompleteInApp) {
+        router.replace("/(app)/(tabs)");
+      }
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Unable to sign in.");
+      setSubmitError(
+        error instanceof Error ? error.message : "Unable to sign in with Google.",
+      );
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
+  };
+
+  const onMagicLinkSubmit = handleSubmit(async ({ email }) => {
+    try {
+      setSubmitError("");
+      setMagicLinkSentTo("");
+      setIsMagicLinkSubmitting(true);
+      await signInWithMagicLink(email);
+      setMagicLinkSentTo(email);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Unable to send a sign-in link.",
+      );
+    } finally {
+      setIsMagicLinkSubmitting(false);
     }
   });
 
   return (
     <Screen
-      footer={<Button isLoading={isSubmitting} onPress={() => void onSubmit()} text="Sign in" />}
-      subtitle="Start with one private account so your CBT history can stay available across web, Android, and iOS."
-      title="Welcome back"
+      footer={
+        <View className="gap-3">
+          <Button
+            disabled={!hasSupabaseConfig}
+            isLoading={isMagicLinkSubmitting}
+            onPress={() => void onMagicLinkSubmit()}
+            text="Email me a sign-in link"
+          />
+          <Button
+            disabled={!hasSupabaseConfig}
+            isLoading={isGoogleSubmitting}
+            onPress={() => void onGoogleSubmit()}
+            text="Continue with Google"
+            variant="ghost"
+          />
+        </View>
+      }
+      subtitle="Use a passwordless email link or Google so the same account works across web and device builds without a manual sign-up screen."
+      title="Sign in"
     >
       {!hasSupabaseConfig ? (
         <NoticeCard
@@ -55,50 +99,41 @@ export default function SignInScreen() {
           tone="warning"
         />
       ) : null}
-      {submitError ? <NoticeCard body={submitError} title="Sign-in problem" tone="warning" /> : null}
-
-      <Controller
-        control={control}
-        name="email"
-        render={({ field: { onBlur, onChange, value } }) => (
-          <FieldShell error={errors.email?.message} label="Email">
-            <TextField
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              onBlur={onBlur}
-              onChangeText={onChange}
-              placeholder="name@example.com"
-              value={value}
-            />
-          </FieldShell>
-        )}
-      />
-      <Controller
-        control={control}
-        name="password"
-        render={({ field: { onBlur, onChange, value } }) => (
-          <FieldShell error={errors.password?.message} label="Password">
-            <TextField
-              autoCapitalize="none"
-              autoCorrect={false}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              placeholder="Your password"
-              secureTextEntry
-              value={value}
-            />
-          </FieldShell>
-        )}
-      />
+      {submitError ? (
+        <NoticeCard body={submitError} title="Sign-in problem" tone="warning" />
+      ) : null}
+      {magicLinkSentTo ? (
+        <NoticeCard
+          body={`We sent a one-time sign-in link to ${magicLinkSentTo}. Open it from your inbox to finish signing in.`}
+          title="Check your inbox"
+        />
+      ) : null}
 
       <View className="gap-3">
-        <Link asChild href="/(auth)/sign-up">
-          <Text className="text-sm font-semibold text-pine">Create an account</Text>
-        </Link>
-        <Link asChild href="/(auth)/reset-password">
-          <Text className="text-sm font-semibold text-pine">Reset password</Text>
-        </Link>
+        <Controller
+          control={control}
+          name="email"
+          render={({ field: { onBlur, onChange, value } }) => (
+            <FieldShell
+              description="A one-time link will sign you in and create your account if it does not exist yet."
+              error={errors.email?.message}
+              label="Email"
+            >
+              <TextField
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                placeholder="you@example.com"
+                value={value}
+              />
+            </FieldShell>
+          )}
+        />
+        <Text className="text-sm leading-6 text-ink/70">
+          New users are created on first successful Google sign-in or magic-link completion. Manual sign-up and passwords stay out of the MVP.
+        </Text>
       </View>
     </Screen>
   );
