@@ -1,6 +1,6 @@
 # Internal Testing
 
-Last updated: 2026-04-16
+Last updated: 2026-04-17
 
 ## Current build profiles
 
@@ -9,6 +9,8 @@ Last updated: 2026-04-16
 - `development`
 - `preview`
 - `production`
+
+Use the Android `development` build as the default local runtime. Do not use Expo Go as the normal Android development path.
 
 ## Minimum internal verification before widening scope
 
@@ -53,9 +55,11 @@ npm run build:android:development
 npx expo export --platform web
 ```
 
+Use Node `20.19+`. If you use `nvm`, run `nvm use || nvm install` first.
+
 ## Android development build
 
-Use the development build instead of Expo Go when testing reminder behavior on Android.
+Use the development build instead of Expo Go for normal Android development, reminder behavior, and device verification.
 
 1. Confirm `.env` has real Supabase values.
 2. The linked Expo project ID is already configured in `app.config.ts`. Only set `EXPO_PUBLIC_EAS_PROJECT_ID` if you need to override it.
@@ -69,7 +73,7 @@ Use the development build instead of Expo Go when testing reminder behavior on A
 
 Do not move to store submission yet. Finish:
 
-- real Supabase project setup
+- migration application in the active Supabase project
 - privacy policy and terms
 - crisis/safety copy review
 - internal device testing

@@ -65,22 +65,31 @@ Before app implementation, complete the planning and operating groundwork:
 
 ### Phase 1: MVP build
 
-1. [ ] decide the backend approach for the first end-to-end scaffold
-2. [ ] decide the remaining architecture choices needed for the first end-to-end scaffold
-3. [ ] confirm Supabase as the operational backend for the first live environment
-4. [ ] keep Expo as the client app framework, not the primary backend runtime
-5. [ ] avoid a separate custom JS backend by default
-6. [ ] decide whether any early backend logic belongs in Supabase Edge Functions
-7. [ ] create a real Supabase project
-8. [ ] add real `.env` values
-9. [ ] apply the first migration
-10. [ ] verify live Google sign-in on web
-11. [ ] verify live CBT thought-record persistence on web
+1. [x] decide the backend approach for the first end-to-end scaffold
+2. [x] decide the remaining architecture choices needed for the first end-to-end scaffold
+3. [x] confirm Supabase as the operational backend for the first live environment
+4. [x] keep Expo as the client app framework, not the primary backend runtime
+5. [x] avoid a separate custom JS backend by default
+6. [x] decide whether any early backend logic belongs in Supabase Edge Functions
+7. [x] create a real Supabase project
+8. [x] add real `.env` values
+9. [ ] confirm the first migration is applied and recorded in the active Supabase project
+10. [x] verify live Google sign-in on web
+11. [x] verify live CBT thought-record persistence on web
 12. [ ] verify live auth and persistence on device builds
 13. [ ] verify local reminders on real devices
 14. [x] link the Expo project to EAS and add Android development-build workflow for device testing
-15. [ ] manually review the scaffolded codebase once before the initial push
-16. [ ] push the initial setup after the manual review
+15. [ ] manually review the scaffolded codebase and capture follow-up fixes
+16. [x] push the initial setup to GitHub
+
+Working rule for Android development:
+
+- [x] use the installed Android development build for normal development and device verification
+- [x] do not treat Expo Go as the primary Android development runtime
+
+Working rule for early backend logic:
+
+- [x] use Supabase Edge Functions for early server-side backend work when client-only code or direct database access is not enough
 
 Ship a usable product on iOS, Android, and browser with these pillars:
 
@@ -102,7 +111,7 @@ Implementation priorities:
 7. [ ] settings, support, privacy, and legal pages
 8. [ ] accessibility, offline tolerance, and error handling
 
-Initial scaffold work completed in this first commit:
+Initial scaffold work completed so far:
 
 - [x] Expo Router + TypeScript project scaffold
 - [x] auth UI scaffold

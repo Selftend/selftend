@@ -5,16 +5,23 @@ import * as WebBrowser from "expo-web-browser";
 import { completeAuthRedirect } from "@/src/features/auth/callback";
 import { requireSupabase } from "@/src/lib/supabase";
 
+const AUTH_CALLBACK_PATH = "auth-callback";
+const APP_SCHEME = "mentalhealth";
+
 export function getOAuthRedirectUrl() {
   if (Platform.OS === "web") {
-    return Linking.createURL("/auth-callback");
+    return Linking.createURL(AUTH_CALLBACK_PATH);
   }
 
-  return Linking.createURL("/");
+  return Linking.createURL(AUTH_CALLBACK_PATH, { scheme: APP_SCHEME });
 }
 
 export function getMagicLinkRedirectUrl() {
-  return Linking.createURL("/auth-callback");
+  if (Platform.OS === "web") {
+    return Linking.createURL(AUTH_CALLBACK_PATH);
+  }
+
+  return Linking.createURL(AUTH_CALLBACK_PATH, { scheme: APP_SCHEME });
 }
 
 export async function signInWithGoogle() {
