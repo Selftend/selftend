@@ -124,6 +124,7 @@ Initial scaffold work completed so far:
 - [x] CI and test harness
 - [x] local web smoke test of the scaffold
 - [x] Expo project linked to EAS and Android development-build workflow added for native reminder testing
+- [x] local setup docs aligned around the current Node engine floor for Expo SDK 54
 
 ### Phase 2: Ready-for-public-product pass
 

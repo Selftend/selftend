@@ -55,7 +55,7 @@ npm run build:android:development
 npx expo export --platform web
 ```
 
-Use Node `20.19+`. If you use `nvm`, run `nvm use || nvm install` first.
+Use Node `20.19.0+` so your local runtime matches the current `package.json` engine requirement before you install or test anything.
 
 ## Android development build
 

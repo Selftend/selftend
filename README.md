@@ -50,7 +50,7 @@ Deferred intentionally:
 npm install
 ```
 
-Use Node `20.19+` for this repo. Expo SDK 54 does not work correctly on Node 18. If you use `nvm`, run `nvm use || nvm install` before `npm install`.
+Use Node `20.19.0+` for this repo. That matches the `package.json` engine requirement. Expo SDK 54 does not work correctly on Node 18.
 
 2. Copy env values:
 
