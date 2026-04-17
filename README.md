@@ -50,6 +50,8 @@ Deferred intentionally:
 npm install
 ```
 
+Use Node `20.19.0+` for this repo. That matches the `package.json` engine requirement. Expo SDK 54 does not work correctly on Node 18.
+
 2. Copy env values:
 
 ```bash
@@ -78,9 +80,11 @@ npm run typecheck
 npm test -- --runInBand
 ```
 
+For Android development, use the installed development build with `npm run start:dev-client`. Do not treat Expo Go as the default Android workflow for this project.
+
 ## Android development build
 
-Use a development build for Android reminder and notification testing. Expo Go is fine for quick UI checks, but it does not support this app's notification path on Android.
+Use the Android development build for normal development, reminder testing, and device verification. Do not use Expo Go as the primary Android runtime for this project.
 
 1. Create or update `.env` with your real Supabase values.
 2. The linked Expo project ID is already configured in `app.config.ts`. Only set `EXPO_PUBLIC_EAS_PROJECT_ID` if you need to override it.
@@ -100,7 +104,7 @@ npm run start:dev-client
 
 7. Open the installed development build and connect it to the Metro server.
 
-Once the development build is installed, use it instead of Expo Go when testing reminders or any other native-only behavior.
+Once the development build is installed, keep using it as the default Android development client. On Linux, the day-to-day workflow should be `npm run start:dev-client` plus the installed dev build, with `npm run build:android:development` only when you need a refreshed binary.
 
 ## Repo map
 
@@ -120,7 +124,7 @@ Once the development build is installed, use it instead of Expo Go when testing 
 
 ## Status
 
-Implementation scaffold is in place. GitHub remote creation and first push are still blocked until the repository exists in GitHub.
+Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, and Android development should use the installed development build rather than Expo Go. The next blockers are Linux local environment setup, first-migration application if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
 
 ## Reference repositories
 
