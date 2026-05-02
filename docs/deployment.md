@@ -164,12 +164,6 @@ selftend://**
 http://localhost:8081/auth-callback
 ```
 
-During migration from the temporary web-test domain, keep the old callback temporarily if users may still open old links:
-
-```text
-https://yoshevbot.uk/auth-callback
-```
-
 Supabase recommends exact production redirect URLs instead of broad wildcards for production. Keep broad patterns limited to native deep links and preview/local workflows where they are needed.
 
 ## Google OAuth Configuration
@@ -199,18 +193,6 @@ Passwordless email sign-in uses `emailRedirectTo` from the app:
 - native returns to `selftend://auth-callback`
 
 If Supabase email templates are customized, keep them redirect-aware by using the redirect target rather than hard-coding the Site URL.
-
-## Cloudflare Detach
-
-Cloudflare is not required for production.
-
-After Netlify and `selftend.org` are working:
-
-1. Remove `yoshevbot.uk` from public app links and app-store metadata.
-2. Keep any old Supabase redirect URL only long enough for transition testing.
-3. Remove old Cloudflare Pages environment variables or project configuration.
-4. Confirm `https://yoshevbot.uk/settingss` is no longer part of the accepted production test path.
-5. Use `https://selftend.org` for Google Play privacy policy and account deletion URLs.
 
 ## Pre-Deployment Verification
 

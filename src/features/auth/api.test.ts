@@ -12,14 +12,14 @@ describe("getWebAuthRedirectUrl", () => {
   });
 
   it("builds the callback from the configured public app URL", () => {
-    expect(getWebAuthRedirectUrl("https://yoshevbot.uk")).toBe(
-      "https://yoshevbot.uk/auth-callback",
+    expect(getWebAuthRedirectUrl("https://selftend.org")).toBe(
+      "https://selftend.org/auth-callback",
     );
   });
 
   it("handles a configured public app URL with a trailing slash", () => {
-    expect(getWebAuthRedirectUrl("https://yoshevbot.uk/")).toBe(
-      "https://yoshevbot.uk/auth-callback",
+    expect(getWebAuthRedirectUrl("https://selftend.org/")).toBe(
+      "https://selftend.org/auth-callback",
     );
   });
 

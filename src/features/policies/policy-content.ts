@@ -46,7 +46,7 @@ export const privacyPolicySections: PolicySection[] = [
     title: "Sharing and processors",
     body: [
       "Supabase is the backend provider for authentication and database storage.",
-      "Cloudflare Pages or an equivalent static host may serve the web app. Static hosting should not add app behavior tracking.",
+      "Netlify or an equivalent static host may serve the web app. Static hosting should not add app behavior tracking.",
       "Expo and EAS are used for builds and app submission workflows. They should not be added as product analytics providers without a separate review.",
     ],
   },
