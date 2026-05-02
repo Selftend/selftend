@@ -1,14 +1,22 @@
+import { router } from "expo-router";
 import { Text, View } from "react-native";
 
+import { Button } from "@/src/components/button";
 import { Card } from "@/src/components/card";
+import { NoticeCard } from "@/src/components/notice-card";
 import { Screen } from "@/src/components/screen";
 
 export default function LegalScreen() {
   return (
     <Screen
-      subtitle="A short in-app stub until the hosted privacy policy, terms, and crisis guidance are finalized."
+      subtitle="Product boundaries, public policy pages, and launch-review reminders."
       title="Legal and boundaries"
     >
+      <NoticeCard
+        body="Policy text is in place for implementation review, but final organization details, contact details, and legal approval are still required before public launch."
+        title="Launch review required"
+        tone="warning"
+      />
       <Card>
         <View className="gap-3">
           <Text className="text-lg font-semibold text-ink">Product boundary</Text>
@@ -19,12 +27,12 @@ export default function LegalScreen() {
         </View>
       </Card>
       <Card>
-        <View className="gap-3">
-          <Text className="text-lg font-semibold text-ink">Privacy posture</Text>
-          <Text className="text-sm leading-6 text-ink/70">
-            The MVP keeps data collection narrow: account access, preferences, and private CBT records. Additional
-            tracking or social features require explicit review.
-          </Text>
+        <View className="gap-4">
+          <Text className="text-lg font-semibold text-ink">Public pages</Text>
+          <Button onPress={() => router.push("/privacy")} text="Open privacy policy" variant="secondary" />
+          <Button onPress={() => router.push("/terms")} text="Open terms and boundaries" variant="ghost" />
+          <Button onPress={() => router.push("/crisis")} text="Open crisis guidance" variant="ghost" />
+          <Button onPress={() => router.push("/account-deletion")} text="Open account deletion" variant="ghost" />
         </View>
       </Card>
       <Card>

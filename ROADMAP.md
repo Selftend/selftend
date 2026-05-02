@@ -58,7 +58,7 @@ Before app implementation, complete the planning and operating groundwork:
 - [x] lock the technical stack
 - [x] write privacy, safety, and content principles
 - [x] set contribution flow and maintainer model
-- [ ] prepare a lightweight launch/legal checklist
+- [x] prepare a lightweight launch/legal checklist
 - [ ] review all-ages implications before public launch
 - [x] create the initial GitHub repository
 - [x] bootstrap the first local implementation scaffold
@@ -117,7 +117,8 @@ Initial scaffold work completed so far:
 - [x] auth UI scaffold
 - [x] protected route shell
 - [x] first CBT module scaffold
-- [x] settings / support / legal stubs
+- [x] settings / support / legal surfaces
+- [x] public privacy, terms, crisis, and account-deletion routes
 - [x] Supabase schema draft
 - [x] Google OAuth sign-in wired for web and native app flows
 - [x] passwordless email magic-link sign-in wired for web and native app flows
@@ -131,14 +132,37 @@ Initial scaffold work completed so far:
 This phase turns the MVP into a product that can be responsibly promoted.
 
 - [ ] accessibility audit
-- [ ] privacy policy and terms
-- [ ] safety and crisis resource copy
+- [x] privacy policy and terms implementation draft
+- [x] safety and crisis resource copy implementation draft
+- [ ] human/legal review of privacy policy and terms
+- [ ] human/legal review of safety and crisis resource copy
 - [ ] data export and account deletion
 - [ ] minimal observability and incident response process
 - [ ] app store assets and copy
 - [ ] FAQ and support workflows
 - [ ] backup and recovery plan
 - [ ] contributor docs for code, content, and design
+
+Launch-prep completed:
+
+- [x] static web deployment checklist for Cloudflare Pages or equivalent hosting
+- [x] Supabase production redirect and Google OAuth configuration checklist
+- [x] Android closed-testing checklist, build commands, store-copy draft, and tester instructions
+- [x] Google Play Health apps, Data safety, and account-deletion policy requirements called out
+
+Immediate launch blockers:
+
+- [x] temporary public web-test domain selected: `yoshevbot.uk`
+- [x] temporary support alias created: `support@yoshevbot.uk`
+- [ ] `yoshevbot.uk` connected to the static web deployment
+- [ ] privacy, security, and deletion aliases configured
+- [ ] legal entity or nonprofit account details confirmed
+- [x] broad/global crisis-resource intent captured
+- [ ] global crisis-resource strategy approved
+- [ ] Google Play organization/nonprofit developer account created or confirmed
+- [ ] final public app name approved before Play upload; current candidate is `SteadyHearth`
+- [ ] production Supabase redirect URLs configured
+- [ ] closed-test Android build verified on a real device
 
 ### Phase 3: Post-MVP product expansion
 
@@ -215,6 +239,7 @@ Recommended channel rollout:
 - [ ] data export
 - [ ] richer progress summaries
 - [ ] localization groundwork
+- [ ] self-hosting and portability plan
 
 ### Later expansion
 
@@ -222,6 +247,8 @@ Recommended channel rollout:
 - [ ] therapist companion workflows
 - [ ] community-led content programs
 - [ ] volunteer moderation and editorial processes
+- [ ] easy managed self-host option, such as PikaPods or a similar service, if feasible
+- [ ] do-it-yourself self-hosting guide
 
 ## 5. Product principles that must survive growth
 
@@ -242,6 +269,8 @@ Current direction:
 - [x] MVP requires an account
 - [x] account exists for cross-platform continuity and sync
 - [x] do not use the account requirement as an excuse for unnecessary data collection
+- [x] default hosted setup uses the maintainer's Supabase project
+- [ ] preserve a future path for users to bring their own compatible backend or self-hosted deployment
 
 MVP data expectations:
 
@@ -269,8 +298,9 @@ Ready means:
 - [ ] acceptable performance on phone and browser
 - [ ] accessibility baseline
 - [ ] store-ready assets and metadata
-- [ ] privacy and legal docs
-- [ ] crisis / safety boundaries
+- [x] privacy and legal docs drafted in-app and in docs
+- [x] crisis / safety boundaries drafted in-app and in docs
+- [ ] privacy, legal, and crisis copy reviewed for launch jurisdictions
 - [ ] account recovery flows
 - [ ] support channel defined
 - [ ] contributor entry path defined
@@ -286,7 +316,8 @@ Initial operations:
 
 - [x] GitHub for source of truth
 - [ ] Discord for contributor chat
-- [ ] shared email aliases: `hello@`, `support@`, `security@`, `contributors@`
+- [ ] shared email aliases: `hello@`, `support@`, `privacy@`, `security@`, `contributors@`
+- [ ] temporary `yoshevbot.uk` aliases: `support@`, `privacy@`, and `security@`
 - [ ] public gratitude and acknowledgements
 - [ ] donation path
 - [ ] sharing page / support page plan

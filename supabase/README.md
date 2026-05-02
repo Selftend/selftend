@@ -19,6 +19,13 @@ And always set:
 
 - `EXPO_PUBLIC_SUPABASE_URL`
 
+For launch builds, also set:
+
+- `EXPO_PUBLIC_PUBLIC_APP_URL`
+- `EXPO_PUBLIC_SUPPORT_EMAIL`
+- `EXPO_PUBLIC_PRIVACY_EMAIL`
+- `EXPO_PUBLIC_SECURITY_EMAIL`
+
 ## First setup
 
 1. create the Supabase project
@@ -53,6 +60,7 @@ npx supabase db push
 
 - `mentalhealth://**`
 - your local Expo web origin plus `/auth-callback`, for example `http://localhost:8081/auth-callback`
+- your production web callback URL, for example `https://<domain>/auth-callback`
 
 8. copy the URL and key into `.env`
 
@@ -67,3 +75,22 @@ The app now uses Google OAuth and passwordless email magic links for MVP authent
 - no manual email/password sign-up or password reset screens are part of the MVP
 
 If you customize Supabase email templates later, keep the confirmation link redirect-aware so `emailRedirectTo` continues to send users back to the correct callback URL.
+
+## Production launch checklist
+
+For the public web deployment, update Supabase Authentication -> URL Configuration:
+
+- Site URL: `https://<domain>`
+- Redirect URL: `https://<domain>/auth-callback`
+- Redirect URL: `mentalhealth://**`
+- Redirect URL: `http://localhost:8081/auth-callback`
+
+If preview deployments need auth testing, add the exact preview callback URL separately rather than broadening production redirects unnecessarily.
+
+In Google Auth Platform, configure the web OAuth client with:
+
+- Authorized JavaScript origin: `https://<domain>`
+- Authorized JavaScript origin: `http://localhost:8081`
+- Authorized redirect URI: the Supabase provider callback, for example `https://<project-ref>.supabase.co/auth/v1/callback`
+
+See [docs/deployment.md](../docs/deployment.md) for the full web launch checklist.

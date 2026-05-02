@@ -17,6 +17,10 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="privacy" />
+        <Stack.Screen name="terms" />
+        <Stack.Screen name="crisis" />
+        <Stack.Screen name="account-deletion" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(app)" />
       </Stack>

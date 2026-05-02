@@ -1,6 +1,6 @@
 # Costs
 
-Last checked: 2026-04-15
+Last checked: 2026-05-02
 
 These are planning estimates, not guarantees. Pricing, verification rules, and limits can change. Verify all costs again before spending money or publishing the app.
 
@@ -15,7 +15,10 @@ These are planning estimates, not guarantees. Pricing, verification rules, and l
 
 - Planning baseline: `$25` one-time
 - Caveat: Google is evolving Android developer verification flows, so verify the exact current requirement at signup.
+- Organization account setup can require D-U-N-S number, organization website, organization phone, public developer email, public developer phone, and verification documents. Plan time for this before Android closed testing.
 - Official references:
+  - <https://support.google.com/googleplay/android-developer/answer/13628312>
+  - <https://support.google.com/googleplay/android-developer/answer/6112435>
   - <https://developer.android.com/developer-verification>
   - <https://developer.android.com/developer-verification/assets/pdfs/introducing-the-android-developer-console.pdf>
 
@@ -23,6 +26,7 @@ These are planning estimates, not guarantees. Pricing, verification rules, and l
 
 - Planning baseline: `$10-$20/year` for a basic `.org` or similar domain
 - This varies by registrar and TLD, so treat it as an estimate rather than a locked price.
+- Current web-test decision: use the existing `yoshevbot.uk` domain under Cloudflare, so no new domain purchase is needed for the first web test.
 
 ## Monthly operating cost scenarios
 
@@ -85,8 +89,10 @@ Start simple.
 
 Recommended early setup:
 
-- use domain-based forwarding or aliases for `hello@`, `support@`, `security@`, and `contributors@`
+- use domain-based forwarding or aliases for `hello@`, `support@`, `privacy@`, `security@`, and `contributors@`
 - route them to one real inbox initially
+- for the `yoshevbot.uk` web test, prefer aliases such as `support@yoshevbot.uk`, `privacy@yoshevbot.uk`, and `security@yoshevbot.uk` forwarding to the owner's real inbox
+- avoid publishing a personal Gmail address directly as the app's public mental-health support or privacy contact unless there is no better short-term option
 
 If you later need a proper shared mailbox provider, treat that as optional overhead rather than day-one scope.
 
@@ -102,9 +108,25 @@ Expo gives the web build, not the hosting bill.
 Initial recommendation:
 
 - static hosting on a free tier such as Cloudflare Pages or an equivalent platform
+- Cloudflare Pages free-plan planning limits currently include 500 builds/month and 100 custom domains/project, with file and asset limits that should be checked before launch
 - Source: <https://www.cloudflare.com/developer-platform/products/pages/>
+- Limits source: <https://developers.cloudflare.com/pages/platform/limits/>
 
 The browser app should stay cheap if it remains a mostly static front-end that talks to Supabase.
+
+## Future self-hosting and portability
+
+The long-term product direction should make self-hosting possible, similar in spirit to apps that support both a hosted service and user-controlled deployments.
+
+Do not make self-hosting crowd out MVP utility, but keep the architecture portable:
+
+- document the default hosted path: static Expo web app plus the maintainer's Supabase project
+- preserve the option to point the app at a user-controlled Supabase-compatible backend
+- later evaluate easy managed self-hosting paths such as PikaPods or similar services
+- later document a do-it-yourself deployment path for users who want to host infrastructure themselves
+- avoid dependencies or proprietary backend assumptions that would make this unnecessarily hard
+
+Research exact self-hosting providers, operational requirements, and pricing before committing to a supported deployment method.
 
 ## What not to buy early
 
@@ -145,6 +167,9 @@ Avoid paying for these before the product earns them:
 - Supabase billing overview: <https://supabase.com/docs/guides/platform/billing-on-supabase>
 - Resend pricing: <https://resend.com/pricing>
 - Cloudflare Pages: <https://www.cloudflare.com/developer-platform/products/pages/>
+- Cloudflare Pages limits: <https://developers.cloudflare.com/pages/platform/limits/>
+- Google Play developer account requirements: <https://support.google.com/googleplay/android-developer/answer/13628312>
+- Google Play registration payment: <https://support.google.com/googleplay/android-developer/answer/6112435>
 - Google Workspace pricing update reference: <https://workspace.google.com/blog/product-announcements/pricing-updates-and-more-flexible-payment-options-google-workspace>
 - Android developer verification: <https://developer.android.com/developer-verification>
 - Android Developer Console first-look PDF: <https://developer.android.com/developer-verification/assets/pdfs/introducing-the-android-developer-console.pdf>
