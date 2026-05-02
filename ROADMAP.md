@@ -149,8 +149,8 @@ Launch-prep completed:
 - [x] Supabase production redirect and Google OAuth configuration checklist
 - [x] Android closed-testing checklist, build commands, store-copy draft, and tester instructions
 - [x] Google Play Health apps, Data safety, and account-deletion policy requirements called out
-- [x] self-hosting defined as build-time Supabase portability for the pre-Android milestone
-- [x] self-hosting docs and public env template added
+- [x] first launch data path confirmed as maintainer-hosted Supabase
+- [x] future data-separation path documented without blocking Play testing
 
 Immediate launch blockers:
 
@@ -273,7 +273,11 @@ Current direction:
 - [x] do not use the account requirement as an excuse for unnecessary data collection
 - [x] default hosted setup uses the maintainer's Supabase project
 - [x] preserve a future path for users to bring their own compatible backend or self-hosted deployment
-- [x] defer runtime backend switching until after the hosted MVP and Play testing path are stable
+- [x] do not block web or Android closed testing on local-only, Drive sync, or custom-backend runtime switching
+- [ ] add a non-technical local-only data mode for users who prefer personal data to stay on their device
+- [ ] add explicit data-location choice before first sign-in: hosted sync, local-only, or advanced custom Supabase
+- [ ] add data-location controls in settings with clear export/import and switching warnings
+- [ ] defer automatic cloud backup/sync, including Google Drive, until export/import and local-only mode are reliable
 
 MVP data expectations:
 
@@ -286,7 +290,10 @@ MVP data expectations:
 Post-MVP privacy improvements:
 
 - [ ] export
+- [ ] import
 - [ ] deletion
+- [ ] local-only storage mode
+- [ ] encrypted backup file export
 - [ ] better encryption review
 - [ ] clearer data lifecycle policies
 - [ ] possible local-first or reduced-account options if later justified

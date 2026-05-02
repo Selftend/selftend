@@ -79,24 +79,27 @@ This keeps MVP scope manageable while leaving room to self-host or abstract late
 
 ## Backend portability direction
 
-Pre-Android self-hosting support is build-time Supabase portability, not runtime backend switching.
+The first web and Android testing path uses the maintainer-hosted Supabase project. Future data separation should be preserved, but runtime backend switching and local-only storage are not blockers for Android closed testing.
 
-Supported v1 backend modes:
+Current and planned backend modes:
 
 - maintainer-hosted Supabase for the public web app and first Android closed-test build
-- bring-your-own Supabase Cloud project for technical self-hosters
-- advanced self-hosted Supabase for operators who can run and maintain Supabase themselves
+- planned local-only storage for non-technical users who want personal records to stay on device
+- planned bring-your-own Supabase Cloud project for technical self-hosters
+- planned advanced self-hosted Supabase for operators who can run and maintain Supabase themselves
 
-The client must keep using public Supabase URL and publishable/anon key configuration from `EXPO_PUBLIC_*` values. Do not put service-role keys, database passwords, SMTP secrets, OAuth secrets, JWT secrets, or other private backend secrets in Expo public env vars.
+For the hosted path, the client uses public Supabase URL and publishable/anon key configuration from `EXPO_PUBLIC_*` values. Do not put service-role keys, database passwords, SMTP secrets, OAuth secrets, JWT secrets, or other private backend secrets in Expo public env vars.
 
 Keep schema and RLS changes in `supabase/migrations` so hosted and self-hosted deployments can apply the same contract.
 
 Out of scope before Android closed testing:
 
-- in-app backend selector
+- automatic Google Drive backup/sync
 - generic Postgres adapter
 - Firebase/Appwrite/custom API support
 - project-maintained production Docker Compose stack for Supabase
+
+The eventual in-app data-location selector should be framed as a privacy choice before sign-in: hosted sync, local-only, or advanced custom Supabase. Implement export/delete first; local-only should come before automatic cloud backup.
 
 ## Data model direction
 

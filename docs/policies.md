@@ -47,6 +47,8 @@ The policy text should keep these boundaries:
 - Contact preference: use public domain aliases that forward to the owner's inbox, not the owner's personal Gmail address directly
 - Remaining public contact aliases to configure before broader testing: `privacy@yoshevbot.uk` and `security@yoshevbot.uk`
 - Temporary deletion/privacy fallback can use `support@yoshevbot.uk` until a separate privacy alias exists
+- First web and Android testing path stores app records in the maintainer-hosted Supabase project
+- Local-only storage, custom backend selection, and Google Drive sync are planned privacy directions, not launch features
 - Audience ambition: global and all ages, because the product mission is to help as many people as possible
 - Practical policy posture: global/all-ages launch raises legal, privacy, child-safety, content, and crisis-resource review burden; do not treat this as a simple copy edit
 

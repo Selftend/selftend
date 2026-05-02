@@ -68,15 +68,15 @@ npx supabase db push
 
 8. copy the URL and key into `.env`
 
-## Self-hosting support
+## Future backend portability
 
 The app's backend contract is Supabase Auth plus the public schema and RLS policies in `supabase/migrations`.
 
-Supported modes:
+Current and planned modes:
 
 - maintainer-hosted Supabase for the public web app and first Android closed-test build
-- bring-your-own Supabase Cloud project
-- advanced self-hosted Supabase operated by the self-hoster
+- future bring-your-own Supabase Cloud project
+- future advanced self-hosted Supabase operated by the self-hoster
 
 For Supabase Cloud, apply migrations with:
 
@@ -93,9 +93,9 @@ npx supabase start
 npx supabase db reset
 ```
 
-For advanced self-hosted Supabase, follow Supabase's official self-hosting docs first, then apply the SQL migrations from this repo to the target database. The operator owns TLS, SMTP/email, backups, upgrades, monitoring, uptime, and incident response.
+For future advanced self-hosted Supabase, follow Supabase's official self-hosting docs first, then apply the SQL migrations from this repo to the target database. The operator owns TLS, SMTP/email, backups, upgrades, monitoring, uptime, and incident response.
 
-Runtime backend switching is intentionally deferred. Self-hosters build the app from source with their own public Supabase URL and publishable or anon key.
+Runtime backend switching is intentionally deferred and should not block the first web or Android closed-test launch. Until runtime switching exists, self-hosters build the app from source with their own public Supabase URL and publishable or anon key.
 
 ## Auth callback flow
 

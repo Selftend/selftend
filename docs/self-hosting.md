@@ -1,8 +1,10 @@
-# Self-Hosting and Backend Portability
+# Future Data Separation and Backend Portability
 
 Last checked: 2026-05-02
 
-Self-hosting support for the pre-Android milestone means the app can be built against a Supabase-compatible backend by changing public build-time configuration. It does not mean the app has a runtime backend picker.
+The first web and Android testing path uses the maintainer-hosted Supabase project. Data separation remains an explicit future direction, but it should not block the first public web test or Google Play closed test.
+
+For non-technical users, the preferred future user-controlled data path is local-only storage with export/import, not asking them to configure Supabase. For technical users and organizations, the app should preserve a future path to bring-your-own Supabase or self-hosted Supabase.
 
 Official references:
 
@@ -12,9 +14,9 @@ Official references:
 
 ## Supported modes
 
-### 1. Maintainer hosted
+### 1. Maintainer hosted sync
 
-This is the default public product path.
+This is the current launch path and default public product path.
 
 - Web app: Cloudflare Pages static Expo export.
 - Backend: the maintainer's Supabase project.
@@ -22,7 +24,19 @@ This is the default public product path.
 
 This is the only mode planned for the first Google Play closed-test build.
 
-### 2. Bring your own Supabase Cloud project
+### 2. Local-only personal data
+
+This should become the main non-technical privacy option after the hosted MVP path is working.
+
+- no Supabase account required for local records
+- sensitive app records stay on the device or browser profile
+- no cross-device sync by default
+- switching devices requires export/import unless a backup feature is added
+- deletion means deleting local app data, with clear platform caveats
+
+Local-only mode should be offered before sign-in and again in settings. It should not claim perfect secrecy: device backups, browser storage, operating-system diagnostics, and file exports can still expose data depending on the user's device and choices.
+
+### 3. Bring your own Supabase Cloud project
 
 This is the easiest self-host-like path for technical users who want their own backend without operating servers.
 
@@ -34,7 +48,7 @@ Self-hoster responsibilities:
 - configure redirect URLs for their web domain and native scheme
 - build the web or native app with their own public Supabase URL and publishable key
 
-### 3. Advanced self-hosted Supabase
+### 4. Advanced self-hosted Supabase
 
 This is for operators who want to run Supabase on their own infrastructure. Supabase's official self-hosting path uses Docker Compose and assumes server administration, Docker, networking, DNS, and firewall knowledge. The operator is responsible for server maintenance, security hardening, Postgres maintenance, backups, disaster recovery, monitoring, uptime, high availability, and scaling.
 
@@ -55,9 +69,35 @@ The MVP does not require:
 - analytics SDKs
 - server-rendered web
 - proprietary hosted-only APIs
-- runtime backend selection
+- automatic cloud backup or sync
 
-Do not replace Supabase with a different backend before Play Store closed testing. Preserve portability by keeping all schema changes in migrations and keeping client code pointed at public Supabase configuration.
+Do not replace Supabase with a different backend before Play Store closed testing. Preserve future portability by keeping schema changes in migrations and avoiding unnecessary coupling in client data access.
+
+## Future data-location UX
+
+After export/delete and local-only storage exist, the first screen can ask where personal data should live before sign-in:
+
+1. `Use hosted sync`: easiest path, uses the maintainer's Supabase backend and supports web/mobile continuity.
+2. `Keep data on this device`: non-technical privacy path, stores records locally and does not sync by default.
+3. `Use my own Supabase`: advanced path for users or organizations who can provide a Supabase-compatible URL and publishable key.
+
+Settings should eventually include the same data-location area. Switching data locations must sign out of the current backend if needed and must not silently move records. The app should show that existing records stay where they were created unless the user explicitly exports and imports them.
+
+## Recommended privacy sequence
+
+Implement privacy-control features in this order:
+
+1. hosted account/data deletion
+2. data export from hosted Supabase
+3. local-only storage
+4. import into local or hosted storage
+5. encrypted backup file export
+6. custom Supabase runtime connection
+7. optional Google Drive sync after encryption, merge behavior, and policy review are solid
+
+## Export, import, and Google Drive
+
+Manual export/import should come before automatic Google Drive sync. Automatic Google Drive sync adds Google OAuth, Drive API scopes, app verification risk, conflict handling, backup encryption decisions, background sync behavior, and more Google Play Data safety disclosure. If Drive support is added later, app data should be encrypted before upload so Google stores the file but not readable mental-health content.
 
 ## Public build-time environment
 

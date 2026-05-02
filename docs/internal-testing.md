@@ -49,12 +49,12 @@ For Google Play closed testing, use the `production` profile to create an Androi
 - `/privacy`, `/terms`, `/crisis`, and `/account-deletion` load without sign-in
 - `/auth-callback` loads directly and shows the missing-link state
 
-### Self-hosting docs smoke
+### Future data separation docs smoke
 
 - `.env.self-host.example` contains only public `EXPO_PUBLIC_*` values
-- `docs/self-hosting.md` explains maintainer-hosted, bring-your-own Supabase Cloud, and advanced self-hosted Supabase modes
+- `docs/self-hosting.md` explains hosted Supabase now, then future local-only, custom Supabase, and advanced self-hosted modes
 - docs clearly say the Play closed-test build uses the maintainer backend
-- docs clearly say runtime backend switching is deferred
+- docs clearly say local-only mode, Drive sync, and runtime backend switching are deferred
 
 ### Public support and policy
 
