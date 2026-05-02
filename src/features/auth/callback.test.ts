@@ -3,7 +3,7 @@ import { parseAuthCallbackUrl } from "@/src/features/auth/callback";
 describe("parseAuthCallbackUrl", () => {
   it("reads auth codes from the query string", () => {
     expect(
-      parseAuthCallbackUrl("mentalhealth://auth-callback?code=abc123&type=recovery"),
+      parseAuthCallbackUrl("selftend://auth-callback?code=abc123&type=recovery"),
     ).toEqual({
       accessToken: null,
       refreshToken: null,
@@ -18,7 +18,7 @@ describe("parseAuthCallbackUrl", () => {
   it("reads sessions from the URL hash", () => {
     expect(
       parseAuthCallbackUrl(
-        "mentalhealth://auth-callback#access_token=access&refresh_token=refresh&type=signup",
+        "selftend://auth-callback#access_token=access&refresh_token=refresh&type=signup",
       ),
     ).toEqual({
       accessToken: "access",

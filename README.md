@@ -1,6 +1,6 @@
-# mental-health
+# SelfTend
 
-Working title for a free, non-profit, cross-platform mental health product.
+SelfTend is a free, non-profit, cross-platform mental health product.
 
 This repository started as docs-first planning and now includes the first implementation scaffold: an Expo Router app with Google OAuth and passwordless email auth foundations, a CBT section, private thought records, settings, public policy surfaces, support links, tests, and CI.
 
@@ -130,7 +130,7 @@ Once the development build is installed, keep using it as the default Android de
 - [docs/self-hosting.md](docs/self-hosting.md): supported hosted and self-hosted backend modes
 - [docs/android-closed-testing.md](docs/android-closed-testing.md): Google Play closed-testing readiness
 - [docs/policies.md](docs/policies.md): public policy surfaces and launch-review status
-- [docs/naming.md](docs/naming.md): current app-name candidate and naming checks
+- [docs/naming.md](docs/naming.md): final app-name decision and naming checks
 - [docs/community.md](docs/community.md): contributor/community and popularization strategy
 - [docs/licensing.md](docs/licensing.md): license choice and reference-repo rules
 - [docs/modules/cbt.md](docs/modules/cbt.md): first CBT module spec
@@ -145,7 +145,7 @@ This repo relies on docs as durable context. When a change affects setup, comman
 
 ## Status
 
-Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and launch-prep docs now cover static web deployment plus Google Play closed testing. The temporary web-test domain is `yoshevbot.uk` under Cloudflare and is connected to the static web app. The next blockers are Cloudflare Pages production env verification, domain email aliases, final app naming, Supabase production Site URL and redirect verification after the localhost OAuth fallback, first-migration confirmation if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
+Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and launch-prep docs now cover static web deployment plus Google Play closed testing. The temporary web-test domain is `yoshevbot.uk` under Cloudflare and is connected to the static web app. The next blockers are Cloudflare Pages production env verification, domain email aliases, final SelfTend domain decision, Supabase production Site URL and redirect verification after the localhost OAuth fallback, first-migration confirmation if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
 
 The first web and Android testing path uses the maintainer-hosted Supabase project. Data separation remains a product direction, but it is not a launch blocker: add export/delete first, then local-only storage, then encrypted backup/import, with custom backend or Drive sync considered later.
 

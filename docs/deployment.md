@@ -18,7 +18,7 @@ Before deployment, confirm:
 
 - temporary web-test domain: `https://yoshevbot.uk`
 - DNS access: domain is under Cloudflare
-- final public app name
+- final public app name: SelfTend
 - public support email alias
 - public privacy/contact email alias
 - legal entity or nonprofit organization name, if available
@@ -157,7 +157,7 @@ Add redirect URLs:
 
 ```text
 https://yoshevbot.uk/auth-callback
-mentalhealth://**
+selftend://**
 http://localhost:8081/auth-callback
 ```
 
@@ -193,7 +193,7 @@ Use the exact redirect URI shown by the Supabase Google provider page for the ac
 Passwordless email sign-in uses `emailRedirectTo` from the app:
 
 - web returns to `https://<domain>/auth-callback`
-- native returns to `mentalhealth://auth-callback`
+- native returns to `selftend://auth-callback`
 
 If Supabase email templates are customized, keep them redirect-aware by using the redirect target rather than hard-coding the Site URL.
 

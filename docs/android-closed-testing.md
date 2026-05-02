@@ -21,11 +21,11 @@ Official references:
 
 ## Current app identifiers
 
-- Expo app name: `mental-health`
-- Expo slug: `mental-health`
-- Native scheme: `mentalhealth`
-- Android package: `org.vasilyoshev.mentalhealth`
-- iOS bundle identifier: `org.vasilyoshev.mentalhealth`
+- Expo app name: `SelfTend`
+- Expo slug: `selftend`
+- Native scheme: `selftend`
+- Android package: `org.vasilyoshev.selftend`
+- iOS bundle identifier: `org.vasilyoshev.selftend`
 - Version: `0.1.0`
 
 Choose the final public app name before uploading to Google Play. The package name cannot be changed for the same Play listing after release without creating a new app listing.
@@ -36,7 +36,7 @@ Use an organization or nonprofit developer account if this project is submitted 
 
 Google currently lists a one-time developer registration fee of `US$25`. Verify the amount and payment requirements during signup.
 
-Current sequencing decision: defer Google Play account creation until after the temporary web version is hosted, the public app name is chosen, and the Android package/name decision is confirmed.
+Current sequencing decision: defer Google Play account creation until after the temporary web version is hosted and organization/nonprofit account details are confirmed. The public app name and native identifiers are now SelfTend.
 
 Required owner inputs:
 
@@ -128,8 +128,8 @@ Use a real Android device, not only an emulator.
 
 - app installs from Google Play closed testing
 - session restores after force close and restart
-- Google sign-in returns to the app through `mentalhealth://auth-callback`
-- magic-link email returns to the app through `mentalhealth://auth-callback`
+- Google sign-in returns to the app through `selftend://auth-callback`
+- magic-link email returns to the app through `selftend://auth-callback`
 - CBT record create/edit/archive works against the intended Supabase project
 - reminders are off by default
 - enabling reminders asks for permission
@@ -142,7 +142,7 @@ Use a real Android device, not only an emulator.
 
 ## Draft store listing copy
 
-Final app name pending.
+Draft copy for SelfTend.
 
 Short description:
 
@@ -153,7 +153,7 @@ Guided self-help and private CBT thought records for calm reflection.
 Full description:
 
 ```text
-mental-health is a free, nonprofit-oriented wellness app for guided self-help and reflection.
+SelfTend is a free, nonprofit-oriented wellness app for guided self-help and reflection.
 
 The first section focuses on private CBT thought records. You can notice a situation, name emotions, identify common thinking patterns, and write a more balanced response.
 

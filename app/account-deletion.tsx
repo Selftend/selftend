@@ -36,7 +36,7 @@ function DeletionContact({ email }: { email: string }) {
 
   const subject = encodeURIComponent("Account and data deletion request");
   const body = encodeURIComponent(
-    "Please delete my mental-health app account and associated app data. My account email is: ",
+    "Please delete my SelfTend account and associated app data. My account email is: ",
   );
 
   return (

@@ -1,22 +1,28 @@
 # GitHub Setup
 
-Last updated: 2026-04-15
+Last updated: 2026-05-02
 
 ## Current state
 
-The local repository is initialized and scaffolded, but no GitHub remote is configured yet.
+The project has been renamed to SelfTend. If the GitHub repository is newly created or manually renamed, use:
 
 Create the empty repository first:
 
 - owner: `vasilyoshev`
-- name: `mental-health`
+- name: `selftend`
 
-After that:
+Remote setup after creation or manual rename:
 
 ```bash
-git remote add origin git@github.com:vasilyoshev/mental-health.git
+git remote add origin git@github.com:vasilyoshev/selftend.git
 git branch -M main
 git push -u origin main
+```
+
+If the old remote already exists, update it only after the GitHub repository has been renamed:
+
+```bash
+git remote set-url origin git@github.com:vasilyoshev/selftend.git
 ```
 
 ## Prepared files

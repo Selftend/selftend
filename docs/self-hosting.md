@@ -117,7 +117,7 @@ EXPO_PUBLIC_SECURITY_EMAIL=security@example.org
 Optional:
 
 ```bash
-EXPO_PUBLIC_GITHUB_REPO_URL=https://github.com/vasilyoshev/mental-health
+EXPO_PUBLIC_GITHUB_REPO_URL=https://github.com/vasilyoshev/selftend
 EXPO_PUBLIC_EAS_PROJECT_ID=6f95348d-9f04-436a-aaf8-f8f20f71d6d9
 ```
 
@@ -165,7 +165,7 @@ https://<app-domain>/auth-callback
 Native callback:
 
 ```text
-mentalhealth://**
+selftend://**
 ```
 
 Local web callback:

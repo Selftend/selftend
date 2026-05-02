@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 
-const REMINDER_KEY = "mental-health:cbt-reminder-id";
+const REMINDER_KEY = "selftend:cbt-reminder-id";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

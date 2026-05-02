@@ -1,7 +1,7 @@
 import type { ExpoConfig } from "expo/config";
 
-const appName = "mental-health";
-const appSlug = "mental-health";
+const appName = "SelfTend";
+const appSlug = "selftend";
 const easProjectId =
   process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? "6f95348d-9f04-436a-aaf8-f8f20f71d6d9";
 
@@ -11,7 +11,7 @@ const config: ExpoConfig = {
   version: "0.1.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
-  scheme: "mentalhealth",
+  scheme: "selftend",
   userInterfaceStyle: "light",
   newArchEnabled: true,
   splash: {
@@ -22,7 +22,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     buildNumber: "1",
-    bundleIdentifier: "org.vasilyoshev.mentalhealth",
+    bundleIdentifier: "org.vasilyoshev.selftend",
   },
   android: {
     adaptiveIcon: {
@@ -30,7 +30,7 @@ const config: ExpoConfig = {
       backgroundColor: "#f4efe5",
     },
     edgeToEdgeEnabled: true,
-    package: "org.vasilyoshev.mentalhealth",
+    package: "org.vasilyoshev.selftend",
     versionCode: 1,
   },
   web: {

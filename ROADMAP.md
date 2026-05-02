@@ -54,7 +54,7 @@ The MVP is not "everything mental health." It is a focused foundation that prove
 
 Before app implementation, complete the planning and operating groundwork:
 
-- [ ] finalize working title and brand direction
+- [x] finalize public app name and brand direction: SelfTend
 - [x] lock the technical stack
 - [x] write privacy, safety, and content principles
 - [x] set contribution flow and maintainer model
@@ -163,7 +163,7 @@ Immediate launch blockers:
 - [x] broad/global crisis-resource intent captured
 - [ ] global crisis-resource strategy approved
 - [ ] Google Play organization/nonprofit developer account created or confirmed
-- [ ] final public app name approved before Play upload; current candidate is `SteadyHearth`
+- [x] final public app name approved before Play upload: `SelfTend`
 - [ ] production Supabase Site URL and redirect URLs verified after localhost OAuth fallback
 - [ ] closed-test Android build verified on a real device
 

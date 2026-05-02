@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping with `mental-health`.
+Thanks for helping with SelfTend.
 
 This project is meant to be open to more than code contributions. Product, design, docs, content, QA, localization, and community work all matter.
 

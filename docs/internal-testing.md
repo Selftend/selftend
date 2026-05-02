@@ -23,7 +23,7 @@ For Google Play closed testing, use the `production` profile to create an Androi
 - Google consent returns to the app in the Android development build
 - magic-link email sends successfully from the sign-in screen
 - magic-link email opens `/auth-callback` on web
-- magic-link email opens the app through `mentalhealth://...` on device builds
+- magic-link email opens the app through `selftend://...` on device builds
 - sign out
 - session restore after app restart
 

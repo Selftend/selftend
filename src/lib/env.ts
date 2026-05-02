@@ -1,6 +1,6 @@
 export const appEnv = {
   githubRepoUrl:
-    process.env.EXPO_PUBLIC_GITHUB_REPO_URL ?? "https://github.com/vasilyoshev/mental-health",
+    process.env.EXPO_PUBLIC_GITHUB_REPO_URL ?? "https://github.com/vasilyoshev/selftend",
   publicAppUrl: process.env.EXPO_PUBLIC_PUBLIC_APP_URL ?? "",
   privacyEmail: process.env.EXPO_PUBLIC_PRIVACY_EMAIL ?? "",
   securityEmail: process.env.EXPO_PUBLIC_SECURITY_EMAIL ?? "",

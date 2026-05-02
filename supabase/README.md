@@ -64,7 +64,7 @@ npx supabase db push
 
 7. add redirect URLs for the app's auth callback flow:
 
-- `mentalhealth://**`
+- `selftend://**`
 - your local Expo web origin plus `/auth-callback`, for example `http://localhost:8081/auth-callback`
 - your production web callback URL, for example `https://<domain>/auth-callback`
 
@@ -117,7 +117,7 @@ For the public web deployment, update Supabase Authentication -> URL Configurati
 
 - Site URL: `https://<domain>`
 - Redirect URL: `https://<domain>/auth-callback`
-- Redirect URL: `mentalhealth://**`
+- Redirect URL: `selftend://**`
 - Redirect URL: `http://localhost:8081/auth-callback`
 
 Do not leave the Site URL set to localhost after production web deployment. If Supabase redirects a completed Google sign-in to `http://localhost:8081`, verify the Site URL, the production redirect allow-list entry, and the exported web app's `EXPO_PUBLIC_PUBLIC_APP_URL`.

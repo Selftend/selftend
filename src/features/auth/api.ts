@@ -7,7 +7,7 @@ import { appEnv } from "@/src/lib/env";
 import { requireSupabase } from "@/src/lib/supabase";
 
 const AUTH_CALLBACK_PATH = "auth-callback";
-const APP_SCHEME = "mentalhealth";
+const APP_SCHEME = "selftend";
 
 export function getWebAuthRedirectUrl(publicAppUrl = appEnv.publicAppUrl) {
   const configuredPublicAppUrl = publicAppUrl.trim();

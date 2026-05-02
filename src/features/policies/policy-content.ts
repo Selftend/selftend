@@ -14,7 +14,7 @@ export const privacyPolicySections: PolicySection[] = [
   {
     title: "Scope",
     body: [
-      "This privacy policy covers the mental-health app in this repository across web and mobile builds.",
+      "This privacy policy covers SelfTend across web and mobile builds.",
       "Before wider public launch, the maintainer must replace the pending organization and contact details with the final legal entity, support contact, and privacy contact.",
     ],
   },

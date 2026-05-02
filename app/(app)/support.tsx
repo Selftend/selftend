@@ -10,7 +10,7 @@ import { appEnv } from "@/src/lib/env";
 
 export default function SupportScreen() {
   const supportEmail = appEnv.supportEmail;
-  const supportSubject = encodeURIComponent("mental-health app support");
+  const supportSubject = encodeURIComponent("SelfTend support");
 
   return (
     <Screen
