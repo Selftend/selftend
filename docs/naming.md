@@ -27,7 +27,7 @@ Canonical project identifiers:
 - Native scheme: `selftend`
 - Android package: `org.vasilyoshev.selftend`
 - iOS bundle identifier: `org.vasilyoshev.selftend`
-- Intended GitHub repository URL after manual repo rename: `https://github.com/vasilyoshev/selftend`
+- GitHub repository URL: `https://github.com/vasilyoshev/self-tend`
 
 ## Temporary domain
 
