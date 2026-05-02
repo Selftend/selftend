@@ -2,7 +2,7 @@
 
 Working title for a free, non-profit, cross-platform mental health product.
 
-This repository started as docs-first planning and now includes the first implementation scaffold: an Expo Router app with Google OAuth and passwordless email auth foundations, a CBT section, private thought records, settings, support stubs, tests, and CI.
+This repository started as docs-first planning and now includes the first implementation scaffold: an Expo Router app with Google OAuth and passwordless email auth foundations, a CBT section, private thought records, settings, public policy surfaces, support links, tests, and CI.
 
 ## Mission
 
@@ -30,7 +30,7 @@ Included now:
 - CBT learn surface and guided thought record flow
 - thought history, edit, and archive flow
 - quiet reminder settings, default-off
-- support and legal stub screens
+- support, legal, privacy, crisis, and account-deletion surfaces
 - Jest test harness
 - GitHub issue / PR templates and CI workflow
 
@@ -76,6 +76,10 @@ Useful commands:
 npm run web
 npm run start:dev-client
 npm run build:android:development
+npm run build:android:preview
+npm run build:android:production
+npm run export:web
+npm run serve:web:production
 npm run typecheck
 npm test -- --runInBand
 ```
@@ -114,6 +118,10 @@ Once the development build is installed, keep using it as the default Android de
 - [docs/product-principles.md](docs/product-principles.md): product guardrails
 - [docs/stack.md](docs/stack.md): approved technical stack
 - [docs/costs.md](docs/costs.md): launch and operating cost planning
+- [docs/deployment.md](docs/deployment.md): static web deployment and Supabase auth callback setup
+- [docs/android-closed-testing.md](docs/android-closed-testing.md): Google Play closed-testing readiness
+- [docs/policies.md](docs/policies.md): public policy surfaces and launch-review status
+- [docs/naming.md](docs/naming.md): current app-name candidate and naming checks
 - [docs/community.md](docs/community.md): contributor/community and popularization strategy
 - [docs/licensing.md](docs/licensing.md): license choice and reference-repo rules
 - [docs/modules/cbt.md](docs/modules/cbt.md): first CBT module spec
@@ -122,9 +130,15 @@ Once the development build is installed, keep using it as the default Android de
 - [docs/internal-testing.md](docs/internal-testing.md): internal build and testing checklist
 - [supabase/README.md](supabase/README.md): schema and environment notes
 
+## Documentation expectation
+
+This repo relies on docs as durable context. When a change affects setup, commands, deployment, store submission, environment variables, safety/legal boundaries, current blockers, or next user inputs, update the relevant docs in the same pass so fresh-context agents can resume safely.
+
 ## Status
 
-Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, and Android development should use the installed development build rather than Expo Go. The next blockers are Linux local environment setup, first-migration application if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
+Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and launch-prep docs now cover static web deployment plus Google Play closed testing. The temporary web-test domain is `yoshevbot.uk` under Cloudflare. The next blockers are Cloudflare Pages deployment, domain email aliases, final app naming, Supabase production redirect configuration, first-migration confirmation if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
+
+Future direction now includes a self-hosting and portability track after the MVP is useful: keep the hosted Supabase path working, but preserve a later path for user-controlled backends, managed self-hosting options, and do-it-yourself deployment docs.
 
 ## Reference repositories
 

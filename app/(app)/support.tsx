@@ -1,4 +1,5 @@
 import * as Linking from "expo-linking";
+import { router } from "expo-router";
 import { Text, View } from "react-native";
 
 import { Button } from "@/src/components/button";
@@ -8,16 +9,37 @@ import { Screen } from "@/src/components/screen";
 import { appEnv } from "@/src/lib/env";
 
 export default function SupportScreen() {
+  const supportEmail = appEnv.supportEmail;
+  const supportSubject = encodeURIComponent("mental-health app support");
+
   return (
     <Screen
-      subtitle="The support surface stays practical: project links, contribution entry points, and scope boundaries."
+      subtitle="Project links, public contact paths, policy pages, and clear safety boundaries."
       title="Support"
     >
       <NoticeCard
-        body="This app is built as guided self-help. If you need urgent help or crisis support, use your local emergency and crisis resources instead of relying on the app."
+        body="This app is built as guided self-help. If you need urgent help or crisis support, use local emergency and crisis resources instead of relying on the app."
         title="Important boundary"
         tone="warning"
       />
+
+      <Card>
+        <View className="gap-4">
+          <Text className="text-lg font-semibold text-ink">Contact</Text>
+          {supportEmail ? (
+            <Button
+              onPress={() => void Linking.openURL(`mailto:${supportEmail}?subject=${supportSubject}`)}
+              text="Email support"
+            />
+          ) : (
+            <Text className="text-sm leading-6 text-ink/70">
+              Set EXPO_PUBLIC_SUPPORT_EMAIL before public launch. Until then, use GitHub issues for project feedback
+              that does not include private health details.
+            </Text>
+          )}
+          <Button onPress={() => router.push("/account-deletion")} text="Request account deletion" variant="ghost" />
+        </View>
+      </Card>
 
       <Card>
         <View className="gap-4">
@@ -32,12 +54,11 @@ export default function SupportScreen() {
       </Card>
 
       <Card>
-        <View className="gap-3">
-          <Text className="text-lg font-semibold text-ink">What belongs here</Text>
-          <Text className="text-sm leading-6 text-ink/70">
-            GitHub, contribution guidance, gratitude, legal docs, and calm explanations of what the product is and is
-            not.
-          </Text>
+        <View className="gap-4">
+          <Text className="text-lg font-semibold text-ink">Policies and safety</Text>
+          <Button onPress={() => router.push("/crisis")} text="Open crisis guidance" variant="secondary" />
+          <Button onPress={() => router.push("/privacy")} text="Open privacy policy" variant="ghost" />
+          <Button onPress={() => router.push("/terms")} text="Open terms and boundaries" variant="ghost" />
         </View>
       </Card>
     </Screen>

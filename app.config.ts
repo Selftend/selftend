@@ -21,6 +21,7 @@ const config: ExpoConfig = {
   },
   ios: {
     supportsTablet: true,
+    buildNumber: "1",
     bundleIdentifier: "org.vasilyoshev.mentalhealth",
   },
   android: {
@@ -30,6 +31,7 @@ const config: ExpoConfig = {
     },
     edgeToEdgeEnabled: true,
     package: "org.vasilyoshev.mentalhealth",
+    versionCode: 1,
   },
   web: {
     bundler: "metro",

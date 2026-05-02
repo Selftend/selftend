@@ -1,6 +1,6 @@
 # Internal Testing
 
-Last updated: 2026-04-17
+Last updated: 2026-05-02
 
 ## Current build profiles
 
@@ -11,6 +11,8 @@ Last updated: 2026-04-17
 - `production`
 
 Use the Android `development` build as the default local runtime. Do not use Expo Go as the normal Android development path.
+
+For Google Play closed testing, use the `production` profile to create an Android App Bundle after policy forms and store setup are ready.
 
 ## Minimum internal verification before widening scope
 
@@ -44,15 +46,28 @@ Use the Android `development` build as the default local runtime. Do not use Exp
 - web build loads
 - authenticated flow works
 - thought records save and reload
+- `/privacy`, `/terms`, `/crisis`, and `/account-deletion` load without sign-in
+- `/auth-callback` loads directly and shows the missing-link state
+
+### Public support and policy
+
+- support screen has a real support contact before external testing
+- privacy page has final organization/contact details before external testing
+- account deletion page has a real deletion contact before Google Play testing
+- crisis guidance is reviewed for the target launch jurisdictions
+- sign-in screen links to privacy, terms, and crisis guidance
 
 ## Recommended commands
 
 ```bash
 npm run typecheck
 npm test -- --runInBand
+npm run export:web
+npm run serve:web:production
 npm run start:dev-client
 npm run build:android:development
-npx expo export --platform web
+npm run build:android:preview
+npm run build:android:production
 ```
 
 Use Node `20.19.0+` so your local runtime matches the current `package.json` engine requirement before you install or test anything.
@@ -71,10 +86,17 @@ Use the development build instead of Expo Go for normal Android development, rem
 
 ## Store-readiness note
 
-Do not move to store submission yet. Finish:
+Do not move to closed testing or store submission yet. Finish:
 
 - migration application in the active Supabase project
-- privacy policy and terms
-- crisis/safety copy review
+- public domain and Supabase production redirect configuration
+- final app name and package-name confirmation
+- public support/privacy/deletion contact configuration
+- privacy policy and terms legal review
+- crisis/safety copy jurisdiction review
+- Google Play Health apps declaration and Data safety form
+- account deletion request process review
 - internal device testing
 - icon/screenshot/store copy polish
+
+See [deployment.md](deployment.md), [android-closed-testing.md](android-closed-testing.md), and [policies.md](policies.md) for launch-specific checklists.

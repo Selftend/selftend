@@ -11,8 +11,13 @@
     "start:dev-client": "expo start --dev-client",
     "android": "expo start --android",
     "build:android:development": "npx eas-cli build --platform android --profile development",
+    "build:android:preview": "npx eas-cli build --platform android --profile preview",
+    "build:android:production": "npx eas-cli build --platform android --profile production",
+    "submit:android:production": "npx eas-cli submit --platform android --profile production",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "export:web": "npx expo export --platform web",
+    "serve:web:production": "npx expo serve",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch"

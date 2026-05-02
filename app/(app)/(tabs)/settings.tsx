@@ -155,6 +155,7 @@ export default function SettingsScreen() {
         <View className="gap-4">
           <Text className="text-lg font-semibold text-ink">Account</Text>
           <Text className="text-sm leading-6 text-ink/70">{user?.email ?? "Signed-in account"}</Text>
+          <Button onPress={() => router.push("/account-deletion")} text="Request account or data deletion" variant="ghost" />
           <Button onPress={() => void handleSignOut()} text="Sign out" variant="danger" />
         </View>
       </Card>

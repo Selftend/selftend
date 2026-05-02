@@ -5,6 +5,7 @@ import { Text, View } from "react-native";
 import { useState } from "react";
 
 import { Button } from "@/src/components/button";
+import { Card } from "@/src/components/card";
 import { FieldShell } from "@/src/components/field-shell";
 import { NoticeCard } from "@/src/components/notice-card";
 import { Screen } from "@/src/components/screen";
@@ -135,6 +136,18 @@ export default function SignInScreen() {
           New users are created on first successful Google sign-in or magic-link completion. Manual sign-up and passwords stay out of the MVP.
         </Text>
       </View>
+
+      <Card>
+        <View className="gap-4">
+          <Text className="text-lg font-semibold text-ink">Before you continue</Text>
+          <Text className="text-sm leading-6 text-ink/70">
+            The app is for wellness and guided self-help. It is not therapy, diagnosis, or emergency support.
+          </Text>
+          <Button onPress={() => router.push("/privacy")} text="Privacy policy" variant="ghost" />
+          <Button onPress={() => router.push("/terms")} text="Terms and boundaries" variant="ghost" />
+          <Button onPress={() => router.push("/crisis")} text="Crisis guidance" variant="ghost" />
+        </View>
+      </Card>
     </Screen>
   );
 }

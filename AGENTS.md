@@ -70,6 +70,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - When pricing or platform policy is mentioned, link to official sources where possible and record the date checked.
 - If a decision is uncertain, mark it as an assumption or open question instead of hiding the uncertainty.
 - After each meaningful product, infrastructure, or process change, update `ROADMAP.md` so it shows current status and the immediate next steps.
+- Also update the docs or README files that a fresh-context agent would read to resume safely. If a change affects setup, commands, deployment, store submission, environment variables, safety/legal boundaries, current blockers, or the next expected user inputs, record it in the relevant doc during the same change.
 
 ## Git safety rule
 
