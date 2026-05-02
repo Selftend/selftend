@@ -11,6 +11,8 @@ Recommended production shape:
 - Backend: Supabase
 - App routing: Expo Router, with `app/+not-found.tsx` handling unmatched routes at runtime
 
+Netlify serves the browser app and public policy pages. Supabase manages accounts, sessions, OAuth, and private app data for both web and native builds. Keep those responsibilities separate: do not add a custom web backend just to host the Expo app, and do not move the frontend into Supabase Edge Functions by default.
+
 For self-hosted and bring-your-own-Supabase builds, see [self-hosting.md](self-hosting.md).
 
 Official references:

@@ -77,6 +77,28 @@ Supabase is the default managed backend for MVP because it covers:
 
 This keeps MVP scope manageable while leaving room to self-host or abstract later if necessary.
 
+## Frontend host vs backend
+
+Netlify and Supabase are both needed because they own different parts of the product.
+
+Netlify is the frontend host:
+
+- serves the Expo web app at `https://selftend.org`
+- provides HTTPS for the browser app
+- deploys the web build from GitHub
+- serves `index.html` for unknown browser routes so Expo Router can render `app/+not-found.tsx`
+- hosts public web pages such as `/privacy` and `/account-deletion`
+
+Supabase is the backend:
+
+- manages user accounts, sessions, Google sign-in, and magic links
+- stores private app records and preferences
+- enforces database access through Postgres and row-level security
+- provides the OAuth provider callback used by Google sign-in
+- remains the backend for both the web app and native Android/iOS builds
+
+The Android and iOS apps do not use Netlify for their app shell. They use Supabase directly for auth and data, and may open Netlify-hosted public pages such as privacy policy or account deletion when needed.
+
 ## Backend portability direction
 
 The first web and Android testing path uses the maintainer-hosted Supabase project. Future data separation should be preserved, but runtime backend switching and local-only storage are not blockers for Android closed testing.
