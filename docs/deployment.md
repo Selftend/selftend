@@ -78,7 +78,7 @@ npm run export:web
 Equivalent raw command:
 
 ```bash
-npx expo export -p web
+npx expo export -p web --clear
 ```
 
 Output directory:
@@ -93,7 +93,7 @@ Local production smoke:
 npm run serve:web:production
 ```
 
-The `public/_headers` file is copied into `dist` during export. Rebuild after editing anything in `public/`.
+The export script clears Metro's bundler cache so changed `EXPO_PUBLIC_*` values are baked into the static bundle. The `public/_headers` file is copied into `dist` during export. Rebuild after editing anything in `public/`.
 
 ## Cloudflare Pages setup
 
@@ -116,6 +116,8 @@ Environment variables:
 - `EXPO_PUBLIC_PRIVACY_EMAIL=support@yoshevbot.uk` temporarily, or `privacy@yoshevbot.uk` after that alias exists
 - `EXPO_PUBLIC_SECURITY_EMAIL=security@yoshevbot.uk` after that alias exists
 - `EXPO_PUBLIC_EAS_PROJECT_ID` only if overriding the configured project ID
+
+`EXPO_PUBLIC_PUBLIC_APP_URL` is baked into the static JavaScript bundle during export and is used as the explicit web auth callback base. If it changes or was missing, update the Pages environment variable and redeploy.
 
 Current Cloudflare Pages free-plan planning limits include 500 builds per month, 100 custom domains per project, and static file limits. Verify the linked limits page before relying on those numbers for launch capacity.
 
@@ -227,6 +229,42 @@ Web launch is acceptable only when:
 - crisis and legal copy has been reviewed for the target launch jurisdictions
 
 ## Troubleshooting
+
+### Google sign-in returns to `localhost:8081`
+
+Observed on 2026-05-02:
+
+- Google OAuth completed, then Supabase redirected to `http://localhost:8081` with session tokens in the URL fragment
+- the live `yoshevbot.uk` static app was reachable
+- the live bundle had `EXPO_PUBLIC_PUBLIC_APP_URL` compiled as empty
+
+This usually means Supabase fell back to its configured Site URL instead of completing at the production callback URL. Check in this order:
+
+1. In Supabase Authentication -> URL Configuration, set Site URL to:
+
+```text
+https://yoshevbot.uk
+```
+
+2. In the same Supabase screen, make sure this exact redirect URL is present:
+
+```text
+https://yoshevbot.uk/auth-callback
+```
+
+3. Keep the local callback only as an additional development redirect, not as the Site URL:
+
+```text
+http://localhost:8081/auth-callback
+```
+
+4. In Cloudflare Pages, set and redeploy with:
+
+```text
+EXPO_PUBLIC_PUBLIC_APP_URL=https://yoshevbot.uk
+```
+
+5. After redeploy, retry from a fresh browser tab. If a token-bearing URL was exposed during testing, sign out of the app and revoke or expire that session before continuing.
 
 ### `yoshevbot.uk` shows only `Hello world`
 

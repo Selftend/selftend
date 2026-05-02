@@ -16,7 +16,7 @@
     "submit:android:production": "npx eas-cli submit --platform android --profile production",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "export:web": "npx expo export --platform web",
+    "export:web": "npx expo export --platform web --clear",
     "serve:web:production": "npx expo serve",
     "typecheck": "tsc --noEmit",
     "test": "jest",

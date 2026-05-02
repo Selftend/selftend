@@ -28,6 +28,8 @@ For launch builds, also set:
 - `EXPO_PUBLIC_PRIVACY_EMAIL`
 - `EXPO_PUBLIC_SECURITY_EMAIL`
 
+`EXPO_PUBLIC_PUBLIC_APP_URL` must be set before exporting the public web build because OAuth and magic-link redirects use it as the web callback base. Missing production values can cause the app or Supabase to fall back to localhost during auth testing.
+
 Never put service-role keys, database passwords, SMTP secrets, OAuth secrets, JWT secrets, or other private backend secrets in Expo public env vars.
 
 ## First setup
@@ -117,6 +119,8 @@ For the public web deployment, update Supabase Authentication -> URL Configurati
 - Redirect URL: `https://<domain>/auth-callback`
 - Redirect URL: `mentalhealth://**`
 - Redirect URL: `http://localhost:8081/auth-callback`
+
+Do not leave the Site URL set to localhost after production web deployment. If Supabase redirects a completed Google sign-in to `http://localhost:8081`, verify the Site URL, the production redirect allow-list entry, and the exported web app's `EXPO_PUBLIC_PUBLIC_APP_URL`.
 
 If preview deployments need auth testing, add the exact preview callback URL separately rather than broadening production redirects unnecessarily.
 

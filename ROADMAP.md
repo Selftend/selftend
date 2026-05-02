@@ -156,14 +156,15 @@ Immediate launch blockers:
 
 - [x] temporary public web-test domain selected: `yoshevbot.uk`
 - [x] temporary support alias created: `support@yoshevbot.uk`
-- [ ] `yoshevbot.uk` connected to the static web deployment
+- [x] `yoshevbot.uk` connected to the static web deployment
+- [ ] Cloudflare Pages production env redeployed with `EXPO_PUBLIC_PUBLIC_APP_URL=https://yoshevbot.uk`
 - [ ] privacy, security, and deletion aliases configured
 - [ ] legal entity or nonprofit account details confirmed
 - [x] broad/global crisis-resource intent captured
 - [ ] global crisis-resource strategy approved
 - [ ] Google Play organization/nonprofit developer account created or confirmed
 - [ ] final public app name approved before Play upload; current candidate is `SteadyHearth`
-- [ ] production Supabase redirect URLs configured
+- [ ] production Supabase Site URL and redirect URLs verified after localhost OAuth fallback
 - [ ] closed-test Android build verified on a real device
 
 ### Phase 3: Post-MVP product expansion

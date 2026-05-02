@@ -3,14 +3,24 @@ import { Platform } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 
 import { completeAuthRedirect } from "@/src/features/auth/callback";
+import { appEnv } from "@/src/lib/env";
 import { requireSupabase } from "@/src/lib/supabase";
 
 const AUTH_CALLBACK_PATH = "auth-callback";
 const APP_SCHEME = "mentalhealth";
 
+export function getWebAuthRedirectUrl(publicAppUrl = appEnv.publicAppUrl) {
+  const configuredPublicAppUrl = publicAppUrl.trim();
+  if (!configuredPublicAppUrl) {
+    return Linking.createURL(AUTH_CALLBACK_PATH);
+  }
+
+  return new URL(`/${AUTH_CALLBACK_PATH}`, configuredPublicAppUrl).toString();
+}
+
 export function getOAuthRedirectUrl() {
   if (Platform.OS === "web") {
-    return Linking.createURL(AUTH_CALLBACK_PATH);
+    return getWebAuthRedirectUrl();
   }
 
   return Linking.createURL(AUTH_CALLBACK_PATH, { scheme: APP_SCHEME });
@@ -18,7 +28,7 @@ export function getOAuthRedirectUrl() {
 
 export function getMagicLinkRedirectUrl() {
   if (Platform.OS === "web") {
-    return Linking.createURL(AUTH_CALLBACK_PATH);
+    return getWebAuthRedirectUrl();
   }
 
   return Linking.createURL(AUTH_CALLBACK_PATH, { scheme: APP_SCHEME });

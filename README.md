@@ -145,7 +145,7 @@ This repo relies on docs as durable context. When a change affects setup, comman
 
 ## Status
 
-Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and launch-prep docs now cover static web deployment plus Google Play closed testing. The temporary web-test domain is `yoshevbot.uk` under Cloudflare. The next blockers are Cloudflare Pages deployment, domain email aliases, final app naming, Supabase production redirect configuration, first-migration confirmation if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
+Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and launch-prep docs now cover static web deployment plus Google Play closed testing. The temporary web-test domain is `yoshevbot.uk` under Cloudflare and is connected to the static web app. The next blockers are Cloudflare Pages production env verification, domain email aliases, final app naming, Supabase production Site URL and redirect verification after the localhost OAuth fallback, first-migration confirmation if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
 
 The first web and Android testing path uses the maintainer-hosted Supabase project. Data separation remains a product direction, but it is not a launch blocker: add export/delete first, then local-only storage, then encrypted backup/import, with custom backend or Drive sync considered later.
 
