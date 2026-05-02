@@ -95,6 +95,8 @@ npm run serve:web:production
 
 The export script clears Metro's bundler cache so changed `EXPO_PUBLIC_*` values are baked into the static bundle. The `public/_headers` file is copied into `dist` during export. Rebuild after editing anything in `public/`.
 
+Do not add a top-level `public/404.html` for the Expo web app. Cloudflare Pages uses its single-page app fallback when no top-level `404.html` exists, which lets unknown production routes load the app and render Expo Router's `app/+not-found.tsx` at runtime.
+
 ## Cloudflare Pages setup
 
 Use Cloudflare Pages unless the owner chooses another static host.
@@ -130,6 +132,7 @@ These routes must be reachable without signing in:
 - `/crisis`
 - `/account-deletion`
 - `/auth-callback`
+- a deliberately unknown route, such as `/missing-test`, should load the app and render the simple `app/+not-found.tsx` screen with a home link
 
 The Google Play privacy policy URL should use the final domain, not a localhost, preview, or repository-editing URL. Prefer:
 

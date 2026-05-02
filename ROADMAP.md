@@ -151,6 +151,7 @@ Launch-prep completed:
 - [x] Google Play Health apps, Data safety, and account-deletion policy requirements called out
 - [x] first launch data path confirmed as maintainer-hosted Supabase
 - [x] future data-separation path documented without blocking Play testing
+- [x] simple runtime not-found screen documented for unknown production web routes
 
 Immediate launch blockers:
 
