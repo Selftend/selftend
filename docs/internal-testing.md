@@ -49,6 +49,13 @@ For Google Play closed testing, use the `production` profile to create an Androi
 - `/privacy`, `/terms`, `/crisis`, and `/account-deletion` load without sign-in
 - `/auth-callback` loads directly and shows the missing-link state
 
+### Self-hosting docs smoke
+
+- `.env.self-host.example` contains only public `EXPO_PUBLIC_*` values
+- `docs/self-hosting.md` explains maintainer-hosted, bring-your-own Supabase Cloud, and advanced self-hosted Supabase modes
+- docs clearly say the Play closed-test build uses the maintainer backend
+- docs clearly say runtime backend switching is deferred
+
 ### Public support and policy
 
 - support screen has a real support contact before external testing
@@ -99,4 +106,4 @@ Do not move to closed testing or store submission yet. Finish:
 - internal device testing
 - icon/screenshot/store copy polish
 
-See [deployment.md](deployment.md), [android-closed-testing.md](android-closed-testing.md), and [policies.md](policies.md) for launch-specific checklists.
+See [deployment.md](deployment.md), [self-hosting.md](self-hosting.md), [android-closed-testing.md](android-closed-testing.md), and [policies.md](policies.md) for launch-specific checklists.

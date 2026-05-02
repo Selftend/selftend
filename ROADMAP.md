@@ -149,6 +149,8 @@ Launch-prep completed:
 - [x] Supabase production redirect and Google OAuth configuration checklist
 - [x] Android closed-testing checklist, build commands, store-copy draft, and tester instructions
 - [x] Google Play Health apps, Data safety, and account-deletion policy requirements called out
+- [x] self-hosting defined as build-time Supabase portability for the pre-Android milestone
+- [x] self-hosting docs and public env template added
 
 Immediate launch blockers:
 
@@ -239,7 +241,7 @@ Recommended channel rollout:
 - [ ] data export
 - [ ] richer progress summaries
 - [ ] localization groundwork
-- [ ] self-hosting and portability plan
+- [x] self-hosting and portability plan
 
 ### Later expansion
 
@@ -270,7 +272,8 @@ Current direction:
 - [x] account exists for cross-platform continuity and sync
 - [x] do not use the account requirement as an excuse for unnecessary data collection
 - [x] default hosted setup uses the maintainer's Supabase project
-- [ ] preserve a future path for users to bring their own compatible backend or self-hosted deployment
+- [x] preserve a future path for users to bring their own compatible backend or self-hosted deployment
+- [x] defer runtime backend switching until after the hosted MVP and Play testing path are stable
 
 MVP data expectations:
 

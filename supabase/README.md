@@ -19,12 +19,16 @@ And always set:
 
 - `EXPO_PUBLIC_SUPABASE_URL`
 
+For self-hosted or bring-your-own-Supabase builds, these values point at the self-hoster's Supabase-compatible project. See [docs/self-hosting.md](../docs/self-hosting.md).
+
 For launch builds, also set:
 
 - `EXPO_PUBLIC_PUBLIC_APP_URL`
 - `EXPO_PUBLIC_SUPPORT_EMAIL`
 - `EXPO_PUBLIC_PRIVACY_EMAIL`
 - `EXPO_PUBLIC_SECURITY_EMAIL`
+
+Never put service-role keys, database passwords, SMTP secrets, OAuth secrets, JWT secrets, or other private backend secrets in Expo public env vars.
 
 ## First setup
 
@@ -63,6 +67,35 @@ npx supabase db push
 - your production web callback URL, for example `https://<domain>/auth-callback`
 
 8. copy the URL and key into `.env`
+
+## Self-hosting support
+
+The app's backend contract is Supabase Auth plus the public schema and RLS policies in `supabase/migrations`.
+
+Supported modes:
+
+- maintainer-hosted Supabase for the public web app and first Android closed-test build
+- bring-your-own Supabase Cloud project
+- advanced self-hosted Supabase operated by the self-hoster
+
+For Supabase Cloud, apply migrations with:
+
+```bash
+npx supabase login
+npx supabase link --project-ref <project-ref>
+npx supabase db push
+```
+
+For local development, use:
+
+```bash
+npx supabase start
+npx supabase db reset
+```
+
+For advanced self-hosted Supabase, follow Supabase's official self-hosting docs first, then apply the SQL migrations from this repo to the target database. The operator owns TLS, SMTP/email, backups, upgrades, monitoring, uptime, and incident response.
+
+Runtime backend switching is intentionally deferred. Self-hosters build the app from source with their own public Supabase URL and publishable or anon key.
 
 ## Auth callback flow
 

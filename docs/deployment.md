@@ -4,6 +4,8 @@ Last checked: 2026-05-02
 
 This project should launch the browser app as a static Expo web export. Do not add a separate backend, analytics SDK, or server-rendered web stack for v1 unless a concrete requirement appears.
 
+For self-hosted and bring-your-own-Supabase builds, see [self-hosting.md](self-hosting.md). The public `yoshevbot.uk` deployment remains the maintainer-hosted path.
+
 Official references:
 
 - Expo publishing websites: <https://docs.expo.dev/guides/publishing-websites/>
@@ -223,3 +225,27 @@ Web launch is acceptable only when:
 - authenticated CBT persistence works against the intended Supabase project
 - support/privacy/security contacts are real operational inboxes
 - crisis and legal copy has been reviewed for the target launch jurisdictions
+
+## Troubleshooting
+
+### `yoshevbot.uk` shows only `Hello world`
+
+Observed on 2026-05-02:
+
+- `https://yoshevbot.uk` returned plain text `Hello world`
+- `https://yoshevbot.uk/privacy` also returned plain text `Hello world`
+- response came from Cloudflare, not from the exported Expo app
+
+This means requests are not reaching the expected Pages static export. Check in this order:
+
+1. Open the Pages project's `*.pages.dev` URL.
+   - If it shows the app, the build is fine and the custom domain is being intercepted or attached incorrectly.
+   - If it shows `Hello world`, the wrong project/template is deployed or the Pages project is not building this repository with `npm run export:web` and output directory `dist`.
+2. In Cloudflare, check Workers & Pages -> Workers -> Routes and Custom Domains.
+   - Remove or disable any Worker route such as `yoshevbot.uk/*` or `*yoshevbot.uk/*`.
+   - Remove any Worker custom domain attached to `yoshevbot.uk`.
+3. In the Pages project, check Custom domains.
+   - `yoshevbot.uk` should be attached to the Pages project that builds this repo.
+   - The domain status should be active.
+4. In DNS, avoid keeping old origin records for the same host if Pages custom domain setup created the required records.
+5. Redeploy the Pages project after confirming the production branch is `main`, build command is `npm run export:web`, and output directory is `dist`.

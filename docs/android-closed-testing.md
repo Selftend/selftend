@@ -4,6 +4,8 @@ Last checked: 2026-05-02
 
 The first Google Play milestone should be closed testing, not production. Do not promote to production until policy, safety, device, and support requirements are reviewed.
 
+The first Android closed-test build uses the maintainer-hosted Supabase project. Self-hosters can build their own native binaries from source with their own public Supabase configuration, but runtime backend switching is intentionally out of scope before Play Store testing.
+
 Official references:
 
 - Play Console account requirements: <https://support.google.com/googleplay/android-developer/answer/13628312>

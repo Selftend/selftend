@@ -114,19 +114,19 @@ Initial recommendation:
 
 The browser app should stay cheap if it remains a mostly static front-end that talks to Supabase.
 
-## Future self-hosting and portability
+## Self-hosting and portability
 
 The long-term product direction should make self-hosting possible, similar in spirit to apps that support both a hosted service and user-controlled deployments.
 
-Do not make self-hosting crowd out MVP utility, but keep the architecture portable:
+Pre-Android support is docs and build-time configuration:
 
-- document the default hosted path: static Expo web app plus the maintainer's Supabase project
-- preserve the option to point the app at a user-controlled Supabase-compatible backend
+- default hosted path: static Expo web app plus the maintainer's Supabase project
+- bring-your-own Supabase Cloud path: self-hoster pays Supabase or uses the free tier under their own account
+- advanced self-hosted Supabase path: self-hoster pays for their own server, storage, email, backups, monitoring, and maintenance
 - later evaluate easy managed self-hosting paths such as PikaPods or similar services
-- later document a do-it-yourself deployment path for users who want to host infrastructure themselves
-- avoid dependencies or proprietary backend assumptions that would make this unnecessarily hard
+- avoid dependencies or proprietary backend assumptions that would make build-time Supabase portability unnecessarily hard
 
-Research exact self-hosting providers, operational requirements, and pricing before committing to a supported deployment method.
+Research exact self-hosting providers, operational requirements, and pricing before committing to a supported managed deployment method. Do not promise PikaPods support until the required Supabase-compatible backend, auth, email, backups, domains, TLS, and upgrade path are verified.
 
 ## What not to buy early
 
@@ -165,6 +165,8 @@ Avoid paying for these before the product earns them:
 - Expo billing docs: <https://docs.expo.dev/billing/plans/>
 - Supabase billing FAQ: <https://supabase.com/docs/guides/platform/billing-faq>
 - Supabase billing overview: <https://supabase.com/docs/guides/platform/billing-on-supabase>
+- Supabase self-hosting with Docker: <https://supabase.com/docs/guides/self-hosting/docker>
+- PikaPods docs: <https://docs.pikapods.com/>
 - Resend pricing: <https://resend.com/pricing>
 - Cloudflare Pages: <https://www.cloudflare.com/developer-platform/products/pages/>
 - Cloudflare Pages limits: <https://developers.cloudflare.com/pages/platform/limits/>

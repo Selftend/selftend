@@ -58,11 +58,19 @@ Use Node `20.19.0+` for this repo. That matches the `package.json` engine requir
 cp .env.example .env
 ```
 
+For a self-hosted or bring-your-own-Supabase build, start from:
+
+```bash
+cp .env.self-host.example .env
+```
+
 3. Fill in:
 
 - `EXPO_PUBLIC_SUPABASE_URL`
 - `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 - `EXPO_PUBLIC_EAS_PROJECT_ID` only if you need to override the linked Expo project ID
+
+Only put public client configuration in `EXPO_PUBLIC_*` values. Never put service-role keys, database passwords, OAuth secrets, SMTP secrets, or JWT secrets in Expo public env vars.
 
 4. Run the app:
 
@@ -119,6 +127,7 @@ Once the development build is installed, keep using it as the default Android de
 - [docs/stack.md](docs/stack.md): approved technical stack
 - [docs/costs.md](docs/costs.md): launch and operating cost planning
 - [docs/deployment.md](docs/deployment.md): static web deployment and Supabase auth callback setup
+- [docs/self-hosting.md](docs/self-hosting.md): supported hosted and self-hosted backend modes
 - [docs/android-closed-testing.md](docs/android-closed-testing.md): Google Play closed-testing readiness
 - [docs/policies.md](docs/policies.md): public policy surfaces and launch-review status
 - [docs/naming.md](docs/naming.md): current app-name candidate and naming checks
@@ -138,7 +147,7 @@ This repo relies on docs as durable context. When a change affects setup, comman
 
 Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and launch-prep docs now cover static web deployment plus Google Play closed testing. The temporary web-test domain is `yoshevbot.uk` under Cloudflare. The next blockers are Cloudflare Pages deployment, domain email aliases, final app naming, Supabase production redirect configuration, first-migration confirmation if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
 
-Future direction now includes a self-hosting and portability track after the MVP is useful: keep the hosted Supabase path working, but preserve a later path for user-controlled backends, managed self-hosting options, and do-it-yourself deployment docs.
+Self-hosting support is now defined as build-time Supabase portability: the maintainer-hosted app uses the maintainer's Supabase project, while self-hosters can build from source against their own Supabase Cloud or advanced self-hosted Supabase deployment. Runtime backend switching is intentionally deferred.
 
 ## Reference repositories
 

@@ -1,6 +1,6 @@
 # Technical Stack
 
-Last reviewed: 2026-04-15
+Last reviewed: 2026-05-02
 
 ## Stack summary
 
@@ -76,6 +76,27 @@ Supabase is the default managed backend for MVP because it covers:
 - server-side functions where needed
 
 This keeps MVP scope manageable while leaving room to self-host or abstract later if necessary.
+
+## Backend portability direction
+
+Pre-Android self-hosting support is build-time Supabase portability, not runtime backend switching.
+
+Supported v1 backend modes:
+
+- maintainer-hosted Supabase for the public web app and first Android closed-test build
+- bring-your-own Supabase Cloud project for technical self-hosters
+- advanced self-hosted Supabase for operators who can run and maintain Supabase themselves
+
+The client must keep using public Supabase URL and publishable/anon key configuration from `EXPO_PUBLIC_*` values. Do not put service-role keys, database passwords, SMTP secrets, OAuth secrets, JWT secrets, or other private backend secrets in Expo public env vars.
+
+Keep schema and RLS changes in `supabase/migrations` so hosted and self-hosted deployments can apply the same contract.
+
+Out of scope before Android closed testing:
+
+- in-app backend selector
+- generic Postgres adapter
+- Firebase/Appwrite/custom API support
+- project-maintained production Docker Compose stack for Supabase
 
 ## Data model direction
 
