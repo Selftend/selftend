@@ -29,14 +29,15 @@ Canonical project identifiers:
 - iOS bundle identifier: `org.vasilyoshev.selftend`
 - GitHub repository URL: `https://github.com/vasilyoshev/self-tend`
 
-## Temporary domain
+## Production domain
 
-Use `https://yoshevbot.uk` for the temporary web test. A final SelfTend domain is still TBD.
+Target production domain: `https://selftend.org`.
 
-Possible future domain patterns:
+Domain purchase status:
 
-- `selftend.org` if available and nonprofit positioning is central
-- `selftend.app` if available and the app identity is primary
-- `selftend.com` if available and not too expensive
+- `selftend.org` is the preferred domain because nonprofit positioning is central.
+- `selftend.com` is optional defensive ownership if affordable.
+- `selftend.app` is acceptable but less aligned with the nonprofit posture.
+- `selftend.io` is not preferred because it reads more like a tech/startup product.
 
 The app identifiers have been renamed for SelfTend before Google Play upload. Do not upload to app stores until redirect allow-lists, support contacts, store metadata, and legal/policy review are aligned with the final identity.

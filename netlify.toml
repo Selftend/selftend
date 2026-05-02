@@ -1,0 +1,11 @@
+[build]
+  command = "npm run export:web"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20.19.0"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -126,7 +126,7 @@ Once the development build is installed, keep using it as the default Android de
 - [docs/product-principles.md](docs/product-principles.md): product guardrails
 - [docs/stack.md](docs/stack.md): approved technical stack
 - [docs/costs.md](docs/costs.md): launch and operating cost planning
-- [docs/deployment.md](docs/deployment.md): static web deployment and Supabase auth callback setup
+- [docs/deployment.md](docs/deployment.md): single-page web deployment and Supabase auth callback setup
 - [docs/self-hosting.md](docs/self-hosting.md): supported hosted and self-hosted backend modes
 - [docs/android-closed-testing.md](docs/android-closed-testing.md): Google Play closed-testing readiness
 - [docs/policies.md](docs/policies.md): public policy surfaces and launch-review status
@@ -145,7 +145,7 @@ This repo relies on docs as durable context. When a change affects setup, comman
 
 ## Status
 
-Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and launch-prep docs now cover static web deployment plus Google Play closed testing. The temporary web-test domain is `yoshevbot.uk` under Cloudflare and is connected to the static web app. The next blockers are Cloudflare Pages production env verification, domain email aliases, final SelfTend domain decision, Supabase production Site URL and redirect verification after the localhost OAuth fallback, first-migration confirmation if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
+Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and launch-prep docs now cover single-page Netlify web deployment plus Google Play closed testing. The next blockers are `selftend.org` purchase/DNS, Netlify production env verification, domain email aliases, Supabase production Site URL and redirect verification, first-migration confirmation if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
 
 The first web and Android testing path uses the maintainer-hosted Supabase project. Data separation remains a product direction, but it is not a launch blocker: add export/delete first, then local-only storage, then encrypted backup/import, with custom backend or Drive sync considered later.
 

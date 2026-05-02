@@ -14,7 +14,7 @@ Last reviewed: 2026-05-02
 - Notifications: Expo Notifications
 - Secure local storage: Expo SecureStore
 - Builds and store delivery: EAS Build + EAS Submit
-- Web hosting for Expo web output: Cloudflare Pages or equivalent static hosting
+- Web hosting for Expo web output: Netlify or equivalent static frontend hosting
 - Testing: Jest + React Native Testing Library, with browser smoke tests later
 
 ## Why Expo

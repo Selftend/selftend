@@ -26,7 +26,7 @@ These are planning estimates, not guarantees. Pricing, verification rules, and l
 
 - Planning baseline: `$10-$20/year` for a basic `.org` or similar domain
 - This varies by registrar and TLD, so treat it as an estimate rather than a locked price.
-- Current web-test decision: use the existing `yoshevbot.uk` domain under Cloudflare, so no new domain purchase is needed for the first web test.
+- Current production-domain decision: buy `selftend.org` if available and use it as the canonical web and app-store policy domain.
 
 ## Monthly operating cost scenarios
 
@@ -91,7 +91,7 @@ Recommended early setup:
 
 - use domain-based forwarding or aliases for `hello@`, `support@`, `privacy@`, `security@`, and `contributors@`
 - route them to one real inbox initially
-- for the `yoshevbot.uk` web test, prefer aliases such as `support@yoshevbot.uk`, `privacy@yoshevbot.uk`, and `security@yoshevbot.uk` forwarding to the owner's real inbox
+- for the first public launch, prefer aliases such as `support@selftend.org`, `privacy@selftend.org`, and `security@selftend.org` forwarding to the owner's real inbox
 - avoid publishing a personal Gmail address directly as the app's public mental-health support or privacy contact unless there is no better short-term option
 
 If you later need a proper shared mailbox provider, treat that as optional overhead rather than day-one scope.
@@ -107,10 +107,9 @@ Expo gives the web build, not the hosting bill.
 
 Initial recommendation:
 
-- static hosting on a free tier such as Cloudflare Pages or an equivalent platform
-- Cloudflare Pages free-plan planning limits currently include 500 builds/month and 100 custom domains/project, with file and asset limits that should be checked before launch
-- Source: <https://www.cloudflare.com/developer-platform/products/pages/>
-- Limits source: <https://developers.cloudflare.com/pages/platform/limits/>
+- static frontend hosting on Netlify's free tier or an equivalent platform
+- Netlify should be verified against current pricing and bandwidth/build limits before launch
+- Source: <https://www.netlify.com/pricing/>
 
 The browser app should stay cheap if it remains a mostly static front-end that talks to Supabase.
 
@@ -168,8 +167,7 @@ Avoid paying for these before the product earns them:
 - Supabase self-hosting with Docker: <https://supabase.com/docs/guides/self-hosting/docker>
 - PikaPods docs: <https://docs.pikapods.com/>
 - Resend pricing: <https://resend.com/pricing>
-- Cloudflare Pages: <https://www.cloudflare.com/developer-platform/products/pages/>
-- Cloudflare Pages limits: <https://developers.cloudflare.com/pages/platform/limits/>
+- Netlify pricing: <https://www.netlify.com/pricing/>
 - Google Play developer account requirements: <https://support.google.com/googleplay/android-developer/answer/13628312>
 - Google Play registration payment: <https://support.google.com/googleplay/android-developer/answer/6112435>
 - Google Workspace pricing update reference: <https://workspace.google.com/blog/product-announcements/pricing-updates-and-more-flexible-payment-options-google-workspace>

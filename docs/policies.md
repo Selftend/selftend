@@ -21,8 +21,8 @@ Implementation status:
 - [x] account deletion request route exists without sign-in
 - [x] in-app sign-in, support, settings, and legal screens link to relevant public pages
 - [ ] final legal entity name added
-- [x] public support email alias configured: `support@yoshevbot.uk`
-- [ ] public privacy/deletion email alias configured
+- [ ] public support email alias configured on `selftend.org`
+- [ ] public privacy/deletion email alias configured on `selftend.org`
 - [x] crisis-resource intent captured as broad/global
 - [ ] global crisis-resource strategy reviewed
 - [ ] human/legal review completed
@@ -42,11 +42,11 @@ The policy text should keep these boundaries:
 
 ## Current launch assumptions
 
-- Temporary web-test domain: `https://yoshevbot.uk`
-- Current support contact: `support@yoshevbot.uk`
+- Target production domain: `https://selftend.org`
+- Target support contact: `support@selftend.org`
 - Contact preference: use public domain aliases that forward to the owner's inbox, not the owner's personal Gmail address directly
-- Remaining public contact aliases to configure before broader testing: `privacy@yoshevbot.uk` and `security@yoshevbot.uk`
-- Temporary deletion/privacy fallback can use `support@yoshevbot.uk` until a separate privacy alias exists
+- Remaining public contact aliases to configure before broader testing: `privacy@selftend.org` and `security@selftend.org`
+- Temporary deletion/privacy fallback can use `support@selftend.org` until a separate privacy alias exists
 - First web and Android testing path stores app records in the maintainer-hosted Supabase project
 - Local-only storage, custom backend selection, and Google Drive sync are planned privacy directions, not launch features
 - Audience ambition: global and all ages, because the product mission is to help as many people as possible
@@ -57,8 +57,8 @@ The policy text should keep these boundaries:
 Use the final domain, not GitHub or preview URLs, for store forms:
 
 ```text
-https://yoshevbot.uk/privacy
-https://yoshevbot.uk/account-deletion
+https://selftend.org/privacy
+https://selftend.org/account-deletion
 ```
 
 Google Play requires Data safety information for closed, open, and production tracks. Apps with account creation also need an account deletion path. The current path is request-based, so a real privacy/support email must be configured before store testing.

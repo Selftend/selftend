@@ -18,7 +18,7 @@ Official references:
 
 This is the current launch path and default public product path.
 
-- Web app: Cloudflare Pages static Expo export.
+- Web app: single-page Expo web export on Netlify or an equivalent static frontend host.
 - Backend: the maintainer's Supabase project.
 - Mobile builds: EAS builds configured with the maintainer's Supabase URL and publishable key.
 
@@ -184,7 +184,7 @@ For Supabase Cloud projects, use the exact callback URL shown in the Supabase Da
 
 ## Web build
 
-Build the static web app:
+Build the single-page web app:
 
 ```bash
 npm run export:web
@@ -196,7 +196,7 @@ Serve locally:
 npm run serve:web:production
 ```
 
-Self-hosters can deploy `dist` to any static host that supports HTTPS and direct route access to generated Expo Router files.
+Self-hosters can deploy `dist` to any static host that supports HTTPS and serves `index.html` for unknown navigation routes so Expo Router can handle unmatched paths at runtime.
 
 ## Native builds
 

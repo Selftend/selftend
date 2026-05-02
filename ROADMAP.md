@@ -145,21 +145,20 @@ This phase turns the MVP into a product that can be responsibly promoted.
 
 Launch-prep completed:
 
-- [x] static web deployment checklist for Cloudflare Pages or equivalent hosting
+- [x] single-page web deployment checklist for Netlify or equivalent hosting
 - [x] Supabase production redirect and Google OAuth configuration checklist
 - [x] Android closed-testing checklist, build commands, store-copy draft, and tester instructions
 - [x] Google Play Health apps, Data safety, and account-deletion policy requirements called out
 - [x] first launch data path confirmed as maintainer-hosted Supabase
 - [x] future data-separation path documented without blocking Play testing
-- [x] simple runtime not-found screen documented for unknown production web routes
+- [x] simple runtime not-found screen configured through Expo Router single-page web output
 
 Immediate launch blockers:
 
-- [x] temporary public web-test domain selected: `yoshevbot.uk`
-- [x] temporary support alias created: `support@yoshevbot.uk`
-- [x] `yoshevbot.uk` connected to the static web deployment
-- [ ] Cloudflare Pages production env redeployed with `EXPO_PUBLIC_PUBLIC_APP_URL=https://yoshevbot.uk`
-- [ ] privacy, security, and deletion aliases configured
+- [ ] production domain purchased and configured: `selftend.org`
+- [ ] Netlify production env configured with `EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org`
+- [ ] `selftend.org` connected to the Netlify web deployment
+- [ ] support, privacy, security, and deletion aliases configured on `selftend.org`
 - [ ] legal entity or nonprofit account details confirmed
 - [x] broad/global crisis-resource intent captured
 - [ ] global crisis-resource strategy approved
@@ -329,7 +328,7 @@ Initial operations:
 - [x] GitHub for source of truth
 - [ ] Discord for contributor chat
 - [ ] shared email aliases: `hello@`, `support@`, `privacy@`, `security@`, `contributors@`
-- [ ] temporary `yoshevbot.uk` aliases: `support@`, `privacy@`, and `security@`
+- [ ] `selftend.org` aliases: `support@`, `privacy@`, `security@`, and `contributors@`
 - [ ] public gratitude and acknowledgements
 - [ ] donation path
 - [ ] sharing page / support page plan
