@@ -30,7 +30,7 @@ export function VerifyEmailForm() {
 
   const onSignOut = async () => {
     await signOut();
-    router.replace("/(auth)/sign-in");
+    router.replace("/");
   };
 
   return (

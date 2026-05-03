@@ -103,7 +103,6 @@ export default function SettingsScreen() {
   const handleSignOut = async () => {
     try {
       await signOut();
-      router.replace("/(auth)/sign-in");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to sign out.");
     }
@@ -300,7 +299,6 @@ function DeleteAccountButton() {
     try {
       await deleteMutation.mutateAsync();
       await signOut();
-      router.replace("/(auth)/sign-in");
     } catch {
       // Error shown in dialog
     }

@@ -37,7 +37,7 @@ export default function AuthCallbackScreen() {
         }
 
         if (outcome === "confirmed") {
-          router.replace("/(auth)/sign-in");
+          router.replace("/");
           return;
         }
 
@@ -86,7 +86,7 @@ export default function AuthCallbackScreen() {
                 <CardDescription>{errorMessage}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button onPress={() => router.replace("/(auth)/sign-in")}>
+                <Button onPress={() => router.replace("/")}>
                   <Text>Back to sign in</Text>
                 </Button>
               </CardContent>
@@ -111,7 +111,7 @@ export default function AuthCallbackScreen() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button onPress={() => router.replace("/(auth)/sign-in")}>
+                <Button onPress={() => router.replace("/")}>
                   <Text>Back to sign in</Text>
                 </Button>
               </CardContent>

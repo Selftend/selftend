@@ -1,6 +1,5 @@
 import { router } from 'expo-router';
-import { LogOutIcon, MoonIcon, SettingsIcon, SunIcon } from 'lucide-react-native';
-import { useColorScheme } from 'nativewind';
+import { LogOutIcon, MonitorIcon, MoonIcon, SettingsIcon, SunIcon } from 'lucide-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -16,6 +15,7 @@ import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { signOut } from '@/src/features/auth/api';
 import { useSession } from '@/src/providers/session-provider';
+import { useThemeStore } from '@/src/stores/theme-store';
 import type { TriggerRef } from '@rn-primitives/popover';
 
 function getInitials(email: string | undefined): string {
@@ -26,7 +26,7 @@ function getInitials(email: string | undefined): string {
 export function UserMenu() {
   const popoverTriggerRef = React.useRef<TriggerRef>(null);
   const { user } = useSession();
-  const { colorScheme, setColorScheme } = useColorScheme();
+  const { preference, setPreference } = useThemeStore();
 
   const email = user?.email;
   const initials = getInitials(email);
@@ -34,11 +34,6 @@ export function UserMenu() {
   async function onSignOut() {
     popoverTriggerRef.current?.close();
     await signOut();
-    router.replace('/(auth)/sign-in');
-  }
-
-  function onToggleTheme() {
-    setColorScheme(colorScheme === 'dark' ? 'light' : 'dark');
   }
 
   return (
@@ -78,19 +73,29 @@ export function UserMenu() {
             </Button>
           </View>
         </View>
-        <Button
-          variant="ghost"
-          size="lg"
-          className="h-14 justify-start gap-3 rounded-none rounded-b-md px-3"
-          onPress={onToggleTheme}>
-          <View className="size-10 items-center justify-center">
-            <Icon
-              as={colorScheme === 'dark' ? SunIcon : MoonIcon}
-              className="size-5 text-foreground"
-            />
-          </View>
-          <Text>{colorScheme === 'dark' ? 'Light mode' : 'Dark mode'}</Text>
-        </Button>
+        <View className="flex-row border-border border-t">
+          <Button
+            variant={preference === 'light' ? 'secondary' : 'ghost'}
+            className="flex-1 rounded-none rounded-bl-md gap-1.5"
+            onPress={() => setPreference('light')}>
+            <Icon as={SunIcon} className="size-4 text-foreground" />
+            <Text>Light</Text>
+          </Button>
+          <Button
+            variant={preference === 'dark' ? 'secondary' : 'ghost'}
+            className="flex-1 rounded-none gap-1.5"
+            onPress={() => setPreference('dark')}>
+            <Icon as={MoonIcon} className="size-4 text-foreground" />
+            <Text>Dark</Text>
+          </Button>
+          <Button
+            variant={preference === 'system' ? 'secondary' : 'ghost'}
+            className="flex-1 rounded-none rounded-br-md gap-1.5"
+            onPress={() => setPreference('system')}>
+            <Icon as={MonitorIcon} className="size-4 text-foreground" />
+            <Text>System</Text>
+          </Button>
+        </View>
       </PopoverContent>
     </Popover>
   );

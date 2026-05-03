@@ -20,11 +20,13 @@ import { useEffect } from "react";
 import { CookieConsentBanner } from "@/src/components/cookie-consent-banner";
 import { AppProviders } from "@/src/providers/app-providers";
 import { NAV_THEME } from "@/lib/theme";
+import { useThemeStore } from "@/src/stores/theme-store";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const { colorScheme } = useColorScheme();
+  const { colorScheme, setColorScheme } = useColorScheme();
+  const { preference, hydrate } = useThemeStore();
   const [fontsLoaded] = useFonts({
     NotoSans_400Regular,
     NotoSans_500Medium,
@@ -32,6 +34,14 @@ export default function RootLayout() {
     NotoSans_700Bold,
     NotoSans_800ExtraBold,
   });
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  useEffect(() => {
+    setColorScheme(preference);
+  }, [preference, setColorScheme]);
 
   useEffect(() => {
     if (fontsLoaded) {

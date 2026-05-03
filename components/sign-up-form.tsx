@@ -148,7 +148,7 @@ export function SignUpForm() {
 
         <View className="items-center gap-1 pt-1">
           <Text className="text-sm text-muted-foreground">Already have an account?</Text>
-          <Button onPress={() => router.push("/(auth)/sign-in")} variant="link">
+          <Button onPress={() => router.push("/")} variant="link">
             <Text>Sign in</Text>
           </Button>
         </View>

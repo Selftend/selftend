@@ -1,5 +1,5 @@
 import { Redirect, Stack } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 
@@ -27,7 +27,11 @@ export default function ProtectedLayout() {
   }
 
   if (!session) {
-    return <Redirect href="/(auth)/sign-in" />;
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      window.location.href = "/";
+      return null;
+    }
+    return <Redirect href="/" />;
   }
 
   if (!user?.email_confirmed_at) {
