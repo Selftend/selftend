@@ -86,7 +86,7 @@ export function CookiePreferencesPanel({ onDone }: CookiePreferencesPanelProps) 
                     Required for authentication. Cannot be disabled.
                   </Text>
                 </View>
-                <Switch checked disabled />
+                <Text className="text-sm font-medium text-muted-foreground">Always on</Text>
               </View>
               <View className="flex-row items-center justify-between gap-4">
                 <View className="flex-1 gap-1">

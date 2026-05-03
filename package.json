@@ -20,7 +20,8 @@
     "serve:web:production": "npx expo serve",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "prepare": "husky"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -89,6 +90,7 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.1.0",
+    "husky": "^9.1.7",
     "jest-expo": "~54.0.17",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"

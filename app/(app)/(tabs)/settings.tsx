@@ -83,6 +83,10 @@ export default function SettingsScreen() {
         cbtRemindersEnabled: remindersEnabled && reminderConsent,
         cbtReminderHour: hour,
         cbtReminderMinute: minute,
+        privacyPolicyAcceptedAt: data?.privacyPolicyAcceptedAt ?? null,
+        termsAcceptedAt: data?.termsAcceptedAt ?? null,
+        policyVersionAccepted: data?.policyVersionAccepted ?? null,
+        cookieConsent: data?.cookieConsent ?? null,
       });
 
       if (remindersEnabled && !reminderConsent) {
