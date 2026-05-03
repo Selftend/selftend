@@ -31,7 +31,9 @@ Included now:
 - Expo + React Native + TypeScript scaffold
 - Expo Router app shell
 - Supabase Google OAuth and magic-link auth wiring
+- Google profile-picture import plus manual profile-picture changes backed by Supabase Storage
 - NativeWind styling with default React Native Reusables-generated UI primitives
+- brand theme tokens with a purple primary, gray secondary, and subtle purple-tinted surfaces
 - CBT learn surface and guided thought record flow
 - thought history, edit, and archive flow
 - quiet reminder settings, default-off
@@ -188,7 +190,9 @@ This repo relies on docs as durable context. When a change affects setup, comman
 
 ## Status
 
-Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and the UI shell now uses NativeWind with default React Native Reusables-generated primitives. Launch-prep docs cover single-page Netlify web deployment plus Google Play closed testing. The next blockers are `selftend.org` purchase/DNS, Netlify production env verification, domain email aliases, Supabase production Site URL and redirect verification, first-migration confirmation if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
+Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and the UI shell now uses NativeWind with default React Native Reusables-generated primitives plus brand tokens from the Selftend icon palette. Launch-prep docs cover single-page Netlify web deployment plus Google Play closed testing. The next blockers are `selftend.org` purchase/DNS, Netlify production env verification, domain email aliases, Supabase production Site URL and redirect verification, migration confirmation if it has not been applied yet, and end-to-end auth/persistence/profile-picture verification on web and device builds from the current environment.
+
+The current database/storage contract includes profile avatar metadata and a private Supabase Storage `profile-pics` bucket. Apply all migrations before testing profile-picture upload or account deletion cleanup.
 
 The first web and Android testing path uses the maintainer-hosted Supabase project. Data separation remains a product direction, but it is not a launch blocker: add export/delete first, then local-only storage, then encrypted backup/import, with custom backend or Drive sync considered later.
 

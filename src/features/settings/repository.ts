@@ -1,4 +1,5 @@
 import { defaultUserPreferences, type CookieConsent, type UserPreferences } from "@/src/features/modules/types";
+import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
 import { requireSupabase } from "@/src/lib/supabase";
 
 interface UserPreferenceRow {
@@ -98,6 +99,7 @@ export async function recordPolicyConsent(userId: string, policyVersion: string)
 
 export async function deleteUserAccount() {
   const client = requireSupabase();
+  await removeCurrentUserUploadedAvatar();
   const { error } = await client.rpc("delete_user_account");
 
   if (error) {

@@ -47,6 +47,13 @@ const config: ExpoConfig = {
         color: "#5b6b52",
       },
     ],
+    [
+      "expo-image-picker",
+      {
+        photosPermission:
+          "Selftend lets you choose a profile picture for your account.",
+      },
+    ],
     "expo-secure-store",
   ],
   experiments: {

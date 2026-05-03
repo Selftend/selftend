@@ -46,6 +46,7 @@ The UI layer currently adds these direct dependencies:
 - `@rn-primitives/*` direct packages used by the generated component set: MIT
 - `class-variance-authority`: Apache-2.0
 - `clsx`: MIT
+- `expo-image-picker`: MIT, official Expo-supported media picker used for profile-picture selection
 - `lucide-react-native`: ISC
 - `tailwind-merge`: MIT
 - `tailwindcss-animate`: MIT

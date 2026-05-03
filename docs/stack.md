@@ -13,6 +13,7 @@ Last reviewed: 2026-05-03
 - Forms: React Hook Form + Zod
 - Backend: Supabase
 - Notifications: Expo Notifications
+- Media selection: Expo ImagePicker for user-selected profile pictures
 - Secure local storage: Expo SecureStore
 - Builds and store delivery: EAS Build + EAS Submit
 - Web hosting for Expo web output: Netlify or equivalent static frontend hosting
@@ -30,6 +31,7 @@ It also gives strong defaults for:
 
 - native APIs
 - notifications
+- media selection
 - secure storage
 - build tooling
 - app submission tooling
@@ -100,6 +102,7 @@ Prefer Expo or React Native first for platform features.
 Approved categories:
 
 - Expo built-ins for device and platform capabilities
+- Expo-supported modules for native platform features such as image picking
 - NativeWind for styling
 - React Native Reusables-generated UI primitives and their focused support dependencies
 - small focused libraries for state, forms, and validation
@@ -139,6 +142,7 @@ Supabase is the backend:
 
 - manages user accounts, sessions, Google sign-in, and magic links
 - stores private app records and preferences
+- stores private uploaded profile pictures in the `profile-pics` bucket
 - enforces database access through Postgres and row-level security
 - provides the OAuth provider callback used by Google sign-in
 - remains the backend for both the web app and native Android/iOS builds
@@ -174,7 +178,8 @@ The eventual in-app data-location selector should be framed as a privacy choice 
 Expected MVP entities:
 
 - user
-- profile / preferences
+- profile, including optional avatar metadata
+- preferences
 - enabled modules
 - mood check-ins
 - journal entries

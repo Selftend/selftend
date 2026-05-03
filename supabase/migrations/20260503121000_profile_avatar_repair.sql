@@ -1,0 +1,83 @@
+-- Migration: Repair profile avatar schema/cache and profile-pics storage policies.
+-- Safe to run after a manual bucket creation or a partially applied avatar setup.
+
+alter table public.profiles
+  add column if not exists avatar_url text,
+  add column if not exists avatar_storage_path text,
+  add column if not exists avatar_source text,
+  add column if not exists avatar_updated_at timestamptz;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'profiles_avatar_source_check'
+      and conrelid = 'public.profiles'::regclass
+  ) then
+    alter table public.profiles
+      add constraint profiles_avatar_source_check
+      check (avatar_source is null or avatar_source in ('oauth', 'upload'));
+  end if;
+end;
+$$;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'profile-pics',
+  'profile-pics',
+  false,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp']::text[]
+)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "profile_pics_select_own" on storage.objects;
+create policy "profile_pics_select_own"
+on storage.objects
+for select
+to authenticated
+using (
+  bucket_id = 'profile-pics'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+drop policy if exists "profile_pics_insert_own" on storage.objects;
+create policy "profile_pics_insert_own"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'profile-pics'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+drop policy if exists "profile_pics_update_own" on storage.objects;
+create policy "profile_pics_update_own"
+on storage.objects
+for update
+to authenticated
+using (
+  bucket_id = 'profile-pics'
+  and (storage.foldername(name))[1] = auth.uid()::text
+)
+with check (
+  bucket_id = 'profile-pics'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+drop policy if exists "profile_pics_delete_own" on storage.objects;
+create policy "profile_pics_delete_own"
+on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'profile-pics'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+notify pgrst, 'reload schema';

@@ -73,7 +73,7 @@ Before app implementation, complete the planning and operating groundwork:
 6. [x] decide whether any early backend logic belongs in Supabase Edge Functions
 7. [x] create a real Supabase project
 8. [x] add real `.env` values
-9. [ ] confirm the first migration is applied and recorded in the active Supabase project
+9. [ ] confirm the current Supabase migrations are applied and recorded in the active Supabase project
 10. [x] verify live Google sign-in on web
 11. [x] verify live CBT thought-record persistence on web
 12. [ ] verify live auth and persistence on device builds
@@ -134,6 +134,9 @@ Initial scaffold work completed so far:
 - [x] logged-out entry route now shows an authentication landing block with app branding and an embedded sign-in form
 - [x] global header now appears across public, auth, and protected routes with an always-visible GitHub link and light/dark theme switch
 - [x] theme preference UI is light/dark only while unset local storage still defaults to the system theme
+- [x] Google OAuth profile-picture import with manual upload, reset, and remove controls in settings
+- [x] profile-picture uploads backed by a private Supabase Storage `profile-pics` bucket
+- [x] light and dark theme tokens updated around a purple primary, gray secondary, and subtle purple-tinted surfaces
 
 ### Phase 2: Ready-for-public-product pass
 
@@ -179,6 +182,8 @@ Immediate launch blockers:
 - [ ] Google Play organization/nonprofit developer account created or confirmed
 - [x] final public app name approved before Play upload: `Selftend`
 - [ ] production Supabase Site URL and redirect URLs verified after localhost OAuth fallback
+- [ ] current Supabase migrations verified in production, including profile avatar columns and the private `profile-pics` bucket
+- [ ] Supabase remote migration-history mismatch around version `20260503` resolved before relying on `supabase db push` for future changes
 - [ ] closed-test Android build verified on a real device
 
 ### Phase 3: Post-MVP product expansion
@@ -297,6 +302,7 @@ Current direction:
 MVP data expectations:
 
 - [ ] email
+- [ ] optional profile avatar metadata and user-uploaded avatar storage path
 - [ ] auth credentials handled by backend provider
 - [ ] user preferences
 - [ ] journal and check-in data

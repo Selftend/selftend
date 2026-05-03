@@ -1,9 +1,12 @@
+import type { User } from "@supabase/supabase-js";
+import * as ImagePicker from "expo-image-picker";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 
+import { ProfileAvatar } from "@/components/profile-avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +27,13 @@ import { Text } from "@/components/ui/text";
 import { signOut } from "@/src/features/auth/api";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import {
+  useRemoveUserAvatar,
+  useResetUserAvatarToOAuth,
+  useUploadUserAvatar,
+  useUserProfile,
+} from "@/src/features/profile/queries";
+import { getOAuthAvatarUrl } from "@/src/features/profile/repository";
+import {
   useDeleteUserAccount,
   useExportUserData,
   useUpdateUserPreferences,
@@ -35,6 +45,23 @@ import { useSession } from "@/src/providers/session-provider";
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  return fallback;
 }
 
 export default function SettingsScreen() {
@@ -140,6 +167,8 @@ export default function SettingsScreen() {
         </Card>
       ) : null}
 
+      <ProfilePictureCard user={user} />
+
       <Card>
         <CardHeader>
           <CardTitle>CBT reminders</CardTitle>
@@ -233,6 +262,159 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function ProfilePictureCard({ user }: { user: User | null }) {
+  const { data: profile, isLoading } = useUserProfile(user);
+  const uploadMutation = useUploadUserAvatar(user?.id ?? null);
+  const resetMutation = useResetUserAvatarToOAuth(user);
+  const removeMutation = useRemoveUserAvatar(user?.id ?? null);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  const googleAvatarUrl = getOAuthAvatarUrl(user);
+  const isPending =
+    uploadMutation.isPending || resetMutation.isPending || removeMutation.isPending;
+  const avatarLabel =
+    profile?.avatarSource === "upload"
+      ? "Custom photo"
+      : profile?.avatarSource === "oauth"
+        ? "Google photo"
+        : "Initials fallback";
+
+  const pickAvatar = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      setMessage("");
+      setError("");
+
+      if (Platform.OS !== "web") {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          setError("Photo library access is needed to choose a profile picture.");
+          return;
+        }
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        mediaTypes: ["images"],
+        preferredAssetRepresentationMode:
+          ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
+        quality: 0.85,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      if (!asset) {
+        return;
+      }
+
+      if (asset.fileSize && asset.fileSize > 5 * 1024 * 1024) {
+        setError("Choose an image smaller than 5 MB.");
+        return;
+      }
+
+      await uploadMutation.mutateAsync({
+        fileName: asset.fileName,
+        mimeType: asset.mimeType,
+        previousStoragePath: profile?.avatarStoragePath,
+        uri: asset.uri,
+      });
+      setMessage("Profile picture updated.");
+    } catch (avatarError) {
+      setError(getErrorMessage(avatarError, "Unable to update profile picture."));
+    }
+  };
+
+  const useGoogleAvatar = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      setMessage("");
+      setError("");
+      await resetMutation.mutateAsync(profile?.avatarStoragePath);
+      setMessage(googleAvatarUrl ? "Google photo restored." : "Profile picture reset.");
+    } catch (avatarError) {
+      setError(getErrorMessage(avatarError, "Unable to reset profile picture."));
+    }
+  };
+
+  const removeAvatar = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      setMessage("");
+      setError("");
+      await removeMutation.mutateAsync(profile?.avatarStoragePath);
+      setMessage("Profile picture removed.");
+    } catch (avatarError) {
+      setError(getErrorMessage(avatarError, "Unable to remove profile picture."));
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Profile picture</CardTitle>
+        <CardDescription>
+          Used on your signed-in account surfaces. Google photos are imported automatically unless you choose your own.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <View className="gap-4">
+          <View className="flex-row items-center gap-4">
+            <ProfileAvatar
+              avatarUrl={profile?.avatarUrl}
+              className="size-16"
+              email={user?.email}
+            />
+            <View className="flex-1 gap-1">
+              <Text numberOfLines={1}>{user?.email ?? "Signed-in account"}</Text>
+              <Text variant="muted">
+                {isLoading ? "Loading profile..." : avatarLabel}
+              </Text>
+            </View>
+          </View>
+
+          <View className="flex-row flex-wrap gap-3">
+            <Button disabled={isPending} onPress={() => void pickAvatar()} variant="secondary">
+              {uploadMutation.isPending ? <ActivityIndicator /> : null}
+              <Text>{uploadMutation.isPending ? "Uploading..." : "Change photo"}</Text>
+            </Button>
+            {googleAvatarUrl ? (
+              <Button disabled={isPending} onPress={() => void useGoogleAvatar()} variant="outline">
+                {resetMutation.isPending ? <ActivityIndicator /> : null}
+                <Text>Use Google photo</Text>
+              </Button>
+            ) : null}
+            <Button
+              disabled={isPending || (!profile?.avatarUrl && !profile?.avatarStoragePath)}
+              onPress={() => void removeAvatar()}
+              variant="ghost"
+            >
+              {removeMutation.isPending ? <ActivityIndicator /> : null}
+              <Text>Remove photo</Text>
+            </Button>
+          </View>
+
+          {message ? <Text className="text-sm text-muted-foreground">{message}</Text> : null}
+          {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
+        </View>
+      </CardContent>
+    </Card>
   );
 }
 

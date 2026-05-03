@@ -1,12 +1,20 @@
 # Supabase Notes
 
-The first schema lives in [supabase/migrations/20260415_initial.sql](migrations/20260415_initial.sql).
+The initial schema lives in [supabase/migrations/20260415_initial.sql](migrations/20260415_initial.sql). Later migrations add consent/deletion support and profile avatar storage.
 
 ## Tables
 
 - `profiles`
 - `user_preferences`
 - `thought_records`
+
+`profiles` stores account-level metadata only: email plus optional avatar fields. Google OAuth avatars are stored as URLs with `avatar_source = 'oauth'`; manually chosen images store a private Storage object path with `avatar_source = 'upload'`.
+
+## Storage
+
+- `profile-pics`: private bucket for user-uploaded profile pictures
+
+Avatar objects are stored under a user-scoped path and protected by Storage RLS so authenticated users can only read, insert, update, or delete objects inside their own folder. The client creates signed URLs for display instead of making uploaded avatars public.
 
 ## Environment
 
@@ -51,6 +59,20 @@ npx supabase link --project-ref <your-project-ref>
 
 ```bash
 npx supabase db push
+```
+
+This creates the database tables, consent/deletion functions, profile avatar columns, and the private `profile-pics` storage bucket with RLS policies.
+
+If profile-picture testing shows `avatar_source` missing from the schema cache or a `profile-pics` row-level security error, the active Supabase project is missing the avatar repair migration. The normal fix is:
+
+```bash
+npx supabase db push
+```
+
+If `db push` is blocked by a migration-history mismatch, apply the idempotent avatar repair SQL directly, then resolve the migration-history mismatch before relying on `db push` again:
+
+```bash
+npx supabase db query --linked -f supabase/migrations/20260503121000_profile_avatar_repair.sql
 ```
 
 5. in Supabase dashboard:
@@ -107,7 +129,8 @@ The app now uses Google OAuth and passwordless email magic links for MVP authent
 - native OAuth returns through the app scheme and completes in the Google sign-in flow
 - web magic links return through `/auth-callback`
 - native magic links return through the app scheme and open the callback route directly
-- no manual email/password sign-up or password reset screens are part of the MVP
+- Google profile pictures are imported from Supabase auth user metadata when no manual profile picture exists
+- manual profile-picture uploads take priority until the user resets to the Google photo or removes the photo
 
 If you customize Supabase email templates later, keep the confirmation link redirect-aware so `emailRedirectTo` continues to send users back to the correct callback URL.
 
