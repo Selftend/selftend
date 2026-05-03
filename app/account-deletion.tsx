@@ -13,9 +13,8 @@ export default function AccountDeletionScreen() {
 
   return (
     <PolicyScreen
-      notice="A real privacy or support email must be configured before store testing. A self-service deletion flow remains a follow-up requirement."
       sections={accountDeletionSections}
-      subtitle="How users can request account and app-data deletion during the MVP."
+      subtitle="How to permanently delete your SelfTend account and all associated data."
       title="Account deletion"
     >
       <DeletionContact email={deletionEmail} />
@@ -24,40 +23,35 @@ export default function AccountDeletionScreen() {
 }
 
 function DeletionContact({ email }: { email: string }) {
-  if (!email) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Deletion contact pending</CardTitle>
-          <CardDescription>
-            No deletion contact email is configured. Set EXPO_PUBLIC_PRIVACY_EMAIL or EXPO_PUBLIC_SUPPORT_EMAIL before
-            using this page for Google Play testing or public launch.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
-  const subject = encodeURIComponent("Account and data deletion request");
-  const body = encodeURIComponent(
-    "Please delete my SelfTend account and associated app data. My account email is: ",
-  );
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Request deletion</CardTitle>
-        <CardDescription>Send the request from the email used for your account when possible.</CardDescription>
+        <CardTitle>Email fallback</CardTitle>
+        <CardDescription>
+          If you cannot access the self-service deletion in Settings, you can request deletion by email.
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <View>
-        <Button
-          onPress={() => void Linking.openURL(`mailto:${email}?subject=${subject}&body=${body}`)}
-        >
-          <Text>Email deletion request</Text>
-        </Button>
-        </View>
-      </CardContent>
+      {email ? (
+        <CardContent>
+          <View>
+          <Button
+            onPress={() =>
+              void Linking.openURL(
+                `mailto:${email}?subject=${encodeURIComponent("Account and data deletion request")}&body=${encodeURIComponent("Please delete my SelfTend account and associated app data. My account email is: ")}`,
+              )
+            }
+          >
+            <Text>Email deletion request</Text>
+          </Button>
+          </View>
+        </CardContent>
+      ) : (
+        <CardContent>
+          <Text className="text-sm text-muted-foreground">
+            Deletion contact email not yet configured. Use the self-service option in Settings.
+          </Text>
+        </CardContent>
+      )}
     </Card>
   );
 }

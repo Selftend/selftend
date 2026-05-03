@@ -1,13 +1,13 @@
-import { termsSections } from "@/src/features/policies/policy-content";
+import { LEGAL_REVIEW_PENDING, termsSections } from "@/src/features/policies/policy-content";
 import { PolicyScreen } from "@/src/features/policies/policy-screen";
 
 export default function TermsScreen() {
   return (
     <PolicyScreen
-      notice="These terms capture the product boundaries for implementation. They still need final organization details and legal review before public launch."
+      notice={LEGAL_REVIEW_PENDING ? "These terms require final legal review before public launch." : undefined}
       sections={termsSections}
-      subtitle="Use boundaries for a free wellness and guided self-help product."
-      title="Terms and boundaries"
+      subtitle="Terms of service for SelfTend, a free wellness and guided self-help product."
+      title="Terms of service"
     />
   );
 }

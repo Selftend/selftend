@@ -1,12 +1,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Redirect, router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
@@ -23,6 +24,7 @@ export default function SignInScreen() {
   const [magicLinkSentTo, setMagicLinkSentTo] = useState("");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const {
     control,
     formState: { errors },
@@ -152,11 +154,23 @@ export default function SignInScreen() {
             </CardHeader>
             <CardContent>
               <View className="gap-3">
+                <Pressable
+                  className="flex-row items-start gap-3"
+                  onPress={() => setHasAcceptedTerms(!hasAcceptedTerms)}
+                >
+                  <Checkbox
+                    checked={hasAcceptedTerms}
+                    onCheckedChange={setHasAcceptedTerms}
+                  />
+                  <Text className="flex-1 text-sm">
+                    I am 13 or older and agree to the Privacy Policy and Terms of Service.
+                  </Text>
+                </Pressable>
                 <Button onPress={() => router.push("/privacy")} variant="ghost">
                   <Text>Privacy policy</Text>
                 </Button>
                 <Button onPress={() => router.push("/terms")} variant="ghost">
-                  <Text>Terms and boundaries</Text>
+                  <Text>Terms of service</Text>
                 </Button>
                 <Button onPress={() => router.push("/crisis")} variant="ghost">
                   <Text>Crisis guidance</Text>
@@ -168,15 +182,20 @@ export default function SignInScreen() {
       </ScrollView>
       <View className="border-t border-border bg-background p-4">
         <View className="gap-3">
+          {!hasAcceptedTerms ? (
+            <Text className="text-center text-sm text-muted-foreground">
+              Accept the terms above to continue.
+            </Text>
+          ) : null}
           <Button
-            disabled={!hasSupabaseConfig || isMagicLinkSubmitting}
+            disabled={!hasSupabaseConfig || isMagicLinkSubmitting || !hasAcceptedTerms}
             onPress={() => void onMagicLinkSubmit()}
           >
             {isMagicLinkSubmitting ? <ActivityIndicator color="#ffffff" /> : null}
             <Text>{isMagicLinkSubmitting ? "Sending sign-in link" : "Email me a sign-in link"}</Text>
           </Button>
           <Button
-            disabled={!hasSupabaseConfig || isGoogleSubmitting}
+            disabled={!hasSupabaseConfig || isGoogleSubmitting || !hasAcceptedTerms}
             onPress={() => void onGoogleSubmit()}
             variant="ghost"
           >

@@ -44,7 +44,10 @@ export default function LegalScreen() {
             <Text>Open privacy policy</Text>
           </Button>
           <Button onPress={() => router.push("/terms")} variant="ghost">
-            <Text>Open terms and boundaries</Text>
+            <Text>Open terms of service</Text>
+          </Button>
+          <Button onPress={() => router.push("/cookies")} variant="ghost">
+            <Text>Open cookie policy</Text>
           </Button>
           <Button onPress={() => router.push("/crisis")} variant="ghost">
             <Text>Open crisis guidance</Text>

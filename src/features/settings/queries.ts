@@ -1,7 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { UserPreferences } from "@/src/features/modules/types";
-import { getUserPreferences, updateUserPreferences } from "@/src/features/settings/repository";
+import {
+  deleteUserAccount,
+  exportUserData,
+  getUserPreferences,
+  recordPolicyConsent,
+  updateUserPreferences,
+} from "@/src/features/settings/repository";
 
 const preferenceKeys = {
   detail: (userId: string) => ["preferences", userId] as const,
@@ -27,5 +33,32 @@ export function useUpdateUserPreferences(userId: string | null) {
 
       await queryClient.invalidateQueries({ queryKey: preferenceKeys.detail(userId) });
     },
+  });
+}
+
+export function useRecordPolicyConsent(userId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (policyVersion: string) => recordPolicyConsent(userId!, policyVersion),
+    onSuccess: async () => {
+      if (!userId) {
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: preferenceKeys.detail(userId) });
+    },
+  });
+}
+
+export function useDeleteUserAccount() {
+  return useMutation({
+    mutationFn: () => deleteUserAccount(),
+  });
+}
+
+export function useExportUserData() {
+  return useMutation({
+    mutationFn: () => exportUserData(),
   });
 }

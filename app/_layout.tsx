@@ -5,6 +5,7 @@ import { PortalHost } from "@rn-primitives/portal";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
+import { CookieConsentBanner } from "@/src/components/cookie-consent-banner";
 import { AppProviders } from "@/src/providers/app-providers";
 
 export default function RootLayout() {
@@ -19,11 +20,13 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="privacy" />
         <Stack.Screen name="terms" />
+        <Stack.Screen name="cookies" />
         <Stack.Screen name="crisis" />
         <Stack.Screen name="account-deletion" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(app)" />
       </Stack>
+      <CookieConsentBanner />
       <PortalHost />
     </AppProviders>
   );

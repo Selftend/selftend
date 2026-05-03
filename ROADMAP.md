@@ -134,10 +134,15 @@ This phase turns the MVP into a product that can be responsibly promoted.
 
 - [ ] accessibility audit
 - [x] privacy policy and terms implementation draft
+- [x] privacy policy and terms production text (GDPR + CCPA compliant)
 - [x] safety and crisis resource copy implementation draft
 - [ ] human/legal review of privacy policy and terms
 - [ ] human/legal review of safety and crisis resource copy
-- [ ] data export and account deletion
+- [x] data export and account deletion (self-service, in-app)
+- [x] cookie consent manager (web)
+- [x] consent capture at sign-in (age 13+ attestation + policy acceptance)
+- [x] consent re-prompt on policy version change
+- [x] GDPR compliance checklist documented
 - [ ] minimal observability and incident response process
 - [ ] app store assets and copy
 - [ ] FAQ and support workflows
