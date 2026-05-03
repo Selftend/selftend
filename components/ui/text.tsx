@@ -2,7 +2,15 @@ import { cn } from '@/lib/utils';
 import { Slot } from '@rn-primitives/slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
-import { Platform, Text as RNText, type Role } from 'react-native';
+import { Platform, Text as RNText, type Role, type TextStyle } from 'react-native';
+
+const FONT_FAMILY = {
+  regular: 'NotoSans_400Regular',
+  medium: 'NotoSans_500Medium',
+  semibold: 'NotoSans_600SemiBold',
+  bold: 'NotoSans_700Bold',
+  extrabold: 'NotoSans_800ExtraBold',
+} as const;
 
 const textVariants = cva(
   cn(
@@ -64,10 +72,53 @@ const ARIA_LEVEL: Partial<Record<TextVariant, string>> = {
 
 const TextClassContext = React.createContext<string | undefined>(undefined);
 
+function resolveFontFamily(classes: string, variant: TextVariant): string | undefined {
+  if (classes.includes('font-mono')) {
+    return undefined;
+  }
+
+  if (classes.includes('font-extrabold')) {
+    return FONT_FAMILY.extrabold;
+  }
+
+  if (classes.includes('font-bold')) {
+    return FONT_FAMILY.bold;
+  }
+
+  if (classes.includes('font-semibold')) {
+    return FONT_FAMILY.semibold;
+  }
+
+  if (classes.includes('font-medium')) {
+    return FONT_FAMILY.medium;
+  }
+
+  if (variant === 'h1') {
+    return FONT_FAMILY.extrabold;
+  }
+
+  return FONT_FAMILY.regular;
+}
+
+export function getTextFontStyle(
+  classNames: Array<string | undefined>,
+  variant: TextVariant = 'default'
+): TextStyle | undefined {
+  const classes = classNames.filter(Boolean).join(' ');
+  const fontFamily = resolveFontFamily(classes, variant);
+
+  if (!fontFamily) {
+    return undefined;
+  }
+
+  return { fontFamily };
+}
+
 function Text({
   className,
   asChild = false,
   variant = 'default',
+  style,
   ...props
 }: React.ComponentProps<typeof RNText> &
   React.RefAttributes<typeof RNText> &
@@ -76,11 +127,14 @@ function Text({
   }) {
   const textClass = React.useContext(TextClassContext);
   const Component = asChild ? Slot : RNText;
+  const resolvedVariant = variant ?? 'default';
+  const variantClassName = textVariants({ variant: resolvedVariant });
   return (
     <Component
-      className={cn(textVariants({ variant }), textClass, className)}
-      role={variant ? ROLE[variant] : undefined}
-      aria-level={variant ? ARIA_LEVEL[variant] : undefined}
+      className={cn(variantClassName, textClass, className)}
+      role={resolvedVariant ? ROLE[resolvedVariant] : undefined}
+      aria-level={resolvedVariant ? ARIA_LEVEL[resolvedVariant] : undefined}
+      style={[getTextFontStyle([variantClassName, textClass, className], resolvedVariant), style]}
       {...props}
     />
   );

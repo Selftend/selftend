@@ -1,5 +1,6 @@
 import { Icon } from '@/components/ui/icon';
 import { NativeOnlyAnimatedView } from '@/components/ui/native-only-animated-view';
+import { getTextFontStyle } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import * as DialogPrimitive from '@rn-primitives/dialog';
 import { X } from 'lucide-react-native';
@@ -106,9 +107,12 @@ function DialogTitle({
   className,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Title>) {
+  const titleClassName = cn('text-foreground text-lg font-semibold leading-none', className);
+
   return (
     <DialogPrimitive.Title
-      className={cn('text-foreground text-lg font-semibold leading-none', className)}
+      className={titleClassName}
+      style={[getTextFontStyle([titleClassName]), props.style]}
       {...props}
     />
   );
@@ -118,9 +122,12 @@ function DialogDescription({
   className,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Description>) {
+  const descriptionClassName = cn('text-muted-foreground text-sm', className);
+
   return (
     <DialogPrimitive.Description
-      className={cn('text-muted-foreground text-sm', className)}
+      className={descriptionClassName}
+      style={[getTextFontStyle([descriptionClassName]), props.style]}
       {...props}
     />
   );

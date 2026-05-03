@@ -1,7 +1,8 @@
 import { cn } from '@/lib/utils';
+import { getTextFontStyle } from '@/components/ui/text';
 import { Platform, TextInput } from 'react-native';
 
-function Input({ className, ...props }: React.ComponentProps<typeof TextInput> & React.RefAttributes<TextInput>) {
+function Input({ className, style, ...props }: React.ComponentProps<typeof TextInput> & React.RefAttributes<TextInput>) {
   return (
     <TextInput
       className={cn(
@@ -21,6 +22,7 @@ function Input({ className, ...props }: React.ComponentProps<typeof TextInput> &
         }),
         className
       )}
+      style={[getTextFontStyle([className]), style]}
       {...props}
     />
   );

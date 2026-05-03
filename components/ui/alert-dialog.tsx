@@ -1,6 +1,6 @@
 import { buttonTextVariants, buttonVariants } from '@/components/ui/button';
 import { NativeOnlyAnimatedView } from '@/components/ui/native-only-animated-view';
-import { TextClassContext } from '@/components/ui/text';
+import { TextClassContext, getTextFontStyle } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import * as AlertDialogPrimitive from '@rn-primitives/alert-dialog';
 import * as React from 'react';
@@ -90,9 +90,12 @@ function AlertDialogTitle({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+  const titleClassName = cn('text-foreground text-lg font-semibold', className);
+
   return (
     <AlertDialogPrimitive.Title
-      className={cn('text-foreground text-lg font-semibold', className)}
+      className={titleClassName}
+      style={[getTextFontStyle([titleClassName]), props.style]}
       {...props}
     />
   );
@@ -102,9 +105,12 @@ function AlertDialogDescription({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+  const descriptionClassName = cn('text-muted-foreground text-sm', className);
+
   return (
     <AlertDialogPrimitive.Description
-      className={cn('text-muted-foreground text-sm', className)}
+      className={descriptionClassName}
+      style={[getTextFontStyle([descriptionClassName]), props.style]}
       {...props}
     />
   );
