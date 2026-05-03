@@ -43,10 +43,11 @@ const NAV_ITEMS = [
 ] as const;
 
 interface SidebarNavProps {
+  includeTopInset?: boolean;
   onSelect?: () => void;
 }
 
-export function SidebarNav({ onSelect }: SidebarNavProps) {
+export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProps) {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
 
@@ -60,7 +61,10 @@ export function SidebarNav({ onSelect }: SidebarNavProps) {
   return (
     <View
       className="w-60 bg-card border-r border-border"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+      style={{
+        paddingTop: includeTopInset ? insets.top : 0,
+        paddingBottom: insets.bottom,
+      }}
     >
       <View className="px-3 py-4 gap-1">
         {NAV_ITEMS.map((item) => {

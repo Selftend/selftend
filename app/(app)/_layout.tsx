@@ -1,15 +1,19 @@
 import { Redirect, Stack } from "expo-router";
-import { ActivityIndicator, Platform, View } from "react-native";
+import { ActivityIndicator, Platform, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 
+import { SidebarNav } from "@/components/sidebar-nav";
 import { Text } from "@/components/ui/text";
 import { ConsentModal } from "@/src/components/consent-modal";
+import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function ProtectedLayout() {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= DESKTOP_BREAKPOINT;
   const { session, status, user } = useSession();
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
@@ -49,19 +53,24 @@ export default function ProtectedLayout() {
         visible={needsConsent}
         onAccepted={() => setConsentDismissed(true)}
       />
-      <Stack
-        screenOptions={{
-          headerShadowVisible: false,
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="cbt/index" options={{ title: "CBT" }} />
-        <Stack.Screen name="cbt/learn" options={{ title: "Learn distortions" }} />
-        <Stack.Screen name="cbt/new" options={{ title: "Thought record" }} />
-        <Stack.Screen name="cbt/[id]" options={{ title: "Record details" }} />
-        <Stack.Screen name="support" options={{ title: "Support" }} />
-        <Stack.Screen name="legal" options={{ title: "Legal and boundaries" }} />
-      </Stack>
+      <View className="flex-1 flex-row bg-background">
+        {isDesktop ? <SidebarNav /> : null}
+        <View className="flex-1">
+          <Stack
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="cbt/index" />
+            <Stack.Screen name="cbt/learn" />
+            <Stack.Screen name="cbt/new" />
+            <Stack.Screen name="cbt/[id]" />
+            <Stack.Screen name="support" />
+            <Stack.Screen name="legal" />
+          </Stack>
+        </View>
+      </View>
     </>
   );
 }

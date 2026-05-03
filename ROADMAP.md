@@ -132,6 +132,8 @@ Initial scaffold work completed so far:
 - [x] local setup docs aligned around the current Node engine floor for Expo SDK 54
 - [x] UI reset to default React Native Reusables generated primitives with local UI wrappers removed
 - [x] logged-out entry route now shows an authentication landing block with app branding and an embedded sign-in form
+- [x] global header now appears across public, auth, and protected routes with an always-visible GitHub link and light/dark theme switch
+- [x] theme preference UI is light/dark only while unset local storage still defaults to the system theme
 
 ### Phase 2: Ready-for-public-product pass
 
