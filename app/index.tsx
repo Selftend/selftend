@@ -1,7 +1,8 @@
 import { Redirect } from "expo-router";
+import { ActivityIndicator, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { LoadingState } from "@/src/components/loading-state";
-import { Screen } from "@/src/components/screen";
+import { Text } from "@/components/ui/text";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function IndexScreen() {
@@ -9,9 +10,13 @@ export default function IndexScreen() {
 
   if (status === "loading") {
     return (
-      <Screen scroll={false} title="Loading">
-        <LoadingState label="Preparing your workspace..." />
-      </Screen>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 items-center justify-center gap-3 p-6">
+          <Text variant="h1">Loading</Text>
+          <ActivityIndicator />
+          <Text variant="muted">Preparing your workspace...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 

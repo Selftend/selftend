@@ -27,6 +27,7 @@ Included now:
 - Expo + React Native + TypeScript scaffold
 - Expo Router app shell
 - Supabase Google OAuth and magic-link auth wiring
+- NativeWind styling with default React Native Reusables-generated UI primitives
 - CBT learn surface and guided thought record flow
 - thought history, edit, and archive flow
 - quiet reminder settings, default-off
@@ -90,6 +91,7 @@ npm run export:web
 npm run serve:web:production
 npm run typecheck
 npm test -- --runInBand
+npx @react-native-reusables/cli@latest doctor --summary --yes
 ```
 
 For Android development, use the installed development build with `npm run start:dev-client`. Do not treat Expo Go as the default Android workflow for this project.
@@ -133,6 +135,7 @@ Once the development build is installed, keep using it as the default Android de
 - [docs/naming.md](docs/naming.md): final app-name decision and naming checks
 - [docs/community.md](docs/community.md): contributor/community and popularization strategy
 - [docs/licensing.md](docs/licensing.md): license choice and reference-repo rules
+- [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md): current third-party notice tracking for copied/generated code
 - [docs/modules/cbt.md](docs/modules/cbt.md): first CBT module spec
 - [docs/reference-log.md](docs/reference-log.md): reference-repo usage log
 - [docs/github-setup.md](docs/github-setup.md): GitHub workflow and label setup
@@ -145,7 +148,7 @@ This repo relies on docs as durable context. When a change affects setup, comman
 
 ## Status
 
-Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and launch-prep docs now cover single-page Netlify web deployment plus Google Play closed testing. The next blockers are `selftend.org` purchase/DNS, Netlify production env verification, domain email aliases, Supabase production Site URL and redirect verification, first-migration confirmation if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
+Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and the UI shell now uses NativeWind with default React Native Reusables-generated primitives. Launch-prep docs cover single-page Netlify web deployment plus Google Play closed testing. The next blockers are `selftend.org` purchase/DNS, Netlify production env verification, domain email aliases, Supabase production Site URL and redirect verification, first-migration confirmation if it has not been applied yet, and end-to-end auth/persistence verification on web and device builds from the current environment.
 
 The first web and Android testing path uses the maintainer-hosted Supabase project. Data separation remains a product direction, but it is not a launch blocker: add export/delete first, then local-only storage, then encrypted backup/import, with custom backend or Drive sync considered later.
 

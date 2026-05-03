@@ -1,15 +1,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Redirect, router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 
-import { Button } from "@/src/components/button";
-import { Card } from "@/src/components/card";
-import { FieldShell } from "@/src/components/field-shell";
-import { NoticeCard } from "@/src/components/notice-card";
-import { Screen } from "@/src/components/screen";
-import { TextField } from "@/src/components/text-field";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Text } from "@/components/ui/text";
 import { signInWithGoogle, signInWithMagicLink } from "@/src/features/auth/api";
 import {
   magicLinkSignInSchema,
@@ -72,82 +72,119 @@ export default function SignInScreen() {
   });
 
   return (
-    <Screen
-      footer={
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView contentContainerClassName="grow p-6">
+        <View className="gap-6">
+          <View className="gap-2">
+            <Text variant="h1">Sign in</Text>
+            <Text variant="muted">
+              Use a passwordless email link or Google so the same account works across web and device builds without a
+              manual sign-up screen.
+            </Text>
+          </View>
+
+          {!hasSupabaseConfig ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Supabase setup required</CardTitle>
+                <CardDescription>
+                  Add your Supabase environment values from .env.example before testing authentication.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
+
+          {submitError ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Sign-in problem</CardTitle>
+                <CardDescription>{submitError}</CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
+
+          {magicLinkSentTo ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Check your inbox</CardTitle>
+                <CardDescription>
+                  We sent a one-time sign-in link to {magicLinkSentTo}. Open it from your inbox to finish signing in.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
+
+          <View className="gap-3">
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onBlur, onChange, value } }) => (
+                <View className="gap-2">
+                  <Label>Email</Label>
+                  <Text variant="muted">
+                    A one-time link will sign you in and create your account if it does not exist yet.
+                  </Text>
+                  <Input
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    placeholder="you@example.com"
+                    value={value}
+                  />
+                  {errors.email?.message ? <Text variant="muted">{errors.email.message}</Text> : null}
+                </View>
+              )}
+            />
+            <Text variant="muted">
+              New users are created on first successful Google sign-in or magic-link completion. Manual sign-up and
+              passwords stay out of the MVP.
+            </Text>
+          </View>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Before you continue</CardTitle>
+              <CardDescription>
+                The app is for wellness and guided self-help. It is not therapy, diagnosis, or emergency support.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-3">
+                <Button onPress={() => router.push("/privacy")} variant="ghost">
+                  <Text>Privacy policy</Text>
+                </Button>
+                <Button onPress={() => router.push("/terms")} variant="ghost">
+                  <Text>Terms and boundaries</Text>
+                </Button>
+                <Button onPress={() => router.push("/crisis")} variant="ghost">
+                  <Text>Crisis guidance</Text>
+                </Button>
+              </View>
+            </CardContent>
+          </Card>
+        </View>
+      </ScrollView>
+      <View className="border-t border-border bg-background p-4">
         <View className="gap-3">
           <Button
-            disabled={!hasSupabaseConfig}
-            isLoading={isMagicLinkSubmitting}
+            disabled={!hasSupabaseConfig || isMagicLinkSubmitting}
             onPress={() => void onMagicLinkSubmit()}
-            text="Email me a sign-in link"
-          />
+          >
+            {isMagicLinkSubmitting ? <ActivityIndicator color="#ffffff" /> : null}
+            <Text>{isMagicLinkSubmitting ? "Sending sign-in link" : "Email me a sign-in link"}</Text>
+          </Button>
           <Button
-            disabled={!hasSupabaseConfig}
-            isLoading={isGoogleSubmitting}
+            disabled={!hasSupabaseConfig || isGoogleSubmitting}
             onPress={() => void onGoogleSubmit()}
-            text="Continue with Google"
             variant="ghost"
-          />
+          >
+            {isGoogleSubmitting ? <ActivityIndicator color="#20312c" /> : null}
+            <Text>{isGoogleSubmitting ? "Opening Google sign-in" : "Continue with Google"}</Text>
+          </Button>
         </View>
-      }
-      subtitle="Use a passwordless email link or Google so the same account works across web and device builds without a manual sign-up screen."
-      title="Sign in"
-    >
-      {!hasSupabaseConfig ? (
-        <NoticeCard
-          body="Add your Supabase environment values from .env.example before testing authentication."
-          title="Supabase setup required"
-          tone="warning"
-        />
-      ) : null}
-      {submitError ? (
-        <NoticeCard body={submitError} title="Sign-in problem" tone="warning" />
-      ) : null}
-      {magicLinkSentTo ? (
-        <NoticeCard
-          body={`We sent a one-time sign-in link to ${magicLinkSentTo}. Open it from your inbox to finish signing in.`}
-          title="Check your inbox"
-        />
-      ) : null}
-
-      <View className="gap-3">
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onBlur, onChange, value } }) => (
-            <FieldShell
-              description="A one-time link will sign you in and create your account if it does not exist yet."
-              error={errors.email?.message}
-              label="Email"
-            >
-              <TextField
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="email-address"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                placeholder="you@example.com"
-                value={value}
-              />
-            </FieldShell>
-          )}
-        />
-        <Text className="text-sm leading-6 text-ink/70">
-          New users are created on first successful Google sign-in or magic-link completion. Manual sign-up and passwords stay out of the MVP.
-        </Text>
       </View>
-
-      <Card>
-        <View className="gap-4">
-          <Text className="text-lg font-semibold text-ink">Before you continue</Text>
-          <Text className="text-sm leading-6 text-ink/70">
-            The app is for wellness and guided self-help. It is not therapy, diagnosis, or emergency support.
-          </Text>
-          <Button onPress={() => router.push("/privacy")} text="Privacy policy" variant="ghost" />
-          <Button onPress={() => router.push("/terms")} text="Terms and boundaries" variant="ghost" />
-          <Button onPress={() => router.push("/crisis")} text="Crisis guidance" variant="ghost" />
-        </View>
-      </Card>
-    </Screen>
+    </SafeAreaView>
   );
 }

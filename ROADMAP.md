@@ -126,6 +126,7 @@ Initial scaffold work completed so far:
 - [x] local web smoke test of the scaffold
 - [x] Expo project linked to EAS and Android development-build workflow added for native reminder testing
 - [x] local setup docs aligned around the current Node engine floor for Expo SDK 54
+- [x] UI reset to default React Native Reusables generated primitives with local UI wrappers removed
 
 ### Phase 2: Ready-for-public-product pass
 
@@ -152,6 +153,7 @@ Launch-prep completed:
 - [x] first launch data path confirmed as maintainer-hosted Supabase
 - [x] future data-separation path documented without blocking Play testing
 - [x] simple runtime not-found screen configured through Expo Router single-page web output
+- [x] initial third-party UI notice tracking added for generated Reusables components
 
 Immediate launch blockers:
 

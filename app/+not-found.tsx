@@ -1,14 +1,18 @@
 import { Link } from "expo-router";
-import { Text } from "react-native";
+import { View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Screen } from "@/src/components/screen";
+import { Text } from "@/components/ui/text";
 
 export default function NotFoundScreen() {
   return (
-    <Screen scroll={false} title="Page not found">
-      <Link href="/" replace>
-        <Text className="text-base font-semibold text-pine underline">Home</Text>
-      </Link>
-    </Screen>
+    <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-1 items-center justify-center gap-4 p-6">
+        <Text variant="h1">Page not found</Text>
+        <Link href="/" replace>
+          <Text>Home</Text>
+        </Link>
+      </View>
+    </SafeAreaView>
   );
 }

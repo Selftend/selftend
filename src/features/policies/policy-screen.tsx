@@ -1,11 +1,11 @@
 import * as Linking from "expo-linking";
 import type { PropsWithChildren } from "react";
-import { Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Button } from "@/src/components/button";
-import { Card } from "@/src/components/card";
-import { NoticeCard } from "@/src/components/notice-card";
-import { Screen } from "@/src/components/screen";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Text } from "@/components/ui/text";
 import type { PolicyAction, PolicySection } from "@/src/features/policies/policy-content";
 import { policyLastUpdated } from "@/src/features/policies/policy-content";
 
@@ -26,22 +26,43 @@ export function PolicyScreen({
   title,
 }: PolicyScreenProps) {
   return (
-    <Screen subtitle={`${subtitle} Last updated: ${policyLastUpdated}.`} title={title}>
-      {notice ? <NoticeCard body={notice} title="Launch review required" tone="warning" /> : null}
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView contentContainerClassName="grow p-6">
+        <View className="gap-6">
+          <View className="gap-2">
+            <Text variant="h1">{title}</Text>
+            <Text variant="muted">
+              {subtitle} Last updated: {policyLastUpdated}.
+            </Text>
+          </View>
+
+      {notice ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Launch review required</CardTitle>
+            <CardDescription>{notice}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
 
       {actions.length ? (
         <Card>
-          <View className="gap-3">
-            <Text className="text-lg font-semibold text-ink">Helpful links</Text>
+          <CardHeader>
+            <CardTitle>Helpful links</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View className="gap-3">
             {actions.map((action) => (
               <Button
                 key={action.url}
                 onPress={() => void Linking.openURL(action.url)}
-                text={action.label}
                 variant="secondary"
-              />
+              >
+                <Text>{action.label}</Text>
+              </Button>
             ))}
-          </View>
+            </View>
+          </CardContent>
         </Card>
       ) : null}
 
@@ -49,18 +70,16 @@ export function PolicyScreen({
 
       {sections.map((section) => (
         <Card key={section.title}>
-          <View className="gap-3">
-            <Text className="text-lg font-semibold text-ink">{section.title}</Text>
+          <CardHeader>
+            <CardTitle>{section.title}</CardTitle>
             {section.body.map((paragraph) => (
-              <TextBody key={paragraph}>{paragraph}</TextBody>
+              <CardDescription key={paragraph}>{paragraph}</CardDescription>
             ))}
-          </View>
+          </CardHeader>
         </Card>
       ))}
-    </Screen>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
-}
-
-function TextBody({ children }: PropsWithChildren) {
-  return <Text className="text-sm leading-6 text-ink/70">{children}</Text>;
 }

@@ -1,14 +1,15 @@
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
-import { Switch, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 
-import { Button } from "@/src/components/button";
-import { Card } from "@/src/components/card";
-import { LoadingState } from "@/src/components/loading-state";
-import { NoticeCard } from "@/src/components/notice-card";
-import { Screen } from "@/src/components/screen";
-import { TextField } from "@/src/components/text-field";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Text } from "@/components/ui/text";
 import { signOut } from "@/src/features/auth/api";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
@@ -89,31 +90,57 @@ export default function SettingsScreen() {
   };
 
   return (
-    <Screen
-      subtitle="Quiet defaults, private account access, and a narrow first section."
-      title="Settings"
-    >
-      {isLoading ? <LoadingState label="Loading settings..." /> : null}
-      {errorMessage ? <NoticeCard body={errorMessage} title="Settings problem" tone="warning" /> : null}
-      {successMessage ? <NoticeCard body={successMessage} title="Saved" /> : null}
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView contentContainerClassName="grow p-6">
+        <View className="gap-6">
+          <View className="gap-2">
+            <Text variant="h1">Settings</Text>
+            <Text variant="muted">Quiet defaults, private account access, and a narrow first section.</Text>
+          </View>
+
+      {isLoading ? (
+        <View className="items-center justify-center gap-3 p-6">
+          <ActivityIndicator />
+          <Text variant="muted">Loading settings...</Text>
+        </View>
+      ) : null}
+      {errorMessage ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Settings problem</CardTitle>
+            <CardDescription>{errorMessage}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
+      {successMessage ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Saved</CardTitle>
+            <CardDescription>{successMessage}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
 
       <Card>
-        <View className="gap-4">
-          <Text className="text-lg font-semibold text-ink">CBT reminders</Text>
-          <Text className="text-sm leading-6 text-ink/70">
+        <CardHeader>
+          <CardTitle>CBT reminders</CardTitle>
+          <CardDescription>
             Reminders stay explicit and off by default. They should support use, not create pressure.
-          </Text>
-          <View className="flex-row items-center justify-between rounded-2xl bg-mist px-4 py-3">
-            <View className="flex-1 gap-1 pr-4">
-              <Text className="text-base font-semibold text-ink">Daily reminder</Text>
-              <Text className="text-sm leading-5 text-ink/70">Enable one repeating local reminder.</Text>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <View className="gap-4">
+          <View className="flex-row items-center justify-between gap-4">
+            <View className="flex-1 gap-1">
+              <Text>Daily reminder</Text>
+              <Text variant="muted">Enable one repeating local reminder.</Text>
             </View>
-            <Switch onValueChange={setRemindersEnabled} value={remindersEnabled} />
+            <Switch checked={remindersEnabled} onCheckedChange={setRemindersEnabled} />
           </View>
           <View className="flex-row gap-3">
             <View className="flex-1 gap-2">
-              <Text className="text-sm font-semibold uppercase tracking-wide text-ink/50">Hour</Text>
-              <TextField
+              <Label>Hour</Label>
+              <Input
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="number-pad"
@@ -123,8 +150,8 @@ export default function SettingsScreen() {
               />
             </View>
             <View className="flex-1 gap-2">
-              <Text className="text-sm font-semibold uppercase tracking-wide text-ink/50">Minute</Text>
-              <TextField
+              <Label>Minute</Label>
+              <Input
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="number-pad"
@@ -135,30 +162,53 @@ export default function SettingsScreen() {
             </View>
           </View>
           <Button
-            isLoading={updatePreferencesMutation.isPending}
+            disabled={updatePreferencesMutation.isPending}
             onPress={() => void savePreferences()}
-            text="Save reminder settings"
-          />
+          >
+            {updatePreferencesMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
+            <Text>{updatePreferencesMutation.isPending ? "Saving settings" : "Save reminder settings"}</Text>
+          </Button>
         </View>
+        </CardContent>
       </Card>
 
       <Card>
-        <View className="gap-4">
-          <Text className="text-lg font-semibold text-ink">Support and project links</Text>
-          <Button onPress={() => router.push("/support")} text="Open support page" variant="secondary" />
-          <Button onPress={() => router.push("/legal")} text="Open legal and boundaries" variant="ghost" />
-          <Button onPress={() => void Linking.openURL(appEnv.githubRepoUrl)} text="Open GitHub repo" variant="ghost" />
-        </View>
+        <CardHeader>
+          <CardTitle>Support and project links</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <View className="gap-3">
+          <Button onPress={() => router.push("/support")} variant="secondary">
+            <Text>Open support page</Text>
+          </Button>
+          <Button onPress={() => router.push("/legal")} variant="ghost">
+            <Text>Open legal and boundaries</Text>
+          </Button>
+          <Button onPress={() => void Linking.openURL(appEnv.githubRepoUrl)} variant="ghost">
+            <Text>Open GitHub repo</Text>
+          </Button>
+          </View>
+        </CardContent>
       </Card>
 
       <Card>
-        <View className="gap-4">
-          <Text className="text-lg font-semibold text-ink">Account</Text>
-          <Text className="text-sm leading-6 text-ink/70">{user?.email ?? "Signed-in account"}</Text>
-          <Button onPress={() => router.push("/account-deletion")} text="Request account or data deletion" variant="ghost" />
-          <Button onPress={() => void handleSignOut()} text="Sign out" variant="danger" />
-        </View>
+        <CardHeader>
+          <CardTitle>Account</CardTitle>
+          <CardDescription>{user?.email ?? "Signed-in account"}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <View className="gap-3">
+          <Button onPress={() => router.push("/account-deletion")} variant="ghost">
+            <Text>Request account or data deletion</Text>
+          </Button>
+          <Button onPress={() => void handleSignOut()} variant="destructive">
+            <Text>Sign out</Text>
+          </Button>
+          </View>
+        </CardContent>
       </Card>
-    </Screen>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

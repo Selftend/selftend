@@ -62,6 +62,26 @@ For any borrowed third-party material, keep a record of:
 - attribution requirement
 - whether it was copied, adapted, or only used for inspiration
 
+## Third-party UI component layer
+
+Last checked: 2026-05-03
+
+The app now uses default React Native Reusables-generated components in `components/ui`.
+
+License posture:
+
+- React Native Reusables is MIT licensed.
+- Generated component code may be used in a free non-profit app, but the project must preserve the relevant copyright and license notices.
+- Non-profit status does not remove open-source license obligations.
+- The Reusables CLI states that it uses code from `shadcn/ui`, also under MIT; keep this in the notice trail.
+- Support dependencies added for the UI layer are permissive or compatible licenses as checked from installed package metadata on 2026-05-03:
+  - `@rn-primitives/*` direct packages used by the generated component set: MIT
+  - `class-variance-authority`: Apache-2.0
+  - `clsx`, `tailwind-merge`, `tailwindcss-animate`: MIT
+  - `lucide-react-native`: ISC
+
+Current notice tracking lives in `THIRD_PARTY_NOTICES.md`. Before public launch, replace the lightweight notice file with a complete dependency notice/export process if app-store or legal review requires it.
+
 ## Contributor rule
 
 If you open a PR, assume the contribution is offered under this repository's license unless the project later adopts an explicit contributor license agreement or developer certificate of origin workflow.

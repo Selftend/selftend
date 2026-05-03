@@ -1,10 +1,9 @@
 import { router } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Card } from "@/src/components/card";
-import { EmptyState } from "@/src/components/empty-state";
-import { LoadingState } from "@/src/components/loading-state";
-import { Screen } from "@/src/components/screen";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Text } from "@/components/ui/text";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
@@ -14,36 +13,46 @@ export default function HistoryScreen() {
   const { data, isLoading } = useThoughtRecords(user?.id ?? null);
 
   return (
-    <Screen
-      subtitle="Saved records stay private, editable, and easy to revisit."
-      title="Thought history"
-    >
-      {isLoading ? <LoadingState label="Loading thought records..." /> : null}
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView contentContainerClassName="grow p-6">
+        <View className="gap-6">
+          <View className="gap-2">
+            <Text variant="h1">Thought history</Text>
+            <Text variant="muted">Saved records stay private, editable, and easy to revisit.</Text>
+          </View>
+
+      {isLoading ? (
+        <View className="items-center justify-center gap-3 p-6">
+          <ActivityIndicator />
+          <Text variant="muted">Loading thought records...</Text>
+        </View>
+      ) : null}
 
       {!isLoading && !data?.length ? (
-        <EmptyState
-          body="Create your first record from the CBT section. It will appear here once saved."
-          title="No thought records yet"
-        />
+        <Card>
+          <CardHeader>
+            <CardTitle>No thought records yet</CardTitle>
+            <CardDescription>
+              Create your first record from the CBT section. It will appear here once saved.
+            </CardDescription>
+          </CardHeader>
+        </Card>
       ) : null}
 
       {data?.map((record) => (
         <Pressable key={record.id} onPress={() => router.push(`/cbt/${record.id}`)}>
           <Card>
-            <View className="gap-3">
-              <Text className="text-xs font-semibold uppercase tracking-wide text-ink/50">
-                Updated {formatTimestamp(record.updatedAt)}
-              </Text>
-              <Text className="text-lg font-semibold text-ink" numberOfLines={2}>
-                {record.automaticThought}
-              </Text>
-              <Text className="text-sm leading-6 text-ink/70" numberOfLines={3}>
-                {record.balancedThought}
-              </Text>
-            </View>
+            <CardHeader>
+              <CardTitle>{record.automaticThought}</CardTitle>
+              <CardDescription>
+                Updated {formatTimestamp(record.updatedAt)}. {record.balancedThought}
+              </CardDescription>
+            </CardHeader>
           </Card>
         </Pressable>
       ))}
-    </Screen>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

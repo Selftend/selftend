@@ -1,11 +1,12 @@
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
+import { ActivityIndicator, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/src/components/button";
-import { LoadingState } from "@/src/components/loading-state";
-import { NoticeCard } from "@/src/components/notice-card";
-import { Screen } from "@/src/components/screen";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Text } from "@/components/ui/text";
 import { completeAuthRedirect } from "@/src/features/auth/callback";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -52,41 +53,77 @@ export default function AuthCallbackScreen() {
 
   if (!hasSupabaseConfig) {
     return (
-      <Screen title="Supabase setup required">
-        <NoticeCard
-          body="Add your real Supabase URL and key before testing sign-in."
-          title="Authentication is not configured"
-          tone="warning"
-        />
-      </Screen>
+      <SafeAreaView className="flex-1 bg-background">
+        <ScrollView contentContainerClassName="grow p-6">
+          <View className="gap-6">
+            <Text variant="h1">Supabase setup required</Text>
+            <Card>
+              <CardHeader>
+                <CardTitle>Authentication is not configured</CardTitle>
+                <CardDescription>Add your real Supabase URL and key before testing sign-in.</CardDescription>
+              </CardHeader>
+            </Card>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   if (errorMessage) {
     return (
-      <Screen title="Authentication link problem">
-        <NoticeCard body={errorMessage} title="Unable to continue" tone="warning" />
-        <Button onPress={() => router.replace("/(auth)/sign-in")} text="Back to sign in" />
-      </Screen>
+      <SafeAreaView className="flex-1 bg-background">
+        <ScrollView contentContainerClassName="grow p-6">
+          <View className="gap-6">
+            <Text variant="h1">Authentication link problem</Text>
+            <Card>
+              <CardHeader>
+                <CardTitle>Unable to continue</CardTitle>
+                <CardDescription>{errorMessage}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onPress={() => router.replace("/(auth)/sign-in")}>
+                  <Text>Back to sign in</Text>
+                </Button>
+              </CardContent>
+            </Card>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   if (!url) {
     return (
-      <Screen title="Authentication link required">
-        <NoticeCard
-          body="Open this screen from an email or OAuth sign-in redirect rather than navigating to it directly."
-          title="Missing callback data"
-          tone="warning"
-        />
-        <Button onPress={() => router.replace("/(auth)/sign-in")} text="Back to sign in" />
-      </Screen>
+      <SafeAreaView className="flex-1 bg-background">
+        <ScrollView contentContainerClassName="grow p-6">
+          <View className="gap-6">
+            <Text variant="h1">Authentication link required</Text>
+            <Card>
+              <CardHeader>
+                <CardTitle>Missing callback data</CardTitle>
+                <CardDescription>
+                  Open this screen from an email or OAuth sign-in redirect rather than navigating to it directly.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onPress={() => router.replace("/(auth)/sign-in")}>
+                  <Text>Back to sign in</Text>
+                </Button>
+              </CardContent>
+            </Card>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   return (
-    <Screen scroll={false} title="Checking your link">
-      <LoadingState label="Completing your sign-in..." />
-    </Screen>
+    <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-1 items-center justify-center gap-3 p-6">
+        <Text variant="h1">Checking your link</Text>
+        <ActivityIndicator />
+        <Text variant="muted">Completing your sign-in...</Text>
+      </View>
+    </SafeAreaView>
   );
 }

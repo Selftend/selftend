@@ -1,17 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useMemo, useState } from "react";
 
-import { Button } from "@/src/components/button";
-import { Card } from "@/src/components/card";
-import { ChipGroup } from "@/src/components/chip-group";
-import { FieldShell } from "@/src/components/field-shell";
-import { LoadingState } from "@/src/components/loading-state";
-import { NoticeCard } from "@/src/components/notice-card";
-import { Screen } from "@/src/components/screen";
-import { TextField } from "@/src/components/text-field";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Text } from "@/components/ui/text";
+import { Textarea } from "@/components/ui/textarea";
 import { distortionDefinitions } from "@/src/constants/distortions";
 import { emotionOptions } from "@/src/constants/emotions";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
@@ -130,61 +129,64 @@ export default function ThoughtRecordEditorScreen() {
 
   if (recordId && isLoading) {
     return (
-      <Screen scroll={false} title="Loading record">
-        <LoadingState label="Preparing your existing record..." />
-      </Screen>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 items-center justify-center gap-3 p-6">
+          <Text variant="h1">Loading record</Text>
+          <ActivityIndicator />
+          <Text variant="muted">Preparing your existing record...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <Screen
-      footer={
-        <View className="flex-row gap-3">
-          {stepIndex > 0 ? (
-            <View className="flex-1">
-              <Button onPress={previousStep} text="Back" variant="ghost" />
-            </View>
-          ) : null}
-          <View className="flex-1">
-            <Button
-              isLoading={isSubmitting || saveMutation.isPending}
-              onPress={() => void (isLastStep ? handleSave() : handleNext())}
-              text={isLastStep ? "Save record" : "Continue"}
-            />
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView contentContainerClassName="grow p-6">
+        <View className="gap-6">
+          <View className="gap-2">
+            <Text variant="h1">{recordId ? "Edit thought record" : "New thought record"}</Text>
+            <Text variant="muted">
+              {recordId ? "Edit a saved record without losing its history." : "Walk through one thought in five small steps."}
+            </Text>
           </View>
-        </View>
-      }
-      subtitle={recordId ? "Edit a saved record without losing its history." : "Walk through one thought in five small steps."}
-      title={recordId ? "Edit thought record" : "New thought record"}
-    >
-      {submitError ? <NoticeCard body={submitError} title="Save problem" tone="warning" /> : null}
+
+      {submitError ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Save problem</CardTitle>
+            <CardDescription>{submitError}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
 
       <View className="flex-row flex-wrap gap-2">
         {steps.map((step, index) => {
           const isActive = stepIndex === index;
           return (
-            <Pressable
+            <Button
               key={step.title}
-              className={`rounded-full px-3 py-2 ${isActive ? "bg-pine" : "bg-white"}`}
+              disabled={index > stepIndex}
               onPress={() => {
                 if (index <= stepIndex) {
                   useCbtDraftStore.getState().setStepIndex(index);
                 }
               }}
+              size="sm"
+              variant={isActive ? "secondary" : "ghost"}
             >
-              <Text className={isActive ? "text-sm font-semibold text-white" : "text-sm font-semibold text-ink/60"}>
+              <Text>
                 {index + 1}. {step.title}
               </Text>
-            </Pressable>
+            </Button>
           );
         })}
       </View>
 
       <Card>
-        <View className="gap-3">
-          <Text className="text-2xl font-semibold text-ink">{currentStep.title}</Text>
-          <Text className="text-sm leading-6 text-ink/70">{currentStep.description}</Text>
-        </View>
+        <CardHeader>
+          <CardTitle>{currentStep.title}</CardTitle>
+          <CardDescription>{currentStep.description}</CardDescription>
+        </CardHeader>
       </Card>
 
       {stepIndex === 0 ? (
@@ -192,15 +194,17 @@ export default function ThoughtRecordEditorScreen() {
           control={control}
           name="situation"
           render={({ field: { onBlur, onChange, value } }) => (
-            <FieldShell description="Keep it concrete. A few sentences is enough." error={errors.situation?.message} label="Situation">
-              <TextField
-                multiline
+            <View className="gap-2">
+              <Label>Situation</Label>
+              <Text variant="muted">Keep it concrete. A few sentences is enough.</Text>
+              <Textarea
                 onBlur={onBlur}
                 onChangeText={onChange}
                 placeholder="Example: I saw an email from my manager and my chest tightened immediately."
                 value={value}
               />
-            </FieldShell>
+              {errors.situation?.message ? <Text variant="muted">{errors.situation.message}</Text> : null}
+            </View>
           )}
         />
       ) : null}
@@ -210,19 +214,19 @@ export default function ThoughtRecordEditorScreen() {
           control={control}
           name="automaticThought"
           render={({ field: { onBlur, onChange, value } }) => (
-            <FieldShell
-              description="Write the raw thought before you correct it."
-              error={errors.automaticThought?.message}
-              label="Automatic thought"
-            >
-              <TextField
-                multiline
+            <View className="gap-2">
+              <Label>Automatic thought</Label>
+              <Text variant="muted">Write the raw thought before you correct it.</Text>
+              <Textarea
                 onBlur={onBlur}
                 onChangeText={onChange}
                 placeholder="Example: I am about to be told I messed everything up."
                 value={value}
               />
-            </FieldShell>
+              {errors.automaticThought?.message ? (
+                <Text variant="muted">{errors.automaticThought.message}</Text>
+              ) : null}
+            </View>
           )}
         />
       ) : null}
@@ -232,18 +236,26 @@ export default function ThoughtRecordEditorScreen() {
           control={control}
           name="emotions"
           render={({ field: { onChange, value } }) => (
-            <FieldShell description="Pick the feelings that fit best." error={errors.emotions?.message} label="Emotions">
-              <ChipGroup
-                onToggle={(nextEmotion) => {
-                  const nextValues = value.includes(nextEmotion)
-                    ? value.filter((item) => item !== nextEmotion)
-                    : [...value, nextEmotion];
+            <View className="gap-3">
+              <View className="gap-2">
+                <Label>Emotions</Label>
+                <Text variant="muted">Pick the feelings that fit best.</Text>
+              </View>
+              {emotionOptions.map((emotion) => {
+                const checked = value.includes(emotion);
+                const toggle = () => {
+                  const nextValues = checked ? value.filter((item) => item !== emotion) : [...value, emotion];
                   onChange(nextValues);
-                }}
-                options={emotionOptions}
-                selected={value}
-              />
-            </FieldShell>
+                };
+                return (
+                  <View key={emotion} className="flex-row items-center gap-3">
+                    <Checkbox checked={checked} onCheckedChange={toggle} />
+                    <Label onPress={toggle}>{emotion}</Label>
+                  </View>
+                );
+              })}
+              {errors.emotions?.message ? <Text variant="muted">{errors.emotions.message}</Text> : null}
+            </View>
           )}
         />
       ) : null}
@@ -253,34 +265,33 @@ export default function ThoughtRecordEditorScreen() {
           control={control}
           name="distortions"
           render={({ field: { onChange, value } }) => (
-            <FieldShell
-              description="Choose the patterns that seem closest. You can pick more than one."
-              error={errors.distortions?.message}
-              label="Thinking patterns"
-            >
-              <View className="gap-3">
-                {distortionDefinitions.map((distortion) => {
-                  const isSelected = value.includes(distortion.key);
-                  return (
-                    <Pressable
-                      key={distortion.key}
-                      className={`rounded-3xl border p-4 ${isSelected ? "border-pine bg-mist" : "border-black/10 bg-white"}`}
-                      onPress={() => {
-                        const nextValues = isSelected
-                          ? value.filter((item) => item !== distortion.key)
-                          : [...value, distortion.key];
-                        onChange(nextValues);
-                      }}
-                    >
-                      <View className="gap-2">
-                        <Text className="text-base font-semibold text-ink">{distortion.title}</Text>
-                        <Text className="text-sm leading-6 text-ink/70">{distortion.shortDescription}</Text>
-                      </View>
-                    </Pressable>
-                  );
-                })}
+            <View className="gap-3">
+              <View className="gap-2">
+                <Label>Thinking patterns</Label>
+                <Text variant="muted">Choose the patterns that seem closest. You can pick more than one.</Text>
               </View>
-            </FieldShell>
+              {distortionDefinitions.map((distortion) => {
+                const checked = value.includes(distortion.key);
+                const toggle = () => {
+                  const nextValues = checked
+                    ? value.filter((item) => item !== distortion.key)
+                    : [...value, distortion.key];
+                  onChange(nextValues);
+                };
+                return (
+                  <Card key={distortion.key}>
+                    <CardHeader>
+                      <View className="flex-row items-center gap-3">
+                        <Checkbox checked={checked} onCheckedChange={toggle} />
+                        <Label onPress={toggle}>{distortion.title}</Label>
+                      </View>
+                      <CardDescription>{distortion.shortDescription}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                );
+              })}
+              {errors.distortions?.message ? <Text variant="muted">{errors.distortions.message}</Text> : null}
+            </View>
           )}
         />
       ) : null}
@@ -291,42 +302,61 @@ export default function ThoughtRecordEditorScreen() {
             control={control}
             name="balancedThought"
             render={({ field: { onBlur, onChange, value } }) => (
-              <FieldShell
-                description="Aim for something believable and kinder, not forced positivity."
-                error={errors.balancedThought?.message}
-                label="Balanced thought"
-              >
-                <TextField
-                  multiline
+              <View className="gap-2">
+                <Label>Balanced thought</Label>
+                <Text variant="muted">Aim for something believable and kinder, not forced positivity.</Text>
+                <Textarea
                   onBlur={onBlur}
                   onChangeText={onChange}
                   placeholder="Example: I do not know what the email means yet. One message is not proof that I failed."
                   value={value}
                 />
-              </FieldShell>
+                {errors.balancedThought?.message ? (
+                  <Text variant="muted">{errors.balancedThought.message}</Text>
+                ) : null}
+              </View>
             )}
           />
 
           <Card>
-            <View className="gap-3">
-              <Text className="text-lg font-semibold text-ink">Summary before saving</Text>
-              <SummaryRow label="Situation" value={getValues("situation")} />
-              <SummaryRow label="Thought" value={getValues("automaticThought")} />
-              <SummaryRow label="Emotions" value={getValues("emotions").join(", ")} />
-              <SummaryRow label="Patterns" value={getValues("distortions").join(", ")} />
-            </View>
+            <CardHeader>
+              <CardTitle>Summary before saving</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-3">
+                <Text>Situation: {getValues("situation") || "Not filled yet."}</Text>
+                <Text>Thought: {getValues("automaticThought") || "Not filled yet."}</Text>
+                <Text>Emotions: {getValues("emotions").join(", ") || "Not filled yet."}</Text>
+                <Text>Patterns: {getValues("distortions").join(", ") || "Not filled yet."}</Text>
+              </View>
+            </CardContent>
           </Card>
         </View>
       ) : null}
-    </Screen>
-  );
-}
-
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View className="gap-1 rounded-2xl bg-mist px-4 py-3">
-      <Text className="text-xs font-semibold uppercase tracking-wide text-ink/50">{label}</Text>
-      <Text className="text-sm leading-6 text-ink">{value || "Not filled yet."}</Text>
-    </View>
+        </View>
+      </ScrollView>
+      <View className="border-t border-border bg-background p-4">
+        <View className="flex-row gap-3">
+          {stepIndex > 0 ? (
+            <View className="flex-1">
+              <Button onPress={previousStep} variant="ghost">
+                <Text>Back</Text>
+              </Button>
+            </View>
+          ) : null}
+          <View className="flex-1">
+            <Button
+              disabled={isSubmitting || saveMutation.isPending}
+              onPress={() => void (isLastStep ? handleSave() : handleNext())}
+            >
+              {isSubmitting || saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
+              <Text>
+                {isSubmitting || saveMutation.isPending ? "Saving record" : isLastStep ? "Save record" : "Continue"}
+              </Text>
+            </Button>
+          </View>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }

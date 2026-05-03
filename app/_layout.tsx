@@ -1,6 +1,7 @@
 import "../global.css";
 import "react-native-reanimated";
 
+import { PortalHost } from "@rn-primitives/portal";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
@@ -13,7 +14,6 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: "#f7f3ea" },
         }}
       >
         <Stack.Screen name="index" />
@@ -24,6 +24,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(app)" />
       </Stack>
+      <PortalHost />
     </AppProviders>
   );
 }

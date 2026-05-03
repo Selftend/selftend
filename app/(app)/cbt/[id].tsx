@@ -1,13 +1,11 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useMemo, useState } from "react";
 
-import { Button } from "@/src/components/button";
-import { Card } from "@/src/components/card";
-import { EmptyState } from "@/src/components/empty-state";
-import { LoadingState } from "@/src/components/loading-state";
-import { NoticeCard } from "@/src/components/notice-card";
-import { Screen } from "@/src/components/screen";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Text } from "@/components/ui/text";
 import { distortionLookup } from "@/src/constants/distortions";
 import { useArchiveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -37,76 +35,119 @@ export default function ThoughtRecordDetailScreen() {
 
   if (isLoading) {
     return (
-      <Screen scroll={false} title="Loading record">
-        <LoadingState label="Fetching your saved record..." />
-      </Screen>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 items-center justify-center gap-3 p-6">
+          <Text variant="h1">Loading record</Text>
+          <ActivityIndicator />
+          <Text variant="muted">Fetching your saved record...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!data) {
     return (
-      <Screen title="Record not found">
-        <EmptyState body="The record may have been archived or removed." title="Nothing to show" />
-      </Screen>
+      <SafeAreaView className="flex-1 bg-background">
+        <ScrollView contentContainerClassName="grow p-6">
+          <View className="gap-6">
+            <Text variant="h1">Record not found</Text>
+            <Card>
+              <CardHeader>
+                <CardTitle>Nothing to show</CardTitle>
+                <CardDescription>The record may have been archived or removed.</CardDescription>
+              </CardHeader>
+            </Card>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   return (
-    <Screen
-      footer={
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView contentContainerClassName="grow p-6">
+        <View className="gap-6">
+          <View className="gap-2">
+            <Text variant="h1">Thought record</Text>
+            <Text variant="muted">Updated {formatTimestamp(data.updatedAt)}</Text>
+          </View>
+
+      {archiveError ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Archive problem</CardTitle>
+            <CardDescription>{archiveError}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Situation</CardTitle>
+          <CardDescription>{data.situation}</CardDescription>
+        </CardHeader>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Automatic thought</CardTitle>
+          <CardDescription>{data.automaticThought}</CardDescription>
+        </CardHeader>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Emotions</CardTitle>
+          <CardDescription>{data.emotions.join(", ")}</CardDescription>
+        </CardHeader>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Thinking patterns</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <View className="gap-3">
+            {data.distortions.map((distortionKey) => (
+              <Card key={distortionKey}>
+                <CardHeader>
+                  <CardTitle>{distortionLookup[distortionKey]?.title ?? distortionKey}</CardTitle>
+                  <CardDescription>
+                    {distortionLookup[distortionKey]?.shortDescription ?? "Saved distortion key."}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </View>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Balanced thought</CardTitle>
+          <CardDescription>{data.balancedThought}</CardDescription>
+        </CardHeader>
+      </Card>
+        </View>
+      </ScrollView>
+      <View className="border-t border-border bg-background p-4">
         <View className="flex-row gap-3">
           <View className="flex-1">
             <Button
               onPress={() => router.push({ pathname: "/cbt/new", params: { recordId: data.id } })}
-              text="Edit"
               variant="secondary"
-            />
+            >
+              <Text>Edit</Text>
+            </Button>
           </View>
           <View className="flex-1">
             <Button
-              isLoading={archiveMutation.isPending}
+              disabled={archiveMutation.isPending}
               onPress={() => void handleArchive()}
-              text="Archive"
-              variant="danger"
-            />
+              variant="destructive"
+            >
+              {archiveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
+              <Text>{archiveMutation.isPending ? "Archiving" : "Archive"}</Text>
+            </Button>
           </View>
         </View>
-      }
-      subtitle={`Updated ${formatTimestamp(data.updatedAt)}`}
-      title="Thought record"
-    >
-      {archiveError ? <NoticeCard body={archiveError} title="Archive problem" tone="warning" /> : null}
-
-      <DetailCard body={data.situation} title="Situation" />
-      <DetailCard body={data.automaticThought} title="Automatic thought" />
-      <DetailCard body={data.emotions.join(", ")} title="Emotions" />
-      <Card>
-        <View className="gap-3">
-          <Text className="text-lg font-semibold text-ink">Thinking patterns</Text>
-          {data.distortions.map((distortionKey) => (
-            <View key={distortionKey} className="rounded-2xl bg-mist px-4 py-3">
-              <Text className="text-base font-semibold text-ink">
-                {distortionLookup[distortionKey]?.title ?? distortionKey}
-              </Text>
-              <Text className="mt-1 text-sm leading-6 text-ink/70">
-                {distortionLookup[distortionKey]?.shortDescription ?? "Saved distortion key."}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </Card>
-      <DetailCard body={data.balancedThought} title="Balanced thought" />
-    </Screen>
-  );
-}
-
-function DetailCard({ body, title }: { body: string; title: string }) {
-  return (
-    <Card>
-      <View className="gap-2">
-        <Text className="text-lg font-semibold text-ink">{title}</Text>
-        <Text className="text-sm leading-6 text-ink/70">{body}</Text>
       </View>
-    </Card>
+    </SafeAreaView>
   );
 }

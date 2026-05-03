@@ -1,9 +1,9 @@
 import * as Linking from "expo-linking";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 
-import { Button } from "@/src/components/button";
-import { Card } from "@/src/components/card";
-import { NoticeCard } from "@/src/components/notice-card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Text } from "@/components/ui/text";
 import { accountDeletionSections } from "@/src/features/policies/policy-content";
 import { PolicyScreen } from "@/src/features/policies/policy-screen";
 import { appEnv } from "@/src/lib/env";
@@ -26,11 +26,15 @@ export default function AccountDeletionScreen() {
 function DeletionContact({ email }: { email: string }) {
   if (!email) {
     return (
-      <NoticeCard
-        body="No deletion contact email is configured. Set EXPO_PUBLIC_PRIVACY_EMAIL or EXPO_PUBLIC_SUPPORT_EMAIL before using this page for Google Play testing or public launch."
-        title="Deletion contact pending"
-        tone="warning"
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>Deletion contact pending</CardTitle>
+          <CardDescription>
+            No deletion contact email is configured. Set EXPO_PUBLIC_PRIVACY_EMAIL or EXPO_PUBLIC_SUPPORT_EMAIL before
+            using this page for Google Play testing or public launch.
+          </CardDescription>
+        </CardHeader>
+      </Card>
     );
   }
 
@@ -41,16 +45,19 @@ function DeletionContact({ email }: { email: string }) {
 
   return (
     <Card>
-      <View className="gap-3">
-        <Text className="text-lg font-semibold text-ink">Request deletion</Text>
-        <Text className="text-sm leading-6 text-ink/70">
-          Send the request from the email used for your account when possible.
-        </Text>
+      <CardHeader>
+        <CardTitle>Request deletion</CardTitle>
+        <CardDescription>Send the request from the email used for your account when possible.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <View>
         <Button
           onPress={() => void Linking.openURL(`mailto:${email}?subject=${subject}&body=${body}`)}
-          text="Email deletion request"
-        />
-      </View>
+        >
+          <Text>Email deletion request</Text>
+        </Button>
+        </View>
+      </CardContent>
     </Card>
   );
 }

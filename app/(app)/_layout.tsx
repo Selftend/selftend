@@ -1,7 +1,8 @@
 import { Redirect, Stack } from "expo-router";
+import { ActivityIndicator, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { LoadingState } from "@/src/components/loading-state";
-import { Screen } from "@/src/components/screen";
+import { Text } from "@/components/ui/text";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function ProtectedLayout() {
@@ -9,9 +10,13 @@ export default function ProtectedLayout() {
 
   if (status === "loading") {
     return (
-      <Screen scroll={false} title="Loading">
-        <LoadingState label="Restoring your session..." />
-      </Screen>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 items-center justify-center gap-3 p-6">
+          <Text variant="h1">Loading</Text>
+          <ActivityIndicator />
+          <Text variant="muted">Restoring your session...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -22,10 +27,7 @@ export default function ProtectedLayout() {
   return (
     <Stack
       screenOptions={{
-        contentStyle: { backgroundColor: "#f7f3ea" },
         headerShadowVisible: false,
-        headerStyle: { backgroundColor: "#f7f3ea" },
-        headerTintColor: "#20312c",
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
