@@ -38,9 +38,9 @@ export function ConsentModal({ visible, onAccepted }: ConsentModalProps) {
       <View className="flex-1 items-center justify-center bg-black/50 p-6">
         <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle>Updated policies</CardTitle>
+            <CardTitle>Quick policy check</CardTitle>
             <CardDescription>
-              Our Privacy Policy and Terms of Service have been updated. Please review and accept to continue using the app.
+              We keep this brief: please review and accept the latest Privacy Policy and Terms to continue.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -62,7 +62,7 @@ export function ConsentModal({ visible, onAccepted }: ConsentModalProps) {
                   onCheckedChange={setAccepted}
                 />
                 <Text className="flex-1 text-sm">
-                  I am 13 or older and agree to the updated Privacy Policy and Terms of Service.
+                  I am 13 or older and agree to the current Privacy Policy and Terms of Service.
                 </Text>
               </Pressable>
               <Button

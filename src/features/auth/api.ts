@@ -26,7 +26,7 @@ export function getOAuthRedirectUrl() {
   return Linking.createURL(AUTH_CALLBACK_PATH, { scheme: APP_SCHEME });
 }
 
-export function getMagicLinkRedirectUrl() {
+export function getEmailRedirectUrl() {
   if (Platform.OS === "web") {
     return getWebAuthRedirectUrl();
   }
@@ -70,15 +70,57 @@ export async function signInWithGoogle() {
   return true;
 }
 
-export async function signInWithMagicLink(email: string) {
+export async function signInWithPassword(email: string, password: string) {
   const client = requireSupabase();
-  const { error } = await client.auth.signInWithOtp({
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  if (error) {
+    throw error;
+  }
+}
+
+export async function signUpWithPassword(email: string, password: string) {
+  const client = requireSupabase();
+  const { data, error } = await client.auth.signUp({
     email,
+    password,
     options: {
-      emailRedirectTo: getMagicLinkRedirectUrl(),
+      emailRedirectTo: getEmailRedirectUrl(),
     },
   });
+  if (error) {
+    throw error;
+  }
 
+  return data;
+}
+
+export async function sendPasswordResetEmail(email: string) {
+  const client = requireSupabase();
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: getEmailRedirectUrl(),
+  });
+  if (error) {
+    throw error;
+  }
+}
+
+export async function updatePassword(newPassword: string) {
+  const client = requireSupabase();
+  const { error } = await client.auth.updateUser({ password: newPassword });
+  if (error) {
+    throw error;
+  }
+}
+
+export async function resendVerificationEmail(email: string) {
+  const client = requireSupabase();
+  const { error } = await client.auth.resend({
+    type: "signup",
+    email,
+    options: {
+      emailRedirectTo: getEmailRedirectUrl(),
+    },
+  });
   if (error) {
     throw error;
   }

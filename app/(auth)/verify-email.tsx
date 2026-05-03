@@ -1,17 +1,9 @@
-import { Redirect } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { SignInForm } from "@/components/sign-in-form";
-import { useSession } from "@/src/providers/session-provider";
+import { VerifyEmailForm } from "@/components/verify-email-form";
 
-export default function SignInScreen() {
-  const { session } = useSession();
-
-  if (session) {
-    return <Redirect href="/(app)/(tabs)" />;
-  }
-
+export default function VerifyEmailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView
@@ -20,7 +12,7 @@ export default function SignInScreen() {
         keyboardDismissMode="interactive"
       >
         <View className="w-full max-w-sm">
-          <SignInForm />
+          <VerifyEmailForm />
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -121,12 +121,17 @@ Initial scaffold work completed so far:
 - [x] public privacy, terms, crisis, and account-deletion routes
 - [x] Supabase schema draft
 - [x] Google OAuth sign-in wired for web and native app flows
-- [x] passwordless email magic-link sign-in wired for web and native app flows
+- [x] email/password sign-in and sign-up with verification requirement
+- [x] forgot-password and reset-password flows
+- [x] verified-email gating before protected app access
+- [x] auth block components following React Native Reusables patterns (sign in, sign up, verify email, forgot password, reset password)
+- [x] local bundled Google logo asset in auth buttons
 - [x] CI and test harness
 - [x] local web smoke test of the scaffold
 - [x] Expo project linked to EAS and Android development-build workflow added for native reminder testing
 - [x] local setup docs aligned around the current Node engine floor for Expo SDK 54
 - [x] UI reset to default React Native Reusables generated primitives with local UI wrappers removed
+- [x] logged-out entry route now shows an authentication landing block with app branding and an embedded sign-in form
 
 ### Phase 2: Ready-for-public-product pass
 
@@ -140,7 +145,7 @@ This phase turns the MVP into a product that can be responsibly promoted.
 - [ ] human/legal review of safety and crisis resource copy
 - [x] data export and account deletion (self-service, in-app)
 - [x] cookie consent manager (web)
-- [x] consent capture at sign-in (age 13+ attestation + policy acceptance)
+- [x] consent capture after sign-in (account-level policy acceptance, persisted in preferences)
 - [x] consent re-prompt on policy version change
 - [x] GDPR compliance checklist documented
 - [ ] minimal observability and incident response process

@@ -30,6 +30,10 @@ export default function ProtectedLayout() {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
+  if (!user?.email_confirmed_at) {
+    return <Redirect href="/(auth)/verify-email" />;
+  }
+
   const needsConsent =
     !consentDismissed &&
     !prefsLoading &&

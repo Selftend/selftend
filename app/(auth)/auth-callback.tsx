@@ -31,7 +31,12 @@ export default function AuthCallbackScreen() {
           return;
         }
 
-        if (outcome !== "authenticated") {
+        if (outcome === "password-recovery") {
+          router.replace("/(auth)/update-password");
+          return;
+        }
+
+        if (outcome === "confirmed") {
           router.replace("/(auth)/sign-in");
           return;
         }

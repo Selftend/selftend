@@ -1,8 +1,9 @@
 import { Redirect } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Text } from "@/components/ui/text";
+import { AuthLandingBlock } from "@/src/components/auth-landing-block";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function IndexScreen() {
@@ -24,5 +25,17 @@ export default function IndexScreen() {
     return <Redirect href="/(app)/(tabs)" />;
   }
 
-  return <Redirect href="/(auth)/sign-in" />;
+  return (
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView
+        contentContainerClassName="grow items-center justify-center p-6"
+        keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
+      >
+        <View className="w-full max-w-sm">
+          <AuthLandingBlock />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
