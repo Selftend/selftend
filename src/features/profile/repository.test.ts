@@ -98,5 +98,50 @@ describe("buildSyncedProfileFields", () => {
       avatar_updated_at: now,
     });
   });
-});
 
+  it("does not reimport an OAuth avatar after the user removes their photo", () => {
+    expect(
+      buildSyncedProfileFields(
+        {
+          email: "person@example.com",
+          avatar_url: null,
+          avatar_storage_path: null,
+          avatar_source: null,
+          avatar_updated_at: "2026-05-02T12:00:00.000Z",
+        },
+        "person@example.com",
+        "https://example.com/avatar.jpg",
+        now,
+      ),
+    ).toEqual({
+      email: "person@example.com",
+      avatar_url: null,
+      avatar_storage_path: null,
+      avatar_source: null,
+      avatar_updated_at: "2026-05-02T12:00:00.000Z",
+    });
+  });
+
+  it("still respects legacy removed-photo rows if avatar_source none exists", () => {
+    expect(
+      buildSyncedProfileFields(
+        {
+          email: "person@example.com",
+          avatar_url: null,
+          avatar_storage_path: null,
+          avatar_source: "none",
+          avatar_updated_at: null,
+        },
+        "person@example.com",
+        "https://example.com/avatar.jpg",
+        now,
+      ),
+    ).toEqual({
+      email: "person@example.com",
+      avatar_url: null,
+      avatar_storage_path: null,
+      avatar_source: "none",
+      avatar_updated_at: null,
+    });
+  });
+});

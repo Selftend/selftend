@@ -1,6 +1,6 @@
 # Web Deployment
 
-Last checked: 2026-05-02
+Last checked: 2026-05-03
 
 This project should launch the browser app as a single-page Expo web export. Do not add a separate backend, analytics SDK, or server-rendered web stack for v1 unless a concrete requirement appears.
 
@@ -124,6 +124,15 @@ npm run serve:web:production
 ```
 
 The web build uses `web.output = "single"` in [app.config.ts](../app.config.ts). Unknown routes should load `index.html`, then Expo Router handles the unmatched path at runtime with [app/+not-found.tsx](../app/+not-found.tsx). Do not add duplicate provider-specific 404 pages for this behavior.
+
+## Production Headers
+
+[public/_headers](../public/_headers) contains the Netlify security headers. Keep the Content Security Policy restrictive, but allow avatar images from:
+
+- `https://*.supabase.co` for private Storage signed URLs
+- `https://*.googleusercontent.com` for Google OAuth profile photos
+
+If profile photo upload or Google photo restore reports success in production but the image does not render, verify the deployed `img-src` directive first.
 
 ## Public Routes To Verify
 

@@ -13,57 +13,60 @@ export default function CbtHomeScreen() {
         <View className="gap-6">
           <View className="gap-2">
             <Text variant="h1">CBT</Text>
-            <Text variant="muted">A focused CBT section built around thought records, distortion awareness, and quiet review.</Text>
+            <Text variant="muted">
+              A focused CBT section built around thought records, distortion awareness, and quiet review.
+            </Text>
           </View>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Why the scope is narrow</CardTitle>
-          <CardDescription>
-            The first build stays narrow on purpose: one practical tool, a small learn surface, and a private history.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Why the scope is narrow</CardTitle>
+              <CardDescription>
+                The first build stays narrow on purpose: one practical tool, a small learn surface, and a private
+                history.
+              </CardDescription>
+            </CardHeader>
+          </Card>
 
-      <View className="flex-row gap-3">
-        <View className="flex-1">
-          <Button onPress={() => router.push("/cbt/new")}>
-            <Text>New record</Text>
-          </Button>
-        </View>
-        <View className="flex-1">
-          <Button onPress={() => router.push("/cbt/learn")} variant="secondary">
-            <Text>Learn</Text>
-          </Button>
-        </View>
-      </View>
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Button onPress={() => router.push("/cbt/new")}>
+                <Text>New record</Text>
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button onPress={() => router.push("/cbt/learn")} variant="secondary">
+                <Text>Learn</Text>
+              </Button>
+            </View>
+          </View>
 
-      <Pressable onPress={() => router.push("/cbt/learn")}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Distortion guide</CardTitle>
-            <CardDescription>See the core thinking patterns this section currently focuses on.</CardDescription>
-          </CardHeader>
-        </Card>
-      </Pressable>
-      <Pressable onPress={() => router.push("/(app)/(tabs)/history")}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Record history</CardTitle>
-            <CardDescription>
-              Review the records you have already saved without mixing CBT with unrelated modules.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </Pressable>
+          <Pressable onPress={() => router.push("/cbt/learn")}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Distortion guide</CardTitle>
+                <CardDescription>See the core thinking patterns this section currently focuses on.</CardDescription>
+              </CardHeader>
+            </Card>
+          </Pressable>
+          <Pressable onPress={() => router.push("/cbt/history")}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Record history</CardTitle>
+                <CardDescription>
+                  Review the records you have already saved without mixing CBT with unrelated modules.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Pressable>
 
-      <View className="gap-2">
-        <Text variant="h3">The current flow</Text>
-        <Text variant="muted">
-          Capture the situation, name the first thought, choose emotions, notice distortions, and respond with a more
-          balanced thought.
-        </Text>
-      </View>
+          <View className="gap-2">
+            <Text variant="h3">The current flow</Text>
+            <Text variant="muted">
+              Capture the situation, name the first thought, choose emotions, notice distortions, and respond with a
+              more balanced thought.
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -266,7 +266,7 @@ export default function SettingsScreen() {
 }
 
 function ProfilePictureCard({ user }: { user: User | null }) {
-  const { data: profile, isLoading } = useUserProfile(user);
+  const { data: profile, error: profileError, isLoading } = useUserProfile(user);
   const uploadMutation = useUploadUserAvatar(user?.id ?? null);
   const resetMutation = useResetUserAvatarToOAuth(user);
   const removeMutation = useRemoveUserAvatar(user?.id ?? null);
@@ -281,7 +281,7 @@ function ProfilePictureCard({ user }: { user: User | null }) {
       ? "Custom photo"
       : profile?.avatarSource === "oauth"
         ? "Google photo"
-        : "Initials fallback";
+        : "No photo";
 
   const pickAvatar = async () => {
     if (!user) {
@@ -370,7 +370,8 @@ function ProfilePictureCard({ user }: { user: User | null }) {
       <CardHeader>
         <CardTitle>Profile picture</CardTitle>
         <CardDescription>
-          Used on your signed-in account surfaces. Google photos are imported automatically unless you choose your own.
+          Used on your signed-in account surfaces. You can restore your Google photo after choosing or removing a custom
+          photo.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -411,6 +412,11 @@ function ProfilePictureCard({ user }: { user: User | null }) {
           </View>
 
           {message ? <Text className="text-sm text-muted-foreground">{message}</Text> : null}
+          {profileError ? (
+            <Text className="text-sm text-destructive">
+              {getErrorMessage(profileError, "Unable to load profile picture.")}
+            </Text>
+          ) : null}
           {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
         </View>
       </CardContent>

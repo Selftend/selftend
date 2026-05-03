@@ -64,8 +64,14 @@ export default function ProtectedLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="cbt/index" />
             <Stack.Screen name="cbt/learn" />
+            <Stack.Screen name="cbt/history" />
             <Stack.Screen name="cbt/new" />
             <Stack.Screen name="cbt/[id]" />
+            <Stack.Screen name="tools/mood-tracker" />
+            <Stack.Screen name="tools/meditation" />
+            <Stack.Screen name="tools/act" />
+            <Stack.Screen name="tools/gratitude-log" />
+            <Stack.Screen name="history" />
             <Stack.Screen name="support" />
             <Stack.Screen name="legal" />
           </Stack>

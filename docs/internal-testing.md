@@ -1,6 +1,6 @@
 # Internal Testing
 
-Last updated: 2026-05-02
+Last updated: 2026-05-03
 
 ## Current build profiles
 
@@ -33,13 +33,28 @@ For Google Play closed testing, use the `production` profile to create an Androi
 - create fuller thought record
 - edit saved record
 - archive saved record
-- review history list and detail screen
+- review `/cbt/history` list and detail screen
+
+### Tools navigation
+
+- sidebar shows Tools with CBT, Mood tracker, Meditation, ACT, and Gratitude log
+- Tools can collapse and expand
+- CBT can collapse and expand inside Tools, with History above Learn
+- CBT history is nested under CBT, not shown as a top-level navigation item
+- Mood tracker, Meditation, ACT, and Gratitude log show under-construction placeholder screens only
 
 ### Reminders
 
 - reminders are off by default
 - enabling reminders asks for permission
 - disabling reminders cancels the scheduled notification
+
+### Profile pictures
+
+- Google profile photo renders on the production web origin
+- manual profile-picture upload renders on the production web origin
+- Remove photo clears a manual upload without falling back to the Google photo
+- Use Google photo restores the Google avatar after Remove photo
 
 ### Web / mobile smoke
 

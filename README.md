@@ -36,6 +36,8 @@ Included now:
 - brand theme tokens with a purple primary, gray secondary, and subtle purple-tinted surfaces
 - CBT learn surface and guided thought record flow
 - thought history, edit, and archive flow
+- collapsible sidebar Tools navigation with CBT history nested under CBT
+- placeholder routes for Mood tracker, Meditation, ACT, and Gratitude log
 - quiet reminder settings, default-off
 - support, legal, privacy, crisis, and account-deletion surfaces
 - Jest test harness
@@ -45,7 +47,7 @@ Deferred intentionally:
 
 - mood check-ins as a separate section
 - journaling as a separate section
-- broader tool library
+- real implementations for ACT, meditation, gratitude, and the broader tool library
 - social features
 - AI features
 
@@ -179,6 +181,7 @@ Once the development build is installed, keep using it as the default Android de
 - [docs/licensing.md](docs/licensing.md): license choice and reference-repo rules
 - [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md): current third-party notice tracking for copied/generated code
 - [docs/modules/cbt.md](docs/modules/cbt.md): first CBT module spec
+- [docs/modules/tools.md](docs/modules/tools.md): Tools navigation and placeholder-module rules
 - [docs/reference-log.md](docs/reference-log.md): reference-repo usage log
 - [docs/github-setup.md](docs/github-setup.md): GitHub workflow and label setup
 - [docs/internal-testing.md](docs/internal-testing.md): internal build and testing checklist
@@ -192,7 +195,7 @@ This repo relies on docs as durable context. When a change affects setup, comman
 
 Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and the UI shell now uses NativeWind with default React Native Reusables-generated primitives plus brand tokens from the Selftend icon palette. Launch-prep docs cover single-page Netlify web deployment plus Google Play closed testing. The next blockers are `selftend.org` purchase/DNS, Netlify production env verification, domain email aliases, Supabase production Site URL and redirect verification, migration confirmation if it has not been applied yet, and end-to-end auth/persistence/profile-picture verification on web and device builds from the current environment.
 
-The current database/storage contract includes profile avatar metadata and a private Supabase Storage `profile-pics` bucket. Apply all migrations before testing profile-picture upload or account deletion cleanup.
+The current database/storage contract includes profile avatar metadata and a private Supabase Storage `profile-pics` bucket. Removed profile photos use the existing nullable avatar fields plus a removal timestamp, so no extra avatar-source value is required. Apply all migrations before testing profile-picture upload, profile-picture removal, or account deletion cleanup.
 
 The first web and Android testing path uses the maintainer-hosted Supabase project. Data separation remains a product direction, but it is not a launch blocker: add export/delete first, then local-only storage, then encrypted backup/import, with custom backend or Drive sync considered later.
 

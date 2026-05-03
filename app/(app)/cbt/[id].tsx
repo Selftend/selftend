@@ -27,7 +27,7 @@ export default function ThoughtRecordDetailScreen() {
     try {
       setArchiveError("");
       await archiveMutation.mutateAsync(recordId);
-      router.replace("/(app)/(tabs)/history");
+      router.replace("/cbt/history");
     } catch (error) {
       setArchiveError(error instanceof Error ? error.message : "Unable to archive the record.");
     }

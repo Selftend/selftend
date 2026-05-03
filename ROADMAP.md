@@ -137,6 +137,10 @@ Initial scaffold work completed so far:
 - [x] Google OAuth profile-picture import with manual upload, reset, and remove controls in settings
 - [x] profile-picture uploads backed by a private Supabase Storage `profile-pics` bucket
 - [x] light and dark theme tokens updated around a purple primary, gray secondary, and subtle purple-tinted surfaces
+- [x] collapsible sidebar Tools navigation added with CBT history nested under CBT
+- [x] placeholder routes added for Mood tracker, Meditation, ACT, and Gratitude log
+- [x] profile-picture removal now persists without re-importing the Google avatar
+- [x] production CSP allows Supabase signed avatar URLs and Google avatar images
 
 ### Phase 2: Ready-for-public-product pass
 

@@ -8,7 +8,7 @@ The initial schema lives in [supabase/migrations/20260415_initial.sql](migration
 - `user_preferences`
 - `thought_records`
 
-`profiles` stores account-level metadata only: email plus optional avatar fields. Google OAuth avatars are stored as URLs with `avatar_source = 'oauth'`; manually chosen images store a private Storage object path with `avatar_source = 'upload'`.
+`profiles` stores account-level metadata only: email plus optional avatar fields. Google OAuth avatars are stored as URLs with `avatar_source = 'oauth'`; manually chosen images store a private Storage object path with `avatar_source = 'upload'`; removed photos keep `avatar_source = null` and set `avatar_updated_at` so the app does not immediately re-import the Google photo.
 
 ## Storage
 
@@ -129,8 +129,9 @@ The app now uses Google OAuth and passwordless email magic links for MVP authent
 - native OAuth returns through the app scheme and completes in the Google sign-in flow
 - web magic links return through `/auth-callback`
 - native magic links return through the app scheme and open the callback route directly
-- Google profile pictures are imported from Supabase auth user metadata when no manual profile picture exists
+- Google profile pictures are imported from Supabase auth user metadata for new profiles
 - manual profile-picture uploads take priority until the user resets to the Google photo or removes the photo
+- removing a profile picture stores `avatar_source = null` with a removal timestamp; users can still choose Use Google photo later
 
 If you customize Supabase email templates later, keep the confirmation link redirect-aware so `emailRedirectTo` continues to send users back to the correct callback URL.
 

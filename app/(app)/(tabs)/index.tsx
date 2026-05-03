@@ -45,7 +45,7 @@ export default function HomeScreen() {
             </Card>
           </Pressable>
 
-          <Pressable onPress={() => router.push("/(app)/(tabs)/history")}>
+          <Pressable onPress={() => router.push("/cbt/history")}>
             <Card>
               <CardHeader>
                 <CardTitle>Thought history</CardTitle>

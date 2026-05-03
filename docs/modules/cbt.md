@@ -1,6 +1,6 @@
 # CBT Module Spec
 
-Last updated: 2026-04-15
+Last updated: 2026-05-03
 
 ## Purpose
 
@@ -80,7 +80,9 @@ Key CBT screens:
 - `/cbt/learn`
 - `/cbt/new`
 - `/cbt/[id]`
-- `/history`
+- `/cbt/history`
+
+`/history` is kept only as a compatibility redirect to `/cbt/history`.
 
 ## Non-goals for this slice
 

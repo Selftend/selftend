@@ -5,7 +5,7 @@ import { requireSupabase } from "@/src/lib/supabase";
 const AVATAR_BUCKET = "profile-pics";
 const AVATAR_SIGNED_URL_SECONDS = 60 * 60;
 
-export type AvatarSource = "oauth" | "upload";
+export type AvatarSource = "oauth" | "upload" | "none";
 
 interface ProfileRow {
   user_id: string;
@@ -164,7 +164,7 @@ export function buildSyncedProfileFields(
     next.email = email;
   }
 
-  if (row.avatar_source === "upload") {
+  if (row.avatar_source === "upload" || isRemovedAvatarRow(row)) {
     return next;
   }
 
@@ -180,6 +180,18 @@ export function buildSyncedProfileFields(
   }
 
   return next;
+}
+
+function isRemovedAvatarRow(
+  row: Pick<ProfileRow, "avatar_url" | "avatar_storage_path" | "avatar_source" | "avatar_updated_at">,
+) {
+  return (
+    row.avatar_source === "none" ||
+    (row.avatar_source === null &&
+      row.avatar_url === null &&
+      row.avatar_storage_path === null &&
+      row.avatar_updated_at !== null)
+  );
 }
 
 function hasProfileFieldChanges(
@@ -206,7 +218,11 @@ async function createSignedAvatarUrl(storagePath: string | null) {
     .createSignedUrl(storagePath, AVATAR_SIGNED_URL_SECONDS);
 
   if (error) {
-    return null;
+    throw getAvatarSetupError(error);
+  }
+
+  if (!data?.signedUrl) {
+    throw new Error("Unable to create a signed profile picture URL.");
   }
 
   return data.signedUrl;
@@ -355,7 +371,7 @@ export async function removeUserAvatar(userId: string, previousStoragePath?: str
         avatar_url: null,
         avatar_storage_path: null,
         avatar_source: null,
-        avatar_updated_at: null,
+        avatar_updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" },
     )
