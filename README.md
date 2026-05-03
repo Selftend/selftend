@@ -1,5 +1,9 @@
 # SelfTend
 
+<div align="center">
+  <img src="./assets/icon.png" alt="SelfTend logo" width="200" height="200" />
+</div>
+
 SelfTend is a free, non-profit, cross-platform mental health product.
 
 This repository started as docs-first planning and now includes the first implementation scaffold: an Expo Router app with Google OAuth and passwordless email auth foundations, a CBT section, private thought records, settings, public policy surfaces, support links, tests, and CI.
@@ -95,6 +99,42 @@ npx @react-native-reusables/cli@latest doctor --summary --yes
 ```
 
 For Android development, use the installed development build with `npm run start:dev-client`. Do not treat Expo Go as the default Android workflow for this project.
+
+## Branding and assets
+
+Icon files are stored in `assets/`:
+
+- **`selftend-icon-source-2048.png`** (in `assets/branding/`) — Original source icon at 2048×2048. Use this as the primary source for any future icon updates or exports.
+- **`icon.png`** — 1024×1024, iOS app icon
+- **`adaptive-icon.png`** — 1024×1024, Android adaptive icon foreground
+- **`splash-icon.png`** — 1024×1024, splash screen
+- **`favicon.png`** — 192×192, web favicon
+- **`favicon-512.png`** — 512×512, web PWA icon
+
+All resized versions are generated from the source using `assets/branding/selftend-icon-source-2048.png`. If you update the source icon, regenerate all sizes using the Python script (see below) or equivalent image resizing tool.
+
+To regenerate icon sizes from the source:
+
+```bash
+python3 << 'EOF'
+from PIL import Image
+
+source_path = './assets/branding/selftend-icon-source-2048.png'
+img = Image.open(source_path).convert('RGBA')
+
+sizes = {
+    'assets/icon.png': 1024,
+    'assets/adaptive-icon.png': 1024,
+    'assets/splash-icon.png': 1024,
+    'assets/favicon.png': 192,
+    'assets/favicon-512.png': 512,
+}
+
+for output_path, size in sizes.items():
+    resized = img.resize((size, size), Image.Resampling.LANCZOS)
+    resized.save(output_path, 'PNG')
+EOF
+```
 
 ## Android development build
 
