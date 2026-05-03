@@ -276,12 +276,6 @@ function ProfilePictureCard({ user }: { user: User | null }) {
   const googleAvatarUrl = getOAuthAvatarUrl(user);
   const isPending =
     uploadMutation.isPending || resetMutation.isPending || removeMutation.isPending;
-  const avatarLabel =
-    profile?.avatarSource === "upload"
-      ? "Custom photo"
-      : profile?.avatarSource === "oauth"
-        ? "Google photo"
-        : "No photo";
 
   const pickAvatar = async () => {
     if (!user) {
@@ -384,9 +378,6 @@ function ProfilePictureCard({ user }: { user: User | null }) {
             />
             <View className="flex-1 gap-1">
               <Text numberOfLines={1}>{user?.email ?? "Signed-in account"}</Text>
-              <Text variant="muted">
-                {isLoading ? "Loading profile..." : avatarLabel}
-              </Text>
             </View>
           </View>
 
