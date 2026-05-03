@@ -253,12 +253,12 @@ function ExportDataButton() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } else {
-        // On mobile, use share sheet via expo-sharing if available
-        const { shareAsync } = await import("expo-sharing");
-        const { writeAsStringAsync, cacheDirectory } = await import("expo-file-system");
-        const fileUri = `${cacheDirectory}selftend-export.json`;
-        await writeAsStringAsync(fileUri, json);
-        await shareAsync(fileUri, { mimeType: "application/json" });
+        // On mobile, use the built-in Share API
+        const { Share } = await import("react-native");
+        await Share.share({
+          message: json,
+          title: "SelfTend Data Export",
+        });
       }
 
       setExported(true);
