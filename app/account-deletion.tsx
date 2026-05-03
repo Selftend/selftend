@@ -14,7 +14,7 @@ export default function AccountDeletionScreen() {
   return (
     <PolicyScreen
       sections={accountDeletionSections}
-      subtitle="How to permanently delete your SelfTend account and all associated data."
+      subtitle="How to permanently delete your Selftend account and all associated data."
       title="Account deletion"
     >
       <DeletionContact email={deletionEmail} />
@@ -37,7 +37,7 @@ function DeletionContact({ email }: { email: string }) {
           <Button
             onPress={() =>
               void Linking.openURL(
-                `mailto:${email}?subject=${encodeURIComponent("Account and data deletion request")}&body=${encodeURIComponent("Please delete my SelfTend account and associated app data. My account email is: ")}`,
+                `mailto:${email}?subject=${encodeURIComponent("Account and data deletion request")}&body=${encodeURIComponent("Please delete my Selftend account and associated app data. My account email is: ")}`,
               )
             }
           >

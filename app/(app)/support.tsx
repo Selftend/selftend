@@ -10,7 +10,7 @@ import { appEnv } from "@/src/lib/env";
 
 export default function SupportScreen() {
   const supportEmail = appEnv.supportEmail;
-  const supportSubject = encodeURIComponent("SelfTend support");
+  const supportSubject = encodeURIComponent("Selftend support");
 
   return (
     <SafeAreaView className="flex-1 bg-background">

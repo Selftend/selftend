@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-03
 
-This checklist tracks GDPR compliance status for SelfTend. It covers the key requirements from the General Data Protection Regulation and related frameworks.
+This checklist tracks GDPR compliance status for Selftend. It covers the key requirements from the General Data Protection Regulation and related frameworks.
 
 ## Principles (Article 5)
 

@@ -6,7 +6,7 @@ export default function PrivacyScreen() {
     <PolicyScreen
       notice={LEGAL_REVIEW_PENDING ? "This policy requires final legal review before public launch. Organization name placeholder must be replaced with the confirmed legal entity." : undefined}
       sections={privacyPolicySections}
-      subtitle="How SelfTend handles your account, preference, and private CBT record data."
+      subtitle="How Selftend handles your account, preference, and private CBT record data."
       title="Privacy policy"
     />
   );

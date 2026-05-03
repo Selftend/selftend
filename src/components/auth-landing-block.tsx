@@ -12,7 +12,7 @@ export function AuthLandingBlock() {
           resizeMode="contain"
           style={{ width: 72, height: 72, borderRadius: 16 }}
         />
-        <Text className="text-2xl font-semibold text-foreground">SelfTend</Text>
+        <Text className="text-2xl font-semibold text-foreground">Selftend</Text>
         <Text className="text-center text-muted-foreground">
           Calm, guided self-help tools for reflection and emotional support.
         </Text>

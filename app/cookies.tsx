@@ -5,7 +5,7 @@ export default function CookiesScreen() {
   return (
     <PolicyScreen
       sections={cookiePolicySections}
-      subtitle="How the web version of SelfTend uses browser storage."
+      subtitle="How the web version of Selftend uses browser storage."
       title="Cookie policy"
     />
   );

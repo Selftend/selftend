@@ -6,7 +6,7 @@ export default function TermsScreen() {
     <PolicyScreen
       notice={LEGAL_REVIEW_PENDING ? "These terms require final legal review before public launch." : undefined}
       sections={termsSections}
-      subtitle="Terms of service for SelfTend, a free wellness and guided self-help product."
+      subtitle="Terms of service for Selftend, a free wellness and guided self-help product."
       title="Terms of service"
     />
   );

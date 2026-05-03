@@ -260,7 +260,7 @@ function ExportDataButton() {
         const { Share } = await import("react-native");
         await Share.share({
           message: json,
-          title: "SelfTend Data Export",
+          title: "Selftend Data Export",
         });
       }
 

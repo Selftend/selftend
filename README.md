@@ -1,10 +1,10 @@
-# SelfTend
+# Selftend
 
 <div align="center">
-  <img src="./assets/icon.png" alt="SelfTend logo" width="200" height="200" />
+  <img src="./assets/icon.png" alt="Selftend logo" width="200" height="200" />
 </div>
 
-SelfTend is a free, non-profit, cross-platform mental health product.
+Selftend is a free, non-profit, cross-platform mental health product.
 
 This repository started as docs-first planning and now includes the first implementation scaffold: an Expo Router app with Google OAuth and passwordless email auth foundations, a CBT section, private thought records, settings, public policy surfaces, support links, tests, and CI.
 

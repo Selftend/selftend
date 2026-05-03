@@ -34,7 +34,7 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
               resizeMode="contain"
               style={{ width: 28, height: 28, borderRadius: 6 }}
             />
-            <Text className="text-lg font-semibold text-foreground">SelfTend</Text>
+            <Text className="text-lg font-semibold text-foreground">Selftend</Text>
           </Pressable>
         </View>
         <View className="flex-1" />

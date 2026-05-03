@@ -4,7 +4,7 @@ Last updated: 2026-05-02
 
 ## Current state
 
-The project has been renamed to SelfTend. If the GitHub repository is newly created or manually renamed, use:
+The project has been renamed to Selftend. If the GitHub repository is newly created or manually renamed, use:
 
 Create the empty repository first:
 

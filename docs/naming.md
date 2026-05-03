@@ -4,7 +4,7 @@ Last updated: 2026-05-02
 
 ## Final name
 
-Final project/product name: `SelfTend`.
+Final project/product name: `Selftend`.
 
 Why it fits:
 
@@ -15,14 +15,14 @@ Why it fits:
 
 Risks and checks:
 
-- the spelling must be kept consistent: `SelfTend`
+- the spelling must be kept consistent: `Selftend`
 - code/package identifiers should use lowercase `selftend`
-- quick web, app-store, and GitHub-oriented searches on 2026-05-02 did not show an obvious exact SelfTend app/site/project collision
+- quick web, app-store, and GitHub-oriented searches on 2026-05-02 did not show an obvious exact Selftend app/site/project collision
 - adjacent `tend` names exist in wellness and healthcare, so run proper trademark, domain, GitHub, npm, app-store, and social-handle checks before public promotion
 
 Canonical project identifiers:
 
-- Display/product name: `SelfTend`
+- Display/product name: `Selftend`
 - Expo slug and package name: `selftend`
 - Native scheme: `selftend`
 - Android package: `org.vasilyoshev.selftend`
@@ -40,4 +40,4 @@ Domain purchase status:
 - `selftend.app` is acceptable but less aligned with the nonprofit posture.
 - `selftend.io` is not preferred because it reads more like a tech/startup product.
 
-The app identifiers have been renamed for SelfTend before Google Play upload. Do not upload to app stores until redirect allow-lists, support contacts, store metadata, and legal/policy review are aligned with the final identity.
+The app identifiers have been renamed for Selftend before Google Play upload. Do not upload to app stores until redirect allow-lists, support contacts, store metadata, and legal/policy review are aligned with the final identity.

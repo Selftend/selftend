@@ -1,6 +1,6 @@
 import type { ExpoConfig } from "expo/config";
 
-const appName = "SelfTend";
+const appName = "Selftend";
 const appSlug = "selftend";
 const easProjectId =
   process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? "6f95348d-9f04-436a-aaf8-f8f20f71d6d9";

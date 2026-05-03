@@ -25,9 +25,9 @@ export const privacyPolicySections: PolicySection[] = [
   {
     title: "1. Who we are",
     body: [
-      "SelfTend is a free, open-source wellness and guided self-help application available on web, iOS, and Android.",
+      "Selftend is a free, open-source wellness and guided self-help application available on web, iOS, and Android.",
       "Data controller: [Organization Name], contact: privacy@selftend.org.",
-      "This policy applies to all users of the SelfTend application regardless of platform.",
+      "This policy applies to all users of the Selftend application regardless of platform.",
     ],
   },
   {
@@ -120,7 +120,7 @@ export const privacyPolicySections: PolicySection[] = [
   {
     title: "11. Children's privacy",
     body: [
-      "SelfTend is intended for users aged 13 and older. We do not knowingly collect personal data from children under 13.",
+      "Selftend is intended for users aged 13 and older. We do not knowingly collect personal data from children under 13.",
       "If you are under 13, do not use this app or provide any personal information.",
       "If we become aware that we have collected data from a child under 13, we will delete that data promptly. If you believe a child under 13 has provided us with personal data, contact privacy@selftend.org.",
     ],
@@ -128,7 +128,7 @@ export const privacyPolicySections: PolicySection[] = [
   {
     title: "12. Cookies and local storage",
     body: [
-      "The web version of SelfTend uses browser localStorage to store your authentication session token. This is functionally essential and cannot be disabled while using the app.",
+      "The web version of Selftend uses browser localStorage to store your authentication session token. This is functionally essential and cannot be disabled while using the app.",
       "We do not use tracking cookies, advertising cookies, or third-party cookies.",
       "If optional analytics are introduced in the future, they will require your explicit consent through the cookie preferences manager before any non-essential storage is used.",
       "You can manage your cookie and storage preferences at any time through the cookie settings available in the app.",
@@ -170,14 +170,14 @@ export const termsSections: PolicySection[] = [
   {
     title: "1. Agreement to terms",
     body: [
-      "By creating an account or using SelfTend, you agree to these Terms of Service and our Privacy Policy.",
+      "By creating an account or using Selftend, you agree to these Terms of Service and our Privacy Policy.",
       "If you do not agree, do not create an account or use the app.",
     ],
   },
   {
     title: "2. Eligibility",
     body: [
-      "You must be at least 13 years old to use SelfTend.",
+      "You must be at least 13 years old to use Selftend.",
       "By using the app, you represent that you are at least 13 years of age.",
       "If you are between 13 and the age of majority in your jurisdiction, you confirm that your parent or legal guardian has reviewed and agrees to these terms on your behalf.",
     ],
@@ -185,7 +185,7 @@ export const termsSections: PolicySection[] = [
   {
     title: "3. Product scope and boundaries",
     body: [
-      "SelfTend is a wellness and guided self-help tool. It is not therapy, medical care, diagnosis, treatment, crisis intervention, or emergency support.",
+      "Selftend is a wellness and guided self-help tool. It is not therapy, medical care, diagnosis, treatment, crisis intervention, or emergency support.",
       "The app provides structured cognitive behavioral exercises for personal reflection. It does not replace professional mental health care.",
       "Do not use this app as your only support in a serious or urgent situation. For medical advice, diagnosis, or treatment, consult a qualified professional. For emergencies, contact local emergency services.",
     ],
@@ -213,7 +213,7 @@ export const termsSections: PolicySection[] = [
     body: [
       "Your thought records and personal data belong to you. We claim no ownership of your content.",
       "We do not use your content for advertising, training AI models, research, or any purpose other than providing the service to you.",
-      "The SelfTend application source code is licensed under AGPL-3.0-only. This license applies to the software, not to your personal data.",
+      "The Selftend application source code is licensed under AGPL-3.0-only. This license applies to the software, not to your personal data.",
     ],
   },
   {
@@ -227,7 +227,7 @@ export const termsSections: PolicySection[] = [
   {
     title: "8. Free access",
     body: [
-      "SelfTend is free to use. There are no subscription fees, paywalls, or paid features.",
+      "Selftend is free to use. There are no subscription fees, paywalls, or paid features.",
       "We do not serve advertisements or monetize your data.",
       "Optional donations may be introduced in the future, but they will never be required for access to any feature.",
     ],
@@ -260,7 +260,7 @@ export const termsSections: PolicySection[] = [
   {
     title: "12. Limitation of liability",
     body: [
-      "To the maximum extent permitted by applicable law, SelfTend and its maintainers shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the app.",
+      "To the maximum extent permitted by applicable law, Selftend and its maintainers shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the app.",
       "This includes, without limitation, damages for loss of data, goodwill, or other intangible losses.",
       "Nothing in these terms excludes or limits liability for death or personal injury caused by negligence, fraud, or any other liability that cannot be excluded by law.",
     ],
@@ -357,7 +357,7 @@ export const cookiePolicySections: PolicySection[] = [
     title: "What are cookies and local storage",
     body: [
       "Cookies are small text files placed on your device by websites. Local storage (localStorage) is a browser feature that allows websites to store data locally on your device.",
-      "SelfTend primarily uses browser localStorage rather than traditional cookies.",
+      "Selftend primarily uses browser localStorage rather than traditional cookies.",
     ],
   },
   {
@@ -371,7 +371,7 @@ export const cookiePolicySections: PolicySection[] = [
   {
     title: "Optional cookies (consent required)",
     body: [
-      "SelfTend does not currently use any optional or analytics cookies.",
+      "Selftend does not currently use any optional or analytics cookies.",
       "If optional analytics or functionality cookies are introduced in the future, they will not be set until you provide explicit consent through the cookie preferences manager.",
       "You will always be able to use the app fully without accepting optional cookies.",
     ],
@@ -379,7 +379,7 @@ export const cookiePolicySections: PolicySection[] = [
   {
     title: "Third-party cookies",
     body: [
-      "SelfTend does not set or use any third-party cookies.",
+      "Selftend does not set or use any third-party cookies.",
       "We do not use advertising networks, social media widgets, or third-party tracking pixels that would set cookies on your device.",
     ],
   },

@@ -21,7 +21,7 @@ Official references:
 
 ## Current app identifiers
 
-- Expo app name: `SelfTend`
+- Expo app name: `Selftend`
 - Expo slug: `selftend`
 - Native scheme: `selftend`
 - Android package: `org.vasilyoshev.selftend`
@@ -36,7 +36,7 @@ Use an organization or nonprofit developer account if this project is submitted 
 
 Google currently lists a one-time developer registration fee of `US$25`. Verify the amount and payment requirements during signup.
 
-Current sequencing decision: defer Google Play account creation until after the temporary web version is hosted and organization/nonprofit account details are confirmed. The public app name and native identifiers are now SelfTend.
+Current sequencing decision: defer Google Play account creation until after the temporary web version is hosted and organization/nonprofit account details are confirmed. The public app name and native identifiers are now Selftend.
 
 Required owner inputs:
 
@@ -142,7 +142,7 @@ Use a real Android device, not only an emulator.
 
 ## Draft store listing copy
 
-Draft copy for SelfTend.
+Draft copy for Selftend.
 
 Short description:
 
@@ -153,7 +153,7 @@ Guided self-help and private CBT thought records for calm reflection.
 Full description:
 
 ```text
-SelfTend is a free, nonprofit-oriented wellness app for guided self-help and reflection.
+Selftend is a free, nonprofit-oriented wellness app for guided self-help and reflection.
 
 The first section focuses on private CBT thought records. You can notice a situation, name emotions, identify common thinking patterns, and write a more balanced response.
 
