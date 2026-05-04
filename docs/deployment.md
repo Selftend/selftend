@@ -56,6 +56,8 @@ The portable contract is:
 
 ## Netlify Deployment
 
+Auto-deploy on push to `main` is disabled. Deploys are triggered manually from the Netlify dashboard (Deploys → Trigger deploy) to stay within the free-tier build-minute budget. Do not re-enable continuous deployment without checking remaining credits for the billing period.
+
 This repo includes [netlify.toml](../netlify.toml), which sets:
 
 - build command: `npm run export:web`

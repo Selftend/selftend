@@ -17,6 +17,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "export:web": "npx expo export --platform web --clear",
+    "deploy": "npm run export:web && npx netlify-cli deploy --prod --dir=dist",
     "serve:web:production": "npx expo serve",
     "typecheck": "tsc --noEmit",
     "test": "jest",
