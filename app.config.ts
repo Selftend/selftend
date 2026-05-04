@@ -3,9 +3,10 @@ import type { ExpoConfig } from "expo/config";
 const appName = "Selftend";
 const appSlug = "selftend";
 const easProjectId =
-  process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? "6f95348d-9f04-436a-aaf8-f8f20f71d6d9";
+  process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? "032dd368-6eae-4a70-bbe5-4ccef2fc06cb";
 
 const config: ExpoConfig = {
+  owner: "vasil.yoshev",
   name: appName,
   slug: appSlug,
   version: "0.1.0",
@@ -50,6 +51,8 @@ const config: ExpoConfig = {
     [
       "expo-image-picker",
       {
+        cameraPermission: false,
+        microphonePermission: false,
         photosPermission:
           "Selftend lets you choose a profile picture for your account.",
       },

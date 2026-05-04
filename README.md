@@ -92,6 +92,7 @@ Useful commands:
 ```bash
 npm run web
 npm run start:dev-client
+npx expo config --type prebuild --json
 npm run build:android:development
 npm run build:android:preview
 npm run build:android:production
@@ -103,6 +104,8 @@ npx @react-native-reusables/cli@latest doctor --summary --yes
 ```
 
 For Android development, use the installed development build with `npm run start:dev-client`. Do not treat Expo Go as the default Android workflow for this project.
+
+Before a Google Play upload, run `npx expo config --type prebuild --json` and confirm the resolved Android permissions do not include `android.permission.CAMERA` or `android.permission.RECORD_AUDIO`. The app only uses the photo library for optional profile-picture changes, and `app.config.ts` disables camera and microphone permissions in `expo-image-picker` for Play policy hygiene.
 
 ## Branding and assets
 
@@ -193,7 +196,7 @@ This repo relies on docs as durable context. When a change affects setup, comman
 
 ## Status
 
-Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and the UI shell now uses NativeWind with default React Native Reusables-generated primitives plus brand tokens from the Selftend icon palette. Launch-prep docs cover single-page Netlify web deployment plus Google Play closed testing. The next blockers are `selftend.org` purchase/DNS, Netlify production env verification, domain email aliases, Supabase production Site URL and redirect verification, migration confirmation if it has not been applied yet, and end-to-end auth/persistence/profile-picture verification on web and device builds from the current environment.
+Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and the UI shell now uses NativeWind with default React Native Reusables-generated primitives plus brand tokens from the Selftend icon palette. Launch-prep docs cover single-page Netlify web deployment plus Google Play closed testing, including Android permission hardening for the first Play upload. The next blockers are `selftend.org` purchase/DNS, Netlify production env verification, domain email aliases, Expo/EAS authentication on the build machine, Google Play organization account setup, first manual AAB upload, Supabase production Site URL and redirect verification, migration confirmation if it has not been applied yet, and end-to-end auth/persistence/profile-picture verification on web and device builds from the current environment.
 
 The current database/storage contract includes profile avatar metadata and a private Supabase Storage `profile-pics` bucket. Removed profile photos use the existing nullable avatar fields plus a removal timestamp, so no extra avatar-source value is required. Apply all migrations before testing profile-picture upload, profile-picture removal, or account deletion cleanup.
 

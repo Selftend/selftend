@@ -118,7 +118,7 @@ Optional:
 
 ```bash
 EXPO_PUBLIC_GITHUB_REPO_URL=https://github.com/vasilyoshev/self-tend
-EXPO_PUBLIC_EAS_PROJECT_ID=6f95348d-9f04-436a-aaf8-f8f20f71d6d9
+EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 ```
 
 Never put these in Expo public variables:

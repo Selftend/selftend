@@ -1,6 +1,6 @@
 # Public Policy Surfaces
 
-Last updated: 2026-05-03
+Last updated: 2026-05-04
 
 The app has public policy routes hosted from the Expo web export:
 
@@ -30,6 +30,7 @@ Implementation status:
 - [x] Cookie preferences management
 - [x] Content-Security-Policy and security headers
 - [x] HSTS header
+- [x] Unused Android camera and microphone permissions disabled before Google Play testing
 - [ ] Final legal entity name added (placeholder: [Organization Name])
 - [ ] Public support email alias configured on `selftend.org`
 - [ ] Public privacy/deletion email alias configured on `selftend.org`
@@ -114,6 +115,7 @@ The policy text maintains these boundaries:
 - No claims to treat, cure, prevent, or monitor a condition
 - Account-required with data minimization
 - Reminders optional, explicit, and off by default
+- Android app permissions minimized for the current feature set; no camera-capture or microphone/audio recording permission
 - No ads, subscriptions, manipulative retention, social feeds, or user-facing AI coach
 - Age 13+ required
 

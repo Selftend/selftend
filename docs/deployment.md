@@ -92,7 +92,7 @@ EXPO_PUBLIC_SECURITY_EMAIL=security@selftend.org
 Optional:
 
 ```text
-EXPO_PUBLIC_EAS_PROJECT_ID=6f95348d-9f04-436a-aaf8-f8f20f71d6d9
+EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 ```
 
 `EXPO_PUBLIC_PUBLIC_APP_URL` is baked into the JavaScript bundle during export and is used as the explicit web auth callback base. If it changes or was missing, update the Netlify environment variable and redeploy.

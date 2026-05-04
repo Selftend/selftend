@@ -1,6 +1,6 @@
 # Android Closed Testing
 
-Last checked: 2026-05-02
+Last checked: 2026-05-04
 
 The first Google Play milestone should be closed testing, not production. Do not promote to production until policy, safety, device, and support requirements are reviewed.
 
@@ -12,10 +12,13 @@ Official references:
 - Google Play registration: <https://support.google.com/googleplay/android-developer/answer/6112435>
 - Play testing tracks: <https://support.google.com/googleplay/android-developer/answer/9845334>
 - App testing requirements for new personal accounts: <https://support.google.com/googleplay/android-developer/answer/14151465>
+- Google Play target API requirements: <https://support.google.com/googleplay/android-developer/answer/11926878>
 - Google Play Data safety: <https://support.google.com/googleplay/android-developer/answer/10787469>
 - Google Play account deletion requirements: <https://support.google.com/googleplay/android-developer/answer/13327111>
-- Google Play Health Content and Services: <https://support.google.com/googleplay/android-developer/answer/12261419>
+- Google Play Health Content and Services: <https://support.google.com/googleplay/android-developer/answer/16679511>
 - Health apps declaration: <https://support.google.com/googleplay/android-developer/answer/14738291>
+- Expo app config `android.blockedPermissions`: <https://docs.expo.dev/versions/latest/config/app/#blockedpermissions>
+- Expo ImagePicker config plugin: <https://docs.expo.dev/versions/latest/sdk/imagepicker/>
 - EAS Android submission: <https://docs.expo.dev/submit/android/>
 - EAS build APK/AAB behavior: <https://docs.expo.dev/build-reference/apk/>
 
@@ -27,6 +30,7 @@ Official references:
 - Android package: `org.vasilyoshev.selftend`
 - iOS bundle identifier: `org.vasilyoshev.selftend`
 - Version: `0.1.0`
+- Disabled Android camera/microphone permissions: `android.permission.CAMERA`, `android.permission.RECORD_AUDIO`
 
 Choose the final public app name before uploading to Google Play. The package name cannot be changed for the same Play listing after release without creating a new app listing.
 
@@ -49,6 +53,8 @@ Required owner inputs:
 - support email for this specific app
 - privacy contact email
 
+The build machine must also be authenticated with Expo before EAS builds or submissions can run. Verify with `npx eas-cli whoami`; if it fails, run `npx eas-cli login` locally or provide an `EXPO_TOKEN` for CI.
+
 New personal developer accounts have additional closed-testing requirements before production access. This project should still run a real closed test even if an organization account avoids that specific personal-account gate.
 
 ## Google Play health and policy items
@@ -64,6 +70,7 @@ Before closed testing:
 - confirm the store listing and app copy include the wellness/self-help boundary
 - do not claim diagnosis, treatment, cure, prevention, emergency support, or professional care
 - verify reminders are optional, local, and off by default
+- verify the resolved Android prebuild config does not request camera or microphone/audio permissions
 - verify no ads, analytics SDKs, social feeds, or AI mental-health coach features were added
 - resolve all-ages implications before targeting children or marking the app as child-directed
 
@@ -72,9 +79,12 @@ Before closed testing:
 Local verification:
 
 ```bash
+npx expo config --type prebuild --json
 npm run typecheck
 npm test -- --runInBand
 ```
+
+Before the first Play upload, confirm the prebuild config does not list `android.permission.CAMERA` or `android.permission.RECORD_AUDIO` in `android.permissions`. The app only uses the photo library for optional profile-picture changes; `app.config.ts` sets `cameraPermission: false` and `microphonePermission: false` on `expo-image-picker` so those permissions are not requested and are guarded against Android manifest merging.
 
 Internal installable Android build:
 
@@ -96,6 +106,8 @@ npm run build:android:production
 
 The production profile explicitly builds an Android App Bundle (`.aab`) because Google Play distribution uses AABs. Development and internal-distribution style builds are installable APKs.
 
+This repo uses dynamic Expo config (`app.config.ts`), so EAS automatic app-version incrementing is disabled. For every new Google Play upload after the first one, manually increase `android.versionCode` in `app.config.ts` before building. The first closed-test upload uses `versionCode: 1`.
+
 Submission command after Play Console and EAS credentials are ready:
 
 ```bash
@@ -115,12 +127,13 @@ The current EAS submit profile targets the `alpha` track with draft release stat
    - Target audience and content
    - Ads declaration
    - App access instructions, because testers need an account
-4. Add store listing draft copy and screenshots.
-5. Build the production AAB with `npm run build:android:production`.
-6. Upload the first AAB manually if Google Play API submission is not available yet.
-7. Create the closed-testing track and tester list.
-8. Submit the closed-testing release for Google review.
-9. After the first manual upload and Google service account setup, use EAS Submit for later closed-test builds.
+4. Run local verification, including the Android permission check.
+5. Add store listing draft copy and screenshots.
+6. Build the production AAB with `npm run build:android:production`.
+7. Upload the first AAB manually if Google Play API submission is not available yet.
+8. Create the closed-testing track and tester list.
+9. Submit the closed-testing release for Google review.
+10. After the first manual upload and Google service account setup, use EAS Submit for later closed-test builds.
 
 ## Closed-test acceptance checklist
 
@@ -131,6 +144,7 @@ Use a real Android device, not only an emulator.
 - Google sign-in returns to the app through `selftend://auth-callback`
 - magic-link email returns to the app through `selftend://auth-callback`
 - CBT record create/edit/archive works against the intended Supabase project
+- optional profile-picture upload works without camera or microphone/audio permission prompts
 - reminders are off by default
 - enabling reminders asks for permission
 - disabling reminders cancels scheduled local notifications
@@ -179,6 +193,7 @@ Likely collected data:
 
 - email address and account identifiers for authentication
 - private app content users enter, currently CBT thought records
+- optional profile picture image and avatar metadata, if the user chooses a custom profile picture
 - app preferences and reminder settings
 - authentication/session metadata handled by Supabase
 
@@ -195,12 +210,13 @@ Current no/none answers to verify:
 - no analytics SDK
 - no third-party behavioral tracking SDK
 - no public social sharing
+- no camera-capture or microphone/audio recording feature or permission
 - no push-token storage in the MVP
 
 Security/deletion answers require review:
 
 - data is encrypted in transit
-- deletion is request-based until self-service deletion is implemented
+- self-service account deletion is implemented in Settings, with email request as a fallback
 - public deletion URL should be `https://<domain>/account-deletion`
 
 ## Tester instructions
@@ -216,6 +232,7 @@ Send testers:
   - create one short CBT record
   - edit it
   - archive it
+  - optionally change then remove a profile picture
   - restart the app and verify session restore
   - enable then disable a reminder
   - open privacy, terms, crisis, and account deletion pages

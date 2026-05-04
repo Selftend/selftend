@@ -173,6 +173,7 @@ Launch-prep completed:
 - [x] future data-separation path documented without blocking Play testing
 - [x] simple runtime not-found screen configured through Expo Router single-page web output
 - [x] initial third-party UI notice tracking added for generated Reusables components
+- [x] unused Android camera and microphone permissions disabled before Google Play testing
 
 Immediate launch blockers:
 
@@ -181,6 +182,7 @@ Immediate launch blockers:
 - [ ] `selftend.org` connected to the Netlify web deployment
 - [ ] support, privacy, security, and deletion aliases configured on `selftend.org`
 - [ ] legal entity or nonprofit account details confirmed
+- [ ] build machine authenticated with Expo for EAS (`npx eas-cli whoami` succeeds or `EXPO_TOKEN` is set)
 - [x] broad/global crisis-resource intent captured
 - [ ] global crisis-resource strategy approved
 - [ ] Google Play organization/nonprofit developer account created or confirmed
@@ -188,6 +190,7 @@ Immediate launch blockers:
 - [ ] production Supabase Site URL and redirect URLs verified after localhost OAuth fallback
 - [ ] current Supabase migrations verified in production, including profile avatar columns and the private `profile-pics` bucket
 - [ ] Supabase remote migration-history mismatch around version `20260503` resolved before relying on `supabase db push` for future changes
+- [ ] production Android AAB built and manually uploaded to Google Play for the first closed-test track
 - [ ] closed-test Android build verified on a real device
 
 ### Phase 3: Post-MVP product expansion
