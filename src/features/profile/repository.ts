@@ -32,6 +32,7 @@ export interface UserProfile {
 export interface AvatarUploadInput {
   userId: string;
   uri: string;
+  base64?: string | null;
   fileName?: string | null;
   mimeType?: string | null;
   previousStoragePath?: string | null;
@@ -292,8 +293,20 @@ export async function uploadUserAvatar(input: AvatarUploadInput) {
 
   const extension = allowedMimeTypes.get(mimeType) ?? "jpg";
   const storagePath = `${input.userId}/avatar-${Date.now()}.${extension}`;
-  const response = await fetch(input.uri);
-  const arrayBuffer = await response.arrayBuffer();
+
+  let arrayBuffer: ArrayBuffer;
+  if (input.base64) {
+    const binaryString = atob(input.base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    arrayBuffer = bytes.buffer as ArrayBuffer;
+  } else {
+    const response = await fetch(input.uri);
+    arrayBuffer = await response.arrayBuffer();
+  }
+
   const client = requireSupabase();
 
   const { error: uploadError } = await client.storage

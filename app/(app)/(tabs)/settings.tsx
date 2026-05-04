@@ -1,10 +1,12 @@
 import type { User } from "@supabase/supabase-js";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
+import type { Area } from "react-easy-crop";
 
 import { ProfileAvatar } from "@/components/profile-avatar";
 import {
@@ -42,6 +44,9 @@ import {
 import { appEnv } from "@/src/lib/env";
 import { cancelCbtReminder, scheduleCbtReminder } from "@/src/lib/notifications";
 import { useSession } from "@/src/providers/session-provider";
+import { AvatarCropModal } from "@/src/components/avatar-crop-modal";
+
+const AVATAR_MAX_SIZE = 512;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -272,10 +277,42 @@ function ProfilePictureCard({ user }: { user: User | null }) {
   const removeMutation = useRemoveUserAvatar(user?.id ?? null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [cropUri, setCropUri] = useState<string | null>(null);
+  const [pickedAsset, setPickedAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
 
   const googleAvatarUrl = getOAuthAvatarUrl(user);
   const isPending =
     uploadMutation.isPending || resetMutation.isPending || removeMutation.isPending;
+
+  const processAndUpload = async (uri: string, cropArea?: Area) => {
+    const context = ImageManipulator.ImageManipulator.manipulate(uri);
+
+    if (cropArea) {
+      context.crop({
+        originX: cropArea.x,
+        originY: cropArea.y,
+        width: cropArea.width,
+        height: cropArea.height,
+      });
+    }
+
+    context.resize({ width: AVATAR_MAX_SIZE, height: AVATAR_MAX_SIZE });
+
+    const rendered = await context.renderAsync();
+    const result = await rendered.saveAsync({
+      base64: true,
+      compress: 0.85,
+      format: ImageManipulator.SaveFormat.JPEG,
+    });
+
+    await uploadMutation.mutateAsync({
+      base64: result.base64,
+      fileName: "avatar.jpg",
+      mimeType: "image/jpeg",
+      previousStoragePath: profile?.avatarStoragePath,
+      uri: result.uri,
+    });
+  };
 
   const pickAvatar = async () => {
     if (!user) {
@@ -295,7 +332,7 @@ function ProfilePictureCard({ user }: { user: User | null }) {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
+        allowsEditing: Platform.OS !== "web",
         aspect: [1, 1],
         mediaTypes: ["images"],
         preferredAssetRepresentationMode:
@@ -317,16 +354,38 @@ function ProfilePictureCard({ user }: { user: User | null }) {
         return;
       }
 
-      await uploadMutation.mutateAsync({
-        fileName: asset.fileName,
-        mimeType: asset.mimeType,
-        previousStoragePath: profile?.avatarStoragePath,
-        uri: asset.uri,
-      });
+      if (Platform.OS === "web") {
+        setPickedAsset(asset);
+        setCropUri(asset.uri);
+        return;
+      }
+
+      await processAndUpload(asset.uri);
       setMessage("Profile picture updated.");
     } catch (avatarError) {
       setError(getErrorMessage(avatarError, "Unable to update profile picture."));
     }
+  };
+
+  const handleCropConfirm = async (croppedArea: Area) => {
+    setCropUri(null);
+    setPickedAsset(null);
+
+    try {
+      if (!cropUri) {
+        return;
+      }
+
+      await processAndUpload(cropUri, croppedArea);
+      setMessage("Profile picture updated.");
+    } catch (avatarError) {
+      setError(getErrorMessage(avatarError, "Unable to update profile picture."));
+    }
+  };
+
+  const handleCropCancel = () => {
+    setCropUri(null);
+    setPickedAsset(null);
   };
 
   const useGoogleAvatar = async () => {
@@ -360,6 +419,7 @@ function ProfilePictureCard({ user }: { user: User | null }) {
   };
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>Profile picture</CardTitle>
@@ -412,6 +472,15 @@ function ProfilePictureCard({ user }: { user: User | null }) {
         </View>
       </CardContent>
     </Card>
+    {Platform.OS === "web" && cropUri ? (
+        <AvatarCropModal
+          imageUri={cropUri}
+          onCancel={handleCropCancel}
+          onCrop={(area) => void handleCropConfirm(area)}
+          visible
+        />
+      ) : null}
+    </>
   );
 }
 

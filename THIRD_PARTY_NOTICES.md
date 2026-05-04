@@ -46,8 +46,10 @@ The UI layer currently adds these direct dependencies:
 - `@rn-primitives/*` direct packages used by the generated component set: MIT
 - `class-variance-authority`: Apache-2.0
 - `clsx`: MIT
+- `expo-image-manipulator`: MIT, official Expo-supported image processing used for avatar crop and resize
 - `expo-image-picker`: MIT, official Expo-supported media picker used for profile-picture selection
 - `lucide-react-native`: ISC
+- `react-easy-crop`: MIT, lightweight interactive crop UI used for profile-picture cropping on web
 - `tailwind-merge`: MIT
 - `tailwindcss-animate`: MIT
 
