@@ -157,7 +157,7 @@ This phase turns the MVP into a product that can be responsibly promoted.
 - [x] consent capture after sign-in (account-level policy acceptance, persisted in preferences)
 - [x] consent re-prompt on policy version change
 - [x] GDPR compliance checklist documented
-- [ ] minimal observability and incident response process
+- [ ] minimal observability and incident response process (see `docs/analytics.md` Phase 2)
 - [ ] app store assets and copy
 - [ ] FAQ and support workflows
 - [ ] backup and recovery plan
