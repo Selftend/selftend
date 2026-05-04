@@ -115,10 +115,10 @@ This checklist tracks GDPR compliance status for Selftend. It covers the key req
 
 ## Remaining Blockers Before Launch
 
-1. [ ] Replace `[Organization Name]` with confirmed legal entity
+1. [x] Replace `[Organization Name]` with confirmed legal entity (Selftend, operated by Vasil Yoshev)
 2. [ ] Human/legal review of privacy policy text
 3. [ ] Human/legal review of terms of service text
-4. [ ] Configure privacy@selftend.org email alias
+4. [x] Configure privacy@selftend.org email alias
 5. [ ] Configure security@selftend.org email alias
 6. [ ] Document data breach notification process
 7. [ ] Verify Supabase DPA is signed/applicable

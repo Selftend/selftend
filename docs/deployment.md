@@ -134,6 +134,19 @@ The web build uses `web.output = "single"` in [app.config.ts](../app.config.ts).
 
 If profile photo upload or Google photo restore reports success in production but the image does not render, verify the deployed `img-src` directive first.
 
+### CSP `'unsafe-inline'` note
+
+The `script-src` and `style-src` directives include `'unsafe-inline'`. This is required because:
+
+- Expo web injects inline scripts during the bundle bootstrap.
+- NativeWind generates inline `style` attributes for Tailwind classes at runtime.
+
+Removing `'unsafe-inline'` breaks the web build. If Expo adds nonce-based CSP support in a future SDK version, revisit and tighten these directives. Until then, this is an accepted trade-off documented here for auditor visibility.
+
+### HSTS preload
+
+The HSTS header includes the `preload` directive. After the first production deploy to `selftend.org`, submit the domain to <https://hstspreload.org> to be included in browser preload lists.
+
 ## Public Routes To Verify
 
 These routes must be reachable without signing in:
@@ -224,6 +237,33 @@ Manual smoke:
 - sign in with Google on web
 - sign in with a magic link on web
 - create, edit, and archive a CBT record against the live Supabase project
+
+### Account Deletion E2E Verification
+
+Run this against a real Supabase instance (staging or production) to confirm the `delete_user_account()` RPC works with full privileges:
+
+1. Sign up a throwaway test user (e.g., `delete-test@example.com`).
+2. Accept policy consent so `user_preferences` row is created.
+3. Create at least one thought record.
+4. Upload a profile avatar.
+5. Call data export and confirm the JSON contains profile, preferences, and thought records:
+   ```sql
+   select public.export_user_data();
+   ```
+6. Call account deletion from the app Settings screen, or directly:
+   ```sql
+   select public.delete_user_account();
+   ```
+7. Verify cleanup — all of the following should return zero rows:
+   ```sql
+   select * from auth.users where email = 'delete-test@example.com';
+   select * from public.profiles where user_id = '<uid>';
+   select * from public.user_preferences where user_id = '<uid>';
+   select * from public.thought_records where user_id = '<uid>';
+   ```
+8. Verify Storage bucket `profile-pics/<uid>/` folder no longer contains files (check via Supabase Dashboard → Storage).
+
+If step 6 fails with a permissions error, the function owner (usually `postgres`) does not have `DELETE` access on `auth.users`. In hosted Supabase this should work by default since `security definer` functions run as the function owner. If using a self-hosted setup, ensure the migration was run by a superuser role.
 
 ## Acceptance
 

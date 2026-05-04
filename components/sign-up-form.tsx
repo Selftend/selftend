@@ -10,11 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { signInWithGoogle, signUpWithPassword } from "@/src/features/auth/api";
-import { signUpSchema, type SignUpSchema } from "@/src/features/auth/schemas";
+import { PASSWORD_REQUIREMENTS_HINT, signUpSchema, type SignUpSchema } from "@/src/features/auth/schemas";
+import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { useSession } from "@/src/providers/session-provider";
 
 export function SignUpForm() {
   const { hasSupabaseConfig } = useSession();
+  const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const {
@@ -32,9 +34,11 @@ export function SignUpForm() {
       setIsGoogleSubmitting(true);
       const didCompleteInApp = await signInWithGoogle();
       if (didCompleteInApp) {
+        recordSuccess();
         router.replace("/(app)/(tabs)");
       }
     } catch (error) {
+      recordFailure(error);
       setSubmitError(
         error instanceof Error ? error.message : "Unable to sign in with Google.",
       );
@@ -47,8 +51,10 @@ export function SignUpForm() {
     try {
       setSubmitError("");
       await signUpWithPassword(email, password);
+      recordSuccess();
       router.replace("/(auth)/verify-email");
     } catch (error) {
+      recordFailure(error);
       setSubmitError(
         error instanceof Error ? error.message : "Unable to create account.",
       );
@@ -99,6 +105,7 @@ export function SignUpForm() {
                 secureTextEntry
                 value={value}
               />
+              <Text className="text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_HINT}</Text>
               {errors.password?.message ? (
                 <Text className="text-sm text-destructive">{errors.password.message}</Text>
               ) : null}
@@ -138,8 +145,14 @@ export function SignUpForm() {
           <Text className="text-sm text-destructive">{submitError}</Text>
         ) : null}
 
+        {isThrottled ? (
+          <Text className="text-sm text-destructive">
+            Too many attempts. Please wait before trying again.
+          </Text>
+        ) : null}
+
         <Button
-          disabled={!hasSupabaseConfig || isSubmitting}
+          disabled={!hasSupabaseConfig || isSubmitting || isThrottled}
           onPress={() => void onSubmit()}
         >
           {isSubmitting ? <ActivityIndicator color="#ffffff" /> : null}

@@ -26,7 +26,7 @@ export const privacyPolicySections: PolicySection[] = [
     title: "1. Who we are",
     body: [
       "Selftend is a free, open-source wellness and guided self-help application available on web, iOS, and Android.",
-      "Data controller: [Organization Name], contact: privacy@selftend.org.",
+      "Data controller: Selftend (operated by Vasil Yoshev), contact: privacy@selftend.org.",
       "This policy applies to all users of the Selftend application regardless of platform.",
     ],
   },

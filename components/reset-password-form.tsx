@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { updatePassword } from "@/src/features/auth/api";
-import { resetPasswordSchema, type ResetPasswordSchema } from "@/src/features/auth/schemas";
+import { PASSWORD_REQUIREMENTS_HINT, resetPasswordSchema, type ResetPasswordSchema } from "@/src/features/auth/schemas";
 
 export function ResetPasswordForm() {
   const [submitError, setSubmitError] = useState("");
@@ -57,6 +57,7 @@ export function ResetPasswordForm() {
                 secureTextEntry
                 value={value}
               />
+              <Text className="text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_HINT}</Text>
               {errors.password?.message ? (
                 <Text className="text-sm text-destructive">{errors.password.message}</Text>
               ) : null}

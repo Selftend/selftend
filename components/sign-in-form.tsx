@@ -11,10 +11,12 @@ import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { signInWithGoogle, signInWithPassword } from "@/src/features/auth/api";
 import { signInSchema, type SignInSchema } from "@/src/features/auth/schemas";
+import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { useSession } from "@/src/providers/session-provider";
 
 export function SignInForm() {
   const { hasSupabaseConfig } = useSession();
+  const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const {
@@ -32,9 +34,11 @@ export function SignInForm() {
       setIsGoogleSubmitting(true);
       const didCompleteInApp = await signInWithGoogle();
       if (didCompleteInApp) {
+        recordSuccess();
         router.replace("/(app)/(tabs)");
       }
     } catch (error) {
+      recordFailure(error);
       setSubmitError(
         error instanceof Error ? error.message : "Unable to sign in with Google.",
       );
@@ -47,8 +51,10 @@ export function SignInForm() {
     try {
       setSubmitError("");
       await signInWithPassword(email, password);
+      recordSuccess();
       router.replace("/(app)/(tabs)");
     } catch (error) {
+      recordFailure(error);
       setSubmitError(
         error instanceof Error ? error.message : "Unable to sign in.",
       );
@@ -125,8 +131,14 @@ export function SignInForm() {
           <Text className="text-sm text-destructive">{submitError}</Text>
         ) : null}
 
+        {isThrottled ? (
+          <Text className="text-sm text-destructive">
+            Too many attempts. Please wait before trying again.
+          </Text>
+        ) : null}
+
         <Button
-          disabled={!hasSupabaseConfig || isSubmitting}
+          disabled={!hasSupabaseConfig || isSubmitting || isThrottled}
           onPress={() => void onSubmit()}
         >
           {isSubmitting ? <ActivityIndicator color="#ffffff" /> : null}

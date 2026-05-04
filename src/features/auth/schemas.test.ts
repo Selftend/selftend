@@ -53,6 +53,26 @@ describe("signUpSchema", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("rejects password with no digits", () => {
+    const result = signUpSchema.safeParse({
+      email: "a@b.com",
+      password: "abcdefghi",
+      confirmPassword: "abcdefghi",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects password with no letters", () => {
+    const result = signUpSchema.safeParse({
+      email: "a@b.com",
+      password: "123456789",
+      confirmPassword: "123456789",
+    });
+
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("forgotPasswordSchema", () => {

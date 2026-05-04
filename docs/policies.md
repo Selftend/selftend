@@ -31,9 +31,9 @@ Implementation status:
 - [x] Content-Security-Policy and security headers
 - [x] HSTS header
 - [x] Unused Android camera and microphone permissions disabled before Google Play testing
-- [ ] Final legal entity name added (placeholder: [Organization Name])
-- [ ] Public support email alias configured on `selftend.org`
-- [ ] Public privacy/deletion email alias configured on `selftend.org`
+- [x] Final legal entity name added (Selftend, operated by Vasil Yoshev)
+- [x] Public support email alias configured on `selftend.org`
+- [x] Public privacy/deletion email alias configured on `selftend.org`
 - [x] Crisis-resource intent captured as broad/global
 - [ ] Global crisis-resource strategy reviewed
 - [ ] Human/legal review of all policy text completed
