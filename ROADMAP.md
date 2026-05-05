@@ -1,387 +1,224 @@
 # Roadmap
 
-## 1. Product summary
-
-Build a free, non-profit, cross-platform mental health app for iOS, Android, and the web using a single Expo-based product stack.
-
-The product should feel calm, useful, and safe:
-
-- [ ] guided self-help first
-- [ ] optional, non-punitive gamification
-- [ ] account-required MVP for continuity across platforms
-- [ ] modular features so users can choose what they want
-- [ ] privacy-conscious and quiet by default
-- [ ] open-source with a contributor-friendly operating model
-
-## 2. What the MVP must accomplish
-
-The MVP is not "everything mental health." It is a focused foundation that proves the product is useful without becoming overwhelming.
-
-### MVP goals
-
-- [ ] help users check in, reflect, and use a small set of practical tools
-- [ ] make the product feel encouraging without making people feel trapped or guilty
-- [ ] support cross-platform continuity with a required account
-- [ ] establish the legal, privacy, contributor, and launch groundwork needed for a real public product
-
-### MVP features
-
-- [x] Google sign-in, email magic link, sign-out, and session restore
-- [ ] onboarding that sets expectations and allows feature selection
-- [ ] daily or on-demand mood check-in
-- [ ] lightweight journaling
-- [x] a small set of guided self-help tools
-- [ ] optional quests or habits
-- [ ] optional streaks, disabled by default or framed as soft progress
-- [ ] explicit notification controls
-- [ ] progress view focused on reflection, not pressure
-- [x] settings page with feature toggles, notification controls, privacy/data controls, and support/legal links
-- [x] support page linking to GitHub, contribution guidance, gratitude, donation options, and sharing guidance
-
-### MVP non-goals to keep excluding
-
-- [x] open social feed
-- [x] public posting
-- [x] peer-to-peer messaging
-- [x] AI coach / AI therapist features
-- [x] heavy therapist workflows
-- [x] large content library
-- [x] a broad "all conditions" taxonomy
-
-## 3. Phase plan
-
-### Phase 0: Foundation and trust
-
-Before app implementation, complete the planning and operating groundwork:
-
-- [x] finalize public app name and brand direction: Selftend
-- [x] lock the technical stack
-- [x] write privacy, safety, and content principles
-- [x] set contribution flow and maintainer model
-- [x] prepare a lightweight launch/legal checklist
-- [ ] review all-ages implications before public launch
-- [x] create the initial GitHub repository
-- [x] bootstrap the first local implementation scaffold
-
-### Phase 1: MVP build
-
-1. [x] decide the backend approach for the first end-to-end scaffold
-2. [x] decide the remaining architecture choices needed for the first end-to-end scaffold
-3. [x] confirm Supabase as the operational backend for the first live environment
-4. [x] keep Expo as the client app framework, not the primary backend runtime
-5. [x] avoid a separate custom JS backend by default
-6. [x] decide whether any early backend logic belongs in Supabase Edge Functions
-7. [x] create a real Supabase project
-8. [x] add real `.env` values
-9. [ ] confirm the current Supabase migrations are applied and recorded in the active Supabase project
-10. [x] verify live Google sign-in on web
-11. [x] verify live CBT thought-record persistence on web
-12. [ ] verify live auth and persistence on device builds
-13. [ ] verify local reminders on real devices
-14. [x] link the Expo project to EAS and add Android development-build workflow for device testing
-15. [ ] manually review the scaffolded codebase and capture follow-up fixes
-16. [x] push the initial setup to GitHub
-
-Working rule for Android development:
-
-- [x] use the installed Android development build for normal development and device verification
-- [x] do not treat Expo Go as the primary Android development runtime
-
-Working rule for early backend logic:
-
-- [x] use Supabase Edge Functions for early server-side backend work when client-only code or direct database access is not enough
-
-Ship a usable product on iOS, Android, and browser with these pillars:
-
-- [ ] account and onboarding
-- [ ] check-ins
-- [ ] journaling
-- [ ] a small tools library
-- [ ] optional progress/gamification
-- [ ] settings/support/privacy
-
-Implementation priorities:
-
-1. [x] auth and account flows
-2. [ ] data model for users, entries, check-ins, preferences, and enabled modules
-3. [ ] onboarding and feature selection
-4. [ ] core check-in and journaling flows
-5. [ ] first tools library
-6. [ ] progress and optional habit mechanics
-7. [x] settings, support, privacy, and legal pages
-8. [ ] accessibility, offline tolerance, and error handling
-
-Initial scaffold work completed so far:
-
-- [x] Expo Router + TypeScript project scaffold
-- [x] auth UI scaffold
-- [x] protected route shell
-- [x] first CBT module scaffold
-- [x] settings / support / legal surfaces
-- [x] public privacy, terms, crisis, and account-deletion routes
-- [x] Supabase schema draft
-- [x] Google OAuth sign-in wired for web and native app flows
-- [x] email/password sign-in and sign-up with verification requirement
-- [x] forgot-password and reset-password flows
-- [x] verified-email gating before protected app access
-- [x] auth block components following React Native Reusables patterns (sign in, sign up, verify email, forgot password, reset password)
-- [x] local bundled Google logo asset in auth buttons
-- [x] CI and test harness
-- [x] local web smoke test of the scaffold
-- [x] Expo project linked to EAS and Android development-build workflow added for native reminder testing
-- [x] local setup docs aligned around the current Node engine floor for Expo SDK 54
-- [x] UI reset to default React Native Reusables generated primitives with local UI wrappers removed
-- [x] logged-out entry route now shows an authentication landing block with app branding and an embedded sign-in form
-- [x] global header now appears across public, auth, and protected routes with an always-visible GitHub link and light/dark theme switch
-- [x] theme preference UI is light/dark only while unset local storage still defaults to the system theme
-- [x] Google OAuth profile-picture import with manual upload, reset, and remove controls in settings
-- [x] profile-picture uploads backed by a private Supabase Storage `profile-pics` bucket
-- [x] light and dark theme tokens updated around a purple primary, gray secondary, and subtle purple-tinted surfaces
-- [x] collapsible sidebar Tools navigation added with CBT history nested under CBT
-- [x] placeholder routes added for Mood tracker, Meditation, ACT, and Gratitude log
-- [x] profile-picture removal now persists without re-importing the Google avatar
-- [x] production CSP allows Supabase signed avatar URLs and Google avatar images
-- [x] manual GitHub Actions workflows added for Android internal Play releases and Netlify web production deploys from `main`
-- [x] repo-wide Prettier formatting applied and Husky pre-commit auto-format flow aligned with CI
-
-### Phase 2: Ready-for-public-product pass
-
-This phase turns the MVP into a product that can be responsibly promoted.
-
-- [ ] accessibility audit
-- [x] privacy policy and terms implementation draft
-- [x] privacy policy and terms production text (GDPR + CCPA compliant)
-- [x] safety and crisis resource copy implementation draft
-- [ ] human/legal review of privacy policy and terms
-- [ ] human/legal review of safety and crisis resource copy
-- [x] data export and account deletion (self-service, in-app)
-- [x] cookie consent manager (web)
-- [x] consent capture after sign-in (account-level policy acceptance, persisted in preferences)
-- [x] consent re-prompt on policy version change
-- [x] GDPR compliance checklist documented
-- [ ] minimal observability and incident response process (see `docs/analytics.md` Phase 2)
-- [ ] app store assets and copy
-- [ ] FAQ and support workflows
-- [ ] backup and recovery plan
-- [ ] contributor docs for code, content, and design
-
-Launch-prep completed:
-
-- [x] single-page web deployment checklist for Netlify or equivalent hosting
-- [x] Supabase production redirect and Google OAuth configuration checklist
-- [x] Android closed-testing checklist, build commands, store-copy draft, and tester instructions
-- [x] Google Play Health apps, Data safety, and account-deletion policy requirements called out
-- [x] first launch data path confirmed as maintainer-hosted Supabase
-- [x] future data-separation path documented without blocking Play testing
-- [x] simple runtime not-found screen configured through Expo Router single-page web output
-- [x] initial third-party UI notice tracking added for generated Reusables components
-- [x] unused Android camera and microphone permissions disabled before Google Play testing
-
-Immediate launch blockers:
-
-- [ ] production domain purchased and configured: `selftend.org`
-- [ ] Netlify production env configured with `EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org`
-- [ ] `selftend.org` connected to the Netlify web deployment
-- [ ] support, privacy, security, and deletion aliases configured on `selftend.org`
-- [ ] legal entity or nonprofit account details confirmed
-- [ ] build machine authenticated with Expo for EAS (`npm exec eas-cli -- whoami` succeeds or `EXPO_TOKEN` is set)
-- [ ] GitHub release variables and secrets configured for Android and web deploy workflows
-- [ ] Google Play service account JSON configured after first manual Play upload
-- [ ] Netlify site ID and auth token configured for manual web production deploys
-- [x] broad/global crisis-resource intent captured
-- [ ] global crisis-resource strategy approved
-- [ ] Google Play organization/nonprofit developer account created or confirmed
-- [x] final public app name approved before Play upload: `Selftend`
-- [ ] production Supabase Site URL and redirect URLs verified after localhost OAuth fallback
-- [ ] current Supabase migrations verified in production, including profile avatar columns and the private `profile-pics` bucket
-- [ ] Supabase remote migration-history mismatch around version `20260503` resolved before relying on `supabase db push` for future changes
-- [ ] production Android AAB built and manually uploaded to Google Play for the first closed-test track
-- [ ] closed-test Android build verified on a real device
-
-### Phase 3: Post-MVP product expansion
-
-Expand the product without losing focus.
-
-Likely additions:
-
-- [ ] more mental health modalities beyond CBT
-- [ ] grounded reflection tools
-- [ ] behavioral activation
-- [ ] coping plans and kits
-- [ ] sleep / stress / energy support
-- [ ] better personalization
-- [ ] module enable / disable and custom home
-- [ ] improved trends and summaries
-
-Possible later additions:
-
-- [ ] trusted-circle sharing
-- [ ] therapist companion exports
-- [ ] private supporter roles
-
-- [x] only explore these after the MVP is clearly useful and stable
-
-### Phase 4: Community and popularization
-
-The product and the open-source community need separate but aligned growth work.
-
-#### User growth
-
-- [ ] claim primary handles early
-- [ ] launch a simple public site or landing presence
-- [ ] create a public roadmap and changelog habit
-- [ ] publish calm educational posts and feature explainers
-- [ ] encourage sharing through usefulness, not pressure
-- [ ] add app store presence once the product is stable
-
-Recommended channel rollout:
-
-1. [ ] GitHub
-2. [ ] Discord
-3. [ ] website / docs presence
-4. [ ] Reddit community after MVP
-5. [ ] one or two social platforms with the highest likelihood of sustained upkeep
-6. [ ] additional platforms only after a repeatable content rhythm exists
-
-#### Contributor growth
-
-- [ ] make the first contribution easy
-- [ ] keep a clean issue taxonomy
-- [ ] publish contributor roles
-- [ ] use GitHub Discussions or Discord for onboarding questions
-- [ ] recognize contributors publicly
-- [ ] invite docs, content, translation, design, and QA contributions, not just code
-
-## 4. Suggested feature roadmap
-
-### MVP feature set
-
-- [x] authentication and account
-- [ ] onboarding and feature selection
-- [ ] mood check-ins
-- [ ] journal
-- [ ] core self-help tools
-- [ ] optional quests and gentle progress
-- [ ] notification preferences
-- [x] support, legal, privacy, sharing
-
-### First expansion after MVP
-
-- [ ] better home personalization
-- [ ] more tools and content packs
-- [ ] flexible reminders
-- [x] data export
-- [ ] richer progress summaries
-- [x] localization groundwork (i18n infrastructure with English and Bulgarian, runtime switching)
-- [x] self-hosting and portability plan
-
-### Later expansion
-
-- [ ] optional supporter or trusted-circle features
-- [ ] therapist companion workflows
-- [ ] community-led content programs
-- [ ] volunteer moderation and editorial processes
-- [ ] easy managed self-host option, such as PikaPods or a similar service, if feasible
-- [ ] do-it-yourself self-hosting guide
-
-## 5. Product principles that must survive growth
-
-- [x] free to users
-- [x] non-profit mission
-- [x] no ad model
-- [x] no manipulative retention
-- [x] no punishment mechanics
-- [x] quiet defaults
-- [x] modular feature set
-- [x] privacy and dignity over growth hacks
-- [x] open-source operations that do not depend on a single commercial platform
-
-## 6. Accounts and privacy roadmap
-
-Current direction:
-
-- [x] MVP requires an account
-- [x] account exists for cross-platform continuity and sync
-- [x] do not use the account requirement as an excuse for unnecessary data collection
-- [x] default hosted setup uses the maintainer's Supabase project
-- [x] preserve a future path for users to bring their own compatible backend or self-hosted deployment
-- [x] do not block web or Android closed testing on local-only, Drive sync, or custom-backend runtime switching
-- [ ] add a non-technical local-only data mode for users who prefer personal data to stay on their device
-- [ ] add explicit data-location choice before first sign-in: hosted sync, local-only, or advanced custom Supabase
-- [ ] add data-location controls in settings with clear export/import and switching warnings
-- [ ] defer automatic cloud backup/sync, including Google Drive, until export/import and local-only mode are reliable
-
-MVP data expectations:
-
-- [x] email
-- [x] optional profile avatar metadata and user-uploaded avatar storage path
-- [x] auth credentials handled by backend provider
-- [x] user preferences
-- [ ] journal and check-in data
-- [ ] enabled modules and notification settings
-
-Post-MVP privacy improvements:
-
-- [x] export
-- [ ] import
-- [x] deletion
-- [ ] local-only storage mode
-- [ ] encrypted backup file export
-- [ ] better encryption review
-- [ ] clearer data lifecycle policies
-- [ ] possible local-first or reduced-account options if later justified
-
-## 7. Ready product checklist
-
-The product should not be considered ready just because the screens work.
-
-Ready means:
-
-- [ ] useful core flows
-- [ ] acceptable performance on phone and browser
-- [ ] accessibility baseline
-- [ ] store-ready assets and metadata
-- [x] privacy and legal docs drafted in-app and in docs
-- [x] crisis / safety boundaries drafted in-app and in docs
-- [ ] privacy, legal, and crisis copy reviewed for launch jurisdictions
-- [x] account recovery flows
-- [ ] support channel defined
-- [ ] contributor entry path defined
-- [ ] minimal observability and incident handling
-- [ ] cost model understood
-- [ ] launch messaging and community expectations documented
-
-## 8. Community and support operations
-
-Operate this as a community project, even if there is a primary maintainer.
-
-Initial operations:
-
-- [x] GitHub for source of truth
-- [ ] Discord for contributor chat
-- [ ] shared email aliases: `hello@`, `support@`, `privacy@`, `security@`, `contributors@`
-- [ ] `selftend.org` aliases: `support@`, `privacy@`, `security@`, and `contributors@`
-- [ ] public gratitude and acknowledgements
-- [ ] donation path
-- [ ] sharing page / support page plan
-
-- [x] prefer Discord over Slack early because it is easier to operate for a public open-source community
-
-## 9. Reference-repo rules
-
-- [x] `../ifme`: study for contributor operations, docs culture, and community structure
-- [x] `../quirk`: study for product flow lessons and focused self-help design
-- [x] `../awesome-mental-health`: study for external resource discovery, comparable tools, and terminology scanning
-- [x] do not copy code, content, or assets without explicit review
-- [x] keep a record for every reused third-party asset, component, or text fragment
-
-## 10. Cost planning
-
-See [docs/costs.md](docs/costs.md) for detailed cost scenarios.
-
-Practical default:
-
-- [x] prototype cheaply
-- [x] launch carefully
-- [x] avoid enterprise plans until real usage justifies them
-- [x] prefer free or low-cost infra until reliability or team scale makes paid tiers necessary
+Selftend should finish the app frame before adding deeper CBT, ACT, meditation, journaling, mood-tracking, or other guided self-help logic. This file is forward-looking: completed work belongs in the README, focused docs, changelog-style notes, or module docs, not as checked roadmap items.
+
+Current implementation and setup are documented in:
+
+- [README.md](README.md)
+- [docs/stack.md](docs/stack.md)
+- [docs/deployment.md](docs/deployment.md)
+- [docs/android-closed-testing.md](docs/android-closed-testing.md)
+- [docs/internal-testing.md](docs/internal-testing.md)
+- [docs/policies.md](docs/policies.md)
+- [docs/gdpr-compliance.md](docs/gdpr-compliance.md)
+- [docs/analytics.md](docs/analytics.md)
+- [docs/modules/cbt.md](docs/modules/cbt.md)
+- [docs/modules/tools.md](docs/modules/tools.md)
+- [supabase/README.md](supabase/README.md)
+- [docs/github-setup.md](docs/github-setup.md)
+- [docs/community.md](docs/community.md)
+- [docs/costs.md](docs/costs.md)
+- [docs/licensing.md](docs/licensing.md)
+- [docs/reference-log.md](docs/reference-log.md)
+
+When the project opens for broader contributions, actionable slices from this roadmap should move into GitHub issues while this file stays focused on direction, sequencing, and readiness.
+
+## 1. Mission And Guardrails
+
+Build a free, non-profit, cross-platform mental health app for iOS, Android, and the web using one Expo-based product stack.
+
+The product should stay:
+
+- guided self-help first
+- account-based for MVP continuity across platforms
+- modular, so users can choose the parts they want
+- quiet by default, with reminders off or minimal by default
+- optional and non-punitive around habits, streaks, quests, or progress mechanics
+- privacy-conscious and data-minimizing
+- open-source and contributor-friendly
+
+Non-negotiable boundaries:
+
+- no ads, ad SDKs, ad-network pixels, or ad-based monetization
+- no subscription paywalls for care
+- no manipulative retention, shame mechanics, or punishment for missing a day
+- no broad social feed, public posting, or peer-to-peer messaging in MVP
+- no diagnosis, prescribing, treatment claims, or therapist-replacement framing
+- no user-facing AI therapist, AI counselor, or AI coach in MVP
+- no large "everything mental health" taxonomy before the focused MVP is useful
+
+## 2. Priority Roadmap
+
+### P0: Foundation Before More Business Logic
+
+These are the next priorities because they affect every future feature and contributor workflow.
+
+1. [ ] Resolve the Supabase remote migration-history mismatch around version `20260503` before relying on `supabase db push`.
+2. [ ] Verify current Supabase migrations in the active production project, including profile avatar columns and the private `profile-pics` bucket.
+3. [ ] Verify database RLS policies and Storage bucket policies for private user data before adding more schema-heavy features.
+4. [ ] Define the shared data and privacy model for preferences, enabled modules, check-ins, journal entries, tool records, notification settings, export, and deletion.
+5. [ ] Define the module architecture contract for tools such as CBT, ACT, meditation, gratitude, mood tracking, and future modules.
+6. [ ] Create shared safety and crisis UI patterns so modules do not each invent their own disclaimers or urgent-support links.
+7. [ ] Add a global error boundary with a calm fallback screen, retry path, and route back to a stable surface.
+8. [ ] Add an app-wide toast or feedback system for saved, failed, retry, and destructive-action messages.
+9. [ ] Extract reusable loading, empty, and error-state components from existing screen patterns.
+10. [ ] Add a mobile form layout and keyboard-avoidance pattern for check-ins, journaling, auth, and future tool flows.
+11. [ ] Decide the online-first draft behavior for MVP, including how unsaved form content survives failed saves or temporary network loss.
+12. [ ] Add one example component test pattern that covers providers, i18n, navigation assumptions, and mocked backend dependencies.
+
+### P1: MVP Product Flows
+
+Build these after the foundation is stable enough that each flow can follow shared data, safety, UI, and testing patterns.
+
+1. [ ] Build onboarding that sets expectations, captures required policy consent, and lets users choose initial modules.
+2. [ ] Add enabled-module persistence and settings controls.
+3. [ ] Add explicit notification preference persistence and in-app controls.
+4. [ ] Build daily or on-demand mood check-ins.
+5. [ ] Build lightweight journaling.
+6. [ ] Expand the focused guided self-help tools library beyond the current CBT slice.
+7. [ ] Add a visible feedback/support entry point that opens email or GitHub guidance and warns users not to include urgent crisis details.
+8. [ ] Establish an accessibility baseline for new screens: contrast, screen-reader labels, keyboard support on web, touch target size, reduced-motion respect, and scalable text.
+9. [ ] Standardize save-failed, auth-expired, permission-denied, and destructive-action states across MVP flows.
+10. [ ] Add lightweight tests for every new module's schemas, repositories, export/delete coverage, and critical UI states.
+11. [ ] Add a progress view focused on reflection, not pressure.
+12. [ ] Add optional quests, habits, or streaks only if they stay disabled by default or framed as soft progress.
+
+### P2: Launch Readiness
+
+These are ordered by practical dependency: public URLs and backend truth first, then store setup, then review and release verification.
+
+1. [ ] Purchase and configure the production domain: `selftend.org`.
+2. [ ] Configure Netlify production environment variables with `EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org`.
+3. [ ] Connect `selftend.org` to the Netlify web deployment.
+4. [ ] Configure support, privacy, security, deletion, and contributor aliases on `selftend.org`.
+5. [ ] Configure Netlify site ID and auth token for manual web production deploys.
+6. [ ] Verify public production routes: `/privacy`, `/terms`, `/crisis`, `/cookies`, `/account-deletion`, `/auth-callback`, and an unknown route.
+7. [ ] Test CSP headers against the real Expo web build.
+8. [ ] Submit the domain for HSTS preload after production HTTPS is stable.
+9. [ ] Verify production Supabase Site URL and redirect URLs after localhost OAuth fallback.
+10. [ ] Test self-service deletion end-to-end against the real Supabase instance.
+11. [ ] Confirm Supabase DPA applicability.
+12. [ ] Authenticate the build machine with Expo for EAS, or configure `EXPO_TOKEN`.
+13. [ ] Configure GitHub release variables and secrets for Android and web deploy workflows.
+14. [ ] Create or confirm the Google Play organization or nonprofit developer account.
+15. [ ] Confirm legal organization or nonprofit account details.
+16. [ ] Complete the Google Play Health apps declaration.
+17. [ ] Complete the Google Play Data safety form.
+18. [ ] Write Google Play app access instructions for account-required testing.
+19. [ ] Complete human/legal review of privacy policy and terms.
+20. [ ] Complete human/legal review of safety and crisis resource copy.
+21. [ ] Approve the global crisis-resource strategy.
+22. [ ] Review all-ages implications before public launch.
+23. [ ] Decide whether a DPIA is needed and document the decision.
+24. [ ] Complete transfer impact assessment.
+25. [ ] Document incident response and breach notification processes.
+26. [ ] Define support workflow for `support@selftend.org`.
+27. [ ] Define manual process for GDPR email requests that cannot be completed in-app.
+28. [ ] Prepare app store assets, screenshots, and policy-safe copy.
+29. [ ] Prepare FAQ and public support guidance.
+30. [ ] Build the production Android AAB.
+31. [ ] Manually upload the first AAB to Google Play for the first closed-test track.
+32. [ ] Configure Google Play service account JSON after the first manual Play upload.
+33. [ ] Verify closed-test Android build on a real device.
+34. [ ] Verify live auth and persistence on device builds.
+35. [ ] Verify local reminders on real devices.
+36. [ ] Verify resolved Android prebuild config excludes camera and microphone permissions.
+
+### P3: Post-MVP Privacy And Portability
+
+Do not block web launch or Android closed testing on these, but keep the architecture compatible with them.
+
+1. [ ] Add import support.
+2. [ ] Add local-only storage mode for non-technical users.
+3. [ ] Add explicit data-location choice before first sign-in: hosted sync, local-only, or advanced custom Supabase.
+4. [ ] Add data-location controls in settings with clear export/import and switching warnings.
+5. [ ] Add encrypted backup file export.
+6. [ ] Complete deeper encryption review.
+7. [ ] Clarify long-term data lifecycle policies.
+8. [ ] Revisit reduced-account or local-first product paths only when the hosted MVP is stable.
+9. [ ] Defer automatic cloud backup/sync, including Google Drive, until export/import and local-only mode are reliable.
+
+### P4: Post-MVP Product Expansion
+
+Expand only after the MVP is useful, stable, and understandable.
+
+1. [ ] Add more mental-health modalities beyond CBT.
+2. [ ] Add grounded reflection tools.
+3. [ ] Add behavioral activation.
+4. [ ] Add coping plans and kits.
+5. [ ] Add sleep, stress, and energy support.
+6. [ ] Improve personalization.
+7. [ ] Improve module enable/disable and custom home behavior.
+8. [ ] Add richer progress summaries.
+9. [ ] Add flexible reminders.
+10. [ ] Consider biometric app lock.
+11. [ ] Consider home-screen widgets.
+12. [ ] Consider community-led content programs.
+13. [ ] Consider volunteer moderation and editorial processes.
+14. [ ] Consider optional supporter or trusted-circle features.
+15. [ ] Consider therapist companion exports only after review.
+16. [ ] Consider private supporter roles only after review.
+17. [ ] Improve self-hosting guide and consider a managed self-host option, such as PikaPods or a similar service, if feasible.
+
+### P5: Tooling Maturity
+
+These are useful later, but should not block the foundation or MVP feature work above.
+
+1. [ ] Add commitlint or conventional-commit enforcement if contributor volume makes commit history hard to maintain.
+2. [ ] Add a full end-to-end test suite after the main MVP flows stabilize.
+3. [ ] Evaluate Netlify Supabase integration only if it proves useful as deployment convenience rather than required architecture.
+4. [ ] Add full offline queue and multi-device conflict resolution only after online-first behavior is reliable.
+
+## 3. Community And Operations
+
+Operate Selftend as a community project, even while there is a primary maintainer.
+
+Contributor operations:
+
+1. [ ] Keep this roadmap current after meaningful product, infrastructure, or process changes.
+2. [ ] Migrate actionable roadmap chunks into GitHub issues when the project opens for broader contributions.
+3. [ ] Make the first contribution easy.
+4. [ ] Keep a clean issue taxonomy.
+5. [ ] Publish contributor roles.
+6. [ ] Use GitHub Discussions or Discord for onboarding questions when contribution volume justifies it.
+7. [ ] Recognize contributors publicly.
+8. [ ] Invite docs, content, translation, design, and QA contributions, not just code.
+9. [ ] Keep contributor docs for code, content, design, and QA up to date.
+
+Community and support:
+
+1. [ ] Claim primary handles early.
+2. [ ] Launch a simple public site or docs presence.
+3. [ ] Create a public changelog habit.
+4. [ ] Publish calm educational posts and feature explainers.
+5. [ ] Encourage sharing through usefulness, not pressure.
+6. [ ] Add app store presence once the product is stable.
+7. [ ] Introduce Discord for contributor chat when there is enough ongoing activity to maintain it.
+8. [ ] Add public gratitude and acknowledgements.
+9. [ ] Add donation path.
+
+Recommended public channel rollout:
+
+1. GitHub
+2. Website / docs presence
+3. Discord when contributor onboarding needs it
+4. Reddit community after MVP
+5. One or two social platforms with the highest likelihood of sustained upkeep
+6. Additional platforms only after a repeatable content rhythm exists
+
+Reference-repo rules:
+
+- Use `../ifme` for contributor operations, docs culture, and community-structure ideas.
+- Use `../quirk` for product-flow lessons and focused self-help design ideas.
+- Use `../awesome-mental-health` for external resource discovery, comparable tools, and terminology scanning.
+- Do not copy code, content, or assets without explicit review.
+- Describe borrowed ideas as ideas or patterns, not original invention.
+- Keep a record for every reused third-party asset, component, or text fragment.
+
+Cost discipline:
+
+- Prototype cheaply.
+- Launch carefully.
+- Avoid enterprise plans until real usage justifies them.
+- Prefer free or low-cost infrastructure until reliability or team scale makes paid tiers necessary.
+- Keep detailed cost scenarios in [docs/costs.md](docs/costs.md).
