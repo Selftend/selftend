@@ -14,7 +14,9 @@ interface CookieConsentState {
   hydrate: () => void;
 }
 
-function persistToStorage(state: Pick<CookieConsentState, "analytics" | "accepted" | "acceptedAt">) {
+function persistToStorage(
+  state: Pick<CookieConsentState, "analytics" | "accepted" | "acceptedAt">,
+) {
   if (Platform.OS !== "web") {
     return;
   }
@@ -33,7 +35,10 @@ function persistToStorage(state: Pick<CookieConsentState, "analytics" | "accepte
   }
 }
 
-function loadFromStorage(): Pick<CookieConsentState, "analytics" | "accepted" | "acceptedAt"> | null {
+function loadFromStorage(): Pick<
+  CookieConsentState,
+  "analytics" | "accepted" | "acceptedAt"
+> | null {
   if (Platform.OS !== "web") {
     return null;
   }

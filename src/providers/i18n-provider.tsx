@@ -1,4 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useState, type PropsWithChildren } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type PropsWithChildren,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import i18n, { type SupportedLanguage, supportedLanguages } from "@/src/i18n";
@@ -38,9 +45,5 @@ export function I18nProvider({ children }: PropsWithChildren) {
     await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
   }, []);
 
-  return (
-    <I18nContext.Provider value={{ language, setLanguage }}>
-      {children}
-    </I18nContext.Provider>
-  );
+  return <I18nContext.Provider value={{ language, setLanguage }}>{children}</I18nContext.Provider>;
 }

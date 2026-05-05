@@ -41,9 +41,7 @@ export function SignUpForm() {
       }
     } catch (error) {
       recordFailure(error);
-      setSubmitError(
-        error instanceof Error ? error.message : t("signUp.googleError"),
-      );
+      setSubmitError(error instanceof Error ? error.message : t("signUp.googleError"));
     } finally {
       setIsGoogleSubmitting(false);
     }
@@ -57,9 +55,7 @@ export function SignUpForm() {
       router.replace("/(auth)/verify-email");
     } catch (error) {
       recordFailure(error);
-      setSubmitError(
-        error instanceof Error ? error.message : t("signUp.error"),
-      );
+      setSubmitError(error instanceof Error ? error.message : t("signUp.error"));
     }
   });
 
@@ -107,7 +103,9 @@ export function SignUpForm() {
                 secureTextEntry
                 value={value}
               />
-              <Text className="text-xs text-muted-foreground">{t("validation.passwordRequirementsHint")}</Text>
+              <Text className="text-xs text-muted-foreground">
+                {t("validation.passwordRequirementsHint")}
+              </Text>
               {errors.password?.message ? (
                 <Text className="text-sm text-destructive">{errors.password.message}</Text>
               ) : null}
@@ -138,19 +136,13 @@ export function SignUpForm() {
         />
 
         {!hasSupabaseConfig ? (
-          <Text variant="muted">
-            {t("signUp.supabaseNotConfigured")}
-          </Text>
+          <Text variant="muted">{t("signUp.supabaseNotConfigured")}</Text>
         ) : null}
 
-        {submitError ? (
-          <Text className="text-sm text-destructive">{submitError}</Text>
-        ) : null}
+        {submitError ? <Text className="text-sm text-destructive">{submitError}</Text> : null}
 
         {isThrottled ? (
-          <Text className="text-sm text-destructive">
-            {t("signUp.rateLimited")}
-          </Text>
+          <Text className="text-sm text-destructive">{t("signUp.rateLimited")}</Text>
         ) : null}
 
         <Button

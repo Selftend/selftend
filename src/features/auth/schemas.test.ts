@@ -1,4 +1,9 @@
-import { signInSchema, signUpSchema, forgotPasswordSchema, resetPasswordSchema } from "@/src/features/auth/schemas";
+import {
+  signInSchema,
+  signUpSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "@/src/features/auth/schemas";
 
 describe("signInSchema", () => {
   it("accepts valid email and password", () => {

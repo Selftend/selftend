@@ -12,9 +12,7 @@ function getWebSystemColorScheme(): ResolvedColorScheme {
     return "light";
   }
 
-  return globalThis.window.matchMedia(DARK_COLOR_SCHEME_QUERY).matches
-    ? "dark"
-    : "light";
+  return globalThis.window.matchMedia(DARK_COLOR_SCHEME_QUERY).matches ? "dark" : "light";
 }
 
 function getSystemColorScheme(): ResolvedColorScheme {
@@ -49,9 +47,7 @@ export function useSystemColorScheme(): ResolvedColorScheme {
 
   useEffect(() => {
     if (Platform.OS === "web") {
-      const mediaQuery = globalThis.window?.matchMedia?.(
-        DARK_COLOR_SCHEME_QUERY,
-      );
+      const mediaQuery = globalThis.window?.matchMedia?.(DARK_COLOR_SCHEME_QUERY);
 
       if (!mediaQuery) {
         return;

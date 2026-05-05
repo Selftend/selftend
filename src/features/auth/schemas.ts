@@ -6,9 +6,7 @@ const emailField = z
   .min(1, { message: "Enter your email address." })
   .email({ message: "Enter a valid email address." });
 
-const passwordField = z
-  .string()
-  .min(8, { message: "Password must be at least 8 characters." });
+const passwordField = z.string().min(8, { message: "Password must be at least 8 characters." });
 
 const newPasswordField = z
   .string()

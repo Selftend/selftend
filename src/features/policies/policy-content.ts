@@ -251,7 +251,7 @@ export const termsSections: PolicySection[] = [
   {
     title: "11. Disclaimers",
     body: [
-      "The app is provided \"as is\" and \"as available\" without warranties of any kind, whether express or implied.",
+      'The app is provided "as is" and "as available" without warranties of any kind, whether express or implied.',
       "We do not warrant that the app will meet your requirements, be error-free, or be available without interruption.",
       "We do not provide medical, psychological, or professional advice. Content in the app is for informational and self-help purposes only.",
       "Your use of the app and reliance on any content is at your sole risk.",

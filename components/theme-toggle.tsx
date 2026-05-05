@@ -5,10 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
-import {
-  resolveThemePreference,
-  useSystemColorScheme,
-} from "@/src/lib/color-scheme";
+import { resolveThemePreference, useSystemColorScheme } from "@/src/lib/color-scheme";
 import { useThemeStore } from "@/src/stores/theme-store";
 
 export function ThemeToggle() {
@@ -41,10 +38,7 @@ export function ThemeToggle() {
           isDark ? "right-0.5" : "left-0.5",
         )}
       >
-        <Icon
-          as={isDark ? MoonIcon : SunIcon}
-          className="size-4 text-foreground"
-        />
+        <Icon as={isDark ? MoonIcon : SunIcon} className="size-4 text-foreground" />
       </SwitchPrimitives.Thumb>
     </SwitchPrimitives.Root>
   );

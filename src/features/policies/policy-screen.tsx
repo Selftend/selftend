@@ -49,50 +49,50 @@ export function PolicyScreen({
             </Text>
           </View>
 
-      {notice ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("launchReview")}</CardTitle>
-            <CardDescription>{notice}</CardDescription>
-          </CardHeader>
-        </Card>
-      ) : null}
-
-      {actions.length ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("helpfulLinks")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <View className="gap-3">
-            {actions.map((action) => (
-              <Button
-                key={action.url}
-                onPress={() => void Linking.openURL(action.url)}
-                variant="secondary"
-              >
-                <Text>{action.label}</Text>
-              </Button>
-            ))}
-            </View>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {children}
-
-      {Array.isArray(sections)
-        ? sections.map((section, index) => (
-            <Card key={index}>
+          {notice ? (
+            <Card>
               <CardHeader>
-                <CardTitle>{section.title}</CardTitle>
-                {section.body.map((paragraph, pIndex) => (
-                  <CardDescription key={pIndex}>{paragraph}</CardDescription>
-                ))}
+                <CardTitle>{t("launchReview")}</CardTitle>
+                <CardDescription>{notice}</CardDescription>
               </CardHeader>
             </Card>
-          ))
-        : null}
+          ) : null}
+
+          {actions.length ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("helpfulLinks")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <View className="gap-3">
+                  {actions.map((action) => (
+                    <Button
+                      key={action.url}
+                      onPress={() => void Linking.openURL(action.url)}
+                      variant="secondary"
+                    >
+                      <Text>{action.label}</Text>
+                    </Button>
+                  ))}
+                </View>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {children}
+
+          {Array.isArray(sections)
+            ? sections.map((section, index) => (
+                <Card key={index}>
+                  <CardHeader>
+                    <CardTitle>{section.title}</CardTitle>
+                    {section.body.map((paragraph, pIndex) => (
+                      <CardDescription key={pIndex}>{paragraph}</CardDescription>
+                    ))}
+                  </CardHeader>
+                </Card>
+              ))
+            : null}
         </View>
       </ScrollView>
     </SafeAreaView>

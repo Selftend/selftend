@@ -19,48 +19,48 @@ export default function LegalScreen() {
             <Text variant="muted">{t("legal.description")}</Text>
           </View>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("legal.launchReview")}</CardTitle>
-          <CardDescription>{t("legal.launchReviewDescription")}</CardDescription>
-        </CardHeader>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("legal.productBoundary")}</CardTitle>
-          <CardDescription>{t("legal.productBoundaryDescription")}</CardDescription>
-        </CardHeader>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("legal.publicPages")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <View className="gap-3">
-          <Button onPress={() => router.push("/privacy")} variant="secondary">
-            <Text>{t("legal.openPrivacy")}</Text>
-          </Button>
-          <Button onPress={() => router.push("/terms")} variant="ghost">
-            <Text>{t("legal.openTerms")}</Text>
-          </Button>
-          <Button onPress={() => router.push("/cookies")} variant="ghost">
-            <Text>{t("legal.openCookies")}</Text>
-          </Button>
-          <Button onPress={() => router.push("/crisis")} variant="ghost">
-            <Text>{t("legal.openCrisis")}</Text>
-          </Button>
-          <Button onPress={() => router.push("/account-deletion")} variant="ghost">
-            <Text>{t("legal.openDeletion")}</Text>
-          </Button>
-          </View>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("legal.license")}</CardTitle>
-          <CardDescription>{t("legal.licenseDescription")}</CardDescription>
-        </CardHeader>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("legal.launchReview")}</CardTitle>
+              <CardDescription>{t("legal.launchReviewDescription")}</CardDescription>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("legal.productBoundary")}</CardTitle>
+              <CardDescription>{t("legal.productBoundaryDescription")}</CardDescription>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("legal.publicPages")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-3">
+                <Button onPress={() => router.push("/privacy")} variant="secondary">
+                  <Text>{t("legal.openPrivacy")}</Text>
+                </Button>
+                <Button onPress={() => router.push("/terms")} variant="ghost">
+                  <Text>{t("legal.openTerms")}</Text>
+                </Button>
+                <Button onPress={() => router.push("/cookies")} variant="ghost">
+                  <Text>{t("legal.openCookies")}</Text>
+                </Button>
+                <Button onPress={() => router.push("/crisis")} variant="ghost">
+                  <Text>{t("legal.openCrisis")}</Text>
+                </Button>
+                <Button onPress={() => router.push("/account-deletion")} variant="ghost">
+                  <Text>{t("legal.openDeletion")}</Text>
+                </Button>
+              </View>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("legal.license")}</CardTitle>
+              <CardDescription>{t("legal.licenseDescription")}</CardDescription>
+            </CardHeader>
+          </Card>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -71,61 +71,69 @@ export default function ThoughtRecordDetailScreen() {
         <View className="gap-6">
           <View className="gap-2">
             <Text variant="h1">{t("detail.title")}</Text>
-            <Text variant="muted">{t("detail.updated", { timestamp: formatTimestamp(data.updatedAt) })}</Text>
+            <Text variant="muted">
+              {t("detail.updated", { timestamp: formatTimestamp(data.updatedAt) })}
+            </Text>
           </View>
 
-      {archiveError ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("detail.archiveProblem")}</CardTitle>
-            <CardDescription>{archiveError}</CardDescription>
-          </CardHeader>
-        </Card>
-      ) : null}
+          {archiveError ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("detail.archiveProblem")}</CardTitle>
+                <CardDescription>{archiveError}</CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("record.situation")}</CardTitle>
-          <CardDescription>{data.situation}</CardDescription>
-        </CardHeader>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("record.automaticThought")}</CardTitle>
-          <CardDescription>{data.automaticThought}</CardDescription>
-        </CardHeader>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("record.emotions")}</CardTitle>
-          <CardDescription>{data.emotions.join(", ")}</CardDescription>
-        </CardHeader>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("record.patterns")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <View className="gap-3">
-            {data.distortions.map((distortionKey) => (
-              <Card key={distortionKey}>
-                <CardHeader>
-                  <CardTitle>{t(`distortions.${distortionKey}.title`, { defaultValue: distortionLookup[distortionKey]?.title ?? distortionKey })}</CardTitle>
-                  <CardDescription>
-                    {t(`distortions.${distortionKey}.shortDescription`, { defaultValue: distortionLookup[distortionKey]?.shortDescription ?? "" })}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
-          </View>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("record.balancedThought")}</CardTitle>
-          <CardDescription>{data.balancedThought}</CardDescription>
-        </CardHeader>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("record.situation")}</CardTitle>
+              <CardDescription>{data.situation}</CardDescription>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("record.automaticThought")}</CardTitle>
+              <CardDescription>{data.automaticThought}</CardDescription>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("record.emotions")}</CardTitle>
+              <CardDescription>{data.emotions.join(", ")}</CardDescription>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("record.patterns")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-3">
+                {data.distortions.map((distortionKey) => (
+                  <Card key={distortionKey}>
+                    <CardHeader>
+                      <CardTitle>
+                        {t(`distortions.${distortionKey}.title`, {
+                          defaultValue: distortionLookup[distortionKey]?.title ?? distortionKey,
+                        })}
+                      </CardTitle>
+                      <CardDescription>
+                        {t(`distortions.${distortionKey}.shortDescription`, {
+                          defaultValue: distortionLookup[distortionKey]?.shortDescription ?? "",
+                        })}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </View>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("record.balancedThought")}</CardTitle>
+              <CardDescription>{data.balancedThought}</CardDescription>
+            </CardHeader>
+          </Card>
         </View>
       </ScrollView>
       <View className="border-t border-border bg-background p-4">
@@ -145,7 +153,9 @@ export default function ThoughtRecordDetailScreen() {
               variant="destructive"
             >
               {archiveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{archiveMutation.isPending ? t("detail.archiveButton") : t("detail.archiveButton")}</Text>
+              <Text>
+                {archiveMutation.isPending ? t("detail.archiveButton") : t("detail.archiveButton")}
+              </Text>
             </Button>
           </View>
         </View>

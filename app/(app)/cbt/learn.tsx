@@ -18,24 +18,24 @@ export default function LearnScreen() {
             <Text variant="muted">{t("learn.description")}</Text>
           </View>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("learn.useGently")}</CardTitle>
-          <CardDescription>{t("learn.useGentlyDescription")}</CardDescription>
-        </CardHeader>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("learn.useGently")}</CardTitle>
+              <CardDescription>{t("learn.useGentlyDescription")}</CardDescription>
+            </CardHeader>
+          </Card>
 
-      {distortionDefinitions.map((distortion) => (
-        <Card key={distortion.key}>
-          <CardHeader>
-            <CardTitle>{t(`distortions.${distortion.key}.title`)}</CardTitle>
-            <CardDescription>
-              {t(`distortions.${distortion.key}.shortDescription`)}{" "}
-              {t(`distortions.${distortion.key}.reflectionPrompt`)}
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      ))}
+          {distortionDefinitions.map((distortion) => (
+            <Card key={distortion.key}>
+              <CardHeader>
+                <CardTitle>{t(`distortions.${distortion.key}.title`)}</CardTitle>
+                <CardDescription>
+                  {t(`distortions.${distortion.key}.shortDescription`)}{" "}
+                  {t(`distortions.${distortion.key}.reflectionPrompt`)}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
         </View>
       </ScrollView>
     </SafeAreaView>

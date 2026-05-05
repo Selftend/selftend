@@ -71,4 +71,3 @@ export function useRemoveUserAvatar(userId: string | null) {
     },
   });
 }
-

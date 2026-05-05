@@ -41,9 +41,7 @@ export function SignInForm() {
       }
     } catch (error) {
       recordFailure(error);
-      setSubmitError(
-        error instanceof Error ? error.message : t("signIn.googleError"),
-      );
+      setSubmitError(error instanceof Error ? error.message : t("signIn.googleError"));
     } finally {
       setIsGoogleSubmitting(false);
     }
@@ -57,9 +55,7 @@ export function SignInForm() {
       router.replace("/(app)/(tabs)");
     } catch (error) {
       recordFailure(error);
-      setSubmitError(
-        error instanceof Error ? error.message : t("signIn.error"),
-      );
+      setSubmitError(error instanceof Error ? error.message : t("signIn.error"));
     }
   });
 
@@ -124,19 +120,13 @@ export function SignInForm() {
         />
 
         {!hasSupabaseConfig ? (
-          <Text variant="muted">
-            {t("signIn.supabaseNotConfigured")}
-          </Text>
+          <Text variant="muted">{t("signIn.supabaseNotConfigured")}</Text>
         ) : null}
 
-        {submitError ? (
-          <Text className="text-sm text-destructive">{submitError}</Text>
-        ) : null}
+        {submitError ? <Text className="text-sm text-destructive">{submitError}</Text> : null}
 
         {isThrottled ? (
-          <Text className="text-sm text-destructive">
-            {t("signIn.rateLimited")}
-          </Text>
+          <Text className="text-sm text-destructive">{t("signIn.rateLimited")}</Text>
         ) : null}
 
         <Button

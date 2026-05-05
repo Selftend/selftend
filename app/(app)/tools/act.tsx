@@ -5,10 +5,5 @@ import { ToolPlaceholderScreen } from "@/src/features/tools/tool-placeholder-scr
 export default function ActScreen() {
   const { t } = useTranslation("settings");
 
-  return (
-    <ToolPlaceholderScreen
-      title={t("tools.act")}
-      description={t("tools.actDescription")}
-    />
-  );
+  return <ToolPlaceholderScreen title={t("tools.act")} description={t("tools.actDescription")} />;
 }

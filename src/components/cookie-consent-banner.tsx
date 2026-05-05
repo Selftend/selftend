@@ -80,14 +80,20 @@ export function CookiePreferencesPanel({ onDone }: CookiePreferencesPanelProps) 
               <View className="flex-row items-center justify-between gap-4">
                 <View className="flex-1 gap-1">
                   <Text className="font-medium">{t("cookieConsent.essential")}</Text>
-                  <Text className="text-sm text-muted-foreground">{t("cookieConsent.essentialDescription")}</Text>
+                  <Text className="text-sm text-muted-foreground">
+                    {t("cookieConsent.essentialDescription")}
+                  </Text>
                 </View>
-                <Text className="text-sm font-medium text-muted-foreground">{t("cookieConsent.alwaysOn")}</Text>
+                <Text className="text-sm font-medium text-muted-foreground">
+                  {t("cookieConsent.alwaysOn")}
+                </Text>
               </View>
               <View className="flex-row items-center justify-between gap-4">
                 <View className="flex-1 gap-1">
                   <Text className="font-medium">{t("cookieConsent.analytics")}</Text>
-                  <Text className="text-sm text-muted-foreground">{t("cookieConsent.analyticsDescription")}</Text>
+                  <Text className="text-sm text-muted-foreground">
+                    {t("cookieConsent.analyticsDescription")}
+                  </Text>
                 </View>
                 <Switch checked={analyticsToggle} onCheckedChange={setAnalyticsToggle} />
               </View>

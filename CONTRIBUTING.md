@@ -54,6 +54,25 @@ See `docs/stack.md` for more details on the i18n architecture.
 5. Update `ROADMAP.md` when the change materially affects product status, implementation progress, or the next planned steps.
 6. Do not add product scope that conflicts with the roadmap without discussion.
 
+## Local checks
+
+Husky runs the pre-commit hook after `npm install`.
+
+VS Code and Cursor should install the recommended Prettier and ESLint extensions from `.vscode/extensions.json`. The workspace settings make Prettier the default formatter and enable format-on-save. The ESLint extension can provide inline diagnostics when installed, but this repo does not require ESLint editor settings.
+
+Editor extensions are optional for enforcement. The pre-commit hook runs `npm run format`, so contributors without the Prettier extension still get repo-wide formatting before commit. Use `npm run lint:fix` separately when you want ESLint to apply safe automatic fixes from the terminal.
+
+The pre-commit hook runs:
+
+- `npm run format`
+- `npm run verify`, matching the shared CI checks
+
+If formatting fails, run:
+
+```bash
+npm run format
+```
+
 ## Rules for contributors
 
 - Do not introduce dark patterns.

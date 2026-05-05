@@ -54,8 +54,7 @@ const config: ExpoConfig = {
       {
         cameraPermission: false,
         microphonePermission: false,
-        photosPermission:
-          "Selftend lets you choose a profile picture for your account.",
+        photosPermission: "Selftend lets you choose a profile picture for your account.",
       },
     ],
     "expo-secure-store",

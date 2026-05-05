@@ -32,11 +32,7 @@ export function ConsentModal({ visible, onAccepted }: ConsentModalProps) {
   };
 
   return (
-    <Modal
-      animationType="fade"
-      transparent
-      visible={visible}
-    >
+    <Modal animationType="fade" transparent visible={visible}>
       <View className="flex-1 items-center justify-center bg-black/50 p-6">
         <Card className="w-full max-w-lg">
           <CardHeader>
@@ -57,17 +53,16 @@ export function ConsentModal({ visible, onAccepted }: ConsentModalProps) {
                 className="flex-row items-start gap-3"
                 onPress={() => setAccepted(!accepted)}
               >
-                <Checkbox
-                  checked={accepted}
-                  onCheckedChange={setAccepted}
-                />
+                <Checkbox checked={accepted} onCheckedChange={setAccepted} />
                 <Text className="flex-1 text-sm">{t("consent.checkbox")}</Text>
               </Pressable>
               <Button
                 disabled={!accepted || consentMutation.isPending}
                 onPress={() => void handleAccept()}
               >
-                <Text>{consentMutation.isPending ? t("consent.submitting") : t("consent.submit")}</Text>
+                <Text>
+                  {consentMutation.isPending ? t("consent.submitting") : t("consent.submit")}
+                </Text>
               </Button>
               {consentMutation.isError ? (
                 <Text className="text-sm text-destructive">{t("consent.error")}</Text>

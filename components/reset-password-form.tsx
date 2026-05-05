@@ -31,9 +31,7 @@ export function ResetPasswordForm() {
       await updatePassword(password);
       router.replace("/(app)/(tabs)");
     } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : t("resetPassword.error"),
-      );
+      setSubmitError(error instanceof Error ? error.message : t("resetPassword.error"));
     }
   });
 
@@ -59,7 +57,9 @@ export function ResetPasswordForm() {
                 secureTextEntry
                 value={value}
               />
-              <Text className="text-xs text-muted-foreground">{t("validation.passwordRequirementsHint")}</Text>
+              <Text className="text-xs text-muted-foreground">
+                {t("validation.passwordRequirementsHint")}
+              </Text>
               {errors.password?.message ? (
                 <Text className="text-sm text-destructive">{errors.password.message}</Text>
               ) : null}
@@ -89,9 +89,7 @@ export function ResetPasswordForm() {
           )}
         />
 
-        {submitError ? (
-          <Text className="text-sm text-destructive">{submitError}</Text>
-        ) : null}
+        {submitError ? <Text className="text-sm text-destructive">{submitError}</Text> : null}
 
         <Button disabled={isSubmitting} onPress={() => void onSubmit()}>
           {isSubmitting ? <ActivityIndicator color="#ffffff" /> : null}

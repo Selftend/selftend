@@ -38,12 +38,7 @@ describe("buildSyncedProfileFields", () => {
 
   it("imports an OAuth avatar for a new profile", () => {
     expect(
-      buildSyncedProfileFields(
-        null,
-        "person@example.com",
-        "https://example.com/avatar.jpg",
-        now,
-      ),
+      buildSyncedProfileFields(null, "person@example.com", "https://example.com/avatar.jpg", now),
     ).toEqual({
       email: "person@example.com",
       avatar_url: "https://example.com/avatar.jpg",

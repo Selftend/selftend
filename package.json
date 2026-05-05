@@ -21,12 +21,12 @@
     "serve:web:production": "npm exec expo -- serve",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "lint-staged": "lint-staged",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
+    "verify": "npm run lint && npm run format:check && npm run typecheck && npm test -- --runInBand",
     "prepare": "husky"
   },
   "dependencies": {
@@ -108,18 +108,8 @@
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
     "jest-expo": "~54.0.17",
-    "lint-staged": "^16.4.0",
     "prettier": "^3.8.3",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
-  },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{js,json,css,md}": [
-      "prettier --write"
-    ]
   }
 }

@@ -41,10 +41,7 @@ export default function RootLayout() {
   const { preference, hydrate } = useThemeStore();
   const systemColorScheme = useSystemColorScheme();
   const colorScheme = resolveThemePreference(preference, systemColorScheme);
-  const nativeWindColorScheme = getNativeWindColorScheme(
-    preference,
-    systemColorScheme,
-  );
+  const nativeWindColorScheme = getNativeWindColorScheme(preference, systemColorScheme);
   const [fontsLoaded] = useFonts({
     NotoSans_400Regular,
     NotoSans_500Medium,

@@ -23,9 +23,7 @@ export function VerifyEmailForm() {
       await resendVerificationEmail(user.email);
       setResendStatus("sent");
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : t("verifyEmail.resendError"),
-      );
+      setErrorMessage(error instanceof Error ? error.message : t("verifyEmail.resendError"));
       setResendStatus("idle");
     }
   };
@@ -44,14 +42,10 @@ export function VerifyEmailForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="gap-4">
-        {errorMessage ? (
-          <Text className="text-sm text-destructive">{errorMessage}</Text>
-        ) : null}
+        {errorMessage ? <Text className="text-sm text-destructive">{errorMessage}</Text> : null}
 
         {resendStatus === "sent" ? (
-          <Text className="text-sm text-muted-foreground">
-            {t("verifyEmail.resendSuccess")}
-          </Text>
+          <Text className="text-sm text-muted-foreground">{t("verifyEmail.resendSuccess")}</Text>
         ) : null}
 
         <Button
@@ -60,7 +54,11 @@ export function VerifyEmailForm() {
           variant="outline"
         >
           {resendStatus === "sending" ? <ActivityIndicator color="#20312c" /> : null}
-          <Text>{resendStatus === "sending" ? t("verifyEmail.resendSubmitting") : t("verifyEmail.resendButton")}</Text>
+          <Text>
+            {resendStatus === "sending"
+              ? t("verifyEmail.resendSubmitting")
+              : t("verifyEmail.resendButton")}
+          </Text>
         </Button>
 
         <View className="items-center pt-2">

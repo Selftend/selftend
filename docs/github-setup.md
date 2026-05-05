@@ -40,6 +40,10 @@ This repo already includes:
 
 `CI` runs on pull requests and pushes to `main`.
 
+CI verifies linting, formatting, typechecking, and tests through `npm run verify`. The Husky pre-commit hook runs `npm run format` first, then `npm run verify`, so local commits auto-format first and then use the same verification command as GitHub.
+
+Workspace settings in `.vscode/settings.json` make Prettier the default VS Code/Cursor formatter and enable format-on-save. The ESLint extension is recommended for inline diagnostics, but ESLint enforcement is handled by terminal, Husky, and CI checks.
+
 `Android Play internal release` is manual. It checks out `main`, runs a local EAS Android production build on the GitHub runner, uploads the `.aab` artifact, and can submit to Google Play internal testing.
 
 `Web production deploy` is manual. It checks out `main`, exports the Expo web app, and deploys `dist` to Netlify production.
@@ -93,8 +97,8 @@ Prepared label set:
 
 - keep PRs focused
 - update docs when product behavior changes
-- run `npm run typecheck`
-- run `npm test -- --runInBand`
+- run or satisfy the Husky pre-commit checks
+- run `npm run verify`
 - call out privacy, safety, and licensing impact explicitly
 
 ## Branching

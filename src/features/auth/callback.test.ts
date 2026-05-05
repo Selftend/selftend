@@ -2,9 +2,7 @@ import { parseAuthCallbackUrl } from "@/src/features/auth/callback";
 
 describe("parseAuthCallbackUrl", () => {
   it("reads auth codes from the query string", () => {
-    expect(
-      parseAuthCallbackUrl("selftend://auth-callback?code=abc123&type=recovery"),
-    ).toEqual({
+    expect(parseAuthCallbackUrl("selftend://auth-callback?code=abc123&type=recovery")).toEqual({
       accessToken: null,
       refreshToken: null,
       code: "abc123",

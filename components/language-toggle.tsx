@@ -21,10 +21,7 @@ export function LanguageToggle() {
   };
 
   function handleChange(option: Option | undefined) {
-    if (
-      option &&
-      supportedLanguages.includes(option.value as SupportedLanguage)
-    ) {
+    if (option && supportedLanguages.includes(option.value as SupportedLanguage)) {
       void setLanguage(option.value as SupportedLanguage);
     }
   }

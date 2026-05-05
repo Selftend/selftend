@@ -63,7 +63,9 @@ export default function HomeScreen() {
             {latestRecord ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>{t("home.lastUpdated", { timestamp: formatTimestamp(latestRecord.updatedAt) })}</CardTitle>
+                  <CardTitle>
+                    {t("home.lastUpdated", { timestamp: formatTimestamp(latestRecord.updatedAt) })}
+                  </CardTitle>
                   <CardDescription>{latestRecord.automaticThought}</CardDescription>
                 </CardHeader>
               </Card>

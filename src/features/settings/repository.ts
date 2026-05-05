@@ -1,4 +1,8 @@
-import { defaultUserPreferences, type CookieConsent, type UserPreferences } from "@/src/features/modules/types";
+import {
+  defaultUserPreferences,
+  type CookieConsent,
+  type UserPreferences,
+} from "@/src/features/modules/types";
 import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
 import { requireSupabase } from "@/src/lib/supabase";
 
@@ -83,17 +87,15 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
 export async function recordPolicyConsent(userId: string, policyVersion: string) {
   const client = requireSupabase();
   const now = new Date().toISOString();
-  const { error } = await client
-    .from("user_preferences")
-    .upsert(
-      {
-        user_id: userId,
-        privacy_policy_accepted_at: now,
-        terms_accepted_at: now,
-        policy_version_accepted: policyVersion,
-      },
-      { onConflict: "user_id" },
-    );
+  const { error } = await client.from("user_preferences").upsert(
+    {
+      user_id: userId,
+      privacy_policy_accepted_at: now,
+      terms_accepted_at: now,
+      policy_version_accepted: policyVersion,
+    },
+    { onConflict: "user_id" },
+  );
 
   if (error) {
     throw error;

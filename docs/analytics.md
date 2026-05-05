@@ -34,11 +34,11 @@ Example queries to create when needed:
 
 ```sql
 -- Weekly sign-ups
-SELECT date_trunc('week', created_at) AS week, count(*) 
+SELECT date_trunc('week', created_at) AS week, count(*)
 FROM auth.users GROUP BY 1 ORDER BY 1 DESC LIMIT 12;
 
 -- Weekly completed exercises
-SELECT date_trunc('week', created_at) AS week, count(*) 
+SELECT date_trunc('week', created_at) AS week, count(*)
 FROM public.thought_records GROUP BY 1 ORDER BY 1 DESC LIMIT 12;
 ```
 
@@ -50,10 +50,10 @@ Aligns with the ROADMAP Phase 2 item: "minimal observability and incident respon
 
 #### Tool options (self-hostable required)
 
-| Tool | License | Self-hosted | Expo/RN support | Notes |
-|------|---------|-------------|-----------------|-------|
-| Sentry | BSL (source-available) | Yes | Yes (official SDK) | Industry standard, heavy |
-| GlitchTip | MIT | Yes | Sentry-compatible SDK | Lighter, fully open-source |
+| Tool      | License                | Self-hosted | Expo/RN support       | Notes                      |
+| --------- | ---------------------- | ----------- | --------------------- | -------------------------- |
+| Sentry    | BSL (source-available) | Yes         | Yes (official SDK)    | Industry standard, heavy   |
+| GlitchTip | MIT                    | Yes         | Sentry-compatible SDK | Lighter, fully open-source |
 
 #### Consent classification
 
@@ -80,11 +80,11 @@ Only proceed if Supabase aggregate queries cannot answer a concrete product ques
 
 #### Tool options (self-hostable, privacy-respecting)
 
-| Tool | License | Self-hosted | Cookieless | Platform | Notes |
-|------|---------|-------------|------------|----------|-------|
-| Plausible | AGPL | Yes | Yes (web) | Web only | Very lightweight (~20 MB RAM), no consent banner needed for web |
-| Umami | MIT | Yes | Yes (web) | Web only | Similar to Plausible, MIT license |
-| PostHog | MIT (core) | Yes | No | Web + native | Feature flags, funnels, heavier (needs ClickHouse) |
+| Tool      | License    | Self-hosted | Cookieless | Platform     | Notes                                                           |
+| --------- | ---------- | ----------- | ---------- | ------------ | --------------------------------------------------------------- |
+| Plausible | AGPL       | Yes         | Yes (web)  | Web only     | Very lightweight (~20 MB RAM), no consent banner needed for web |
+| Umami     | MIT        | Yes         | Yes (web)  | Web only     | Similar to Plausible, MIT license                               |
+| PostHog   | MIT (core) | Yes         | No         | Web + native | Feature flags, funnels, heavier (needs ClickHouse)              |
 
 Recommendations:
 
@@ -105,10 +105,10 @@ Example allowlist:
 
 ```typescript
 type AllowedEvent =
-  | 'exercise_completed'
-  | 'tool_opened'
-  | 'check_in_submitted'
-  | 'onboarding_completed';
+  | "exercise_completed"
+  | "tool_opened"
+  | "check_in_submitted"
+  | "onboarding_completed";
 ```
 
 #### Implementation checklist

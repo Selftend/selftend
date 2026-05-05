@@ -142,6 +142,7 @@ Initial scaffold work completed so far:
 - [x] profile-picture removal now persists without re-importing the Google avatar
 - [x] production CSP allows Supabase signed avatar URLs and Google avatar images
 - [x] manual GitHub Actions workflows added for Android internal Play releases and Netlify web production deploys from `main`
+- [x] repo-wide Prettier formatting applied and Husky pre-commit auto-format flow aligned with CI
 
 ### Phase 2: Ready-for-public-product pass
 

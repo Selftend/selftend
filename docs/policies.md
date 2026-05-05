@@ -57,21 +57,21 @@ Implementation status:
 
 ### Lawful basis for processing (GDPR Article 6)
 
-| Data | Lawful basis | Notes |
-|------|-------------|-------|
-| Email, auth metadata | Contract (Art. 6(1)(b)) | Necessary to provide the service |
-| Thought records, preferences | Contract (Art. 6(1)(b)) | Core app functionality |
-| Local notification reminders | Consent (Art. 6(1)(a)) | Explicit opt-in, revocable in Settings |
-| Auth event logs (Supabase) | Legitimate interest (Art. 6(1)(f)) | Security and abuse prevention |
+| Data                         | Lawful basis                       | Notes                                  |
+| ---------------------------- | ---------------------------------- | -------------------------------------- |
+| Email, auth metadata         | Contract (Art. 6(1)(b))            | Necessary to provide the service       |
+| Thought records, preferences | Contract (Art. 6(1)(b))            | Core app functionality                 |
+| Local notification reminders | Consent (Art. 6(1)(a))             | Explicit opt-in, revocable in Settings |
+| Auth event logs (Supabase)   | Legitimate interest (Art. 6(1)(f)) | Security and abuse prevention          |
 
 ### Data processors
 
-| Processor | Role | DPA |
-|-----------|------|-----|
-| Supabase Inc. (USA) | Database, auth, backend | [Supabase DPA](https://supabase.com/legal/dpa) |
-| Google LLC (USA) | OAuth provider (optional) | [Google Privacy](https://policies.google.com/privacy) |
-| Netlify Inc. (USA) | Static web hosting | [Netlify DPA](https://www.netlify.com/legal/dpa/) |
-| Expo Inc. (USA) | Build tooling only | No runtime data processing |
+| Processor           | Role                      | DPA                                                   |
+| ------------------- | ------------------------- | ----------------------------------------------------- |
+| Supabase Inc. (USA) | Database, auth, backend   | [Supabase DPA](https://supabase.com/legal/dpa)        |
+| Google LLC (USA)    | OAuth provider (optional) | [Google Privacy](https://policies.google.com/privacy) |
+| Netlify Inc. (USA)  | Static web hosting        | [Netlify DPA](https://www.netlify.com/legal/dpa/)     |
+| Expo Inc. (USA)     | Build tooling only        | No runtime data processing                            |
 
 ### Data retention
 
@@ -83,21 +83,22 @@ Implementation status:
 ### International transfers
 
 EU/EEA data may be processed in the US by Supabase, Google, and Netlify. Transfers rely on:
+
 - Standard Contractual Clauses (SCCs)
 - Processor DPAs with appropriate safeguards
 
 ### User rights implementation
 
-| Right | Implementation |
-|-------|---------------|
-| Access | Data export in Settings (JSON) |
-| Rectification | Edit thought records in-app |
-| Erasure | Self-service account deletion in Settings |
-| Portability | Data export in Settings (structured JSON) |
-| Restriction | Contact privacy@selftend.org |
-| Object | Contact privacy@selftend.org |
-| Withdraw consent | Disable reminders in Settings |
-| Complaint | Contact local supervisory authority |
+| Right            | Implementation                            |
+| ---------------- | ----------------------------------------- |
+| Access           | Data export in Settings (JSON)            |
+| Rectification    | Edit thought records in-app               |
+| Erasure          | Self-service account deletion in Settings |
+| Portability      | Data export in Settings (structured JSON) |
+| Restriction      | Contact privacy@selftend.org              |
+| Object           | Contact privacy@selftend.org              |
+| Withdraw consent | Disable reminders in Settings             |
+| Complaint        | Contact local supervisory authority       |
 
 ### Cookie/storage policy
 

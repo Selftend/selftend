@@ -32,8 +32,18 @@ interface NavItemDef {
 
 const MAIN_NAV_ITEMS: NavItemDef[] = [
   { labelKey: "sidebar.home", href: "/(app)/(tabs)/", icon: HomeIcon, matchPrefix: null },
-  { labelKey: "sidebar.settings", href: "/(app)/(tabs)/settings", icon: SettingsIcon, matchPrefix: "/settings" },
-  { labelKey: "sidebar.support", href: "/(app)/support", icon: LifeBuoyIcon, matchPrefix: "/support" },
+  {
+    labelKey: "sidebar.settings",
+    href: "/(app)/(tabs)/settings",
+    icon: SettingsIcon,
+    matchPrefix: "/settings",
+  },
+  {
+    labelKey: "sidebar.support",
+    href: "/(app)/support",
+    icon: LifeBuoyIcon,
+    matchPrefix: "/support",
+  },
 ];
 
 const CBT_NAV_ITEMS: NavItemDef[] = [
@@ -48,15 +58,40 @@ const CBT_NAV_ITEMS: NavItemDef[] = [
         !pathname.startsWith("/cbt/learn") &&
         !pathname.startsWith("/cbt/history")),
   },
-  { labelKey: "sidebar.cbtHistory", href: "/cbt/history", icon: HistoryIcon, matchPrefix: "/cbt/history" },
-  { labelKey: "sidebar.cbtLearn", href: "/cbt/learn", icon: BookOpenIcon, matchPrefix: "/cbt/learn" },
+  {
+    labelKey: "sidebar.cbtHistory",
+    href: "/cbt/history",
+    icon: HistoryIcon,
+    matchPrefix: "/cbt/history",
+  },
+  {
+    labelKey: "sidebar.cbtLearn",
+    href: "/cbt/learn",
+    icon: BookOpenIcon,
+    matchPrefix: "/cbt/learn",
+  },
 ];
 
 const TOOL_PLACEHOLDER_NAV_ITEMS: NavItemDef[] = [
-  { labelKey: "sidebar.moodTracker", href: "/tools/mood-tracker", icon: SmilePlusIcon, matchPrefix: "/tools/mood-tracker" },
-  { labelKey: "sidebar.meditation", href: "/tools/meditation", icon: WindIcon, matchPrefix: "/tools/meditation" },
+  {
+    labelKey: "sidebar.moodTracker",
+    href: "/tools/mood-tracker",
+    icon: SmilePlusIcon,
+    matchPrefix: "/tools/mood-tracker",
+  },
+  {
+    labelKey: "sidebar.meditation",
+    href: "/tools/meditation",
+    icon: WindIcon,
+    matchPrefix: "/tools/meditation",
+  },
   { labelKey: "sidebar.act", href: "/tools/act", icon: ShapesIcon, matchPrefix: "/tools/act" },
-  { labelKey: "sidebar.gratitudeLog", href: "/tools/gratitude-log", icon: BookHeartIcon, matchPrefix: "/tools/gratitude-log" },
+  {
+    labelKey: "sidebar.gratitudeLog",
+    href: "/tools/gratitude-log",
+    icon: BookHeartIcon,
+    matchPrefix: "/tools/gratitude-log",
+  },
 ];
 
 interface SidebarNavProps {
@@ -111,7 +146,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
         className={cn(
           "flex-row items-center gap-3 rounded-md py-2.5",
           getLevelPadding(level),
-          active ? "bg-primary/10" : "active:bg-muted/50"
+          active ? "bg-primary/10" : "active:bg-muted/50",
         )}
       >
         <Icon
@@ -143,20 +178,27 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     const highlighted = active && !open;
     return (
       <Pressable
-        accessibilityLabel={open ? t("sidebar.collapse", { label }) : t("sidebar.expand", { label })}
+        accessibilityLabel={
+          open ? t("sidebar.collapse", { label }) : t("sidebar.expand", { label })
+        }
         accessibilityState={{ expanded: open }}
         onPress={onPress}
         className={cn(
           "flex-row items-center gap-3 rounded-md py-2.5",
           getLevelPadding(level),
-          highlighted ? "bg-primary/10" : "active:bg-muted/50"
+          highlighted ? "bg-primary/10" : "active:bg-muted/50",
         )}
       >
         <Icon
           as={icon}
           className={cn("size-5", highlighted ? "text-primary" : "text-muted-foreground")}
         />
-        <Text className={cn("flex-1 text-sm font-medium", highlighted ? "text-primary" : "text-foreground")}>
+        <Text
+          className={cn(
+            "flex-1 text-sm font-medium",
+            highlighted ? "text-primary" : "text-foreground",
+          )}
+        >
           {label}
         </Text>
         <Icon

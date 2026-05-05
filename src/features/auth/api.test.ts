@@ -24,9 +24,7 @@ describe("getWebAuthRedirectUrl", () => {
   });
 
   it("falls back to Expo Linking when no public app URL is configured", () => {
-    jest
-      .mocked(Linking.createURL)
-      .mockReturnValue("http://localhost:8081/auth-callback");
+    jest.mocked(Linking.createURL).mockReturnValue("http://localhost:8081/auth-callback");
 
     expect(getWebAuthRedirectUrl("")).toBe("http://localhost:8081/auth-callback");
     expect(Linking.createURL).toHaveBeenCalledWith("auth-callback");

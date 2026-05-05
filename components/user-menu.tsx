@@ -1,25 +1,21 @@
-import { router } from 'expo-router';
-import { LogOutIcon, SettingsIcon } from 'lucide-react-native';
-import * as React from 'react';
-import { View } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import { router } from "expo-router";
+import { LogOutIcon, SettingsIcon } from "lucide-react-native";
+import * as React from "react";
+import { View } from "react-native";
+import { useTranslation } from "react-i18next";
 
-import { ProfileAvatar } from '@/components/profile-avatar';
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Text } from '@/components/ui/text';
-import { signOut } from '@/src/features/auth/api';
-import { useUserProfile } from '@/src/features/profile/queries';
-import { useSession } from '@/src/providers/session-provider';
-import type { TriggerRef } from '@rn-primitives/popover';
+import { ProfileAvatar } from "@/components/profile-avatar";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Text } from "@/components/ui/text";
+import { signOut } from "@/src/features/auth/api";
+import { useUserProfile } from "@/src/features/profile/queries";
+import { useSession } from "@/src/providers/session-provider";
+import type { TriggerRef } from "@rn-primitives/popover";
 
 export function UserMenu() {
-  const { t } = useTranslation('navigation');
+  const { t } = useTranslation("navigation");
   const popoverTriggerRef = React.useRef<TriggerRef>(null);
   const { user } = useSession();
   const { data: profile } = useUserProfile(user);
@@ -48,7 +44,7 @@ export function UserMenu() {
                 className="text-sm text-muted-foreground font-normal leading-4"
                 numberOfLines={1}
               >
-                {email ?? t('userMenu.account')}
+                {email ?? t("userMenu.account")}
               </Text>
             </View>
           </View>
@@ -58,14 +54,15 @@ export function UserMenu() {
               size="sm"
               onPress={() => {
                 popoverTriggerRef.current?.close();
-                router.push('/(app)/(tabs)/settings');
-              }}>
+                router.push("/(app)/(tabs)/settings");
+              }}
+            >
               <Icon as={SettingsIcon} className="size-4" />
-              <Text>{t('userMenu.settings')}</Text>
+              <Text>{t("userMenu.settings")}</Text>
             </Button>
             <Button variant="outline" size="sm" className="flex-1" onPress={onSignOut}>
               <Icon as={LogOutIcon} className="size-4" />
-              <Text>{t('userMenu.signOut')}</Text>
+              <Text>{t("userMenu.signOut")}</Text>
             </Button>
           </View>
         </View>

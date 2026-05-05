@@ -35,9 +35,7 @@ export function ForgotPasswordForm() {
       await sendPasswordResetEmail(email);
       setSentTo(email);
     } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : t("forgotPassword.error"),
-      );
+      setSubmitError(error instanceof Error ? error.message : t("forgotPassword.error"));
     }
   });
 
@@ -45,9 +43,7 @@ export function ForgotPasswordForm() {
     <Card>
       <CardHeader>
         <CardTitle>{t("forgotPassword.title")}</CardTitle>
-        <CardDescription>
-          {t("forgotPassword.subtitle")}
-        </CardDescription>
+        <CardDescription>{t("forgotPassword.subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="gap-4">
         <Controller
@@ -73,14 +69,10 @@ export function ForgotPasswordForm() {
         />
 
         {!hasSupabaseConfig ? (
-          <Text variant="muted">
-            {t("forgotPassword.supabaseNotConfigured")}
-          </Text>
+          <Text variant="muted">{t("forgotPassword.supabaseNotConfigured")}</Text>
         ) : null}
 
-        {submitError ? (
-          <Text className="text-sm text-destructive">{submitError}</Text>
-        ) : null}
+        {submitError ? <Text className="text-sm text-destructive">{submitError}</Text> : null}
 
         {sentTo ? (
           <Text className="text-sm text-muted-foreground">
@@ -88,10 +80,7 @@ export function ForgotPasswordForm() {
           </Text>
         ) : null}
 
-        <Button
-          disabled={!hasSupabaseConfig || isSubmitting}
-          onPress={() => void onSubmit()}
-        >
+        <Button disabled={!hasSupabaseConfig || isSubmitting} onPress={() => void onSubmit()}>
           {isSubmitting ? <ActivityIndicator color="#ffffff" /> : null}
           <Text>{isSubmitting ? t("forgotPassword.submitting") : t("forgotPassword.submit")}</Text>
         </Button>

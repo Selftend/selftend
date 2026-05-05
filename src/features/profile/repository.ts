@@ -138,7 +138,10 @@ function toUserProfile(row: ProfileRow, avatarUrl: string | null): UserProfile {
 }
 
 export function buildSyncedProfileFields(
-  row: Pick<ProfileRow, "email" | "avatar_url" | "avatar_storage_path" | "avatar_source" | "avatar_updated_at"> | null,
+  row: Pick<
+    ProfileRow,
+    "email" | "avatar_url" | "avatar_storage_path" | "avatar_source" | "avatar_updated_at"
+  > | null,
   email: string | null,
   oauthAvatarUrl: string | null,
   now: string,
@@ -184,7 +187,10 @@ export function buildSyncedProfileFields(
 }
 
 function isRemovedAvatarRow(
-  row: Pick<ProfileRow, "avatar_url" | "avatar_storage_path" | "avatar_source" | "avatar_updated_at">,
+  row: Pick<
+    ProfileRow,
+    "avatar_url" | "avatar_storage_path" | "avatar_source" | "avatar_updated_at"
+  >,
 ) {
   return (
     row.avatar_source === "none" ||
@@ -196,7 +202,10 @@ function isRemovedAvatarRow(
 }
 
 function hasProfileFieldChanges(
-  row: Pick<ProfileRow, "email" | "avatar_url" | "avatar_storage_path" | "avatar_source" | "avatar_updated_at">,
+  row: Pick<
+    ProfileRow,
+    "email" | "avatar_url" | "avatar_storage_path" | "avatar_source" | "avatar_updated_at"
+  >,
   next: SyncedProfileFields,
 ) {
   return (

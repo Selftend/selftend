@@ -16,9 +16,7 @@ export function AuthLandingBlock() {
           style={{ width: 72, height: 72, borderRadius: 16 }}
         />
         <Text className="text-2xl font-semibold text-foreground">{t("landing.title")}</Text>
-        <Text className="text-center text-muted-foreground">
-          {t("landing.subtitle")}
-        </Text>
+        <Text className="text-center text-muted-foreground">{t("landing.subtitle")}</Text>
       </View>
       <SignInForm />
     </View>

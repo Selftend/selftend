@@ -35,20 +35,22 @@ function DeletionContact({ email }: { email: string }) {
       {email ? (
         <CardContent>
           <View>
-          <Button
-            onPress={() =>
-              void Linking.openURL(
-                `mailto:${email}?subject=${encodeURIComponent("Account and data deletion request")}&body=${encodeURIComponent("Please delete my Selftend account and associated app data. My account email is: ")}`,
-              )
-            }
-          >
-            <Text>{t("accountDeletion.emailLink")}</Text>
-          </Button>
+            <Button
+              onPress={() =>
+                void Linking.openURL(
+                  `mailto:${email}?subject=${encodeURIComponent("Account and data deletion request")}&body=${encodeURIComponent("Please delete my Selftend account and associated app data. My account email is: ")}`,
+                )
+              }
+            >
+              <Text>{t("accountDeletion.emailLink")}</Text>
+            </Button>
           </View>
         </CardContent>
       ) : (
         <CardContent>
-          <Text className="text-sm text-muted-foreground">{t("accountDeletion.emailNotConfigured")}</Text>
+          <Text className="text-sm text-muted-foreground">
+            {t("accountDeletion.emailNotConfigured")}
+          </Text>
         </CardContent>
       )}
     </Card>

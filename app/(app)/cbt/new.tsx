@@ -152,190 +152,218 @@ export default function ThoughtRecordEditorScreen() {
             </Text>
           </View>
 
-      {submitError ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("record.saveProblem")}</CardTitle>
-            <CardDescription>{submitError}</CardDescription>
-          </CardHeader>
-        </Card>
-      ) : null}
+          {submitError ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("record.saveProblem")}</CardTitle>
+                <CardDescription>{submitError}</CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
 
-      <View className="flex-row flex-wrap gap-2">
-        {steps.map((step, index) => {
-          const isActive = stepIndex === index;
-          return (
-            <Button
-              key={step.title}
-              disabled={index > stepIndex}
-              onPress={() => {
-                if (index <= stepIndex) {
-                  useCbtDraftStore.getState().setStepIndex(index);
-                }
-              }}
-              size="sm"
-              variant={isActive ? "secondary" : "ghost"}
-            >
-              <Text>
-                {index + 1}. {step.title}
-              </Text>
-            </Button>
-          );
-        })}
-      </View>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{currentStep.title}</CardTitle>
-          <CardDescription>{currentStep.description}</CardDescription>
-        </CardHeader>
-      </Card>
-
-      {stepIndex === 0 ? (
-        <Controller
-          control={control}
-          name="situation"
-          render={({ field: { onBlur, onChange, value } }) => (
-            <View className="gap-2">
-              <Label>{t("record.situation")}</Label>
-              <Text variant="muted">{t("record.situationPlaceholder")}</Text>
-              <Textarea
-                onBlur={onBlur}
-                onChangeText={onChange}
-                placeholder={t("record.situationExample")}
-                value={value}
-              />
-              {errors.situation?.message ? <Text variant="muted">{errors.situation.message}</Text> : null}
-            </View>
-          )}
-        />
-      ) : null}
-
-      {stepIndex === 1 ? (
-        <Controller
-          control={control}
-          name="automaticThought"
-          render={({ field: { onBlur, onChange, value } }) => (
-            <View className="gap-2">
-              <Label>{t("record.automaticThought")}</Label>
-              <Text variant="muted">{t("record.automaticThoughtPlaceholder")}</Text>
-              <Textarea
-                onBlur={onBlur}
-                onChangeText={onChange}
-                placeholder={t("record.automaticThoughtExample")}
-                value={value}
-              />
-              {errors.automaticThought?.message ? (
-                <Text variant="muted">{errors.automaticThought.message}</Text>
-              ) : null}
-            </View>
-          )}
-        />
-      ) : null}
-
-      {stepIndex === 2 ? (
-        <Controller
-          control={control}
-          name="emotions"
-          render={({ field: { onChange, value } }) => (
-            <View className="gap-3">
-              <View className="gap-2">
-                <Label>{t("record.emotionsLabel")}</Label>
-                <Text variant="muted">{t("record.emotionsLabelHint")}</Text>
-              </View>
-              {emotionOptions.map((emotion) => {
-                const checked = value.includes(emotion);
-                const toggle = () => {
-                  const nextValues = checked ? value.filter((item) => item !== emotion) : [...value, emotion];
-                  onChange(nextValues);
-                };
-                const emotionKey = emotion.toLowerCase();
-                return (
-                  <View key={emotion} className="flex-row items-center gap-3">
-                    <Checkbox checked={checked} onCheckedChange={toggle} />
-                    <Label onPress={toggle}>{t(`emotions.${emotionKey}`)}</Label>
-                  </View>
-                );
-              })}
-              {errors.emotions?.message ? <Text variant="muted">{errors.emotions.message}</Text> : null}
-            </View>
-          )}
-        />
-      ) : null}
-
-      {stepIndex === 3 ? (
-        <Controller
-          control={control}
-          name="distortions"
-          render={({ field: { onChange, value } }) => (
-            <View className="gap-3">
-              <View className="gap-2">
-                <Label>{t("record.patternsLabel")}</Label>
-                <Text variant="muted">{t("record.patternsChooseHint")}</Text>
-              </View>
-              {distortionDefinitions.map((distortion) => {
-                const checked = value.includes(distortion.key);
-                const toggle = () => {
-                  const nextValues = checked
-                    ? value.filter((item) => item !== distortion.key)
-                    : [...value, distortion.key];
-                  onChange(nextValues);
-                };
-                return (
-                  <Card key={distortion.key}>
-                    <CardHeader>
-                      <View className="flex-row items-center gap-3">
-                        <Checkbox checked={checked} onCheckedChange={toggle} />
-                        <Label onPress={toggle}>{t(`distortions.${distortion.key}.title`)}</Label>
-                      </View>
-                      <CardDescription>{t(`distortions.${distortion.key}.shortDescription`)}</CardDescription>
-                    </CardHeader>
-                  </Card>
-                );
-              })}
-              {errors.distortions?.message ? <Text variant="muted">{errors.distortions.message}</Text> : null}
-            </View>
-          )}
-        />
-      ) : null}
-
-      {stepIndex === 4 ? (
-        <View className="gap-6">
-          <Controller
-            control={control}
-            name="balancedThought"
-            render={({ field: { onBlur, onChange, value } }) => (
-              <View className="gap-2">
-                <Label>{t("record.balancedThoughtLabel")}</Label>
-                <Text variant="muted">{t("record.balancedThoughtPlaceholder")}</Text>
-                <Textarea
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  placeholder={t("record.balancedThoughtExample")}
-                  value={value}
-                />
-                {errors.balancedThought?.message ? (
-                  <Text variant="muted">{errors.balancedThought.message}</Text>
-                ) : null}
-              </View>
-            )}
-          />
+          <View className="flex-row flex-wrap gap-2">
+            {steps.map((step, index) => {
+              const isActive = stepIndex === index;
+              return (
+                <Button
+                  key={step.title}
+                  disabled={index > stepIndex}
+                  onPress={() => {
+                    if (index <= stepIndex) {
+                      useCbtDraftStore.getState().setStepIndex(index);
+                    }
+                  }}
+                  size="sm"
+                  variant={isActive ? "secondary" : "ghost"}
+                >
+                  <Text>
+                    {index + 1}. {step.title}
+                  </Text>
+                </Button>
+              );
+            })}
+          </View>
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("record.summaryTitle")}</CardTitle>
+              <CardTitle>{currentStep.title}</CardTitle>
+              <CardDescription>{currentStep.description}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <View className="gap-3">
-                <Text>{t("record.summarySituation", { value: getValues("situation") || t("record.summaryNotFilled") })}</Text>
-                <Text>{t("record.summaryThought", { value: getValues("automaticThought") || t("record.summaryNotFilled") })}</Text>
-                <Text>{t("record.summaryEmotions", { value: getValues("emotions").join(", ") || t("record.summaryNotFilled") })}</Text>
-                <Text>{t("record.summaryPatterns", { value: getValues("distortions").join(", ") || t("record.summaryNotFilled") })}</Text>
-              </View>
-            </CardContent>
           </Card>
-        </View>
-      ) : null}
+
+          {stepIndex === 0 ? (
+            <Controller
+              control={control}
+              name="situation"
+              render={({ field: { onBlur, onChange, value } }) => (
+                <View className="gap-2">
+                  <Label>{t("record.situation")}</Label>
+                  <Text variant="muted">{t("record.situationPlaceholder")}</Text>
+                  <Textarea
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    placeholder={t("record.situationExample")}
+                    value={value}
+                  />
+                  {errors.situation?.message ? (
+                    <Text variant="muted">{errors.situation.message}</Text>
+                  ) : null}
+                </View>
+              )}
+            />
+          ) : null}
+
+          {stepIndex === 1 ? (
+            <Controller
+              control={control}
+              name="automaticThought"
+              render={({ field: { onBlur, onChange, value } }) => (
+                <View className="gap-2">
+                  <Label>{t("record.automaticThought")}</Label>
+                  <Text variant="muted">{t("record.automaticThoughtPlaceholder")}</Text>
+                  <Textarea
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    placeholder={t("record.automaticThoughtExample")}
+                    value={value}
+                  />
+                  {errors.automaticThought?.message ? (
+                    <Text variant="muted">{errors.automaticThought.message}</Text>
+                  ) : null}
+                </View>
+              )}
+            />
+          ) : null}
+
+          {stepIndex === 2 ? (
+            <Controller
+              control={control}
+              name="emotions"
+              render={({ field: { onChange, value } }) => (
+                <View className="gap-3">
+                  <View className="gap-2">
+                    <Label>{t("record.emotionsLabel")}</Label>
+                    <Text variant="muted">{t("record.emotionsLabelHint")}</Text>
+                  </View>
+                  {emotionOptions.map((emotion) => {
+                    const checked = value.includes(emotion);
+                    const toggle = () => {
+                      const nextValues = checked
+                        ? value.filter((item) => item !== emotion)
+                        : [...value, emotion];
+                      onChange(nextValues);
+                    };
+                    const emotionKey = emotion.toLowerCase();
+                    return (
+                      <View key={emotion} className="flex-row items-center gap-3">
+                        <Checkbox checked={checked} onCheckedChange={toggle} />
+                        <Label onPress={toggle}>{t(`emotions.${emotionKey}`)}</Label>
+                      </View>
+                    );
+                  })}
+                  {errors.emotions?.message ? (
+                    <Text variant="muted">{errors.emotions.message}</Text>
+                  ) : null}
+                </View>
+              )}
+            />
+          ) : null}
+
+          {stepIndex === 3 ? (
+            <Controller
+              control={control}
+              name="distortions"
+              render={({ field: { onChange, value } }) => (
+                <View className="gap-3">
+                  <View className="gap-2">
+                    <Label>{t("record.patternsLabel")}</Label>
+                    <Text variant="muted">{t("record.patternsChooseHint")}</Text>
+                  </View>
+                  {distortionDefinitions.map((distortion) => {
+                    const checked = value.includes(distortion.key);
+                    const toggle = () => {
+                      const nextValues = checked
+                        ? value.filter((item) => item !== distortion.key)
+                        : [...value, distortion.key];
+                      onChange(nextValues);
+                    };
+                    return (
+                      <Card key={distortion.key}>
+                        <CardHeader>
+                          <View className="flex-row items-center gap-3">
+                            <Checkbox checked={checked} onCheckedChange={toggle} />
+                            <Label onPress={toggle}>
+                              {t(`distortions.${distortion.key}.title`)}
+                            </Label>
+                          </View>
+                          <CardDescription>
+                            {t(`distortions.${distortion.key}.shortDescription`)}
+                          </CardDescription>
+                        </CardHeader>
+                      </Card>
+                    );
+                  })}
+                  {errors.distortions?.message ? (
+                    <Text variant="muted">{errors.distortions.message}</Text>
+                  ) : null}
+                </View>
+              )}
+            />
+          ) : null}
+
+          {stepIndex === 4 ? (
+            <View className="gap-6">
+              <Controller
+                control={control}
+                name="balancedThought"
+                render={({ field: { onBlur, onChange, value } }) => (
+                  <View className="gap-2">
+                    <Label>{t("record.balancedThoughtLabel")}</Label>
+                    <Text variant="muted">{t("record.balancedThoughtPlaceholder")}</Text>
+                    <Textarea
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      placeholder={t("record.balancedThoughtExample")}
+                      value={value}
+                    />
+                    {errors.balancedThought?.message ? (
+                      <Text variant="muted">{errors.balancedThought.message}</Text>
+                    ) : null}
+                  </View>
+                )}
+              />
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("record.summaryTitle")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <View className="gap-3">
+                    <Text>
+                      {t("record.summarySituation", {
+                        value: getValues("situation") || t("record.summaryNotFilled"),
+                      })}
+                    </Text>
+                    <Text>
+                      {t("record.summaryThought", {
+                        value: getValues("automaticThought") || t("record.summaryNotFilled"),
+                      })}
+                    </Text>
+                    <Text>
+                      {t("record.summaryEmotions", {
+                        value: getValues("emotions").join(", ") || t("record.summaryNotFilled"),
+                      })}
+                    </Text>
+                    <Text>
+                      {t("record.summaryPatterns", {
+                        value: getValues("distortions").join(", ") || t("record.summaryNotFilled"),
+                      })}
+                    </Text>
+                  </View>
+                </CardContent>
+              </Card>
+            </View>
+          ) : null}
         </View>
       </ScrollView>
       <View className="border-t border-border bg-background p-4">
@@ -352,9 +380,15 @@ export default function ThoughtRecordEditorScreen() {
               disabled={isSubmitting || saveMutation.isPending}
               onPress={() => void (isLastStep ? handleSave() : handleNext())}
             >
-              {isSubmitting || saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
+              {isSubmitting || saveMutation.isPending ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : null}
               <Text>
-                {isSubmitting || saveMutation.isPending ? t("record.saving") : isLastStep ? t("record.saveRecord") : t("record.continue")}
+                {isSubmitting || saveMutation.isPending
+                  ? t("record.saving")
+                  : isLastStep
+                    ? t("record.saveRecord")
+                    : t("record.continue")}
               </Text>
             </Button>
           </View>

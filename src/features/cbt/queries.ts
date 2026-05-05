@@ -24,7 +24,8 @@ export function useThoughtRecords(userId: string | null) {
 
 export function useThoughtRecord(userId: string | null, recordId: string | null) {
   return useQuery({
-    queryKey: userId && recordId ? cbtKeys.record(userId, recordId) : ["cbt", "record", "anonymous"],
+    queryKey:
+      userId && recordId ? cbtKeys.record(userId, recordId) : ["cbt", "record", "anonymous"],
     queryFn: () => getThoughtRecord(userId!, recordId!),
     enabled: Boolean(userId && recordId),
   });

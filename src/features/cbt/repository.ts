@@ -61,7 +61,11 @@ export async function getThoughtRecord(userId: string, recordId: string) {
   return data ? mapThoughtRecord(data as ThoughtRecordRow) : null;
 }
 
-export async function saveThoughtRecord(userId: string, input: ThoughtRecordInput, recordId?: string) {
+export async function saveThoughtRecord(
+  userId: string,
+  input: ThoughtRecordInput,
+  recordId?: string,
+) {
   const client = requireSupabase();
   const payload = {
     user_id: userId,
@@ -73,11 +77,7 @@ export async function saveThoughtRecord(userId: string, input: ThoughtRecordInpu
   };
 
   const query = recordId
-    ? client
-        .from("thought_records")
-        .update(payload)
-        .eq("user_id", userId)
-        .eq("id", recordId)
+    ? client.from("thought_records").update(payload).eq("user_id", userId).eq("id", recordId)
     : client.from("thought_records").insert(payload);
 
   const { data, error } = await query.select("*").single();

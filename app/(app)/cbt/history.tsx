@@ -45,7 +45,10 @@ export default function CbtHistoryScreen() {
                 <CardHeader>
                   <CardTitle>{record.automaticThought}</CardTitle>
                   <CardDescription>
-                    {t("history.recordSummary", { timestamp: formatTimestamp(record.updatedAt), balancedThought: record.balancedThought })}
+                    {t("history.recordSummary", {
+                      timestamp: formatTimestamp(record.updatedAt),
+                      balancedThought: record.balancedThought,
+                    })}
                   </CardDescription>
                 </CardHeader>
               </Card>

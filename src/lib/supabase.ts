@@ -1,6 +1,11 @@
 import { AppState, Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import { createClient, processLock, type Session, type SupportedStorage } from "@supabase/supabase-js";
+import {
+  createClient,
+  processLock,
+  type Session,
+  type SupportedStorage,
+} from "@supabase/supabase-js";
 import "react-native-url-polyfill/auto";
 
 import { appEnv, hasSupabaseConfig } from "@/src/lib/env";

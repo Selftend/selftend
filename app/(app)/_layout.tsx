@@ -43,16 +43,11 @@ export default function ProtectedLayout() {
   }
 
   const needsConsent =
-    !consentDismissed &&
-    !prefsLoading &&
-    preferences?.policyVersionAccepted !== policyVersion;
+    !consentDismissed && !prefsLoading && preferences?.policyVersionAccepted !== policyVersion;
 
   return (
     <>
-      <ConsentModal
-        visible={needsConsent}
-        onAccepted={() => setConsentDismissed(true)}
-      />
+      <ConsentModal visible={needsConsent} onAccepted={() => setConsentDismissed(true)} />
       <View className="flex-1 flex-row bg-background">
         {isDesktop ? <SidebarNav /> : null}
         <View className="flex-1">

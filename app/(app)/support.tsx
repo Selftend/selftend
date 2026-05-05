@@ -23,72 +23,76 @@ export default function SupportScreen() {
             <Text variant="muted">{t("supportPage.description")}</Text>
           </View>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("supportPage.boundary")}</CardTitle>
-          <CardDescription>{t("supportPage.boundaryDescription")}</CardDescription>
-        </CardHeader>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("supportPage.boundary")}</CardTitle>
+              <CardDescription>{t("supportPage.boundaryDescription")}</CardDescription>
+            </CardHeader>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("supportPage.contact")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <View className="gap-3">
-          {supportEmail ? (
-            <Button
-              onPress={() => void Linking.openURL(`mailto:${supportEmail}?subject=${supportSubject}`)}
-            >
-              <Text>{t("supportPage.emailSupport")}</Text>
-            </Button>
-          ) : (
-            <Text variant="muted">{t("supportPage.emailNotConfigured")}</Text>
-          )}
-          <Button onPress={() => router.push("/account-deletion")} variant="ghost">
-            <Text>{t("supportPage.requestDeletion")}</Text>
-          </Button>
-          </View>
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("supportPage.contact")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-3">
+                {supportEmail ? (
+                  <Button
+                    onPress={() =>
+                      void Linking.openURL(`mailto:${supportEmail}?subject=${supportSubject}`)
+                    }
+                  >
+                    <Text>{t("supportPage.emailSupport")}</Text>
+                  </Button>
+                ) : (
+                  <Text variant="muted">{t("supportPage.emailNotConfigured")}</Text>
+                )}
+                <Button onPress={() => router.push("/account-deletion")} variant="ghost">
+                  <Text>{t("supportPage.requestDeletion")}</Text>
+                </Button>
+              </View>
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("supportPage.projectLinks")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <View className="gap-3">
-          <Button onPress={() => void Linking.openURL(appEnv.githubRepoUrl)}>
-            <Text>{t("supportPage.openRepo")}</Text>
-          </Button>
-          <Button
-            onPress={() => void Linking.openURL(`${appEnv.githubRepoUrl}/blob/main/CONTRIBUTING.md`)}
-            variant="secondary"
-          >
-            <Text>{t("supportPage.openContributing")}</Text>
-          </Button>
-          </View>
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("supportPage.projectLinks")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-3">
+                <Button onPress={() => void Linking.openURL(appEnv.githubRepoUrl)}>
+                  <Text>{t("supportPage.openRepo")}</Text>
+                </Button>
+                <Button
+                  onPress={() =>
+                    void Linking.openURL(`${appEnv.githubRepoUrl}/blob/main/CONTRIBUTING.md`)
+                  }
+                  variant="secondary"
+                >
+                  <Text>{t("supportPage.openContributing")}</Text>
+                </Button>
+              </View>
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("supportPage.policiesAndSafety")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <View className="gap-3">
-          <Button onPress={() => router.push("/crisis")} variant="secondary">
-            <Text>{t("supportPage.openCrisis")}</Text>
-          </Button>
-          <Button onPress={() => router.push("/privacy")} variant="ghost">
-            <Text>{t("supportPage.openPrivacy")}</Text>
-          </Button>
-          <Button onPress={() => router.push("/terms")} variant="ghost">
-            <Text>{t("supportPage.openTerms")}</Text>
-          </Button>
-          </View>
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("supportPage.policiesAndSafety")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-3">
+                <Button onPress={() => router.push("/crisis")} variant="secondary">
+                  <Text>{t("supportPage.openCrisis")}</Text>
+                </Button>
+                <Button onPress={() => router.push("/privacy")} variant="ghost">
+                  <Text>{t("supportPage.openPrivacy")}</Text>
+                </Button>
+                <Button onPress={() => router.push("/terms")} variant="ghost">
+                  <Text>{t("supportPage.openTerms")}</Text>
+                </Button>
+              </View>
+            </CardContent>
+          </Card>
         </View>
       </ScrollView>
     </SafeAreaView>

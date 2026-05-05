@@ -13,10 +13,7 @@ import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { UserMenu } from "@/components/user-menu";
 import { appEnv } from "@/src/lib/env";
-import {
-  resolveThemePreference,
-  useSystemColorScheme,
-} from "@/src/lib/color-scheme";
+import { resolveThemePreference, useSystemColorScheme } from "@/src/lib/color-scheme";
 import { useSession } from "@/src/providers/session-provider";
 import { useThemeStore } from "@/src/stores/theme-store";
 
@@ -76,11 +73,7 @@ function GitHubButton() {
   const colorScheme = resolveThemePreference(preference, systemColorScheme);
   const openGitHub = () => {
     if (Platform.OS === "web") {
-      globalThis.window?.open(
-        appEnv.githubRepoUrl,
-        "_blank",
-        "noopener,noreferrer",
-      );
+      globalThis.window?.open(appEnv.githubRepoUrl, "_blank", "noopener,noreferrer");
       return;
     }
 

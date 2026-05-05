@@ -108,9 +108,7 @@ export default function AuthCallbackScreen() {
             <Card>
               <CardHeader>
                 <CardTitle>{t("callback.missingData")}</CardTitle>
-                <CardDescription>
-                  {t("callback.missingDataDescription")}
-                </CardDescription>
+                <CardDescription>{t("callback.missingDataDescription")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button onPress={() => router.replace("/")}>

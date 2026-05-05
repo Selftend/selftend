@@ -20,8 +20,7 @@ export function useAuthThrottle() {
     (error?: unknown) => {
       const isRateLimited =
         error instanceof Error &&
-        (error.message.toLowerCase().includes("rate") ||
-          error.message.includes("429"));
+        (error.message.toLowerCase().includes("rate") || error.message.includes("429"));
 
       if (isRateLimited) {
         startCooldown();
