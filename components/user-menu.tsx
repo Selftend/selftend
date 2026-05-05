@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { LogOutIcon, SettingsIcon } from 'lucide-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ProfileAvatar } from '@/components/profile-avatar';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ import { useSession } from '@/src/providers/session-provider';
 import type { TriggerRef } from '@rn-primitives/popover';
 
 export function UserMenu() {
+  const { t } = useTranslation('navigation');
   const popoverTriggerRef = React.useRef<TriggerRef>(null);
   const { user } = useSession();
   const { data: profile } = useUserProfile(user);
@@ -46,7 +48,7 @@ export function UserMenu() {
                 className="text-sm text-muted-foreground font-normal leading-4"
                 numberOfLines={1}
               >
-                {email ?? 'Account'}
+                {email ?? t('userMenu.account')}
               </Text>
             </View>
           </View>
@@ -59,11 +61,11 @@ export function UserMenu() {
                 router.push('/(app)/(tabs)/settings');
               }}>
               <Icon as={SettingsIcon} className="size-4" />
-              <Text>Settings</Text>
+              <Text>{t('userMenu.settings')}</Text>
             </Button>
             <Button variant="outline" size="sm" className="flex-1" onPress={onSignOut}>
               <Icon as={LogOutIcon} className="size-4" />
-              <Text>Sign Out</Text>
+              <Text>{t('userMenu.signOut')}</Text>
             </Button>
           </View>
         </View>

@@ -3,21 +3,18 @@ import { z } from "zod";
 const emailField = z
   .string()
   .trim()
-  .min(1, "Enter your email address.")
-  .email("Enter a valid email address.");
+  .min(1, { message: "Enter your email address." })
+  .email({ message: "Enter a valid email address." });
 
 const passwordField = z
   .string()
-  .min(8, "Password must be at least 8 characters.");
+  .min(8, { message: "Password must be at least 8 characters." });
 
 const newPasswordField = z
   .string()
-  .min(8, "Password must be at least 8 characters.")
-  .regex(/[a-zA-Z]/, "Password must contain at least one letter.")
-  .regex(/\d/, "Password must contain at least one number.");
-
-export const PASSWORD_REQUIREMENTS_HINT =
-  "At least 8 characters, including a letter and a number.";
+  .min(8, { message: "Password must be at least 8 characters." })
+  .regex(/[a-zA-Z]/, { message: "Password must contain at least one letter." })
+  .regex(/\d/, { message: "Password must contain at least one number." });
 
 export const signInSchema = z.object({
   email: emailField,
@@ -30,7 +27,7 @@ export const signUpSchema = z
   .object({
     email: emailField,
     password: newPasswordField,
-    confirmPassword: z.string().min(1, "Confirm your password."),
+    confirmPassword: z.string().min(1, { message: "Confirm your password." }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match.",
@@ -48,7 +45,7 @@ export type ForgotPasswordSchema = z.infer<typeof forgotPasswordSchema>;
 export const resetPasswordSchema = z
   .object({
     password: newPasswordField,
-    confirmPassword: z.string().min(1, "Confirm your new password."),
+    confirmPassword: z.string().min(1, { message: "Confirm your new password." }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match.",

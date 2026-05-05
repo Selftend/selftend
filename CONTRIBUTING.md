@@ -27,7 +27,23 @@ This project is meant to be open to more than code contributions. Product, desig
 - accessibility review
 - issue triage
 - test planning
-- localization planning
+- adding or improving translations
+
+## Translating the app
+
+Translation files live in `src/i18n/locales/`. Each supported language has a folder (e.g. `en/`, `bg/`) with seven JSON namespace files.
+
+To improve an existing language, edit the JSON files in that language's folder.
+
+To add a new language:
+
+1. Copy `src/i18n/locales/en/` to `src/i18n/locales/{code}/`.
+2. Translate every value in all seven JSON files. Do not change the keys.
+3. Register the new language in `src/i18n/index.ts` (import the files, add the code to `supportedLanguages`, add the resources).
+4. Add the language option to the language switcher in `src/features/settings/settings.tsx`.
+5. Open a PR with the new locale.
+
+See `docs/stack.md` for more details on the i18n architecture.
 
 ## Contribution flow
 

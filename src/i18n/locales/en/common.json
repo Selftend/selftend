@@ -1,0 +1,17 @@
+{
+  "loading": "Loading",
+  "preparingWorkspace": "Preparing your workspace...",
+  "saving": "Saving...",
+  "cancel": "Cancel",
+  "back": "Back",
+  "next": "Next",
+  "previous": "Previous",
+  "continue": "Continue",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "or": "or",
+  "appName": "Selftend",
+  "underConstruction": "Under construction",
+  "toolNotAvailable": "This tool is not available yet. For now, Selftend is focused on the working CBT section."
+}

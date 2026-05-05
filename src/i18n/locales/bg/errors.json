@@ -1,0 +1,6 @@
+{
+  "supabaseNotConfigured": "Supabase не е конфигуриран. Добавете EXPO_PUBLIC_SUPABASE_URL и EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY към средата си.",
+  "googleSignIn": "Неуспешно стартиране на Google влизане.",
+  "authLink": "Неуспешно завършване на линка за удостоверяване.",
+  "authLinkMissing": "Линкът за удостоверяване няма необходимите параметри."
+}

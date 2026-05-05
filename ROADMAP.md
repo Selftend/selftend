@@ -267,7 +267,7 @@ Recommended channel rollout:
 - [ ] flexible reminders
 - [ ] data export
 - [ ] richer progress summaries
-- [ ] localization groundwork
+- [x] localization groundwork (i18n infrastructure with English and Bulgarian, runtime switching)
 - [x] self-hosting and portability plan
 
 ### Later expansion

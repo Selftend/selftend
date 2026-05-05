@@ -4,6 +4,7 @@ import { MenuIcon } from "lucide-react-native";
 import { Image, Platform, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
+  const { t } = useTranslation("navigation");
   const { session } = useSession();
   const isSignedIn = Boolean(session);
 
@@ -32,7 +34,7 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
       <View className="flex-row items-center gap-2 px-2 h-14">
         {showHamburger ? (
           <Button
-            accessibilityLabel="Open navigation"
+            accessibilityLabel={t("header.openNav")}
             variant="ghost"
             size="icon"
             onPress={onMenuPress}
@@ -44,7 +46,7 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
           className="min-w-0 flex-1 flex-row items-center gap-2 px-2"
           onPress={() => router.push(isSignedIn ? "/(app)/(tabs)" : "/")}
           accessibilityRole="button"
-          accessibilityLabel="Go to home"
+          accessibilityLabel={t("header.goHome")}
         >
           <Image
             source={require("../assets/icon.png")}
@@ -52,7 +54,7 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
             style={{ width: 28, height: 28, borderRadius: 6 }}
           />
           <Text className="shrink text-lg font-semibold text-foreground" numberOfLines={1}>
-            Selftend
+            {t("header.appName")}
           </Text>
         </Pressable>
         <View className="flex-row items-center gap-2">
@@ -66,6 +68,7 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
 }
 
 function GitHubButton() {
+  const { t } = useTranslation("navigation");
   const preference = useThemeStore((state) => state.preference);
   const systemColorScheme = useSystemColorScheme();
   const colorScheme = resolveThemePreference(preference, systemColorScheme);
@@ -84,7 +87,7 @@ function GitHubButton() {
 
   return (
     <Button
-      accessibilityLabel="Open Selftend on GitHub"
+      accessibilityLabel={t("header.openGithub")}
       className="size-9 rounded-full"
       onPress={openGitHub}
       size="icon"

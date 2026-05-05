@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
+import i18n from "@/src/i18n";
 
 const REMINDER_KEY = "selftend:cbt-reminder-id";
 
@@ -66,8 +67,8 @@ export async function scheduleCbtReminder(hour: number, minute: number) {
 
   const notificationId = await Notifications.scheduleNotificationAsync({
     content: {
-      title: "Quiet CBT check-in",
-      body: "Take a minute to notice a thought and respond to it with more balance.",
+      title: i18n.t("cbt:notifications.title"),
+      body: i18n.t("cbt:notifications.body"),
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,

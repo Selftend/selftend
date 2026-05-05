@@ -4,6 +4,7 @@ import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,35 +27,8 @@ const defaultValues: ThoughtRecordFormSchema = {
   balancedThought: "",
 };
 
-const steps = [
-  {
-    description: "What happened, where were you, and what set the moment off?",
-    fields: ["situation"] as const,
-    title: "Situation",
-  },
-  {
-    description: "Capture the first thought that showed up before you tried to soften it.",
-    fields: ["automaticThought"] as const,
-    title: "Automatic thought",
-  },
-  {
-    description: "Choose the emotions that feel closest to the moment.",
-    fields: ["emotions"] as const,
-    title: "Emotions",
-  },
-  {
-    description: "Notice which thinking patterns might be shaping the moment.",
-    fields: ["distortions"] as const,
-    title: "Patterns",
-  },
-  {
-    description: "Write the calmer, more balanced response you want to keep.",
-    fields: ["balancedThought"] as const,
-    title: "Balanced thought",
-  },
-];
-
 export default function ThoughtRecordEditorScreen() {
+  const { t } = useTranslation("cbt");
   const { recordId: rawRecordId } = useLocalSearchParams<{ recordId?: string }>();
   const recordId = useMemo(
     () => (typeof rawRecordId === "string" && rawRecordId.length > 0 ? rawRecordId : null),
@@ -103,6 +77,34 @@ export default function ThoughtRecordEditorScreen() {
     });
   }, [existingRecord, reset]);
 
+  const steps = [
+    {
+      description: t("record.situationHint"),
+      fields: ["situation"] as const,
+      title: t("record.situation"),
+    },
+    {
+      description: t("record.automaticThoughtHint"),
+      fields: ["automaticThought"] as const,
+      title: t("record.automaticThought"),
+    },
+    {
+      description: t("record.emotionsHint"),
+      fields: ["emotions"] as const,
+      title: t("record.emotions"),
+    },
+    {
+      description: t("record.patternsHint"),
+      fields: ["distortions"] as const,
+      title: t("record.patterns"),
+    },
+    {
+      description: t("record.balancedThoughtHint"),
+      fields: ["balancedThought"] as const,
+      title: t("record.balancedThought"),
+    },
+  ];
+
   const currentStep = steps[stepIndex];
   const isLastStep = stepIndex === steps.length - 1;
 
@@ -123,7 +125,7 @@ export default function ThoughtRecordEditorScreen() {
       resetDraft();
       router.replace(`/cbt/${saved.id}`);
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Unable to save the thought record.");
+      setSubmitError(error instanceof Error ? error.message : t("detail.archiveError"));
     }
   });
 
@@ -131,9 +133,9 @@ export default function ThoughtRecordEditorScreen() {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 items-center justify-center gap-3 p-6">
-          <Text variant="h1">Loading record</Text>
+          <Text variant="h1">{t("detail.loading")}</Text>
           <ActivityIndicator />
-          <Text variant="muted">Preparing your existing record...</Text>
+          <Text variant="muted">{t("detail.loadingDescription")}</Text>
         </View>
       </SafeAreaView>
     );
@@ -144,16 +146,16 @@ export default function ThoughtRecordEditorScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">{recordId ? "Edit thought record" : "New thought record"}</Text>
+            <Text variant="h1">{recordId ? t("record.editTitle") : t("record.newTitle")}</Text>
             <Text variant="muted">
-              {recordId ? "Edit a saved record without losing its history." : "Walk through one thought in five small steps."}
+              {recordId ? t("record.editDescription") : t("record.newDescription")}
             </Text>
           </View>
 
       {submitError ? (
         <Card>
           <CardHeader>
-            <CardTitle>Save problem</CardTitle>
+            <CardTitle>{t("record.saveProblem")}</CardTitle>
             <CardDescription>{submitError}</CardDescription>
           </CardHeader>
         </Card>
@@ -195,12 +197,12 @@ export default function ThoughtRecordEditorScreen() {
           name="situation"
           render={({ field: { onBlur, onChange, value } }) => (
             <View className="gap-2">
-              <Label>Situation</Label>
-              <Text variant="muted">Keep it concrete. A few sentences is enough.</Text>
+              <Label>{t("record.situation")}</Label>
+              <Text variant="muted">{t("record.situationPlaceholder")}</Text>
               <Textarea
                 onBlur={onBlur}
                 onChangeText={onChange}
-                placeholder="Example: I saw an email from my manager and my chest tightened immediately."
+                placeholder={t("record.situationExample")}
                 value={value}
               />
               {errors.situation?.message ? <Text variant="muted">{errors.situation.message}</Text> : null}
@@ -215,12 +217,12 @@ export default function ThoughtRecordEditorScreen() {
           name="automaticThought"
           render={({ field: { onBlur, onChange, value } }) => (
             <View className="gap-2">
-              <Label>Automatic thought</Label>
-              <Text variant="muted">Write the raw thought before you correct it.</Text>
+              <Label>{t("record.automaticThought")}</Label>
+              <Text variant="muted">{t("record.automaticThoughtPlaceholder")}</Text>
               <Textarea
                 onBlur={onBlur}
                 onChangeText={onChange}
-                placeholder="Example: I am about to be told I messed everything up."
+                placeholder={t("record.automaticThoughtExample")}
                 value={value}
               />
               {errors.automaticThought?.message ? (
@@ -238,8 +240,8 @@ export default function ThoughtRecordEditorScreen() {
           render={({ field: { onChange, value } }) => (
             <View className="gap-3">
               <View className="gap-2">
-                <Label>Emotions</Label>
-                <Text variant="muted">Pick the feelings that fit best.</Text>
+                <Label>{t("record.emotionsLabel")}</Label>
+                <Text variant="muted">{t("record.emotionsLabelHint")}</Text>
               </View>
               {emotionOptions.map((emotion) => {
                 const checked = value.includes(emotion);
@@ -247,10 +249,11 @@ export default function ThoughtRecordEditorScreen() {
                   const nextValues = checked ? value.filter((item) => item !== emotion) : [...value, emotion];
                   onChange(nextValues);
                 };
+                const emotionKey = emotion.toLowerCase();
                 return (
                   <View key={emotion} className="flex-row items-center gap-3">
                     <Checkbox checked={checked} onCheckedChange={toggle} />
-                    <Label onPress={toggle}>{emotion}</Label>
+                    <Label onPress={toggle}>{t(`emotions.${emotionKey}`)}</Label>
                   </View>
                 );
               })}
@@ -267,8 +270,8 @@ export default function ThoughtRecordEditorScreen() {
           render={({ field: { onChange, value } }) => (
             <View className="gap-3">
               <View className="gap-2">
-                <Label>Thinking patterns</Label>
-                <Text variant="muted">Choose the patterns that seem closest. You can pick more than one.</Text>
+                <Label>{t("record.patternsLabel")}</Label>
+                <Text variant="muted">{t("record.patternsChooseHint")}</Text>
               </View>
               {distortionDefinitions.map((distortion) => {
                 const checked = value.includes(distortion.key);
@@ -283,9 +286,9 @@ export default function ThoughtRecordEditorScreen() {
                     <CardHeader>
                       <View className="flex-row items-center gap-3">
                         <Checkbox checked={checked} onCheckedChange={toggle} />
-                        <Label onPress={toggle}>{distortion.title}</Label>
+                        <Label onPress={toggle}>{t(`distortions.${distortion.key}.title`)}</Label>
                       </View>
-                      <CardDescription>{distortion.shortDescription}</CardDescription>
+                      <CardDescription>{t(`distortions.${distortion.key}.shortDescription`)}</CardDescription>
                     </CardHeader>
                   </Card>
                 );
@@ -303,12 +306,12 @@ export default function ThoughtRecordEditorScreen() {
             name="balancedThought"
             render={({ field: { onBlur, onChange, value } }) => (
               <View className="gap-2">
-                <Label>Balanced thought</Label>
-                <Text variant="muted">Aim for something believable and kinder, not forced positivity.</Text>
+                <Label>{t("record.balancedThoughtLabel")}</Label>
+                <Text variant="muted">{t("record.balancedThoughtPlaceholder")}</Text>
                 <Textarea
                   onBlur={onBlur}
                   onChangeText={onChange}
-                  placeholder="Example: I do not know what the email means yet. One message is not proof that I failed."
+                  placeholder={t("record.balancedThoughtExample")}
                   value={value}
                 />
                 {errors.balancedThought?.message ? (
@@ -320,14 +323,14 @@ export default function ThoughtRecordEditorScreen() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Summary before saving</CardTitle>
+              <CardTitle>{t("record.summaryTitle")}</CardTitle>
             </CardHeader>
             <CardContent>
               <View className="gap-3">
-                <Text>Situation: {getValues("situation") || "Not filled yet."}</Text>
-                <Text>Thought: {getValues("automaticThought") || "Not filled yet."}</Text>
-                <Text>Emotions: {getValues("emotions").join(", ") || "Not filled yet."}</Text>
-                <Text>Patterns: {getValues("distortions").join(", ") || "Not filled yet."}</Text>
+                <Text>{t("record.summarySituation", { value: getValues("situation") || t("record.summaryNotFilled") })}</Text>
+                <Text>{t("record.summaryThought", { value: getValues("automaticThought") || t("record.summaryNotFilled") })}</Text>
+                <Text>{t("record.summaryEmotions", { value: getValues("emotions").join(", ") || t("record.summaryNotFilled") })}</Text>
+                <Text>{t("record.summaryPatterns", { value: getValues("distortions").join(", ") || t("record.summaryNotFilled") })}</Text>
               </View>
             </CardContent>
           </Card>
@@ -340,7 +343,7 @@ export default function ThoughtRecordEditorScreen() {
           {stepIndex > 0 ? (
             <View className="flex-1">
               <Button onPress={previousStep} variant="ghost">
-                <Text>Back</Text>
+                <Text>{t("record.back")}</Text>
               </Button>
             </View>
           ) : null}
@@ -351,7 +354,7 @@ export default function ThoughtRecordEditorScreen() {
             >
               {isSubmitting || saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
               <Text>
-                {isSubmitting || saveMutation.isPending ? "Saving record" : isLastStep ? "Save record" : "Continue"}
+                {isSubmitting || saveMutation.isPending ? t("record.saving") : isLastStep ? t("record.saveRecord") : t("record.continue")}
               </Text>
             </Button>
           </View>

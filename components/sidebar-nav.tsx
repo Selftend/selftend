@@ -16,30 +16,29 @@ import {
 import * as React from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
 
-const MAIN_NAV_ITEMS = [
-  { label: "Home", href: "/(app)/(tabs)/", icon: HomeIcon, matchPrefix: null },
-  {
-    label: "Settings",
-    href: "/(app)/(tabs)/settings",
-    icon: SettingsIcon,
-    matchPrefix: "/settings",
-  },
-  {
-    label: "Support",
-    href: "/(app)/support",
-    icon: LifeBuoyIcon,
-    matchPrefix: "/support",
-  },
-] as const;
+interface NavItemDef {
+  labelKey: string;
+  href: string;
+  icon: typeof HomeIcon;
+  matchPrefix: string | null;
+  activeWhen?: (pathname: string) => boolean;
+}
 
-const CBT_NAV_ITEMS = [
+const MAIN_NAV_ITEMS: NavItemDef[] = [
+  { labelKey: "sidebar.home", href: "/(app)/(tabs)/", icon: HomeIcon, matchPrefix: null },
+  { labelKey: "sidebar.settings", href: "/(app)/(tabs)/settings", icon: SettingsIcon, matchPrefix: "/settings" },
+  { labelKey: "sidebar.support", href: "/(app)/support", icon: LifeBuoyIcon, matchPrefix: "/support" },
+];
+
+const CBT_NAV_ITEMS: NavItemDef[] = [
   {
-    label: "Overview",
+    labelKey: "sidebar.cbtOverview",
     href: "/cbt",
     icon: BrainIcon,
     matchPrefix: "/cbt",
@@ -49,51 +48,16 @@ const CBT_NAV_ITEMS = [
         !pathname.startsWith("/cbt/learn") &&
         !pathname.startsWith("/cbt/history")),
   },
-  {
-    label: "History",
-    href: "/cbt/history",
-    icon: HistoryIcon,
-    matchPrefix: "/cbt/history",
-  },
-  {
-    label: "Learn",
-    href: "/cbt/learn",
-    icon: BookOpenIcon,
-    matchPrefix: "/cbt/learn",
-  },
-] as const;
+  { labelKey: "sidebar.cbtHistory", href: "/cbt/history", icon: HistoryIcon, matchPrefix: "/cbt/history" },
+  { labelKey: "sidebar.cbtLearn", href: "/cbt/learn", icon: BookOpenIcon, matchPrefix: "/cbt/learn" },
+];
 
-const TOOL_PLACEHOLDER_NAV_ITEMS = [
-  {
-    label: "Mood tracker",
-    href: "/tools/mood-tracker",
-    icon: SmilePlusIcon,
-    matchPrefix: "/tools/mood-tracker",
-  },
-  {
-    label: "Meditation",
-    href: "/tools/meditation",
-    icon: WindIcon,
-    matchPrefix: "/tools/meditation",
-  },
-  {
-    label: "ACT",
-    href: "/tools/act",
-    icon: ShapesIcon,
-    matchPrefix: "/tools/act",
-  },
-  {
-    label: "Gratitude log",
-    href: "/tools/gratitude-log",
-    icon: BookHeartIcon,
-    matchPrefix: "/tools/gratitude-log",
-  },
-] as const;
-
-type NavItem =
-  | (typeof MAIN_NAV_ITEMS)[number]
-  | (typeof CBT_NAV_ITEMS)[number]
-  | (typeof TOOL_PLACEHOLDER_NAV_ITEMS)[number];
+const TOOL_PLACEHOLDER_NAV_ITEMS: NavItemDef[] = [
+  { labelKey: "sidebar.moodTracker", href: "/tools/mood-tracker", icon: SmilePlusIcon, matchPrefix: "/tools/mood-tracker" },
+  { labelKey: "sidebar.meditation", href: "/tools/meditation", icon: WindIcon, matchPrefix: "/tools/meditation" },
+  { labelKey: "sidebar.act", href: "/tools/act", icon: ShapesIcon, matchPrefix: "/tools/act" },
+  { labelKey: "sidebar.gratitudeLog", href: "/tools/gratitude-log", icon: BookHeartIcon, matchPrefix: "/tools/gratitude-log" },
+];
 
 interface SidebarNavProps {
   includeTopInset?: boolean;
@@ -101,6 +65,7 @@ interface SidebarNavProps {
 }
 
 export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProps) {
+  const { t } = useTranslation("navigation");
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const toolsActive = pathname.startsWith("/cbt") || pathname.startsWith("/tools");
@@ -117,8 +82,8 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     }
   }, [cbtActive, toolsActive]);
 
-  function isActive(item: NavItem) {
-    if ("activeWhen" in item) {
+  function isActive(item: NavItemDef) {
+    if (item.activeWhen) {
       return item.activeWhen(pathname);
     }
 
@@ -133,8 +98,9 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     return level === 0 ? "px-3" : level === 1 ? "pl-8 pr-3" : "pl-12 pr-3";
   }
 
-  function renderNavItem(item: NavItem, level = 0) {
+  function renderNavItem(item: NavItemDef, level = 0) {
     const active = isActive(item);
+    const label = t(item.labelKey);
     return (
       <Pressable
         key={item.href}
@@ -153,7 +119,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
           className={cn("size-5", active ? "text-primary" : "text-muted-foreground")}
         />
         <Text className={cn("text-sm font-medium", active ? "text-primary" : "text-foreground")}>
-          {item.label}
+          {label}
         </Text>
       </Pressable>
     );
@@ -174,11 +140,10 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     onPress: () => void;
     open: boolean;
   }) {
-    // When expanded, children are visible — only the most specific child should highlight.
     const highlighted = active && !open;
     return (
       <Pressable
-        accessibilityLabel={`${open ? "Collapse" : "Expand"} ${label}`}
+        accessibilityLabel={open ? t("sidebar.collapse", { label }) : t("sidebar.expand", { label })}
         accessibilityState={{ expanded: open }}
         onPress={onPress}
         className={cn(
@@ -217,7 +182,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
           {renderSubmenuTrigger({
             active: toolsActive,
             icon: ShapesIcon,
-            label: "Tools",
+            label: t("sidebar.tools"),
             level: 0,
             onPress: () => setToolsOpen((open) => !open),
             open: toolsOpen,

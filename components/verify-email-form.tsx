@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { resendVerificationEmail, signOut } from "@/src/features/auth/api";
 import { useSession } from "@/src/providers/session-provider";
 
 export function VerifyEmailForm() {
+  const { t } = useTranslation("auth");
   const { user } = useSession();
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -22,7 +24,7 @@ export function VerifyEmailForm() {
       setResendStatus("sent");
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Unable to resend verification email.",
+        error instanceof Error ? error.message : t("verifyEmail.resendError"),
       );
       setResendStatus("idle");
     }
@@ -36,9 +38,9 @@ export function VerifyEmailForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Verify your email</CardTitle>
+        <CardTitle>{t("verifyEmail.title")}</CardTitle>
         <CardDescription>
-          We sent a verification link to {user?.email ?? "your email"}. Open the link to activate your account.
+          {t("verifyEmail.subtitle", { email: user?.email ?? "your email" })}
         </CardDescription>
       </CardHeader>
       <CardContent className="gap-4">
@@ -48,7 +50,7 @@ export function VerifyEmailForm() {
 
         {resendStatus === "sent" ? (
           <Text className="text-sm text-muted-foreground">
-            Verification email resent. Check your inbox.
+            {t("verifyEmail.resendSuccess")}
           </Text>
         ) : null}
 
@@ -58,12 +60,12 @@ export function VerifyEmailForm() {
           variant="outline"
         >
           {resendStatus === "sending" ? <ActivityIndicator color="#20312c" /> : null}
-          <Text>{resendStatus === "sending" ? "Sending..." : "Resend verification email"}</Text>
+          <Text>{resendStatus === "sending" ? t("verifyEmail.resendSubmitting") : t("verifyEmail.resendButton")}</Text>
         </Button>
 
         <View className="items-center pt-2">
           <Button onPress={() => void onSignOut()} variant="link">
-            <Text>Sign out and start over</Text>
+            <Text>{t("verifyEmail.signOutButton")}</Text>
           </Button>
         </View>
       </CardContent>

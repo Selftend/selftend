@@ -407,3 +407,9 @@ export const crisisActions: PolicyAction[] = [
     url: "https://988.ca/get-help/help-right-now",
   },
 ];
+
+/** URL-only version with stable keys for i18n label lookup. */
+export const crisisActionUrls = [
+  { key: "open988", url: "https://988lifeline.org/get-help/" },
+  { key: "open988Canada", url: "https://988.ca/get-help/help-right-now" },
+] as const;

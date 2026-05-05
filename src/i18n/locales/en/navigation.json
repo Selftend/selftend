@@ -1,0 +1,41 @@
+{
+  "header": {
+    "openNav": "Open navigation",
+    "goHome": "Go to home",
+    "appName": "Selftend",
+    "openGithub": "Open Selftend on GitHub"
+  },
+  "sidebar": {
+    "home": "Home",
+    "settings": "Settings",
+    "support": "Support",
+    "cbtOverview": "Overview",
+    "cbtHistory": "History",
+    "cbtLearn": "Learn",
+    "moodTracker": "Mood tracker",
+    "meditation": "Meditation",
+    "act": "ACT",
+    "gratitudeLog": "Gratitude log",
+    "tools": "Tools",
+    "collapse": "Collapse {{label}}",
+    "expand": "Expand {{label}}"
+  },
+  "userMenu": {
+    "account": "Account",
+    "settings": "Settings",
+    "signOut": "Sign Out"
+  },
+  "themeToggle": {
+    "toggle": "Toggle dark theme",
+    "dark": "Dark theme",
+    "light": "Light theme"
+  },
+  "tabs": {
+    "home": "Home",
+    "settings": "Settings"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "home": "Home"
+  }
+}

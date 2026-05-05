@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { useState } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { forgotPasswordSchema, type ForgotPasswordSchema } from "@/src/features/
 import { useSession } from "@/src/providers/session-provider";
 
 export function ForgotPasswordForm() {
+  const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
   const [submitError, setSubmitError] = useState("");
   const [sentTo, setSentTo] = useState("");
@@ -34,7 +36,7 @@ export function ForgotPasswordForm() {
       setSentTo(email);
     } catch (error) {
       setSubmitError(
-        error instanceof Error ? error.message : "Unable to send reset email.",
+        error instanceof Error ? error.message : t("forgotPassword.error"),
       );
     }
   });
@@ -42,9 +44,9 @@ export function ForgotPasswordForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Forgot your password?</CardTitle>
+        <CardTitle>{t("forgotPassword.title")}</CardTitle>
         <CardDescription>
-          Enter your email and we'll send you a link to reset your password.
+          {t("forgotPassword.subtitle")}
         </CardDescription>
       </CardHeader>
       <CardContent className="gap-4">
@@ -53,14 +55,14 @@ export function ForgotPasswordForm() {
           name="email"
           render={({ field: { onBlur, onChange, value } }) => (
             <View className="gap-2">
-              <Label>Email</Label>
+              <Label>{t("forgotPassword.email")}</Label>
               <Input
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
                 onBlur={onBlur}
                 onChangeText={onChange}
-                placeholder="m@example.com"
+                placeholder={t("forgotPassword.emailPlaceholder")}
                 value={value}
               />
               {errors.email?.message ? (
@@ -72,7 +74,7 @@ export function ForgotPasswordForm() {
 
         {!hasSupabaseConfig ? (
           <Text variant="muted">
-            Supabase auth is not configured yet. Add environment values to continue.
+            {t("forgotPassword.supabaseNotConfigured")}
           </Text>
         ) : null}
 
@@ -82,7 +84,7 @@ export function ForgotPasswordForm() {
 
         {sentTo ? (
           <Text className="text-sm text-muted-foreground">
-            A password-reset link was sent to {sentTo}. Check your inbox.
+            {t("forgotPassword.success", { sentTo })}
           </Text>
         ) : null}
 
@@ -91,12 +93,12 @@ export function ForgotPasswordForm() {
           onPress={() => void onSubmit()}
         >
           {isSubmitting ? <ActivityIndicator color="#ffffff" /> : null}
-          <Text>{isSubmitting ? "Sending..." : "Send reset link"}</Text>
+          <Text>{isSubmitting ? t("forgotPassword.submitting") : t("forgotPassword.submit")}</Text>
         </Button>
 
         <View className="items-center pt-2">
           <Button onPress={() => router.push("/")} variant="link">
-            <Text>Back to sign in</Text>
+            <Text>{t("forgotPassword.backToSignIn")}</Text>
           </Button>
         </View>
       </CardContent>

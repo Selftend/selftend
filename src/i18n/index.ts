@@ -1,0 +1,50 @@
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+
+import enCommon from "./locales/en/common.json";
+import enAuth from "./locales/en/auth.json";
+import enCbt from "./locales/en/cbt.json";
+import enSettings from "./locales/en/settings.json";
+import enNavigation from "./locales/en/navigation.json";
+import enPolicies from "./locales/en/policies.json";
+import enErrors from "./locales/en/errors.json";
+
+import bgCommon from "./locales/bg/common.json";
+import bgAuth from "./locales/bg/auth.json";
+import bgCbt from "./locales/bg/cbt.json";
+import bgSettings from "./locales/bg/settings.json";
+import bgNavigation from "./locales/bg/navigation.json";
+import bgPolicies from "./locales/bg/policies.json";
+import bgErrors from "./locales/bg/errors.json";
+
+export const supportedLanguages = ["en", "bg"] as const;
+export type SupportedLanguage = (typeof supportedLanguages)[number];
+
+i18n.use(initReactI18next).init({
+  fallbackLng: "en",
+  defaultNS: "common",
+  ns: ["common", "auth", "cbt", "settings", "navigation", "policies", "errors"],
+  interpolation: { escapeValue: false },
+  resources: {
+    en: {
+      common: enCommon,
+      auth: enAuth,
+      cbt: enCbt,
+      settings: enSettings,
+      navigation: enNavigation,
+      policies: enPolicies,
+      errors: enErrors,
+    },
+    bg: {
+      common: bgCommon,
+      auth: bgAuth,
+      cbt: bgCbt,
+      settings: bgSettings,
+      navigation: bgNavigation,
+      policies: bgPolicies,
+      errors: bgErrors,
+    },
+  },
+});
+
+export default i18n;

@@ -1,9 +1,12 @@
 import { Image, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import { SignInForm } from "@/components/sign-in-form";
 import { Text } from "@/components/ui/text";
 
 export function AuthLandingBlock() {
+  const { t } = useTranslation("auth");
+
   return (
     <View className="gap-5">
       <View className="items-center gap-3">
@@ -12,9 +15,9 @@ export function AuthLandingBlock() {
           resizeMode="contain"
           style={{ width: 72, height: 72, borderRadius: 16 }}
         />
-        <Text className="text-2xl font-semibold text-foreground">Selftend</Text>
+        <Text className="text-2xl font-semibold text-foreground">{t("landing.title")}</Text>
         <Text className="text-center text-muted-foreground">
-          Calm, guided self-help tools for reflection and emotional support.
+          {t("landing.subtitle")}
         </Text>
       </View>
       <SignInForm />

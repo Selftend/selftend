@@ -1,5 +1,6 @@
 import "../global.css";
 import "react-native-reanimated";
+import "@/src/i18n";
 
 import {
   NotoSans_400Regular,

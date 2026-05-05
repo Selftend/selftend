@@ -13,6 +13,7 @@ Last reviewed: 2026-05-03
 - Forms: React Hook Form + Zod
 - Backend: Supabase
 - Notifications: Expo Notifications
+- i18n: i18next + react-i18next + expo-localization
 - Media selection: Expo ImagePicker for user-selected profile pictures
 - Secure local storage: Expo SecureStore
 - Builds and store delivery: EAS Build + EAS Submit
@@ -94,6 +95,51 @@ Do not add a second broad UI kit without a clear reason. Prefer generated Reusab
 ## Why not daisyUI
 
 `daisyUI` is web-DOM-focused and is not the right default for a React Native / Expo product. This project should use NativeWind and React Native Reusables primitives instead.
+
+## Internationalization (i18n)
+
+The app uses i18next and react-i18next for runtime translations, with expo-localization for detecting the device language.
+
+Supported languages: English (`en`), Bulgarian (`bg`). English is the fallback.
+
+Translation files live in `src/i18n/locales/{lang}/` with seven namespaces:
+
+| Namespace | Scope |
+|---|---|
+| `common` | shared UI strings (loading, cancel, save, etc.) |
+| `auth` | sign-in, sign-up, verify-email, password flows |
+| `cbt` | CBT module screens and thought records |
+| `settings` | settings, profile, consent, cookie banner |
+| `navigation` | tab labels, sidebar, header, not-found page |
+| `policies` | legal page chrome and full section content |
+| `errors` | error messages |
+
+Usage pattern in components:
+
+```tsx
+import { useTranslation } from "react-i18next";
+
+const { t } = useTranslation("settings");
+// then: t("someKey")
+```
+
+Policy screens use `t(sectionKey, { returnObjects: true })` to load structured section arrays from JSON.
+
+Language preference is persisted in AsyncStorage (key `selftend:language`) and synced to the Supabase `user_preferences.language` column. The `useLanguage()` hook from `src/providers/i18n-provider.tsx` provides `language` and `setLanguage()`. Users switch languages from the settings screen.
+
+To add a new language:
+
+1. Create `src/i18n/locales/{code}/` with all seven namespace JSON files, using the `en/` files as templates.
+2. Add the language code to the `supportedLanguages` array in `src/i18n/index.ts`.
+3. Import and register the new locale resources in the same file.
+4. Add the language option to the `LanguageCard` in `src/features/settings/settings.tsx`.
+
+Key files:
+
+- `src/i18n/index.ts` — i18next config, language list, resource registration
+- `src/providers/i18n-provider.tsx` — `I18nProvider` context, `useLanguage()` hook, AsyncStorage persistence
+- `src/i18n/locales/en/` — English source translations
+- `src/i18n/locales/bg/` — Bulgarian translations
 
 ## Dependency policy
 

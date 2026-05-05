@@ -36,6 +36,15 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Notifications: Expo Notifications
 - Secure local secrets: Expo SecureStore
 - Builds and submission: EAS Build and EAS Submit
+- i18n: i18next + react-i18next + expo-localization, seven namespaces in `src/i18n/locales/`
+
+## i18n conventions
+
+- All user-visible strings must come from translation files, not hardcoded in components.
+- Use `useTranslation("namespace")` in components. Use `i18n.t()` direct import only in non-component code.
+- Policy page section content uses `t(sectionKey, { returnObjects: true })` to load structured arrays from JSON.
+- When adding a new screen or feature, add keys to the appropriate namespace JSON files for all supported languages.
+- Language preference is persisted in AsyncStorage and synced to the Supabase `user_preferences.language` column.
 
 ## Dependency policy
 

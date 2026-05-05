@@ -2,6 +2,7 @@ import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { Text } from "@/components/ui/text";
 import { appEnv } from "@/src/lib/env";
 
 export default function SupportScreen() {
+  const { t } = useTranslation("settings");
   const supportEmail = appEnv.supportEmail;
   const supportSubject = encodeURIComponent("Selftend support");
 
@@ -17,23 +19,20 @@ export default function SupportScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">Support</Text>
-            <Text variant="muted">Project links, public contact paths, policy pages, and clear safety boundaries.</Text>
+            <Text variant="h1">{t("supportPage.title")}</Text>
+            <Text variant="muted">{t("supportPage.description")}</Text>
           </View>
 
       <Card>
         <CardHeader>
-          <CardTitle>Important boundary</CardTitle>
-          <CardDescription>
-            This app is built as guided self-help. If you need urgent help or crisis support, use local emergency and
-            crisis resources instead of relying on the app.
-          </CardDescription>
+          <CardTitle>{t("supportPage.boundary")}</CardTitle>
+          <CardDescription>{t("supportPage.boundaryDescription")}</CardDescription>
         </CardHeader>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Contact</CardTitle>
+          <CardTitle>{t("supportPage.contact")}</CardTitle>
         </CardHeader>
         <CardContent>
           <View className="gap-3">
@@ -41,16 +40,13 @@ export default function SupportScreen() {
             <Button
               onPress={() => void Linking.openURL(`mailto:${supportEmail}?subject=${supportSubject}`)}
             >
-              <Text>Email support</Text>
+              <Text>{t("supportPage.emailSupport")}</Text>
             </Button>
           ) : (
-            <Text variant="muted">
-              Set EXPO_PUBLIC_SUPPORT_EMAIL before public launch. Until then, use GitHub issues for project feedback
-              that does not include private health details.
-            </Text>
+            <Text variant="muted">{t("supportPage.emailNotConfigured")}</Text>
           )}
           <Button onPress={() => router.push("/account-deletion")} variant="ghost">
-            <Text>Request account deletion</Text>
+            <Text>{t("supportPage.requestDeletion")}</Text>
           </Button>
           </View>
         </CardContent>
@@ -58,18 +54,18 @@ export default function SupportScreen() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Project links</CardTitle>
+          <CardTitle>{t("supportPage.projectLinks")}</CardTitle>
         </CardHeader>
         <CardContent>
           <View className="gap-3">
           <Button onPress={() => void Linking.openURL(appEnv.githubRepoUrl)}>
-            <Text>Open repository</Text>
+            <Text>{t("supportPage.openRepo")}</Text>
           </Button>
           <Button
             onPress={() => void Linking.openURL(`${appEnv.githubRepoUrl}/blob/main/CONTRIBUTING.md`)}
             variant="secondary"
           >
-            <Text>Open contribution guide</Text>
+            <Text>{t("supportPage.openContributing")}</Text>
           </Button>
           </View>
         </CardContent>
@@ -77,18 +73,18 @@ export default function SupportScreen() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Policies and safety</CardTitle>
+          <CardTitle>{t("supportPage.policiesAndSafety")}</CardTitle>
         </CardHeader>
         <CardContent>
           <View className="gap-3">
           <Button onPress={() => router.push("/crisis")} variant="secondary">
-            <Text>Open crisis guidance</Text>
+            <Text>{t("supportPage.openCrisis")}</Text>
           </Button>
           <Button onPress={() => router.push("/privacy")} variant="ghost">
-            <Text>Open privacy policy</Text>
+            <Text>{t("supportPage.openPrivacy")}</Text>
           </Button>
           <Button onPress={() => router.push("/terms")} variant="ghost">
-            <Text>Open terms and boundaries</Text>
+            <Text>{t("supportPage.openTerms")}</Text>
           </Button>
           </View>
         </CardContent>

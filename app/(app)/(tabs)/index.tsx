@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
@@ -9,6 +10,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
 
 export default function HomeScreen() {
+  const { t } = useTranslation("settings");
   const { user } = useSession();
   const { data } = useThoughtRecords(user?.id ?? null);
   const latestRecord = data?.[0];
@@ -18,29 +20,22 @@ export default function HomeScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">A calm starting point</Text>
-            <Text variant="muted">
-              The app starts with a single complete CBT section. Other modules stay out of the way until they are
-              justified.
-            </Text>
+            <Text variant="h1">{t("home.title")}</Text>
+            <Text variant="muted">{t("home.description")}</Text>
           </View>
 
           <Card>
             <CardHeader>
-              <CardTitle>Scope boundary</CardTitle>
-              <CardDescription>
-                This product is for guided self-help and reflection. It is not diagnosis, therapy, or emergency support.
-              </CardDescription>
+              <CardTitle>{t("home.scopeBoundary")}</CardTitle>
+              <CardDescription>{t("home.scopeBoundaryDescription")}</CardDescription>
             </CardHeader>
           </Card>
 
           <Pressable onPress={() => router.push("/cbt")}>
             <Card>
               <CardHeader>
-                <CardTitle>CBT section</CardTitle>
-                <CardDescription>
-                  Start a guided thought record, review distortions, and keep one private history.
-                </CardDescription>
+                <CardTitle>{t("home.cbtSection")}</CardTitle>
+                <CardDescription>{t("home.cbtSectionDescription")}</CardDescription>
               </CardHeader>
             </Card>
           </Pressable>
@@ -48,10 +43,8 @@ export default function HomeScreen() {
           <Pressable onPress={() => router.push("/cbt/history")}>
             <Card>
               <CardHeader>
-                <CardTitle>Thought history</CardTitle>
-                <CardDescription>
-                  Review saved records, keep context, and revisit balanced thoughts without pressure.
-                </CardDescription>
+                <CardTitle>{t("home.thoughtHistory")}</CardTitle>
+                <CardDescription>{t("home.thoughtHistoryDescription")}</CardDescription>
               </CardHeader>
             </Card>
           </Pressable>
@@ -59,26 +52,26 @@ export default function HomeScreen() {
           <Pressable onPress={() => router.push("/(app)/(tabs)/settings")}>
             <Card>
               <CardHeader>
-                <CardTitle>Settings and support</CardTitle>
-                <CardDescription>Quiet reminders, support links, and legal boundaries live here.</CardDescription>
+                <CardTitle>{t("home.settingsAndSupport")}</CardTitle>
+                <CardDescription>{t("home.settingsAndSupportDescription")}</CardDescription>
               </CardHeader>
             </Card>
           </Pressable>
 
           <View className="gap-2">
-            <Text variant="h3">Recent activity</Text>
+            <Text variant="h3">{t("home.recentActivity")}</Text>
             {latestRecord ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>Last updated {formatTimestamp(latestRecord.updatedAt)}</CardTitle>
+                  <CardTitle>{t("home.lastUpdated", { timestamp: formatTimestamp(latestRecord.updatedAt) })}</CardTitle>
                   <CardDescription>{latestRecord.automaticThought}</CardDescription>
                 </CardHeader>
               </Card>
             ) : (
               <Card>
                 <CardHeader>
-                  <CardTitle>No records yet</CardTitle>
-                  <CardDescription>Once you save a record, the latest one will surface here.</CardDescription>
+                  <CardTitle>{t("home.noRecords")}</CardTitle>
+                  <CardDescription>{t("home.noRecordsDescription")}</CardDescription>
                 </CardHeader>
               </Card>
             )}

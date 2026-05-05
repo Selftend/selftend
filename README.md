@@ -42,6 +42,7 @@ Included now:
 - support, legal, privacy, crisis, and account-deletion surfaces
 - Jest test harness
 - GitHub issue / PR templates and CI workflow
+- i18n with English and Bulgarian, runtime language switching in settings
 
 Deferred intentionally:
 

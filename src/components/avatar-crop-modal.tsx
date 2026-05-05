@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { Modal, View, StyleSheet } from "react-native";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
@@ -14,6 +15,7 @@ interface AvatarCropModalProps {
 }
 
 export function AvatarCropModal({ imageUri, onCancel, onCrop, visible }: AvatarCropModalProps) {
+  const { t } = useTranslation("settings");
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -33,7 +35,7 @@ export function AvatarCropModal({ imageUri, onCancel, onCrop, visible }: AvatarC
       <View style={styles.overlay}>
         <View style={styles.container}>
           <View style={styles.header}>
-            <Text className="text-lg font-semibold text-foreground">Crop profile picture</Text>
+            <Text className="text-lg font-semibold text-foreground">{t("avatarCrop.title")}</Text>
           </View>
           <View style={styles.cropContainer}>
             <Cropper
@@ -49,10 +51,10 @@ export function AvatarCropModal({ imageUri, onCancel, onCrop, visible }: AvatarC
           </View>
           <View style={styles.footer}>
             <Button onPress={onCancel} variant="ghost">
-              <Text>Cancel</Text>
+              <Text>{t("avatarCrop.cancel")}</Text>
             </Button>
             <Button onPress={handleConfirm}>
-              <Text>Apply</Text>
+              <Text>{t("avatarCrop.apply")}</Text>
             </Button>
           </View>
         </View>

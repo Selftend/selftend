@@ -16,6 +16,7 @@ export interface UserPreferences {
   termsAcceptedAt: string | null;
   policyVersionAccepted: string | null;
   cookieConsent: CookieConsent | null;
+  language: string;
 }
 
 export const defaultUserPreferences: UserPreferences = {
@@ -28,4 +29,5 @@ export const defaultUserPreferences: UserPreferences = {
   termsAcceptedAt: null,
   policyVersionAccepted: null,
   cookieConsent: null,
+  language: "en",
 };

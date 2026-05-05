@@ -1,21 +1,22 @@
 import * as Linking from "expo-linking";
 import { View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
-import { accountDeletionSections } from "@/src/features/policies/policy-content";
 import { PolicyScreen } from "@/src/features/policies/policy-screen";
 import { appEnv } from "@/src/lib/env";
 
 export default function AccountDeletionScreen() {
+  const { t } = useTranslation("policies");
   const deletionEmail = appEnv.privacyEmail || appEnv.supportEmail;
 
   return (
     <PolicyScreen
-      sections={accountDeletionSections}
-      subtitle="How to permanently delete your Selftend account and all associated data."
-      title="Account deletion"
+      sectionKey="accountDeletion.sections"
+      subtitle={t("accountDeletion.pageDescription")}
+      title={t("accountDeletion.pageTitle")}
     >
       <DeletionContact email={deletionEmail} />
     </PolicyScreen>
@@ -23,13 +24,13 @@ export default function AccountDeletionScreen() {
 }
 
 function DeletionContact({ email }: { email: string }) {
+  const { t } = useTranslation("policies");
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Email fallback</CardTitle>
-        <CardDescription>
-          If you cannot access the self-service deletion in Settings, you can request deletion by email.
-        </CardDescription>
+        <CardTitle>{t("accountDeletion.emailFallback")}</CardTitle>
+        <CardDescription>{t("accountDeletion.emailFallbackDescription")}</CardDescription>
       </CardHeader>
       {email ? (
         <CardContent>
@@ -41,15 +42,13 @@ function DeletionContact({ email }: { email: string }) {
               )
             }
           >
-            <Text>Email deletion request</Text>
+            <Text>{t("accountDeletion.emailLink")}</Text>
           </Button>
           </View>
         </CardContent>
       ) : (
         <CardContent>
-          <Text className="text-sm text-muted-foreground">
-            Deletion contact email not yet configured. Use the self-service option in Settings.
-          </Text>
+          <Text className="text-sm text-muted-foreground">{t("accountDeletion.emailNotConfigured")}</Text>
         </CardContent>
       )}
     </Card>

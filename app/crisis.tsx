@@ -1,14 +1,23 @@
-import { crisisActions, crisisSections } from "@/src/features/policies/policy-content";
+import { useTranslation } from "react-i18next";
+
+import { crisisActionUrls } from "@/src/features/policies/policy-content";
 import { PolicyScreen } from "@/src/features/policies/policy-screen";
 
 export default function CrisisScreen() {
+  const { t } = useTranslation("policies");
+
+  const actions = crisisActionUrls.map((action) => ({
+    label: t(`crisis.actions.${action.key}`),
+    url: action.url,
+  }));
+
   return (
     <PolicyScreen
-      actions={crisisActions}
-      notice="Crisis guidance must stay separate from self-help tools. Review jurisdiction-specific resources before public launch."
-      sections={crisisSections}
-      subtitle="This app is not emergency support and is not monitored by crisis responders."
-      title="Crisis guidance"
+      actions={actions}
+      notice={t("crisis.reviewBanner")}
+      sectionKey="crisis.sections"
+      subtitle={t("crisis.pageDescription")}
+      title={t("crisis.pageTitle")}
     />
   );
 }

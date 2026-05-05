@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { completeAuthRedirect } from "@/src/features/auth/callback";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function AuthCallbackScreen() {
+  const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
   const url = Linking.useLinkingURL();
   const hasProcessedLink = useRef(false);
@@ -47,25 +49,25 @@ export default function AuthCallbackScreen() {
           return;
         }
 
-        setErrorMessage(error instanceof Error ? error.message : "Unable to complete the auth link.");
+        setErrorMessage(error instanceof Error ? error.message : t("callback.unableToContinue"));
       }
     })();
 
     return () => {
       active = false;
     };
-  }, [hasSupabaseConfig, url]);
+  }, [hasSupabaseConfig, url, t]);
 
   if (!hasSupabaseConfig) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <Text variant="h1">Supabase setup required</Text>
+            <Text variant="h1">{t("callback.supabaseRequired")}</Text>
             <Card>
               <CardHeader>
-                <CardTitle>Authentication is not configured</CardTitle>
-                <CardDescription>Add your real Supabase URL and key before testing sign-in.</CardDescription>
+                <CardTitle>{t("callback.notConfigured")}</CardTitle>
+                <CardDescription>{t("callback.notConfiguredDescription")}</CardDescription>
               </CardHeader>
             </Card>
           </View>
@@ -79,15 +81,15 @@ export default function AuthCallbackScreen() {
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <Text variant="h1">Authentication link problem</Text>
+            <Text variant="h1">{t("callback.linkProblem")}</Text>
             <Card>
               <CardHeader>
-                <CardTitle>Unable to continue</CardTitle>
+                <CardTitle>{t("callback.unableToContinue")}</CardTitle>
                 <CardDescription>{errorMessage}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button onPress={() => router.replace("/")}>
-                  <Text>Back to sign in</Text>
+                  <Text>{t("callback.backToSignIn")}</Text>
                 </Button>
               </CardContent>
             </Card>
@@ -102,17 +104,17 @@ export default function AuthCallbackScreen() {
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <Text variant="h1">Authentication link required</Text>
+            <Text variant="h1">{t("callback.linkRequired")}</Text>
             <Card>
               <CardHeader>
-                <CardTitle>Missing callback data</CardTitle>
+                <CardTitle>{t("callback.missingData")}</CardTitle>
                 <CardDescription>
-                  Open this screen from an email or OAuth sign-in redirect rather than navigating to it directly.
+                  {t("callback.missingDataDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button onPress={() => router.replace("/")}>
-                  <Text>Back to sign in</Text>
+                  <Text>{t("callback.backToSignIn")}</Text>
                 </Button>
               </CardContent>
             </Card>
@@ -125,9 +127,9 @@ export default function AuthCallbackScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-1 items-center justify-center gap-3 p-6">
-        <Text variant="h1">Checking your link</Text>
+        <Text variant="h1">{t("callback.checking")}</Text>
         <ActivityIndicator />
-        <Text variant="muted">Completing your sign-in...</Text>
+        <Text variant="muted">{t("callback.completing")}</Text>
       </View>
     </SafeAreaView>
   );

@@ -1,21 +1,23 @@
 import { Redirect } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { Text } from "@/components/ui/text";
 import { AuthLandingBlock } from "@/src/components/auth-landing-block";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function IndexScreen() {
+  const { t } = useTranslation("common");
   const { session, status } = useSession();
 
   if (status === "loading") {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 items-center justify-center gap-3 p-6">
-          <Text variant="h1">Loading</Text>
+          <Text variant="h1">{t("loading")}</Text>
           <ActivityIndicator />
-          <Text variant="muted">Preparing your workspace...</Text>
+          <Text variant="muted">{t("preparingWorkspace")}</Text>
         </View>
       </SafeAreaView>
     );

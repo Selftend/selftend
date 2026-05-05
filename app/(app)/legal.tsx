@@ -1,70 +1,64 @@
 import { router } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 
 export default function LegalScreen() {
+  const { t } = useTranslation("settings");
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">Legal and boundaries</Text>
-            <Text variant="muted">Product boundaries, public policy pages, and launch-review reminders.</Text>
+            <Text variant="h1">{t("legal.title")}</Text>
+            <Text variant="muted">{t("legal.description")}</Text>
           </View>
 
       <Card>
         <CardHeader>
-          <CardTitle>Launch review required</CardTitle>
-          <CardDescription>
-            Policy text is in place for implementation review, but final organization details, contact details, and legal
-            approval are still required before public launch.
-          </CardDescription>
+          <CardTitle>{t("legal.launchReview")}</CardTitle>
+          <CardDescription>{t("legal.launchReviewDescription")}</CardDescription>
         </CardHeader>
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Product boundary</CardTitle>
-          <CardDescription>
-            This app is for wellness and guided self-help. It does not diagnose, prescribe, replace therapy, or act as
-            emergency support.
-          </CardDescription>
+          <CardTitle>{t("legal.productBoundary")}</CardTitle>
+          <CardDescription>{t("legal.productBoundaryDescription")}</CardDescription>
         </CardHeader>
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Public pages</CardTitle>
+          <CardTitle>{t("legal.publicPages")}</CardTitle>
         </CardHeader>
         <CardContent>
           <View className="gap-3">
           <Button onPress={() => router.push("/privacy")} variant="secondary">
-            <Text>Open privacy policy</Text>
+            <Text>{t("legal.openPrivacy")}</Text>
           </Button>
           <Button onPress={() => router.push("/terms")} variant="ghost">
-            <Text>Open terms of service</Text>
+            <Text>{t("legal.openTerms")}</Text>
           </Button>
           <Button onPress={() => router.push("/cookies")} variant="ghost">
-            <Text>Open cookie policy</Text>
+            <Text>{t("legal.openCookies")}</Text>
           </Button>
           <Button onPress={() => router.push("/crisis")} variant="ghost">
-            <Text>Open crisis guidance</Text>
+            <Text>{t("legal.openCrisis")}</Text>
           </Button>
           <Button onPress={() => router.push("/account-deletion")} variant="ghost">
-            <Text>Open account deletion</Text>
+            <Text>{t("legal.openDeletion")}</Text>
           </Button>
           </View>
         </CardContent>
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>License direction</CardTitle>
-          <CardDescription>
-            The repository is planned under AGPL-3.0-only. Reference repos and curated resource lists may inform design
-            decisions, but their code, text, and assets are not copied casually into this project.
-          </CardDescription>
+          <CardTitle>{t("legal.license")}</CardTitle>
+          <CardDescription>{t("legal.licenseDescription")}</CardDescription>
         </CardHeader>
       </Card>
         </View>

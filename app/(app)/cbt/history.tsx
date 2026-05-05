@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
@@ -9,6 +10,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
 
 export default function CbtHistoryScreen() {
+  const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { data, isLoading } = useThoughtRecords(user?.id ?? null);
 
@@ -17,24 +19,22 @@ export default function CbtHistoryScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">Thought history</Text>
-            <Text variant="muted">Saved CBT records stay private, editable, and easy to revisit.</Text>
+            <Text variant="h1">{t("history.title")}</Text>
+            <Text variant="muted">{t("history.description")}</Text>
           </View>
 
           {isLoading ? (
             <View className="items-center justify-center gap-3 p-6">
               <ActivityIndicator />
-              <Text variant="muted">Loading thought records...</Text>
+              <Text variant="muted">{t("history.loading")}</Text>
             </View>
           ) : null}
 
           {!isLoading && !data?.length ? (
             <Card>
               <CardHeader>
-                <CardTitle>No thought records yet</CardTitle>
-                <CardDescription>
-                  Create your first record from the CBT section. It will appear here once saved.
-                </CardDescription>
+                <CardTitle>{t("history.empty")}</CardTitle>
+                <CardDescription>{t("history.emptyDescription")}</CardDescription>
               </CardHeader>
             </Card>
           ) : null}
@@ -45,7 +45,7 @@ export default function CbtHistoryScreen() {
                 <CardHeader>
                   <CardTitle>{record.automaticThought}</CardTitle>
                   <CardDescription>
-                    Updated {formatTimestamp(record.updatedAt)}. {record.balancedThought}
+                    {t("history.recordSummary", { timestamp: formatTimestamp(record.updatedAt), balancedThought: record.balancedThought })}
                   </CardDescription>
                 </CardHeader>
               </Card>

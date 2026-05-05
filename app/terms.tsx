@@ -1,13 +1,17 @@
-import { LEGAL_REVIEW_PENDING, termsSections } from "@/src/features/policies/policy-content";
+import { useTranslation } from "react-i18next";
+
+import { LEGAL_REVIEW_PENDING } from "@/src/features/policies/policy-content";
 import { PolicyScreen } from "@/src/features/policies/policy-screen";
 
 export default function TermsScreen() {
+  const { t } = useTranslation("policies");
+
   return (
     <PolicyScreen
-      notice={LEGAL_REVIEW_PENDING ? "These terms require final legal review before public launch." : undefined}
-      sections={termsSections}
-      subtitle="Terms of service for Selftend, a free wellness and guided self-help product."
-      title="Terms of service"
+      notice={LEGAL_REVIEW_PENDING ? t("terms.reviewBanner") : undefined}
+      sectionKey="terms.sections"
+      subtitle={t("terms.pageDescription")}
+      title={t("terms.pageTitle")}
     />
   );
 }

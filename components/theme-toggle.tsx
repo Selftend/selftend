@@ -1,6 +1,7 @@
 import { MoonIcon, SunIcon } from "lucide-react-native";
 import * as SwitchPrimitives from "@rn-primitives/switch";
 import { Platform } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -11,6 +12,7 @@ import {
 import { useThemeStore } from "@/src/stores/theme-store";
 
 export function ThemeToggle() {
+  const { t } = useTranslation("navigation");
   const { preference, setPreference } = useThemeStore();
   const systemColorScheme = useSystemColorScheme();
   const colorScheme = resolveThemePreference(preference, systemColorScheme);
@@ -18,8 +20,8 @@ export function ThemeToggle() {
 
   return (
     <SwitchPrimitives.Root
-      accessibilityLabel="Toggle dark theme"
-      aria-valuetext={isDark ? "Dark theme" : "Light theme"}
+      accessibilityLabel={t("themeToggle.toggle")}
+      aria-valuetext={isDark ? t("themeToggle.dark") : t("themeToggle.light")}
       checked={isDark}
       className={cn(
         "relative h-8 w-14 shrink-0 rounded-full border border-border shadow-sm shadow-black/5",

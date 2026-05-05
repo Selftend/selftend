@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
 
 export default function ThoughtRecordDetailScreen() {
+  const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const recordId = useMemo(() => (typeof id === "string" ? id : null), [id]);
   const { user } = useSession();
@@ -29,7 +31,7 @@ export default function ThoughtRecordDetailScreen() {
       await archiveMutation.mutateAsync(recordId);
       router.replace("/cbt/history");
     } catch (error) {
-      setArchiveError(error instanceof Error ? error.message : "Unable to archive the record.");
+      setArchiveError(error instanceof Error ? error.message : t("detail.archiveError"));
     }
   };
 
@@ -37,9 +39,9 @@ export default function ThoughtRecordDetailScreen() {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 items-center justify-center gap-3 p-6">
-          <Text variant="h1">Loading record</Text>
+          <Text variant="h1">{t("detail.loading")}</Text>
           <ActivityIndicator />
-          <Text variant="muted">Fetching your saved record...</Text>
+          <Text variant="muted">{t("detail.loadingDescription")}</Text>
         </View>
       </SafeAreaView>
     );
@@ -50,11 +52,11 @@ export default function ThoughtRecordDetailScreen() {
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <Text variant="h1">Record not found</Text>
+            <Text variant="h1">{t("detail.notFound")}</Text>
             <Card>
               <CardHeader>
-                <CardTitle>Nothing to show</CardTitle>
-                <CardDescription>The record may have been archived or removed.</CardDescription>
+                <CardTitle>{t("detail.notFoundLabel")}</CardTitle>
+                <CardDescription>{t("detail.notFoundDescription")}</CardDescription>
               </CardHeader>
             </Card>
           </View>
@@ -68,14 +70,14 @@ export default function ThoughtRecordDetailScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">Thought record</Text>
-            <Text variant="muted">Updated {formatTimestamp(data.updatedAt)}</Text>
+            <Text variant="h1">{t("detail.title")}</Text>
+            <Text variant="muted">{t("detail.updated", { timestamp: formatTimestamp(data.updatedAt) })}</Text>
           </View>
 
       {archiveError ? (
         <Card>
           <CardHeader>
-            <CardTitle>Archive problem</CardTitle>
+            <CardTitle>{t("detail.archiveProblem")}</CardTitle>
             <CardDescription>{archiveError}</CardDescription>
           </CardHeader>
         </Card>
@@ -83,34 +85,34 @@ export default function ThoughtRecordDetailScreen() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Situation</CardTitle>
+          <CardTitle>{t("record.situation")}</CardTitle>
           <CardDescription>{data.situation}</CardDescription>
         </CardHeader>
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Automatic thought</CardTitle>
+          <CardTitle>{t("record.automaticThought")}</CardTitle>
           <CardDescription>{data.automaticThought}</CardDescription>
         </CardHeader>
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Emotions</CardTitle>
+          <CardTitle>{t("record.emotions")}</CardTitle>
           <CardDescription>{data.emotions.join(", ")}</CardDescription>
         </CardHeader>
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Thinking patterns</CardTitle>
+          <CardTitle>{t("record.patterns")}</CardTitle>
         </CardHeader>
         <CardContent>
           <View className="gap-3">
             {data.distortions.map((distortionKey) => (
               <Card key={distortionKey}>
                 <CardHeader>
-                  <CardTitle>{distortionLookup[distortionKey]?.title ?? distortionKey}</CardTitle>
+                  <CardTitle>{t(`distortions.${distortionKey}.title`, { defaultValue: distortionLookup[distortionKey]?.title ?? distortionKey })}</CardTitle>
                   <CardDescription>
-                    {distortionLookup[distortionKey]?.shortDescription ?? "Saved distortion key."}
+                    {t(`distortions.${distortionKey}.shortDescription`, { defaultValue: distortionLookup[distortionKey]?.shortDescription ?? "" })}
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -120,7 +122,7 @@ export default function ThoughtRecordDetailScreen() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Balanced thought</CardTitle>
+          <CardTitle>{t("record.balancedThought")}</CardTitle>
           <CardDescription>{data.balancedThought}</CardDescription>
         </CardHeader>
       </Card>
@@ -133,7 +135,7 @@ export default function ThoughtRecordDetailScreen() {
               onPress={() => router.push({ pathname: "/cbt/new", params: { recordId: data.id } })}
               variant="secondary"
             >
-              <Text>Edit</Text>
+              <Text>{t("detail.editButton")}</Text>
             </Button>
           </View>
           <View className="flex-1">
@@ -143,7 +145,7 @@ export default function ThoughtRecordDetailScreen() {
               variant="destructive"
             >
               {archiveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{archiveMutation.isPending ? "Archiving" : "Archive"}</Text>
+              <Text>{archiveMutation.isPending ? t("detail.archiveButton") : t("detail.archiveButton")}</Text>
             </Button>
           </View>
         </View>

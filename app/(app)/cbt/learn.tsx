@@ -1,35 +1,37 @@
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { distortionDefinitions } from "@/src/constants/distortions";
 
 export default function LearnScreen() {
+  const { t } = useTranslation("cbt");
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">Distortion guide</Text>
-            <Text variant="muted">
-              Short, app-owned explanations of the distortion patterns the first CBT slice supports.
-            </Text>
+            <Text variant="h1">{t("learn.title")}</Text>
+            <Text variant="muted">{t("learn.description")}</Text>
           </View>
 
       <Card>
         <CardHeader>
-          <CardTitle>Use gently</CardTitle>
-          <CardDescription>These patterns are prompts for reflection, not labels to pin on yourself.</CardDescription>
+          <CardTitle>{t("learn.useGently")}</CardTitle>
+          <CardDescription>{t("learn.useGentlyDescription")}</CardDescription>
         </CardHeader>
       </Card>
 
       {distortionDefinitions.map((distortion) => (
         <Card key={distortion.key}>
           <CardHeader>
-            <CardTitle>{distortion.title}</CardTitle>
+            <CardTitle>{t(`distortions.${distortion.key}.title`)}</CardTitle>
             <CardDescription>
-              {distortion.shortDescription} Reflection prompt: {distortion.reflectionPrompt}
+              {t(`distortions.${distortion.key}.shortDescription`)}{" "}
+              {t(`distortions.${distortion.key}.reflectionPrompt`)}
             </CardDescription>
           </CardHeader>
         </Card>

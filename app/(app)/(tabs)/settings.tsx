@@ -7,6 +7,7 @@ import { ActivityIndicator, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import type { Area } from "react-easy-crop";
+import { useTranslation } from "react-i18next";
 
 import { ProfileAvatar } from "@/components/profile-avatar";
 import {
@@ -44,6 +45,7 @@ import {
 import { appEnv } from "@/src/lib/env";
 import { cancelCbtReminder, scheduleCbtReminder } from "@/src/lib/notifications";
 import { useSession } from "@/src/providers/session-provider";
+import { useLanguage } from "@/src/providers/i18n-provider";
 import { AvatarCropModal } from "@/src/components/avatar-crop-modal";
 
 const AVATAR_MAX_SIZE = 512;
@@ -70,6 +72,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export default function SettingsScreen() {
+  const { t } = useTranslation("settings");
   const { user } = useSession();
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -119,16 +122,17 @@ export default function SettingsScreen() {
         termsAcceptedAt: data?.termsAcceptedAt ?? null,
         policyVersionAccepted: data?.policyVersionAccepted ?? null,
         cookieConsent: data?.cookieConsent ?? null,
+        language: data?.language ?? "en",
       });
 
       if (remindersEnabled && !reminderConsent) {
-        setErrorMessage("Notification permission was not granted. Reminder settings were saved as off.");
+        setErrorMessage(t("reminders.permissionDenied"));
         return;
       }
 
-      setSuccessMessage("Settings saved.");
+      setSuccessMessage(t("saved"));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to save settings.");
+      setErrorMessage(error instanceof Error ? error.message : t("saveError"));
     }
   };
 
@@ -136,7 +140,7 @@ export default function SettingsScreen() {
     try {
       await signOut();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to sign out.");
+      setErrorMessage(error instanceof Error ? error.message : t("account.signOutError"));
     }
   };
 
@@ -145,20 +149,20 @@ export default function SettingsScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">Settings</Text>
-            <Text variant="muted">Quiet defaults, private account access, and a narrow first section.</Text>
+            <Text variant="h1">{t("title")}</Text>
+            <Text variant="muted">{t("description")}</Text>
           </View>
 
       {isLoading ? (
         <View className="items-center justify-center gap-3 p-6">
           <ActivityIndicator />
-          <Text variant="muted">Loading settings...</Text>
+          <Text variant="muted">{t("loading")}</Text>
         </View>
       ) : null}
       {errorMessage ? (
         <Card>
           <CardHeader>
-            <CardTitle>Settings problem</CardTitle>
+            <CardTitle>{t("problem")}</CardTitle>
             <CardDescription>{errorMessage}</CardDescription>
           </CardHeader>
         </Card>
@@ -166,7 +170,7 @@ export default function SettingsScreen() {
       {successMessage ? (
         <Card>
           <CardHeader>
-            <CardTitle>Saved</CardTitle>
+            <CardTitle>{t("saved")}</CardTitle>
             <CardDescription>{successMessage}</CardDescription>
           </CardHeader>
         </Card>
@@ -174,42 +178,42 @@ export default function SettingsScreen() {
 
       <ProfilePictureCard user={user} />
 
+      <LanguageCard />
+
       <Card>
         <CardHeader>
-          <CardTitle>CBT reminders</CardTitle>
-          <CardDescription>
-            Reminders stay explicit and off by default. They should support use, not create pressure.
-          </CardDescription>
+          <CardTitle>{t("reminders.title")}</CardTitle>
+          <CardDescription>{t("reminders.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <View className="gap-4">
           <View className="flex-row items-center justify-between gap-4">
             <View className="flex-1 gap-1">
-              <Text>Daily reminder</Text>
-              <Text variant="muted">Enable one repeating local reminder.</Text>
+              <Text>{t("reminders.daily")}</Text>
+              <Text variant="muted">{t("reminders.dailyHint")}</Text>
             </View>
             <Switch checked={remindersEnabled} onCheckedChange={setRemindersEnabled} />
           </View>
           <View className="flex-row gap-3">
             <View className="flex-1 gap-2">
-              <Label>Hour</Label>
+              <Label>{t("reminders.hour")}</Label>
               <Input
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="number-pad"
                 onChangeText={setHourInput}
-                placeholder="19"
+                placeholder={t("reminders.hourPlaceholder")}
                 value={hourInput}
               />
             </View>
             <View className="flex-1 gap-2">
-              <Label>Minute</Label>
+              <Label>{t("reminders.minute")}</Label>
               <Input
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="number-pad"
                 onChangeText={setMinuteInput}
-                placeholder="00"
+                placeholder={t("reminders.minutePlaceholder")}
                 value={minuteInput}
               />
             </View>
@@ -219,7 +223,7 @@ export default function SettingsScreen() {
             onPress={() => void savePreferences()}
           >
             {updatePreferencesMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
-            <Text>{updatePreferencesMutation.isPending ? "Saving settings" : "Save reminder settings"}</Text>
+            <Text>{updatePreferencesMutation.isPending ? t("savingSettings") : t("reminders.save")}</Text>
           </Button>
         </View>
         </CardContent>
@@ -227,23 +231,23 @@ export default function SettingsScreen() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Support and project links</CardTitle>
+          <CardTitle>{t("support.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <View className="gap-3">
           <Button onPress={() => router.push("/support")} variant="secondary">
-            <Text>Open support page</Text>
+            <Text>{t("support.openSupport")}</Text>
           </Button>
           <Button onPress={() => router.push("/legal")} variant="ghost">
-            <Text>Open legal and boundaries</Text>
+            <Text>{t("support.openLegal")}</Text>
           </Button>
           {Platform.OS === "web" ? (
             <Button onPress={() => router.push("/cookies")} variant="ghost">
-              <Text>Cookie preferences</Text>
+              <Text>{t("support.cookiePreferences")}</Text>
             </Button>
           ) : null}
           <Button onPress={() => void Linking.openURL(appEnv.githubRepoUrl)} variant="ghost">
-            <Text>Open GitHub repo</Text>
+            <Text>{t("support.openGithub")}</Text>
           </Button>
           </View>
         </CardContent>
@@ -251,15 +255,15 @@ export default function SettingsScreen() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Account</CardTitle>
-          <CardDescription>{user?.email ?? "Signed-in account"}</CardDescription>
+          <CardTitle>{t("account.title")}</CardTitle>
+          <CardDescription>{user?.email ?? t("account.signedIn")}</CardDescription>
         </CardHeader>
         <CardContent>
           <View className="gap-3">
           <ExportDataButton />
           <DeleteAccountButton />
           <Button onPress={() => void handleSignOut()} variant="destructive">
-            <Text>Sign out</Text>
+            <Text>{t("account.signOut")}</Text>
           </Button>
           </View>
         </CardContent>
@@ -271,6 +275,7 @@ export default function SettingsScreen() {
 }
 
 function ProfilePictureCard({ user }: { user: User | null }) {
+  const { t } = useTranslation("settings");
   const { data: profile, error: profileError, isLoading } = useUserProfile(user);
   const uploadMutation = useUploadUserAvatar(user?.id ?? null);
   const resetMutation = useResetUserAvatarToOAuth(user);
@@ -326,7 +331,7 @@ function ProfilePictureCard({ user }: { user: User | null }) {
       if (Platform.OS !== "web") {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
-          setError("Photo library access is needed to choose a profile picture.");
+          setError(t("profile.permissionNeeded"));
           return;
         }
       }
@@ -350,7 +355,7 @@ function ProfilePictureCard({ user }: { user: User | null }) {
       }
 
       if (asset.fileSize && asset.fileSize > 5 * 1024 * 1024) {
-        setError("Choose an image smaller than 5 MB.");
+        setError(t("profile.tooLarge"));
         return;
       }
 
@@ -361,9 +366,9 @@ function ProfilePictureCard({ user }: { user: User | null }) {
       }
 
       await processAndUpload(asset.uri);
-      setMessage("Profile picture updated.");
+      setMessage(t("profile.updated"));
     } catch (avatarError) {
-      setError(getErrorMessage(avatarError, "Unable to update profile picture."));
+      setError(getErrorMessage(avatarError, t("profile.error")));
     }
   };
 
@@ -377,9 +382,9 @@ function ProfilePictureCard({ user }: { user: User | null }) {
       }
 
       await processAndUpload(cropUri, croppedArea);
-      setMessage("Profile picture updated.");
+      setMessage(t("profile.updated"));
     } catch (avatarError) {
-      setError(getErrorMessage(avatarError, "Unable to update profile picture."));
+      setError(getErrorMessage(avatarError, t("profile.error")));
     }
   };
 
@@ -397,9 +402,9 @@ function ProfilePictureCard({ user }: { user: User | null }) {
       setMessage("");
       setError("");
       await resetMutation.mutateAsync(profile?.avatarStoragePath);
-      setMessage(googleAvatarUrl ? "Google photo restored." : "Profile picture reset.");
+      setMessage(googleAvatarUrl ? t("profile.googleRestored") : t("profile.reset"));
     } catch (avatarError) {
-      setError(getErrorMessage(avatarError, "Unable to reset profile picture."));
+      setError(getErrorMessage(avatarError, t("profile.resetError")));
     }
   };
 
@@ -412,9 +417,9 @@ function ProfilePictureCard({ user }: { user: User | null }) {
       setMessage("");
       setError("");
       await removeMutation.mutateAsync(profile?.avatarStoragePath);
-      setMessage("Profile picture removed.");
+      setMessage(t("profile.removed"));
     } catch (avatarError) {
-      setError(getErrorMessage(avatarError, "Unable to remove profile picture."));
+      setError(getErrorMessage(avatarError, t("profile.removeError")));
     }
   };
 
@@ -422,11 +427,8 @@ function ProfilePictureCard({ user }: { user: User | null }) {
     <>
     <Card>
       <CardHeader>
-        <CardTitle>Profile picture</CardTitle>
-        <CardDescription>
-          Used on your signed-in account surfaces. You can restore your Google photo after choosing or removing a custom
-          photo.
-        </CardDescription>
+        <CardTitle>{t("profile.title")}</CardTitle>
+        <CardDescription>{t("profile.description")}</CardDescription>
       </CardHeader>
       <CardContent>
         <View className="gap-4">
@@ -437,19 +439,19 @@ function ProfilePictureCard({ user }: { user: User | null }) {
               email={user?.email}
             />
             <View className="flex-1 gap-1">
-              <Text numberOfLines={1}>{user?.email ?? "Signed-in account"}</Text>
+              <Text numberOfLines={1}>{user?.email ?? t("account.signedIn")}</Text>
             </View>
           </View>
 
           <View className="flex-row flex-wrap gap-3">
             <Button disabled={isPending} onPress={() => void pickAvatar()} variant="secondary">
               {uploadMutation.isPending ? <ActivityIndicator /> : null}
-              <Text>{uploadMutation.isPending ? "Uploading..." : "Change photo"}</Text>
+              <Text>{uploadMutation.isPending ? t("profile.uploading") : t("profile.change")}</Text>
             </Button>
             {googleAvatarUrl ? (
               <Button disabled={isPending} onPress={() => void useGoogleAvatar()} variant="outline">
                 {resetMutation.isPending ? <ActivityIndicator /> : null}
-                <Text>Use Google photo</Text>
+                <Text>{t("profile.useGoogle")}</Text>
               </Button>
             ) : null}
             <Button
@@ -458,14 +460,14 @@ function ProfilePictureCard({ user }: { user: User | null }) {
               variant="ghost"
             >
               {removeMutation.isPending ? <ActivityIndicator /> : null}
-              <Text>Remove photo</Text>
+              <Text>{t("profile.remove")}</Text>
             </Button>
           </View>
 
           {message ? <Text className="text-sm text-muted-foreground">{message}</Text> : null}
           {profileError ? (
             <Text className="text-sm text-destructive">
-              {getErrorMessage(profileError, "Unable to load profile picture.")}
+              {getErrorMessage(profileError, t("profile.loadError"))}
             </Text>
           ) : null}
           {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
@@ -485,6 +487,7 @@ function ProfilePictureCard({ user }: { user: User | null }) {
 }
 
 function ExportDataButton() {
+  const { t } = useTranslation("settings");
   const exportMutation = useExportUserData();
   const [exported, setExported] = useState(false);
 
@@ -504,7 +507,6 @@ function ExportDataButton() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } else {
-        // On mobile, use the built-in Share API
         const { Share } = await import("react-native");
         await Share.share({
           message: json,
@@ -526,19 +528,20 @@ function ExportDataButton() {
         variant="secondary"
       >
         {exportMutation.isPending ? <ActivityIndicator /> : null}
-        <Text>{exportMutation.isPending ? "Exporting..." : "Export my data"}</Text>
+        <Text>{exportMutation.isPending ? t("account.exporting") : t("account.exportButton")}</Text>
       </Button>
       {exported ? (
-        <Text className="text-sm text-muted-foreground">Data exported successfully.</Text>
+        <Text className="text-sm text-muted-foreground">{t("account.exported")}</Text>
       ) : null}
       {exportMutation.isError ? (
-        <Text className="text-sm text-destructive">Export failed. Please try again.</Text>
+        <Text className="text-sm text-destructive">{t("account.exportError")}</Text>
       ) : null}
     </View>
   );
 }
 
 function DeleteAccountButton() {
+  const { t } = useTranslation("settings");
   const deleteMutation = useDeleteUserAccount();
   const [confirmInput, setConfirmInput] = useState("");
   const [open, setOpen] = useState(false);
@@ -556,42 +559,69 @@ function DeleteAccountButton() {
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         <Button variant="ghost">
-          <Text>Delete my account</Text>
+          <Text>{t("account.deleteButton")}</Text>
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete account permanently?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will permanently delete your account and all data including thought records, preferences, and profile. This cannot be undone.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{t("account.deleteTitle")}</AlertDialogTitle>
+          <AlertDialogDescription>{t("account.deleteDescription")}</AlertDialogDescription>
         </AlertDialogHeader>
         <View className="gap-2 py-2">
-          <Label>Type DELETE to confirm</Label>
+          <Label>{t("account.deleteConfirmLabel")}</Label>
           <Input
             autoCapitalize="characters"
             onChangeText={setConfirmInput}
-            placeholder="DELETE"
+            placeholder={t("account.deleteConfirmPlaceholder")}
             value={confirmInput}
           />
           {deleteMutation.isError ? (
-            <Text className="text-sm text-destructive">
-              Deletion failed. Please try again or contact support.
-            </Text>
+            <Text className="text-sm text-destructive">{t("account.deleteFailed")}</Text>
           ) : null}
         </View>
         <AlertDialogFooter>
           <AlertDialogCancel>
-            <Text>Cancel</Text>
+            <Text>{t("account.cancel")}</Text>
           </AlertDialogCancel>
           <AlertDialogAction
             disabled={confirmInput !== "DELETE" || deleteMutation.isPending}
             onPress={() => void handleDelete()}
           >
-            <Text>{deleteMutation.isPending ? "Deleting..." : "Delete permanently"}</Text>
+            <Text>{deleteMutation.isPending ? t("account.deleting") : t("account.deletePermanently")}</Text>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+function LanguageCard() {
+  const { t } = useTranslation("settings");
+  const { language, setLanguage } = useLanguage();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("language.title")}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <View className="flex-row gap-3">
+          <Button
+            onPress={() => void setLanguage("en")}
+            variant={language === "en" ? "default" : "outline"}
+            size="sm"
+          >
+            <Text>{t("language.english")}</Text>
+          </Button>
+          <Button
+            onPress={() => void setLanguage("bg")}
+            variant={language === "bg" ? "default" : "outline"}
+            size="sm"
+          >
+            <Text>{t("language.bulgarian")}</Text>
+          </Button>
+        </View>
+      </CardContent>
+    </Card>
   );
 }

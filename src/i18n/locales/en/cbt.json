@@ -1,0 +1,165 @@
+{
+  "home": {
+    "title": "CBT",
+    "description": "A focused CBT section built around thought records, distortion awareness, and quiet review.",
+    "whyNarrow": "Why the scope is narrow",
+    "whyNarrowDescription": "The first build stays narrow on purpose: one practical tool, a small learn surface, and a private history.",
+    "newRecord": "New record",
+    "learn": "Learn",
+    "distortionGuide": "Distortion guide",
+    "distortionGuideDescription": "See the core thinking patterns this section currently focuses on.",
+    "recordHistory": "Record history",
+    "recordHistoryDescription": "Review the records you have already saved without mixing CBT with unrelated modules.",
+    "currentFlow": "The current flow",
+    "currentFlowDescription": "Capture the situation, name the first thought, choose emotions, notice distortions, and respond with a more balanced thought."
+  },
+  "history": {
+    "title": "Thought history",
+    "description": "Saved CBT records stay private, editable, and easy to revisit.",
+    "loading": "Loading thought records...",
+    "empty": "No thought records yet",
+    "emptyDescription": "Create your first record from the CBT section. It will appear here once saved.",
+    "recordSummary": "Updated {{timestamp}}. {{balancedThought}}"
+  },
+  "learn": {
+    "title": "Distortion guide",
+    "description": "Short, app-owned explanations of the distortion patterns the first CBT slice supports.",
+    "useGently": "Use gently",
+    "useGentlyDescription": "These patterns are prompts for reflection, not labels to pin on yourself."
+  },
+  "record": {
+    "newTitle": "New thought record",
+    "newDescription": "Walk through one thought in five small steps.",
+    "editTitle": "Edit thought record",
+    "editDescription": "Edit a saved record without losing its history.",
+    "saveProblem": "Save problem",
+    "situation": "Situation",
+    "situationHint": "What happened, where were you, and what set the moment off?",
+    "situationPlaceholder": "Keep it concrete. A few sentences is enough.",
+    "situationExample": "Example: I saw an email from my manager and my chest tightened immediately.",
+    "automaticThought": "Automatic thought",
+    "automaticThoughtHint": "Capture the first thought that showed up before you tried to soften it.",
+    "automaticThoughtPlaceholder": "Write the raw thought before you correct it.",
+    "automaticThoughtExample": "Example: I am about to be told I messed everything up.",
+    "emotions": "Emotions",
+    "emotionsHint": "Choose the emotions that feel closest to the moment.",
+    "patterns": "Patterns",
+    "patternsHint": "Notice which thinking patterns might be shaping the moment.",
+    "balancedThought": "Balanced thought",
+    "balancedThoughtHint": "Write the calmer, more balanced response you want to keep.",
+    "emotionsLabel": "Emotions",
+    "emotionsLabelHint": "Pick the feelings that fit best.",
+    "patternsLabel": "Thinking patterns",
+    "patternsChooseHint": "Choose the patterns that seem closest. You can pick more than one.",
+    "balancedThoughtLabel": "Balanced thought",
+    "balancedThoughtPlaceholder": "Aim for something believable and kinder, not forced positivity.",
+    "balancedThoughtExample": "Example: I do not know what the email means yet. One message is not proof that I failed.",
+    "summaryTitle": "Summary before saving",
+    "summarySituation": "Situation: {{value}}",
+    "summaryThought": "Thought: {{value}}",
+    "summaryEmotions": "Emotions: {{value}}",
+    "summaryPatterns": "Patterns: {{value}}",
+    "summaryNotFilled": "Not filled yet.",
+    "back": "Back",
+    "continue": "Continue",
+    "step1": "1. Situation",
+    "step2": "2. Automatic thought",
+    "step3": "3. Emotions",
+    "step4": "4. Patterns",
+    "step5": "5. Balanced thought",
+    "saveRecord": "Save record",
+    "saving": "Saving record"
+  },
+  "detail": {
+    "loading": "Loading record",
+    "loadingDescription": "Fetching your saved record...",
+    "notFound": "Record not found",
+    "notFoundLabel": "Nothing to show",
+    "notFoundDescription": "The record may have been archived or removed.",
+    "title": "Thought record",
+    "updated": "Updated {{timestamp}}",
+    "archiveProblem": "Archive problem",
+    "archiveConfirmTitle": "Archive this record",
+    "archiveConfirmDescription": "This action cannot be undone.",
+    "archiveButton": "Archive",
+    "editButton": "Edit record",
+    "archiveError": "Unable to archive the record."
+  },
+  "validation": {
+    "situationMin": "Describe the moment in a little more detail.",
+    "automaticThoughtMin": "Capture the first thought that showed up.",
+    "emotionsMin": "Choose at least one emotion.",
+    "distortionsMin": "Choose at least one thinking pattern.",
+    "balancedThoughtMin": "Write a calmer, more balanced response."
+  },
+  "emotions": {
+    "anxious": "Anxious",
+    "sad": "Sad",
+    "angry": "Angry",
+    "ashamed": "Ashamed",
+    "guilty": "Guilty",
+    "overwhelmed": "Overwhelmed",
+    "frustrated": "Frustrated",
+    "lonely": "Lonely",
+    "fearful": "Fearful",
+    "hopeless": "Hopeless",
+    "numb": "Numb",
+    "irritated": "Irritated"
+  },
+  "distortions": {
+    "all-or-nothing": {
+      "title": "All-or-nothing thinking",
+      "shortDescription": "Seeing the situation in extremes instead of noticing the middle ground.",
+      "reflectionPrompt": "What would a more balanced version of this situation sound like?"
+    },
+    "catastrophizing": {
+      "title": "Catastrophizing",
+      "shortDescription": "Jumping quickly to the worst-case outcome and treating it as likely.",
+      "reflectionPrompt": "What is difficult here, and what is only a fear about the future?"
+    },
+    "mind-reading": {
+      "title": "Mind reading",
+      "shortDescription": "Assuming you know what other people think without enough evidence.",
+      "reflectionPrompt": "What facts do I have, and what am I filling in myself?"
+    },
+    "fortune-telling": {
+      "title": "Fortune telling",
+      "shortDescription": "Treating a prediction as if it is already proven.",
+      "reflectionPrompt": "What other outcome is also plausible right now?"
+    },
+    "overgeneralization": {
+      "title": "Overgeneralization",
+      "shortDescription": "Using one event as proof that the same pattern will always repeat.",
+      "reflectionPrompt": "Is this one moment, or is it truly evidence for every situation?"
+    },
+    "should-statements": {
+      "title": "Should statements",
+      "shortDescription": "Using rigid rules that leave little room for context or humanity.",
+      "reflectionPrompt": "What would become kinder and more realistic if I changed should to prefer?"
+    },
+    "emotional-reasoning": {
+      "title": "Emotional reasoning",
+      "shortDescription": "Treating a feeling as proof that a conclusion must be true.",
+      "reflectionPrompt": "What do I feel, and what do I actually know?"
+    },
+    "discounting-the-positive": {
+      "title": "Discounting the positive",
+      "shortDescription": "Dismissing helpful evidence because it feels too small to count.",
+      "reflectionPrompt": "What positive detail am I brushing aside too quickly?"
+    },
+    "labeling": {
+      "title": "Labeling",
+      "shortDescription": "Reducing yourself or someone else to a harsh global label.",
+      "reflectionPrompt": "How can I describe the moment without turning it into an identity?"
+    },
+    "personalization": {
+      "title": "Personalization",
+      "shortDescription": "Taking on more blame or responsibility than the facts justify.",
+      "reflectionPrompt": "What part is mine, and what part is not actually under my control?"
+    }
+  },
+  "notifications": {
+    "title": "Quiet CBT check-in",
+    "body": "Take a minute to notice a thought and respond to it with more balance."
+  }
+}

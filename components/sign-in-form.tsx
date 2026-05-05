@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { useState } from "react";
 import { ActivityIndicator, Image, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { useSession } from "@/src/providers/session-provider";
 
 export function SignInForm() {
+  const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
@@ -40,7 +42,7 @@ export function SignInForm() {
     } catch (error) {
       recordFailure(error);
       setSubmitError(
-        error instanceof Error ? error.message : "Unable to sign in with Google.",
+        error instanceof Error ? error.message : t("signIn.googleError"),
       );
     } finally {
       setIsGoogleSubmitting(false);
@@ -56,7 +58,7 @@ export function SignInForm() {
     } catch (error) {
       recordFailure(error);
       setSubmitError(
-        error instanceof Error ? error.message : "Unable to sign in.",
+        error instanceof Error ? error.message : t("signIn.error"),
       );
     }
   });
@@ -64,8 +66,8 @@ export function SignInForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sign in to your account</CardTitle>
-        <CardDescription>Welcome back! Please sign in to continue.</CardDescription>
+        <CardTitle>{t("signIn.title")}</CardTitle>
+        <CardDescription>{t("signIn.subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="gap-4">
         <Controller
@@ -73,14 +75,14 @@ export function SignInForm() {
           name="email"
           render={({ field: { onBlur, onChange, value } }) => (
             <View className="gap-2">
-              <Label>Email</Label>
+              <Label>{t("signIn.email")}</Label>
               <Input
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
                 onBlur={onBlur}
                 onChangeText={onChange}
-                placeholder="m@example.com"
+                placeholder={t("signIn.emailPlaceholder")}
                 value={value}
               />
               {errors.email?.message ? (
@@ -96,13 +98,13 @@ export function SignInForm() {
           render={({ field: { onBlur, onChange, value } }) => (
             <View className="gap-2">
               <View className="flex-row items-center justify-between">
-                <Label>Password</Label>
+                <Label>{t("signIn.password")}</Label>
                 <Button
                   onPress={() => router.push("/(auth)/reset-password")}
                   variant="link"
                   size="sm"
                 >
-                  <Text className="text-xs">Forgot your password?</Text>
+                  <Text className="text-xs">{t("signIn.forgotPassword")}</Text>
                 </Button>
               </View>
               <Input
@@ -123,7 +125,7 @@ export function SignInForm() {
 
         {!hasSupabaseConfig ? (
           <Text variant="muted">
-            Supabase auth is not configured yet. Add environment values to continue.
+            {t("signIn.supabaseNotConfigured")}
           </Text>
         ) : null}
 
@@ -133,7 +135,7 @@ export function SignInForm() {
 
         {isThrottled ? (
           <Text className="text-sm text-destructive">
-            Too many attempts. Please wait before trying again.
+            {t("signIn.rateLimited")}
           </Text>
         ) : null}
 
@@ -142,18 +144,18 @@ export function SignInForm() {
           onPress={() => void onSubmit()}
         >
           {isSubmitting ? <ActivityIndicator color="#ffffff" /> : null}
-          <Text>{isSubmitting ? "Signing in..." : "Continue"}</Text>
+          <Text>{isSubmitting ? t("signIn.submitting") : t("signIn.submit")}</Text>
         </Button>
 
         <View className="items-center gap-1 pt-1">
-          <Text className="text-sm text-muted-foreground">Don't have an account?</Text>
+          <Text className="text-sm text-muted-foreground">{t("signIn.noAccount")}</Text>
           <Button onPress={() => router.push("/(auth)/sign-up")} variant="link">
-            <Text>Sign up</Text>
+            <Text>{t("signIn.signUpLink")}</Text>
           </Button>
         </View>
 
         <View className="items-center">
-          <Text className="text-sm text-muted-foreground">or</Text>
+          <Text className="text-sm text-muted-foreground">{t("common:or")}</Text>
         </View>
 
         <Button
@@ -170,7 +172,7 @@ export function SignInForm() {
               resizeMode="contain"
             />
           )}
-          <Text>{isGoogleSubmitting ? "Opening Google..." : "Continue with Google"}</Text>
+          <Text>{isGoogleSubmitting ? t("signIn.googleOpening") : t("signIn.googleButton")}</Text>
         </Button>
       </CardContent>
     </Card>

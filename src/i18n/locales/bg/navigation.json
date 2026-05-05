@@ -1,0 +1,41 @@
+{
+  "header": {
+    "openNav": "Отвори навигация",
+    "goHome": "Към начало",
+    "appName": "Selftend",
+    "openGithub": "Отвори Selftend в GitHub"
+  },
+  "sidebar": {
+    "home": "Начало",
+    "settings": "Настройки",
+    "support": "Поддръжка",
+    "cbtOverview": "Преглед",
+    "cbtHistory": "История",
+    "cbtLearn": "Научи",
+    "moodTracker": "Проследяване на настроението",
+    "meditation": "Медитация",
+    "act": "ACT",
+    "gratitudeLog": "Дневник на благодарността",
+    "tools": "Инструменти",
+    "collapse": "Свий {{label}}",
+    "expand": "Разгъни {{label}}"
+  },
+  "userMenu": {
+    "account": "Профил",
+    "settings": "Настройки",
+    "signOut": "Излизане"
+  },
+  "themeToggle": {
+    "toggle": "Превключи тъмна тема",
+    "dark": "Тъмна тема",
+    "light": "Светла тема"
+  },
+  "tabs": {
+    "home": "Начало",
+    "settings": "Настройки"
+  },
+  "notFound": {
+    "title": "Страницата не е намерена",
+    "home": "Начало"
+  }
+}

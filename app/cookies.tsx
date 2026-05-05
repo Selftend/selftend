@@ -1,12 +1,15 @@
+import { useTranslation } from "react-i18next";
+
 import { PolicyScreen } from "@/src/features/policies/policy-screen";
-import { cookiePolicySections } from "@/src/features/policies/policy-content";
 
 export default function CookiesScreen() {
+  const { t } = useTranslation("policies");
+
   return (
     <PolicyScreen
-      sections={cookiePolicySections}
-      subtitle="How the web version of Selftend uses browser storage."
-      title="Cookie policy"
+      sectionKey="cookies.sections"
+      subtitle={t("cookies.pageDescription")}
+      title={t("cookies.pageTitle")}
     />
   );
 }
