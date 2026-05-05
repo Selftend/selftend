@@ -25,6 +25,11 @@
     "settings": "Settings",
     "signOut": "Sign Out"
   },
+  "languageToggle": {
+    "toggle": "Switch language",
+    "en": "English",
+    "bg": "Bulgarian"
+  },
   "themeToggle": {
     "toggle": "Toggle dark theme",
     "dark": "Dark theme",

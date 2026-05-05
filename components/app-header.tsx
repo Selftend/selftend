@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 
+import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -59,6 +60,7 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
         </Pressable>
         <View className="flex-row items-center gap-2">
           <GitHubButton />
+          <LanguageToggle />
           <ThemeToggle />
           {isSignedIn ? <UserMenu /> : null}
         </View>

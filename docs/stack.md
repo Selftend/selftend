@@ -132,7 +132,7 @@ To add a new language:
 1. Create `src/i18n/locales/{code}/` with all seven namespace JSON files, using the `en/` files as templates.
 2. Add the language code to the `supportedLanguages` array in `src/i18n/index.ts`.
 3. Import and register the new locale resources in the same file.
-4. Add the language option to the `LanguageCard` in `src/features/settings/settings.tsx`.
+4. Add the language option to the `LanguageToggle` select in `components/language-toggle.tsx`.
 
 Key files:
 

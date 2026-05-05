@@ -45,7 +45,6 @@ import {
 import { appEnv } from "@/src/lib/env";
 import { cancelCbtReminder, scheduleCbtReminder } from "@/src/lib/notifications";
 import { useSession } from "@/src/providers/session-provider";
-import { useLanguage } from "@/src/providers/i18n-provider";
 import { AvatarCropModal } from "@/src/components/avatar-crop-modal";
 
 const AVATAR_MAX_SIZE = 512;
@@ -177,8 +176,6 @@ export default function SettingsScreen() {
       ) : null}
 
       <ProfilePictureCard user={user} />
-
-      <LanguageCard />
 
       <Card>
         <CardHeader>
@@ -592,36 +589,5 @@ function DeleteAccountButton() {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  );
-}
-
-function LanguageCard() {
-  const { t } = useTranslation("settings");
-  const { language, setLanguage } = useLanguage();
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("language.title")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <View className="flex-row gap-3">
-          <Button
-            onPress={() => void setLanguage("en")}
-            variant={language === "en" ? "default" : "outline"}
-            size="sm"
-          >
-            <Text>{t("language.english")}</Text>
-          </Button>
-          <Button
-            onPress={() => void setLanguage("bg")}
-            variant={language === "bg" ? "default" : "outline"}
-            size="sm"
-          >
-            <Text>{t("language.bulgarian")}</Text>
-          </Button>
-        </View>
-      </CardContent>
-    </Card>
   );
 }
