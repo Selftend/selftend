@@ -26,17 +26,17 @@ The MVP is not "everything mental health." It is a focused foundation that prove
 
 ### MVP features
 
-- [ ] Google sign-in, email magic link, sign-out, and session restore
+- [x] Google sign-in, email magic link, sign-out, and session restore
 - [ ] onboarding that sets expectations and allows feature selection
 - [ ] daily or on-demand mood check-in
 - [ ] lightweight journaling
-- [ ] a small set of guided self-help tools
+- [x] a small set of guided self-help tools
 - [ ] optional quests or habits
 - [ ] optional streaks, disabled by default or framed as soft progress
 - [ ] explicit notification controls
 - [ ] progress view focused on reflection, not pressure
-- [ ] settings page with feature toggles, notification controls, privacy/data controls, and support/legal links
-- [ ] support page linking to GitHub, contribution guidance, gratitude, donation options, and sharing guidance
+- [x] settings page with feature toggles, notification controls, privacy/data controls, and support/legal links
+- [x] support page linking to GitHub, contribution guidance, gratitude, donation options, and sharing guidance
 
 ### MVP non-goals to keep excluding
 
@@ -102,13 +102,13 @@ Ship a usable product on iOS, Android, and browser with these pillars:
 
 Implementation priorities:
 
-1. [ ] auth and account flows
+1. [x] auth and account flows
 2. [ ] data model for users, entries, check-ins, preferences, and enabled modules
 3. [ ] onboarding and feature selection
 4. [ ] core check-in and journaling flows
 5. [ ] first tools library
 6. [ ] progress and optional habit mechanics
-7. [ ] settings, support, privacy, and legal pages
+7. [x] settings, support, privacy, and legal pages
 8. [ ] accessibility, offline tolerance, and error handling
 
 Initial scaffold work completed so far:
@@ -182,7 +182,7 @@ Immediate launch blockers:
 - [ ] `selftend.org` connected to the Netlify web deployment
 - [ ] support, privacy, security, and deletion aliases configured on `selftend.org`
 - [ ] legal entity or nonprofit account details confirmed
-- [ ] build machine authenticated with Expo for EAS (`npx eas-cli whoami` succeeds or `EXPO_TOKEN` is set)
+- [ ] build machine authenticated with Expo for EAS (`npm exec eas-cli -- whoami` succeeds or `EXPO_TOKEN` is set)
 - [x] broad/global crisis-resource intent captured
 - [ ] global crisis-resource strategy approved
 - [ ] Google Play organization/nonprofit developer account created or confirmed
@@ -251,21 +251,21 @@ Recommended channel rollout:
 
 ### MVP feature set
 
-- [ ] authentication and account
+- [x] authentication and account
 - [ ] onboarding and feature selection
 - [ ] mood check-ins
 - [ ] journal
 - [ ] core self-help tools
 - [ ] optional quests and gentle progress
 - [ ] notification preferences
-- [ ] support, legal, privacy, sharing
+- [x] support, legal, privacy, sharing
 
 ### First expansion after MVP
 
 - [ ] better home personalization
 - [ ] more tools and content packs
 - [ ] flexible reminders
-- [ ] data export
+- [x] data export
 - [ ] richer progress summaries
 - [x] localization groundwork (i18n infrastructure with English and Bulgarian, runtime switching)
 - [x] self-hosting and portability plan
@@ -308,18 +308,18 @@ Current direction:
 
 MVP data expectations:
 
-- [ ] email
-- [ ] optional profile avatar metadata and user-uploaded avatar storage path
-- [ ] auth credentials handled by backend provider
-- [ ] user preferences
+- [x] email
+- [x] optional profile avatar metadata and user-uploaded avatar storage path
+- [x] auth credentials handled by backend provider
+- [x] user preferences
 - [ ] journal and check-in data
 - [ ] enabled modules and notification settings
 
 Post-MVP privacy improvements:
 
-- [ ] export
+- [x] export
 - [ ] import
-- [ ] deletion
+- [x] deletion
 - [ ] local-only storage mode
 - [ ] encrypted backup file export
 - [ ] better encryption review
@@ -339,7 +339,7 @@ Ready means:
 - [x] privacy and legal docs drafted in-app and in docs
 - [x] crisis / safety boundaries drafted in-app and in docs
 - [ ] privacy, legal, and crisis copy reviewed for launch jurisdictions
-- [ ] account recovery flows
+- [x] account recovery flows
 - [ ] support channel defined
 - [ ] contributor entry path defined
 - [ ] minimal observability and incident handling

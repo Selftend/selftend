@@ -77,7 +77,9 @@ export default function SettingsScreen() {
   const [successMessage, setSuccessMessage] = useState("");
   const [hourInput, setHourInput] = useState(String(defaultUserPreferences.cbtReminderHour));
   const [minuteInput, setMinuteInput] = useState(String(defaultUserPreferences.cbtReminderMinute));
-  const [remindersEnabled, setRemindersEnabled] = useState(defaultUserPreferences.cbtRemindersEnabled);
+  const [remindersEnabled, setRemindersEnabled] = useState(
+    defaultUserPreferences.cbtRemindersEnabled,
+  );
   const { data, isLoading } = useUserPreferences(user?.id ?? null);
   const updatePreferencesMutation = useUpdateUserPreferences(user?.id ?? null);
 
@@ -152,119 +154,125 @@ export default function SettingsScreen() {
             <Text variant="muted">{t("description")}</Text>
           </View>
 
-      {isLoading ? (
-        <View className="items-center justify-center gap-3 p-6">
-          <ActivityIndicator />
-          <Text variant="muted">{t("loading")}</Text>
-        </View>
-      ) : null}
-      {errorMessage ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("problem")}</CardTitle>
-            <CardDescription>{errorMessage}</CardDescription>
-          </CardHeader>
-        </Card>
-      ) : null}
-      {successMessage ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("saved")}</CardTitle>
-            <CardDescription>{successMessage}</CardDescription>
-          </CardHeader>
-        </Card>
-      ) : null}
-
-      <ProfilePictureCard user={user} />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("reminders.title")}</CardTitle>
-          <CardDescription>{t("reminders.description")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <View className="gap-4">
-          <View className="flex-row items-center justify-between gap-4">
-            <View className="flex-1 gap-1">
-              <Text>{t("reminders.daily")}</Text>
-              <Text variant="muted">{t("reminders.dailyHint")}</Text>
+          {isLoading ? (
+            <View className="items-center justify-center gap-3 p-6">
+              <ActivityIndicator />
+              <Text variant="muted">{t("loading")}</Text>
             </View>
-            <Switch checked={remindersEnabled} onCheckedChange={setRemindersEnabled} />
-          </View>
-          <View className="flex-row gap-3">
-            <View className="flex-1 gap-2">
-              <Label>{t("reminders.hour")}</Label>
-              <Input
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="number-pad"
-                onChangeText={setHourInput}
-                placeholder={t("reminders.hourPlaceholder")}
-                value={hourInput}
-              />
-            </View>
-            <View className="flex-1 gap-2">
-              <Label>{t("reminders.minute")}</Label>
-              <Input
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="number-pad"
-                onChangeText={setMinuteInput}
-                placeholder={t("reminders.minutePlaceholder")}
-                value={minuteInput}
-              />
-            </View>
-          </View>
-          <Button
-            disabled={updatePreferencesMutation.isPending}
-            onPress={() => void savePreferences()}
-          >
-            {updatePreferencesMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
-            <Text>{updatePreferencesMutation.isPending ? t("savingSettings") : t("reminders.save")}</Text>
-          </Button>
-        </View>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("support.title")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <View className="gap-3">
-          <Button onPress={() => router.push("/support")} variant="secondary">
-            <Text>{t("support.openSupport")}</Text>
-          </Button>
-          <Button onPress={() => router.push("/legal")} variant="ghost">
-            <Text>{t("support.openLegal")}</Text>
-          </Button>
-          {Platform.OS === "web" ? (
-            <Button onPress={() => router.push("/cookies")} variant="ghost">
-              <Text>{t("support.cookiePreferences")}</Text>
-            </Button>
           ) : null}
-          <Button onPress={() => void Linking.openURL(appEnv.githubRepoUrl)} variant="ghost">
-            <Text>{t("support.openGithub")}</Text>
-          </Button>
-          </View>
-        </CardContent>
-      </Card>
+          {errorMessage ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("problem")}</CardTitle>
+                <CardDescription>{errorMessage}</CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
+          {successMessage ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("saved")}</CardTitle>
+                <CardDescription>{successMessage}</CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("account.title")}</CardTitle>
-          <CardDescription>{user?.email ?? t("account.signedIn")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <View className="gap-3">
-          <ExportDataButton />
-          <DeleteAccountButton />
-          <Button onPress={() => void handleSignOut()} variant="destructive">
-            <Text>{t("account.signOut")}</Text>
-          </Button>
-          </View>
-        </CardContent>
-      </Card>
+          <ProfilePictureCard user={user} />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("reminders.title")}</CardTitle>
+              <CardDescription>{t("reminders.description")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-4">
+                <View className="flex-row items-center justify-between gap-4">
+                  <View className="flex-1 gap-1">
+                    <Text>{t("reminders.daily")}</Text>
+                    <Text variant="muted">{t("reminders.dailyHint")}</Text>
+                  </View>
+                  <Switch checked={remindersEnabled} onCheckedChange={setRemindersEnabled} />
+                </View>
+                <View className="flex-row gap-3">
+                  <View className="flex-1 gap-2">
+                    <Label>{t("reminders.hour")}</Label>
+                    <Input
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="number-pad"
+                      onChangeText={setHourInput}
+                      placeholder={t("reminders.hourPlaceholder")}
+                      value={hourInput}
+                    />
+                  </View>
+                  <View className="flex-1 gap-2">
+                    <Label>{t("reminders.minute")}</Label>
+                    <Input
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="number-pad"
+                      onChangeText={setMinuteInput}
+                      placeholder={t("reminders.minutePlaceholder")}
+                      value={minuteInput}
+                    />
+                  </View>
+                </View>
+                <Button
+                  disabled={updatePreferencesMutation.isPending}
+                  onPress={() => void savePreferences()}
+                >
+                  {updatePreferencesMutation.isPending ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : null}
+                  <Text>
+                    {updatePreferencesMutation.isPending
+                      ? t("savingSettings")
+                      : t("reminders.save")}
+                  </Text>
+                </Button>
+              </View>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("support.title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-3">
+                <Button onPress={() => router.push("/support")} variant="secondary">
+                  <Text>{t("support.openSupport")}</Text>
+                </Button>
+                <Button onPress={() => router.push("/legal")} variant="ghost">
+                  <Text>{t("support.openLegal")}</Text>
+                </Button>
+                {Platform.OS === "web" ? (
+                  <Button onPress={() => router.push("/cookies")} variant="ghost">
+                    <Text>{t("support.cookiePreferences")}</Text>
+                  </Button>
+                ) : null}
+                <Button onPress={() => void Linking.openURL(appEnv.githubRepoUrl)} variant="ghost">
+                  <Text>{t("support.openGithub")}</Text>
+                </Button>
+              </View>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("account.title")}</CardTitle>
+              <CardDescription>{user?.email ?? t("account.signedIn")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-3">
+                <ExportDataButton />
+                <DeleteAccountButton />
+                <Button onPress={() => void handleSignOut()} variant="destructive">
+                  <Text>{t("account.signOut")}</Text>
+                </Button>
+              </View>
+            </CardContent>
+          </Card>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -273,18 +281,16 @@ export default function SettingsScreen() {
 
 function ProfilePictureCard({ user }: { user: User | null }) {
   const { t } = useTranslation("settings");
-  const { data: profile, error: profileError, isLoading } = useUserProfile(user);
+  const { data: profile, error: profileError } = useUserProfile(user);
   const uploadMutation = useUploadUserAvatar(user?.id ?? null);
   const resetMutation = useResetUserAvatarToOAuth(user);
   const removeMutation = useRemoveUserAvatar(user?.id ?? null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [cropUri, setCropUri] = useState<string | null>(null);
-  const [pickedAsset, setPickedAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
 
   const googleAvatarUrl = getOAuthAvatarUrl(user);
-  const isPending =
-    uploadMutation.isPending || resetMutation.isPending || removeMutation.isPending;
+  const isPending = uploadMutation.isPending || resetMutation.isPending || removeMutation.isPending;
 
   const processAndUpload = async (uri: string, cropArea?: Area) => {
     const context = ImageManipulator.ImageManipulator.manipulate(uri);
@@ -357,7 +363,6 @@ function ProfilePictureCard({ user }: { user: User | null }) {
       }
 
       if (Platform.OS === "web") {
-        setPickedAsset(asset);
         setCropUri(asset.uri);
         return;
       }
@@ -371,7 +376,6 @@ function ProfilePictureCard({ user }: { user: User | null }) {
 
   const handleCropConfirm = async (croppedArea: Area) => {
     setCropUri(null);
-    setPickedAsset(null);
 
     try {
       if (!cropUri) {
@@ -387,10 +391,9 @@ function ProfilePictureCard({ user }: { user: User | null }) {
 
   const handleCropCancel = () => {
     setCropUri(null);
-    setPickedAsset(null);
   };
 
-  const useGoogleAvatar = async () => {
+  const restoreGoogleAvatar = async () => {
     if (!user) {
       return;
     }
@@ -422,56 +425,62 @@ function ProfilePictureCard({ user }: { user: User | null }) {
 
   return (
     <>
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("profile.title")}</CardTitle>
-        <CardDescription>{t("profile.description")}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <View className="gap-4">
-          <View className="flex-row items-center gap-4">
-            <ProfileAvatar
-              avatarUrl={profile?.avatarUrl}
-              className="size-16"
-              email={user?.email}
-            />
-            <View className="flex-1 gap-1">
-              <Text numberOfLines={1}>{user?.email ?? t("account.signedIn")}</Text>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("profile.title")}</CardTitle>
+          <CardDescription>{t("profile.description")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <View className="gap-4">
+            <View className="flex-row items-center gap-4">
+              <ProfileAvatar
+                avatarUrl={profile?.avatarUrl}
+                className="size-16"
+                email={user?.email}
+              />
+              <View className="flex-1 gap-1">
+                <Text numberOfLines={1}>{user?.email ?? t("account.signedIn")}</Text>
+              </View>
             </View>
-          </View>
 
-          <View className="flex-row flex-wrap gap-3">
-            <Button disabled={isPending} onPress={() => void pickAvatar()} variant="secondary">
-              {uploadMutation.isPending ? <ActivityIndicator /> : null}
-              <Text>{uploadMutation.isPending ? t("profile.uploading") : t("profile.change")}</Text>
-            </Button>
-            {googleAvatarUrl ? (
-              <Button disabled={isPending} onPress={() => void useGoogleAvatar()} variant="outline">
-                {resetMutation.isPending ? <ActivityIndicator /> : null}
-                <Text>{t("profile.useGoogle")}</Text>
+            <View className="flex-row flex-wrap gap-3">
+              <Button disabled={isPending} onPress={() => void pickAvatar()} variant="secondary">
+                {uploadMutation.isPending ? <ActivityIndicator /> : null}
+                <Text>
+                  {uploadMutation.isPending ? t("profile.uploading") : t("profile.change")}
+                </Text>
               </Button>
-            ) : null}
-            <Button
-              disabled={isPending || (!profile?.avatarUrl && !profile?.avatarStoragePath)}
-              onPress={() => void removeAvatar()}
-              variant="ghost"
-            >
-              {removeMutation.isPending ? <ActivityIndicator /> : null}
-              <Text>{t("profile.remove")}</Text>
-            </Button>
-          </View>
+              {googleAvatarUrl ? (
+                <Button
+                  disabled={isPending}
+                  onPress={() => void restoreGoogleAvatar()}
+                  variant="outline"
+                >
+                  {resetMutation.isPending ? <ActivityIndicator /> : null}
+                  <Text>{t("profile.useGoogle")}</Text>
+                </Button>
+              ) : null}
+              <Button
+                disabled={isPending || (!profile?.avatarUrl && !profile?.avatarStoragePath)}
+                onPress={() => void removeAvatar()}
+                variant="ghost"
+              >
+                {removeMutation.isPending ? <ActivityIndicator /> : null}
+                <Text>{t("profile.remove")}</Text>
+              </Button>
+            </View>
 
-          {message ? <Text className="text-sm text-muted-foreground">{message}</Text> : null}
-          {profileError ? (
-            <Text className="text-sm text-destructive">
-              {getErrorMessage(profileError, t("profile.loadError"))}
-            </Text>
-          ) : null}
-          {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
-        </View>
-      </CardContent>
-    </Card>
-    {Platform.OS === "web" && cropUri ? (
+            {message ? <Text className="text-sm text-muted-foreground">{message}</Text> : null}
+            {profileError ? (
+              <Text className="text-sm text-destructive">
+                {getErrorMessage(profileError, t("profile.loadError"))}
+              </Text>
+            ) : null}
+            {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
+          </View>
+        </CardContent>
+      </Card>
+      {Platform.OS === "web" && cropUri ? (
         <AvatarCropModal
           imageUri={cropUri}
           onCancel={handleCropCancel}
@@ -584,7 +593,9 @@ function DeleteAccountButton() {
             disabled={confirmInput !== "DELETE" || deleteMutation.isPending}
             onPress={() => void handleDelete()}
           >
-            <Text>{deleteMutation.isPending ? t("account.deleting") : t("account.deletePermanently")}</Text>
+            <Text>
+              {deleteMutation.isPending ? t("account.deleting") : t("account.deletePermanently")}
+            </Text>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,0 +1,13 @@
+node_modules/
+.expo/
+.expo-shared/
+dist/
+build/
+web-build/
+android/
+ios/
+supabase/.temp/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+expo-env.d.ts

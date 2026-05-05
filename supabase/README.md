@@ -46,19 +46,19 @@ Never put service-role keys, database passwords, SMTP secrets, OAuth secrets, JW
 2. authenticate the CLI:
 
 ```bash
-npx supabase login
+npm exec supabase -- login
 ```
 
 3. link the repo to the project:
 
 ```bash
-npx supabase link --project-ref <your-project-ref>
+npm exec supabase -- link --project-ref <your-project-ref>
 ```
 
 4. apply the existing migration:
 
 ```bash
-npx supabase db push
+npm exec supabase -- db push
 ```
 
 This creates the database tables, consent/deletion functions, profile avatar columns, and the private `profile-pics` storage bucket with RLS policies.
@@ -66,19 +66,20 @@ This creates the database tables, consent/deletion functions, profile avatar col
 If profile-picture testing shows `avatar_source` missing from the schema cache or a `profile-pics` row-level security error, the active Supabase project is missing the avatar repair migration. The normal fix is:
 
 ```bash
-npx supabase db push
+npm exec supabase -- db push
 ```
 
 If `db push` is blocked by a migration-history mismatch, apply the idempotent avatar repair SQL directly, then resolve the migration-history mismatch before relying on `db push` again:
 
 ```bash
-npx supabase db query --linked -f supabase/migrations/20260503121000_profile_avatar_repair.sql
+npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_profile_avatar_repair.sql
 ```
 
 5. in Supabase dashboard:
 
 - enable the Google provider and paste the Google OAuth client ID and secret
 - keep email auth enabled for passwordless magic-link sign-in
+
 6. in Google Auth Platform, create a `Web application` OAuth client and configure:
 
 - Authorized JavaScript origins for your web app, for example `http://localhost:8081`
@@ -105,16 +106,16 @@ Current and planned modes:
 For Supabase Cloud, apply migrations with:
 
 ```bash
-npx supabase login
-npx supabase link --project-ref <project-ref>
-npx supabase db push
+npm exec supabase -- login
+npm exec supabase -- link --project-ref <project-ref>
+npm exec supabase -- db push
 ```
 
 For local development, use:
 
 ```bash
-npx supabase start
-npx supabase db reset
+npm exec supabase -- start
+npm exec supabase -- db reset
 ```
 
 For future advanced self-hosted Supabase, follow Supabase's official self-hosting docs first, then apply the SQL migrations from this repo to the target database. The operator owns TLS, SMTP/email, backups, upgrades, monitoring, uptime, and incident response.

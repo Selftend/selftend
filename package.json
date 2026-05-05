@@ -10,15 +10,20 @@
     "start": "expo start",
     "start:dev-client": "expo start --dev-client",
     "android": "expo start --android",
-    "build:android:development": "npx eas-cli build --platform android --profile development",
-    "build:android:preview": "npx eas-cli build --platform android --profile preview",
-    "build:android:production": "npx eas-cli build --platform android --profile production",
-    "submit:android:production": "npx eas-cli submit --platform android --profile production",
+    "build:android:development": "npm exec eas-cli -- build --platform android --profile development",
+    "build:android:preview": "npm exec eas-cli -- build --platform android --profile preview",
+    "build:android:production": "npm exec eas-cli -- build --platform android --profile production",
+    "submit:android:production": "npm exec eas-cli -- submit --platform android --profile production",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "export:web": "npx expo export --platform web --clear",
-    "deploy": "npm run export:web && npx netlify-cli deploy --prod --dir=dist",
-    "serve:web:production": "npx expo serve",
+    "export:web": "npm exec expo -- export --platform web --clear",
+    "deploy": "npm run export:web && npm exec netlify-cli -- deploy --prod --dir=dist",
+    "serve:web:production": "npm exec expo -- serve",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint-staged": "lint-staged",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -98,9 +103,23 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.1.0",
+    "eslint": "^9.39.4",
+    "eslint-config-expo": "^55.0.0",
+    "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
     "jest-expo": "~54.0.17",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.3",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,json,css,md}": [
+      "prettier --write"
+    ]
   }
 }

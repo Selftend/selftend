@@ -53,7 +53,7 @@ Required owner inputs:
 - support email for this specific app
 - privacy contact email
 
-The build machine must also be authenticated with Expo before EAS builds or submissions can run. Verify with `npx eas-cli whoami`; if it fails, run `npx eas-cli login` locally or provide an `EXPO_TOKEN` for CI.
+The build machine must also be authenticated with Expo before EAS builds or submissions can run. Verify with `npm exec eas-cli -- whoami`; if it fails, run `npm exec eas-cli -- login` locally or provide an `EXPO_TOKEN` for CI.
 
 New personal developer accounts have additional closed-testing requirements before production access. This project should still run a real closed test even if an organization account avoids that specific personal-account gate.
 
@@ -79,7 +79,7 @@ Before closed testing:
 Local verification:
 
 ```bash
-npx expo config --type prebuild --json
+npm exec expo -- config --type prebuild --json
 npm run typecheck
 npm test -- --runInBand
 ```

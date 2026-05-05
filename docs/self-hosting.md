@@ -138,16 +138,16 @@ Expo public variables are bundled into the client app and should be treated as v
 For Supabase Cloud:
 
 ```bash
-npx supabase login
-npx supabase link --project-ref <project-ref>
-npx supabase db push
+npm exec supabase -- login
+npm exec supabase -- link --project-ref <project-ref>
+npm exec supabase -- db push
 ```
 
 For local development:
 
 ```bash
-npx supabase start
-npx supabase db reset
+npm exec supabase -- start
+npm exec supabase -- db reset
 ```
 
 For self-hosted Supabase, follow Supabase's official self-hosting docs first, then apply the SQL migrations from `supabase/migrations` to the target Postgres database. The exact deployment and migration command depends on how the operator exposes the database and manages credentials.

@@ -93,7 +93,7 @@ Useful commands:
 ```bash
 npm run web
 npm run start:dev-client
-npx expo config --type prebuild --json
+npm exec expo -- config --type prebuild --json
 npm run build:android:development
 npm run build:android:preview
 npm run build:android:production
@@ -101,12 +101,12 @@ npm run export:web
 npm run serve:web:production
 npm run typecheck
 npm test -- --runInBand
-npx @react-native-reusables/cli@latest doctor --summary --yes
+npm exec @react-native-reusables/cli@latest -- doctor --summary --yes
 ```
 
 For Android development, use the installed development build with `npm run start:dev-client`. Do not treat Expo Go as the default Android workflow for this project.
 
-Before a Google Play upload, run `npx expo config --type prebuild --json` and confirm the resolved Android permissions do not include `android.permission.CAMERA` or `android.permission.RECORD_AUDIO`. The app only uses the photo library for optional profile-picture changes, and `app.config.ts` disables camera and microphone permissions in `expo-image-picker` for Play policy hygiene.
+Before a Google Play upload, run `npm exec expo -- config --type prebuild --json` and confirm the resolved Android permissions do not include `android.permission.CAMERA` or `android.permission.RECORD_AUDIO`. The app only uses the photo library for optional profile-picture changes, and `app.config.ts` disables camera and microphone permissions in `expo-image-picker` for Play policy hygiene.
 
 ## Branding and assets
 
@@ -150,7 +150,7 @@ Use the Android development build for normal development, reminder testing, and 
 
 1. Create or update `.env` with your real Supabase values.
 2. The linked Expo project ID is already configured in `app.config.ts`. Only set `EXPO_PUBLIC_EAS_PROJECT_ID` if you need to override it.
-3. If the project is not yet linked in EAS for your account, run `npx eas-cli init`.
+3. If the project is not yet linked in EAS for your account, run `npm exec eas-cli -- init`.
 4. Build the Android development client:
 
 ```bash

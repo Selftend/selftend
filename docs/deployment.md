@@ -110,7 +110,7 @@ npm run export:web
 Equivalent raw command:
 
 ```bash
-npx expo export -p web --clear
+npm exec expo -- export -p web --clear
 ```
 
 Output directory:
@@ -129,7 +129,7 @@ The web build uses `web.output = "single"` in [app.config.ts](../app.config.ts).
 
 ## Production Headers
 
-[public/_headers](../public/_headers) contains the Netlify security headers. Keep the Content Security Policy restrictive, but allow avatar images from:
+[public/\_headers](../public/_headers) contains the Netlify security headers. Keep the Content Security Policy restrictive, but allow avatar images from:
 
 - `https://*.supabase.co` for private Storage signed URLs
 - `https://*.googleusercontent.com` for Google OAuth profile photos

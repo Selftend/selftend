@@ -70,8 +70,8 @@ Current usage:
 The setup was normalized with:
 
 ```bash
-npx @react-native-reusables/cli@latest init -t minimal
-npx @react-native-reusables/cli@latest add --all --overwrite --styling-library nativewind
+npm exec @react-native-reusables/cli@latest -- init -t minimal
+npm exec @react-native-reusables/cli@latest -- add --all --overwrite --styling-library nativewind
 ```
 
 Keep generated primitives close to the Reusables registry API and avoid app-specific styling or compatibility props in `components/ui`. For example, use the documented button pattern:
@@ -87,7 +87,7 @@ Do not add local compatibility props such as `text`, `isLoading`, `primary`, or 
 Use this command after changing the UI setup:
 
 ```bash
-npx @react-native-reusables/cli@latest doctor --summary --yes
+npm exec @react-native-reusables/cli@latest -- doctor --summary --yes
 ```
 
 Do not add a second broad UI kit without a clear reason. Prefer generated Reusables primitives and screen-local layout until product UI needs are clearer.
@@ -104,15 +104,15 @@ Supported languages: English (`en`), Bulgarian (`bg`). English is the fallback.
 
 Translation files live in `src/i18n/locales/{lang}/` with seven namespaces:
 
-| Namespace | Scope |
-|---|---|
-| `common` | shared UI strings (loading, cancel, save, etc.) |
-| `auth` | sign-in, sign-up, verify-email, password flows |
-| `cbt` | CBT module screens and thought records |
-| `settings` | settings, profile, consent, cookie banner |
-| `navigation` | tab labels, sidebar, header, not-found page |
-| `policies` | legal page chrome and full section content |
-| `errors` | error messages |
+| Namespace    | Scope                                           |
+| ------------ | ----------------------------------------------- |
+| `common`     | shared UI strings (loading, cancel, save, etc.) |
+| `auth`       | sign-in, sign-up, verify-email, password flows  |
+| `cbt`        | CBT module screens and thought records          |
+| `settings`   | settings, profile, consent, cookie banner       |
+| `navigation` | tab labels, sidebar, header, not-found page     |
+| `policies`   | legal page chrome and full section content      |
+| `errors`     | error messages                                  |
 
 Usage pattern in components:
 

@@ -100,7 +100,7 @@ Use the development build instead of Expo Go for normal Android development, rem
 
 1. Confirm `.env` has real Supabase values.
 2. The linked Expo project ID is already configured in `app.config.ts`. Only set `EXPO_PUBLIC_EAS_PROJECT_ID` if you need to override it.
-3. Run `npx eas-cli init` once if the EAS project has not been linked yet.
+3. Run `npm exec eas-cli -- init` once if the EAS project has not been linked yet.
 4. Run `npm run build:android:development`.
 5. Install the generated build on the target device.
 6. Run `npm run start:dev-client`.
