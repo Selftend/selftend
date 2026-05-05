@@ -1,6 +1,6 @@
 # Costs
 
-Last checked: 2026-05-02
+Last checked: 2026-05-05
 
 These are planning estimates, not guarantees. Pricing, verification rules, and limits can change. Verify all costs again before spending money or publishing the app.
 
@@ -113,6 +113,19 @@ Initial recommendation:
 
 The browser app should stay cheap if it remains a mostly static front-end that talks to Supabase.
 
+## GitHub Actions release builds
+
+The manual Android release workflow uses `eas build --local` on a standard GitHub-hosted Ubuntu runner. This avoids the EAS cloud build queue, but it still consumes GitHub Actions minutes and artifact/cache storage.
+
+GitHub's billing docs say standard GitHub-hosted runner usage is free for public repositories, while private repositories receive plan-dependent included minutes and storage before overage billing. Source checked 2026-05-05: <https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions>
+
+Practical default:
+
+- keep mobile and web release workflows manual
+- keep Android `.aab` artifact retention short
+- do not run store-release builds on every push until release cadence and Actions usage are understood
+- consider a self-hosted runner only if build time, quota, or reproducibility becomes a real blocker
+
 ## Self-hosting and portability
 
 The long-term product direction should make self-hosting possible, similar in spirit to apps that support both a hosted service and user-controlled deployments.
@@ -162,6 +175,7 @@ Avoid paying for these before the product earns them:
 - Apple enrollment details: <https://developer.apple.com/programs/enroll/>
 - Expo pricing: <https://expo.dev/pricing>
 - Expo billing docs: <https://docs.expo.dev/billing/plans/>
+- GitHub Actions billing: <https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions>
 - Supabase billing FAQ: <https://supabase.com/docs/guides/platform/billing-faq>
 - Supabase billing overview: <https://supabase.com/docs/guides/platform/billing-on-supabase>
 - Supabase self-hosting with Docker: <https://supabase.com/docs/guides/self-hosting/docker>

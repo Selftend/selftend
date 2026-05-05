@@ -1,6 +1,6 @@
 # Web Deployment
 
-Last checked: 2026-05-03
+Last checked: 2026-05-05
 
 This project should launch the browser app as a single-page Expo web export. Do not add a separate backend, analytics SDK, or server-rendered web stack for v1 unless a concrete requirement appears.
 
@@ -58,6 +58,8 @@ The portable contract is:
 
 Auto-deploy on push to `main` is disabled. Deploys are triggered manually from the Netlify dashboard (Deploys → Trigger deploy) to stay within the free-tier build-minute budget. Do not re-enable continuous deployment without checking remaining credits for the billing period.
 
+This repo also includes a manual GitHub Actions workflow, `Web production deploy`, for maintainer-triggered production deploys from the current `main` branch. Use that workflow when you want a reproducible deploy from GitHub without enabling Netlify's continuous deployment hook.
+
 This repo includes [netlify.toml](../netlify.toml), which sets:
 
 - build command: `npm run export:web`
@@ -98,6 +100,38 @@ EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 ```
 
 `EXPO_PUBLIC_PUBLIC_APP_URL` is baked into the JavaScript bundle during export and is used as the explicit web auth callback base. If it changes or was missing, update the Netlify environment variable and redeploy.
+
+### GitHub Actions Web Deploy
+
+The manual `.github/workflows/web-deploy.yml` workflow:
+
+- checks out `main`
+- installs dependencies with Node `20.19.0`
+- runs `npm run export:web`
+- deploys `dist` to Netlify production with `netlify-cli`
+
+Required GitHub repository variables:
+
+```text
+EXPO_PUBLIC_SUPABASE_URL
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+EXPO_PUBLIC_GITHUB_REPO_URL
+EXPO_PUBLIC_PUBLIC_APP_URL
+EXPO_PUBLIC_SUPPORT_EMAIL
+EXPO_PUBLIC_PRIVACY_EMAIL
+EXPO_PUBLIC_SECURITY_EMAIL
+```
+
+`EXPO_PUBLIC_GITHUB_REPO_URL` is optional in app code because a default exists, but setting it in GitHub keeps the release environment explicit.
+
+Required GitHub repository secrets:
+
+```text
+NETLIFY_AUTH_TOKEN
+NETLIFY_SITE_ID
+```
+
+Use GitHub repository or environment protection rules if more than one maintainer can run production deploys.
 
 ## Web Build
 

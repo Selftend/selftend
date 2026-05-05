@@ -6,7 +6,12 @@ node_modules/
 # Web / builds
 dist/
 build/
+build-artifacts/
 web-build/
+
+# CI / release secrets
+.secrets/
+google-play-service-account.json
 
 # Native
 android/

@@ -97,6 +97,7 @@ npm exec expo -- config --type prebuild --json
 npm run build:android:development
 npm run build:android:preview
 npm run build:android:production
+EAS_LOCAL_BUILD_ARTIFACTS_DIR=./build-artifacts npm exec eas-cli -- build --platform android --profile production --local --non-interactive
 npm run export:web
 npm run serve:web:production
 npm run typecheck
@@ -167,6 +168,28 @@ npm run start:dev-client
 7. Open the installed development build and connect it to the Metro server.
 
 Once the development build is installed, keep using it as the default Android development client. On Linux, the day-to-day workflow should be `npm run start:dev-client` plus the installed dev build, with `npm run build:android:development` only when you need a refreshed binary.
+
+## Manual release workflows
+
+GitHub Actions has separate manual release workflows for production surfaces:
+
+- `Android Play internal release`: checks out `main`, runs an EAS local Android production build on the GitHub runner, uploads the `.aab` as a workflow artifact, and can submit it to the Google Play internal testing track.
+- `Web production deploy`: checks out `main`, exports the Expo web app, and deploys `dist` to Netlify production.
+
+Required GitHub repository variables for both workflows:
+
+```text
+EXPO_PUBLIC_SUPABASE_URL
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+EXPO_PUBLIC_PUBLIC_APP_URL
+EXPO_PUBLIC_SUPPORT_EMAIL
+EXPO_PUBLIC_PRIVACY_EMAIL
+EXPO_PUBLIC_SECURITY_EMAIL
+```
+
+Android also requires `EXPO_TOKEN` as a repository secret. Store submission additionally requires `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` after the first manual Google Play upload and Play API setup are complete.
+
+Web deployment requires `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` as repository secrets.
 
 ## Repo map
 

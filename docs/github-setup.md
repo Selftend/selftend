@@ -1,6 +1,6 @@
 # GitHub Setup
 
-Last updated: 2026-05-02
+Last updated: 2026-05-05
 
 ## Current state
 
@@ -30,9 +30,53 @@ git remote set-url origin git@github.com:vasilyoshev/self-tend.git
 This repo already includes:
 
 - `.github/workflows/ci.yml`
+- `.github/workflows/android-release.yml`
+- `.github/workflows/web-deploy.yml`
 - `.github/pull_request_template.md`
 - issue templates
 - `.github/labels.yml`
+
+## Workflows
+
+`CI` runs on pull requests and pushes to `main`.
+
+`Android Play internal release` is manual. It checks out `main`, runs a local EAS Android production build on the GitHub runner, uploads the `.aab` artifact, and can submit to Google Play internal testing.
+
+`Web production deploy` is manual. It checks out `main`, exports the Expo web app, and deploys `dist` to Netlify production.
+
+Required release variables:
+
+```text
+EXPO_PUBLIC_SUPABASE_URL
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+EXPO_PUBLIC_PUBLIC_APP_URL
+EXPO_PUBLIC_SUPPORT_EMAIL
+EXPO_PUBLIC_PRIVACY_EMAIL
+EXPO_PUBLIC_SECURITY_EMAIL
+```
+
+Recommended explicit release variables:
+
+```text
+EXPO_PUBLIC_EAS_PROJECT_ID
+EXPO_PUBLIC_GITHUB_REPO_URL
+```
+
+Required release secrets:
+
+```text
+EXPO_TOKEN
+NETLIFY_AUTH_TOKEN
+NETLIFY_SITE_ID
+```
+
+Required only for Android store submission:
+
+```text
+GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
+```
+
+Use GitHub branch, environment, or workflow permission controls before sharing release rights with additional maintainers.
 
 ## Suggested labels
 

@@ -1,0 +1,132 @@
+name: Android Play internal release
+
+on:
+  workflow_dispatch:
+    inputs:
+      submit_to_play:
+        description: Submit the built AAB to Google Play internal testing
+        type: boolean
+        default: true
+
+concurrency:
+  group: android-release-main
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Android App Bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      ANDROID_SUBMIT_TO_PLAY: ${{ inputs.submit_to_play }}
+      EAS_LOCAL_BUILD_ARTIFACTS_DIR: build-artifacts
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
+      EXPO_PUBLIC_GITHUB_REPO_URL: ${{ vars.EXPO_PUBLIC_GITHUB_REPO_URL }}
+      EXPO_PUBLIC_PRIVACY_EMAIL: ${{ vars.EXPO_PUBLIC_PRIVACY_EMAIL }}
+      EXPO_PUBLIC_PUBLIC_APP_URL: ${{ vars.EXPO_PUBLIC_PUBLIC_APP_URL }}
+      EXPO_PUBLIC_SECURITY_EMAIL: ${{ vars.EXPO_PUBLIC_SECURITY_EMAIL }}
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPPORT_EMAIL: ${{ vars.EXPO_PUBLIC_SUPPORT_EMAIL }}
+      GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.0
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Prepare Android SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager --install "platforms;android-36" "ndk;27.1.12297006"
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.cache/eas
+          key: ${{ runner.os }}-android-release-${{ hashFiles('package-lock.json', 'app.config.ts', 'eas.json') }}
+          restore-keys: |
+            ${{ runner.os }}-android-release-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check release environment
+        run: |
+          missing=0
+          for name in \
+            EXPO_PUBLIC_SUPABASE_URL \
+            EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
+            EXPO_PUBLIC_PUBLIC_APP_URL \
+            EXPO_PUBLIC_SUPPORT_EMAIL \
+            EXPO_PUBLIC_PRIVACY_EMAIL \
+            EXPO_PUBLIC_SECURITY_EMAIL
+          do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name must be set as a GitHub repository variable for release builds."
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Verify EAS authentication
+        run: npm exec --yes eas-cli -- whoami
+
+      - name: Build signed Android App Bundle locally
+        run: |
+          mkdir -p "$EAS_LOCAL_BUILD_ARTIFACTS_DIR"
+          npm exec --yes eas-cli -- build --platform android --profile production --local --non-interactive
+
+      - name: Upload Android App Bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: selftend-android-aab-${{ github.run_number }}
+          path: build-artifacts/*.aab
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Write Google Play service account key
+        if: ${{ inputs.submit_to_play }}
+        run: |
+          if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is required when ANDROID_SUBMIT_TO_PLAY is true."
+            exit 1
+          fi
+
+          mkdir -p .secrets
+          printf '%s' "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" > .secrets/google-play-service-account.json
+
+      - name: Submit to Google Play internal testing
+        if: ${{ inputs.submit_to_play }}
+        run: |
+          aab_path="$(find build-artifacts -maxdepth 1 -type f -name '*.aab' -print -quit)"
+          if [ -z "$aab_path" ]; then
+            echo "::error::No Android App Bundle found in build-artifacts."
+            exit 1
+          fi
+
+          npm exec --yes eas-cli -- submit --platform android --profile internal --path "$aab_path" --non-interactive

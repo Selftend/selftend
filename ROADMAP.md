@@ -141,6 +141,7 @@ Initial scaffold work completed so far:
 - [x] placeholder routes added for Mood tracker, Meditation, ACT, and Gratitude log
 - [x] profile-picture removal now persists without re-importing the Google avatar
 - [x] production CSP allows Supabase signed avatar URLs and Google avatar images
+- [x] manual GitHub Actions workflows added for Android internal Play releases and Netlify web production deploys from `main`
 
 ### Phase 2: Ready-for-public-product pass
 
@@ -183,6 +184,9 @@ Immediate launch blockers:
 - [ ] support, privacy, security, and deletion aliases configured on `selftend.org`
 - [ ] legal entity or nonprofit account details confirmed
 - [ ] build machine authenticated with Expo for EAS (`npm exec eas-cli -- whoami` succeeds or `EXPO_TOKEN` is set)
+- [ ] GitHub release variables and secrets configured for Android and web deploy workflows
+- [ ] Google Play service account JSON configured after first manual Play upload
+- [ ] Netlify site ID and auth token configured for manual web production deploys
 - [x] broad/global crisis-resource intent captured
 - [ ] global crisis-resource strategy approved
 - [ ] Google Play organization/nonprofit developer account created or confirmed

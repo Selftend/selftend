@@ -1,6 +1,6 @@
 # Internal Testing
 
-Last updated: 2026-05-03
+Last updated: 2026-05-05
 
 ## Current build profiles
 
@@ -13,6 +13,13 @@ Last updated: 2026-05-03
 Use the Android `development` build as the default local runtime. Do not use Expo Go as the normal Android development path.
 
 For Google Play closed testing, use the `production` profile to create an Android App Bundle after policy forms and store setup are ready.
+
+Manual GitHub Actions workflows are available for maintainer-triggered releases from `main`:
+
+- `Android Play internal release` builds a signed production `.aab` on a GitHub runner and can submit it to Google Play internal testing after Play API credentials are ready.
+- `Web production deploy` exports the web app and deploys `dist` to Netlify production.
+
+These workflows are manual by design. CI still validates pushes and pull requests; release workflows should be run only when the current `main` state is intended for testers or production web users.
 
 ## Minimum internal verification before widening scope
 
@@ -90,6 +97,7 @@ npm run start:dev-client
 npm run build:android:development
 npm run build:android:preview
 npm run build:android:production
+EAS_LOCAL_BUILD_ARTIFACTS_DIR=./build-artifacts npm exec eas-cli -- build --platform android --profile production --local --non-interactive
 ```
 
 Use Node `20.19.0+` so your local runtime matches the current `package.json` engine requirement before you install or test anything.

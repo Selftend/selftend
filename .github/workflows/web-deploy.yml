@@ -1,0 +1,73 @@
+name: Web production deploy
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: web-production-deploy-main
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Web To Netlify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
+      EXPO_PUBLIC_GITHUB_REPO_URL: ${{ vars.EXPO_PUBLIC_GITHUB_REPO_URL }}
+      EXPO_PUBLIC_PRIVACY_EMAIL: ${{ vars.EXPO_PUBLIC_PRIVACY_EMAIL }}
+      EXPO_PUBLIC_PUBLIC_APP_URL: ${{ vars.EXPO_PUBLIC_PUBLIC_APP_URL }}
+      EXPO_PUBLIC_SECURITY_EMAIL: ${{ vars.EXPO_PUBLIC_SECURITY_EMAIL }}
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPPORT_EMAIL: ${{ vars.EXPO_PUBLIC_SUPPORT_EMAIL }}
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check deploy environment
+        run: |
+          missing=0
+          for name in \
+            EXPO_PUBLIC_SUPABASE_URL \
+            EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
+            EXPO_PUBLIC_PUBLIC_APP_URL \
+            EXPO_PUBLIC_SUPPORT_EMAIL \
+            EXPO_PUBLIC_PRIVACY_EMAIL \
+            EXPO_PUBLIC_SECURITY_EMAIL \
+            NETLIFY_AUTH_TOKEN \
+            NETLIFY_SITE_ID
+          do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name must be set before deploying the web app."
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Export web app
+        run: npm run export:web
+
+      - name: Deploy to Netlify production
+        run: npm exec --yes netlify-cli -- deploy --prod --dir=dist --site "$NETLIFY_SITE_ID" --auth "$NETLIFY_AUTH_TOKEN"

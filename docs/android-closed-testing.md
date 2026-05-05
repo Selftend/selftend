@@ -1,6 +1,6 @@
 # Android Closed Testing
 
-Last checked: 2026-05-04
+Last checked: 2026-05-05
 
 The first Google Play milestone should be closed testing, not production. Do not promote to production until policy, safety, device, and support requirements are reviewed.
 
@@ -19,6 +19,8 @@ Official references:
 - Health apps declaration: <https://support.google.com/googleplay/android-developer/answer/14738291>
 - Expo app config `android.blockedPermissions`: <https://docs.expo.dev/versions/latest/config/app/#blockedpermissions>
 - Expo ImagePicker config plugin: <https://docs.expo.dev/versions/latest/sdk/imagepicker/>
+- EAS local builds: <https://docs.expo.dev/build-reference/local-builds/>
+- EAS app version management: <https://docs.expo.dev/build-reference/app-versions>
 - EAS Android submission: <https://docs.expo.dev/submit/android/>
 - EAS build APK/AAB behavior: <https://docs.expo.dev/build-reference/apk/>
 
@@ -53,7 +55,7 @@ Required owner inputs:
 - support email for this specific app
 - privacy contact email
 
-The build machine must also be authenticated with Expo before EAS builds or submissions can run. Verify with `npm exec eas-cli -- whoami`; if it fails, run `npm exec eas-cli -- login` locally or provide an `EXPO_TOKEN` for CI.
+The build machine must also be authenticated with Expo before EAS builds or submissions can run. Verify locally with `npm exec eas-cli -- whoami`; if it fails, run `npm exec eas-cli -- login` locally. For GitHub Actions, set an `EXPO_TOKEN` repository secret.
 
 New personal developer accounts have additional closed-testing requirements before production access. This project should still run a real closed test even if an organization account avoids that specific personal-account gate.
 
@@ -104,9 +106,16 @@ Production Google Play App Bundle:
 npm run build:android:production
 ```
 
+Production Google Play App Bundle on the current machine, without waiting in the EAS cloud queue:
+
+```bash
+mkdir -p build-artifacts
+EAS_LOCAL_BUILD_ARTIFACTS_DIR=./build-artifacts npm exec eas-cli -- build --platform android --profile production --local --non-interactive
+```
+
 The production profile explicitly builds an Android App Bundle (`.aab`) because Google Play distribution uses AABs. Development and internal-distribution style builds are installable APKs.
 
-This repo uses dynamic Expo config (`app.config.ts`), so EAS automatic app-version incrementing is disabled. For every new Google Play upload after the first one, manually increase `android.versionCode` in `app.config.ts` before building. The first closed-test upload uses `versionCode: 1`.
+This repo now uses EAS remote app-version management with `build.production.autoIncrement: true`. After the first Play upload and remote version initialization, production builds automatically increment the Android `versionCode`. Keep `version` in `app.config.ts` as the human-facing release version and use EAS remote versioning for the developer-facing Play upload number.
 
 Submission command after Play Console and EAS credentials are ready:
 
@@ -115,6 +124,48 @@ npm run submit:android:production
 ```
 
 The current EAS submit profile targets the `alpha` track with draft release status. In Google Play Console terms, use this for the first closed-testing workflow only after the app listing, policy forms, testers, and first manual upload requirements are satisfied.
+
+The `internal` submit profile targets Google Play internal testing with `releaseStatus: completed`. The manual GitHub Actions workflow uses this profile for maintainer-triggered internal releases after Play API credentials are ready.
+
+## Manual GitHub Actions release
+
+`.github/workflows/android-release.yml` defines `Android Play internal release`.
+
+When manually triggered, it:
+
+- checks out `main`
+- installs Node `20.19.0`, Java 17, Android API 36, and NDK `27.1.12297006`
+- runs `eas build --platform android --profile production --local --non-interactive`
+- uploads the generated `.aab` as a GitHub Actions artifact
+- submits the `.aab` to Google Play internal testing when `submit_to_play` is enabled
+
+Required GitHub repository variables:
+
+```text
+EXPO_PUBLIC_SUPABASE_URL
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+EXPO_PUBLIC_GITHUB_REPO_URL
+EXPO_PUBLIC_PUBLIC_APP_URL
+EXPO_PUBLIC_SUPPORT_EMAIL
+EXPO_PUBLIC_PRIVACY_EMAIL
+EXPO_PUBLIC_SECURITY_EMAIL
+```
+
+`EXPO_PUBLIC_GITHUB_REPO_URL` and `EXPO_PUBLIC_EAS_PROJECT_ID` have app defaults, but setting them as GitHub variables keeps the release environment explicit.
+
+Required GitHub repository secrets:
+
+```text
+EXPO_TOKEN
+```
+
+Required only when `submit_to_play` is enabled:
+
+```text
+GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
+```
+
+Do not set `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` until the Google Play app has had its first manual upload and the Play service account has been created with access to the app. EAS Submit requires that first manual upload before API submissions work.
 
 ## First Google Play upload sequence
 
@@ -133,7 +184,7 @@ The current EAS submit profile targets the `alpha` track with draft release stat
 7. Upload the first AAB manually if Google Play API submission is not available yet.
 8. Create the closed-testing track and tester list.
 9. Submit the closed-testing release for Google review.
-10. After the first manual upload and Google service account setup, use EAS Submit for later closed-test builds.
+10. After the first manual upload and Google service account setup, use the manual GitHub Actions release workflow or EAS Submit for later internal-test builds.
 
 ## Closed-test acceptance checklist
 
