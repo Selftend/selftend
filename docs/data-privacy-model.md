@@ -30,6 +30,6 @@ Selftend stores only the data needed to provide account-based guided self-help a
 - Failed saves must leave the form content in place and show a calm reusable failure message.
 - Analytics, tracking, ads, social feeds, public posting, peer messaging, and user-facing AI remain out of MVP unless explicitly reviewed and added to the roadmap.
 
-## Open Backend Verification
+## Backend Status
 
-The linked Supabase project still needs sequential verification after the migration-history mismatch is resolved. Do not rely on `supabase db push` until the remote history and local migration files agree.
+The linked Supabase project migration history was repaired on 2026-05-05. The active project includes profile avatar storage, private `profile-pics` policies, and `user_preferences.language` for language sync.

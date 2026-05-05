@@ -69,7 +69,7 @@ If profile-picture testing shows `avatar_source` missing from the schema cache o
 npm exec supabase -- db push
 ```
 
-If `db push` is blocked by a migration-history mismatch, apply the idempotent avatar repair SQL directly, then resolve the migration-history mismatch before relying on `db push` again:
+If `db push` is blocked by a migration-history mismatch, inspect the active project before changing history. The 2026-05-05 repair renamed the consent/deletion migration to `20260503000000_consent_and_deletion.sql` so it sorts before the same-day avatar migrations, repaired remote history, then applied `20260504_add_language_preference.sql`.
 
 ```bash
 npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_profile_avatar_repair.sql
@@ -77,26 +77,22 @@ npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_pro
 
 ## Linked project status
 
-Last read-only check: 2026-05-05.
+Last checked: 2026-05-05.
 
-`npm exec supabase -- migration list --linked` currently shows a remote/local history mismatch around `20260503`:
+The active linked project migration history was repaired on 2026-05-05:
 
-- local and remote both include `20260415`
-- remote includes `20260503`
-- local includes `20260503_consent_and_deletion.sql`
-- local also includes `20260503120000_profile_avatars.sql`, `20260503121000_profile_avatar_repair.sql`, and `20260504_add_language_preference.sql`
-
-Do not rely on `supabase db push` until the remote migration history is reconciled with the local migration files.
-
-Sequential read-only catalog verification confirmed:
+- the old remote `20260503` history row was reverted
+- the local consent/deletion migration was renamed to `20260503000000_consent_and_deletion.sql`
+- `20260503000000`, `20260503120000`, and `20260503121000` were marked applied in remote history
+- `20260504_add_language_preference.sql` was applied with `supabase db push`
 
 - `profiles` includes the avatar columns from `20260503120000_profile_avatars.sql`
 - `profile-pics` exists as a private bucket with a 5 MB limit and JPEG/PNG/WebP MIME types
 - named public RLS policies exist for `profiles`, `user_preferences`, and `thought_records`
 - named Storage policies exist for authenticated user-owned objects in `profile-pics`
-- `user_preferences.language` is missing from the active linked project even though it exists in `20260504_add_language_preference.sql`
+- `user_preferences.language` exists with the `user_preferences_language_check` constraint
 
-Avoid parallel linked CLI queries against the production project; parallel reads triggered Supabase's temporary auth circuit breaker during verification.
+Avoid parallel linked CLI queries against the production project; parallel reads can trigger Supabase's temporary auth circuit breaker.
 
 5. in Supabase dashboard:
 

@@ -51,13 +51,11 @@ Non-negotiable boundaries:
 
 ### P0: Foundation Before More Business Logic
 
-These are the next priorities because they affect every future feature and contributor workflow.
+These foundation items affected every future feature and contributor workflow.
 
-Local app-foundation work is now documented in [docs/data-privacy-model.md](docs/data-privacy-model.md), [docs/modules/tools.md](docs/modules/tools.md), and the shared components under `src/components`. The remaining P0 blocker is backend truth in the active Supabase project: avatar storage is present, but `user_preferences.language` is missing remotely and migration history still needs reconciliation before `supabase db push` is safe.
+No open P0 tasks remain. The local app-foundation work is documented in [docs/data-privacy-model.md](docs/data-privacy-model.md), [docs/modules/tools.md](docs/modules/tools.md), and the shared components under `src/components`. The active Supabase project has had its migration history repaired, including the sortable `20260503000000_consent_and_deletion.sql` migration, avatar storage migrations, and `20260504_add_language_preference.sql`.
 
-1. [ ] Resolve the Supabase remote migration-history mismatch around version `20260503` before relying on `supabase db push`.
-2. [ ] Apply or otherwise reconcile the missing `20260504_add_language_preference.sql` change in the active project.
-3. [ ] Verify current Supabase migrations in the active production project after reconciliation.
+The next product work should start from P1 unless new foundation regressions are found.
 
 ### P1: MVP Product Flows
 
