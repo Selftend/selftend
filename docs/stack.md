@@ -141,6 +141,12 @@ Key files:
 - `src/i18n/locales/en/` — English source translations
 - `src/i18n/locales/bg/` — Bulgarian translations
 
+## Testing
+
+Jest uses `jest-expo` and React Native Testing Library. Route component tests may import screens from `app/`, but test files must live outside `app/` so Expo Router does not treat them as runtime routes.
+
+Use `test/render-with-providers.tsx` for component tests that need shared providers such as safe area, TanStack Query, and i18n. Mock route navigation and backend hooks at the test boundary.
+
 ## Dependency policy
 
 Prefer Expo or React Native first for platform features.

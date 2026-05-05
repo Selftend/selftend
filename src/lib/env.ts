@@ -16,6 +16,10 @@ export const appEnv = {
 
 export const hasSupabaseConfig = Boolean(appEnv.supabaseUrl && appEnv.supabaseKey);
 
+function isProductionBuild() {
+  return process.env.NODE_ENV === "production";
+}
+
 export function validateRequiredEnv() {
   if (!appEnv.supabaseUrl || !appEnv.supabaseKey) {
     console.error(
@@ -24,8 +28,14 @@ export function validateRequiredEnv() {
   }
 
   if (Platform.OS === "web" && !appEnv.publicAppUrl) {
-    console.error(
-      "[env] EXPO_PUBLIC_PUBLIC_APP_URL is not set. OAuth redirects may not work on web.",
-    );
+    const message =
+      "[env] EXPO_PUBLIC_PUBLIC_APP_URL is not set. Local web auth will use the Expo dev server callback. Set it before exporting or deploying production web builds.";
+
+    if (isProductionBuild()) {
+      console.error(message);
+      return;
+    }
+
+    console.warn(message);
   }
 }

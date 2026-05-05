@@ -40,7 +40,9 @@ Included now:
 - placeholder routes for Mood tracker, Meditation, ACT, and Gratitude log
 - quiet reminder settings, default-off
 - support, legal, privacy, crisis, and account-deletion surfaces
+- shared safety callout, loading/empty/error states, mobile form shell, app toast feedback, and global error fallback
 - Jest test harness
+- provider-aware component test example for i18n, navigation assumptions, and mocked backend data
 - GitHub issue / PR templates and CI workflow
 - i18n with English and Bulgarian, runtime language switching in settings
 
@@ -78,9 +80,16 @@ cp .env.self-host.example .env
 
 - `EXPO_PUBLIC_SUPABASE_URL`
 - `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- `EXPO_PUBLIC_PUBLIC_APP_URL=http://localhost:8081` for local Expo web auth, or your production web origin before exporting a production web build
 - `EXPO_PUBLIC_EAS_PROJECT_ID` only if you need to override the linked Expo project ID
 
 Only put public client configuration in `EXPO_PUBLIC_*` values. Never put service-role keys, database passwords, OAuth secrets, SMTP secrets, or JWT secrets in Expo public env vars.
+
+For local Expo web auth, make sure the matching callback URL is allowed in Supabase Auth redirect URLs:
+
+```text
+http://localhost:8081/auth-callback
+```
 
 4. Run the app:
 
@@ -197,6 +206,7 @@ Web deployment requires `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` as repository
 - [AGENTS.md](AGENTS.md): instructions for AI agents working in this repo
 - [CONTRIBUTING.md](CONTRIBUTING.md): contributor flow and expectations
 - [docs/product-principles.md](docs/product-principles.md): product guardrails
+- [docs/data-privacy-model.md](docs/data-privacy-model.md): shared data, privacy, draft, export, and deletion model
 - [docs/stack.md](docs/stack.md): approved technical stack
 - [docs/costs.md](docs/costs.md): launch and operating cost planning
 - [docs/deployment.md](docs/deployment.md): single-page web deployment and Supabase auth callback setup
@@ -220,7 +230,7 @@ This repo relies on docs as durable context. When a change affects setup, comman
 
 ## Status
 
-Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and the UI shell now uses NativeWind with default React Native Reusables-generated primitives plus brand tokens from the Selftend icon palette. Launch-prep docs cover single-page Netlify web deployment plus Google Play closed testing, including Android permission hardening for the first Play upload. The next blockers are `selftend.org` purchase/DNS, Netlify production env verification, domain email aliases, Expo/EAS authentication on the build machine, Google Play organization account setup, first manual AAB upload, Supabase production Site URL and redirect verification, migration confirmation if it has not been applied yet, and end-to-end auth/persistence/profile-picture verification on web and device builds from the current environment.
+Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and the UI shell now uses NativeWind with default React Native Reusables-generated primitives plus brand tokens from the Selftend icon palette. The P0 local app foundation now includes shared safety, feedback, loading/empty/error, mobile form, online-first draft, global error fallback, data/privacy, module-contract, and component-test patterns. Launch-prep docs cover single-page Netlify web deployment plus Google Play closed testing, including Android permission hardening for the first Play upload. The next blockers are the Supabase migration-history mismatch around `20260503`, sequential verification of the active production schema/storage/RLS state, `selftend.org` purchase/DNS, Netlify production env verification, domain email aliases, Expo/EAS authentication on the build machine, Google Play organization account setup, first manual AAB upload, Supabase production Site URL and redirect verification, and end-to-end auth/persistence/profile-picture verification on web and device builds from the current environment.
 
 The current database/storage contract includes profile avatar metadata and a private Supabase Storage `profile-pics` bucket. Removed profile photos use the existing nullable avatar fields plus a removal timestamp, so no extra avatar-source value is required. Apply all migrations before testing profile-picture upload, profile-picture removal, or account deletion cleanup.
 

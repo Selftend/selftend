@@ -1,10 +1,11 @@
 import { router } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
+import { EmptyState, LoadingState } from "@/src/components/screen-state";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
@@ -23,20 +24,10 @@ export default function CbtHistoryScreen() {
             <Text variant="muted">{t("history.description")}</Text>
           </View>
 
-          {isLoading ? (
-            <View className="items-center justify-center gap-3 p-6">
-              <ActivityIndicator />
-              <Text variant="muted">{t("history.loading")}</Text>
-            </View>
-          ) : null}
+          {isLoading ? <LoadingState title={t("history.loading")} /> : null}
 
           {!isLoading && !data?.length ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("history.empty")}</CardTitle>
-                <CardDescription>{t("history.emptyDescription")}</CardDescription>
-              </CardHeader>
-            </Card>
+            <EmptyState title={t("history.empty")} description={t("history.emptyDescription")} />
           ) : null}
 
           {data?.map((record) => (

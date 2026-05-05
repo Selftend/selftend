@@ -75,6 +75,29 @@ If `db push` is blocked by a migration-history mismatch, apply the idempotent av
 npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_profile_avatar_repair.sql
 ```
 
+## Linked project status
+
+Last read-only check: 2026-05-05.
+
+`npm exec supabase -- migration list --linked` currently shows a remote/local history mismatch around `20260503`:
+
+- local and remote both include `20260415`
+- remote includes `20260503`
+- local includes `20260503_consent_and_deletion.sql`
+- local also includes `20260503120000_profile_avatars.sql`, `20260503121000_profile_avatar_repair.sql`, and `20260504_add_language_preference.sql`
+
+Do not rely on `supabase db push` until the remote migration history is reconciled with the local migration files.
+
+Sequential read-only catalog verification confirmed:
+
+- `profiles` includes the avatar columns from `20260503120000_profile_avatars.sql`
+- `profile-pics` exists as a private bucket with a 5 MB limit and JPEG/PNG/WebP MIME types
+- named public RLS policies exist for `profiles`, `user_preferences`, and `thought_records`
+- named Storage policies exist for authenticated user-owned objects in `profile-pics`
+- `user_preferences.language` is missing from the active linked project even though it exists in `20260504_add_language_preference.sql`
+
+Avoid parallel linked CLI queries against the production project; parallel reads triggered Supabase's temporary auth circuit breaker during verification.
+
 5. in Supabase dashboard:
 
 - enable the Google provider and paste the Google OAuth client ID and secret

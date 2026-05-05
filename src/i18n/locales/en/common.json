@@ -13,5 +13,15 @@
   "or": "or",
   "appName": "Selftend",
   "underConstruction": "Under construction",
-  "toolNotAvailable": "This tool is not available yet. For now, Selftend is focused on the working CBT section."
+  "toolNotAvailable": "This tool is not available yet. For now, Selftend is focused on the working CBT section.",
+  "feedback": {
+    "saved": "Saved",
+    "problem": "Something did not save",
+    "archived": "Archived"
+  },
+  "safety": {
+    "title": "Use urgent support for urgent risk",
+    "description": "Selftend is for guided self-help when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders.",
+    "openCrisis": "Open crisis guidance"
+  }
 }

@@ -2,5 +2,13 @@
   "supabaseNotConfigured": "Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY to your environment.",
   "googleSignIn": "Unable to start Google sign-in.",
   "authLink": "Unable to complete the authentication link.",
-  "authLinkMissing": "The authentication link is missing the required parameters."
+  "authLinkMissing": "The authentication link is missing the required parameters.",
+  "fallback": {
+    "title": "Something went wrong",
+    "description": "The app hit an unexpected problem. Your account data is still protected.",
+    "cardTitle": "Try a calm reset",
+    "cardDescription": "Retry this screen, or return to the start and continue from a stable place.",
+    "retry": "Retry",
+    "home": "Go to start"
+  }
 }

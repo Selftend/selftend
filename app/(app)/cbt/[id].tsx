@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { distortionLookup } from "@/src/constants/distortions";
+import { ErrorState, LoadingState } from "@/src/components/screen-state";
 import { useArchiveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { useToastStore } from "@/src/stores/toast-store";
 import { formatTimestamp } from "@/src/utils/date";
 
 export default function ThoughtRecordDetailScreen() {
@@ -20,6 +22,7 @@ export default function ThoughtRecordDetailScreen() {
   const [archiveError, setArchiveError] = useState("");
   const { data, isLoading } = useThoughtRecord(user?.id ?? null, recordId);
   const archiveMutation = useArchiveThoughtRecord(user?.id ?? null);
+  const showToast = useToastStore((state) => state.showToast);
 
   const handleArchive = async () => {
     if (!recordId) {
@@ -29,19 +32,27 @@ export default function ThoughtRecordDetailScreen() {
     try {
       setArchiveError("");
       await archiveMutation.mutateAsync(recordId);
+      showToast({
+        title: t("common:feedback.archived"),
+        tone: "success",
+      });
       router.replace("/cbt/history");
     } catch (error) {
-      setArchiveError(error instanceof Error ? error.message : t("detail.archiveError"));
+      const message = error instanceof Error ? error.message : t("detail.archiveError");
+      setArchiveError(message);
+      showToast({
+        title: t("detail.archiveProblem"),
+        description: message,
+        tone: "error",
+      });
     }
   };
 
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 items-center justify-center gap-3 p-6">
-          <Text variant="h1">{t("detail.loading")}</Text>
-          <ActivityIndicator />
-          <Text variant="muted">{t("detail.loadingDescription")}</Text>
+        <View className="flex-1 justify-center">
+          <LoadingState title={t("detail.loading")} description={t("detail.loadingDescription")} />
         </View>
       </SafeAreaView>
     );
@@ -53,12 +64,10 @@ export default function ThoughtRecordDetailScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <Text variant="h1">{t("detail.notFound")}</Text>
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("detail.notFoundLabel")}</CardTitle>
-                <CardDescription>{t("detail.notFoundDescription")}</CardDescription>
-              </CardHeader>
-            </Card>
+            <ErrorState
+              title={t("detail.notFoundLabel")}
+              description={t("detail.notFoundDescription")}
+            />
           </View>
         </ScrollView>
       </SafeAreaView>

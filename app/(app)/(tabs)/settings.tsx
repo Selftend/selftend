@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Text } from "@/components/ui/text";
+import { LoadingState } from "@/src/components/screen-state";
 import { signOut } from "@/src/features/auth/api";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import {
@@ -46,6 +47,7 @@ import { appEnv } from "@/src/lib/env";
 import { cancelCbtReminder, scheduleCbtReminder } from "@/src/lib/notifications";
 import { useSession } from "@/src/providers/session-provider";
 import { AvatarCropModal } from "@/src/components/avatar-crop-modal";
+import { useToastStore } from "@/src/stores/toast-store";
 
 const AVATAR_MAX_SIZE = 512;
 
@@ -82,6 +84,7 @@ export default function SettingsScreen() {
   );
   const { data, isLoading } = useUserPreferences(user?.id ?? null);
   const updatePreferencesMutation = useUpdateUserPreferences(user?.id ?? null);
+  const showToast = useToastStore((state) => state.showToast);
 
   useEffect(() => {
     if (!data) {
@@ -127,13 +130,30 @@ export default function SettingsScreen() {
       });
 
       if (remindersEnabled && !reminderConsent) {
-        setErrorMessage(t("reminders.permissionDenied"));
+        const message = t("reminders.permissionDenied");
+        setErrorMessage(message);
+        showToast({
+          title: t("problem"),
+          description: message,
+          tone: "error",
+        });
         return;
       }
 
       setSuccessMessage(t("saved"));
+      showToast({
+        title: t("common:feedback.saved"),
+        description: t("saved"),
+        tone: "success",
+      });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t("saveError"));
+      const message = error instanceof Error ? error.message : t("saveError");
+      setErrorMessage(message);
+      showToast({
+        title: t("problem"),
+        description: message,
+        tone: "error",
+      });
     }
   };
 
@@ -141,7 +161,13 @@ export default function SettingsScreen() {
     try {
       await signOut();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t("account.signOutError"));
+      const message = error instanceof Error ? error.message : t("account.signOutError");
+      setErrorMessage(message);
+      showToast({
+        title: t("problem"),
+        description: message,
+        tone: "error",
+      });
     }
   };
 
@@ -154,12 +180,7 @@ export default function SettingsScreen() {
             <Text variant="muted">{t("description")}</Text>
           </View>
 
-          {isLoading ? (
-            <View className="items-center justify-center gap-3 p-6">
-              <ActivityIndicator />
-              <Text variant="muted">{t("loading")}</Text>
-            </View>
-          ) : null}
+          {isLoading ? <LoadingState title={t("loading")} /> : null}
           {errorMessage ? (
             <Card>
               <CardHeader>

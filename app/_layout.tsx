@@ -21,6 +21,8 @@ import { Pressable, useWindowDimensions, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
 import { SidebarNav } from "@/components/sidebar-nav";
+import { AppErrorBoundary } from "@/src/components/app-error-boundary";
+import { AppToast } from "@/src/components/app-toast";
 import { CookieConsentBanner } from "@/src/components/cookie-consent-banner";
 import {
   getNativeWindColorScheme,
@@ -72,8 +74,11 @@ export default function RootLayout() {
     <AppProviders>
       <ThemeProvider value={NAV_THEME[colorScheme]}>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        <AppShell />
-        <CookieConsentBanner />
+        <AppErrorBoundary>
+          <AppShell />
+          <CookieConsentBanner />
+          <AppToast />
+        </AppErrorBoundary>
         <PortalHost />
       </ThemeProvider>
     </AppProviders>

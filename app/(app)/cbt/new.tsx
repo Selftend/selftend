@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,12 +12,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
+import { CrisisSupportCallout } from "@/src/components/safety-callout";
+import { LoadingState } from "@/src/components/screen-state";
+import { MobileFormScreen } from "@/src/components/mobile-form-screen";
 import { distortionDefinitions } from "@/src/constants/distortions";
 import { emotionOptions } from "@/src/constants/emotions";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
 import { thoughtRecordFormSchema, type ThoughtRecordFormSchema } from "@/src/features/cbt/schemas";
 import { useSession } from "@/src/providers/session-provider";
 import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
+import { useToastStore } from "@/src/stores/toast-store";
 
 const defaultValues: ThoughtRecordFormSchema = {
   situation: "",
@@ -34,13 +38,19 @@ export default function ThoughtRecordEditorScreen() {
     () => (typeof rawRecordId === "string" && rawRecordId.length > 0 ? rawRecordId : null),
     [rawRecordId],
   );
+  const draftMode = recordId ? "edit" : "create";
   const { user } = useSession();
   const [submitError, setSubmitError] = useState("");
   const stepIndex = useCbtDraftStore((state) => state.stepIndex);
+  const storedDraftValues = useCbtDraftStore((state) =>
+    state.mode === draftMode && state.recordId === recordId ? state.values : null,
+  );
   const hydrateDraft = useCbtDraftStore((state) => state.hydrate);
   const nextStep = useCbtDraftStore((state) => state.nextStep);
   const previousStep = useCbtDraftStore((state) => state.previousStep);
   const resetDraft = useCbtDraftStore((state) => state.reset);
+  const setDraftValues = useCbtDraftStore((state) => state.setValues);
+  const showToast = useToastStore((state) => state.showToast);
   const { data: existingRecord, isLoading } = useThoughtRecord(user?.id ?? null, recordId);
   const saveMutation = useSaveThoughtRecord(user?.id ?? null);
   const {
@@ -51,20 +61,16 @@ export default function ThoughtRecordEditorScreen() {
     reset,
     trigger,
   } = useForm<ThoughtRecordFormSchema>({
-    defaultValues,
+    defaultValues: storedDraftValues ?? defaultValues,
     resolver: zodResolver(thoughtRecordFormSchema),
   });
 
   useEffect(() => {
-    hydrateDraft(recordId ? "edit" : "create", recordId);
-
-    return () => {
-      resetDraft();
-    };
-  }, [hydrateDraft, recordId, resetDraft]);
+    hydrateDraft(draftMode, recordId);
+  }, [draftMode, hydrateDraft, recordId]);
 
   useEffect(() => {
-    if (!existingRecord) {
+    if (!existingRecord || storedDraftValues) {
       return;
     }
 
@@ -75,7 +81,7 @@ export default function ThoughtRecordEditorScreen() {
       emotions: existingRecord.emotions,
       situation: existingRecord.situation,
     });
-  }, [existingRecord, reset]);
+  }, [existingRecord, reset, storedDraftValues]);
 
   const steps = [
     {
@@ -116,6 +122,8 @@ export default function ThoughtRecordEditorScreen() {
   };
 
   const handleSave = handleSubmit(async (values) => {
+    setDraftValues(getValues());
+
     try {
       setSubmitError("");
       const saved = await saveMutation.mutateAsync({
@@ -123,250 +131,35 @@ export default function ThoughtRecordEditorScreen() {
         recordId: recordId ?? undefined,
       });
       resetDraft();
+      showToast({
+        title: t("common:feedback.saved"),
+        tone: "success",
+      });
       router.replace(`/cbt/${saved.id}`);
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : t("detail.archiveError"));
+      const message = error instanceof Error ? error.message : t("detail.archiveError");
+      setSubmitError(message);
+      showToast({
+        title: t("common:feedback.problem"),
+        description: message,
+        tone: "error",
+      });
     }
   });
 
   if (recordId && isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 items-center justify-center gap-3 p-6">
-          <Text variant="h1">{t("detail.loading")}</Text>
-          <ActivityIndicator />
-          <Text variant="muted">{t("detail.loadingDescription")}</Text>
+        <View className="flex-1 justify-center">
+          <LoadingState title={t("detail.loading")} description={t("detail.loadingDescription")} />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="grow p-6">
-        <View className="gap-6">
-          <View className="gap-2">
-            <Text variant="h1">{recordId ? t("record.editTitle") : t("record.newTitle")}</Text>
-            <Text variant="muted">
-              {recordId ? t("record.editDescription") : t("record.newDescription")}
-            </Text>
-          </View>
-
-          {submitError ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("record.saveProblem")}</CardTitle>
-                <CardDescription>{submitError}</CardDescription>
-              </CardHeader>
-            </Card>
-          ) : null}
-
-          <View className="flex-row flex-wrap gap-2">
-            {steps.map((step, index) => {
-              const isActive = stepIndex === index;
-              return (
-                <Button
-                  key={step.title}
-                  disabled={index > stepIndex}
-                  onPress={() => {
-                    if (index <= stepIndex) {
-                      useCbtDraftStore.getState().setStepIndex(index);
-                    }
-                  }}
-                  size="sm"
-                  variant={isActive ? "secondary" : "ghost"}
-                >
-                  <Text>
-                    {index + 1}. {step.title}
-                  </Text>
-                </Button>
-              );
-            })}
-          </View>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{currentStep.title}</CardTitle>
-              <CardDescription>{currentStep.description}</CardDescription>
-            </CardHeader>
-          </Card>
-
-          {stepIndex === 0 ? (
-            <Controller
-              control={control}
-              name="situation"
-              render={({ field: { onBlur, onChange, value } }) => (
-                <View className="gap-2">
-                  <Label>{t("record.situation")}</Label>
-                  <Text variant="muted">{t("record.situationPlaceholder")}</Text>
-                  <Textarea
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    placeholder={t("record.situationExample")}
-                    value={value}
-                  />
-                  {errors.situation?.message ? (
-                    <Text variant="muted">{errors.situation.message}</Text>
-                  ) : null}
-                </View>
-              )}
-            />
-          ) : null}
-
-          {stepIndex === 1 ? (
-            <Controller
-              control={control}
-              name="automaticThought"
-              render={({ field: { onBlur, onChange, value } }) => (
-                <View className="gap-2">
-                  <Label>{t("record.automaticThought")}</Label>
-                  <Text variant="muted">{t("record.automaticThoughtPlaceholder")}</Text>
-                  <Textarea
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    placeholder={t("record.automaticThoughtExample")}
-                    value={value}
-                  />
-                  {errors.automaticThought?.message ? (
-                    <Text variant="muted">{errors.automaticThought.message}</Text>
-                  ) : null}
-                </View>
-              )}
-            />
-          ) : null}
-
-          {stepIndex === 2 ? (
-            <Controller
-              control={control}
-              name="emotions"
-              render={({ field: { onChange, value } }) => (
-                <View className="gap-3">
-                  <View className="gap-2">
-                    <Label>{t("record.emotionsLabel")}</Label>
-                    <Text variant="muted">{t("record.emotionsLabelHint")}</Text>
-                  </View>
-                  {emotionOptions.map((emotion) => {
-                    const checked = value.includes(emotion);
-                    const toggle = () => {
-                      const nextValues = checked
-                        ? value.filter((item) => item !== emotion)
-                        : [...value, emotion];
-                      onChange(nextValues);
-                    };
-                    const emotionKey = emotion.toLowerCase();
-                    return (
-                      <View key={emotion} className="flex-row items-center gap-3">
-                        <Checkbox checked={checked} onCheckedChange={toggle} />
-                        <Label onPress={toggle}>{t(`emotions.${emotionKey}`)}</Label>
-                      </View>
-                    );
-                  })}
-                  {errors.emotions?.message ? (
-                    <Text variant="muted">{errors.emotions.message}</Text>
-                  ) : null}
-                </View>
-              )}
-            />
-          ) : null}
-
-          {stepIndex === 3 ? (
-            <Controller
-              control={control}
-              name="distortions"
-              render={({ field: { onChange, value } }) => (
-                <View className="gap-3">
-                  <View className="gap-2">
-                    <Label>{t("record.patternsLabel")}</Label>
-                    <Text variant="muted">{t("record.patternsChooseHint")}</Text>
-                  </View>
-                  {distortionDefinitions.map((distortion) => {
-                    const checked = value.includes(distortion.key);
-                    const toggle = () => {
-                      const nextValues = checked
-                        ? value.filter((item) => item !== distortion.key)
-                        : [...value, distortion.key];
-                      onChange(nextValues);
-                    };
-                    return (
-                      <Card key={distortion.key}>
-                        <CardHeader>
-                          <View className="flex-row items-center gap-3">
-                            <Checkbox checked={checked} onCheckedChange={toggle} />
-                            <Label onPress={toggle}>
-                              {t(`distortions.${distortion.key}.title`)}
-                            </Label>
-                          </View>
-                          <CardDescription>
-                            {t(`distortions.${distortion.key}.shortDescription`)}
-                          </CardDescription>
-                        </CardHeader>
-                      </Card>
-                    );
-                  })}
-                  {errors.distortions?.message ? (
-                    <Text variant="muted">{errors.distortions.message}</Text>
-                  ) : null}
-                </View>
-              )}
-            />
-          ) : null}
-
-          {stepIndex === 4 ? (
-            <View className="gap-6">
-              <Controller
-                control={control}
-                name="balancedThought"
-                render={({ field: { onBlur, onChange, value } }) => (
-                  <View className="gap-2">
-                    <Label>{t("record.balancedThoughtLabel")}</Label>
-                    <Text variant="muted">{t("record.balancedThoughtPlaceholder")}</Text>
-                    <Textarea
-                      onBlur={onBlur}
-                      onChangeText={onChange}
-                      placeholder={t("record.balancedThoughtExample")}
-                      value={value}
-                    />
-                    {errors.balancedThought?.message ? (
-                      <Text variant="muted">{errors.balancedThought.message}</Text>
-                    ) : null}
-                  </View>
-                )}
-              />
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("record.summaryTitle")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <View className="gap-3">
-                    <Text>
-                      {t("record.summarySituation", {
-                        value: getValues("situation") || t("record.summaryNotFilled"),
-                      })}
-                    </Text>
-                    <Text>
-                      {t("record.summaryThought", {
-                        value: getValues("automaticThought") || t("record.summaryNotFilled"),
-                      })}
-                    </Text>
-                    <Text>
-                      {t("record.summaryEmotions", {
-                        value: getValues("emotions").join(", ") || t("record.summaryNotFilled"),
-                      })}
-                    </Text>
-                    <Text>
-                      {t("record.summaryPatterns", {
-                        value: getValues("distortions").join(", ") || t("record.summaryNotFilled"),
-                      })}
-                    </Text>
-                  </View>
-                </CardContent>
-              </Card>
-            </View>
-          ) : null}
-        </View>
-      </ScrollView>
-      <View className="border-t border-border bg-background p-4">
+    <MobileFormScreen
+      footer={
         <View className="flex-row gap-3">
           {stepIndex > 0 ? (
             <View className="flex-1">
@@ -393,7 +186,229 @@ export default function ThoughtRecordEditorScreen() {
             </Button>
           </View>
         </View>
+      }
+    >
+      <View className="gap-6">
+        <View className="gap-2">
+          <Text variant="h1">{recordId ? t("record.editTitle") : t("record.newTitle")}</Text>
+          <Text variant="muted">
+            {recordId ? t("record.editDescription") : t("record.newDescription")}
+          </Text>
+        </View>
+
+        <CrisisSupportCallout />
+
+        {submitError ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("record.saveProblem")}</CardTitle>
+              <CardDescription>{submitError}</CardDescription>
+            </CardHeader>
+          </Card>
+        ) : null}
+
+        <View className="flex-row flex-wrap gap-2">
+          {steps.map((step, index) => {
+            const isActive = stepIndex === index;
+            return (
+              <Button
+                key={step.title}
+                disabled={index > stepIndex}
+                onPress={() => {
+                  if (index <= stepIndex) {
+                    useCbtDraftStore.getState().setStepIndex(index);
+                  }
+                }}
+                size="sm"
+                variant={isActive ? "secondary" : "ghost"}
+              >
+                <Text>
+                  {index + 1}. {step.title}
+                </Text>
+              </Button>
+            );
+          })}
+        </View>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{currentStep.title}</CardTitle>
+            <CardDescription>{currentStep.description}</CardDescription>
+          </CardHeader>
+        </Card>
+
+        {stepIndex === 0 ? (
+          <Controller
+            control={control}
+            name="situation"
+            render={({ field: { onBlur, onChange, value } }) => (
+              <View className="gap-2">
+                <Label>{t("record.situation")}</Label>
+                <Text variant="muted">{t("record.situationPlaceholder")}</Text>
+                <Textarea
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  placeholder={t("record.situationExample")}
+                  value={value}
+                />
+                {errors.situation?.message ? (
+                  <Text variant="muted">{errors.situation.message}</Text>
+                ) : null}
+              </View>
+            )}
+          />
+        ) : null}
+
+        {stepIndex === 1 ? (
+          <Controller
+            control={control}
+            name="automaticThought"
+            render={({ field: { onBlur, onChange, value } }) => (
+              <View className="gap-2">
+                <Label>{t("record.automaticThought")}</Label>
+                <Text variant="muted">{t("record.automaticThoughtPlaceholder")}</Text>
+                <Textarea
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  placeholder={t("record.automaticThoughtExample")}
+                  value={value}
+                />
+                {errors.automaticThought?.message ? (
+                  <Text variant="muted">{errors.automaticThought.message}</Text>
+                ) : null}
+              </View>
+            )}
+          />
+        ) : null}
+
+        {stepIndex === 2 ? (
+          <Controller
+            control={control}
+            name="emotions"
+            render={({ field: { onChange, value } }) => (
+              <View className="gap-3">
+                <View className="gap-2">
+                  <Label>{t("record.emotionsLabel")}</Label>
+                  <Text variant="muted">{t("record.emotionsLabelHint")}</Text>
+                </View>
+                {emotionOptions.map((emotion) => {
+                  const checked = value.includes(emotion);
+                  const toggle = () => {
+                    const nextValues = checked
+                      ? value.filter((item) => item !== emotion)
+                      : [...value, emotion];
+                    onChange(nextValues);
+                  };
+                  const emotionKey = emotion.toLowerCase();
+                  return (
+                    <View key={emotion} className="flex-row items-center gap-3">
+                      <Checkbox checked={checked} onCheckedChange={toggle} />
+                      <Label onPress={toggle}>{t(`emotions.${emotionKey}`)}</Label>
+                    </View>
+                  );
+                })}
+                {errors.emotions?.message ? (
+                  <Text variant="muted">{errors.emotions.message}</Text>
+                ) : null}
+              </View>
+            )}
+          />
+        ) : null}
+
+        {stepIndex === 3 ? (
+          <Controller
+            control={control}
+            name="distortions"
+            render={({ field: { onChange, value } }) => (
+              <View className="gap-3">
+                <View className="gap-2">
+                  <Label>{t("record.patternsLabel")}</Label>
+                  <Text variant="muted">{t("record.patternsChooseHint")}</Text>
+                </View>
+                {distortionDefinitions.map((distortion) => {
+                  const checked = value.includes(distortion.key);
+                  const toggle = () => {
+                    const nextValues = checked
+                      ? value.filter((item) => item !== distortion.key)
+                      : [...value, distortion.key];
+                    onChange(nextValues);
+                  };
+                  return (
+                    <Card key={distortion.key}>
+                      <CardHeader>
+                        <View className="flex-row items-center gap-3">
+                          <Checkbox checked={checked} onCheckedChange={toggle} />
+                          <Label onPress={toggle}>{t(`distortions.${distortion.key}.title`)}</Label>
+                        </View>
+                        <CardDescription>
+                          {t(`distortions.${distortion.key}.shortDescription`)}
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                  );
+                })}
+                {errors.distortions?.message ? (
+                  <Text variant="muted">{errors.distortions.message}</Text>
+                ) : null}
+              </View>
+            )}
+          />
+        ) : null}
+
+        {stepIndex === 4 ? (
+          <View className="gap-6">
+            <Controller
+              control={control}
+              name="balancedThought"
+              render={({ field: { onBlur, onChange, value } }) => (
+                <View className="gap-2">
+                  <Label>{t("record.balancedThoughtLabel")}</Label>
+                  <Text variant="muted">{t("record.balancedThoughtPlaceholder")}</Text>
+                  <Textarea
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    placeholder={t("record.balancedThoughtExample")}
+                    value={value}
+                  />
+                  {errors.balancedThought?.message ? (
+                    <Text variant="muted">{errors.balancedThought.message}</Text>
+                  ) : null}
+                </View>
+              )}
+            />
+
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("record.summaryTitle")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <View className="gap-3">
+                  <Text>
+                    {t("record.summarySituation", {
+                      value: getValues("situation") || t("record.summaryNotFilled"),
+                    })}
+                  </Text>
+                  <Text>
+                    {t("record.summaryThought", {
+                      value: getValues("automaticThought") || t("record.summaryNotFilled"),
+                    })}
+                  </Text>
+                  <Text>
+                    {t("record.summaryEmotions", {
+                      value: getValues("emotions").join(", ") || t("record.summaryNotFilled"),
+                    })}
+                  </Text>
+                  <Text>
+                    {t("record.summaryPatterns", {
+                      value: getValues("distortions").join(", ") || t("record.summaryNotFilled"),
+                    })}
+                  </Text>
+                </View>
+              </CardContent>
+            </Card>
+          </View>
+        ) : null}
       </View>
-    </SafeAreaView>
+    </MobileFormScreen>
   );
 }

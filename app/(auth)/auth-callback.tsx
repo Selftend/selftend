@@ -1,8 +1,8 @@
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ActivityIndicator, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -11,24 +11,69 @@ import { Text } from "@/components/ui/text";
 import { completeAuthRedirect } from "@/src/features/auth/callback";
 import { useSession } from "@/src/providers/session-provider";
 
+const AUTH_CALLBACK_TIMEOUT_MS = 15000;
+
+function getCurrentWebUrl() {
+  if (Platform.OS !== "web" || typeof window === "undefined") {
+    return null;
+  }
+
+  return window.location.href;
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  timeoutMessage: string,
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error(timeoutMessage));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
 export default function AuthCallbackScreen() {
   const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
-  const url = Linking.useLinkingURL();
-  const hasProcessedLink = useRef(false);
+  const linkingUrl = Linking.useLinkingURL();
+  const url = useMemo(() => linkingUrl ?? getCurrentWebUrl(), [linkingUrl]);
+  const processedUrl = useRef<string | null>(null);
+  const fallbackErrorMessage = useRef(t("callback.unableToContinue"));
+  const timeoutErrorMessage = useRef(t("callback.timeout"));
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (!hasSupabaseConfig || !url || hasProcessedLink.current) {
+    fallbackErrorMessage.current = t("callback.unableToContinue");
+    timeoutErrorMessage.current = t("callback.timeout");
+  }, [t]);
+
+  useEffect(() => {
+    if (!hasSupabaseConfig || !url || processedUrl.current === url) {
       return;
     }
 
-    hasProcessedLink.current = true;
+    processedUrl.current = url;
     let active = true;
 
     void (async () => {
       try {
-        const outcome = await completeAuthRedirect(url);
+        const outcome = await withTimeout(
+          completeAuthRedirect(url),
+          AUTH_CALLBACK_TIMEOUT_MS,
+          timeoutErrorMessage.current,
+        );
         if (!active) {
           return;
         }
@@ -49,14 +94,14 @@ export default function AuthCallbackScreen() {
           return;
         }
 
-        setErrorMessage(error instanceof Error ? error.message : t("callback.unableToContinue"));
+        setErrorMessage(error instanceof Error ? error.message : fallbackErrorMessage.current);
       }
     })();
 
     return () => {
       active = false;
     };
-  }, [hasSupabaseConfig, url, t]);
+  }, [hasSupabaseConfig, url]);
 
   if (!hasSupabaseConfig) {
     return (

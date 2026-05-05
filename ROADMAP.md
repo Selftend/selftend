@@ -53,18 +53,11 @@ Non-negotiable boundaries:
 
 These are the next priorities because they affect every future feature and contributor workflow.
 
+Local app-foundation work is now documented in [docs/data-privacy-model.md](docs/data-privacy-model.md), [docs/modules/tools.md](docs/modules/tools.md), and the shared components under `src/components`. The remaining P0 blocker is backend truth in the active Supabase project: avatar storage is present, but `user_preferences.language` is missing remotely and migration history still needs reconciliation before `supabase db push` is safe.
+
 1. [ ] Resolve the Supabase remote migration-history mismatch around version `20260503` before relying on `supabase db push`.
-2. [ ] Verify current Supabase migrations in the active production project, including profile avatar columns and the private `profile-pics` bucket.
-3. [ ] Verify database RLS policies and Storage bucket policies for private user data before adding more schema-heavy features.
-4. [ ] Define the shared data and privacy model for preferences, enabled modules, check-ins, journal entries, tool records, notification settings, export, and deletion.
-5. [ ] Define the module architecture contract for tools such as CBT, ACT, meditation, gratitude, mood tracking, and future modules.
-6. [ ] Create shared safety and crisis UI patterns so modules do not each invent their own disclaimers or urgent-support links.
-7. [ ] Add a global error boundary with a calm fallback screen, retry path, and route back to a stable surface.
-8. [ ] Add an app-wide toast or feedback system for saved, failed, retry, and destructive-action messages.
-9. [ ] Extract reusable loading, empty, and error-state components from existing screen patterns.
-10. [ ] Add a mobile form layout and keyboard-avoidance pattern for check-ins, journaling, auth, and future tool flows.
-11. [ ] Decide the online-first draft behavior for MVP, including how unsaved form content survives failed saves or temporary network loss.
-12. [ ] Add one example component test pattern that covers providers, i18n, navigation assumptions, and mocked backend dependencies.
+2. [ ] Apply or otherwise reconcile the missing `20260504_add_language_preference.sql` change in the active project.
+3. [ ] Verify current Supabase migrations in the active production project after reconciliation.
 
 ### P1: MVP Product Flows
 
