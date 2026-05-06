@@ -1,45 +1,59 @@
 import { MoonIcon, SunIcon } from "lucide-react-native";
-import * as SwitchPrimitives from "@rn-primitives/switch";
-import { Platform } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/components/ui/icon";
-import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  type Option,
+} from "@/components/ui/select";
 import { resolveThemePreference, useSystemColorScheme } from "@/src/lib/color-scheme";
-import { useThemeStore } from "@/src/stores/theme-store";
+import { useThemeStore, type ThemePreference } from "@/src/stores/theme-store";
+
+const PREFERENCES: ThemePreference[] = ["system", "light", "dark"];
+
+function isThemePreference(value: string): value is ThemePreference {
+  return value === "system" || value === "light" || value === "dark";
+}
 
 export function ThemeToggle() {
   const { t } = useTranslation("navigation");
-  const { preference, setPreference } = useThemeStore();
+  const preference = useThemeStore((state) => state.preference);
+  const setPreference = useThemeStore((state) => state.setPreference);
   const systemColorScheme = useSystemColorScheme();
-  const colorScheme = resolveThemePreference(preference, systemColorScheme);
-  const isDark = colorScheme === "dark";
+  const resolved = resolveThemePreference(preference, systemColorScheme);
+  const isDark = resolved === "dark";
+
+  const currentOption: Option = {
+    value: preference,
+    label: t(`themeToggle.${preference}`),
+  };
+
+  function handleChange(option: Option | undefined) {
+    if (option && isThemePreference(option.value)) {
+      setPreference(option.value);
+    }
+  }
 
   return (
-    <SwitchPrimitives.Root
-      accessibilityLabel={t("themeToggle.toggle")}
-      aria-valuetext={isDark ? t("themeToggle.dark") : t("themeToggle.light")}
-      checked={isDark}
-      className={cn(
-        "relative h-8 w-14 shrink-0 rounded-full border border-border shadow-sm shadow-black/5",
-        Platform.select({
-          web: "focus-visible:border-ring focus-visible:ring-ring/50 outline-none transition-all focus-visible:ring-[3px]",
-        }),
-        "bg-secondary",
-      )}
-      onCheckedChange={(checked) => setPreference(checked ? "dark" : "light")}
-    >
-      <SwitchPrimitives.Thumb
-        className={cn(
-          "absolute top-px size-7 items-center justify-center rounded-full bg-background shadow-sm transition-all",
-          Platform.select({
-            web: "pointer-events-none flex ring-0",
-          }),
-          isDark ? "right-0.5" : "left-0.5",
-        )}
+    <Select value={currentOption} onValueChange={handleChange}>
+      <SelectTrigger
+        size="sm"
+        accessibilityLabel={t("themeToggle.toggle")}
+        aria-valuetext={t(`themeToggle.${preference}`)}
+        className="min-w-0 w-auto gap-1 px-2"
       >
         <Icon as={isDark ? MoonIcon : SunIcon} className="size-4 text-foreground" />
-      </SwitchPrimitives.Thumb>
-    </SwitchPrimitives.Root>
+      </SelectTrigger>
+      <SelectContent side="bottom" align="end">
+        {PREFERENCES.map((value) => (
+          <SelectItem key={value} value={value} label={t(`themeToggle.${value}`)}>
+            {t(`themeToggle.${value}`)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

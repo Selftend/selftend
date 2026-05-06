@@ -31,9 +31,10 @@
     "bg": "Bulgarian"
   },
   "themeToggle": {
-    "toggle": "Toggle dark theme",
-    "dark": "Dark theme",
-    "light": "Light theme"
+    "toggle": "Switch theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
   },
   "tabs": {
     "home": "Home",
