@@ -9,10 +9,7 @@ function isSupportedLanguage(value: string | null | undefined): value is Support
   return Boolean(value) && (supportedLanguages as readonly string[]).includes(value as string);
 }
 
-export function useLanguageSync(
-  userId: string | null,
-  preferences: UserPreferences | undefined,
-) {
+export function useLanguageSync(userId: string | null, preferences: UserPreferences | undefined) {
   const { language, setLanguage } = useLanguage();
   const { mutate: updatePreferences } = useUpdateUserPreferences(userId);
   const initialPullDone = useRef(false);
