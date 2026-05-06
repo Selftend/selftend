@@ -2,20 +2,25 @@ import { Redirect, Stack } from "expo-router";
 import { ActivityIndicator, Platform, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { SidebarNav } from "@/components/sidebar-nav";
 import { Text } from "@/components/ui/text";
 import { ConsentModal } from "@/src/components/consent-modal";
+import { OnboardingModal } from "@/src/components/onboarding-modal";
 import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
+import { mergeUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
-import { useUserPreferences } from "@/src/features/settings/queries";
+import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function ProtectedLayout() {
+  const { t } = useTranslation("settings");
   const { width } = useWindowDimensions();
   const isDesktop = width >= DESKTOP_BREAKPOINT;
   const { session, status, user } = useSession();
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(user?.id ?? null);
+  const appOnboardingMutation = useUpdateUserPreferences(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
 
   if (status === "loading") {
@@ -44,10 +49,35 @@ export default function ProtectedLayout() {
 
   const needsConsent =
     !consentDismissed && !prefsLoading && preferences?.policyVersionAccepted !== policyVersion;
+  const needsAppOnboarding =
+    !needsConsent && !prefsLoading && Boolean(preferences) && !preferences?.appOnboardingCompleted;
+
+  const completeAppOnboarding = async () => {
+    if (!preferences) {
+      return;
+    }
+
+    try {
+      await appOnboardingMutation.mutateAsync(
+        mergeUserPreferences(preferences, { appOnboardingCompleted: true }),
+      );
+    } catch {
+      // Error state is shown inside the modal.
+    }
+  };
 
   return (
     <>
       <ConsentModal visible={needsConsent} onAccepted={() => setConsentDismissed(true)} />
+      <OnboardingModal
+        actionLabel={t("onboarding.appContinue")}
+        body={[t("onboarding.appBody1"), t("onboarding.appBody2"), t("onboarding.appBody3")]}
+        errorMessage={appOnboardingMutation.isError ? t("onboarding.appSaveError") : undefined}
+        isPending={appOnboardingMutation.isPending}
+        onComplete={() => void completeAppOnboarding()}
+        title={t("onboarding.appTitle")}
+        visible={needsAppOnboarding}
+      />
       <View className="flex-1 flex-row bg-background">
         {isDesktop ? <SidebarNav /> : null}
         <View className="flex-1">

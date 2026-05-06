@@ -29,7 +29,7 @@ import { Switch } from "@/components/ui/switch";
 import { Text } from "@/components/ui/text";
 import { LoadingState } from "@/src/components/screen-state";
 import { signOut } from "@/src/features/auth/api";
-import { defaultUserPreferences } from "@/src/features/modules/types";
+import { defaultUserPreferences, mergeUserPreferences } from "@/src/features/modules/types";
 import {
   useRemoveUserAvatar,
   useResetUserAvatarToOAuth,
@@ -84,6 +84,7 @@ export default function SettingsScreen() {
   );
   const { data, isLoading } = useUserPreferences(user?.id ?? null);
   const updatePreferencesMutation = useUpdateUserPreferences(user?.id ?? null);
+  const resetOnboardingMutation = useUpdateUserPreferences(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
 
   useEffect(() => {
@@ -116,18 +117,15 @@ export default function SettingsScreen() {
         reminderConsent = false;
       }
 
-      await updatePreferencesMutation.mutateAsync({
-        enabledModules: ["cbt"],
-        reminderConsent,
-        cbtRemindersEnabled: remindersEnabled && reminderConsent,
-        cbtReminderHour: hour,
-        cbtReminderMinute: minute,
-        privacyPolicyAcceptedAt: data?.privacyPolicyAcceptedAt ?? null,
-        termsAcceptedAt: data?.termsAcceptedAt ?? null,
-        policyVersionAccepted: data?.policyVersionAccepted ?? null,
-        cookieConsent: data?.cookieConsent ?? null,
-        language: data?.language ?? "en",
-      });
+      await updatePreferencesMutation.mutateAsync(
+        mergeUserPreferences(data, {
+          enabledModules: ["cbt"],
+          reminderConsent,
+          cbtRemindersEnabled: remindersEnabled && reminderConsent,
+          cbtReminderHour: hour,
+          cbtReminderMinute: minute,
+        }),
+      );
 
       if (remindersEnabled && !reminderConsent) {
         const message = t("reminders.permissionDenied");
@@ -162,6 +160,39 @@ export default function SettingsScreen() {
       await signOut();
     } catch (error) {
       const message = error instanceof Error ? error.message : t("account.signOutError");
+      setErrorMessage(message);
+      showToast({
+        title: t("problem"),
+        description: message,
+        tone: "error",
+      });
+    }
+  };
+
+  const resetOnboarding = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      setErrorMessage("");
+      setSuccessMessage("");
+
+      await resetOnboardingMutation.mutateAsync(
+        mergeUserPreferences(data, {
+          appOnboardingCompleted: false,
+          cbtOnboardingCompleted: false,
+        }),
+      );
+
+      setSuccessMessage(t("onboarding.resetSaved"));
+      showToast({
+        title: t("common:feedback.saved"),
+        description: t("onboarding.resetSaved"),
+        tone: "success",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t("onboarding.resetError");
       setErrorMessage(message);
       showToast({
         title: t("problem"),
@@ -252,6 +283,27 @@ export default function SettingsScreen() {
                   </Text>
                 </Button>
               </View>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("onboarding.title")}</CardTitle>
+              <CardDescription>{t("onboarding.description")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                disabled={!data || resetOnboardingMutation.isPending}
+                onPress={() => void resetOnboarding()}
+                variant="secondary"
+              >
+                {resetOnboardingMutation.isPending ? <ActivityIndicator /> : null}
+                <Text>
+                  {resetOnboardingMutation.isPending
+                    ? t("onboarding.resetting")
+                    : t("onboarding.reset")}
+                </Text>
+              </Button>
             </CardContent>
           </Card>
 

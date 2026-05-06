@@ -1,6 +1,6 @@
 # Tools Navigation Spec
 
-Last updated: 2026-05-03
+Last updated: 2026-05-06
 
 ## Purpose
 
@@ -20,6 +20,8 @@ The protected app sidebar now groups self-help modules under a collapsible `Tool
 ## Current behavior
 
 CBT is the only working tool module.
+
+The protected app and CBT module each have one-page onboarding tracked in `user_preferences`. Settings includes a reset control that marks current onboarding flags incomplete so those introductions can be shown again. Future real tools should add their own reviewed one-page onboarding before collecting data.
 
 Mood tracker, Meditation, ACT, and Gratitude log are placeholder routes with explicit under-construction copy. They must not collect data, schedule reminders, create streak pressure, or imply therapeutic outcomes until each module has its own reviewed spec.
 

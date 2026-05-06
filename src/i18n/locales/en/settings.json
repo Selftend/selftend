@@ -44,6 +44,20 @@
     "save": "Save reminder settings",
     "permissionDenied": "Notification permission was not granted. Reminder settings were saved as off."
   },
+  "onboarding": {
+    "title": "Onboarding",
+    "description": "Show the app and tool introductions again when you want a fresh walkthrough.",
+    "reset": "Reset onboarding",
+    "resetting": "Resetting...",
+    "resetSaved": "Onboarding will be shown again.",
+    "resetError": "Unable to reset onboarding.",
+    "appTitle": "Welcome to Selftend",
+    "appBody1": "Selftend is a calm place for guided self-help and private reflection.",
+    "appBody2": "It is not a diagnosis tool, therapy replacement, or emergency support. Use local emergency or crisis resources if you need urgent help.",
+    "appBody3": "The first section focuses on CBT thought records. Reminders stay optional, quiet, and easy to turn off.",
+    "appContinue": "Start using Selftend",
+    "appSaveError": "Unable to save app onboarding."
+  },
   "support": {
     "title": "Support and project links",
     "openSupport": "Open support page",

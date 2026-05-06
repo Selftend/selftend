@@ -1,6 +1,6 @@
 # CBT Module Spec
 
-Last updated: 2026-05-03
+Last updated: 2026-05-06
 
 ## Purpose
 
@@ -17,6 +17,7 @@ The module should be:
 ## Included in the first CBT slice
 
 - CBT section home
+- one-page CBT onboarding, tracked in account preferences
 - short distortion learn surface
 - guided thought record flow
 - private history list

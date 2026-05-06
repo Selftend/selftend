@@ -1,6 +1,6 @@
 # Shared Data And Privacy Model
 
-Last updated: 2026-05-05
+Last updated: 2026-05-06
 
 ## Purpose
 
@@ -11,7 +11,7 @@ Selftend stores only the data needed to provide account-based guided self-help a
 | Data class            | MVP storage decision                                             | Privacy rule                                                                                                                                                          |
 | --------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Account profile       | Supabase Auth plus `profiles.email` and optional avatar metadata | Keep account metadata separate from self-help content. Uploaded avatars stay in the private `profile-pics` bucket.                                                    |
-| Preferences           | `user_preferences` row per user                                  | Store quiet defaults, enabled modules, policy consent, language, and notification settings. Do not infer sensitive traits from preferences.                           |
+| Preferences           | `user_preferences` row per user                                  | Store quiet defaults, enabled modules, onboarding status, policy consent, language, and notification settings. Do not infer sensitive traits from preferences.        |
 | Enabled modules       | `user_preferences.enabled_modules`                               | Use explicit user choice. Do not auto-enable new modules silently.                                                                                                    |
 | CBT thought records   | `thought_records`                                                | Private user-owned tool records protected by RLS and included in export/delete.                                                                                       |
 | Check-ins             | Planned dedicated user-owned records                             | Keep separate from CBT and journaling. Store only user-entered mood/check-in fields needed for the reviewed flow.                                                     |
@@ -32,4 +32,4 @@ Selftend stores only the data needed to provide account-based guided self-help a
 
 ## Backend Status
 
-The linked Supabase project migration history was repaired on 2026-05-05. The active project includes profile avatar storage, private `profile-pics` policies, and `user_preferences.language` for language sync.
+The linked Supabase project migration history was repaired on 2026-05-05. The active project includes profile avatar storage, private `profile-pics` policies, `user_preferences.language` for language sync, and account-backed onboarding flags after applying `20260506_onboarding_flags.sql`.

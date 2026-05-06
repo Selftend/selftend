@@ -53,7 +53,7 @@ Non-negotiable boundaries:
 
 These foundation items affected every future feature and contributor workflow.
 
-No open P0 tasks remain. The local app-foundation work is documented in [docs/data-privacy-model.md](docs/data-privacy-model.md), [docs/modules/tools.md](docs/modules/tools.md), and the shared components under `src/components`. The active Supabase project has had its migration history repaired, including the sortable `20260503000000_consent_and_deletion.sql` migration, avatar storage migrations, and `20260504_add_language_preference.sql`.
+No open P0 tasks remain. The local app-foundation work is documented in [docs/data-privacy-model.md](docs/data-privacy-model.md), [docs/modules/tools.md](docs/modules/tools.md), and the shared components under `src/components`. The active Supabase project has had its migration history repaired, including the sortable `20260503000000_consent_and_deletion.sql` migration, avatar storage migrations, `20260504_add_language_preference.sql`, and `20260506_onboarding_flags.sql`.
 
 The next product work should start from P1 unless new foundation regressions are found.
 
@@ -61,18 +61,17 @@ The next product work should start from P1 unless new foundation regressions are
 
 Build these after the foundation is stable enough that each flow can follow shared data, safety, UI, and testing patterns.
 
-1. [ ] Build onboarding that sets expectations, captures required policy consent, and lets users choose initial modules.
-2. [ ] Add enabled-module persistence and settings controls.
-3. [ ] Add explicit notification preference persistence and in-app controls.
-4. [ ] Build daily or on-demand mood check-ins.
-5. [ ] Build lightweight journaling.
-6. [ ] Expand the focused guided self-help tools library beyond the current CBT slice.
-7. [ ] Add a visible feedback/support entry point that opens email or GitHub guidance and warns users not to include urgent crisis details.
-8. [ ] Establish an accessibility baseline for new screens: contrast, screen-reader labels, keyboard support on web, touch target size, reduced-motion respect, and scalable text.
-9. [ ] Standardize save-failed, auth-expired, permission-denied, and destructive-action states across MVP flows.
-10. [ ] Add lightweight tests for every new module's schemas, repositories, export/delete coverage, and critical UI states.
-11. [ ] Add a progress view focused on reflection, not pressure.
-12. [ ] Add optional quests, habits, or streaks only if they stay disabled by default or framed as soft progress.
+1. [ ] Add enabled-module persistence and settings controls.
+2. [ ] Add explicit notification preference persistence and in-app controls.
+3. [ ] Build daily or on-demand mood check-ins.
+4. [ ] Build lightweight journaling.
+5. [ ] Expand the focused guided self-help tools library beyond the current CBT slice.
+6. [ ] Add a visible feedback/support entry point that opens email or GitHub guidance and warns users not to include urgent crisis details.
+7. [ ] Establish an accessibility baseline for new screens: contrast, screen-reader labels, keyboard support on web, touch target size, reduced-motion respect, and scalable text.
+8. [ ] Standardize save-failed, auth-expired, permission-denied, and destructive-action states across MVP flows.
+9. [ ] Add lightweight tests for every new module's schemas, repositories, export/delete coverage, and critical UI states.
+10. [ ] Add a progress view focused on reflection, not pressure.
+11. [ ] Add optional quests, habits, or streaks only if they stay disabled by default or framed as soft progress.
 
 ### P2: Launch Readiness
 
@@ -149,7 +148,8 @@ Expand only after the MVP is useful, stable, and understandable.
 14. [ ] Consider optional supporter or trusted-circle features.
 15. [ ] Consider therapist companion exports only after review.
 16. [ ] Consider private supporter roles only after review.
-17. [ ] Improve self-hosting guide and consider a managed self-host option, such as PikaPods or a similar service, if feasible.
+17. [ ] Consider richer onboarding or initial module-selection walkthroughs only after the MVP flows are stable.
+18. [ ] Improve self-hosting guide and consider a managed self-host option, such as PikaPods or a similar service, if feasible.
 
 ### P5: Tooling Maturity
 

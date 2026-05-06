@@ -1,6 +1,6 @@
 # Supabase Notes
 
-The initial schema lives in [supabase/migrations/20260415_initial.sql](migrations/20260415_initial.sql). Later migrations add consent/deletion support and profile avatar storage.
+The initial schema lives in [supabase/migrations/20260415_initial.sql](migrations/20260415_initial.sql). Later migrations add consent/deletion support, profile avatar storage, language preference sync, and onboarding flags.
 
 ## Tables
 
@@ -61,7 +61,7 @@ npm exec supabase -- link --project-ref <your-project-ref>
 npm exec supabase -- db push
 ```
 
-This creates the database tables, consent/deletion functions, profile avatar columns, and the private `profile-pics` storage bucket with RLS policies.
+This creates the database tables, consent/deletion functions, profile avatar columns, onboarding preference flags, and the private `profile-pics` storage bucket with RLS policies.
 
 If profile-picture testing shows `avatar_source` missing from the schema cache or a `profile-pics` row-level security error, the active Supabase project is missing the avatar repair migration. The normal fix is:
 
@@ -77,9 +77,9 @@ npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_pro
 
 ## Linked project status
 
-Last checked: 2026-05-05.
+Last checked: 2026-05-06.
 
-The active linked project migration history was repaired on 2026-05-05:
+The active linked project migration history was repaired on 2026-05-05 and the onboarding flags migration was applied on 2026-05-06:
 
 - the old remote `20260503` history row was reverted
 - the local consent/deletion migration was renamed to `20260503000000_consent_and_deletion.sql`
@@ -91,6 +91,9 @@ The active linked project migration history was repaired on 2026-05-05:
 - named public RLS policies exist for `profiles`, `user_preferences`, and `thought_records`
 - named Storage policies exist for authenticated user-owned objects in `profile-pics`
 - `user_preferences.language` exists with the `user_preferences_language_check` constraint
+- `user_preferences.app_onboarding_completed` and `user_preferences.cbt_onboarding_completed` exist for account-backed onboarding
+
+The local and remote migration histories currently include `20260506_onboarding_flags.sql`. If a new Supabase project is linked later, apply migrations with `npm exec supabase -- db push` before testing account-backed onboarding.
 
 Avoid parallel linked CLI queries against the production project; parallel reads can trigger Supabase's temporary auth circuit breaker.
 

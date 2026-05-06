@@ -30,13 +30,24 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Platform: Expo + React Native + TypeScript
 - Routing: Expo Router
 - Styling: NativeWind + Tailwind CSS
+- UI primitives: @rn-primitives (full suite of accessible components)
+- Styling utilities: class-variance-authority, clsx, tailwind-merge, tailwindcss-animate
+- Icons: lucide-react-native (primary), @expo/vector-icons (built-in fallback)
+- Fonts: @expo-google-fonts/noto-sans
 - Backend: Supabase
 - State: TanStack Query for server state, Zustand for local state
 - Forms and validation: React Hook Form + Zod
 - Notifications: Expo Notifications
 - Secure local secrets: Expo SecureStore
+- Local storage: @react-native-async-storage/async-storage
+- Animation: react-native-reanimated
+- Image handling: expo-image-picker, expo-image-manipulator, react-easy-crop
+- Navigation support: react-native-screens, react-native-safe-area-context
 - Builds and submission: EAS Build and EAS Submit
+- Web deployment: Netlify
 - i18n: i18next + react-i18next + expo-localization, seven namespaces in `src/i18n/locales/`
+- Testing: Jest + @testing-library/react-native + jest-expo
+- Code quality: ESLint, Prettier, Husky (pre-commit hooks)
 
 ## i18n conventions
 

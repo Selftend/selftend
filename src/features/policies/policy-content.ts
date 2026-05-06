@@ -1,5 +1,5 @@
-export const policyLastUpdated = "2026-05-03";
-export const policyVersion = "2026-05-03";
+export const policyLastUpdated = "2026-05-06";
+export const policyVersion = "2026-05-06";
 
 /**
  * Set to true while policies await final human/legal review.
@@ -34,7 +34,7 @@ export const privacyPolicySections: PolicySection[] = [
     title: "2. Data we collect",
     body: [
       "Account data: your email address and authentication identifiers provided during sign-in via passwordless email link or Google OAuth.",
-      "App data: user preferences (enabled modules, reminder settings) and private CBT thought records you create.",
+      "App data: user preferences (enabled modules, onboarding status, reminder settings) and private CBT thought records you create.",
       "Device data: a local notification identifier stored on your device only when you explicitly enable reminders. No device fingerprinting or hardware identifiers are collected.",
       "Session data: an authentication token stored in browser localStorage (web) or Expo SecureStore (mobile) to maintain your signed-in session.",
     ],

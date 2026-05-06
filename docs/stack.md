@@ -233,6 +233,7 @@ Expected MVP entities:
 - profile, including optional avatar metadata
 - preferences
 - enabled modules
+- onboarding flags
 - mood check-ins
 - journal entries
 - quests / habits
