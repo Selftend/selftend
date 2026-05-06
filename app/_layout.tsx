@@ -53,7 +53,7 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    hydrate();
+    void hydrate();
   }, [hydrate]);
 
   useEffect(() => {

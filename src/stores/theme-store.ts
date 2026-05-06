@@ -1,54 +1,29 @@
-import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
-const STORAGE_KEY = "selftend_theme";
+const STORAGE_KEY = "selftend:theme";
 
 export type ThemePreference = "light" | "dark" | "system";
 
 interface ThemeState {
   preference: ThemePreference;
   setPreference: (preference: ThemePreference) => void;
-  hydrate: () => void;
+  hydrate: () => Promise<void>;
 }
 
-function persistToStorage(preference: ThemePreference) {
-  if (Platform.OS !== "web") {
-    return;
-  }
-
-  try {
-    globalThis.localStorage?.setItem(STORAGE_KEY, preference);
-  } catch {
-    // localStorage may be unavailable in some contexts
-  }
-}
-
-function loadFromStorage(): ThemePreference | null {
-  if (Platform.OS !== "web") {
-    return null;
-  }
-
-  try {
-    const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
-    if (raw === "light" || raw === "dark" || raw === "system") {
-      return raw;
-    }
-  } catch {
-    // Malformed data, ignore
-  }
-
-  return null;
+function isThemePreference(value: unknown): value is ThemePreference {
+  return value === "light" || value === "dark" || value === "system";
 }
 
 export const useThemeStore = create<ThemeState>((set) => ({
   preference: "system",
   setPreference: (preference) => {
-    persistToStorage(preference);
     set({ preference });
+    void AsyncStorage.setItem(STORAGE_KEY, preference);
   },
-  hydrate: () => {
-    const stored = loadFromStorage();
-    if (stored) {
+  hydrate: async () => {
+    const stored = await AsyncStorage.getItem(STORAGE_KEY);
+    if (isThemePreference(stored)) {
       set({ preference: stored });
     }
   },
