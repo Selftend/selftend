@@ -1,0 +1,37 @@
+import { useEffect, useRef } from "react";
+
+import { mergeUserPreferences, type UserPreferences } from "@/src/features/modules/types";
+import { useUpdateUserPreferences } from "@/src/features/settings/queries";
+import { supportedLanguages, type SupportedLanguage } from "@/src/i18n";
+import { useLanguage } from "@/src/providers/i18n-provider";
+
+function isSupportedLanguage(value: string | null | undefined): value is SupportedLanguage {
+  return Boolean(value) && (supportedLanguages as readonly string[]).includes(value as string);
+}
+
+export function useLanguageSync(
+  userId: string | null,
+  preferences: UserPreferences | undefined,
+) {
+  const { language, setLanguage } = useLanguage();
+  const { mutate: updatePreferences } = useUpdateUserPreferences(userId);
+  const initialPullDone = useRef(false);
+
+  useEffect(() => {
+    if (!preferences || !userId) {
+      return;
+    }
+
+    if (!initialPullDone.current) {
+      initialPullDone.current = true;
+      if (isSupportedLanguage(preferences.language) && preferences.language !== language) {
+        void setLanguage(preferences.language);
+      }
+      return;
+    }
+
+    if (language !== preferences.language) {
+      updatePreferences(mergeUserPreferences(preferences, { language }));
+    }
+  }, [language, preferences, userId, setLanguage, updatePreferences]);
+}

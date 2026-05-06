@@ -12,6 +12,7 @@ import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import { useLanguageSync } from "@/src/features/settings/use-language-sync";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function ProtectedLayout() {
@@ -22,6 +23,8 @@ export default function ProtectedLayout() {
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(user?.id ?? null);
   const appOnboardingMutation = useUpdateUserPreferences(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
+
+  useLanguageSync(user?.id ?? null, preferences);
 
   if (status === "loading") {
     return (
