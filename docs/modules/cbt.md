@@ -24,7 +24,7 @@ The module should be:
 - detail view
 - edit flow
 - archive flow
-- optional quiet local reminders, default-off
+- optional quiet reminders, default-off, with account-backed opt-in / withdrawal state
 
 ## Thought record flow
 
@@ -52,6 +52,17 @@ Public implementation types:
 - `UserPreferences`
 - `ThoughtRecord`
 - `DistortionDefinition`
+
+Current persisted CBT reminder preference fields live on `user_preferences`:
+
+- `reminder_consent`
+- `reminder_consent_updated_at`
+- `cbt_reminders_enabled`
+- `cbt_reminder_hour`
+- `cbt_reminder_minute`
+- `cbt_reminder_timezone`
+
+Web push reminder subscriptions live in `web_push_subscriptions`. Native Android and iOS reminders remain local device schedules through Expo Notifications. Browser reminders use the Push API, the app service worker, and the scheduled Supabase Edge Function; iOS and iPadOS web push requires the app to be installed to the Home Screen.
 
 Current persisted `ThoughtRecord` fields:
 

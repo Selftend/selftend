@@ -54,7 +54,9 @@ These workflows are manual by design. CI still validates pushes and pull request
 
 - reminders are off by default
 - enabling reminders asks for permission
-- disabling reminders cancels the scheduled notification
+- disabling native reminders cancels the scheduled local notification
+- disabling web reminders unsubscribes the browser push subscription
+- web reminders are tested only after VAPID keys, Edge Function secrets, and the Supabase cron job are configured
 
 ### Profile pictures
 
@@ -119,6 +121,7 @@ Use the development build instead of Expo Go for normal Android development, rem
 Do not move to closed testing or store submission yet. Finish:
 
 - migration application in the active Supabase project
+- web push VAPID keys, Edge Function secrets, and cron scheduling before claiming browser reminder support
 - public domain and Supabase production redirect configuration
 - final app name and package-name confirmation
 - public support/privacy/deletion contact configuration

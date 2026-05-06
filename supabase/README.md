@@ -1,12 +1,13 @@
 # Supabase Notes
 
-The initial schema lives in [supabase/migrations/20260415_initial.sql](migrations/20260415_initial.sql). Later migrations add consent/deletion support, profile avatar storage, language preference sync, and onboarding flags.
+The initial schema lives in [supabase/migrations/20260415_initial.sql](migrations/20260415_initial.sql). Later migrations add consent/deletion support, profile avatar storage, language preference sync, onboarding flags, reminder consent timestamps, and browser push subscription infrastructure.
 
 ## Tables
 
 - `profiles`
 - `user_preferences`
 - `thought_records`
+- `web_push_subscriptions`
 
 `profiles` stores account-level metadata only: email plus optional avatar fields. Google OAuth avatars are stored as URLs with `avatar_source = 'oauth'`; manually chosen images store a private Storage object path with `avatar_source = 'upload'`; removed photos keep `avatar_source = null` and set `avatar_updated_at` so the app does not immediately re-import the Google photo.
 
@@ -61,7 +62,7 @@ npm exec supabase -- link --project-ref <your-project-ref>
 npm exec supabase -- db push
 ```
 
-This creates the database tables, consent/deletion functions, profile avatar columns, onboarding preference flags, and the private `profile-pics` storage bucket with RLS policies.
+This creates the database tables, consent/deletion functions, profile avatar columns, onboarding preference flags, reminder consent timestamp field, browser push subscription table, and the private `profile-pics` storage bucket with RLS policies.
 
 If profile-picture testing shows `avatar_source` missing from the schema cache or a `profile-pics` row-level security error, the active Supabase project is missing the avatar repair migration. The normal fix is:
 
@@ -79,12 +80,14 @@ npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_pro
 
 Last checked: 2026-05-06.
 
-The active linked project migration history was repaired on 2026-05-05 and the onboarding flags migration was applied on 2026-05-06:
+The active linked project migration history was repaired on 2026-05-05, the onboarding flags migration was applied on 2026-05-06, the reminder consent timestamp migration was applied on 2026-05-06, and the browser push subscription migration was applied on 2026-05-06:
 
 - the old remote `20260503` history row was reverted
 - the local consent/deletion migration was renamed to `20260503000000_consent_and_deletion.sql`
 - `20260503000000`, `20260503120000`, and `20260503121000` were marked applied in remote history
 - `20260504_add_language_preference.sql` was applied with `supabase db push`
+- `20260507000000_reminder_consent_timestamp.sql` was applied with `supabase db push --yes`
+- `20260508000000_web_push_notifications.sql` was applied with `supabase db push --yes`
 
 - `profiles` includes the avatar columns from `20260503120000_profile_avatars.sql`
 - `profile-pics` exists as a private bucket with a 5 MB limit and JPEG/PNG/WebP MIME types
@@ -92,8 +95,12 @@ The active linked project migration history was repaired on 2026-05-05 and the o
 - named Storage policies exist for authenticated user-owned objects in `profile-pics`
 - `user_preferences.language` exists with the `user_preferences_language_check` constraint
 - `user_preferences.app_onboarding_completed` and `user_preferences.cbt_onboarding_completed` exist for account-backed onboarding
+- `user_preferences.reminder_consent_updated_at` exists for timestamped reminder opt-in and withdrawal state
+- `user_preferences.cbt_reminder_timezone` and `web_push_subscriptions` exist for opted-in browser reminders
 
-The local and remote migration histories currently include `20260506_onboarding_flags.sql`. If a new Supabase project is linked later, apply migrations with `npm exec supabase -- db push` before testing account-backed onboarding.
+The local and remote migration histories include `20260507000000_reminder_consent_timestamp.sql`, which adds `user_preferences.reminder_consent_updated_at` and export coverage for timestamped reminder consent. The 2026-05-07 version is used so the file sorts after the legacy 8-digit `20260506_onboarding_flags.sql` migration.
+
+The local and remote migration histories also include `20260508000000_web_push_notifications.sql`, which adds `web_push_subscriptions`, `user_preferences.cbt_reminder_timezone`, export/delete coverage, and helper SQL for invoking the `send-web-reminders` Edge Function from Supabase Cron. Do not schedule the cron helper until VAPID keys, `WEB_PUSH_CRON_SECRET`, and matching Vault secrets are configured.
 
 Avoid parallel linked CLI queries against the production project; parallel reads can trigger Supabase's temporary auth circuit breaker.
 

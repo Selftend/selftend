@@ -57,21 +57,23 @@ Implementation status:
 
 ### Lawful basis for processing (GDPR Article 6)
 
-| Data                         | Lawful basis                       | Notes                                  |
-| ---------------------------- | ---------------------------------- | -------------------------------------- |
-| Email, auth metadata         | Contract (Art. 6(1)(b))            | Necessary to provide the service       |
-| Thought records, preferences | Contract (Art. 6(1)(b))            | Core app functionality                 |
-| Local notification reminders | Consent (Art. 6(1)(a))             | Explicit opt-in, revocable in Settings |
-| Auth event logs (Supabase)   | Legitimate interest (Art. 6(1)(f)) | Security and abuse prevention          |
+| Data                            | Lawful basis                       | Notes                                                      |
+| ------------------------------- | ---------------------------------- | ---------------------------------------------------------- |
+| Email, auth metadata            | Contract (Art. 6(1)(b))            | Necessary to provide the service                           |
+| Thought records, preferences    | Contract (Art. 6(1)(b))            | Core app functionality                                     |
+| Native local reminders          | Consent (Art. 6(1)(a))             | Explicit opt-in, revocable in Settings                     |
+| Web push reminder subscriptions | Consent (Art. 6(1)(a))             | Explicit opt-in, browser permission, revocable in Settings |
+| Auth event logs (Supabase)      | Legitimate interest (Art. 6(1)(f)) | Security and abuse prevention                              |
 
 ### Data processors
 
-| Processor           | Role                      | DPA                                                   |
-| ------------------- | ------------------------- | ----------------------------------------------------- |
-| Supabase Inc. (USA) | Database, auth, backend   | [Supabase DPA](https://supabase.com/legal/dpa)        |
-| Google LLC (USA)    | OAuth provider (optional) | [Google Privacy](https://policies.google.com/privacy) |
-| Netlify Inc. (USA)  | Static web hosting        | [Netlify DPA](https://www.netlify.com/legal/dpa/)     |
-| Expo Inc. (USA)     | Build tooling only        | No runtime data processing                            |
+| Processor             | Role                      | DPA                                                   |
+| --------------------- | ------------------------- | ----------------------------------------------------- |
+| Supabase Inc. (USA)   | Database, auth, backend   | [Supabase DPA](https://supabase.com/legal/dpa)        |
+| Google LLC (USA)      | OAuth provider (optional) | [Google Privacy](https://policies.google.com/privacy) |
+| Netlify Inc. (USA)    | Static web hosting        | [Netlify DPA](https://www.netlify.com/legal/dpa/)     |
+| Expo Inc. (USA)       | Build tooling only        | No runtime data processing                            |
+| Browser push services | Web push delivery         | Depends on the user's browser vendor                  |
 
 ### Data retention
 
@@ -116,6 +118,7 @@ The policy text maintains these boundaries:
 - No claims to treat, cure, prevent, or monitor a condition
 - Account-required with data minimization
 - Reminders optional, explicit, and off by default
+- Web push subscriptions are stored only after opt-in and browser permission
 - Android app permissions minimized for the current feature set; no camera-capture or microphone/audio recording permission
 - No ads, subscriptions, manipulative retention, social feeds, or user-facing AI coach
 - Age 13+ required

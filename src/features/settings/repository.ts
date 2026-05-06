@@ -10,9 +10,11 @@ interface UserPreferenceRow {
   user_id: string;
   enabled_modules: string[] | null;
   reminder_consent: boolean | null;
+  reminder_consent_updated_at: string | null;
   cbt_reminders_enabled: boolean | null;
   cbt_reminder_hour: number | null;
   cbt_reminder_minute: number | null;
+  cbt_reminder_timezone: string | null;
   app_onboarding_completed: boolean | null;
   cbt_onboarding_completed: boolean | null;
   privacy_policy_accepted_at: string | null;
@@ -30,9 +32,11 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
   return {
     enabledModules: row.enabled_modules?.includes("cbt") ? ["cbt"] : ["cbt"],
     reminderConsent: Boolean(row.reminder_consent),
+    reminderConsentUpdatedAt: row.reminder_consent_updated_at ?? null,
     cbtRemindersEnabled: Boolean(row.cbt_reminders_enabled),
     cbtReminderHour: row.cbt_reminder_hour ?? defaultUserPreferences.cbtReminderHour,
     cbtReminderMinute: row.cbt_reminder_minute ?? defaultUserPreferences.cbtReminderMinute,
+    cbtReminderTimezone: row.cbt_reminder_timezone ?? null,
     appOnboardingCompleted: Boolean(row.app_onboarding_completed),
     cbtOnboardingCompleted: Boolean(row.cbt_onboarding_completed),
     privacyPolicyAcceptedAt: row.privacy_policy_accepted_at ?? null,
@@ -67,9 +71,11 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
         user_id: userId,
         enabled_modules: preferences.enabledModules,
         reminder_consent: preferences.reminderConsent,
+        reminder_consent_updated_at: preferences.reminderConsentUpdatedAt,
         cbt_reminders_enabled: preferences.cbtRemindersEnabled,
         cbt_reminder_hour: preferences.cbtReminderHour,
         cbt_reminder_minute: preferences.cbtReminderMinute,
+        cbt_reminder_timezone: preferences.cbtReminderTimezone,
         app_onboarding_completed: preferences.appOnboardingCompleted,
         cbt_onboarding_completed: preferences.cbtOnboardingCompleted,
         privacy_policy_accepted_at: preferences.privacyPolicyAcceptedAt,
@@ -127,4 +133,48 @@ export async function exportUserData() {
   }
 
   return data;
+}
+
+interface WebPushSubscriptionPayload {
+  auth: string;
+  endpoint: string;
+  p256dh: string;
+  timeZone: string | null;
+  userAgent: string | null;
+}
+
+export async function upsertWebPushSubscription(
+  userId: string,
+  subscription: WebPushSubscriptionPayload,
+) {
+  const client = requireSupabase();
+  const { error } = await client.from("web_push_subscriptions").upsert(
+    {
+      auth: subscription.auth,
+      enabled: true,
+      endpoint: subscription.endpoint,
+      p256dh: subscription.p256dh,
+      time_zone: subscription.timeZone,
+      user_agent: subscription.userAgent,
+      user_id: userId,
+    },
+    { onConflict: "endpoint" },
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function deleteWebPushSubscription(userId: string, endpoint: string) {
+  const client = requireSupabase();
+  const { error } = await client
+    .from("web_push_subscriptions")
+    .delete()
+    .eq("user_id", userId)
+    .eq("endpoint", endpoint);
+
+  if (error) {
+    throw error;
+  }
 }

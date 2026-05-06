@@ -29,7 +29,11 @@ import { Switch } from "@/components/ui/switch";
 import { Text } from "@/components/ui/text";
 import { LoadingState } from "@/src/components/screen-state";
 import { signOut } from "@/src/features/auth/api";
-import { defaultUserPreferences, mergeUserPreferences } from "@/src/features/modules/types";
+import {
+  defaultUserPreferences,
+  mergeUserPreferences,
+  type UserPreferences,
+} from "@/src/features/modules/types";
 import {
   useRemoveUserAvatar,
   useResetUserAvatarToOAuth,
@@ -44,7 +48,12 @@ import {
   useUserPreferences,
 } from "@/src/features/settings/queries";
 import { appEnv } from "@/src/lib/env";
-import { cancelCbtReminder, scheduleCbtReminder } from "@/src/lib/notifications";
+import {
+  cancelCbtReminder,
+  getReminderTimeZone,
+  scheduleCbtReminder,
+  type ReminderScheduleFailureReason,
+} from "@/src/lib/notifications";
 import { useSession } from "@/src/providers/session-provider";
 import { AvatarCropModal } from "@/src/components/avatar-crop-modal";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -70,6 +79,37 @@ function getErrorMessage(error: unknown, fallback: string) {
   }
 
   return fallback;
+}
+
+function getReminderConsentUpdatedAt(
+  preferences: UserPreferences | null | undefined,
+  reminderConsent: boolean,
+) {
+  const previousReminderConsent =
+    preferences?.reminderConsent ?? defaultUserPreferences.reminderConsent;
+
+  if (previousReminderConsent === reminderConsent) {
+    return preferences?.reminderConsentUpdatedAt ?? defaultUserPreferences.reminderConsentUpdatedAt;
+  }
+
+  return new Date().toISOString();
+}
+
+function getReminderFailureMessageKey(reason: ReminderScheduleFailureReason) {
+  switch (reason) {
+    case "missing-vapid-key":
+      return "reminders.webNotConfigured";
+    case "service-worker-unavailable":
+      return "reminders.serviceWorkerUnavailable";
+    case "subscription-failed":
+      return "reminders.subscriptionFailed";
+    case "unsupported":
+      return "reminders.webUnsupported";
+    case "missing-user":
+    case "permission-denied":
+    default:
+      return "reminders.permissionDenied";
+  }
 }
 
 export default function SettingsScreen() {
@@ -109,26 +149,36 @@ export default function SettingsScreen() {
       const hour = clamp(Number.parseInt(hourInput || "19", 10), 0, 23);
       const minute = clamp(Number.parseInt(minuteInput || "0", 10), 0, 59);
       let reminderConsent = data?.reminderConsent ?? false;
+      let reminderFailureReason: ReminderScheduleFailureReason | null = null;
 
       if (remindersEnabled) {
-        reminderConsent = await scheduleCbtReminder(hour, minute);
+        const result = await scheduleCbtReminder(hour, minute, user.id);
+        reminderConsent = result.enabled;
+        reminderFailureReason = result.enabled ? null : result.reason;
       } else {
-        await cancelCbtReminder();
+        await cancelCbtReminder(user.id);
         reminderConsent = false;
       }
+
+      const reminderConsentUpdatedAt = getReminderConsentUpdatedAt(data, reminderConsent);
 
       await updatePreferencesMutation.mutateAsync(
         mergeUserPreferences(data, {
           enabledModules: ["cbt"],
           reminderConsent,
+          reminderConsentUpdatedAt,
           cbtRemindersEnabled: remindersEnabled && reminderConsent,
           cbtReminderHour: hour,
           cbtReminderMinute: minute,
+          cbtReminderTimezone: getReminderTimeZone(),
         }),
       );
 
       if (remindersEnabled && !reminderConsent) {
-        const message = t("reminders.permissionDenied");
+        const message = t(
+          getReminderFailureMessageKey(reminderFailureReason ?? "permission-denied"),
+        );
+        setRemindersEnabled(false);
         setErrorMessage(message);
         showToast({
           title: t("problem"),

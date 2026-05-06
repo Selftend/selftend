@@ -39,7 +39,7 @@ Included now:
 - thought history, edit, and archive flow
 - collapsible sidebar Tools navigation with CBT history nested under CBT
 - placeholder routes for Mood tracker, Meditation, ACT, and Gratitude log
-- quiet reminder settings, default-off
+- quiet reminder settings, default-off, with native local reminders and web push infrastructure
 - support, legal, privacy, crisis, and account-deletion surfaces
 - shared safety callout, loading/empty/error states, mobile form shell, app toast feedback, and global error fallback
 - Jest test harness
@@ -82,9 +82,17 @@ cp .env.self-host.example .env
 - `EXPO_PUBLIC_SUPABASE_URL`
 - `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 - `EXPO_PUBLIC_PUBLIC_APP_URL=http://localhost:8081` for local Expo web auth, or your production web origin before exporting a production web build
+- `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` if testing browser push reminders
 - `EXPO_PUBLIC_EAS_PROJECT_ID` only if you need to override the linked Expo project ID
 
 Only put public client configuration in `EXPO_PUBLIC_*` values. Never put service-role keys, database passwords, OAuth secrets, SMTP secrets, or JWT secrets in Expo public env vars.
+
+Web push also needs Supabase Edge Function secrets before browser reminders can send:
+
+- `WEB_PUSH_VAPID_PUBLIC_KEY`
+- `WEB_PUSH_VAPID_PRIVATE_KEY`
+- `WEB_PUSH_VAPID_SUBJECT`, for example `mailto:support@selftend.org`
+- `WEB_PUSH_CRON_SECRET`
 
 For local Expo web auth, make sure the matching callback URL is allowed in Supabase Auth redirect URLs:
 
@@ -231,9 +239,9 @@ This repo relies on docs as durable context. When a change affects setup, comman
 
 ## Status
 
-Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and the UI shell now uses NativeWind with default React Native Reusables-generated primitives plus brand tokens from the Selftend icon palette. The P0 app and backend foundation now includes shared safety, feedback, loading/empty/error, mobile form, online-first draft, global error fallback, data/privacy, module-contract, component-test patterns, repaired Supabase migration history, profile avatar storage, language preference persistence, and account-backed one-page app/CBT onboarding flags. Launch-prep docs cover single-page Netlify web deployment plus Google Play closed testing, including Android permission hardening for the first Play upload. The next blockers are `selftend.org` purchase/DNS, Netlify production env verification, domain email aliases, Expo/EAS authentication on the build machine, Google Play organization account setup, first manual AAB upload, Supabase production Site URL and redirect verification, and end-to-end auth/persistence/profile-picture verification on web and device builds from the current environment.
+Implementation scaffold is in place and pushed to GitHub. A real Supabase project exists, Android development should use the installed development build rather than Expo Go, and the UI shell now uses NativeWind with default React Native Reusables-generated primitives plus brand tokens from the Selftend icon palette. The P0 app and backend foundation now includes shared safety, feedback, loading/empty/error, mobile form, online-first draft, global error fallback, data/privacy, module-contract, component-test patterns, repaired Supabase migration history, profile avatar storage, language preference persistence, account-backed one-page app/CBT onboarding flags, native local reminders, and browser push reminder infrastructure. Launch-prep docs cover single-page Netlify web deployment plus Google Play closed testing, including Android permission hardening for the first Play upload. The next blockers are `selftend.org` purchase/DNS, Netlify production env verification, web push VAPID keys and Supabase Edge Function secrets, web reminder cron scheduling, domain email aliases, Expo/EAS authentication on the build machine, Google Play organization account setup, first manual AAB upload, Supabase production Site URL and redirect verification, and end-to-end auth/persistence/profile-picture/reminder verification on web and device builds from the current environment.
 
-The current database/storage contract includes profile avatar metadata and a private Supabase Storage `profile-pics` bucket. Removed profile photos use the existing nullable avatar fields plus a removal timestamp, so no extra avatar-source value is required. Apply all migrations before testing profile-picture upload, profile-picture removal, or account deletion cleanup.
+The current database/storage contract includes profile avatar metadata, a private Supabase Storage `profile-pics` bucket, timestamped reminder consent fields, and `web_push_subscriptions` for opted-in browser reminders. Removed profile photos use the existing nullable avatar fields plus a removal timestamp, so no extra avatar-source value is required. Apply all migrations before testing profile-picture upload, profile-picture removal, account deletion cleanup, or browser reminders.
 
 The first web and Android testing path uses the maintainer-hosted Supabase project. Data separation remains a product direction, but it is not a launch blocker: add export/delete first, then local-only storage, then encrypted backup/import, with custom backend or Drive sync considered later.
 

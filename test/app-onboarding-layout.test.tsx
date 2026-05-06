@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import ProtectedLayout from "@/app/(app)/_layout";
 import { defaultUserPreferences } from "@/src/features/modules/types";
+import { policyVersion } from "@/src/features/policies/policy-content";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -81,7 +82,7 @@ describe("ProtectedLayout app onboarding", () => {
       data: {
         ...defaultUserPreferences,
         appOnboardingCompleted: false,
-        policyVersionAccepted: "2026-05-06",
+        policyVersionAccepted: policyVersion,
       },
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);

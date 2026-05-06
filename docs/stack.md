@@ -12,7 +12,7 @@ Last reviewed: 2026-05-03
 - Local state: Zustand
 - Forms: React Hook Form + Zod
 - Backend: Supabase
-- Notifications: Expo Notifications
+- Notifications: Expo Notifications for native local reminders; browser Push API + Supabase Edge Function for web push reminders
 - i18n: i18next + react-i18next + expo-localization
 - Media selection: Expo ImagePicker for user-selected profile pictures
 - Secure local storage: Expo SecureStore
@@ -238,6 +238,7 @@ Expected MVP entities:
 - journal entries
 - quests / habits
 - notification settings
+- web push subscriptions
 
 ## Web direction
 

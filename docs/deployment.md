@@ -91,6 +91,7 @@ EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org
 EXPO_PUBLIC_SUPPORT_EMAIL=support@selftend.org
 EXPO_PUBLIC_PRIVACY_EMAIL=privacy@selftend.org
 EXPO_PUBLIC_SECURITY_EMAIL=security@selftend.org
+EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=<vapid-public-key>
 ```
 
 Optional:
@@ -100,6 +101,54 @@ EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 ```
 
 `EXPO_PUBLIC_PUBLIC_APP_URL` is baked into the JavaScript bundle during export and is used as the explicit web auth callback base. If it changes or was missing, update the Netlify environment variable and redeploy.
+
+`EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` is also baked into the web bundle. Browser reminders stay disabled until this public key is present and the matching private key is configured in Supabase Edge Function secrets.
+
+### Web Push Reminders
+
+Web push reminders use the browser Push API, `public/selftend-push-worker.js`, the `web_push_subscriptions` table, and the `send-web-reminders` Supabase Edge Function. Native Android and iOS builds keep using local Expo Notifications.
+
+Because the app uses `web.output = "single"`, PWA head tags are added through `public/index.html`. Keep the manifest and push worker in `public/` so `npm run export:web` copies them to `dist`.
+
+Before production web push testing:
+
+1. Generate VAPID keys, for example with `npx web-push generate-vapid-keys`.
+2. Set `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` in Netlify and GitHub repository variables.
+3. Apply the database migration so `web_push_subscriptions`, `pg_cron`, `pg_net`, and Vault are available:
+
+```bash
+npm exec supabase -- db push
+```
+
+4. Set Supabase Edge Function secrets:
+
+```bash
+npm exec supabase -- secrets set WEB_PUSH_VAPID_PUBLIC_KEY=<public-key>
+npm exec supabase -- secrets set WEB_PUSH_VAPID_PRIVATE_KEY=<private-key>
+npm exec supabase -- secrets set WEB_PUSH_VAPID_SUBJECT=mailto:support@selftend.org
+npm exec supabase -- secrets set WEB_PUSH_CRON_SECRET=<random-secret>
+```
+
+5. Store matching database Vault secrets for the cron invoker:
+
+```sql
+select vault.create_secret('https://<project-ref>.supabase.co', 'selftend_supabase_url');
+select vault.create_secret('<same-random-secret>', 'selftend_web_push_cron_secret');
+```
+
+6. Deploy the Edge Function and schedule the cron job:
+
+```bash
+npm exec supabase -- functions deploy send-web-reminders
+```
+
+Then run in the Supabase SQL editor:
+
+```sql
+select public.schedule_send_web_reminders_cron();
+```
+
+iOS and iPadOS web push requires the user to install the web app to the Home Screen before enabling reminders. Normal Safari tabs should be treated as unsupported.
 
 ### GitHub Actions Web Deploy
 
@@ -120,6 +169,7 @@ EXPO_PUBLIC_PUBLIC_APP_URL
 EXPO_PUBLIC_SUPPORT_EMAIL
 EXPO_PUBLIC_PRIVACY_EMAIL
 EXPO_PUBLIC_SECURITY_EMAIL
+EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY
 ```
 
 `EXPO_PUBLIC_GITHUB_REPO_URL` is optional in app code because a default exists, but setting it in GitHub keeps the release environment explicit.

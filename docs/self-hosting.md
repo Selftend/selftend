@@ -119,6 +119,7 @@ Optional:
 ```bash
 EXPO_PUBLIC_GITHUB_REPO_URL=https://github.com/vasilyoshev/self-tend
 EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
+EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=<public-vapid-key>
 ```
 
 Never put these in Expo public variables:
@@ -151,6 +152,20 @@ npm exec supabase -- db reset
 ```
 
 For self-hosted Supabase, follow Supabase's official self-hosting docs first, then apply the SQL migrations from `supabase/migrations` to the target Postgres database. The exact deployment and migration command depends on how the operator exposes the database and manages credentials.
+
+## Web push reminders
+
+Browser reminder support is optional for self-hosters. Native Android and iOS reminders remain local device schedules and do not need the web push backend.
+
+Self-hosters who enable browser reminders must provide:
+
+- a VAPID public key in `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY`
+- matching private VAPID secrets for the `send-web-reminders` Supabase Edge Function
+- a `WEB_PUSH_CRON_SECRET` Edge Function secret
+- matching Vault secrets named `selftend_supabase_url` and `selftend_web_push_cron_secret`
+- a scheduled Supabase Cron job created by `select public.schedule_send_web_reminders_cron();`
+
+Do not schedule the cron job until the Edge Function deploy and secrets are complete, otherwise opted-in browser reminders will not send.
 
 ## Auth and redirects
 

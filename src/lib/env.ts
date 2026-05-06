@@ -12,6 +12,7 @@ export const appEnv = {
     process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
     process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
     "",
+  webPushVapidPublicKey: process.env.EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY ?? "",
 };
 
 export const hasSupabaseConfig = Boolean(appEnv.supabaseUrl && appEnv.supabaseKey);
@@ -37,5 +38,11 @@ export function validateRequiredEnv() {
     }
 
     console.warn(message);
+  }
+
+  if (Platform.OS === "web" && isProductionBuild() && !appEnv.webPushVapidPublicKey) {
+    console.warn(
+      "[env] EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY is not set. Web reminder notifications are disabled for this deployment.",
+    );
   }
 }

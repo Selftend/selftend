@@ -59,26 +59,24 @@ The next product work should start from P1 unless new foundation regressions are
 
 ### P1: MVP Product Flows
 
-Build these after the foundation is stable enough that each flow can follow shared data, safety, UI, and testing patterns.
+Build these after the foundation is stable enough that each flow can follow shared data, safety, UI, and testing patterns. Do not add module disable controls during MVP; CBT remains the available working tool while broader module enable/disable behavior stays deferred to P4.
 
-1. [ ] Add enabled-module persistence and settings controls.
-2. [ ] Add explicit notification preference persistence and in-app controls.
-3. [ ] Build daily or on-demand mood check-ins.
-4. [ ] Build lightweight journaling.
-5. [ ] Expand the focused guided self-help tools library beyond the current CBT slice.
-6. [ ] Add a visible feedback/support entry point that opens email or GitHub guidance and warns users not to include urgent crisis details.
-7. [ ] Establish an accessibility baseline for new screens: contrast, screen-reader labels, keyboard support on web, touch target size, reduced-motion respect, and scalable text.
-8. [ ] Standardize save-failed, auth-expired, permission-denied, and destructive-action states across MVP flows.
-9. [ ] Add lightweight tests for every new module's schemas, repositories, export/delete coverage, and critical UI states.
-10. [ ] Add a progress view focused on reflection, not pressure.
-11. [ ] Add optional quests, habits, or streaks only if they stay disabled by default or framed as soft progress.
+1. [ ] Build daily or on-demand mood check-ins.
+2. [ ] Build lightweight journaling.
+3. [ ] Expand the focused guided self-help tools library beyond the current CBT slice.
+4. [ ] Add a visible feedback/support entry point that opens email or GitHub guidance and warns users not to include urgent crisis details.
+5. [ ] Establish an accessibility baseline for new screens: contrast, screen-reader labels, keyboard support on web, touch target size, reduced-motion respect, and scalable text.
+6. [ ] Standardize save-failed, auth-expired, permission-denied, and destructive-action states across MVP flows.
+7. [ ] Add lightweight tests for every new module's schemas, repositories, export/delete coverage, and critical UI states.
+8. [ ] Add a progress view focused on reflection, not pressure.
+9. [ ] Add optional quests, habits, or streaks only if they stay disabled by default or framed as soft progress.
 
 ### P2: Launch Readiness
 
 These are ordered by practical dependency: public URLs and backend truth first, then store setup, then review and release verification.
 
 1. [ ] Purchase and configure the production domain: `selftend.org`.
-2. [ ] Configure Netlify production environment variables with `EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org`.
+2. [ ] Configure Netlify production environment variables with `EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org` and the web push VAPID public key.
 3. [ ] Connect `selftend.org` to the Netlify web deployment.
 4. [ ] Configure support, privacy, security, deletion, and contributor aliases on `selftend.org`.
 5. [ ] Configure Netlify site ID and auth token for manual web production deploys.
@@ -90,29 +88,32 @@ These are ordered by practical dependency: public URLs and backend truth first, 
 11. [ ] Confirm Supabase DPA applicability.
 12. [ ] Authenticate the build machine with Expo for EAS, or configure `EXPO_TOKEN`.
 13. [ ] Configure GitHub release variables and secrets for Android and web deploy workflows.
-14. [ ] Create or confirm the Google Play organization or nonprofit developer account.
-15. [ ] Confirm legal organization or nonprofit account details.
-16. [ ] Complete the Google Play Health apps declaration.
-17. [ ] Complete the Google Play Data safety form.
-18. [ ] Write Google Play app access instructions for account-required testing.
-19. [ ] Complete human/legal review of privacy policy and terms.
-20. [ ] Complete human/legal review of safety and crisis resource copy.
-21. [ ] Approve the global crisis-resource strategy.
-22. [ ] Review all-ages implications before public launch.
-23. [ ] Decide whether a DPIA is needed and document the decision.
-24. [ ] Complete transfer impact assessment.
-25. [ ] Document incident response and breach notification processes.
-26. [ ] Define support workflow for `support@selftend.org`.
-27. [ ] Define manual process for GDPR email requests that cannot be completed in-app.
-28. [ ] Prepare app store assets, screenshots, and policy-safe copy.
-29. [ ] Prepare FAQ and public support guidance.
-30. [ ] Build the production Android AAB.
-31. [ ] Manually upload the first AAB to Google Play for the first closed-test track.
-32. [ ] Configure Google Play service account JSON after the first manual Play upload.
-33. [ ] Verify closed-test Android build on a real device.
-34. [ ] Verify live auth and persistence on device builds.
-35. [ ] Verify local reminders on real devices.
-36. [ ] Verify resolved Android prebuild config excludes camera and microphone permissions.
+14. [ ] Generate production VAPID keys and configure Supabase Edge Function secrets for web push reminders.
+15. [ ] Deploy `send-web-reminders` and schedule the Supabase cron job after Vault secrets are configured.
+16. [ ] Verify web push reminders on desktop web, Android web, and iOS/iPadOS Home Screen web app where supported.
+17. [ ] Create or confirm the Google Play organization or nonprofit developer account.
+18. [ ] Confirm legal organization or nonprofit account details.
+19. [ ] Complete the Google Play Health apps declaration.
+20. [ ] Complete the Google Play Data safety form.
+21. [ ] Write Google Play app access instructions for account-required testing.
+22. [ ] Complete human/legal review of privacy policy and terms.
+23. [ ] Complete human/legal review of safety and crisis resource copy.
+24. [ ] Approve the global crisis-resource strategy.
+25. [ ] Review all-ages implications before public launch.
+26. [ ] Decide whether a DPIA is needed and document the decision.
+27. [ ] Complete transfer impact assessment.
+28. [ ] Document incident response and breach notification processes.
+29. [ ] Define support workflow for `support@selftend.org`.
+30. [ ] Define manual process for GDPR email requests that cannot be completed in-app.
+31. [ ] Prepare app store assets, screenshots, and policy-safe copy.
+32. [ ] Prepare FAQ and public support guidance.
+33. [ ] Build the production Android AAB.
+34. [ ] Manually upload the first AAB to Google Play for the first closed-test track.
+35. [ ] Configure Google Play service account JSON after the first manual Play upload.
+36. [ ] Verify closed-test Android build on a real device.
+37. [ ] Verify live auth and persistence on device builds.
+38. [ ] Verify local reminders on real devices.
+39. [ ] Verify resolved Android prebuild config excludes camera and microphone permissions.
 
 ### P3: Post-MVP Privacy And Portability
 

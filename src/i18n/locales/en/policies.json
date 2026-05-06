@@ -20,7 +20,7 @@
         "body": [
           "Account data: your email address and authentication identifiers provided during sign-in via passwordless email link or Google OAuth.",
           "App data: user preferences (enabled modules, onboarding status, reminder settings) and private CBT thought records you create.",
-          "Device data: a local notification identifier stored on your device only when you explicitly enable reminders. No device fingerprinting or hardware identifiers are collected.",
+          "Device data: a local notification identifier on native apps, or a browser push subscription endpoint and keys on web, only when you explicitly enable reminders. No device fingerprinting or hardware identifiers are collected.",
           "Session data: an authentication token stored in browser localStorage (web) or Expo SecureStore (mobile) to maintain your signed-in session."
         ]
       },
@@ -45,7 +45,7 @@
         "body": [
           "To authenticate you and maintain your signed-in session across devices.",
           "To store and sync your private thought records and preferences.",
-          "To schedule local device reminders when you opt in.",
+          "To schedule local device reminders or send web push reminders when you opt in.",
           "To process account deletion and data export requests.",
           "We do not use your wellness entries for advertising, training AI models, research, or any purpose beyond delivering the app's features to you."
         ]
@@ -57,6 +57,7 @@
           "Google (Google LLC, USA): processes your email and account identifiers only if you choose Google OAuth sign-in. See policies.google.com/privacy.",
           "Netlify (Netlify Inc., USA): serves the static web application. Netlify does not receive or process your personal data beyond standard web server logs (IP address in access logs, subject to Netlify's privacy policy).",
           "Expo / EAS (Expo Inc., USA): used for mobile app builds and submission. Does not receive user personal data at runtime.",
+          "Browser push services (for example Apple, Google, Mozilla, or Microsoft depending on your browser): deliver web push reminders only after you opt in through your browser.",
           "We do not share your data with any other third parties, advertisers, or data brokers."
         ]
       },
@@ -73,7 +74,7 @@
           "Account and app data: retained for as long as your account is active.",
           "After account deletion: all personal data (profile, preferences, thought records) is permanently deleted within 30 days. No backups containing your data are retained beyond this period.",
           "Authentication logs: managed and retained by Supabase according to their retention policy.",
-          "Local device data (reminder IDs, session tokens): removed when you sign out or delete the app."
+          "Local device data (reminder IDs, browser push subscriptions, session tokens): removed when you disable reminders, sign out, delete your account, or delete the app/browser data where applicable."
         ]
       },
       {

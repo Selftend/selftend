@@ -9,9 +9,11 @@ export interface CookieConsent {
 export interface UserPreferences {
   enabledModules: ModuleKey[];
   reminderConsent: boolean;
+  reminderConsentUpdatedAt: string | null;
   cbtRemindersEnabled: boolean;
   cbtReminderHour: number;
   cbtReminderMinute: number;
+  cbtReminderTimezone: string | null;
   appOnboardingCompleted: boolean;
   cbtOnboardingCompleted: boolean;
   privacyPolicyAcceptedAt: string | null;
@@ -24,9 +26,11 @@ export interface UserPreferences {
 export const defaultUserPreferences: UserPreferences = {
   enabledModules: ["cbt"],
   reminderConsent: false,
+  reminderConsentUpdatedAt: null,
   cbtRemindersEnabled: false,
   cbtReminderHour: 19,
   cbtReminderMinute: 0,
+  cbtReminderTimezone: null,
   appOnboardingCompleted: false,
   cbtOnboardingCompleted: false,
   privacyPolicyAcceptedAt: null,

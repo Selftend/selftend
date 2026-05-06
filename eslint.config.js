@@ -15,6 +15,7 @@ module.exports = [
       "android/**",
       "ios/**",
       "supabase/.temp/**",
+      "supabase/functions/**",
     ],
   },
   prettierConfig,

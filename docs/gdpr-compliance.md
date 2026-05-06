@@ -1,6 +1,6 @@
 # GDPR Compliance Checklist
 
-Last updated: 2026-05-03
+Last updated: 2026-05-06
 
 This checklist tracks GDPR compliance status for Selftend. It covers the key requirements from the General Data Protection Regulation and related frameworks.
 
@@ -49,7 +49,7 @@ This checklist tracks GDPR compliance status for Selftend. It covers the key req
 
 ## Data Protection by Design and Default (Article 25)
 
-- [x] Privacy by design: minimal data collection, RLS, local-first reminders
+- [x] Privacy by design: minimal data collection, RLS, local-first native reminders, and minimal web push subscription records
 - [x] Privacy by default: reminders off, no analytics, no tracking
 - [x] Pseudonymization where possible (UUIDs as identifiers)
 
@@ -57,7 +57,7 @@ This checklist tracks GDPR compliance status for Selftend. It covers the key req
 
 - [x] Processing activities documented in `docs/policies.md`
 - [x] Categories of data subjects: app users (13+)
-- [x] Categories of data: email, preferences, thought records
+- [x] Categories of data: email, preferences, web push subscriptions, thought records
 - [x] Recipients: Supabase, Google (optional), Netlify
 - [x] Transfers to third countries: documented (USA, via SCCs)
 - [x] Retention periods: documented
@@ -103,7 +103,7 @@ This checklist tracks GDPR compliance status for Selftend. It covers the key req
 - [x] Consent specific (separate from terms acceptance in UX)
 - [x] Consent informed (clear language in Settings)
 - [x] Consent withdrawable (toggle off in Settings)
-- [x] Record of consent stored (reminder_consent field + timestamp)
+- [x] Record of consent stored (`reminder_consent` + `reminder_consent_updated_at`)
 - [x] Cookie consent on web (banner + preferences)
 
 ## Children (Article 8)
