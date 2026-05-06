@@ -1,6 +1,6 @@
 import * as Linking from "expo-linking";
 
-import { getWebAuthRedirectUrl } from "@/src/features/auth/api";
+import { getNativeAuthRedirectUrl, getWebAuthRedirectUrl } from "@/src/features/auth/api";
 
 jest.mock("expo-linking", () => ({
   createURL: jest.fn(),
@@ -27,6 +27,19 @@ describe("getWebAuthRedirectUrl", () => {
     jest.mocked(Linking.createURL).mockReturnValue("http://localhost:8081/auth-callback");
 
     expect(getWebAuthRedirectUrl("")).toBe("http://localhost:8081/auth-callback");
+    expect(Linking.createURL).toHaveBeenCalledWith("auth-callback");
+  });
+});
+
+describe("getNativeAuthRedirectUrl", () => {
+  beforeEach(() => {
+    jest.mocked(Linking.createURL).mockReset();
+  });
+
+  it("delegates to Linking.createURL with the auth callback path", () => {
+    jest.mocked(Linking.createURL).mockReturnValue("selftend://auth-callback");
+
+    expect(getNativeAuthRedirectUrl()).toBe("selftend://auth-callback");
     expect(Linking.createURL).toHaveBeenCalledWith("auth-callback");
   });
 });

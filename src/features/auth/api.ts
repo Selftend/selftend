@@ -7,7 +7,6 @@ import { appEnv } from "@/src/lib/env";
 import { requireSupabase } from "@/src/lib/supabase";
 
 const AUTH_CALLBACK_PATH = "auth-callback";
-const APP_SCHEME = "selftend";
 
 export function getWebAuthRedirectUrl(publicAppUrl = appEnv.publicAppUrl) {
   const configuredPublicAppUrl = publicAppUrl.trim();
@@ -23,7 +22,7 @@ export function getOAuthRedirectUrl() {
     return getWebAuthRedirectUrl();
   }
 
-  return Linking.createURL(AUTH_CALLBACK_PATH, { scheme: APP_SCHEME });
+  return getNativeAuthRedirectUrl();
 }
 
 export function getEmailRedirectUrl() {
@@ -31,7 +30,11 @@ export function getEmailRedirectUrl() {
     return getWebAuthRedirectUrl();
   }
 
-  return Linking.createURL(AUTH_CALLBACK_PATH, { scheme: APP_SCHEME });
+  return getNativeAuthRedirectUrl();
+}
+
+export function getNativeAuthRedirectUrl() {
+  return Linking.createURL(AUTH_CALLBACK_PATH);
 }
 
 export async function signInWithGoogle() {

@@ -87,7 +87,7 @@ These are ordered by practical dependency: public URLs and backend truth first, 
 10. [ ] Test self-service deletion end-to-end against the real Supabase instance.
 11. [ ] Confirm Supabase DPA applicability.
 12. [ ] Authenticate the build machine with Expo for EAS, or configure `EXPO_TOKEN`.
-13. [ ] Configure GitHub release variables and secrets for Android and web deploy workflows.
+13. [ ] Configure EAS preview/production environment variables and GitHub release variables/secrets for Android and web deploy workflows.
 14. [ ] Generate production VAPID keys and configure Supabase Edge Function secrets for web push reminders.
 15. [ ] Deploy `send-web-reminders` and schedule the Supabase cron job after Vault secrets are configured.
 16. [ ] Verify web push reminders on desktop web, Android web, and iOS/iPadOS Home Screen web app where supported.
@@ -107,7 +107,7 @@ These are ordered by practical dependency: public URLs and backend truth first, 
 30. [ ] Define manual process for GDPR email requests that cannot be completed in-app.
 31. [ ] Prepare app store assets, screenshots, and policy-safe copy.
 32. [ ] Prepare FAQ and public support guidance.
-33. [ ] Build the production Android AAB.
+33. [ ] Build the production Android AAB only after the EAS production environment includes Supabase public URL/key values.
 34. [ ] Manually upload the first AAB to Google Play for the first closed-test track.
 35. [ ] Configure Google Play service account JSON after the first manual Play upload.
 36. [ ] Verify closed-test Android build on a real device.

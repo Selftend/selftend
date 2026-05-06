@@ -1,6 +1,6 @@
 # Android Closed Testing
 
-Last checked: 2026-05-05
+Last checked: 2026-05-06
 
 The first Google Play milestone should be closed testing, not production. Do not promote to production until policy, safety, device, and support requirements are reviewed.
 
@@ -21,6 +21,7 @@ Official references:
 - Expo ImagePicker config plugin: <https://docs.expo.dev/versions/latest/sdk/imagepicker/>
 - EAS local builds: <https://docs.expo.dev/build-reference/local-builds/>
 - EAS app version management: <https://docs.expo.dev/build-reference/app-versions>
+- EAS environment variables: <https://docs.expo.dev/eas/environment-variables>
 - EAS Android submission: <https://docs.expo.dev/submit/android/>
 - EAS build APK/AAB behavior: <https://docs.expo.dev/build-reference/apk/>
 
@@ -117,6 +118,19 @@ The production profile explicitly builds an Android App Bundle (`.aab`) because 
 
 This repo now uses EAS remote app-version management with `build.production.autoIncrement: true`. After the first Play upload and remote version initialization, production builds automatically increment the Android `versionCode`. Keep `version` in `app.config.ts` as the human-facing release version and use EAS remote versioning for the developer-facing Play upload number.
 
+The `preview` and `production` EAS profiles explicitly select the matching EAS environment. Before building a Play-bound AAB, set these public values in the EAS `production` environment:
+
+```text
+EXPO_PUBLIC_SUPABASE_URL
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+EXPO_PUBLIC_PUBLIC_APP_URL
+EXPO_PUBLIC_SUPPORT_EMAIL
+EXPO_PUBLIC_PRIVACY_EMAIL
+EXPO_PUBLIC_SECURITY_EMAIL
+```
+
+`EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are required at build time. The app config now fails `preview` and `production` EAS builds when either value is missing, because those values are baked into the JavaScript bundle and cannot be fixed inside an already uploaded Play build.
+
 Submission command after Play Console and EAS credentials are ready:
 
 ```bash
@@ -152,6 +166,8 @@ EXPO_PUBLIC_SECURITY_EMAIL
 ```
 
 `EXPO_PUBLIC_GITHUB_REPO_URL` and `EXPO_PUBLIC_EAS_PROJECT_ID` have app defaults, but setting them as GitHub variables keeps the release environment explicit.
+
+The GitHub workflow passes repository variables into the local EAS build. Direct EAS cloud builds use the variables stored in the selected EAS environment instead. Keep both sources in sync before publishing a tester build.
 
 Required GitHub repository secrets:
 
@@ -191,6 +207,7 @@ Do not set `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` until the Google Play app has had 
 Use a real Android device, not only an emulator.
 
 - app installs from Google Play closed testing
+- sign-in screens do not show the Supabase-not-configured message
 - session restores after force close and restart
 - Google sign-in returns to the app through `selftend://auth-callback`
 - magic-link email returns to the app through `selftend://auth-callback`

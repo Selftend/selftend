@@ -1,6 +1,6 @@
 # Internal Testing
 
-Last updated: 2026-05-05
+Last updated: 2026-05-06
 
 ## Current build profiles
 
@@ -12,7 +12,17 @@ Last updated: 2026-05-05
 
 Use the Android `development` build as the default local runtime. Do not use Expo Go as the normal Android development path.
 
-For Google Play closed testing, use the `production` profile to create an Android App Bundle after policy forms and store setup are ready.
+The Android `development` profile uses a distinct app identity so it can coexist with the Play/internal-testing app:
+
+```text
+Development name: Selftend Dev
+Development Android package: org.vasilyoshev.selftend.dev
+Development native scheme: selftend-dev
+Production Android package: org.vasilyoshev.selftend
+Production native scheme: selftend
+```
+
+For Google Play closed testing, use the `production` profile to create an Android App Bundle after policy forms and store setup are ready. The `preview` and `production` profiles use matching EAS environments and fail at app-config evaluation if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing.
 
 Manual GitHub Actions workflows are available for maintainer-triggered releases from `main`:
 
@@ -28,6 +38,7 @@ These workflows are manual by design. CI still validates pushes and pull request
 - Google sign-in opens the browser flow
 - Google consent returns to `/auth-callback` on web
 - Google consent returns to the app in the Android development build
+- Expo Go auth checks either return through an allowlisted `exp://**/--/auth-callback` URL or are skipped in favor of the development build
 - magic-link email sends successfully from the sign-in screen
 - magic-link email opens `/auth-callback` on web
 - magic-link email opens the app through `selftend://...` on device builds
@@ -95,6 +106,10 @@ npm run typecheck
 npm test -- --runInBand
 npm run export:web
 npm run serve:web:production
+npm run android
+npm run android:dev-server
+npm run android:server-only
+npm run android:emulator:list
 npm run start:dev-client
 npm run build:android:development
 npm run build:android:preview
@@ -110,11 +125,30 @@ Use the development build instead of Expo Go for normal Android development, rem
 
 1. Confirm `.env` has real Supabase values.
 2. The linked Expo project ID is already configured in `app.config.ts`. Only set `EXPO_PUBLIC_EAS_PROJECT_ID` if you need to override it.
-3. Run `npm exec eas-cli -- init` once if the EAS project has not been linked yet.
-4. Run `npm run build:android:development`.
-5. Install the generated build on the target device.
-6. Run `npm run start:dev-client`.
-7. Open the installed development build and verify auth, persistence, and reminder scheduling there.
+3. In Supabase Auth redirect URLs, add `selftend-dev://auth-callback`.
+4. Run `npm exec eas-cli -- init` once if the EAS project has not been linked yet.
+5. Run `npm run build:android:development`.
+6. Install the generated `Selftend Dev` build on the target device.
+7. Run `npm run android`.
+8. Open `Selftend Dev` and verify auth, persistence, and reminder scheduling there.
+
+`npm run android` launches the configured Android Studio emulator when no Android device is connected, waits for it to boot, starts the Expo development-client server with the development app variant, configures `adb reverse` for Metro, then opens `Selftend Dev` with the `selftend-dev://expo-development-client/?url=...` URL. It intentionally avoids Expo CLI's `--android` opener because that can fall back to Expo Go when the development client is missing or stale. `npm run start:dev-client` is still available when the emulator/device is already running and you only need Metro. Use `npm run android:server-only` if you want to start the emulator and server without launching the dev client. If the Play app opens instead, the installed development client is stale or still uses the production scheme; rebuild the development client from the current config and install the new `org.vasilyoshev.selftend.dev` package. The Play app can stay installed.
+
+## Play build environment check
+
+Before publishing a preview or production build to testers:
+
+1. Confirm the matching EAS environment has:
+   ```text
+   EXPO_PUBLIC_SUPABASE_URL
+   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+   EXPO_PUBLIC_PUBLIC_APP_URL
+   EXPO_PUBLIC_SUPPORT_EMAIL
+   EXPO_PUBLIC_PRIVACY_EMAIL
+   EXPO_PUBLIC_SECURITY_EMAIL
+   ```
+2. Rebuild the AAB after changing any of those values. Existing Play builds keep the environment values that were baked in at build time.
+3. Install from Play internal testing and confirm the sign-in screen does not show the Supabase-not-configured message.
 
 ## Store-readiness note
 

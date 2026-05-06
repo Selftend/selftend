@@ -1,21 +1,14 @@
 import { router } from "expo-router";
-import * as Linking from "expo-linking";
 import { MenuIcon } from "lucide-react-native";
-import { Image, Platform, Pressable, View } from "react-native";
+import { Image, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 
-import { LanguageToggle } from "@/components/language-toggle";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { UserMenu } from "@/components/user-menu";
-import { appEnv } from "@/src/lib/env";
-import { resolveThemePreference, useSystemColorScheme } from "@/src/lib/color-scheme";
 import { useSession } from "@/src/providers/session-provider";
-import { useThemeStore } from "@/src/stores/theme-store";
 
 interface AppHeaderProps {
   showHamburger?: boolean;
@@ -55,44 +48,8 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
             {t("header.appName")}
           </Text>
         </Pressable>
-        <View className="flex-row items-center gap-2">
-          <GitHubButton />
-          <LanguageToggle />
-          <ThemeToggle />
-          {isSignedIn ? <UserMenu /> : null}
-        </View>
+        <UserMenu />
       </View>
     </SafeAreaView>
-  );
-}
-
-function GitHubButton() {
-  const { t } = useTranslation("navigation");
-  const preference = useThemeStore((state) => state.preference);
-  const systemColorScheme = useSystemColorScheme();
-  const colorScheme = resolveThemePreference(preference, systemColorScheme);
-  const openGitHub = () => {
-    if (Platform.OS === "web") {
-      globalThis.window?.open(appEnv.githubRepoUrl, "_blank", "noopener,noreferrer");
-      return;
-    }
-
-    void Linking.openURL(appEnv.githubRepoUrl);
-  };
-
-  return (
-    <Button
-      accessibilityLabel={t("header.openGithub")}
-      className="size-9 rounded-full"
-      onPress={openGitHub}
-      size="icon"
-      variant="ghost"
-    >
-      <Ionicons
-        color={colorScheme === "dark" ? "#fafafa" : "#0a0a0a"}
-        name="logo-github"
-        size={20}
-      />
-    </Button>
   );
 }

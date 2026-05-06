@@ -16,7 +16,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "nativewind";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Pressable, useWindowDimensions, View } from "react-native";
 
 import { AppHeader } from "@/components/app-header";
@@ -56,9 +56,12 @@ export default function RootLayout() {
     void hydrate();
   }, [hydrate]);
 
+  const setColorSchemeRef = useRef(setColorScheme);
+  setColorSchemeRef.current = setColorScheme;
+
   useEffect(() => {
-    setColorScheme(nativeWindColorScheme);
-  }, [nativeWindColorScheme, setColorScheme]);
+    setColorSchemeRef.current(nativeWindColorScheme);
+  }, [nativeWindColorScheme]);
 
   useEffect(() => {
     if (fontsLoaded) {
@@ -89,7 +92,9 @@ function AppShell() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= DESKTOP_BREAKPOINT;
   const { session } = useSession();
-  const { isOpen, toggle, close } = useSidebarStore();
+  const isOpen = useSidebarStore((s) => s.isOpen);
+  const toggle = useSidebarStore((s) => s.toggle);
+  const close = useSidebarStore((s) => s.close);
   const showMobileNav = Boolean(session) && !isDesktop;
 
   useEffect(() => {

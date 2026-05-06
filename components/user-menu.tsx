@@ -1,8 +1,18 @@
 import { router } from "expo-router";
-import { LogOutIcon, SettingsIcon } from "lucide-react-native";
+import * as Linking from "expo-linking";
+import {
+  CheckIcon,
+  EllipsisVerticalIcon,
+  LogOutIcon,
+  MonitorIcon,
+  MoonIcon,
+  SettingsIcon,
+  SunIcon,
+} from "lucide-react-native";
 import * as React from "react";
-import { View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
+import { Ionicons } from "@expo/vector-icons";
 
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { Button } from "@/components/ui/button";
@@ -11,17 +21,41 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Text } from "@/components/ui/text";
 import { signOut } from "@/src/features/auth/api";
 import { useUserProfile } from "@/src/features/profile/queries";
+import { supportedLanguages, type SupportedLanguage } from "@/src/i18n";
+import { resolveThemePreference, useSystemColorScheme } from "@/src/lib/color-scheme";
+import { appEnv } from "@/src/lib/env";
+import { useLanguage } from "@/src/providers/i18n-provider";
 import { useSession } from "@/src/providers/session-provider";
+import { useThemeStore, type ThemePreference } from "@/src/stores/theme-store";
 import type { TriggerRef } from "@rn-primitives/popover";
+
+const THEME_OPTIONS: ThemePreference[] = ["system", "light", "dark"];
+const THEME_ICONS = { system: MonitorIcon, light: SunIcon, dark: MoonIcon } as const;
 
 export function UserMenu() {
   const { t } = useTranslation("navigation");
   const popoverTriggerRef = React.useRef<TriggerRef>(null);
-  const { user } = useSession();
+  const { session, user } = useSession();
+  const isSignedIn = Boolean(session);
   const { data: profile } = useUserProfile(user);
+  const { language, setLanguage } = useLanguage();
+  const preference = useThemeStore((s) => s.preference);
+  const setPreference = useThemeStore((s) => s.setPreference);
+  const systemColorScheme = useSystemColorScheme();
+  const resolved = resolveThemePreference(preference, systemColorScheme);
+  const isDark = resolved === "dark";
 
   const email = user?.email;
   const avatarUrl = profile?.avatarUrl ?? null;
+
+  function openGitHub() {
+    popoverTriggerRef.current?.close();
+    if (Platform.OS === "web") {
+      globalThis.window?.open(appEnv.githubRepoUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    void Linking.openURL(appEnv.githubRepoUrl);
+  }
 
   async function onSignOut() {
     popoverTriggerRef.current?.close();
@@ -32,39 +66,100 @@ export function UserMenu() {
     <Popover>
       <PopoverTrigger asChild ref={popoverTriggerRef}>
         <Button variant="ghost" size="icon" className="size-8 rounded-full">
-          <ProfileAvatar avatarUrl={avatarUrl} email={email} />
+          {isSignedIn ? (
+            <ProfileAvatar avatarUrl={avatarUrl} email={email} />
+          ) : (
+            <Icon as={EllipsisVerticalIcon} className="size-5 text-foreground" />
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" side="bottom" className="w-72 p-0">
         <View className="gap-3 p-3">
-          <View className="flex-row items-center gap-3">
-            <ProfileAvatar avatarUrl={avatarUrl} email={email} className="size-10" />
-            <View className="flex-1">
-              <Text
-                className="text-sm text-muted-foreground font-normal leading-4"
-                numberOfLines={1}
-              >
-                {email ?? t("userMenu.account")}
-              </Text>
+          {isSignedIn ? (
+            <View className="flex-row items-center gap-3">
+              <ProfileAvatar avatarUrl={avatarUrl} email={email} className="size-10" />
+              <View className="flex-1">
+                <Text
+                  className="text-sm text-muted-foreground font-normal leading-4"
+                  numberOfLines={1}
+                >
+                  {email ?? t("userMenu.account")}
+                </Text>
+              </View>
             </View>
+          ) : null}
+
+          <View>
+            <Text className="text-xs font-medium text-muted-foreground px-2 pb-1">
+              {t("languageToggle.toggle")}
+            </Text>
+            {supportedLanguages.map((code) => (
+              <Pressable
+                key={code}
+                className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
+                onPress={() => void setLanguage(code)}
+              >
+                <View className="size-4 items-center justify-center">
+                  {language === code ? (
+                    <Icon as={CheckIcon} className="size-4 text-foreground" />
+                  ) : null}
+                </View>
+                <Text className="text-sm">{t(`languageToggle.${code}`)}</Text>
+              </Pressable>
+            ))}
           </View>
-          <View className="flex-row flex-wrap gap-3 py-0.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={() => {
-                popoverTriggerRef.current?.close();
-                router.push("/(app)/(tabs)/settings");
-              }}
-            >
-              <Icon as={SettingsIcon} className="size-4" />
-              <Text>{t("userMenu.settings")}</Text>
-            </Button>
-            <Button variant="outline" size="sm" className="flex-1" onPress={onSignOut}>
-              <Icon as={LogOutIcon} className="size-4" />
-              <Text>{t("userMenu.signOut")}</Text>
+
+          <View>
+            <Text className="text-xs font-medium text-muted-foreground px-2 pb-1">
+              {t("themeToggle.toggle")}
+            </Text>
+            {THEME_OPTIONS.map((value) => (
+              <Pressable
+                key={value}
+                className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
+                onPress={() => setPreference(value)}
+              >
+                <View className="size-4 items-center justify-center">
+                  {preference === value ? (
+                    <Icon as={CheckIcon} className="size-4 text-foreground" />
+                  ) : null}
+                </View>
+                <Icon as={THEME_ICONS[value]} className="size-4 text-foreground" />
+                <Text className="text-sm">{t(`themeToggle.${value}`)}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View className="gap-1">
+            <Button variant="ghost" size="sm" className="justify-start" onPress={openGitHub}>
+              <Ionicons
+                name="logo-github"
+                size={16}
+                color={isDark ? "#fafafa" : "#0a0a0a"}
+              />
+              <Text>{t("header.openGithub")}</Text>
             </Button>
           </View>
+
+          {isSignedIn ? (
+            <View className="flex-row flex-wrap gap-3 py-0.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={() => {
+                  popoverTriggerRef.current?.close();
+                  router.push("/(app)/(tabs)/settings");
+                }}
+              >
+                <Icon as={SettingsIcon} className="size-4" />
+                <Text>{t("userMenu.settings")}</Text>
+              </Button>
+              <Button variant="outline" size="sm" className="flex-1" onPress={onSignOut}>
+                <Icon as={LogOutIcon} className="size-4" />
+                <Text>{t("userMenu.signOut")}</Text>
+              </Button>
+            </View>
+          ) : null}
         </View>
       </PopoverContent>
     </Popover>

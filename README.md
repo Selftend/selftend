@@ -100,6 +100,31 @@ For local Expo web auth, make sure the matching callback URL is allowed in Supab
 http://localhost:8081/auth-callback
 ```
 
+For quick native auth checks in Expo Go, Supabase also needs to allow the Expo Go callback URL that `Linking.createURL("auth-callback")` produces, commonly:
+
+```text
+exp://**/--/auth-callback
+```
+
+If Expo Go still falls back to the production Site URL, add the exact Metro URL shown for the current session, for example:
+
+```text
+exp://192.168.0.12:8081/--/auth-callback
+```
+
+Use the Android development build for reliable OAuth testing. Expo documents Expo Go callback URLs as development URLs, not stable production-style auth callbacks.
+
+The Android development client intentionally uses a separate app identity from the Play build so both can be installed at the same time:
+
+```text
+Development package: org.vasilyoshev.selftend.dev
+Development scheme: selftend-dev
+Play package: org.vasilyoshev.selftend
+Play scheme: selftend
+```
+
+Add `selftend-dev://auth-callback` to Supabase Auth redirect URLs before testing Google or email auth in the development build.
+
 4. Run the app:
 
 ```bash
@@ -110,7 +135,13 @@ Useful commands:
 
 ```bash
 npm run web
+npm run android
+npm run android:dev-server
+npm run android:server-only
+npm run android:emulator:list
+npm run android:emulator
 npm run start:dev-client
+npm run android:expo-go
 npm exec expo -- config --type prebuild --json
 npm run build:android:development
 npm run build:android:preview
@@ -123,7 +154,7 @@ npm test -- --runInBand
 npm exec @react-native-reusables/cli@latest -- doctor --summary --yes
 ```
 
-For Android development, use the installed development build with `npm run start:dev-client`. Do not treat Expo Go as the default Android workflow for this project.
+For Android development, use the installed development build with `npm run android` or `npm run start:dev-client`. Do not treat Expo Go as the default Android workflow for this project.
 
 Before a Google Play upload, run `npm exec expo -- config --type prebuild --json` and confirm the resolved Android permissions do not include `android.permission.CAMERA` or `android.permission.RECORD_AUDIO`. The app only uses the photo library for optional profile-picture changes, and `app.config.ts` disables camera and microphone permissions in `expo-image-picker` for Play policy hygiene.
 
@@ -170,22 +201,54 @@ Use the Android development build for normal development, reminder testing, and 
 1. Create or update `.env` with your real Supabase values.
 2. The linked Expo project ID is already configured in `app.config.ts`. Only set `EXPO_PUBLIC_EAS_PROJECT_ID` if you need to override it.
 3. If the project is not yet linked in EAS for your account, run `npm exec eas-cli -- init`.
-4. Build the Android development client:
+4. Make sure Supabase Auth allows the development callback:
+
+```text
+selftend-dev://auth-callback
+```
+
+5. Build the Android development client:
 
 ```bash
 npm run build:android:development
 ```
 
-5. Install the resulting build on the Android device or emulator.
-6. Start Metro for the development client:
+6. Install the resulting build on the Android device or emulator. It installs as `Selftend Dev` with package `org.vasilyoshev.selftend.dev`, so it can coexist with the Play/internal-testing app.
+7. Confirm the Android Studio emulator exists:
 
 ```bash
-npm run start:dev-client
+npm run android:emulator:list
 ```
 
-7. Open the installed development build and connect it to the Metro server.
+The default emulator name is `Selftend_API_35`. If Android Studio created a different AVD name, set it before running the Android script:
 
-Once the development build is installed, keep using it as the default Android development client. On Linux, the day-to-day workflow should be `npm run start:dev-client` plus the installed dev build, with `npm run build:android:development` only when you need a refreshed binary.
+```powershell
+$env:SELFTEND_ANDROID_AVD="Your_AVD_Name"
+```
+
+8. Start the day-to-day Android development flow:
+
+```bash
+npm run android
+```
+
+`npm run android` launches the configured Android Studio emulator when no Android device is connected, waits for it to boot, starts the Expo development-client server with the development app variant, configures `adb reverse` for Metro, then opens `Selftend Dev` with the `selftend-dev://expo-development-client/?url=...` URL. `npm run android:dev`, `npm run android:dev-server`, and `npm run android:studio` are aliases for the same flow.
+
+You do not need to run `npm run start` first. `npm run start` is the plain Expo start command, mainly useful for Expo Go or web-oriented checks. For the installed development client, use `npm run android`, or use `npm run start:dev-client` when the emulator/device is already running and you only need Metro.
+
+The script intentionally avoids Expo CLI's `--android` opener because it can fall back to Expo Go when the development client is missing or stale. Use `npm run android:server-only` if you want to start the emulator and server without launching the dev client. If automatic launch reports that `Selftend Dev` is not installed, install the latest development build, then rerun `npm run android`.
+
+Pass Expo start flags after `--`, for example:
+
+```bash
+npm run android -- --clear
+```
+
+If Android opens the Play build from a QR code, stop Metro, run `npm run android -- --clear`, then open `Selftend Dev` directly from the emulator launcher. If it still opens the Play build, uninstall any older development client that used the production package, then rebuild from the current config.
+
+Once the development build is installed, keep using it as the default Android development client. The day-to-day workflow should be `npm run android` plus the installed dev build, with `npm run build:android:development` only when you need a refreshed binary.
+
+Use `npm run android:expo-go` only for temporary Expo Go checks. Expo Go uses `exp://.../--/auth-callback` redirects and can still fall back to the Supabase production Site URL if the exact current Metro redirect is not allow-listed.
 
 ## Manual release workflows
 
@@ -206,6 +269,8 @@ EXPO_PUBLIC_SECURITY_EMAIL
 ```
 
 Android also requires `EXPO_TOKEN` as a repository secret. Store submission additionally requires `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` after the first manual Google Play upload and Play API setup are complete.
+
+EAS preview and production builds also require matching EAS environment variables before running `npm run build:android:preview` or `npm run build:android:production`. The app now fails those builds if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing, so a Play build cannot be shipped with auth disabled by accident.
 
 Web deployment requires `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` as repository secrets.
 
