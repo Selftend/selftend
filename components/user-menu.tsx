@@ -132,11 +132,7 @@ export function UserMenu() {
 
           <View className="gap-1">
             <Button variant="ghost" size="sm" className="justify-start" onPress={openGitHub}>
-              <Ionicons
-                name="logo-github"
-                size={16}
-                color={isDark ? "#fafafa" : "#0a0a0a"}
-              />
+              <Ionicons name="logo-github" size={16} color={isDark ? "#fafafa" : "#0a0a0a"} />
               <Text>{t("header.openGithub")}</Text>
             </Button>
           </View>
