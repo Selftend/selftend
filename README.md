@@ -183,7 +183,7 @@ Once the development build is installed, keep using it as the default Android de
 
 GitHub Actions has separate manual release workflows for production surfaces:
 
-- `Android Play internal release`: checks out `main`, runs an EAS local Android production build on the GitHub runner, uploads the `.aab` as a workflow artifact, and can submit it to the Google Play internal testing track.
+- `Android Play internal release`: checks out `main`, runs an EAS local Android production build on the GitHub runner, uploads the `.aab` as a workflow artifact, and can upload it as a draft Google Play internal-testing release.
 - `Web production deploy`: checks out `main`, exports the Expo web app, and deploys `dist` to Netlify production.
 
 Required GitHub repository variables for both workflows:

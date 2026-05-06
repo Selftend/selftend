@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       submit_to_play:
-        description: Submit the built AAB to Google Play internal testing
+        description: Upload the built AAB as a draft Google Play internal testing release
         type: boolean
         default: true
 
@@ -136,7 +136,7 @@ jobs:
           mkdir -p .secrets
           printf '%s' "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" > .secrets/google-play-service-account.json
 
-      - name: Submit to Google Play internal testing
+      - name: Upload draft to Google Play internal testing
         if: ${{ inputs.submit_to_play }}
         run: |
           aab_path="$(find build-artifacts -maxdepth 1 -type f -name '*.aab' -print -quit)"

@@ -44,7 +44,7 @@ CI verifies linting, formatting, typechecking, and tests through `npm run verify
 
 Workspace settings in `.vscode/settings.json` make Prettier the default VS Code/Cursor formatter and enable format-on-save. The ESLint extension is recommended for inline diagnostics, but ESLint enforcement is handled by terminal, Husky, and CI checks.
 
-`Android Play internal release` is manual. It checks out `main`, runs a local EAS Android production build on the GitHub runner, uploads the `.aab` artifact, and can submit to Google Play internal testing.
+`Android Play internal release` is manual. It checks out `main`, runs a local EAS Android production build on the GitHub runner, uploads the `.aab` artifact, and can upload a draft Google Play internal-testing release.
 
 `Web production deploy` is manual. It checks out `main`, exports the Expo web app, and deploys `dist` to Netlify production.
 

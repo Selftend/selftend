@@ -125,7 +125,7 @@ npm run submit:android:production
 
 The current EAS submit profile targets the `alpha` track with draft release status. In Google Play Console terms, use this for the first closed-testing workflow only after the app listing, policy forms, testers, and first manual upload requirements are satisfied.
 
-The `internal` submit profile targets Google Play internal testing with `releaseStatus: completed`. The manual GitHub Actions workflow uses this profile for maintainer-triggered internal releases after Play API credentials are ready.
+The `internal` submit profile targets Google Play internal testing with `releaseStatus: draft`. New Play apps often cannot accept a `completed` release through the API until the required store listing, app-content, policy, and review metadata are complete. The manual GitHub Actions workflow therefore uploads a draft internal-testing release; review and publish it from Play Console when the required metadata is ready.
 
 ## Manual GitHub Actions release
 
@@ -137,7 +137,7 @@ When manually triggered, it:
 - installs Node `20.19.0`, Java 17, Android API 36, and NDK `27.1.12297006`
 - runs `eas build --platform android --profile production --local --non-interactive`
 - uploads the generated `.aab` as a GitHub Actions artifact
-- submits the `.aab` to Google Play internal testing when `submit_to_play` is enabled
+- uploads the `.aab` as a draft Google Play internal-testing release when `submit_to_play` is enabled
 
 Required GitHub repository variables:
 
