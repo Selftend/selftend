@@ -18,6 +18,7 @@
     "android:emulator:list": "node scripts/android-dev.js --list-avds",
     "android:expo-go": "expo start --android",
     "build:android:development": "npm exec eas-cli -- build --platform android --profile development",
+    "build:android:development:local": "npm exec eas-cli -- build --platform android --profile development --local",
     "build:android:preview": "npm exec eas-cli -- build --platform android --profile preview",
     "build:android:production": "npm exec eas-cli -- build --platform android --profile production",
     "submit:android:production": "npm exec eas-cli -- submit --platform android --profile production",
