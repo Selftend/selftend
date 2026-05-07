@@ -36,6 +36,9 @@
     "test:watch": "jest --watch",
     "test:integration": "jest -c jest.integration.config.js --runInBand",
     "test:integration:watch": "jest -c jest.integration.config.js --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
     "verify": "npm run lint && npm run format:check && npm run typecheck && npm test -- --runInBand",
     "db:start": "npm exec supabase -- start",
     "db:stop": "npm exec supabase -- stop",
@@ -115,6 +118,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@playwright/test": "1.59.1",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.1.0",

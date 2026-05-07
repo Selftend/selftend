@@ -18,6 +18,11 @@ android/
 ios/
 supabase/.temp/
 
+# E2E test artifacts
+playwright-report/
+test-results/
+.playwright/
+
 # Logs
 *.log
 npm-debug.log*

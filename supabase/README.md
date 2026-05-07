@@ -136,6 +136,28 @@ Tests clean up after themselves (per-test teardown) so the suite is rerunnable w
 
 GitHub Actions runs the suite on every PR via `.github/workflows/integration-tests.yml`.
 
+### End-to-end tests (Playwright)
+
+Browser-driven flows exercise the wiring between UI, repos, navigation, and auth. They run against `expo start --web` pointed at the local stack.
+
+```bash
+npm run db:start && npm run db:reset    # boot stack + seed
+npm run test:e2e                        # Playwright auto-starts expo on :8081
+npm run test:e2e:headed                 # watch the browser
+npm run test:e2e:ui                     # Playwright UI mode for debugging
+```
+
+Coverage:
+
+- `sign-in.e2e.test.ts` — seeded user signs in via the UI and reaches the authenticated app; wrong password shows an inline error.
+- `create-thought-record.e2e.test.ts` — alice signs in, walks the 5-step CBT wizard, and the saved record renders on detail + history.
+- `sign-out.e2e.test.ts` — bob signs out from settings and lands back on the landing screen.
+- `sign-up-onboarding.e2e.test.ts` — brand-new user signs up, completes consent + app + CBT onboarding, and saves their first record.
+
+Each test cleans up its own data via the service-role admin API (`test/e2e/helpers.ts` re-exports the integration helpers). Running E2E does not need `db:reset` between runs as long as the seed users still exist.
+
+GitHub Actions runs E2E on every PR via `.github/workflows/e2e-tests.yml`. Failure artifacts (Playwright report + traces) are uploaded for 7 days.
+
 ## First setup
 
 1. create the Supabase project
