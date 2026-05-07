@@ -23,7 +23,7 @@ jobs:
 
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
-      EAS_LOCAL_BUILD_ARTIFACTS_DIR: build-artifacts
+      CI: "true"
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
       EXPO_PUBLIC_GITHUB_REPO_URL: ${{ vars.EXPO_PUBLIC_GITHUB_REPO_URL }}
@@ -100,14 +100,12 @@ jobs:
         run: npm exec --yes eas-cli -- whoami
 
       - name: Build development APK locally
-        run: |
-          mkdir -p "$EAS_LOCAL_BUILD_ARTIFACTS_DIR"
-          npm run build:android:development:local -- --non-interactive
+        run: npm run build:android:development:local -- --non-interactive
 
       - name: Upload development APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: selftend-android-dev-apk-${{ github.run_number }}
-          path: build-artifacts/*.apk
+          path: local-builds/android/*.apk
           if-no-files-found: error
           retention-days: 14

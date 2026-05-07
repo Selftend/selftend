@@ -55,7 +55,7 @@ npm run android
 
 `npm run android` launches the configured Android Studio emulator when no Android device is connected, waits for it to boot, starts the Expo development-client server with the development app variant, configures `adb reverse` for Metro, then opens `Selftend Dev` with the `selftend-dev://expo-development-client/?url=...` URL. `npm run android:dev`, `npm run android:dev-server`, and `npm run android:studio` are aliases for the same flow.
 
-You do not need to run `npm run start` first. `npm run start` is the plain Expo start command, mainly useful for Expo Go or web-oriented checks. For the installed development client, use `npm run android`, or use `npm run start:dev-client` when the emulator/device is already running and you only need Metro.
+You do not need to run `npm run start` first. `npm run start` (and its alias `npm run start:dev-client`) starts Metro for the development client when the emulator/device is already running. Use `npm run start:expo-go` if you specifically want plain `expo start` (web or Expo Go). For a fresh emulator boot plus install/launch of `Selftend Dev`, prefer `npm run android`.
 
 The script intentionally avoids Expo CLI's `--android` opener because it can fall back to Expo Go when the development client is missing or stale. Use `npm run android:server-only` if you want to start the emulator and server without launching the dev client. If automatic launch reports that `Selftend Dev` is not installed, install the latest development build, then rerun `npm run android`.
 
@@ -114,6 +114,8 @@ Use the Android development build for reliable OAuth testing. Expo documents Exp
 
 `npm run build:android:development:local` runs the EAS development build on your machine instead of in the cloud. Useful for iterating on a fresh dev client without consuming EAS cloud build minutes, or when offline.
 
+The APK is written to `local-builds/android/selftend-dev-<timestamp>.apk` (gitignored). After the build finishes, the script starts a one-shot HTTP server on your LAN and prints a QR code so you can download the APK directly to a phone on the same Wi-Fi — no cable required. Open the QR in your phone camera, install when the browser/Files app prompts (you may need to enable "install unknown apps" once for that source), then Ctrl+C the server. Override the port with `SELFTEND_APK_SERVE_PORT`. In CI (`CI=true`) the server is skipped and the script just exits after the build.
+
 Prerequisites:
 
 - Android SDK with `cmdline-tools/latest`, `platform-tools`, `build-tools`, and a recent `platforms` directory. Easiest install path is Android Studio → SDK Manager.
@@ -142,4 +144,4 @@ After editing, run `source ~/.profile` for the current shell, and log out and ba
 
 The `Android development APK` GitHub Actions workflow builds the development client via `npm run build:android:development:local` on the runner and uploads the `.apk` as an artifact. Useful when you want to install the dev client on an emulator running on a different machine (for example, building on Linux and emulating on a Windows host with a stronger GPU).
 
-Trigger from the Actions tab, download the artifact, then `adb install -r selftend-dev.apk` on the target device. Run Metro on the same machine as the emulator with `npm run start:dev-client`.
+Trigger from the Actions tab, download the artifact, then `adb install -r <apk-name>.apk` on the target device. Run Metro on the same machine as the emulator with `npm run start:dev-client`.

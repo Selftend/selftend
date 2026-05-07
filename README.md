@@ -105,7 +105,7 @@ For Android setup, including the development-client identity, callback URLs, and
 4. Run the app:
 
 ```bash
-npm run start    # Expo dev server (web + Expo Go)
+npm run start    # Metro for the development client (QR code targets `Selftend Dev`)
 npm run web      # Expo web only
 npm run android  # Android dev build (see docs/android-development.md)
 ```
