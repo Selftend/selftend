@@ -71,11 +71,9 @@ Use Node `20.19.0+` for this repo. That matches the `package.json` engine requir
 cp .env.example .env
 ```
 
-For a self-hosted or bring-your-own-Supabase build, start from:
-
-```bash
-cp .env.self-host.example .env
-```
+Use `.env` for the hosted Supabase project. If you want the default
+`npm run start` command to use local Supabase, create `.env.local` with the local
+Supabase URL and local anon key from `npm run db:status`.
 
 3. Fill in:
 
@@ -105,10 +103,18 @@ For Android setup, including the development-client identity, callback URLs, and
 4. Run the app:
 
 ```bash
-npm run start    # Metro for the development client (QR code targets `Selftend Dev`)
-npm run web      # Expo web only
-npm run android  # Android dev build (see docs/android-development.md)
+npm run start         # development client with `.env.local` values
+npm run start:hosted  # development client with `.env` values, ignoring `.env.local`
+npm run web           # Expo web only
+npm run android       # Android dev build (see docs/android-development.md)
 ```
+
+Use `.env.local` for local Supabase development and `.env` for the hosted
+Supabase project. `npm run start` requires `.env.local`; use
+`npm run start:hosted` when you want the development client to use `.env` and
+ignore `.env.local`. Local Supabase on Android requires the current
+development build because the dev Android manifest allows cleartext HTTP only
+for `Selftend Dev`.
 
 Day-to-day commands:
 

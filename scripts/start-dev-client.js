@@ -7,6 +7,7 @@ const args = [expoCliPath, "start", "--dev-client", ...process.argv.slice(2)];
 const child = spawn(process.execPath, args, {
   env: {
     ...process.env,
+    EXPO_NO_DOTENV: "1",
     SELFTEND_APP_VARIANT: "development",
   },
   stdio: "inherit",

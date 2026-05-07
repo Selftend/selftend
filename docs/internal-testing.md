@@ -86,7 +86,6 @@ These workflows are manual by design. CI still validates pushes and pull request
 
 ### Future data separation docs smoke
 
-- `.env.self-host.example` contains only public `EXPO_PUBLIC_*` values
 - `docs/self-hosting.md` explains hosted Supabase now, then future local-only, custom Supabase, and advanced self-hosted modes
 - docs clearly say the Play closed-test build uses the maintainer backend
 - docs clearly say local-only mode, Drive sync, and runtime backend switching are deferred

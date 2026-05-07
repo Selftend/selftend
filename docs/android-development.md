@@ -53,9 +53,9 @@ Add `selftend-dev://auth-callback` to Supabase Auth redirect URLs before testing
 npm run android
 ```
 
-`npm run android` launches the configured Android Studio emulator when no Android device is connected, waits for it to boot, starts the Expo development-client server with the development app variant, configures `adb reverse` for Metro, then opens `Selftend Dev` with the `selftend-dev://expo-development-client/?url=...` URL. `npm run android:dev`, `npm run android:dev-server`, and `npm run android:studio` are aliases for the same flow.
+`npm run android` launches the configured Android Studio emulator when no Android device is connected, waits for it to boot, starts the Expo development-client server with the development app variant, configures `adb reverse` for Metro and the local Supabase API port, then opens `Selftend Dev` with the `selftend-dev://expo-development-client/?url=...` URL. `npm run android:dev`, `npm run android:dev-server`, and `npm run android:studio` are aliases for the same flow.
 
-You do not need to run `npm run start` first. `npm run start` (and its alias `npm run start:dev-client`) starts Metro for the development client when the emulator/device is already running. Use `npm run start:expo-go` if you specifically want plain `expo start` (web or Expo Go). For a fresh emulator boot plus install/launch of `Selftend Dev`, prefer `npm run android`.
+You do not need to run `npm run start` first. `npm run start` (and its alias `npm run start:dev-client`) starts Metro for the development client with `.env.local`, which is the local Supabase default. Use `npm run start:hosted` to start the same development client with `.env` and ignore `.env.local`. Use `npm run start:expo-go` if you specifically want plain `expo start` (web or Expo Go). For a fresh emulator boot plus install/launch of `Selftend Dev`, prefer `npm run android`.
 
 The script intentionally avoids Expo CLI's `--android` opener because it can fall back to Expo Go when the development client is missing or stale. Use `npm run android:server-only` if you want to start the emulator and server without launching the dev client. If automatic launch reports that `Selftend Dev` is not installed, install the latest development build, then rerun `npm run android`.
 
@@ -64,6 +64,37 @@ Pass Expo start flags after `--`, for example:
 ```bash
 npm run android -- --clear
 ```
+
+For physical-device local Supabase testing, the phone must be visible to `adb`
+through USB debugging or wireless debugging before the reverse port can be
+configured. Once `adb devices` lists the phone, run `npm run android` or:
+
+```bash
+adb reverse tcp:54321 tcp:54321
+npm run start -- --clear
+```
+
+Without `adb reverse`, `http://localhost:54321` in `.env.local` points at the
+phone itself and the app will fail network requests. Override the local
+Supabase port with `SELFTEND_LOCAL_SUPABASE_PORT` if the local stack is not using
+`54321`.
+
+The development build enables Android cleartext HTTP traffic so it can call the
+local Supabase API at `http://localhost:54321` during development. Rebuild and
+reinstall `Selftend Dev` after changing this native setting; Metro reloads do
+not update Android manifest permissions or network policy.
+
+Wireless debugging setup on Android:
+
+1. Enable Developer options by tapping Settings -> About phone -> Build number
+   seven times.
+2. Open Settings -> System -> Developer options and enable Wireless debugging.
+3. Open Wireless debugging -> Pair device with pairing code.
+4. On the development machine, run `adb pair PHONE_IP:PAIRING_PORT` and enter the
+   pairing code.
+5. Connect with the main wireless debugging address using
+   `adb connect PHONE_IP:ADB_PORT`, then confirm the phone appears in
+   `adb devices`.
 
 Once the development build is installed, keep using it as the default Android development client. The day-to-day workflow should be `npm run android` plus the installed dev build, with `npm run build:android:development` only when you need a refreshed binary.
 

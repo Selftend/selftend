@@ -7,8 +7,9 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "start": "node scripts/start-dev-client.js",
-    "start:dev-client": "node scripts/start-dev-client.js",
+    "start": "node --env-file=.env.local scripts/start-dev-client.js",
+    "start:dev-client": "node --env-file=.env.local scripts/start-dev-client.js",
+    "start:hosted": "node --env-file=.env scripts/start-dev-client.js",
     "start:expo-go": "expo start",
     "android": "node scripts/android-dev.js",
     "android:dev": "node scripts/android-dev.js",

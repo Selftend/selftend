@@ -1,4 +1,5 @@
 import type { ExpoConfig } from "expo/config";
+import { withAndroidManifest, type ConfigPlugin } from "@expo/config-plugins";
 
 const easBuildProfile = process.env.EAS_BUILD_PROFILE;
 const isDevelopmentBuild =
@@ -38,7 +39,23 @@ function validateReleaseBuildEnv() {
 
 validateReleaseBuildEnv();
 
-const config: ExpoConfig = {
+const withDevelopmentCleartextTraffic: ConfigPlugin = (config) => {
+  if (!isDevelopmentBuild) {
+    return config;
+  }
+
+  return withAndroidManifest(config, (config) => {
+    const application = config.modResults.manifest.application?.[0];
+
+    if (application) {
+      application.$["android:usesCleartextTraffic"] = "true";
+    }
+
+    return config;
+  });
+};
+
+const config: ExpoConfig = withDevelopmentCleartextTraffic({
   owner: "vasil.yoshev",
   name: appName,
   slug: appSlug,
@@ -101,6 +118,6 @@ const config: ExpoConfig = {
       projectId: easProjectId,
     },
   },
-};
+});
 
 export default config;

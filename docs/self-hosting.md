@@ -101,8 +101,6 @@ Manual export/import should come before automatic Google Drive sync. Automatic G
 
 ## Public build-time environment
 
-Self-hosters can start from [.env.self-host.example](../.env.self-host.example).
-
 Required public values:
 
 ```bash

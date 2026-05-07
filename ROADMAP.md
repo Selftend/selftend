@@ -7,6 +7,7 @@ Current implementation and setup are documented in:
 - [README.md](README.md)
 - [docs/stack.md](docs/stack.md)
 - [docs/deployment.md](docs/deployment.md)
+- [docs/android-development.md](docs/android-development.md)
 - [docs/android-closed-testing.md](docs/android-closed-testing.md)
 - [docs/internal-testing.md](docs/internal-testing.md)
 - [docs/policies.md](docs/policies.md)

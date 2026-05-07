@@ -19,6 +19,7 @@ const emulatorOnly = rawArgs.includes("--emulator-only");
 const shouldLaunchDevClient = !rawArgs.includes("--no-launch");
 const expoArgs = rawArgs.filter((arg) => !controlArgs.has(arg));
 const metroPort = getMetroPort(expoArgs);
+const localSupabasePort = Number(process.env.SELFTEND_LOCAL_SUPABASE_PORT || 54321);
 
 const isWindows = process.platform === "win32";
 const exeSuffix = isWindows ? ".exe" : "";
@@ -253,17 +254,11 @@ async function waitForReadyDevice() {
   process.exit(1);
 }
 
-function reverseMetroPort(deviceId) {
-  const result = runCapture(adb, [
-    "-s",
-    deviceId,
-    "reverse",
-    `tcp:${metroPort}`,
-    `tcp:${metroPort}`,
-  ]);
+function reverseTcpPort(deviceId, port, label) {
+  const result = runCapture(adb, ["-s", deviceId, "reverse", `tcp:${port}`, `tcp:${port}`]);
 
   if (result.status !== 0) {
-    console.warn(`Could not configure adb reverse for port ${metroPort}.`);
+    console.warn(`Could not configure adb reverse for ${label} on port ${port}.`);
     console.warn((result.stderr || result.stdout).trim());
   }
 }
@@ -281,7 +276,8 @@ function openDevelopmentClient(deviceId) {
     return;
   }
 
-  reverseMetroPort(deviceId);
+  reverseTcpPort(deviceId, metroPort, "Metro");
+  reverseTcpPort(deviceId, localSupabasePort, "local Supabase");
 
   const manifestUrl = `http://127.0.0.1:${metroPort}`;
   const devClientUrl = `${DEV_CLIENT_SCHEME}://expo-development-client/?url=${encodeURIComponent(
