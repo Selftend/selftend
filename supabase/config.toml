@@ -1,2 +1,14 @@
 [functions.send-web-reminders]
 verify_jwt = false
+
+# Optional: Google OAuth against the local stack. Uncomment + export
+# GOOGLE_LOCAL_CLIENT_ID and GOOGLE_LOCAL_CLIENT_SECRET before `supabase start`.
+# See supabase/README.md "Local development" for the dev OAuth client setup.
+# Left commented out by default so unset env vars don't print warnings on every
+# CLI invocation.
+# [auth.external.google]
+# enabled = true
+# client_id = "env(GOOGLE_LOCAL_CLIENT_ID)"
+# secret = "env(GOOGLE_LOCAL_CLIENT_SECRET)"
+# redirect_uri = "http://localhost:54321/auth/v1/callback"
+# skip_nonce_check = true

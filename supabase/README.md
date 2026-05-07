@@ -41,6 +41,72 @@ For launch builds, also set:
 
 Never put service-role keys, database passwords, SMTP secrets, OAuth secrets, JWT secrets, or other private backend secrets in Expo public env vars.
 
+## Local development
+
+Run a full local Supabase stack (Postgres, Auth, Storage, Studio, Inbucket) via the CLI. Migrations and `seed.sql` are applied on every reset, so test users come back deterministically.
+
+### Prerequisites
+
+- Docker (Docker Desktop or `docker` + `docker compose`). The CLI shells out to Docker; nothing else to install — the Supabase CLI is already a dev dependency invoked through `npm exec supabase`.
+
+### Commands
+
+```bash
+npm run db:start    # boot the local stack (first run pulls images; later runs are fast)
+npm run db:status   # print URLs + the local anon key (copy into .env.local)
+npm run db:reset    # drop + re-apply migrations + run supabase/seed.sql
+npm run db:stop     # shut everything down
+```
+
+`db:reset` is wrapped in `scripts/db-reset.js` because `supabase db reset` recreates the GoTrue container with a new Docker IP, but Kong's nginx caches the old upstream IP and returns 502 Bad Gateway for auth requests until it's restarted. The wrapper restarts Kong automatically after each reset.
+
+### Point the app at the local stack
+
+```bash
+cp .env.local.example .env.local
+# then paste the anon key from `npm run db:status` into EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+```
+
+Expo loads `.env.local` with priority over `.env`, so `npm start` will now talk to `http://localhost:54321`. To switch back to the cloud project, delete `.env.local`.
+
+**Android emulator:** replace `localhost` with `10.0.2.2` in `.env.local` so the emulated device can reach the host's Supabase containers.
+
+### Seeded test users
+
+All three accounts share the password `password123`. They are recreated on every `npm run db:reset`.
+
+| Email             | UUID                                   | State                                                  |
+| ----------------- | -------------------------------------- | ------------------------------------------------------ |
+| `alice@test.local` | `…0001` | Empty account, post-signup, CBT onboarding not done   |
+| `bob@test.local`   | `…0002` | Mid-use, 5 thought records, reminders enabled         |
+| `demo@test.local`  | `…0003` | Polished demo/screenshot account, 10 thought records  |
+
+Sign in via the app's email/password form (`signInWithPassword` in `src/features/auth/api.ts`).
+
+### Inspecting auth emails
+
+Local Supabase routes all auth emails (password reset, signup confirmation) to **Inbucket** at `http://localhost:54324`. Use it to grab links during password-reset testing without configuring real SMTP.
+
+### Optional: Google OAuth against the local stack
+
+Only needed if you want to exercise the full Google sign-in flow locally. The seeded password users cover the everyday path.
+
+1. Uncomment the `[auth.external.google]` block in `supabase/config.toml` (left commented by default to avoid CLI warnings about unset env vars).
+2. In Google Cloud Console, create a separate OAuth web client for development:
+   - Authorized JavaScript origin: `http://localhost:8081`
+   - Authorized redirect URI: `http://localhost:54321/auth/v1/callback`
+3. Export the credentials before starting the stack:
+   ```bash
+   export GOOGLE_LOCAL_CLIENT_ID=...
+   export GOOGLE_LOCAL_CLIENT_SECRET=...
+   npm run db:start
+   ```
+4. Sign in with any real Google account — local Auth creates the user on first sign-in.
+
+### Integration tests (future)
+
+The current Jest setup mocks Supabase deeply (`test/setup.js`, `test/render-with-providers.tsx`). A future option is a separate `*.integration.test.ts` pattern that uses the real client against `http://localhost:54321` with one of the seeded users — out of scope for now.
+
 ## First setup
 
 1. create the Supabase project
