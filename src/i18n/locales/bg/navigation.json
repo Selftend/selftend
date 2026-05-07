@@ -1,6 +1,7 @@
 {
   "header": {
     "openNav": "Отвори навигация",
+    "closeNav": "Затвори навигация",
     "goHome": "Към начало",
     "appName": "Selftend",
     "openGithub": "Отвори Selftend в GitHub"
@@ -22,6 +23,7 @@
   },
   "userMenu": {
     "account": "Профил",
+    "openMenu": "Отвори меню на профила",
     "settings": "Настройки",
     "signOut": "Излизане"
   },

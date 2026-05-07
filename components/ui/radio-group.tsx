@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { COMPACT_CONTROL_HIT_SLOP } from "@/src/lib/accessibility";
 import * as RadioGroupPrimitive from "@rn-primitives/radio-group";
 import { Platform } from "react-native";
 
@@ -10,11 +11,19 @@ function RadioGroup({
 }
 
 function RadioGroupItem({
+  accessibilityRole = "radio",
+  accessibilityState,
   className,
+  hitSlop = COMPACT_CONTROL_HIT_SLOP,
   ...props
 }: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
   return (
     <RadioGroupPrimitive.Item
+      accessibilityRole={accessibilityRole}
+      accessibilityState={{
+        disabled: props.disabled ?? undefined,
+        ...accessibilityState,
+      }}
       className={cn(
         "border-input dark:bg-input/30 aspect-square size-4 shrink-0 items-center justify-center rounded-full border shadow-sm shadow-black/5",
         Platform.select({
@@ -23,6 +32,7 @@ function RadioGroupItem({
         props.disabled && "opacity-50",
         className,
       )}
+      hitSlop={hitSlop}
       {...props}
     >
       <RadioGroupPrimitive.Indicator className="bg-primary size-2 rounded-full" />

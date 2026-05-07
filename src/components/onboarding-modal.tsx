@@ -3,6 +3,7 @@ import { ActivityIndicator, Modal, View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
 interface OnboardingModalProps {
   actionLabel: string;
@@ -23,8 +24,15 @@ export function OnboardingModal({
   title,
   visible,
 }: OnboardingModalProps) {
+  const reduceMotionEnabled = useReduceMotionEnabled();
+
   return (
-    <Modal animationType="fade" onRequestClose={() => undefined} transparent visible={visible}>
+    <Modal
+      animationType={reduceMotionEnabled ? "none" : "fade"}
+      onRequestClose={() => undefined}
+      transparent
+      visible={visible}
+    >
       <View className="flex-1 items-center justify-center bg-black/50 p-6">
         <Card className="w-full max-w-lg">
           <CardHeader>

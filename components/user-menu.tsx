@@ -21,9 +21,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Text } from "@/components/ui/text";
 import { signOut } from "@/src/features/auth/api";
 import { useUserProfile } from "@/src/features/profile/queries";
-import { supportedLanguages, type SupportedLanguage } from "@/src/i18n";
+import { supportedLanguages } from "@/src/i18n";
 import { resolveThemePreference, useSystemColorScheme } from "@/src/lib/color-scheme";
 import { appEnv } from "@/src/lib/env";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useLanguage } from "@/src/providers/i18n-provider";
 import { useSession } from "@/src/providers/session-provider";
 import { useThemeStore, type ThemePreference } from "@/src/stores/theme-store";
@@ -65,7 +66,12 @@ export function UserMenu() {
   return (
     <Popover>
       <PopoverTrigger asChild ref={popoverTriggerRef}>
-        <Button variant="ghost" size="icon" className="size-8 rounded-full">
+        <Button
+          accessibilityLabel={t("userMenu.openMenu")}
+          variant="ghost"
+          size="icon"
+          className="size-8 rounded-full"
+        >
           {isSignedIn ? (
             <ProfileAvatar avatarUrl={avatarUrl} email={email} />
           ) : (
@@ -95,9 +101,14 @@ export function UserMenu() {
             </Text>
             {supportedLanguages.map((code) => (
               <Pressable
+                accessibilityLabel={t(`languageToggle.${code}`)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: language === code }}
                 key={code}
                 className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
+                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                 onPress={() => void setLanguage(code)}
+                role="button"
               >
                 <View className="size-4 items-center justify-center">
                   {language === code ? (
@@ -115,9 +126,14 @@ export function UserMenu() {
             </Text>
             {THEME_OPTIONS.map((value) => (
               <Pressable
+                accessibilityLabel={t(`themeToggle.${value}`)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: preference === value }}
                 key={value}
                 className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
+                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                 onPress={() => setPreference(value)}
+                role="button"
               >
                 <View className="size-4 items-center justify-center">
                   {preference === value ? (

@@ -8,6 +8,7 @@ Index for everything under `docs/`. Top-level files like [README.md](../README.m
 - [product-principles.md](product-principles.md) — the eleven principles that shape every product decision. Read this before proposing scope.
 - [stack.md](stack.md) — approved technical stack, why each piece is in, and dependency policy.
 - [architecture.md](architecture.md) — how the runtime layers fit together: providers, routes, auth flow, data layer, reminders, where web and native diverge.
+- [accessibility.md](accessibility.md) — accessibility baseline, shared helpers, and contributor checklist for new UI.
 
 ## Product
 
@@ -18,6 +19,7 @@ Index for everything under `docs/`. Top-level files like [README.md](../README.m
 ## Technical
 
 - [android-development.md](android-development.md) — Android dev-build setup, callback URLs, day-to-day workflow, troubleshooting, local builds.
+- [accessibility.md](accessibility.md) — screen-reader labels, keyboard support, touch targets, contrast, and reduced-motion conventions.
 - [branding.md](branding.md) — icon source, generated sizes, regeneration script.
 - [deployment.md](deployment.md) — single-page web deployment and Supabase auth callback setup.
 - [self-hosting.md](self-hosting.md) — supported hosted and self-hosted backend modes.

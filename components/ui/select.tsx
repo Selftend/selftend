@@ -2,6 +2,7 @@ import { Icon } from "@/components/ui/icon";
 import { NativeOnlyAnimatedView } from "@/components/ui/native-only-animated-view";
 import { TextClassContext } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import * as SelectPrimitive from "@rn-primitives/select";
 import { Check, ChevronDown, ChevronDownIcon, ChevronUpIcon } from "lucide-react-native";
 import * as React from "react";
@@ -37,9 +38,12 @@ function SelectValue({
 }
 
 function SelectTrigger({
+  accessibilityRole = "button",
+  accessibilityState,
   ref,
   className,
   children,
+  hitSlop = DEFAULT_INTERACTIVE_HIT_SLOP,
   size = "default",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
@@ -49,6 +53,11 @@ function SelectTrigger({
   return (
     <SelectPrimitive.Trigger
       ref={ref}
+      accessibilityRole={accessibilityRole}
+      accessibilityState={{
+        disabled: props.disabled ?? undefined,
+        ...accessibilityState,
+      }}
       className={cn(
         "border-input dark:bg-input/30 dark:active:bg-input/50 bg-background flex h-10 flex-row items-center justify-between gap-2 rounded-md border px-3 py-2 shadow-sm shadow-black/5 sm:h-9",
         Platform.select({
@@ -58,6 +67,7 @@ function SelectTrigger({
         size === "sm" && "h-8 py-2 sm:py-1.5",
         className,
       )}
+      hitSlop={hitSlop}
       {...props}
     >
       <>{children}</>

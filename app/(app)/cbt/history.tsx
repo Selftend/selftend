@@ -1,10 +1,10 @@
 import { router } from "expo-router";
-import { Pressable, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
+import { AccessibleCardLink } from "@/src/components/accessible-card-link";
 import { EmptyState, LoadingState } from "@/src/components/screen-state";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -31,19 +31,15 @@ export default function CbtHistoryScreen() {
           ) : null}
 
           {data?.map((record) => (
-            <Pressable key={record.id} onPress={() => router.push(`/cbt/${record.id}`)}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>{record.automaticThought}</CardTitle>
-                  <CardDescription>
-                    {t("history.recordSummary", {
-                      timestamp: formatTimestamp(record.updatedAt),
-                      balancedThought: record.balancedThought,
-                    })}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </Pressable>
+            <AccessibleCardLink
+              key={record.id}
+              description={t("history.recordSummary", {
+                timestamp: formatTimestamp(record.updatedAt),
+                balancedThought: record.balancedThought,
+              })}
+              onPress={() => router.push(`/cbt/${record.id}`)}
+              title={record.automaticThought}
+            />
           ))}
         </View>
       </ScrollView>

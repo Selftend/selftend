@@ -1,10 +1,11 @@
 import { router } from "expo-router";
-import { Pressable, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
+import { AccessibleCardLink } from "@/src/components/accessible-card-link";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
@@ -31,32 +32,23 @@ export default function HomeScreen() {
             </CardHeader>
           </Card>
 
-          <Pressable onPress={() => router.push("/cbt")}>
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("home.cbtSection")}</CardTitle>
-                <CardDescription>{t("home.cbtSectionDescription")}</CardDescription>
-              </CardHeader>
-            </Card>
-          </Pressable>
+          <AccessibleCardLink
+            description={t("home.cbtSectionDescription")}
+            onPress={() => router.push("/cbt")}
+            title={t("home.cbtSection")}
+          />
 
-          <Pressable onPress={() => router.push("/cbt/history")}>
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("home.thoughtHistory")}</CardTitle>
-                <CardDescription>{t("home.thoughtHistoryDescription")}</CardDescription>
-              </CardHeader>
-            </Card>
-          </Pressable>
+          <AccessibleCardLink
+            description={t("home.thoughtHistoryDescription")}
+            onPress={() => router.push("/cbt/history")}
+            title={t("home.thoughtHistory")}
+          />
 
-          <Pressable onPress={() => router.push("/(app)/(tabs)/settings")}>
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("home.settingsAndSupport")}</CardTitle>
-                <CardDescription>{t("home.settingsAndSupportDescription")}</CardDescription>
-              </CardHeader>
-            </Card>
-          </Pressable>
+          <AccessibleCardLink
+            description={t("home.settingsAndSupportDescription")}
+            onPress={() => router.push("/(app)/(tabs)/settings")}
+            title={t("home.settingsAndSupport")}
+          />
 
           <View className="gap-2">
             <Text variant="h3">{t("home.recentActivity")}</Text>

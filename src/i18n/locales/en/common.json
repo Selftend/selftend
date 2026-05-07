@@ -19,6 +19,9 @@
     "problem": "Something did not save",
     "archived": "Archived"
   },
+  "toast": {
+    "dismissHint": "Dismiss this message"
+  },
   "safety": {
     "title": "Use urgent support for urgent risk",
     "description": "Selftend is for guided self-help when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders.",

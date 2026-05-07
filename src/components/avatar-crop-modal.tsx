@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
 interface AvatarCropModalProps {
   imageUri: string;
@@ -19,6 +20,7 @@ export function AvatarCropModal({ imageUri, onCancel, onCrop, visible }: AvatarC
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const reduceMotionEnabled = useReduceMotionEnabled();
 
   const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
     setCroppedAreaPixels(croppedPixels);
@@ -31,7 +33,12 @@ export function AvatarCropModal({ imageUri, onCancel, onCrop, visible }: AvatarC
   };
 
   return (
-    <Modal animationType="fade" onRequestClose={onCancel} transparent visible={visible}>
+    <Modal
+      animationType={reduceMotionEnabled ? "none" : "fade"}
+      onRequestClose={onCancel}
+      transparent
+      visible={visible}
+    >
       <View style={styles.overlay}>
         <View style={styles.container}>
           <View style={styles.header}>

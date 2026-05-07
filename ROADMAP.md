@@ -10,6 +10,7 @@ Current implementation and setup are documented in:
 - [docs/android-development.md](docs/android-development.md)
 - [docs/android-closed-testing.md](docs/android-closed-testing.md)
 - [docs/internal-testing.md](docs/internal-testing.md)
+- [docs/accessibility.md](docs/accessibility.md)
 - [docs/policies.md](docs/policies.md)
 - [docs/gdpr-compliance.md](docs/gdpr-compliance.md)
 - [docs/analytics.md](docs/analytics.md)
@@ -66,7 +67,7 @@ Build these after the foundation is stable enough that each flow can follow shar
 2. [ ] Build lightweight journaling.
 3. [ ] Expand the focused guided self-help tools library beyond the current CBT slice.
 4. [ ] Add a visible feedback/support entry point that opens email or GitHub guidance and warns users not to include urgent crisis details.
-5. [ ] Establish an accessibility baseline for new screens: contrast, screen-reader labels, keyboard support on web, touch target size, reduced-motion respect, and scalable text.
+5. [ ] Apply the accessibility baseline from [docs/accessibility.md](docs/accessibility.md) to each new MVP flow and close the known gaps there as the UI stabilizes.
 6. [ ] Standardize save-failed, auth-expired, permission-denied, and destructive-action states across MVP flows.
 7. [ ] Add lightweight tests for every new module's schemas, repositories, export/delete coverage, and critical UI states.
 8. [ ] Add a progress view focused on reflection, not pressure.

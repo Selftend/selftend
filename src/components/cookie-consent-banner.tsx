@@ -55,7 +55,7 @@ interface CookiePreferencesPanelProps {
 
 export function CookiePreferencesPanel({ onDone }: CookiePreferencesPanelProps) {
   const { t } = useTranslation("settings");
-  const { analytics, setAnalytics, acceptEssentialOnly, acceptAll } = useCookieConsentStore();
+  const { analytics, acceptEssentialOnly, acceptAll } = useCookieConsentStore();
   const [analyticsToggle, setAnalyticsToggle] = useState(analytics);
 
   const handleSave = () => {
@@ -95,7 +95,12 @@ export function CookiePreferencesPanel({ onDone }: CookiePreferencesPanelProps) 
                     {t("cookieConsent.analyticsDescription")}
                   </Text>
                 </View>
-                <Switch checked={analyticsToggle} onCheckedChange={setAnalyticsToggle} />
+                <Switch
+                  accessibilityHint={t("cookieConsent.analyticsDescription")}
+                  accessibilityLabel={t("cookieConsent.analytics")}
+                  checked={analyticsToggle}
+                  onCheckedChange={setAnalyticsToggle}
+                />
               </View>
               <View className="flex-row gap-2">
                 <Button onPress={handleSave} size="sm">

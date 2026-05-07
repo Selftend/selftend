@@ -1,11 +1,12 @@
 import { router } from "expo-router";
-import { Pressable, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
+import { AccessibleCardLink } from "@/src/components/accessible-card-link";
 import { OnboardingModal } from "@/src/components/onboarding-modal";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
@@ -72,22 +73,16 @@ export default function CbtHomeScreen() {
               </View>
             </View>
 
-            <Pressable onPress={() => router.push("/cbt/learn")}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("home.distortionGuide")}</CardTitle>
-                  <CardDescription>{t("home.distortionGuideDescription")}</CardDescription>
-                </CardHeader>
-              </Card>
-            </Pressable>
-            <Pressable onPress={() => router.push("/cbt/history")}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("home.recordHistory")}</CardTitle>
-                  <CardDescription>{t("home.recordHistoryDescription")}</CardDescription>
-                </CardHeader>
-              </Card>
-            </Pressable>
+            <AccessibleCardLink
+              description={t("home.distortionGuideDescription")}
+              onPress={() => router.push("/cbt/learn")}
+              title={t("home.distortionGuide")}
+            />
+            <AccessibleCardLink
+              description={t("home.recordHistoryDescription")}
+              onPress={() => router.push("/cbt/history")}
+              title={t("home.recordHistory")}
+            />
 
             <View className="gap-2">
               <Text variant="h3">{t("home.currentFlow")}</Text>

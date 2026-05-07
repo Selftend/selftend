@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Text } from "@/components/ui/text";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { useRecordPolicyConsent } from "@/src/features/settings/queries";
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 
 interface ConsentModalProps {
@@ -20,6 +21,7 @@ export function ConsentModal({ visible, onAccepted }: ConsentModalProps) {
   const { t } = useTranslation("settings");
   const { user } = useSession();
   const [accepted, setAccepted] = useState(false);
+  const reduceMotionEnabled = useReduceMotionEnabled();
   const consentMutation = useRecordPolicyConsent(user?.id ?? null);
 
   const handleAccept = async () => {
@@ -32,7 +34,7 @@ export function ConsentModal({ visible, onAccepted }: ConsentModalProps) {
   };
 
   return (
-    <Modal animationType="fade" transparent visible={visible}>
+    <Modal animationType={reduceMotionEnabled ? "none" : "fade"} transparent visible={visible}>
       <View className="flex-1 items-center justify-center bg-black/50 p-6">
         <Card className="w-full max-w-lg">
           <CardHeader>
@@ -50,10 +52,19 @@ export function ConsentModal({ visible, onAccepted }: ConsentModalProps) {
                 </Button>
               </View>
               <Pressable
+                accessibilityLabel={t("consent.checkbox")}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: accepted }}
                 className="flex-row items-start gap-3"
                 onPress={() => setAccepted(!accepted)}
+                role="checkbox"
               >
-                <Checkbox checked={accepted} onCheckedChange={setAccepted} />
+                <Checkbox
+                  accessibilityElementsHidden
+                  checked={accepted}
+                  importantForAccessibility="no"
+                  onCheckedChange={setAccepted}
+                />
                 <Text className="flex-1 text-sm">{t("consent.checkbox")}</Text>
               </Pressable>
               <Button

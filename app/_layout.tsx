@@ -18,6 +18,7 @@ import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "nativewind";
 import { useEffect, useRef } from "react";
 import { Pressable, useWindowDimensions, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import { AppHeader } from "@/components/app-header";
 import { SidebarNav } from "@/components/sidebar-nav";
@@ -29,6 +30,7 @@ import {
   resolveThemePreference,
   useSystemColorScheme,
 } from "@/src/lib/color-scheme";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { AppProviders } from "@/src/providers/app-providers";
 import { useSession } from "@/src/providers/session-provider";
@@ -91,6 +93,7 @@ export default function RootLayout() {
 }
 
 function AppShell() {
+  const { t } = useTranslation("navigation");
   const { width } = useWindowDimensions();
   const isDesktop = width >= DESKTOP_BREAKPOINT;
   const { session } = useSession();
@@ -129,9 +132,12 @@ function AppShell() {
         <View className="absolute inset-0 z-50 flex-row">
           <SidebarNav includeTopInset onSelect={close} />
           <Pressable
-            accessibilityLabel="Close navigation"
+            accessibilityLabel={t("header.closeNav")}
+            accessibilityRole="button"
             className="flex-1 bg-black/50"
+            hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
             onPress={close}
+            role="button"
           />
         </View>
       ) : null}

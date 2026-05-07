@@ -212,6 +212,10 @@ export default function ThoughtRecordEditorScreen() {
             const isActive = stepIndex === index;
             return (
               <Button
+                accessibilityState={{
+                  disabled: index > stepIndex,
+                  selected: isActive,
+                }}
                 key={step.title}
                 disabled={index > stepIndex}
                 onPress={() => {
@@ -246,6 +250,8 @@ export default function ThoughtRecordEditorScreen() {
                 <Label>{t("record.situation")}</Label>
                 <Text variant="muted">{t("record.situationPlaceholder")}</Text>
                 <Textarea
+                  accessibilityHint={t("record.situationHint")}
+                  accessibilityLabel={t("record.situation")}
                   onBlur={onBlur}
                   onChangeText={onChange}
                   placeholder={t("record.situationExample")}
@@ -268,6 +274,8 @@ export default function ThoughtRecordEditorScreen() {
                 <Label>{t("record.automaticThought")}</Label>
                 <Text variant="muted">{t("record.automaticThoughtPlaceholder")}</Text>
                 <Textarea
+                  accessibilityHint={t("record.automaticThoughtHint")}
+                  accessibilityLabel={t("record.automaticThought")}
                   onBlur={onBlur}
                   onChangeText={onChange}
                   placeholder={t("record.automaticThoughtExample")}
@@ -293,17 +301,22 @@ export default function ThoughtRecordEditorScreen() {
                 </View>
                 {emotionOptions.map((emotion) => {
                   const checked = value.includes(emotion);
+                  const emotionKey = emotion.toLowerCase();
+                  const label = t(`emotions.${emotionKey}`);
                   const toggle = () => {
                     const nextValues = checked
                       ? value.filter((item) => item !== emotion)
                       : [...value, emotion];
                     onChange(nextValues);
                   };
-                  const emotionKey = emotion.toLowerCase();
                   return (
                     <View key={emotion} className="flex-row items-center gap-3">
-                      <Checkbox checked={checked} onCheckedChange={toggle} />
-                      <Label onPress={toggle}>{t(`emotions.${emotionKey}`)}</Label>
+                      <Checkbox
+                        accessibilityLabel={label}
+                        checked={checked}
+                        onCheckedChange={toggle}
+                      />
+                      <Label onPress={toggle}>{label}</Label>
                     </View>
                   );
                 })}
@@ -327,6 +340,7 @@ export default function ThoughtRecordEditorScreen() {
                 </View>
                 {distortionDefinitions.map((distortion) => {
                   const checked = value.includes(distortion.key);
+                  const title = t(`distortions.${distortion.key}.title`);
                   const toggle = () => {
                     const nextValues = checked
                       ? value.filter((item) => item !== distortion.key)
@@ -337,8 +351,12 @@ export default function ThoughtRecordEditorScreen() {
                     <Card key={distortion.key}>
                       <CardHeader>
                         <View className="flex-row items-center gap-3">
-                          <Checkbox checked={checked} onCheckedChange={toggle} />
-                          <Label onPress={toggle}>{t(`distortions.${distortion.key}.title`)}</Label>
+                          <Checkbox
+                            accessibilityLabel={title}
+                            checked={checked}
+                            onCheckedChange={toggle}
+                          />
+                          <Label onPress={toggle}>{title}</Label>
                         </View>
                         <CardDescription>
                           {t(`distortions.${distortion.key}.shortDescription`)}
@@ -365,6 +383,8 @@ export default function ThoughtRecordEditorScreen() {
                   <Label>{t("record.balancedThoughtLabel")}</Label>
                   <Text variant="muted">{t("record.balancedThoughtPlaceholder")}</Text>
                   <Textarea
+                    accessibilityHint={t("record.balancedThoughtHint")}
+                    accessibilityLabel={t("record.balancedThoughtLabel")}
                     onBlur={onBlur}
                     onChangeText={onChange}
                     placeholder={t("record.balancedThoughtExample")}

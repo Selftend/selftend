@@ -293,12 +293,19 @@ export default function SettingsScreen() {
                     <Text>{t("reminders.daily")}</Text>
                     <Text variant="muted">{t("reminders.dailyHint")}</Text>
                   </View>
-                  <Switch checked={remindersEnabled} onCheckedChange={setRemindersEnabled} />
+                  <Switch
+                    accessibilityHint={t("reminders.dailyHint")}
+                    accessibilityLabel={t("reminders.daily")}
+                    checked={remindersEnabled}
+                    onCheckedChange={setRemindersEnabled}
+                  />
                 </View>
                 <View className="flex-row gap-3">
                   <View className="flex-1 gap-2">
                     <Label>{t("reminders.hour")}</Label>
                     <Input
+                      accessibilityHint={t("reminders.hourPlaceholder")}
+                      accessibilityLabel={t("reminders.hour")}
                       autoCapitalize="none"
                       autoCorrect={false}
                       keyboardType="number-pad"
@@ -310,6 +317,8 @@ export default function SettingsScreen() {
                   <View className="flex-1 gap-2">
                     <Label>{t("reminders.minute")}</Label>
                     <Input
+                      accessibilityHint={t("reminders.minutePlaceholder")}
+                      accessibilityLabel={t("reminders.minute")}
                       autoCapitalize="none"
                       autoCorrect={false}
                       keyboardType="number-pad"
@@ -699,6 +708,7 @@ function DeleteAccountButton() {
         <View className="gap-2 py-2">
           <Label>{t("account.deleteConfirmLabel")}</Label>
           <Input
+            accessibilityLabel={t("account.deleteConfirmLabel")}
             autoCapitalize="characters"
             onChangeText={setConfirmInput}
             placeholder={t("account.deleteConfirmPlaceholder")}

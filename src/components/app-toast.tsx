@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,7 @@ const toneClasses: Record<ToastTone, string> = {
 };
 
 export function AppToast() {
+  const { t } = useTranslation("common");
   const insets = useSafeAreaInsets();
   const toast = useToastStore((state) => state.toast);
   const dismissToast = useToastStore((state) => state.dismissToast);
@@ -36,7 +38,17 @@ export function AppToast() {
       pointerEvents="box-none"
       style={{ top: insets.top + 12 }}
     >
-      <Pressable accessibilityRole="alert" className="w-full max-w-xl" onPress={dismissToast}>
+      <Pressable
+        accessibilityHint={t("toast.dismissHint")}
+        accessibilityLabel={
+          toast.description ? `${toast.title}. ${toast.description}` : toast.title
+        }
+        accessibilityLiveRegion="polite"
+        accessibilityRole="button"
+        className="w-full max-w-xl"
+        onPress={dismissToast}
+        role="button"
+      >
         <Card className={cn("gap-0 py-4 shadow-md", toneClasses[toast.tone])}>
           <CardHeader className="gap-1 px-4">
             <CardTitle>{toast.title}</CardTitle>

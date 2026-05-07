@@ -1,3 +1,4 @@
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { Platform } from "react-native";
 import Animated from "react-native-reanimated";
 
@@ -11,11 +12,17 @@ import Animated from "react-native-reanimated";
  * </NativeOnlyAnimatedView>
  */
 function NativeOnlyAnimatedView(props: React.ComponentPropsWithoutRef<typeof Animated.View>) {
+  const reduceMotionEnabled = useReduceMotionEnabled();
+
   if (Platform.OS === "web") {
     return <>{props.children as React.ReactNode}</>;
-  } else {
-    return <Animated.View {...props} />;
   }
+
+  if (reduceMotionEnabled) {
+    return <Animated.View {...props} entering={undefined} exiting={undefined} layout={undefined} />;
+  }
+
+  return <Animated.View {...props} />;
 }
 
 export { NativeOnlyAnimatedView };

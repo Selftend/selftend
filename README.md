@@ -42,6 +42,7 @@ Included now:
 - quiet reminder settings, default-off, with native local reminders and web push infrastructure
 - support, legal, privacy, crisis, and account-deletion surfaces
 - shared safety callout, loading/empty/error states, mobile form shell, app toast feedback, and global error fallback
+- accessibility baseline with shared target-size, reduced-motion, accessible card-link, and control-state helpers
 - Jest test harness
 - provider-aware component test example for i18n, navigation assumptions, and mocked backend data
 - GitHub issue / PR templates and CI workflow
@@ -158,6 +159,7 @@ Most-read deeper docs:
 
 - [docs/contributor-roles.md](docs/contributor-roles.md) — practical starting points by role (developer, designer, translator, tester, mental-health expert)
 - [docs/product-principles.md](docs/product-principles.md) — product guardrails
+- [docs/accessibility.md](docs/accessibility.md) — accessibility baseline and contributor checklist
 - [docs/stack.md](docs/stack.md) — approved technical stack
 - [docs/architecture.md](docs/architecture.md) — how the runtime layers fit together
 - [docs/data-privacy-model.md](docs/data-privacy-model.md) — data classes, privacy rules, export and deletion model

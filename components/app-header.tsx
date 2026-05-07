@@ -40,6 +40,7 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
           accessibilityLabel={t("header.goHome")}
         >
           <Image
+            accessible={false}
             source={require("../assets/icon.png")}
             resizeMode="contain"
             style={{ width: 28, height: 28, borderRadius: 6 }}

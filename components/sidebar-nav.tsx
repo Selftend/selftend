@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface NavItemDef {
   labelKey: string;
@@ -138,11 +139,16 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     const label = t(item.labelKey);
     return (
       <Pressable
+        accessibilityLabel={label}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
         key={item.href}
         onPress={() => {
           router.push(item.href as Parameters<typeof router.push>[0]);
           onSelect?.();
         }}
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+        role="button"
         className={cn(
           "flex-row items-center gap-3 rounded-md py-2.5",
           getLevelPadding(level),
@@ -181,8 +187,11 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
         accessibilityLabel={
           open ? t("sidebar.collapse", { label }) : t("sidebar.expand", { label })
         }
-        accessibilityState={{ expanded: open }}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open, selected: active }}
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
         onPress={onPress}
+        role="button"
         className={cn(
           "flex-row items-center gap-3 rounded-md py-2.5",
           getLevelPadding(level),

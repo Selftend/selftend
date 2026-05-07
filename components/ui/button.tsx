@@ -1,5 +1,6 @@
 import { TextClassContext } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Platform, Pressable } from "react-native";
 
@@ -92,12 +93,27 @@ type ButtonProps = React.ComponentProps<typeof Pressable> &
   React.RefAttributes<typeof Pressable> &
   VariantProps<typeof buttonVariants>;
 
-function Button({ className, variant, size, ...props }: ButtonProps) {
+function Button({
+  accessibilityRole = "button",
+  accessibilityState,
+  className,
+  hitSlop = DEFAULT_INTERACTIVE_HIT_SLOP,
+  role = "button",
+  variant,
+  size,
+  ...props
+}: ButtonProps) {
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
       <Pressable
+        accessibilityRole={accessibilityRole}
+        accessibilityState={{
+          disabled: props.disabled ?? undefined,
+          ...accessibilityState,
+        }}
         className={cn(props.disabled && "opacity-50", buttonVariants({ variant, size }), className)}
-        role="button"
+        hitSlop={hitSlop}
+        role={role}
         {...props}
       />
     </TextClassContext.Provider>
