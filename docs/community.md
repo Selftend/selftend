@@ -45,6 +45,8 @@ Early on, these can forward to one real inbox. They do not need a full paid team
 - community moderators
 - product and content editors
 
+For a practical "if you are X, here's how to start" guide, see [contributor-roles.md](contributor-roles.md). This list is the strategy-level view; that file is the onboarding view.
+
 ## Support page plan
 
 The product should eventually include a support page that links to:

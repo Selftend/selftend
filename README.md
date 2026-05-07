@@ -100,236 +100,60 @@ For local Expo web auth, make sure the matching callback URL is allowed in Supab
 http://localhost:8081/auth-callback
 ```
 
-For quick native auth checks in Expo Go, Supabase also needs to allow the Expo Go callback URL that `Linking.createURL("auth-callback")` produces, commonly:
-
-```text
-exp://**/--/auth-callback
-```
-
-If Expo Go still falls back to the production Site URL, add the exact Metro URL shown for the current session, for example:
-
-```text
-exp://192.168.0.12:8081/--/auth-callback
-```
-
-Use the Android development build for reliable OAuth testing. Expo documents Expo Go callback URLs as development URLs, not stable production-style auth callbacks.
-
-The Android development client intentionally uses a separate app identity from the Play build so both can be installed at the same time:
-
-```text
-Development package: org.vasilyoshev.selftend.dev
-Development scheme: selftend-dev
-Play package: org.vasilyoshev.selftend
-Play scheme: selftend
-```
-
-Add `selftend-dev://auth-callback` to Supabase Auth redirect URLs before testing Google or email auth in the development build.
+For Android setup, including the development-client identity, callback URLs, and `npm run android` workflow, see [docs/android-development.md](docs/android-development.md).
 
 4. Run the app:
 
 ```bash
-npm run start
+npm run start    # Expo dev server (web + Expo Go)
+npm run web      # Expo web only
+npm run android  # Android dev build (see docs/android-development.md)
 ```
 
-Useful commands:
+Day-to-day commands:
 
 ```bash
-npm run web
-npm run android
-npm run android:dev-server
-npm run android:server-only
-npm run android:emulator:list
-npm run android:emulator
-npm run start:dev-client
-npm run android:expo-go
-npm exec expo -- config --type prebuild --json
-npm run build:android:development
-npm run build:android:development:local
-npm run build:android:preview
-npm run build:android:production
-EAS_LOCAL_BUILD_ARTIFACTS_DIR=./build-artifacts npm exec eas-cli -- build --platform android --profile production --local --non-interactive
-npm run export:web
-npm run serve:web:production
 npm run typecheck
-npm test -- --runInBand
-npm exec @react-native-reusables/cli@latest -- doctor --summary --yes
+npm run lint
+npm run test
+npm run verify   # what CI runs: lint + format check + typecheck + tests
+npm run format   # apply Prettier
 ```
-
-For Android development, use the installed development build with `npm run android` or `npm run start:dev-client`. Do not treat Expo Go as the default Android workflow for this project.
 
 Before a Google Play upload, run `npm exec expo -- config --type prebuild --json` and confirm the resolved Android permissions do not include `android.permission.CAMERA` or `android.permission.RECORD_AUDIO`. The app only uses the photo library for optional profile-picture changes, and `app.config.ts` disables camera and microphone permissions in `expo-image-picker` for Play policy hygiene.
 
-## Branding and assets
+## Branding
 
-Icon files are stored in `assets/`:
+Icon source and regeneration script: see [docs/branding.md](docs/branding.md).
 
-- **`selftend-icon-source-2048.png`** (in `assets/branding/`) — Original source icon at 2048×2048. Use this as the primary source for any future icon updates or exports.
-- **`icon.png`** — 1024×1024, iOS app icon
-- **`adaptive-icon.png`** — 1024×1024, Android adaptive icon foreground
-- **`splash-icon.png`** — 1024×1024, splash screen
-- **`favicon.png`** — 192×192, web favicon
-- **`favicon-512.png`** — 512×512, web PWA icon
+## Android development
 
-All resized versions are generated from the source using `assets/branding/selftend-icon-source-2048.png`. If you update the source icon, regenerate all sizes using the Python script (see below) or equivalent image resizing tool.
+The default Android workflow uses an EAS development client (`Selftend Dev`), not Expo Go. For setup, callback URLs, day-to-day commands, troubleshooting, and local builds, see [docs/android-development.md](docs/android-development.md).
 
-To regenerate icon sizes from the source:
+## Releases
 
-```bash
-python3 << 'EOF'
-from PIL import Image
-
-source_path = './assets/branding/selftend-icon-source-2048.png'
-img = Image.open(source_path).convert('RGBA')
-
-sizes = {
-    'assets/icon.png': 1024,
-    'assets/adaptive-icon.png': 1024,
-    'assets/splash-icon.png': 1024,
-    'assets/favicon.png': 192,
-    'assets/favicon-512.png': 512,
-}
-
-for output_path, size in sizes.items():
-    resized = img.resize((size, size), Image.Resampling.LANCZOS)
-    resized.save(output_path, 'PNG')
-EOF
-```
-
-## Android development build
-
-Use the Android development build for normal development, reminder testing, and device verification. Do not use Expo Go as the primary Android runtime for this project.
-
-1. Create or update `.env` with your real Supabase values.
-2. The linked Expo project ID is already configured in `app.config.ts`. Only set `EXPO_PUBLIC_EAS_PROJECT_ID` if you need to override it.
-3. If the project is not yet linked in EAS for your account, run `npm exec eas-cli -- init`.
-4. Make sure Supabase Auth allows the development callback:
-
-```text
-selftend-dev://auth-callback
-```
-
-5. Build the Android development client:
-
-```bash
-npm run build:android:development
-```
-
-6. Install the resulting build on the Android device or emulator. It installs as `Selftend Dev` with package `org.vasilyoshev.selftend.dev`, so it can coexist with the Play/internal-testing app.
-7. Confirm the Android Studio emulator exists:
-
-```bash
-npm run android:emulator:list
-```
-
-The default emulator name is `Selftend_API_35`. If Android Studio created a different AVD name, set it before running the Android script:
-
-```powershell
-$env:SELFTEND_ANDROID_AVD="Your_AVD_Name"
-```
-
-8. Start the day-to-day Android development flow:
-
-```bash
-npm run android
-```
-
-`npm run android` launches the configured Android Studio emulator when no Android device is connected, waits for it to boot, starts the Expo development-client server with the development app variant, configures `adb reverse` for Metro, then opens `Selftend Dev` with the `selftend-dev://expo-development-client/?url=...` URL. `npm run android:dev`, `npm run android:dev-server`, and `npm run android:studio` are aliases for the same flow.
-
-You do not need to run `npm run start` first. `npm run start` is the plain Expo start command, mainly useful for Expo Go or web-oriented checks. For the installed development client, use `npm run android`, or use `npm run start:dev-client` when the emulator/device is already running and you only need Metro.
-
-The script intentionally avoids Expo CLI's `--android` opener because it can fall back to Expo Go when the development client is missing or stale. Use `npm run android:server-only` if you want to start the emulator and server without launching the dev client. If automatic launch reports that `Selftend Dev` is not installed, install the latest development build, then rerun `npm run android`.
-
-Pass Expo start flags after `--`, for example:
-
-```bash
-npm run android -- --clear
-```
-
-If Android opens the Play build from a QR code, stop Metro, run `npm run android -- --clear`, then open `Selftend Dev` directly from the emulator launcher. If it still opens the Play build, uninstall any older development client that used the production package, then rebuild from the current config.
-
-Once the development build is installed, keep using it as the default Android development client. The day-to-day workflow should be `npm run android` plus the installed dev build, with `npm run build:android:development` only when you need a refreshed binary.
-
-Use `npm run android:expo-go` only for temporary Expo Go checks. Expo Go uses `exp://.../--/auth-callback` redirects and can still fall back to the Supabase production Site URL if the exact current Metro redirect is not allow-listed.
-
-### Local Android builds
-
-`npm run build:android:development:local` runs the EAS development build on your machine instead of in the cloud. Useful for iterating on a fresh dev client without consuming EAS cloud build minutes, or when offline.
-
-Prerequisites:
-
-- Android SDK with `cmdline-tools/latest`, `platform-tools`, `build-tools`, and a recent `platforms` directory. Easiest install path is Android Studio → SDK Manager.
-- JDK 17 (Android Gradle Plugin 8 requires 17).
-- `ANDROID_HOME` and `JAVA_HOME` exported in `~/.profile`.
-
-Use `~/.profile`, not `~/.bashrc`. `.bashrc` is only sourced by interactive bash, so EAS local builds spawned by IDEs, agents, or any other non-interactive subprocess will not see exports placed there and Gradle fails with `SDK location not found`. `.profile` is sourced once at desktop login and the values propagate to every process in the session.
-
-Example block to add to `~/.profile`:
-
-```sh
-if [ -d "$HOME/Android/Sdk" ]; then
-    export ANDROID_HOME="$HOME/Android/Sdk"
-    PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
-fi
-
-if [ -d "$HOME/jdk-17" ]; then
-    export JAVA_HOME="$HOME/jdk-17"
-    PATH="$JAVA_HOME/bin:$PATH"
-fi
-```
-
-After editing, run `source ~/.profile` for the current shell, and log out and back into the desktop once so every newly-spawned terminal inherits the values.
-
-## Manual release workflows
-
-GitHub Actions has separate manual release workflows for production surfaces:
-
-- `Android Play internal release`: checks out `main`, runs an EAS local Android production build on the GitHub runner, uploads the `.aab` as a workflow artifact, and can upload it as a draft Google Play internal-testing release.
-- `Web production deploy`: checks out `main`, exports the Expo web app, and deploys `dist` to Netlify production.
-
-There is also a manual development build workflow for cross-machine emulator testing:
-
-- `Android development APK`: builds the development client via `npm run build:android:development:local` on the runner and uploads the `.apk` as an artifact. Useful when you want to install the dev client on an emulator running on a different machine (for example, building on Linux and emulating on a Windows host with a stronger GPU). Trigger from the Actions tab, download the artifact, then `adb install -r selftend-dev.apk` on the target device. Run Metro on the same machine as the emulator with `npm run start:dev-client`.
-
-Required GitHub repository variables for both workflows:
-
-```text
-EXPO_PUBLIC_SUPABASE_URL
-EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-EXPO_PUBLIC_PUBLIC_APP_URL
-EXPO_PUBLIC_SUPPORT_EMAIL
-EXPO_PUBLIC_PRIVACY_EMAIL
-EXPO_PUBLIC_SECURITY_EMAIL
-```
-
-Android also requires `EXPO_TOKEN` as a repository secret. Store submission additionally requires `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` after the first manual Google Play upload and Play API setup are complete.
-
-EAS preview and production builds also require matching EAS environment variables before running `npm run build:android:preview` or `npm run build:android:production`. The app now fails those builds if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing, so a Play build cannot be shipped with auth disabled by accident.
-
-Web deployment requires `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` as repository secrets.
+GitHub Actions has manual workflows for `Android Play internal release`, `Web production deploy`, and `Android development APK` (cross-machine emulator builds). Required variables, secrets, and trigger details live in [docs/github-setup.md](docs/github-setup.md). EAS preview and production builds fail if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing, so a Play build cannot ship with auth disabled by accident.
 
 ## Repo map
 
-- [ROADMAP.md](ROADMAP.md): feature roadmap, launch phases, and readiness criteria
-- [AGENTS.md](AGENTS.md): instructions for AI agents working in this repo
-- [CONTRIBUTING.md](CONTRIBUTING.md): contributor flow and expectations
-- [docs/product-principles.md](docs/product-principles.md): product guardrails
-- [docs/data-privacy-model.md](docs/data-privacy-model.md): shared data, privacy, draft, export, and deletion model
-- [docs/stack.md](docs/stack.md): approved technical stack
-- [docs/costs.md](docs/costs.md): launch and operating cost planning
-- [docs/deployment.md](docs/deployment.md): single-page web deployment and Supabase auth callback setup
-- [docs/self-hosting.md](docs/self-hosting.md): supported hosted and self-hosted backend modes
-- [docs/android-closed-testing.md](docs/android-closed-testing.md): Google Play closed-testing readiness
-- [docs/policies.md](docs/policies.md): public policy surfaces and launch-review status
-- [docs/naming.md](docs/naming.md): final app-name decision and naming checks
-- [docs/community.md](docs/community.md): contributor/community and popularization strategy
-- [docs/licensing.md](docs/licensing.md): license choice and reference-repo rules
-- [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md): current third-party notice tracking for copied/generated code
-- [docs/modules/cbt.md](docs/modules/cbt.md): first CBT module spec
-- [docs/modules/tools.md](docs/modules/tools.md): Tools navigation and placeholder-module rules
-- [docs/reference-log.md](docs/reference-log.md): reference-repo usage log
-- [docs/github-setup.md](docs/github-setup.md): GitHub workflow and label setup
-- [docs/internal-testing.md](docs/internal-testing.md): internal build and testing checklist
-- [supabase/README.md](supabase/README.md): schema and environment notes
+Top-level:
+
+- [ROADMAP.md](ROADMAP.md) — feature roadmap, launch phases, and readiness criteria
+- [CONTRIBUTING.md](CONTRIBUTING.md) — contributor flow, code structure, dev loop
+- [AGENTS.md](AGENTS.md) — instructions for AI agents working in this repo
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — expected behavior in project spaces
+- [SECURITY.md](SECURITY.md) — how to report security vulnerabilities
+- [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) — third-party notice tracking for copied/generated code
+
+Most-read deeper docs:
+
+- [docs/contributor-roles.md](docs/contributor-roles.md) — practical starting points by role (developer, designer, translator, tester, mental-health expert)
+- [docs/product-principles.md](docs/product-principles.md) — product guardrails
+- [docs/stack.md](docs/stack.md) — approved technical stack
+- [docs/architecture.md](docs/architecture.md) — how the runtime layers fit together
+- [docs/data-privacy-model.md](docs/data-privacy-model.md) — data classes, privacy rules, export and deletion model
+
+Everything else: [docs/README.md](docs/README.md) is the full index, grouped by topic. Backend-specific notes live in [supabase/README.md](supabase/README.md).
 
 ## Documentation expectation
 

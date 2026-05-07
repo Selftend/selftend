@@ -16,3 +16,9 @@
 - name: accessibility
   color: 0052cc
   description: Accessibility work or review.
+- name: good first issue
+  color: 7057ff
+  description: Suitable for a first-time contributor.
+- name: help wanted
+  color: 008672
+  description: Maintainer is open to outside contributors picking this up.

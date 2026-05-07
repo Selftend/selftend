@@ -92,6 +92,8 @@ Prepared label set:
 - `privacy`
 - `safety`
 - `accessibility`
+- `good first issue`
+- `help wanted`
 
 ## PR expectations
 
