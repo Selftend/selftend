@@ -48,7 +48,7 @@ describe("export_user_data() (integration)", () => {
   it("never leaks another user's data", async () => {
     const { data, error } = await bob.rpc("export_user_data");
     expect(error).toBeNull();
-    const records = data.thoughtRecords as Array<{ situation: string }>;
+    const records = data.thoughtRecords as { situation: string }[];
     // demo's seed records mention "presentation" and "rest day"; bob's don't.
     const matchesDemo = records.some(
       (r) => r.situation.includes("presentation") || r.situation.includes("rest day"),

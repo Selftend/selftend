@@ -83,6 +83,17 @@ All three accounts share the password `password123`. They are recreated on every
 
 Sign in via the app's email/password form (`signInWithPassword` in `src/features/auth/api.ts`).
 
+#### Adding more seeded users
+
+Pick the path that matches how long you need the user:
+
+| Lifetime                           | How                                                                                                                                                      | Notes                                                                                                                                               |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Persistent (back after `db:reset`) | Add a block to `supabase/seed.sql` mirroring alice's pattern: `auth.users` + `auth.identities` + `profiles` + `user_preferences`                         | Use a fresh UUID and a unique email. Also update `SEED_USERS` in `test/integration/helpers.ts` if you want integration tests to reach the new user. |
+| One-off, throwaway                 | Studio UI at `http://localhost:54323` → **Authentication → Users → Add user**                                                                            | Fastest. Gone on next `db:reset`.                                                                                                                   |
+| One-off via signup flow            | Just sign up in the app                                                                                                                                  | Local Auth has auto-confirm so the user is immediately usable. Gone on `db:reset`.                                                                  |
+| Programmatic / scripted            | Service-role admin API: `client.auth.admin.createUser({ email, password, email_confirm: true })` — see `ensureSeedUser` in `test/integration/helpers.ts` | Works against the local stack via the deterministic CLI service-role key.                                                                           |
+
 ### Inspecting auth emails
 
 Local Supabase routes all auth emails (password reset, signup confirmation) to **Inbucket** at `http://localhost:54324`. Use it to grab links during password-reset testing without configuring real SMTP.
