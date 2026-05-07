@@ -18,12 +18,7 @@ function tryRun(cmd, args) {
 
 run("npm", ["exec", "supabase", "--", "db", "reset"]);
 
-const ps = tryRun("docker", [
-  "ps",
-  "-q",
-  "--filter",
-  "name=^supabase_kong_",
-]);
+const ps = tryRun("docker", ["ps", "-q", "--filter", "name=^supabase_kong_"]);
 const kongIds = ps.stdout?.toString().trim().split("\n").filter(Boolean) ?? [];
 
 if (kongIds.length === 0) {
@@ -36,9 +31,7 @@ if (kongIds.length === 0) {
 console.log(`[db-reset] Restarting Kong (${kongIds.join(", ")}) to refresh upstream IPs...`);
 const restart = tryRun("docker", ["restart", ...kongIds]);
 if (restart.status !== 0) {
-  console.warn(
-    `[db-reset] Kong restart failed: ${restart.stderr?.toString().trim()}`,
-  );
+  console.warn(`[db-reset] Kong restart failed: ${restart.stderr?.toString().trim()}`);
   process.exit(restart.status ?? 1);
 }
 console.log("[db-reset] Kong restarted.");

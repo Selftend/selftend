@@ -34,6 +34,8 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:integration": "jest -c jest.integration.config.js --runInBand",
+    "test:integration:watch": "jest -c jest.integration.config.js --watch",
     "verify": "npm run lint && npm run format:check && npm run typecheck && npm test -- --runInBand",
     "db:start": "npm exec supabase -- start",
     "db:stop": "npm exec supabase -- stop",

@@ -75,11 +75,11 @@ Expo loads `.env.local` with priority over `.env`, so `npm start` will now talk 
 
 All three accounts share the password `password123`. They are recreated on every `npm run db:reset`.
 
-| Email             | UUID                                   | State                                                  |
-| ----------------- | -------------------------------------- | ------------------------------------------------------ |
-| `alice@test.local` | `…0001` | Empty account, post-signup, CBT onboarding not done   |
-| `bob@test.local`   | `…0002` | Mid-use, 5 thought records, reminders enabled         |
-| `demo@test.local`  | `…0003` | Polished demo/screenshot account, 10 thought records  |
+| Email              | UUID    | State                                                |
+| ------------------ | ------- | ---------------------------------------------------- |
+| `alice@test.local` | `…0001` | Empty account, post-signup, CBT onboarding not done  |
+| `bob@test.local`   | `…0002` | Mid-use, 5 thought records, reminders enabled        |
+| `demo@test.local`  | `…0003` | Polished demo/screenshot account, 10 thought records |
 
 Sign in via the app's email/password form (`signInWithPassword` in `src/features/auth/api.ts`).
 
@@ -103,9 +103,27 @@ Only needed if you want to exercise the full Google sign-in flow locally. The se
    ```
 4. Sign in with any real Google account — local Auth creates the user on first sign-in.
 
-### Integration tests (future)
+### Integration tests
 
-The current Jest setup mocks Supabase deeply (`test/setup.js`, `test/render-with-providers.tsx`). A future option is a separate `*.integration.test.ts` pattern that uses the real client against `http://localhost:54321` with one of the seeded users — out of scope for now.
+A separate Jest config (`jest.integration.config.js`) runs `*.integration.test.ts` files against the running local stack. Hermetic unit tests stay under `npm test`; integration tests are opt-in:
+
+```bash
+npm run db:start && npm run db:reset   # boot stack + seed
+npm run test:integration               # run real-DB tests
+```
+
+Coverage:
+
+- `cbt-repository.integration.test.ts` — thought_records CRUD + ordering + archived_at filter
+- `settings-repository.integration.test.ts` — user_preferences upserts, web_push_subscriptions, check constraints
+- `profile-repository.integration.test.ts` — profiles upserts + profile-pics storage round-trip
+- `rls.integration.test.ts` — cross-user isolation across all owner-scoped tables and the storage bucket
+- `db-functions.integration.test.ts` — `export_user_data()` and `delete_user_account()`
+- `auth.integration.test.ts` — sign-in success/failure, sign-up, password-reset email landing in Mailpit (`http://localhost:54324`)
+
+Tests clean up after themselves (per-test teardown) so the suite is rerunnable without `db:reset` between runs. Local anon and service-role keys are deterministic Supabase CLI defaults and are hardcoded in `test/integration/helpers.ts`.
+
+GitHub Actions runs the suite on every PR via `.github/workflows/integration-tests.yml`.
 
 ## First setup
 
