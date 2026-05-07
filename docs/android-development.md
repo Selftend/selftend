@@ -38,7 +38,7 @@ Add `selftend-dev://auth-callback` to Supabase Auth redirect URLs before testing
 7. Confirm the Android Studio emulator exists:
 
    ```bash
-   npm run android:emulator:list
+   node scripts/android-dev.js --list-avds
    ```
 
    The default emulator name is `Selftend_API_35`. If Android Studio created a different AVD name, set it before running the Android script:
@@ -49,35 +49,65 @@ Add `selftend-dev://auth-callback` to Supabase Auth redirect URLs before testing
 
 ## Day-to-day workflow
 
+For a real Android device over USB or wireless debugging:
+
 ```bash
-npm run android
+npm run start       # local Supabase from .env.local
+npm run start:prod  # hosted Supabase from .env
 ```
 
-`npm run android` launches the configured Android Studio emulator when no Android device is connected, waits for it to boot, starts the Expo development-client server with the development app variant, configures `adb reverse` for Metro and the local Supabase API port, then opens `Selftend Dev` with the `selftend-dev://expo-development-client/?url=...` URL. `npm run android:dev`, `npm run android:dev-server`, and `npm run android:studio` are aliases for the same flow.
+`npm run start` starts Metro for the development client with `.env.local`, which
+is the local Supabase default. `npm run start:prod` uses `.env`, which should
+point at the hosted Supabase project. Before Expo starts, the wrapper checks
+`adb devices` and configures reverse mappings for every connected Android
+device: Metro's port, plus the local Supabase port when
+`EXPO_PUBLIC_SUPABASE_URL` points at `localhost`, `127.0.0.1`, or another local
+host name. This keeps `http://localhost:54321` working from a physical phone.
 
-You do not need to run `npm run start` first. `npm run start` (and its alias `npm run start:dev-client`) starts Metro for the development client with `.env.local`, which is the local Supabase default. Use `npm run start:hosted` to start the same development client with `.env` and ignore `.env.local`. Use `npm run start:expo-go` if you specifically want plain `expo start` (web or Expo Go). For a fresh emulator boot plus install/launch of `Selftend Dev`, prefer `npm run android`.
+For a fresh Android emulator boot plus dev-client launch:
 
-The script intentionally avoids Expo CLI's `--android` opener because it can fall back to Expo Go when the development client is missing or stale. Use `npm run android:server-only` if you want to start the emulator and server without launching the dev client. If automatic launch reports that `Selftend Dev` is not installed, install the latest development build, then rerun `npm run android`.
+```bash
+npm run start:emulator       # local Supabase from .env.local
+npm run start:prod:emulator  # hosted Supabase from .env
+```
+
+`npm run start:emulator` uses only the configured Android Studio emulator,
+ignoring connected physical phones. It waits for the emulator to boot, starts the
+Expo development-client server with the development app variant, configures
+`adb reverse` for Metro and the local Supabase API port, then opens `Selftend
+Dev` with the `selftend-dev://expo-development-client/?url=...` URL.
+`npm run start:prod:emulator` follows the same emulator flow with hosted
+Supabase values from `.env`, so it reverses Metro but skips the local Supabase
+port.
+
+The `:prod` script name means "use the hosted Supabase env", not "make a
+production JavaScript build". Use `npm run web` for Expo web only. For temporary
+Expo Go checks, run `npm exec expo -- start` directly. The emulator script
+intentionally avoids Expo CLI's `--android` opener because it can fall back to
+Expo Go when the development client is missing or stale. If automatic launch
+reports that `Selftend Dev` is not installed, install the latest development
+build, then rerun `npm run start:emulator`.
 
 Pass Expo start flags after `--`, for example:
 
 ```bash
-npm run android -- --clear
+npm run start -- --clear
+npm run start:emulator -- --clear
 ```
 
 For physical-device local Supabase testing, the phone must be visible to `adb`
 through USB debugging or wireless debugging before the reverse port can be
-configured. Once `adb devices` lists the phone, run `npm run android` or:
+configured. Once `adb devices` lists the phone, run:
 
 ```bash
-adb reverse tcp:54321 tcp:54321
 npm run start -- --clear
 ```
 
 Without `adb reverse`, `http://localhost:54321` in `.env.local` points at the
-phone itself and the app will fail network requests. Override the local
-Supabase port with `SELFTEND_LOCAL_SUPABASE_PORT` if the local stack is not using
-`54321`.
+phone itself and the app will fail network requests. `npm run start` configures
+the reverse mappings automatically; use `SELFTEND_SKIP_ADB_REVERSE=1` only when
+you intentionally want to skip that setup. Override the local Supabase port with
+`SELFTEND_LOCAL_SUPABASE_PORT` if the local stack is not using `54321`.
 
 The development build enables Android cleartext HTTP traffic so it can call the
 local Supabase API at `http://localhost:54321` during development. Rebuild and
@@ -96,19 +126,23 @@ Wireless debugging setup on Android:
    `adb connect PHONE_IP:ADB_PORT`, then confirm the phone appears in
    `adb devices`.
 
-Once the development build is installed, keep using it as the default Android development client. The day-to-day workflow should be `npm run android` plus the installed dev build, with `npm run build:android:development` only when you need a refreshed binary.
+Once the development build is installed, keep using it as the default Android
+development client. The day-to-day workflow should be `npm run start` for a real
+device, `npm run start:emulator` for the emulator, and the `:prod` variants when
+you want the hosted backend. Use `npm run build:android:development` only when
+you need a refreshed binary.
 
-Use `npm run android:expo-go` only for temporary Expo Go checks. Expo Go uses `exp://.../--/auth-callback` redirects and can still fall back to the Supabase production Site URL if the exact current Metro redirect is not allow-listed.
+Use Expo Go only for temporary checks. Expo Go uses `exp://.../--/auth-callback` redirects and can still fall back to the Supabase production Site URL if the exact current Metro redirect is not allow-listed.
 
 ## Troubleshooting
 
-If `npm run android` fails with `Cannot find module 'ora'` from Expo CLI after a local EAS build, reinstall the project dependencies from the repository root:
+If `npm run start:emulator` fails with `Cannot find module 'ora'` from Expo CLI after a local EAS build, reinstall the project dependencies from the repository root:
 
 ```bash
 npm install
 ```
 
-This restores hoisted Expo CLI dependencies such as `ora` without changing the lockfile when `package-lock.json` is already current. Then rerun `npm run android`.
+This restores hoisted Expo CLI dependencies such as `ora` without changing the lockfile when `package-lock.json` is already current. Then rerun `npm run start:emulator`.
 
 If Metro then fails with `EACCES: permission denied, lstat ... node_modules\\...\\.bin\\.<name>-<random>`, remove stale npm temporary `.bin` junctions from `node_modules`:
 
@@ -123,9 +157,9 @@ $items = foreach ($binDir in $binDirs) {
 $items | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
 ```
 
-Then rerun `npm run android`. These paths are generated npm install artifacts; do not delete source files to fix this error.
+Then rerun `npm run start:emulator`. These paths are generated npm install artifacts; do not delete source files to fix this error.
 
-If Android opens the Play build from a QR code, stop Metro, run `npm run android -- --clear`, then open `Selftend Dev` directly from the emulator launcher. If it still opens the Play build, uninstall any older development client that used the production package, then rebuild from the current config.
+If Android opens the Play build from a QR code, stop Metro, run `npm run start:emulator -- --clear`, then open `Selftend Dev` directly from the emulator launcher. If it still opens the Play build, uninstall any older development client that used the production package, then rebuild from the current config.
 
 For quick native auth checks in Expo Go, Supabase also needs to allow the Expo Go callback URL that `Linking.createURL("auth-callback")` produces, commonly:
 
@@ -175,4 +209,4 @@ After editing, run `source ~/.profile` for the current shell, and log out and ba
 
 The `Android development APK` GitHub Actions workflow builds the development client via `npm run build:android:development:local` on the runner and uploads the `.apk` as an artifact. Useful when you want to install the dev client on an emulator running on a different machine (for example, building on Linux and emulating on a Windows host with a stronger GPU).
 
-Trigger from the Actions tab, download the artifact, then `adb install -r <apk-name>.apk` on the target device. Run Metro on the same machine as the emulator with `npm run start:dev-client`.
+Trigger from the Actions tab, download the artifact, then `adb install -r <apk-name>.apk` on the target device. Run Metro on the same machine as the emulator with `npm run start`.

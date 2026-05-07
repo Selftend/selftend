@@ -71,9 +71,9 @@ Use Node `20.19.0+` for this repo. That matches the `package.json` engine requir
 cp .env.example .env
 ```
 
-Use `.env` for the hosted Supabase project. If you want the default
-`npm run start` command to use local Supabase, create `.env.local` with the local
-Supabase URL and local anon key from `npm run db:status`.
+Use `.env` for the hosted Supabase project. Create `.env.local` with the local
+Supabase URL and local anon key from `npm run db:status` when you want the local
+development backend.
 
 3. Fill in:
 
@@ -98,23 +98,26 @@ For local Expo web auth, make sure the matching callback URL is allowed in Supab
 http://localhost:8081/auth-callback
 ```
 
-For Android setup, including the development-client identity, callback URLs, and `npm run android` workflow, see [docs/android-development.md](docs/android-development.md).
+For Android setup, including the development-client identity, callback URLs, and real-device vs. emulator workflows, see [docs/android-development.md](docs/android-development.md).
 
 4. Run the app:
 
 ```bash
 npm run start         # development client with `.env.local` values
-npm run start:hosted  # development client with `.env` values, ignoring `.env.local`
+npm run start:prod    # development client with `.env` values
+npm run start:emulator  # boot/open the Android emulator development client
+npm run start:prod:emulator # boot/open the Android emulator with `.env` values
 npm run web           # Expo web only
-npm run android       # Android dev build (see docs/android-development.md)
 ```
 
 Use `.env.local` for local Supabase development and `.env` for the hosted
-Supabase project. `npm run start` requires `.env.local`; use
-`npm run start:hosted` when you want the development client to use `.env` and
-ignore `.env.local`. Local Supabase on Android requires the current
-development build because the dev Android manifest allows cleartext HTTP only
-for `Selftend Dev`.
+Supabase project. The `:prod` script name means "use the hosted Supabase env",
+not "make a production JavaScript build". When an Android phone or emulator is
+already visible in `adb devices`, `npm run start` and `npm run start:prod`
+configure `adb reverse` for Metro before starting Expo. Local Supabase commands
+also reverse the local Supabase port. Local Supabase on Android requires the
+current development build because the dev Android manifest allows cleartext HTTP
+only for `Selftend Dev`.
 
 Day-to-day commands:
 

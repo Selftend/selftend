@@ -11,15 +11,14 @@ const AVD_NAME = process.env.SELFTEND_ANDROID_AVD || DEFAULT_AVD_NAME;
 const BOOT_TIMEOUT_MS = Number(process.env.SELFTEND_ANDROID_BOOT_TIMEOUT_MS || 240000);
 const METRO_TIMEOUT_MS = Number(process.env.SELFTEND_METRO_TIMEOUT_MS || 120000);
 const POLL_INTERVAL_MS = 3000;
+const LOCALHOST_NAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"]);
 
-const controlArgs = new Set(["--list-avds", "--emulator-only", "--no-launch"]);
+const controlArgs = new Set(["--list-avds"]);
 const rawArgs = process.argv.slice(2);
 const shouldListAvds = rawArgs.includes("--list-avds");
-const emulatorOnly = rawArgs.includes("--emulator-only");
-const shouldLaunchDevClient = !rawArgs.includes("--no-launch");
 const expoArgs = rawArgs.filter((arg) => !controlArgs.has(arg));
 const metroPort = getMetroPort(expoArgs);
-const localSupabasePort = Number(process.env.SELFTEND_LOCAL_SUPABASE_PORT || 54321);
+const localSupabasePort = getLocalSupabasePort();
 
 const isWindows = process.platform === "win32";
 const exeSuffix = isWindows ? ".exe" : "";
@@ -78,6 +77,34 @@ function getMetroPort(args) {
   }
 
   return 8081;
+}
+
+function getLocalSupabasePort() {
+  if (process.env.SELFTEND_LOCAL_SUPABASE_PORT) {
+    return Number(process.env.SELFTEND_LOCAL_SUPABASE_PORT);
+  }
+
+  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+
+  if (!supabaseUrl) {
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(supabaseUrl);
+
+    if (!LOCALHOST_NAMES.has(parsedUrl.hostname)) {
+      return null;
+    }
+
+    if (parsedUrl.port) {
+      return Number(parsedUrl.port);
+    }
+
+    return parsedUrl.protocol === "https:" ? 443 : 80;
+  } catch {
+    return null;
+  }
 }
 
 function runCapture(command, args) {
@@ -162,8 +189,8 @@ function getDevices() {
     });
 }
 
-function getReadyDevice() {
-  return getDevices().find((device) => device.state === "device");
+function getReadyEmulator() {
+  return getDevices().find((device) => device.state === "device" && isEmulator(device.id));
 }
 
 function isEmulator(deviceId) {
@@ -234,11 +261,11 @@ function startEmulator() {
   child.unref();
 }
 
-async function waitForReadyDevice() {
+async function waitForReadyEmulator() {
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < BOOT_TIMEOUT_MS) {
-    const device = getReadyDevice();
+    const device = getReadyEmulator();
 
     if (device && isBootComplete(device.id)) {
       return device;
@@ -247,7 +274,7 @@ async function waitForReadyDevice() {
     await sleep(POLL_INTERVAL_MS);
   }
 
-  console.error("Timed out waiting for an Android device to finish booting.");
+  console.error("Timed out waiting for Android emulator to finish booting.");
   console.error(
     "Open Android Studio > Virtual Device Manager and start the emulator manually, then try again.",
   );
@@ -277,7 +304,10 @@ function openDevelopmentClient(deviceId) {
   }
 
   reverseTcpPort(deviceId, metroPort, "Metro");
-  reverseTcpPort(deviceId, localSupabasePort, "local Supabase");
+
+  if (localSupabasePort) {
+    reverseTcpPort(deviceId, localSupabasePort, "local Supabase");
+  }
 
   const manifestUrl = `http://127.0.0.1:${metroPort}`;
   const devClientUrl = `${DEV_CLIENT_SCHEME}://expo-development-client/?url=${encodeURIComponent(
@@ -324,9 +354,7 @@ function startExpo(deviceId) {
     stdio: "inherit",
   });
 
-  if (shouldLaunchDevClient) {
-    launchDevelopmentClientWhenReady(deviceId);
-  }
+  launchDevelopmentClientWhenReady(deviceId);
 
   child.on("exit", (code, signal) => {
     if (signal) {
@@ -344,28 +372,24 @@ async function main() {
     return;
   }
 
-  const connectedDevice = getReadyDevice();
+  const connectedEmulator = getReadyEmulator();
 
-  let activeDevice = connectedDevice;
+  let activeEmulator = connectedEmulator;
 
-  if (activeDevice && isBootComplete(activeDevice.id)) {
-    console.log(`Using connected Android device: ${activeDevice.id}`);
+  if (activeEmulator && isBootComplete(activeEmulator.id)) {
+    console.log(`Using connected Android emulator: ${activeEmulator.id}`);
   } else {
-    if (activeDevice) {
-      console.log(`Waiting for Android device to finish booting: ${activeDevice.id}`);
+    if (activeEmulator) {
+      console.log(`Waiting for Android emulator to finish booting: ${activeEmulator.id}`);
     } else {
       startEmulator();
     }
 
-    activeDevice = await waitForReadyDevice();
-    console.log(`Android device is ready: ${activeDevice.id}`);
+    activeEmulator = await waitForReadyEmulator();
+    console.log(`Android emulator is ready: ${activeEmulator.id}`);
   }
 
-  if (emulatorOnly) {
-    return;
-  }
-
-  startExpo(activeDevice.id);
+  startExpo(activeEmulator.id);
 }
 
 main().catch((error) => {

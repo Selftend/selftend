@@ -105,11 +105,10 @@ npm run typecheck
 npm test -- --runInBand
 npm run export:web
 npm run serve:web:production
-npm run android
-npm run android:dev-server
-npm run android:server-only
-npm run android:emulator:list
-npm run start:dev-client
+npm run start
+npm run start:prod
+npm run start:emulator
+npm run start:prod:emulator
 npm run build:android:development
 npm run build:android:preview
 npm run build:android:production
@@ -128,10 +127,10 @@ Use the development build instead of Expo Go for normal Android development, rem
 4. Run `npm exec eas-cli -- init` once if the EAS project has not been linked yet.
 5. Run `npm run build:android:development`.
 6. Install the generated `Selftend Dev` build on the target device.
-7. Run `npm run android`.
+7. Run `npm run start` for a real device or `npm run start:emulator` for the Android Studio emulator. Use the `:prod` variants when testing against the hosted Supabase project.
 8. Open `Selftend Dev` and verify auth, persistence, and reminder scheduling there.
 
-`npm run android` launches the configured Android Studio emulator when no Android device is connected, waits for it to boot, starts the Expo development-client server with the development app variant, configures `adb reverse` for Metro, then opens `Selftend Dev` with the `selftend-dev://expo-development-client/?url=...` URL. It intentionally avoids Expo CLI's `--android` opener because that can fall back to Expo Go when the development client is missing or stale. `npm run start:dev-client` is still available when the emulator/device is already running and you only need Metro. Use `npm run android:server-only` if you want to start the emulator and server without launching the dev client. If the Play app opens instead, the installed development client is stale or still uses the production scheme; rebuild the development client from the current config and install the new `org.vasilyoshev.selftend.dev` package. The Play app can stay installed.
+`npm run start` starts Metro for the development client and configures `adb reverse` for connected Android devices before Expo starts. `npm run start:emulator` launches the configured Android Studio emulator, starts the Expo development-client server, configures `adb reverse` for Metro and local Supabase, then opens `Selftend Dev` with the `selftend-dev://expo-development-client/?url=...` URL. `npm run start:prod` and `npm run start:prod:emulator` use `.env` for hosted Supabase values. The emulator command intentionally avoids Expo CLI's `--android` opener because that can fall back to Expo Go when the development client is missing or stale. If the Play app opens instead, the installed development client is stale or still uses the production scheme; rebuild the development client from the current config and install the new `org.vasilyoshev.selftend.dev` package. The Play app can stay installed.
 
 ## Play build environment check
 

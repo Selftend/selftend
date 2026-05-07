@@ -56,7 +56,7 @@ These foundation items affected every future feature and contributor workflow.
 
 No open P0 tasks remain. The local app-foundation work is documented in [docs/data-privacy-model.md](docs/data-privacy-model.md), [docs/modules/tools.md](docs/modules/tools.md), and the shared components under `src/components`. The active Supabase project has had its migration history repaired, including the sortable `20260503000000_consent_and_deletion.sql` migration, avatar storage migrations, `20260504_add_language_preference.sql`, and `20260506_onboarding_flags.sql`.
 
-The next product work should start from P1 unless new foundation regressions are found. Treat Android dev-client startup failures, dependency-install integrity issues, or native auth persistence warnings as foundation regressions before adding more MVP flows.
+The Android development workflow now has four start paths: `npm run start` and `npm run start:emulator` use local Supabase, while `npm run start:prod` and `npm run start:prod:emulator` use the hosted Supabase env. The next product work should start from P1 unless new foundation regressions are found. Treat Android dev-client startup failures, dependency-install integrity issues, or native auth persistence warnings as foundation regressions before adding more MVP flows.
 
 ### P1: MVP Product Flows
 
