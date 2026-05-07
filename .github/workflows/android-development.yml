@@ -6,7 +6,7 @@ on:
       ref:
         description: Branch, tag, or SHA to build (defaults to the workflow ref)
         required: false
-        default: ''
+        default: ""
 
 concurrency:
   group: android-development-${{ github.ref }}
