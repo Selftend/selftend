@@ -117,8 +117,19 @@
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
     "jest-expo": "~54.0.17",
+    "lint-staged": "^17.0.2",
     "prettier": "^3.8.3",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write",
+      "jest --findRelatedTests --bail --passWithNoTests"
+    ],
+    "*.{json,md,yml,yaml,css}": [
+      "prettier --write"
+    ]
   }
 }
