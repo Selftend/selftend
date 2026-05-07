@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { SidebarNav } from "@/components/sidebar-nav";
 import { Text } from "@/components/ui/text";
+import { AuthLandingScreen } from "@/src/components/auth-landing-screen";
 import { ConsentModal } from "@/src/components/consent-modal";
 import { OnboardingModal } from "@/src/components/onboarding-modal";
 import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
@@ -43,7 +44,7 @@ export default function ProtectedLayout() {
       window.location.href = "/";
       return null;
     }
-    return <Redirect href="/" />;
+    return <AuthLandingScreen />;
   }
 
   if (!user?.email_confirmed_at) {

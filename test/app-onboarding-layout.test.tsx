@@ -8,6 +8,34 @@ import { policyVersion } from "@/src/features/policies/policy-content";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+type MockSessionState = {
+  session: {
+    user: {
+      email_confirmed_at: string | null;
+      id: string;
+    };
+  } | null;
+  status: "loading" | "ready";
+  user: {
+    email_confirmed_at: string | null;
+    id: string;
+  } | null;
+};
+
+let mockSessionState: MockSessionState = {
+  session: {
+    user: {
+      email_confirmed_at: "2026-05-06T10:00:00.000Z",
+      id: "user-1",
+    },
+  },
+  status: "ready",
+  user: {
+    email_confirmed_at: "2026-05-06T10:00:00.000Z",
+    id: "user-1",
+  },
+};
+
 jest.mock("expo-router", () => {
   const Text = mockText;
   const View = mockView;
@@ -32,6 +60,14 @@ jest.mock("@/components/sidebar-nav", () => ({
   SidebarNav: () => null,
 }));
 
+jest.mock("@/src/components/auth-landing-screen", () => {
+  const Text = mockText;
+
+  return {
+    AuthLandingScreen: () => <Text>Signed-out landing</Text>,
+  };
+});
+
 jest.mock("@/src/components/consent-modal", () => {
   const Text = mockText;
 
@@ -42,19 +78,7 @@ jest.mock("@/src/components/consent-modal", () => {
 });
 
 jest.mock("@/src/providers/session-provider", () => ({
-  useSession: () => ({
-    session: {
-      user: {
-        email_confirmed_at: "2026-05-06T10:00:00.000Z",
-        id: "user-1",
-      },
-    },
-    status: "ready",
-    user: {
-      email_confirmed_at: "2026-05-06T10:00:00.000Z",
-      id: "user-1",
-    },
-  }),
+  useSession: () => mockSessionState,
 }));
 
 jest.mock("@/src/features/settings/queries", () => ({
@@ -72,6 +96,19 @@ describe("ProtectedLayout app onboarding", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSessionState = {
+      session: {
+        user: {
+          email_confirmed_at: "2026-05-06T10:00:00.000Z",
+          id: "user-1",
+        },
+      },
+      status: "ready",
+      user: {
+        email_confirmed_at: "2026-05-06T10:00:00.000Z",
+        id: "user-1",
+      },
+    };
     mutateAsync.mockResolvedValue(defaultUserPreferences);
     mockUseUpdateUserPreferences.mockReturnValue({
       isError: false,
@@ -103,5 +140,17 @@ describe("ProtectedLayout app onboarding", () => {
         }),
       );
     });
+  });
+
+  it("shows the landing page when the session is cleared", () => {
+    mockSessionState = {
+      session: null,
+      status: "ready",
+      user: null,
+    };
+
+    renderWithProviders(<ProtectedLayout />);
+
+    expect(screen.getByText("Signed-out landing")).toBeTruthy();
   });
 });
