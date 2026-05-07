@@ -144,6 +144,7 @@ npm run start:dev-client
 npm run android:expo-go
 npm exec expo -- config --type prebuild --json
 npm run build:android:development
+npm run build:android:development:local
 npm run build:android:preview
 npm run build:android:production
 EAS_LOCAL_BUILD_ARTIFACTS_DIR=./build-artifacts npm exec eas-cli -- build --platform android --profile production --local --non-interactive
@@ -250,12 +251,44 @@ Once the development build is installed, keep using it as the default Android de
 
 Use `npm run android:expo-go` only for temporary Expo Go checks. Expo Go uses `exp://.../--/auth-callback` redirects and can still fall back to the Supabase production Site URL if the exact current Metro redirect is not allow-listed.
 
+### Local Android builds
+
+`npm run build:android:development:local` runs the EAS development build on your machine instead of in the cloud. Useful for iterating on a fresh dev client without consuming EAS cloud build minutes, or when offline.
+
+Prerequisites:
+
+- Android SDK with `cmdline-tools/latest`, `platform-tools`, `build-tools`, and a recent `platforms` directory. Easiest install path is Android Studio → SDK Manager.
+- JDK 17 (Android Gradle Plugin 8 requires 17).
+- `ANDROID_HOME` and `JAVA_HOME` exported in `~/.profile`.
+
+Use `~/.profile`, not `~/.bashrc`. `.bashrc` is only sourced by interactive bash, so EAS local builds spawned by IDEs, agents, or any other non-interactive subprocess will not see exports placed there and Gradle fails with `SDK location not found`. `.profile` is sourced once at desktop login and the values propagate to every process in the session.
+
+Example block to add to `~/.profile`:
+
+```sh
+if [ -d "$HOME/Android/Sdk" ]; then
+    export ANDROID_HOME="$HOME/Android/Sdk"
+    PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+fi
+
+if [ -d "$HOME/jdk-17" ]; then
+    export JAVA_HOME="$HOME/jdk-17"
+    PATH="$JAVA_HOME/bin:$PATH"
+fi
+```
+
+After editing, run `source ~/.profile` for the current shell, and log out and back into the desktop once so every newly-spawned terminal inherits the values.
+
 ## Manual release workflows
 
 GitHub Actions has separate manual release workflows for production surfaces:
 
 - `Android Play internal release`: checks out `main`, runs an EAS local Android production build on the GitHub runner, uploads the `.aab` as a workflow artifact, and can upload it as a draft Google Play internal-testing release.
 - `Web production deploy`: checks out `main`, exports the Expo web app, and deploys `dist` to Netlify production.
+
+There is also a manual development build workflow for cross-machine emulator testing:
+
+- `Android development APK`: builds the development client via `npm run build:android:development:local` on the runner and uploads the `.apk` as an artifact. Useful when you want to install the dev client on an emulator running on a different machine (for example, building on Linux and emulating on a Windows host with a stronger GPU). Trigger from the Actions tab, download the artifact, then `adb install -r selftend-dev.apk` on the target device. Run Metro on the same machine as the emulator with `npm run start:dev-client`.
 
 Required GitHub repository variables for both workflows:
 
