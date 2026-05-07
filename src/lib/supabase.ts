@@ -1,5 +1,4 @@
 import { AppState, Platform } from "react-native";
-import * as SecureStore from "expo-secure-store";
 import {
   createClient,
   processLock,
@@ -9,6 +8,7 @@ import {
 import "react-native-url-polyfill/auto";
 
 import { appEnv, hasSupabaseConfig } from "@/src/lib/env";
+import { secureStoreStorage } from "@/src/lib/secure-store-storage";
 
 const webStorage: SupportedStorage = {
   getItem: (key) => Promise.resolve(globalThis.localStorage?.getItem(key) ?? null),
@@ -16,13 +16,7 @@ const webStorage: SupportedStorage = {
   removeItem: (key) => Promise.resolve(globalThis.localStorage?.removeItem(key)),
 };
 
-const secureStoreAdapter: SupportedStorage = {
-  getItem: (key) => SecureStore.getItemAsync(key),
-  setItem: (key, value) => SecureStore.setItemAsync(key, value),
-  removeItem: (key) => SecureStore.deleteItemAsync(key),
-};
-
-const storage = Platform.OS === "web" ? webStorage : secureStoreAdapter;
+const storage = Platform.OS === "web" ? webStorage : secureStoreStorage;
 
 export const supabase = hasSupabaseConfig
   ? createClient(appEnv.supabaseUrl, appEnv.supabaseKey, {

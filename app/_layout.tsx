@@ -32,7 +32,7 @@ import {
 import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { AppProviders } from "@/src/providers/app-providers";
 import { useSession } from "@/src/providers/session-provider";
-import { NAV_THEME } from "@/lib/theme";
+import { NAV_THEME, THEME_VARIABLES } from "@/lib/theme";
 import { useSidebarStore } from "@/src/stores/sidebar-store";
 import { useThemeStore } from "@/src/stores/theme-store";
 
@@ -76,13 +76,15 @@ export default function RootLayout() {
   return (
     <AppProviders>
       <ThemeProvider value={NAV_THEME[colorScheme]}>
-        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        <AppErrorBoundary>
-          <AppShell />
-          <CookieConsentBanner />
-          <AppToast />
-        </AppErrorBoundary>
-        <PortalHost />
+        <View className="flex-1 bg-background" style={THEME_VARIABLES[colorScheme]}>
+          <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+          <AppErrorBoundary>
+            <AppShell />
+            <CookieConsentBanner />
+            <AppToast />
+          </AppErrorBoundary>
+          <PortalHost />
+        </View>
       </ThemeProvider>
     </AppProviders>
   );

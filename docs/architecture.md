@@ -70,6 +70,7 @@ Public routes are intentionally accessible without sign-in so policy and crisis 
 [src/lib/supabase.ts](../src/lib/supabase.ts) creates one client. Two key choices:
 
 - **Storage adapter is platform-conditional.** Web uses `localStorage`; native uses `expo-secure-store`. This keeps native session tokens out of plaintext storage.
+- **Native auth storage chunks large values.** Supabase session JSON can exceed Expo SecureStore's single-value warning threshold, so `src/lib/secure-store-storage.ts` splits oversized native auth values across SecureStore keys and reassembles them on read.
 - **`detectSessionInUrl: false`.** The app handles callback URLs explicitly through `app/(auth)/auth-callback.tsx` and `src/features/auth/callback.ts` instead of letting Supabase auto-parse the URL. This makes Expo Router + deep linking + magic-link + OAuth + recovery flows behave consistently across platforms.
 
 `requireSupabase()` is the call-site helper that throws if the client is `null` (i.e., env vars missing). All repository code uses it — no caller hand-rolls null checks.
@@ -157,6 +158,7 @@ Direct imports of `i18n.t(...)` are reserved for non-component code (utility fun
 ## Theme and color scheme
 
 - `lib/theme.ts` exports `NAV_THEME` (React Navigation theme) and the brand tokens.
+- `lib/theme.ts` also exports `THEME_VARIABLES`, which applies the same token values through NativeWind `vars()` at the root layout so native builds can resolve classes like `bg-background` and `text-foreground`.
 - `tailwind.config.js` mirrors the same tokens for NativeWind classes.
 - `src/lib/color-scheme.ts` resolves the user's preference (light / dark / system) to an active scheme.
 - `src/stores/theme-store.ts` persists the choice.
@@ -187,7 +189,7 @@ The module is not "real" until export and deletion include its data. That is the
 
 ## Where things deliberately diverge
 
-- **Storage:** localStorage on web, SecureStore on native (auth tokens).
+- **Storage:** localStorage on web, SecureStore on native (auth tokens, chunked when a session value is too large for one SecureStore entry).
 - **Reminders:** local OS notifications on native, Push API + edge function on web.
 - **Auth callback URLs:** different per environment, allow-listed in Supabase.
 - **Auto-refresh:** `AppState`-driven on native, browser-driven on web.

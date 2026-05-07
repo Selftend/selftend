@@ -71,6 +71,29 @@ Use `npm run android:expo-go` only for temporary Expo Go checks. Expo Go uses `e
 
 ## Troubleshooting
 
+If `npm run android` fails with `Cannot find module 'ora'` from Expo CLI after a local EAS build, reinstall the project dependencies from the repository root:
+
+```bash
+npm install
+```
+
+This restores hoisted Expo CLI dependencies such as `ora` without changing the lockfile when `package-lock.json` is already current. Then rerun `npm run android`.
+
+If Metro then fails with `EACCES: permission denied, lstat ... node_modules\\...\\.bin\\.<name>-<random>`, remove stale npm temporary `.bin` junctions from `node_modules`:
+
+```powershell
+$nodeModulesRoot = (Resolve-Path -LiteralPath node_modules).Path
+$binDirs = Get-ChildItem -Force -Directory -Recurse -Filter '.bin' -LiteralPath $nodeModulesRoot -ErrorAction SilentlyContinue
+$items = foreach ($binDir in $binDirs) {
+  Get-ChildItem -Force -LiteralPath $binDir.FullName -ErrorAction SilentlyContinue | Where-Object {
+    $_.Attributes -band [IO.FileAttributes]::ReparsePoint -and $_.Name -match '^\..+-[A-Za-z0-9]{8}$'
+  }
+}
+$items | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
+```
+
+Then rerun `npm run android`. These paths are generated npm install artifacts; do not delete source files to fix this error.
+
 If Android opens the Play build from a QR code, stop Metro, run `npm run android -- --clear`, then open `Selftend Dev` directly from the emulator launcher. If it still opens the Play build, uninstall any older development client that used the production package, then rebuild from the current config.
 
 For quick native auth checks in Expo Go, Supabase also needs to allow the Expo Go callback URL that `Linking.createURL("auth-callback")` produces, commonly:

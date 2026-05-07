@@ -1,4 +1,5 @@
 import { DarkTheme, DefaultTheme, type Theme } from "@react-navigation/native";
+import { vars } from "nativewind";
 
 export const THEME = {
   light: {
@@ -80,4 +81,61 @@ export const NAV_THEME: Record<"light" | "dark", Theme> = {
       text: THEME.dark.foreground,
     },
   },
+};
+
+export const THEME_VARIABLES = {
+  light: vars({
+    "--background": "260 30% 98%",
+    "--foreground": "260 18% 14%",
+    "--card": "260 28% 99%",
+    "--card-foreground": "258 22% 15%",
+    "--popover": "260 28% 99%",
+    "--popover-foreground": "258 22% 15%",
+    "--primary": "262 62% 56%",
+    "--primary-foreground": "0 0% 100%",
+    "--secondary": "260 8% 92%",
+    "--secondary-foreground": "260 12% 24%",
+    "--muted": "260 14% 95%",
+    "--muted-foreground": "260 8% 42%",
+    "--accent": "260 28% 93%",
+    "--accent-foreground": "260 28% 25%",
+    "--destructive": "0 72% 51%",
+    "--destructive-foreground": "0 0% 100%",
+    "--border": "260 14% 87%",
+    "--input": "260 14% 87%",
+    "--ring": "262 62% 64%",
+    "--radius": "0.625rem",
+    "--chart-1": "260 58% 62%",
+    "--chart-2": "260 36% 70%",
+    "--chart-3": "286 44% 68%",
+    "--chart-4": "160 46% 42%",
+    "--chart-5": "43 74% 58%",
+  }),
+  dark: vars({
+    "--background": "260 20% 9%",
+    "--foreground": "260 30% 96%",
+    "--card": "260 18% 13%",
+    "--card-foreground": "260 30% 96%",
+    "--popover": "260 18% 13%",
+    "--popover-foreground": "260 30% 96%",
+    "--primary": "264 72% 72%",
+    "--primary-foreground": "260 22% 12%",
+    "--secondary": "260 8% 22%",
+    "--secondary-foreground": "260 24% 92%",
+    "--muted": "260 12% 18%",
+    "--muted-foreground": "260 12% 72%",
+    "--accent": "260 20% 24%",
+    "--accent-foreground": "260 32% 93%",
+    "--destructive": "0 68% 59%",
+    "--destructive-foreground": "0 0% 100%",
+    "--border": "260 12% 24%",
+    "--input": "260 12% 22%",
+    "--ring": "264 72% 72%",
+    "--radius": "0.625rem",
+    "--chart-1": "264 72% 72%",
+    "--chart-2": "260 34% 66%",
+    "--chart-3": "286 45% 68%",
+    "--chart-4": "160 56% 52%",
+    "--chart-5": "43 86% 65%",
+  }),
 };
