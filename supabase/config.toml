@@ -6,9 +6,13 @@ verify_jwt = false
 # See supabase/README.md "Local development" for the dev OAuth client setup.
 # Left commented out by default so unset env vars don't print warnings on every
 # CLI invocation.
-# [auth.external.google]
-# enabled = true
-# client_id = "env(GOOGLE_LOCAL_CLIENT_ID)"
-# secret = "env(GOOGLE_LOCAL_CLIENT_SECRET)"
-# redirect_uri = "http://localhost:54321/auth/v1/callback"
-# skip_nonce_check = true
+[auth]
+site_url = "http://localhost:8081"
+additional_redirect_urls = ["http://localhost:8081/auth-callback", "selftend://**"]
+
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_LOCAL_CLIENT_ID)"
+secret = "env(GOOGLE_LOCAL_CLIENT_SECRET)"
+redirect_uri = "http://localhost:54321/auth/v1/callback"
+skip_nonce_check = true
