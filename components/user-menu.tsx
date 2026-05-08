@@ -12,9 +12,8 @@ import {
 import * as React from "react";
 import { Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Ionicons } from "@expo/vector-icons";
-
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { SocialConnections } from "@/components/social-connections";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -22,7 +21,6 @@ import { Text } from "@/components/ui/text";
 import { signOut } from "@/src/features/auth/api";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { supportedLanguages } from "@/src/i18n";
-import { resolveThemePreference, useSystemColorScheme } from "@/src/lib/color-scheme";
 import { appEnv } from "@/src/lib/env";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useLanguage } from "@/src/providers/i18n-provider";
@@ -42,9 +40,6 @@ export function UserMenu() {
   const { language, setLanguage } = useLanguage();
   const preference = useThemeStore((s) => s.preference);
   const setPreference = useThemeStore((s) => s.setPreference);
-  const systemColorScheme = useSystemColorScheme();
-  const resolved = resolveThemePreference(preference, systemColorScheme);
-  const isDark = resolved === "dark";
 
   const email = user?.email;
   const avatarUrl = profile?.avatarUrl ?? null;
@@ -146,12 +141,19 @@ export function UserMenu() {
             ))}
           </View>
 
-          <View className="gap-1">
-            <Button variant="ghost" size="sm" className="justify-start" onPress={openGitHub}>
-              <Ionicons name="logo-github" size={16} color={isDark ? "#fafafa" : "#0a0a0a"} />
-              <Text>{t("header.openGithub")}</Text>
-            </Button>
-          </View>
+          <SocialConnections
+            connections={[
+              {
+                id: "github",
+                icon: "logo-github",
+                onPress: openGitHub,
+              },
+              {
+                id: "discord",
+                icon: "logo-discord",
+              },
+            ]}
+          />
 
           {isSignedIn ? (
             <View className="flex-row flex-wrap gap-3 py-0.5">
