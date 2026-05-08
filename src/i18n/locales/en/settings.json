@@ -91,7 +91,9 @@
     "cancel": "Cancel",
     "deleteError": "Unable to delete account.",
     "signOut": "Sign out",
-    "signOutError": "Unable to sign out."
+    "signOutError": "Unable to sign out.",
+    "deleteWarning": "This action is permanent. Your account, profile, preferences, and app data will be deleted unless we are required to keep limited data for legal, security, or abuse-prevention reasons.",
+    "requestDeletion": "Request deletion"
   },
   "home": {
     "title": "A calm starting point",

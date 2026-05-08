@@ -10,18 +10,8 @@ import type { Area } from "react-easy-crop";
 import { useTranslation } from "react-i18next";
 
 import { ProfileAvatar } from "@/components/profile-avatar";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { DeleteAccountModal } from "@/src/components/delete-account-modal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -681,57 +671,31 @@ function ExportDataButton() {
 function DeleteAccountButton() {
   const { t } = useTranslation("settings");
   const deleteMutation = useDeleteUserAccount();
-  const [confirmInput, setConfirmInput] = useState("");
   const [open, setOpen] = useState(false);
 
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync();
+      setOpen(false);
       await signOut();
     } catch {
-      // Error shown in dialog
+      // Error is shown in the modal.
     }
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost">
-          <Text>{t("account.deleteButton")}</Text>
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t("account.deleteTitle")}</AlertDialogTitle>
-          <AlertDialogDescription>{t("account.deleteDescription")}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <View className="gap-2 py-2">
-          <Label>{t("account.deleteConfirmLabel")}</Label>
-          <Input
-            accessibilityLabel={t("account.deleteConfirmLabel")}
-            autoCapitalize="characters"
-            onChangeText={setConfirmInput}
-            placeholder={t("account.deleteConfirmPlaceholder")}
-            value={confirmInput}
-          />
-          {deleteMutation.isError ? (
-            <Text className="text-sm text-destructive">{t("account.deleteFailed")}</Text>
-          ) : null}
-        </View>
-        <AlertDialogFooter>
-          <AlertDialogCancel>
-            <Text>{t("account.cancel")}</Text>
-          </AlertDialogCancel>
-          <AlertDialogAction
-            disabled={confirmInput !== "DELETE" || deleteMutation.isPending}
-            onPress={() => void handleDelete()}
-          >
-            <Text>
-              {deleteMutation.isPending ? t("account.deleting") : t("account.deletePermanently")}
-            </Text>
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <Button onPress={() => setOpen(true)} variant="ghost">
+        <Text>{t("account.deleteButton")}</Text>
+      </Button>
+
+      <DeleteAccountModal
+        isError={deleteMutation.isError}
+        isPending={deleteMutation.isPending}
+        onCancel={() => setOpen(false)}
+        onConfirm={() => void handleDelete()}
+        visible={open}
+      />
+    </>
   );
 }
