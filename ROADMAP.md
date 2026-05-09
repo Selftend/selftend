@@ -176,7 +176,7 @@ Contributor operations:
 5. [ ] Publish contributor roles.
 6. [ ] Use GitHub Discussions or Discord for onboarding questions when contribution volume justifies it.
 7. [ ] Recognize contributors publicly.
-8. [ ] Invite docs, content, translation, design, and QA contributions, not just code.
+8. [x] Invite docs, content, translation, design, and QA contributions, not just code. (Weblate Libre plan deployed on hosted.weblate.org.)
 9. [ ] Keep contributor docs for code, content, design, and QA up to date.
 
 Community and support:

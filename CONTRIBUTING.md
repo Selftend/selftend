@@ -69,19 +69,19 @@ For a deeper tour — provider tree, auth flow, data layer pattern, where web an
 
 ## Translating the app
 
-Translation files live in `src/i18n/locales/`. Each supported language has a folder (e.g. `en/`, `bg/`) with seven JSON namespace files.
+Translations are managed via Weblate (hosted Libre plan):
 
-To improve an existing language, edit the JSON files in that language's folder.
+https://hosted.weblate.org/projects/selftend/
 
-To add a new language:
+To contribute:
 
-1. Copy `src/i18n/locales/en/` to `src/i18n/locales/{code}/`.
-2. Translate every value in all seven JSON files. Do not change the keys.
-3. Register the new language in `src/i18n/index.ts` (import the files, add the code to `supportedLanguages`, add the resources).
-4. Add the language option to the language switcher in `src/features/settings/settings.tsx`.
-5. Open a PR with the new locale.
+1. Create an account on hosted.weblate.org.
+2. Browse to the selftend project and pick a language.
+3. Translate in the web UI — Weblate auto-creates a GitHub PR.
+4. A maintainer reviews and merges.
 
-See `docs/stack.md` for more details on the i18n architecture.
+To add a new language, request it via the Weblate interface or open a
+GitHub issue. See docs/stack.md for the namespace list.
 
 ## Contribution flow
 

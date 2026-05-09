@@ -56,6 +56,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Policy page section content uses `t(sectionKey, { returnObjects: true })` to load structured arrays from JSON.
 - When adding a new screen or feature, add keys to the appropriate namespace JSON files for all supported languages.
 - Language preference is persisted in AsyncStorage and synced to the Supabase `user_preferences.language` column.
+- Translations managed via Weblate hosted Libre plan at hosted.weblate.org.
 
 ## Dependency policy
 

@@ -141,6 +141,10 @@ Key files:
 - `src/i18n/locales/en/` — English source translations
 - `src/i18n/locales/bg/` — Bulgarian translations
 
+Translations are managed via [Weblate](https://hosted.weblate.org/) (hosted Libre plan).
+The Weblate project mirrors the 7 namespaces as separate components using i18next JSON v4.
+Weblate auto-creates GitHub PRs from translation changes and syncs via webhooks.
+
 ## Testing
 
 Jest uses `jest-expo` and React Native Testing Library. Route component tests may import screens from `app/`, but test files must live outside `app/` so Expo Router does not treat them as runtime routes.

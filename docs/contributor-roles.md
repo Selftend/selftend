@@ -71,9 +71,10 @@ What you can contribute:
 
 Start here:
 
-1. [CONTRIBUTING.md](../CONTRIBUTING.md#translating-the-app) — step-by-step for editing or adding a language.
-2. [docs/stack.md](stack.md#internationalization-i18n) — i18n architecture.
-3. The seven namespace files in `src/i18n/locales/en/` are the canonical source. The `policies` namespace is the largest because it carries full legal text.
+1. [Weblate selftend project](https://hosted.weblate.org/projects/selftend/) — translate in the web UI; Weblate auto-creates a PR.
+2. [CONTRIBUTING.md](../CONTRIBUTING.md#translating-the-app) — overview of the translation workflow.
+3. [docs/stack.md](stack.md#internationalization-i18n) — i18n architecture.
+4. The seven namespace files in `src/i18n/locales/en/` are the canonical source. The `policies` namespace is the largest because it carries full legal text.
 
 What to mind:
 
