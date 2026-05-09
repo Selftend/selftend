@@ -72,9 +72,7 @@ Use Node `20.19.0+` for this repo. That matches the `package.json` engine requir
 cp .env.example .env
 ```
 
-Use `.env` for the hosted Supabase project. Create `.env.local` with the local
-Supabase URL and local anon key from `npm run db:status` when you want the local
-development backend.
+Use `.env` for the hosted Supabase project. Create `.env.local` with the local Supabase URL and local anon key from `npm run db:status` when you want the local development backend.
 
 3. Fill in:
 
@@ -104,21 +102,14 @@ For Android setup, including the development-client identity, callback URLs, and
 4. Run the app:
 
 ```bash
-npm run start         # development client with `.env.local` values
-npm run start:prod    # development client with `.env` values
-npm run start:emulator  # boot/open the Android emulator development client
-npm run start:prod:emulator # boot/open the Android emulator with `.env` values
-npm run web           # Expo web only
+npm run start
+npm run start:prod
+npm run start:emulator
+npm run start:prod:emulator
+npm run web
 ```
 
-Use `.env.local` for local Supabase development and `.env` for the hosted
-Supabase project. The `:prod` script name means "use the hosted Supabase env",
-not "make a production JavaScript build". When an Android phone or emulator is
-already visible in `adb devices`, `npm run start` and `npm run start:prod`
-configure `adb reverse` for Metro before starting Expo. Local Supabase commands
-also reverse the local Supabase port. Local Supabase on Android requires the
-current development build because the dev Android manifest allows cleartext HTTP
-only for `Selftend Dev`.
+Use `.env.local` for local Supabase development and `.env` for the hosted Supabase project. The `:prod` script name means "use the hosted Supabase env", not "make a production JavaScript build". When an Android phone or emulator is already visible in `adb devices`, `npm run start` and `npm run start:prod` configure `adb reverse` for Metro before starting Expo. Local Supabase commands also reverse the local Supabase port. Local Supabase on Android requires the current development build because the dev Android manifest allows cleartext HTTP only for `Selftend Dev`.
 
 Day-to-day commands:
 
@@ -126,8 +117,8 @@ Day-to-day commands:
 npm run typecheck
 npm run lint
 npm run test
-npm run verify   # what CI runs: lint + format check + typecheck + tests
-npm run format   # apply Prettier
+npm run verify
+npm run format
 ```
 
 Before a Google Play upload, run `npm exec expo -- config --type prebuild --json` and confirm the resolved Android permissions do not include `android.permission.CAMERA` or `android.permission.RECORD_AUDIO`. The app only uses the photo library for optional profile-picture changes, and `app.config.ts` disables camera and microphone permissions in `expo-image-picker` for Play policy hygiene.
@@ -142,12 +133,23 @@ The default Android workflow uses an EAS development client (`Selftend Dev`), no
 
 ## Releases
 
-GitHub Actions has manual workflows for `Android Play internal release`, `Web production deploy`, and `Android development APK` (cross-machine emulator builds). Required variables, secrets, and trigger details live in [docs/github-setup.md](docs/github-setup.md). EAS preview and production builds fail if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing, so a Play build cannot ship with auth disabled by accident.
+GitHub Actions has manual workflows for `Android Play internal release`, `Web production deploy`, and `Android development APK` cross-machine emulator builds. Required variables, secrets, and trigger details live in [docs/github-setup.md](docs/github-setup.md). EAS preview and production builds fail if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing, so a Play build cannot ship with auth disabled by accident.
+
+## License
+
+Selftend is licensed under the [GNU Affero General Public License v3.0 only](LICENSE).
+
+The Selftend name, logo, icon, domain, and branding are not licensed under the AGPL. You may fork and modify the source code under the AGPL, but you may not use the Selftend name, logo, icon, or branding in a way that implies your fork is the official Selftend project.
+
+Modified versions should use clearly different naming and branding.
+
+Copyright (C) 2026 Vasil Yoshev.
 
 ## Repo map
 
 Top-level:
 
+- [LICENSE](LICENSE) — GNU Affero General Public License v3.0 only
 - [ROADMAP.md](ROADMAP.md) — feature roadmap, launch phases, and readiness criteria
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contributor flow, code structure, dev loop
 - [AGENTS.md](AGENTS.md) — instructions for AI agents working in this repo
@@ -157,7 +159,7 @@ Top-level:
 
 Most-read deeper docs:
 
-- [docs/contributor-roles.md](docs/contributor-roles.md) — practical starting points by role (developer, designer, translator, tester, mental-health expert)
+- [docs/contributor-roles.md](docs/contributor-roles.md) — practical starting points by role
 - [docs/product-principles.md](docs/product-principles.md) — product guardrails
 - [docs/accessibility.md](docs/accessibility.md) — accessibility baseline and contributor checklist
 - [docs/stack.md](docs/stack.md) — approved technical stack
