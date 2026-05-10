@@ -72,7 +72,7 @@ Netlify setup:
 
 1. Create or sign in to a Netlify account.
 2. Add a new site from GitHub.
-3. Select `vasilyoshev/self-tend`.
+3. Select `Selftend/selftend`.
 4. Use the settings from `netlify.toml`.
 5. Add production environment variables listed below.
 6. Deploy from `main`.
@@ -87,7 +87,7 @@ Required Netlify environment variables:
 ```text
 EXPO_PUBLIC_SUPABASE_URL=<supabase-project-url>
 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<supabase-publishable-key>
-EXPO_PUBLIC_GITHUB_REPO_URL=https://github.com/vasilyoshev/self-tend
+EXPO_PUBLIC_GITHUB_REPO_URL=https://github.com/Selftend/selftend
 EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org
 EXPO_PUBLIC_SUPPORT_EMAIL=support@selftend.org
 EXPO_PUBLIC_PRIVACY_EMAIL=privacy@selftend.org

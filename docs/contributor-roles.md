@@ -25,7 +25,7 @@ Start here:
 5. [docs/data-privacy-model.md](data-privacy-model.md) — what data classes exist and the rules around them.
 6. [docs/modules/tools.md](modules/tools.md) — module contract for any new feature module.
 
-Pick from issues labeled [`good first issue`](https://github.com/vasilyoshev/self-tend/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22), `bug`, `feature`, or `accessibility`. Comment before claiming larger work.
+Pick from issues labeled [`good first issue`](https://github.com/Selftend/selftend/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22), `bug`, `feature`, or `accessibility`. Comment before claiming larger work.
 
 What to mind:
 

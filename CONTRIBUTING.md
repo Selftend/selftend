@@ -31,7 +31,7 @@ By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 - test planning
 - adding or improving translations
 
-Filtered list of issues marked beginner-friendly: [good first issue](https://github.com/vasilyoshev/self-tend/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22). If none are open, comment on any issue you'd like to take, or open one describing what you want to work on.
+Filtered list of issues marked beginner-friendly: [good first issue](https://github.com/Selftend/selftend/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22). If none are open, comment on any issue you'd like to take, or open one describing what you want to work on.
 
 For role-specific starting points (developer, designer, translator, tester, mental-health expert), see [docs/contributor-roles.md](docs/contributor-roles.md).
 

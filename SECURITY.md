@@ -9,7 +9,7 @@ Selftend stores sensitive personal reflection from real people. We take security
 Please report suspected vulnerabilities privately. Do not open a public GitHub issue for security problems.
 
 - **Email:** `security@selftend.org`
-- **GitHub Security Advisory:** https://github.com/vasilyoshev/self-tend/security/advisories/new
+- **GitHub Security Advisory:** https://github.com/Selftend/selftend/security/advisories/new
 
 If you have not received a reply within 7 days, please follow up — emails do occasionally get filtered.
 
