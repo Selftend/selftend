@@ -1,0 +1,26 @@
+name: Content
+description: Improve in-app text, guidance, exercises, or educational material.
+title: "[Content]: "
+type: Content
+body:
+  - type: textarea
+    id: content
+    attributes:
+      label: What content should change?
+      description: Describe the text, exercise, guidance, or educational material.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: Why does it matter?
+      description: Explain the user benefit or concern.
+    validations:
+      required: true
+
+  - type: textarea
+    id: guardrails
+    attributes:
+      label: Safety, privacy, or clinical concerns
+      description: Mention if this touches crisis support, self-harm, minors, medical advice, privacy, or sensitive mental-health content.

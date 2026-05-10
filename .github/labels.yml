@@ -1,24 +1,35 @@
-- name: bug
-  color: d73a4a
-  description: Something is broken.
-- name: feature
-  color: 0e8a16
-  description: Proposed product or engineering capability.
-- name: docs
-  color: 1d76db
-  description: Documentation or contributor-process work.
 - name: privacy
   color: 5319e7
   description: Privacy-sensitive change or discussion.
+
 - name: safety
   color: b60205
-  description: Safety, crisis, or child-safety review needed.
+  description: Safety, crisis, self-harm, minors, or abuse-related review needed.
+
 - name: accessibility
   color: 0052cc
   description: Accessibility work or review.
+
+- name: security
+  color: ee0701
+  description: Security-sensitive change or vulnerability concern.
+
+- name: auth
+  color: fbca04
+  description: Accounts, login, OAuth, sessions, or passwordless auth.
+
+- name: ui
+  color: a2eeef
+  description: Visual design, layout, components, or user interface work.
+
+- name: i18n
+  color: 006b75
+  description: Translation, localization, or language support.
+
 - name: good first issue
   color: 7057ff
   description: Suitable for a first-time contributor.
+
 - name: help wanted
   color: 008672
   description: Maintainer is open to outside contributors picking this up.

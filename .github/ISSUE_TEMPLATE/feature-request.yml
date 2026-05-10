@@ -1,9 +1,13 @@
 name: Feature request
 description: Propose a feature or product change.
 title: "[Feature]: "
-labels:
-  - feature
+type: Feature
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement for Selftend.
+
   - type: textarea
     id: problem
     attributes:
@@ -11,6 +15,7 @@ body:
       description: What user problem is this trying to solve?
     validations:
       required: true
+
   - type: textarea
     id: proposal
     attributes:
@@ -18,8 +23,9 @@ body:
       description: Describe the smallest useful version first.
     validations:
       required: true
+
   - type: textarea
     id: guardrails
     attributes:
       label: Guardrails
-      description: Call out privacy, safety, licensing, or scope concerns.
+      description: Call out privacy, safety, accessibility, licensing, or scope concerns.

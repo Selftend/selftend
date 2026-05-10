@@ -1,9 +1,15 @@
 name: Bug report
 description: Report a defect in the current product or docs.
 title: "[Bug]: "
-labels:
-  - bug
+type: Bug
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Selftend.
+
+        Please do not include private health information, passwords, tokens, or other sensitive personal data.
+
   - type: textarea
     id: summary
     attributes:
@@ -11,21 +17,29 @@ body:
       description: What broke and where did you see it?
     validations:
       required: true
+
   - type: textarea
     id: steps
     attributes:
       label: Steps to reproduce
       description: Keep the steps concrete and reproducible.
+      placeholder: |
+        1. Go to...
+        2. Click/tap...
+        3. See...
     validations:
       required: true
+
   - type: textarea
     id: expected
     attributes:
       label: Expected behavior
+      description: What did you expect to happen instead?
     validations:
       required: true
+
   - type: textarea
     id: scope
     attributes:
       label: Privacy or safety impact
-      description: Mention any data-loss, minors, crisis, or privacy concern.
+      description: Mention any data-loss, minors, crisis, security, or privacy concern.
