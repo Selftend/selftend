@@ -65,7 +65,9 @@ export default function SupportScreen() {
                 </Button>
                 <Button
                   onPress={() =>
-                    void Linking.openURL(`${appEnv.githubRepoUrl}/blob/main/CONTRIBUTING.md`)
+                    void Linking.openURL(
+                      `${appEnv.githubRepoUrl}/blob/main/.github/CONTRIBUTING.md`,
+                    )
                   }
                   variant="secondary"
                 >

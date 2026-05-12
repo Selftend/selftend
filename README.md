@@ -4,15 +4,13 @@
   <img src="./assets/icon.png" alt="Selftend logo" width="200" height="200" />
 </div>
 
-**A free, open-source mental health app for web, iOS, and Android.**
+**Free, open-source guided self-help for web, iOS, and Android.**
 
-https://github.com/Selftend/selftend
-
-Selftend helps you with guided self-help tools including cognitive behavioral therapy (CBT), mood tracking, meditation, and more. No ads, no subscriptions, no paywalls.
+Selftend is being built around private guided self-help tools. The current working slice is CBT thought records; mood check-ins and journaling are planned next. It has no ads, subscriptions, or paywalls.
 
 ## Quick Start
 
-### 1. Install dependencies
+Requires Node `20.19.0+`.
 
 ```bash
 git clone https://github.com/Selftend/selftend.git
@@ -20,86 +18,55 @@ cd selftend
 npm install
 ```
 
-Requires Node 20.19.0+.
-
-### 2. Set up environment
-
-You have two options for environment configuration:
-
-**Option A: Use `.env` for remote Supabase (hosted)**
+Create one environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in your hosted Supabase URL and anon key. Good for testing against a shared backend.
-
-**Option B: Use `.env.local` for local Supabase**
+Use `.env` for hosted Supabase values. For local Supabase development, use:
 
 ```bash
 cp .env.local.example .env.local
+npx supabase start
 ```
 
-Fill in your local Supabase URL and anon key from `supabase/config.toml`. Run `npx supabase start` to start local backend.
+`.env` takes precedence over `.env.local` when both exist.
 
-**.env takes precedence over .env.local** if both exist.
-
-### 3. Run the app
-
-**Web browser:**
+## Run
 
 ```bash
-npm run web
+npm run web              # browser at http://localhost:8081
+npm run start            # Android device, local Supabase when available
+npm run start:emulator   # Android emulator
+npm run ios              # iOS simulator
 ```
 
-Opens at http://localhost:8081
-
-**Android emulator:**
+## Checks
 
 ```bash
-npm run start:emulator
-```
-
-Uses local Supabase if `.env.local` exists, otherwise uses `.env`. Requires Android Studio emulator running.
-
-**Android device (connected via USB):**
-
-```bash
-npm run start
-```
-
-Detects connected device automatically. Enable USB debugging on device.
-
-**iOS simulator:**
-
-```bash
-npm run ios
-```
-
-### 4. Day-to-day commands
-
-```bash
-npm run typecheck   # TypeScript type checking
-npm run lint        # ESLint code quality
-npm run test        # Run Jest tests
-npm run verify      # Typecheck + lint + test
-npm run format      # Format code with Prettier
+npm run typecheck
+npm run lint
+npm run test
+npm run verify           # typecheck + lint + test
+npm run format
 ```
 
 ## Documentation
 
-| Topic         | Guide                                                      |
-| ------------- | ---------------------------------------------------------- |
-| Android Setup | [docs/android-development.md](docs/android-development.md) |
-| Contributing  | [CONTRIBUTING.md](CONTRIBUTING.md)                         |
-| Roadmap       | [ROADMAP.md](ROADMAP.md)                                   |
-| Tech Stack    | [docs/stack.md](docs/stack.md)                             |
-| Privacy       | [docs/data-privacy-model.md](docs/data-privacy-model.md)   |
+| Topic              | Guide                                                      |
+| ------------------ | ---------------------------------------------------------- |
+| Contributing       | [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)         |
+| Roadmap            | [.github/ROADMAP.md](.github/ROADMAP.md)                   |
+| Security           | [.github/SECURITY.md](.github/SECURITY.md)                 |
+| Code of Conduct    | [.github/CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md)   |
+| Docs index         | [docs/README.md](docs/README.md)                           |
+| Android setup      | [docs/android-development.md](docs/android-development.md) |
+| Architecture       | [docs/architecture.md](docs/architecture.md)               |
+| Stack              | [docs/stack.md](docs/stack.md)                             |
+| Privacy data model | [docs/data-privacy-model.md](docs/data-privacy-model.md)   |
+| Supabase setup     | [supabase/README.md](supabase/README.md)                   |
 
 ## License
 
-AGPL-3.0-only. The Selftend name, logo, and branding are not licensed. See [LICENSE](LICENSE) for details.
-
-## Contributing
-
-This is a community project. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/contributor-roles.md](docs/contributor-roles.md) to get started.
+Code is licensed under AGPL-3.0-only. The Selftend name, logo, and branding are not licensed for reuse. See [LICENSE](LICENSE) and [.github/THIRD_PARTY_NOTICES.md](.github/THIRD_PARTY_NOTICES.md).

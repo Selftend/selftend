@@ -111,10 +111,11 @@ Practical default:
 - use short feature branches
 - prefer draft PRs for larger work
 
-## Immediate follow-up after remote creation
+## Repository setup checklist
 
-1. push the current scaffold
-2. create the prepared labels
-3. enable GitHub Actions
-4. enable issue templates
-5. decide whether to protect `main`
+Use this when configuring a new GitHub remote or mirror:
+
+1. create the prepared labels
+2. enable GitHub Actions
+3. enable issue templates
+4. decide whether to protect `main`

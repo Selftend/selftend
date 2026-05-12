@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-Last updated: 2026-05-03
+Last updated: 2026-05-12
 
 This file tracks copied or generated third-party code that needs explicit notice handling. It is not a complete dependency license inventory.
 
@@ -8,10 +8,10 @@ This file tracks copied or generated third-party code that needs explicit notice
 
 Source: https://github.com/founded-labs/react-native-reusables
 
-Use in this project:
+Use:
 
 - generated UI primitives under `components/ui`
-- default theme/config glue in `components.json`, `global.css`, `tailwind.config.js`, `metro.config.js`, `lib/utils.ts`, and `lib/theme.ts`
+- registry/theme glue in `components.json`, `global.css`, `tailwind.config.js`, `metro.config.js`, `lib/utils.ts`, and `lib/theme.ts`
 
 License: MIT
 
@@ -33,24 +33,24 @@ THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## shadcn/ui Notice Trail
 
-The React Native Reusables CLI states that it uses code from `shadcn/ui` under the MIT License.
+React Native Reusables states that it uses code from `shadcn/ui` under the MIT License.
 
 Source: https://github.com/shadcn-ui/ui
 
-No web `shadcn/ui` components were copied directly in this change, but this notice is kept because React Native Reusables is a shadcn-style component registry.
+No web `shadcn/ui` components were copied directly. This notice remains because React Native Reusables is a shadcn-style component registry.
 
 ## UI Support Dependencies
 
-The UI layer currently adds these direct dependencies:
+Direct UI support dependencies:
 
-- `@rn-primitives/*` direct packages used by the generated component set: MIT
+- `@rn-primitives/*`: MIT
 - `class-variance-authority`: Apache-2.0
 - `clsx`: MIT
-- `expo-image-manipulator`: MIT, official Expo-supported image processing used for avatar crop and resize
-- `expo-image-picker`: MIT, official Expo-supported media picker used for profile-picture selection
+- `expo-image-manipulator`: MIT
+- `expo-image-picker`: MIT
 - `lucide-react-native`: ISC
-- `react-easy-crop`: MIT, lightweight interactive crop UI used for profile-picture cropping on web
+- `react-easy-crop`: MIT
 - `tailwind-merge`: MIT
 - `tailwindcss-animate`: MIT
 
-Before public launch, run a complete dependency license review and replace this lightweight file with the final notice process required by legal and app-store review.
+Before public launch, run a complete dependency license review and replace this lightweight file if legal or app-store review requires a fuller notice process.

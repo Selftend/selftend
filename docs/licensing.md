@@ -80,7 +80,7 @@ License posture:
   - `clsx`, `tailwind-merge`, `tailwindcss-animate`: MIT
   - `lucide-react-native`: ISC
 
-Current notice tracking lives in `THIRD_PARTY_NOTICES.md`. Before public launch, replace the lightweight notice file with a complete dependency notice/export process if app-store or legal review requires it.
+Current notice tracking lives in [.github/THIRD_PARTY_NOTICES.md](../.github/THIRD_PARTY_NOTICES.md). Before public launch, replace the lightweight notice file with a complete dependency notice/export process if app-store or legal review requires it.
 
 ## Contributor rule
 

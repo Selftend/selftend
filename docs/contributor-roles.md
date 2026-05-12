@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-07
 
-Selftend needs more than code. This page is a practical starting point for the kinds of contributors the project actively wants. If you don't see your skill below, [CONTRIBUTING.md](../CONTRIBUTING.md) covers the general flow and you can also open an issue describing how you'd like to help.
+Selftend needs more than code. This page is a practical starting point for the kinds of contributors the project actively wants. If you don't see your skill below, [.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md) covers the general flow and you can also open an issue describing how you'd like to help.
 
 For the broader community-operations view (channels, recognition, moderation), see [docs/community.md](community.md). This page is about getting one person started.
 
@@ -19,7 +19,7 @@ What you can contribute:
 Start here:
 
 1. [README.md](../README.md) — install, env, run on web or Android.
-2. [CONTRIBUTING.md](../CONTRIBUTING.md) — code structure table, branch/PR flow, dev loop.
+2. [.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md) — code structure table, branch/PR flow, dev loop.
 3. [AGENTS.md](../AGENTS.md) — technical defaults and "things to push back on." Same guardrails apply to humans.
 4. [docs/stack.md](stack.md) — approved stack and dependency policy.
 5. [docs/data-privacy-model.md](data-privacy-model.md) — what data classes exist and the rules around them.
@@ -72,7 +72,7 @@ What you can contribute:
 Start here:
 
 1. [Weblate selftend project](https://hosted.weblate.org/projects/selftend/) — translate in the web UI; Weblate auto-creates a PR.
-2. [CONTRIBUTING.md](../CONTRIBUTING.md#translating-the-app) — overview of the translation workflow.
+2. [.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md#translation) — overview of the translation workflow.
 3. [docs/stack.md](stack.md#internationalization-i18n) — i18n architecture.
 4. The seven namespace files in `src/i18n/locales/en/` are the canonical source. The `policies` namespace is the largest because it carries full legal text.
 
@@ -126,7 +126,7 @@ Start here:
 1. [docs/product-principles.md](product-principles.md) — especially principle 6 ("Wellness, not diagnosis") and principle 11 ("No AI coach in MVP").
 2. [docs/modules/cbt.md](modules/cbt.md) — the only built module. Review the distortion list, the five-step thought-record flow, and the validation rules.
 3. [docs/policies.md](policies.md) — privacy, terms, crisis copy, age floor (13+), and the explicit non-medical framing.
-4. [ROADMAP.md](../ROADMAP.md) — sequencing of future modules.
+4. [.github/ROADMAP.md](../.github/ROADMAP.md) — sequencing of future modules.
 
 To contribute, you can:
 
@@ -140,7 +140,7 @@ What to mind:
 - The project does not currently claim "clinically reviewed" status anywhere, and won't until a formal review process exists. If you'd like that to change, raise it as a process discussion rather than as a copy edit.
 - Credentials are appreciated context but not required to file an issue. If you'd like to be credited, say so in your PR or issue and let us know how you want to be named.
 - The MVP intentionally has no AI coach, no peer-to-peer messaging, and no community feed. If you think any future module needs clinical involvement before shipping (e.g., suicide-safety planning), please flag that early so it can be planned for or dropped from scope.
-- Crisis copy currently lists US (988) and Canada resources only. Expanding to other jurisdictions is an open task — see roadmap item P2 §24 ("Approve the global crisis-resource strategy").
+- Crisis copy currently lists US (988) and Canada resources only. Expanding to other jurisdictions is an open task; see the global crisis-resource item in [.github/ROADMAP.md](../.github/ROADMAP.md).
 
 ## What's not yet covered
 
