@@ -24,7 +24,7 @@ Production iOS bundle identifier: org.vasilyoshev.selftend
 Production native scheme: selftend
 ```
 
-For Google Play closed testing, use the `production` profile to create an Android App Bundle after policy forms and store setup are ready. For Apple TestFlight, use the same `production` profile to create an iOS build, then submit it through EAS Submit after the App Store Connect app record exists. The `preview` and `production` profiles use matching EAS environments and fail at app-config evaluation if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing.
+For Google Play closed testing, use the `production` profile to create an Android App Bundle. iOS TestFlight/App Store work is deferred out of the current launch path until Apple Developer Program funding or legal organization/nonprofit enrollment is realistic. The `preview` and `production` profiles use matching EAS environments and fail at app-config evaluation if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing.
 
 Manual GitHub Actions workflows are available for maintainer-triggered releases from `main`:
 
@@ -115,8 +115,6 @@ npm run build:android:development
 npm run build:android:preview
 npm run build:android:production
 EAS_LOCAL_BUILD_ARTIFACTS_DIR=./build-artifacts npm exec eas-cli -- build --platform android --profile production --local --non-interactive
-npm run build:ios:production
-npm run submit:ios:production -- --latest
 ```
 
 Use Node `20.19.0+` so your local runtime matches the current `package.json` engine requirement before you install or test anything.
@@ -154,37 +152,28 @@ Before publishing a preview or production build to testers:
 
 ## iOS TestFlight note
 
-Apple TestFlight and App Store work is currently blocked. Do not spend on Apple Developer Program enrollment or submit an iOS build until one of these is true:
+iOS TestFlight and App Store work is deferred. Do not spend on Apple Developer Program enrollment or submit an iOS build until one of these is true:
 
 - the annual Apple Developer Program fee is funded and the maintainer accepts the seller-name tradeoff, or
 - Selftend has a legal organization/nonprofit identity that can enroll under the organization name and, if eligible, apply for Apple's fee waiver.
 
-After the block is cleared:
-
-1. Enroll in the Apple Developer Program.
-2. Create the App Store Connect app record for `Selftend` with bundle ID `org.vasilyoshev.selftend`.
-3. Add the numeric App Store Connect Apple ID as `submit.production.ios.ascAppId` in `eas.json`.
-4. Configure EAS-managed iOS credentials or an App Store Connect API key.
-5. Run `npm run build:ios:production`, then `npm run submit:ios:production -- --latest`.
-6. Finish TestFlight and App Review metadata in App Store Connect.
+Release scripts and EAS submit config for iOS are intentionally omitted while this is deferred. Reintroduce them only when the Apple path is funded and ready.
 
 ## Store-readiness note
 
-Do not move to closed testing or store submission yet. Finish:
+Do not widen closed testing or move to store production yet. Finish:
 
-- migration application in the active Supabase project
-- web push VAPID keys, Edge Function secrets, and cron scheduling before claiming browser reminder support
-- public domain and Supabase production redirect configuration
-- final app name and package-name confirmation
-- public support/privacy/deletion contact configuration
+- production public route smoke testing
+- CSP verification against the real Expo web build
+- self-service deletion testing against production Supabase
 - privacy policy and terms legal review
 - crisis/safety copy jurisdiction review
-- iOS release block resolved: Apple Developer Program fee funded or legal organization/nonprofit enrollment path confirmed
-- after the iOS block is resolved, Apple Developer Program enrollment and App Store Connect app record
-- after the iOS block is resolved, iOS App Store privacy labels, screenshots, support URL, and TestFlight review notes
-- Google Play Health apps declaration and Data safety form
-- account deletion request process review
+- incident response, breach notification, support, and manual GDPR request runbooks
+- app store screenshots, policy-safe copy, FAQ, and public support guidance
+- Google Play service account JSON after the first manual upload
 - internal device testing
 - icon/screenshot/store copy polish
+
+Web push VAPID keys, Edge Function secrets, cron scheduling, and cross-browser web-push verification are deferred reminder infrastructure. They do not block the first public web test.
 
 See [deployment.md](deployment.md), [self-hosting.md](self-hosting.md), [android-closed-testing.md](android-closed-testing.md), and [policies.md](policies.md) for launch-specific checklists.

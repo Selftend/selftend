@@ -1,6 +1,6 @@
 # Naming
 
-Last updated: 2026-05-02
+Last updated: 2026-05-12
 
 ## Final name
 
@@ -31,11 +31,11 @@ Canonical project identifiers:
 
 ## Production domain
 
-Target production domain: `https://selftend.org`.
+Canonical production domain: `https://selftend.org`.
 
 Domain purchase status:
 
-- `selftend.org` is the preferred domain because nonprofit positioning is central.
+- `selftend.org` is purchased, configured, and live as the production domain.
 - `selftend.com` is optional defensive ownership if affordable.
 - `selftend.app` is acceptable but less aligned with the nonprofit posture.
 - `selftend.io` is not preferred because it reads more like a tech/startup product.

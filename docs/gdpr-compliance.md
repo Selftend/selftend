@@ -1,6 +1,6 @@
 # GDPR Compliance Checklist
 
-Last updated: 2026-05-06
+Last updated: 2026-05-12
 
 This checklist tracks GDPR compliance status for Selftend. It covers the key requirements from the General Data Protection Regulation and related frameworks.
 
@@ -79,7 +79,7 @@ This checklist tracks GDPR compliance status for Selftend. It covers the key req
 - [ ] Process for detecting breaches
 - [ ] Process for notifying supervisory authority within 72 hours
 - [ ] Process for notifying affected users when high risk
-- [ ] Security contact published (security@selftend.org planned)
+- [x] Security contact published (security@selftend.org)
 
 ## Data Protection Impact Assessment (Article 35)
 
@@ -119,7 +119,7 @@ This checklist tracks GDPR compliance status for Selftend. It covers the key req
 2. [ ] Human/legal review of privacy policy text
 3. [ ] Human/legal review of terms of service text
 4. [x] Configure privacy@selftend.org email alias
-5. [ ] Configure security@selftend.org email alias
+5. [x] Configure security@selftend.org email alias
 6. [ ] Document data breach notification process
 7. [ ] Verify Supabase DPA is signed/applicable
 8. [ ] Test CSP headers don't break Expo web bundle

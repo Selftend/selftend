@@ -1,6 +1,6 @@
 # Android Closed Testing
 
-Last checked: 2026-05-06
+Last checked: 2026-05-12
 
 The first Google Play milestone should be closed testing, not production. Do not promote to production until policy, safety, device, and support requirements are reviewed.
 
@@ -35,7 +35,7 @@ Official references:
 - Version: `0.1.0`
 - Disabled Android camera/microphone permissions: `android.permission.CAMERA`, `android.permission.RECORD_AUDIO`
 
-Choose the final public app name before uploading to Google Play. The package name cannot be changed for the same Play listing after release without creating a new app listing.
+The public app name and Android package are now set for the Play listing. The package name cannot be changed for the same Play listing after release without creating a new app listing.
 
 ## Developer account setup
 
@@ -43,7 +43,7 @@ Use an organization or nonprofit developer account if this project is submitted 
 
 Google currently lists a one-time developer registration fee of `US$25`. Verify the amount and payment requirements during signup.
 
-Current sequencing decision: defer Google Play account creation until after the temporary web version is hosted and organization/nonprofit account details are confirmed. The public app name and native identifiers are now Selftend.
+Current status: the Google Play developer account and Selftend app record exist, required Play policy forms are completed, and the first production AAB has been uploaded. Next work is service-account setup for repeatable uploads, store-asset polish, and real-device closed-test verification.
 
 Required owner inputs:
 
@@ -64,12 +64,17 @@ New personal developer accounts have additional closed-testing requirements befo
 
 Because this is a mental-health/wellness app, treat it as in scope for Google Play health-app review.
 
-Before closed testing:
+Completed for the current Play app:
 
-- complete the Health apps declaration in Play Console
-- provide a public privacy policy URL, preferably `https://<domain>/privacy`
-- provide a public account deletion URL, preferably `https://<domain>/account-deletion`
-- complete the Data safety form for closed testing
+- Health apps declaration in Play Console
+- Data safety form for closed testing
+- app access instructions for account-required testing
+- first production AAB upload
+
+Before widening testing:
+
+- confirm the public privacy policy URL is `https://selftend.org/privacy`
+- confirm the public account deletion URL is `https://selftend.org/account-deletion`
 - confirm the store listing and app copy include the wellness/self-help boundary
 - do not claim diagnosis, treatment, cure, prevention, emergency support, or professional care
 - verify reminders are optional, local, and off by default
@@ -181,26 +186,26 @@ Required only when `submit_to_play` is enabled:
 GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
 ```
 
-Do not set `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` until the Google Play app has had its first manual upload and the Play service account has been created with access to the app. EAS Submit requires that first manual upload before API submissions work.
+The first manual upload requirement is now satisfied. Do not set `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` until the Play service account has been created with access to the app.
 
 ## First Google Play upload sequence
 
-1. Confirm the final public app name and package name.
-2. Create the app in Play Console under the organization account.
-3. Complete required app content forms:
+1. [x] Confirm the final public app name and package name.
+2. [x] Create the app in Play Console.
+3. [x] Complete required app content forms:
    - Privacy policy URL
    - Data safety
    - Health apps declaration
    - Target audience and content
    - Ads declaration
    - App access instructions, because testers need an account
-4. Run local verification, including the Android permission check.
-5. Add store listing draft copy and screenshots.
-6. Build the production AAB with `npm run build:android:production`.
-7. Upload the first AAB manually if Google Play API submission is not available yet.
-8. Create the closed-testing track and tester list.
-9. Submit the closed-testing release for Google review.
-10. After the first manual upload and Google service account setup, use the manual GitHub Actions release workflow or EAS Submit for later internal-test builds.
+4. [ ] Run local verification, including the Android permission check.
+5. [ ] Add store listing draft copy and screenshots.
+6. [x] Build the production AAB with `npm run build:android:production`.
+7. [x] Upload the first AAB manually if Google Play API submission is not available yet.
+8. [ ] Create the closed-testing track and tester list.
+9. [ ] Submit the closed-testing release for Google review.
+10. [ ] After Google service account setup, use the manual GitHub Actions release workflow or EAS Submit for later internal-test builds.
 
 ## Closed-test acceptance checklist
 

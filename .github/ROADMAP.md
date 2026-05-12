@@ -70,52 +70,44 @@ CBT remains the working tool during MVP. Broader module enable/disable behavior 
 
 ## P2: Launch Readiness
 
-Order matters: public URLs and backend truth first, then store setup, then legal/policy review, then release verification.
+Order matters: public web truth first, then Android closed-test verification, then legal/ops review. iOS TestFlight/App Store work is deferred out of this launch path until the Apple Developer Program fee is funded or Selftend has a legal organization/nonprofit enrollment path.
 
-iOS TestFlight/App Store work is blocked until the Apple Developer Program cost is funded or Selftend has a legal organization/nonprofit identity that can enroll under the project name and pursue a fee waiver if eligible.
-
-1. [ ] Purchase and configure `selftend.org`.
-2. [ ] Configure Netlify production env vars, including `EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org` and the web push VAPID public key.
-3. [ ] Connect `selftend.org` to the Netlify deployment.
-4. [ ] Configure support, privacy, security, deletion, and contributor email aliases.
-5. [ ] Configure Netlify site ID and auth token for manual web production deploys.
+1. [x] Purchase and configure `selftend.org`.
+2. [x] Connect `selftend.org` to the Netlify production deployment.
+3. [x] Configure Netlify production env vars for the hosted web app, including `EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org`.
+4. [x] Configure support, privacy, security, deletion, and contributor email aliases.
+5. [x] Configure production Supabase Site URL, redirect URLs, and current migrations.
 6. [ ] Verify `/privacy`, `/terms`, `/crisis`, `/cookies`, `/account-deletion`, `/auth-callback`, and an unknown route in production.
 7. [ ] Test CSP headers against the real Expo web build.
 8. [ ] Submit the domain for HSTS preload after HTTPS is stable.
-9. [ ] Verify Supabase Site URL and redirect URLs.
-10. [ ] Test self-service deletion against production Supabase.
-11. [ ] Confirm Supabase DPA applicability.
-12. [ ] Authenticate the build machine with Expo or configure `EXPO_TOKEN`.
-13. [ ] Configure EAS and GitHub release variables/secrets for Android and web deploys.
-14. [ ] Generate production VAPID keys and configure Supabase Edge Function secrets.
-15. [ ] Deploy `send-web-reminders` and schedule the Supabase cron job after Vault secrets are set.
-16. [ ] Verify web push reminders on supported desktop, Android web, and iOS/iPadOS Home Screen contexts.
-17. [ ] Create or confirm the Google Play organization or nonprofit developer account.
-18. [ ] Confirm legal organization or nonprofit account details.
-19. [ ] Complete the Google Play Health apps declaration.
-20. [ ] Complete the Google Play Data safety form.
-21. [ ] Write Google Play app access instructions for account-required testing.
-22. [ ] Complete legal review of privacy policy, terms, and safety/crisis copy.
-23. [ ] Approve the global crisis-resource strategy.
-24. [ ] Review all-ages implications before public launch.
-25. [ ] Decide whether a DPIA is needed and document the decision.
-26. [ ] Complete transfer impact assessment.
-27. [ ] Document incident response and breach notification processes.
-28. [ ] Define support workflow for `support@selftend.org`.
-29. [ ] Define manual GDPR email request handling for requests not completed in-app.
-30. [ ] Prepare app store assets, screenshots, policy-safe copy, FAQ, and public support guidance.
-31. [ ] Resolve iOS release block: fund Apple Developer Program or create a legal organization/nonprofit enrollment path.
-32. [ ] After iOS unblock: decide Apple seller-name path, individual maintainer name or legal organization name.
-33. [ ] After iOS unblock: enroll in the Apple Developer Program and confirm App Store Connect access.
-34. [ ] After iOS unblock: create the App Store Connect app record for `Selftend` with bundle ID `org.vasilyoshev.selftend`.
-35. [ ] After iOS unblock: add the App Store Connect Apple ID as `submit.production.ios.ascAppId` in `eas.json`.
-36. [ ] After iOS unblock: complete iOS App Store privacy labels, support URL, screenshots, review notes, and TestFlight tester setup.
-37. [ ] After iOS unblock: build and submit the production iOS app through EAS for TestFlight.
-38. [ ] After iOS unblock: verify TestFlight iOS build, live auth, persistence, local reminders, and policy/support links on a real device.
-39. [ ] Build the production Android AAB after EAS production env values are configured.
-40. [ ] Upload the first AAB manually to Google Play closed testing.
-41. [ ] Configure Google Play service account JSON after the first manual upload.
-42. [ ] Verify closed-test Android build, live auth, persistence, local reminders, and removed camera/microphone permissions on a real device.
+9. [ ] Test self-service deletion against production Supabase.
+10. [ ] Confirm Supabase DPA applicability.
+11. [ ] Authenticate the build machine with Expo or configure `EXPO_TOKEN`.
+12. [ ] Verify EAS, Netlify, and GitHub release variables/secrets for reproducible Android and web releases.
+13. [x] Create the Google Play developer account and app record.
+14. [x] Complete the Google Play Health apps declaration.
+15. [x] Complete the Google Play Data safety form.
+16. [x] Write Google Play app access instructions for account-required testing.
+17. [ ] Complete legal review of privacy policy, terms, and safety/crisis copy.
+18. [ ] Approve the global crisis-resource strategy.
+19. [ ] Review all-ages implications before public launch.
+20. [ ] Decide whether a DPIA is needed and document the decision.
+21. [ ] Complete transfer impact assessment.
+22. [ ] Document incident response and breach notification processes.
+23. [ ] Define support workflow for `support@selftend.org`.
+24. [ ] Define manual GDPR email request handling for requests not completed in-app.
+25. [ ] Prepare app store assets, screenshots, policy-safe copy, FAQ, and public support guidance.
+26. [x] Build the production Android AAB after EAS production env values are configured.
+27. [x] Upload the first production AAB to Google Play.
+28. [ ] Configure Google Play service account JSON after the first manual upload.
+29. [ ] Submit or confirm the closed-testing release and tester list in Google Play.
+30. [ ] Verify closed-test Android build, live auth, persistence, local reminders, and removed camera/microphone permissions on a real device.
+
+Deferred reminder infrastructure, not blocking first public web testing:
+
+1. [ ] Generate production VAPID keys and configure Supabase Edge Function secrets.
+2. [ ] Deploy `send-web-reminders` and schedule the Supabase cron job after Vault secrets are set.
+3. [ ] Verify web push reminders on supported desktop, Android web, and iOS/iPadOS Home Screen contexts.
 
 ## P3: Post-MVP Privacy And Portability
 
@@ -177,7 +169,7 @@ Do not copy code, content, or assets from reference repos without explicit revie
 ## Pre-Public Cleanup
 
 1. [ ] Replace placeholder organization names with the confirmed legal entity.
-2. [ ] Verify domain-based emails.
+2. [x] Verify domain-based emails.
 3. [ ] Complete legal review for policies, terms, and crisis guidance.
 4. [ ] Review crisis guidance by jurisdiction.
 5. [ ] Audit docs for stale internal notes and broken URLs.
