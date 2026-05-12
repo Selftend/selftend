@@ -92,6 +92,6 @@ This file is planning guidance, not legal advice. Before a public launch, get a 
 
 - AGPL posture
 - public hosting obligations
-- minors / all-ages implications
+- minors / future under-18 expansion
 - privacy and data retention
 - crisis and safety copy

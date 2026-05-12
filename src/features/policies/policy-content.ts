@@ -1,5 +1,5 @@
-export const policyLastUpdated = "2026-05-06";
-export const policyVersion = "2026-05-06-web-push";
+export const policyLastUpdated = "2026-05-12";
+export const policyVersion = "2026-05-12-adults-only";
 
 /**
  * Set to true while policies await final human/legal review.
@@ -34,7 +34,7 @@ export const privacyPolicySections: PolicySection[] = [
     title: "2. Data we collect",
     body: [
       "Account data: your email address and authentication identifiers provided during sign-in via passwordless email link or Google OAuth.",
-      "App data: user preferences (enabled modules, onboarding status, reminder settings) and private CBT thought records you create.",
+      "App data: user preferences (enabled modules, onboarding status, reminder settings) and private CBT thought records or other self-help entries you create. These entries may include wellness or mental-health reflection content if you choose to enter it.",
       "Device data: a local notification identifier on native apps, or a browser push subscription endpoint and keys on web, only when you explicitly enable reminders. No device fingerprinting or hardware identifiers are collected.",
       "Session data: an authentication token stored in browser localStorage (web) or Expo SecureStore (mobile) to maintain your signed-in session.",
     ],
@@ -48,10 +48,11 @@ export const privacyPolicySections: PolicySection[] = [
     ],
   },
   {
-    title: "4. Legal basis for processing (GDPR Article 6)",
+    title: "4. Legal basis for processing (GDPR Articles 6 and 9)",
     body: [
       "Contract (Art. 6(1)(b)): Processing your email and app data is necessary to provide the service you signed up for — maintaining your account, syncing your records, and delivering the self-help features.",
       "Consent (Art. 6(1)(a)): Notification reminders are only scheduled after you explicitly opt in. You can withdraw consent at any time in Settings.",
+      "Explicit consent for sensitive content (GDPR Art. 9(2)(a), where applicable): if your self-help entries include wellness, mental-health, or other special-category information, we process that content only to provide the app features you choose to use. You can withdraw this consent by deleting your account or contacting privacy@selftend.org.",
       "Legitimate interest (Art. 6(1)(f)): Minimal security logging (e.g., authentication events managed by Supabase) to protect the service and users from abuse.",
     ],
   },
@@ -119,11 +120,11 @@ export const privacyPolicySections: PolicySection[] = [
     ],
   },
   {
-    title: "11. Children's privacy",
+    title: "11. Age restriction",
     body: [
-      "Selftend is intended for users aged 13 and older. We do not knowingly collect personal data from children under 13.",
-      "If you are under 13, do not use this app or provide any personal information.",
-      "If we become aware that we have collected data from a child under 13, we will delete that data promptly. If you believe a child under 13 has provided us with personal data, contact privacy@selftend.org.",
+      "Selftend is intended for adults aged 18 and older. We do not knowingly collect personal data from anyone under 18.",
+      "If you are under 18, do not use this app or provide any personal information.",
+      "If we become aware that we have collected data from someone under 18, we will delete that data promptly. If you believe someone under 18 has provided us with personal data, contact privacy@selftend.org.",
     ],
   },
   {
@@ -178,9 +179,9 @@ export const termsSections: PolicySection[] = [
   {
     title: "2. Eligibility",
     body: [
-      "You must be at least 13 years old to use Selftend.",
-      "By using the app, you represent that you are at least 13 years of age.",
-      "If you are between 13 and the age of majority in your jurisdiction, you confirm that your parent or legal guardian has reviewed and agrees to these terms on your behalf.",
+      "You must be at least 18 years old to use Selftend.",
+      "By using the app, you represent that you are at least 18 years of age.",
+      "Selftend is not intended for minors. Do not create an account or use the app if you are under 18.",
     ],
   },
   {

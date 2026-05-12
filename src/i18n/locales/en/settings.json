@@ -137,7 +137,7 @@
     "description": "We keep this brief: please review and accept the latest Privacy Policy and Terms to continue.",
     "readPrivacy": "Read Privacy Policy",
     "readTerms": "Read Terms of Service",
-    "checkbox": "I am 13 or older and agree to the current Privacy Policy and Terms of Service.",
+    "checkbox": "I am 18 or older, agree to the current Privacy Policy and Terms of Service, and consent to Selftend processing the self-help entries I choose to save, including any wellness or mental-health reflection content I enter.",
     "submitting": "Saving...",
     "submit": "Accept and continue",
     "error": "Unable to save consent. Please try again."
@@ -148,6 +148,7 @@
     "boundary": "Important boundary",
     "boundaryDescription": "This app is built as guided self-help. If you need urgent help or crisis support, use local emergency and crisis resources instead of relying on the app.",
     "contact": "Contact",
+    "contactDescription": "For support, include only the minimum details needed. Do not email urgent crisis details or private self-help entries.",
     "emailSupport": "Email support",
     "emailNotConfigured": "Set EXPO_PUBLIC_SUPPORT_EMAIL before public launch. Until then, use GitHub issues for project feedback that does not include private health details.",
     "requestDeletion": "Request account deletion",

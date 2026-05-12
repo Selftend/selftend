@@ -64,6 +64,6 @@ Popularization should come from usefulness, trust, and clarity, not fear-of-loss
 
 AI may help internal planning, content drafting, or developer workflows, but the MVP should not present itself as an AI therapist, AI counselor, or AI mental-health coach.
 
-## Audience note
+## Audience Note
 
-The current roadmap assumes broad public availability and an all-ages ambition. That increases trust, moderation, and legal burden. Any implementation that materially affects minors, user-generated content, or peer-to-peer communication should trigger a higher review bar.
+The launch posture is adults-only: Selftend is for users aged 18 and older. Under-18 support is deferred until there is legal review, child-safety review, and a clear parental-consent or age-assurance plan. Any implementation that materially affects minors, user-generated content, or peer-to-peer communication should trigger a higher review bar.

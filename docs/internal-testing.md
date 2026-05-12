@@ -168,7 +168,6 @@ Do not widen closed testing or move to store production yet. Finish:
 - self-service deletion testing against production Supabase
 - privacy policy and terms legal review
 - crisis/safety copy jurisdiction review
-- incident response, breach notification, support, and manual GDPR request runbooks
 - app store screenshots, policy-safe copy, FAQ, and public support guidance
 - Google Play service account JSON after the first manual upload
 - internal device testing

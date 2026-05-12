@@ -33,6 +33,7 @@ export default function SupportScreen() {
           <Card>
             <CardHeader>
               <CardTitle>{t("supportPage.contact")}</CardTitle>
+              <CardDescription>{t("supportPage.contactDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               <View className="gap-3">

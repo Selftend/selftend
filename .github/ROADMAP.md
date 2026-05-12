@@ -17,6 +17,7 @@ Current setup and implementation references:
 - [docs/accessibility.md](../docs/accessibility.md)
 - [docs/policies.md](../docs/policies.md)
 - [docs/gdpr-compliance.md](../docs/gdpr-compliance.md)
+- [docs/operations-runbook.md](../docs/operations-runbook.md)
 - [docs/analytics.md](../docs/analytics.md)
 - [docs/modules/cbt.md](../docs/modules/cbt.md)
 - [docs/modules/tools.md](../docs/modules/tools.md)
@@ -77,11 +78,11 @@ Order matters: public web truth first, then Android closed-test verification, th
 3. [x] Configure Netlify production env vars for the hosted web app, including `EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org`.
 4. [x] Configure support, privacy, security, deletion, and contributor email aliases.
 5. [x] Configure production Supabase Site URL, redirect URLs, and current migrations.
-6. [ ] Verify `/privacy`, `/terms`, `/crisis`, `/cookies`, `/account-deletion`, `/auth-callback`, and an unknown route in production.
-7. [ ] Test CSP headers against the real Expo web build.
+6. [x] Verify `/privacy`, `/terms`, `/crisis`, `/cookies`, `/account-deletion`, `/auth-callback`, and an unknown route in production.
+7. [x] Test CSP headers against the real Expo web build.
 8. [ ] Submit the domain for HSTS preload after HTTPS is stable.
-9. [ ] Test self-service deletion against production Supabase.
-10. [ ] Confirm Supabase DPA applicability.
+9. [x] Test self-service deletion against production Supabase.
+10. [x] Confirm Supabase DPA applicability.
 11. [ ] Authenticate the build machine with Expo or configure `EXPO_TOKEN`.
 12. [ ] Verify EAS, Netlify, and GitHub release variables/secrets for reproducible Android and web releases.
 13. [x] Create the Google Play developer account and app record.
@@ -90,12 +91,12 @@ Order matters: public web truth first, then Android closed-test verification, th
 16. [x] Write Google Play app access instructions for account-required testing.
 17. [ ] Complete legal review of privacy policy, terms, and safety/crisis copy.
 18. [ ] Approve the global crisis-resource strategy.
-19. [ ] Review all-ages implications before public launch.
-20. [ ] Decide whether a DPIA is needed and document the decision.
-21. [ ] Complete transfer impact assessment.
-22. [ ] Document incident response and breach notification processes.
-23. [ ] Define support workflow for `support@selftend.org`.
-24. [ ] Define manual GDPR email request handling for requests not completed in-app.
+19. [x] Resolve all-ages implications for launch by setting the product and store posture to 18+.
+20. [x] Decide whether a DPIA is needed and document the decision.
+21. [x] Complete transfer impact assessment.
+22. [x] Document incident response and breach notification processes.
+23. [x] Define support workflow for `support@selftend.org`.
+24. [x] Define manual GDPR email request handling for requests not completed in-app.
 25. [ ] Prepare app store assets, screenshots, policy-safe copy, FAQ, and public support guidance.
 26. [x] Build the production Android AAB after EAS production env values are configured.
 27. [x] Upload the first production AAB to Google Play.
@@ -168,7 +169,7 @@ Do not copy code, content, or assets from reference repos without explicit revie
 
 ## Pre-Public Cleanup
 
-1. [ ] Replace placeholder organization names with the confirmed legal entity.
+1. [x] Replace placeholder organization names with the confirmed legal entity.
 2. [x] Verify domain-based emails.
 3. [ ] Complete legal review for policies, terms, and crisis guidance.
 4. [ ] Review crisis guidance by jurisdiction.

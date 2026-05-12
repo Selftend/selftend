@@ -1,6 +1,6 @@
 # Shared Data And Privacy Model
 
-Last updated: 2026-05-06
+Last updated: 2026-05-12
 
 ## Purpose
 
@@ -13,7 +13,7 @@ Selftend stores only the data needed to provide account-based guided self-help a
 | Account profile        | Supabase Auth plus `profiles.email` and optional avatar metadata               | Keep account metadata separate from self-help content. Uploaded avatars stay in the private `profile-pics` bucket.                                                                             |
 | Preferences            | `user_preferences` row per user                                                | Store quiet defaults, enabled modules, onboarding status, policy consent, language, and timestamped notification settings. Do not infer sensitive traits from preferences.                     |
 | Enabled modules        | `user_preferences.enabled_modules`                                             | Use explicit user choice. Do not auto-enable new modules silently.                                                                                                                             |
-| CBT thought records    | `thought_records`                                                              | Private user-owned tool records protected by RLS and included in export/delete.                                                                                                                |
+| CBT thought records    | `thought_records`                                                              | Private user-owned tool records protected by RLS and included in export/delete. Treat as highly private because users may enter wellness or mental-health reflections.                         |
 | Check-ins              | Planned dedicated user-owned records                                           | Keep separate from CBT and journaling. Store only user-entered mood/check-in fields needed for the reviewed flow.                                                                              |
 | Journal entries        | Planned dedicated user-owned records                                           | Keep free-text journal data separate from structured tool records. No social visibility in MVP.                                                                                                |
 | Future tool records    | Planned module-specific tables or a reviewed shared table                      | Each module spec must define fields, privacy justification, export shape, deletion behavior, and RLS before implementation.                                                                    |
@@ -26,6 +26,7 @@ Selftend stores only the data needed to provide account-based guided self-help a
 ## Implementation Rules
 
 - All private user records must include a user ownership field, use RLS, and be queried through authenticated Supabase clients.
+- Do not read or disclose private self-help records except for verified privacy requests, security incident handling, or legal obligations.
 - Public policy, crisis, support, and legal routes must not require sign-in.
 - User-visible strings for privacy, safety, errors, toasts, forms, and empty states must live in i18n JSON for every supported language.
 - Failed saves must leave the form content in place and show a calm reusable failure message.

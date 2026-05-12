@@ -125,7 +125,7 @@ Start here:
 
 1. [docs/product-principles.md](product-principles.md) — especially principle 6 ("Wellness, not diagnosis") and principle 11 ("No AI coach in MVP").
 2. [docs/modules/cbt.md](modules/cbt.md) — the only built module. Review the distortion list, the five-step thought-record flow, and the validation rules.
-3. [docs/policies.md](policies.md) — privacy, terms, crisis copy, age floor (13+), and the explicit non-medical framing.
+3. [docs/policies.md](policies.md) — privacy, terms, crisis copy, age floor (18+), and the explicit non-medical framing.
 4. [.github/ROADMAP.md](../.github/ROADMAP.md) — sequencing of future modules.
 
 To contribute, you can:

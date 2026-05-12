@@ -135,7 +135,7 @@ These are deliberately excluded and should not be proposed without exceptional j
 - **Google Analytics, Mixpanel, Amplitude, Segment**: proprietary, not self-hostable, heavy behavioral profiling
 - **Session replay or heatmaps**: surveillance-style, conflicts with product principles
 - **Default-on tracking**: always opt-in or legitimately essential
-- **User-level behavioral profiling**: especially given all-ages target (COPPA/child-safety risk)
+- **User-level behavioral profiling**: especially given sensitive mental-health content and possible future under-18 support
 - **Ad-network pixels or attribution SDKs**: no ads, no ad-funded model
 
 ## Trigger for advancing phases

@@ -47,6 +47,7 @@ Repo-level files:
 - [community.md](community.md) - community operating model, channels, recognition, and donations
 - [costs.md](costs.md) - launch and operating cost planning
 - [github-setup.md](github-setup.md) - workflows, release variables/secrets, labels, and branching
+- [operations-runbook.md](operations-runbook.md) - support, privacy request, security incident, breach, DPIA, and transfer workflows
 - [reference-log.md](reference-log.md) - reference-repository usage log
 
 ## Launch And Store Readiness

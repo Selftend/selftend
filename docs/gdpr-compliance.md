@@ -17,14 +17,14 @@ This checklist tracks GDPR compliance status for Selftend. It covers the key req
 ## Lawful Basis (Article 6)
 
 - [x] Contract basis for core processing documented
-- [x] Consent basis for reminders documented
+- [x] Consent basis for reminders and user-entered sensitive self-help content documented
 - [x] Legitimate interest for security logging documented
-- [x] No special category data processed (Article 9) — thought records are user-generated wellness reflections, not health data collected by the controller
+- [x] Special-category risk addressed (Article 9) — Selftend is not a medical or diagnostic product, but user-entered self-help records may include wellness or mental-health reflections, so policy consent and operational handling now treat this content as highly private
 
 ## Transparency (Articles 12-14)
 
 - [x] Privacy policy accessible without sign-in at `/privacy`
-- [x] Identity of controller stated (placeholder pending legal entity)
+- [x] Identity of controller stated (Selftend, operated by Vasil Yoshev)
 - [x] Contact details provided (privacy@selftend.org)
 - [x] Purposes of processing stated
 - [x] Lawful basis stated
@@ -44,7 +44,7 @@ This checklist tracks GDPR compliance status for Selftend. It covers the key req
 - [x] **Right to restriction (Art. 18)** — Available via email request
 - [x] **Right to data portability (Art. 20)** — JSON export in Settings
 - [x] **Right to object (Art. 21)** — Available via email request
-- [ ] **Response within one month** — Process needed (manual for email requests)
+- [x] **Response within one month** — Manual request workflow documented in [operations-runbook.md](operations-runbook.md)
 - [x] **No automated decision-making (Art. 22)** — App does not make automated decisions about users
 
 ## Data Protection by Design and Default (Article 25)
@@ -56,7 +56,7 @@ This checklist tracks GDPR compliance status for Selftend. It covers the key req
 ## Records of Processing (Article 30)
 
 - [x] Processing activities documented in `docs/policies.md`
-- [x] Categories of data subjects: app users (13+)
+- [x] Categories of data subjects: app users (18+)
 - [x] Categories of data: email, preferences, web push subscriptions, thought records
 - [x] Recipients: Supabase, Google (optional), Netlify
 - [x] Transfers to third countries: documented (USA, via SCCs)
@@ -71,31 +71,32 @@ This checklist tracks GDPR compliance status for Selftend. It covers the key req
 - [x] Content-Security-Policy header
 - [x] HSTS header
 - [x] No service-role keys in client bundle
-- [ ] Incident response process documented
+- [x] Incident response process documented in [operations-runbook.md](operations-runbook.md)
 - [ ] Regular security testing/audit
 
 ## Data Breach Notification (Articles 33-34)
 
-- [ ] Process for detecting breaches
-- [ ] Process for notifying supervisory authority within 72 hours
-- [ ] Process for notifying affected users when high risk
+- [x] Process for detecting breaches documented in [operations-runbook.md](operations-runbook.md)
+- [x] Process for notifying supervisory authority within 72 hours documented in [operations-runbook.md](operations-runbook.md)
+- [x] Process for notifying affected users when high risk documented in [operations-runbook.md](operations-runbook.md)
 - [x] Security contact published (security@selftend.org)
 
 ## Data Protection Impact Assessment (Article 35)
 
-- [ ] DPIA conducted — **May not be required** given:
+- [x] DPIA screening conducted — full DPIA not required for current MVP scope on 2026-05-12 because:
   - No systematic monitoring
   - No large-scale processing of special categories
   - No automated decision-making
   - Small-scale, voluntary self-help tool
-- [ ] Decision on DPIA necessity documented
+- [x] Decision on DPIA necessity documented in [operations-runbook.md](operations-runbook.md)
 
 ## International Transfers (Chapter V)
 
 - [x] Transfers to USA documented
 - [x] SCCs referenced as transfer mechanism
 - [x] Processor DPAs referenced (Supabase, Netlify)
-- [ ] Transfer Impact Assessment completed
+- [x] Supabase DPA executed via PandaDoc on 2026-05-12
+- [x] Initial transfer impact assessment completed in [operations-runbook.md](operations-runbook.md)
 
 ## Consent Management (Article 7)
 
@@ -106,12 +107,12 @@ This checklist tracks GDPR compliance status for Selftend. It covers the key req
 - [x] Record of consent stored (`reminder_consent` + `reminder_consent_updated_at`)
 - [x] Cookie consent on web (banner + preferences)
 
-## Children (Article 8)
+## Age Restriction And Children (Article 8)
 
-- [x] Age threshold set at 13
+- [x] Age threshold set at 18 for launch
 - [x] Age attestation at sign-up
-- [x] No data collected from under-13
-- [x] Terms state parental involvement for 13-17 where required
+- [x] No data knowingly collected from users under 18
+- [x] Terms prohibit use by minors; no parental-consent flow in MVP
 
 ## Remaining Blockers Before Launch
 
@@ -120,8 +121,8 @@ This checklist tracks GDPR compliance status for Selftend. It covers the key req
 3. [ ] Human/legal review of terms of service text
 4. [x] Configure privacy@selftend.org email alias
 5. [x] Configure security@selftend.org email alias
-6. [ ] Document data breach notification process
-7. [ ] Verify Supabase DPA is signed/applicable
-8. [ ] Test CSP headers don't break Expo web bundle
-9. [ ] Test self-service deletion end-to-end with real Supabase instance
-10. [ ] Decide on DPIA necessity and document decision
+6. [x] Document data breach notification process
+7. [x] Verify Supabase DPA is signed/applicable
+8. [x] Test CSP headers don't break Expo web bundle
+9. [x] Test self-service deletion end-to-end with real Supabase instance
+10. [x] Decide on DPIA necessity and document decision
