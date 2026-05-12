@@ -72,6 +72,8 @@ CBT remains the working tool during MVP. Broader module enable/disable behavior 
 
 Order matters: public URLs and backend truth first, then store setup, then legal/policy review, then release verification.
 
+iOS TestFlight/App Store work is blocked until the Apple Developer Program cost is funded or Selftend has a legal organization/nonprofit identity that can enroll under the project name and pursue a fee waiver if eligible.
+
 1. [ ] Purchase and configure `selftend.org`.
 2. [ ] Configure Netlify production env vars, including `EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org` and the web push VAPID public key.
 3. [ ] Connect `selftend.org` to the Netlify deployment.
@@ -102,10 +104,18 @@ Order matters: public URLs and backend truth first, then store setup, then legal
 28. [ ] Define support workflow for `support@selftend.org`.
 29. [ ] Define manual GDPR email request handling for requests not completed in-app.
 30. [ ] Prepare app store assets, screenshots, policy-safe copy, FAQ, and public support guidance.
-31. [ ] Build the production Android AAB after EAS production env values are configured.
-32. [ ] Upload the first AAB manually to Google Play closed testing.
-33. [ ] Configure Google Play service account JSON after the first manual upload.
-34. [ ] Verify closed-test Android build, live auth, persistence, local reminders, and removed camera/microphone permissions on a real device.
+31. [ ] Resolve iOS release block: fund Apple Developer Program or create a legal organization/nonprofit enrollment path.
+32. [ ] After iOS unblock: decide Apple seller-name path, individual maintainer name or legal organization name.
+33. [ ] After iOS unblock: enroll in the Apple Developer Program and confirm App Store Connect access.
+34. [ ] After iOS unblock: create the App Store Connect app record for `Selftend` with bundle ID `org.vasilyoshev.selftend`.
+35. [ ] After iOS unblock: add the App Store Connect Apple ID as `submit.production.ios.ascAppId` in `eas.json`.
+36. [ ] After iOS unblock: complete iOS App Store privacy labels, support URL, screenshots, review notes, and TestFlight tester setup.
+37. [ ] After iOS unblock: build and submit the production iOS app through EAS for TestFlight.
+38. [ ] After iOS unblock: verify TestFlight iOS build, live auth, persistence, local reminders, and policy/support links on a real device.
+39. [ ] Build the production Android AAB after EAS production env values are configured.
+40. [ ] Upload the first AAB manually to Google Play closed testing.
+41. [ ] Configure Google Play service account JSON after the first manual upload.
+42. [ ] Verify closed-test Android build, live auth, persistence, local reminders, and removed camera/microphone permissions on a real device.
 
 ## P3: Post-MVP Privacy And Portability
 

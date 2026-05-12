@@ -1,6 +1,6 @@
 # Internal Testing
 
-Last updated: 2026-05-06
+Last updated: 2026-05-12
 
 ## Current build profiles
 
@@ -12,17 +12,19 @@ Last updated: 2026-05-06
 
 Use the Android `development` build as the default local runtime. Do not use Expo Go as the normal Android development path.
 
-The Android `development` profile uses a distinct app identity so it can coexist with the Play/internal-testing app:
+The Android and iOS `development` profiles use distinct app identities so they can coexist with store/internal-testing apps:
 
 ```text
 Development name: Selftend Dev
 Development Android package: org.vasilyoshev.selftend.dev
+Development iOS bundle identifier: org.vasilyoshev.selftend.dev
 Development native scheme: selftend-dev
 Production Android package: org.vasilyoshev.selftend
+Production iOS bundle identifier: org.vasilyoshev.selftend
 Production native scheme: selftend
 ```
 
-For Google Play closed testing, use the `production` profile to create an Android App Bundle after policy forms and store setup are ready. The `preview` and `production` profiles use matching EAS environments and fail at app-config evaluation if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing.
+For Google Play closed testing, use the `production` profile to create an Android App Bundle after policy forms and store setup are ready. For Apple TestFlight, use the same `production` profile to create an iOS build, then submit it through EAS Submit after the App Store Connect app record exists. The `preview` and `production` profiles use matching EAS environments and fail at app-config evaluation if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing.
 
 Manual GitHub Actions workflows are available for maintainer-triggered releases from `main`:
 
@@ -113,6 +115,8 @@ npm run build:android:development
 npm run build:android:preview
 npm run build:android:production
 EAS_LOCAL_BUILD_ARTIFACTS_DIR=./build-artifacts npm exec eas-cli -- build --platform android --profile production --local --non-interactive
+npm run build:ios:production
+npm run submit:ios:production -- --latest
 ```
 
 Use Node `20.19.0+` so your local runtime matches the current `package.json` engine requirement before you install or test anything.
@@ -148,6 +152,22 @@ Before publishing a preview or production build to testers:
 2. Rebuild the AAB after changing any of those values. Existing Play builds keep the environment values that were baked in at build time.
 3. Install from Play internal testing and confirm the sign-in screen does not show the Supabase-not-configured message.
 
+## iOS TestFlight note
+
+Apple TestFlight and App Store work is currently blocked. Do not spend on Apple Developer Program enrollment or submit an iOS build until one of these is true:
+
+- the annual Apple Developer Program fee is funded and the maintainer accepts the seller-name tradeoff, or
+- Selftend has a legal organization/nonprofit identity that can enroll under the organization name and, if eligible, apply for Apple's fee waiver.
+
+After the block is cleared:
+
+1. Enroll in the Apple Developer Program.
+2. Create the App Store Connect app record for `Selftend` with bundle ID `org.vasilyoshev.selftend`.
+3. Add the numeric App Store Connect Apple ID as `submit.production.ios.ascAppId` in `eas.json`.
+4. Configure EAS-managed iOS credentials or an App Store Connect API key.
+5. Run `npm run build:ios:production`, then `npm run submit:ios:production -- --latest`.
+6. Finish TestFlight and App Review metadata in App Store Connect.
+
 ## Store-readiness note
 
 Do not move to closed testing or store submission yet. Finish:
@@ -159,6 +179,9 @@ Do not move to closed testing or store submission yet. Finish:
 - public support/privacy/deletion contact configuration
 - privacy policy and terms legal review
 - crisis/safety copy jurisdiction review
+- iOS release block resolved: Apple Developer Program fee funded or legal organization/nonprofit enrollment path confirmed
+- after the iOS block is resolved, Apple Developer Program enrollment and App Store Connect app record
+- after the iOS block is resolved, iOS App Store privacy labels, screenshots, support URL, and TestFlight review notes
 - Google Play Health apps declaration and Data safety form
 - account deletion request process review
 - internal device testing
