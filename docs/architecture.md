@@ -1,7 +1,5 @@
 # Architecture
 
-Last updated: 2026-05-07
-
 A practical map of how a request flows through the app. For _what_ the stack uses, see [stack.md](stack.md). For _what_ gets stored, see [data-privacy-model.md](data-privacy-model.md). This file is the _how it fits together_ view.
 
 ## Runtime layers

@@ -1,15 +1,37 @@
 name: Content
 description: Improve in-app text, guidance, exercises, or educational material.
 title: "[Content]: "
+labels:
+  - needs triage
 type: Content
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for content, exercise, education, or tone changes.
+
+        Do not include private health details. Keep proposed copy non-clinical: Selftend should not diagnose, prescribe, promise outcomes, or replace professional care.
+
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: File, screen, route, Weblate component, or public page if known.
+      placeholder: "Example: CBT thought record, src/i18n/locales/en/tools.json, /crisis"
+
   - type: textarea
     id: content
     attributes:
       label: What content should change?
-      description: Describe the text, exercise, guidance, or educational material.
+      description: Describe the current text, exercise, guidance, or educational material.
     validations:
       required: true
+
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed replacement or direction
+      description: Share exact copy if you have it, or describe the change you want reviewed.
 
   - type: textarea
     id: reason
@@ -20,7 +42,19 @@ body:
       required: true
 
   - type: textarea
+    id: basis
+    attributes:
+      label: Source or review basis
+      description: If this is based on professional expertise, research, lived-experience review, or another source, summarize it without copying long text.
+
+  - type: textarea
     id: guardrails
     attributes:
       label: Safety, privacy, or clinical concerns
-      description: Mention if this touches crisis support, self-harm, minors, medical advice, privacy, or sensitive mental-health content.
+      description: Mention if this touches crisis support, self-harm, minors, medical advice, privacy, sensitive mental-health content, or claims about outcomes.
+
+  - type: textarea
+    id: translation
+    attributes:
+      label: Translation impact
+      description: Note affected languages, Weblate components, tone concerns, or whether this should be handled in Weblate.

@@ -1,7 +1,5 @@
 # GDPR Compliance Checklist
 
-Last updated: 2026-05-12
-
 This checklist tracks GDPR compliance status for Selftend. It covers the key requirements from the General Data Protection Regulation and related frameworks.
 
 ## Principles (Article 5)

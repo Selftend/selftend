@@ -1,7 +1,5 @@
 # Accessibility
 
-Last updated: 2026-05-08
-
 Accessibility is part of the app foundation, not a polish pass. Selftend is a mental-health self-help product, so users must be able to move through the app calmly with screen readers, keyboards, switch controls, larger text, reduced motion, and high-contrast settings.
 
 ## Baseline

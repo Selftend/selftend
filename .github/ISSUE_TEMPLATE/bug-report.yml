@@ -1,6 +1,8 @@
 name: Bug report
-description: Report a defect in the current product or docs.
+description: Report a reproducible defect in the app, docs, or contributor workflow.
 title: "[Bug]: "
+labels:
+  - needs triage
 type: Bug
 body:
   - type: markdown
@@ -8,7 +10,47 @@ body:
       value: |
         Thanks for helping improve Selftend.
 
-        Please do not include private health information, passwords, tokens, or other sensitive personal data.
+        Please do not include private health information, passwords, auth tokens, session cookies, or other sensitive personal data. Redact screenshots and logs before attaching them.
+
+        Security vulnerabilities should be reported privately through [SECURITY.md](https://github.com/Selftend/selftend/blob/main/.github/SECURITY.md), not as public issues.
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected surface
+      description: Where did you see the problem?
+      options:
+        - Web app
+        - Android app
+        - iOS or TestFlight build
+        - Documentation
+        - Contributor tooling
+        - Supabase or backend behavior
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Pick the closest platform. Maintainers can adjust labels during triage.
+      options:
+        - Web
+        - Android
+        - iOS
+        - Cross-platform
+        - Docs or process only
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Device, OS, browser, app build, or commit SHA if known.
+      placeholder: "Example: Pixel 7, Android 15, Chrome 124, selftend.org"
 
   - type: textarea
     id: summary
@@ -31,6 +73,14 @@ body:
       required: true
 
   - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened?
+    validations:
+      required: true
+
+  - type: textarea
     id: expected
     attributes:
       label: Expected behavior
@@ -38,8 +88,26 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: reproducibility
+    attributes:
+      label: Reproducibility
+      options:
+        - Every time
+        - Sometimes
+        - Once
+        - Not yet reproduced
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots, logs, or notes
+      description: Optional. Attach only redacted screenshots or logs. Do not include private account, health, auth, or database details.
+
   - type: textarea
     id: scope
     attributes:
       label: Privacy or safety impact
-      description: Mention any data-loss, minors, crisis, security, or privacy concern.
+      description: Mention any data loss, account access, minors, crisis, security, privacy, notification, or reminder concern.

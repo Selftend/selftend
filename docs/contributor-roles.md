@@ -1,7 +1,5 @@
 # Contributor Roles
 
-Last updated: 2026-05-07
-
 Selftend needs more than code. This page is a practical starting point for the kinds of contributors the project actively wants. If you don't see your skill below, [.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md) covers the general flow and you can also open an issue describing how you'd like to help.
 
 For the broader community-operations view (channels, recognition, moderation), see [docs/community.md](community.md). This page is about getting one person started.
@@ -25,7 +23,7 @@ Start here:
 5. [docs/data-privacy-model.md](data-privacy-model.md) — what data classes exist and the rules around them.
 6. [docs/modules/tools.md](modules/tools.md) — module contract for any new feature module.
 
-Pick from issues labeled [`good first issue`](https://github.com/Selftend/selftend/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22), `bug`, `feature`, or `accessibility`. Comment before claiming larger work.
+Pick from issues labeled [`good first issue`](https://github.com/Selftend/selftend/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22), issues with the Bug or Feature type, or issues labeled `accessibility`. Comment before claiming larger work.
 
 What to mind:
 
@@ -51,7 +49,7 @@ Start here:
 3. [docs/modules/cbt.md](modules/cbt.md) — the only fully-built feature today.
 4. The current app: run it locally per the [README](../README.md), or browse the production web build once it's live at `selftend.org`.
 
-To share work, open an issue with the `feature` or `accessibility` label and attach images, short videos, or links. Figma, Penpot, or any tool you prefer is fine — keep exports scannable inside the issue. We don't have a single canonical design file yet; mockups currently live in issues.
+To share work, open a Feature issue or an issue labeled `accessibility` and attach images, short videos, or links. Figma, Penpot, or any tool you prefer is fine — keep exports scannable inside the issue. We don't have a single canonical design file yet; mockups currently live in issues.
 
 What to mind:
 
@@ -107,7 +105,7 @@ To file a bug, use the `bug-report.yml` template (the `Bug report` option when o
 What to mind:
 
 - Account flows (sign-in, sign-out, magic links, OAuth, account deletion, data export) are the highest-priority test areas. Bugs there can lose user data or leak it.
-- Reminders should be off by default and easy to disable. If you find a path that creates a reminder without explicit consent, file as `safety`, not just `bug`.
+- Reminders should be off by default and easy to disable. If you find a path that creates a reminder without explicit consent, add the `safety` label instead of treating it as only a Bug.
 - Don't test against another contributor's account or production user data — use accounts you own or test accounts.
 - Web push reminders behave differently across Chrome, Firefox, Safari, and iOS Home Screen. Note the exact platform when reporting.
 

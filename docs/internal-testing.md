@@ -1,7 +1,5 @@
 # Internal Testing
 
-Last updated: 2026-05-12
-
 ## Current build profiles
 
 `eas.json` includes:

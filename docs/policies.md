@@ -1,7 +1,5 @@
 # Public Policy Surfaces
 
-Last updated: 2026-05-12
-
 The app has public policy routes hosted from the Expo web export:
 
 - `/privacy` — Privacy policy (GDPR + CCPA compliant)

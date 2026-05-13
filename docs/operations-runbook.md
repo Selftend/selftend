@@ -1,7 +1,5 @@
 # Operations Runbook
 
-Last updated: 2026-05-12
-
 This runbook defines the minimum operational process for support, privacy requests, security incidents, and breach handling. It is practical operating guidance, not legal advice.
 
 ## Contacts

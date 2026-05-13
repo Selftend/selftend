@@ -1,7 +1,5 @@
 # Security Policy
 
-Last updated: 2026-05-12
-
 Selftend stores private reflection data. Please report vulnerabilities privately.
 
 ## Report A Vulnerability

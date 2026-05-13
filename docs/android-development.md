@@ -1,7 +1,5 @@
 # Android Development Build
 
-Last updated: 2026-05-07
-
 Use the Android development build for normal development, reminder testing, and device verification. Do not use Expo Go as the primary Android runtime for this project.
 
 ## App identities

@@ -1,7 +1,5 @@
 # Third-Party Notices
 
-Last updated: 2026-05-12
-
 This file tracks copied or generated third-party code that needs explicit notice handling. It is not a complete dependency license inventory.
 
 ## React Native Reusables

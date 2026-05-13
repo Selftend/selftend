@@ -1,7 +1,5 @@
 # Tools Navigation Spec
 
-Last updated: 2026-05-06
-
 ## Purpose
 
 Keep the product modular without implying that future tools are ready.

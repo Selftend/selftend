@@ -59,6 +59,18 @@ To contribute translations:
 
 To add a language, request it in Weblate or open a GitHub issue. New languages need all seven namespaces listed in [docs/stack.md](../docs/stack.md).
 
+## Which Issue Template To Use
+
+- **Bug report**: reproducible defects in the app, docs, backend behavior, or contributor tooling.
+- **Feature request**: product or implementation proposals that need scope review before work starts.
+- **Content**: changes to in-app copy, educational text, exercises, crisis copy, or tone.
+- **Accessibility**: screen reader, focus, contrast, reduced-motion, touch target, or semantic issues.
+- **QA test report**: device test passes, release verification, reproduction attempts, and manual testing notes.
+- **Localization**: language requests, translation bugs, missing keys, Weblate workflow issues, or RTL/layout concerns.
+- **Docs or process**: contributor onboarding, setup docs, roadmap docs, GitHub workflow, release process, or operations docs.
+
+Do not open public issues for vulnerabilities, private account data, private health details, or another person's data. Use [SECURITY.md](SECURITY.md) for security reports and `support@selftend.org` for sensitive support concerns.
+
 ## Contribution Flow
 
 1. Open or claim an issue. For changes larger than a typo, explain the approach first.

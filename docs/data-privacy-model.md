@@ -1,7 +1,5 @@
 # Shared Data And Privacy Model
 
-Last updated: 2026-05-12
-
 ## Purpose
 
 Selftend stores only the data needed to provide account-based guided self-help across devices. New modules must justify each persisted field before adding schema, export, deletion, notifications, or settings behavior.

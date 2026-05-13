@@ -3,3 +3,12 @@ contact_links:
   - name: Contribution guide
     url: https://github.com/Selftend/selftend/blob/main/.github/CONTRIBUTING.md
     about: Read the repo posture and contribution flow before starting large work.
+  - name: Security vulnerability
+    url: https://github.com/Selftend/selftend/blob/main/.github/SECURITY.md
+    about: Report vulnerabilities privately instead of opening a public issue.
+  - name: Translation in Weblate
+    url: https://hosted.weblate.org/projects/selftend/
+    about: Contribute translation updates through Weblate when possible.
+  - name: Roadmap
+    url: https://github.com/Selftend/selftend/blob/main/.github/ROADMAP.md
+    about: Check current priorities before proposing larger product scope.

@@ -1,8 +1,25 @@
 name: Docs or process
 description: Improve contributor workflow, documentation, or project operations.
 title: "[Docs]: "
+labels:
+  - needs triage
 type: Documentation
 body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Contributor onboarding
+        - Local setup or commands
+        - Product or roadmap docs
+        - Privacy, legal, or safety docs
+        - Release, deployment, or operations
+        - GitHub issue or PR workflow
+        - Other or not sure
+    validations:
+      required: true
+
   - type: textarea
     id: change
     attributes:
@@ -15,5 +32,18 @@ body:
     id: why
     attributes:
       label: Why does it matter?
+      description: Who is blocked or confused today?
     validations:
       required: true
+
+  - type: textarea
+    id: audience
+    attributes:
+      label: Target contributor role
+      description: Developer, designer, translator, tester, mental-health expert, maintainer, or another role.
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: What would make this issue complete?

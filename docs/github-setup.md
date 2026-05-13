@@ -1,7 +1,5 @@
 # GitHub Setup
 
-Last updated: 2026-05-05
-
 ## Current state
 
 The project has been renamed to Selftend. If the GitHub repository is newly created or manually renamed, use:
@@ -86,12 +84,20 @@ Use GitHub branch, environment, or workflow permission controls before sharing r
 
 Prepared label set:
 
-- `bug`
-- `feature`
-- `docs`
+- `needs triage`
+- `design`
+- `qa`
 - `privacy`
 - `safety`
 - `accessibility`
+- `security`
+- `auth`
+- `ui`
+- `i18n`
+- `dependencies`
+- `platform: web`
+- `platform: android`
+- `platform: ios`
 - `good first issue`
 - `help wanted`
 

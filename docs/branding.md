@@ -1,7 +1,5 @@
 # Branding and Assets
 
-Last updated: 2026-05-07
-
 Icon files live in `assets/`.
 
 ## Source

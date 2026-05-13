@@ -1,3 +1,15 @@
+- name: needs triage
+  color: d876e3
+  description: Needs maintainer review before it is ready to claim.
+
+- name: design
+  color: c5def5
+  description: UX, visual design, flows, mockups, or design review.
+
+- name: qa
+  color: fbca04
+  description: Manual testing, device coverage, reproduction, or release verification.
+
 - name: privacy
   color: 5319e7
   description: Privacy-sensitive change or discussion.
@@ -19,12 +31,28 @@
   description: Accounts, login, OAuth, sessions, or passwordless auth.
 
 - name: ui
-  color: a2eeef
-  description: Visual design, layout, components, or user interface work.
+  color: 0e8a16
+  description: Visual layout, reusable components, or user interface implementation.
 
 - name: i18n
   color: 006b75
-  description: Translation, localization, or language support.
+  description: Translation, localization, language support, or Weblate workflow.
+
+- name: dependencies
+  color: 0366d6
+  description: Dependency additions, upgrades, removals, or policy review.
+
+- name: "platform: web"
+  color: 1d76db
+  description: Web-specific behavior, release, or testing.
+
+- name: "platform: android"
+  color: 3fb950
+  description: Android-specific behavior, release, or testing.
+
+- name: "platform: ios"
+  color: bfdadc
+  description: iOS-specific behavior, release, or testing.
 
 - name: good first issue
   color: 7057ff

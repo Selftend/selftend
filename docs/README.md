@@ -1,7 +1,5 @@
 # Documentation
 
-Last updated: 2026-05-12
-
 Index for the `docs/` directory.
 
 Repo-level files:
@@ -57,7 +55,6 @@ Repo-level files:
 
 ## Doc Rules
 
-- Use `Last updated: YYYY-MM-DD`.
 - State decisions directly.
 - Mark assumptions and open questions.
 - Update the relevant doc when setup, commands, deployment, store submission, env vars, safety/legal boundaries, current blockers, or next expected inputs change.

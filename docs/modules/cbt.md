@@ -1,7 +1,5 @@
 # CBT Module Spec
 
-Last updated: 2026-05-06
-
 ## Purpose
 
 Ship one complete CBT section before expanding the app into broader mental-health scope.

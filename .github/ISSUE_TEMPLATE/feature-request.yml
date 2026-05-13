@@ -1,12 +1,34 @@
 name: Feature request
 description: Propose a feature or product change.
 title: "[Feature]: "
+labels:
+  - needs triage
 type: Feature
 body:
   - type: markdown
     attributes:
       value: |
         Thanks for suggesting an improvement for Selftend.
+
+        Selftend is a free wellness and self-help product. Please avoid proposals that depend on ads, subscription paywalls, manipulative retention mechanics, diagnosis, treatment claims, AI therapist framing, broad social feeds, or default-on reminders/streaks.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the project would this affect most?
+      options:
+        - Guided self-help flow
+        - Mood, journaling, or progress
+        - Account, privacy, or data controls
+        - Notifications or reminders
+        - Accessibility
+        - Design or UI
+        - Contributor tooling
+        - Documentation
+        - Other or not sure
+    validations:
+      required: true
 
   - type: textarea
     id: problem
@@ -25,7 +47,25 @@ body:
       required: true
 
   - type: textarea
+    id: audience
+    attributes:
+      label: Who benefits?
+      description: Which users or contributors need this, and when would they use it?
+
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: What should this proposal deliberately avoid or defer?
+
+  - type: textarea
     id: guardrails
     attributes:
       label: Guardrails
-      description: Call out privacy, safety, accessibility, licensing, or scope concerns.
+      description: Call out privacy, safety, accessibility, licensing, i18n, dependency, data-model, notification, or roadmap concerns.
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Optional. List the observable behavior that would make this done.

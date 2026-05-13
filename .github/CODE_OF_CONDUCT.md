@@ -1,7 +1,5 @@
 # Code of Conduct
 
-Last updated: 2026-05-12
-
 Selftend project spaces should stay respectful and usable for contributors and users. This applies to GitHub, Discord, project email aliases, reviews, and any channel representing the project.
 
 ## Expected Behavior

@@ -1,7 +1,5 @@
 # Naming
 
-Last updated: 2026-05-12
-
 ## Final name
 
 Final project/product name: `Selftend`.

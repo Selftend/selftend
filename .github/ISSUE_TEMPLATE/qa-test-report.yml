@@ -1,0 +1,75 @@
+name: QA test report
+description: Share a manual test pass, device report, or reproducibility result.
+title: "[QA]: "
+labels:
+  - qa
+  - needs triage
+type: Task
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for manual testing notes, device coverage, and reproduction attempts.
+
+        Test only with accounts and data you control. Do not include private health information, passwords, auth tokens, session cookies, or another person's data.
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform tested
+      options:
+        - Web
+        - Android
+        - iOS
+        - Cross-platform
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Device, OS, browser, app build, commit SHA, or deployment URL.
+      placeholder: "Example: Galaxy S22, Android 14, closed test build 12"
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: What did you test?
+      description: List the flow, issue, checklist, or area you tested.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - Passed
+        - Failed
+        - Partially passed
+        - Could not test
+    validations:
+      required: true
+
+  - type: textarea
+    id: findings
+    attributes:
+      label: Findings
+      description: Summarize what happened. If you found a reproducible defect, include steps or link the bug issue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: privacy_safety
+    attributes:
+      label: Privacy, safety, or accessibility observations
+      description: Note account, deletion, data loss, notification consent, crisis copy, minors, or accessibility concerns.
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Screenshots, recordings, or logs
+      description: Optional. Attach only redacted evidence.
