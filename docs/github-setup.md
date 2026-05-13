@@ -6,13 +6,13 @@ The project has been renamed to Selftend. If the GitHub repository is newly crea
 
 Create the empty repository first:
 
-- owner: `vasilyoshev`
-- name: `self-tend`
+- owner: `Selftend`
+- name: `selftend`
 
 Remote setup after creation or manual rename:
 
 ```bash
-git remote add origin git@github.com:vasilyoshev/self-tend.git
+git remote add origin git@github.com:Selftend/selftend.git
 git branch -M main
 git push -u origin main
 ```
@@ -20,7 +20,7 @@ git push -u origin main
 If the old remote already exists, update it only after the GitHub repository has been renamed:
 
 ```bash
-git remote set-url origin git@github.com:vasilyoshev/self-tend.git
+git remote set-url origin git@github.com:Selftend/selftend.git
 ```
 
 ## Prepared files

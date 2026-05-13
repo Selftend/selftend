@@ -31,6 +31,7 @@ Use this as the map for project docs. The README covers setup; the roadmap holds
 ## Policy And Planning
 
 - [policies.md](policies.md) - public policy surfaces and launch-review status
+- [crisis-strategy.md](crisis-strategy.md) - crisis guidance posture and per-jurisdiction review
 - [gdpr-compliance.md](gdpr-compliance.md) - GDPR/CCPA posture
 - [analytics.md](analytics.md) - analytics and observability posture
 - [licensing.md](licensing.md) - AGPL and third-party content rules

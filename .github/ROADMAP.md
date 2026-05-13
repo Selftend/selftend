@@ -48,16 +48,18 @@ This file is the source of truth for tracked work. Tick `[x]` when an item is co
 
 ## P2: Launch Readiness
 
-1. [ ] Submit the domain for HSTS preload after HTTPS is stable.
-2. [ ] Authenticate the build machine with Expo or configure `EXPO_TOKEN`.
+1. [x] Submit the domain for HSTS preload after HTTPS is stable.
+2. [x] Authenticate the build machine with Expo or configure `EXPO_TOKEN`.
 3. [x] Verify EAS, Netlify, and GitHub release variables/secrets for reproducible Android and web releases.
 4. [ ] Complete legal review of privacy policy, terms, and safety/crisis copy.
 5. [ ] Approve the global crisis-resource strategy.
 6. [ ] Run local Android verification including the permission check before submission.
-7. [ ] Prepare app store assets, screenshots, policy-safe copy, FAQ, and public support guidance.
-8. [ ] Configure Google Play service account JSON after the first manual upload.
-9. [ ] Create the closed-testing track and tester list in Google Play; submit the closed-testing release for Google review.
-10. [ ] Verify closed-test Android build, live auth, persistence, local reminders, and removed camera/microphone permissions on a real device.
+7. [x] Prepare public FAQ (in-app + web `/faq` route) and public support guidance (extended `/support` route).
+       Play Store short/full descriptions and "what's new" copy are drafted in the conversation history; paste into Play Console at launch time.
+8. [ ] Prepare Google Play store assets and screenshots.
+9. [x] Configure Google Play service account JSON after the first manual upload.
+10. [ ] Create the closed-testing track and tester list in Google Play; submit the closed-testing release for Google review.
+11. [ ] Verify closed-test Android build, live auth, persistence, local reminders, and removed camera/microphone permissions on a real device.
 
 ## Deferred reminders infrastructure
 
@@ -112,13 +114,13 @@ This file is the source of truth for tracked work. Tick `[x]` when an item is co
 
 ## Pre-Public Cleanup
 
-1. [ ] Review crisis guidance by jurisdiction.
-2. [ ] Audit docs for stale internal notes and broken URLs.
-3. [ ] Remove debug logging before public release.
-4. [ ] Verify translation coverage for supported languages.
-5. [ ] Review [.github/THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and source license headers before launch.
+1. [x] Review crisis guidance by jurisdiction (audit + recommendation in [docs/crisis-strategy.md](../docs/crisis-strategy.md); needs approval to land code changes).
+2. [x] Audit docs for stale internal notes and broken URLs.
+3. [x] Remove debug logging before public release.
+4. [x] Verify translation coverage for supported languages.
+5. [x] Review [.github/THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and source license headers before launch.
 6. [x] Verify environment variable docs and CI/CD workflows.
-7. [ ] Verify DNS/domain setup and Supabase Authentication redirect URL allow-list.
+7. [x] Verify DNS/domain setup and Supabase Authentication redirect URL allow-list.
 
 ## Reference repos
 

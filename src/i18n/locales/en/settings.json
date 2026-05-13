@@ -158,7 +158,11 @@
     "policiesAndSafety": "Policies and safety",
     "openCrisis": "Open crisis guidance",
     "openPrivacy": "Open privacy policy",
-    "openTerms": "Open terms and boundaries"
+    "openTerms": "Open terms and boundaries",
+    "handles": "What support handles",
+    "handlesCovers": "Sign-in problems, sync failures, missing records, app crashes, bug reports, account deletion fallback, accessibility issues, and translation feedback.",
+    "handlesNot": "Support cannot provide crisis response, therapy, diagnosis, clinical advice, or help interpreting your records.",
+    "openFaq": "Read full FAQ"
   },
   "legal": {
     "title": "Legal and boundaries",

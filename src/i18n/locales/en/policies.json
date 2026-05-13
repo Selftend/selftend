@@ -387,5 +387,85 @@
         ]
       }
     ]
+  },
+  "faq": {
+    "pageTitle": "FAQ",
+    "pageDescription": "Common questions about Selftend.",
+    "sections": [
+      {
+        "title": "Is Selftend therapy?",
+        "body": [
+          "No. Selftend is guided self-help. It is not therapy, counseling, diagnosis, treatment, or a substitute for a licensed mental health professional. If you need clinical care, contact a qualified provider in your area."
+        ]
+      },
+      {
+        "title": "Can it help in a crisis?",
+        "body": [
+          "No. Selftend cannot help in an emergency. If you are in crisis or at risk of harm, contact local emergency services or a crisis line. The in-app crisis page lists resources we currently know about."
+        ]
+      },
+      {
+        "title": "Is it really free? What's the catch?",
+        "body": [
+          "It is free. No ads, no in-app purchases, no subscription paywalls for care. Selftend is operated as a non-profit project. Donation support may exist eventually; it will never restrict access to the app."
+        ]
+      },
+      {
+        "title": "Do I need an account?",
+        "body": [
+          "Yes — the MVP requires an account so records sync across devices and so you can export or delete them on demand. Local-only and bring-your-own-Supabase modes are on the post-MVP roadmap."
+        ]
+      },
+      {
+        "title": "What data does Selftend collect?",
+        "body": [
+          "Email, preferences, and the records you choose to create. No date of birth, no device identifiers, no advertising or analytics SDKs. Full details in the privacy policy."
+        ]
+      },
+      {
+        "title": "Who can see my records?",
+        "body": [
+          "Only you. Records are scoped to your account through Supabase Row-Level Security and HTTPS in transit. We do not read your records except to fulfill a verified privacy request, investigate a security incident, or satisfy a legal obligation."
+        ]
+      },
+      {
+        "title": "Can I export or delete my data?",
+        "body": [
+          "Yes. Settings has a one-tap JSON export and a self-service account deletion. Deleted accounts are removed within 30 days; no backup copies are retained beyond that window."
+        ]
+      },
+      {
+        "title": "Why is there no AI counselor?",
+        "body": [
+          "Because we don't think a self-help app should pretend to be one. The MVP intentionally has no AI therapist, AI counselor, or AI coach. Any future AI features would need explicit safety review."
+        ]
+      },
+      {
+        "title": "Why 18 and over?",
+        "body": [
+          "Under-18 support needs legal review, child-safety review, and a parental-consent or age-assurance plan we have not built yet. Until that is in place, Selftend is for adults only."
+        ]
+      },
+      {
+        "title": "Are reminders annoying?",
+        "body": [
+          "They are off by default. If you turn them on in Settings, you can pick a time and turn them off anytime. There are no streaks, no shame messaging, and no penalty for missing a day."
+        ]
+      },
+      {
+        "title": "Is Selftend open source?",
+        "body": [
+          "Yes — the code is licensed under AGPL-3.0. Issues, contributor docs, and the roadmap are public on GitHub. The Selftend name, logo, and branding are not licensed for reuse."
+        ]
+      },
+      {
+        "title": "How can I contact you, and what should I expect?",
+        "body": [
+          "Use support@selftend.org for product questions and bug reports, privacy@selftend.org for data requests, and security@selftend.org for security concerns.",
+          "Include the minimum needed to help: platform, browser or app version, steps to reproduce, expected and actual behavior. Please do not include the body of your thought records or other sensitive self-help content in email.",
+          "We acknowledge support emails within a week during launch and complete valid GDPR/CCPA privacy requests within one month of receipt."
+        ]
+      }
+    ]
   }
 }

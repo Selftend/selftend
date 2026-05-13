@@ -38,6 +38,19 @@ export default function SupportScreen() {
 
           <Card>
             <CardHeader>
+              <CardTitle>{t("supportPage.handles")}</CardTitle>
+              <CardDescription>{t("supportPage.handlesCovers")}</CardDescription>
+              <CardDescription>{t("supportPage.handlesNot")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onPress={() => router.push("/faq")} variant="secondary">
+                <Text>{t("supportPage.openFaq")}</Text>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>{t("supportPage.contact")}</CardTitle>
               <CardDescription>{t("supportPage.contactDescription")}</CardDescription>
             </CardHeader>

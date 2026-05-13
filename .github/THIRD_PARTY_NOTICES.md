@@ -51,4 +51,20 @@ Direct UI support dependencies:
 - `tailwind-merge`: MIT
 - `tailwindcss-animate`: MIT
 
-Before public launch, run a complete dependency license review and replace this lightweight file if legal or app-store review requires a fuller notice process.
+## Bundled Fonts
+
+The app bundles Noto Sans via `@expo-google-fonts/noto-sans`. The font itself is licensed under the SIL Open Font License 1.1 (OFL-1.1); the npm package wrapper is MIT.
+
+Source: https://fonts.google.com/noto/specimen/Noto+Sans
+
+License: SIL Open Font License 1.1 — see the full text shipped with the package at `node_modules/@expo-google-fonts/noto-sans/LICENSE`.
+
+## Google Sign-In Branding
+
+`assets/branding/google-logo.png` is Google's "G" mark, used on the Sign in with Google button. Its use is governed by Google's Sign-In branding guidelines, not a copyright license.
+
+Source: https://developers.google.com/identity/branding-guidelines
+
+## Dependency License Posture
+
+The production `dependencies` tree at the time of writing breaks down as 66 MIT, 1 ISC (`lucide-react-native`), 1 Apache-2.0 (`class-variance-authority`), and 1 dual MIT/OFL-1.1 (`@expo-google-fonts/noto-sans`). No AGPL/GPL/LGPL/MPL/SSPL/BUSL packages are present. Re-run this audit whenever a new direct dependency is added.
