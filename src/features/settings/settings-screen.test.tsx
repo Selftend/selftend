@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Pressable as mockPressable, Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
-import SettingsScreen from "@/app/(app)/(tabs)/settings";
+import SettingsScreen from "./settings-screen";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { cancelCbtReminder, scheduleCbtReminder } from "@/src/lib/notifications";

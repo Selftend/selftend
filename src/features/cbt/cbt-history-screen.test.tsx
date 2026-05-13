@@ -1,7 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
-import CbtHistoryScreen from "@/app/(app)/cbt/history";
+import CbtHistoryScreen from "./cbt-history-screen";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 

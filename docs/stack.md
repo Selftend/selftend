@@ -65,8 +65,10 @@ To add a language:
 ## Testing
 
 - Unit and component tests use `jest-expo` and React Native Testing Library.
-- Tests that need providers should use `test/render-with-providers.tsx`.
-- Test files must stay outside `app/` so Expo Router does not treat them as routes.
+- Unit tests live next to the source file as `*.test.ts(x)`.
+- Tests that need providers can import `test/render-with-providers.tsx` from their colocated test file.
+- Test files must stay outside `app/` so Expo Router does not treat them as routes; keep route files thin and colocate tests with extracted `src/` components.
+- Integration and e2e suites remain under `test/integration/` and `test/e2e/`.
 - Add tests around the riskiest logic first: schemas, repositories, auth, deletion/export, reminders, and critical UI states.
 
 ## Dependency Policy

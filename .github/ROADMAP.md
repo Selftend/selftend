@@ -49,7 +49,7 @@ Do not add:
 
 No open P0 tasks remain.
 
-The app foundation, data model, module contract, shared components, Supabase migrations, onboarding flags, and Android start workflows are documented in the focused docs above. App-owned components live in `src/components/app`, while generated React Native Reusables primitives live in `src/components/react-native-reusables`. Treat Android dev-client startup failures, dependency-install integrity issues, native auth persistence warnings, or migration-history regressions as P0 before adding new MVP flows.
+The app foundation, data model, module contract, shared components, colocated unit tests, Supabase migrations, onboarding flags, and Android start workflows are documented in the focused docs above. App-owned components live in `src/components/app`, while generated React Native Reusables primitives live in `src/components/react-native-reusables`. Treat Android dev-client startup failures, dependency-install integrity issues, native auth persistence warnings, or migration-history regressions as P0 before adding new MVP flows.
 
 ## P1: MVP Product Flows
 

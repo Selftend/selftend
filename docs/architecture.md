@@ -7,7 +7,7 @@ A map of how the app is organized. For stack choices, see [stack.md](stack.md). 
 | Layer             | Where it lives                                | Responsibility                                                                               |
 | ----------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Routes            | `app/`                                        | File-system routes (Expo Router). Public, `(auth)`, `(app)` protected.                       |
-| Screens           | `app/.../*.tsx`                               | Wire route to feature components, mostly thin.                                               |
+| Screens           | `app/.../*.tsx`, `src/features/**`            | Route files stay thin; tested screen bodies live under `src/` when practical.                |
 | Feature modules   | `src/features/{name}/`                        | Module-owned: schemas, types, repository, queries, components.                               |
 | Shared components | `src/components/app/`                         | App-owned cross-feature UI: screen states, toast, error boundary, header, sidebar.           |
 | UI primitives     | `src/components/react-native-reusables/`      | Generated React Native Reusables (do not edit casually).                                     |
@@ -100,7 +100,8 @@ src/features/cbt/
 ├── schemas.ts        Zod validation schemas
 ├── schemas.test.ts   Schema tests
 ├── repository.ts     Supabase queries: list, get, save, archive
-└── queries.ts        TanStack Query hooks wrapping the repository
+├── queries.ts        TanStack Query hooks wrapping the repository
+└── *-screen.tsx      Tested screen components used by thin Expo Router files
 ```
 
 Flow:

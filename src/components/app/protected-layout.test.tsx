@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
-import ProtectedLayout from "@/app/(app)/_layout";
+import ProtectedLayout from "./protected-layout";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";

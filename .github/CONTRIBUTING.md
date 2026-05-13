@@ -38,7 +38,7 @@ You do not need Supabase, EAS, or Google OAuth for docs, copy, design notes, tra
 | `lib/`                                   | Reusables theme glue and `cn()` utility.                                                                                          |
 | `supabase/`                              | Migrations, RLS policies, and edge functions. See [supabase/README.md](../supabase/README.md).                                    |
 | `functions/`                             | Supabase Edge Function source for web push reminders.                                                                             |
-| `test/`                                  | Tests that need shared providers. File-local tests can live next to the code as `*.test.ts(x)`.                                   |
+| `test/`                                  | Shared Jest setup/helpers plus separate integration and e2e suites. Unit tests live next to source files as `*.test.ts(x)`.       |
 | `scripts/`                               | Maintainer scripts for Android and dev-client workflows.                                                                          |
 | `docs/`                                  | Product, platform, policy, and process docs.                                                                                      |
 
@@ -102,8 +102,9 @@ Husky installs with `npm install`. The pre-commit hook runs `lint-staged`, which
 ## Tests
 
 - Use Jest and `@testing-library/react-native`.
-- Put unit tests next to the file when possible.
-- Put route/component tests that need providers in `test/` and use `test/render-with-providers.tsx`.
+- Put unit and component tests next to the source file.
+- Keep route files in `app/` thin; when a route needs unit coverage, move the tested component into `src/` and colocate the test there.
+- Use `test/render-with-providers.tsx` from colocated tests when shared providers are needed.
 - Keep test files outside `app/` so Expo Router does not treat them as routes.
 - New persistent modules need schema or repository tests plus one critical UI state test.
 
