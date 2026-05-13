@@ -1,10 +1,8 @@
 # Accessibility
 
-Accessibility is part of the app foundation, not a polish pass. Selftend is a mental-health self-help product, so users must be able to move through the app calmly with screen readers, keyboards, switch controls, larger text, reduced motion, and high-contrast settings.
+Accessibility is part of the app foundation, not a polish pass. Users must be able to move calmly through the app with screen readers, keyboards, switch controls, larger text, reduced motion, and high-contrast settings.
 
 ## Baseline
-
-Use these rules for every new screen and shared component:
 
 - All actionable UI has an accessible name from i18n. Visible text can be the name; icon-only and card-like actions need `accessibilityLabel`.
 - Use `accessibilityHint` only when the label does not explain the result of the action.
@@ -24,8 +22,6 @@ Shared accessibility helpers live in [src/lib/accessibility.ts](../src/lib/acces
 - `DEFAULT_INTERACTIVE_HIT_SLOP` is for buttons, card links, navigation rows, and select triggers.
 - `COMPACT_CONTROL_HIT_SLOP` is for compact switches, checkboxes, and radio controls.
 - `useReduceMotionEnabled()` listens to the platform reduce-motion setting.
-
-Current component defaults:
 
 - [components/ui/button.tsx](../components/ui/button.tsx), [components/ui/select.tsx](../components/ui/select.tsx), [components/ui/switch.tsx](../components/ui/switch.tsx), [components/ui/checkbox.tsx](../components/ui/checkbox.tsx), and [components/ui/radio-group.tsx](../components/ui/radio-group.tsx) set baseline roles, states, and hit slop.
 - [components/ui/native-only-animated-view.tsx](../components/ui/native-only-animated-view.tsx) drops entering, exiting, and layout animations when reduced motion is enabled.

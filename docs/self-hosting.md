@@ -1,107 +1,89 @@
-# Future Data Separation and Backend Portability
+# Future Data Separation And Backend Portability
 
-Last checked: 2026-05-02
+The first web and Android testing path uses the maintainer-hosted Supabase project. Data separation is still a product direction, but it should not block public web testing or Google Play closed testing.
 
-The first web and Android testing path uses the maintainer-hosted Supabase project. Data separation remains an explicit future direction, but it should not block the first public web test or Google Play closed test.
+Preferred future paths:
 
-For non-technical users, the preferred future user-controlled data path is local-only storage with export/import, not asking them to configure Supabase. For technical users and organizations, the app should preserve a future path to bring-your-own Supabase or self-hosted Supabase.
+- non-technical users: local-only records with export/import
+- technical users: bring-your-own Supabase Cloud project
+- operators: advanced self-hosted Supabase
 
-Official references:
+References:
 
 - Supabase self-hosting with Docker: <https://supabase.com/docs/guides/self-hosting/docker>
 - Supabase local development and migrations: <https://supabase.com/docs/guides/local-development/overview>
 - PikaPods docs: <https://docs.pikapods.com/>
 
-## Supported modes
+## Supported Modes
 
-### 1. Maintainer hosted sync
+### Maintainer Hosted Sync
 
-This is the current launch path and default public product path.
+Current launch path and default public product path:
 
-- Web app: single-page Expo web export on Netlify or an equivalent static frontend host.
-- Backend: the maintainer's Supabase project.
-- Mobile builds: EAS builds configured with the maintainer's Supabase URL and publishable key.
+- Expo web app on Netlify or equivalent static host
+- maintainer Supabase project
+- mobile builds configured with maintainer Supabase URL and publishable key
 
 This is the only mode planned for the first Google Play closed-test build.
 
-### 2. Local-only personal data
+### Local-Only Personal Data
 
-This should become the main non-technical privacy option after the hosted MVP path is working.
+Planned privacy path for non-technical users:
 
-- no Supabase account required for local records
-- sensitive app records stay on the device or browser profile
+- no Supabase account for local records
+- records stay on device or browser profile
 - no cross-device sync by default
-- switching devices requires export/import unless a backup feature is added
-- deletion means deleting local app data, with clear platform caveats
+- moving devices requires export/import unless backup is added
+- deletion means deleting local app data, with platform caveats
 
-Local-only mode should be offered before sign-in and again in settings. It should not claim perfect secrecy: device backups, browser storage, operating-system diagnostics, and file exports can still expose data depending on the user's device and choices.
+Do not claim perfect secrecy: device backups, browser storage, OS diagnostics, and exports can still expose data.
 
-### 3. Bring your own Supabase Cloud project
+### Bring Your Own Supabase Cloud
 
-This is the easiest self-host-like path for technical users who want their own backend without operating servers.
+Technical users can create their own Supabase project, apply `supabase/migrations`, configure auth/OAuth/redirects, and build the web or native app with their own public Supabase URL and publishable key.
 
-Self-hoster responsibilities:
+### Advanced Self-Hosted Supabase
 
-- create a Supabase project
-- apply this repo's migrations from `supabase/migrations`
-- configure email auth and any OAuth providers they want
-- configure redirect URLs for their web domain and native scheme
-- build the web or native app with their own public Supabase URL and publishable key
+Operators can run Supabase themselves, but they own server maintenance, security hardening, Postgres, backups, disaster recovery, monitoring, uptime, scaling, email, OAuth, support, privacy policy, and deletion operations.
 
-### 4. Advanced self-hosted Supabase
+The project documents this path but does not maintain a production Docker Compose stack for Supabase.
 
-This is for operators who want to run Supabase on their own infrastructure. Supabase's official self-hosting path uses Docker Compose and assumes server administration, Docker, networking, DNS, and firewall knowledge. The operator is responsible for server maintenance, security hardening, Postgres maintenance, backups, disaster recovery, monitoring, uptime, high availability, and scaling.
-
-For this project, advanced self-hosting is supported only as a documented operator path. The project does not currently maintain its own production Docker Compose stack for Supabase.
-
-## Backend portability contract
+## Portability Contract
 
 The client currently depends on:
 
 - Supabase Auth for accounts, sessions, magic links, and Google OAuth
-- Supabase Postgres tables and RLS policies in `supabase/migrations`
-- Supabase client access from Expo using public URL and publishable or anon key
-- auth callback redirects for web and native app flows
+- Supabase Postgres tables and RLS in `supabase/migrations`
+- Supabase client access from Expo using public URL and publishable/anon key
+- auth redirects for web and native flows
 
-The MVP does not require:
+Before Play Store closed testing, do not replace Supabase or add automatic cloud sync, custom backend adapters, Firebase/Appwrite/custom API support, or a project-maintained production Docker stack.
 
-- a custom JavaScript backend
-- analytics SDKs
-- server-rendered web
-- proprietary hosted-only APIs
-- automatic cloud backup or sync
+## Future Data-Location UX
 
-Do not replace Supabase with a different backend before Play Store closed testing. Preserve future portability by keeping schema changes in migrations and avoiding unnecessary coupling in client data access.
+After export/delete and local-only storage exist, the app can ask before sign-in:
 
-## Future data-location UX
+1. `Use hosted sync`
+2. `Keep data on this device`
+3. `Use my own Supabase`
 
-After export/delete and local-only storage exist, the first screen can ask where personal data should live before sign-in:
+Settings should offer the same area later. Switching data locations must not silently move records; users should explicitly export and import.
 
-1. `Use hosted sync`: easiest path, uses the maintainer's Supabase backend and supports web/mobile continuity.
-2. `Keep data on this device`: non-technical privacy path, stores records locally and does not sync by default.
-3. `Use my own Supabase`: advanced path for users or organizations who can provide a Supabase-compatible URL and publishable key.
-
-Settings should eventually include the same data-location area. Switching data locations must sign out of the current backend if needed and must not silently move records. The app should show that existing records stay where they were created unless the user explicitly exports and imports them.
-
-## Recommended privacy sequence
-
-Implement privacy-control features in this order:
+Recommended privacy sequence:
 
 1. hosted account/data deletion
-2. data export from hosted Supabase
+2. hosted data export
 3. local-only storage
 4. import into local or hosted storage
 5. encrypted backup file export
 6. custom Supabase runtime connection
-7. optional Google Drive sync after encryption, merge behavior, and policy review are solid
+7. optional Google Drive sync after encryption, merge behavior, and policy review
 
-## Export, import, and Google Drive
+Manual export/import comes before automatic Google Drive sync. Drive sync adds OAuth scopes, app verification, conflict handling, encryption decisions, background sync, and more Google Play disclosure.
 
-Manual export/import should come before automatic Google Drive sync. Automatic Google Drive sync adds Google OAuth, Drive API scopes, app verification risk, conflict handling, backup encryption decisions, background sync behavior, and more Google Play Data safety disclosure. If Drive support is added later, app data should be encrypted before upload so Google stores the file but not readable mental-health content.
+## Public Build-Time Environment
 
-## Public build-time environment
-
-Required public values:
+Required:
 
 ```bash
 EXPO_PUBLIC_SUPABASE_URL=https://your-supabase.example.org
@@ -120,21 +102,11 @@ EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=<public-vapid-key>
 ```
 
-Never put these in Expo public variables:
+Never put service-role keys, database passwords, SMTP passwords, OAuth secrets, JWT secrets, private API keys, or backup credentials in Expo public variables. They are bundled into the client app.
 
-- Supabase service-role keys
-- database passwords
-- SMTP passwords
-- OAuth client secrets
-- JWT secrets
-- private API keys
-- backup credentials
+## Database Setup
 
-Expo public variables are bundled into the client app and should be treated as visible to users.
-
-## Database setup
-
-For Supabase Cloud:
+Supabase Cloud:
 
 ```bash
 npm exec supabase -- login
@@ -142,114 +114,51 @@ npm exec supabase -- link --project-ref <project-ref>
 npm exec supabase -- db push
 ```
 
-For local development:
+Local development:
 
 ```bash
 npm exec supabase -- start
 npm exec supabase -- db reset
 ```
 
-For self-hosted Supabase, follow Supabase's official self-hosting docs first, then apply the SQL migrations from `supabase/migrations` to the target Postgres database. The exact deployment and migration command depends on how the operator exposes the database and manages credentials.
+Self-hosted operators should follow Supabase's official docs, then apply this repo's migrations to the target Postgres database.
 
-## Web push reminders
+## Web Push Reminders
 
-Browser reminder support is optional for self-hosters. Native Android and iOS reminders remain local device schedules and do not need the web push backend.
+Native reminders are local device schedules. Browser reminders are optional for self-hosters and require:
 
-Self-hosters who enable browser reminders must provide:
+- `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY`
+- private VAPID secrets for `send-web-reminders`
+- `WEB_PUSH_CRON_SECRET`
+- Vault secrets named `selftend_supabase_url` and `selftend_web_push_cron_secret`
+- Supabase Cron via `select public.schedule_send_web_reminders_cron();`
 
-- a VAPID public key in `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY`
-- matching private VAPID secrets for the `send-web-reminders` Supabase Edge Function
-- a `WEB_PUSH_CRON_SECRET` Edge Function secret
-- matching Vault secrets named `selftend_supabase_url` and `selftend_web_push_cron_secret`
-- a scheduled Supabase Cron job created by `select public.schedule_send_web_reminders_cron();`
+Do not schedule cron until the Edge Function and secrets are complete.
 
-Do not schedule the cron job until the Edge Function deploy and secrets are complete, otherwise opted-in browser reminders will not send.
+## Auth, Web, And Native Builds
 
-## Auth and redirects
-
-Each backend owner must configure auth redirects for their own domains.
-
-Web callback:
+Each backend owner configures redirects:
 
 ```text
 https://<app-domain>/auth-callback
-```
-
-Native callback:
-
-```text
 selftend://**
-```
-
-Local web callback:
-
-```text
 http://localhost:8081/auth-callback
 ```
 
-Google OAuth, if enabled, must use the Supabase auth provider callback for that Supabase instance, for example:
+Google OAuth uses that Supabase instance's provider callback, for example:
 
 ```text
 https://<supabase-domain>/auth/v1/callback
 ```
 
-For Supabase Cloud projects, use the exact callback URL shown in the Supabase Dashboard Google provider settings.
+Build the web app with `npm run export:web` and serve locally with `npm run serve:web:production`. Deploy `dist` to any HTTPS static host that serves `index.html` for unknown routes.
 
-## Web build
+The public Android closed-test build uses the maintainer backend. Self-hosters who want native apps must build their own binaries with their own public Supabase configuration and handle app identifiers, store accounts, redirects, support contacts, privacy policy, and deletion process.
 
-Build the single-page web app:
+## Managed Self-Hosting Research
 
-```bash
-npm run export:web
-```
+PikaPods is not supported yet. Future review should check whether it can run or approximate the required Supabase stack, auth/email setup, backups, custom domains, TLS, upgrades, export/deletion, and acceptable costs.
 
-Serve locally:
-
-```bash
-npm run serve:web:production
-```
-
-Self-hosters can deploy `dist` to any static host that supports HTTPS and serves `index.html` for unknown navigation routes so Expo Router can handle unmatched paths at runtime.
-
-## Native builds
-
-The public Android closed-test build will use the maintainer backend.
-
-Self-hosters who want native apps must build their own binaries from source with their own public Supabase configuration:
-
-```bash
-npm run build:android:production
-```
-
-They must also handle their own app identifiers, store accounts, auth redirect configuration, support contacts, privacy policy, and account deletion process.
-
-## PikaPods and managed self-hosting
-
-PikaPods is not a supported deployment target yet. Its docs describe hosting open-source apps with managed files, database access, custom domains, and backups, but this project has not verified whether PikaPods can run the required Supabase-compatible backend stack for production.
-
-Future research should check:
-
-- whether the full Supabase stack can be hosted or approximated
-- auth provider and email configuration support
-- backup and restore behavior
-- domain and TLS support
-- upgrade process
-- data export and deletion workflows
-- cost and maintenance burden
-
-Until that review is complete, document PikaPods as a possible future managed self-hosting option, not as a launch promise.
-
-## Operator responsibilities
-
-Anyone running their own backend is responsible for:
-
-- privacy policy and terms for their deployment
-- account deletion and data deletion operations
-- backups and restore tests
-- software updates and security patches
-- SMTP/email deliverability
-- OAuth provider configuration
-- monitoring and uptime
-- abuse handling and child-safety obligations for their jurisdiction
+Document managed self-hosting as a possibility, not a launch promise.
 
 The app remains wellness and guided self-help, not therapy, diagnosis, or emergency support, regardless of who hosts it.

@@ -1,60 +1,48 @@
 # Documentation
 
-Index for the `docs/` directory.
-
-Repo-level files:
-
-- [README.md](../README.md) - project entry point and local setup
-- [AGENTS.md](../AGENTS.md) - agent instructions
-- [.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md) - contribution flow
-- [.github/ROADMAP.md](../.github/ROADMAP.md) - product and launch sequence
-- [.github/CODE_OF_CONDUCT.md](../.github/CODE_OF_CONDUCT.md) - community conduct
-- [.github/SECURITY.md](../.github/SECURITY.md) - private security reporting
+Use this as the map for project docs. The README covers setup; the roadmap shows current priorities.
 
 ## Start Here
 
 - [product-principles.md](product-principles.md) - product guardrails
-- [contributor-roles.md](contributor-roles.md) - starting points by role
+- [contributor-roles.md](contributor-roles.md) - contribution paths by role
+- [.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md) - branch, PR, and local workflow
+- [.github/ROADMAP.md](../.github/ROADMAP.md) - product and launch sequence
+- [.github/SECURITY.md](../.github/SECURITY.md) - private security reporting
+
+## Product And Technical
+
 - [stack.md](stack.md) - approved stack and dependency policy
-- [architecture.md](architecture.md) - providers, routes, auth, data layer, reminders, and platform differences
-- [accessibility.md](accessibility.md) - accessibility baseline and checklist
-
-## Product
-
+- [architecture.md](architecture.md) - routes, providers, auth, data, reminders
+- [data-privacy-model.md](data-privacy-model.md) - stored data, ownership, export, deletion
+- [accessibility.md](accessibility.md) - accessibility baseline
 - [modules/cbt.md](modules/cbt.md) - CBT thought-record flow and data contract
-- [modules/tools.md](modules/tools.md) - Tools navigation, placeholder routes, and module contract
-- [data-privacy-model.md](data-privacy-model.md) - data classes, ownership, export, and deletion rules
+- [modules/tools.md](modules/tools.md) - tools navigation and module contract
 
-## Technical
+## Launch And Operations
 
-- [android-development.md](android-development.md) - Android dev-build setup and troubleshooting
-- [branding.md](branding.md) - icon source, generated sizes, and regeneration script
-- [deployment.md](deployment.md) - Expo web deployment and Supabase auth callbacks
-- [self-hosting.md](self-hosting.md) - hosted, local-only, and self-hosted backend modes
-- [naming.md](naming.md) - app name, identifiers, and production domain
-
-## Privacy, Legal, And Safety
-
-- [policies.md](policies.md) - public policy surfaces and launch-review status
-- [gdpr-compliance.md](gdpr-compliance.md) - GDPR/CCPA posture, processors, retention, and user rights
-- [analytics.md](analytics.md) - analytics posture and review requirements
-- [licensing.md](licensing.md) - AGPL choice, reference-repo rules, and third-party content rules
-
-## Project Ops
-
-- [community.md](community.md) - community operating model, channels, recognition, and donations
-- [costs.md](costs.md) - launch and operating cost planning
-- [github-setup.md](github-setup.md) - workflows, release variables/secrets, labels, and branching
-- [operations-runbook.md](operations-runbook.md) - support, privacy request, security incident, breach, DPIA, and transfer workflows
-- [reference-log.md](reference-log.md) - reference-repository usage log
-
-## Launch And Store Readiness
-
+- [deployment.md](deployment.md) - web deployment and Supabase callbacks
+- [android-development.md](android-development.md) - Android dev-build setup
 - [internal-testing.md](internal-testing.md) - internal build and testing checklist
 - [android-closed-testing.md](android-closed-testing.md) - Google Play closed-testing readiness
+- [github-setup.md](github-setup.md) - workflows, labels, release variables, branching
+- [operations-runbook.md](operations-runbook.md) - support, privacy, security, breach workflows
+
+## Policy And Planning
+
+- [policies.md](policies.md) - public policy surfaces and launch-review status
+- [gdpr-compliance.md](gdpr-compliance.md) - GDPR/CCPA posture
+- [analytics.md](analytics.md) - analytics and observability posture
+- [licensing.md](licensing.md) - AGPL and third-party content rules
+- [self-hosting.md](self-hosting.md) - hosted, local-only, custom backend, self-hosting paths
+- [community.md](community.md) - community model, channels, recognition, donations
+- [costs.md](costs.md) - launch and operating cost planning
+- [branding.md](branding.md) - icon source and theme tokens
+- [naming.md](naming.md) - app name, identifiers, production domain
+- [reference-log.md](reference-log.md) - reference-repository usage log
 
 ## Doc Rules
 
-- State decisions directly.
+- Keep decisions direct and implementation-oriented.
 - Mark assumptions and open questions.
-- Update the relevant doc when setup, commands, deployment, store submission, env vars, safety/legal boundaries, current blockers, or next expected inputs change.
+- Update the relevant doc when setup, commands, deployment, store submission, env vars, safety/legal boundaries, blockers, or expected inputs change.

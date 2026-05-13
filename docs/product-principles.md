@@ -1,69 +1,53 @@
 # Product Principles
 
-## Mission
-
-Make mental health support more available without turning care into a paid trap, an ad funnel, or an engagement game.
+Selftend is a free guided self-help product. It should make support more available without becoming a paid trap, ad funnel, engagement game, diagnosis engine, or therapist replacement.
 
 ## Principles
 
-### 1. Free first
+### 1. Free First
 
-The app should be free to use. Revenue, if any, should support the mission without restricting care.
+The app is free to use. Revenue, if any, supports the mission without restricting care.
 
-### 2. Calm over sticky
+### 2. Calm Over Sticky
 
-The product should help people leave in a better state, not keep them trapped in loops.
+Help people leave in a better state; do not keep them trapped in loops.
 
-### 3. Optional gamification
+### 3. Optional Gamification
 
-Gamification may support consistency, but it must never punish absence.
+Streaks, reminders, quests, and progress views must be optional, user-controlled, non-punitive, and framed around reflection rather than shame.
 
-Rules:
+### 4. Modular Product
 
-- streaks must be optional
-- streak loss must not create shame mechanics
-- reminders must be user-controlled
-- progress views should encourage reflection, not obsession
+Users can start simple and add tools only when useful.
 
-### 4. Modular product
+### 5. Quiet Defaults
 
-Users should not be forced into every feature. The product should let people start simple and expand only when useful.
+Use minimal notifications, few enabled modules, simple language, and low-friction controls for turning features off.
 
-### 5. Quiet defaults
+### 6. Wellness, Not Diagnosis
 
-The product should not feel overwhelming.
+Support reflection and self-help. Do not diagnose, prescribe, claim treatment outcomes, provide emergency support, or replace professional care.
 
-Examples:
-
-- notifications off or minimal by default
-- only a few modules enabled initially
-- simple language
-- low-friction settings for turning features off
-
-### 6. Wellness, not diagnosis
-
-The app supports reflection and self-help. It does not diagnose, prescribe, or replace professional care.
-
-### 7. Privacy and dignity
+### 7. Privacy And Dignity
 
 Collect only what is needed. Respect the sensitivity of the data. Avoid surveillance-style analytics.
 
-### 8. Accessibility is part of quality
+### 8. Accessibility Is Quality
 
 Readable type, accessible color contrast, screen-reader support, keyboard support on web, and reduced-motion respect are baseline requirements.
 
-### 9. Open-source with real contributor paths
+### 9. Real Contributor Paths
 
-The project should welcome code and non-code contributors and make the first useful contribution easy.
+Welcome code and non-code contributors. Make the first useful contribution easy.
 
-### 10. Growth without manipulation
+### 10. Growth Without Manipulation
 
-Popularization should come from usefulness, trust, and clarity, not fear-of-loss tactics.
+Growth should come from usefulness, trust, and clarity, not fear-of-loss tactics.
 
-### 11. No AI coach in MVP
+### 11. No AI Coach In MVP
 
-AI may help internal planning, content drafting, or developer workflows, but the MVP should not present itself as an AI therapist, AI counselor, or AI mental-health coach.
+The MVP must not present itself as an AI therapist, counselor, or mental-health coach.
 
 ## Audience Note
 
-The launch posture is adults-only: Selftend is for users aged 18 and older. Under-18 support is deferred until there is legal review, child-safety review, and a clear parental-consent or age-assurance plan. Any implementation that materially affects minors, user-generated content, or peer-to-peer communication should trigger a higher review bar.
+The launch posture is adults-only: Selftend is for users aged 18 and older. Under-18 support needs legal review, child-safety review, and a parental-consent or age-assurance plan. Minors, user-generated content, or peer-to-peer communication require higher review before implementation.

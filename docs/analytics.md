@@ -1,7 +1,5 @@
 # Analytics Strategy
 
-Last reviewed: 2026-05-04
-
 ## Current state
 
 The MVP does not include any analytics SDK, tracking service, or telemetry. This is intentional:
@@ -16,7 +14,7 @@ The consent infrastructure is already built and waiting:
 - `src/components/cookie-consent-banner.tsx` offers "Accept all" / "Essential only" / "Manage preferences."
 - The Supabase `cookie_consent` column stores `{essential, analytics, acceptedAt}` per user.
 
-Contributors must not add ad-hoc tracking without explicit review (see AGENTS.md and the PR template checklist).
+Contributors must not add ad-hoc tracking without explicit review through the roadmap and PR template.
 
 ## Phased plan
 

@@ -1,7 +1,5 @@
 # Costs
 
-Last checked: 2026-05-05
-
 These are planning estimates, not guarantees. Pricing, verification rules, and limits can change. Verify all costs again before spending money or publishing the app.
 
 ## One-time and annual costs

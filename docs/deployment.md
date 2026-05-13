@@ -1,7 +1,5 @@
 # Web Deployment
 
-Last checked: 2026-05-06
-
 This project should launch the browser app as a single-page Expo web export. Do not add a separate backend, analytics SDK, or server-rendered web stack for v1 unless a concrete requirement appears.
 
 Recommended production shape:

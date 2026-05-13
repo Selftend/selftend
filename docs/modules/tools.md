@@ -1,12 +1,12 @@
 # Tools Navigation Spec
 
-## Purpose
+The product stays modular without implying planned tools are already ready.
 
-Keep the product modular without implying that future tools are ready.
+## Current State
 
-The protected app sidebar now groups self-help modules under a collapsible `Tools` submenu:
+The protected app sidebar groups tools as:
 
-- CBT, also collapsible
+- CBT
   - Overview
   - History
   - Learn
@@ -15,58 +15,41 @@ The protected app sidebar now groups self-help modules under a collapsible `Tool
 - ACT
 - Gratitude log
 
-## Current behavior
+CBT is the only working module. The app shell and CBT each have one-page onboarding tracked in `user_preferences`; Settings can reset those flags.
 
-CBT is the only working tool module.
-
-The protected app and CBT module each have one-page onboarding tracked in `user_preferences`. Settings includes a reset control that marks current onboarding flags incomplete so those introductions can be shown again. Future real tools should add their own reviewed one-page onboarding before collecting data.
-
-Mood tracker, Meditation, ACT, and Gratitude log are placeholder routes with explicit under-construction copy. They must not collect data, schedule reminders, create streak pressure, or imply therapeutic outcomes until each module has its own reviewed spec.
+Mood tracker, Meditation, ACT, and Gratitude log are placeholders. They must not collect data, schedule reminders, create streak pressure, or imply therapeutic outcomes until each has a reviewed module spec.
 
 ## Routes
 
-Working CBT routes:
+Working CBT routes: `/cbt`, `/cbt/learn`, `/cbt/history`, `/cbt/new`, `/cbt/[id]`.
 
-- `/cbt`
-- `/cbt/learn`
-- `/cbt/history`
-- `/cbt/new`
-- `/cbt/[id]`
+Placeholder routes: `/tools/mood-tracker`, `/tools/meditation`, `/tools/act`, `/tools/gratitude-log`.
 
-Placeholder routes:
+## Expansion Rule
 
-- `/tools/mood-tracker`
-- `/tools/meditation`
-- `/tools/act`
-- `/tools/gratitude-log`
-
-## Expansion rule
-
-Before any placeholder becomes a real tool, add a module spec covering:
+Before a placeholder becomes real, add a module spec covering:
 
 - user problem and feature boundary
-- data fields and privacy justification
+- data fields, privacy justification, RLS, export, and deletion
 - safety copy and non-medical framing
-- notification or reminder behavior, if any
+- reminder behavior, if any
 - tests and acceptance criteria
 
-## Module contract
+## Module Contract
 
-Every real module must follow the shared app foundation instead of inventing local behavior.
+Every real module must use the shared app foundation:
 
-- **Identity:** define a stable `ModuleKey`, route group, settings label, and i18n keys before adding UI.
-- **Data:** document persisted fields, privacy justification, RLS ownership, export coverage, and deletion coverage before adding migrations.
-- **UI states:** use shared loading, empty, error, toast, safety/crisis, and mobile form patterns from `src/components`.
-- **Safety:** include the shared crisis-support pattern where a flow asks for sensitive reflection or distress-related input. Do not claim diagnosis, treatment, crisis response, or emergency support.
-- **Drafts:** online-first forms keep unsaved local content after failed saves or temporary network loss and clear only after confirmed save or explicit discard.
-- **Reminders:** default off, explicitly enabled, locally scheduled where possible, and always non-punitive.
-- **Tests:** add schema/repository tests for data logic and at least one component state test for new user-facing flows.
+- stable `ModuleKey`, route group, settings label, and i18n keys
+- shared loading, empty, error, toast, safety/crisis, and mobile form patterns
+- online-first drafts that survive failed saves and clear after confirmed save or explicit discard
+- reminders off by default, explicit, local where possible, and non-punitive
+- schema/repository tests plus one component state test for user-facing flows
 
-Current planned module boundaries:
+Planned boundaries:
 
-- **CBT:** working guided thought records, distortion learning, history, edit, archive, optional quiet reminders.
-- **Mood tracker:** planned check-ins only; do not mix generic journaling into this module.
-- **Journaling:** planned free-text/private reflection; keep separate from CBT thought records and mood check-ins.
-- **ACT:** planned focused exercises; add its own spec before collecting data.
-- **Meditation:** planned guided practice surface; no reminders or progress pressure without review.
-- **Gratitude log:** planned lightweight entries; no streak pressure by default.
+- **CBT:** guided thought records, distortion learning, history, edit, archive, optional quiet reminders
+- **Mood tracker:** check-ins only; do not mix in generic journaling
+- **Journaling:** private free-text reflection, separate from CBT and check-ins
+- **ACT:** focused exercises after a spec
+- **Meditation:** guided practice, no reminder or progress pressure without review
+- **Gratitude log:** lightweight entries, no default streak pressure

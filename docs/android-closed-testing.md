@@ -1,7 +1,5 @@
 # Android Closed Testing
 
-Last checked: 2026-05-12
-
 The first Google Play milestone should be closed testing, not production. Do not promote to production until policy, safety, device, and support requirements are reviewed.
 
 The first Android closed-test build uses the maintainer-hosted Supabase project. Local-only mode, Google Drive sync, and custom-backend runtime switching are future privacy features, not blockers for closed testing.
