@@ -163,7 +163,7 @@ export function SignInForm() {
             <ActivityIndicator color="#20312c" />
           ) : (
             <Image
-              source={require("../assets/branding/google-logo.png")}
+              source={require("../../../assets/branding/google-logo.png")}
               style={{ width: 18, height: 18 }}
               resizeMode="contain"
             />

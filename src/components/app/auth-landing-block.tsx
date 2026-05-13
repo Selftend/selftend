@@ -11,7 +11,7 @@ export function AuthLandingBlock() {
     <View className="gap-5">
       <View className="items-center gap-3">
         <Image
-          source={require("../../assets/icon.png")}
+          source={require("../../../assets/icon.png")}
           resizeMode="contain"
           style={{ width: 72, height: 72, borderRadius: 16 }}
         />
