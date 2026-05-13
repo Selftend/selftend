@@ -95,7 +95,7 @@ npm run test:watch # Jest watch mode
 npm run verify     # CI check set
 ```
 
-`npm run verify` matches CI. Husky installs with `npm install`; the pre-commit hook runs formatting and verification before a commit.
+`npm run verify` matches the main CI verification job. CI also runs integration and end-to-end jobs against local Supabase. Run those locally when you want faster feedback before pushing; GitHub remains the source of truth for required automated checks. Husky installs with `npm install`; the pre-commit hook runs formatting and verification before a commit.
 
 ## Tests
 

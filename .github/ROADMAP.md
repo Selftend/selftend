@@ -148,7 +148,7 @@ Add after the main flows stabilize:
 
 1. [ ] Keep this roadmap current after meaningful product, infrastructure, or process changes.
 2. [ ] Move actionable roadmap slices into GitHub issues when the project opens for broader contribution.
-3. [ ] Keep first contributions easy and issue labels useful as issue volume grows. Current issue templates cover code, docs, content, QA, accessibility, and localization.
+3. [ ] Keep first contributions easy and issue labels useful as issue volume grows. Current issue templates cover code, docs, content, QA, accessibility, and localization; the PR template asks for the relevant guardrail checks.
 4. [ ] Publish contributor roles and keep contributor docs current.
 5. [ ] Use GitHub Discussions or Discord when onboarding volume needs it.
 6. [x] Invite docs, content, translation, design, and QA contributions. Weblate Libre is live at hosted.weblate.org.

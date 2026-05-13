@@ -36,9 +36,9 @@ This repo already includes:
 
 ## Workflows
 
-`CI` runs on pull requests and pushes to `main`.
+`CI` runs on pull requests and pushes to `main` with Node `20.19.0`.
 
-CI verifies linting, formatting, typechecking, and tests through `npm run verify`. The Husky pre-commit hook runs `npm run format` first, then `npm run verify`, so local commits auto-format first and then use the same verification command as GitHub.
+The main CI verification job checks linting, formatting, typechecking, and tests through `npm run verify`. CI also runs integration and end-to-end jobs against local Supabase. The Husky pre-commit hook runs `npm run format` first, then `npm run verify`, so local commits auto-format first and then use the same core verification command as GitHub.
 
 Workspace settings in `.vscode/settings.json` make Prettier the default VS Code/Cursor formatter and enable format-on-save. The ESLint extension is recommended for inline diagnostics, but ESLint enforcement is handled by terminal, Husky, and CI checks.
 
@@ -105,8 +105,7 @@ Prepared label set:
 
 - keep PRs focused
 - update docs when product behavior changes
-- run or satisfy the Husky pre-commit checks
-- run `npm run verify`
+- let Husky and CI enforce automated checks
 - call out privacy, safety, and licensing impact explicitly
 
 ## Branching

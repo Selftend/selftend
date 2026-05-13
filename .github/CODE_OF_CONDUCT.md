@@ -32,7 +32,7 @@ Report conduct issues privately:
 
 Include what happened, where it happened, roughly when it happened, and any links or screenshots that help. Confidentiality requests will be respected unless they prevent action on the report.
 
-Reports about the maintainer should use the same address. If that is not workable, open a GitHub issue so the contributor base can review the concern.
+Reports about the maintainer should use the same address. If that is not workable, do not post private conduct details publicly; open a minimal GitHub issue asking for an alternate private reporting path or use GitHub's platform reporting tools.
 
 ## Enforcement
 
