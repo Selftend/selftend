@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 
-import { AccessibleCardLink } from "@/src/components/accessible-card-link";
+import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 
 describe("AccessibleCardLink", () => {
   it("uses the visible title as the accessible action name", () => {

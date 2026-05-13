@@ -6,7 +6,7 @@ Selftend welcomes code, design, docs, content, QA, translation, accessibility, a
 
 Useful work:
 
-- app features in `src/features/`, `src/components/`, `components/`, and `app/`
+- app features in `src/features/`, `src/components/app/`, `src/components/react-native-reusables/`, and `app/`
 - Supabase schema, RLS, storage policies, and edge functions
 - tests, accessibility fixes, performance, tooling, CI
 

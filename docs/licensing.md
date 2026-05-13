@@ -64,7 +64,7 @@ For any borrowed third-party material, keep a record of:
 
 ## Third-party UI component layer
 
-The app now uses default React Native Reusables-generated components in `components/ui`.
+The app now uses default React Native Reusables-generated components in `src/components/react-native-reusables`.
 
 License posture:
 

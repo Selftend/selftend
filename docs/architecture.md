@@ -9,8 +9,8 @@ A map of how the app is organized. For stack choices, see [stack.md](stack.md). 
 | Routes            | `app/`                                        | File-system routes (Expo Router). Public, `(auth)`, `(app)` protected.                       |
 | Screens           | `app/.../*.tsx`                               | Wire route to feature components, mostly thin.                                               |
 | Feature modules   | `src/features/{name}/`                        | Module-owned: schemas, types, repository, queries, components.                               |
-| Shared components | `src/components/`, `components/`              | Cross-feature UI: screen states, toast, error boundary, header, sidebar.                     |
-| UI primitives     | `components/ui/`                              | Generated React Native Reusables (do not edit casually).                                     |
+| Shared components | `src/components/app/`                         | App-owned cross-feature UI: screen states, toast, error boundary, header, sidebar.           |
+| UI primitives     | `src/components/react-native-reusables/`      | Generated React Native Reusables (do not edit casually).                                     |
 | Providers         | `src/providers/`                              | App-wide context: session, i18n, root provider tree.                                         |
 | Stores            | `src/stores/`                                 | Zustand for local UI state (sidebar, theme, toast, draft, cookie consent).                   |
 | Library           | `src/lib/`, `lib/`                            | Supabase client, env validation, notifications, theme, `cn()` utility.                       |
@@ -75,7 +75,7 @@ On native, [`initializeSupabaseAutoRefresh()`](../src/lib/supabase.ts) wires `Ap
 
 ### Sign-In Path
 
-1. The user submits [components/sign-in-form.tsx](../components/sign-in-form.tsx) or starts Google OAuth.
+1. The user submits [src/components/app/sign-in-form.tsx](../src/components/app/sign-in-form.tsx) or starts Google OAuth.
 2. Supabase redirects to the configured callback URL. Allowed callbacks per environment:
    - Web: `http://localhost:8081/auth-callback` (dev) or `https://selftend.org/auth-callback` (prod)
    - Android dev build: `selftend-dev://auth-callback`
@@ -154,9 +154,9 @@ NativeWind and React Navigation both receive the active scheme from the root lay
 
 ## Error handling
 
-[src/components/app-error-boundary.tsx](../src/components/app-error-boundary.tsx) catches render errors anywhere inside the shell and shows a calm fallback. It sits **inside** the providers so the fallback can use i18n.
+[src/components/app/app-error-boundary.tsx](../src/components/app/app-error-boundary.tsx) catches render errors anywhere inside the shell and shows a calm fallback. It sits **inside** the providers so the fallback can use i18n.
 
-Repository errors bubble to TanStack Query. Screens use `src/components/screen-state.tsx` for loading/empty/error states. Failed saves use `src/stores/toast-store.ts` and keep unsaved input in place.
+Repository errors bubble to TanStack Query. Screens use `src/components/app/screen-state.tsx` for loading/empty/error states. Failed saves use `src/stores/toast-store.ts` and keep unsaved input in place.
 
 ## Adding A Module
 

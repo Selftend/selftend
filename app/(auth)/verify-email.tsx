@@ -1,7 +1,7 @@
 import { View } from "react-native";
 
-import { VerifyEmailForm } from "@/components/verify-email-form";
-import { MobileFormScreen } from "@/src/components/mobile-form-screen";
+import { VerifyEmailForm } from "@/src/components/app/verify-email-form";
+import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 
 export default function VerifyEmailScreen() {
   return (

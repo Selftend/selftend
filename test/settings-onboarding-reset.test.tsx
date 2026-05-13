@@ -33,11 +33,11 @@ jest.mock("expo-image-manipulator", () => ({
   },
 }));
 
-jest.mock("@/components/profile-avatar", () => ({
+jest.mock("@/src/components/app/profile-avatar", () => ({
   ProfileAvatar: () => null,
 }));
 
-jest.mock("@/components/ui/alert-dialog", () => {
+jest.mock("@/src/components/react-native-reusables/alert-dialog", () => {
   const Pressable = mockPressable;
   const View = mockView;
 
@@ -62,7 +62,7 @@ jest.mock("@/components/ui/alert-dialog", () => {
   };
 });
 
-jest.mock("@/components/ui/label", () => {
+jest.mock("@/src/components/react-native-reusables/label", () => {
   const Text = mockText;
 
   return {
@@ -70,7 +70,7 @@ jest.mock("@/components/ui/label", () => {
   };
 });
 
-jest.mock("@/components/ui/switch", () => {
+jest.mock("@/src/components/react-native-reusables/switch", () => {
   const Pressable = mockPressable;
 
   return {

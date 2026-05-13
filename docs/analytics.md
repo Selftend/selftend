@@ -11,7 +11,7 @@ The MVP does not include any analytics SDK, tracking service, or telemetry. This
 The consent infrastructure is already built and waiting:
 
 - `src/stores/cookie-consent-store.ts` has an `analytics` toggle (default `false`).
-- `src/components/cookie-consent-banner.tsx` offers "Accept all" / "Essential only" / "Manage preferences."
+- `src/components/app/cookie-consent-banner.tsx` offers "Accept all" / "Essential only" / "Manage preferences."
 - The Supabase `cookie_consent` column stores `{essential, analytics, acceptedAt}` per user.
 
 Contributors must not add ad-hoc tracking without explicit review through the roadmap and PR template.
@@ -146,7 +146,7 @@ Do not add analytics preemptively. Advance to the next phase only when:
 ## Related files
 
 - `src/stores/cookie-consent-store.ts` — consent state with `analytics` toggle
-- `src/components/cookie-consent-banner.tsx` — consent UI
+- `src/components/app/cookie-consent-banner.tsx` — consent UI
 - `src/providers/app-providers.tsx` — provider tree for future analytics provider
 - `src/features/policies/policy-content.ts` — privacy and cookie policy text
 - `docs/policies.md` — data processor list

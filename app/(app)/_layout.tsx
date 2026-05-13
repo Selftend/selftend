@@ -4,11 +4,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { SidebarNav } from "@/components/sidebar-nav";
-import { Text } from "@/components/ui/text";
-import { AuthLandingScreen } from "@/src/components/auth-landing-screen";
-import { ConsentModal } from "@/src/components/consent-modal";
-import { OnboardingModal } from "@/src/components/onboarding-modal";
+import { SidebarNav } from "@/src/components/app/sidebar-nav";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
+import { ConsentModal } from "@/src/components/app/consent-modal";
+import { OnboardingModal } from "@/src/components/app/onboarding-modal";
 import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";

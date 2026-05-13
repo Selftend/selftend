@@ -6,15 +6,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Text } from "@/components/ui/text";
-import { Textarea } from "@/components/ui/textarea";
-import { CrisisSupportCallout } from "@/src/components/safety-callout";
-import { LoadingState } from "@/src/components/screen-state";
-import { MobileFormScreen } from "@/src/components/mobile-form-screen";
+import { Button } from "@/src/components/react-native-reusables/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/react-native-reusables/card";
+import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
+import { Label } from "@/src/components/react-native-reusables/label";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
+import { LoadingState } from "@/src/components/app/screen-state";
+import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { distortionDefinitions } from "@/src/constants/distortions";
 import { emotionOptions } from "@/src/constants/emotions";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";

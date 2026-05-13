@@ -9,15 +9,21 @@ import { useEffect, useState } from "react";
 import type { Area } from "react-easy-crop";
 import { useTranslation } from "react-i18next";
 
-import { ProfileAvatar } from "@/components/profile-avatar";
-import { Button } from "@/components/ui/button";
-import { DeleteAccountModal } from "@/src/components/delete-account-modal";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Text } from "@/components/ui/text";
-import { LoadingState } from "@/src/components/screen-state";
+import { ProfileAvatar } from "@/src/components/app/profile-avatar";
+import { Button } from "@/src/components/react-native-reusables/button";
+import { DeleteAccountModal } from "@/src/components/app/delete-account-modal";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/react-native-reusables/card";
+import { Input } from "@/src/components/react-native-reusables/input";
+import { Label } from "@/src/components/react-native-reusables/label";
+import { Switch } from "@/src/components/react-native-reusables/switch";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { LoadingState } from "@/src/components/app/screen-state";
 import { signOut } from "@/src/features/auth/api";
 import {
   defaultUserPreferences,
@@ -45,7 +51,7 @@ import {
   type ReminderScheduleFailureReason,
 } from "@/src/lib/notifications";
 import { useSession } from "@/src/providers/session-provider";
-import { AvatarCropModal } from "@/src/components/avatar-crop-modal";
+import { AvatarCropModal } from "@/src/components/app/avatar-crop-modal";
 import { useToastStore } from "@/src/stores/toast-store";
 
 const AVATAR_MAX_SIZE = 512;

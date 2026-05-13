@@ -8,7 +8,7 @@ Source: https://github.com/founded-labs/react-native-reusables
 
 Use:
 
-- generated UI primitives under `components/ui`
+- generated UI primitives under `src/components/react-native-reusables`
 - registry/theme glue in `components.json`, `global.css`, `tailwind.config.js`, `metro.config.js`, `lib/utils.ts`, and `lib/theme.ts`
 
 License: MIT

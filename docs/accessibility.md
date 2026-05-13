@@ -23,9 +23,9 @@ Shared accessibility helpers live in [src/lib/accessibility.ts](../src/lib/acces
 - `COMPACT_CONTROL_HIT_SLOP` is for compact switches, checkboxes, and radio controls.
 - `useReduceMotionEnabled()` listens to the platform reduce-motion setting.
 
-- [components/ui/button.tsx](../components/ui/button.tsx), [components/ui/select.tsx](../components/ui/select.tsx), [components/ui/switch.tsx](../components/ui/switch.tsx), [components/ui/checkbox.tsx](../components/ui/checkbox.tsx), and [components/ui/radio-group.tsx](../components/ui/radio-group.tsx) set baseline roles, states, and hit slop.
-- [components/ui/native-only-animated-view.tsx](../components/ui/native-only-animated-view.tsx) drops entering, exiting, and layout animations when reduced motion is enabled.
-- [src/components/accessible-card-link.tsx](../src/components/accessible-card-link.tsx) is the default pattern for card-shaped navigation actions.
+- [src/components/react-native-reusables/button.tsx](../src/components/react-native-reusables/button.tsx), [src/components/react-native-reusables/select.tsx](../src/components/react-native-reusables/select.tsx), [src/components/react-native-reusables/switch.tsx](../src/components/react-native-reusables/switch.tsx), [src/components/react-native-reusables/checkbox.tsx](../src/components/react-native-reusables/checkbox.tsx), and [src/components/react-native-reusables/radio-group.tsx](../src/components/react-native-reusables/radio-group.tsx) set baseline roles, states, and hit slop.
+- [src/components/react-native-reusables/native-only-animated-view.tsx](../src/components/react-native-reusables/native-only-animated-view.tsx) drops entering, exiting, and layout animations when reduced motion is enabled.
+- [src/components/app/accessible-card-link.tsx](../src/components/app/accessible-card-link.tsx) is the default pattern for card-shaped navigation actions.
 - Onboarding, consent, and avatar-crop modals switch from fade animation to no animation when reduced motion is enabled.
 
 ## Contributor Checklist

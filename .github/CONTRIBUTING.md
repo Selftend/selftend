@@ -24,23 +24,23 @@ You do not need Supabase, EAS, or Google OAuth for docs, copy, design notes, tra
 
 ## Code Map
 
-| Path                       | Purpose                                                                                                 |
-| -------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `app/`                     | Expo Router routes. Do not put non-route modules here.                                                  |
-| `app/(app)/` `app/(auth)/` | Protected app shell and auth route groups.                                                              |
-| `src/features/`            | Feature folders: `auth`, `cbt`, `modules`, `policies`, `profile`, `settings`, `tools`.                  |
-| `src/components/`          | Shared product components such as safety callouts, screen states, toasts, modals, and error boundaries. |
-| `components/`              | App-level reusable components plus generated Reusables primitives in `components/ui/`.                  |
-| `src/providers/`           | Session, i18n, and root provider setup.                                                                 |
-| `src/stores/`              | Zustand local state.                                                                                    |
-| `src/lib/`                 | Shared app libraries: Supabase client, environment handling, notifications.                             |
-| `src/i18n/`                | i18next config and `locales/{lang}/` JSON namespaces.                                                   |
-| `lib/`                     | Reusables theme glue and `cn()` utility.                                                                |
-| `supabase/`                | Migrations, RLS policies, and edge functions. See [supabase/README.md](../supabase/README.md).          |
-| `functions/`               | Supabase Edge Function source for web push reminders.                                                   |
-| `test/`                    | Tests that need shared providers. File-local tests can live next to the code as `*.test.ts(x)`.         |
-| `scripts/`                 | Maintainer scripts for Android and dev-client workflows.                                                |
-| `docs/`                    | Product, platform, policy, and process docs.                                                            |
+| Path                                     | Purpose                                                                                                                           |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `app/`                                   | Expo Router routes. Do not put non-route modules here.                                                                            |
+| `app/(app)/` `app/(auth)/`               | Protected app shell and auth route groups.                                                                                        |
+| `src/features/`                          | Feature folders: `auth`, `cbt`, `modules`, `policies`, `profile`, `settings`, `tools`.                                            |
+| `src/components/app/`                    | Shared app-owned components such as auth forms, navigation, safety callouts, screen states, toasts, modals, and error boundaries. |
+| `src/components/react-native-reusables/` | Generated React Native Reusables primitives. Keep these close to the upstream API.                                                |
+| `src/providers/`                         | Session, i18n, and root provider setup.                                                                                           |
+| `src/stores/`                            | Zustand local state.                                                                                                              |
+| `src/lib/`                               | Shared app libraries: Supabase client, environment handling, notifications.                                                       |
+| `src/i18n/`                              | i18next config and `locales/{lang}/` JSON namespaces.                                                                             |
+| `lib/`                                   | Reusables theme glue and `cn()` utility.                                                                                          |
+| `supabase/`                              | Migrations, RLS policies, and edge functions. See [supabase/README.md](../supabase/README.md).                                    |
+| `functions/`                             | Supabase Edge Function source for web push reminders.                                                                             |
+| `test/`                                  | Tests that need shared providers. File-local tests can live next to the code as `*.test.ts(x)`.                                   |
+| `scripts/`                               | Maintainer scripts for Android and dev-client workflows.                                                                          |
+| `docs/`                                  | Product, platform, policy, and process docs.                                                                                      |
 
 New modules must follow [docs/modules/tools.md](../docs/modules/tools.md). For app structure and data-flow details, read [docs/architecture.md](../docs/architecture.md).
 

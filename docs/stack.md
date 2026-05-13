@@ -5,7 +5,7 @@
 - App: Expo + React Native + TypeScript
 - Routing: Expo Router
 - Styling: NativeWind + Tailwind CSS
-- UI: React Native Reusables-generated primitives in `components/ui`
+- UI: React Native Reusables-generated primitives in `src/components/react-native-reusables`
 - Server state: TanStack Query
 - Local state: Zustand
 - Forms and validation: React Hook Form + Zod
@@ -24,7 +24,7 @@ Expo is the default because it keeps iOS, Android, and web in one product stack 
 
 NativeWind is the approved styling exception because it gives fast cross-platform iteration and consistent tokens for spacing, type, color, and state.
 
-React Native Reusables is the approved UI primitive source. Generated components live in `components/ui`; keep them close to the upstream API and avoid app-specific compatibility props. Use screen-level composition for loading and layout behavior.
+React Native Reusables is the approved UI primitive source. Generated components live in `src/components/react-native-reusables`; keep them close to the upstream API and avoid app-specific compatibility props. App-owned composition lives in `src/components/app`.
 
 Useful commands:
 
@@ -59,7 +59,7 @@ To add a language:
 
 1. Create all seven namespace files under `src/i18n/locales/{code}/`.
 2. Register the locale in `src/i18n/index.ts`.
-3. Add the option to `components/language-toggle.tsx`.
+3. Add the option to `src/components/app/language-toggle.tsx`.
 4. Coordinate translation through [Weblate](https://hosted.weblate.org/projects/selftend/).
 
 ## Testing

@@ -3,9 +3,9 @@ import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Text } from "@/components/ui/text";
-import { AccessibleCardLink } from "@/src/components/accessible-card-link";
-import { EmptyState, LoadingState } from "@/src/components/screen-state";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
+import { EmptyState, LoadingState } from "@/src/components/app/screen-state";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";

@@ -56,11 +56,11 @@ jest.mock("expo-router", () => {
   };
 });
 
-jest.mock("@/components/sidebar-nav", () => ({
+jest.mock("@/src/components/app/sidebar-nav", () => ({
   SidebarNav: () => null,
 }));
 
-jest.mock("@/src/components/auth-landing-screen", () => {
+jest.mock("@/src/components/app/auth-landing-screen", () => {
   const Text = mockText;
 
   return {
@@ -68,7 +68,7 @@ jest.mock("@/src/components/auth-landing-screen", () => {
   };
 });
 
-jest.mock("@/src/components/consent-modal", () => {
+jest.mock("@/src/components/app/consent-modal", () => {
   const Text = mockText;
 
   return {
