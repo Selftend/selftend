@@ -14,7 +14,6 @@ export default function CrisisScreen() {
   return (
     <PolicyScreen
       actions={actions}
-      notice={t("crisis.reviewBanner")}
       sectionKey="crisis.sections"
       subtitle={t("crisis.pageDescription")}
       title={t("crisis.pageTitle")}

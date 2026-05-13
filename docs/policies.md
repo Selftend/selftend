@@ -115,11 +115,11 @@ Google Play requires Data safety information for all tracks. Self-service accoun
 
 ## Crisis guidance
 
-The app shows calm, separate crisis guidance but never implies the app provides crisis response.
+The app shows calm, separate crisis guidance but never implies the app provides crisis response. Approved posture for the MVP launch (jurisdiction review on 2026-05-13):
 
-Current public resources listed:
+- The `/crisis` page does not list per-country crisis hotlines. Listing a wrong or rotated number is more dangerous than directing the reader to a reviewed registry.
+- For all locales, the single action button on `/crisis` points at [Find A Helpline](https://findahelpline.com/) (ThroughLine), which maintains a country-reviewed directory of crisis and emotional-support services.
+- The Bulgarian locale additionally calls out 112 (Bulgaria and EU emergency number) inline in the "Immediate danger" section so Bulgarian-speaking users see a number that will connect.
+- The English locale keeps the prose generic ("contact local emergency services") and relies on Find A Helpline for country-specific guidance.
 
-- United States and territories: <https://988lifeline.org/get-help/>
-- Canada: <https://988.ca/get-help/help-right-now>
-
-Before public launch outside those jurisdictions, either add reviewed local resources or keep guidance generic.
+Re-verify the Find A Helpline URL and the locale prose on each minor release. Adding any named hotline beyond the current set requires verification of the number and a documented re-check cadence.

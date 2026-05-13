@@ -401,17 +401,12 @@ export const cookiePolicySections: PolicySection[] = [
 
 export const crisisActions: PolicyAction[] = [
   {
-    label: "Open 988 Lifeline",
-    url: "https://988lifeline.org/get-help/",
-  },
-  {
-    label: "Open 9-8-8 Canada",
-    url: "https://988.ca/get-help/help-right-now",
+    label: "Find A Helpline",
+    url: "https://findahelpline.com/",
   },
 ];
 
 /** URL-only version with stable keys for i18n label lookup. */
 export const crisisActionUrls = [
-  { key: "open988", url: "https://988lifeline.org/get-help/" },
-  { key: "open988Canada", url: "https://988.ca/get-help/help-right-now" },
+  { key: "openFindAHelpline", url: "https://findahelpline.com/" },
 ] as const;

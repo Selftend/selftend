@@ -272,8 +272,7 @@
   },
   "crisis": {
     "pageTitle": "Crisis guidance",
-    "pageDescription": "This app is not emergency support and is not monitored by crisis responders.",
-    "reviewBanner": "Crisis guidance must stay separate from self-help tools. Review jurisdiction-specific resources before public launch.",
+    "pageDescription": "This app is not emergency support and is not monitored. If you are in danger, contact local emergency services.",
     "sections": [
       {
         "title": "Immediate danger",
@@ -283,11 +282,10 @@
         ]
       },
       {
-        "title": "Crisis support",
+        "title": "Finding crisis support",
         "body": [
-          "If you are in the United States or its territories, the 988 Suicide & Crisis Lifeline is available by calling or texting 988 or using chat at 988lifeline.org.",
-          "If you are in Canada, 9-8-8: Suicide Crisis Helpline is available by calling or texting 9-8-8.",
-          "If you are outside those jurisdictions, use the emergency number or crisis support service available where you are."
+          "Crisis services vary by country. Find A Helpline (https://findahelpline.com) maintains a reviewed directory of crisis and emotional-support services by country.",
+          "If you are in immediate danger, call your local emergency number instead of searching the directory."
         ]
       },
       {
@@ -296,17 +294,10 @@
           "The app can help with structured reflection when there is time and safety to reflect.",
           "It should not delay contacting emergency services, a crisis line, a trusted person nearby, or a qualified professional when urgent support is needed."
         ]
-      },
-      {
-        "title": "Review requirement",
-        "body": [
-          "Crisis-resource links and country-specific guidance must be reviewed before launch in each target jurisdiction. Do not assume one country's hotline is available everywhere."
-        ]
       }
     ],
     "actions": {
-      "open988": "Open 988 Lifeline",
-      "open988Canada": "Open 9-8-8 Canada"
+      "openFindAHelpline": "Open Find A Helpline"
     }
   },
   "accountDeletion": {

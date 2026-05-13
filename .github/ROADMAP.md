@@ -52,7 +52,7 @@ This file is the source of truth for tracked work. Tick `[x]` when an item is co
 2. [x] Authenticate the build machine with Expo or configure `EXPO_TOKEN`.
 3. [x] Verify EAS, Netlify, and GitHub release variables/secrets for reproducible Android and web releases.
 4. [ ] Complete legal review of privacy policy, terms, and safety/crisis copy.
-5. [ ] Approve the global crisis-resource strategy.
+5. [x] Approve the global crisis-resource strategy (Option B: generic + Find A Helpline registry; bg locale surfaces 112 inline).
 6. [ ] Run local Android verification including the permission check before submission.
 7. [x] Prepare public FAQ (in-app + web `/faq` route) and public support guidance (extended `/support` route).
        Play Store short/full descriptions and "what's new" copy are drafted in the conversation history; paste into Play Console at launch time.
@@ -114,7 +114,7 @@ This file is the source of truth for tracked work. Tick `[x]` when an item is co
 
 ## Pre-Public Cleanup
 
-1. [x] Review crisis guidance by jurisdiction (audit + recommendation in [docs/crisis-strategy.md](../docs/crisis-strategy.md); needs approval to land code changes).
+1. [x] Review crisis guidance by jurisdiction (approved Option B; posture recorded in [docs/policies.md](../docs/policies.md) Crisis guidance section).
 2. [x] Audit docs for stale internal notes and broken URLs.
 3. [x] Remove debug logging before public release.
 4. [x] Verify translation coverage for supported languages.
