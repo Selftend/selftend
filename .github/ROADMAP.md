@@ -50,7 +50,7 @@ This file is the source of truth for tracked work. Tick `[x]` when an item is co
 
 1. [ ] Submit the domain for HSTS preload after HTTPS is stable.
 2. [ ] Authenticate the build machine with Expo or configure `EXPO_TOKEN`.
-3. [ ] Verify EAS, Netlify, and GitHub release variables/secrets for reproducible Android and web releases.
+3. [x] Verify EAS, Netlify, and GitHub release variables/secrets for reproducible Android and web releases.
 4. [ ] Complete legal review of privacy policy, terms, and safety/crisis copy.
 5. [ ] Approve the global crisis-resource strategy.
 6. [ ] Run local Android verification including the permission check before submission.
@@ -117,7 +117,8 @@ This file is the source of truth for tracked work. Tick `[x]` when an item is co
 3. [ ] Remove debug logging before public release.
 4. [ ] Verify translation coverage for supported languages.
 5. [ ] Review [.github/THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and source license headers before launch.
-6. [ ] Verify environment variable docs, CI/CD workflows, DNS/domain setup, and Supabase redirects.
+6. [x] Verify environment variable docs and CI/CD workflows.
+7. [ ] Verify DNS/domain setup and Supabase Authentication redirect URL allow-list.
 
 ## Reference repos
 

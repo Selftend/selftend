@@ -134,7 +134,7 @@ Coverage:
 
 Tests clean up after themselves (per-test teardown) so the suite is rerunnable without `db:reset` between runs. Local anon and service-role keys are deterministic Supabase CLI defaults and are hardcoded in `test/integration/helpers.ts`.
 
-GitHub Actions runs the suite on every PR via `.github/workflows/integration-tests.yml`.
+GitHub Actions runs the suite on every PR as the `integration` job in `.github/workflows/ci.yml`.
 
 ### End-to-end tests (Playwright)
 
@@ -156,7 +156,7 @@ Coverage:
 
 Each test cleans up its own data via the service-role admin API (`test/e2e/helpers.ts` re-exports the integration helpers). Running E2E does not need `db:reset` between runs as long as the seed users still exist.
 
-GitHub Actions runs E2E on every PR via `.github/workflows/e2e-tests.yml`. Failure artifacts (Playwright report + traces) are uploaded for 7 days.
+GitHub Actions runs E2E on every PR as the `e2e` job in `.github/workflows/ci.yml`. Failure artifacts (Playwright report + traces) are uploaded for 7 days.
 
 ## First setup
 
