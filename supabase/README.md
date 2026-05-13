@@ -195,9 +195,7 @@ npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_pro
 
 ## Linked project status
 
-Last checked: 2026-05-06.
-
-The active linked project migration history was repaired on 2026-05-05, the onboarding flags migration was applied on 2026-05-06, the reminder consent timestamp migration was applied on 2026-05-06, and the browser push subscription migration was applied on 2026-05-06:
+As of 2026-05-06, the active linked project migration history was repaired on 2026-05-05, the onboarding flags migration was applied on 2026-05-06, the reminder consent timestamp migration was applied on 2026-05-06, and the browser push subscription migration was applied on 2026-05-06:
 
 - the old remote `20260503` history row was reverted
 - the local consent/deletion migration was renamed to `20260503000000_consent_and_deletion.sql`
