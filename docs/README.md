@@ -1,13 +1,13 @@
 # Documentation
 
-Use this as the map for project docs. The README covers setup; the roadmap shows current priorities.
+Use this as the map for project docs. The README covers setup; the roadmap holds product direction and the live task list.
 
 ## Start Here
 
 - [product-principles.md](product-principles.md) - product guardrails
 - [contributor-roles.md](contributor-roles.md) - contribution paths by role
 - [.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md) - branch, PR, and local workflow
-- [.github/ROADMAP.md](../.github/ROADMAP.md) - product and launch sequence
+- [.github/ROADMAP.md](../.github/ROADMAP.md) - product direction and tracked work
 - [.github/SECURITY.md](../.github/SECURITY.md) - private security reporting
 
 ## Product And Technical

@@ -10,33 +10,6 @@ The app has public policy routes hosted from the Expo web export:
 
 The policy version constants and fallback source text live in [src/features/policies/policy-content.ts](../src/features/policies/policy-content.ts). Displayed policy copy is loaded from the locale files in `src/i18n/locales/{lang}/policies.json`.
 
-## Launch status
-
-Implementation status:
-
-- [x] Privacy policy route exists without sign-in (production text drafted)
-- [x] Terms of service route exists without sign-in (production text drafted)
-- [x] Cookie policy route exists without sign-in
-- [x] Crisis guidance route exists without sign-in
-- [x] Account deletion route exists without sign-in
-- [x] In-app sign-in, support, settings, and legal screens link to relevant public pages
-- [x] Consent checkbox on sign-in screen (age 18+ attestation + policy acceptance)
-- [x] Consent modal for policy version updates (shown to existing users on version change)
-- [x] Self-service account deletion in Settings
-- [x] Data export in Settings (JSON download)
-- [x] Cookie consent banner on web
-- [x] Cookie preferences management
-- [x] Content-Security-Policy and security headers
-- [x] HSTS header
-- [x] Unused Android camera and microphone permissions disabled before Google Play testing
-- [x] Final legal entity name added (Selftend, operated by Vasil Yoshev)
-- [x] Public support email alias configured on `selftend.org`
-- [x] Public privacy/deletion email alias configured on `selftend.org`
-- [x] Crisis-resource intent captured as broad/global
-- [ ] Global crisis-resource strategy reviewed
-- [ ] Human/legal review of all policy text completed
-- [x] Self-service account deletion implemented (DB RPC + UI)
-
 ## Compliance approach
 
 ### Jurisdictions targeted

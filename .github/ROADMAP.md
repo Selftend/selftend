@@ -1,25 +1,6 @@
 # Roadmap
 
-Selftend should finish a useful guided self-help MVP before adding broad modality coverage or community product features. Completed implementation details belong in focused docs, not as checked-off roadmap history.
-
-Current setup and implementation references:
-
-- [README.md](../README.md)
-- [docs/README.md](../docs/README.md)
-- [docs/stack.md](../docs/stack.md)
-- [docs/architecture.md](../docs/architecture.md)
-- [docs/deployment.md](../docs/deployment.md)
-- [docs/android-development.md](../docs/android-development.md)
-- [docs/android-closed-testing.md](../docs/android-closed-testing.md)
-- [docs/internal-testing.md](../docs/internal-testing.md)
-- [docs/accessibility.md](../docs/accessibility.md)
-- [docs/policies.md](../docs/policies.md)
-- [docs/gdpr-compliance.md](../docs/gdpr-compliance.md)
-- [docs/operations-runbook.md](../docs/operations-runbook.md)
-- [docs/analytics.md](../docs/analytics.md)
-- [docs/modules/cbt.md](../docs/modules/cbt.md)
-- [docs/modules/tools.md](../docs/modules/tools.md)
-- [supabase/README.md](../supabase/README.md)
+Selftend should finish a useful guided self-help MVP before adding broad modality coverage or community product features.
 
 ## Direction
 
@@ -45,15 +26,15 @@ Do not add:
 - user-facing AI therapist, AI counselor, or AI coach features in MVP
 - a broad "everything mental health" taxonomy before the focused MVP works
 
-## P0: Foundation
+CBT thought records are the working tool during MVP. Mood check-ins, journaling, and broader tools sit in the post-MVP backlog. Broader module enable/disable behavior is also deferred. Expansion beyond CBT is allowed, but favor depth in a few useful tools over shallow breadth.
 
-No open P0 tasks remain.
+iOS TestFlight/App Store work is deferred until the Apple Developer Program fee is funded or Selftend has a legal organization/nonprofit enrollment path. MVP launch path is public web on `selftend.org` followed by Android closed testing on Google Play.
 
-The app foundation, data model, module contract, shared components, colocated unit tests, Supabase migrations, onboarding flags, and Android start workflows are documented in the focused docs above. App-owned components live in `src/components/app`, while generated React Native Reusables primitives live in `src/components/react-native-reusables`. Treat Android dev-client startup failures, dependency-install integrity issues, native auth persistence warnings, or migration-history regressions as P0 before adding new MVP flows.
+## Current work
+
+This file is the source of truth for tracked work. Tick `[x]` when an item is complete; add new items here rather than in other docs. When the project opens to outside contributors, mirror selected items into GitHub Issues for visibility — the Issue should link back to the ROADMAP line. Per-PR review gates live in `.github/pull_request_template.md` and are not tracked here.
 
 ## P1: MVP Product Flows
-
-Do this before broad launch work or post-MVP expansion:
 
 1. [ ] Build daily or on-demand mood check-ins.
 2. [ ] Build lightweight journaling.
@@ -65,52 +46,26 @@ Do this before broad launch work or post-MVP expansion:
 8. [ ] Add a progress view centered on reflection, not pressure.
 9. [ ] Add quests, habits, or streaks only if they are disabled by default or framed as soft progress.
 
-CBT remains the working tool during MVP. Broader module enable/disable behavior is deferred to P4.
-
 ## P2: Launch Readiness
 
-Order matters: public web truth first, then Android closed-test verification, then legal/ops review. iOS TestFlight/App Store work is deferred out of this launch path until the Apple Developer Program fee is funded or Selftend has a legal organization/nonprofit enrollment path.
+1. [ ] Submit the domain for HSTS preload after HTTPS is stable.
+2. [ ] Authenticate the build machine with Expo or configure `EXPO_TOKEN`.
+3. [ ] Verify EAS, Netlify, and GitHub release variables/secrets for reproducible Android and web releases.
+4. [ ] Complete legal review of privacy policy, terms, and safety/crisis copy.
+5. [ ] Approve the global crisis-resource strategy.
+6. [ ] Run local Android verification including the permission check before submission.
+7. [ ] Prepare app store assets, screenshots, policy-safe copy, FAQ, and public support guidance.
+8. [ ] Configure Google Play service account JSON after the first manual upload.
+9. [ ] Create the closed-testing track and tester list in Google Play; submit the closed-testing release for Google review.
+10. [ ] Verify closed-test Android build, live auth, persistence, local reminders, and removed camera/microphone permissions on a real device.
 
-1. [x] Purchase and configure `selftend.org`.
-2. [x] Connect `selftend.org` to the Netlify production deployment.
-3. [x] Configure Netlify production env vars for the hosted web app, including `EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org`.
-4. [x] Configure support, privacy, security, deletion, and contributor email aliases.
-5. [x] Configure production Supabase Site URL, redirect URLs, and current migrations.
-6. [x] Verify `/privacy`, `/terms`, `/crisis`, `/cookies`, `/account-deletion`, `/auth-callback`, and an unknown route in production.
-7. [x] Test CSP headers against the real Expo web build.
-8. [ ] Submit the domain for HSTS preload after HTTPS is stable.
-9. [x] Test self-service deletion against production Supabase.
-10. [x] Confirm Supabase DPA applicability.
-11. [ ] Authenticate the build machine with Expo or configure `EXPO_TOKEN`.
-12. [ ] Verify EAS, Netlify, and GitHub release variables/secrets for reproducible Android and web releases.
-13. [x] Create the Google Play developer account and app record.
-14. [x] Complete the Google Play Health apps declaration.
-15. [x] Complete the Google Play Data safety form.
-16. [x] Write Google Play app access instructions for account-required testing.
-17. [ ] Complete legal review of privacy policy, terms, and safety/crisis copy.
-18. [ ] Approve the global crisis-resource strategy.
-19. [x] Resolve all-ages implications for launch by setting the product and store posture to 18+.
-20. [x] Decide whether a DPIA is needed and document the decision.
-21. [x] Complete transfer impact assessment.
-22. [x] Document incident response and breach notification processes.
-23. [x] Define support workflow for `support@selftend.org`.
-24. [x] Define manual GDPR email request handling for requests not completed in-app.
-25. [ ] Prepare app store assets, screenshots, policy-safe copy, FAQ, and public support guidance.
-26. [x] Build the production Android AAB after EAS production env values are configured.
-27. [x] Upload the first production AAB to Google Play.
-28. [ ] Configure Google Play service account JSON after the first manual upload.
-29. [ ] Submit or confirm the closed-testing release and tester list in Google Play.
-30. [ ] Verify closed-test Android build, live auth, persistence, local reminders, and removed camera/microphone permissions on a real device.
-
-Deferred reminder infrastructure, not blocking first public web testing:
+## Deferred reminders infrastructure
 
 1. [ ] Generate production VAPID keys and configure Supabase Edge Function secrets.
 2. [ ] Deploy `send-web-reminders` and schedule the Supabase cron job after Vault secrets are set.
 3. [ ] Verify web push reminders on supported desktop, Android web, and iOS/iPadOS Home Screen contexts.
 
 ## P3: Post-MVP Privacy And Portability
-
-Do not block web launch or Android closed testing on these, but preserve compatibility:
 
 1. [ ] Add hosted data export.
 2. [ ] Add import support.
@@ -124,8 +79,6 @@ Do not block web launch or Android closed testing on these, but preserve compati
 
 ## P4: Post-MVP Product Expansion
 
-Expand only after the MVP is useful, stable, and understandable:
-
 1. [ ] Add more modalities beyond CBT.
 2. [ ] Add grounded reflection tools, behavioral activation, coping plans, sleep, stress, and energy support.
 3. [ ] Improve personalization, module enable/disable behavior, and custom home behavior.
@@ -137,42 +90,39 @@ Expand only after the MVP is useful, stable, and understandable:
 
 ## P5: Tooling Maturity
 
-Add after the main flows stabilize:
-
 1. [ ] Commitlint or conventional-commit enforcement if contributor volume needs it.
 2. [ ] Full end-to-end test suite.
 3. [ ] Netlify Supabase integration only if it simplifies deployment without changing architecture.
 4. [ ] Offline queue and multi-device conflict resolution after online-first behavior is reliable.
 
+## Security maintenance
+
+1. [ ] Establish a regular security testing and audit cadence.
+
 ## Community And Operations
 
-1. [ ] Keep this roadmap current after meaningful product, infrastructure, or process changes.
-2. [ ] Move actionable roadmap slices into GitHub issues when the project opens for broader contribution.
-3. [ ] Keep first contributions easy and issue labels useful as issue volume grows. Current issue templates cover code, docs, content, QA, accessibility, and localization; the PR template asks for the relevant guardrail checks.
-4. [ ] Publish contributor roles and keep contributor docs current.
-5. [ ] Use GitHub Discussions or Discord when onboarding volume needs it.
-6. [x] Invite docs, content, translation, design, and QA contributions. Weblate Libre is live at hosted.weblate.org.
-7. [ ] Recognize contributors publicly, including non-code work.
-8. [ ] Claim primary public handles and create a simple public site/docs presence.
-9. [ ] Publish calm feature explainers and a changelog habit.
-10. [ ] Add donation support without restricting care.
+1. [ ] Mirror open ROADMAP items into GitHub Issues when the project opens for broader contribution, so contributors can browse work without reading the repo.
+2. [ ] Keep first contributions easy and issue labels useful as issue volume grows. Current issue templates cover code, docs, content, QA, accessibility, and localization; the PR template asks for the relevant guardrail checks.
+3. [ ] Publish contributor roles and keep contributor docs current.
+4. [ ] Use GitHub Discussions or Discord when onboarding volume needs it.
+5. [ ] Recognize contributors publicly, including non-code work.
+6. [ ] Claim primary public handles and create a simple public site/docs presence.
+7. [ ] Publish calm feature explainers and a changelog habit.
+8. [ ] Add donation support without restricting care.
 
-Reference repos:
+## Pre-Public Cleanup
+
+1. [ ] Review crisis guidance by jurisdiction.
+2. [ ] Audit docs for stale internal notes and broken URLs.
+3. [ ] Remove debug logging before public release.
+4. [ ] Verify translation coverage for supported languages.
+5. [ ] Review [.github/THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and source license headers before launch.
+6. [ ] Verify environment variable docs, CI/CD workflows, DNS/domain setup, and Supabase redirects.
+
+## Reference repos
 
 - `../ifme` for contributor operations, docs culture, and community-structure ideas
 - `../quirk` for product-flow lessons and focused self-help design ideas
 - `../awesome-mental-health` for resource discovery, comparable tools, and terminology scanning
 
 Do not copy code, content, or assets from reference repos without explicit review. Track any reused third-party asset, component, or text fragment.
-
-## Pre-Public Cleanup
-
-1. [x] Replace placeholder organization names with the confirmed legal entity.
-2. [x] Verify domain-based emails.
-3. [ ] Complete legal review for policies, terms, and crisis guidance.
-4. [ ] Review crisis guidance by jurisdiction.
-5. [ ] Audit docs for stale internal notes and broken URLs.
-6. [ ] Remove debug logging before public release.
-7. [ ] Verify translation coverage for supported languages.
-8. [ ] Review [.github/THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and source license headers before launch.
-9. [ ] Verify environment variable docs, CI/CD workflows, DNS/domain setup, and Supabase redirects.

@@ -189,24 +189,11 @@ GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
 
 The first manual upload requirement is now satisfied. Do not set `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` until the Play service account has been created with access to the app.
 
-## First Google Play upload sequence
+## First Google Play upload status
 
-1. [x] Confirm the final public app name and package name.
-2. [x] Create the app in Play Console.
-3. [x] Complete required app content forms:
-   - Privacy policy URL
-   - Data safety
-   - Health apps declaration
-   - Target audience and content
-   - Ads declaration
-   - App access instructions, because testers need an account
-4. [ ] Run local verification, including the Android permission check.
-5. [ ] Add store listing draft copy and screenshots.
-6. [x] Build the production AAB with `npm run build:android:production`.
-7. [x] Upload the first AAB manually if Google Play API submission is not available yet.
-8. [ ] Create the closed-testing track and tester list.
-9. [ ] Submit the closed-testing release for Google review.
-10. [ ] After Google service account setup, use the manual GitHub Actions release workflow or EAS Submit for later internal-test builds.
+The app exists in Play Console under the confirmed public app name and package name, with the required content forms completed (privacy policy URL, data safety, health apps declaration, target audience and content, ads declaration, app access instructions for the account-required tester flow). The first production AAB was built with `npm run build:android:production` and uploaded manually.
+
+Remaining work is tracked in [.github/ROADMAP.md](../.github/ROADMAP.md) under P2: local Android verification including the permission check, store-listing copy and screenshots, the closed-testing track and tester list, release submission for Google review, and Play service account JSON setup so later internal-test builds can ship through the manual GitHub Actions release workflow or EAS Submit.
 
 ## Closed-test acceptance checklist
 
