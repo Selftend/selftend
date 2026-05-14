@@ -6,12 +6,23 @@ import { Text } from "@/src/components/react-native-reusables/text";
 interface NumberRatingProps {
   max?: number;
   min?: number;
+  step?: number;
   onChange: (value: number) => void;
   value: number | null;
 }
 
-export function NumberRating({ max = 10, min = 1, onChange, value }: NumberRatingProps) {
-  const numbers = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+export function NumberRating({
+  max = 10,
+  min = 1,
+  step = 1,
+  onChange,
+  value,
+}: NumberRatingProps) {
+  const numbers: number[] = [];
+  for (let n = min; n <= max; n += step) {
+    numbers.push(n);
+  }
+  const wide = step >= 10;
 
   return (
     <View className="flex-row flex-wrap gap-2">
@@ -21,7 +32,7 @@ export function NumberRating({ max = 10, min = 1, onChange, value }: NumberRatin
           onPress={() => onChange(n)}
           size="sm"
           variant={value === n ? "default" : "outline"}
-          className="w-10"
+          className={wide ? "min-w-12" : "w-10"}
         >
           <Text>{String(n)}</Text>
         </Button>

@@ -57,6 +57,9 @@ export default function CbtHomeScreen() {
     { key: "activities", route: "/cbt/activities", label: t("dashboard.strategies.activities") },
     { key: "thoughts", route: "/cbt/new", label: t("dashboard.strategies.thoughts") },
     { key: "values", route: "/cbt/values", label: t("dashboard.strategies.values") },
+    { key: "beliefs", route: "/cbt/beliefs", label: t("dashboard.strategies.beliefs") },
+    { key: "exposure", route: "/cbt/exposure", label: t("dashboard.strategies.exposure") },
+    { key: "worry", route: "/cbt/worry", label: t("dashboard.strategies.worry") },
     {
       key: "weeklyReview",
       route: "/cbt/weekly-review",
