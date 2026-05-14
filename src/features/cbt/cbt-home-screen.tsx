@@ -61,6 +61,14 @@ export default function CbtHomeScreen() {
     { key: "exposure", route: "/cbt/exposure", label: t("dashboard.strategies.exposure") },
     { key: "worry", route: "/cbt/worry", label: t("dashboard.strategies.worry") },
     {
+      key: "mindfulness",
+      route: "/cbt/mindfulness",
+      label: t("dashboard.strategies.mindfulness"),
+    },
+    { key: "tasks", route: "/cbt/tasks", label: t("dashboard.strategies.tasks") },
+    { key: "anger", route: "/cbt/anger", label: t("dashboard.strategies.anger") },
+    { key: "selfCare", route: "/cbt/self-care", label: t("dashboard.strategies.selfCare") },
+    {
       key: "weeklyReview",
       route: "/cbt/weekly-review",
       label: t("dashboard.strategies.weeklyReview"),

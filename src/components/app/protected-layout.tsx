@@ -112,6 +112,15 @@ export default function ProtectedLayout() {
             <Stack.Screen name="cbt/exposure/[id]" />
             <Stack.Screen name="cbt/worry/index" />
             <Stack.Screen name="cbt/worry/new" />
+            <Stack.Screen name="cbt/mindfulness/index" />
+            <Stack.Screen name="cbt/mindfulness/[slug]" />
+            <Stack.Screen name="cbt/tasks/index" />
+            <Stack.Screen name="cbt/tasks/new" />
+            <Stack.Screen name="cbt/tasks/[id]" />
+            <Stack.Screen name="cbt/anger/index" />
+            <Stack.Screen name="cbt/anger/new" />
+            <Stack.Screen name="cbt/anger/[id]" />
+            <Stack.Screen name="cbt/self-care" />
             <Stack.Screen name="tools/mood-tracker" />
             <Stack.Screen name="tools/meditation" />
             <Stack.Screen name="tools/act" />
