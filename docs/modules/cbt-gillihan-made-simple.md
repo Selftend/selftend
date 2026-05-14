@@ -880,3 +880,31 @@ All notifications are opt-in and time-configurable:
 | Habituation          | The natural reduction of anxiety that occurs during prolonged, repeated exposure           |
 | ERP                  | Exposure and Response Prevention — used for OCD-type patterns                              |
 | Think-Act-Be         | The three-pillar framework of the Gillihan model: cognitive, behavioral, mindfulness       |
+
+---
+
+## 10. Concern → Strategy Mapping
+
+Reference table for implementing the onboarding assessment flow. When a user selects one or more concerns during onboarding, use this table to:
+
+- Recommend which of the 10 strategies to activate first
+- Pre-select relevant cognitive distortions in the thought record distortion picker
+- Surface the correct core belief examples during the Core Beliefs module
+
+**Source:** CBT Strategies for Emotional Management (Gillihan supplementary material)
+
+| Concern | Underlying Core Belief | Cognitive Distortions | Think Strategy | Act Strategy | Be Strategy |
+| --- | --- | --- | --- | --- | --- |
+| **Depression** | I am a failure; I am unlovable; I am inadequate. | Black-and-white thinking, discounting the positive, overgeneralisation. | Cognitive restructuring: identify and test negative automatic thoughts for accuracy, replace with more balanced thoughts. | Behavioural activation: schedule and engage in enjoyable or important activities (pleasure and mastery) to break the downward spiral. | Mindful awareness: focus on the present with openness and curiosity; take thoughts less seriously and reduce rumination. |
+| **Generalised Anxiety** | The world is a dangerous place; I am powerless to cope with threat. | Catastrophising, fortune telling, emotional reasoning. | Reassess the likelihood and severity of danger; challenge the belief that worry is helpful for planning. | Reduce avoidance; drop safety behaviours that prevent new learning about safety. | Mindful breathing: slow the breath to calm the nervous system; ground in the present to release future-oriented worry. |
+| **Panic** | I am vulnerable; physical sensations are dangerous. | Catastrophising (e.g. "I am having a heart attack"), emotional reasoning. | Test panic-related thoughts; re-evaluate physical symptoms as non-dangerous extreme anxiety. | Interoceptive exposure: deliberately induce feared physical sensations to reduce sensitivity to them. | Controlled breathing: learn to manage the breath when feeling out of control; observe the panic wave without resisting. |
+| **Social Anxiety** | I am unlikable; others will judge me harshly. | Mind reading, disqualifying the positive, personalisation. | Predict social outcomes and record actual results to challenge the fear of embarrassment. | Exposure therapy: gradually face feared social situations without using safety behaviours. | Direct attention outward: focus on others and the environment rather than internal monitoring of anxiety symptoms. |
+| **Excessive Anger** | Others are inconsiderate; I am being mistreated; I must be respected. | Should statements, mind reading, personalisation. | Question "shoulds"; find kinder, more accurate explanations for others' behaviour. | Postpone arguments until calm; assert needs constructively rather than aggressively; improve sleep to boost frustration tolerance. | Breathe with the anger: observe the physical sensation of anger in the body without impulsive reaction. |
+| **Procrastination** | I must be perfect; I am incapable of the task; discomfort is intolerable. | Fortune telling, false sense of helplessness, should statements. | Identify permission-giving thoughts; remind oneself of the costs of delay. | Break down big tasks into small, manageable sub-tasks; use the Pomodoro technique (shorter focused work sessions). | Accept discomfort: be willing to feel uncomfortable in the service of completing a valued task. |
+
+### How to use this table in code
+
+- **Onboarding assessment**: present the 6 concerns as multi-select options. Store selected concerns on the user's profile.
+- **Strategy recommendation**: after concern selection, activate the strategies whose Think/Act/Be approaches address the selected concerns (see Section 5 for sequencing).
+- **Distortion pre-selection**: when a user creates a thought record, optionally pre-highlight the distortions most associated with their flagged concern (e.g., for Depression: surface all-or-nothing thinking, discounting the positive, overgeneralisation first).
+- **Core belief prompts**: in the Core Beliefs module, seed the belief statement prompt with the example beliefs from the table matching the user's concern.

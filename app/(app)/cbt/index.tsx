@@ -2,12 +2,13 @@ import { router } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { useIsFocused } from "@react-navigation/native";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { AccessibleCardLink } from "@/src/components/accessible-card-link";
-import { OnboardingModal } from "@/src/components/onboarding-modal";
+import { CbtOnboarding } from "@/src/components/onboarding/cbt-onboarding";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -17,8 +18,9 @@ export default function CbtHomeScreen() {
   const { user } = useSession();
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(user?.id ?? null);
   const cbtOnboardingMutation = useUpdateUserPreferences(user?.id ?? null);
+  const isFocused = useIsFocused();
   const showCbtOnboarding =
-    !prefsLoading && Boolean(preferences) && !preferences?.cbtOnboardingCompleted;
+    isFocused && !prefsLoading && Boolean(preferences) && !preferences?.cbtOnboardingCompleted;
 
   const completeCbtOnboarding = async () => {
     if (!preferences) {
@@ -36,13 +38,10 @@ export default function CbtHomeScreen() {
 
   return (
     <>
-      <OnboardingModal
-        actionLabel={t("onboarding.continue")}
-        body={[t("onboarding.body1"), t("onboarding.body2"), t("onboarding.body3")]}
+      <CbtOnboarding
         errorMessage={cbtOnboardingMutation.isError ? t("onboarding.error") : undefined}
         isPending={cbtOnboardingMutation.isPending}
         onComplete={() => void completeCbtOnboarding()}
-        title={t("onboarding.title")}
         visible={showCbtOnboarding}
       />
       <SafeAreaView className="flex-1 bg-background">

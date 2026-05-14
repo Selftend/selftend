@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Text } from "@/components/ui/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
-interface OnboardingModalProps {
+interface AppOnboardingProps {
   actionLabel: string;
   body: string[];
   errorMessage?: string;
@@ -15,7 +15,7 @@ interface OnboardingModalProps {
   visible: boolean;
 }
 
-export function OnboardingModal({
+export function AppOnboarding({
   actionLabel,
   body,
   errorMessage,
@@ -23,7 +23,7 @@ export function OnboardingModal({
   onComplete,
   title,
   visible,
-}: OnboardingModalProps) {
+}: AppOnboardingProps) {
   const reduceMotionEnabled = useReduceMotionEnabled();
 
   return (
