@@ -9,6 +9,7 @@ import { CircleHelp } from "lucide-react-native";
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -18,13 +19,59 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
 import { MoodLogSheet } from "@/src/components/app/mood-log-sheet";
+import { useActivities } from "@/src/features/activities/queries";
+import type { ActivityLog } from "@/src/features/activities/types";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useGoals } from "@/src/features/goals/queries";
+import { useMoodLogs } from "@/src/features/mood/queries";
+import { useTasks } from "@/src/features/procrastination/queries";
+import type { ProcrastinationTask } from "@/src/features/procrastination/types";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
+import { useSelfCareLog } from "@/src/features/self-care/queries";
 import { useSession } from "@/src/providers/session-provider";
+
+function getDateKey(value: string | null | undefined) {
+  return value?.slice(0, 10) ?? "";
+}
+
+function getMoodSummary(
+  moodLogs: { loggedAt: string; moodScore: number }[] | undefined,
+  days: number,
+) {
+  if (!moodLogs || moodLogs.length === 0) {
+    return { average: null, count: 0 };
+  }
+
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (days - 1));
+
+  const scores = moodLogs
+    .filter((log) => new Date(log.loggedAt).getTime() >= start.getTime())
+    .map((log) => log.moodScore);
+
+  if (scores.length === 0) {
+    return { average: null, count: 0 };
+  }
+
+  const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+  return { average: Math.round(average * 10) / 10, count: scores.length };
+}
+
+function getTodaysActivities(activities: ActivityLog[] | undefined, today: string) {
+  return (
+    activities
+      ?.filter((activity) => !activity.completedAt && getDateKey(activity.scheduledAt) === today)
+      .slice(0, 3) ?? []
+  );
+}
+
+function getOpenTasks(tasks: ProcrastinationTask[] | undefined) {
+  return tasks?.filter((task) => task.status === "active").slice(0, 3) ?? [];
+}
 
 export default function CbtHomeScreen() {
   const { t } = useTranslation("cbt");
@@ -36,6 +83,11 @@ export default function CbtHomeScreen() {
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
   const { data: goals } = useGoals(user?.id ?? null);
+  const { data: activities } = useActivities(user?.id ?? null);
+  const { data: tasks } = useTasks(user?.id ?? null);
+  const { data: moodLogs } = useMoodLogs(user?.id ?? null, 180);
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: todaySelfCareLog } = useSelfCareLog(user?.id ?? null, today);
   const { data: thoughtRecords } = useThoughtRecords(user?.id ?? null);
   const { data: recoveryPlan } = useRecoveryPlan(user?.id ?? null);
   const { beliefReviewSuggestions, exerciseMoodLift, slogan, topDistortions } = useCbtInsights(
@@ -46,7 +98,15 @@ export default function CbtHomeScreen() {
     forceOnboarding ||
     (isFocused && !prefsLoading && Boolean(preferences) && !preferences?.cbtOnboardingCompleted);
 
+  const todaysMoodLogs = moodLogs?.filter((log) => getDateKey(log.loggedAt) === today) ?? [];
+  const morningCheckInComplete = todaysMoodLogs.length > 0;
+  const eveningCheckInComplete = Boolean(todaySelfCareLog);
   const activeGoals = goals?.filter((g) => g.status === "active").slice(0, 2) ?? [];
+  const scheduledToday = getTodaysActivities(activities, today);
+  const openTasks = getOpenTasks(tasks);
+  const hasDailyPlan = scheduledToday.length > 0 || openTasks.length > 0;
+  const sevenDayMood = getMoodSummary(moodLogs, 7);
+  const thirtyDayMood = getMoodSummary(moodLogs, 30);
   const latestRecord = thoughtRecords?.[0] ?? null;
   const personalSlogan = recoveryPlan?.personalSlogan.trim() || slogan;
   const topDistortion = topDistortions[0] ?? null;
@@ -129,6 +189,139 @@ export default function CbtHomeScreen() {
                 </CardHeader>
               </Card>
             ) : null}
+
+            {/* Check-in loop */}
+            <View className="gap-3">
+              <Text variant="h3">{t("dashboard.checkIn.title")}</Text>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("dashboard.checkIn.morningTitle")}</CardTitle>
+                  <CardDescription>
+                    {morningCheckInComplete
+                      ? t("dashboard.checkIn.morningComplete")
+                      : t("dashboard.checkIn.morningPending")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <View className="flex-row flex-wrap gap-2">
+                    <Button onPress={() => setShowMoodSheet(true)} size="sm">
+                      <Text>{t("dashboard.logMood")}</Text>
+                    </Button>
+                    <Button
+                      onPress={() => router.push("/cbt/activities")}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Text>{t("dashboard.checkIn.reviewActivities")}</Text>
+                    </Button>
+                  </View>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("dashboard.checkIn.eveningTitle")}</CardTitle>
+                  <CardDescription>
+                    {eveningCheckInComplete
+                      ? t("dashboard.checkIn.eveningComplete")
+                      : t("dashboard.checkIn.eveningPending")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <View className="flex-row flex-wrap gap-2">
+                    <Button onPress={() => router.push("/cbt/self-care")} size="sm">
+                      <Text>{t("dashboard.checkIn.openSelfCare")}</Text>
+                    </Button>
+                    <Button onPress={() => setShowMoodSheet(true)} size="sm" variant="outline">
+                      <Text>{t("dashboard.logMood")}</Text>
+                    </Button>
+                  </View>
+                </CardContent>
+              </Card>
+            </View>
+
+            {/* Daily plan */}
+            <View className="gap-3">
+              <Text variant="h3">{t("dashboard.todayPlan.title")}</Text>
+              {scheduledToday.length > 0 ? (
+                <View className="gap-2">
+                  <Text className="font-medium">
+                    {t("dashboard.todayPlan.scheduledActivities")}
+                  </Text>
+                  {scheduledToday.map((activity) => (
+                    <AccessibleCardLink
+                      key={activity.id}
+                      title={activity.activityName}
+                      description={
+                        activity.scheduledAt
+                          ? t("dashboard.todayPlan.activityScheduled", {
+                              value: activity.scheduledAt,
+                            })
+                          : undefined
+                      }
+                      onPress={() => router.push(`/cbt/activities/${activity.id}`)}
+                    />
+                  ))}
+                </View>
+              ) : null}
+
+              {openTasks.length > 0 ? (
+                <View className="gap-2">
+                  <Text className="font-medium">{t("dashboard.todayPlan.openTasks")}</Text>
+                  {openTasks.map((task) => (
+                    <AccessibleCardLink
+                      key={task.id}
+                      title={task.taskDescription}
+                      description={
+                        task.deadline
+                          ? t("dashboard.todayPlan.taskDue", {
+                              value: task.deadline,
+                            })
+                          : undefined
+                      }
+                      onPress={() => router.push(`/cbt/tasks/${task.id}`)}
+                    />
+                  ))}
+                </View>
+              ) : null}
+
+              {!hasDailyPlan ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t("dashboard.todayPlan.emptyTitle")}</CardTitle>
+                    <CardDescription>{t("dashboard.todayPlan.emptyDescription")}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ) : null}
+            </View>
+
+            {/* Mood summaries */}
+            <View className="gap-3">
+              <Text variant="h3">{t("dashboard.moodSummary.title")}</Text>
+              <View className="flex-row flex-wrap gap-3">
+                {[
+                  { key: "sevenDay", summary: sevenDayMood },
+                  { key: "thirtyDay", summary: thirtyDayMood },
+                ].map(({ key, summary }) => (
+                  <View
+                    key={key}
+                    className="min-w-[44%] flex-1 gap-1 rounded-md border border-border p-3"
+                  >
+                    <Text className="font-medium">{t(`dashboard.moodSummary.${key}`)}</Text>
+                    <Text className="text-2xl font-semibold">
+                      {summary.average === null
+                        ? t("dashboard.moodSummary.noData")
+                        : t("dashboard.moodSummary.average", {
+                            average: summary.average,
+                          })}
+                    </Text>
+                    <Text variant="muted">
+                      {t("dashboard.moodSummary.count", { count: summary.count })}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
 
             {/* Quick actions */}
             <View className="gap-3">

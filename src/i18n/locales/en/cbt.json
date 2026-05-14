@@ -23,6 +23,34 @@
     "seeAll": "See all",
     "recentThought": "Recent thought record",
     "sloganTitle": "Your slogan",
+    "checkIn": {
+      "title": "Today check-in",
+      "morningTitle": "Morning check-in",
+      "morningPending": "Start with a mood log and a quick look at what is scheduled.",
+      "morningComplete": "Mood is logged for today. Review your plan when you need a next step.",
+      "eveningTitle": "Evening check-in",
+      "eveningPending": "Close the day with self-care, gratitude, and any activity completion.",
+      "eveningComplete": "Self-care is logged for today. Add another mood note if the evening shifted.",
+      "reviewActivities": "Review activities",
+      "openSelfCare": "Open self-care"
+    },
+    "todayPlan": {
+      "title": "Today",
+      "scheduledActivities": "Scheduled activities",
+      "openTasks": "Open tasks",
+      "activityScheduled": "Scheduled {{value}}",
+      "taskDue": "Due {{value}}",
+      "emptyTitle": "No scheduled CBT items today",
+      "emptyDescription": "You can still log mood, schedule an activity, or choose one small task."
+    },
+    "moodSummary": {
+      "title": "Mood summaries",
+      "sevenDay": "7 days",
+      "thirtyDay": "30 days",
+      "average": "{{average}} avg",
+      "count": "{{count}} log(s)",
+      "noData": "No data"
+    },
     "insights": {
       "title": "Insights",
       "topDistortion": "Top distortion: {{name}} ({{count}}×)",

@@ -3,11 +3,15 @@ import { Pressable as mockPressable, Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
 import CbtHomeScreen from "./cbt-home-screen";
+import { useActivities } from "@/src/features/activities/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
 import { useGoals } from "@/src/features/goals/queries";
+import { useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
+import { useTasks } from "@/src/features/procrastination/queries";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
+import { useSelfCareLog } from "@/src/features/self-care/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -36,6 +40,23 @@ jest.mock("@/src/features/settings/queries", () => ({
 
 jest.mock("@/src/features/goals/queries", () => ({
   useGoals: jest.fn(),
+}));
+
+jest.mock("@/src/features/activities/queries", () => ({
+  useActivities: jest.fn(),
+}));
+
+jest.mock("@/src/features/mood/queries", () => ({
+  useMoodLogs: jest.fn(),
+  useSaveMoodLog: jest.fn(),
+}));
+
+jest.mock("@/src/features/procrastination/queries", () => ({
+  useTasks: jest.fn(),
+}));
+
+jest.mock("@/src/features/self-care/queries", () => ({
+  useSelfCareLog: jest.fn(),
 }));
 
 jest.mock("@/src/features/cbt/queries", () => ({
@@ -88,6 +109,11 @@ const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunc
   typeof useUpdateUserPreferences
 >;
 const mockUseGoals = useGoals as jest.MockedFunction<typeof useGoals>;
+const mockUseActivities = useActivities as jest.MockedFunction<typeof useActivities>;
+const mockUseMoodLogs = useMoodLogs as jest.MockedFunction<typeof useMoodLogs>;
+const mockUseSaveMoodLog = useSaveMoodLog as jest.MockedFunction<typeof useSaveMoodLog>;
+const mockUseTasks = useTasks as jest.MockedFunction<typeof useTasks>;
+const mockUseSelfCareLog = useSelfCareLog as jest.MockedFunction<typeof useSelfCareLog>;
 const mockUseThoughtRecords = useThoughtRecords as jest.MockedFunction<typeof useThoughtRecords>;
 const mockUseRecoveryPlan = useRecoveryPlan as jest.MockedFunction<typeof useRecoveryPlan>;
 const mockUseCbtInsights = useCbtInsights as jest.MockedFunction<typeof useCbtInsights>;
@@ -104,6 +130,16 @@ describe("CbtHomeScreen onboarding", () => {
       mutateAsync,
     } as unknown as ReturnType<typeof useUpdateUserPreferences>);
     mockUseGoals.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useGoals>);
+    mockUseActivities.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useActivities>);
+    mockUseMoodLogs.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useMoodLogs>);
+    mockUseSaveMoodLog.mockReturnValue({
+      isPending: false,
+      mutateAsync: jest.fn().mockResolvedValue(undefined),
+    } as unknown as ReturnType<typeof useSaveMoodLog>);
+    mockUseTasks.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useTasks>);
+    mockUseSelfCareLog.mockReturnValue({
+      data: null,
+    } as unknown as ReturnType<typeof useSelfCareLog>);
     mockUseThoughtRecords.mockReturnValue({
       data: [],
     } as unknown as ReturnType<typeof useThoughtRecords>);
