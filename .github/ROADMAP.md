@@ -39,12 +39,13 @@ This file is the source of truth for tracked work. Tick `[x]` when an item is co
 1. [ ] Build daily or on-demand mood check-ins.
 2. [ ] Build lightweight journaling.
 3. [ ] Expand the guided self-help tools library beyond the current CBT slice.
-4. [ ] Add a feedback/support entry point that warns users not to include urgent crisis details.
-5. [ ] Apply the accessibility baseline to each new MVP flow.
-6. [ ] Standardize save-failed, auth-expired, permission-denied, and destructive-action states.
-7. [ ] Add lightweight schema, repository, export/delete, and critical UI-state tests for new modules.
-8. [ ] Add a progress view centered on reflection, not pressure.
-9. [ ] Add quests, habits, or streaks only if they are disabled by default or framed as soft progress.
+4. [x] Complete CBT Phase 5 recovery planning and cross-cutting pattern insights.
+5. [ ] Add a feedback/support entry point that warns users not to include urgent crisis details.
+6. [ ] Apply the accessibility baseline to each new MVP flow.
+7. [ ] Standardize save-failed, auth-expired, permission-denied, and destructive-action states.
+8. [ ] Add lightweight schema, repository, export/delete, and critical UI-state tests for new modules.
+9. [ ] Add a progress view centered on reflection, not pressure.
+10. [ ] Add quests, habits, or streaks only if they are disabled by default or framed as soft progress.
 
 ## P2: Launch Readiness
 

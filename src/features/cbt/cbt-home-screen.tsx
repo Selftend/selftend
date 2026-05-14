@@ -7,6 +7,12 @@ import { useIsFocused } from "@react-navigation/native";
 import { CircleHelp } from "lucide-react-native";
 
 import { Button } from "@/src/components/react-native-reusables/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
@@ -16,6 +22,8 @@ import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useGoals } from "@/src/features/goals/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
+import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
+import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function CbtHomeScreen() {
@@ -29,6 +37,10 @@ export default function CbtHomeScreen() {
 
   const { data: goals } = useGoals(user?.id ?? null);
   const { data: thoughtRecords } = useThoughtRecords(user?.id ?? null);
+  const { data: recoveryPlan } = useRecoveryPlan(user?.id ?? null);
+  const { beliefReviewSuggestions, exerciseMoodLift, slogan, topDistortions } = useCbtInsights(
+    user?.id ?? null,
+  );
 
   const showCbtOnboarding =
     forceOnboarding ||
@@ -36,6 +48,11 @@ export default function CbtHomeScreen() {
 
   const activeGoals = goals?.filter((g) => g.status === "active").slice(0, 2) ?? [];
   const latestRecord = thoughtRecords?.[0] ?? null;
+  const personalSlogan = recoveryPlan?.personalSlogan.trim() || slogan;
+  const topDistortion = topDistortions[0] ?? null;
+  const otherDistortions = topDistortions.slice(1);
+  const hasInsights =
+    Boolean(topDistortion) || Boolean(exerciseMoodLift) || beliefReviewSuggestions.length > 0;
 
   const completeCbtOnboarding = async (selectedConcerns: string[]) => {
     if (!preferences) return;
@@ -68,6 +85,7 @@ export default function CbtHomeScreen() {
     { key: "tasks", route: "/cbt/tasks", label: t("dashboard.strategies.tasks") },
     { key: "anger", route: "/cbt/anger", label: t("dashboard.strategies.anger") },
     { key: "selfCare", route: "/cbt/self-care", label: t("dashboard.strategies.selfCare") },
+    { key: "recovery", route: "/cbt/recovery", label: t("dashboard.strategies.recovery") },
     {
       key: "weeklyReview",
       route: "/cbt/weekly-review",
@@ -102,6 +120,15 @@ export default function CbtHomeScreen() {
               </View>
               <Text variant="muted">{t("home.description")}</Text>
             </View>
+
+            {personalSlogan ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("dashboard.sloganTitle")}</CardTitle>
+                  <CardDescription className="italic">{`"${personalSlogan}"`}</CardDescription>
+                </CardHeader>
+              </Card>
+            ) : null}
 
             {/* Quick actions */}
             <View className="gap-3">
@@ -149,6 +176,74 @@ export default function CbtHomeScreen() {
                     onPress={() => router.push(`/cbt/goals/${goal.id}`)}
                   />
                 ))}
+              </View>
+            ) : null}
+
+            {/* Insights */}
+            {hasInsights ? (
+              <View className="gap-3">
+                <Text variant="h3">{t("dashboard.insights.title")}</Text>
+                {topDistortion ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>
+                        {t("dashboard.insights.topDistortion", {
+                          name: t(`distortions.${topDistortion.key}.title`, {
+                            defaultValue: topDistortion.key,
+                          }),
+                          count: topDistortion.count,
+                        })}
+                      </CardTitle>
+                      {otherDistortions.length > 0 ? (
+                        <CardDescription>
+                          {t("dashboard.insights.topDistortionDetail", {
+                            names: otherDistortions
+                              .map((distortion) =>
+                                t("dashboard.insights.distortionSummaryItem", {
+                                  name: t(`distortions.${distortion.key}.title`, {
+                                    defaultValue: distortion.key,
+                                  }),
+                                  count: distortion.count,
+                                }),
+                              )
+                              .join(", "),
+                          })}
+                        </CardDescription>
+                      ) : null}
+                    </CardHeader>
+                  </Card>
+                ) : null}
+
+                {exerciseMoodLift ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>
+                        {t("dashboard.insights.exerciseMood", {
+                          withExercise: exerciseMoodLift.withExercise,
+                          withoutExercise: exerciseMoodLift.withoutExercise,
+                        })}
+                      </CardTitle>
+                      <CardDescription>
+                        {t("dashboard.insights.exerciseMoodDetail")}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                ) : null}
+
+                {beliefReviewSuggestions.length > 0 ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>
+                        {t("dashboard.insights.reviewBelief", {
+                          count: beliefReviewSuggestions.length,
+                        })}
+                      </CardTitle>
+                      <CardDescription>
+                        {t("dashboard.insights.reviewBeliefDetail")}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                ) : null}
               </View>
             ) : null}
 

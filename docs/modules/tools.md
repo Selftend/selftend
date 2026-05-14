@@ -21,7 +21,25 @@ Mood tracker, Meditation, ACT, and Gratitude log are placeholders. They must not
 
 ## Routes
 
-Working CBT routes: `/cbt`, `/cbt/learn`, `/cbt/history`, `/cbt/new`, `/cbt/[id]`.
+Working CBT routes:
+
+- `/cbt`
+- `/cbt/learn`
+- `/cbt/history`
+- `/cbt/new`
+- `/cbt/[id]`
+- `/cbt/goals`, `/cbt/goals/new`, `/cbt/goals/[id]`
+- `/cbt/activities`, `/cbt/activities/new`, `/cbt/activities/[id]`
+- `/cbt/values`
+- `/cbt/weekly-review`
+- `/cbt/beliefs`, `/cbt/beliefs/new`, `/cbt/beliefs/[id]`
+- `/cbt/exposure`, `/cbt/exposure/new`, `/cbt/exposure/[id]`
+- `/cbt/worry`, `/cbt/worry/new`
+- `/cbt/mindfulness`, `/cbt/mindfulness/[slug]`
+- `/cbt/tasks`, `/cbt/tasks/new`, `/cbt/tasks/[id]`
+- `/cbt/anger`, `/cbt/anger/new`, `/cbt/anger/[id]`
+- `/cbt/self-care`
+- `/cbt/recovery`
 
 Placeholder routes: `/tools/mood-tracker`, `/tools/meditation`, `/tools/act`, `/tools/gratitude-log`.
 
@@ -47,7 +65,7 @@ Every real module must use the shared app foundation:
 
 Planned boundaries:
 
-- **CBT:** guided thought records, distortion learning, history, edit, archive, optional quiet reminders
+- **CBT:** guided self-help strategies under the Gillihan CBT program, private history, recovery planning, pattern insights, and optional quiet reminders
 - **Mood tracker:** check-ins only; do not mix in generic journaling
 - **Journaling:** private free-text reflection, separate from CBT and check-ins
 - **ACT:** focused exercises after a spec

@@ -3,7 +3,11 @@ import { Pressable as mockPressable, Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
 import CbtHomeScreen from "./cbt-home-screen";
+import { useThoughtRecords } from "@/src/features/cbt/queries";
+import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
+import { useGoals } from "@/src/features/goals/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
+import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -28,6 +32,22 @@ jest.mock("@/src/providers/session-provider", () => ({
 jest.mock("@/src/features/settings/queries", () => ({
   useUpdateUserPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
+}));
+
+jest.mock("@/src/features/goals/queries", () => ({
+  useGoals: jest.fn(),
+}));
+
+jest.mock("@/src/features/cbt/queries", () => ({
+  useThoughtRecords: jest.fn(),
+}));
+
+jest.mock("@/src/features/recovery/queries", () => ({
+  useRecoveryPlan: jest.fn(),
+}));
+
+jest.mock("@/src/features/cbt/use-cbt-insights", () => ({
+  useCbtInsights: jest.fn(),
 }));
 
 jest.mock("@/src/components/react-native-reusables/checkbox", () => {
@@ -67,6 +87,10 @@ const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof 
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
 >;
+const mockUseGoals = useGoals as jest.MockedFunction<typeof useGoals>;
+const mockUseThoughtRecords = useThoughtRecords as jest.MockedFunction<typeof useThoughtRecords>;
+const mockUseRecoveryPlan = useRecoveryPlan as jest.MockedFunction<typeof useRecoveryPlan>;
+const mockUseCbtInsights = useCbtInsights as jest.MockedFunction<typeof useCbtInsights>;
 
 describe("CbtHomeScreen onboarding", () => {
   const mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences);
@@ -79,6 +103,19 @@ describe("CbtHomeScreen onboarding", () => {
       isPending: false,
       mutateAsync,
     } as unknown as ReturnType<typeof useUpdateUserPreferences>);
+    mockUseGoals.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useGoals>);
+    mockUseThoughtRecords.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useThoughtRecords>);
+    mockUseRecoveryPlan.mockReturnValue({
+      data: null,
+    } as unknown as ReturnType<typeof useRecoveryPlan>);
+    mockUseCbtInsights.mockReturnValue({
+      beliefReviewSuggestions: [],
+      exerciseMoodLift: null,
+      slogan: "",
+      topDistortions: [],
+    });
   });
 
   it("shows CBT onboarding when the account flag is incomplete", () => {

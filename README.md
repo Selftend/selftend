@@ -6,7 +6,7 @@
 
 **Free, open-source guided self-help for web, iOS, and Android.**
 
-Selftend is being built around private guided self-help tools. The current working slice is CBT thought records; mood check-ins and journaling are planned next. It has no ads, subscriptions, or paywalls.
+Selftend is being built around private guided self-help tools. The current working slice is a Gillihan-based CBT toolkit with goals, thought records, mood and self-care logs, exposure, mindfulness, and recovery planning. It has no ads, subscriptions, or paywalls.
 
 ## Quick Start
 
