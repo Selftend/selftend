@@ -90,9 +90,17 @@ export default function CbtHomeScreen() {
   const { data: todaySelfCareLog } = useSelfCareLog(user?.id ?? null, today);
   const { data: thoughtRecords } = useThoughtRecords(user?.id ?? null);
   const { data: recoveryPlan } = useRecoveryPlan(user?.id ?? null);
-  const { beliefReviewSuggestions, exerciseMoodLift, slogan, topDistortions } = useCbtInsights(
-    user?.id ?? null,
-  );
+  const {
+    activityMoodLiftByCategory,
+    angerPattern,
+    beliefReviewSuggestions,
+    exerciseMoodLift,
+    exposureProgress,
+    recurringThoughtSuggestions,
+    selfCareTrend,
+    slogan,
+    topDistortions,
+  } = useCbtInsights(user?.id ?? null);
 
   const showCbtOnboarding =
     forceOnboarding ||
@@ -111,8 +119,16 @@ export default function CbtHomeScreen() {
   const personalSlogan = recoveryPlan?.personalSlogan.trim() || slogan;
   const topDistortion = topDistortions[0] ?? null;
   const otherDistortions = topDistortions.slice(1);
+  const topRecurringThought = recurringThoughtSuggestions[0] ?? null;
   const hasInsights =
-    Boolean(topDistortion) || Boolean(exerciseMoodLift) || beliefReviewSuggestions.length > 0;
+    Boolean(topDistortion) ||
+    Boolean(exerciseMoodLift) ||
+    activityMoodLiftByCategory.length > 0 ||
+    beliefReviewSuggestions.length > 0 ||
+    Boolean(topRecurringThought) ||
+    Boolean(selfCareTrend) ||
+    Boolean(angerPattern) ||
+    Boolean(exposureProgress);
 
   const completeCbtOnboarding = async (selectedConcerns: string[]) => {
     if (!preferences) return;
@@ -433,6 +449,105 @@ export default function CbtHomeScreen() {
                       </CardTitle>
                       <CardDescription>
                         {t("dashboard.insights.reviewBeliefDetail")}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                ) : null}
+
+                {activityMoodLiftByCategory.length > 0 ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{t("dashboard.insights.activityMoodLift")}</CardTitle>
+                      <CardDescription>
+                        {t("dashboard.insights.activityMoodLiftDetail", {
+                          summary: activityMoodLiftByCategory
+                            .map((item) =>
+                              t("dashboard.insights.activityMoodLiftItem", {
+                                category: t(`activities.category.${item.category}`),
+                                lift: item.averageLift,
+                                count: item.count,
+                              }),
+                            )
+                            .join(", "),
+                        })}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                ) : null}
+
+                {topRecurringThought ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>
+                        {t("dashboard.insights.recurringThought", {
+                          thought: topRecurringThought.thought,
+                        })}
+                      </CardTitle>
+                      <CardDescription>
+                        {t("dashboard.insights.recurringThoughtDetail", {
+                          count: topRecurringThought.count,
+                        })}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                ) : null}
+
+                {selfCareTrend ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>
+                        {t("dashboard.insights.selfCareTrend", {
+                          exerciseDays: selfCareTrend.exerciseDays,
+                          totalDays: selfCareTrend.totalDays,
+                        })}
+                      </CardTitle>
+                      <CardDescription>
+                        {t("dashboard.insights.selfCareTrendDetail", {
+                          socialDays: selfCareTrend.socialDays,
+                          gratitudeDays: selfCareTrend.gratitudeDays,
+                          averageSleep:
+                            selfCareTrend.averageSleepHours === null
+                              ? t("dashboard.insights.noSleepAverage")
+                              : t("dashboard.insights.sleepAverage", {
+                                  hours: selfCareTrend.averageSleepHours,
+                                }),
+                        })}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                ) : null}
+
+                {angerPattern ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>
+                        {t("dashboard.insights.angerPattern", {
+                          averageArousal: angerPattern.averageArousal,
+                        })}
+                      </CardTitle>
+                      <CardDescription>
+                        {t("dashboard.insights.angerPatternDetail", {
+                          commonUrge:
+                            angerPattern.commonUrge ?? t("dashboard.insights.noCommonUrge"),
+                          timeOutsTaken: angerPattern.timeOutsTaken,
+                          totalLogs: angerPattern.totalLogs,
+                        })}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                ) : null}
+
+                {exposureProgress ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>
+                        {t("dashboard.insights.exposureProgress", {
+                          completed: exposureProgress.completed,
+                          total: exposureProgress.total,
+                        })}
+                      </CardTitle>
+                      <CardDescription>
+                        {t("dashboard.insights.exposureProgressDetail")}
                       </CardDescription>
                     </CardHeader>
                   </Card>

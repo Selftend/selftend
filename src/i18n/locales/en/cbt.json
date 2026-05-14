@@ -59,7 +59,21 @@
       "exerciseMood": "Average mood on exercise days: {{withExercise}} vs {{withoutExercise}} without.",
       "exerciseMoodDetail": "This compares mood logs on days with and without exercise.",
       "reviewBelief": "{{count}} belief(s) due for review.",
-      "reviewBeliefDetail": "Review dates and low alternative-belief strength can be useful checkpoints."
+      "reviewBeliefDetail": "Review dates and low alternative-belief strength can be useful checkpoints.",
+      "activityMoodLift": "Activity mood lift by category",
+      "activityMoodLiftDetail": "{{summary}} with before/after mood.",
+      "activityMoodLiftItem": "{{category}} {{lift}} ({{count}})",
+      "recurringThought": "Thought to explore: {{thought}}",
+      "recurringThoughtDetail": "This exact thought appears {{count}} times. Consider whether a core belief sits underneath it.",
+      "selfCareTrend": "Self-care trend: movement on {{exerciseDays}}/{{totalDays}} recent days",
+      "selfCareTrendDetail": "{{socialDays}} social day(s), {{gratitudeDays}} gratitude day(s), {{averageSleep}}.",
+      "sleepAverage": "{{hours}}h average sleep",
+      "noSleepAverage": "no sleep average yet",
+      "angerPattern": "Anger pattern: {{averageArousal}}/10 average arousal",
+      "angerPatternDetail": "Common urge: {{commonUrge}}. Time-outs taken: {{timeOutsTaken}}/{{totalLogs}}.",
+      "noCommonUrge": "not enough repeated urges yet",
+      "exposureProgress": "Exposure progress: {{completed}}/{{total}} items completed",
+      "exposureProgressDetail": "Completion here means an exposure item has at least one saved practice session."
     },
     "strategies": {
       "title": "Strategies",

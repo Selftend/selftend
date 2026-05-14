@@ -147,8 +147,13 @@ describe("CbtHomeScreen onboarding", () => {
       data: null,
     } as unknown as ReturnType<typeof useRecoveryPlan>);
     mockUseCbtInsights.mockReturnValue({
+      activityMoodLiftByCategory: [],
+      angerPattern: null,
       beliefReviewSuggestions: [],
       exerciseMoodLift: null,
+      exposureProgress: null,
+      recurringThoughtSuggestions: [],
+      selfCareTrend: null,
       slogan: "",
       topDistortions: [],
     });

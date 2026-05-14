@@ -59,7 +59,21 @@
       "exerciseMood": "Средно настроение в дни с движение: {{withExercise}} срещу {{withoutExercise}} без движение.",
       "exerciseMoodDetail": "Сравнява записите за настроение в дни с и без движение.",
       "reviewBelief": "{{count}} убеждение(я) за преглед.",
-      "reviewBeliefDetail": "Датите за преглед и ниската сила на алтернативното убеждение могат да са полезни ориентири."
+      "reviewBeliefDetail": "Датите за преглед и ниската сила на алтернативното убеждение могат да са полезни ориентири.",
+      "activityMoodLift": "Промяна в настроението по вид дейност",
+      "activityMoodLiftDetail": "{{summary}} със записано настроение преди и след.",
+      "activityMoodLiftItem": "{{category}} {{lift}} ({{count}})",
+      "recurringThought": "Мисъл за разглеждане: {{thought}}",
+      "recurringThoughtDetail": "Тази точна мисъл се появява {{count}} пъти. Помисли дали под нея стои основно убеждение.",
+      "selfCareTrend": "Тенденция в самогрижата: движение в {{exerciseDays}}/{{totalDays}} скорошни дни",
+      "selfCareTrendDetail": "{{socialDays}} социален/социални ден(дни), {{gratitudeDays}} ден(дни) с благодарност, {{averageSleep}}.",
+      "sleepAverage": "{{hours}} ч. среден сън",
+      "noSleepAverage": "още няма средна стойност за сън",
+      "angerPattern": "Модел при гняв: {{averageArousal}}/10 средна възбуда",
+      "angerPatternDetail": "Чест импулс: {{commonUrge}}. Тайм-аути: {{timeOutsTaken}}/{{totalLogs}}.",
+      "noCommonUrge": "още няма достатъчно повтарящи се импулси",
+      "exposureProgress": "Напредък в излагането: {{completed}}/{{total}} завършени елемента",
+      "exposureProgressDetail": "Тук завършено означава, че за елемента има поне една запазена практика."
     },
     "strategies": {
       "title": "Стратегии",
