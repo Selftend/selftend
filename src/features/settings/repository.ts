@@ -22,6 +22,8 @@ interface UserPreferenceRow {
   policy_version_accepted: string | null;
   cookie_consent: CookieConsent | null;
   language: string | null;
+  selected_concerns: string[] | null;
+  active_strategies: string[] | null;
 }
 
 function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
@@ -44,6 +46,8 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     policyVersionAccepted: row.policy_version_accepted ?? null,
     cookieConsent: row.cookie_consent ?? null,
     language: row.language ?? defaultUserPreferences.language,
+    selectedConcerns: row.selected_concerns ?? [],
+    activeStrategies: row.active_strategies ?? [],
   };
 }
 
@@ -83,6 +87,8 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
         policy_version_accepted: preferences.policyVersionAccepted,
         cookie_consent: preferences.cookieConsent,
         language: preferences.language,
+        selected_concerns: preferences.selectedConcerns,
+        active_strategies: preferences.activeStrategies,
       },
       { onConflict: "user_id" },
     )

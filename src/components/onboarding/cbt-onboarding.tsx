@@ -1,8 +1,11 @@
 import { ActivityIndicator, Image, Modal, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
@@ -13,10 +16,19 @@ const toolBeliefs = require("../../../assets/images/onboarding/tool-beliefs.png"
 const toolExposure = require("../../../assets/images/onboarding/tool-exposure.png");
 const toolSleep = require("../../../assets/images/onboarding/tool-sleep.png");
 
+const CONCERNS = [
+  "depression",
+  "anxiety",
+  "panic",
+  "socialAnxiety",
+  "anger",
+  "procrastination",
+] as const;
+
 interface CbtOnboardingProps {
   errorMessage?: string;
   isPending?: boolean;
-  onComplete: () => void;
+  onComplete: (selectedConcerns: string[]) => void;
   visible: boolean;
 }
 
@@ -51,6 +63,14 @@ export function CbtOnboarding({
 }: CbtOnboardingProps) {
   const { t } = useTranslation("cbt");
   const reduceMotionEnabled = useReduceMotionEnabled();
+  const [step, setStep] = useState<"intro" | "concerns">("intro");
+  const [selectedConcerns, setSelectedConcerns] = useState<string[]>([]);
+
+  const toggleConcern = (concern: string) => {
+    setSelectedConcerns((prev) =>
+      prev.includes(concern) ? prev.filter((c) => c !== concern) : [...prev, concern],
+    );
+  };
 
   return (
     <Modal
@@ -59,152 +79,191 @@ export function CbtOnboarding({
       visible={visible}
     >
       <SafeAreaView className="flex-1 bg-background">
-        <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
+        {step === "intro" ? (
+          <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
 
-          {/* Header */}
-          <View className="items-center gap-3">
-            <Text variant="h2" className="text-center">{t("onboarding.intro.title")}</Text>
-            <Text variant="muted" className="text-center">{t("onboarding.intro.subtitle")}</Text>
-          </View>
-
-          {/* Three pillars */}
-          <View className="gap-4">
-            <Card>
-              <CardContent className="items-center gap-3 pt-6">
-                <Image
-                  source={pillarAct}
-                  style={{ width: 200, height: 118 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("onboarding.intro.actTitle")}
-                />
-                <CardTitle className="text-center">{t("onboarding.intro.actTitle")}</CardTitle>
-                <Text variant="muted" className="text-center">{t("onboarding.intro.actBody")}</Text>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="items-center gap-3 pt-6">
-                <Image
-                  source={pillarThink}
-                  style={{ width: 200, height: 118 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("onboarding.intro.thinkTitle")}
-                />
-                <CardTitle className="text-center">{t("onboarding.intro.thinkTitle")}</CardTitle>
-                <Text variant="muted" className="text-center">{t("onboarding.intro.thinkBody")}</Text>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="items-center gap-3 pt-6">
-                <Image
-                  source={pillarBe}
-                  style={{ width: 200, height: 118 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("onboarding.intro.beTitle")}
-                />
-                <CardTitle className="text-center">{t("onboarding.intro.beTitle")}</CardTitle>
-                <Text variant="muted" className="text-center">{t("onboarding.intro.beBody")}</Text>
-              </CardContent>
-            </Card>
-          </View>
-
-          {/* Tools for Lasting Change */}
-          <View className="gap-4">
-            <Text variant="h3" className="text-center">{t("onboarding.intro.toolsTitle")}</Text>
-
-            <Card>
-              <CardContent className="flex-row items-center gap-4 pt-6">
-                <Image
-                  source={toolBeliefs}
-                  style={{ width: 72, height: 72 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("onboarding.intro.beliefsTitle")}
-                />
-                <View className="flex-1 gap-1">
-                  <Text className="font-semibold">{t("onboarding.intro.beliefsTitle")}</Text>
-                  <Text variant="muted">{t("onboarding.intro.beliefsBody")}</Text>
-                </View>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="flex-row items-center gap-4 pt-6">
-                <Image
-                  source={toolExposure}
-                  style={{ width: 72, height: 72 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("onboarding.intro.exposureTitle")}
-                />
-                <View className="flex-1 gap-1">
-                  <Text className="font-semibold">{t("onboarding.intro.exposureTitle")}</Text>
-                  <Text variant="muted">{t("onboarding.intro.exposureBody")}</Text>
-                </View>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="flex-row items-center gap-4 pt-6">
-                <Image
-                  source={toolSleep}
-                  style={{ width: 72, height: 72 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("onboarding.intro.sleepTitle")}
-                />
-                <View className="flex-1 gap-1">
-                  <Text className="font-semibold">{t("onboarding.intro.sleepTitle")}</Text>
-                  <Text variant="muted">{t("onboarding.intro.sleepBody")}</Text>
-                </View>
-              </CardContent>
-            </Card>
-          </View>
-
-          {/* Condition table */}
-          <View className="overflow-hidden rounded-lg border border-border">
-            <View className="flex-row border-b border-border">
-              <View className="w-1/4 border-r border-border p-2">
-                <Text className="text-xs font-semibold">{t("onboarding.intro.tableCondition")}</Text>
-              </View>
-              <View className="w-1/4 border-r border-border p-2">
-                <Text className="text-xs font-semibold">{t("onboarding.intro.tableCoreFeature")}</Text>
-              </View>
-              <View className="flex-1 p-2">
-                <Text className="text-xs font-semibold">{t("onboarding.intro.tableCbtFocus")}</Text>
-              </View>
+            {/* Header */}
+            <View className="items-center gap-3">
+              <Text variant="h2" className="text-center">{t("onboarding.intro.title")}</Text>
+              <Text variant="muted" className="text-center">{t("onboarding.intro.subtitle")}</Text>
             </View>
-            <TableRow
-              condition={t("onboarding.intro.tableRow1Condition")}
-              feature={t("onboarding.intro.tableRow1Feature")}
-              focus={t("onboarding.intro.tableRow1Focus")}
-            />
-            <TableRow
-              condition={t("onboarding.intro.tableRow2Condition")}
-              feature={t("onboarding.intro.tableRow2Feature")}
-              focus={t("onboarding.intro.tableRow2Focus")}
-            />
-            <TableRow
-              condition={t("onboarding.intro.tableRow3Condition")}
-              feature={t("onboarding.intro.tableRow3Feature")}
-              focus={t("onboarding.intro.tableRow3Focus")}
-              isLast
-            />
-          </View>
 
-          {/* CTA + attribution */}
-          <View className="gap-4">
-            <Button disabled={isPending} onPress={onComplete}>
-              {isPending ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{t("onboarding.intro.continue")}</Text>
-            </Button>
-            {errorMessage ? (
-              <Text className="text-sm text-destructive">{errorMessage}</Text>
-            ) : null}
-            <Text className="text-center text-xs text-muted-foreground">
-              {t("onboarding.intro.attribution")}
-            </Text>
-          </View>
+            {/* Three pillars */}
+            <View className="gap-4">
+              <Card>
+                <CardContent className="items-center gap-3 pt-6">
+                  <Image
+                    source={pillarAct}
+                    style={{ width: 200, height: 118 }}
+                    resizeMode="contain"
+                    accessibilityLabel={t("onboarding.intro.actTitle")}
+                  />
+                  <CardTitle className="text-center">{t("onboarding.intro.actTitle")}</CardTitle>
+                  <Text variant="muted" className="text-center">{t("onboarding.intro.actBody")}</Text>
+                </CardContent>
+              </Card>
 
-        </ScrollView>
+              <Card>
+                <CardContent className="items-center gap-3 pt-6">
+                  <Image
+                    source={pillarThink}
+                    style={{ width: 200, height: 118 }}
+                    resizeMode="contain"
+                    accessibilityLabel={t("onboarding.intro.thinkTitle")}
+                  />
+                  <CardTitle className="text-center">{t("onboarding.intro.thinkTitle")}</CardTitle>
+                  <Text variant="muted" className="text-center">{t("onboarding.intro.thinkBody")}</Text>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="items-center gap-3 pt-6">
+                  <Image
+                    source={pillarBe}
+                    style={{ width: 200, height: 118 }}
+                    resizeMode="contain"
+                    accessibilityLabel={t("onboarding.intro.beTitle")}
+                  />
+                  <CardTitle className="text-center">{t("onboarding.intro.beTitle")}</CardTitle>
+                  <Text variant="muted" className="text-center">{t("onboarding.intro.beBody")}</Text>
+                </CardContent>
+              </Card>
+            </View>
+
+            {/* Tools for Lasting Change */}
+            <View className="gap-4">
+              <Text variant="h3" className="text-center">{t("onboarding.intro.toolsTitle")}</Text>
+
+              <Card>
+                <CardContent className="flex-row items-center gap-4 pt-6">
+                  <Image
+                    source={toolBeliefs}
+                    style={{ width: 72, height: 72 }}
+                    resizeMode="contain"
+                    accessibilityLabel={t("onboarding.intro.beliefsTitle")}
+                  />
+                  <View className="flex-1 gap-1">
+                    <Text className="font-semibold">{t("onboarding.intro.beliefsTitle")}</Text>
+                    <Text variant="muted">{t("onboarding.intro.beliefsBody")}</Text>
+                  </View>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="flex-row items-center gap-4 pt-6">
+                  <Image
+                    source={toolExposure}
+                    style={{ width: 72, height: 72 }}
+                    resizeMode="contain"
+                    accessibilityLabel={t("onboarding.intro.exposureTitle")}
+                  />
+                  <View className="flex-1 gap-1">
+                    <Text className="font-semibold">{t("onboarding.intro.exposureTitle")}</Text>
+                    <Text variant="muted">{t("onboarding.intro.exposureBody")}</Text>
+                  </View>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="flex-row items-center gap-4 pt-6">
+                  <Image
+                    source={toolSleep}
+                    style={{ width: 72, height: 72 }}
+                    resizeMode="contain"
+                    accessibilityLabel={t("onboarding.intro.sleepTitle")}
+                  />
+                  <View className="flex-1 gap-1">
+                    <Text className="font-semibold">{t("onboarding.intro.sleepTitle")}</Text>
+                    <Text variant="muted">{t("onboarding.intro.sleepBody")}</Text>
+                  </View>
+                </CardContent>
+              </Card>
+            </View>
+
+            {/* Condition table */}
+            <View className="overflow-hidden rounded-lg border border-border">
+              <View className="flex-row border-b border-border">
+                <View className="w-1/4 border-r border-border p-2">
+                  <Text className="text-xs font-semibold">{t("onboarding.intro.tableCondition")}</Text>
+                </View>
+                <View className="w-1/4 border-r border-border p-2">
+                  <Text className="text-xs font-semibold">{t("onboarding.intro.tableCoreFeature")}</Text>
+                </View>
+                <View className="flex-1 p-2">
+                  <Text className="text-xs font-semibold">{t("onboarding.intro.tableCbtFocus")}</Text>
+                </View>
+              </View>
+              <TableRow
+                condition={t("onboarding.intro.tableRow1Condition")}
+                feature={t("onboarding.intro.tableRow1Feature")}
+                focus={t("onboarding.intro.tableRow1Focus")}
+              />
+              <TableRow
+                condition={t("onboarding.intro.tableRow2Condition")}
+                feature={t("onboarding.intro.tableRow2Feature")}
+                focus={t("onboarding.intro.tableRow2Focus")}
+              />
+              <TableRow
+                condition={t("onboarding.intro.tableRow3Condition")}
+                feature={t("onboarding.intro.tableRow3Feature")}
+                focus={t("onboarding.intro.tableRow3Focus")}
+                isLast
+              />
+            </View>
+
+            {/* CTA + attribution */}
+            <View className="gap-4">
+              <Button onPress={() => setStep("concerns")}>
+                <Text>{t("onboarding.intro.continue")}</Text>
+              </Button>
+              <Text className="text-center text-xs text-muted-foreground">
+                {t("onboarding.intro.attribution")}
+              </Text>
+            </View>
+
+          </ScrollView>
+        ) : (
+          <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
+            <View className="gap-3">
+              <Text variant="h2" className="text-center">{t("onboarding.concerns.title")}</Text>
+              <Text variant="muted" className="text-center">{t("onboarding.concerns.subtitle")}</Text>
+            </View>
+
+            <View className="gap-4">
+              {CONCERNS.map((concern) => {
+                const checked = selectedConcerns.includes(concern);
+                const label = t(`onboarding.concerns.${concern}`);
+                return (
+                  <Card key={concern}>
+                    <CardContent className="flex-row items-center gap-4 pt-4 pb-4">
+                      <Checkbox
+                        accessibilityLabel={label}
+                        checked={checked}
+                        onCheckedChange={() => toggleConcern(concern)}
+                      />
+                      <Label onPress={() => toggleConcern(concern)} className="flex-1">
+                        {label}
+                      </Label>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </View>
+
+            <View className="gap-4">
+              <Button disabled={isPending} onPress={() => onComplete(selectedConcerns)}>
+                {isPending ? <ActivityIndicator color="#ffffff" /> : null}
+                <Text>{t("onboarding.concerns.continue")}</Text>
+              </Button>
+              {errorMessage ? (
+                <Text className="text-sm text-destructive">{errorMessage}</Text>
+              ) : null}
+              <Button onPress={() => setStep("intro")} variant="ghost">
+                <Text>{t("onboarding.concerns.back")}</Text>
+              </Button>
+            </View>
+          </ScrollView>
+        )}
       </SafeAreaView>
     </Modal>
   );

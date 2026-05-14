@@ -21,6 +21,8 @@ export interface UserPreferences {
   policyVersionAccepted: string | null;
   cookieConsent: CookieConsent | null;
   language: string;
+  selectedConcerns: string[];
+  activeStrategies: string[];
 }
 
 export const defaultUserPreferences: UserPreferences = {
@@ -38,6 +40,8 @@ export const defaultUserPreferences: UserPreferences = {
   policyVersionAccepted: null,
   cookieConsent: null,
   language: "en",
+  selectedConcerns: [],
+  activeStrategies: [],
 };
 
 export function mergeUserPreferences(
