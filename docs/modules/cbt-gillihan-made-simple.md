@@ -816,18 +816,27 @@ Mood is logged at multiple points: morning check-in, after activities, after min
 
 - Daily summary: check-in status, scheduled activities, open tasks
 - Quick-access buttons: log mood, record thought, start exposure session, log anger episode
-- Streak indicators: mindfulness practice, self-care log, daily check-ins
+- Gentle practice summaries: mindfulness practice, self-care log, daily check-ins
 - Weekly progress card
 
 ### Notifications
 
-All notifications are opt-in and time-configurable:
+All notifications are explicit opt-in, quiet by default, and easy to disable. They remind the user about a chosen supportive action; they do not track streaks, punish missed days, or use urgency/scarcity language.
+
+Allowed CBT reminder extensions:
 
 - Morning check-in
-- Scheduled activity reminders (per ActivityLog entry)
 - Evening self-care log
 - Weekly review prompt
-- Milestone celebrations (one-time)
+- Scheduled activity reminders, only when the user has deliberately scheduled an activity
+
+Deferred or out of scope for MVP notifications:
+
+- Default-on reminders
+- Streak, quest, or habit-preservation reminders
+- Missed-day warnings
+- Milestone celebration pushes
+- Crisis or low-mood follow-up notifications; crisis support stays in-app and user-initiated
 
 ### Safety
 

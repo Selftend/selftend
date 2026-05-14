@@ -114,6 +114,21 @@ describe("delete_user_account() (integration)", () => {
       distortions: ["catastrophizing"],
       balanced_thought: "balanced",
     });
+    await admin.from("recovery_plans").insert({
+      id: "00000000-0000-0000-0000-00000000aa01",
+      user_id: testUserId,
+      recovery_keys: ["Walk first"],
+      personal_slogan: "Keep practicing",
+      strategy_integration_notes: { thoughts: "Use the record" },
+      maintenance_commitments: ["Weekly review"],
+    });
+    await admin.from("challenge_plans").insert({
+      id: "00000000-0000-0000-0000-00000000aa02",
+      recovery_plan_id: "00000000-0000-0000-0000-00000000aa01",
+      user_id: testUserId,
+      challenge_description: "Hard week",
+      coping_steps: ["Text a trusted person"],
+    });
   });
 
   afterEach(async () => {
@@ -136,16 +151,20 @@ describe("delete_user_account() (integration)", () => {
     expect(error).toBeNull();
 
     const admin = createServiceClient();
-    const [auth, profile, prefs, records] = await Promise.all([
+    const [auth, profile, prefs, records, recoveryPlans, challengePlans] = await Promise.all([
       admin.auth.admin.getUserById(testUserId),
       admin.from("profiles").select("user_id").eq("user_id", testUserId),
       admin.from("user_preferences").select("user_id").eq("user_id", testUserId),
       admin.from("thought_records").select("id").eq("user_id", testUserId),
+      admin.from("recovery_plans").select("id").eq("user_id", testUserId),
+      admin.from("challenge_plans").select("id").eq("user_id", testUserId),
     ]);
 
     expect(auth.data?.user).toBeNull();
     expect(profile.data).toEqual([]);
     expect(prefs.data).toEqual([]);
     expect(records.data).toEqual([]);
+    expect(recoveryPlans.data).toEqual([]);
+    expect(challengePlans.data).toEqual([]);
   });
 });
