@@ -8,8 +8,8 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 
 ## Current project state
 
-- This repo is planning-first.
-- Documentation quality matters because it is the source of truth for future implementation.
+- Documentation quality matters because it carries context that a task line cannot.
+- Active and planned work is tracked in `.github/ROADMAP.md`; other docs hold prose only.
 - Do not invent product direction that conflicts with the roadmap or principles docs.
 
 ## Product guardrails
@@ -87,11 +87,14 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 ## Documentation rules
 
 - Keep docs direct and implementation-oriented.
+- `AGENTS.md` is the single source of truth for AI-agent instructions. No other file (`CLAUDE.md`, `.cursorrules`, `.clinerules`, `.windsurfrules`, etc.) should hold AI-agent rules. Contributor, user, product, and process docs are written for humans and should not link to, quote, or depend on AI-agent instructions.
 - Prefer concrete decisions over vague aspiration.
 - When pricing or platform policy is mentioned, link to official sources where possible and record the date checked.
 - If a decision is uncertain, mark it as an assumption or open question instead of hiding the uncertainty.
-- After each meaningful product, infrastructure, or process change, update `ROADMAP.md` so it shows current status and the immediate next steps.
-- Also update the docs or README files that a fresh-context agent would read to resume safely. If a change affects setup, commands, deployment, store submission, environment variables, safety/legal boundaries, current blockers, or the next expected user inputs, record it in the relevant doc during the same change.
+- After each meaningful product, infrastructure, or process change:
+  - Update the matching task line in `.github/ROADMAP.md` — tick `[x]` if the task is complete, add a new `[ ]` line if the change introduced new work. ROADMAP.md is the single tracker for tasks; do not record tasks in other docs.
+  - Update any human-facing doc whose content the change affects — setup, commands, deployment, store submission, environment variables, safety/legal boundaries, blockers, or expected user inputs. If a change affects setup commands or contributor-visible defaults, update `README.md` in the same change.
+  - Per-PR review gates in `.github/pull_request_template.md` are the only checkboxes outside ROADMAP and are not tracked there.
 
 ## Git safety rule
 
@@ -100,6 +103,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 
 ## Roadmap discipline
 
+- Tasks live only in `.github/ROADMAP.md`. Do not add checklist items to docs in `docs/`, `supabase/`, or anywhere else.
 - MVP should stay focused on guided self-help.
 - Community operations can start early outside the app, but community product features should not crowd out MVP utility.
 - Expansion beyond CBT is allowed, but the product should avoid becoming a vague "everything app."

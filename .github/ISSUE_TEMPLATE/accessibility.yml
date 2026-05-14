@@ -1,0 +1,79 @@
+name: Accessibility
+description: Report or propose an accessibility improvement.
+title: "[A11y]: "
+labels:
+  - accessibility
+  - needs triage
+type: Task
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for accessibility issues across web, Android, iOS, docs, or designs.
+
+        Please do not include private health information or account details in screenshots, recordings, or logs.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Accessibility area
+      options:
+        - Screen reader or accessible name
+        - Keyboard or focus order
+        - Color contrast
+        - Text size or readability
+        - Motion or animation
+        - Touch target or gesture
+        - Semantics or landmarks
+        - Other or not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Web
+        - Android
+        - iOS
+        - Cross-platform
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: location
+    attributes:
+      label: Location
+      description: Screen, route, component, browser, device, assistive technology, or design artifact.
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: Issue
+      description: What is hard to perceive, operate, understand, or navigate?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected accessible behavior
+      description: What should happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Notes, screenshots, or recordings
+      description: Optional. Redact private data before attaching anything.
+
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested fix
+      description: Optional. Include WCAG, platform, or assistive-technology notes if useful.

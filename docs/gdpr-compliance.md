@@ -1,127 +1,51 @@
-# GDPR Compliance Checklist
+# GDPR Compliance Posture
 
-Last updated: 2026-05-06
-
-This checklist tracks GDPR compliance status for Selftend. It covers the key requirements from the General Data Protection Regulation and related frameworks.
+This document records Selftend's compliance posture under the GDPR and equivalent frameworks. Lawful-basis, processor, and retention specifics live in [policies.md](policies.md); operational workflows for incidents, requests, and breach notification live in [operations-runbook.md](operations-runbook.md). Open compliance work is tracked in [.github/ROADMAP.md](../.github/ROADMAP.md).
 
 ## Principles (Article 5)
 
-- [x] **Lawfulness, fairness, transparency** — Lawful basis documented; privacy policy explains processing clearly
-- [x] **Purpose limitation** — Data used only for stated purposes (service delivery)
-- [x] **Data minimization** — Only email, preferences, and user-created content collected; no DOB, no device IDs
-- [x] **Accuracy** — Users can edit their own records
-- [x] **Storage limitation** — Retention policy defined (active account = retained; deleted = removed within 30 days)
-- [x] **Integrity and confidentiality** — HTTPS, RLS, SecureStore, CSP headers
-- [x] **Accountability** — This document + policies doc + privacy policy
+Selftend processes data in line with all seven Article 5 principles. Lawful basis and transparency are documented in the privacy policy; data minimization is enforced by collecting only email, preferences, and user-created content (no date of birth, no device identifiers); accuracy is supported by in-app editing; storage limitation follows the 30-day post-deletion retention window; integrity and confidentiality rely on HTTPS, Row-Level Security, SecureStore, and CSP headers; accountability is supported by this document, [policies.md](policies.md), and the privacy policy.
 
-## Lawful Basis (Article 6)
+## Lawful Basis (Article 6 and Article 9)
 
-- [x] Contract basis for core processing documented
-- [x] Consent basis for reminders documented
-- [x] Legitimate interest for security logging documented
-- [x] No special category data processed (Article 9) — thought records are user-generated wellness reflections, not health data collected by the controller
+Lawful bases are documented in the [policies.md "Lawful basis" table](policies.md): contract for core service delivery, consent for native and web push reminders, explicit consent for any user-entered self-help content that may engage Article 9, and legitimate interest for security and auth-event logging. Selftend is not a medical or diagnostic product, but user-entered records may include wellness or mental-health reflections, so they are treated operationally as highly private.
 
-## Transparency (Articles 12-14)
+## Transparency (Articles 12–14)
 
-- [x] Privacy policy accessible without sign-in at `/privacy`
-- [x] Identity of controller stated (placeholder pending legal entity)
-- [x] Contact details provided (privacy@selftend.org)
-- [x] Purposes of processing stated
-- [x] Lawful basis stated
-- [x] Recipients/processors listed
-- [x] International transfer information provided
-- [x] Retention periods stated
-- [x] Data subject rights listed
-- [x] Right to withdraw consent mentioned
-- [x] Right to lodge complaint mentioned
-- [x] Whether data provision is statutory/contractual requirement clarified
+The privacy policy at `/privacy` is accessible without sign-in and states: the controller identity (Selftend, operated by Vasil Yoshev), contact (privacy@selftend.org), processing purposes, lawful bases, processors and recipients, international transfer information, retention periods, data subject rights, the right to withdraw consent, the right to lodge a complaint, and whether data provision is statutory or contractual.
 
-## Data Subject Rights (Articles 15-22)
+## Data Subject Rights (Articles 15–22)
 
-- [x] **Right of access (Art. 15)** — Data export in Settings
-- [x] **Right to rectification (Art. 16)** — Edit records in-app
-- [x] **Right to erasure (Art. 17)** — Self-service account deletion in Settings
-- [x] **Right to restriction (Art. 18)** — Available via email request
-- [x] **Right to data portability (Art. 20)** — JSON export in Settings
-- [x] **Right to object (Art. 21)** — Available via email request
-- [ ] **Response within one month** — Process needed (manual for email requests)
-- [x] **No automated decision-making (Art. 22)** — App does not make automated decisions about users
+Right of access and portability are served by JSON data export in Settings. Right to rectification is served by in-app editing. Right to erasure is served by self-service account deletion in Settings (DB RPC + UI). Right to restriction and right to object are handled via email request to privacy@selftend.org. The one-month response deadline and request logging are documented in [operations-runbook.md](operations-runbook.md). Selftend makes no automated decisions about users (Article 22 does not apply).
 
 ## Data Protection by Design and Default (Article 25)
 
-- [x] Privacy by design: minimal data collection, RLS, local-first native reminders, and minimal web push subscription records
-- [x] Privacy by default: reminders off, no analytics, no tracking
-- [x] Pseudonymization where possible (UUIDs as identifiers)
+Privacy by design: minimal data collection, Row-Level Security, local-first native reminders, and minimal web push subscription records. Privacy by default: reminders off, no analytics, no tracking. Pseudonymization uses UUID identifiers.
 
 ## Records of Processing (Article 30)
 
-- [x] Processing activities documented in `docs/policies.md`
-- [x] Categories of data subjects: app users (13+)
-- [x] Categories of data: email, preferences, web push subscriptions, thought records
-- [x] Recipients: Supabase, Google (optional), Netlify
-- [x] Transfers to third countries: documented (USA, via SCCs)
-- [x] Retention periods: documented
+Processing activities are documented in [policies.md](policies.md). Data subjects are app users aged 18+. Data categories are email, preferences, web push subscriptions, and thought records. Recipients are Supabase, Google (optional OAuth), and Netlify. Transfers to third countries (USA) are documented with SCCs as the transfer mechanism. Retention periods are documented above.
 
 ## Security (Article 32)
 
-- [x] Encryption in transit (HTTPS/TLS)
-- [x] Encryption at rest (Supabase infrastructure)
-- [x] Row-Level Security (database access control)
-- [x] Secure credential storage (SecureStore on mobile)
-- [x] Content-Security-Policy header
-- [x] HSTS header
-- [x] No service-role keys in client bundle
-- [ ] Incident response process documented
-- [ ] Regular security testing/audit
+Encryption in transit (HTTPS/TLS) and at rest (Supabase infrastructure). Database access is constrained by Row-Level Security. Mobile credentials are stored in SecureStore. The web bundle ships with a Content-Security-Policy and HSTS. No service-role keys are present in the client bundle. The incident response process is documented in [operations-runbook.md](operations-runbook.md). A regular security testing and audit cadence is open work.
 
-## Data Breach Notification (Articles 33-34)
+## Data Breach Notification (Articles 33–34)
 
-- [ ] Process for detecting breaches
-- [ ] Process for notifying supervisory authority within 72 hours
-- [ ] Process for notifying affected users when high risk
-- [ ] Security contact published (security@selftend.org planned)
+Detection, supervisory-authority notification within 72 hours, and notification of affected users when risk is high are all documented in [operations-runbook.md](operations-runbook.md). The published security contact is security@selftend.org.
 
 ## Data Protection Impact Assessment (Article 35)
 
-- [ ] DPIA conducted — **May not be required** given:
-  - No systematic monitoring
-  - No large-scale processing of special categories
-  - No automated decision-making
-  - Small-scale, voluntary self-help tool
-- [ ] Decision on DPIA necessity documented
+DPIA screening was conducted on 2026-05-12 and a full DPIA was determined not to be required for the current MVP scope, based on: no systematic monitoring, no large-scale processing of special categories, no automated decision-making, and the small-scale voluntary nature of the tool. The decision is recorded in [operations-runbook.md](operations-runbook.md).
 
 ## International Transfers (Chapter V)
 
-- [x] Transfers to USA documented
-- [x] SCCs referenced as transfer mechanism
-- [x] Processor DPAs referenced (Supabase, Netlify)
-- [ ] Transfer Impact Assessment completed
+Transfers to the USA via Supabase, Google, and Netlify rely on Standard Contractual Clauses and processor DPAs with appropriate safeguards. The Supabase DPA was executed via PandaDoc on 2026-05-12. The initial transfer impact assessment is in [operations-runbook.md](operations-runbook.md).
 
 ## Consent Management (Article 7)
 
-- [x] Consent freely given (reminders optional, service works without)
-- [x] Consent specific (separate from terms acceptance in UX)
-- [x] Consent informed (clear language in Settings)
-- [x] Consent withdrawable (toggle off in Settings)
-- [x] Record of consent stored (`reminder_consent` + `reminder_consent_updated_at`)
-- [x] Cookie consent on web (banner + preferences)
+Consent is freely given (reminders optional, service works without them), specific (separated from terms acceptance in the UX), informed (clear language in Settings), and withdrawable (toggle off in Settings). Reminder consent is recorded in `reminder_consent` and `reminder_consent_updated_at`. Web cookie consent is captured via the banner and managed in cookie preferences.
 
-## Children (Article 8)
+## Age Restriction (Article 8)
 
-- [x] Age threshold set at 13
-- [x] Age attestation at sign-up
-- [x] No data collected from under-13
-- [x] Terms state parental involvement for 13-17 where required
-
-## Remaining Blockers Before Launch
-
-1. [x] Replace `[Organization Name]` with confirmed legal entity (Selftend, operated by Vasil Yoshev)
-2. [ ] Human/legal review of privacy policy text
-3. [ ] Human/legal review of terms of service text
-4. [x] Configure privacy@selftend.org email alias
-5. [ ] Configure security@selftend.org email alias
-6. [ ] Document data breach notification process
-7. [ ] Verify Supabase DPA is signed/applicable
-8. [ ] Test CSP headers don't break Expo web bundle
-9. [ ] Test self-service deletion end-to-end with real Supabase instance
-10. [ ] Decide on DPIA necessity and document decision
+Launch age threshold is 18. Age is attested at sign-up. No data is knowingly collected from users under 18, and the terms prohibit use by minors; no parental-consent flow exists in MVP.

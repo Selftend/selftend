@@ -4,12 +4,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Text } from "@/components/ui/text";
-import { LoadingState } from "@/src/components/screen-state";
+import { Button } from "@/src/components/react-native-reusables/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/react-native-reusables/card";
+import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
+import { Label } from "@/src/components/react-native-reusables/label";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { LoadingState } from "@/src/components/app/screen-state";
 import { useGoal, useMilestones, useToggleMilestone, useUpdateGoalStatus } from "@/src/features/goals/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";

@@ -1,7 +1,5 @@
 # Reference Log
 
-Last updated: 2026-04-15
-
 This log records how sibling repositories inform this project without turning inspiration into untracked copying.
 
 ## Rule

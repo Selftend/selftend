@@ -1,7 +1,5 @@
 # Internal Testing
 
-Last updated: 2026-05-06
-
 ## Current build profiles
 
 `eas.json` includes:
@@ -12,17 +10,19 @@ Last updated: 2026-05-06
 
 Use the Android `development` build as the default local runtime. Do not use Expo Go as the normal Android development path.
 
-The Android `development` profile uses a distinct app identity so it can coexist with the Play/internal-testing app:
+The Android and iOS `development` profiles use distinct app identities so they can coexist with store/internal-testing apps:
 
 ```text
 Development name: Selftend Dev
 Development Android package: org.vasilyoshev.selftend.dev
+Development iOS bundle identifier: org.vasilyoshev.selftend.dev
 Development native scheme: selftend-dev
 Production Android package: org.vasilyoshev.selftend
+Production iOS bundle identifier: org.vasilyoshev.selftend
 Production native scheme: selftend
 ```
 
-For Google Play closed testing, use the `production` profile to create an Android App Bundle after policy forms and store setup are ready. The `preview` and `production` profiles use matching EAS environments and fail at app-config evaluation if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing.
+For Google Play closed testing, use the `production` profile to create an Android App Bundle. iOS TestFlight/App Store work is deferred out of the current launch path until Apple Developer Program funding or legal organization/nonprofit enrollment is realistic. The `preview` and `production` profiles use matching EAS environments and fail at app-config evaluation if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing.
 
 Manual GitHub Actions workflows are available for maintainer-triggered releases from `main`:
 
@@ -148,20 +148,29 @@ Before publishing a preview or production build to testers:
 2. Rebuild the AAB after changing any of those values. Existing Play builds keep the environment values that were baked in at build time.
 3. Install from Play internal testing and confirm the sign-in screen does not show the Supabase-not-configured message.
 
+## iOS TestFlight note
+
+iOS TestFlight and App Store work is deferred. Do not spend on Apple Developer Program enrollment or submit an iOS build until one of these is true:
+
+- the annual Apple Developer Program fee is funded and the maintainer accepts the seller-name tradeoff, or
+- Selftend has a legal organization/nonprofit identity that can enroll under the organization name and, if eligible, apply for Apple's fee waiver.
+
+Release scripts and EAS submit config for iOS are intentionally omitted while this is deferred. Reintroduce them only when the Apple path is funded and ready.
+
 ## Store-readiness note
 
-Do not move to closed testing or store submission yet. Finish:
+Do not widen closed testing or move to store production yet. Finish:
 
-- migration application in the active Supabase project
-- web push VAPID keys, Edge Function secrets, and cron scheduling before claiming browser reminder support
-- public domain and Supabase production redirect configuration
-- final app name and package-name confirmation
-- public support/privacy/deletion contact configuration
+- production public route smoke testing
+- CSP verification against the real Expo web build
+- self-service deletion testing against production Supabase
 - privacy policy and terms legal review
 - crisis/safety copy jurisdiction review
-- Google Play Health apps declaration and Data safety form
-- account deletion request process review
+- app store screenshots, policy-safe copy, FAQ, and public support guidance
+- Google Play service account JSON after the first manual upload
 - internal device testing
 - icon/screenshot/store copy polish
+
+Web push VAPID keys, Edge Function secrets, cron scheduling, and cross-browser web-push verification are deferred reminder infrastructure. They do not block the first public web test.
 
 See [deployment.md](deployment.md), [self-hosting.md](self-hosting.md), [android-closed-testing.md](android-closed-testing.md), and [policies.md](policies.md) for launch-specific checklists.

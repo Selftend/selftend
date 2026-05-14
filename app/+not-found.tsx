@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Text } from "@/components/ui/text";
+import { Text } from "@/src/components/react-native-reusables/text";
 
 export default function NotFoundScreen() {
   const { t } = useTranslation("navigation");

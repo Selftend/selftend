@@ -1,12 +1,6 @@
 # Branding and Assets
 
-Last updated: 2026-05-07
-
-Icon files live in `assets/`.
-
-## Source
-
-- **`assets/branding/selftend-icon-source-2048.png`** — original source icon at 2048×2048. Treat this as the primary source for any future icon updates or exports.
+Icon files live in `assets/`. The source icon is `assets/branding/selftend-icon-source-2048.png` at 2048 x 2048; use it for future exports.
 
 ## Generated sizes
 

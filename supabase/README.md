@@ -134,7 +134,7 @@ Coverage:
 
 Tests clean up after themselves (per-test teardown) so the suite is rerunnable without `db:reset` between runs. Local anon and service-role keys are deterministic Supabase CLI defaults and are hardcoded in `test/integration/helpers.ts`.
 
-GitHub Actions runs the suite on every PR via `.github/workflows/integration-tests.yml`.
+GitHub Actions runs the suite on every PR as the `integration` job in `.github/workflows/ci.yml`.
 
 ### End-to-end tests (Playwright)
 
@@ -156,7 +156,7 @@ Coverage:
 
 Each test cleans up its own data via the service-role admin API (`test/e2e/helpers.ts` re-exports the integration helpers). Running E2E does not need `db:reset` between runs as long as the seed users still exist.
 
-GitHub Actions runs E2E on every PR via `.github/workflows/e2e-tests.yml`. Failure artifacts (Playwright report + traces) are uploaded for 7 days.
+GitHub Actions runs E2E on every PR as the `e2e` job in `.github/workflows/ci.yml`. Failure artifacts (Playwright report + traces) are uploaded for 7 days.
 
 ## First setup
 
@@ -195,9 +195,7 @@ npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_pro
 
 ## Linked project status
 
-Last checked: 2026-05-06.
-
-The active linked project migration history was repaired on 2026-05-05, the onboarding flags migration was applied on 2026-05-06, the reminder consent timestamp migration was applied on 2026-05-06, and the browser push subscription migration was applied on 2026-05-06:
+As of 2026-05-06, the active linked project migration history was repaired on 2026-05-05, the onboarding flags migration was applied on 2026-05-06, the reminder consent timestamp migration was applied on 2026-05-06, and the browser push subscription migration was applied on 2026-05-06:
 
 - the old remote `20260503` history row was reverted
 - the local consent/deletion migration was renamed to `20260503000000_consent_and_deletion.sql`

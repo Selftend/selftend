@@ -1,7 +1,5 @@
 # Android Development Build
 
-Last updated: 2026-05-07
-
 Use the Android development build for normal development, reminder testing, and device verification. Do not use Expo Go as the primary Android runtime for this project.
 
 ## App identities
@@ -187,7 +185,7 @@ Prerequisites:
 - JDK 17 (Android Gradle Plugin 8 requires 17).
 - `ANDROID_HOME` and `JAVA_HOME` exported in `~/.profile`.
 
-Use `~/.profile`, not `~/.bashrc`. `.bashrc` is only sourced by interactive bash, so EAS local builds spawned by IDEs, agents, or any other non-interactive subprocess will not see exports placed there and Gradle fails with `SDK location not found`. `.profile` is sourced once at desktop login and the values propagate to every process in the session.
+Use `~/.profile`, not `~/.bashrc`. `.bashrc` is only sourced by interactive bash, so EAS local builds spawned by IDEs or other non-interactive subprocesses will not see exports placed there and Gradle fails with `SDK location not found`. `.profile` is sourced once at desktop login and the values propagate to every process in the session.
 
 Example block to add to `~/.profile`:
 

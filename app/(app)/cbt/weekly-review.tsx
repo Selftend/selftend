@@ -3,10 +3,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Text } from "@/components/ui/text";
-import { MoodLineChart } from "@/src/components/mood-line-chart";
-import { LoadingState } from "@/src/components/screen-state";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/react-native-reusables/card";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { MoodLineChart } from "@/src/components/app/mood-line-chart";
+import { LoadingState } from "@/src/components/app/screen-state";
 import { useActivities } from "@/src/features/activities/queries";
 import { useGoals, useMilestones } from "@/src/features/goals/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";

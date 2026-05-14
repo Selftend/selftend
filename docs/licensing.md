@@ -64,9 +64,7 @@ For any borrowed third-party material, keep a record of:
 
 ## Third-party UI component layer
 
-Last checked: 2026-05-03
-
-The app now uses default React Native Reusables-generated components in `components/ui`.
+The app now uses default React Native Reusables-generated components in `src/components/react-native-reusables`.
 
 License posture:
 
@@ -80,7 +78,7 @@ License posture:
   - `clsx`, `tailwind-merge`, `tailwindcss-animate`: MIT
   - `lucide-react-native`: ISC
 
-Current notice tracking lives in `THIRD_PARTY_NOTICES.md`. Before public launch, replace the lightweight notice file with a complete dependency notice/export process if app-store or legal review requires it.
+Current notice tracking lives in [.github/THIRD_PARTY_NOTICES.md](../.github/THIRD_PARTY_NOTICES.md). Before public launch, replace the lightweight notice file with a complete dependency notice/export process if app-store or legal review requires it.
 
 ## Contributor rule
 
@@ -92,6 +90,6 @@ This file is planning guidance, not legal advice. Before a public launch, get a 
 
 - AGPL posture
 - public hosting obligations
-- minors / all-ages implications
+- minors / future under-18 expansion
 - privacy and data retention
 - crisis and safety copy

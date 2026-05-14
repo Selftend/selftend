@@ -1,7 +1,5 @@
 # Analytics Strategy
 
-Last reviewed: 2026-05-04
-
 ## Current state
 
 The MVP does not include any analytics SDK, tracking service, or telemetry. This is intentional:
@@ -13,10 +11,10 @@ The MVP does not include any analytics SDK, tracking service, or telemetry. This
 The consent infrastructure is already built and waiting:
 
 - `src/stores/cookie-consent-store.ts` has an `analytics` toggle (default `false`).
-- `src/components/cookie-consent-banner.tsx` offers "Accept all" / "Essential only" / "Manage preferences."
+- `src/components/app/cookie-consent-banner.tsx` offers "Accept all" / "Essential only" / "Manage preferences."
 - The Supabase `cookie_consent` column stores `{essential, analytics, acceptedAt}` per user.
 
-Contributors must not add ad-hoc tracking without explicit review (see AGENTS.md and the PR template checklist).
+Contributors must not add ad-hoc tracking without explicit review through the roadmap and PR template.
 
 ## Phased plan
 
@@ -46,7 +44,7 @@ Keep these in a contributor-only context (Supabase dashboard, a local script, or
 
 ### Phase 2: Error and crash monitoring
 
-Aligns with the ROADMAP Phase 2 item: "minimal observability and incident response process."
+Adds minimal observability alongside the incident response process documented in [operations-runbook.md](operations-runbook.md).
 
 #### Tool options (self-hostable required)
 
@@ -61,18 +59,9 @@ Error monitoring captures stack traces and device metadata, not user behavior. R
 
 If the team prefers maximum caution, gate it behind the existing `analytics` consent toggle instead.
 
-#### Implementation checklist
+#### Implementation notes
 
-When this phase begins:
-
-- [ ] Choose Sentry self-hosted or GlitchTip
-- [ ] Add the SDK dependency (`@sentry/react-native` or compatible)
-- [ ] Initialize in `src/providers/app-providers.tsx`, gated on the chosen consent classification
-- [ ] Update `src/features/policies/policy-content.ts` privacy policy text
-- [ ] Add the vendor to `docs/policies.md` data processor list
-- [ ] Add self-hosted setup instructions to `docs/self-hosting.md`
-- [ ] Update `docs/costs.md` with hosting cost estimate
-- [ ] Update `docs/android-closed-testing.md` checklist to note the approved exception
+When this phase begins: choose Sentry self-hosted or GlitchTip; add the SDK dependency (`@sentry/react-native` or compatible); initialize in `src/providers/app-providers.tsx` gated on the chosen consent classification; update privacy text in `src/features/policies/policy-content.ts`; add the vendor to the `docs/policies.md` data processor list; add self-hosted setup instructions to `docs/self-hosting.md`; update `docs/costs.md` with the hosting cost estimate; and note the approved exception in `docs/android-closed-testing.md`.
 
 ### Phase 3: Opt-in product analytics (only if Phase 1 is insufficient)
 
@@ -111,22 +100,9 @@ type AllowedEvent =
   | "onboarding_completed";
 ```
 
-#### Implementation checklist
+#### Implementation notes
 
-When this phase begins:
-
-- [ ] Document the concrete product question that requires client-side analytics
-- [ ] Choose the tool based on web-only vs. native needs
-- [ ] Create `src/providers/analytics-provider.tsx` that:
-  - Reads consent state from `useCookieConsentStore`
-  - Initializes or tears down the SDK based on consent changes
-  - Exposes `trackEvent(name: AllowedEvent, properties?: Record<string, string>)`
-  - No-ops silently when consent is not granted
-- [ ] Gate initialization behind `analytics === true` from the consent store
-- [ ] Define the event allowlist in this file or a dedicated constants file
-- [ ] Update privacy policy, cookie policy, and data processor list
-- [ ] Add self-hosted setup instructions to `docs/self-hosting.md`
-- [ ] Update `docs/costs.md` with hosting cost estimate
+When this phase begins: document the concrete product question that requires client-side analytics; choose the tool based on web-only vs. native needs; create `src/providers/analytics-provider.tsx` that reads consent state from `useCookieConsentStore`, initializes or tears down the SDK based on consent changes, exposes `trackEvent(name: AllowedEvent, properties?: Record<string, string>)`, and no-ops silently when consent is not granted; gate initialization behind `analytics === true` from the consent store; define the event allowlist in this file or a dedicated constants file; update the privacy policy, cookie policy, and processor list; add self-hosted setup instructions to `docs/self-hosting.md`; and update `docs/costs.md` with the hosting cost estimate.
 
 ## Excluded approaches
 
@@ -135,20 +111,20 @@ These are deliberately excluded and should not be proposed without exceptional j
 - **Google Analytics, Mixpanel, Amplitude, Segment**: proprietary, not self-hostable, heavy behavioral profiling
 - **Session replay or heatmaps**: surveillance-style, conflicts with product principles
 - **Default-on tracking**: always opt-in or legitimately essential
-- **User-level behavioral profiling**: especially given all-ages target (COPPA/child-safety risk)
+- **User-level behavioral profiling**: especially given sensitive mental-health content and possible future under-18 support
 - **Ad-network pixels or attribution SDKs**: no ads, no ad-funded model
 
 ## Trigger for advancing phases
 
 Do not add analytics preemptively. Advance to the next phase only when:
 
-- **Phase 2**: The app has real users and an undiagnosable production issue occurs, or the ROADMAP Phase 2 observability item is actively being worked.
+- **Phase 2**: The app has real users and an undiagnosable production issue occurs, or an observability initiative is actively being scoped in `.github/ROADMAP.md`.
 - **Phase 3**: A concrete, documented product question cannot be answered by Supabase aggregate queries alone.
 
 ## Related files
 
 - `src/stores/cookie-consent-store.ts` — consent state with `analytics` toggle
-- `src/components/cookie-consent-banner.tsx` — consent UI
+- `src/components/app/cookie-consent-banner.tsx` — consent UI
 - `src/providers/app-providers.tsx` — provider tree for future analytics provider
 - `src/features/policies/policy-content.ts` — privacy and cookie policy text
 - `docs/policies.md` — data processor list

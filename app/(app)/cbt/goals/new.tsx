@@ -5,14 +5,14 @@ import { ActivityIndicator, View } from "react-native";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Text } from "@/components/ui/text";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { MobileFormScreen } from "@/src/components/mobile-form-screen";
-import { LoadingState } from "@/src/components/screen-state";
+import { Button } from "@/src/components/react-native-reusables/button";
+import { Card, CardHeader, CardTitle } from "@/src/components/react-native-reusables/card";
+import { Label } from "@/src/components/react-native-reusables/label";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { Input } from "@/src/components/react-native-reusables/input";
+import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { LoadingState } from "@/src/components/app/screen-state";
 import { goalTypes } from "@/src/constants/goal-types";
 import { lifeDomains } from "@/src/constants/life-domains";
 import { useGoal, useMilestones, useSaveGoal } from "@/src/features/goals/queries";
@@ -108,7 +108,9 @@ export default function NewGoalScreen() {
   const isLastStep = stepIndex === steps.length - 1;
 
   const handleNext = async () => {
-    const isValid = await trigger(currentStep.fields as Array<keyof GoalFormSchema>);
+    const isValid = await trigger(
+      currentStep.fields as unknown as Array<keyof GoalFormSchema>,
+    );
     if (isValid) nextStep(steps.length - 1);
   };
 

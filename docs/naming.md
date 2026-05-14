@@ -1,9 +1,5 @@
 # Naming
 
-Last updated: 2026-05-02
-
-## Final name
-
 Final project/product name: `Selftend`.
 
 Why it fits:
@@ -13,12 +9,12 @@ Why it fits:
 - works for CBT, journaling, check-ins, reminders, and later guided self-help tools
 - short enough for app stores, docs, and support copy
 
-Risks and checks:
+Rules:
 
 - the spelling must be kept consistent: `Selftend`
 - code/package identifiers should use lowercase `selftend`
-- quick web, app-store, and GitHub-oriented searches on 2026-05-02 did not show an obvious exact Selftend app/site/project collision
-- adjacent `tend` names exist in wellness and healthcare, so run proper trademark, domain, GitHub, npm, app-store, and social-handle checks before public promotion
+- quick web, app-store, and GitHub-oriented searches on 2026-05-02 did not show an obvious exact Selftend collision
+- adjacent `tend` names exist in wellness and healthcare, so run proper trademark, domain, package, app-store, and social-handle checks before public promotion
 
 Canonical project identifiers:
 
@@ -31,13 +27,8 @@ Canonical project identifiers:
 
 ## Production domain
 
-Target production domain: `https://selftend.org`.
+Canonical production domain: `https://selftend.org`. It is purchased, configured, and live.
 
-Domain purchase status:
-
-- `selftend.org` is the preferred domain because nonprofit positioning is central.
-- `selftend.com` is optional defensive ownership if affordable.
-- `selftend.app` is acceptable but less aligned with the nonprofit posture.
-- `selftend.io` is not preferred because it reads more like a tech/startup product.
+Optional defensive domains: `selftend.com` if affordable; `selftend.app` is acceptable but less nonprofit-aligned; `selftend.io` is not preferred.
 
 The app identifiers have been renamed for Selftend before Google Play upload. Do not upload to app stores until redirect allow-lists, support contacts, store metadata, and legal/policy review are aligned with the final identity.

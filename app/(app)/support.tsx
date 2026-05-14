@@ -4,9 +4,15 @@ import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Text } from "@/components/ui/text";
+import { Button } from "@/src/components/react-native-reusables/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/react-native-reusables/card";
+import { Text } from "@/src/components/react-native-reusables/text";
 import { appEnv } from "@/src/lib/env";
 
 export default function SupportScreen() {
@@ -32,7 +38,21 @@ export default function SupportScreen() {
 
           <Card>
             <CardHeader>
+              <CardTitle>{t("supportPage.handles")}</CardTitle>
+              <CardDescription>{t("supportPage.handlesCovers")}</CardDescription>
+              <CardDescription>{t("supportPage.handlesNot")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onPress={() => router.push("/faq")} variant="secondary">
+                <Text>{t("supportPage.openFaq")}</Text>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>{t("supportPage.contact")}</CardTitle>
+              <CardDescription>{t("supportPage.contactDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               <View className="gap-3">
@@ -65,7 +85,9 @@ export default function SupportScreen() {
                 </Button>
                 <Button
                   onPress={() =>
-                    void Linking.openURL(`${appEnv.githubRepoUrl}/blob/main/CONTRIBUTING.md`)
+                    void Linking.openURL(
+                      `${appEnv.githubRepoUrl}/blob/main/.github/CONTRIBUTING.md`,
+                    )
                   }
                   variant="secondary"
                 >

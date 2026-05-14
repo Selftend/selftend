@@ -20,11 +20,11 @@ import { useEffect, useRef } from "react";
 import { Pressable, useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { AppHeader } from "@/components/app-header";
-import { SidebarNav } from "@/components/sidebar-nav";
-import { AppErrorBoundary } from "@/src/components/app-error-boundary";
-import { AppToast } from "@/src/components/app-toast";
-import { CookieConsentBanner } from "@/src/components/cookie-consent-banner";
+import { AppHeader } from "@/src/components/app/app-header";
+import { SidebarNav } from "@/src/components/app/sidebar-nav";
+import { AppErrorBoundary } from "@/src/components/app/app-error-boundary";
+import { AppToast } from "@/src/components/app/app-toast";
+import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner";
 import {
   getNativeWindColorScheme,
   resolveThemePreference,

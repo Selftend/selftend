@@ -1,0 +1,61 @@
+name: Localization
+description: Request a language, report a translation issue, or flag localization layout problems.
+title: "[i18n]: "
+labels:
+  - i18n
+  - needs triage
+type: Task
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Translation updates should usually happen through [Weblate](https://hosted.weblate.org/projects/selftend/).
+
+        Use this form for language requests, translation bugs, tone concerns, missing keys, localization workflow issues, or layout concerns such as long strings and right-to-left support.
+
+  - type: dropdown
+    id: request_type
+    attributes:
+      label: Request type
+      options:
+        - New language request
+        - Translation bug
+        - Tone or terminology concern
+        - Missing or hardcoded string
+        - Weblate workflow issue
+        - Layout, long string, or RTL issue
+    validations:
+      required: true
+
+  - type: input
+    id: language
+    attributes:
+      label: Language or locale
+      description: Include the language code if known.
+      placeholder: "Example: es, ar, fr-CA"
+
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Screen, route, i18n namespace/key, Weblate component, or file path if known.
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: Issue or request
+      description: What needs to change?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested_text
+    attributes:
+      label: Suggested translation or wording
+      description: Optional. Include the source text and your suggested wording if helpful.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and review notes
+      description: Mention tone, mental-health terminology, crisis-resource risk, RTL needs, or whether all seven namespaces are affected.

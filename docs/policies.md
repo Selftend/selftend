@@ -1,7 +1,5 @@
 # Public Policy Surfaces
 
-Last updated: 2026-05-04
-
 The app has public policy routes hosted from the Expo web export:
 
 - `/privacy` — Privacy policy (GDPR + CCPA compliant)
@@ -10,34 +8,7 @@ The app has public policy routes hosted from the Expo web export:
 - `/crisis` — Crisis guidance
 - `/account-deletion` — Account deletion info
 
-The source text for these routes lives in [src/features/policies/policy-content.ts](../src/features/policies/policy-content.ts).
-
-## Launch status
-
-Implementation status:
-
-- [x] Privacy policy route exists without sign-in (production text drafted)
-- [x] Terms of service route exists without sign-in (production text drafted)
-- [x] Cookie policy route exists without sign-in
-- [x] Crisis guidance route exists without sign-in
-- [x] Account deletion route exists without sign-in
-- [x] In-app sign-in, support, settings, and legal screens link to relevant public pages
-- [x] Consent checkbox on sign-in screen (age 13+ attestation + policy acceptance)
-- [x] Consent modal for policy version updates (shown to existing users on version change)
-- [x] Self-service account deletion in Settings
-- [x] Data export in Settings (JSON download)
-- [x] Cookie consent banner on web
-- [x] Cookie preferences management
-- [x] Content-Security-Policy and security headers
-- [x] HSTS header
-- [x] Unused Android camera and microphone permissions disabled before Google Play testing
-- [x] Final legal entity name added (Selftend, operated by Vasil Yoshev)
-- [x] Public support email alias configured on `selftend.org`
-- [x] Public privacy/deletion email alias configured on `selftend.org`
-- [x] Crisis-resource intent captured as broad/global
-- [ ] Global crisis-resource strategy reviewed
-- [ ] Human/legal review of all policy text completed
-- [x] Self-service account deletion implemented (DB RPC + UI)
+The policy version constants and fallback source text live in [src/features/policies/policy-content.ts](../src/features/policies/policy-content.ts). Displayed policy copy is loaded from the locale files in `src/i18n/locales/{lang}/policies.json`.
 
 ## Compliance approach
 
@@ -49,21 +20,23 @@ Implementation status:
 
 ### Age floor
 
-- **Minimum age: 13**
+- **Minimum age: 18**
 - Users attest age via checkbox at sign-in
 - No collection of date of birth (data minimization)
-- Under-13 use is explicitly prohibited in terms and privacy policy
-- No COPPA compliance required (no knowing collection from under-13)
+- Under-18 use is explicitly prohibited in terms and privacy policy
+- No child-directed launch posture; minor support is deferred until legal and safety review
+- Google Play target audience should remain 18+ / adults only for the first launch path
 
-### Lawful basis for processing (GDPR Article 6)
+### Lawful basis for processing (GDPR Articles 6 and 9)
 
-| Data                            | Lawful basis                       | Notes                                                      |
-| ------------------------------- | ---------------------------------- | ---------------------------------------------------------- |
-| Email, auth metadata            | Contract (Art. 6(1)(b))            | Necessary to provide the service                           |
-| Thought records, preferences    | Contract (Art. 6(1)(b))            | Core app functionality                                     |
-| Native local reminders          | Consent (Art. 6(1)(a))             | Explicit opt-in, revocable in Settings                     |
-| Web push reminder subscriptions | Consent (Art. 6(1)(a))             | Explicit opt-in, browser permission, revocable in Settings |
-| Auth event logs (Supabase)      | Legitimate interest (Art. 6(1)(f)) | Security and abuse prevention                              |
+| Data                                              | Lawful basis                             | Notes                                                                                                                   |
+| ------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Email, auth metadata                              | Contract (Art. 6(1)(b))                  | Necessary to provide the service                                                                                        |
+| Thought records, preferences                      | Contract (Art. 6(1)(b))                  | Core app functionality                                                                                                  |
+| Sensitive self-help content users choose to enter | Explicit consent where Article 9 applies | Processed only to provide selected app features; consent can be withdrawn by deleting the account or contacting privacy |
+| Native local reminders                            | Consent (Art. 6(1)(a))                   | Explicit opt-in, revocable in Settings                                                                                  |
+| Web push reminder subscriptions                   | Consent (Art. 6(1)(a))                   | Explicit opt-in, browser permission, revocable in Settings                                                              |
+| Auth event logs (Supabase)                        | Legitimate interest (Art. 6(1)(f))       | Security and abuse prevention                                                                                           |
 
 ### Data processors
 
@@ -89,6 +62,8 @@ EU/EEA data may be processed in the US by Supabase, Google, and Netlify. Transfe
 - Standard Contractual Clauses (SCCs)
 - Processor DPAs with appropriate safeguards
 
+The initial transfer impact assessment and processor follow-ups are tracked in [operations-runbook.md](operations-runbook.md).
+
 ### User rights implementation
 
 | Right            | Implementation                            |
@@ -101,6 +76,8 @@ EU/EEA data may be processed in the US by Supabase, Google, and Netlify. Transfe
 | Object           | Contact privacy@selftend.org              |
 | Withdraw consent | Disable reminders in Settings             |
 | Complaint        | Contact local supervisory authority       |
+
+Manual request deadlines and logging are documented in [operations-runbook.md](operations-runbook.md).
 
 ### Cookie/storage policy
 
@@ -119,9 +96,10 @@ The policy text maintains these boundaries:
 - Account-required with data minimization
 - Reminders optional, explicit, and off by default
 - Web push subscriptions are stored only after opt-in and browser permission
+- User-entered self-help records are treated as highly private because they may include wellness or mental-health reflections
 - Android app permissions minimized for the current feature set; no camera-capture or microphone/audio recording permission
 - No ads, subscriptions, manipulative retention, social feeds, or user-facing AI coach
-- Age 13+ required
+- Age 18+ required
 
 ## Google Play URLs
 
@@ -137,11 +115,11 @@ Google Play requires Data safety information for all tracks. Self-service accoun
 
 ## Crisis guidance
 
-The app shows calm, separate crisis guidance but never implies the app provides crisis response.
+The app shows calm, separate crisis guidance but never implies the app provides crisis response. Approved posture for the MVP launch (jurisdiction review on 2026-05-13):
 
-Current public resources listed:
+- The `/crisis` page does not list per-country crisis hotlines. Listing a wrong or rotated number is more dangerous than directing the reader to a reviewed registry.
+- For all locales, the single action button on `/crisis` points at [Find A Helpline](https://findahelpline.com/) (ThroughLine), which maintains a country-reviewed directory of crisis and emotional-support services.
+- The Bulgarian locale additionally calls out 112 (Bulgaria and EU emergency number) inline in the "Immediate danger" section so Bulgarian-speaking users see a number that will connect.
+- The English locale keeps the prose generic ("contact local emergency services") and relies on Find A Helpline for country-specific guidance.
 
-- United States and territories: <https://988lifeline.org/get-help/>
-- Canada: <https://988.ca/get-help/help-right-now>
-
-Before public launch outside those jurisdictions, either add reviewed local resources or keep guidance generic.
+Re-verify the Find A Helpline URL and the locale prose on each minor release. Adding any named hotline beyond the current set requires verification of the number and a documented re-check cadence.

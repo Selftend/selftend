@@ -3,8 +3,8 @@ import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { AuthLandingScreen } from "@/src/components/auth-landing-screen";
-import { LoadingState } from "@/src/components/screen-state";
+import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
+import { LoadingState } from "@/src/components/app/screen-state";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function IndexScreen() {

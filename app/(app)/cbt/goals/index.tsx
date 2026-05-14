@@ -3,11 +3,11 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Text } from "@/components/ui/text";
-import { AccessibleCardLink } from "@/src/components/accessible-card-link";
-import { LoadingState } from "@/src/components/screen-state";
+import { Button } from "@/src/components/react-native-reusables/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/src/components/react-native-reusables/card";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
+import { LoadingState } from "@/src/components/app/screen-state";
 import { useGoals, useMilestones } from "@/src/features/goals/queries";
 import { useSession } from "@/src/providers/session-provider";
 import type { Goal } from "@/src/features/goals/types";

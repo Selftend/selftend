@@ -4,11 +4,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Text } from "@/components/ui/text";
-import { MoodLogSheet } from "@/src/components/mood-log-sheet";
-import { LoadingState } from "@/src/components/screen-state";
+import { Button } from "@/src/components/react-native-reusables/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/src/components/react-native-reusables/card";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { MoodLogSheet } from "@/src/components/app/mood-log-sheet";
+import { LoadingState } from "@/src/components/app/screen-state";
 import { useActivity, useCompleteActivity } from "@/src/features/activities/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";

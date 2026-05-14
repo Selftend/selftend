@@ -1,138 +1,42 @@
-# Community and Popularization
+# Community And Popularization
 
-## Community operating model
+Selftend should feel like a mission-led community project with clear maintainership, not a personal app. Keep contribution paths simple, recognize non-code work, and let the project outgrow one person's inbox.
 
-This project should feel like a community collective with a clear maintainer, not a personal vanity app.
+## Channels
 
-That means:
+- GitHub is the source of truth for code, docs, issues, PRs, and roadmap decisions.
+- Discord is the preferred real-time contributor channel when volume justifies it.
+- Slack can be reconsidered later if the community needs a formal workspace.
+- Shared aliases should cover `hello@`, `support@`, `security@`, and `contributors@`; early forwarding to one inbox is fine.
 
-- the mission comes first
-- the repo is open to non-code contributors
-- gratitude is visible
-- the contribution path is simple
-- the project can outgrow one person's inbox and memory
+## Early Contributor Paths
 
-## Core channels
+Welcome code, docs, UX/design, accessibility, translation, QA/device testing, moderation, product, and content editing. See [contributor-roles.md](contributor-roles.md) for role-specific onboarding.
 
-### Source of truth
+## Support Surface
 
-- GitHub for code, docs, issues, PRs, and roadmap decisions
+The app support page should link to:
 
-### Real-time contributor coordination
-
-- Discord first
-- Slack can be reconsidered later if the contributor base needs more formal workspace-style workflows
-
-### Shared public contact paths
-
-Create aliases such as:
-
-- `hello@`
-- `support@`
-- `security@`
-- `contributors@`
-
-Early on, these can forward to one real inbox. They do not need a full paid team-email suite on day one.
-
-## Contributor roles to welcome early
-
-- code contributors
-- docs contributors
-- UX and visual design contributors
-- accessibility reviewers
-- translators
-- QA and device testers
-- community moderators
-- product and content editors
-
-For a practical "if you are X, here's how to start" guide, see [contributor-roles.md](contributor-roles.md). This list is the strategy-level view; that file is the onboarding view.
-
-## Support page plan
-
-The product should eventually include a support page that links to:
-
-- GitHub repository
-- contribution guide
-- gratitude / acknowledgements
+- GitHub repository and contribution guide
+- acknowledgements or gratitude page
 - donation path
-- share-the-app page
-- legal and privacy docs
+- legal, privacy, and crisis pages
 - support contact route
 
-## Public growth strategy
+## Public Growth
 
-### Before launch
+Before launch: claim likely handles, make GitHub docs readable, publish the mission and roadmap, and set up Discord only when useful.
 
-- claim project handles on the most likely channels
-- set up Discord
-- make GitHub docs readable
-- publish the mission and roadmap clearly
+After MVP: focus on GitHub, Discord, public docs/site, Reddit, and one or two sustainable social channels. Lead with usefulness, privacy, free access, clear boundaries, screenshots, demos, and practical educational content.
 
-Do not try to actively maintain every social platform before the product is usable.
+Avoid guilt-based retention, fake urgency, and panic marketing.
 
-### After MVP
+## Recognition And Donations
 
-Recommended rollout:
+Public thanks should value docs, design, QA, translation, moderation, content, and code. Donations are acceptable only when optional, transparent, separate from product access, and framed as sustaining the mission rather than buying care.
 
-1. GitHub
-2. Discord
-3. public site / docs presence
-4. Reddit community
-5. one or two social channels with sustainable upkeep
+Possible later tools: GitHub Sponsors, Open Collective, or direct donation links.
 
-Likely useful channels:
+## Moderation Note
 
-- Reddit
-- Bluesky
-- Mastodon
-- Instagram or TikTok only if there is a realistic content plan
-- email updates / newsletter later
-
-## Popularizing to users
-
-Lead with usefulness and trust:
-
-- calm launch messaging
-- privacy and free-access positioning
-- clear explanation of what the app is and is not
-- short demo videos and screenshots
-- practical educational content
-
-Avoid:
-
-- guilt-based retention messaging
-- fake urgency
-- mental-health panic marketing
-
-## Popularizing to contributors
-
-Make the project easy to join:
-
-- clear good-first issues
-- labels for docs, design, content, QA, and code
-- a short setup path
-- public recognition for contributors
-- visible roadmap and decisions
-
-## Recognition and gratitude
-
-Contributors should be thanked publicly in docs or a dedicated acknowledgements page. That page should value non-code contributions equally.
-
-## Donation strategy
-
-The project should be free to users. Donation support is acceptable if it is:
-
-- optional
-- transparent
-- separated from core product access
-- framed as sustaining the mission, not buying care
-
-Possible later tools:
-
-- GitHub Sponsors
-- Open Collective
-- direct donation links
-
-## Moderation and safety note
-
-If the project later adds public or semi-public community features inside the app, it must first define moderation, abuse handling, and child-safety processes. Do not smuggle moderation-heavy features into the roadmap as "simple community."
+Do not add public or semi-public community features inside the app until moderation, abuse handling, and child-safety processes exist.

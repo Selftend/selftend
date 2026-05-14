@@ -1,7 +1,7 @@
 import { View } from "react-native";
 
-import { ForgotPasswordForm } from "@/components/forgot-password-form";
-import { MobileFormScreen } from "@/src/components/mobile-form-screen";
+import { ForgotPasswordForm } from "@/src/components/app/forgot-password-form";
+import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 
 export default function ResetPasswordScreen() {
   return (
