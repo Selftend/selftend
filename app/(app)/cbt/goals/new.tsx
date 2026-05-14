@@ -108,9 +108,7 @@ export default function NewGoalScreen() {
   const isLastStep = stepIndex === steps.length - 1;
 
   const handleNext = async () => {
-    const isValid = await trigger(
-      currentStep.fields as unknown as Array<keyof GoalFormSchema>,
-    );
+    const isValid = await trigger(currentStep.fields as unknown as (keyof GoalFormSchema)[]);
     if (isValid) nextStep(steps.length - 1);
   };
 
@@ -181,7 +179,9 @@ export default function NewGoalScreen() {
       <View className="gap-6">
         <View className="gap-2">
           <Text variant="h1">{goalId ? t("goals.editTitle") : t("goals.newTitle")}</Text>
-          <Text variant="muted">{goalId ? t("goals.editDescription") : t("goals.newDescription")}</Text>
+          <Text variant="muted">
+            {goalId ? t("goals.editDescription") : t("goals.newDescription")}
+          </Text>
         </View>
 
         <View className="flex-row flex-wrap gap-2">
@@ -350,10 +350,7 @@ export default function NewGoalScreen() {
               </Card>
             ))}
 
-            <Button
-              onPress={() => append({ description: "", targetDate: null })}
-              variant="outline"
-            >
+            <Button onPress={() => append({ description: "", targetDate: null })} variant="outline">
               <Text>{t("goals.addMilestone")}</Text>
             </Button>
 

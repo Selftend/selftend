@@ -32,8 +32,7 @@ export default function NewActivityScreen() {
   const { t } = useTranslation("cbt");
   const { activityId: rawActivityId } = useLocalSearchParams<{ activityId?: string }>();
   const activityId = useMemo(
-    () =>
-      typeof rawActivityId === "string" && rawActivityId.length > 0 ? rawActivityId : null,
+    () => (typeof rawActivityId === "string" && rawActivityId.length > 0 ? rawActivityId : null),
     [rawActivityId],
   );
   const { user } = useSession();
@@ -107,13 +106,9 @@ export default function NewActivityScreen() {
     <MobileFormScreen
       footer={
         <Button disabled={isSubmitting || saveMutation.isPending} onPress={() => void handleSave()}>
-          {isSubmitting || saveMutation.isPending ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : null}
+          {isSubmitting || saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
           <Text>
-            {isSubmitting || saveMutation.isPending
-              ? t("activities.saving")
-              : t("activities.save")}
+            {isSubmitting || saveMutation.isPending ? t("activities.saving") : t("activities.save")}
           </Text>
         </Button>
       }

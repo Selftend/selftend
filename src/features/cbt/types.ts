@@ -26,4 +26,4 @@ export interface ThoughtRecordInput {
   balancedThought: string;
 }
 
-export interface ThoughtRecordFormValues extends ThoughtRecordInput {}
+export type ThoughtRecordFormValues = ThoughtRecordInput;

@@ -76,7 +76,11 @@ export async function saveActivity(userId: string, input: ActivityInput, activit
   return mapActivity(data as ActivityLogRow);
 }
 
-export async function completeActivity(userId: string, activityId: string, moodAfter: number | null) {
+export async function completeActivity(
+  userId: string,
+  activityId: string,
+  moodAfter: number | null,
+) {
   const client = requireSupabase();
   const { data, error } = await client
     .from("activity_logs")

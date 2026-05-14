@@ -12,10 +12,7 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { useSaveWorryEntry } from "@/src/features/worry/queries";
-import {
-  worryEntryFormSchema,
-  type WorryEntryFormSchema,
-} from "@/src/features/worry/schemas";
+import { worryEntryFormSchema, type WorryEntryFormSchema } from "@/src/features/worry/schemas";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -84,8 +81,7 @@ export default function NewWorryScreen() {
         actionSteps: values.actionSteps.filter((s) => s.trim().length > 0),
         probabilityEstimate:
           values.worryCategory === "hypothetical" ? values.probabilityEstimate : null,
-        copingStatement:
-          values.worryCategory === "hypothetical" ? values.copingStatement : "",
+        copingStatement: values.worryCategory === "hypothetical" ? values.copingStatement : "",
       };
       await saveMutation.mutateAsync(sanitized);
       showToast({ title: t("common:feedback.saved"), tone: "success" });
@@ -129,13 +125,8 @@ export default function NewWorryScreen() {
   return (
     <MobileFormScreen
       footer={
-        <Button
-          disabled={isSubmitting || saveMutation.isPending}
-          onPress={() => void handleSave()}
-        >
-          {isSubmitting || saveMutation.isPending ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : null}
+        <Button disabled={isSubmitting || saveMutation.isPending} onPress={() => void handleSave()}>
+          {isSubmitting || saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
           <Text>
             {isSubmitting || saveMutation.isPending ? t("worry.saving") : t("worry.save")}
           </Text>

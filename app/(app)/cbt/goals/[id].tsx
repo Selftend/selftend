@@ -5,12 +5,23 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/react-native-reusables/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/react-native-reusables/card";
 import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { useGoal, useMilestones, useToggleMilestone, useUpdateGoalStatus } from "@/src/features/goals/queries";
+import {
+  useGoal,
+  useMilestones,
+  useToggleMilestone,
+  useUpdateGoalStatus,
+} from "@/src/features/goals/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import type { GoalStatus } from "@/src/features/goals/types";
@@ -151,15 +162,14 @@ export default function GoalDetailScreen() {
                 <Card>
                   <CardHeader>
                     <CardTitle>{t(`goals.confirm.${confirmStatus}Title`)}</CardTitle>
-                    <CardDescription>{t(`goals.confirm.${confirmStatus}Description`)}</CardDescription>
+                    <CardDescription>
+                      {t(`goals.confirm.${confirmStatus}Description`)}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <View className="flex-row gap-3">
                       <View className="flex-1">
-                        <Button
-                          onPress={() => setConfirmStatus(null)}
-                          variant="ghost"
-                        >
+                        <Button onPress={() => setConfirmStatus(null)} variant="ghost">
                           <Text>{t("goals.cancel")}</Text>
                         </Button>
                       </View>
@@ -178,18 +188,12 @@ export default function GoalDetailScreen() {
               ) : (
                 <View className="flex-row gap-3">
                   <View className="flex-1">
-                    <Button
-                      onPress={() => setConfirmStatus("paused")}
-                      variant="outline"
-                    >
+                    <Button onPress={() => setConfirmStatus("paused")} variant="outline">
                       <Text>{t("goals.status.paused")}</Text>
                     </Button>
                   </View>
                   <View className="flex-1">
-                    <Button
-                      onPress={() => setConfirmStatus("completed")}
-                      variant="outline"
-                    >
+                    <Button onPress={() => setConfirmStatus("completed")} variant="outline">
                       <Text>{t("goals.status.completed")}</Text>
                     </Button>
                   </View>

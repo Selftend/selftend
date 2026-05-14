@@ -27,10 +27,7 @@ function mapValuesProfile(row: ValuesProfileRow): ValuesProfile {
 
 export async function listValuesProfiles(userId: string) {
   const client = requireSupabase();
-  const { data, error } = await client
-    .from("values_profile")
-    .select("*")
-    .eq("user_id", userId);
+  const { data, error } = await client.from("values_profile").select("*").eq("user_id", userId);
 
   if (error) throw error;
   return (data as ValuesProfileRow[]).map(mapValuesProfile);

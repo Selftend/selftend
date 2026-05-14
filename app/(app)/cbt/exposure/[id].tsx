@@ -160,9 +160,7 @@ function SessionSheet({
               <Label>{t("exposure.session.safetyBehaviorDescription")}</Label>
               <Textarea
                 accessibilityLabel={t("exposure.session.safetyBehaviorDescription")}
-                onChangeText={(text) =>
-                  setForm((p) => ({ ...p, safetyBehaviorDescription: text }))
-                }
+                onChangeText={(text) => setForm((p) => ({ ...p, safetyBehaviorDescription: text }))}
                 placeholder={t("exposure.session.safetyBehaviorPlaceholder")}
                 value={form.safetyBehaviorDescription}
               />
@@ -187,11 +185,7 @@ function SessionSheet({
             </View>
             <View className="flex-1">
               <Button
-                disabled={
-                  form.preSuds === null ||
-                  form.postSuds === null ||
-                  saveMutation.isPending
-                }
+                disabled={form.preSuds === null || form.postSuds === null || saveMutation.isPending}
                 onPress={() => void handleSave()}
               >
                 {saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
@@ -205,13 +199,7 @@ function SessionSheet({
   );
 }
 
-function ItemRow({
-  item,
-  onStart,
-}: {
-  item: ExposureItem;
-  onStart: () => void;
-}) {
+function ItemRow({ item, onStart }: { item: ExposureItem; onStart: () => void }) {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { data: sessions } = useExposureSessions(user?.id ?? null, item.id);
@@ -234,9 +222,7 @@ function ItemRow({
         <View className="gap-3">
           {sessions && sessions.length > 0 ? (
             <View className="gap-2">
-              <Text className="text-xs font-medium">
-                {t("exposure.item.recentSessions")}
-              </Text>
+              <Text className="text-xs font-medium">{t("exposure.item.recentSessions")}</Text>
               {sessions.slice(0, 3).map((s) => (
                 <Text key={s.id} variant="muted" className="text-xs">
                   {t("exposure.item.sessionSummary", {
@@ -249,9 +235,7 @@ function ItemRow({
             </View>
           ) : null}
           <Button onPress={onStart} size="sm" variant={completed ? "outline" : "default"}>
-            <Text>
-              {completed ? t("exposure.item.repeat") : t("exposure.item.start")}
-            </Text>
+            <Text>{completed ? t("exposure.item.repeat") : t("exposure.item.start")}</Text>
           </Button>
         </View>
       </CardContent>
@@ -269,10 +253,7 @@ export default function ExposureHierarchyDetailScreen() {
     user?.id ?? null,
     id ?? null,
   );
-  const { data: items, isLoading: itemsLoading } = useExposureItems(
-    user?.id ?? null,
-    id ?? null,
-  );
+  const { data: items, isLoading: itemsLoading } = useExposureItems(user?.id ?? null, id ?? null);
 
   if (hierarchyLoading || itemsLoading) {
     return (
@@ -314,11 +295,7 @@ export default function ExposureHierarchyDetailScreen() {
               <View className="gap-3">
                 <Text variant="h3">{t("exposure.itemsLabel")}</Text>
                 {items.map((item) => (
-                  <ItemRow
-                    key={item.id}
-                    item={item}
-                    onStart={() => setActiveItem(item)}
-                  />
+                  <ItemRow key={item.id} item={item} onStart={() => setActiveItem(item)} />
                 ))}
               </View>
             ) : (

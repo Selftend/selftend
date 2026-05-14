@@ -20,6 +20,7 @@ import bgErrors from "./locales/bg/errors.json";
 export const supportedLanguages = ["en", "bg"] as const;
 export type SupportedLanguage = (typeof supportedLanguages)[number];
 
+// eslint-disable-next-line import/no-named-as-default-member
 i18n.use(initReactI18next).init({
   fallbackLng: "en",
   defaultNS: "common",

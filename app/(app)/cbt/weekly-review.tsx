@@ -3,7 +3,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/react-native-reusables/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
 import { LoadingState } from "@/src/components/app/screen-state";

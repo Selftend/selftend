@@ -17,8 +17,7 @@ export const useExposureDraftStore = create<ExposureDraftState>((set) => ({
   values: null,
   nextStep: (maxStepIndex) =>
     set((state) => ({ stepIndex: Math.min(state.stepIndex + 1, maxStepIndex) })),
-  previousStep: () =>
-    set((state) => ({ stepIndex: Math.max(state.stepIndex - 1, 0) })),
+  previousStep: () => set((state) => ({ stepIndex: Math.max(state.stepIndex - 1, 0) })),
   reset: () => set({ stepIndex: 0, values: null }),
   setValues: (values) => set({ values }),
   setStepIndex: (stepIndex) => set({ stepIndex }),

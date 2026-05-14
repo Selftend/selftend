@@ -244,10 +244,7 @@ export default function NewExposureHierarchyScreen() {
               </Card>
             ))}
 
-            <Button
-              onPress={() => append({ description: "", sudsRating: 20 })}
-              variant="outline"
-            >
+            <Button onPress={() => append({ description: "", sudsRating: 20 })} variant="outline">
               <Text>{t("exposure.addItem")}</Text>
             </Button>
 

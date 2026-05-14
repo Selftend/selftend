@@ -11,13 +11,7 @@ interface NumberRatingProps {
   value: number | null;
 }
 
-export function NumberRating({
-  max = 10,
-  min = 1,
-  step = 1,
-  onChange,
-  value,
-}: NumberRatingProps) {
+export function NumberRating({ max = 10, min = 1, step = 1, onChange, value }: NumberRatingProps) {
   const numbers: number[] = [];
   for (let n = min; n <= max; n += step) {
     numbers.push(n);

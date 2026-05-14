@@ -66,11 +66,7 @@ export async function saveWorryEntry(userId: string, input: WorryEntryInput) {
   return mapWorryEntry(data as WorryEntryRow);
 }
 
-export async function toggleWorryResolved(
-  userId: string,
-  entryId: string,
-  resolved: boolean,
-) {
+export async function toggleWorryResolved(userId: string, entryId: string, resolved: boolean) {
   const client = requireSupabase();
   const { error } = await client
     .from("worry_entries")

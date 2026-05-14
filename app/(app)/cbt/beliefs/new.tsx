@@ -16,10 +16,7 @@ import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useCoreBelief, useSaveCoreBelief } from "@/src/features/beliefs/queries";
-import {
-  coreBeliefFormSchema,
-  type CoreBeliefFormSchema,
-} from "@/src/features/beliefs/schemas";
+import { coreBeliefFormSchema, type CoreBeliefFormSchema } from "@/src/features/beliefs/schemas";
 import { useSession } from "@/src/providers/session-provider";
 import { useBeliefDraftStore } from "@/src/stores/belief-draft-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -146,9 +143,7 @@ export default function NewBeliefScreen() {
   const isLastStep = stepIndex === steps.length - 1;
 
   const handleNext = async () => {
-    const isValid = await trigger(
-      currentStep.fields as unknown as (keyof CoreBeliefFormSchema)[],
-    );
+    const isValid = await trigger(currentStep.fields as unknown as (keyof CoreBeliefFormSchema)[]);
     if (isValid) nextStep(steps.length - 1);
   };
 

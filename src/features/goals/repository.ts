@@ -1,4 +1,10 @@
-import type { Goal, GoalInput, GoalStatus, Milestone, MilestoneInput } from "@/src/features/goals/types";
+import type {
+  Goal,
+  GoalInput,
+  GoalStatus,
+  Milestone,
+  MilestoneInput,
+} from "@/src/features/goals/types";
 import { requireSupabase } from "@/src/lib/supabase";
 
 interface GoalRow {

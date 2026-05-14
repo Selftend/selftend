@@ -136,11 +136,7 @@ export async function listItems(userId: string, hierarchyId: string) {
   return (data as ItemRow[]).map(mapItem);
 }
 
-export async function saveItems(
-  userId: string,
-  hierarchyId: string,
-  inputs: ExposureItemInput[],
-) {
+export async function saveItems(userId: string, hierarchyId: string, inputs: ExposureItemInput[]) {
   const client = requireSupabase();
   const payload = inputs.map((i) => ({
     hierarchy_id: hierarchyId,
@@ -179,11 +175,7 @@ export async function listSessions(userId: string, itemId: string) {
   return (data as SessionRow[]).map(mapSession);
 }
 
-export async function saveSession(
-  userId: string,
-  itemId: string,
-  input: ExposureSessionInput,
-) {
+export async function saveSession(userId: string, itemId: string, input: ExposureSessionInput) {
   const client = requireSupabase();
   const { data, error } = await client
     .from("exposure_sessions")

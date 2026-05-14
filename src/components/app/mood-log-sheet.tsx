@@ -115,7 +115,10 @@ export function MoodLogSheet({ linkedStrategy, onClose, onSaved, visible }: Mood
               </Button>
             </View>
             <View className="flex-1">
-              <Button disabled={!moodScore || saveMutation.isPending} onPress={() => void handleSave()}>
+              <Button
+                disabled={!moodScore || saveMutation.isPending}
+                onPress={() => void handleSave()}
+              >
                 {saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
                 <Text>{t("mood.save")}</Text>
               </Button>

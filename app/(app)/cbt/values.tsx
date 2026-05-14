@@ -4,7 +4,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/react-native-reusables/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/react-native-reusables/card";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
@@ -34,8 +39,7 @@ function DomainEditor({ domain, existing, userId }: DomainEditorProps) {
   const [note, setNote] = useState(existing?.domainNote ?? "");
   const [saved, setSaved] = useState(Boolean(existing));
 
-  const gap =
-    importance !== null && satisfaction !== null ? importance - satisfaction : null;
+  const gap = importance !== null && satisfaction !== null ? importance - satisfaction : null;
 
   const handleSave = async () => {
     if (importance === null || satisfaction === null) return;
@@ -66,9 +70,7 @@ function DomainEditor({ domain, existing, userId }: DomainEditorProps) {
               />
             </View>
             {gap > 0 ? (
-              <Text className="text-xs text-muted-foreground">
-                {t("values.gap", { gap })}
-              </Text>
+              <Text className="text-xs text-muted-foreground">{t("values.gap", { gap })}</Text>
             ) : null}
           </View>
         ) : null}

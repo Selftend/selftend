@@ -11,8 +11,7 @@ import type { CoreBeliefInput } from "@/src/features/beliefs/types";
 const beliefKeys = {
   all: ["beliefs"] as const,
   list: (userId: string) => ["beliefs", "list", userId] as const,
-  detail: (userId: string, beliefId: string) =>
-    ["beliefs", "detail", userId, beliefId] as const,
+  detail: (userId: string, beliefId: string) => ["beliefs", "detail", userId, beliefId] as const,
 };
 
 export function useCoreBeliefs(userId: string | null) {
@@ -59,12 +58,7 @@ export function useUpdateBeliefStrength(userId: string | null) {
       originalBeliefStrength: number;
       alternativeBeliefStrength: number;
     }) =>
-      updateBeliefStrength(
-        userId!,
-        beliefId,
-        originalBeliefStrength,
-        alternativeBeliefStrength,
-      ),
+      updateBeliefStrength(userId!, beliefId, originalBeliefStrength, alternativeBeliefStrength),
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: beliefKeys.all });

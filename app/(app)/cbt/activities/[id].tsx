@@ -5,7 +5,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/src/components/react-native-reusables/card";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { MoodLogSheet } from "@/src/components/app/mood-log-sheet";
 import { LoadingState } from "@/src/components/app/screen-state";
@@ -109,21 +114,30 @@ export default function ActivityDetailScreen() {
                 <View className="flex-row px-6 pb-6 gap-4">
                   {activity.moodBefore !== null ? (
                     <View className="flex-1 gap-1">
-                      <Text className="text-xs text-muted-foreground">{t("activities.moodBefore")}</Text>
+                      <Text className="text-xs text-muted-foreground">
+                        {t("activities.moodBefore")}
+                      </Text>
                       <Text className="text-2xl font-bold">{activity.moodBefore}</Text>
                     </View>
                   ) : null}
                   {activity.moodAfter !== null ? (
                     <View className="flex-1 gap-1">
-                      <Text className="text-xs text-muted-foreground">{t("activities.moodAfter")}</Text>
+                      <Text className="text-xs text-muted-foreground">
+                        {t("activities.moodAfter")}
+                      </Text>
                       <Text className="text-2xl font-bold">{activity.moodAfter}</Text>
                     </View>
                   ) : null}
                   {moodLift !== null ? (
                     <View className="flex-1 gap-1">
-                      <Text className="text-xs text-muted-foreground">{t("activities.moodLiftLabel")}</Text>
-                      <Text className={`text-2xl font-bold ${moodLift >= 0 ? "text-primary" : "text-destructive"}`}>
-                        {moodLift >= 0 ? "+" : ""}{moodLift}
+                      <Text className="text-xs text-muted-foreground">
+                        {t("activities.moodLiftLabel")}
+                      </Text>
+                      <Text
+                        className={`text-2xl font-bold ${moodLift >= 0 ? "text-primary" : "text-destructive"}`}
+                      >
+                        {moodLift >= 0 ? "+" : ""}
+                        {moodLift}
                       </Text>
                     </View>
                   ) : null}

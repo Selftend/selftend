@@ -30,8 +30,7 @@ export function useGoals(userId: string | null) {
 
 export function useGoal(userId: string | null, goalId: string | null) {
   return useQuery({
-    queryKey:
-      userId && goalId ? goalKeys.detail(userId, goalId) : ["goals", "detail", "anonymous"],
+    queryKey: userId && goalId ? goalKeys.detail(userId, goalId) : ["goals", "detail", "anonymous"],
     queryFn: () => getGoal(userId!, goalId!),
     enabled: Boolean(userId && goalId),
   });
@@ -40,9 +39,7 @@ export function useGoal(userId: string | null, goalId: string | null) {
 export function useMilestones(userId: string | null, goalId: string | null) {
   return useQuery({
     queryKey:
-      userId && goalId
-        ? goalKeys.milestones(userId, goalId)
-        : ["goals", "milestones", "anonymous"],
+      userId && goalId ? goalKeys.milestones(userId, goalId) : ["goals", "milestones", "anonymous"],
     queryFn: () => listMilestones(userId!, goalId!),
     enabled: Boolean(userId && goalId),
   });

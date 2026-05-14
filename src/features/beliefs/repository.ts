@@ -60,11 +60,7 @@ export async function getCoreBelief(userId: string, beliefId: string) {
   return data ? mapCoreBelief(data as CoreBeliefRow) : null;
 }
 
-export async function saveCoreBelief(
-  userId: string,
-  input: CoreBeliefInput,
-  beliefId?: string,
-) {
+export async function saveCoreBelief(userId: string, input: CoreBeliefInput, beliefId?: string) {
   const client = requireSupabase();
   const payload = {
     user_id: userId,
