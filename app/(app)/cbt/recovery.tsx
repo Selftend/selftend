@@ -1,9 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
+import type { TFunction } from "i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -23,9 +24,10 @@ import { useActivities } from "@/src/features/activities/queries";
 import { useAngerLogs } from "@/src/features/anger/queries";
 import { useCoreBeliefs } from "@/src/features/beliefs/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
-import { useHierarchies } from "@/src/features/exposure/queries";
+import { useAllExposureItems, useHierarchies } from "@/src/features/exposure/queries";
 import { useGoals } from "@/src/features/goals/queries";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
+import { useMoodLogs } from "@/src/features/mood/queries";
 import { useTasks } from "@/src/features/procrastination/queries";
 import {
   useChallengePlans,
@@ -62,7 +64,24 @@ const strategyKeys = [
 ] as const;
 
 type StrategyKey = (typeof strategyKeys)[number];
+type TimelineKey = StrategyKey | "mood" | "recovery";
 type ListFieldName = "recoveryKeys" | "maintenanceCommitments";
+
+interface RecoveryStat {
+  key:
+    | "thoughtRecords"
+    | "exposuresCompleted"
+    | "moodDays"
+    | "goalsAchieved"
+    | "activitiesCompleted";
+  value: number;
+}
+
+interface TimelineItem {
+  key: TimelineKey;
+  date: string;
+  count: number;
+}
 
 interface ChallengeDraft {
   id?: string;
@@ -100,6 +119,132 @@ function sanitizeRecoveryValues(values: RecoveryPlanFormSchema) {
   };
 }
 
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
+}
+
+function earliestDate<T>(
+  records: T[] | undefined,
+  getDate: (record: T) => string | null | undefined,
+) {
+  const dates = records?.map(getDate).filter((value): value is string => Boolean(value)) ?? [];
+  return dates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime())[0] ?? null;
+}
+
+function createTimelineItem<T>(
+  key: TimelineKey,
+  records: T[] | undefined,
+  getDate: (record: T) => string | null | undefined,
+) {
+  if (!records || records.length === 0) {
+    return null;
+  }
+
+  const date = earliestDate(records, getDate);
+  return date ? { key, date, count: records.length } : null;
+}
+
+function getTimelineLabel(t: TFunction<"cbt">, key: TimelineKey) {
+  if (key === "mood" || key === "recovery") {
+    return t(`recovery.timeline.${key}`);
+  }
+
+  return t(`dashboard.strategies.${key}`);
+}
+
+function appendExportList(lines: string[], title: string, values: string[], emptyLabel: string) {
+  lines.push("", `## ${title}`);
+  if (values.length === 0) {
+    lines.push(emptyLabel);
+    return;
+  }
+
+  for (const value of values) {
+    lines.push(`- ${value}`);
+  }
+}
+
+function buildRecoveryPlanExport({
+  challengePlans,
+  recoveryValues,
+  stats,
+  t,
+  timelineItems,
+}: {
+  challengePlans: ChallengePlan[];
+  recoveryValues: ReturnType<typeof sanitizeRecoveryValues>;
+  stats: RecoveryStat[];
+  t: TFunction<"cbt">;
+  timelineItems: TimelineItem[];
+}) {
+  const emptyLabel = t("recovery.export.empty");
+  const lines = [
+    `# ${t("recovery.export.fileTitle")}`,
+    "",
+    t("recovery.export.generatedAt", { date: formatDate(new Date().toISOString()) }),
+  ];
+
+  lines.push("", `## ${t("recovery.stats.title")}`);
+  for (const stat of stats) {
+    lines.push(`- ${t(`recovery.stats.${stat.key}`)}: ${stat.value}`);
+  }
+
+  lines.push("", `## ${t("recovery.timeline.title")}`);
+  if (timelineItems.length === 0) {
+    lines.push(emptyLabel);
+  } else {
+    for (const item of timelineItems) {
+      lines.push(
+        `- ${formatDate(item.date)}: ${getTimelineLabel(t, item.key)} (${t(
+          "recovery.timeline.count",
+          {
+            count: item.count,
+          },
+        )})`,
+      );
+    }
+  }
+
+  appendExportList(lines, t("recovery.recoveryKeys"), recoveryValues.recoveryKeys, emptyLabel);
+
+  lines.push("", `## ${t("recovery.personalSlogan")}`);
+  lines.push(recoveryValues.personalSlogan || emptyLabel);
+
+  lines.push("", `## ${t("recovery.strategyNotes")}`);
+  const strategyNotes = Object.entries(recoveryValues.strategyIntegrationNotes);
+  if (strategyNotes.length === 0) {
+    lines.push(emptyLabel);
+  } else {
+    for (const [strategyKey, note] of strategyNotes) {
+      const label = isStrategyKey(strategyKey)
+        ? t(`dashboard.strategies.${strategyKey}`)
+        : strategyKey;
+      lines.push(`- ${label}: ${note}`);
+    }
+  }
+
+  lines.push("", `## ${t("recovery.challengePlans")}`);
+  if (challengePlans.length === 0) {
+    lines.push(emptyLabel);
+  } else {
+    for (const plan of challengePlans) {
+      lines.push(`- ${plan.challengeDescription}`);
+      for (const step of plan.copingSteps) {
+        lines.push(`  - ${step}`);
+      }
+    }
+  }
+
+  appendExportList(
+    lines,
+    t("recovery.maintenanceCommitments"),
+    recoveryValues.maintenanceCommitments,
+    emptyLabel,
+  );
+
+  return lines.join("\n");
+}
+
 export default function RecoveryScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
@@ -118,6 +263,8 @@ export default function RecoveryScreen() {
   const { data: valuesProfiles } = useValuesProfiles(user?.id ?? null);
   const { data: beliefs } = useCoreBeliefs(user?.id ?? null);
   const { data: hierarchies } = useHierarchies(user?.id ?? null);
+  const { data: exposureItems } = useAllExposureItems(user?.id ?? null);
+  const { data: moodLogs } = useMoodLogs(user?.id ?? null, 365);
   const { data: worries } = useWorryEntries(user?.id ?? null);
   const { data: mindfulnessSessions } = useMindfulnessSessions(user?.id ?? null);
   const { data: tasks } = useTasks(user?.id ?? null);
@@ -125,6 +272,7 @@ export default function RecoveryScreen() {
   const { data: selfCareLogs } = useSelfCareLogs(user?.id ?? null);
 
   const [challengeDraft, setChallengeDraft] = useState<ChallengeDraft | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const {
     control,
@@ -181,6 +329,63 @@ export default function RecoveryScreen() {
     hierarchies,
     mindfulnessSessions,
     preferences,
+    selfCareLogs,
+    tasks,
+    thoughtRecords,
+    valuesProfiles,
+    worries,
+  ]);
+
+  const recoveryStats = useMemo<RecoveryStat[]>(() => {
+    const moodDays = new Set((moodLogs ?? []).map((log) => log.loggedAt.slice(0, 10)));
+
+    return [
+      { key: "thoughtRecords", value: thoughtRecords?.length ?? 0 },
+      {
+        key: "exposuresCompleted",
+        value: exposureItems?.filter((item) => item.completedAt).length ?? 0,
+      },
+      { key: "moodDays", value: moodDays.size },
+      {
+        key: "goalsAchieved",
+        value: goals?.filter((goal) => goal.status === "completed").length ?? 0,
+      },
+      {
+        key: "activitiesCompleted",
+        value: activities?.filter((activity) => activity.completedAt).length ?? 0,
+      },
+    ];
+  }, [activities, exposureItems, goals, moodLogs, thoughtRecords]);
+
+  const timelineItems = useMemo<TimelineItem[]>(() => {
+    const items = [
+      createTimelineItem("mood", moodLogs, (log) => log.loggedAt),
+      createTimelineItem("goals", goals, (goal) => goal.createdAt),
+      createTimelineItem("activities", activities, (activity) => activity.createdAt),
+      createTimelineItem("thoughts", thoughtRecords, (record) => record.createdAt),
+      createTimelineItem("values", valuesProfiles, (profile) => profile.createdAt),
+      createTimelineItem("beliefs", beliefs, (belief) => belief.createdAt),
+      createTimelineItem("exposure", hierarchies, (hierarchy) => hierarchy.createdAt),
+      createTimelineItem("worry", worries, (worry) => worry.createdAt),
+      createTimelineItem("mindfulness", mindfulnessSessions, (session) => session.completedAt),
+      createTimelineItem("tasks", tasks, (task) => task.createdAt),
+      createTimelineItem("anger", angerLogs, (log) => log.createdAt),
+      createTimelineItem("selfCare", selfCareLogs, (log) => log.createdAt),
+      recoveryPlan ? { key: "recovery" as const, date: recoveryPlan.createdAt, count: 1 } : null,
+    ];
+
+    return items
+      .filter((item): item is TimelineItem => Boolean(item))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [
+    activities,
+    angerLogs,
+    beliefs,
+    goals,
+    hierarchies,
+    mindfulnessSessions,
+    moodLogs,
+    recoveryPlan,
     selfCareLogs,
     tasks,
     thoughtRecords,
@@ -277,6 +482,49 @@ export default function RecoveryScreen() {
     }
   };
 
+  const handleExportRecoveryPlan = async () => {
+    setIsExporting(true);
+
+    try {
+      const exportText = buildRecoveryPlanExport({
+        challengePlans: challengePlans ?? [],
+        recoveryValues: sanitizeRecoveryValues(getValues()),
+        stats: recoveryStats,
+        t,
+        timelineItems,
+      });
+
+      if (Platform.OS === "web") {
+        const blob = new Blob([exportText], { type: "text/markdown" });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = `selftend-recovery-plan-${new Date().toISOString().split("T")[0]}.md`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(url);
+      } else {
+        const { Share } = await import("react-native");
+        await Share.share({
+          message: exportText,
+          title: t("recovery.export.fileTitle"),
+        });
+      }
+
+      showToast({
+        title: t("common:feedback.saved"),
+        description: t("recovery.export.exported"),
+        tone: "success",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t("recovery.export.exportError");
+      showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const updateCopingStep = (index: number, value: string) => {
     setChallengeDraft((draft) => {
       if (!draft) return draft;
@@ -364,6 +612,69 @@ export default function RecoveryScreen() {
           <Text variant="h1">{t("recovery.title")}</Text>
           <Text variant="muted">{t("recovery.description")}</Text>
         </View>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("recovery.stats.title")}</CardTitle>
+            <CardDescription>{t("recovery.stats.description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <View className="flex-row flex-wrap gap-3">
+              {recoveryStats.map((stat) => (
+                <View
+                  key={stat.key}
+                  className="min-w-[44%] flex-1 gap-1 rounded-md border border-border p-3"
+                >
+                  <Text className="text-2xl font-semibold">{stat.value}</Text>
+                  <Text variant="muted">{t(`recovery.stats.${stat.key}`)}</Text>
+                </View>
+              ))}
+            </View>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("recovery.timeline.title")}</CardTitle>
+            <CardDescription>{t("recovery.timeline.description")}</CardDescription>
+          </CardHeader>
+          <CardContent className="gap-4">
+            {timelineItems.length > 0 ? (
+              timelineItems.map((item) => (
+                <View key={`${item.key}-${item.date}`} className="flex-row gap-3">
+                  <View className="items-center">
+                    <View className="mt-1 size-3 rounded-full bg-primary" />
+                    <View className="w-px flex-1 bg-border" />
+                  </View>
+                  <View className="flex-1 gap-1 pb-4">
+                    <Text className="text-sm text-muted-foreground">{formatDate(item.date)}</Text>
+                    <Text className="font-medium">{getTimelineLabel(t, item.key)}</Text>
+                    <Text variant="muted">
+                      {t("recovery.timeline.count", { count: item.count })}
+                    </Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <Text variant="muted">{t("recovery.timeline.empty")}</Text>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("recovery.export.title")}</CardTitle>
+            <CardDescription>{t("recovery.export.description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button disabled={isExporting} onPress={() => void handleExportRecoveryPlan()}>
+              {isExporting ? <ActivityIndicator color="#ffffff" /> : null}
+              <Text>
+                {isExporting ? t("recovery.export.exporting") : t("recovery.export.button")}
+              </Text>
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

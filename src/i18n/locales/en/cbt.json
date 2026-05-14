@@ -459,6 +459,34 @@
     "save": "Save plan",
     "update": "Update plan",
     "loading": "Loading recovery plan...",
+    "stats": {
+      "title": "Personal stats",
+      "description": "A simple snapshot of the CBT work you have recorded so far.",
+      "thoughtRecords": "Thought records",
+      "exposuresCompleted": "Exposures completed",
+      "moodDays": "Mood days logged",
+      "goalsAchieved": "Goals achieved",
+      "activitiesCompleted": "Activities completed"
+    },
+    "timeline": {
+      "title": "Journey timeline",
+      "description": "When each part of your CBT toolkit first showed up.",
+      "empty": "Your timeline will appear after you save records across the CBT tools.",
+      "count": "{{count}} record(s)",
+      "mood": "Mood check-ins",
+      "recovery": "Recovery plan"
+    },
+    "export": {
+      "title": "Export recovery plan",
+      "description": "Download or share a readable copy of this plan, including your stats and timeline.",
+      "button": "Export plan",
+      "exporting": "Exporting...",
+      "exported": "Recovery plan exported.",
+      "exportError": "Unable to export the recovery plan.",
+      "fileTitle": "Selftend Recovery Plan",
+      "generatedAt": "Generated {{date}}",
+      "empty": "Not set yet."
+    },
     "recoveryKeys": "Recovery keys",
     "recoveryKeysHint": "Short reminders of the actions, mindsets, or supports that work for you.",
     "addKey": "Add key",

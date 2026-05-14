@@ -136,6 +136,18 @@ export async function listItems(userId: string, hierarchyId: string) {
   return (data as ItemRow[]).map(mapItem);
 }
 
+export async function listAllItems(userId: string) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("exposure_items")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data as ItemRow[]).map(mapItem);
+}
+
 export async function saveItems(userId: string, hierarchyId: string, inputs: ExposureItemInput[]) {
   const client = requireSupabase();
   const payload = inputs.map((i) => ({

@@ -22,7 +22,7 @@
     "export:web": "npm exec expo -- export --platform web --clear",
     "deploy": "npm run export:web && npm exec netlify-cli -- deploy --prod --dir=dist",
     "serve:web:production": "npm exec expo -- serve",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -130,7 +130,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
+      "eslint --fix --max-warnings=0",
       "prettier --write",
       "jest --findRelatedTests --bail --passWithNoTests"
     ],

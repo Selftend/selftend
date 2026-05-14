@@ -50,7 +50,7 @@ This file is the source of truth for tracked work. Tick `[x]` when an item is co
 ## CBT Spec Follow-Ups
 
 1. [x] Include all CBT strategy tables in `export_user_data()` account export coverage.
-2. [ ] Add Recovery Plan timeline, personal stats summary, and user-controlled export polish.
+2. [x] Add Recovery Plan timeline, personal stats summary, and user-controlled export polish.
 3. [ ] Build the dashboard/check-in loop from the CBT spec: morning/evening check-ins, open tasks, scheduled activities, and 7/30-day mood summaries.
 4. [ ] Add remaining strategy-specific insights: activity mood lift by category, recurring thought-to-core-belief suggestions, self-care trends, anger patterns, and exposure progress.
 5. [ ] Add lightweight schema, repository, export/delete, and critical UI-state tests for newer CBT strategy modules.
