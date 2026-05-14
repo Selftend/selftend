@@ -24,7 +24,7 @@ describe("export_user_data() (integration)", () => {
     await bob.auth.signOut();
   });
 
-  it("returns the caller's profile, preferences, and thought records", async () => {
+  it("returns the caller's profile, preferences, and private CBT records", async () => {
     const { data, error } = await bob.rpc("export_user_data");
 
     expect(error).toBeNull();
@@ -35,6 +35,8 @@ describe("export_user_data() (integration)", () => {
         app_onboarding_completed: true,
         cbt_onboarding_completed: true,
         language: "en",
+        selected_concerns: expect.any(Array),
+        active_strategies: expect.any(Array),
       },
     });
     expect(Array.isArray(data.thoughtRecords)).toBe(true);
@@ -42,6 +44,23 @@ describe("export_user_data() (integration)", () => {
     expect(data.thoughtRecords[0]).toHaveProperty("situation");
     expect(data.thoughtRecords[0]).toHaveProperty("automatic_thought");
     expect(Array.isArray(data.webPushSubscriptions)).toBe(true);
+    expect(Array.isArray(data.goals)).toBe(true);
+    expect(Array.isArray(data.milestones)).toBe(true);
+    expect(Array.isArray(data.valuesProfiles)).toBe(true);
+    expect(Array.isArray(data.activityLogs)).toBe(true);
+    expect(Array.isArray(data.moodLogs)).toBe(true);
+    expect(Array.isArray(data.coreBeliefs)).toBe(true);
+    expect(Array.isArray(data.exposureHierarchies)).toBe(true);
+    expect(Array.isArray(data.exposureItems)).toBe(true);
+    expect(Array.isArray(data.exposureSessions)).toBe(true);
+    expect(Array.isArray(data.worryEntries)).toBe(true);
+    expect(Array.isArray(data.mindfulnessSessions)).toBe(true);
+    expect(Array.isArray(data.procrastinationTasks)).toBe(true);
+    expect(Array.isArray(data.taskSteps)).toBe(true);
+    expect(Array.isArray(data.angerLogs)).toBe(true);
+    expect(Array.isArray(data.selfCareLogs)).toBe(true);
+    expect(Array.isArray(data.recoveryPlans)).toBe(true);
+    expect(Array.isArray(data.challengePlans)).toBe(true);
     expect(typeof data.exportDate).toBe("string");
   });
 

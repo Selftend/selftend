@@ -1,6 +1,6 @@
 # Supabase Notes
 
-The initial schema lives in [supabase/migrations/20260415_initial.sql](migrations/20260415_initial.sql). Later migrations add consent/deletion support, profile avatar storage, language preference sync, onboarding flags, reminder consent timestamps, and browser push subscription infrastructure.
+The initial schema lives in [supabase/migrations/20260415_initial.sql](migrations/20260415_initial.sql). Later migrations add consent/deletion support, profile avatar storage, language preference sync, onboarding flags, reminder consent timestamps, browser push subscription infrastructure, and CBT strategy tables.
 
 ## Tables
 
@@ -8,8 +8,21 @@ The initial schema lives in [supabase/migrations/20260415_initial.sql](migration
 - `user_preferences`
 - `thought_records`
 - `web_push_subscriptions`
+- `goals`, `milestones`
+- `values_profile`, `activity_logs`
+- `mood_logs`
+- `core_beliefs`
+- `exposure_hierarchies`, `exposure_items`, `exposure_sessions`
+- `worry_entries`
+- `mindfulness_sessions`
+- `procrastination_tasks`, `task_steps`
+- `anger_logs`
+- `self_care_logs`
+- `recovery_plans`, `challenge_plans`
 
 `profiles` stores account-level metadata only: email plus optional avatar fields. Google OAuth avatars are stored as URLs with `avatar_source = 'oauth'`; manually chosen images store a private Storage object path with `avatar_source = 'upload'`; removed photos keep `avatar_source = null` and set `avatar_updated_at` so the app does not immediately re-import the Google photo.
+
+`export_user_data()` includes account metadata, preferences, web push subscriptions, thought records, and all private CBT strategy records. `delete_user_account()` deletes owned private rows directly or through `auth.users` cascade.
 
 ## Storage
 
@@ -129,7 +142,7 @@ Coverage:
 - `settings-repository.integration.test.ts` — user_preferences upserts, web_push_subscriptions, check constraints
 - `profile-repository.integration.test.ts` — profiles upserts + profile-pics storage round-trip
 - `rls.integration.test.ts` — cross-user isolation across all owner-scoped tables and the storage bucket
-- `db-functions.integration.test.ts` — `export_user_data()` and `delete_user_account()`
+- `db-functions.integration.test.ts` — `export_user_data()` coverage for private app data and `delete_user_account()`
 - `auth.integration.test.ts` — sign-in success/failure, sign-up, password-reset email landing in Mailpit (`http://localhost:54324`)
 
 Tests clean up after themselves (per-test teardown) so the suite is rerunnable without `db:reset` between runs. Local anon and service-role keys are deterministic Supabase CLI defaults and are hardcoded in `test/integration/helpers.ts`.
