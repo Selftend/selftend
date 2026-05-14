@@ -29,6 +29,7 @@ interface CbtOnboardingProps {
   errorMessage?: string;
   isPending?: boolean;
   onComplete: (selectedConcerns: string[]) => void;
+  onDismiss?: () => void;
   visible: boolean;
 }
 
@@ -59,6 +60,7 @@ export function CbtOnboarding({
   errorMessage,
   isPending = false,
   onComplete,
+  onDismiss,
   visible,
 }: CbtOnboardingProps) {
   const { t } = useTranslation("cbt");
@@ -75,17 +77,20 @@ export function CbtOnboarding({
   return (
     <Modal
       animationType={reduceMotionEnabled ? "none" : "slide"}
-      onRequestClose={() => undefined}
+      onRequestClose={onDismiss ?? (() => undefined)}
       visible={visible}
     >
       <SafeAreaView className="flex-1 bg-background">
         {step === "intro" ? (
           <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
-
             {/* Header */}
             <View className="items-center gap-3">
-              <Text variant="h2" className="text-center">{t("onboarding.intro.title")}</Text>
-              <Text variant="muted" className="text-center">{t("onboarding.intro.subtitle")}</Text>
+              <Text variant="h2" className="text-center">
+                {t("onboarding.intro.title")}
+              </Text>
+              <Text variant="muted" className="text-center">
+                {t("onboarding.intro.subtitle")}
+              </Text>
             </View>
 
             {/* Three pillars */}
@@ -99,7 +104,9 @@ export function CbtOnboarding({
                     accessibilityLabel={t("onboarding.intro.actTitle")}
                   />
                   <CardTitle className="text-center">{t("onboarding.intro.actTitle")}</CardTitle>
-                  <Text variant="muted" className="text-center">{t("onboarding.intro.actBody")}</Text>
+                  <Text variant="muted" className="text-center">
+                    {t("onboarding.intro.actBody")}
+                  </Text>
                 </CardContent>
               </Card>
 
@@ -112,7 +119,9 @@ export function CbtOnboarding({
                     accessibilityLabel={t("onboarding.intro.thinkTitle")}
                   />
                   <CardTitle className="text-center">{t("onboarding.intro.thinkTitle")}</CardTitle>
-                  <Text variant="muted" className="text-center">{t("onboarding.intro.thinkBody")}</Text>
+                  <Text variant="muted" className="text-center">
+                    {t("onboarding.intro.thinkBody")}
+                  </Text>
                 </CardContent>
               </Card>
 
@@ -125,14 +134,18 @@ export function CbtOnboarding({
                     accessibilityLabel={t("onboarding.intro.beTitle")}
                   />
                   <CardTitle className="text-center">{t("onboarding.intro.beTitle")}</CardTitle>
-                  <Text variant="muted" className="text-center">{t("onboarding.intro.beBody")}</Text>
+                  <Text variant="muted" className="text-center">
+                    {t("onboarding.intro.beBody")}
+                  </Text>
                 </CardContent>
               </Card>
             </View>
 
             {/* Tools for Lasting Change */}
             <View className="gap-4">
-              <Text variant="h3" className="text-center">{t("onboarding.intro.toolsTitle")}</Text>
+              <Text variant="h3" className="text-center">
+                {t("onboarding.intro.toolsTitle")}
+              </Text>
 
               <Card>
                 <CardContent className="flex-row items-center gap-4 pt-6">
@@ -184,13 +197,19 @@ export function CbtOnboarding({
             <View className="overflow-hidden rounded-lg border border-border">
               <View className="flex-row border-b border-border">
                 <View className="w-1/4 border-r border-border p-2">
-                  <Text className="text-xs font-semibold">{t("onboarding.intro.tableCondition")}</Text>
+                  <Text className="text-xs font-semibold">
+                    {t("onboarding.intro.tableCondition")}
+                  </Text>
                 </View>
                 <View className="w-1/4 border-r border-border p-2">
-                  <Text className="text-xs font-semibold">{t("onboarding.intro.tableCoreFeature")}</Text>
+                  <Text className="text-xs font-semibold">
+                    {t("onboarding.intro.tableCoreFeature")}
+                  </Text>
                 </View>
                 <View className="flex-1 p-2">
-                  <Text className="text-xs font-semibold">{t("onboarding.intro.tableCbtFocus")}</Text>
+                  <Text className="text-xs font-semibold">
+                    {t("onboarding.intro.tableCbtFocus")}
+                  </Text>
                 </View>
               </View>
               <TableRow
@@ -213,20 +232,29 @@ export function CbtOnboarding({
 
             {/* CTA + attribution */}
             <View className="gap-4">
-              <Button onPress={() => setStep("concerns")}>
-                <Text>{t("onboarding.intro.continue")}</Text>
-              </Button>
+              {onDismiss ? (
+                <Button onPress={onDismiss}>
+                  <Text>{t("onboarding.dismiss")}</Text>
+                </Button>
+              ) : (
+                <Button onPress={() => setStep("concerns")}>
+                  <Text>{t("onboarding.intro.continue")}</Text>
+                </Button>
+              )}
               <Text className="text-center text-xs text-muted-foreground">
                 {t("onboarding.intro.attribution")}
               </Text>
             </View>
-
           </ScrollView>
         ) : (
           <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
             <View className="gap-3">
-              <Text variant="h2" className="text-center">{t("onboarding.concerns.title")}</Text>
-              <Text variant="muted" className="text-center">{t("onboarding.concerns.subtitle")}</Text>
+              <Text variant="h2" className="text-center">
+                {t("onboarding.concerns.title")}
+              </Text>
+              <Text variant="muted" className="text-center">
+                {t("onboarding.concerns.subtitle")}
+              </Text>
             </View>
 
             <View className="gap-4">

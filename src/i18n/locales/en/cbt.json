@@ -11,7 +11,8 @@
     "recordHistory": "Record history",
     "recordHistoryDescription": "Review the records you have already saved without mixing CBT with unrelated modules.",
     "currentFlow": "The current flow",
-    "currentFlowDescription": "Capture the situation, name the first thought, choose emotions, notice distortions, and respond with a more balanced thought."
+    "currentFlowDescription": "Capture the situation, name the first thought, choose emotions, notice distortions, and respond with a more balanced thought.",
+    "onboardingHint": "Replay the CBT introduction"
   },
   "dashboard": {
     "quickActions": "Quick actions",
@@ -26,7 +27,33 @@
       "goals": "Goal Setting",
       "activities": "Behavioral Activation",
       "thoughts": "Thought Records",
-      "values": "Values"
+      "values": "Values",
+      "weeklyReview": "Weekly Review"
+    }
+  },
+  "weeklyReview": {
+    "title": "Weekly review",
+    "description": "A quiet look at the past seven days — mood, activity, goals, and what to carry forward.",
+    "loading": "Loading your week...",
+    "moodTrend": "Mood trend",
+    "moodTrendDescription": "Average score per day over the past seven days.",
+    "noMoodData": "No mood logs for this week yet. Log your mood from the dashboard to see it here.",
+    "activities": "Activities",
+    "activitiesCompleted": "completed",
+    "activitiesPlanned": "planned",
+    "completionRate": "rate",
+    "goalProgress": "Goal progress",
+    "goalProgressDescription": "Milestone completion for your active goals.",
+    "milestonesProgress": "{{done}} / {{total}}",
+    "thoughtRecords": "Thought records",
+    "recordsThisWeek": "this week",
+    "reflection": {
+      "title": "Reflection prompt",
+      "description": "One question to sit with before the next week begins.",
+      "prompt1": "What is one thing that went better than expected this week?",
+      "prompt2": "Where did you notice yourself being hardest on yourself? What would you say to a friend in the same situation?",
+      "prompt3": "Which activity gave you the most energy or sense of accomplishment?",
+      "prompt4": "What is one small thing you would like to do differently next week?"
     }
   },
   "history": {
@@ -87,7 +114,8 @@
       "continue": "Continue",
       "back": "Back"
     },
-    "error": "Unable to save CBT onboarding."
+    "error": "Unable to save CBT onboarding.",
+    "dismiss": "Close"
   },
   "goals": {
     "title": "Goals",

@@ -1,4 +1,6 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { Pressable as mockPressable, Text as mockText } from "react-native";
+import type { ReactNode } from "react";
 
 import CbtHomeScreen from "@/app/(app)/cbt";
 import { defaultUserPreferences } from "@/src/features/modules/types";
@@ -9,6 +11,10 @@ jest.mock("expo-router", () => ({
   router: {
     push: jest.fn(),
   },
+}));
+
+jest.mock("@react-navigation/native", () => ({
+  useIsFocused: () => true,
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -23,6 +29,39 @@ jest.mock("@/src/features/settings/queries", () => ({
   useUpdateUserPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
 }));
+
+jest.mock("@/components/ui/checkbox", () => {
+  const Pressable = mockPressable;
+
+  return {
+    Checkbox: ({
+      accessibilityLabel,
+      checked,
+      onCheckedChange,
+    }: {
+      accessibilityLabel?: string;
+      checked?: boolean;
+      onCheckedChange?: (checked: boolean) => void;
+    }) => (
+      <Pressable
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: Boolean(checked) }}
+        onPress={() => onCheckedChange?.(!checked)}
+      />
+    ),
+  };
+});
+
+jest.mock("@/components/ui/label", () => {
+  const Text = mockText;
+
+  return {
+    Label: ({ children, onPress }: { children?: ReactNode; onPress?: () => void }) => (
+      <Text onPress={onPress}>{children}</Text>
+    ),
+  };
+});
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
@@ -53,8 +92,8 @@ describe("CbtHomeScreen onboarding", () => {
 
     renderWithProviders(<CbtHomeScreen />);
 
-    expect(screen.getByText("Using CBT gently")).toBeTruthy();
-    expect(screen.getByText("Continue to CBT")).toBeTruthy();
+    expect(screen.getByText(/The CBT Toolkit/)).toBeTruthy();
+    expect(screen.getByText("Get started")).toBeTruthy();
   });
 
   it("marks CBT onboarding complete when the user continues", async () => {
@@ -69,13 +108,16 @@ describe("CbtHomeScreen onboarding", () => {
 
     renderWithProviders(<CbtHomeScreen />);
 
-    fireEvent.press(screen.getByText("Continue to CBT"));
+    fireEvent.press(screen.getByText("Get started"));
+    fireEvent.press(screen.getByLabelText("Anxiety / Worry"));
+    fireEvent.press(screen.getByText("Continue"));
 
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledWith(
         expect.objectContaining({
           appOnboardingCompleted: true,
           cbtOnboardingCompleted: true,
+          selectedConcerns: ["anxiety"],
         }),
       );
     });
@@ -92,6 +134,6 @@ describe("CbtHomeScreen onboarding", () => {
 
     renderWithProviders(<CbtHomeScreen />);
 
-    expect(screen.queryByText("Using CBT gently")).toBeNull();
+    expect(screen.queryByText(/The CBT Toolkit/)).toBeNull();
   });
 });

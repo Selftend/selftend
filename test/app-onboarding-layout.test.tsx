@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
+import HomeScreen from "@/app/(app)/(tabs)/index";
 import ProtectedLayout from "@/app/(app)/_layout";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
@@ -44,17 +45,24 @@ jest.mock("expo-router", () => {
     return <View>{children}</View>;
   }
 
-  function StackScreen() {
-    return null;
+  function StackScreen({ name }: { name: string }) {
+    return <Text>Screen: {name}</Text>;
   }
 
   Stack.Screen = StackScreen;
 
   return {
     Redirect: ({ href }: { href: string }) => <Text>Redirect: {href}</Text>,
+    router: {
+      push: jest.fn(),
+    },
     Stack,
   };
 });
+
+jest.mock("@react-navigation/native", () => ({
+  useIsFocused: () => true,
+}));
 
 jest.mock("@/components/sidebar-nav", () => ({
   SidebarNav: () => null,
@@ -86,12 +94,16 @@ jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: jest.fn(),
 }));
 
+jest.mock("@/src/features/cbt/queries", () => ({
+  useThoughtRecords: () => ({ data: [] }),
+}));
+
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
 >;
 
-describe("ProtectedLayout app onboarding", () => {
+describe("ProtectedLayout access gates", () => {
   const mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences);
 
   beforeEach(() => {
@@ -125,8 +137,15 @@ describe("ProtectedLayout app onboarding", () => {
     } as unknown as ReturnType<typeof useUserPreferences>);
   });
 
-  it("marks app onboarding complete when the user continues", async () => {
+  it("renders the protected app stack without owning app onboarding", () => {
     renderWithProviders(<ProtectedLayout />);
+
+    expect(screen.getByText("Screen: (tabs)")).toBeTruthy();
+    expect(screen.queryByText("Welcome to Selftend")).toBeNull();
+  });
+
+  it("marks app onboarding complete from the home screen when the user continues", async () => {
+    renderWithProviders(<HomeScreen />);
 
     expect(screen.getByText("Welcome to Selftend")).toBeTruthy();
 

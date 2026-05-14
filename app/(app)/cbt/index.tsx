@@ -1,11 +1,13 @@
 import { router } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useIsFocused } from "@react-navigation/native";
+import { CircleHelp } from "lucide-react-native";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { AccessibleCardLink } from "@/src/components/accessible-card-link";
 import { CbtOnboarding } from "@/src/components/onboarding/cbt-onboarding";
@@ -23,12 +25,14 @@ export default function CbtHomeScreen() {
   const cbtOnboardingMutation = useUpdateUserPreferences(user?.id ?? null);
   const isFocused = useIsFocused();
   const [showMoodSheet, setShowMoodSheet] = useState(false);
+  const [forceOnboarding, setForceOnboarding] = useState(false);
 
   const { data: goals } = useGoals(user?.id ?? null);
   const { data: thoughtRecords } = useThoughtRecords(user?.id ?? null);
 
   const showCbtOnboarding =
-    isFocused && !prefsLoading && Boolean(preferences) && !preferences?.cbtOnboardingCompleted;
+    forceOnboarding ||
+    (isFocused && !prefsLoading && Boolean(preferences) && !preferences?.cbtOnboardingCompleted);
 
   const activeGoals = goals?.filter((g) => g.status === "active").slice(0, 2) ?? [];
   const latestRecord = thoughtRecords?.[0] ?? null;
@@ -42,6 +46,7 @@ export default function CbtHomeScreen() {
           selectedConcerns,
         }),
       );
+      setForceOnboarding(false);
     } catch {
       // Error state is shown inside the modal.
     }
@@ -52,6 +57,11 @@ export default function CbtHomeScreen() {
     { key: "activities", route: "/cbt/activities", label: t("dashboard.strategies.activities") },
     { key: "thoughts", route: "/cbt/new", label: t("dashboard.strategies.thoughts") },
     { key: "values", route: "/cbt/values", label: t("dashboard.strategies.values") },
+    {
+      key: "weeklyReview",
+      route: "/cbt/weekly-review",
+      label: t("dashboard.strategies.weeklyReview"),
+    },
   ];
 
   return (
@@ -60,17 +70,25 @@ export default function CbtHomeScreen() {
         errorMessage={cbtOnboardingMutation.isError ? t("onboarding.error") : undefined}
         isPending={cbtOnboardingMutation.isPending}
         onComplete={(concerns) => void completeCbtOnboarding(concerns)}
+        onDismiss={forceOnboarding ? () => setForceOnboarding(false) : undefined}
         visible={showCbtOnboarding}
       />
-      <MoodLogSheet
-        onClose={() => setShowMoodSheet(false)}
-        visible={showMoodSheet}
-      />
+      <MoodLogSheet onClose={() => setShowMoodSheet(false)} visible={showMoodSheet} />
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <View className="gap-2">
-              <Text variant="h1">{t("home.title")}</Text>
+              <View className="flex-row items-center gap-2">
+                <Text variant="h1">{t("home.title")}</Text>
+                <Pressable
+                  accessibilityLabel={t("home.onboardingHint")}
+                  accessibilityRole="button"
+                  onPress={() => setForceOnboarding(true)}
+                  hitSlop={8}
+                >
+                  <Icon as={CircleHelp} className="text-muted-foreground" size={20} />
+                </Pressable>
+              </View>
               <Text variant="muted">{t("home.description")}</Text>
             </View>
 
@@ -108,11 +126,7 @@ export default function CbtHomeScreen() {
               <View className="gap-3">
                 <View className="flex-row items-center justify-between">
                   <Text variant="h3">{t("dashboard.activeGoals")}</Text>
-                  <Button
-                    onPress={() => router.push("/cbt/goals")}
-                    size="sm"
-                    variant="ghost"
-                  >
+                  <Button onPress={() => router.push("/cbt/goals")} size="sm" variant="ghost">
                     <Text>{t("dashboard.seeAll")}</Text>
                   </Button>
                 </View>

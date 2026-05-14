@@ -73,6 +73,7 @@ export default function ProtectedLayout() {
             <Stack.Screen name="cbt/activities/new" />
             <Stack.Screen name="cbt/activities/[id]" />
             <Stack.Screen name="cbt/values" />
+            <Stack.Screen name="cbt/weekly-review" />
             <Stack.Screen name="tools/mood-tracker" />
             <Stack.Screen name="tools/meditation" />
             <Stack.Screen name="tools/act" />
