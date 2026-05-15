@@ -208,7 +208,7 @@ npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_pro
 
 ## Linked project status
 
-As of 2026-05-06, the active linked project migration history was repaired on 2026-05-05, the onboarding flags migration was applied on 2026-05-06, the reminder consent timestamp migration was applied on 2026-05-06, and the browser push subscription migration was applied on 2026-05-06:
+As of 2026-05-15, the active linked project is aligned with the checked-in migration history through `20260519_expanded_thought_records.sql`. The migration history was repaired on 2026-05-05, the onboarding flags migration was applied on 2026-05-06, the reminder consent timestamp migration was applied on 2026-05-06, the browser push subscription migration was applied on 2026-05-06, and the CBT strategy migrations were applied on 2026-05-15:
 
 - the old remote `20260503` history row was reverted
 - the local consent/deletion migration was renamed to `20260503000000_consent_and_deletion.sql`
@@ -216,6 +216,7 @@ As of 2026-05-06, the active linked project migration history was repaired on 20
 - `20260504_add_language_preference.sql` was applied with `supabase db push`
 - `20260507000000_reminder_consent_timestamp.sql` was applied with `supabase db push --yes`
 - `20260508000000_web_push_notifications.sql` was applied with `supabase db push --yes`
+- `20260514_cbt_phase1.sql`, `20260515_cbt_phase3.sql`, `20260516_cbt_phase4.sql`, `20260517_cbt_phase5.sql`, `20260518_cbt_export_coverage.sql`, and `20260519_expanded_thought_records.sql` were applied with `supabase db push --yes`
 
 - `profiles` includes the avatar columns from `20260503120000_profile_avatars.sql`
 - `profile-pics` exists as a private bucket with a 5 MB limit and JPEG/PNG/WebP MIME types
@@ -225,6 +226,7 @@ As of 2026-05-06, the active linked project migration history was repaired on 20
 - `user_preferences.app_onboarding_completed` and `user_preferences.cbt_onboarding_completed` exist for account-backed onboarding
 - `user_preferences.reminder_consent_updated_at` exists for timestamped reminder opt-in and withdrawal state
 - `user_preferences.cbt_reminder_timezone` and `web_push_subscriptions` exist for opted-in browser reminders
+- `activity_logs`, `mood_logs`, `self_care_logs`, and the rest of the CBT strategy tables exist with owner-scoped RLS policies
 
 The local and remote migration histories include `20260507000000_reminder_consent_timestamp.sql`, which adds `user_preferences.reminder_consent_updated_at` and export coverage for timestamped reminder consent. The 2026-05-07 version is used so the file sorts after the legacy 8-digit `20260506_onboarding_flags.sql` migration.
 
