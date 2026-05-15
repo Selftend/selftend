@@ -73,7 +73,10 @@ test.describe("sign-up + onboarding + first record", () => {
     await page.getByText("Anxious", { exact: true }).first().click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    await page.getByText("Catastrophizing", { exact: true }).first().click();
+    // Evidence is optional in the first thought-record flow.
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    await page.getByRole("checkbox", { name: "Catastrophizing", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     await page
@@ -81,6 +84,8 @@ test.describe("sign-up + onboarding + first record", () => {
         "Example: I do not know what the email means yet. One message is not proof that I failed.",
       )
       .fill(balancedThought);
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
     await page.getByRole("button", { name: "Save record", exact: true }).click();
 
     // Detail page renders the saved values.

@@ -18,7 +18,9 @@ test.describe("create thought record", () => {
     await deleteAllThoughtRecordsForUser(SEED_USERS.alice.id);
   });
 
-  test("alice signs in, completes the 5-step wizard, and the record is saved", async ({ page }) => {
+  test("alice signs in, completes the thought record wizard, and the record is saved", async ({
+    page,
+  }) => {
     const situation =
       "I noticed my heart racing before a routine team meeting and started bracing for criticism.";
     const automaticThought = "They are going to call me out for not delivering enough.";
@@ -54,16 +56,22 @@ test.describe("create thought record", () => {
     await page.getByText("Anxious", { exact: true }).first().click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Step 4: Distortions
-    await page.getByText("Catastrophizing", { exact: true }).first().click();
+    // Step 4: Evidence is optional in this flow.
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Step 5: Balanced thought + Save
+    // Step 5: Distortions
+    await page.getByRole("checkbox", { name: "Catastrophizing", exact: true }).click();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    // Step 6: Balanced thought
     await page
       .getByPlaceholder(
         "Example: I do not know what the email means yet. One message is not proof that I failed.",
       )
       .fill(balancedThought);
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    // Step 7: Outcome is optional; save from the final step.
     await page.getByRole("button", { name: "Save record", exact: true }).click();
 
     // After save, app routes to /cbt/history/<id>. Verify the saved values render.
