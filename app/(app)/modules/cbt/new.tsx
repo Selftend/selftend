@@ -195,7 +195,7 @@ export default function ThoughtRecordEditorScreen() {
         title: t("common:feedback.saved"),
         tone: "success",
       });
-      router.replace(`/cbt/history/${saved.id}`);
+      router.replace(`/modules/cbt/history/${saved.id}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : t("detail.archiveError");
       setSubmitError(message);
