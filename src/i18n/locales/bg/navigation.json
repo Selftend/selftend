@@ -110,8 +110,33 @@
       "moodTrackerSub": "Шаблони във времето",
       "mindfulness": "Осъзнатост",
       "mindfulnessSub": "Водено дишане",
+      "meditation": "Медитация",
+      "meditationSub": "Спокойни, структурирани сесии",
       "gratitudeLog": "Дневник на благодарността",
       "gratitudeLogSub": "Забележи малките победи"
+    }
+  },
+  "tools": {
+    "title": "Инструменти",
+    "description": "Самостоятелни тракери, които всеки модул може да ползва. Работят и сами по себе си.",
+    "stats": {
+      "moodLogs_one": "{{count}} запис",
+      "moodLogs_other": "{{count}} записа",
+      "moodLast7": "{{average}} средно тази седмица",
+      "moodNoData": "Още няма записи",
+      "mindfulnessMinutes": "{{minutes}} мин този месец",
+      "mindfulnessNoData": "Още няма сесии",
+      "comingSoon": "Скоро"
+    }
+  },
+  "modulesPage": {
+    "title": "Модули",
+    "description": "Структурирани терапевтични програми, по които можеш да работиш във времето. Всяка използва споделените инструменти.",
+    "stats": {
+      "live": "Активно",
+      "soon": "Скоро",
+      "inDesign": "В дизайн",
+      "onRoadmap": "В пътната карта"
     }
   }
 }

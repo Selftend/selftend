@@ -110,8 +110,33 @@
       "moodTrackerSub": "Patterns over time",
       "mindfulness": "Mindfulness",
       "mindfulnessSub": "Guided breathing",
+      "meditation": "Meditation",
+      "meditationSub": "Quiet, structured sits",
       "gratitudeLog": "Gratitude log",
       "gratitudeLogSub": "Notice the small wins"
+    }
+  },
+  "tools": {
+    "title": "Tools",
+    "description": "Standalone trackers any module can call into. Use them on their own, too.",
+    "stats": {
+      "moodLogs_one": "{{count}} log",
+      "moodLogs_other": "{{count}} logs",
+      "moodLast7": "{{average}} avg this week",
+      "moodNoData": "No logs yet",
+      "mindfulnessMinutes": "{{minutes}} min this month",
+      "mindfulnessNoData": "No sessions yet",
+      "comingSoon": "Coming soon"
+    }
+  },
+  "modulesPage": {
+    "title": "Modules",
+    "description": "Structured therapeutic programs you can work through over time. Each draws on the shared tools.",
+    "stats": {
+      "live": "Live",
+      "soon": "Soon",
+      "inDesign": "In design",
+      "onRoadmap": "On the roadmap"
     }
   }
 }

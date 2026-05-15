@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react-native";
 import { Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
-import RecoveryScreen from "../../../app/(app)/cbt/recovery";
+import RecoveryScreen from "../../../app/(app)/modules/cbt/recovery";
 import { useActivities } from "@/src/features/activities/queries";
 import { useAngerLogs } from "@/src/features/anger/queries";
 import { useCoreBeliefs } from "@/src/features/beliefs/queries";

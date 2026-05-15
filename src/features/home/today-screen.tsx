@@ -47,7 +47,7 @@ interface ModuleTile {
 const MODULES: ModuleTile[] = [
   {
     key: "cbt",
-    href: "/cbt",
+    href: "/modules/cbt",
     abbreviation: "CBT",
     nameKey: "today.modules.cbtName",
     descriptionKey: "today.modules.cbtDescription",
@@ -222,7 +222,7 @@ export default function TodayScreen() {
       labelKey: "today.plan.activityLabel",
       actionKey: "today.plan.open",
       onPress: () =>
-        router.push(`/cbt/activities/${activity.id}` as Parameters<typeof router.push>[0]),
+        router.push(`/modules/cbt/activities/${activity.id}` as Parameters<typeof router.push>[0]),
       pillar: "act" as const,
     })),
     ...(incompleteThoughtRecord
@@ -235,7 +235,9 @@ export default function TodayScreen() {
             actionKey: "today.plan.resume",
             onPress: () =>
               router.push(
-                `/cbt/history/${incompleteThoughtRecord.id}` as Parameters<typeof router.push>[0],
+                `/modules/cbt/history/${incompleteThoughtRecord.id}` as Parameters<
+                  typeof router.push
+                >[0],
               ),
             pillar: "think" as const,
           },
@@ -250,7 +252,8 @@ export default function TodayScreen() {
             title: t("today.plan.evening"),
             labelKey: "today.plan.selfCareLabel",
             actionKey: "today.plan.open",
-            onPress: () => router.push("/cbt/self-care"),
+            onPress: () =>
+              router.push("/modules/cbt/self-care" as Parameters<typeof router.push>[0]),
             pillar: "be" as const,
             subtitle: t("today.plan.eveningSub"),
           },
@@ -283,7 +286,13 @@ export default function TodayScreen() {
                 </Button>
               </View>
               <View className="min-w-[150px] flex-1 basis-[150px]">
-                <Button onPress={() => router.push("/cbt/new")} variant="outline" size="lg">
+                <Button
+                  onPress={() =>
+                    router.push("/modules/cbt/new" as Parameters<typeof router.push>[0])
+                  }
+                  variant="outline"
+                  size="lg"
+                >
                   <Icon as={ScrollTextIcon} className="size-4" />
                   <Text>{t("today.quickActions.thoughtRecord")}</Text>
                 </Button>
@@ -301,7 +310,13 @@ export default function TodayScreen() {
                 </Button>
               </View>
               <View className="min-w-[150px] flex-1 basis-[150px]">
-                <Button onPress={() => router.push("/cbt/self-care")} variant="outline" size="lg">
+                <Button
+                  onPress={() =>
+                    router.push("/modules/cbt/self-care" as Parameters<typeof router.push>[0])
+                  }
+                  variant="outline"
+                  size="lg"
+                >
                   <Icon as={HeartIcon} className="size-4" />
                   <Text>{t("today.quickActions.selfCare")}</Text>
                 </Button>

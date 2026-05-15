@@ -191,7 +191,7 @@ Deno.serve(async (request) => {
             body: copy.body,
             tag: "selftend-cbt-reminder",
             title: copy.title,
-            url: "/cbt",
+            url: "/modules/cbt",
           }),
         );
 

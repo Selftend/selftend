@@ -1,0 +1,189 @@
+import { router } from "expo-router";
+import { Pressable, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
+import {
+  ArrowRightIcon,
+  BookHeartIcon,
+  ClockIcon,
+  SmilePlusIcon,
+  WindIcon,
+} from "lucide-react-native";
+import type { LucideIcon } from "lucide-react-native";
+
+import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { BackButton } from "@/src/components/app/back-button";
+import { cn } from "@/lib/utils";
+import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
+import { useMoodLogs } from "@/src/features/mood/queries";
+import { useSession } from "@/src/providers/session-provider";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+
+interface ToolTile {
+  key: "mood" | "mindfulness" | "meditation" | "gratitude";
+  href: string;
+  icon: LucideIcon;
+  nameKey: string;
+  subKey: string;
+  iconBg: string;
+  iconColor: string;
+}
+
+const TOOLS: ToolTile[] = [
+  {
+    key: "mood",
+    href: "/tools/mood-tracker",
+    icon: SmilePlusIcon,
+    nameKey: "today.tools.moodTracker",
+    subKey: "today.tools.moodTrackerSub",
+    iconBg: "bg-be/15",
+    iconColor: "text-be",
+  },
+  {
+    key: "mindfulness",
+    href: "/tools/mindfulness",
+    icon: WindIcon,
+    nameKey: "today.tools.mindfulness",
+    subKey: "today.tools.mindfulnessSub",
+    iconBg: "bg-be/15",
+    iconColor: "text-be",
+  },
+  {
+    key: "meditation",
+    href: "/tools/meditation",
+    icon: WindIcon,
+    nameKey: "today.tools.meditation",
+    subKey: "today.tools.meditationSub",
+    iconBg: "bg-be/15",
+    iconColor: "text-be",
+  },
+  {
+    key: "gratitude",
+    href: "/tools/gratitude-log",
+    icon: BookHeartIcon,
+    nameKey: "today.tools.gratitudeLog",
+    subKey: "today.tools.gratitudeLogSub",
+    iconBg: "bg-primary/15",
+    iconColor: "text-primary",
+  },
+];
+
+function sevenDayAverage(moodLogs: { loggedAt: string; moodScore: number }[] | undefined) {
+  if (!moodLogs || moodLogs.length === 0) return null;
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - 6);
+  const recent = moodLogs.filter((log) => new Date(log.loggedAt).getTime() >= start.getTime());
+  if (recent.length === 0) return null;
+  const avg = recent.reduce((sum, log) => sum + log.moodScore, 0) / recent.length;
+  return Math.round(avg * 10) / 10;
+}
+
+function lastThirtyDaysMinutes(
+  sessions: { durationMinutes: number; createdAt: string }[] | undefined,
+) {
+  if (!sessions || sessions.length === 0) return 0;
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - 29);
+  return sessions
+    .filter((s) => new Date(s.createdAt).getTime() >= start.getTime())
+    .reduce((sum, s) => sum + s.durationMinutes, 0);
+}
+
+export default function ToolsScreen() {
+  const { t } = useTranslation("navigation");
+  const { user } = useSession();
+  const { data: moodLogs } = useMoodLogs(user?.id ?? null, 30);
+  const { data: mindfulnessSessions } = useMindfulnessSessions(user?.id ?? null, 30);
+
+  const moodCount = moodLogs?.length ?? 0;
+  const moodAverage = sevenDayAverage(moodLogs);
+  const mindfulnessMinutes = lastThirtyDaysMinutes(mindfulnessSessions);
+
+  function statFor(key: ToolTile["key"]): string {
+    switch (key) {
+      case "mood":
+        if (moodCount === 0) return t("tools.stats.moodNoData");
+        if (moodAverage === null) return t("tools.stats.moodLogs", { count: moodCount });
+        return `${t("tools.stats.moodLogs", { count: moodCount })} · ${t("tools.stats.moodLast7", {
+          average: moodAverage,
+        })}`;
+      case "mindfulness":
+        if (mindfulnessMinutes === 0) return t("tools.stats.mindfulnessNoData");
+        return t("tools.stats.mindfulnessMinutes", { minutes: mindfulnessMinutes });
+      case "meditation":
+        return t("tools.stats.comingSoon");
+      case "gratitude":
+        return t("today.tools.gratitudeLogSub");
+    }
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <ScrollView contentContainerClassName="grow p-6">
+        <View className="gap-6">
+          <View className="gap-2">
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1">{t("tools.title")}</Text>
+            </View>
+            <Text variant="muted" className="max-w-[64ch]">
+              {t("tools.description")}
+            </Text>
+          </View>
+
+          <View className="flex-row flex-wrap gap-3">
+            {TOOLS.map((tool) => (
+              <ToolCard key={tool.key} tool={tool} stat={statFor(tool.key)} />
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+interface ToolCardProps {
+  tool: ToolTile;
+  stat: string;
+}
+
+function ToolCard({ tool, stat }: ToolCardProps) {
+  const { t } = useTranslation("navigation");
+  const name = t(tool.nameKey);
+  const subtitle = t(tool.subKey);
+  const isComingSoon = tool.key === "meditation";
+
+  return (
+    <Pressable
+      accessibilityHint={subtitle}
+      accessibilityLabel={name}
+      accessibilityRole="button"
+      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+      onPress={() => router.push(tool.href as Parameters<typeof router.push>[0])}
+      className="min-w-[260px] flex-1 basis-[260px] flex-row items-center gap-4 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
+      role="button"
+    >
+      <View className={cn("size-12 items-center justify-center rounded-xl", tool.iconBg)}>
+        <Icon as={tool.icon} className={cn("size-6", tool.iconColor)} />
+      </View>
+      <View className="flex-1 gap-0.5">
+        <Text className="text-base font-semibold">{name}</Text>
+        <Text variant="muted" className="text-xs">
+          {subtitle}
+        </Text>
+        <View className="mt-1 flex-row items-center gap-1.5">
+          {isComingSoon ? (
+            <Icon as={ClockIcon} className="size-3 text-muted-foreground" size={12} />
+          ) : null}
+          <Text variant="muted" className="text-xs">
+            {stat}
+          </Text>
+        </View>
+      </View>
+      <Icon as={ArrowRightIcon} className="size-4 text-muted-foreground" />
+    </Pressable>
+  );
+}

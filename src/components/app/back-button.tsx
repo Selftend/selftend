@@ -58,9 +58,9 @@ export function BackButton({ targetHref, className, label, showLabel = true }: B
  *
  * Examples:
  *   "/"                  → null
- *   "/cbt"               → "/"
- *   "/cbt/activities"    → "/cbt"
- *   "/cbt/activities/12" → "/cbt/activities"
+ *   "/modules/cbt"               → "/"
+ *   "/modules/cbt/activities"    → "/modules/cbt"
+ *   "/modules/cbt/activities/12" → "/modules/cbt/activities"
  */
 export function getParentPath(pathname: string): string | null {
   const cleaned = pathname.replace(/\/+$/, "");

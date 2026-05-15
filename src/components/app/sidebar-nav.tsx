@@ -38,11 +38,11 @@ const TODAY_ITEM: NavItemDef = {
 const MODULE_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.cbt",
-    href: "/cbt",
+    href: "/modules/cbt",
     icon: BrainIcon,
-    matchPrefix: "/cbt",
+    matchPrefix: "/modules/cbt",
     badgeKey: "badgeLive",
-    activeWhen: (pathname) => pathname === "/cbt" || pathname.startsWith("/cbt/"),
+    activeWhen: (pathname) => pathname === "/modules/cbt" || pathname.startsWith("/modules/cbt/"),
   },
   {
     labelKey: "sidebar.act",
@@ -172,14 +172,36 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     );
   }
 
-  function renderGroupLabel(label: string) {
+  function renderGroupLabel(label: string, href?: string) {
+    const active = href ? pathname === href : false;
+    const className = cn(
+      "px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider",
+      active ? "text-primary" : "text-muted-foreground",
+    );
+
+    if (!href) {
+      return (
+        <Text className={className} key={`group-${label}`}>
+          {label}
+        </Text>
+      );
+    }
+
     return (
-      <Text
-        className="px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+      <Pressable
+        accessibilityLabel={label}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
         key={`group-${label}`}
+        onPress={() => {
+          router.push(href as Parameters<typeof router.push>[0]);
+          onSelect?.();
+        }}
+        role="button"
       >
-        {label}
-      </Text>
+        <Text className={className}>{label}</Text>
+      </Pressable>
     );
   }
 
@@ -195,10 +217,10 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
         <View className="gap-1">
           {renderNavItem(TODAY_ITEM)}
 
-          {renderGroupLabel(t("sidebar.modules"))}
+          {renderGroupLabel(t("sidebar.modules"), "/modules")}
           {MODULE_ITEMS.map((item) => renderNavItem(item))}
 
-          {renderGroupLabel(t("sidebar.tools"))}
+          {renderGroupLabel(t("sidebar.tools"), "/tools")}
           {TOOL_ITEMS.map((item) => renderNavItem(item))}
         </View>
 

@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Modal, Pressable, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -15,19 +16,16 @@ import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { useRecordPolicyConsent } from "@/src/features/settings/queries";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 
-interface ConsentModalProps {
-  visible: boolean;
+interface ConsentGateProps {
   onAccepted: () => void;
 }
 
-export function ConsentModal({ visible, onAccepted }: ConsentModalProps) {
+export function ConsentGate({ onAccepted }: ConsentGateProps) {
   const { t } = useTranslation("settings");
   const { user } = useSession();
   const [accepted, setAccepted] = useState(false);
-  const reduceMotionEnabled = useReduceMotionEnabled();
   const consentMutation = useRecordPolicyConsent(user?.id ?? null);
 
   const handleAccept = async () => {
@@ -40,8 +38,8 @@ export function ConsentModal({ visible, onAccepted }: ConsentModalProps) {
   };
 
   return (
-    <Modal animationType={reduceMotionEnabled ? "none" : "fade"} transparent visible={visible}>
-      <View className="flex-1 items-center justify-center bg-black/50 p-6">
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView contentContainerClassName="grow items-center justify-center p-6">
         <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle>{t("consent.title")}</CardTitle>
@@ -50,10 +48,10 @@ export function ConsentModal({ visible, onAccepted }: ConsentModalProps) {
           <CardContent>
             <View className="gap-4">
               <View className="gap-2">
-                <Button onPress={() => router.push("/privacy")} variant="ghost">
+                <Button onPress={() => router.push("/privacy")} variant="secondary">
                   <Text>{t("consent.readPrivacy")}</Text>
                 </Button>
-                <Button onPress={() => router.push("/terms")} variant="ghost">
+                <Button onPress={() => router.push("/terms")} variant="secondary">
                   <Text>{t("consent.readTerms")}</Text>
                 </Button>
               </View>
@@ -74,9 +72,14 @@ export function ConsentModal({ visible, onAccepted }: ConsentModalProps) {
                 <Text className="flex-1 text-sm">{t("consent.checkbox")}</Text>
               </Pressable>
               <Button
+                accessibilityState={{
+                  busy: consentMutation.isPending,
+                  disabled: !accepted || consentMutation.isPending,
+                }}
                 disabled={!accepted || consentMutation.isPending}
                 onPress={() => void handleAccept()}
               >
+                {consentMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
                 <Text>
                   {consentMutation.isPending ? t("consent.submitting") : t("consent.submit")}
                 </Text>
@@ -87,7 +90,7 @@ export function ConsentModal({ visible, onAccepted }: ConsentModalProps) {
             </View>
           </CardContent>
         </Card>
-      </View>
-    </Modal>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

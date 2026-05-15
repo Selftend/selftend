@@ -11,7 +11,7 @@ self.addEventListener("push", (event) => {
   const options = {
     body: payload.body,
     data: {
-      url: payload.url || "/cbt",
+      url: payload.url || "/modules/cbt",
     },
     icon: "/favicon.png",
     tag: payload.tag || "selftend-cbt-reminder",
@@ -23,7 +23,8 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const targetUrl = new URL(event.notification.data?.url || "/cbt", self.location.origin).href;
+  const targetUrl = new URL(event.notification.data?.url || "/modules/cbt", self.location.origin)
+    .href;
 
   event.waitUntil(
     self.clients.matchAll({ includeUncontrolled: true, type: "window" }).then((clients) => {

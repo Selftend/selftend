@@ -19,7 +19,7 @@ jest.mock("expo-router", () => ({
   router: {
     push: jest.fn(),
   },
-  usePathname: () => "/cbt",
+  usePathname: () => "/modules/cbt",
 }));
 
 jest.mock("@react-navigation/native", () => ({

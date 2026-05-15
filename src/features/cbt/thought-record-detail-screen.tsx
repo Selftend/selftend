@@ -63,7 +63,7 @@ export default function ThoughtRecordDetailScreen() {
         title: t("common:feedback.archived"),
         tone: "success",
       });
-      router.replace("/cbt/history");
+      router.replace("/modules/cbt/history" as Parameters<typeof router.replace>[0]);
     } catch (error) {
       const message = error instanceof Error ? error.message : t("detail.archiveError");
       setArchiveError(message);
@@ -252,7 +252,9 @@ export default function ThoughtRecordDetailScreen() {
         <View className="flex-row gap-3">
           <View className="flex-1">
             <Button
-              onPress={() => router.push({ pathname: "/cbt/new", params: { recordId: data.id } })}
+              onPress={() =>
+                router.push({ pathname: "/modules/cbt/new", params: { recordId: data.id } })
+              }
               variant="secondary"
             >
               <Text>{t("detail.editButton")}</Text>

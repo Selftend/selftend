@@ -30,7 +30,7 @@ test.describe("create thought record", () => {
     await signInAsViaUi(page, "alice");
     await dismissPostSignInModals(page);
 
-    await page.goto("/cbt/new");
+    await page.goto("/modules/cbt/new");
     await dismissCbtOnboarding(page);
     // Cookie banner can re-show after navigation.
     await page
@@ -80,7 +80,7 @@ test.describe("create thought record", () => {
     await expect(page.getByText(balancedThought)).toBeVisible();
 
     // And the record shows up in history.
-    await page.goto("/cbt/history");
+    await page.goto("/modules/cbt/history");
     await expect(page.getByText(balancedThought)).toBeVisible({ timeout: 10_000 });
   });
 });

@@ -68,12 +68,11 @@ jest.mock("@/src/components/app/auth-landing-screen", () => {
   };
 });
 
-jest.mock("@/src/components/app/consent-modal", () => {
+jest.mock("@/src/components/app/consent-gate", () => {
   const Text = mockText;
 
   return {
-    ConsentModal: ({ visible }: { visible: boolean }) =>
-      visible ? <Text>Consent modal</Text> : null,
+    ConsentGate: () => <Text>Consent gate</Text>,
   };
 });
 
@@ -140,6 +139,22 @@ describe("ProtectedLayout app onboarding", () => {
         }),
       );
     });
+  });
+
+  it("shows the policy gate before app onboarding when consent is outdated", () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: false,
+        policyVersionAccepted: "2026-05-01",
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+
+    expect(screen.getByText("Consent gate")).toBeTruthy();
+    expect(screen.queryByText("Welcome to Selftend")).toBeNull();
   });
 
   it("shows the landing page when the session is cleared", () => {

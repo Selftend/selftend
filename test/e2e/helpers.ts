@@ -33,8 +33,8 @@ export async function dismissCookieBanner(page: Page) {
     .catch(() => undefined);
 }
 
-// After signing in, modals can stack on top of the app depending on user state:
-//   1. ConsentModal — when seeded policy_version_accepted differs from the
+// After signing in, gates and modals can appear depending on user state:
+//   1. ConsentGate — when seeded policy_version_accepted differs from the
 //      current app policyVersion ("Quick policy check"). Affects all seed users.
 //   2. App-level OnboardingModal — when appOnboardingCompleted is false ("Welcome to Selftend").
 //   3. CBT-screen OnboardingModal — when cbt_onboarding_completed is false ("Using CBT gently").
@@ -51,7 +51,7 @@ export async function dismissPostSignInModals(page: Page) {
     .then(() => true)
     .catch(() => false);
   if (consentVisible) {
-    // The first checkbox in the dialog is the agreement checkbox.
+    // The first checkbox in the gate is the agreement checkbox.
     await page.getByRole("checkbox").first().click();
     const acceptButton = page.getByRole("button", { name: "Accept and continue", exact: true });
     await expect(acceptButton).toBeEnabled({ timeout: 5_000 });

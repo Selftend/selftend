@@ -9,7 +9,7 @@ jest.mock("expo-router", () => ({
   router: {
     push: jest.fn(),
   },
-  usePathname: () => "/cbt/history",
+  usePathname: () => "/modules/cbt/history",
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -75,7 +75,7 @@ describe("CbtHistoryScreen", () => {
 
     fireEvent.press(screen.getByText("I cannot handle this"));
 
-    expect(router.push).toHaveBeenCalledWith("/cbt/history/record-1");
+    expect(router.push).toHaveBeenCalledWith("/modules/cbt/history/record-1");
   });
 
   it("uses fallback text for a saved partial record", () => {

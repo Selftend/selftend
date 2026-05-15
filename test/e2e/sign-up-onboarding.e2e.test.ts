@@ -47,7 +47,7 @@ test.describe("sign-up + onboarding + first record", () => {
     await expect(page.getByText(/Welcome to Selftend/)).toBeHidden();
 
     // Now create the first thought record.
-    await page.goto("/cbt/new");
+    await page.goto("/modules/cbt/new");
     await dismissCbtOnboarding(page);
     await page
       .getByRole("button", { name: "Essential only", exact: true })

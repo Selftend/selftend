@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
-import { ConsentModal } from "@/src/components/app/consent-modal";
+import { ConsentGate } from "@/src/components/app/consent-gate";
 import { OnboardingModal } from "@/src/components/app/onboarding-modal";
 import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { mergeUserPreferences } from "@/src/features/modules/types";
@@ -70,9 +70,12 @@ export default function ProtectedLayout() {
     }
   };
 
+  if (needsConsent) {
+    return <ConsentGate onAccepted={() => setConsentDismissed(true)} />;
+  }
+
   return (
     <>
-      <ConsentModal visible={needsConsent} onAccepted={() => setConsentDismissed(true)} />
       <OnboardingModal
         actionLabel={t("onboarding.appContinue")}
         body={[t("onboarding.appBody1"), t("onboarding.appBody2"), t("onboarding.appBody3")]}
@@ -91,40 +94,42 @@ export default function ProtectedLayout() {
             }}
           >
             <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="cbt/index" />
-            <Stack.Screen name="cbt/learn" />
-            <Stack.Screen name="cbt/history/index" />
-            <Stack.Screen name="cbt/history/[id]" />
-            <Stack.Screen name="cbt/new" />
-            <Stack.Screen name="cbt/[id]" />
-            <Stack.Screen name="cbt/goals/index" />
-            <Stack.Screen name="cbt/goals/new" />
-            <Stack.Screen name="cbt/goals/[id]" />
-            <Stack.Screen name="cbt/activities/index" />
-            <Stack.Screen name="cbt/activities/new" />
-            <Stack.Screen name="cbt/activities/[id]" />
-            <Stack.Screen name="cbt/values" />
-            <Stack.Screen name="cbt/weekly-review" />
-            <Stack.Screen name="cbt/beliefs/index" />
-            <Stack.Screen name="cbt/beliefs/new" />
-            <Stack.Screen name="cbt/beliefs/[id]" />
-            <Stack.Screen name="cbt/exposure/index" />
-            <Stack.Screen name="cbt/exposure/new" />
-            <Stack.Screen name="cbt/exposure/[id]" />
-            <Stack.Screen name="cbt/worry/index" />
-            <Stack.Screen name="cbt/worry/new" />
+            <Stack.Screen name="modules/index" />
+            <Stack.Screen name="modules/cbt/index" />
+            <Stack.Screen name="modules/cbt/learn" />
+            <Stack.Screen name="modules/cbt/history/index" />
+            <Stack.Screen name="modules/cbt/history/[id]" />
+            <Stack.Screen name="modules/cbt/new" />
+            <Stack.Screen name="modules/cbt/[id]" />
+            <Stack.Screen name="modules/cbt/goals/index" />
+            <Stack.Screen name="modules/cbt/goals/new" />
+            <Stack.Screen name="modules/cbt/goals/[id]" />
+            <Stack.Screen name="modules/cbt/activities/index" />
+            <Stack.Screen name="modules/cbt/activities/new" />
+            <Stack.Screen name="modules/cbt/activities/[id]" />
+            <Stack.Screen name="modules/cbt/values" />
+            <Stack.Screen name="modules/cbt/weekly-review" />
+            <Stack.Screen name="modules/cbt/beliefs/index" />
+            <Stack.Screen name="modules/cbt/beliefs/new" />
+            <Stack.Screen name="modules/cbt/beliefs/[id]" />
+            <Stack.Screen name="modules/cbt/exposure/index" />
+            <Stack.Screen name="modules/cbt/exposure/new" />
+            <Stack.Screen name="modules/cbt/exposure/[id]" />
+            <Stack.Screen name="modules/cbt/worry/index" />
+            <Stack.Screen name="modules/cbt/worry/new" />
             <Stack.Screen name="tools/mindfulness/index" />
             <Stack.Screen name="tools/mindfulness/[slug]" />
-            <Stack.Screen name="cbt/tasks/index" />
-            <Stack.Screen name="cbt/tasks/new" />
-            <Stack.Screen name="cbt/tasks/[id]" />
-            <Stack.Screen name="cbt/anger/index" />
-            <Stack.Screen name="cbt/anger/new" />
-            <Stack.Screen name="cbt/anger/[id]" />
-            <Stack.Screen name="cbt/self-care" />
-            <Stack.Screen name="cbt/recovery" />
+            <Stack.Screen name="modules/cbt/tasks/index" />
+            <Stack.Screen name="modules/cbt/tasks/new" />
+            <Stack.Screen name="modules/cbt/tasks/[id]" />
+            <Stack.Screen name="modules/cbt/anger/index" />
+            <Stack.Screen name="modules/cbt/anger/new" />
+            <Stack.Screen name="modules/cbt/anger/[id]" />
+            <Stack.Screen name="modules/cbt/self-care" />
+            <Stack.Screen name="modules/cbt/recovery" />
             <Stack.Screen name="modules/act" />
             <Stack.Screen name="modules/dbt" />
+            <Stack.Screen name="tools/index" />
             <Stack.Screen name="tools/mood-tracker" />
             <Stack.Screen name="tools/meditation" />
             <Stack.Screen name="tools/act" />

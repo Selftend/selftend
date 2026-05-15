@@ -46,6 +46,7 @@ This file is the source of truth for tracked work. Tick `[x]` when an item is co
 8. [ ] Add lightweight schema, repository, export/delete, and critical UI-state tests for new modules.
 9. [ ] Add a progress view centered on reflection, not pressure.
 10. [ ] Add quests, habits, or streaks only if they are disabled by default or framed as soft progress.
+11. [x] Make the required policy acceptance gate readable without covering Privacy Policy or Terms pages.
 
 ## CBT Spec Follow-Ups
 

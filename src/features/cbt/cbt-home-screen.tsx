@@ -80,28 +80,28 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
   think: [
     {
       key: "thoughts",
-      route: "/cbt/new",
+      route: "/modules/cbt/new",
       icon: ScrollTextIcon,
       labelKey: "dashboard.strategies.thoughts",
       descKey: "pillars.strategyDescriptions.thoughts",
     },
     {
       key: "beliefs",
-      route: "/cbt/beliefs",
+      route: "/modules/cbt/beliefs",
       icon: AnchorIcon,
       labelKey: "dashboard.strategies.beliefs",
       descKey: "pillars.strategyDescriptions.beliefs",
     },
     {
       key: "worry",
-      route: "/cbt/worry",
+      route: "/modules/cbt/worry",
       icon: BrainIcon,
       labelKey: "dashboard.strategies.worry",
       descKey: "pillars.strategyDescriptions.worry",
     },
     {
       key: "distortions",
-      route: "/cbt/learn",
+      route: "/modules/cbt/learn",
       icon: BookOpenIcon,
       labelKey: "home.distortionGuide",
       descKey: "pillars.strategyDescriptions.distortions",
@@ -110,42 +110,42 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
   act: [
     {
       key: "goals",
-      route: "/cbt/goals",
+      route: "/modules/cbt/goals",
       icon: TargetIcon,
       labelKey: "dashboard.strategies.goals",
       descKey: "pillars.strategyDescriptions.goals",
     },
     {
       key: "values",
-      route: "/cbt/values",
+      route: "/modules/cbt/values",
       icon: CompassIcon,
       labelKey: "dashboard.strategies.values",
       descKey: "pillars.strategyDescriptions.values",
     },
     {
       key: "activities",
-      route: "/cbt/activities",
+      route: "/modules/cbt/activities",
       icon: ActivityIcon,
       labelKey: "dashboard.strategies.activities",
       descKey: "pillars.strategyDescriptions.activities",
     },
     {
       key: "exposure",
-      route: "/cbt/exposure",
+      route: "/modules/cbt/exposure",
       icon: LayersIcon,
       labelKey: "dashboard.strategies.exposure",
       descKey: "pillars.strategyDescriptions.exposure",
     },
     {
       key: "tasks",
-      route: "/cbt/tasks",
+      route: "/modules/cbt/tasks",
       icon: FootprintsIcon,
       labelKey: "dashboard.strategies.tasks",
       descKey: "pillars.strategyDescriptions.tasks",
     },
     {
       key: "anger",
-      route: "/cbt/anger",
+      route: "/modules/cbt/anger",
       icon: FlameIcon,
       labelKey: "dashboard.strategies.anger",
       descKey: "pillars.strategyDescriptions.anger",
@@ -154,7 +154,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
   be: [
     {
       key: "selfCare",
-      route: "/cbt/self-care",
+      route: "/modules/cbt/self-care",
       icon: HeartIcon,
       labelKey: "dashboard.strategies.selfCare",
       descKey: "pillars.strategyDescriptions.selfCare",
@@ -186,14 +186,14 @@ const BE_SHARED_TOOLS: SharedTool[] = [
 const REVIEW_LINKS = [
   {
     key: "weeklyReview",
-    route: "/cbt/weekly-review",
+    route: "/modules/cbt/weekly-review",
     icon: CalendarCheckIcon,
     labelKey: "dashboard.strategies.weeklyReview",
     descKey: "pillars.strategyDescriptions.weeklyReview",
   },
   {
     key: "recovery",
-    route: "/cbt/recovery",
+    route: "/modules/cbt/recovery",
     icon: MapIcon,
     labelKey: "dashboard.strategies.recovery",
     descKey: "pillars.strategyDescriptions.recovery",
@@ -211,35 +211,35 @@ const GUIDANCE_STRATEGIES: Record<
   }
 > = {
   activities: {
-    route: "/cbt/activities",
+    route: "/modules/cbt/activities",
     icon: ActivityIcon,
     labelKey: "dashboard.strategies.activities",
     descKey: "pillars.strategyDescriptions.activities",
     pillar: "act",
   },
   anger: {
-    route: "/cbt/anger",
+    route: "/modules/cbt/anger",
     icon: FlameIcon,
     labelKey: "dashboard.strategies.anger",
     descKey: "pillars.strategyDescriptions.anger",
     pillar: "act",
   },
   beliefs: {
-    route: "/cbt/beliefs",
+    route: "/modules/cbt/beliefs",
     icon: AnchorIcon,
     labelKey: "dashboard.strategies.beliefs",
     descKey: "pillars.strategyDescriptions.beliefs",
     pillar: "think",
   },
   exposure: {
-    route: "/cbt/exposure",
+    route: "/modules/cbt/exposure",
     icon: LayersIcon,
     labelKey: "dashboard.strategies.exposure",
     descKey: "pillars.strategyDescriptions.exposure",
     pillar: "act",
   },
   goals: {
-    route: "/cbt/goals",
+    route: "/modules/cbt/goals",
     icon: TargetIcon,
     labelKey: "dashboard.strategies.goals",
     descKey: "pillars.strategyDescriptions.goals",
@@ -253,28 +253,28 @@ const GUIDANCE_STRATEGIES: Record<
     pillar: "be",
   },
   selfCare: {
-    route: "/cbt/self-care",
+    route: "/modules/cbt/self-care",
     icon: HeartIcon,
     labelKey: "dashboard.strategies.selfCare",
     descKey: "pillars.strategyDescriptions.selfCare",
     pillar: "be",
   },
   tasks: {
-    route: "/cbt/tasks",
+    route: "/modules/cbt/tasks",
     icon: FootprintsIcon,
     labelKey: "dashboard.strategies.tasks",
     descKey: "pillars.strategyDescriptions.tasks",
     pillar: "act",
   },
   thoughts: {
-    route: "/cbt/new",
+    route: "/modules/cbt/new",
     icon: ScrollTextIcon,
     labelKey: "dashboard.strategies.thoughts",
     descKey: "pillars.strategyDescriptions.thoughts",
     pillar: "think",
   },
   worry: {
-    route: "/cbt/worry",
+    route: "/modules/cbt/worry",
     icon: BrainIcon,
     labelKey: "dashboard.strategies.worry",
     descKey: "pillars.strategyDescriptions.worry",
@@ -694,7 +694,11 @@ export default function CbtHomeScreen() {
                           <Text>{t("dashboard.logMood")}</Text>
                         </Button>
                         <Button
-                          onPress={() => router.push("/cbt/activities")}
+                          onPress={() =>
+                            router.push(
+                              "/modules/cbt/activities" as Parameters<typeof router.push>[0],
+                            )
+                          }
                           size="sm"
                           variant="outline"
                         >
@@ -717,7 +721,14 @@ export default function CbtHomeScreen() {
                     </CardHeader>
                     <CardContent>
                       <View className="flex-row flex-wrap gap-2">
-                        <Button onPress={() => router.push("/cbt/self-care")} size="sm">
+                        <Button
+                          onPress={() =>
+                            router.push(
+                              "/modules/cbt/self-care" as Parameters<typeof router.push>[0],
+                            )
+                          }
+                          size="sm"
+                        >
                           <Text>{t("dashboard.checkIn.openSelfCare")}</Text>
                         </Button>
                         <Button onPress={() => setShowMoodSheet(true)} size="sm" variant="outline">
@@ -765,7 +776,13 @@ export default function CbtHomeScreen() {
                             })
                           : undefined
                       }
-                      onPress={() => router.push(`/cbt/activities/${activity.id}`)}
+                      onPress={() =>
+                        router.push(
+                          `/modules/cbt/activities/${activity.id}` as Parameters<
+                            typeof router.push
+                          >[0],
+                        )
+                      }
                     />
                   ))}
                 </View>
@@ -785,7 +802,11 @@ export default function CbtHomeScreen() {
                             })
                           : undefined
                       }
-                      onPress={() => router.push(`/cbt/tasks/${task.id}`)}
+                      onPress={() =>
+                        router.push(
+                          `/modules/cbt/tasks/${task.id}` as Parameters<typeof router.push>[0],
+                        )
+                      }
                     />
                   ))}
                 </View>
@@ -834,7 +855,11 @@ export default function CbtHomeScreen() {
               <Text variant="h3">{t("dashboard.quickActions")}</Text>
               <View className="flex-row flex-wrap gap-3">
                 <View className="min-w-[160px] flex-1 basis-[160px]">
-                  <Button onPress={() => router.push("/cbt/new")}>
+                  <Button
+                    onPress={() =>
+                      router.push("/modules/cbt/new" as Parameters<typeof router.push>[0])
+                    }
+                  >
                     <Text>{t("home.newRecord")}</Text>
                   </Button>
                 </View>
@@ -844,12 +869,24 @@ export default function CbtHomeScreen() {
                   </Button>
                 </View>
                 <View className="min-w-[160px] flex-1 basis-[160px]">
-                  <Button onPress={() => router.push("/cbt/activities/new")} variant="secondary">
+                  <Button
+                    onPress={() =>
+                      router.push(
+                        "/modules/cbt/activities/new" as Parameters<typeof router.push>[0],
+                      )
+                    }
+                    variant="secondary"
+                  >
                     <Text>{t("dashboard.scheduleActivity")}</Text>
                   </Button>
                 </View>
                 <View className="min-w-[160px] flex-1 basis-[160px]">
-                  <Button onPress={() => router.push("/cbt/goals/new")} variant="secondary">
+                  <Button
+                    onPress={() =>
+                      router.push("/modules/cbt/goals/new" as Parameters<typeof router.push>[0])
+                    }
+                    variant="secondary"
+                  >
                     <Text>{t("dashboard.newGoal")}</Text>
                   </Button>
                 </View>
@@ -861,7 +898,13 @@ export default function CbtHomeScreen() {
               <View className="gap-3">
                 <View className="flex-row items-center justify-between">
                   <Text variant="h3">{t("dashboard.activeGoals")}</Text>
-                  <Button onPress={() => router.push("/cbt/goals")} size="sm" variant="ghost">
+                  <Button
+                    onPress={() =>
+                      router.push("/modules/cbt/goals" as Parameters<typeof router.push>[0])
+                    }
+                    size="sm"
+                    variant="ghost"
+                  >
                     <Text>{t("dashboard.seeAll")}</Text>
                   </Button>
                 </View>
@@ -870,7 +913,11 @@ export default function CbtHomeScreen() {
                     key={goal.id}
                     title={goal.title}
                     description={t(`goals.domain.${goal.lifeDomain}`)}
-                    onPress={() => router.push(`/cbt/goals/${goal.id}`)}
+                    onPress={() =>
+                      router.push(
+                        `/modules/cbt/goals/${goal.id}` as Parameters<typeof router.push>[0],
+                      )
+                    }
                   />
                 ))}
               </View>
@@ -1114,7 +1161,13 @@ export default function CbtHomeScreen() {
                 <AccessibleCardLink
                   title={latestRecord.automaticThought}
                   description={latestRecord.balancedThought}
-                  onPress={() => router.push(`/cbt/history/${latestRecord.id}`)}
+                  onPress={() =>
+                    router.push(
+                      `/modules/cbt/history/${latestRecord.id}` as Parameters<
+                        typeof router.push
+                      >[0],
+                    )
+                  }
                 />
               </View>
             ) : null}
@@ -1123,7 +1176,9 @@ export default function CbtHomeScreen() {
               accessibilityLabel={t("home.recordHistory")}
               accessibilityRole="button"
               hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={() => router.push("/cbt/history")}
+              onPress={() =>
+                router.push("/modules/cbt/history" as Parameters<typeof router.push>[0])
+              }
               className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
               role="button"
             >
