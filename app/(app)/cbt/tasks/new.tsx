@@ -249,6 +249,7 @@ export default function NewTaskScreen() {
             <View className="gap-2">
               <Label>{t("tasks.stepsLabel")}</Label>
               <Text variant="muted">{t("tasks.stepsHint")}</Text>
+              <Text variant="muted">{t("tasks.smallestStepDescription")}</Text>
             </View>
             {stepArray.fields.map((field, index) => (
               <Card key={field.id}>

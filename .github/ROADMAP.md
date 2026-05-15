@@ -55,6 +55,7 @@ This file is the source of truth for tracked work. Tick `[x]` when an item is co
 4. [x] Add remaining strategy-specific insights: activity mood lift by category, recurring thought-to-core-belief suggestions, self-care trends, anger patterns, and exposure progress.
 5. [x] Add lightweight schema, repository, export/delete, and critical UI-state tests for newer CBT strategy modules.
 6. [x] Scope quiet opt-in CBT notification extensions without streak pressure or punitive reminders.
+7. [x] Apply workbook-style CBT refinements: optional full thought records, concern-guided strategy shortcuts, values-to-activity follow-through, and smallest-step task support.
 
 ## P2: Launch Readiness
 

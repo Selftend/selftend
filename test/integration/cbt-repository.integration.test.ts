@@ -29,8 +29,13 @@ describe("cbt thought_records (integration)", () => {
         situation: "Test situation",
         automatic_thought: "Test thought",
         emotions: ["Anxious"],
+        emotion_intensity_before: 80,
         distortions: ["catastrophizing"],
+        evidence_for: ["It felt urgent"],
+        evidence_against: ["No one has blamed me"],
         balanced_thought: "Test balance",
+        emotion_intensity_after: 50,
+        outcome_notes: "Less certain after writing it down",
       })
       .select("*")
       .single();
@@ -41,12 +46,42 @@ describe("cbt thought_records (integration)", () => {
       situation: "Test situation",
       automatic_thought: "Test thought",
       emotions: ["Anxious"],
+      emotion_intensity_before: 80,
       distortions: ["catastrophizing"],
+      evidence_for: ["It felt urgent"],
+      evidence_against: ["No one has blamed me"],
       balanced_thought: "Test balance",
+      emotion_intensity_after: 50,
+      outcome_notes: "Less certain after writing it down",
       archived_at: null,
     });
     expect(insert.data?.id).toEqual(expect.any(String));
     expect(insert.data?.created_at).toEqual(expect.any(String));
+  });
+
+  it("allows a blank partial thought record", async () => {
+    const insert = await alice
+      .from("thought_records")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        situation: "",
+        automatic_thought: "",
+        emotions: [],
+        distortions: [],
+        balanced_thought: "",
+      })
+      .select("*")
+      .single();
+
+    expect(insert.error).toBeNull();
+    expect(insert.data).toMatchObject({
+      situation: "",
+      automatic_thought: "",
+      emotions: [],
+      distortions: [],
+      balanced_thought: "",
+      archived_at: null,
+    });
   });
 
   it("lists non-archived records ordered by updated_at desc", async () => {

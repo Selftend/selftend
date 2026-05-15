@@ -18,6 +18,7 @@ The module should be:
 - one-page CBT onboarding, tracked in account preferences
 - short distortion learn surface
 - guided thought record flow
+- full thought record prompts for evidence, before/after intensity, and outcome notes
 - private history list
 - detail view
 - edit flow
@@ -75,13 +76,20 @@ Web push reminder subscriptions live in `web_push_subscriptions`. Native Android
 
 Current persisted `ThoughtRecord` fields:
 
+All thought record prompts are optional at save time so a user can create a partial record and complete it later.
+
 - `id`
 - `userId`
 - `situation`
 - `automaticThought`
 - `emotions[]`
+- `emotionIntensityBefore`
 - `distortions[]`
+- `evidenceFor[]`
+- `evidenceAgainst[]`
 - `balancedThought`
+- `emotionIntensityAfter`
+- `outcomeNotes`
 - `createdAt`
 - `updatedAt`
 - `archivedAt`
@@ -114,8 +122,8 @@ Key CBT screens:
 - `/cbt`
 - `/cbt/learn`
 - `/cbt/new`
-- `/cbt/[id]`
 - `/cbt/history`
+- `/cbt/history/[id]`
 - `/cbt/goals`, `/cbt/goals/new`, `/cbt/goals/[id]`
 - `/cbt/activities`, `/cbt/activities/new`, `/cbt/activities/[id]`
 - `/cbt/values`
@@ -123,13 +131,13 @@ Key CBT screens:
 - `/cbt/beliefs`, `/cbt/beliefs/new`, `/cbt/beliefs/[id]`
 - `/cbt/exposure`, `/cbt/exposure/new`, `/cbt/exposure/[id]`
 - `/cbt/worry`, `/cbt/worry/new`
-- `/cbt/mindfulness`, `/cbt/mindfulness/[slug]`
+- `/tools/mindfulness`, `/tools/mindfulness/[slug]`
 - `/cbt/tasks`, `/cbt/tasks/new`, `/cbt/tasks/[id]`
 - `/cbt/anger`, `/cbt/anger/new`, `/cbt/anger/[id]`
 - `/cbt/self-care`
 - `/cbt/recovery`
 
-`/history` is kept only as a compatibility redirect to `/cbt/history`.
+`/history` is kept only as a compatibility redirect to `/cbt/history`. `/cbt/[id]` redirects to `/cbt/history/[id]` for older thought-record links.
 
 ## Non-goals for this slice
 

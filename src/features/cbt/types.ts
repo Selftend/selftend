@@ -11,8 +11,13 @@ export interface ThoughtRecord {
   situation: string;
   automaticThought: string;
   emotions: string[];
+  emotionIntensityBefore: number | null;
   distortions: string[];
+  evidenceFor: string[];
+  evidenceAgainst: string[];
   balancedThought: string;
+  emotionIntensityAfter: number | null;
+  outcomeNotes: string;
   createdAt: string;
   updatedAt: string;
   archivedAt: string | null;
@@ -22,8 +27,13 @@ export interface ThoughtRecordInput {
   situation: string;
   automaticThought: string;
   emotions: string[];
+  emotionIntensityBefore: number | null;
   distortions: string[];
+  evidenceFor: string[];
+  evidenceAgainst: string[];
   balancedThought: string;
+  emotionIntensityAfter: number | null;
+  outcomeNotes: string;
 }
 
 export type ThoughtRecordFormValues = ThoughtRecordInput;

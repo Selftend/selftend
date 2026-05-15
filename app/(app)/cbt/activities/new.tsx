@@ -14,6 +14,7 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { LoadingState } from "@/src/components/app/screen-state";
+import { lifeDomains, type LifeDomain } from "@/src/constants/life-domains";
 import { useActivity, useSaveActivity } from "@/src/features/activities/queries";
 import { activityFormSchema, type ActivityFormSchema } from "@/src/features/activities/schemas";
 import { useSession } from "@/src/providers/session-provider";
@@ -31,10 +32,31 @@ const defaultValues: ActivityFormSchema = {
 
 export default function NewActivityScreen() {
   const { t } = useTranslation("cbt");
-  const { activityId: rawActivityId } = useLocalSearchParams<{ activityId?: string }>();
+  const { activityId: rawActivityId, domain: rawDomain } = useLocalSearchParams<{
+    activityId?: string;
+    domain?: string;
+  }>();
   const activityId = useMemo(
     () => (typeof rawActivityId === "string" && rawActivityId.length > 0 ? rawActivityId : null),
     [rawActivityId],
+  );
+  const valueDomain = useMemo(
+    () =>
+      typeof rawDomain === "string" && lifeDomains.includes(rawDomain as LifeDomain)
+        ? (rawDomain as LifeDomain)
+        : null,
+    [rawDomain],
+  );
+  const domainLabel = valueDomain ? t(`goals.domain.${valueDomain}`) : null;
+  const valueLinkedDefaults = useMemo(
+    () =>
+      valueDomain && domainLabel
+        ? {
+            ...defaultValues,
+            notes: t("activities.valuePrompt", { domain: domainLabel }),
+          }
+        : defaultValues,
+    [domainLabel, t, valueDomain],
   );
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
@@ -56,7 +78,7 @@ export default function NewActivityScreen() {
     reset,
     watch,
   } = useForm<ActivityFormSchema>({
-    defaultValues: storedDraft ?? defaultValues,
+    defaultValues: storedDraft ?? valueLinkedDefaults,
     resolver: zodResolver(activityFormSchema),
   });
 
@@ -76,6 +98,11 @@ export default function NewActivityScreen() {
       notes: existing.notes,
     });
   }, [existing, reset, storedDraft]);
+
+  useEffect(() => {
+    if (activityId || existing || storedDraft || !valueDomain) return;
+    reset(valueLinkedDefaults);
+  }, [activityId, existing, reset, storedDraft, valueDomain, valueLinkedDefaults]);
 
   const handleSave = handleSubmit(async (values) => {
     setDraftValues(values);
@@ -125,6 +152,11 @@ export default function NewActivityScreen() {
           <Text variant="muted">
             {activityId ? t("activities.editDescription") : t("activities.newDescription")}
           </Text>
+          {domainLabel ? (
+            <Text variant="muted">
+              {t("activities.valueLinkedDescription", { domain: domainLabel })}
+            </Text>
+          ) : null}
         </View>
 
         <Controller

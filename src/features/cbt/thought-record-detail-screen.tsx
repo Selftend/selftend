@@ -21,6 +21,26 @@ import { useToastStore } from "@/src/stores/toast-store";
 import { formatTimestamp } from "@/src/utils/date";
 import { BackButton } from "@/src/components/app/back-button";
 
+function hasExpandedDetail(data: {
+  emotionIntensityBefore: number | null;
+  emotionIntensityAfter: number | null;
+  evidenceFor: string[];
+  evidenceAgainst: string[];
+  outcomeNotes: string;
+}) {
+  return Boolean(
+    data.emotionIntensityBefore !== null ||
+    data.emotionIntensityAfter !== null ||
+    data.evidenceFor.length > 0 ||
+    data.evidenceAgainst.length > 0 ||
+    data.outcomeNotes.trim(),
+  );
+}
+
+function displayText(value: string, fallback: string) {
+  return value.trim() || fallback;
+}
+
 export default function ThoughtRecordDetailScreen() {
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -84,6 +104,29 @@ export default function ThoughtRecordDetailScreen() {
     );
   }
 
+  const showExpandedDetail = hasExpandedDetail(data);
+  const notFilled = t("record.summaryNotFilled");
+  const intensityShift =
+    data.emotionIntensityBefore !== null && data.emotionIntensityAfter !== null
+      ? data.emotionIntensityAfter - data.emotionIntensityBefore
+      : null;
+
+  const renderList = (title: string, items: string[]) =>
+    items.length > 0 ? (
+      <Card>
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <View className="gap-2">
+            {items.map((item, index) => (
+              <Text key={`${item}-${index}`}>- {item}</Text>
+            ))}
+          </View>
+        </CardContent>
+      </Card>
+    ) : null;
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView contentContainerClassName="grow p-6">
@@ -107,52 +150,102 @@ export default function ThoughtRecordDetailScreen() {
           <Card>
             <CardHeader>
               <CardTitle>{t("record.situation")}</CardTitle>
-              <CardDescription>{data.situation}</CardDescription>
+              <CardDescription>{displayText(data.situation, notFilled)}</CardDescription>
             </CardHeader>
           </Card>
           <Card>
             <CardHeader>
               <CardTitle>{t("record.automaticThought")}</CardTitle>
-              <CardDescription>{data.automaticThought}</CardDescription>
+              <CardDescription>{displayText(data.automaticThought, notFilled)}</CardDescription>
             </CardHeader>
           </Card>
           <Card>
             <CardHeader>
               <CardTitle>{t("record.emotions")}</CardTitle>
-              <CardDescription>{data.emotions.join(", ")}</CardDescription>
+              <CardDescription>{data.emotions.join(", ") || notFilled}</CardDescription>
             </CardHeader>
           </Card>
+          {showExpandedDetail ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("detail.expandedTitle")}</CardTitle>
+                <CardDescription>
+                  {intensityShift !== null
+                    ? t("detail.intensityShift", {
+                        after: data.emotionIntensityAfter,
+                        before: data.emotionIntensityBefore,
+                        shift: intensityShift,
+                      })
+                    : t("detail.expandedDescription")}
+                </CardDescription>
+              </CardHeader>
+              {data.emotionIntensityBefore !== null || data.emotionIntensityAfter !== null ? (
+                <CardContent>
+                  <View className="gap-2">
+                    {data.emotionIntensityBefore !== null ? (
+                      <Text>
+                        {t("record.intensityBefore")}: {data.emotionIntensityBefore}
+                      </Text>
+                    ) : null}
+                    {data.emotionIntensityAfter !== null ? (
+                      <Text>
+                        {t("record.intensityAfter")}: {data.emotionIntensityAfter}
+                      </Text>
+                    ) : null}
+                  </View>
+                </CardContent>
+              ) : null}
+            </Card>
+          ) : null}
           <Card>
             <CardHeader>
               <CardTitle>{t("record.patterns")}</CardTitle>
             </CardHeader>
             <CardContent>
               <View className="gap-3">
-                {data.distortions.map((distortionKey) => (
-                  <Card key={distortionKey}>
-                    <CardHeader>
-                      <CardTitle>
-                        {t(`distortions.${distortionKey}.title`, {
-                          defaultValue: distortionLookup[distortionKey]?.title ?? distortionKey,
-                        })}
-                      </CardTitle>
-                      <CardDescription>
-                        {t(`distortions.${distortionKey}.shortDescription`, {
-                          defaultValue: distortionLookup[distortionKey]?.shortDescription ?? "",
-                        })}
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                ))}
+                {data.distortions.length > 0 ? (
+                  data.distortions.map((distortionKey) => (
+                    <Card key={distortionKey}>
+                      <CardHeader>
+                        <CardTitle>
+                          {t(`distortions.${distortionKey}.title`, {
+                            defaultValue: distortionLookup[distortionKey]?.title ?? distortionKey,
+                          })}
+                        </CardTitle>
+                        <CardDescription>
+                          {t(`distortions.${distortionKey}.shortDescription`, {
+                            defaultValue: distortionLookup[distortionKey]?.shortDescription ?? "",
+                          })}
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                  ))
+                ) : (
+                  <Text variant="muted">{notFilled}</Text>
+                )}
               </View>
             </CardContent>
           </Card>
+          {showExpandedDetail ? (
+            <>
+              {renderList(t("record.evidenceFor"), data.evidenceFor)}
+              {renderList(t("record.evidenceAgainst"), data.evidenceAgainst)}
+            </>
+          ) : null}
           <Card>
             <CardHeader>
               <CardTitle>{t("record.balancedThought")}</CardTitle>
-              <CardDescription>{data.balancedThought}</CardDescription>
+              <CardDescription>{displayText(data.balancedThought, notFilled)}</CardDescription>
             </CardHeader>
           </Card>
+          {data.outcomeNotes.trim() ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("record.outcomeNotes")}</CardTitle>
+                <CardDescription>{data.outcomeNotes}</CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
         </View>
       </ScrollView>
       <View className="border-t border-border bg-background p-4">

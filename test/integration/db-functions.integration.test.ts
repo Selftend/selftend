@@ -43,6 +43,11 @@ describe("export_user_data() (integration)", () => {
     expect(data.thoughtRecords.length).toBeGreaterThanOrEqual(5);
     expect(data.thoughtRecords[0]).toHaveProperty("situation");
     expect(data.thoughtRecords[0]).toHaveProperty("automatic_thought");
+    expect(data.thoughtRecords[0]).toHaveProperty("emotion_intensity_before");
+    expect(data.thoughtRecords[0]).toHaveProperty("evidence_for");
+    expect(data.thoughtRecords[0]).toHaveProperty("evidence_against");
+    expect(data.thoughtRecords[0]).toHaveProperty("emotion_intensity_after");
+    expect(data.thoughtRecords[0]).toHaveProperty("outcome_notes");
     expect(Array.isArray(data.webPushSubscriptions)).toBe(true);
     expect(Array.isArray(data.goals)).toBe(true);
     expect(Array.isArray(data.milestones)).toBe(true);

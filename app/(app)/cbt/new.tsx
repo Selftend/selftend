@@ -21,6 +21,7 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { NumberRating } from "@/src/components/app/number-rating";
 import { distortionDefinitions } from "@/src/constants/distortions";
 import { emotionOptions } from "@/src/constants/emotions";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
@@ -34,9 +35,35 @@ const defaultValues: ThoughtRecordFormSchema = {
   situation: "",
   automaticThought: "",
   emotions: [],
+  emotionIntensityBefore: null,
   distortions: [],
+  evidenceFor: [],
+  evidenceAgainst: [],
   balancedThought: "",
+  emotionIntensityAfter: null,
+  outcomeNotes: "",
 };
+
+function listToText(values: string[]) {
+  return values.join("\n");
+}
+
+function textToList(value: string) {
+  return value.split("\n");
+}
+
+function cleanList(values: string[]) {
+  return values.map((value) => value.trim()).filter((value) => value.length > 0);
+}
+
+type ThoughtRecordStepKey =
+  | "situation"
+  | "automaticThought"
+  | "emotions"
+  | "evidence"
+  | "distortions"
+  | "balancedThought"
+  | "outcome";
 
 export default function ThoughtRecordEditorScreen() {
   const { t } = useTranslation("cbt");
@@ -85,41 +112,61 @@ export default function ThoughtRecordEditorScreen() {
       automaticThought: existingRecord.automaticThought,
       balancedThought: existingRecord.balancedThought,
       distortions: existingRecord.distortions,
+      emotionIntensityAfter: existingRecord.emotionIntensityAfter,
+      emotionIntensityBefore: existingRecord.emotionIntensityBefore,
       emotions: existingRecord.emotions,
+      evidenceAgainst: existingRecord.evidenceAgainst,
+      evidenceFor: existingRecord.evidenceFor,
+      outcomeNotes: existingRecord.outcomeNotes,
       situation: existingRecord.situation,
     });
   }, [existingRecord, reset, storedDraftValues]);
 
-  const steps = [
+  const steps: {
+    fields: (keyof ThoughtRecordFormSchema)[];
+    key: ThoughtRecordStepKey;
+    title: string;
+  }[] = [
     {
-      description: t("record.situationHint"),
-      fields: ["situation"] as const,
+      fields: ["situation"],
+      key: "situation",
       title: t("record.situation"),
     },
     {
-      description: t("record.automaticThoughtHint"),
-      fields: ["automaticThought"] as const,
+      fields: ["automaticThought"],
+      key: "automaticThought",
       title: t("record.automaticThought"),
     },
     {
-      description: t("record.emotionsHint"),
-      fields: ["emotions"] as const,
+      fields: ["emotions", "emotionIntensityBefore"],
+      key: "emotions",
       title: t("record.emotions"),
     },
     {
-      description: t("record.patternsHint"),
-      fields: ["distortions"] as const,
+      fields: ["evidenceFor", "evidenceAgainst"],
+      key: "evidence",
+      title: t("record.evidence"),
+    },
+    {
+      fields: ["distortions"],
+      key: "distortions",
       title: t("record.patterns"),
     },
     {
-      description: t("record.balancedThoughtHint"),
-      fields: ["balancedThought"] as const,
+      fields: ["balancedThought"],
+      key: "balancedThought",
       title: t("record.balancedThought"),
+    },
+    {
+      fields: ["emotionIntensityAfter", "outcomeNotes"],
+      key: "outcome",
+      title: t("record.outcome"),
     },
   ];
 
-  const currentStep = steps[stepIndex];
-  const isLastStep = stepIndex === steps.length - 1;
+  const activeStepIndex = Math.min(stepIndex, steps.length - 1);
+  const currentStep = steps[activeStepIndex];
+  const isLastStep = activeStepIndex === steps.length - 1;
 
   const handleNext = async () => {
     const isValid = await trigger(currentStep.fields);
@@ -130,11 +177,17 @@ export default function ThoughtRecordEditorScreen() {
 
   const handleSave = handleSubmit(async (values) => {
     setDraftValues(getValues());
+    const input: ThoughtRecordFormSchema = {
+      ...values,
+      evidenceAgainst: cleanList(values.evidenceAgainst),
+      evidenceFor: cleanList(values.evidenceFor),
+      outcomeNotes: values.outcomeNotes.trim(),
+    };
 
     try {
       setSubmitError("");
       const saved = await saveMutation.mutateAsync({
-        input: values,
+        input,
         recordId: recordId ?? undefined,
       });
       resetDraft();
@@ -219,7 +272,7 @@ export default function ThoughtRecordEditorScreen() {
 
         <View className="flex-row flex-wrap gap-2">
           {steps.map((step, index) => {
-            const isActive = stepIndex === index;
+            const isActive = activeStepIndex === index;
             return (
               <Button
                 accessibilityState={{
@@ -244,14 +297,7 @@ export default function ThoughtRecordEditorScreen() {
           })}
         </View>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{currentStep.title}</CardTitle>
-            <CardDescription>{currentStep.description}</CardDescription>
-          </CardHeader>
-        </Card>
-
-        {stepIndex === 0 ? (
+        {currentStep.key === "situation" ? (
           <Controller
             control={control}
             name="situation"
@@ -275,7 +321,7 @@ export default function ThoughtRecordEditorScreen() {
           />
         ) : null}
 
-        {stepIndex === 1 ? (
+        {currentStep.key === "automaticThought" ? (
           <Controller
             control={control}
             name="automaticThought"
@@ -299,46 +345,98 @@ export default function ThoughtRecordEditorScreen() {
           />
         ) : null}
 
-        {stepIndex === 2 ? (
-          <Controller
-            control={control}
-            name="emotions"
-            render={({ field: { onChange, value } }) => (
-              <View className="gap-3">
-                <View className="gap-2">
-                  <Label>{t("record.emotionsLabel")}</Label>
-                  <Text variant="muted">{t("record.emotionsLabelHint")}</Text>
+        {currentStep.key === "emotions" ? (
+          <View className="gap-6">
+            <Controller
+              control={control}
+              name="emotions"
+              render={({ field: { onChange, value } }) => (
+                <View className="gap-3">
+                  <View className="gap-2">
+                    <Label>{t("record.emotionsLabel")}</Label>
+                    <Text variant="muted">{t("record.emotionsLabelHint")}</Text>
+                  </View>
+                  {emotionOptions.map((emotion) => {
+                    const checked = value.includes(emotion);
+                    const emotionKey = emotion.toLowerCase();
+                    const label = t(`emotions.${emotionKey}`);
+                    const toggle = () => {
+                      const nextValues = checked
+                        ? value.filter((item) => item !== emotion)
+                        : [...value, emotion];
+                      onChange(nextValues);
+                    };
+                    return (
+                      <View key={emotion} className="flex-row items-center gap-3">
+                        <Checkbox
+                          accessibilityLabel={label}
+                          checked={checked}
+                          onCheckedChange={toggle}
+                        />
+                        <Label onPress={toggle}>{label}</Label>
+                      </View>
+                    );
+                  })}
+                  {errors.emotions?.message ? (
+                    <Text variant="muted">{errors.emotions.message}</Text>
+                  ) : null}
                 </View>
-                {emotionOptions.map((emotion) => {
-                  const checked = value.includes(emotion);
-                  const emotionKey = emotion.toLowerCase();
-                  const label = t(`emotions.${emotionKey}`);
-                  const toggle = () => {
-                    const nextValues = checked
-                      ? value.filter((item) => item !== emotion)
-                      : [...value, emotion];
-                    onChange(nextValues);
-                  };
-                  return (
-                    <View key={emotion} className="flex-row items-center gap-3">
-                      <Checkbox
-                        accessibilityLabel={label}
-                        checked={checked}
-                        onCheckedChange={toggle}
-                      />
-                      <Label onPress={toggle}>{label}</Label>
-                    </View>
-                  );
-                })}
-                {errors.emotions?.message ? (
-                  <Text variant="muted">{errors.emotions.message}</Text>
-                ) : null}
-              </View>
-            )}
-          />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="emotionIntensityBefore"
+              render={({ field: { onChange, value } }) => (
+                <View className="gap-2">
+                  <Label>{t("record.intensityBefore")}</Label>
+                  <Text variant="muted">{t("record.intensityBeforeHint")}</Text>
+                  <NumberRating min={0} max={100} step={10} value={value} onChange={onChange} />
+                </View>
+              )}
+            />
+          </View>
         ) : null}
 
-        {stepIndex === 3 ? (
+        {currentStep.key === "evidence" ? (
+          <View className="gap-6">
+            <Controller
+              control={control}
+              name="evidenceFor"
+              render={({ field: { onChange, value } }) => (
+                <View className="gap-2">
+                  <Label>{t("record.evidenceFor")}</Label>
+                  <Text variant="muted">{t("record.evidenceForHint")}</Text>
+                  <Textarea
+                    accessibilityLabel={t("record.evidenceFor")}
+                    onChangeText={(text) => onChange(textToList(text))}
+                    placeholder={t("record.evidenceForPlaceholder")}
+                    value={listToText(value)}
+                  />
+                </View>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="evidenceAgainst"
+              render={({ field: { onChange, value } }) => (
+                <View className="gap-2">
+                  <Label>{t("record.evidenceAgainst")}</Label>
+                  <Text variant="muted">{t("record.evidenceAgainstHint")}</Text>
+                  <Textarea
+                    accessibilityLabel={t("record.evidenceAgainst")}
+                    onChangeText={(text) => onChange(textToList(text))}
+                    placeholder={t("record.evidenceAgainstPlaceholder")}
+                    value={listToText(value)}
+                  />
+                </View>
+              )}
+            />
+          </View>
+        ) : null}
+
+        {currentStep.key === "distortions" ? (
           <Controller
             control={control}
             name="distortions"
@@ -383,7 +481,7 @@ export default function ThoughtRecordEditorScreen() {
           />
         ) : null}
 
-        {stepIndex === 4 ? (
+        {currentStep.key === "balancedThought" ? (
           <View className="gap-6">
             <Controller
               control={control}
@@ -436,6 +534,40 @@ export default function ThoughtRecordEditorScreen() {
                 </View>
               </CardContent>
             </Card>
+          </View>
+        ) : null}
+
+        {currentStep.key === "outcome" ? (
+          <View className="gap-6">
+            <Controller
+              control={control}
+              name="emotionIntensityAfter"
+              render={({ field: { onChange, value } }) => (
+                <View className="gap-2">
+                  <Label>{t("record.intensityAfter")}</Label>
+                  <Text variant="muted">{t("record.intensityAfterHint")}</Text>
+                  <NumberRating min={0} max={100} step={10} value={value} onChange={onChange} />
+                </View>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="outcomeNotes"
+              render={({ field: { onBlur, onChange, value } }) => (
+                <View className="gap-2">
+                  <Label>{t("record.outcomeNotes")}</Label>
+                  <Text variant="muted">{t("record.outcomeNotesHint")}</Text>
+                  <Textarea
+                    accessibilityLabel={t("record.outcomeNotes")}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    placeholder={t("record.outcomeNotesPlaceholder")}
+                    value={value}
+                  />
+                </View>
+              )}
+            />
           </View>
         ) : null}
       </View>

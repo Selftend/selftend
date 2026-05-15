@@ -43,6 +43,10 @@
       "emptyTitle": "No scheduled CBT items today",
       "emptyDescription": "You can still log mood, schedule an activity, or choose one small task."
     },
+    "guidance": {
+      "title": "Suggested starting points",
+      "description": "Based on your selected focus areas: {{concerns}}. These are optional shortcuts, not a score or diagnosis."
+    },
     "moodSummary": {
       "title": "Mood summaries",
       "sevenDay": "7 days",
@@ -437,6 +441,7 @@
     "challengedThought": "A more balanced thought",
     "challengedThoughtHint": "How would you respond to that fear, kindly?",
     "challengedThoughtPlaceholder": "Example: A draft doesn't need to be perfect. I can improve it after.",
+    "smallestStepDescription": "The goal is to begin, not to finish perfectly. Write the first action so small that it feels doable even with low motivation.",
     "stepsLabel": "Break it into steps",
     "stepsHint": "Small steps. Aim for first ones you can finish in under 30 minutes.",
     "stepNumber": "Step {{n}}",
@@ -608,6 +613,8 @@
     "loading": "Loading thought records...",
     "empty": "No thought records yet",
     "emptyDescription": "Create your first record from the CBT section. It will appear here once saved.",
+    "untitledRecord": "Untitled thought record",
+    "recordSummaryEmpty": "No balanced thought yet.",
     "recordSummary": "Updated {{timestamp}}. {{balancedThought}}"
   },
   "learn": {
@@ -769,6 +776,8 @@
     "moodLift": "+{{lift}} mood lift",
     "notes": "Notes",
     "notesPlaceholder": "Any thoughts before you begin.",
+    "valuePrompt": "Linked to the {{domain}} values gap.",
+    "valueLinkedDescription": "You came from {{domain}} values. Choose one small activity that would move this area by one step.",
     "markComplete": "Mark as complete",
     "edit": "Edit activity",
     "category": {
@@ -786,7 +795,8 @@
     "notePlaceholder": "Anything you want to remember about this domain.",
     "save": "Save",
     "update": "Update",
-    "gap": "Gap: {{gap}}"
+    "gap": "Gap: {{gap}}",
+    "scheduleActivity": "Schedule one activity"
   },
   "mood": {
     "title": "Log mood",
@@ -802,7 +812,7 @@
   },
   "record": {
     "newTitle": "New thought record",
-    "newDescription": "Walk through one thought in five small steps.",
+    "newDescription": "Use any prompts that help. Blank fields can be saved and completed later.",
     "editTitle": "Edit thought record",
     "editDescription": "Edit a saved record without losing its history.",
     "saveProblem": "Save problem",
@@ -820,13 +830,30 @@
     "patternsHint": "Notice which thinking patterns might be shaping the moment.",
     "balancedThought": "Balanced thought",
     "balancedThoughtHint": "Write the calmer, more balanced response you want to keep.",
+    "evidence": "Evidence",
+    "evidenceHint": "Optional: test the thought by separating what supports it from what does not.",
+    "outcome": "Afterward",
+    "outcomeHint": "Optional: note how the feeling shifted and anything worth remembering.",
     "emotionsLabel": "Emotions",
     "emotionsLabelHint": "Pick the feelings that fit best.",
+    "intensityBefore": "Emotion intensity before (0-100)",
+    "intensityBeforeHint": "Optional. 0 means no intensity; 100 means as strong as it gets.",
     "patternsLabel": "Thinking patterns",
     "patternsChooseHint": "Choose the patterns that seem closest. You can pick more than one.",
+    "evidenceFor": "Evidence supporting the thought",
+    "evidenceForHint": "Optional. Add one fact per line.",
+    "evidenceForPlaceholder": "Example: The message says we need to talk.",
+    "evidenceAgainst": "Evidence against the thought",
+    "evidenceAgainstHint": "Optional. Add one fact per line.",
+    "evidenceAgainstPlaceholder": "Example: My manager has sent routine check-in messages before.",
     "balancedThoughtLabel": "Balanced thought",
     "balancedThoughtPlaceholder": "Aim for something believable and kinder, not forced positivity.",
     "balancedThoughtExample": "Example: I do not know what the email means yet. One message is not proof that I failed.",
+    "intensityAfter": "Emotion intensity after (0-100)",
+    "intensityAfterHint": "Optional. Rate the same emotion after writing the balanced thought.",
+    "outcomeNotes": "Outcome notes",
+    "outcomeNotesHint": "Optional. Capture what changed, what helped, or what you want to remember.",
+    "outcomeNotesPlaceholder": "Example: The thought still feels uncomfortable, but less certain.",
     "summaryTitle": "Summary before saving",
     "summarySituation": "Situation: {{value}}",
     "summaryThought": "Thought: {{value}}",
@@ -856,14 +883,10 @@
     "archiveConfirmDescription": "This action cannot be undone.",
     "archiveButton": "Archive",
     "editButton": "Edit record",
-    "archiveError": "Unable to archive the record."
-  },
-  "validation": {
-    "situationMin": "Describe the moment in a little more detail.",
-    "automaticThoughtMin": "Capture the first thought that showed up.",
-    "emotionsMin": "Choose at least one emotion.",
-    "distortionsMin": "Choose at least one thinking pattern.",
-    "balancedThoughtMin": "Write a calmer, more balanced response."
+    "archiveError": "Unable to archive the record.",
+    "expandedTitle": "Additional reflection",
+    "expandedDescription": "This record includes optional evidence or intensity notes.",
+    "intensityShift": "Intensity {{before}} -> {{after}} (shift {{shift}})."
   },
   "emotions": {
     "anxious": "Anxious",

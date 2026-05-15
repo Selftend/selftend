@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -104,6 +105,19 @@ function DomainEditor({ domain, existing, userId }: DomainEditorProps) {
           {upsertMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
           <Text>{saved ? t("values.update") : t("values.save")}</Text>
         </Button>
+
+        {saved && gap !== null && gap > 0 ? (
+          <Button
+            onPress={() =>
+              router.push(
+                `/cbt/activities/new?domain=${domain}` as Parameters<typeof router.push>[0],
+              )
+            }
+            variant="outline"
+          >
+            <Text>{t("values.scheduleActivity")}</Text>
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );

@@ -56,8 +56,13 @@ describe("CbtHistoryScreen", () => {
           balancedThought: "I can take this one step at a time",
           createdAt: "2026-05-03T12:00:00.000Z",
           distortions: ["catastrophizing"],
+          emotionIntensityAfter: null,
+          emotionIntensityBefore: null,
           emotions: ["Anxious"],
+          evidenceAgainst: [],
+          evidenceFor: [],
           id: "record-1",
+          outcomeNotes: "",
           situation: "A hard moment",
           updatedAt: "2026-05-03T12:00:00.000Z",
           userId: "user-1",
@@ -71,5 +76,35 @@ describe("CbtHistoryScreen", () => {
     fireEvent.press(screen.getByText("I cannot handle this"));
 
     expect(router.push).toHaveBeenCalledWith("/cbt/history/record-1");
+  });
+
+  it("uses fallback text for a saved partial record", () => {
+    mockUseThoughtRecords.mockReturnValue({
+      data: [
+        {
+          archivedAt: null,
+          automaticThought: "",
+          balancedThought: "",
+          createdAt: "2026-05-03T12:00:00.000Z",
+          distortions: [],
+          emotionIntensityAfter: null,
+          emotionIntensityBefore: null,
+          emotions: [],
+          evidenceAgainst: [],
+          evidenceFor: [],
+          id: "record-1",
+          outcomeNotes: "",
+          situation: "",
+          updatedAt: "2026-05-03T12:00:00.000Z",
+          userId: "user-1",
+        },
+      ],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useThoughtRecords>);
+
+    renderWithProviders(<CbtHistoryScreen />);
+
+    expect(screen.getByText("Untitled thought record")).toBeTruthy();
+    expect(screen.getByText(/No balanced thought yet/)).toBeTruthy();
   });
 });

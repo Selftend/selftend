@@ -57,6 +57,7 @@ import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLog } from "@/src/features/self-care/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { getConcernGuidance, type GuidedStrategyKey } from "@/src/features/cbt/concern-guidance";
 
 type Pillar = "think" | "act" | "be";
 
@@ -198,6 +199,88 @@ const REVIEW_LINKS = [
     descKey: "pillars.strategyDescriptions.recovery",
   },
 ] as const;
+
+const GUIDANCE_STRATEGIES: Record<
+  GuidedStrategyKey,
+  {
+    route: string;
+    icon: LucideIcon;
+    labelKey: string;
+    descKey: string;
+    pillar: Pillar;
+  }
+> = {
+  activities: {
+    route: "/cbt/activities",
+    icon: ActivityIcon,
+    labelKey: "dashboard.strategies.activities",
+    descKey: "pillars.strategyDescriptions.activities",
+    pillar: "act",
+  },
+  anger: {
+    route: "/cbt/anger",
+    icon: FlameIcon,
+    labelKey: "dashboard.strategies.anger",
+    descKey: "pillars.strategyDescriptions.anger",
+    pillar: "act",
+  },
+  beliefs: {
+    route: "/cbt/beliefs",
+    icon: AnchorIcon,
+    labelKey: "dashboard.strategies.beliefs",
+    descKey: "pillars.strategyDescriptions.beliefs",
+    pillar: "think",
+  },
+  exposure: {
+    route: "/cbt/exposure",
+    icon: LayersIcon,
+    labelKey: "dashboard.strategies.exposure",
+    descKey: "pillars.strategyDescriptions.exposure",
+    pillar: "act",
+  },
+  goals: {
+    route: "/cbt/goals",
+    icon: TargetIcon,
+    labelKey: "dashboard.strategies.goals",
+    descKey: "pillars.strategyDescriptions.goals",
+    pillar: "act",
+  },
+  mindfulness: {
+    route: "/tools/mindfulness",
+    icon: WindIcon,
+    labelKey: "dashboard.strategies.mindfulness",
+    descKey: "pillars.strategyDescriptions.mindfulness",
+    pillar: "be",
+  },
+  selfCare: {
+    route: "/cbt/self-care",
+    icon: HeartIcon,
+    labelKey: "dashboard.strategies.selfCare",
+    descKey: "pillars.strategyDescriptions.selfCare",
+    pillar: "be",
+  },
+  tasks: {
+    route: "/cbt/tasks",
+    icon: FootprintsIcon,
+    labelKey: "dashboard.strategies.tasks",
+    descKey: "pillars.strategyDescriptions.tasks",
+    pillar: "act",
+  },
+  thoughts: {
+    route: "/cbt/new",
+    icon: ScrollTextIcon,
+    labelKey: "dashboard.strategies.thoughts",
+    descKey: "pillars.strategyDescriptions.thoughts",
+    pillar: "think",
+  },
+  worry: {
+    route: "/cbt/worry",
+    icon: BrainIcon,
+    labelKey: "dashboard.strategies.worry",
+    descKey: "pillars.strategyDescriptions.worry",
+    pillar: "think",
+  },
+};
 
 function getDateKey(value: string | null | undefined) {
   return value?.slice(0, 10) ?? "";
@@ -443,6 +526,37 @@ function SharedToolPill({ pillar, tool }: SharedToolPillProps) {
   );
 }
 
+function GuidanceCard({ strategy }: { strategy: (typeof GUIDANCE_STRATEGIES)[GuidedStrategyKey] }) {
+  const { t } = useTranslation("cbt");
+
+  return (
+    <Pressable
+      accessibilityHint={t(strategy.descKey)}
+      accessibilityLabel={t(strategy.labelKey)}
+      accessibilityRole="button"
+      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+      onPress={() => router.push(strategy.route as Parameters<typeof router.push>[0])}
+      className="min-w-[190px] flex-1 basis-[190px] flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
+      role="button"
+    >
+      <View
+        className={cn(
+          "size-9 items-center justify-center rounded-lg",
+          PILLAR_ICON_BG_CLASS[strategy.pillar],
+        )}
+      >
+        <Icon as={strategy.icon} className={cn("size-5", PILLAR_TEXT_CLASS[strategy.pillar])} />
+      </View>
+      <View className="flex-1 gap-0.5">
+        <Text className="text-sm font-semibold">{t(strategy.labelKey)}</Text>
+        <Text variant="muted" className="text-xs">
+          {t(strategy.descKey)}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
 export default function CbtHomeScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
@@ -482,6 +596,13 @@ export default function CbtHomeScreen() {
   const activeGoals = goals?.filter((g) => g.status === "active").slice(0, 2) ?? [];
   const scheduledToday = getTodaysActivities(activities, today);
   const openTasks = getOpenTasks(tasks);
+  const selectedConcerns = preferences?.selectedConcerns ?? [];
+  const guidanceStrategies = getConcernGuidance(selectedConcerns).map(
+    (strategyKey) => GUIDANCE_STRATEGIES[strategyKey],
+  );
+  const selectedConcernLabels = selectedConcerns
+    .map((concern) => t(`onboarding.concerns.${concern}`, { defaultValue: concern }))
+    .join(", ");
   const hasDailyPlan = scheduledToday.length > 0 || openTasks.length > 0;
   const sevenDayMood = getMoodSummary(moodLogs, 7);
   const thirtyDayMood = getMoodSummary(moodLogs, 30);
@@ -608,6 +729,22 @@ export default function CbtHomeScreen() {
                 </View>
               </View>
             </View>
+
+            {guidanceStrategies.length > 0 ? (
+              <View className="gap-3">
+                <View className="gap-1">
+                  <Text variant="h3">{t("dashboard.guidance.title")}</Text>
+                  <Text variant="muted" className="max-w-[64ch]">
+                    {t("dashboard.guidance.description", { concerns: selectedConcernLabels })}
+                  </Text>
+                </View>
+                <View className="flex-row flex-wrap gap-2">
+                  {guidanceStrategies.map((strategy) => (
+                    <GuidanceCard key={strategy.route} strategy={strategy} />
+                  ))}
+                </View>
+              </View>
+            ) : null}
 
             {/* Daily plan */}
             <View className="gap-3">

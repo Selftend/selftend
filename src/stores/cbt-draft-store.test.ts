@@ -21,7 +21,12 @@ describe("cbt draft store", () => {
       automaticThought: "This will fail",
       balancedThought: "It may still be recoverable",
       distortions: ["catastrophizing"],
+      emotionIntensityAfter: null,
+      emotionIntensityBefore: null,
       emotions: ["Anxious"],
+      evidenceAgainst: [],
+      evidenceFor: [],
+      outcomeNotes: "",
       situation: "A save failed",
     };
 

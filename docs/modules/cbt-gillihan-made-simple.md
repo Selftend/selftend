@@ -183,14 +183,14 @@ Examples:
 
 | Field                    | Type          | Notes                                                |
 | ------------------------ | ------------- | ---------------------------------------------------- |
-| `situation`              | string        | Required                                             |
-| `automaticThought`       | string        | Required                                             |
-| `emotions`               | string[]      | Free text or tag selection; required at least one    |
+| `situation`              | string        | Optional at save time                                |
+| `automaticThought`       | string        | Optional at save time                                |
+| `emotions`               | string[]      | Free text or tag selection; optional at save time    |
 | `emotionIntensityBefore` | integer 0–100 |                                                      |
-| `distortions`            | string[]      | Tag selection from list above; required at least one |
+| `distortions`            | string[]      | Tag selection from list above; optional at save time |
 | `evidenceFor`            | string        | Facts supporting the thought                         |
 | `evidenceAgainst`        | string        | Facts against the thought                            |
-| `balancedThought`        | string        | Required                                             |
+| `balancedThought`        | string        | Optional at save time                                |
 | `emotionIntensityAfter`  | integer 0–100 |                                                      |
 | `outcomeNotes`           | string        | Optional reflection                                  |
 
@@ -203,6 +203,8 @@ Examples:
 - "What evidence argues against this thought?"
 
 **Key insight display after completion:** Show the emotion intensity drop (before vs. after) as evidence that the exercise works.
+
+**Implementation note:** The app shows the full thought record flow by default, including evidence, before/after intensity, and outcome notes. Fields are optional at save time so users can create a partial record and complete it later.
 
 ---
 
@@ -858,6 +860,7 @@ Deferred or out of scope for MVP notifications:
 - Community features
 - Generic journaling mixed into the CBT flow
 - Clinical diagnostic labels in UI copy
+- Diagnostic or scored anxiety/depression scales in the MVP app
 - Therapist portal (flag for architecture consideration only — single-user in v1)
 
 ---
@@ -875,20 +878,20 @@ Deferred or out of scope for MVP notifications:
 
 ## 9. Glossary
 
-| Term                 | Definition as used in this tool                                                            |
-| -------------------- | ------------------------------------------------------------------------------------------ |
-| ThoughtRecord        | Structured form: situation → automatic thought → emotions → distortions → balanced thought |
-| AutomaticThought     | An immediate, unexamined thought arising in response to a situation                        |
-| CoreBelief           | A deep-seated global assumption about self, others, or the world                           |
-| SUDS                 | Subjective Units of Distress Scale, 0–100                                                  |
-| Exposure             | Planned, deliberate contact with a feared situation without using safety behaviors         |
-| SafetyBehavior       | An action taken during anxiety to reduce it short-term that prevents long-term habituation |
-| BehavioralActivation | Scheduling meaningful activities to break the depression-inactivity cycle                  |
-| LifeDomain           | A category of life area: work, relationships, health, leisure, personal growth             |
-| RecoveryKey          | A personally identified insight or practice that supports ongoing wellbeing                |
-| Habituation          | The natural reduction of anxiety that occurs during prolonged, repeated exposure           |
-| ERP                  | Exposure and Response Prevention — used for OCD-type patterns                              |
-| Think-Act-Be         | The three-pillar framework of the Gillihan model: cognitive, behavioral, mindfulness       |
+| Term                 | Definition as used in this tool                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------------------------------- |
+| ThoughtRecord        | Structured form: situation → automatic thought → emotions → evidence → distortions → balanced thought → outcome |
+| AutomaticThought     | An immediate, unexamined thought arising in response to a situation                                             |
+| CoreBelief           | A deep-seated global assumption about self, others, or the world                                                |
+| SUDS                 | Subjective Units of Distress Scale, 0–100                                                                       |
+| Exposure             | Planned, deliberate contact with a feared situation without using safety behaviors                              |
+| SafetyBehavior       | An action taken during anxiety to reduce it short-term that prevents long-term habituation                      |
+| BehavioralActivation | Scheduling meaningful activities to break the depression-inactivity cycle                                       |
+| LifeDomain           | A category of life area: work, relationships, health, leisure, personal growth                                  |
+| RecoveryKey          | A personally identified insight or practice that supports ongoing wellbeing                                     |
+| Habituation          | The natural reduction of anxiety that occurs during prolonged, repeated exposure                                |
+| ERP                  | Exposure and Response Prevention — used for OCD-type patterns                                                   |
+| Think-Act-Be         | The three-pillar framework of the Gillihan model: cognitive, behavioral, mindfulness                            |
 
 ---
 

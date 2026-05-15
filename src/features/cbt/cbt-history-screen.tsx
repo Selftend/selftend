@@ -11,6 +11,10 @@ import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
 import { BackButton } from "@/src/components/app/back-button";
 
+function getRecordTitle(record: { automaticThought: string; situation: string }, fallback: string) {
+  return record.automaticThought.trim() || record.situation.trim() || fallback;
+}
+
 export default function CbtHistoryScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
@@ -39,10 +43,10 @@ export default function CbtHistoryScreen() {
               key={record.id}
               description={t("history.recordSummary", {
                 timestamp: formatTimestamp(record.updatedAt),
-                balancedThought: record.balancedThought,
+                balancedThought: record.balancedThought.trim() || t("history.recordSummaryEmpty"),
               })}
               onPress={() => router.push(`/cbt/history/${record.id}`)}
-              title={record.automaticThought}
+              title={getRecordTitle(record, t("history.untitledRecord"))}
             />
           ))}
         </View>
