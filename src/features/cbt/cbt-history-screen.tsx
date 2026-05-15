@@ -41,7 +41,7 @@ export default function CbtHistoryScreen() {
                 timestamp: formatTimestamp(record.updatedAt),
                 balancedThought: record.balancedThought,
               })}
-              onPress={() => router.push(`/cbt/${record.id}`)}
+              onPress={() => router.push(`/cbt/history/${record.id}`)}
               title={record.automaticThought}
             />
           ))}

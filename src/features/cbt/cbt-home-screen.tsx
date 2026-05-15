@@ -977,7 +977,7 @@ export default function CbtHomeScreen() {
                 <AccessibleCardLink
                   title={latestRecord.automaticThought}
                   description={latestRecord.balancedThought}
-                  onPress={() => router.push(`/cbt/${latestRecord.id}`)}
+                  onPress={() => router.push(`/cbt/history/${latestRecord.id}`)}
                 />
               </View>
             ) : null}

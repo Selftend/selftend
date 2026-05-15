@@ -93,7 +93,8 @@ export default function ProtectedLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="cbt/index" />
             <Stack.Screen name="cbt/learn" />
-            <Stack.Screen name="cbt/history" />
+            <Stack.Screen name="cbt/history/index" />
+            <Stack.Screen name="cbt/history/[id]" />
             <Stack.Screen name="cbt/new" />
             <Stack.Screen name="cbt/[id]" />
             <Stack.Screen name="cbt/goals/index" />

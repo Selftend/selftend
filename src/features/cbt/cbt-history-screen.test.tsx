@@ -70,6 +70,6 @@ describe("CbtHistoryScreen", () => {
 
     fireEvent.press(screen.getByText("I cannot handle this"));
 
-    expect(router.push).toHaveBeenCalledWith("/cbt/record-1");
+    expect(router.push).toHaveBeenCalledWith("/cbt/history/record-1");
   });
 });

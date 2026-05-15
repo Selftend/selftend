@@ -235,7 +235,7 @@ export default function TodayScreen() {
             actionKey: "today.plan.resume",
             onPress: () =>
               router.push(
-                `/cbt/${incompleteThoughtRecord.id}` as Parameters<typeof router.push>[0],
+                `/cbt/history/${incompleteThoughtRecord.id}` as Parameters<typeof router.push>[0],
               ),
             pillar: "think" as const,
           },
