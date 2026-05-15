@@ -1,0 +1,26 @@
+{
+  "title": "Meditation",
+  "description": "A quiet, timed sit with start and end bells.",
+  "duration": {
+    "label": "Duration",
+    "minutes": "{{count}} min"
+  },
+  "timer": {
+    "start": "Start",
+    "pause": "Pause",
+    "resume": "Resume",
+    "reset": "Reset",
+    "remaining": "{{time}} remaining"
+  },
+  "complete": {
+    "title": "Session complete",
+    "subtitle": "{{count}} min · well done",
+    "save": "Save & close",
+    "discard": "Discard"
+  },
+  "history": {
+    "title": "Recent sessions",
+    "session": "{{count}} min",
+    "noSessions": "No sessions yet"
+  }
+}

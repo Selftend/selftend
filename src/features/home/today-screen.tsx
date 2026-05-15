@@ -12,6 +12,7 @@ import {
   PlusIcon,
   ScrollTextIcon,
   SmilePlusIcon,
+  SunMediumIcon,
   WindIcon,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
@@ -312,12 +313,12 @@ export default function TodayScreen() {
               <View className="min-w-[150px] flex-1 basis-[150px]">
                 <Button
                   onPress={() =>
-                    router.push("/tools/mindfulness" as Parameters<typeof router.push>[0])
+                    router.push("/tools/meditation" as Parameters<typeof router.push>[0])
                   }
                   variant="outline"
                   size="lg"
                 >
-                  <Icon as={WindIcon} className="size-4" />
+                  <Icon as={SunMediumIcon} className="size-4" />
                   <Text>{t("today.quickActions.meditate")}</Text>
                 </Button>
               </View>

@@ -9,6 +9,7 @@ import {
   NotebookPenIcon,
   SettingsIcon,
   SmilePlusIcon,
+  SunMediumIcon,
   WindIcon,
 } from "lucide-react-native";
 import { Pressable, ScrollView, View } from "react-native";
@@ -83,7 +84,7 @@ const TOOL_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.meditation",
     href: "/tools/meditation",
-    icon: WindIcon,
+    icon: SunMediumIcon,
     matchPrefix: "/tools/meditation",
   },
   {

@@ -5,9 +5,9 @@ import { useTranslation } from "react-i18next";
 import {
   ArrowRightIcon,
   BookHeartIcon,
-  ClockIcon,
   NotebookPenIcon,
   SmilePlusIcon,
+  SunMediumIcon,
   WindIcon,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
@@ -17,6 +17,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { cn } from "@/lib/utils";
 import { useJournalEntries } from "@/src/features/journal/queries";
+import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { getMoodSummary } from "@/src/features/mood/summaries";
@@ -55,7 +56,7 @@ const TOOLS: ToolTile[] = [
   {
     key: "meditation",
     href: "/tools/meditation",
-    icon: WindIcon,
+    icon: SunMediumIcon,
     nameKey: "today.tools.meditation",
     subKey: "today.tools.meditationSub",
     iconBg: "bg-be/15",
@@ -98,11 +99,13 @@ export default function ToolsScreen() {
   const { user } = useSession();
   const { data: moodLogs } = useMoodLogs(user?.id ?? null, 30);
   const { data: mindfulnessSessions } = useMindfulnessSessions(user?.id ?? null, 30);
+  const { data: meditationSessions } = useMeditationSessions(user?.id ?? null, 30);
   const { data: journalEntries } = useJournalEntries(user?.id ?? null, 50);
 
   const moodCount = moodLogs?.length ?? 0;
   const moodAverage = getMoodSummary(moodLogs, 7).average;
   const mindfulnessMinutes = lastThirtyDaysMinutes(mindfulnessSessions);
+  const meditationMinutes = lastThirtyDaysMinutes(meditationSessions);
   const journalCount = journalEntries?.length ?? 0;
 
   function statFor(key: ToolTile["key"]): string {
@@ -117,7 +120,8 @@ export default function ToolsScreen() {
         if (mindfulnessMinutes === 0) return t("tools.stats.mindfulnessNoData");
         return t("tools.stats.mindfulnessMinutes", { minutes: mindfulnessMinutes });
       case "meditation":
-        return t("tools.stats.comingSoon");
+        if (meditationMinutes === 0) return t("tools.stats.mindfulnessNoData");
+        return t("tools.stats.mindfulnessMinutes", { minutes: meditationMinutes });
       case "journal":
         if (journalCount === 0) return t("tools.stats.journalNoData");
         return t("tools.stats.journalEntries", { count: journalCount });
@@ -160,8 +164,6 @@ function ToolCard({ tool, stat }: ToolCardProps) {
   const { t } = useTranslation("navigation");
   const name = t(tool.nameKey);
   const subtitle = t(tool.subKey);
-  const isComingSoon = tool.key === "meditation";
-
   return (
     <Pressable
       accessibilityHint={subtitle}
@@ -181,9 +183,6 @@ function ToolCard({ tool, stat }: ToolCardProps) {
           {subtitle}
         </Text>
         <View className="mt-1 flex-row items-center gap-1.5">
-          {isComingSoon ? (
-            <Icon as={ClockIcon} className="size-3 text-muted-foreground" size={12} />
-          ) : null}
           <Text variant="muted" className="text-xs">
             {stat}
           </Text>

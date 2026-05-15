@@ -5,6 +5,7 @@ import enCommon from "./locales/en/common.json";
 import enAuth from "./locales/en/auth.json";
 import enCbt from "./locales/en/cbt.json";
 import enJournal from "./locales/en/journal.json";
+import enMeditation from "./locales/en/meditation.json";
 import enMood from "./locales/en/mood.json";
 import enModules from "./locales/en/modules.json";
 import enSettings from "./locales/en/settings.json";
@@ -16,6 +17,7 @@ import bgCommon from "./locales/bg/common.json";
 import bgAuth from "./locales/bg/auth.json";
 import bgCbt from "./locales/bg/cbt.json";
 import bgJournal from "./locales/bg/journal.json";
+import bgMeditation from "./locales/bg/meditation.json";
 import bgMood from "./locales/bg/mood.json";
 import bgModules from "./locales/bg/modules.json";
 import bgSettings from "./locales/bg/settings.json";
@@ -35,6 +37,7 @@ i18n.use(initReactI18next).init({
     "auth",
     "cbt",
     "journal",
+    "meditation",
     "mood",
     "modules",
     "settings",
@@ -49,6 +52,7 @@ i18n.use(initReactI18next).init({
       auth: enAuth,
       cbt: enCbt,
       journal: enJournal,
+      meditation: enMeditation,
       mood: enMood,
       modules: enModules,
       settings: enSettings,
@@ -61,6 +65,7 @@ i18n.use(initReactI18next).init({
       auth: bgAuth,
       cbt: bgCbt,
       journal: bgJournal,
+      meditation: bgMeditation,
       mood: bgMood,
       modules: bgModules,
       settings: bgSettings,

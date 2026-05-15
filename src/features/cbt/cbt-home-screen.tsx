@@ -23,6 +23,7 @@ import {
   MapIcon,
   NotebookPenIcon,
   ScrollTextIcon,
+  SunMediumIcon,
   SmilePlusIcon,
   TargetIcon,
   WandSparklesIcon,
@@ -170,6 +171,12 @@ const BE_SHARED_TOOLS: SharedTool[] = [
     route: "/tools/mindfulness",
     icon: WindIcon,
     labelKey: "navigation:sidebar.mindfulness",
+  },
+  {
+    key: "meditation",
+    route: "/tools/meditation",
+    icon: SunMediumIcon,
+    labelKey: "navigation:sidebar.meditation",
   },
   {
     key: "moodTracker",
