@@ -1,7 +1,7 @@
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text, TextClassContext } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react-native";
+import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import * as React from "react";
 import { View } from "react-native";
 
@@ -14,7 +14,7 @@ function Alert({
   ...props
 }: React.ComponentProps<typeof View> &
   React.RefAttributes<View> & {
-    icon: LucideIcon;
+    icon: MaterialIconName;
     variant?: "default" | "destructive";
     iconClassName?: string;
   }) {
@@ -36,7 +36,7 @@ function Alert({
       >
         <View className="absolute left-3.5 top-3">
           <Icon
-            as={icon}
+            name={icon}
             className={cn("size-4", variant === "destructive" && "text-destructive", iconClassName)}
           />
         </View>

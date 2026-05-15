@@ -3,7 +3,6 @@ import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { PencilIcon } from "lucide-react-native";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -97,7 +96,7 @@ export default function MoodDetailScreen() {
               variant="secondary"
               className="self-start"
             >
-              <Icon as={PencilIcon} className="size-4" />
+              <Icon name="edit" className="size-4" />
               <Text>{t("detail.edit")}</Text>
             </Button>
           </View>

@@ -1,7 +1,6 @@
 import { router, usePathname } from "expo-router";
 import { Pressable } from "react-native";
 import { useTranslation } from "react-i18next";
-import { ArrowLeftIcon } from "lucide-react-native";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -65,7 +64,7 @@ export function BackButton({
       )}
       role="button"
     >
-      <Icon as={ArrowLeftIcon} className="size-4 text-muted-foreground" />
+      <Icon name="arrow-back" className="size-4 text-muted-foreground" />
       {showLabel ? (
         <Text className="text-sm font-medium text-muted-foreground">{resolvedLabel}</Text>
       ) : null}

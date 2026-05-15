@@ -4,7 +4,7 @@ import { TextClassContext } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import * as MenubarPrimitive from "@rn-primitives/menubar";
 import { Portal } from "@rn-primitives/portal";
-import { Check, ChevronDown, ChevronRight, ChevronUp } from "lucide-react-native";
+import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import * as React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { FadeIn } from "react-native-reanimated";
@@ -100,7 +100,8 @@ function MenubarSubTrigger({
   inset?: boolean;
 }) {
   const { open } = MenubarPrimitive.useSubContext();
-  const icon = Platform.OS === "web" ? ChevronRight : open ? ChevronUp : ChevronDown;
+  const icon: MaterialIconName =
+    Platform.OS === "web" ? "chevron-right" : open ? "expand-less" : "expand-more";
   return (
     <TextClassContext.Provider
       value={cn(
@@ -121,7 +122,10 @@ function MenubarSubTrigger({
         {...props}
       >
         <>{children}</>
-        <Icon as={icon} className={cn("text-foreground ml-auto size-4 shrink-0", iconClassName)} />
+        <Icon
+          name={icon}
+          className={cn("text-foreground ml-auto size-4 shrink-0", iconClassName)}
+        />
       </MenubarPrimitive.SubTrigger>
     </TextClassContext.Provider>
   );
@@ -250,7 +254,7 @@ function MenubarCheckboxItem({
         <View className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
           <MenubarPrimitive.ItemIndicator>
             <Icon
-              as={Check}
+              name="check"
               className={cn(
                 "text-foreground size-4",
                 Platform.select({ web: "pointer-events-none" }),

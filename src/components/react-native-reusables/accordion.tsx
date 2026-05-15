@@ -2,7 +2,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { TextClassContext } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import * as AccordionPrimitive from "@rn-primitives/accordion";
-import { ChevronDown } from "lucide-react-native";
+
 import { Platform, Pressable, View } from "react-native";
 import Animated, {
   FadeOutUp,
@@ -97,7 +97,7 @@ function AccordionTrigger({
             <>{children}</>
             <Animated.View style={chevronStyle}>
               <Icon
-                as={ChevronDown}
+                name="expand-more"
                 size={16}
                 className={cn(
                   "text-muted-foreground shrink-0",

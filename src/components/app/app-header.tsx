@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { MenuIcon } from "lucide-react-native";
+
 import { Image, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -30,7 +30,7 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
             size="icon"
             onPress={onMenuPress}
           >
-            <Icon as={MenuIcon} className="size-5 text-foreground" />
+            <Icon name="menu" className="size-6 text-foreground" />
           </Button>
         ) : null}
         <Pressable

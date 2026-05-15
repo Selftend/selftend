@@ -5,32 +5,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useIsFocused } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  ActivityIcon,
-  AnchorIcon,
-  ArrowRightIcon,
-  BookHeartIcon,
-  BookOpenIcon,
-  BrainIcon,
-  CalendarCheckIcon,
-  CheckCircle2Icon,
-  CircleHelpIcon,
-  CompassIcon,
-  FlameIcon,
-  FootprintsIcon,
-  HeartIcon,
-  LayersIcon,
-  MapIcon,
-  NotebookPenIcon,
-  ScrollTextIcon,
-  SunMediumIcon,
-  SmilePlusIcon,
-  TargetIcon,
-  WandSparklesIcon,
-  WindIcon,
-} from "lucide-react-native";
-import type { LucideIcon } from "lucide-react-native";
-
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
@@ -39,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
-import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { BackButton } from "@/src/components/app/back-button";
@@ -67,7 +41,7 @@ type Pillar = "think" | "act" | "be";
 interface PillarStrategy {
   key: string;
   route: string;
-  icon: LucideIcon;
+  icon: MaterialIconName;
   labelKey: string;
   descKey: string;
 }
@@ -75,7 +49,7 @@ interface PillarStrategy {
 interface SharedTool {
   key: string;
   route: string;
-  icon: LucideIcon;
+  icon: MaterialIconName;
   labelKey: string;
 }
 
@@ -84,28 +58,28 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
     {
       key: "thoughts",
       route: "/modules/cbt/new",
-      icon: ScrollTextIcon,
+      icon: "article",
       labelKey: "dashboard.strategies.thoughts",
       descKey: "pillars.strategyDescriptions.thoughts",
     },
     {
       key: "beliefs",
       route: "/modules/cbt/beliefs",
-      icon: AnchorIcon,
+      icon: "anchor",
       labelKey: "dashboard.strategies.beliefs",
       descKey: "pillars.strategyDescriptions.beliefs",
     },
     {
       key: "worry",
       route: "/modules/cbt/worry",
-      icon: BrainIcon,
+      icon: "psychology",
       labelKey: "dashboard.strategies.worry",
       descKey: "pillars.strategyDescriptions.worry",
     },
     {
       key: "distortions",
       route: "/modules/cbt/learn",
-      icon: BookOpenIcon,
+      icon: "menu-book",
       labelKey: "home.distortionGuide",
       descKey: "pillars.strategyDescriptions.distortions",
     },
@@ -114,42 +88,42 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
     {
       key: "goals",
       route: "/modules/cbt/goals",
-      icon: TargetIcon,
+      icon: "gps-fixed",
       labelKey: "dashboard.strategies.goals",
       descKey: "pillars.strategyDescriptions.goals",
     },
     {
       key: "values",
       route: "/modules/cbt/values",
-      icon: CompassIcon,
+      icon: "explore",
       labelKey: "dashboard.strategies.values",
       descKey: "pillars.strategyDescriptions.values",
     },
     {
       key: "activities",
       route: "/modules/cbt/activities",
-      icon: ActivityIcon,
+      icon: "directions-run",
       labelKey: "dashboard.strategies.activities",
       descKey: "pillars.strategyDescriptions.activities",
     },
     {
       key: "exposure",
       route: "/modules/cbt/exposure",
-      icon: LayersIcon,
+      icon: "layers",
       labelKey: "dashboard.strategies.exposure",
       descKey: "pillars.strategyDescriptions.exposure",
     },
     {
       key: "tasks",
       route: "/modules/cbt/tasks",
-      icon: FootprintsIcon,
+      icon: "hiking",
       labelKey: "dashboard.strategies.tasks",
       descKey: "pillars.strategyDescriptions.tasks",
     },
     {
       key: "anger",
       route: "/modules/cbt/anger",
-      icon: FlameIcon,
+      icon: "local-fire-department",
       labelKey: "dashboard.strategies.anger",
       descKey: "pillars.strategyDescriptions.anger",
     },
@@ -158,7 +132,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
     {
       key: "selfCare",
       route: "/modules/cbt/self-care",
-      icon: HeartIcon,
+      icon: "favorite",
       labelKey: "dashboard.strategies.selfCare",
       descKey: "pillars.strategyDescriptions.selfCare",
     },
@@ -169,31 +143,31 @@ const BE_SHARED_TOOLS: SharedTool[] = [
   {
     key: "mindfulness",
     route: "/tools/mindfulness",
-    icon: WindIcon,
+    icon: "air",
     labelKey: "navigation:sidebar.mindfulness",
   },
   {
     key: "meditation",
     route: "/tools/meditation",
-    icon: SunMediumIcon,
+    icon: "self-improvement",
     labelKey: "navigation:sidebar.meditation",
   },
   {
     key: "moodTracker",
     route: "/tools/mood-tracker",
-    icon: SmilePlusIcon,
+    icon: "mood",
     labelKey: "navigation:sidebar.moodTracker",
   },
   {
     key: "gratitudeLog",
     route: "/tools/gratitude-log",
-    icon: BookHeartIcon,
+    icon: "favorite",
     labelKey: "navigation:sidebar.gratitudeLog",
   },
   {
     key: "journal",
     route: "/tools/journal",
-    icon: NotebookPenIcon,
+    icon: "edit-note",
     labelKey: "navigation:sidebar.journal",
   },
 ];
@@ -202,14 +176,14 @@ const REVIEW_LINKS = [
   {
     key: "weeklyReview",
     route: "/modules/cbt/weekly-review",
-    icon: CalendarCheckIcon,
+    icon: "event-available" as MaterialIconName,
     labelKey: "dashboard.strategies.weeklyReview",
     descKey: "pillars.strategyDescriptions.weeklyReview",
   },
   {
     key: "recovery",
     route: "/modules/cbt/recovery",
-    icon: MapIcon,
+    icon: "map" as MaterialIconName,
     labelKey: "dashboard.strategies.recovery",
     descKey: "pillars.strategyDescriptions.recovery",
   },
@@ -219,7 +193,7 @@ const GUIDANCE_STRATEGIES: Record<
   GuidedStrategyKey,
   {
     route: string;
-    icon: LucideIcon;
+    icon: MaterialIconName;
     labelKey: string;
     descKey: string;
     pillar: Pillar;
@@ -227,70 +201,70 @@ const GUIDANCE_STRATEGIES: Record<
 > = {
   activities: {
     route: "/modules/cbt/activities",
-    icon: ActivityIcon,
+    icon: "directions-run",
     labelKey: "dashboard.strategies.activities",
     descKey: "pillars.strategyDescriptions.activities",
     pillar: "act",
   },
   anger: {
     route: "/modules/cbt/anger",
-    icon: FlameIcon,
+    icon: "local-fire-department",
     labelKey: "dashboard.strategies.anger",
     descKey: "pillars.strategyDescriptions.anger",
     pillar: "act",
   },
   beliefs: {
     route: "/modules/cbt/beliefs",
-    icon: AnchorIcon,
+    icon: "anchor",
     labelKey: "dashboard.strategies.beliefs",
     descKey: "pillars.strategyDescriptions.beliefs",
     pillar: "think",
   },
   exposure: {
     route: "/modules/cbt/exposure",
-    icon: LayersIcon,
+    icon: "layers",
     labelKey: "dashboard.strategies.exposure",
     descKey: "pillars.strategyDescriptions.exposure",
     pillar: "act",
   },
   goals: {
     route: "/modules/cbt/goals",
-    icon: TargetIcon,
+    icon: "gps-fixed",
     labelKey: "dashboard.strategies.goals",
     descKey: "pillars.strategyDescriptions.goals",
     pillar: "act",
   },
   mindfulness: {
     route: "/tools/mindfulness",
-    icon: WindIcon,
+    icon: "air",
     labelKey: "dashboard.strategies.mindfulness",
     descKey: "pillars.strategyDescriptions.mindfulness",
     pillar: "be",
   },
   selfCare: {
     route: "/modules/cbt/self-care",
-    icon: HeartIcon,
+    icon: "favorite",
     labelKey: "dashboard.strategies.selfCare",
     descKey: "pillars.strategyDescriptions.selfCare",
     pillar: "be",
   },
   tasks: {
     route: "/modules/cbt/tasks",
-    icon: FootprintsIcon,
+    icon: "hiking",
     labelKey: "dashboard.strategies.tasks",
     descKey: "pillars.strategyDescriptions.tasks",
     pillar: "act",
   },
   thoughts: {
     route: "/modules/cbt/new",
-    icon: ScrollTextIcon,
+    icon: "article",
     labelKey: "dashboard.strategies.thoughts",
     descKey: "pillars.strategyDescriptions.thoughts",
     pillar: "think",
   },
   worry: {
     route: "/modules/cbt/worry",
-    icon: BrainIcon,
+    icon: "psychology",
     labelKey: "dashboard.strategies.worry",
     descKey: "pillars.strategyDescriptions.worry",
     pillar: "think",
@@ -434,7 +408,7 @@ function PillarPane({
       {sharedTools && sharedTools.length > 0 ? (
         <View className="mt-5 gap-2">
           <View className="flex-row items-center gap-2">
-            <Icon as={WandSparklesIcon} className="size-3 text-muted-foreground" size={12} />
+            <Icon name="auto-awesome" className="size-3 text-muted-foreground" size={12} />
             <Text className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               {t("pillars.usesSharedTools")}
             </Text>
@@ -478,9 +452,9 @@ function PillarStrategyCard({ pillar, strategy }: PillarStrategyCardProps) {
               PILLAR_ICON_BG_CLASS[pillar],
             )}
           >
-            <Icon as={strategy.icon} className={cn("size-5", PILLAR_TEXT_CLASS[pillar])} />
+            <Icon name={strategy.icon} className={cn("size-6", PILLAR_TEXT_CLASS[pillar])} />
           </View>
-          <Icon as={ArrowRightIcon} className="size-4 text-muted-foreground" />
+          <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
         </View>
         <Text className="text-base font-semibold leading-tight">{label}</Text>
         <Text variant="muted" className="text-xs leading-snug">
@@ -515,7 +489,7 @@ function SharedToolPill({ pillar, tool }: SharedToolPillProps) {
           PILLAR_ICON_BG_CLASS[pillar],
         )}
       >
-        <Icon as={tool.icon} className={cn("size-5", PILLAR_TEXT_CLASS[pillar])} />
+        <Icon name={tool.icon} className={cn("size-6", PILLAR_TEXT_CLASS[pillar])} />
       </View>
       <Text className="flex-1 text-sm font-semibold" numberOfLines={1}>
         {label}
@@ -543,7 +517,7 @@ function GuidanceCard({ strategy }: { strategy: (typeof GUIDANCE_STRATEGIES)[Gui
           PILLAR_ICON_BG_CLASS[strategy.pillar],
         )}
       >
-        <Icon as={strategy.icon} className={cn("size-5", PILLAR_TEXT_CLASS[strategy.pillar])} />
+        <Icon name={strategy.icon} className={cn("size-6", PILLAR_TEXT_CLASS[strategy.pillar])} />
       </View>
       <View className="flex-1 gap-0.5">
         <Text className="text-sm font-semibold">{t(strategy.labelKey)}</Text>
@@ -656,7 +630,7 @@ export default function CbtHomeScreen() {
                   onPress={() => setForceOnboarding(true)}
                   hitSlop={8}
                 >
-                  <Icon as={CircleHelpIcon} className="text-muted-foreground" size={20} />
+                  <Icon name="help-outline" className="text-muted-foreground" size={20} />
                 </Pressable>
               </View>
               <Text variant="muted">{t("home.description")}</Text>
@@ -701,10 +675,7 @@ export default function CbtHomeScreen() {
                           size="sm"
                         >
                           {morningCheckInComplete ? (
-                            <Icon
-                              as={CheckCircle2Icon}
-                              className="size-4 text-primary-foreground"
-                            />
+                            <Icon name="check-circle" className="size-4 text-primary-foreground" />
                           ) : null}
                           <Text>{t("dashboard.logMood")}</Text>
                         </Button>
@@ -1167,7 +1138,7 @@ export default function CbtHomeScreen() {
                       role="button"
                     >
                       <View className="size-9 items-center justify-center rounded-lg bg-muted">
-                        <Icon as={link.icon} className="size-5 text-foreground" />
+                        <Icon name={link.icon} className="size-6 text-foreground" />
                       </View>
                       <View className="flex-1">
                         <Text className="text-sm font-semibold">{t(link.labelKey)}</Text>
@@ -1175,7 +1146,7 @@ export default function CbtHomeScreen() {
                           {t(link.descKey)}
                         </Text>
                       </View>
-                      <Icon as={ArrowRightIcon} className="size-4 text-muted-foreground" />
+                      <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
                     </Pressable>
                   </View>
                 ))}
@@ -1211,7 +1182,7 @@ export default function CbtHomeScreen() {
               role="button"
             >
               <Text className="flex-1 text-sm font-medium">{t("home.recordHistory")}</Text>
-              <Icon as={ArrowRightIcon} className="size-4 text-muted-foreground" />
+              <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
             </Pressable>
           </View>
         </ScrollView>

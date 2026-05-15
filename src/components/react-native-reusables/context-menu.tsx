@@ -3,7 +3,7 @@ import { NativeOnlyAnimatedView } from "@/src/components/react-native-reusables/
 import { TextClassContext } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import * as ContextMenuPrimitive from "@rn-primitives/context-menu";
-import { Check, ChevronDown, ChevronRight, ChevronUp } from "lucide-react-native";
+import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import * as React from "react";
 import { Platform, type StyleProp, StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { FadeIn } from "react-native-reanimated";
@@ -27,7 +27,8 @@ function ContextMenuSubTrigger({
   inset?: boolean;
 }) {
   const { open } = ContextMenuPrimitive.useSubContext();
-  const icon = Platform.OS === "web" ? ChevronRight : open ? ChevronUp : ChevronDown;
+  const icon: MaterialIconName =
+    Platform.OS === "web" ? "chevron-right" : open ? "expand-less" : "expand-more";
   return (
     <TextClassContext.Provider
       value={cn(
@@ -48,7 +49,10 @@ function ContextMenuSubTrigger({
         {...props}
       >
         <>{children}</>
-        <Icon as={icon} className={cn("text-foreground ml-auto size-4 shrink-0", iconClassName)} />
+        <Icon
+          name={icon}
+          className={cn("text-foreground ml-auto size-4 shrink-0", iconClassName)}
+        />
       </ContextMenuPrimitive.SubTrigger>
     </TextClassContext.Provider>
   );
@@ -186,7 +190,7 @@ function ContextMenuCheckboxItem({
         <View className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
           <ContextMenuPrimitive.ItemIndicator>
             <Icon
-              as={Check}
+              name="check"
               className={cn(
                 "text-foreground size-4",
                 Platform.select({ web: "pointer-events-none" }),

@@ -3,7 +3,7 @@ import { NativeOnlyAnimatedView } from "@/src/components/react-native-reusables/
 import { getTextFontStyle } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import * as DialogPrimitive from "@rn-primitives/dialog";
-import { X } from "lucide-react-native";
+
 import * as React from "react";
 import { Platform, Text, View, type ViewProps } from "react-native";
 import { FadeIn, FadeOut } from "react-native-reanimated";
@@ -80,7 +80,7 @@ function DialogContent({
             hitSlop={12}
           >
             <Icon
-              as={X}
+              name="close"
               className={cn("text-accent-foreground web:pointer-events-none size-4 shrink-0")}
             />
             <Text className="sr-only">Close</Text>

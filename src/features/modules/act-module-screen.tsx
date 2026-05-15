@@ -2,15 +2,13 @@ import { router } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { CompassIcon, SmilePlusIcon, WindIcon, BookHeartIcon } from "lucide-react-native";
-
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
-import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
@@ -27,14 +25,14 @@ const PROCESS_KEYS = [
 
 interface SharedTool {
   href: string;
-  icon: typeof SmilePlusIcon;
+  icon: MaterialIconName;
   labelKey: string;
 }
 
 const SHARED_TOOLS: SharedTool[] = [
-  { href: "/tools/mood-tracker", icon: SmilePlusIcon, labelKey: "sidebar.moodTracker" },
-  { href: "/tools/mindfulness", icon: WindIcon, labelKey: "sidebar.mindfulness" },
-  { href: "/tools/gratitude-log", icon: BookHeartIcon, labelKey: "sidebar.gratitudeLog" },
+  { href: "/tools/mood-tracker", icon: "mood", labelKey: "sidebar.moodTracker" },
+  { href: "/tools/mindfulness", icon: "air", labelKey: "sidebar.mindfulness" },
+  { href: "/tools/gratitude-log", icon: "favorite", labelKey: "sidebar.gratitudeLog" },
 ];
 
 export default function ActModuleScreen() {
@@ -61,7 +59,7 @@ export default function ActModuleScreen() {
           <Card className="border-act/30 bg-act/5">
             <CardHeader className="flex-row items-center gap-4">
               <View className="size-14 items-center justify-center rounded-xl border border-act/30 bg-act/15">
-                <Icon as={CompassIcon} className="size-7 text-act" />
+                <Icon name="explore" className="size-7 text-act" />
               </View>
               <View className="flex-1 gap-1">
                 <Text className="text-base font-semibold">{t("act.statusTitle")}</Text>
@@ -105,7 +103,7 @@ export default function ActModuleScreen() {
                   className="min-w-[180px] flex-1 basis-[180px] flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
                 >
                   <View className="size-10 items-center justify-center rounded-lg bg-be/15">
-                    <Icon as={tool.icon} className="size-5 text-be" />
+                    <Icon name={tool.icon} className="size-5 text-be" />
                   </View>
                   <Text className="flex-1 text-sm font-semibold">{tNav(tool.labelKey)}</Text>
                 </Pressable>

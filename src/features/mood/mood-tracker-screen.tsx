@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import { ScrollView, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2Icon, SmilePlusIcon } from "lucide-react-native";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -71,7 +70,7 @@ export default function MoodTrackerScreen() {
               variant="outline"
               className="self-start"
             >
-              <Icon as={SmilePlusIcon} className="size-4" />
+              <Icon name="mood" className="size-4" />
               <Text>{t("today.logAnother")}</Text>
             </Button>
           ) : null}
@@ -136,7 +135,7 @@ function TodayCheckInCard({ summary, onLog }: TodayCheckInCardProps) {
     <Card>
       <CardHeader>
         <View className="flex-row items-center gap-2">
-          {logged ? <Icon as={CheckCircle2Icon} className="size-5 text-primary" /> : null}
+          {logged ? <Icon name="check-circle" className="size-5 text-primary" /> : null}
           <CardTitle>{t("today.title")}</CardTitle>
         </View>
         <CardDescription>{description}</CardDescription>
@@ -144,7 +143,7 @@ function TodayCheckInCard({ summary, onLog }: TodayCheckInCardProps) {
       {!logged ? (
         <CardContent>
           <Button onPress={onLog} className="self-start">
-            <Icon as={SmilePlusIcon} className="size-4 text-primary-foreground" />
+            <Icon name="mood" className="size-4 text-primary-foreground" />
             <Text>{t("cta.logMood")}</Text>
           </Button>
         </CardContent>

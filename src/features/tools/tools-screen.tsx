@@ -2,17 +2,7 @@ import { router } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import {
-  ArrowRightIcon,
-  BookHeartIcon,
-  NotebookPenIcon,
-  SmilePlusIcon,
-  SunMediumIcon,
-  WindIcon,
-} from "lucide-react-native";
-import type { LucideIcon } from "lucide-react-native";
-
-import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { cn } from "@/lib/utils";
@@ -27,7 +17,7 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 interface ToolTile {
   key: "mood" | "mindfulness" | "meditation" | "gratitude" | "journal";
   href: string;
-  icon: LucideIcon;
+  icon: MaterialIconName;
   nameKey: string;
   subKey: string;
   iconBg: string;
@@ -38,7 +28,7 @@ const TOOLS: ToolTile[] = [
   {
     key: "mood",
     href: "/tools/mood-tracker",
-    icon: SmilePlusIcon,
+    icon: "mood",
     nameKey: "today.tools.moodTracker",
     subKey: "today.tools.moodTrackerSub",
     iconBg: "bg-be/15",
@@ -47,7 +37,7 @@ const TOOLS: ToolTile[] = [
   {
     key: "mindfulness",
     href: "/tools/mindfulness",
-    icon: WindIcon,
+    icon: "air",
     nameKey: "today.tools.mindfulness",
     subKey: "today.tools.mindfulnessSub",
     iconBg: "bg-be/15",
@@ -56,7 +46,7 @@ const TOOLS: ToolTile[] = [
   {
     key: "meditation",
     href: "/tools/meditation",
-    icon: SunMediumIcon,
+    icon: "self-improvement",
     nameKey: "today.tools.meditation",
     subKey: "today.tools.meditationSub",
     iconBg: "bg-be/15",
@@ -65,7 +55,7 @@ const TOOLS: ToolTile[] = [
   {
     key: "journal",
     href: "/tools/journal",
-    icon: NotebookPenIcon,
+    icon: "edit-note",
     nameKey: "today.tools.journal",
     subKey: "today.tools.journalSub",
     iconBg: "bg-primary/15",
@@ -74,7 +64,7 @@ const TOOLS: ToolTile[] = [
   {
     key: "gratitude",
     href: "/tools/gratitude-log",
-    icon: BookHeartIcon,
+    icon: "favorite",
     nameKey: "today.tools.gratitudeLog",
     subKey: "today.tools.gratitudeLogSub",
     iconBg: "bg-primary/15",
@@ -175,7 +165,7 @@ function ToolCard({ tool, stat }: ToolCardProps) {
       role="button"
     >
       <View className={cn("size-12 items-center justify-center rounded-xl", tool.iconBg)}>
-        <Icon as={tool.icon} className={cn("size-6", tool.iconColor)} />
+        <Icon name={tool.icon} className={cn("size-6", tool.iconColor)} />
       </View>
       <View className="flex-1 gap-0.5">
         <Text className="text-base font-semibold">{name}</Text>
@@ -188,7 +178,7 @@ function ToolCard({ tool, stat }: ToolCardProps) {
           </Text>
         </View>
       </View>
-      <Icon as={ArrowRightIcon} className="size-4 text-muted-foreground" />
+      <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
     </Pressable>
   );
 }

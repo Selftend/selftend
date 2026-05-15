@@ -3,7 +3,6 @@ import { ActivityIndicator, Modal, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { PencilIcon, Trash2Icon } from "lucide-react-native";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -119,11 +118,11 @@ export default function JournalDetailScreen() {
                 }
                 variant="secondary"
               >
-                <Icon as={PencilIcon} className="size-4" />
+                <Icon name="edit" className="size-4" />
                 <Text>{t("detail.edit")}</Text>
               </Button>
               <Button onPress={() => setConfirmOpen(true)} variant="ghost">
-                <Icon as={Trash2Icon} className="size-4 text-destructive" />
+                <Icon name="delete-outline" className="size-4 text-destructive" />
                 <Text>{t("detail.delete")}</Text>
               </Button>
             </View>

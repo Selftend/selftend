@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { PlusIcon } from "lucide-react-native";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -40,7 +39,7 @@ export default function JournalListScreen() {
             onPress={() => router.push("/tools/journal/new" as Parameters<typeof router.push>[0])}
             className="self-start"
           >
-            <Icon as={PlusIcon} className="size-4 text-primary-foreground" />
+            <Icon name="add" className="size-4 text-primary-foreground" />
             <Text>{t("cta.new")}</Text>
           </Button>
 

@@ -1,7 +1,6 @@
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { AnchorIcon } from "lucide-react-native";
 
 import {
   Card,
@@ -44,7 +43,7 @@ export default function DbtModuleScreen() {
           <Card className="border-be/30 bg-be/5">
             <CardHeader className="flex-row items-center gap-4">
               <View className="size-14 items-center justify-center rounded-xl border border-be/30 bg-be/15">
-                <Icon as={AnchorIcon} className="size-7 text-be" />
+                <Icon name="anchor" className="size-7 text-be" />
               </View>
               <View className="flex-1 gap-1">
                 <Text className="text-base font-semibold">{t("dbt.statusTitle")}</Text>

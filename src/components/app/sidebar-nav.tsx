@@ -1,22 +1,9 @@
 import { router, usePathname } from "expo-router";
-import {
-  AnchorIcon,
-  BookHeartIcon,
-  BrainIcon,
-  CompassIcon,
-  HomeIcon,
-  LifeBuoyIcon,
-  NotebookPenIcon,
-  SettingsIcon,
-  SmilePlusIcon,
-  SunMediumIcon,
-  WindIcon,
-} from "lucide-react-native";
 import { Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
@@ -24,7 +11,7 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 interface NavItemDef {
   labelKey: string;
   href: string;
-  icon: typeof HomeIcon;
+  icon: MaterialIconName;
   matchPrefix: string | null;
   activeWhen?: (pathname: string) => boolean;
   badgeKey?: "badgeLive" | "badgeSoon";
@@ -33,7 +20,7 @@ interface NavItemDef {
 const TODAY_ITEM: NavItemDef = {
   labelKey: "sidebar.home",
   href: "/(app)/(tabs)/",
-  icon: HomeIcon,
+  icon: "home",
   matchPrefix: null,
 };
 
@@ -41,7 +28,7 @@ const MODULE_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.cbt",
     href: "/modules/cbt",
-    icon: BrainIcon,
+    icon: "psychology",
     matchPrefix: "/modules/cbt",
     badgeKey: "badgeLive",
     activeWhen: (pathname) => pathname === "/modules/cbt" || pathname.startsWith("/modules/cbt/"),
@@ -49,14 +36,14 @@ const MODULE_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.act",
     href: "/modules/act",
-    icon: CompassIcon,
+    icon: "explore",
     matchPrefix: "/modules/act",
     badgeKey: "badgeSoon",
   },
   {
     labelKey: "sidebar.dbt",
     href: "/modules/dbt",
-    icon: AnchorIcon,
+    icon: "anchor",
     matchPrefix: "/modules/dbt",
     badgeKey: "badgeSoon",
   },
@@ -66,31 +53,31 @@ const TOOL_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.moodTracker",
     href: "/tools/mood-tracker",
-    icon: SmilePlusIcon,
+    icon: "mood",
     matchPrefix: "/tools/mood-tracker",
   },
   {
     labelKey: "sidebar.journal",
     href: "/tools/journal",
-    icon: NotebookPenIcon,
+    icon: "edit-note",
     matchPrefix: "/tools/journal",
   },
   {
     labelKey: "sidebar.mindfulness",
     href: "/tools/mindfulness",
-    icon: WindIcon,
+    icon: "air",
     matchPrefix: "/tools/mindfulness",
   },
   {
     labelKey: "sidebar.meditation",
     href: "/tools/meditation",
-    icon: SunMediumIcon,
+    icon: "self-improvement",
     matchPrefix: "/tools/meditation",
   },
   {
     labelKey: "sidebar.gratitudeLog",
     href: "/tools/gratitude-log",
-    icon: BookHeartIcon,
+    icon: "favorite",
     matchPrefix: "/tools/gratitude-log",
   },
 ];
@@ -99,13 +86,13 @@ const ACCOUNT_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.settings",
     href: "/(app)/(tabs)/settings",
-    icon: SettingsIcon,
+    icon: "settings",
     matchPrefix: "/settings",
   },
   {
     labelKey: "sidebar.support",
     href: "/(app)/support",
-    icon: LifeBuoyIcon,
+    icon: "support",
     matchPrefix: "/support",
   },
 ];
@@ -156,8 +143,8 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
         )}
       >
         <Icon
-          as={item.icon}
-          className={cn("size-5", active ? "text-primary" : "text-muted-foreground")}
+          name={item.icon}
+          className={cn("size-6", active ? "text-primary" : "text-muted-foreground")}
         />
         <Text
           className={cn("flex-1 text-sm font-medium", active ? "text-primary" : "text-foreground")}

@@ -1,4 +1,3 @@
-import { MoonIcon, SunIcon } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -45,7 +44,7 @@ export function ThemeToggle() {
         aria-valuetext={t(`themeToggle.${preference}`)}
         className="min-w-0 w-auto gap-1 px-2"
       >
-        <Icon as={isDark ? MoonIcon : SunIcon} className="size-4 text-foreground" />
+        <Icon name={isDark ? "dark-mode" : "light-mode"} className="size-4 text-foreground" />
       </SelectTrigger>
       <SelectContent side="bottom" align="end">
         {PREFERENCES.map((value) => (

@@ -4,7 +4,6 @@ import { TextClassContext } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import * as SelectPrimitive from "@rn-primitives/select";
-import { Check, ChevronDown, ChevronDownIcon, ChevronUpIcon } from "lucide-react-native";
 import * as React from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { FadeIn, FadeOut } from "react-native-reanimated";
@@ -71,7 +70,7 @@ function SelectTrigger({
       {...props}
     >
       <>{children}</>
-      <Icon as={ChevronDown} aria-hidden={true} className="text-muted-foreground size-4" />
+      <Icon name="expand-more" aria-hidden={true} className="text-muted-foreground size-4" />
     </SelectPrimitive.Trigger>
   );
 }
@@ -170,7 +169,7 @@ function SelectItem({
     >
       <View className="absolute right-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <Icon as={Check} className="text-muted-foreground size-4 shrink-0" />
+          <Icon name="check" className="text-muted-foreground size-4 shrink-0" />
         </SelectPrimitive.ItemIndicator>
       </View>
       <SelectPrimitive.ItemText className="text-foreground group-active:text-accent-foreground select-none text-sm" />
@@ -210,7 +209,7 @@ function SelectScrollUpButton({
       className={cn("flex cursor-default items-center justify-center py-1", className)}
       {...props}
     >
-      <Icon as={ChevronUpIcon} className="size-4" />
+      <Icon name="expand-less" className="size-4" />
     </SelectPrimitive.ScrollUpButton>
   );
 }
@@ -231,7 +230,7 @@ function SelectScrollDownButton({
       className={cn("flex cursor-default items-center justify-center py-1", className)}
       {...props}
     >
-      <Icon as={ChevronDownIcon} className="size-4" />
+      <Icon name="expand-more" className="size-4" />
     </SelectPrimitive.ScrollDownButton>
   );
 }

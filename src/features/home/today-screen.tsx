@@ -2,24 +2,9 @@ import { router } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIcon,
-  ArrowRightIcon,
-  BookHeartIcon,
-  ClockIcon,
-  HeartIcon,
-  NotebookPenIcon,
-  PlusIcon,
-  ScrollTextIcon,
-  SmilePlusIcon,
-  SunMediumIcon,
-  WindIcon,
-} from "lucide-react-native";
-import type { LucideIcon } from "lucide-react-native";
-
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
-import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { useActivities } from "@/src/features/activities/queries";
@@ -86,7 +71,7 @@ const MODULES: ModuleTile[] = [
 interface SharedTool {
   key: string;
   href: string;
-  icon: LucideIcon;
+  icon: MaterialIconName;
   nameKey: string;
   subKey: string;
   iconBg: string;
@@ -97,7 +82,7 @@ const SHARED_TOOLS: SharedTool[] = [
   {
     key: "mood",
     href: "/tools/mood-tracker",
-    icon: SmilePlusIcon,
+    icon: "mood",
     nameKey: "today.tools.moodTracker",
     subKey: "today.tools.moodTrackerSub",
     iconBg: "bg-be/15",
@@ -106,7 +91,7 @@ const SHARED_TOOLS: SharedTool[] = [
   {
     key: "mindfulness",
     href: "/tools/mindfulness",
-    icon: WindIcon,
+    icon: "air",
     nameKey: "today.tools.mindfulness",
     subKey: "today.tools.mindfulnessSub",
     iconBg: "bg-be/15",
@@ -115,7 +100,7 @@ const SHARED_TOOLS: SharedTool[] = [
   {
     key: "journal",
     href: "/tools/journal",
-    icon: NotebookPenIcon,
+    icon: "edit-note",
     nameKey: "today.tools.journal",
     subKey: "today.tools.journalSub",
     iconBg: "bg-primary/15",
@@ -124,7 +109,7 @@ const SHARED_TOOLS: SharedTool[] = [
   {
     key: "gratitude",
     href: "/tools/gratitude-log",
-    icon: BookHeartIcon,
+    icon: "favorite",
     nameKey: "today.tools.gratitudeLog",
     subKey: "today.tools.gratitudeLogSub",
     iconBg: "bg-primary/15",
@@ -225,7 +210,7 @@ export default function TodayScreen() {
   const planItems: PlanItem[] = [
     ...scheduledToday.map((activity) => ({
       key: `activity-${activity.id}`,
-      icon: ActivityIcon,
+      icon: "directions-run" as MaterialIconName,
       title: activity.activityName,
       labelKey: "today.plan.activityLabel",
       actionKey: "today.plan.open",
@@ -237,7 +222,7 @@ export default function TodayScreen() {
       ? [
           {
             key: `thought-${incompleteThoughtRecord.id}`,
-            icon: ScrollTextIcon,
+            icon: "article" as MaterialIconName,
             title: incompleteThoughtRecord.automaticThought,
             labelKey: "today.plan.thoughtRecordLabel",
             actionKey: "today.plan.resume",
@@ -256,7 +241,7 @@ export default function TodayScreen() {
       : [
           {
             key: "self-care",
-            icon: HeartIcon,
+            icon: "favorite" as MaterialIconName,
             title: t("today.plan.evening"),
             labelKey: "today.plan.selfCareLabel",
             actionKey: "today.plan.open",
@@ -287,64 +272,49 @@ export default function TodayScreen() {
             {/* Quick actions */}
             <View className="flex-row flex-wrap gap-2">
               <View className="min-w-[150px] flex-1 basis-[150px]">
-                <Button
+                <QuickActionButton
+                  icon="mood"
+                  label={t("today.quickActions.logMood")}
                   onPress={() =>
                     router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
                   }
-                  variant="outline"
-                  size="lg"
-                >
-                  <Icon as={SmilePlusIcon} className="size-4" />
-                  <Text>{t("today.quickActions.logMood")}</Text>
-                </Button>
+                />
               </View>
               <View className="min-w-[150px] flex-1 basis-[150px]">
-                <Button
+                <QuickActionButton
+                  icon="article"
+                  label={t("today.quickActions.thoughtRecord")}
                   onPress={() =>
                     router.push("/modules/cbt/new" as Parameters<typeof router.push>[0])
                   }
-                  variant="outline"
-                  size="lg"
-                >
-                  <Icon as={ScrollTextIcon} className="size-4" />
-                  <Text>{t("today.quickActions.thoughtRecord")}</Text>
-                </Button>
+                />
               </View>
               <View className="min-w-[150px] flex-1 basis-[150px]">
-                <Button
+                <QuickActionButton
+                  icon="self-improvement"
+                  label={t("today.quickActions.meditate")}
                   onPress={() =>
                     router.push("/tools/meditation" as Parameters<typeof router.push>[0])
                   }
-                  variant="outline"
-                  size="lg"
-                >
-                  <Icon as={SunMediumIcon} className="size-4" />
-                  <Text>{t("today.quickActions.meditate")}</Text>
-                </Button>
+                />
               </View>
               <View className="min-w-[150px] flex-1 basis-[150px]">
-                <Button
+                <QuickActionButton
+                  icon="favorite"
+                  label={t("today.quickActions.selfCare")}
                   onPress={() =>
                     router.push("/modules/cbt/self-care" as Parameters<typeof router.push>[0])
                   }
-                  variant="outline"
-                  size="lg"
-                >
-                  <Icon as={HeartIcon} className="size-4" />
-                  <Text>{t("today.quickActions.selfCare")}</Text>
-                </Button>
+                />
               </View>
               <View className="min-w-[150px] flex-1 basis-[150px]">
-                <Button
+                <QuickActionButton
+                  icon="edit-note"
+                  label={t("today.quickActions.journal")}
                   onPress={() =>
                     router.push("/tools/journal/new" as Parameters<typeof router.push>[0])
                   }
-                  variant="outline"
-                  size="lg"
-                >
-                  <Icon as={NotebookPenIcon} className="size-4" />
-                  <Text>{t("today.quickActions.journal")}</Text>
-                </Button>
+                />
               </View>
             </View>
 
@@ -360,7 +330,7 @@ export default function TodayScreen() {
                   variant="ghost"
                 >
                   <Text>{t("today.moodSnapshot.logMood")}</Text>
-                  <Icon as={PlusIcon} className="size-3.5" />
+                  <Icon name="add" className="size-3.5" />
                 </Button>
               </View>
               <View className="flex-row flex-wrap gap-3">
@@ -436,6 +406,29 @@ export default function TodayScreen() {
   );
 }
 
+interface QuickActionButtonProps {
+  icon: MaterialIconName;
+  label: string;
+  onPress: () => void;
+}
+
+function QuickActionButton({ icon, label, onPress }: QuickActionButtonProps) {
+  return (
+    <Button
+      accessibilityLabel={label}
+      className="h-12 w-full gap-2 px-3"
+      onPress={onPress}
+      variant="outline"
+      size="lg"
+    >
+      <Icon name={icon} className="size-6 shrink-0" size={24} />
+      <Text className="shrink-0 text-sm" numberOfLines={1}>
+        {label}
+      </Text>
+    </Button>
+  );
+}
+
 interface StatTileProps {
   label: string;
   value: string;
@@ -465,7 +458,7 @@ type PlanPillar = "think" | "act" | "be";
 
 interface PlanItem {
   key: string;
-  icon: LucideIcon;
+  icon: MaterialIconName;
   title: string;
   labelKey: string;
   actionKey: string;
@@ -493,7 +486,7 @@ function PlanRow({ item }: { item: PlanItem }) {
       <View
         className={cn("size-9 items-center justify-center rounded-lg", PLAN_PILLAR_BG[item.pillar])}
       >
-        <Icon as={item.icon} className={cn("size-5", PLAN_PILLAR_TEXT[item.pillar])} />
+        <Icon name={item.icon} className={cn("size-6", PLAN_PILLAR_TEXT[item.pillar])} />
       </View>
       <View className="flex-1 gap-1">
         <Text className="text-sm font-semibold" numberOfLines={2}>
@@ -552,7 +545,7 @@ function ModuleCard({ module }: { module: ModuleTile }) {
           {module.footerKey ? t(`today.modules.${module.footerKey}`) : ""}
         </Text>
         <Icon
-          as={module.footerKey ? ClockIcon : ArrowRightIcon}
+          name={module.footerKey ? "schedule" : "arrow-forward"}
           className="size-4 text-muted-foreground"
         />
       </View>
@@ -572,7 +565,7 @@ function SharedToolCard({ tool }: { tool: SharedTool }) {
       role="button"
     >
       <View className={cn("size-10 items-center justify-center rounded-lg", tool.iconBg)}>
-        <Icon as={tool.icon} className={cn("size-5", tool.iconColor)} />
+        <Icon name={tool.icon} className={cn("size-6", tool.iconColor)} />
       </View>
       <View className="flex-1">
         <Text className="text-sm font-semibold">{t(tool.nameKey)}</Text>

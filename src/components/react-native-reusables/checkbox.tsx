@@ -2,7 +2,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { cn } from "@/lib/utils";
 import { COMPACT_CONTROL_HIT_SLOP } from "@/src/lib/accessibility";
 import * as CheckboxPrimitive from "@rn-primitives/checkbox";
-import { Check } from "lucide-react-native";
+
 import { Platform } from "react-native";
 
 function Checkbox({
@@ -43,12 +43,7 @@ function Checkbox({
       <CheckboxPrimitive.Indicator
         className={cn("bg-primary h-full w-full items-center justify-center", indicatorClassName)}
       >
-        <Icon
-          as={Check}
-          size={12}
-          strokeWidth={Platform.OS === "web" ? 2.5 : 3.5}
-          className={cn("text-primary-foreground", iconClassName)}
-        />
+        <Icon name="check" size={12} className={cn("text-primary-foreground", iconClassName)} />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

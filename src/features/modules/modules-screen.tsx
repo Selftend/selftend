@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { ArrowRightIcon, ClockIcon } from "lucide-react-native";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -141,7 +140,10 @@ function ModuleCard({ module }: { module: ModuleTile }) {
         <Text variant="muted" className="text-xs">
           {module.footerKey ? t(`modulesPage.stats.${module.footerKey}`) : ""}
         </Text>
-        <Icon as={isLocked ? ClockIcon : ArrowRightIcon} className="size-4 text-muted-foreground" />
+        <Icon
+          name={isLocked ? "schedule" : "arrow-forward"}
+          className="size-4 text-muted-foreground"
+        />
       </View>
     </Pressable>
   );

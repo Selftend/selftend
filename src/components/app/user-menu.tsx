@@ -1,14 +1,6 @@
 import { router } from "expo-router";
 import * as Linking from "expo-linking";
-import {
-  CheckIcon,
-  EllipsisVerticalIcon,
-  LogOutIcon,
-  MonitorIcon,
-  MoonIcon,
-  SettingsIcon,
-  SunIcon,
-} from "lucide-react-native";
+import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import * as React from "react";
 import { Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -33,7 +25,11 @@ import { useThemeStore, type ThemePreference } from "@/src/stores/theme-store";
 import type { TriggerRef } from "@rn-primitives/popover";
 
 const THEME_OPTIONS: ThemePreference[] = ["system", "light", "dark"];
-const THEME_ICONS = { system: MonitorIcon, light: SunIcon, dark: MoonIcon } as const;
+const THEME_ICONS: Record<ThemePreference, MaterialIconName> = {
+  system: "desktop-windows",
+  light: "light-mode",
+  dark: "dark-mode",
+};
 
 export function UserMenu() {
   const { t } = useTranslation("navigation");
@@ -74,7 +70,7 @@ export function UserMenu() {
           {isSignedIn ? (
             <ProfileAvatar avatarUrl={avatarUrl} email={email} />
           ) : (
-            <Icon as={EllipsisVerticalIcon} className="size-5 text-foreground" />
+            <Icon name="more-vert" className="size-6 text-foreground" />
           )}
         </Button>
       </PopoverTrigger>
@@ -111,7 +107,7 @@ export function UserMenu() {
               >
                 <View className="size-4 items-center justify-center">
                   {language === code ? (
-                    <Icon as={CheckIcon} className="size-4 text-foreground" />
+                    <Icon name="check" className="size-4 text-foreground" />
                   ) : null}
                 </View>
                 <Text className="text-sm">{t(`languageToggle.${code}`)}</Text>
@@ -136,10 +132,10 @@ export function UserMenu() {
               >
                 <View className="size-4 items-center justify-center">
                   {preference === value ? (
-                    <Icon as={CheckIcon} className="size-4 text-foreground" />
+                    <Icon name="check" className="size-4 text-foreground" />
                   ) : null}
                 </View>
-                <Icon as={THEME_ICONS[value]} className="size-4 text-foreground" />
+                <Icon name={THEME_ICONS[value]} className="size-4 text-foreground" />
                 <Text className="text-sm">{t(`themeToggle.${value}`)}</Text>
               </Pressable>
             ))}
@@ -169,11 +165,11 @@ export function UserMenu() {
                   router.push("/(app)/(tabs)/settings");
                 }}
               >
-                <Icon as={SettingsIcon} className="size-4" />
+                <Icon name="settings" className="size-4" />
                 <Text>{t("userMenu.settings")}</Text>
               </Button>
               <Button variant="outline" size="sm" className="flex-1" onPress={onSignOut}>
-                <Icon as={LogOutIcon} className="size-4" />
+                <Icon name="logout" className="size-4" />
                 <Text>{t("userMenu.signOut")}</Text>
               </Button>
             </View>
