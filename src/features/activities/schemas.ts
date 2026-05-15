@@ -4,7 +4,7 @@ export const activityFormSchema = z.object({
   activityName: z.string().trim().min(2, "Name the activity."),
   category: z.enum(["pleasure", "mastery"]),
   scheduledAt: z.string().nullable(),
-  moodBefore: z.number().min(1).max(10).nullable(),
+  moodBefore: z.number().min(1).max(5).nullable(),
   notes: z.string(),
 });
 

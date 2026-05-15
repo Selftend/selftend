@@ -34,7 +34,7 @@ export default function BeliefsScreen() {
               </View>
               <Text variant="muted">{t("beliefs.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/cbt/beliefs/new")} size="sm">
+            <Button onPress={() => router.push("/modules/cbt/beliefs/new")} size="sm">
               <Text>{t("beliefs.new")}</Text>
             </Button>
           </View>
@@ -58,7 +58,7 @@ export default function BeliefsScreen() {
                     original: belief.originalBeliefStrength,
                     alternative: belief.alternativeBeliefStrength,
                   })}
-                  onPress={() => router.push(`/cbt/beliefs/${belief.id}`)}
+                  onPress={() => router.push(`/modules/cbt/beliefs/${belief.id}`)}
                 />
               ))}
             </View>

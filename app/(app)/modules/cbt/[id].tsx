@@ -5,8 +5,8 @@ export default function LegacyThoughtRecordDetailRedirect() {
   const recordId = typeof id === "string" ? id : null;
 
   if (!recordId) {
-    return <Redirect href="/cbt/history" />;
+    return <Redirect href="/modules/cbt/history" />;
   }
 
-  return <Redirect href={`/cbt/history/${recordId}`} />;
+  return <Redirect href={`/modules/cbt/history/${recordId}`} />;
 }

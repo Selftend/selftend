@@ -13,6 +13,7 @@ import {
   BookOpenIcon,
   BrainIcon,
   CalendarCheckIcon,
+  CheckCircle2Icon,
   CircleHelpIcon,
   CompassIcon,
   FlameIcon,
@@ -41,7 +42,6 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { BackButton } from "@/src/components/app/back-button";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
-import { MoodLogSheet } from "@/src/components/app/mood-log-sheet";
 import { cn } from "@/lib/utils";
 import { useActivities } from "@/src/features/activities/queries";
 import type { ActivityLog } from "@/src/features/activities/types";
@@ -49,6 +49,7 @@ import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useGoals } from "@/src/features/goals/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
+import { getMoodSummary } from "@/src/features/mood/summaries";
 import { useTasks } from "@/src/features/procrastination/queries";
 import type { ProcrastinationTask } from "@/src/features/procrastination/types";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
@@ -286,28 +287,11 @@ function getDateKey(value: string | null | undefined) {
   return value?.slice(0, 10) ?? "";
 }
 
-function getMoodSummary(
-  moodLogs: { loggedAt: string; moodScore: number }[] | undefined,
-  days: number,
-) {
-  if (!moodLogs || moodLogs.length === 0) {
-    return { average: null, count: 0 };
-  }
-
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (days - 1));
-
-  const scores = moodLogs
-    .filter((log) => new Date(log.loggedAt).getTime() >= start.getTime())
-    .map((log) => log.moodScore);
-
-  if (scores.length === 0) {
-    return { average: null, count: 0 };
-  }
-
-  const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-  return { average: Math.round(average * 10) / 10, count: scores.length };
+function getLocalDateKey(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function getTodaysActivities(activities: ActivityLog[] | undefined, today: string) {
@@ -563,14 +547,13 @@ export default function CbtHomeScreen() {
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(user?.id ?? null);
   const cbtOnboardingMutation = useUpdateUserPreferences(user?.id ?? null);
   const isFocused = useIsFocused();
-  const [showMoodSheet, setShowMoodSheet] = useState(false);
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
   const { data: goals } = useGoals(user?.id ?? null);
   const { data: activities } = useActivities(user?.id ?? null);
   const { data: tasks } = useTasks(user?.id ?? null);
   const { data: moodLogs } = useMoodLogs(user?.id ?? null, 180);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getLocalDateKey(new Date());
   const { data: todaySelfCareLog } = useSelfCareLog(user?.id ?? null, today);
   const { data: thoughtRecords } = useThoughtRecords(user?.id ?? null);
   const { data: recoveryPlan } = useRecoveryPlan(user?.id ?? null);
@@ -590,7 +573,8 @@ export default function CbtHomeScreen() {
     forceOnboarding ||
     (isFocused && !prefsLoading && Boolean(preferences) && !preferences?.cbtOnboardingCompleted);
 
-  const todaysMoodLogs = moodLogs?.filter((log) => getDateKey(log.loggedAt) === today) ?? [];
+  const todaysMoodLogs =
+    moodLogs?.filter((log) => getLocalDateKey(new Date(log.loggedAt)) === today) ?? [];
   const morningCheckInComplete = todaysMoodLogs.length > 0;
   const eveningCheckInComplete = Boolean(todaySelfCareLog);
   const activeGoals = goals?.filter((g) => g.status === "active").slice(0, 2) ?? [];
@@ -645,7 +629,6 @@ export default function CbtHomeScreen() {
         onDismiss={forceOnboarding ? () => setForceOnboarding(false) : undefined}
         visible={showCbtOnboarding}
       />
-      <MoodLogSheet onClose={() => setShowMoodSheet(false)} visible={showMoodSheet} />
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -690,7 +673,25 @@ export default function CbtHomeScreen() {
                     </CardHeader>
                     <CardContent>
                       <View className="flex-row flex-wrap gap-2">
-                        <Button onPress={() => setShowMoodSheet(true)} size="sm">
+                        <Button
+                          accessibilityLabel={
+                            morningCheckInComplete
+                              ? t("dashboard.checkIn.logMoodCompleteLabel")
+                              : t("dashboard.logMood")
+                          }
+                          onPress={() =>
+                            router.push(
+                              "/tools/mood-tracker/new" as Parameters<typeof router.push>[0],
+                            )
+                          }
+                          size="sm"
+                        >
+                          {morningCheckInComplete ? (
+                            <Icon
+                              as={CheckCircle2Icon}
+                              className="size-4 text-primary-foreground"
+                            />
+                          ) : null}
                           <Text>{t("dashboard.logMood")}</Text>
                         </Button>
                         <Button
@@ -731,7 +732,15 @@ export default function CbtHomeScreen() {
                         >
                           <Text>{t("dashboard.checkIn.openSelfCare")}</Text>
                         </Button>
-                        <Button onPress={() => setShowMoodSheet(true)} size="sm" variant="outline">
+                        <Button
+                          onPress={() =>
+                            router.push(
+                              "/tools/mood-tracker/new" as Parameters<typeof router.push>[0],
+                            )
+                          }
+                          size="sm"
+                          variant="outline"
+                        >
                           <Text>{t("dashboard.logMood")}</Text>
                         </Button>
                       </View>
@@ -864,7 +873,12 @@ export default function CbtHomeScreen() {
                   </Button>
                 </View>
                 <View className="min-w-[160px] flex-1 basis-[160px]">
-                  <Button onPress={() => setShowMoodSheet(true)} variant="secondary">
+                  <Button
+                    onPress={() =>
+                      router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
+                    }
+                    variant="secondary"
+                  >
                     <Text>{t("dashboard.logMood")}</Text>
                   </Button>
                 </View>

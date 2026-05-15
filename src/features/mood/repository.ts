@@ -38,20 +38,37 @@ export async function listMoodLogs(userId: string, limit = 30) {
   return (data as MoodLogRow[]).map(mapMoodLog);
 }
 
-export async function saveMoodLog(userId: string, input: MoodInput) {
+export async function getMoodLog(userId: string, id: string) {
   const client = requireSupabase();
   const { data, error } = await client
     .from("mood_logs")
-    .insert({
-      user_id: userId,
-      mood_score: input.moodScore,
-      emotions: input.emotions,
-      notes: input.notes.trim(),
-      linked_strategy: input.linkedStrategy ?? null,
-      logged_at: new Date().toISOString(),
-    })
     .select("*")
-    .single();
+    .eq("user_id", userId)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? mapMoodLog(data as MoodLogRow) : null;
+}
+
+export async function saveMoodLog(userId: string, input: MoodInput, moodLogId?: string) {
+  const client = requireSupabase();
+  const payload = {
+    mood_score: input.moodScore,
+    emotions: input.emotions,
+    notes: input.notes.trim(),
+    linked_strategy: input.linkedStrategy ?? null,
+  };
+
+  const query = moodLogId
+    ? client.from("mood_logs").update(payload).eq("user_id", userId).eq("id", moodLogId)
+    : client.from("mood_logs").insert({
+        ...payload,
+        user_id: userId,
+        logged_at: new Date().toISOString(),
+      });
+
+  const { data, error } = await query.select("*").single();
 
   if (error) throw error;
   return mapMoodLog(data as MoodLogRow);

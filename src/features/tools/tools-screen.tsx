@@ -17,6 +17,7 @@ import { BackButton } from "@/src/components/app/back-button";
 import { cn } from "@/lib/utils";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
+import { getMoodSummary } from "@/src/features/mood/summaries";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
@@ -69,17 +70,6 @@ const TOOLS: ToolTile[] = [
   },
 ];
 
-function sevenDayAverage(moodLogs: { loggedAt: string; moodScore: number }[] | undefined) {
-  if (!moodLogs || moodLogs.length === 0) return null;
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - 6);
-  const recent = moodLogs.filter((log) => new Date(log.loggedAt).getTime() >= start.getTime());
-  if (recent.length === 0) return null;
-  const avg = recent.reduce((sum, log) => sum + log.moodScore, 0) / recent.length;
-  return Math.round(avg * 10) / 10;
-}
-
 function lastThirtyDaysMinutes(
   sessions: { durationMinutes: number; createdAt: string }[] | undefined,
 ) {
@@ -99,7 +89,7 @@ export default function ToolsScreen() {
   const { data: mindfulnessSessions } = useMindfulnessSessions(user?.id ?? null, 30);
 
   const moodCount = moodLogs?.length ?? 0;
-  const moodAverage = sevenDayAverage(moodLogs);
+  const moodAverage = getMoodSummary(moodLogs, 7).average;
   const mindfulnessMinutes = lastThirtyDaysMinutes(mindfulnessSessions);
 
   function statFor(key: ToolTile["key"]): string {

@@ -157,7 +157,7 @@ export default function GoalDetailScreen() {
             <View className="gap-3">
               <Text variant="h3">{t("goals.actions")}</Text>
               <Button
-                onPress={() => router.push(`/cbt/goals/new?goalId=${goal.id}`)}
+                onPress={() => router.push(`/modules/cbt/goals/new?goalId=${goal.id}`)}
                 variant="secondary"
               >
                 <Text>{t("goals.edit")}</Text>

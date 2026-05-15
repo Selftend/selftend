@@ -47,7 +47,7 @@ export default function WorryScreen() {
               </View>
               <Text variant="muted">{t("worry.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/cbt/worry/new")} size="sm">
+            <Button onPress={() => router.push("/modules/cbt/worry/new")} size="sm">
               <Text>{t("worry.new")}</Text>
             </Button>
           </View>

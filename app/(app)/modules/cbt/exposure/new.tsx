@@ -80,7 +80,7 @@ export default function NewExposureHierarchyScreen() {
       });
       resetDraft();
       showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace(`/cbt/exposure/${saved.id}`);
+      router.replace(`/modules/cbt/exposure/${saved.id}`);
     } catch (e) {
       const message = e instanceof Error ? e.message : t("exposure.saveError");
       showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });

@@ -199,7 +199,7 @@ export default function BeliefDetailScreen() {
           ) : null}
 
           <Button
-            onPress={() => router.push(`/cbt/beliefs/new?beliefId=${belief.id}`)}
+            onPress={() => router.push(`/modules/cbt/beliefs/new?beliefId=${belief.id}`)}
             variant="secondary"
           >
             <Text>{t("beliefs.edit")}</Text>

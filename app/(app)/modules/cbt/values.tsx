@@ -110,7 +110,7 @@ function DomainEditor({ domain, existing, userId }: DomainEditorProps) {
           <Button
             onPress={() =>
               router.push(
-                `/cbt/activities/new?domain=${domain}` as Parameters<typeof router.push>[0],
+                `/modules/cbt/activities/new?domain=${domain}` as Parameters<typeof router.push>[0],
               )
             }
             variant="outline"

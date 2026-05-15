@@ -37,7 +37,7 @@ export default function TasksScreen() {
               </View>
               <Text variant="muted">{t("tasks.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/cbt/tasks/new")} size="sm">
+            <Button onPress={() => router.push("/modules/cbt/tasks/new")} size="sm">
               <Text>{t("tasks.new")}</Text>
             </Button>
           </View>
@@ -65,7 +65,7 @@ export default function TasksScreen() {
                           ? t("tasks.deadlineLabel", { value: task.deadline })
                           : undefined
                       }
-                      onPress={() => router.push(`/cbt/tasks/${task.id}`)}
+                      onPress={() => router.push(`/modules/cbt/tasks/${task.id}`)}
                     />
                   ))}
                 </View>
@@ -78,7 +78,7 @@ export default function TasksScreen() {
                       key={task.id}
                       title={task.taskDescription}
                       description={t(`tasks.status.${task.status}`)}
-                      onPress={() => router.push(`/cbt/tasks/${task.id}`)}
+                      onPress={() => router.push(`/modules/cbt/tasks/${task.id}`)}
                     />
                   ))}
                 </View>

@@ -12,7 +12,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
-import { NumberRating } from "@/src/components/app/number-rating";
+import { MoodScale } from "@/src/components/app/mood-scale";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { lifeDomains, type LifeDomain } from "@/src/constants/life-domains";
 import { useActivity, useSaveActivity } from "@/src/features/activities/queries";
@@ -113,7 +113,7 @@ export default function NewActivityScreen() {
       });
       resetDraft();
       showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace(`/cbt/activities/${saved.id}`);
+      router.replace(`/modules/cbt/activities/${saved.id}`);
     } catch (e) {
       const message = e instanceof Error ? e.message : t("activities.saveError");
       showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
@@ -226,7 +226,7 @@ export default function NewActivityScreen() {
             <View className="gap-2">
               <Label>{t("activities.moodBefore")}</Label>
               <Text variant="muted">{t("activities.moodBeforeHint")}</Text>
-              <NumberRating value={value} onChange={onChange} />
+              <MoodScale value={value} onChange={onChange} />
             </View>
           )}
         />

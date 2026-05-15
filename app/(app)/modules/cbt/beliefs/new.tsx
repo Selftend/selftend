@@ -164,7 +164,7 @@ export default function NewBeliefScreen() {
       });
       resetDraft();
       showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace(`/cbt/beliefs/${saved.id}`);
+      router.replace(`/modules/cbt/beliefs/${saved.id}`);
     } catch (e) {
       const message = e instanceof Error ? e.message : t("beliefs.saveError");
       showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });

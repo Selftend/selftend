@@ -1,0 +1,201 @@
+import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { Pressable as mockPressable, Text as mockText } from "react-native";
+import type { ReactNode } from "react";
+
+import { useCompleteActivity } from "@/src/features/activities/queries";
+import { MoodEntryEditorScreen } from "@/src/features/mood/mood-entry-editor-screen";
+import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
+import { renderWithProviders } from "@/test/render-with-providers";
+
+jest.mock("expo-router", () => ({
+  router: {
+    back: jest.fn(),
+    canGoBack: jest.fn(() => false),
+    push: jest.fn(),
+    replace: jest.fn(),
+  },
+  useLocalSearchParams: jest.fn(() => ({})),
+  usePathname: () => "/tools/mood-tracker/new",
+}));
+
+jest.mock("@/src/providers/session-provider", () => ({
+  useSession: () => ({
+    user: { id: "user-1" },
+  }),
+}));
+
+jest.mock("@/src/features/activities/queries", () => ({
+  useCompleteActivity: jest.fn(),
+}));
+
+jest.mock("@/src/features/mood/queries", () => ({
+  useMoodLog: jest.fn(),
+  useMoodLogs: jest.fn(),
+  useSaveMoodLog: jest.fn(),
+}));
+
+jest.mock("@/src/components/react-native-reusables/checkbox", () => {
+  const Pressable = mockPressable;
+
+  return {
+    Checkbox: ({
+      accessibilityLabel,
+      checked,
+      onCheckedChange,
+    }: {
+      accessibilityLabel?: string;
+      checked?: boolean;
+      onCheckedChange?: (checked: boolean) => void;
+    }) => (
+      <Pressable
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: Boolean(checked) }}
+        onPress={() => onCheckedChange?.(!checked)}
+      />
+    ),
+  };
+});
+
+jest.mock("@/src/components/react-native-reusables/label", () => {
+  const Text = mockText;
+
+  return {
+    Label: ({ children, onPress }: { children?: ReactNode; onPress?: () => void }) => (
+      <Text onPress={onPress}>{children}</Text>
+    ),
+  };
+});
+
+const mockUseCompleteActivity = useCompleteActivity as jest.MockedFunction<
+  typeof useCompleteActivity
+>;
+const mockUseLocalSearchParams = useLocalSearchParams as jest.MockedFunction<
+  typeof useLocalSearchParams
+>;
+const mockUseMoodLog = useMoodLog as jest.MockedFunction<typeof useMoodLog>;
+const mockUseMoodLogs = useMoodLogs as jest.MockedFunction<typeof useMoodLogs>;
+const mockUseSaveMoodLog = useSaveMoodLog as jest.MockedFunction<typeof useSaveMoodLog>;
+const mockRouter = jest.mocked(router);
+
+describe("MoodEntryEditorScreen", () => {
+  const saveMood = jest.fn();
+  const completeActivity = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseLocalSearchParams.mockReturnValue({});
+    mockUseMoodLog.mockReturnValue({
+      data: null,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useMoodLog>);
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodLogs>);
+    mockUseSaveMoodLog.mockReturnValue({
+      isPending: false,
+      mutateAsync: saveMood,
+    } as unknown as ReturnType<typeof useSaveMoodLog>);
+    mockUseCompleteActivity.mockReturnValue({
+      isPending: false,
+      mutateAsync: completeActivity,
+    } as unknown as ReturnType<typeof useCompleteActivity>);
+    saveMood.mockResolvedValue({
+      id: "log-1",
+      userId: "user-1",
+      moodScore: 3,
+      emotions: [],
+      notes: "",
+      linkedStrategy: null,
+      loggedAt: "2026-05-10T08:00:00.000Z",
+      createdAt: "2026-05-10T08:00:00.000Z",
+    });
+    completeActivity.mockResolvedValue(undefined);
+  });
+
+  it("creates a mood entry and routes to the saved detail page", async () => {
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+
+    fireEvent.press(screen.getByLabelText("3, neutral"));
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() => {
+      expect(saveMood).toHaveBeenCalledWith({
+        input: {
+          emotions: [],
+          linkedStrategy: null,
+          moodScore: 3,
+          notes: "",
+        },
+        moodLogId: undefined,
+      });
+    });
+    expect(mockRouter.replace).toHaveBeenCalledWith("/tools/mood-tracker/log-1");
+  });
+
+  it("updates an existing mood entry", async () => {
+    const loggedAt = "2026-05-10T08:00:00.000Z";
+    mockUseMoodLogs.mockReturnValue({
+      data: [
+        {
+          id: "log-1",
+          userId: "user-1",
+          moodScore: 4,
+          emotions: [],
+          notes: "",
+          linkedStrategy: null,
+          loggedAt,
+          createdAt: loggedAt,
+        },
+      ],
+    } as unknown as ReturnType<typeof useMoodLogs>);
+
+    renderWithProviders(
+      <MoodEntryEditorScreen fallbackHref="/tools/mood-tracker/log-1" mode="edit" moodId="log-1" />,
+    );
+
+    fireEvent.press(screen.getByLabelText("5, very good"));
+    fireEvent.press(screen.getByText("Update"));
+
+    await waitFor(() => {
+      expect(saveMood).toHaveBeenCalledWith({
+        input: {
+          emotions: [],
+          linkedStrategy: null,
+          moodScore: 5,
+          notes: "",
+        },
+        moodLogId: "log-1",
+      });
+    });
+  });
+
+  it("completes a linked activity after saving from the activity flow", async () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      completeActivityId: "activity-1",
+      linkedStrategy: "behavioral-activation",
+    });
+
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+
+    fireEvent.press(screen.getByLabelText("4, good"));
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() => {
+      expect(completeActivity).toHaveBeenCalledWith({
+        activityId: "activity-1",
+        moodAfter: 4,
+      });
+    });
+    expect(saveMood).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.objectContaining({
+          linkedStrategy: "behavioral-activation",
+          moodScore: 4,
+        }),
+      }),
+    );
+    expect(mockRouter.replace).toHaveBeenCalledWith("/modules/cbt/activities/activity-1");
+  });
+});

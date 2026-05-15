@@ -14,7 +14,7 @@ interface MoodLineChartProps {
 
 const PADDING = { top: 16, right: 16, bottom: 32, left: 24 };
 const MIN_SCORE = 1;
-const MAX_SCORE = 10;
+const MAX_SCORE = 5;
 
 export function MoodLineChart({ data, height = 160, width = 300 }: MoodLineChartProps) {
   if (data.length === 0) return null;
@@ -35,7 +35,7 @@ export function MoodLineChart({ data, height = 160, width = 300 }: MoodLineChart
 
   const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(" ");
 
-  const gridLines = [2, 4, 6, 8, 10];
+  const gridLines = [1, 2, 3, 4, 5];
 
   return (
     <View>

@@ -11,6 +11,10 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 interface BackButtonProps {
   /** Override the computed parent path. When omitted, derives from pathname. */
   targetHref?: string;
+  /** Use route hierarchy by default. Use history for flows with multiple possible source screens. */
+  mode?: "parent" | "history";
+  /** Fallback route when history mode has no browser/native history entry. */
+  fallbackHref?: string;
   className?: string;
   label?: string;
   /** When true (default), shows the "Back" label next to the icon. */
@@ -21,12 +25,20 @@ interface BackButtonProps {
  * Hierarchical back button. By default, navigates one segment up the URL
  * tree (eg. /a/b/c → /a/b → /a → /). Renders nothing on the home route.
  */
-export function BackButton({ targetHref, className, label, showLabel = true }: BackButtonProps) {
+export function BackButton({
+  targetHref,
+  mode = "parent",
+  fallbackHref,
+  className,
+  label,
+  showLabel = true,
+}: BackButtonProps) {
   const { t } = useTranslation("navigation");
   const pathname = usePathname();
-  const computed = targetHref ?? getParentPath(pathname);
+  const computed = targetHref ?? (mode === "history" ? fallbackHref : getParentPath(pathname));
+  const canUseHistory = mode === "history" && router.canGoBack();
 
-  if (!computed) {
+  if (!computed && !canUseHistory) {
     return null;
   }
 
@@ -37,7 +49,16 @@ export function BackButton({ targetHref, className, label, showLabel = true }: B
       accessibilityLabel={resolvedLabel}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(computed as Parameters<typeof router.push>[0])}
+      onPress={() => {
+        if (canUseHistory) {
+          router.back();
+          return;
+        }
+
+        if (computed) {
+          router.push(computed as Parameters<typeof router.push>[0]);
+        }
+      }}
       className={cn(
         "flex-row items-center gap-1 rounded-md px-2 py-1 active:bg-muted/60",
         className,

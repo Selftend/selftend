@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { router } from "expo-router";
 import { Pressable as mockPressable, Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
@@ -7,7 +8,7 @@ import { useActivities } from "@/src/features/activities/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
 import { useGoals } from "@/src/features/goals/queries";
-import { useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
+import { useMoodLogs } from "@/src/features/mood/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { useTasks } from "@/src/features/procrastination/queries";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
@@ -49,7 +50,6 @@ jest.mock("@/src/features/activities/queries", () => ({
 
 jest.mock("@/src/features/mood/queries", () => ({
   useMoodLogs: jest.fn(),
-  useSaveMoodLog: jest.fn(),
 }));
 
 jest.mock("@/src/features/procrastination/queries", () => ({
@@ -112,12 +112,12 @@ const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunc
 const mockUseGoals = useGoals as jest.MockedFunction<typeof useGoals>;
 const mockUseActivities = useActivities as jest.MockedFunction<typeof useActivities>;
 const mockUseMoodLogs = useMoodLogs as jest.MockedFunction<typeof useMoodLogs>;
-const mockUseSaveMoodLog = useSaveMoodLog as jest.MockedFunction<typeof useSaveMoodLog>;
 const mockUseTasks = useTasks as jest.MockedFunction<typeof useTasks>;
 const mockUseSelfCareLog = useSelfCareLog as jest.MockedFunction<typeof useSelfCareLog>;
 const mockUseThoughtRecords = useThoughtRecords as jest.MockedFunction<typeof useThoughtRecords>;
 const mockUseRecoveryPlan = useRecoveryPlan as jest.MockedFunction<typeof useRecoveryPlan>;
 const mockUseCbtInsights = useCbtInsights as jest.MockedFunction<typeof useCbtInsights>;
+const mockRouter = jest.mocked(router);
 
 describe("CbtHomeScreen onboarding", () => {
   const mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences);
@@ -133,10 +133,6 @@ describe("CbtHomeScreen onboarding", () => {
     mockUseGoals.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useGoals>);
     mockUseActivities.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useActivities>);
     mockUseMoodLogs.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useMoodLogs>);
-    mockUseSaveMoodLog.mockReturnValue({
-      isPending: false,
-      mutateAsync: jest.fn().mockResolvedValue(undefined),
-    } as unknown as ReturnType<typeof useSaveMoodLog>);
     mockUseTasks.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useTasks>);
     mockUseSelfCareLog.mockReturnValue({
       data: null,
@@ -214,5 +210,39 @@ describe("CbtHomeScreen onboarding", () => {
     renderWithProviders(<CbtHomeScreen />);
 
     expect(screen.queryByText(/The CBT Toolkit/)).toBeNull();
+  });
+
+  it("marks the morning mood button complete when mood is already logged today", () => {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        cbtOnboardingCompleted: true,
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+    mockUseMoodLogs.mockReturnValue({
+      data: [
+        {
+          id: "log-1",
+          userId: "user-1",
+          moodScore: 4,
+          emotions: [],
+          notes: "",
+          linkedStrategy: null,
+          loggedAt: today.toISOString(),
+          createdAt: today.toISOString(),
+        },
+      ],
+    } as unknown as ReturnType<typeof useMoodLogs>);
+
+    renderWithProviders(<CbtHomeScreen />);
+
+    expect(
+      screen.getByText("Mood is logged for today. Review your plan when you need a next step."),
+    ).toBeTruthy();
+    fireEvent.press(screen.getByLabelText("Log mood, completed today"));
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/new");
   });
 });

@@ -86,7 +86,7 @@ export default function NewWorryScreen() {
       };
       await saveMutation.mutateAsync(sanitized);
       showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace("/cbt/worry");
+      router.replace("/modules/cbt/worry");
     } catch (e) {
       const message = e instanceof Error ? e.message : t("worry.saveError");
       showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });

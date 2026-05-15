@@ -1,0 +1,62 @@
+{
+  "title": "Mood tracker",
+  "description": "Log how you're feeling and see how it shifts over time.",
+  "cta": {
+    "logMood": "Log mood"
+  },
+  "scale": {
+    "steps": {
+      "1": "1, very low",
+      "2": "2, low",
+      "3": "3, neutral",
+      "4": "4, good",
+      "5": "5, very good"
+    }
+  },
+  "today": {
+    "title": "Today",
+    "pending": "No mood logged yet today.",
+    "completeOne": "Logged today · {{score}}",
+    "completeMany": "{{count}} logs today · avg {{average}}",
+    "logAnother": "Log another"
+  },
+  "sections": {
+    "summary": "Summary",
+    "trend": "Mood trend",
+    "recent": "Recent entries"
+  },
+  "summary": {
+    "sevenDay": "Last 7 days",
+    "thirtyDay": "Last 30 days",
+    "average": "Avg {{average}}",
+    "count_one": "{{count}} log",
+    "count_other": "{{count}} logs",
+    "noData": "No logs in this window"
+  },
+  "trend": {
+    "empty": "Log a mood to start your 14-day trend.",
+    "lastDays": "Last 14 days"
+  },
+  "recent": {
+    "empty": "Nothing logged yet. Tap \"Log mood\" to add your first entry.",
+    "viewEntry": "View mood entry from {{when}}"
+  },
+  "detail": {
+    "title": "Mood entry",
+    "loggedAt": "Logged at",
+    "score": "Score",
+    "emotions": "Emotions",
+    "notes": "Notes",
+    "noNotes": "No notes for this entry.",
+    "noEmotions": "No emotions tagged.",
+    "linkedStrategy": "Linked strategy",
+    "edit": "Edit",
+    "notFound": "We couldn't find that mood entry."
+  },
+  "relativeTime": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago"
+  }
+}

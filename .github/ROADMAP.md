@@ -36,7 +36,7 @@ This file is the source of truth for tracked work. Tick `[x]` when an item is co
 
 ## P1: MVP Product Flows
 
-1. [ ] Build daily or on-demand mood check-ins.
+1. [ ] Build daily or on-demand mood check-ins. (On-demand mood tracker with dedicated create/edit pages + daily Today check-in card shipped at `/tools/mood-tracker`; opt-in daily notification reminder still pending.)
 2. [ ] Build lightweight journaling.
 3. [ ] Expand the guided self-help tools library beyond the current CBT slice.
 4. [x] Complete CBT Phase 5 recovery planning and cross-cutting pattern insights.

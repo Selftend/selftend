@@ -40,7 +40,7 @@ export default function AngerScreen() {
               </View>
               <Text variant="muted">{t("anger.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/cbt/anger/new")} size="sm">
+            <Button onPress={() => router.push("/modules/cbt/anger/new")} size="sm">
               <Text>{t("anger.new")}</Text>
             </Button>
           </View>
@@ -77,7 +77,7 @@ export default function AngerScreen() {
                     key={log.id}
                     title={log.triggerText}
                     description={t("anger.arousalLabel", { value: log.arousalLevel })}
-                    onPress={() => router.push(`/cbt/anger/${log.id}`)}
+                    onPress={() => router.push(`/modules/cbt/anger/${log.id}`)}
                   />
                 ))}
               </View>

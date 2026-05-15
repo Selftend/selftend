@@ -1,7 +1,6 @@
 import { router } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIcon,
@@ -20,7 +19,6 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { MoodLogSheet } from "@/src/components/app/mood-log-sheet";
 import { cn } from "@/lib/utils";
 import { useActivities } from "@/src/features/activities/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
@@ -174,7 +172,6 @@ function getDisplayName(user: { user_metadata?: Record<string, unknown> } | null
 export default function TodayScreen() {
   const { t, i18n } = useTranslation("navigation");
   const { user } = useSession();
-  const [showMoodSheet, setShowMoodSheet] = useState(false);
 
   const today = new Date();
   const todayKey = today.toISOString().slice(0, 10);
@@ -262,7 +259,6 @@ export default function TodayScreen() {
 
   return (
     <>
-      <MoodLogSheet onClose={() => setShowMoodSheet(false)} visible={showMoodSheet} />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -280,7 +276,13 @@ export default function TodayScreen() {
             {/* Quick actions */}
             <View className="flex-row flex-wrap gap-2">
               <View className="min-w-[150px] flex-1 basis-[150px]">
-                <Button onPress={() => setShowMoodSheet(true)} variant="outline" size="lg">
+                <Button
+                  onPress={() =>
+                    router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
+                  }
+                  variant="outline"
+                  size="lg"
+                >
                   <Icon as={SmilePlusIcon} className="size-4" />
                   <Text>{t("today.quickActions.logMood")}</Text>
                 </Button>
@@ -327,7 +329,13 @@ export default function TodayScreen() {
             <View className="gap-3">
               <View className="flex-row items-center justify-between">
                 <Text variant="h3">{t("today.moodSnapshot.title")}</Text>
-                <Button onPress={() => setShowMoodSheet(true)} size="sm" variant="ghost">
+                <Button
+                  onPress={() =>
+                    router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
+                  }
+                  size="sm"
+                  variant="ghost"
+                >
                   <Text>{t("today.moodSnapshot.logMood")}</Text>
                   <Icon as={PlusIcon} className="size-3.5" />
                 </Button>

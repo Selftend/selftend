@@ -34,7 +34,7 @@ export default function ExposureScreen() {
               </View>
               <Text variant="muted">{t("exposure.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/cbt/exposure/new")} size="sm">
+            <Button onPress={() => router.push("/modules/cbt/exposure/new")} size="sm">
               <Text>{t("exposure.new")}</Text>
             </Button>
           </View>
@@ -55,7 +55,7 @@ export default function ExposureScreen() {
                   key={h.id}
                   title={h.title}
                   description={h.anxietyType}
-                  onPress={() => router.push(`/cbt/exposure/${h.id}`)}
+                  onPress={() => router.push(`/modules/cbt/exposure/${h.id}`)}
                 />
               ))}
             </View>
@@ -64,7 +64,7 @@ export default function ExposureScreen() {
           <AccessibleCardLink
             title={t("exposure.worryLink")}
             description={t("exposure.worryLinkDescription")}
-            onPress={() => router.push("/cbt/worry")}
+            onPress={() => router.push("/modules/cbt/worry")}
           />
         </View>
       </ScrollView>

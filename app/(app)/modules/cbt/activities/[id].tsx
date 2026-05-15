@@ -1,7 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -12,32 +11,17 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { MoodLogSheet } from "@/src/components/app/mood-log-sheet";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { useActivity, useCompleteActivity } from "@/src/features/activities/queries";
+import { useActivity } from "@/src/features/activities/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { useToastStore } from "@/src/stores/toast-store";
 import { BackButton } from "@/src/components/app/back-button";
 
 export default function ActivityDetailScreen() {
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
-  const showToast = useToastStore((state) => state.showToast);
-  const [showMoodSheet, setShowMoodSheet] = useState(false);
 
   const { data: activity, isLoading } = useActivity(user?.id ?? null, id ?? null);
-  const completeMutation = useCompleteActivity(user?.id ?? null);
-
-  const handleComplete = async (moodAfter: number | null) => {
-    if (!activity) return;
-    try {
-      await completeMutation.mutateAsync({ activityId: activity.id, moodAfter });
-      showToast({ title: t("common:feedback.saved"), tone: "success" });
-    } catch {
-      showToast({ title: t("common:feedback.problem"), tone: "error" });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -66,12 +50,6 @@ export default function ActivityDetailScreen() {
 
   return (
     <>
-      <MoodLogSheet
-        linkedStrategy="behavioral-activation"
-        onClose={() => setShowMoodSheet(false)}
-        onSaved={(score) => void handleComplete(score)}
-        visible={showMoodSheet}
-      />
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -151,11 +129,21 @@ export default function ActivityDetailScreen() {
 
             {!activity.completedAt ? (
               <View className="gap-3">
-                <Button onPress={() => setShowMoodSheet(true)}>
+                <Button
+                  onPress={() =>
+                    router.push(
+                      `/tools/mood-tracker/new?linkedStrategy=behavioral-activation&completeActivityId=${activity.id}` as Parameters<
+                        typeof router.push
+                      >[0],
+                    )
+                  }
+                >
                   <Text>{t("activities.markComplete")}</Text>
                 </Button>
                 <Button
-                  onPress={() => router.push(`/cbt/activities/new?activityId=${activity.id}`)}
+                  onPress={() =>
+                    router.push(`/modules/cbt/activities/new?activityId=${activity.id}`)
+                  }
                   variant="secondary"
                 >
                   <Text>{t("activities.edit")}</Text>

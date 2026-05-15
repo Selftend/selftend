@@ -60,7 +60,7 @@ export default function ActivitiesScreen() {
           ? ` Â· ${t("activities.moodLift", { lift: activity.moodAfter - activity.moodBefore })}`
           : ""
       }`}
-      onPress={() => router.push(`/cbt/activities/${activity.id}`)}
+      onPress={() => router.push(`/modules/cbt/activities/${activity.id}`)}
     />
   );
 
@@ -76,7 +76,7 @@ export default function ActivitiesScreen() {
               </View>
               <Text variant="muted">{t("activities.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/cbt/activities/new")} size="sm">
+            <Button onPress={() => router.push("/modules/cbt/activities/new")} size="sm">
               <Text>{t("activities.new")}</Text>
             </Button>
           </View>

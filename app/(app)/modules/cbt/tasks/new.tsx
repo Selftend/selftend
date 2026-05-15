@@ -91,7 +91,7 @@ export default function NewTaskScreen() {
       });
       resetDraft();
       showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace(`/cbt/tasks/${saved.id}`);
+      router.replace(`/modules/cbt/tasks/${saved.id}`);
     } catch (e) {
       const message = e instanceof Error ? e.message : t("tasks.saveError");
       showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
