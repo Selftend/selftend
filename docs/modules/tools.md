@@ -12,13 +12,14 @@ The protected app sidebar groups tools as:
   - Learn
 - Mood tracker
 - Journal
+- Mindfulness
 - Meditation
 - ACT
 - Gratitude log
 
-CBT, Mood tracker, and Journal are the working modules. The app shell and CBT each have one-page onboarding tracked in `user_preferences`; Settings can reset those flags.
+CBT, Mood tracker, Journal, Mindfulness, and Gratitude log are the working modules. The app shell and CBT each have one-page onboarding tracked in `user_preferences`; Settings can reset those flags.
 
-Meditation, ACT, and Gratitude log are placeholders. They must not collect data, schedule reminders, create streak pressure, or imply therapeutic outcomes until each has a reviewed module spec.
+Meditation and ACT are placeholders. They must not collect data, schedule reminders, create streak pressure, or imply therapeutic outcomes until each has a reviewed module spec.
 
 ## Routes
 
@@ -47,8 +48,9 @@ Working tool routes:
 - `/tools/mood-tracker`, `/tools/mood-tracker/new`, `/tools/mood-tracker/[id]`, `/tools/mood-tracker/[id]/edit`
 - `/tools/journal`, `/tools/journal/new`, `/tools/journal/[id]`, `/tools/journal/[id]/edit`
 - `/tools/mindfulness`, `/tools/mindfulness/[slug]`
+- `/tools/gratitude-log`, `/tools/gratitude-log/new`, `/tools/gratitude-log/[id]`, `/tools/gratitude-log/[id]/edit`
 
-Placeholder routes: `/tools/meditation`, `/tools/act`, `/tools/gratitude-log`.
+Placeholder routes: `/tools/meditation`, `/tools/act`.
 
 ## Expansion Rule
 
@@ -77,4 +79,4 @@ Planned boundaries:
 - **Journaling:** private free-text reflection, separate from CBT and check-ins. Spec: [journaling.md](journaling.md)
 - **ACT:** focused exercises after a spec
 - **Meditation:** guided practice, no reminder or progress pressure without review
-- **Gratitude log:** lightweight entries, no default streak pressure
+- **Gratitude log:** lightweight one-to-three item entries, private history, no reminders or streak pressure. Spec: [gratitude-log.md](gratitude-log.md)

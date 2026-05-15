@@ -4,6 +4,7 @@ import { initReactI18next } from "react-i18next";
 import enCommon from "./locales/en/common.json";
 import enAuth from "./locales/en/auth.json";
 import enCbt from "./locales/en/cbt.json";
+import enGratitude from "./locales/en/gratitude.json";
 import enJournal from "./locales/en/journal.json";
 import enMeditation from "./locales/en/meditation.json";
 import enMood from "./locales/en/mood.json";
@@ -16,6 +17,7 @@ import enErrors from "./locales/en/errors.json";
 import bgCommon from "./locales/bg/common.json";
 import bgAuth from "./locales/bg/auth.json";
 import bgCbt from "./locales/bg/cbt.json";
+import bgGratitude from "./locales/bg/gratitude.json";
 import bgJournal from "./locales/bg/journal.json";
 import bgMeditation from "./locales/bg/meditation.json";
 import bgMood from "./locales/bg/mood.json";
@@ -36,6 +38,7 @@ i18n.use(initReactI18next).init({
     "common",
     "auth",
     "cbt",
+    "gratitude",
     "journal",
     "meditation",
     "mood",
@@ -51,6 +54,7 @@ i18n.use(initReactI18next).init({
       common: enCommon,
       auth: enAuth,
       cbt: enCbt,
+      gratitude: enGratitude,
       journal: enJournal,
       meditation: enMeditation,
       mood: enMood,
@@ -64,6 +68,7 @@ i18n.use(initReactI18next).init({
       common: bgCommon,
       auth: bgAuth,
       cbt: bgCbt,
+      gratitude: bgGratitude,
       journal: bgJournal,
       meditation: bgMeditation,
       mood: bgMood,

@@ -1,0 +1,61 @@
+{
+  "title": "Gratitude log",
+  "description": "Notice small things you appreciated. Save only when it feels useful - no streaks, no pressure.",
+  "cta": {
+    "new": "New entry"
+  },
+  "list": {
+    "recent": "Recent entries",
+    "empty": {
+      "title": "Nothing here yet",
+      "description": "Add one small thing you appreciated today.",
+      "cta": "Notice something"
+    },
+    "viewEntry": "View gratitude entry from {{when}}",
+    "fallbackItem": "Gratitude entry",
+    "itemsCount_one": "{{count}} thing",
+    "itemsCount_other": "{{count}} things"
+  },
+  "editor": {
+    "createTitle": "New gratitude entry",
+    "editTitle": "Edit gratitude entry",
+    "createDescription": "Write one to three things you appreciated. Small counts.",
+    "editDescription": "Update what you noticed earlier.",
+    "itemLabel": "Gratitude {{number}}",
+    "itemPlaceholder": "A small thing that mattered.",
+    "noteLabel": "Note (optional)",
+    "notePlaceholder": "Add a little context if it helps.",
+    "cancel": "Cancel",
+    "save": "Save",
+    "update": "Update",
+    "saveError": "Couldn't save your entry. Try again.",
+    "notFound": "We couldn't find that entry."
+  },
+  "detail": {
+    "title": "Gratitude entry",
+    "edit": "Edit",
+    "delete": "Delete",
+    "itemsTitle": "Things noticed",
+    "itemsDescription": "Saved privately for your own reflection.",
+    "noteTitle": "Note",
+    "loggedAt": "Logged",
+    "notFound": "We couldn't find that gratitude entry.",
+    "deleteError": "Couldn't delete this entry. Try again.",
+    "confirmDelete": {
+      "title": "Delete this entry?",
+      "message": "This permanently removes the entry. It can't be recovered.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    }
+  },
+  "relativeTime": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago"
+  },
+  "feedback": {
+    "saved": "Entry saved",
+    "deleted": "Entry deleted"
+  }
+}

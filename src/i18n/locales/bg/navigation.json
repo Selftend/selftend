@@ -133,6 +133,9 @@
       "journalEntries_one": "{{count}} запис",
       "journalEntries_other": "{{count}} записа",
       "journalNoData": "Още няма записи",
+      "gratitudeEntries_one": "{{count}} запис за благодарност",
+      "gratitudeEntries_other": "{{count}} записа за благодарност",
+      "gratitudeNoData": "Още няма записи за благодарност",
       "comingSoon": "Скоро"
     }
   },

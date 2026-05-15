@@ -59,7 +59,9 @@ These workflows are manual by design. CI still validates pushes and pull request
 - Tools can collapse and expand
 - CBT can collapse and expand inside Tools, with History above Learn
 - CBT history is nested under CBT, not shown as a top-level navigation item
-- Mood tracker, Meditation, ACT, and Gratitude log show under-construction placeholder screens only
+- Mood tracker opens the working mood flow
+- Gratitude log can create, edit, list, open, and delete a private entry
+- Meditation and ACT show under-construction placeholder screens only
 
 ### Reminders
 

@@ -38,7 +38,7 @@ This file is the source of truth for tracked work. Tick `[x]` when an item is co
 
 1. [x] Build daily or on-demand mood check-ins. (Shipped: on-demand mood tracker with dedicated create/edit pages + daily Today check-in card at `/tools/mood-tracker`. Opt-in mood push reminder is intentionally deferred — the in-app Today card is the cue.)
 2. [x] Build lightweight journaling. (Shipped: `/tools/journal` with create/edit/delete, optional title, free-text body, export coverage, RLS. Spec: `docs/modules/journaling.md`.)
-3. [ ] Expand the guided self-help tools library beyond the current CBT slice.
+3. [ ] Expand the guided self-help tools library beyond the current CBT slice. (Shipped: lightweight `/tools/gratitude-log` with private CRUD entries, export coverage, RLS, and no reminders or streak pressure.)
 4. [x] Complete CBT Phase 5 recovery planning and cross-cutting pattern insights.
 5. [ ] Add a feedback/support entry point that warns users not to include urgent crisis details.
 6. [ ] Apply the accessibility baseline to each new MVP flow.

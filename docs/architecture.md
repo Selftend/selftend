@@ -53,7 +53,7 @@ app/
 └── (app)/                 protected app shell
     ├── (tabs)/            index (home), settings
     ├── cbt/               index, learn, new, [id], history
-    ├── tools/             mood-tracker, journal, mindfulness (working); act, gratitude-log, meditation (placeholders)
+    ├── tools/             mood-tracker, journal, mindfulness, gratitude-log (working); act, meditation (placeholders)
     ├── history.tsx        compatibility redirect to cbt/history
     ├── legal.tsx
     └── support.tsx

@@ -18,6 +18,7 @@ Use this as the map for project docs. The README covers setup; the roadmap holds
 - [accessibility.md](accessibility.md) - accessibility baseline
 - [modules/cbt.md](modules/cbt.md) - CBT thought-record flow and data contract
 - [modules/tools.md](modules/tools.md) - tools navigation and module contract
+- [modules/gratitude-log.md](modules/gratitude-log.md) - gratitude log scope and data contract
 
 ## Launch And Operations
 

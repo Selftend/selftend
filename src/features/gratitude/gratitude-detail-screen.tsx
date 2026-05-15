@@ -1,0 +1,228 @@
+import { router, useLocalSearchParams } from "expo-router";
+import { ActivityIndicator, Modal, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { BackButton } from "@/src/components/app/back-button";
+import { LoadingState } from "@/src/components/app/screen-state";
+import { Button } from "@/src/components/react-native-reusables/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/react-native-reusables/card";
+import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Text } from "@/src/components/react-native-reusables/text";
+import {
+  useDeleteGratitudeEntry,
+  useGratitudeEntries,
+  useGratitudeEntry,
+} from "@/src/features/gratitude/queries";
+import type { GratitudeEntry } from "@/src/features/gratitude/types";
+import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { useSession } from "@/src/providers/session-provider";
+import { useToastStore } from "@/src/stores/toast-store";
+
+function formatTimestamp(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString();
+}
+
+export default function GratitudeDetailScreen() {
+  const { t } = useTranslation("gratitude");
+  const { user } = useSession();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const entryId = typeof id === "string" ? id : null;
+  const showToast = useToastStore((state) => state.showToast);
+
+  const { data: cachedList } = useGratitudeEntries(user?.id ?? null, 50);
+  const fromCache = useMemo(
+    () => (entryId ? (cachedList?.find((entry) => entry.id === entryId) ?? null) : null),
+    [cachedList, entryId],
+  );
+  const { data: fetched, isLoading } = useGratitudeEntry(
+    fromCache ? null : (user?.id ?? null),
+    fromCache ? null : entryId,
+  );
+  const entry: GratitudeEntry | null = fromCache ?? fetched ?? null;
+
+  const deleteMutation = useDeleteGratitudeEntry(user?.id ?? null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  if (!fromCache && isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 justify-center">
+          <LoadingState title={t("detail.title")} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!entry) {
+    return (
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+        <ScrollView contentContainerClassName="grow p-6">
+          <View className="gap-6">
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1">{t("detail.title")}</Text>
+            </View>
+            <Text variant="muted">{t("detail.notFound")}</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  const when = formatMoodRelativeTime(entry.loggedAt, t);
+  const heading = entry.items[0] ?? t("detail.title");
+
+  const confirmDelete = async () => {
+    setDeleteError("");
+    try {
+      await deleteMutation.mutateAsync(entry.id);
+      setConfirmOpen(false);
+      showToast({ title: t("feedback.deleted"), tone: "success" });
+      router.replace("/tools/gratitude-log" as Parameters<typeof router.replace>[0]);
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : t("detail.deleteError"));
+    }
+  };
+
+  return (
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <ScrollView contentContainerClassName="grow p-6">
+        <View className="gap-6">
+          <View className="gap-2">
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1" numberOfLines={2}>
+                {heading}
+              </Text>
+            </View>
+            <Text variant="muted">{when}</Text>
+            <View className="flex-row gap-3">
+              <Button
+                onPress={() =>
+                  router.push(
+                    `/tools/gratitude-log/${entry.id}/edit` as Parameters<typeof router.push>[0],
+                  )
+                }
+                variant="secondary"
+              >
+                <Icon name="edit" className="size-4" />
+                <Text>{t("detail.edit")}</Text>
+              </Button>
+              <Button onPress={() => setConfirmOpen(true)} variant="ghost">
+                <Icon name="delete-outline" className="size-4 text-destructive" />
+                <Text>{t("detail.delete")}</Text>
+              </Button>
+            </View>
+          </View>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("detail.itemsTitle")}</CardTitle>
+              <CardDescription>{t("detail.itemsDescription")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-3">
+                {entry.items.map((item, index) => (
+                  <View key={`${index}-${item}`} className="flex-row gap-3">
+                    <Text className="w-6 text-base font-semibold text-primary">{index + 1}</Text>
+                    <Text className="flex-1 text-base leading-6">{item}</Text>
+                  </View>
+                ))}
+              </View>
+            </CardContent>
+          </Card>
+
+          {entry.note.trim().length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("detail.noteTitle")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Text className="text-base leading-6">{entry.note.trim()}</Text>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("detail.loggedAt")}</CardTitle>
+              <CardDescription>{formatTimestamp(entry.loggedAt)}</CardDescription>
+            </CardHeader>
+          </Card>
+        </View>
+      </ScrollView>
+
+      <ConfirmDeleteModal
+        visible={confirmOpen}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setDeleteError("");
+        }}
+        onConfirm={() => void confirmDelete()}
+        isPending={deleteMutation.isPending}
+        error={deleteError}
+      />
+    </SafeAreaView>
+  );
+}
+
+interface ConfirmDeleteModalProps {
+  visible: boolean;
+  isPending: boolean;
+  error: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
+function ConfirmDeleteModal({
+  visible,
+  isPending,
+  error,
+  onCancel,
+  onConfirm,
+}: ConfirmDeleteModalProps) {
+  const { t } = useTranslation("gratitude");
+  const reduceMotionEnabled = useReduceMotionEnabled();
+
+  return (
+    <Modal
+      animationType={reduceMotionEnabled ? "none" : "fade"}
+      onRequestClose={onCancel}
+      transparent
+      visible={visible}
+    >
+      <View className="flex-1 items-center justify-center bg-black/50 p-6">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>{t("detail.confirmDelete.title")}</CardTitle>
+            <CardDescription>{t("detail.confirmDelete.message")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <View className="gap-3">
+              {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
+              <Button disabled={isPending} onPress={onCancel} variant="secondary">
+                <Text>{t("detail.confirmDelete.cancel")}</Text>
+              </Button>
+              <Button disabled={isPending} onPress={onConfirm} variant="destructive">
+                {isPending ? <ActivityIndicator color="#ffffff" /> : null}
+                <Text>{t("detail.confirmDelete.confirm")}</Text>
+              </Button>
+            </View>
+          </CardContent>
+        </Card>
+      </View>
+    </Modal>
+  );
+}

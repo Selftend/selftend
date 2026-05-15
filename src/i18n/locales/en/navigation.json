@@ -133,6 +133,9 @@
       "journalEntries_one": "{{count}} entry",
       "journalEntries_other": "{{count}} entries",
       "journalNoData": "No entries yet",
+      "gratitudeEntries_one": "{{count}} gratitude entry",
+      "gratitudeEntries_other": "{{count}} gratitude entries",
+      "gratitudeNoData": "No gratitude entries yet",
       "comingSoon": "Coming soon"
     }
   },
