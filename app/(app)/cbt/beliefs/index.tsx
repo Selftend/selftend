@@ -15,6 +15,7 @@ import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useCoreBeliefs } from "@/src/features/beliefs/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { BackButton } from "@/src/components/app/back-button";
 
 export default function BeliefsScreen() {
   const { t } = useTranslation("cbt");
@@ -27,7 +28,10 @@ export default function BeliefsScreen() {
         <View className="gap-6">
           <View className="flex-row items-center justify-between gap-4">
             <View className="flex-1 gap-2">
-              <Text variant="h1">{t("beliefs.title")}</Text>
+              <View className="flex-row items-center gap-2">
+                <BackButton showLabel={false} className="-ml-2" />
+                <Text variant="h1">{t("beliefs.title")}</Text>
+              </View>
               <Text variant="muted">{t("beliefs.description")}</Text>
             </View>
             <Button onPress={() => router.push("/cbt/beliefs/new")} size="sm">

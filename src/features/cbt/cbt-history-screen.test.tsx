@@ -9,6 +9,7 @@ jest.mock("expo-router", () => ({
   router: {
     push: jest.fn(),
   },
+  usePathname: () => "/cbt/history",
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({

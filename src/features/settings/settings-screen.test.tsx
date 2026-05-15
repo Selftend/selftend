@@ -12,6 +12,7 @@ jest.mock("expo-router", () => ({
   router: {
     push: jest.fn(),
   },
+  usePathname: () => "/(app)/(tabs)/settings",
 }));
 
 jest.mock("expo-linking", () => ({

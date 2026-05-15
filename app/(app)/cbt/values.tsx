@@ -20,6 +20,7 @@ import { useValuesProfiles, useUpsertValuesProfile } from "@/src/features/values
 import type { ValuesProfile } from "@/src/features/values/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { BackButton } from "@/src/components/app/back-button";
 
 interface DomainEditorProps {
   domain: string;
@@ -128,7 +129,10 @@ export default function ValuesScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">{t("values.title")}</Text>
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1">{t("values.title")}</Text>
+            </View>
             <Text variant="muted">{t("values.description")}</Text>
           </View>
 

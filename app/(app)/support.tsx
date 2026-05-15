@@ -14,6 +14,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { appEnv } from "@/src/lib/env";
+import { BackButton } from "@/src/components/app/back-button";
 
 export default function SupportScreen() {
   const { t } = useTranslation("settings");
@@ -25,7 +26,10 @@ export default function SupportScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">{t("supportPage.title")}</Text>
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1">{t("supportPage.title")}</Text>
+            </View>
             <Text variant="muted">{t("supportPage.description")}</Text>
           </View>
 

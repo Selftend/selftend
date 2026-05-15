@@ -19,6 +19,7 @@ import {
 import { useSession } from "@/src/providers/session-provider";
 import { useProcrastinationDraftStore } from "@/src/stores/procrastination-draft-store";
 import { useToastStore } from "@/src/stores/toast-store";
+import { BackButton } from "@/src/components/app/back-button";
 
 const defaultValues: ProcrastinationTaskFormSchema = {
   taskDescription: "",
@@ -130,7 +131,10 @@ export default function NewTaskScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <Text variant="h1">{t("tasks.newTitle")}</Text>
+          <View className="flex-row items-center gap-2">
+            <BackButton showLabel={false} className="-ml-2" />
+            <Text variant="h1">{t("tasks.newTitle")}</Text>
+          </View>
           <Text variant="muted">{t("tasks.newDescription")}</Text>
         </View>
 

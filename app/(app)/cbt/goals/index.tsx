@@ -17,6 +17,7 @@ import { useGoals, useMilestones } from "@/src/features/goals/queries";
 import { useSession } from "@/src/providers/session-provider";
 import type { Goal } from "@/src/features/goals/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { BackButton } from "@/src/components/app/back-button";
 
 function GoalCard({ goal, userId }: { goal: Goal; userId: string }) {
   const { t } = useTranslation("cbt");
@@ -68,7 +69,10 @@ export default function GoalsScreen() {
         <View className="gap-6">
           <View className="flex-row items-center justify-between gap-4">
             <View className="flex-1 gap-2">
-              <Text variant="h1">{t("goals.title")}</Text>
+              <View className="flex-row items-center gap-2">
+                <BackButton showLabel={false} className="-ml-2" />
+                <Text variant="h1">{t("goals.title")}</Text>
+              </View>
               <Text variant="muted">{t("goals.description")}</Text>
             </View>
             <Button onPress={() => router.push("/cbt/goals/new")} size="sm">

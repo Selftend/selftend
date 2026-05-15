@@ -16,6 +16,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { useActivities } from "@/src/features/activities/queries";
 import { useSession } from "@/src/providers/session-provider";
 import type { ActivityLog } from "@/src/features/activities/types";
+import { BackButton } from "@/src/components/app/back-button";
 
 function groupActivities(activities: ActivityLog[]) {
   const now = new Date();
@@ -69,7 +70,10 @@ export default function ActivitiesScreen() {
         <View className="gap-6">
           <View className="flex-row items-center justify-between gap-4">
             <View className="flex-1 gap-2">
-              <Text variant="h1">{t("activities.title")}</Text>
+              <View className="flex-row items-center gap-2">
+                <BackButton showLabel={false} className="-ml-2" />
+                <Text variant="h1">{t("activities.title")}</Text>
+              </View>
               <Text variant="muted">{t("activities.description")}</Text>
             </View>
             <Button onPress={() => router.push("/cbt/activities/new")} size="sm">

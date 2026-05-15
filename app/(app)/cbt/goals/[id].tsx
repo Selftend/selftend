@@ -25,6 +25,7 @@ import {
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import type { GoalStatus } from "@/src/features/goals/types";
+import { BackButton } from "@/src/components/app/back-button";
 
 export default function GoalDetailScreen() {
   const { t } = useTranslation("cbt");
@@ -92,7 +93,10 @@ export default function GoalDetailScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">{goal.title}</Text>
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1">{goal.title}</Text>
+            </View>
             {goal.description ? <Text variant="muted">{goal.description}</Text> : null}
           </View>
 

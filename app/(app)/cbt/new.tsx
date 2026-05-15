@@ -28,6 +28,7 @@ import { thoughtRecordFormSchema, type ThoughtRecordFormSchema } from "@/src/fea
 import { useSession } from "@/src/providers/session-provider";
 import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
 import { useToastStore } from "@/src/stores/toast-store";
+import { BackButton } from "@/src/components/app/back-button";
 
 const defaultValues: ThoughtRecordFormSchema = {
   situation: "",
@@ -196,7 +197,10 @@ export default function ThoughtRecordEditorScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <Text variant="h1">{recordId ? t("record.editTitle") : t("record.newTitle")}</Text>
+          <View className="flex-row items-center gap-2">
+            <BackButton showLabel={false} className="-ml-2" />
+            <Text variant="h1">{recordId ? t("record.editTitle") : t("record.newTitle")}</Text>
+          </View>
           <Text variant="muted">
             {recordId ? t("record.editDescription") : t("record.newDescription")}
           </Text>

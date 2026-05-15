@@ -19,6 +19,7 @@ import {
 import { useSession } from "@/src/providers/session-provider";
 import { useExposureDraftStore } from "@/src/stores/exposure-draft-store";
 import { useToastStore } from "@/src/stores/toast-store";
+import { BackButton } from "@/src/components/app/back-button";
 
 const defaultValues: ExposureHierarchyFormSchema = {
   title: "",
@@ -119,7 +120,10 @@ export default function NewExposureHierarchyScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <Text variant="h1">{t("exposure.newTitle")}</Text>
+          <View className="flex-row items-center gap-2">
+            <BackButton showLabel={false} className="-ml-2" />
+            <Text variant="h1">{t("exposure.newTitle")}</Text>
+          </View>
           <Text variant="muted">{t("exposure.newDescription")}</Text>
         </View>
 

@@ -6,7 +6,7 @@
     "appName": "Selftend"
   },
   "sidebar": {
-    "home": "Home",
+    "home": "Today",
     "settings": "Settings",
     "support": "Support",
     "cbtOverview": "Overview",
@@ -14,9 +14,16 @@
     "cbtLearn": "Learn",
     "moodTracker": "Mood tracker",
     "meditation": "Meditation",
+    "mindfulness": "Mindfulness",
+    "back": "Back",
     "act": "ACT",
+    "dbt": "DBT",
+    "cbt": "CBT",
+    "modules": "Modules",
     "gratitudeLog": "Gratitude log",
     "tools": "Tools",
+    "badgeLive": "Live",
+    "badgeSoon": "Soon",
     "collapse": "Collapse {{label}}",
     "expand": "Expand {{label}}"
   },
@@ -38,11 +45,73 @@
     "dark": "Dark"
   },
   "tabs": {
-    "home": "Home",
+    "home": "Today",
     "settings": "Settings"
   },
   "notFound": {
     "title": "Page not found",
     "home": "Home"
+  },
+  "today": {
+    "eyebrow": "Today · {{date}}",
+    "greetingMorning": "Good morning",
+    "greetingAfternoon": "Good afternoon",
+    "greetingEvening": "Good evening",
+    "greetingWithName": "{{greeting}}, {{name}}.",
+    "greetingPlain": "{{greeting}}.",
+    "subtitle": "A small check-in goes a long way. Pick one thing — there's no pressure to do everything.",
+    "quickActions": {
+      "logMood": "Log mood",
+      "thoughtRecord": "Thought record",
+      "meditate": "Meditate",
+      "selfCare": "Self-care log"
+    },
+    "moodSnapshot": {
+      "title": "Mood snapshot",
+      "sevenDay": "Last 7 days",
+      "thirtyDay": "Last 30 days",
+      "today": "Today",
+      "logsCount": "{{count}} log",
+      "logsCount_other": "{{count}} logs",
+      "notLogged": "Not logged yet",
+      "noData": "—",
+      "logMood": "Log mood"
+    },
+    "plan": {
+      "title": "On your plate today",
+      "empty": "Nothing scheduled. Pick one small thing.",
+      "activityLabel": "CBT · Behavioral activation",
+      "taskLabel": "CBT · Procrastination",
+      "selfCareLabel": "CBT · Self-care",
+      "thoughtRecordLabel": "CBT · Thought record",
+      "open": "Open",
+      "resume": "Resume",
+      "evening": "Evening self-care log",
+      "eveningSub": "Two minutes. Sleep, body, connection, gratitude."
+    },
+    "modules": {
+      "title": "Therapeutic modules",
+      "subtitle": "Bigger structured programs. Pick one to work through over time — the shared tools feed into all of them.",
+      "cbtName": "Cognitive behavioral therapy",
+      "cbtDescription": "The Think · Act · Be framework. Evidence-based strategies for anxiety, depression, anger, panic and worry.",
+      "actName": "Acceptance & commitment",
+      "actDescription": "Six processes for psychological flexibility — values, defusion, acceptance, present-moment, self-as-context, committed action.",
+      "dbtName": "Dialectical behavior therapy",
+      "dbtDescription": "Four skill groups — mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness.",
+      "live": "Live",
+      "soon": "Soon",
+      "inDesign": "In design",
+      "onRoadmap": "On the roadmap"
+    },
+    "tools": {
+      "title": "Shared tools",
+      "subtitle": "Standalone trackers any module can call into. Use them on their own, too.",
+      "moodTracker": "Mood tracker",
+      "moodTrackerSub": "Patterns over time",
+      "mindfulness": "Mindfulness",
+      "mindfulnessSub": "Guided breathing",
+      "gratitudeLog": "Gratitude log",
+      "gratitudeLogSub": "Notice the small wins"
+    }
   }
 }

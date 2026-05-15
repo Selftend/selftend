@@ -19,6 +19,7 @@ import { useArchiveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/qu
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatTimestamp } from "@/src/utils/date";
+import { BackButton } from "@/src/components/app/back-button";
 
 export default function ThoughtRecordDetailScreen() {
   const { t } = useTranslation("cbt");
@@ -69,7 +70,10 @@ export default function ThoughtRecordDetailScreen() {
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <Text variant="h1">{t("detail.notFound")}</Text>
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1">{t("detail.notFound")}</Text>
+            </View>
             <ErrorState
               title={t("detail.notFoundLabel")}
               description={t("detail.notFoundDescription")}

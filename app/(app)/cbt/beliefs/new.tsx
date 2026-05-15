@@ -20,6 +20,7 @@ import { coreBeliefFormSchema, type CoreBeliefFormSchema } from "@/src/features/
 import { useSession } from "@/src/providers/session-provider";
 import { useBeliefDraftStore } from "@/src/stores/belief-draft-store";
 import { useToastStore } from "@/src/stores/toast-store";
+import { BackButton } from "@/src/components/app/back-button";
 
 const defaultValues: CoreBeliefFormSchema = {
   beliefStatement: "",
@@ -245,7 +246,10 @@ export default function NewBeliefScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <Text variant="h1">{beliefId ? t("beliefs.editTitle") : t("beliefs.newTitle")}</Text>
+          <View className="flex-row items-center gap-2">
+            <BackButton showLabel={false} className="-ml-2" />
+            <Text variant="h1">{beliefId ? t("beliefs.editTitle") : t("beliefs.newTitle")}</Text>
+          </View>
           <Text variant="muted">
             {beliefId ? t("beliefs.editDescription") : t("beliefs.newDescription")}
           </Text>

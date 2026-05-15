@@ -15,6 +15,7 @@ import {
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { BackButton } from "@/src/components/app/back-button";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { mindfulnessLookup } from "@/src/constants/mindfulness";
 import { useSaveMindfulnessSession } from "@/src/features/mindfulness/queries";
@@ -87,7 +88,7 @@ export default function MindfulnessExerciseScreen() {
         moodAfter,
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace("/cbt/mindfulness");
+      router.replace("/tools/mindfulness" as Parameters<typeof router.replace>[0]);
     } catch {
       showToast({ title: t("common:feedback.problem"), tone: "error" });
     }
@@ -102,7 +103,10 @@ export default function MindfulnessExerciseScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">{t(`mindfulness.exercises.${exercise.slug}.title`)}</Text>
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1">{t(`mindfulness.exercises.${exercise.slug}.title`)}</Text>
+            </View>
             <Text variant="muted">
               {t(`mindfulness.exercises.${exercise.slug}.shortDescription`)}
             </Text>

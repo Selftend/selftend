@@ -48,6 +48,7 @@ import { useValuesProfiles } from "@/src/features/values/queries";
 import { useWorryEntries } from "@/src/features/worry/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { BackButton } from "@/src/components/app/back-button";
 
 const strategyKeys = [
   "goals",
@@ -609,7 +610,10 @@ export default function RecoveryScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <Text variant="h1">{t("recovery.title")}</Text>
+          <View className="flex-row items-center gap-2">
+            <BackButton showLabel={false} className="-ml-2" />
+            <Text variant="h1">{t("recovery.title")}</Text>
+          </View>
           <Text variant="muted">{t("recovery.description")}</Text>
         </View>
 

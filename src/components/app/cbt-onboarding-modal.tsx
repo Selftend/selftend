@@ -95,7 +95,7 @@ export function CbtOnboarding({
 
             {/* Three pillars */}
             <View className="gap-4">
-              <Card>
+              <Card className="border-act/30 bg-act/5">
                 <CardContent className="items-center gap-3 pt-6">
                   <Image
                     source={pillarAct}
@@ -103,14 +103,16 @@ export function CbtOnboarding({
                     resizeMode="contain"
                     accessibilityLabel={t("onboarding.intro.actTitle")}
                   />
-                  <CardTitle className="text-center">{t("onboarding.intro.actTitle")}</CardTitle>
+                  <CardTitle className="text-center text-act">
+                    {t("onboarding.intro.actTitle")}
+                  </CardTitle>
                   <Text variant="muted" className="text-center">
                     {t("onboarding.intro.actBody")}
                   </Text>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-think/30 bg-think/5">
                 <CardContent className="items-center gap-3 pt-6">
                   <Image
                     source={pillarThink}
@@ -118,14 +120,16 @@ export function CbtOnboarding({
                     resizeMode="contain"
                     accessibilityLabel={t("onboarding.intro.thinkTitle")}
                   />
-                  <CardTitle className="text-center">{t("onboarding.intro.thinkTitle")}</CardTitle>
+                  <CardTitle className="text-center text-think">
+                    {t("onboarding.intro.thinkTitle")}
+                  </CardTitle>
                   <Text variant="muted" className="text-center">
                     {t("onboarding.intro.thinkBody")}
                   </Text>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-be/30 bg-be/5">
                 <CardContent className="items-center gap-3 pt-6">
                   <Image
                     source={pillarBe}
@@ -133,7 +137,9 @@ export function CbtOnboarding({
                     resizeMode="contain"
                     accessibilityLabel={t("onboarding.intro.beTitle")}
                   />
-                  <CardTitle className="text-center">{t("onboarding.intro.beTitle")}</CardTitle>
+                  <CardTitle className="text-center text-be">
+                    {t("onboarding.intro.beTitle")}
+                  </CardTitle>
                   <Text variant="muted" className="text-center">
                     {t("onboarding.intro.beBody")}
                   </Text>

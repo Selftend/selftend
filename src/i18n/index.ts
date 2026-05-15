@@ -4,6 +4,7 @@ import { initReactI18next } from "react-i18next";
 import enCommon from "./locales/en/common.json";
 import enAuth from "./locales/en/auth.json";
 import enCbt from "./locales/en/cbt.json";
+import enModules from "./locales/en/modules.json";
 import enSettings from "./locales/en/settings.json";
 import enNavigation from "./locales/en/navigation.json";
 import enPolicies from "./locales/en/policies.json";
@@ -12,6 +13,7 @@ import enErrors from "./locales/en/errors.json";
 import bgCommon from "./locales/bg/common.json";
 import bgAuth from "./locales/bg/auth.json";
 import bgCbt from "./locales/bg/cbt.json";
+import bgModules from "./locales/bg/modules.json";
 import bgSettings from "./locales/bg/settings.json";
 import bgNavigation from "./locales/bg/navigation.json";
 import bgPolicies from "./locales/bg/policies.json";
@@ -24,13 +26,14 @@ export type SupportedLanguage = (typeof supportedLanguages)[number];
 i18n.use(initReactI18next).init({
   fallbackLng: "en",
   defaultNS: "common",
-  ns: ["common", "auth", "cbt", "settings", "navigation", "policies", "errors"],
+  ns: ["common", "auth", "cbt", "modules", "settings", "navigation", "policies", "errors"],
   interpolation: { escapeValue: false },
   resources: {
     en: {
       common: enCommon,
       auth: enAuth,
       cbt: enCbt,
+      modules: enModules,
       settings: enSettings,
       navigation: enNavigation,
       policies: enPolicies,
@@ -40,6 +43,7 @@ i18n.use(initReactI18next).init({
       common: bgCommon,
       auth: bgAuth,
       cbt: bgCbt,
+      modules: bgModules,
       settings: bgSettings,
       navigation: bgNavigation,
       policies: bgPolicies,

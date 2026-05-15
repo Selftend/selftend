@@ -1,19 +1,15 @@
 import { router, usePathname } from "expo-router";
 import {
+  AnchorIcon,
   BookHeartIcon,
-  BookOpenIcon,
   BrainIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  HistoryIcon,
+  CompassIcon,
   HomeIcon,
   LifeBuoyIcon,
-  SmilePlusIcon,
   SettingsIcon,
-  ShapesIcon,
+  SmilePlusIcon,
   WindIcon,
 } from "lucide-react-native";
-import * as React from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -29,10 +25,69 @@ interface NavItemDef {
   icon: typeof HomeIcon;
   matchPrefix: string | null;
   activeWhen?: (pathname: string) => boolean;
+  badgeKey?: "badgeLive" | "badgeSoon";
 }
 
-const MAIN_NAV_ITEMS: NavItemDef[] = [
-  { labelKey: "sidebar.home", href: "/(app)/(tabs)/", icon: HomeIcon, matchPrefix: null },
+const TODAY_ITEM: NavItemDef = {
+  labelKey: "sidebar.home",
+  href: "/(app)/(tabs)/",
+  icon: HomeIcon,
+  matchPrefix: null,
+};
+
+const MODULE_ITEMS: NavItemDef[] = [
+  {
+    labelKey: "sidebar.cbt",
+    href: "/cbt",
+    icon: BrainIcon,
+    matchPrefix: "/cbt",
+    badgeKey: "badgeLive",
+    activeWhen: (pathname) => pathname === "/cbt" || pathname.startsWith("/cbt/"),
+  },
+  {
+    labelKey: "sidebar.act",
+    href: "/modules/act",
+    icon: CompassIcon,
+    matchPrefix: "/modules/act",
+    badgeKey: "badgeSoon",
+  },
+  {
+    labelKey: "sidebar.dbt",
+    href: "/modules/dbt",
+    icon: AnchorIcon,
+    matchPrefix: "/modules/dbt",
+    badgeKey: "badgeSoon",
+  },
+];
+
+const TOOL_ITEMS: NavItemDef[] = [
+  {
+    labelKey: "sidebar.moodTracker",
+    href: "/tools/mood-tracker",
+    icon: SmilePlusIcon,
+    matchPrefix: "/tools/mood-tracker",
+  },
+  {
+    labelKey: "sidebar.mindfulness",
+    href: "/tools/mindfulness",
+    icon: WindIcon,
+    matchPrefix: "/tools/mindfulness",
+  },
+  {
+    labelKey: "sidebar.meditation",
+    href: "/tools/meditation",
+    icon: WindIcon,
+    matchPrefix: "/tools/meditation",
+  },
+  {
+    labelKey: "sidebar.gratitudeLog",
+    href: "/tools/gratitude-log",
+    icon: BookHeartIcon,
+    matchPrefix: "/tools/gratitude-log",
+  },
+];
+
+const ACCOUNT_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.settings",
     href: "/(app)/(tabs)/settings",
@@ -47,54 +102,6 @@ const MAIN_NAV_ITEMS: NavItemDef[] = [
   },
 ];
 
-const CBT_NAV_ITEMS: NavItemDef[] = [
-  {
-    labelKey: "sidebar.cbtOverview",
-    href: "/cbt",
-    icon: BrainIcon,
-    matchPrefix: "/cbt",
-    activeWhen: (pathname: string) =>
-      pathname === "/cbt" ||
-      (pathname.startsWith("/cbt/") &&
-        !pathname.startsWith("/cbt/learn") &&
-        !pathname.startsWith("/cbt/history")),
-  },
-  {
-    labelKey: "sidebar.cbtHistory",
-    href: "/cbt/history",
-    icon: HistoryIcon,
-    matchPrefix: "/cbt/history",
-  },
-  {
-    labelKey: "sidebar.cbtLearn",
-    href: "/cbt/learn",
-    icon: BookOpenIcon,
-    matchPrefix: "/cbt/learn",
-  },
-];
-
-const TOOL_PLACEHOLDER_NAV_ITEMS: NavItemDef[] = [
-  {
-    labelKey: "sidebar.moodTracker",
-    href: "/tools/mood-tracker",
-    icon: SmilePlusIcon,
-    matchPrefix: "/tools/mood-tracker",
-  },
-  {
-    labelKey: "sidebar.meditation",
-    href: "/tools/meditation",
-    icon: WindIcon,
-    matchPrefix: "/tools/meditation",
-  },
-  { labelKey: "sidebar.act", href: "/tools/act", icon: ShapesIcon, matchPrefix: "/tools/act" },
-  {
-    labelKey: "sidebar.gratitudeLog",
-    href: "/tools/gratitude-log",
-    icon: BookHeartIcon,
-    matchPrefix: "/tools/gratitude-log",
-  },
-];
-
 interface SidebarNavProps {
   includeTopInset?: boolean;
   onSelect?: () => void;
@@ -104,19 +111,6 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
   const { t } = useTranslation("navigation");
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const toolsActive = pathname.startsWith("/cbt") || pathname.startsWith("/tools");
-  const cbtActive = pathname.startsWith("/cbt");
-  const [toolsOpen, setToolsOpen] = React.useState(toolsActive);
-  const [cbtOpen, setCbtOpen] = React.useState(cbtActive);
-
-  React.useEffect(() => {
-    if (toolsActive) {
-      setToolsOpen(true);
-    }
-    if (cbtActive) {
-      setCbtOpen(true);
-    }
-  }, [cbtActive, toolsActive]);
 
   function isActive(item: NavItemDef) {
     if (item.activeWhen) {
@@ -130,13 +124,12 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     return pathname === "/" || pathname === "/(app)/(tabs)/";
   }
 
-  function getLevelPadding(level: number) {
-    return level === 0 ? "px-3" : level === 1 ? "pl-8 pr-3" : "pl-12 pr-3";
-  }
-
-  function renderNavItem(item: NavItemDef, level = 0) {
+  function renderNavItem(item: NavItemDef) {
     const active = isActive(item);
     const label = t(item.labelKey);
+    const badgeLabel = item.badgeKey ? t(`sidebar.${item.badgeKey}`) : null;
+    const isLive = item.badgeKey === "badgeLive";
+
     return (
       <Pressable
         accessibilityLabel={label}
@@ -150,8 +143,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
         role="button"
         className={cn(
-          "flex-row items-center gap-3 rounded-md py-2.5",
-          getLevelPadding(level),
+          "flex-row items-center gap-3 rounded-md px-3 py-2.5",
           active ? "bg-primary/10" : "active:bg-muted/50",
         )}
       >
@@ -159,102 +151,63 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
           as={item.icon}
           className={cn("size-5", active ? "text-primary" : "text-muted-foreground")}
         />
-        <Text className={cn("text-sm font-medium", active ? "text-primary" : "text-foreground")}>
+        <Text
+          className={cn("flex-1 text-sm font-medium", active ? "text-primary" : "text-foreground")}
+        >
           {label}
         </Text>
+        {badgeLabel ? (
+          <View className={cn("rounded-full px-2 py-0.5", isLive ? "bg-act/15" : "bg-muted")}>
+            <Text
+              className={cn(
+                "text-[10px] font-semibold uppercase tracking-wider",
+                isLive ? "text-act" : "text-muted-foreground",
+              )}
+            >
+              {badgeLabel}
+            </Text>
+          </View>
+        ) : null}
       </Pressable>
     );
   }
 
-  function renderSubmenuTrigger({
-    active,
-    icon,
-    label,
-    level,
-    onPress,
-    open,
-  }: {
-    active: boolean;
-    icon: typeof ShapesIcon;
-    label: string;
-    level: number;
-    onPress: () => void;
-    open: boolean;
-  }) {
-    const highlighted = active && !open;
+  function renderGroupLabel(label: string) {
     return (
-      <Pressable
-        accessibilityLabel={
-          open ? t("sidebar.collapse", { label }) : t("sidebar.expand", { label })
-        }
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open, selected: active }}
-        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-        onPress={onPress}
-        role="button"
-        className={cn(
-          "flex-row items-center gap-3 rounded-md py-2.5",
-          getLevelPadding(level),
-          highlighted ? "bg-primary/10" : "active:bg-muted/50",
-        )}
+      <Text
+        className="px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+        key={`group-${label}`}
       >
-        <Icon
-          as={icon}
-          className={cn("size-5", highlighted ? "text-primary" : "text-muted-foreground")}
-        />
-        <Text
-          className={cn(
-            "flex-1 text-sm font-medium",
-            highlighted ? "text-primary" : "text-foreground",
-          )}
-        >
-          {label}
-        </Text>
-        <Icon
-          as={open ? ChevronDownIcon : ChevronRightIcon}
-          className={cn("size-4", highlighted ? "text-primary" : "text-muted-foreground")}
-        />
-      </Pressable>
+        {label}
+      </Text>
     );
   }
 
   return (
     <View
-      className="w-60 bg-card border-r border-border"
+      className="w-60 flex-shrink-0 border-r border-border bg-card"
       style={{
         paddingTop: includeTopInset ? insets.top : 0,
         paddingBottom: insets.bottom,
       }}
     >
-      <ScrollView contentContainerClassName="px-3 py-4 gap-1">
-        {renderNavItem(MAIN_NAV_ITEMS[0])}
+      <ScrollView contentContainerClassName="grow px-3 py-4">
+        <View className="gap-1">
+          {renderNavItem(TODAY_ITEM)}
 
-        <View className="gap-1 py-1">
-          {renderSubmenuTrigger({
-            active: toolsActive,
-            icon: ShapesIcon,
-            label: t("sidebar.tools"),
-            level: 0,
-            onPress: () => setToolsOpen((open) => !open),
-            open: toolsOpen,
-          })}
-          {toolsOpen ? (
-            <View className="gap-1">
-              {renderSubmenuTrigger({
-                active: cbtActive,
-                icon: BrainIcon,
-                label: "CBT",
-                level: 1,
-                onPress: () => setCbtOpen((open) => !open),
-                open: cbtOpen,
-              })}
-              {cbtOpen ? CBT_NAV_ITEMS.map((item) => renderNavItem(item, 2)) : null}
-              {TOOL_PLACEHOLDER_NAV_ITEMS.map((item) => renderNavItem(item, 1))}
-            </View>
-          ) : null}
+          {renderGroupLabel(t("sidebar.modules"))}
+          {MODULE_ITEMS.map((item) => renderNavItem(item))}
+
+          {renderGroupLabel(t("sidebar.tools"))}
+          {TOOL_ITEMS.map((item) => renderNavItem(item))}
         </View>
 
-        {MAIN_NAV_ITEMS.slice(1).map((item) => renderNavItem(item))}
+        <View className="grow" />
+
+        <View className="gap-1 pt-3">
+          <View className="mx-1 mb-2 h-px bg-border" />
+          {ACCOUNT_ITEMS.map((item) => renderNavItem(item))}
+        </View>
       </ScrollView>
     </View>
   );

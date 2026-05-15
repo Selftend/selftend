@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { BackButton } from "@/src/components/app/back-button";
 
 interface ToolPlaceholderScreenProps {
   title: string;
@@ -23,7 +24,10 @@ export function ToolPlaceholderScreen({ title, description }: ToolPlaceholderScr
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">{title}</Text>
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1">{title}</Text>
+            </View>
             <Text variant="muted">{description}</Text>
           </View>
 

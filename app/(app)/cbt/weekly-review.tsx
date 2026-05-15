@@ -18,6 +18,7 @@ import { useGoals, useMilestones } from "@/src/features/goals/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { BackButton } from "@/src/components/app/back-button";
 
 const REFLECTION_PROMPTS = [
   "weeklyReview.reflection.prompt1",
@@ -143,7 +144,10 @@ export default function WeeklyReviewScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">{t("weeklyReview.title")}</Text>
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1">{t("weeklyReview.title")}</Text>
+            </View>
             <Text variant="muted">{t("weeklyReview.description")}</Text>
           </View>
 

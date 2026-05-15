@@ -12,6 +12,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
+import { BackButton } from "@/src/components/app/back-button";
 import { mindfulnessExercises } from "@/src/constants/mindfulness";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -26,7 +27,10 @@ export default function MindfulnessScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">{t("mindfulness.title")}</Text>
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1">{t("mindfulness.title")}</Text>
+            </View>
             <Text variant="muted">{t("mindfulness.description")}</Text>
           </View>
 
@@ -58,7 +62,11 @@ export default function MindfulnessScreen() {
                 key={exercise.slug}
                 title={t(`mindfulness.exercises.${exercise.slug}.title`)}
                 description={t(`mindfulness.exercises.${exercise.slug}.shortDescription`)}
-                onPress={() => router.push(`/cbt/mindfulness/${exercise.slug}`)}
+                onPress={() =>
+                  router.push(
+                    `/tools/mindfulness/${exercise.slug}` as Parameters<typeof router.push>[0],
+                  )
+                }
               />
             ))}
           </View>

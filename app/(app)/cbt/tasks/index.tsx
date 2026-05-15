@@ -15,6 +15,7 @@ import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useTasks } from "@/src/features/procrastination/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { BackButton } from "@/src/components/app/back-button";
 
 export default function TasksScreen() {
   const { t } = useTranslation("cbt");
@@ -30,7 +31,10 @@ export default function TasksScreen() {
         <View className="gap-6">
           <View className="flex-row items-center justify-between gap-4">
             <View className="flex-1 gap-2">
-              <Text variant="h1">{t("tasks.title")}</Text>
+              <View className="flex-row items-center gap-2">
+                <BackButton showLabel={false} className="-ml-2" />
+                <Text variant="h1">{t("tasks.title")}</Text>
+              </View>
               <Text variant="muted">{t("tasks.description")}</Text>
             </View>
             <Button onPress={() => router.push("/cbt/tasks/new")} size="sm">

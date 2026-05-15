@@ -21,6 +21,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { useGoalDraftStore } from "@/src/stores/goal-draft-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BackButton } from "@/src/components/app/back-button";
 
 const defaultValues: GoalFormSchema = {
   lifeDomain: "",
@@ -178,7 +179,10 @@ export default function NewGoalScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <Text variant="h1">{goalId ? t("goals.editTitle") : t("goals.newTitle")}</Text>
+          <View className="flex-row items-center gap-2">
+            <BackButton showLabel={false} className="-ml-2" />
+            <Text variant="h1">{goalId ? t("goals.editTitle") : t("goals.newTitle")}</Text>
+          </View>
           <Text variant="muted">
             {goalId ? t("goals.editDescription") : t("goals.newDescription")}
           </Text>

@@ -19,6 +19,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { useCoreBelief, useUpdateBeliefStrength } from "@/src/features/beliefs/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { BackButton } from "@/src/components/app/back-button";
 
 export default function BeliefDetailScreen() {
   const { t } = useTranslation("cbt");
@@ -92,7 +93,10 @@ export default function BeliefDetailScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">{t("beliefs.detailTitle")}</Text>
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1">{t("beliefs.detailTitle")}</Text>
+            </View>
             <Text variant="h3">{belief.beliefStatement}</Text>
           </View>
 

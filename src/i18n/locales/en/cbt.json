@@ -92,6 +92,48 @@
       "weeklyReview": "Weekly Review"
     }
   },
+  "pillars": {
+    "intro": "The Think · Act · Be framework",
+    "introDescription": "CBT works through three reinforcing pillars. Positive change in any one pillar makes the others easier.",
+    "think": {
+      "title": "Think",
+      "sub": "Cognitive",
+      "description": "Examine the thoughts and beliefs under your reactions. Identify patterns, test them, and form more accurate views."
+    },
+    "act": {
+      "title": "Act",
+      "sub": "Behavioral",
+      "description": "Action precedes motivation. Schedule meaningful behavior, expose yourself gradually to what you avoid, and watch mood follow."
+    },
+    "be": {
+      "title": "Be",
+      "sub": "Mindfulness",
+      "description": "Present-moment awareness without judgment. Use the shared meditation and mood tools — and the self-care log to protect baseline mood."
+    },
+    "review": {
+      "title": "Review"
+    },
+    "usesSharedTools": "Uses these shared tools",
+    "strategyDescriptions": {
+      "thoughts": "5-step examination of one moment.",
+      "beliefs": "Recurring themes underneath thoughts.",
+      "worry": "Sort \"what if\" from real problems.",
+      "distortions": "Reference for the core thinking patterns.",
+      "goals": "Compelling, value-anchored steps.",
+      "values": "Chosen directions that anchor goals.",
+      "activities": "Pleasure and mastery, on the calendar.",
+      "exposure": "Graduated practice with anxiety.",
+      "tasks": "Smallest-possible-step breakdown.",
+      "anger": "Trigger → interpretation → choice.",
+      "selfCare": "Daily check on sleep, body, connection.",
+      "weeklyReview": "Sunday. Five minutes.",
+      "recovery": "The keys you keep coming back to.",
+      "mindfulness": "Shared tool",
+      "moodTracker": "Shared tool",
+      "gratitudeLog": "Shared tool",
+      "meditation": "Shared tool"
+    }
+  },
   "weeklyReview": {
     "title": "Weekly review",
     "description": "A quiet look at the past seven days — mood, activity, goals, and what to carry forward.",

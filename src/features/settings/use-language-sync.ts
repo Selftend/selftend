@@ -10,25 +10,32 @@ function isSupportedLanguage(value: string | null | undefined): value is Support
 }
 
 export function useLanguageSync(userId: string | null, preferences: UserPreferences | undefined) {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, hydrated, hasStoredLanguage } = useLanguage();
   const { mutate: updatePreferences } = useUpdateUserPreferences(userId);
   const initialPullDone = useRef(false);
 
   useEffect(() => {
-    if (!preferences || !userId) {
+    if (!preferences || !userId || !hydrated) {
       return;
     }
 
     if (!initialPullDone.current) {
       initialPullDone.current = true;
-      if (isSupportedLanguage(preferences.language) && preferences.language !== language) {
+      // Local AsyncStorage wins on first load if it has a value — refresh must
+      // preserve what the user chose. Pull from the DB only when the device
+      // has no stored language (e.g. fresh install / new device sign-in).
+      if (
+        !hasStoredLanguage &&
+        isSupportedLanguage(preferences.language) &&
+        preferences.language !== language
+      ) {
         void setLanguage(preferences.language);
+        return;
       }
-      return;
     }
 
     if (language !== preferences.language) {
       updatePreferences(mergeUserPreferences(preferences, { language }));
     }
-  }, [language, preferences, userId, setLanguage, updatePreferences]);
+  }, [hydrated, hasStoredLanguage, language, preferences, userId, setLanguage, updatePreferences]);
 }

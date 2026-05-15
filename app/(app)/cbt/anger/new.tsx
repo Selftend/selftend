@@ -22,6 +22,7 @@ import { useAngerLogs, useSaveAngerLog } from "@/src/features/anger/queries";
 import { angerLogFormSchema, type AngerLogFormSchema } from "@/src/features/anger/schemas";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { BackButton } from "@/src/components/app/back-button";
 
 const defaultValues: AngerLogFormSchema = {
   triggerText: "",
@@ -83,7 +84,10 @@ export default function NewAngerLogScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <Text variant="h1">{t("anger.newTitle")}</Text>
+          <View className="flex-row items-center gap-2">
+            <BackButton showLabel={false} className="-ml-2" />
+            <Text variant="h1">{t("anger.newTitle")}</Text>
+          </View>
           <Text variant="muted">{t("anger.newDescription")}</Text>
         </View>
 

@@ -9,6 +9,7 @@ import { EmptyState, LoadingState } from "@/src/components/app/screen-state";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
+import { BackButton } from "@/src/components/app/back-button";
 
 export default function CbtHistoryScreen() {
   const { t } = useTranslation("cbt");
@@ -20,7 +21,10 @@ export default function CbtHistoryScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">{t("history.title")}</Text>
+            <View className="flex-row items-center gap-2">
+              <BackButton showLabel={false} className="-ml-2" />
+              <Text variant="h1">{t("history.title")}</Text>
+            </View>
             <Text variant="muted">{t("history.description")}</Text>
           </View>
 
