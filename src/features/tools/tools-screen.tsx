@@ -6,6 +6,7 @@ import {
   ArrowRightIcon,
   BookHeartIcon,
   ClockIcon,
+  NotebookPenIcon,
   SmilePlusIcon,
   WindIcon,
 } from "lucide-react-native";
@@ -15,6 +16,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { cn } from "@/lib/utils";
+import { useJournalEntries } from "@/src/features/journal/queries";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { getMoodSummary } from "@/src/features/mood/summaries";
@@ -22,7 +24,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface ToolTile {
-  key: "mood" | "mindfulness" | "meditation" | "gratitude";
+  key: "mood" | "mindfulness" | "meditation" | "gratitude" | "journal";
   href: string;
   icon: LucideIcon;
   nameKey: string;
@@ -60,6 +62,15 @@ const TOOLS: ToolTile[] = [
     iconColor: "text-be",
   },
   {
+    key: "journal",
+    href: "/tools/journal",
+    icon: NotebookPenIcon,
+    nameKey: "today.tools.journal",
+    subKey: "today.tools.journalSub",
+    iconBg: "bg-primary/15",
+    iconColor: "text-primary",
+  },
+  {
     key: "gratitude",
     href: "/tools/gratitude-log",
     icon: BookHeartIcon,
@@ -87,10 +98,12 @@ export default function ToolsScreen() {
   const { user } = useSession();
   const { data: moodLogs } = useMoodLogs(user?.id ?? null, 30);
   const { data: mindfulnessSessions } = useMindfulnessSessions(user?.id ?? null, 30);
+  const { data: journalEntries } = useJournalEntries(user?.id ?? null, 50);
 
   const moodCount = moodLogs?.length ?? 0;
   const moodAverage = getMoodSummary(moodLogs, 7).average;
   const mindfulnessMinutes = lastThirtyDaysMinutes(mindfulnessSessions);
+  const journalCount = journalEntries?.length ?? 0;
 
   function statFor(key: ToolTile["key"]): string {
     switch (key) {
@@ -105,6 +118,9 @@ export default function ToolsScreen() {
         return t("tools.stats.mindfulnessMinutes", { minutes: mindfulnessMinutes });
       case "meditation":
         return t("tools.stats.comingSoon");
+      case "journal":
+        if (journalCount === 0) return t("tools.stats.journalNoData");
+        return t("tools.stats.journalEntries", { count: journalCount });
       case "gratitude":
         return t("today.tools.gratitudeLogSub");
     }

@@ -6,6 +6,7 @@ import {
   CompassIcon,
   HomeIcon,
   LifeBuoyIcon,
+  NotebookPenIcon,
   SettingsIcon,
   SmilePlusIcon,
   WindIcon,
@@ -66,6 +67,12 @@ const TOOL_ITEMS: NavItemDef[] = [
     href: "/tools/mood-tracker",
     icon: SmilePlusIcon,
     matchPrefix: "/tools/mood-tracker",
+  },
+  {
+    labelKey: "sidebar.journal",
+    href: "/tools/journal",
+    icon: NotebookPenIcon,
+    matchPrefix: "/tools/journal",
   },
   {
     labelKey: "sidebar.mindfulness",

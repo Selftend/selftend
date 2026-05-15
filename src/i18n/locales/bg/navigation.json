@@ -13,6 +13,7 @@
     "cbtHistory": "История",
     "cbtLearn": "Научи",
     "moodTracker": "Проследяване на настроението",
+    "journal": "Дневник",
     "meditation": "Медитация",
     "mindfulness": "Осъзнатост",
     "back": "Назад",
@@ -64,7 +65,8 @@
       "logMood": "Запиши настроение",
       "thoughtRecord": "Запис на мисли",
       "meditate": "Медитирай",
-      "selfCare": "Самогрижа"
+      "selfCare": "Самогрижа",
+      "journal": "Нов запис в дневника"
     },
     "moodSnapshot": {
       "title": "Поглед към настроението",
@@ -113,7 +115,9 @@
       "meditation": "Медитация",
       "meditationSub": "Спокойни, структурирани сесии",
       "gratitudeLog": "Дневник на благодарността",
-      "gratitudeLogSub": "Забележи малките победи"
+      "gratitudeLogSub": "Забележи малките победи",
+      "journal": "Дневник",
+      "journalSub": "Личен дневник за свободно писане"
     }
   },
   "tools": {
@@ -126,6 +130,9 @@
       "moodNoData": "Още няма записи",
       "mindfulnessMinutes": "{{minutes}} мин този месец",
       "mindfulnessNoData": "Още няма сесии",
+      "journalEntries_one": "{{count}} запис",
+      "journalEntries_other": "{{count}} записа",
+      "journalNoData": "Още няма записи",
       "comingSoon": "Скоро"
     }
   },

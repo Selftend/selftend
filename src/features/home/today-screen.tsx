@@ -8,6 +8,7 @@ import {
   BookHeartIcon,
   ClockIcon,
   HeartIcon,
+  NotebookPenIcon,
   PlusIcon,
   ScrollTextIcon,
   SmilePlusIcon,
@@ -109,6 +110,15 @@ const SHARED_TOOLS: SharedTool[] = [
     subKey: "today.tools.mindfulnessSub",
     iconBg: "bg-be/15",
     iconColor: "text-be",
+  },
+  {
+    key: "journal",
+    href: "/tools/journal",
+    icon: NotebookPenIcon,
+    nameKey: "today.tools.journal",
+    subKey: "today.tools.journalSub",
+    iconBg: "bg-primary/15",
+    iconColor: "text-primary",
   },
   {
     key: "gratitude",
@@ -321,6 +331,18 @@ export default function TodayScreen() {
                 >
                   <Icon as={HeartIcon} className="size-4" />
                   <Text>{t("today.quickActions.selfCare")}</Text>
+                </Button>
+              </View>
+              <View className="min-w-[150px] flex-1 basis-[150px]">
+                <Button
+                  onPress={() =>
+                    router.push("/tools/journal/new" as Parameters<typeof router.push>[0])
+                  }
+                  variant="outline"
+                  size="lg"
+                >
+                  <Icon as={NotebookPenIcon} className="size-4" />
+                  <Text>{t("today.quickActions.journal")}</Text>
                 </Button>
               </View>
             </View>

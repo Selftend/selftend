@@ -66,6 +66,7 @@ describe("export_user_data() (integration)", () => {
     expect(Array.isArray(data.selfCareLogs)).toBe(true);
     expect(Array.isArray(data.recoveryPlans)).toBe(true);
     expect(Array.isArray(data.challengePlans)).toBe(true);
+    expect(Array.isArray(data.journalEntries)).toBe(true);
     expect(typeof data.exportDate).toBe("string");
   });
 

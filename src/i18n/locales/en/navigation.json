@@ -13,6 +13,7 @@
     "cbtHistory": "History",
     "cbtLearn": "Learn",
     "moodTracker": "Mood tracker",
+    "journal": "Journal",
     "meditation": "Meditation",
     "mindfulness": "Mindfulness",
     "back": "Back",
@@ -64,7 +65,8 @@
       "logMood": "Log mood",
       "thoughtRecord": "Thought record",
       "meditate": "Meditate",
-      "selfCare": "Self-care log"
+      "selfCare": "Self-care log",
+      "journal": "New journal entry"
     },
     "moodSnapshot": {
       "title": "Mood snapshot",
@@ -113,7 +115,9 @@
       "meditation": "Meditation",
       "meditationSub": "Quiet, structured sits",
       "gratitudeLog": "Gratitude log",
-      "gratitudeLogSub": "Notice the small wins"
+      "gratitudeLogSub": "Notice the small wins",
+      "journal": "Journal",
+      "journalSub": "Private free-text reflection"
     }
   },
   "tools": {
@@ -126,6 +130,9 @@
       "moodNoData": "No logs yet",
       "mindfulnessMinutes": "{{minutes}} min this month",
       "mindfulnessNoData": "No sessions yet",
+      "journalEntries_one": "{{count}} entry",
+      "journalEntries_other": "{{count}} entries",
+      "journalNoData": "No entries yet",
       "comingSoon": "Coming soon"
     }
   },

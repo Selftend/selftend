@@ -21,6 +21,7 @@ import {
   HeartIcon,
   LayersIcon,
   MapIcon,
+  NotebookPenIcon,
   ScrollTextIcon,
   SmilePlusIcon,
   TargetIcon,
@@ -181,6 +182,12 @@ const BE_SHARED_TOOLS: SharedTool[] = [
     route: "/tools/gratitude-log",
     icon: BookHeartIcon,
     labelKey: "navigation:sidebar.gratitudeLog",
+  },
+  {
+    key: "journal",
+    route: "/tools/journal",
+    icon: NotebookPenIcon,
+    labelKey: "navigation:sidebar.journal",
   },
 ];
 

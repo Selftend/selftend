@@ -4,6 +4,7 @@ import { initReactI18next } from "react-i18next";
 import enCommon from "./locales/en/common.json";
 import enAuth from "./locales/en/auth.json";
 import enCbt from "./locales/en/cbt.json";
+import enJournal from "./locales/en/journal.json";
 import enMood from "./locales/en/mood.json";
 import enModules from "./locales/en/modules.json";
 import enSettings from "./locales/en/settings.json";
@@ -14,6 +15,7 @@ import enErrors from "./locales/en/errors.json";
 import bgCommon from "./locales/bg/common.json";
 import bgAuth from "./locales/bg/auth.json";
 import bgCbt from "./locales/bg/cbt.json";
+import bgJournal from "./locales/bg/journal.json";
 import bgMood from "./locales/bg/mood.json";
 import bgModules from "./locales/bg/modules.json";
 import bgSettings from "./locales/bg/settings.json";
@@ -28,13 +30,25 @@ export type SupportedLanguage = (typeof supportedLanguages)[number];
 i18n.use(initReactI18next).init({
   fallbackLng: "en",
   defaultNS: "common",
-  ns: ["common", "auth", "cbt", "mood", "modules", "settings", "navigation", "policies", "errors"],
+  ns: [
+    "common",
+    "auth",
+    "cbt",
+    "journal",
+    "mood",
+    "modules",
+    "settings",
+    "navigation",
+    "policies",
+    "errors",
+  ],
   interpolation: { escapeValue: false },
   resources: {
     en: {
       common: enCommon,
       auth: enAuth,
       cbt: enCbt,
+      journal: enJournal,
       mood: enMood,
       modules: enModules,
       settings: enSettings,
@@ -46,6 +60,7 @@ i18n.use(initReactI18next).init({
       common: bgCommon,
       auth: bgAuth,
       cbt: bgCbt,
+      journal: bgJournal,
       mood: bgMood,
       modules: bgModules,
       settings: bgSettings,

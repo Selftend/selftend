@@ -11,13 +11,14 @@ The protected app sidebar groups tools as:
   - History
   - Learn
 - Mood tracker
+- Journal
 - Meditation
 - ACT
 - Gratitude log
 
-CBT is the only working module. The app shell and CBT each have one-page onboarding tracked in `user_preferences`; Settings can reset those flags.
+CBT, Mood tracker, and Journal are the working modules. The app shell and CBT each have one-page onboarding tracked in `user_preferences`; Settings can reset those flags.
 
-Mood tracker, Meditation, ACT, and Gratitude log are placeholders. They must not collect data, schedule reminders, create streak pressure, or imply therapeutic outcomes until each has a reviewed module spec.
+Meditation, ACT, and Gratitude log are placeholders. They must not collect data, schedule reminders, create streak pressure, or imply therapeutic outcomes until each has a reviewed module spec.
 
 ## Routes
 
@@ -41,7 +42,13 @@ Working CBT routes:
 - `/cbt/self-care`
 - `/cbt/recovery`
 
-Placeholder routes: `/tools/mood-tracker`, `/tools/meditation`, `/tools/act`, `/tools/gratitude-log`.
+Working tool routes:
+
+- `/tools/mood-tracker`, `/tools/mood-tracker/new`, `/tools/mood-tracker/[id]`, `/tools/mood-tracker/[id]/edit`
+- `/tools/journal`, `/tools/journal/new`, `/tools/journal/[id]`, `/tools/journal/[id]/edit`
+- `/tools/mindfulness`, `/tools/mindfulness/[slug]`
+
+Placeholder routes: `/tools/meditation`, `/tools/act`, `/tools/gratitude-log`.
 
 ## Expansion Rule
 
@@ -67,7 +74,7 @@ Planned boundaries:
 
 - **CBT:** guided self-help strategies under the Gillihan CBT program, private history, recovery planning, pattern insights, and optional quiet reminders
 - **Mood tracker:** check-ins only; do not mix in generic journaling
-- **Journaling:** private free-text reflection, separate from CBT and check-ins
+- **Journaling:** private free-text reflection, separate from CBT and check-ins. Spec: [journaling.md](journaling.md)
 - **ACT:** focused exercises after a spec
 - **Meditation:** guided practice, no reminder or progress pressure without review
 - **Gratitude log:** lightweight entries, no default streak pressure
