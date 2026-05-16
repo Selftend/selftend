@@ -248,6 +248,27 @@
       "back": "Back"
     }
   },
+  "info": {
+    "title": "The mind can be trained.",
+    "subtitle": "Ten stages. One breath at a time.",
+    "heroAlt": "Meditation path",
+    "heroBody": "This module follows The Mind Illuminated — a structured path through ten distinct stages, from establishing a daily habit to deep meditative mastery.",
+    "circlesAlt": "Attention and awareness",
+    "conceptsTitle": "Two modes of knowing",
+    "attentionTitle": "Attention",
+    "attentionBody": "Selective and focused. Isolates one object — like the breath — for closer inspection.",
+    "awarenessTitle": "Peripheral awareness",
+    "awarenessBody": "Global and contextual. Holds the background of your experience — including the state of your own mind.",
+    "principlesTitle": "Three things to know",
+    "patience": "Patience, not force — you can't pull a sapling to make it grow.",
+    "intention": "Intention, not willpower — clear intentions, repeated daily, do the work.",
+    "everySit": "Every sit counts — even a restless sit is practice.",
+    "attribution": "Based on The Mind Illuminated by Culadasa (John Yates, Ph.D.)",
+    "begin": "Start setup",
+    "dismiss": "Got it",
+    "resetWizard": "Reassess or change preferences",
+    "helpHint": "What is this module?"
+  },
   "onboarding": {
     "welcome": {
       "title": "The path to awakening",

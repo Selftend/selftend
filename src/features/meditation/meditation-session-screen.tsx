@@ -483,7 +483,7 @@ function TimerFace({
   );
 }
 
-interface PostSitProps {
+export interface PostSitProps {
   stageNumber: StageNumber;
   durationMinutes: number;
   reflection: string;
@@ -503,7 +503,7 @@ interface PostSitProps {
   isPending: boolean;
 }
 
-function PostSit({
+export function PostSit({
   stageNumber,
   durationMinutes,
   reflection,

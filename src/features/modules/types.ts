@@ -21,6 +21,7 @@ export interface UserPreferences {
   appOnboardingCompleted: boolean;
   cbtOnboardingCompleted: boolean;
   meditationOnboardingCompleted: boolean;
+  meditationInfoCompleted: boolean;
   privacyPolicyAcceptedAt: string | null;
   termsAcceptedAt: string | null;
   policyVersionAccepted: string | null;
@@ -45,6 +46,7 @@ export const defaultUserPreferences: UserPreferences = {
   appOnboardingCompleted: false,
   cbtOnboardingCompleted: false,
   meditationOnboardingCompleted: false,
+  meditationInfoCompleted: false,
   privacyPolicyAcceptedAt: null,
   termsAcceptedAt: null,
   policyVersionAccepted: null,

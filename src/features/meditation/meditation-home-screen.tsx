@@ -6,13 +6,15 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
+import { MeditationInfo } from "@/src/components/app/meditation-info-modal";
+import { TimerWidget } from "@/src/features/timer/timer-widget";
 import {
   MeditationOnboarding,
   type MeditationOnboardingResult,
 } from "@/src/components/app/meditation-onboarding-modal";
-import { cn } from "@/lib/utils";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
 import { MeditationInsightsCard } from "@/src/features/meditation/meditation-insights-card";
 import {
@@ -20,7 +22,7 @@ import {
   useMeditationSessions,
   useUpsertMeditationProgramState,
 } from "@/src/features/meditation/queries";
-import { getStage, STAGES, type StageDefinition } from "@/src/features/meditation/stages";
+import { getStage } from "@/src/features/meditation/stages";
 import type { StageNumber } from "@/src/features/meditation/types";
 import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
 import { mergeUserPreferences } from "@/src/features/modules/types";
@@ -39,14 +41,29 @@ export default function MeditationHomeScreen() {
   const upsertProgramState = useUpsertMeditationProgramState(userId);
   const updatePreferences = useUpdateUserPreferences(userId);
   const [onboardingError, setOnboardingError] = useState<string | undefined>();
+  const [forceInfo, setForceInfo] = useState(false);
+  const [forceWizard, setForceWizard] = useState(false);
 
+  const infoNeeded = !prefsLoading && Boolean(preferences) && !preferences?.meditationInfoCompleted;
+  const showInfo = infoNeeded || forceInfo;
   const onboardingNeeded =
-    !prefsLoading && Boolean(preferences) && !preferences?.meditationOnboardingCompleted;
+    !prefsLoading &&
+    Boolean(preferences) &&
+    !preferences?.meditationOnboardingCompleted &&
+    !infoNeeded;
+  const showWizard = onboardingNeeded || forceWizard;
 
   const currentStage = (programState?.currentStage ?? 1) as StageNumber;
   const stage = getStage(currentStage);
   const suggestedDuration = programState?.preferredDurationMinutes ?? 15;
   const phaseLabel = t(`module.home.phase${capitalize(stage.phase)}`);
+
+  async function handleInfoComplete() {
+    if (!preferences) return;
+    await updatePreferences.mutateAsync(
+      mergeUserPreferences(preferences, { meditationInfoCompleted: true }),
+    );
+  }
 
   async function handleOnboardingComplete(result: MeditationOnboardingResult) {
     if (!preferences || !userId) return;
@@ -68,6 +85,7 @@ export default function MeditationHomeScreen() {
           enabledModules: addModule(preferences.enabledModules, "meditation"),
         }),
       );
+      setForceWizard(false);
     } catch (error) {
       const fallback = t("onboarding.commit.error");
       const detail = error instanceof Error ? error.message : null;
@@ -85,11 +103,17 @@ export default function MeditationHomeScreen() {
 
   return (
     <>
+      <MeditationInfo
+        visible={showInfo}
+        onComplete={() => void handleInfoComplete()}
+        onDismiss={forceInfo ? () => setForceInfo(false) : undefined}
+      />
       <MeditationOnboarding
-        visible={onboardingNeeded}
+        visible={showWizard}
         isPending={upsertProgramState.isPending || updatePreferences.isPending}
         errorMessage={onboardingError}
         onComplete={(result) => void handleOnboardingComplete(result)}
+        onDismiss={forceWizard ? () => setForceWizard(false) : undefined}
       />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
@@ -98,6 +122,14 @@ export default function MeditationHomeScreen() {
               <View className="flex-row items-center gap-2">
                 <BackButton showLabel={false} className="-ml-2" />
                 <Text variant="h1">{t("module.home.title")}</Text>
+                <Pressable
+                  accessibilityLabel={t("info.helpHint")}
+                  accessibilityRole="button"
+                  onPress={() => setForceInfo(true)}
+                  hitSlop={8}
+                >
+                  <Icon name="help-outline" className="text-muted-foreground" size={20} />
+                </Pressable>
               </View>
               <Text variant="muted">
                 {t("module.home.subtitle", { stage: stage.number, phase: phaseLabel })}
@@ -113,21 +145,9 @@ export default function MeditationHomeScreen() {
                     stage: stage.number,
                   })}
                 </Text>
-                <Button onPress={() => router.push("/modules/meditation/session/new")}>
-                  <Text>{t("module.home.startSit")}</Text>
-                </Button>
+                <TimerWidget initialDuration={suggestedDuration} />
               </CardContent>
             </Card>
-
-            <View className="gap-3">
-              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {t("module.home.stageStripTitle")}
-              </Text>
-              <StageStrip currentStage={currentStage} />
-              <Text variant="muted" className="text-xs">
-                {t("module.home.stageStripHint")}
-              </Text>
-            </View>
 
             <View className="flex-row flex-wrap gap-3">
               <Button
@@ -145,6 +165,10 @@ export default function MeditationHomeScreen() {
                 <Text>{t("module.home.openLearn")}</Text>
               </Button>
             </View>
+
+            <Button variant="ghost" onPress={() => setForceWizard(true)}>
+              <Text className="text-sm text-muted-foreground">{t("info.resetWizard")}</Text>
+            </Button>
 
             {currentStage === 10 ? <MeditationDailyLifeCard /> : null}
 
@@ -204,41 +228,6 @@ export default function MeditationHomeScreen() {
         </ScrollView>
       </SafeAreaView>
     </>
-  );
-}
-
-function StageStrip({ currentStage }: { currentStage: StageNumber }) {
-  return (
-    <View className="flex-row flex-wrap gap-1.5">
-      {STAGES.map((s: StageDefinition) => (
-        <Pressable
-          key={s.number}
-          accessibilityRole="button"
-          accessibilityLabel={`Stage ${s.number}`}
-          onPress={() =>
-            router.push({
-              pathname: "/modules/meditation/stages/[n]",
-              params: { n: String(s.number) },
-            })
-          }
-          className={cn(
-            "size-9 items-center justify-center rounded-md border",
-            s.number === currentStage
-              ? "border-primary bg-primary"
-              : "border-border bg-card active:bg-muted",
-          )}
-        >
-          <Text
-            className={cn(
-              "text-xs font-bold",
-              s.number === currentStage ? "text-primary-foreground" : "text-foreground",
-            )}
-          >
-            {s.number}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
   );
 }
 

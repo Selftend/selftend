@@ -86,13 +86,11 @@ export default function MeditationStageDetailScreen() {
               <Button onPress={handleSwitch} disabled={upsertProgramState.isPending}>
                 <Text>{t("module.stages.switchTo")}</Text>
               </Button>
-            ) : null}
-            <Button
-              variant="outline"
-              onPress={() => router.push("/modules/meditation/session/new")}
-            >
-              <Text>{t("module.home.startSit")}</Text>
-            </Button>
+            ) : (
+              <Button variant="outline" onPress={() => router.push("/tools/timer")}>
+                <Text>{t("module.home.startSit")}</Text>
+              </Button>
+            )}
           </View>
         </View>
       </ScrollView>

@@ -1,7 +1,7 @@
 import { Audio } from "expo-av";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, Vibration, View } from "react-native";
+import { Pressable, View, Vibration } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -38,10 +38,14 @@ async function playBell() {
 
 export default function TimerScreen() {
   const { t } = useTranslation("timer");
+  const params = useLocalSearchParams<{ duration?: string }>();
 
-  const [durationMinutes, setDurationMinutes] = useState(10);
+  const parsedDuration = Number(params.duration);
+  const initialDuration = DURATION_PRESETS.includes(parsedDuration) ? parsedDuration : 10;
+
+  const [durationMinutes, setDurationMinutes] = useState(initialDuration);
   const [timerState, setTimerState] = useState<TimerState>("idle");
-  const [secondsLeft, setSecondsLeft] = useState(durationMinutes * 60);
+  const [secondsLeft, setSecondsLeft] = useState(initialDuration * 60);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -197,12 +201,19 @@ export default function TimerScreen() {
                 >
                   <Text>{t("timer.again")}</Text>
                 </Button>
-                <Pressable
-                  accessibilityRole="link"
-                  onPress={() => router.push("/modules/meditation")}
+                <Button
+                  onPress={() =>
+                    router.push({
+                      pathname: "/modules/meditation/session/log",
+                      params: { duration: String(durationMinutes) },
+                    })
+                  }
+                  variant="outline"
+                  size="lg"
+                  className="min-w-[140px]"
                 >
-                  <Text className="text-sm text-primary">{t("openMeditationModule")}</Text>
-                </Pressable>
+                  <Text>{t("logSit")}</Text>
+                </Button>
               </View>
             )}
           </View>
