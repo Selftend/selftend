@@ -64,6 +64,15 @@ const MODULE_ITEMS: NavItemDef[] = [
     matchPrefix: "/modules/dbt",
     badgeKey: "badgeSoon",
   },
+  {
+    labelKey: "sidebar.gratitudeLog",
+    href: "/modules/gratitude",
+    icon: "favorite",
+    matchPrefix: "/modules/gratitude",
+    badgeKey: "badgeLive",
+    activeWhen: (pathname) =>
+      pathname === "/modules/gratitude" || pathname.startsWith("/modules/gratitude/"),
+  },
 ];
 
 const TOOL_ITEMS: NavItemDef[] = [
@@ -90,12 +99,6 @@ const TOOL_ITEMS: NavItemDef[] = [
     href: "/tools/timer",
     icon: "timer",
     matchPrefix: "/tools/timer",
-  },
-  {
-    labelKey: "sidebar.gratitudeLog",
-    href: "/tools/gratitude-log",
-    icon: "favorite",
-    matchPrefix: "/tools/gratitude-log",
   },
 ];
 

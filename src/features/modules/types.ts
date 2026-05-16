@@ -1,4 +1,6 @@
-export type ModuleKey = "cbt" | "meditation";
+export type ModuleKey = "cbt" | "meditation" | "gratitude";
+
+export type GratitudeLevel = 1 | 2 | 3;
 
 export interface CookieConsent {
   essential: true;
@@ -22,6 +24,8 @@ export interface UserPreferences {
   cbtOnboardingCompleted: boolean;
   meditationOnboardingCompleted: boolean;
   meditationInfoCompleted: boolean;
+  gratitudeOnboardingCompleted: boolean;
+  gratitudeDefaultLevel: GratitudeLevel;
   privacyPolicyAcceptedAt: string | null;
   termsAcceptedAt: string | null;
   policyVersionAccepted: string | null;
@@ -47,6 +51,8 @@ export const defaultUserPreferences: UserPreferences = {
   cbtOnboardingCompleted: false,
   meditationOnboardingCompleted: false,
   meditationInfoCompleted: false,
+  gratitudeOnboardingCompleted: false,
+  gratitudeDefaultLevel: 1,
   privacyPolicyAcceptedAt: null,
   termsAcceptedAt: null,
   policyVersionAccepted: null,
@@ -56,7 +62,7 @@ export const defaultUserPreferences: UserPreferences = {
   activeStrategies: [],
 };
 
-const VALID_MODULES: ModuleKey[] = ["cbt", "meditation"];
+const VALID_MODULES: ModuleKey[] = ["cbt", "meditation", "gratitude"];
 
 export function sanitizeEnabledModules(value: unknown): ModuleKey[] {
   if (!Array.isArray(value)) return ["cbt"];

@@ -48,7 +48,15 @@ Working tool routes:
 - `/tools/mood-tracker`, `/tools/mood-tracker/new`, `/tools/mood-tracker/[id]`, `/tools/mood-tracker/[id]/edit`
 - `/tools/journal`, `/tools/journal/new`, `/tools/journal/[id]`, `/tools/journal/[id]/edit`
 - `/tools/mindfulness`, `/tools/mindfulness/[slug]`
-- `/tools/gratitude-log`, `/tools/gratitude-log/new`, `/tools/gratitude-log/[id]`, `/tools/gratitude-log/[id]/edit`
+- `/tools/gratitude-log`, `/tools/gratitude-log/new`, `/tools/gratitude-log/[id]`, `/tools/gratitude-log/[id]/edit` (compat redirects → `/modules/gratitude/*`)
+
+Working gratitude routes (planned — Phase 1):
+
+- `/modules/gratitude` — home (level strip, recent entries, break card)
+- `/modules/gratitude/onboarding` — onboarding modal fallback / revisit
+- `/modules/gratitude/new` — create entry (level-aware)
+- `/modules/gratitude/entries`, `/modules/gratitude/entries/[id]`, `/modules/gratitude/entries/[id]/edit`
+- `/modules/gratitude/breaks/[slug]` — individual exercise or science card
 
 Working meditation routes:
 
@@ -89,4 +97,4 @@ Planned boundaries:
 - **Journaling:** private free-text reflection, separate from CBT and check-ins. Spec: [journaling.md](journaling.md)
 - **ACT:** focused exercises after a spec
 - **Meditation:** the ten-stage Mind Illuminated program with onboarding, stage-aware sits, private session history, and optional quiet reminders. Spec: [meditation-tmi.md](meditation-tmi.md)
-- **Gratitude log:** lightweight one-to-three item entries, private history, no reminders or streak pressure. Spec: [gratitude-log.md](gratitude-log.md)
+- **Gratitude:** three-level practice (Noticing → Reflecting → Practicing), 9 named exercises from the Kurzgesagt Gratitude Journal, private history, no reminders or streak pressure. Spec: [gratitude.md](gratitude.md)

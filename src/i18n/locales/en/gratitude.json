@@ -1,8 +1,62 @@
 {
-  "title": "Gratitude log",
+  "title": "Gratitude",
   "description": "Notice small things you appreciated. Save only when it feels useful - no streaks, no pressure.",
   "cta": {
     "new": "New entry"
+  },
+  "home": {
+    "title": "Gratitude",
+    "subtitle": "Notice what's good. Write it down. No pressure, no streaks.",
+    "levelLabel": "Practice level",
+    "level1Name": "Level 1",
+    "level2Name": "Level 2",
+    "level3Name": "Level 3",
+    "viewAll": "View all"
+  },
+  "onboarding": {
+    "helpHint": "Learn about gratitude practice",
+    "skip": "Skip",
+    "back": "Back",
+    "welcome": {
+      "title": "The Science of Gratitude",
+      "subtitle": "A short guide to what this practice is and why it works.",
+      "scienceTitle": "Brain-level changes",
+      "scienceBody": "Acting selflessly and expressing gratitude activates specific brain regions — including the reward system and the cingulate cortex responsible for ethics and decision-making.",
+      "antidoteTitle": "An antidote to dissatisfaction",
+      "antidoteBody": "Gratitude is one of the strongest predictors of happiness, the ability to make friends, and how well we handle hardship. A 2015 randomised trial found gratitude journaling produced significantly better mental health outcomes than psychotherapy alone.",
+      "continue": "Continue"
+    },
+    "levels": {
+      "title": "Three Levels of Practice",
+      "subtitle": "You can move between levels at any time. There is no wrong choice.",
+      "level1Title": "Level 1 — Noticing",
+      "level1Body": "Simply report what happened today without judgment. A good meal, a calm moment, a conversation. Nothing is too small.",
+      "level2Title": "Level 2 — Reflecting & Appreciating",
+      "level2Body": "Think about what you would miss if it were gone. Notice things you usually take for granted — running water, sunlight, a friend nearby.",
+      "level3Title": "Level 3 — Practicing Gratitude",
+      "level3Body": "Write sentences starting with \"I'm grateful for…\" — for today and for your life. Aim for one to three times a week.",
+      "continue": "Continue"
+    },
+    "frequency": {
+      "title": "How Often?",
+      "subtitle": "Research points to a sweet spot.",
+      "body": "Researchers suggest writing one to three times a week rather than daily. Daily writing can lead to hedonic adaptation — the positive feeling fades as gratitude becomes routine.",
+      "note": "There is no minimum. If you skip a few days, just pick it up again. You can't fail at this.",
+      "continue": "Continue"
+    },
+    "pick": {
+      "title": "Where Would You Like to Start?",
+      "subtitle": "You can change this any time from the home screen.",
+      "level1Title": "Level 1 — Noticing",
+      "level1Body": "Report small daily events without judgment. Good for beginners or days when you have little energy.",
+      "level2Title": "Level 2 — Reflecting & Appreciating",
+      "level2Body": "Focus on what you would miss if it were gone. Builds on noticing.",
+      "level3Title": "Level 3 — Practicing Gratitude",
+      "level3Body": "Write \"I'm grateful for…\" sentences regularly. The most studied form of gratitude practice.",
+      "finish": "Start",
+      "saving": "Saving…",
+      "error": "Couldn't save your preferences. Try again."
+    }
   },
   "list": {
     "recent": "Recent entries",
