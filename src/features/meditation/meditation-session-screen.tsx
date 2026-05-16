@@ -12,6 +12,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { cn } from "@/lib/utils";
 import { type BodyScanSegments, currentBodyScanSegment } from "@/src/features/meditation/body-scan";
+import { activeEffortlessnessWindow } from "@/src/features/meditation/effortlessness";
 import { obstacleTagsForStage } from "@/src/features/meditation/obstacles";
 import {
   useMeditationProgramState,
@@ -412,6 +413,10 @@ function TimerFace({
   const segment = showBodyScan
     ? currentBodyScanSegment(bodyScanSegmentCount, elapsedSeconds, totalSeconds)
     : null;
+  const effortlessnessWindow =
+    technique === "effortlessness" && phase === "running"
+      ? activeEffortlessnessWindow(elapsedSeconds, totalSeconds)
+      : null;
 
   return (
     <View className="items-center gap-6 py-8">
@@ -439,6 +444,17 @@ function TimerFace({
         <View className="items-center rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
           <Text className="text-center text-sm text-foreground">
             {t("module.session.wholeBodyCue")}
+          </Text>
+        </View>
+      ) : null}
+
+      {effortlessnessWindow !== null ? (
+        <View className="items-center gap-1 rounded-lg border border-act/40 bg-act/5 px-4 py-3">
+          <Text className="text-xs uppercase tracking-wider text-muted-foreground">
+            {t("module.session.effortlessness.indicator")}
+          </Text>
+          <Text className="text-center text-sm font-semibold text-act">
+            {t("module.session.effortlessness.body")}
           </Text>
         </View>
       ) : null}

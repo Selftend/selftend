@@ -127,6 +127,10 @@
       },
       "obstaclesLabel": "Anything that pulled at you today",
       "wholeBodyCue": "Breath at the anchor. Body breathing around it.",
+      "effortlessness": {
+        "indicator": "Test for effortlessness",
+        "body": "Try relaxing all effort now. See what stays."
+      },
       "purification": {
         "title": "If something heavy comes up",
         "body": "Stage 4 can surface old emotional material. If anything feels overwhelming, you don't have to push through.",
