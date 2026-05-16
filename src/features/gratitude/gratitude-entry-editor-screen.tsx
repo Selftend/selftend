@@ -20,6 +20,7 @@ import {
   GRATITUDE_EVENT_COUNT,
   GRATITUDE_ITEM_COUNT,
   GRATITUDE_ITEM_MAX,
+  GRATITUDE_LIFE_ITEM_COUNT,
   GRATITUDE_NOTE_MAX,
 } from "@/src/features/gratitude/schemas";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
@@ -35,7 +36,19 @@ interface GratitudeEntryEditorScreenProps {
 }
 
 const EMPTY_ITEMS = Array.from({ length: GRATITUDE_ITEM_COUNT }, () => "");
+const EMPTY_LIFE_ITEMS = Array.from({ length: GRATITUDE_LIFE_ITEM_COUNT }, () => "");
 const EMPTY_EVENTS = Array.from({ length: GRATITUDE_EVENT_COUNT }, () => "");
+
+function asStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function rotatingPlaceholder(options: string[], offset: number, index: number, fallback: string) {
+  if (options.length === 0) return fallback;
+  return options[(offset + index) % options.length] ?? fallback;
+}
 
 export function GratitudeEntryEditorScreen({
   fallbackHref,
@@ -48,7 +61,7 @@ export function GratitudeEntryEditorScreen({
   const showToast = useToastStore((state) => state.showToast);
   const editMode = mode === "edit";
 
-  const { data: cachedList } = useGratitudeEntries(editMode ? (user?.id ?? null) : null, 50);
+  const { data: cachedList } = useGratitudeEntries(user?.id ?? null, 50);
   const fromCache = useMemo(
     () => (entryId ? (cachedList?.find((entry) => entry.id === entryId) ?? null) : null),
     [cachedList, entryId],
@@ -72,7 +85,7 @@ export function GratitudeEntryEditorScreen({
   // All levels: main gratitude items
   const [items, setItems] = useState<string[]>(EMPTY_ITEMS);
   // Level 3: life items + note
-  const [lifeItems, setLifeItems] = useState<string[]>(EMPTY_ITEMS);
+  const [lifeItems, setLifeItems] = useState<string[]>(EMPTY_LIFE_ITEMS);
   const [note, setNote] = useState("");
 
   const [error, setError] = useState("");
@@ -84,6 +97,8 @@ export function GratitudeEntryEditorScreen({
       existingEntry.items[0] ?? "",
       existingEntry.items[1] ?? "",
       existingEntry.items[2] ?? "",
+      existingEntry.items[3] ?? "",
+      existingEntry.items[4] ?? "",
     ]);
     setNote(existingEntry.note);
     setEvents([
@@ -104,6 +119,13 @@ export function GratitudeEntryEditorScreen({
 
   const trimmedItems = items.map((s) => s.trim()).filter((s) => s.length > 0);
   const canSave = trimmedItems.length > 0 && !saving && Boolean(user);
+  const itemPlaceholderFallback = t("editor.itemPlaceholder");
+  const todaySuggestionPlaceholders = useMemo(
+    () => asStringArray(t("editor.todaySuggestionPlaceholders", { returnObjects: true })),
+    [t],
+  );
+  const placeholderOffset =
+    (cachedList?.length ?? 0) % Math.max(todaySuggestionPlaceholders.length, 1);
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -301,7 +323,12 @@ export function GratitudeEntryEditorScreen({
                     accessibilityLabel={t("editor.itemLabel", { number: index + 1 })}
                     maxLength={GRATITUDE_ITEM_MAX}
                     onChangeText={(value) => updateItem(index, value)}
-                    placeholder={t("editor.itemPlaceholder")}
+                    placeholder={rotatingPlaceholder(
+                      todaySuggestionPlaceholders,
+                      placeholderOffset,
+                      index,
+                      itemPlaceholderFallback,
+                    )}
                     value={item}
                   />
                 </View>

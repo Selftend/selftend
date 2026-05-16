@@ -3,14 +3,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteGratitudeEntry,
   getGratitudeEntry,
+  listFavoriteGratitudeEntries,
   listGratitudeEntries,
   saveGratitudeEntry,
+  setGratitudeEntryStarred,
 } from "@/src/features/gratitude/repository";
 import type { GratitudeInput } from "@/src/features/gratitude/types";
 
 const gratitudeKeys = {
   all: ["gratitude"] as const,
   list: (userId: string, limit: number) => ["gratitude", "list", userId, limit] as const,
+  favorites: (userId: string, limit: number) => ["gratitude", "favorites", userId, limit] as const,
   detail: (userId: string, id: string) => ["gratitude", "detail", userId, id] as const,
 };
 
@@ -35,6 +38,16 @@ export function useGratitudeEntry(userId: string | null, id: string | null) {
   });
 }
 
+export function useFavoriteGratitudeEntries(userId: string | null, limit = 100) {
+  return useQuery({
+    queryKey: userId
+      ? gratitudeKeys.favorites(userId, limit)
+      : ["gratitude", "favorites", "anonymous", limit],
+    queryFn: () => listFavoriteGratitudeEntries(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
 export function useSaveGratitudeEntry(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -51,6 +64,18 @@ export function useDeleteGratitudeEntry(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deleteGratitudeEntry(userId!, id),
+    onSuccess: async () => {
+      if (!userId) return;
+      await queryClient.invalidateQueries({ queryKey: gratitudeKeys.all });
+    },
+  });
+}
+
+export function useSetGratitudeEntryStarred(userId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, starred }: { id: string; starred: boolean }) =>
+      setGratitudeEntryStarred(userId!, id, starred),
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: gratitudeKeys.all });

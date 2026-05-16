@@ -123,13 +123,14 @@ Level is stored per-entry (`level: 1 | 2 | 3`) so history shows which mode the u
 | life_item_2  | text        | NOT NULL, default `''`, ≤ 240 chars (Level 3 only) |
 | life_item_3  | text        | NOT NULL, default `''`, ≤ 240 chars (Level 3 only) |
 | note         | text        | NOT NULL, default `''`, ≤ 2000 chars               |
+| starred      | boolean     | NOT NULL, default `false`, Favorite Moments        |
 | logged_at    | timestamptz | default now() UTC                                  |
 | created_at   | timestamptz | default now() UTC                                  |
 | updated_at   | timestamptz | trigger-maintained                                 |
 
-Index: `(user_id, logged_at desc)`.
+Indexes: `(user_id, logged_at desc)` and `(user_id, starred, logged_at desc)` for the Favorite Moments collection.
 
-**Migration note:** existing `gratitude_entries` rows (written under the old lightweight spec) have `level = 3` and their `item_1`–`item_3` values backfilled. All new Level-1/2 columns default to empty string, so existing rows remain valid.
+**Migration note:** existing `gratitude_entries` rows (written under the old lightweight spec) have `level = 3` and their `item_1`–`item_3` values backfilled. All new Level-1/2 columns, Level-3 `item_4`/`item_5`, and `starred` default to empty or false values, so existing rows remain valid.
 
 ---
 
@@ -158,6 +159,7 @@ This module follows the contract in `tools.md`:
 | `/modules/gratitude/entries`           | Private history list                                                 |
 | `/modules/gratitude/entries/[id]`      | Entry detail; edit / delete                                          |
 | `/modules/gratitude/entries/[id]/edit` | Edit an entry                                                        |
+| `/modules/gratitude/favorites`         | Favorite Moments collection for starred entries                      |
 | `/modules/gratitude/breaks/[slug]`     | Single exercise or science card (Gratitude Letter, Give It Up, etc.) |
 | `/tools/gratitude-log`                 | Compat redirect → `/modules/gratitude`                               |
 | `/tools/gratitude-log/new`             | Compat redirect → `/modules/gratitude/new`                           |
@@ -199,7 +201,7 @@ Onboarding can be skipped after Step 1; skipping lands the user at Level 1.
 
 ## 7. Home Screen
 
-- **Level indicator strip** — three level tabs (1 / 2 / 3). Tapping switches the default new-entry level (persisted locally, not in the database).
+- **Level indicator strip** — three level tabs (1 / 2 / 3). Tapping switches the default new-entry level, persisted to `user_preferences.gratitude_default_level`.
 - **New Entry button** — always visible, opens the level-appropriate entry form.
 - **Recent entries** — last 5–7 entries, each showing date, first item, level badge.
 - **Break Card** — one rotating exercise card (from the 9 named exercises above). Tapping opens the full break screen at `/modules/gratitude/breaks/[slug]`. Cards cycle in a fixed order; the user can dismiss the current card to advance.

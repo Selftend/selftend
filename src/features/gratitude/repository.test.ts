@@ -1,8 +1,10 @@
 import {
   deleteGratitudeEntry,
   getGratitudeEntry,
+  listFavoriteGratitudeEntries,
   listGratitudeEntries,
   saveGratitudeEntry,
+  setGratitudeEntryStarred,
 } from "@/src/features/gratitude/repository";
 import { requireSupabase } from "@/src/lib/supabase";
 
@@ -25,6 +27,8 @@ describe("gratitude repository", () => {
         item_1: "Warm coffee",
         item_2: "Sunlight",
         item_3: "",
+        item_4: "",
+        item_5: "",
         level: 3,
         events: [],
         good_moment: "",
@@ -33,6 +37,7 @@ describe("gratitude repository", () => {
         life_item_1: "",
         life_item_2: "",
         life_item_3: "",
+        starred: true,
         note: "A steady morning.",
         logged_at: "2026-05-15T08:00:00.000Z",
         created_at: "2026-05-15T08:00:00.000Z",
@@ -57,6 +62,7 @@ describe("gratitude repository", () => {
         missIfGone: "",
         hiddenGood: "",
         lifeItems: [],
+        starred: true,
         note: "A steady morning.",
         loggedAt: "2026-05-15T08:00:00.000Z",
         createdAt: "2026-05-15T08:00:00.000Z",
@@ -82,6 +88,49 @@ describe("gratitude repository", () => {
     expect(eqId).toHaveBeenCalledWith("id", "missing");
   });
 
+  it("lists favorite entries newest-first", async () => {
+    const rows = [
+      {
+        id: "g-1",
+        user_id: "user-1",
+        item_1: "Warm coffee",
+        item_2: "",
+        item_3: "",
+        item_4: "",
+        item_5: "",
+        level: 3,
+        events: [],
+        good_moment: "",
+        miss_if_gone: "",
+        hidden_good: "",
+        life_item_1: "",
+        life_item_2: "",
+        life_item_3: "",
+        starred: true,
+        note: "",
+        logged_at: "2026-05-15T08:00:00.000Z",
+        created_at: "2026-05-15T08:00:00.000Z",
+        updated_at: "2026-05-15T08:00:00.000Z",
+      },
+    ];
+    const limit = jest.fn().mockResolvedValue({ data: rows, error: null });
+    const order = jest.fn(() => ({ limit }));
+    const eqStarred = jest.fn(() => ({ order }));
+    const eqUser = jest.fn(() => ({ eq: eqStarred }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(listFavoriteGratitudeEntries("user-1", 10)).resolves.toMatchObject([
+      { id: "g-1", starred: true },
+    ]);
+
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(eqStarred).toHaveBeenCalledWith("starred", true);
+    expect(order).toHaveBeenCalledWith("logged_at", { ascending: false });
+    expect(limit).toHaveBeenCalledWith(10);
+  });
+
   it("trims, filters blanks, and inserts a new entry", async () => {
     const row = {
       id: "g-1",
@@ -89,6 +138,8 @@ describe("gratitude repository", () => {
       item_1: "Warm coffee",
       item_2: "Sunlight",
       item_3: "",
+      item_4: "",
+      item_5: "",
       level: 3,
       events: [],
       good_moment: "",
@@ -97,6 +148,7 @@ describe("gratitude repository", () => {
       life_item_1: "",
       life_item_2: "",
       life_item_3: "",
+      starred: false,
       note: "A steady morning.",
       logged_at: "2026-05-15T08:00:00.000Z",
       created_at: "2026-05-15T08:00:00.000Z",
@@ -120,6 +172,8 @@ describe("gratitude repository", () => {
       item_1: "Warm coffee",
       item_2: "Sunlight",
       item_3: "",
+      item_4: "",
+      item_5: "",
       note: "A steady morning.",
       events: [],
       good_moment: "",
@@ -138,6 +192,8 @@ describe("gratitude repository", () => {
       item_1: "Updated",
       item_2: "",
       item_3: "",
+      item_4: "",
+      item_5: "",
       level: 3,
       events: [],
       good_moment: "",
@@ -146,6 +202,7 @@ describe("gratitude repository", () => {
       life_item_1: "",
       life_item_2: "",
       life_item_3: "",
+      starred: false,
       note: "",
       logged_at: "2026-05-15T08:00:00.000Z",
       created_at: "2026-05-15T08:00:00.000Z",
@@ -171,6 +228,7 @@ describe("gratitude repository", () => {
       missIfGone: "",
       hiddenGood: "",
       lifeItems: [],
+      starred: false,
       note: "",
       loggedAt: "2026-05-15T08:00:00.000Z",
       createdAt: "2026-05-15T08:00:00.000Z",
@@ -182,6 +240,8 @@ describe("gratitude repository", () => {
       item_1: "Updated",
       item_2: "",
       item_3: "",
+      item_4: "",
+      item_5: "",
       note: "",
       events: [],
       good_moment: "",
@@ -195,11 +255,105 @@ describe("gratitude repository", () => {
     expect(eqId).toHaveBeenCalledWith("id", "g-1");
   });
 
+  it("stores up to five gratitude items", async () => {
+    const row = {
+      id: "g-5",
+      user_id: "user-1",
+      item_1: "Coffee",
+      item_2: "Sunlight",
+      item_3: "Music",
+      item_4: "Warm socks",
+      item_5: "A call",
+      level: 3,
+      events: [],
+      good_moment: "",
+      miss_if_gone: "",
+      hidden_good: "",
+      life_item_1: "Home",
+      life_item_2: "",
+      life_item_3: "",
+      starred: false,
+      note: "",
+      logged_at: "2026-05-15T08:00:00.000Z",
+      created_at: "2026-05-15T08:00:00.000Z",
+      updated_at: "2026-05-15T08:30:00.000Z",
+    };
+    const single = jest.fn().mockResolvedValue({ data: row, error: null });
+    const select = jest.fn(() => ({ single }));
+    const insert = jest.fn(() => ({ select }));
+    const from = jest.fn(() => ({ insert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      saveGratitudeEntry("user-1", {
+        level: 3,
+        items: ["Coffee", "Sunlight", "Music", "Warm socks", "A call", "Extra"],
+        lifeItems: ["Home"],
+        note: "",
+      }),
+    ).resolves.toMatchObject({
+      items: ["Coffee", "Sunlight", "Music", "Warm socks", "A call"],
+      lifeItems: ["Home"],
+    });
+
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        item_1: "Coffee",
+        item_2: "Sunlight",
+        item_3: "Music",
+        item_4: "Warm socks",
+        item_5: "A call",
+        life_item_1: "Home",
+      }),
+    );
+  });
+
   it("rejects saves without a gratitude item", async () => {
     await expect(
       saveGratitudeEntry("user-1", { level: 3, items: ["  "], note: "" }),
     ).rejects.toThrow("At least one gratitude item is required.");
     expect(mockRequireSupabase).not.toHaveBeenCalled();
+  });
+
+  it("toggles the favorite marker scoped to user", async () => {
+    const row = {
+      id: "g-1",
+      user_id: "user-1",
+      item_1: "Warm coffee",
+      item_2: "",
+      item_3: "",
+      item_4: "",
+      item_5: "",
+      level: 3,
+      events: [],
+      good_moment: "",
+      miss_if_gone: "",
+      hidden_good: "",
+      life_item_1: "",
+      life_item_2: "",
+      life_item_3: "",
+      starred: true,
+      note: "",
+      logged_at: "2026-05-15T08:00:00.000Z",
+      created_at: "2026-05-15T08:00:00.000Z",
+      updated_at: "2026-05-15T08:30:00.000Z",
+    };
+    const single = jest.fn().mockResolvedValue({ data: row, error: null });
+    const select = jest.fn(() => ({ single }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ update }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(setGratitudeEntryStarred("user-1", "g-1", true)).resolves.toMatchObject({
+      id: "g-1",
+      starred: true,
+    });
+
+    expect(update).toHaveBeenCalledWith({ starred: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(eqId).toHaveBeenCalledWith("id", "g-1");
   });
 
   it("deletes by id scoped to user", async () => {

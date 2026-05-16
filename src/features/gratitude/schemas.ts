@@ -2,7 +2,8 @@ import { z } from "zod";
 
 export const GRATITUDE_ITEM_MAX = 240;
 export const GRATITUDE_NOTE_MAX = 2000;
-export const GRATITUDE_ITEM_COUNT = 3;
+export const GRATITUDE_ITEM_COUNT = 5;
+export const GRATITUDE_LIFE_ITEM_COUNT = 3;
 export const GRATITUDE_EVENT_COUNT = 3;
 
 const nonEmptyString = z

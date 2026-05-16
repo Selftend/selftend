@@ -74,6 +74,7 @@ describe("GratitudeEntryEditorScreen", () => {
     expect(screen.getByText("New gratitude entry")).toBeTruthy();
     expect(screen.getByLabelText("Gratitude 1")).toBeTruthy();
     expect(screen.getByLabelText("Gratitude 2")).toBeTruthy();
+    expect(screen.getByLabelText("Gratitude 5")).toBeTruthy();
     expect(screen.getByLabelText("Note (optional)")).toBeTruthy();
     expect(screen.getByText("Save")).toBeTruthy();
   });
@@ -89,6 +90,7 @@ describe("GratitudeEntryEditorScreen", () => {
       missIfGone: "",
       hiddenGood: "",
       lifeItems: [],
+      starred: false,
       note: "",
       loggedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -134,6 +136,7 @@ describe("GratitudeEntryEditorScreen", () => {
       missIfGone: "",
       hiddenGood: "",
       lifeItems: [],
+      starred: false,
       note: "Small thing.",
       loggedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -182,6 +185,7 @@ describe("GratitudeEntryEditorScreen", () => {
           missIfGone: "",
           hiddenGood: "",
           lifeItems: [],
+          starred: false,
           note: "This helped.",
           loggedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),

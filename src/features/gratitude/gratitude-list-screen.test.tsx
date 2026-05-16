@@ -58,6 +58,7 @@ describe("GratitudeListScreen", () => {
           missIfGone: "",
           hiddenGood: "",
           lifeItems: [],
+          starred: false,
           note: "The morning felt steady.",
           loggedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),

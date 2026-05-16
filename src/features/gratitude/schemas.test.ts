@@ -14,9 +14,9 @@ describe("gratitudeEntrySchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("accepts up to three gratitude items", () => {
+  it("accepts up to five gratitude items", () => {
     const result = gratitudeEntrySchema.safeParse({
-      items: ["Coffee", "Sunlight", "A quiet walk"],
+      items: ["Coffee", "Sunlight", "A quiet walk", "Music", "Warm socks"],
       note: "Small things helped.",
     });
     expect(result.success).toBe(true);
@@ -38,7 +38,7 @@ describe("gratitudeEntrySchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects more than three items", () => {
+  it("rejects more than five items", () => {
     const result = gratitudeEntrySchema.safeParse({
       items: Array.from({ length: GRATITUDE_ITEM_COUNT + 1 }, (_, index) => `Item ${index}`),
       note: "",

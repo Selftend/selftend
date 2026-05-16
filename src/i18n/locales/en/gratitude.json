@@ -13,6 +13,18 @@
     "level3Name": "Level 3",
     "viewAll": "View all"
   },
+  "insights": {
+    "title": "Insights",
+    "frequencyTitle": "Recent rhythm",
+    "frequencyEmpty": "Your entries will appear here when you have a few saved.",
+    "themesTitle": "Common themes",
+    "themesEmpty": "Themes will appear after more saved text.",
+    "themeCount": "{{word}} · {{count}}",
+    "favoritesTitle": "Favorite moments",
+    "favoritesCount_one": "{{count}} saved favorite",
+    "favoritesCount_other": "{{count}} saved favorites",
+    "favoritesOpen": "Favorites"
+  },
   "onboarding": {
     "helpHint": "Learn about gratitude practice",
     "skip": "Skip",
@@ -73,7 +85,7 @@
   "editor": {
     "createTitle": "New gratitude entry",
     "editTitle": "Edit gratitude entry",
-    "createDescription": "Write one to three things you appreciated. Small counts.",
+    "createDescription": "Write one to five things you appreciated. Small counts.",
     "editDescription": "Update what you noticed earlier.",
     "level1Title": "New entry — Noticing",
     "level1Description": "Notice small events from today. Any moment counts.",
@@ -93,6 +105,13 @@
     "hiddenGoodLabel": "A hidden good",
     "hiddenGoodPlaceholder": "Something usually taken for granted.",
     "todayItemsLabel": "Grateful for today",
+    "todaySuggestionPlaceholders": [
+      "What made you laugh?",
+      "Who was kind to you?",
+      "What simple pleasure did you enjoy?",
+      "What went a little better than expected?",
+      "What did your body help you do?"
+    ],
     "lifeItemsLabel": "Grateful in your life",
     "lifeItemLabel": "Life item {{number}}",
     "lifeItemPlaceholder": "Something in your life to appreciate.",
@@ -106,6 +125,8 @@
   },
   "detail": {
     "title": "Gratitude entry",
+    "favorite": "Favorite",
+    "unfavorite": "Favorited",
     "edit": "Edit",
     "delete": "Delete",
     "levelBadge": "Level {{level}}",
@@ -119,12 +140,22 @@
     "noteTitle": "Note",
     "loggedAt": "Logged",
     "notFound": "We couldn't find that gratitude entry.",
+    "favoriteError": "Couldn't update this favorite. Try again.",
     "deleteError": "Couldn't delete this entry. Try again.",
     "confirmDelete": {
       "title": "Delete this entry?",
       "message": "This permanently removes the entry. It can't be recovered.",
       "confirm": "Delete",
       "cancel": "Cancel"
+    }
+  },
+  "favorites": {
+    "title": "Favorite moments",
+    "description": "Entries you marked for easy return.",
+    "viewEntry": "View favorite gratitude entry from {{when}}",
+    "empty": {
+      "title": "No favorites yet",
+      "description": "Open an entry and mark it as a favorite when it feels worth returning to."
     }
   },
   "relativeTime": {
@@ -187,6 +218,8 @@
   },
   "feedback": {
     "saved": "Entry saved",
-    "deleted": "Entry deleted"
+    "deleted": "Entry deleted",
+    "favoriteAdded": "Added to favorites",
+    "favoriteRemoved": "Removed from favorites"
   }
 }

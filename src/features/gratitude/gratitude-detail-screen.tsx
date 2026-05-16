@@ -21,6 +21,7 @@ import {
   useDeleteGratitudeEntry,
   useGratitudeEntries,
   useGratitudeEntry,
+  useSetGratitudeEntryStarred,
 } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
@@ -52,8 +53,10 @@ export default function GratitudeDetailScreen() {
   const entry: GratitudeEntry | null = fromCache ?? fetched ?? null;
 
   const deleteMutation = useDeleteGratitudeEntry(user?.id ?? null);
+  const starMutation = useSetGratitudeEntryStarred(user?.id ?? null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [favoriteError, setFavoriteError] = useState("");
 
   if (!fromCache && isLoading) {
     return (
@@ -96,6 +99,22 @@ export default function GratitudeDetailScreen() {
     }
   };
 
+  const toggleFavorite = async () => {
+    setFavoriteError("");
+    try {
+      const updated = await starMutation.mutateAsync({
+        id: entry.id,
+        starred: !entry.starred,
+      });
+      showToast({
+        title: updated.starred ? t("feedback.favoriteAdded") : t("feedback.favoriteRemoved"),
+        tone: "success",
+      });
+    } catch (e) {
+      setFavoriteError(e instanceof Error ? e.message : t("detail.favoriteError"));
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow p-6">
@@ -113,7 +132,18 @@ export default function GratitudeDetailScreen() {
                 {t("detail.levelBadge", { level: entry.level })}
               </Text>
             </View>
-            <View className="flex-row gap-3">
+            <View className="flex-row flex-wrap gap-3">
+              <Button
+                disabled={starMutation.isPending}
+                onPress={() => void toggleFavorite()}
+                variant={entry.starred ? "secondary" : "ghost"}
+              >
+                <Icon
+                  name={entry.starred ? "star" : "star-outline"}
+                  className="size-4 text-primary"
+                />
+                <Text>{entry.starred ? t("detail.unfavorite") : t("detail.favorite")}</Text>
+              </Button>
               <Button
                 onPress={() =>
                   router.push({
@@ -131,6 +161,9 @@ export default function GratitudeDetailScreen() {
                 <Text>{t("detail.delete")}</Text>
               </Button>
             </View>
+            {favoriteError ? (
+              <Text className="text-sm text-destructive">{favoriteError}</Text>
+            ) : null}
           </View>
 
           {entry.level === 1 ? (

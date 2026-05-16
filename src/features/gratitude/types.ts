@@ -14,6 +14,7 @@ export interface GratitudeEntry {
   missIfGone: string;
   hiddenGood: string;
   lifeItems: string[];
+  starred: boolean;
 }
 
 export interface GratitudeInput {

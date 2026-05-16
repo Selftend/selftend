@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,13 @@ import {
   type GratitudeOnboardingResult,
 } from "@/src/components/app/gratitude-onboarding-modal";
 import { GRATITUDE_BREAKS } from "@/src/features/gratitude/breaks";
+import {
+  getFavoriteGratitudeEntries,
+  getGratitudeFrequencyBuckets,
+  getGratitudeThemes,
+  type GratitudeFrequencyBucket,
+  type GratitudeTheme,
+} from "@/src/features/gratitude/insights";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
@@ -28,7 +35,7 @@ export default function GratitudeHomeScreen() {
   const userId = user?.id ?? null;
 
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
-  const { data: entries } = useGratitudeEntries(userId, 7);
+  const { data: entries } = useGratitudeEntries(userId, 90);
   const updatePreferences = useUpdateUserPreferences(userId);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
@@ -40,6 +47,11 @@ export default function GratitudeHomeScreen() {
   const showOnboarding = onboardingNeeded || forceOnboarding;
 
   const currentLevel = (preferences?.gratitudeDefaultLevel ?? 1) as GratitudeLevel;
+  const allEntries = useMemo(() => entries ?? [], [entries]);
+  const recentList = useMemo(() => allEntries.slice(0, 7), [allEntries]);
+  const frequencyBuckets = useMemo(() => getGratitudeFrequencyBuckets(allEntries), [allEntries]);
+  const themes = useMemo(() => getGratitudeThemes(allEntries, 6), [allEntries]);
+  const favoriteCount = useMemo(() => getFavoriteGratitudeEntries(allEntries).length, [allEntries]);
 
   async function handleOnboardingComplete(result: GratitudeOnboardingResult) {
     if (!preferences) return;
@@ -73,8 +85,6 @@ export default function GratitudeHomeScreen() {
       </SafeAreaView>
     );
   }
-
-  const recentList = entries ?? [];
 
   return (
     <>
@@ -153,6 +163,12 @@ export default function GratitudeHomeScreen() {
               onDismiss={() => setBreakIndex((prev) => prev + 1)}
             />
 
+            <InsightsSection
+              buckets={frequencyBuckets}
+              favoriteCount={favoriteCount}
+              themes={themes}
+            />
+
             <View className="gap-3">
               <View className="flex-row items-center justify-between">
                 <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -210,6 +226,93 @@ export default function GratitudeHomeScreen() {
         </ScrollView>
       </SafeAreaView>
     </>
+  );
+}
+
+interface InsightsSectionProps {
+  buckets: GratitudeFrequencyBucket[];
+  favoriteCount: number;
+  themes: GratitudeTheme[];
+}
+
+function InsightsSection({ buckets, favoriteCount, themes }: InsightsSectionProps) {
+  const { t } = useTranslation("gratitude");
+  const maxCount = Math.max(1, ...buckets.map((bucket) => bucket.count));
+  const hasFrequency = buckets.some((bucket) => bucket.count > 0);
+
+  return (
+    <View className="gap-3">
+      <View className="flex-row items-center justify-between">
+        <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          {t("insights.title")}
+        </Text>
+        <Pressable
+          accessibilityRole="link"
+          onPress={() =>
+            router.push("/modules/gratitude/favorites" as Parameters<typeof router.push>[0])
+          }
+        >
+          <Text className="text-sm text-primary">{t("insights.favoritesOpen")}</Text>
+        </Pressable>
+      </View>
+
+      <View className="gap-4 rounded-2xl border border-border bg-card p-4">
+        <View className="gap-2">
+          <Text className="text-base font-semibold">{t("insights.frequencyTitle")}</Text>
+          {hasFrequency ? (
+            <View className="flex-row items-end gap-2">
+              {buckets.map((bucket) => {
+                const height = bucket.count > 0 ? Math.max(6, (bucket.count / maxCount) * 64) : 2;
+                return (
+                  <View key={bucket.id} className="flex-1 items-center gap-1">
+                    <View className="h-16 w-full justify-end">
+                      <View className="w-full rounded-t-md bg-primary/70" style={{ height }} />
+                    </View>
+                    <Text variant="muted" className="text-[10px] leading-3">
+                      {bucket.label}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <Text variant="muted" className="text-sm">
+              {t("insights.frequencyEmpty")}
+            </Text>
+          )}
+        </View>
+
+        <View className="gap-2">
+          <Text className="text-base font-semibold">{t("insights.themesTitle")}</Text>
+          {themes.length > 0 ? (
+            <View className="flex-row flex-wrap gap-2">
+              {themes.map((theme) => (
+                <Text
+                  key={theme.word}
+                  className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground"
+                >
+                  {t("insights.themeCount", { word: theme.word, count: theme.count })}
+                </Text>
+              ))}
+            </View>
+          ) : (
+            <Text variant="muted" className="text-sm">
+              {t("insights.themesEmpty")}
+            </Text>
+          )}
+        </View>
+
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="flex-1">
+            <Text className="text-base font-semibold">{t("insights.favoritesTitle")}</Text>
+            <Text variant="muted" className="text-sm">
+              {t("insights.favoritesCount", { count: favoriteCount })}
+            </Text>
+          </View>
+          <Icon name="star" className="size-5 text-primary" />
+        </View>
+      </View>
+    </View>
   );
 }
 

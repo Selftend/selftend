@@ -1,5 +1,7 @@
 # Gratitude Log Module
 
+**Status:** Legacy lightweight spec. The current canonical module spec is [gratitude.md](gratitude.md), which expands this log into the three-level gratitude module and Favorite Moments collection.
+
 Private one-to-three item gratitude entries. Lightweight by design: notice something, save it, come back later if useful. Separate from journaling, mood check-ins, and CBT self-care logs. No streaks, no required daily cadence, no reminders.
 
 ## User Problem

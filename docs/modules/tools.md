@@ -56,6 +56,7 @@ Working gratitude routes (planned — Phase 1):
 - `/modules/gratitude/onboarding` — onboarding modal fallback / revisit
 - `/modules/gratitude/new` — create entry (level-aware)
 - `/modules/gratitude/entries`, `/modules/gratitude/entries/[id]`, `/modules/gratitude/entries/[id]/edit`
+- `/modules/gratitude/favorites` — Favorite Moments collection for starred entries
 - `/modules/gratitude/breaks/[slug]` — individual exercise or science card
 
 Working meditation routes:

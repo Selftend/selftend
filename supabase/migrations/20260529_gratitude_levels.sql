@@ -14,16 +14,54 @@ ALTER TABLE public.gratitude_entries
   ADD COLUMN IF NOT EXISTS life_item_2 TEXT NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS life_item_3 TEXT NOT NULL DEFAULT '';
 
-ALTER TABLE public.gratitude_entries
-  ADD CONSTRAINT IF NOT EXISTS gratitude_entries_good_moment_length
-    CHECK (length(good_moment) <= 240),
-  ADD CONSTRAINT IF NOT EXISTS gratitude_entries_miss_if_gone_length
-    CHECK (length(miss_if_gone) <= 240),
-  ADD CONSTRAINT IF NOT EXISTS gratitude_entries_hidden_good_length
-    CHECK (length(hidden_good) <= 240),
-  ADD CONSTRAINT IF NOT EXISTS gratitude_entries_life_item_1_length
-    CHECK (length(life_item_1) <= 240),
-  ADD CONSTRAINT IF NOT EXISTS gratitude_entries_life_item_2_length
-    CHECK (length(life_item_2) <= 240),
-  ADD CONSTRAINT IF NOT EXISTS gratitude_entries_life_item_3_length
-    CHECK (length(life_item_3) <= 240);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'gratitude_entries_good_moment_length'
+  ) THEN
+    ALTER TABLE public.gratitude_entries
+      ADD CONSTRAINT gratitude_entries_good_moment_length
+      CHECK (length(good_moment) <= 240);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'gratitude_entries_miss_if_gone_length'
+  ) THEN
+    ALTER TABLE public.gratitude_entries
+      ADD CONSTRAINT gratitude_entries_miss_if_gone_length
+      CHECK (length(miss_if_gone) <= 240);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'gratitude_entries_hidden_good_length'
+  ) THEN
+    ALTER TABLE public.gratitude_entries
+      ADD CONSTRAINT gratitude_entries_hidden_good_length
+      CHECK (length(hidden_good) <= 240);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'gratitude_entries_life_item_1_length'
+  ) THEN
+    ALTER TABLE public.gratitude_entries
+      ADD CONSTRAINT gratitude_entries_life_item_1_length
+      CHECK (length(life_item_1) <= 240);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'gratitude_entries_life_item_2_length'
+  ) THEN
+    ALTER TABLE public.gratitude_entries
+      ADD CONSTRAINT gratitude_entries_life_item_2_length
+      CHECK (length(life_item_2) <= 240);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'gratitude_entries_life_item_3_length'
+  ) THEN
+    ALTER TABLE public.gratitude_entries
+      ADD CONSTRAINT gratitude_entries_life_item_3_length
+      CHECK (length(life_item_3) <= 240);
+  END IF;
+END;
+$$;
