@@ -43,7 +43,7 @@ export const TOOL_DEFS: Record<PlanTool, ToolDef> = {
   breathing: {
     toolId: "breathing",
     title: "Breathing exercise",
-    route: "/tools/mindfulness",
+    route: "/tools/breathing",
     frequency: "daily",
   },
   meditation: {

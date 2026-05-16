@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -246,6 +246,25 @@ export default function ThoughtRecordDetailScreen() {
               </CardHeader>
             </Card>
           ) : null}
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() =>
+              router.push("/tools/breathing/box-breathing" as Parameters<typeof router.push>[0])
+            }
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("breathing.nudgeTitle")}</CardTitle>
+                <CardDescription>{t("breathing.nudgeDescription")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Text className="text-primary text-sm font-medium">
+                  {t("breathing.nudgeButton")} →
+                </Text>
+              </CardContent>
+            </Card>
+          </Pressable>
         </View>
       </ScrollView>
       <View className="border-t border-border bg-background p-4">

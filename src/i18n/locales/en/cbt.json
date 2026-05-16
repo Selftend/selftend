@@ -962,5 +962,42 @@
   "notifications": {
     "title": "Quiet CBT check-in",
     "body": "Take a minute to notice a thought and respond to it with more balance."
+  },
+  "breathing": {
+    "title": "Breathing exercises",
+    "description": "Short guided patterns to calm your nervous system right now.",
+    "choose": "Choose a pattern",
+    "minutes": "{{value}} min",
+    "recentCount": "{{count}} sessions",
+    "chooseDuration": "Choose a duration",
+    "start": "Start",
+    "finishEarly": "Finish early",
+    "notFound": "Exercise not found",
+    "nudgeTitle": "Want to ground yourself?",
+    "nudgeDescription": "A short breathing exercise can help settle your nervous system.",
+    "nudgeButton": "2 min box breathing",
+    "phases": {
+      "inhale": "Inhale",
+      "hold": "Hold",
+      "exhale": "Exhale",
+      "holdOut": "Hold"
+    },
+    "exercises": {
+      "box-breathing": {
+        "title": "Box breathing",
+        "shortDescription": "Equal counts of inhale, hold, exhale, hold — used to quickly reduce acute stress.",
+        "benefit": "Activates the parasympathetic nervous system within a few cycles."
+      },
+      "4-7-8": {
+        "title": "4-7-8 breathing",
+        "shortDescription": "A longer exhale that down-regulates the nervous system quickly.",
+        "benefit": "The extended hold and slow exhale trigger the relaxation response."
+      },
+      "coherent-breathing": {
+        "title": "Coherent breathing",
+        "shortDescription": "Slow, equal inhale and exhale at about 5 breaths per minute.",
+        "benefit": "Maximises heart rate variability and reduces anxiety over time."
+      }
+    }
   }
 }

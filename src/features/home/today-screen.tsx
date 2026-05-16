@@ -13,6 +13,7 @@ import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { useJournalEntries } from "@/src/features/journal/queries";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
+import { breathingSlugs } from "@/src/constants/breathing";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { usePlanItems } from "@/src/features/plan/queries";
 import type { CarePlanItem } from "@/src/features/plan/types";
@@ -554,7 +555,7 @@ interface CarePlanSectionProps {
   moodLogs: { loggedAt: string }[] | undefined;
   thoughtRecords: { createdAt: string }[] | undefined;
   meditationSessions: { completedAt: string }[] | undefined;
-  mindfulnessSessions: { completedAt: string }[] | undefined;
+  mindfulnessSessions: { completedAt: string; exerciseName: string }[] | undefined;
   journalEntries: { createdAt: string }[] | undefined;
   gratitudeEntries: { loggedAt: string }[] | undefined;
   activities: { completedAt: string | null }[] | undefined;
@@ -582,7 +583,11 @@ function isToolCompletedToday(
     case "cbt":
       return thoughtRecords?.some((r) => r.createdAt.startsWith(todayKey)) ?? false;
     case "breathing":
-      return mindfulnessSessions?.some((s) => s.completedAt.startsWith(todayKey)) ?? false;
+      return (
+        mindfulnessSessions?.some(
+          (s) => breathingSlugs.includes(s.exerciseName) && s.completedAt.startsWith(todayKey),
+        ) ?? false
+      );
     case "meditation":
       return meditationSessions?.some((s) => s.completedAt.startsWith(todayKey)) ?? false;
     case "gratitude":

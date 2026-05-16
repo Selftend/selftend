@@ -89,9 +89,15 @@ const TOOL_ITEMS: NavItemDef[] = [
     matchPrefix: "/tools/journal",
   },
   {
+    labelKey: "sidebar.breathing",
+    href: "/tools/breathing",
+    icon: "air",
+    matchPrefix: "/tools/breathing",
+  },
+  {
     labelKey: "sidebar.mindfulness",
     href: "/tools/mindfulness",
-    icon: "air",
+    icon: "self-improvement",
     matchPrefix: "/tools/mindfulness",
   },
   {

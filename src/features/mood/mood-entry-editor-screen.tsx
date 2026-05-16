@@ -1,10 +1,17 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/react-native-reusables/card";
 import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -150,6 +157,7 @@ export function MoodEntryEditorScreen({
   }
 
   const showCrisis = moodScore !== null && moodScore <= 1;
+  const showBreathingNudge = moodScore !== null && moodScore <= 2;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -176,6 +184,27 @@ export function MoodEntryEditorScreen({
           <Text variant="muted">{t("mood.scoreHint")}</Text>
           <MoodScale value={moodScore} onChange={setMoodScore} />
         </View>
+
+        {showBreathingNudge ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() =>
+              router.push("/tools/breathing/box-breathing" as Parameters<typeof router.push>[0])
+            }
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("breathing.nudgeTitle")}</CardTitle>
+                <CardDescription>{t("breathing.nudgeDescription")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Text className="text-primary text-sm font-medium">
+                  {t("breathing.nudgeButton")} →
+                </Text>
+              </CardContent>
+            </Card>
+          </Pressable>
+        ) : null}
 
         <View className="gap-3">
           <Label>{t("mood.emotionsLabel")}</Label>
