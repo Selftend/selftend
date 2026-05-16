@@ -9,7 +9,13 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { useActivities } from "@/src/features/activities/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
+import { useGratitudeEntries } from "@/src/features/gratitude/queries";
+import { useJournalEntries } from "@/src/features/journal/queries";
+import { useMeditationSessions } from "@/src/features/meditation/queries";
+import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
+import { usePlanItems } from "@/src/features/plan/queries";
+import type { CarePlanItem } from "@/src/features/plan/types";
 import { useSelfCareLog } from "@/src/features/self-care/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
@@ -197,6 +203,11 @@ export default function TodayScreen() {
   const { data: activities } = useActivities(user?.id ?? null);
   const { data: thoughtRecords } = useThoughtRecords(user?.id ?? null);
   const { data: todaySelfCareLog } = useSelfCareLog(user?.id ?? null, todayKey);
+  const { data: carePlanItems } = usePlanItems(user?.id ?? null);
+  const { data: meditationSessions } = useMeditationSessions(user?.id ?? null);
+  const { data: mindfulnessSessions } = useMindfulnessSessions(user?.id ?? null);
+  const { data: journalEntries } = useJournalEntries(user?.id ?? null);
+  const { data: gratitudeEntries } = useGratitudeEntries(user?.id ?? null);
 
   const sevenDayMood = getMoodSummary(moodLogs, 7);
   const thirtyDayMood = getMoodSummary(moodLogs, 30);
@@ -216,7 +227,7 @@ export default function TodayScreen() {
   const incompleteThoughtRecord =
     thoughtRecords?.find((record) => !record.balancedThought?.trim()) ?? null;
 
-  const planItems: PlanItem[] = [
+  const todayRows: TodayPlanRow[] = [
     ...scheduledToday.map((activity) => ({
       key: `activity-${activity.id}`,
       icon: "directions-run" as MaterialIconName,
@@ -366,13 +377,27 @@ export default function TodayScreen() {
               </View>
             </View>
 
-            {/* Today's plan */}
-            {planItems.length > 0 ? (
+            {/* Care plan checklist */}
+            <CarePlanSection
+              carePlanItems={carePlanItems ?? null}
+              todayKey={todayKey}
+              moodLogs={moodLogs}
+              thoughtRecords={thoughtRecords}
+              meditationSessions={meditationSessions}
+              mindfulnessSessions={mindfulnessSessions}
+              journalEntries={journalEntries}
+              gratitudeEntries={gratitudeEntries}
+              activities={activities}
+              todaySelfCareLog={todaySelfCareLog}
+            />
+
+            {/* Legacy activity / thought record reminders */}
+            {todayRows.length > 0 ? (
               <View className="gap-3">
                 <Text variant="h3">{t("today.plan.title")}</Text>
                 <Card>
                   <CardContent className="gap-3 pt-6">
-                    {planItems.map((item, index) => (
+                    {todayRows.map((item, index) => (
                       <View key={item.key} className="gap-3">
                         {index > 0 ? <View className="h-px bg-border" /> : null}
                         <PlanRow item={item} />
@@ -465,7 +490,7 @@ function StatTile({ label, value, meta, muted = false }: StatTileProps) {
 
 type PlanPillar = "think" | "act" | "be";
 
-interface PlanItem {
+interface TodayPlanRow {
   key: string;
   icon: MaterialIconName;
   title: string;
@@ -488,7 +513,7 @@ const PLAN_PILLAR_TEXT: Record<PlanPillar, string> = {
   be: "text-be",
 };
 
-function PlanRow({ item }: { item: PlanItem }) {
+function PlanRow({ item }: { item: TodayPlanRow }) {
   const { t } = useTranslation("navigation");
   return (
     <View className="flex-row items-start gap-3">
@@ -508,6 +533,167 @@ function PlanRow({ item }: { item: PlanItem }) {
       <Button onPress={item.onPress} size="sm" variant="outline">
         <Text>{t(item.actionKey)}</Text>
       </Button>
+    </View>
+  );
+}
+
+const CARE_PLAN_ICONS: Record<string, MaterialIconName> = {
+  mood: "mood",
+  cbt: "article",
+  breathing: "air",
+  meditation: "self-improvement",
+  gratitude: "favorite",
+  journal: "edit-note",
+  habits: "directions-run",
+  "self-care": "spa",
+};
+
+interface CarePlanSectionProps {
+  carePlanItems: CarePlanItem[] | null;
+  todayKey: string;
+  moodLogs: { loggedAt: string }[] | undefined;
+  thoughtRecords: { createdAt: string }[] | undefined;
+  meditationSessions: { completedAt: string }[] | undefined;
+  mindfulnessSessions: { completedAt: string }[] | undefined;
+  journalEntries: { createdAt: string }[] | undefined;
+  gratitudeEntries: { loggedAt: string }[] | undefined;
+  activities: { completedAt: string | null }[] | undefined;
+  todaySelfCareLog: unknown;
+}
+
+function isToolCompletedToday(
+  toolId: string,
+  todayKey: string,
+  props: CarePlanSectionProps,
+): boolean {
+  const {
+    moodLogs,
+    thoughtRecords,
+    meditationSessions,
+    mindfulnessSessions,
+    journalEntries,
+    gratitudeEntries,
+    activities,
+    todaySelfCareLog,
+  } = props;
+  switch (toolId) {
+    case "mood":
+      return moodLogs?.some((l) => l.loggedAt.startsWith(todayKey)) ?? false;
+    case "cbt":
+      return thoughtRecords?.some((r) => r.createdAt.startsWith(todayKey)) ?? false;
+    case "breathing":
+      return mindfulnessSessions?.some((s) => s.completedAt.startsWith(todayKey)) ?? false;
+    case "meditation":
+      return meditationSessions?.some((s) => s.completedAt.startsWith(todayKey)) ?? false;
+    case "gratitude":
+      return gratitudeEntries?.some((e) => e.loggedAt.startsWith(todayKey)) ?? false;
+    case "journal":
+      return journalEntries?.some((e) => e.createdAt.startsWith(todayKey)) ?? false;
+    case "habits":
+      return activities?.some((a) => a.completedAt?.startsWith(todayKey)) ?? false;
+    case "self-care":
+      return Boolean(todaySelfCareLog);
+    default:
+      return false;
+  }
+}
+
+function CarePlanSection(props: CarePlanSectionProps) {
+  const { t } = useTranslation("navigation");
+  const { carePlanItems, todayKey } = props;
+
+  if (carePlanItems === null) {
+    return null;
+  }
+
+  if (carePlanItems.length === 0) {
+    return (
+      <View className="gap-3">
+        <Text variant="h3">{t("plan.checklist.title")}</Text>
+        <Card>
+          <CardContent className="gap-4 pt-6 pb-4 items-center">
+            <Icon name="checklist" className="size-8 text-muted-foreground" />
+            <Text variant="muted" className="text-sm text-center">
+              {t("plan.checklist.empty")}
+            </Text>
+            <Button
+              size="sm"
+              onPress={() => router.push("/(app)/plan/create" as Parameters<typeof router.push>[0])}
+            >
+              <Text>{t("plan.checklist.setup")}</Text>
+            </Button>
+          </CardContent>
+        </Card>
+      </View>
+    );
+  }
+
+  const todayItems = carePlanItems.filter(
+    (item) => item.frequency === "daily" || item.frequency === "as_needed",
+  );
+
+  return (
+    <View className="gap-3">
+      <View className="flex-row items-center justify-between">
+        <Text variant="h3">{t("plan.checklist.title")}</Text>
+        <Button
+          size="sm"
+          variant="ghost"
+          onPress={() => router.push("/(app)/plan" as Parameters<typeof router.push>[0])}
+        >
+          <Text className="text-xs">{t("plan.checklist.manage")}</Text>
+        </Button>
+      </View>
+      <Card>
+        <CardContent className="gap-3 pt-6 pb-4">
+          {todayItems.map((item, index) => {
+            const completed = isToolCompletedToday(item.toolId, todayKey, props);
+            const icon = CARE_PLAN_ICONS[item.toolId] ?? "check-circle";
+            const freqKey = `plan.frequency.${item.frequency}`;
+            return (
+              <View key={item.id} className="gap-3">
+                {index > 0 ? <View className="h-px bg-border" /> : null}
+                <View className="flex-row items-center gap-3">
+                  <View
+                    className={cn(
+                      "size-9 items-center justify-center rounded-lg",
+                      completed ? "bg-primary/15" : "bg-muted",
+                    )}
+                  >
+                    <Icon
+                      name={completed ? "check-circle" : icon}
+                      className={cn("size-5", completed ? "text-primary" : "text-muted-foreground")}
+                    />
+                  </View>
+                  <View className="flex-1 gap-0.5">
+                    <Text
+                      className={cn(
+                        "text-sm font-semibold",
+                        completed && "line-through text-muted-foreground",
+                      )}
+                      numberOfLines={1}
+                    >
+                      {item.title}
+                    </Text>
+                    <Text variant="muted" className="text-xs">
+                      {t(freqKey)}
+                    </Text>
+                  </View>
+                  {!completed ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onPress={() => router.push(item.route as Parameters<typeof router.push>[0])}
+                    >
+                      <Text>{t("today.plan.open")}</Text>
+                    </Button>
+                  ) : null}
+                </View>
+              </View>
+            );
+          })}
+        </CardContent>
+      </Card>
     </View>
   );
 }

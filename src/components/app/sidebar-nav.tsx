@@ -24,6 +24,14 @@ const TODAY_ITEM: NavItemDef = {
   matchPrefix: null,
 };
 
+const MY_PLAN_ITEM: NavItemDef = {
+  labelKey: "sidebar.myPlan",
+  href: "/(app)/plan",
+  icon: "checklist",
+  matchPrefix: "/plan",
+  activeWhen: (pathname) => pathname === "/plan" || pathname.startsWith("/plan/"),
+};
+
 const MODULE_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.cbt",
@@ -211,6 +219,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
       <ScrollView contentContainerClassName="grow px-3 py-4">
         <View className="gap-1">
           {renderNavItem(TODAY_ITEM)}
+          {renderNavItem(MY_PLAN_ITEM)}
 
           {renderGroupLabel(t("sidebar.modules"), "/modules")}
           {MODULE_ITEMS.map((item) => renderNavItem(item))}

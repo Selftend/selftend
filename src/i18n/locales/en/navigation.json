@@ -26,7 +26,8 @@
     "badgeLive": "Live",
     "badgeSoon": "Soon",
     "collapse": "Collapse {{label}}",
-    "expand": "Expand {{label}}"
+    "expand": "Expand {{label}}",
+    "myPlan": "My Plan"
   },
   "userMenu": {
     "account": "Account",
@@ -167,6 +168,86 @@
       "soon": "Soon",
       "inDesign": "In design",
       "onRoadmap": "On the roadmap"
+    }
+  },
+  "plan": {
+    "empty": "No plan set up yet.",
+    "emptyHint": "Build a routine with the wizard, or add items one by one.",
+    "emptyWizard": "Start wizard",
+    "emptyManual": "Add manually",
+    "checklist": {
+      "title": "My plan",
+      "empty": "You haven't set up a plan yet. A short routine makes it easier to show up.",
+      "setup": "Set up my plan",
+      "manage": "Manage"
+    },
+    "frequency": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "as_needed": "As needed"
+    },
+    "manage": {
+      "title": "My plan",
+      "subtitle": "Toggle items on or off, reorder, or add new ones.",
+      "addItem": "Add item",
+      "runWizard": "Re-run wizard",
+      "deleted": "Item removed.",
+      "errorToggle": "Could not update item.",
+      "errorDelete": "Could not delete item."
+    },
+    "wizard": {
+      "concernsTitle": "What do you want support with?",
+      "concernsSubtitle": "Pick everything that feels relevant — you can change this later.",
+      "toolsTitle": "What tools feel useful?",
+      "toolsSubtitle": "Select the practices you'd like in your routine.",
+      "routineTitle": "How much do you want to take on?",
+      "routineSubtitle": "You can always adjust later.",
+      "reviewTitle": "Your starter plan",
+      "reviewSubtitle": "Uncheck anything you don't want. You can always edit later.",
+      "next": "Next",
+      "back": "Back",
+      "save": "Save plan",
+      "saved": "Plan saved.",
+      "skipWizard": "Build manually instead",
+      "errorNoItems": "Please keep at least one item.",
+      "errorSave": "Could not save plan. Please try again.",
+      "concernAnxiety": "Anxiety",
+      "concernStress": "Stress",
+      "concernLowMood": "Low mood",
+      "concernSleep": "Sleep",
+      "concernNegativeThoughts": "Negative thoughts",
+      "concernSelfCompassion": "Self-compassion",
+      "concernEmotionalRegulation": "Emotional regulation",
+      "toolMood": "Mood check-in",
+      "toolCbt": "CBT thought record",
+      "toolBreathing": "Breathing exercise",
+      "toolMeditation": "Meditation",
+      "toolGratitude": "Gratitude log",
+      "toolJournal": "Journal",
+      "toolHabits": "Habit tracking",
+      "routineLight": "Light",
+      "routineLightDesc": "2–3 items — a gentle daily check-in",
+      "routineStandard": "Standard",
+      "routineStandardDesc": "4–5 items — a balanced routine",
+      "routineCustom": "Custom",
+      "routineCustomDesc": "All selected tools, no cap"
+    },
+    "form": {
+      "titleCreate": "New plan item",
+      "titleEdit": "Edit plan item",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Morning mood check-in",
+      "descriptionLabel": "Description (optional)",
+      "descriptionPlaceholder": "A short note about this item",
+      "toolLabel": "Tool",
+      "frequencyLabel": "Frequency",
+      "save": "Add to plan",
+      "update": "Save changes",
+      "cancel": "Cancel",
+      "created": "Item added to plan.",
+      "updated": "Item updated.",
+      "errorTitle": "Please enter a name.",
+      "errorSave": "Could not save. Please try again."
     }
   }
 }
