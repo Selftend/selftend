@@ -5,9 +5,19 @@ import {
   type SeedUserName,
   createServiceClient,
   deleteAllThoughtRecordsForUser,
+  deleteAllMoodLogsForUser,
+  deleteAllJournalEntriesForUser,
+  deleteAllGratitudeEntriesForUser,
 } from "../integration/helpers";
 
-export { SEED_USERS, createServiceClient, deleteAllThoughtRecordsForUser };
+export {
+  SEED_USERS,
+  createServiceClient,
+  deleteAllThoughtRecordsForUser,
+  deleteAllMoodLogsForUser,
+  deleteAllJournalEntriesForUser,
+  deleteAllGratitudeEntriesForUser,
+};
 
 // Sign in via the actual UI form using a seeded user. Asserts redirect to the
 // authenticated tabs.

@@ -84,6 +84,30 @@ export async function deleteAllThoughtRecordsForUser(userId: string) {
   }
 }
 
+export async function deleteAllMoodLogsForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("mood_logs").delete().eq("user_id", userId);
+  if (error) {
+    throw new Error(`deleteAllMoodLogsForUser cleanup failed: ${error.message}`);
+  }
+}
+
+export async function deleteAllJournalEntriesForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("journal_entries").delete().eq("user_id", userId);
+  if (error) {
+    throw new Error(`deleteAllJournalEntriesForUser cleanup failed: ${error.message}`);
+  }
+}
+
+export async function deleteAllGratitudeEntriesForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("gratitude_entries").delete().eq("user_id", userId);
+  if (error) {
+    throw new Error(`deleteAllGratitudeEntriesForUser cleanup failed: ${error.message}`);
+  }
+}
+
 // Re-creates a user via admin API after a destructive test. Used by
 // delete_user_account tests so a torn-down user comes back for the next run
 // without requiring `db:reset`.
