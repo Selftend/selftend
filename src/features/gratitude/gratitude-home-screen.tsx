@@ -12,6 +12,7 @@ import {
   GratitudeOnboarding,
   type GratitudeOnboardingResult,
 } from "@/src/components/app/gratitude-onboarding-modal";
+import { GRATITUDE_BREAKS } from "@/src/features/gratitude/breaks";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
@@ -32,6 +33,7 @@ export default function GratitudeHomeScreen() {
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | undefined>();
+  const [breakIndex, setBreakIndex] = useState(0);
 
   const onboardingNeeded =
     !prefsLoading && Boolean(preferences) && !preferences?.gratitudeOnboardingCompleted;
@@ -135,13 +137,21 @@ export default function GratitudeHomeScreen() {
 
             <Button
               onPress={() =>
-                router.push("/modules/gratitude/new" as Parameters<typeof router.push>[0])
+                router.push({
+                  pathname: "/modules/gratitude/new",
+                  params: { level: String(currentLevel) },
+                })
               }
               className="self-start"
             >
               <Icon name="add" className="size-4 text-primary-foreground" />
               <Text>{t("cta.new")}</Text>
             </Button>
+
+            <BreakCard
+              breakIndex={breakIndex}
+              onDismiss={() => setBreakIndex((prev) => prev + 1)}
+            />
 
             <View className="gap-3">
               <View className="flex-row items-center justify-between">
@@ -200,5 +210,84 @@ export default function GratitudeHomeScreen() {
         </ScrollView>
       </SafeAreaView>
     </>
+  );
+}
+
+const CATEGORY_CLASSES = {
+  "positive-psychology":
+    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+  stoicism: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  "mental-subtraction": "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
+} as const;
+
+interface BreakCardProps {
+  breakIndex: number;
+  onDismiss: () => void;
+}
+
+function BreakCard({ breakIndex, onDismiss }: BreakCardProps) {
+  const { t } = useTranslation("gratitude");
+  const breakDef = GRATITUDE_BREAKS[breakIndex % GRATITUDE_BREAKS.length];
+  if (!breakDef) return null;
+
+  const cardKey = `breaks.cards.${breakDef.slug}` as Parameters<typeof t>[0];
+  const title = t(`${cardKey}.title` as Parameters<typeof t>[0]);
+  const short = t(`${cardKey}.short` as Parameters<typeof t>[0]);
+  const categoryLabel = t(`breaks.categories.${breakDef.category}` as Parameters<typeof t>[0]);
+
+  return (
+    <View className="gap-2">
+      <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        {t("breaks.sectionLabel")}
+      </Text>
+      <View className="rounded-2xl border border-border bg-card p-4 gap-3">
+        <View className="flex-row items-center justify-between">
+          <Text
+            className={cn(
+              "rounded-full px-2.5 py-1 text-xs font-semibold",
+              CATEGORY_CLASSES[breakDef.category],
+            )}
+          >
+            {categoryLabel}
+          </Text>
+          <Pressable
+            accessibilityLabel={t("breaks.dismiss")}
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={onDismiss}
+          >
+            <Icon name="arrow-forward" className="text-muted-foreground" size={18} />
+          </Pressable>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() =>
+            router.push({
+              pathname: "/modules/gratitude/breaks/[slug]",
+              params: { slug: breakDef.slug },
+            })
+          }
+        >
+          <View className="gap-1">
+            <Text className="text-base font-semibold">{title}</Text>
+            <Text variant="muted" className="text-sm" numberOfLines={2}>
+              {short}
+            </Text>
+          </View>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() =>
+            router.push({
+              pathname: "/modules/gratitude/breaks/[slug]",
+              params: { slug: breakDef.slug },
+            })
+          }
+          className="self-start"
+        >
+          <Text className="text-sm font-semibold text-primary">{t("breaks.open")}</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }

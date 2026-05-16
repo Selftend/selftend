@@ -17,7 +17,7 @@ jest.mock("expo-router", () => ({
     back: jest.fn(),
     canGoBack: jest.fn(() => false),
   },
-  usePathname: () => "/tools/gratitude-log/new",
+  usePathname: () => "/modules/gratitude/new",
 }));
 
 jest.mock("@/src/components/react-native-reusables/label", () => {
@@ -68,7 +68,7 @@ describe("GratitudeEntryEditorScreen", () => {
     } as unknown as ReturnType<typeof useSaveGratitudeEntry>);
 
     renderWithProviders(
-      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
+      <GratitudeEntryEditorScreen fallbackHref="/modules/gratitude" mode="create" />,
     );
 
     expect(screen.getByText("New gratitude entry")).toBeTruthy();
@@ -82,7 +82,13 @@ describe("GratitudeEntryEditorScreen", () => {
     const mutateAsync = jest.fn().mockResolvedValue({
       id: "g-1",
       userId: "user-1",
+      level: 3,
       items: ["Warm coffee"],
+      events: [],
+      goodMoment: "",
+      missIfGone: "",
+      hiddenGood: "",
+      lifeItems: [],
       note: "",
       loggedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -94,7 +100,7 @@ describe("GratitudeEntryEditorScreen", () => {
     } as unknown as ReturnType<typeof useSaveGratitudeEntry>);
 
     renderWithProviders(
-      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
+      <GratitudeEntryEditorScreen fallbackHref="/modules/gratitude" mode="create" />,
     );
 
     fireEvent.changeText(screen.getByLabelText("Gratitude 1"), "Warm coffee");
@@ -102,7 +108,16 @@ describe("GratitudeEntryEditorScreen", () => {
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({
-        input: { items: ["Warm coffee"], note: "" },
+        input: {
+          level: 3,
+          items: ["Warm coffee"],
+          note: "",
+          events: [],
+          goodMoment: "",
+          missIfGone: "",
+          hiddenGood: "",
+          lifeItems: [],
+        },
         entryId: undefined,
       }),
     );
@@ -112,7 +127,13 @@ describe("GratitudeEntryEditorScreen", () => {
     const mutateAsync = jest.fn().mockResolvedValue({
       id: "g-2",
       userId: "user-1",
+      level: 3,
       items: ["Sunlight"],
+      events: [],
+      goodMoment: "",
+      missIfGone: "",
+      hiddenGood: "",
+      lifeItems: [],
       note: "Small thing.",
       loggedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -124,7 +145,7 @@ describe("GratitudeEntryEditorScreen", () => {
     } as unknown as ReturnType<typeof useSaveGratitudeEntry>);
 
     renderWithProviders(
-      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
+      <GratitudeEntryEditorScreen fallbackHref="/modules/gratitude" mode="create" />,
     );
 
     fireEvent.changeText(screen.getByLabelText("Gratitude 2"), "Sunlight");
@@ -133,7 +154,16 @@ describe("GratitudeEntryEditorScreen", () => {
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({
-        input: { items: ["Sunlight"], note: "Small thing." },
+        input: {
+          level: 3,
+          items: ["Sunlight"],
+          note: "Small thing.",
+          events: [],
+          goodMoment: "",
+          missIfGone: "",
+          hiddenGood: "",
+          lifeItems: [],
+        },
         entryId: undefined,
       }),
     );
@@ -145,7 +175,13 @@ describe("GratitudeEntryEditorScreen", () => {
         {
           id: "g-9",
           userId: "user-1",
+          level: 3,
           items: ["A quiet walk", "A kind message"],
+          events: [],
+          goodMoment: "",
+          missIfGone: "",
+          hiddenGood: "",
+          lifeItems: [],
           note: "This helped.",
           loggedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
@@ -159,7 +195,7 @@ describe("GratitudeEntryEditorScreen", () => {
     } as unknown as ReturnType<typeof useSaveGratitudeEntry>);
 
     renderWithProviders(
-      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="edit" entryId="g-9" />,
+      <GratitudeEntryEditorScreen fallbackHref="/modules/gratitude" mode="edit" entryId="g-9" />,
     );
 
     expect(screen.getByText("Edit gratitude entry")).toBeTruthy();

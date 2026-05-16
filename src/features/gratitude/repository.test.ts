@@ -25,6 +25,14 @@ describe("gratitude repository", () => {
         item_1: "Warm coffee",
         item_2: "Sunlight",
         item_3: "",
+        level: 3,
+        events: [],
+        good_moment: "",
+        miss_if_gone: "",
+        hidden_good: "",
+        life_item_1: "",
+        life_item_2: "",
+        life_item_3: "",
         note: "A steady morning.",
         logged_at: "2026-05-15T08:00:00.000Z",
         created_at: "2026-05-15T08:00:00.000Z",
@@ -42,7 +50,13 @@ describe("gratitude repository", () => {
       {
         id: "g-1",
         userId: "user-1",
+        level: 3,
         items: ["Warm coffee", "Sunlight"],
+        events: [],
+        goodMoment: "",
+        missIfGone: "",
+        hiddenGood: "",
+        lifeItems: [],
         note: "A steady morning.",
         loggedAt: "2026-05-15T08:00:00.000Z",
         createdAt: "2026-05-15T08:00:00.000Z",
@@ -75,6 +89,14 @@ describe("gratitude repository", () => {
       item_1: "Warm coffee",
       item_2: "Sunlight",
       item_3: "",
+      level: 3,
+      events: [],
+      good_moment: "",
+      miss_if_gone: "",
+      hidden_good: "",
+      life_item_1: "",
+      life_item_2: "",
+      life_item_3: "",
       note: "A steady morning.",
       logged_at: "2026-05-15T08:00:00.000Z",
       created_at: "2026-05-15T08:00:00.000Z",
@@ -87,16 +109,25 @@ describe("gratitude repository", () => {
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
     await saveGratitudeEntry("user-1", {
+      level: 3,
       items: ["  Warm coffee  ", "   ", " Sunlight "],
       note: "  A steady morning.  ",
     });
 
     expect(insert).toHaveBeenCalledWith({
       user_id: "user-1",
+      level: 3,
       item_1: "Warm coffee",
       item_2: "Sunlight",
       item_3: "",
       note: "A steady morning.",
+      events: [],
+      good_moment: "",
+      miss_if_gone: "",
+      hidden_good: "",
+      life_item_1: "",
+      life_item_2: "",
+      life_item_3: "",
     });
   });
 
@@ -107,6 +138,14 @@ describe("gratitude repository", () => {
       item_1: "Updated",
       item_2: "",
       item_3: "",
+      level: 3,
+      events: [],
+      good_moment: "",
+      miss_if_gone: "",
+      hidden_good: "",
+      life_item_1: "",
+      life_item_2: "",
+      life_item_3: "",
       note: "",
       logged_at: "2026-05-15T08:00:00.000Z",
       created_at: "2026-05-15T08:00:00.000Z",
@@ -121,11 +160,17 @@ describe("gratitude repository", () => {
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
     await expect(
-      saveGratitudeEntry("user-1", { items: [" Updated "], note: " " }, "g-1"),
+      saveGratitudeEntry("user-1", { level: 3, items: [" Updated "], note: " " }, "g-1"),
     ).resolves.toEqual({
       id: "g-1",
       userId: "user-1",
+      level: 3,
       items: ["Updated"],
+      events: [],
+      goodMoment: "",
+      missIfGone: "",
+      hiddenGood: "",
+      lifeItems: [],
       note: "",
       loggedAt: "2026-05-15T08:00:00.000Z",
       createdAt: "2026-05-15T08:00:00.000Z",
@@ -133,19 +178,27 @@ describe("gratitude repository", () => {
     });
 
     expect(update).toHaveBeenCalledWith({
+      level: 3,
       item_1: "Updated",
       item_2: "",
       item_3: "",
       note: "",
+      events: [],
+      good_moment: "",
+      miss_if_gone: "",
+      hidden_good: "",
+      life_item_1: "",
+      life_item_2: "",
+      life_item_3: "",
     });
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
     expect(eqId).toHaveBeenCalledWith("id", "g-1");
   });
 
   it("rejects saves without a gratitude item", async () => {
-    await expect(saveGratitudeEntry("user-1", { items: ["  "], note: "" })).rejects.toThrow(
-      "At least one gratitude item is required.",
-    );
+    await expect(
+      saveGratitudeEntry("user-1", { level: 3, items: ["  "], note: "" }),
+    ).rejects.toThrow("At least one gratitude item is required.");
     expect(mockRequireSupabase).not.toHaveBeenCalled();
   });
 

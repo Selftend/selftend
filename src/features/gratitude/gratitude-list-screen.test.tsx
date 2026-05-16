@@ -10,7 +10,7 @@ jest.mock("expo-router", () => ({
     push: jest.fn(),
     canGoBack: jest.fn(() => false),
   },
-  usePathname: () => "/tools/gratitude-log",
+  usePathname: () => "/modules/gratitude",
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -40,7 +40,7 @@ describe("GratitudeListScreen", () => {
 
     renderWithProviders(<GratitudeListScreen />);
 
-    expect(screen.getByText("Gratitude log")).toBeTruthy();
+    expect(screen.getByText("Gratitude")).toBeTruthy();
     expect(screen.getByText("Nothing here yet")).toBeTruthy();
     expect(screen.getByText("Notice something")).toBeTruthy();
   });
@@ -51,7 +51,13 @@ describe("GratitudeListScreen", () => {
         {
           id: "g-1",
           userId: "user-1",
+          level: 3,
           items: ["Warm coffee", "Sunlight"],
+          events: [],
+          goodMoment: "",
+          missIfGone: "",
+          hiddenGood: "",
+          lifeItems: [],
           note: "The morning felt steady.",
           loggedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
@@ -68,7 +74,7 @@ describe("GratitudeListScreen", () => {
     expect(screen.getByText("Recent entries")).toBeTruthy();
   });
 
-  it("routes to /tools/gratitude-log/new when the CTA is pressed", () => {
+  it("routes to /modules/gratitude/new when the CTA is pressed", () => {
     mockUseGratitudeEntries.mockReturnValue({
       data: [],
     } as unknown as ReturnType<typeof useGratitudeEntries>);
@@ -77,6 +83,6 @@ describe("GratitudeListScreen", () => {
 
     fireEvent.press(screen.getByText("New entry"));
 
-    expect(mockRouter.push).toHaveBeenCalledWith("/tools/gratitude-log/new");
+    expect(mockRouter.push).toHaveBeenCalledWith("/modules/gratitude/new");
   });
 });
