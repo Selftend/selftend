@@ -11,21 +11,32 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { cn } from "@/lib/utils";
+import { type BodyScanSegments, currentBodyScanSegment } from "@/src/features/meditation/body-scan";
+import { obstacleTagsForStage } from "@/src/features/meditation/obstacles";
 import {
   useMeditationProgramState,
   useSaveMeditationSession,
 } from "@/src/features/meditation/queries";
 import { getStage } from "@/src/features/meditation/stages";
-import type { DullnessLevel, StageNumber, TmiTechnique } from "@/src/features/meditation/types";
+import type {
+  DistractionLevel,
+  DullnessLevel,
+  MeditationObstacleTag,
+  StageNumber,
+  TmiTechnique,
+} from "@/src/features/meditation/types";
 import { useSession } from "@/src/providers/session-provider";
 
 const BELL_ASSET = require("@/assets/sounds/bell.wav");
 
 const DURATION_PRESETS = [10, 15, 20, 30];
 
+const BODY_SCAN_OPTIONS: BodyScanSegments[] = [4, 6, 12];
+
 type Phase = "preSit" | "running" | "paused" | "completed";
 
 const DULLNESS_OPTIONS: DullnessLevel[] = ["none", "subtle", "strong"];
+const DISTRACTION_OPTIONS: DistractionLevel[] = ["none", "subtle", "gross"];
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -63,10 +74,13 @@ export default function MeditationSessionScreen() {
   const [durationMinutes, setDurationMinutes] = useState(initialDuration);
   const [secondsLeft, setSecondsLeft] = useState(initialDuration * 60);
   const [technique, setTechnique] = useState<TmiTechnique>(stage.suggestedTechniques[0]);
+  const [bodyScanSegmentCount, setBodyScanSegmentCount] = useState<BodyScanSegments>(6);
   const [reflection, setReflection] = useState("");
   const [moodAfter, setMoodAfter] = useState<number | null>(null);
   const [dullness, setDullness] = useState<DullnessLevel | null>(null);
+  const [distraction, setDistraction] = useState<DistractionLevel | null>(null);
   const [mindWandering, setMindWandering] = useState<number | null>(null);
+  const [obstacleTags, setObstacleTags] = useState<MeditationObstacleTag[]>([]);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -111,6 +125,12 @@ export default function MeditationSessionScreen() {
     setSecondsLeft(durationMinutes * 60);
   }
 
+  function toggleObstacleTag(tag: MeditationObstacleTag) {
+    setObstacleTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  }
+
   function handleSave(skipReflection: boolean) {
     saveMutation.mutate(
       {
@@ -120,7 +140,9 @@ export default function MeditationSessionScreen() {
         reflection: skipReflection ? "" : reflection,
         moodAfter: skipReflection ? null : moodAfter,
         dullnessLevel: skipReflection ? null : dullness,
+        distractionLevel: skipReflection ? null : distraction,
         mindWanderingEpisodes: skipReflection ? null : mindWandering,
+        obstacleTags: skipReflection ? [] : obstacleTags,
       },
       {
         onSettled: () => router.replace("/modules/meditation"),
@@ -128,7 +150,9 @@ export default function MeditationSessionScreen() {
     );
   }
 
-  const progressFraction = phase === "completed" ? 1 : 1 - secondsLeft / (durationMinutes * 60);
+  const totalSeconds = durationMinutes * 60;
+  const elapsedSeconds = totalSeconds - secondsLeft;
+  const progressFraction = phase === "completed" ? 1 : 1 - secondsLeft / totalSeconds;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -152,6 +176,8 @@ export default function MeditationSessionScreen() {
               suggestedTechniques={stage.suggestedTechniques}
               durationMinutes={durationMinutes}
               onDurationChange={setDurationMinutes}
+              bodyScanSegmentCount={bodyScanSegmentCount}
+              onBodyScanSegmentCountChange={setBodyScanSegmentCount}
               onStart={start}
             />
           ) : null}
@@ -164,6 +190,10 @@ export default function MeditationSessionScreen() {
               onPause={pause}
               onResume={resume}
               onReset={reset}
+              technique={technique}
+              elapsedSeconds={elapsedSeconds}
+              totalSeconds={totalSeconds}
+              bodyScanSegmentCount={bodyScanSegmentCount}
             />
           ) : null}
 
@@ -177,8 +207,12 @@ export default function MeditationSessionScreen() {
               onMoodChange={setMoodAfter}
               dullness={dullness}
               onDullnessChange={setDullness}
+              distraction={distraction}
+              onDistractionChange={setDistraction}
               mindWandering={mindWandering}
               onMindWanderingChange={setMindWandering}
+              obstacleTags={obstacleTags}
+              onObstacleTagToggle={toggleObstacleTag}
               onSave={() => handleSave(false)}
               onSkip={() => handleSave(true)}
               isPending={saveMutation.isPending}
@@ -197,6 +231,8 @@ interface PreSitProps {
   suggestedTechniques: TmiTechnique[];
   durationMinutes: number;
   onDurationChange: (n: number) => void;
+  bodyScanSegmentCount: BodyScanSegments;
+  onBodyScanSegmentCountChange: (n: BodyScanSegments) => void;
   onStart: () => void;
 }
 
@@ -207,9 +243,14 @@ function PreSit({
   suggestedTechniques,
   durationMinutes,
   onDurationChange,
+  bodyScanSegmentCount,
+  onBodyScanSegmentCountChange,
   onStart,
 }: PreSitProps) {
   const { t } = useTranslation("meditation");
+  const showPurificationNotice = stageNumber === 4;
+  const showBodyScanPicker = technique === "bodyScan";
+
   return (
     <View className="gap-4">
       <Card>
@@ -218,6 +259,26 @@ function PreSit({
           <Text variant="muted">{t(`module.session.stageNote.s${stageNumber}`)}</Text>
         </CardContent>
       </Card>
+
+      {showPurificationNotice ? (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="gap-2 pt-6">
+            <CardTitle>{t("module.session.purification.title")}</CardTitle>
+            <Text variant="muted" className="text-sm">
+              {t("module.session.purification.body")}
+            </Text>
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => router.push("/crisis")}
+              className="self-start"
+            >
+              <Text className="text-sm font-semibold text-destructive">
+                {t("module.session.purification.crisisLink")}
+              </Text>
+            </Pressable>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {suggestedTechniques.length > 1 ? (
         <View className="gap-2">
@@ -243,6 +304,37 @@ function PreSit({
                   )}
                 >
                   {t(`module.session.technique.${tech}`)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      {showBodyScanPicker ? (
+        <View className="gap-2">
+          <Text className="text-sm font-semibold">{t("module.bodyScan.segmentLabel")}</Text>
+          <View className="flex-row gap-2">
+            {BODY_SCAN_OPTIONS.map((n) => (
+              <Pressable
+                key={n}
+                accessibilityRole="button"
+                accessibilityState={{ selected: bodyScanSegmentCount === n }}
+                onPress={() => onBodyScanSegmentCountChange(n)}
+                className={cn(
+                  "flex-1 items-center rounded-md border px-3 py-2",
+                  bodyScanSegmentCount === n
+                    ? "border-primary bg-primary"
+                    : "border-border bg-card active:bg-muted",
+                )}
+              >
+                <Text
+                  className={cn(
+                    "text-sm font-semibold",
+                    bodyScanSegmentCount === n ? "text-primary-foreground" : "text-foreground",
+                  )}
+                >
+                  {t("module.bodyScan.segmentCount", { count: n })}
                 </Text>
               </Pressable>
             ))}
@@ -295,6 +387,10 @@ interface TimerFaceProps {
   onPause: () => void;
   onResume: () => void;
   onReset: () => void;
+  technique: TmiTechnique;
+  elapsedSeconds: number;
+  totalSeconds: number;
+  bodyScanSegmentCount: BodyScanSegments;
 }
 
 function TimerFace({
@@ -304,8 +400,19 @@ function TimerFace({
   onPause,
   onResume,
   onReset,
+  technique,
+  elapsedSeconds,
+  totalSeconds,
+  bodyScanSegmentCount,
 }: TimerFaceProps) {
   const { t } = useTranslation("meditation");
+
+  const showBodyScan = technique === "bodyScan";
+  const showWholeBodyCue = technique === "wholeBodyWithBreath";
+  const segment = showBodyScan
+    ? currentBodyScanSegment(bodyScanSegmentCount, elapsedSeconds, totalSeconds)
+    : null;
+
   return (
     <View className="items-center gap-6 py-8">
       <View className="size-56 items-center justify-center rounded-full border-4 border-border">
@@ -318,6 +425,24 @@ function TimerFace({
         />
         <Text className="text-5xl font-bold tabular-nums">{formatTime(secondsLeft)}</Text>
       </View>
+
+      {showBodyScan && segment ? (
+        <View className="items-center gap-1 rounded-lg border border-be/40 bg-be/5 px-4 py-3">
+          <Text className="text-xs uppercase tracking-wider text-muted-foreground">
+            {t("module.bodyScan.indicator")}
+          </Text>
+          <Text className="text-base font-semibold text-be">{t(segment.labelKey)}</Text>
+        </View>
+      ) : null}
+
+      {showWholeBodyCue ? (
+        <View className="items-center rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+          <Text className="text-center text-sm text-foreground">
+            {t("module.session.wholeBodyCue")}
+          </Text>
+        </View>
+      ) : null}
+
       <View className="flex-row items-center gap-3">
         {phase === "running" ? (
           <>
@@ -352,8 +477,12 @@ interface PostSitProps {
   onMoodChange: (n: number | null) => void;
   dullness: DullnessLevel | null;
   onDullnessChange: (d: DullnessLevel | null) => void;
+  distraction: DistractionLevel | null;
+  onDistractionChange: (d: DistractionLevel | null) => void;
   mindWandering: number | null;
   onMindWanderingChange: (n: number | null) => void;
+  obstacleTags: MeditationObstacleTag[];
+  onObstacleTagToggle: (tag: MeditationObstacleTag) => void;
   onSave: () => void;
   onSkip: () => void;
   isPending: boolean;
@@ -368,8 +497,12 @@ function PostSit({
   onMoodChange,
   dullness,
   onDullnessChange,
+  distraction,
+  onDistractionChange,
   mindWandering,
   onMindWanderingChange,
+  obstacleTags,
+  onObstacleTagToggle,
   onSave,
   onSkip,
   isPending,
@@ -377,6 +510,8 @@ function PostSit({
   const { t } = useTranslation("meditation");
   const showMindWandering = stageNumber === 2 || stageNumber === 3;
   const showDullness = stageNumber === 4 || stageNumber === 5;
+  const showDistraction = stageNumber === 4 || stageNumber === 6;
+  const availableObstacleTags = obstacleTagsForStage(stageNumber);
 
   return (
     <View className="gap-4">
@@ -427,7 +562,7 @@ function PostSit({
 
       {showDullness ? (
         <View className="gap-2">
-          <Text className="text-sm font-semibold">{t("stages.s5.prompts.vivid")}</Text>
+          <Text className="text-sm font-semibold">{t("module.session.dullnessLabel")}</Text>
           <View className="flex-row gap-2">
             {DULLNESS_OPTIONS.map((level) => (
               <Pressable
@@ -448,10 +583,75 @@ function PostSit({
                     dullness === level ? "text-primary-foreground" : "text-foreground",
                   )}
                 >
-                  {level}
+                  {t(`module.session.dullness.${level}`)}
                 </Text>
               </Pressable>
             ))}
+          </View>
+        </View>
+      ) : null}
+
+      {showDistraction ? (
+        <View className="gap-2">
+          <Text className="text-sm font-semibold">{t("module.session.distractionLabel")}</Text>
+          <View className="flex-row gap-2">
+            {DISTRACTION_OPTIONS.map((level) => (
+              <Pressable
+                key={level}
+                accessibilityRole="button"
+                accessibilityState={{ selected: distraction === level }}
+                onPress={() => onDistractionChange(distraction === level ? null : level)}
+                className={cn(
+                  "flex-1 items-center rounded-md border px-3 py-2",
+                  distraction === level
+                    ? "border-primary bg-primary"
+                    : "border-border bg-card active:bg-muted",
+                )}
+              >
+                <Text
+                  className={cn(
+                    "text-xs font-semibold uppercase tracking-wider",
+                    distraction === level ? "text-primary-foreground" : "text-foreground",
+                  )}
+                >
+                  {t(`module.session.distraction.${level}`)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      {availableObstacleTags.length > 0 ? (
+        <View className="gap-2">
+          <Text className="text-sm font-semibold">{t("module.session.obstaclesLabel")}</Text>
+          <View className="flex-row flex-wrap gap-2">
+            {availableObstacleTags.map((tag) => {
+              const selected = obstacleTags.includes(tag);
+              return (
+                <Pressable
+                  key={tag}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  onPress={() => onObstacleTagToggle(tag)}
+                  className={cn(
+                    "rounded-full border px-3 py-1.5",
+                    selected
+                      ? "border-primary bg-primary"
+                      : "border-border bg-card active:bg-muted",
+                  )}
+                >
+                  <Text
+                    className={cn(
+                      "text-xs font-semibold",
+                      selected ? "text-primary-foreground" : "text-foreground",
+                    )}
+                  >
+                    {t(`module.obstacles.${tag}`)}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
       ) : null}

@@ -113,9 +113,75 @@
       "reflectionLabel": "Anything to note",
       "reflectionPlaceholder": "Private notes about this sit",
       "moodLabel": "How do you feel right now? (1–10)",
+      "dullnessLabel": "How vivid were breath sensations?",
+      "dullness": {
+        "none": "Vivid",
+        "subtle": "Subtle dullness",
+        "strong": "Strong dullness"
+      },
+      "distractionLabel": "What kind of distraction was present?",
+      "distraction": {
+        "none": "None",
+        "subtle": "Subtle",
+        "gross": "Gross"
+      },
+      "obstaclesLabel": "Anything that pulled at you today",
+      "wholeBodyCue": "Breath at the anchor. Body breathing around it.",
+      "purification": {
+        "title": "If something heavy comes up",
+        "body": "Stage 4 can surface old emotional material. If anything feels overwhelming, you don't have to push through.",
+        "crisisLink": "See crisis support"
+      },
       "save": "Save & close",
       "skip": "Skip reflection",
       "discard": "Discard sit"
+    },
+    "bodyScan": {
+      "indicator": "Body scan — where to rest attention",
+      "segmentLabel": "Body-scan segments",
+      "segmentCount": "{{count}} segments",
+      "segments": {
+        "headNeck": "Head and neck",
+        "torso": "Torso",
+        "arms": "Arms",
+        "legs": "Legs",
+        "head": "Head",
+        "shoulders": "Shoulders",
+        "hips": "Hips",
+        "crown": "Crown of the head",
+        "face": "Face",
+        "neck": "Neck",
+        "upperArms": "Upper arms",
+        "forearmsHands": "Forearms and hands",
+        "chest": "Chest",
+        "abdomen": "Abdomen",
+        "back": "Back",
+        "thighs": "Thighs",
+        "calvesFeet": "Calves and feet"
+      }
+    },
+    "obstacles": {
+      "resistance": "Resistance",
+      "procrastination": "Procrastination",
+      "fatigue": "Fatigue",
+      "impatience": "Impatience",
+      "boredom": "Boredom",
+      "mindWandering": "Mind-wandering",
+      "monkeyMind": "Monkey-mind",
+      "forgetting": "Forgetting the breath",
+      "sleepiness": "Sleepiness",
+      "grossDistraction": "Gross distraction",
+      "subtleDullness": "Subtle dullness",
+      "strongDullness": "Strong dullness",
+      "pain": "Pain or discomfort",
+      "intellectualInsights": "Intellectual insights",
+      "chargedMemories": "Charged memories",
+      "subtleDistraction": "Subtle distraction",
+      "restlessness": "Restlessness",
+      "doubt": "Doubt",
+      "bizarreSensations": "Bizarre sensations",
+      "energyCurrents": "Energy currents",
+      "meditativeJoyIntensity": "Intensity of joy"
     },
     "history": {
       "title": "Recent sessions",
