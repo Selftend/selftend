@@ -113,7 +113,7 @@ export default function NewActivityScreen() {
       });
       resetDraft();
       showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace(`/modules/cbt/activities/${saved.id}`);
+      router.replace(`/modules/cbt/activities/${saved.id}` as Parameters<typeof router.replace>[0]);
     } catch (e) {
       const message = e instanceof Error ? e.message : t("activities.saveError");
       showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });

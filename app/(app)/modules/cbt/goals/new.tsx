@@ -129,7 +129,7 @@ export default function NewGoalScreen() {
       });
       resetDraft();
       showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace(`/modules/cbt/goals/${saved.id}`);
+      router.replace(`/modules/cbt/goals/${saved.id}` as Parameters<typeof router.replace>[0]);
     } catch (e) {
       const message = e instanceof Error ? e.message : t("goals.saveError");
       showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });

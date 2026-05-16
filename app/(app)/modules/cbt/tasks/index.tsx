@@ -65,7 +65,11 @@ export default function TasksScreen() {
                           ? t("tasks.deadlineLabel", { value: task.deadline })
                           : undefined
                       }
-                      onPress={() => router.push(`/modules/cbt/tasks/${task.id}`)}
+                      onPress={() =>
+                        router.push(
+                          `/modules/cbt/tasks/${task.id}` as Parameters<typeof router.push>[0],
+                        )
+                      }
                     />
                   ))}
                 </View>
@@ -78,7 +82,11 @@ export default function TasksScreen() {
                       key={task.id}
                       title={task.taskDescription}
                       description={t(`tasks.status.${task.status}`)}
-                      onPress={() => router.push(`/modules/cbt/tasks/${task.id}`)}
+                      onPress={() =>
+                        router.push(
+                          `/modules/cbt/tasks/${task.id}` as Parameters<typeof router.push>[0],
+                        )
+                      }
                     />
                   ))}
                 </View>

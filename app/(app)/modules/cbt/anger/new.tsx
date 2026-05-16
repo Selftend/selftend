@@ -64,7 +64,7 @@ export default function NewAngerLogScreen() {
     try {
       await saveMutation.mutateAsync(values);
       showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace("/modules/cbt/anger");
+      router.replace("/modules/cbt/anger" as Parameters<typeof router.replace>[0]);
     } catch (e) {
       const message = e instanceof Error ? e.message : t("anger.saveError");
       showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
