@@ -116,8 +116,13 @@ begin
           situation,
           automatic_thought,
           emotions,
+          emotion_intensity_before,
           distortions,
+          evidence_for,
+          evidence_against,
           balanced_thought,
+          emotion_intensity_after,
+          outcome_notes,
           archived_at,
           created_at,
           updated_at
