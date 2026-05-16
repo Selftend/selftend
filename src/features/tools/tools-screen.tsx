@@ -7,6 +7,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { cn } from "@/lib/utils";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
+import { useGroundingSessions } from "@/src/features/grounding/queries";
 import { useJournalEntries } from "@/src/features/journal/queries";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
@@ -16,7 +17,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface ToolTile {
-  key: "mood" | "mindfulness" | "timer" | "gratitude" | "journal";
+  key: "mood" | "mindfulness" | "timer" | "gratitude" | "journal" | "grounding";
   href: string;
   icon: MaterialIconName;
   nameKey: string;
@@ -71,6 +72,15 @@ const TOOLS: ToolTile[] = [
     iconBg: "bg-primary/15",
     iconColor: "text-primary",
   },
+  {
+    key: "grounding",
+    href: "/tools/grounding",
+    icon: "anchor",
+    nameKey: "today.tools.grounding",
+    subKey: "today.tools.groundingSub",
+    iconBg: "bg-be/15",
+    iconColor: "text-be",
+  },
 ];
 
 function lastThirtyDaysMinutes(
@@ -93,6 +103,7 @@ export default function ToolsScreen() {
   const { data: meditationSessions } = useMeditationSessions(user?.id ?? null, 30);
   const { data: journalEntries } = useJournalEntries(user?.id ?? null, 50);
   const { data: gratitudeEntries } = useGratitudeEntries(user?.id ?? null, 50);
+  const { data: groundingSessions } = useGroundingSessions(user?.id ?? null, 50);
 
   const moodCount = moodLogs?.length ?? 0;
   const moodAverage = getMoodSummary(moodLogs, 7).average;
@@ -100,6 +111,7 @@ export default function ToolsScreen() {
   const meditationMinutes = lastThirtyDaysMinutes(meditationSessions);
   const journalCount = journalEntries?.length ?? 0;
   const gratitudeCount = gratitudeEntries?.length ?? 0;
+  const groundingCount = groundingSessions?.length ?? 0;
 
   function statFor(key: ToolTile["key"]): string {
     switch (key) {
@@ -121,6 +133,9 @@ export default function ToolsScreen() {
       case "gratitude":
         if (gratitudeCount === 0) return t("tools.stats.gratitudeNoData");
         return t("tools.stats.gratitudeEntries", { count: gratitudeCount });
+      case "grounding":
+        if (groundingCount === 0) return t("tools.stats.groundingNoData");
+        return t("tools.stats.groundingSessions", { count: groundingCount });
     }
   }
 

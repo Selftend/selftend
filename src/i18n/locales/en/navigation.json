@@ -18,6 +18,7 @@
     "meditation": "Meditation",
     "mindfulness": "Mindfulness",
     "timer": "Timer",
+    "grounding": "Grounding",
     "back": "Back",
     "act": "ACT",
     "dbt": "DBT",
@@ -127,6 +128,8 @@
       "gratitudeLogSub": "Notice the small wins",
       "journal": "Journal",
       "journalSub": "Private free-text reflection",
+      "grounding": "Grounding",
+      "groundingSub": "Anchor to the present",
       "progress": "Reflect",
       "progressSub": "See your 30-day picture"
     }
@@ -167,6 +170,9 @@
       "gratitudeEntries_one": "{{count}} gratitude entry",
       "gratitudeEntries_other": "{{count}} gratitude entries",
       "gratitudeNoData": "No gratitude entries yet",
+      "groundingSessions_one": "{{count}} session",
+      "groundingSessions_other": "{{count}} sessions",
+      "groundingNoData": "No sessions yet",
       "comingSoon": "Coming soon"
     }
   },

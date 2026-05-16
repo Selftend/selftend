@@ -963,6 +963,55 @@
     "title": "Quiet CBT check-in",
     "body": "Take a minute to notice a thought and respond to it with more balance."
   },
+  "grounding": {
+    "title": "Grounding",
+    "description": "Quick techniques to anchor yourself in the present moment when anxiety or distress spikes.",
+    "choose": "Choose a technique",
+    "howTo": "How to do it",
+    "step": "Step {{current}} of {{total}}",
+    "start": "Start",
+    "next": "Next",
+    "finish": "Finish",
+    "done": "Done",
+    "doneMessage": "You got through it. Take a breath.",
+    "save": "Save session",
+    "notFound": "Technique not found",
+    "streakTitle": "Recent sessions",
+    "recentCount": "{{count}} sessions logged.",
+    "techniques": {
+      "54321": {
+        "title": "5-4-3-2-1",
+        "shortDescription": "Anchor yourself in the present through all five senses.",
+        "steps": [
+          "Name 5 things you can see right now.",
+          "Notice 4 things you can physically feel — clothes on skin, feet on floor.",
+          "Listen for 3 things you can hear.",
+          "Find 2 things you can smell — or recall a familiar scent.",
+          "Notice 1 thing you can taste."
+        ]
+      },
+      "cold-water": {
+        "title": "Cold water",
+        "shortDescription": "A sharp physical sensation that interrupts the stress response.",
+        "steps": [
+          "Go to a tap or fill a bowl with cold water.",
+          "Submerge your wrists, or splash your face.",
+          "Hold for 30 seconds. Notice the temperature, the sensation, the boundary between cold and skin.",
+          "Dry off slowly. Notice how your body feels now."
+        ]
+      },
+      "feet-floor": {
+        "title": "Feet on the floor",
+        "shortDescription": "Use physical contact with the ground to settle anxiety.",
+        "steps": [
+          "Sit or stand with both feet flat on the floor.",
+          "Press your feet down firmly. Notice the pressure and texture.",
+          "Take three slow breaths while keeping your feet grounded.",
+          "Stamp your feet three times and notice the vibration."
+        ]
+      }
+    }
+  },
   "breathing": {
     "title": "Breathing exercises",
     "description": "Short guided patterns to calm your nervous system right now.",

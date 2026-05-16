@@ -106,6 +106,12 @@ const TOOL_ITEMS: NavItemDef[] = [
     icon: "timer",
     matchPrefix: "/tools/timer",
   },
+  {
+    labelKey: "sidebar.grounding",
+    href: "/tools/grounding",
+    icon: "anchor",
+    matchPrefix: "/tools/grounding",
+  },
 ];
 
 const ACCOUNT_ITEMS: NavItemDef[] = [

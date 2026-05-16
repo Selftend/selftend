@@ -18,6 +18,7 @@
     "meditation": "Медитация",
     "mindfulness": "Осъзнатост",
     "timer": "Таймер",
+    "grounding": "Заземяване",
     "back": "Назад",
     "act": "ACT",
     "dbt": "DBT",
@@ -125,6 +126,8 @@
       "gratitudeLogSub": "Забележи малките победи",
       "journal": "Дневник",
       "journalSub": "Личен дневник за свободно писане",
+      "grounding": "Заземяване",
+      "groundingSub": "Закрепи се в настоящото",
       "progress": "Рефлексия",
       "progressSub": "Виж картината за 30 дни"
     }
@@ -163,6 +166,9 @@
       "gratitudeEntries_one": "{{count}} запис за благодарност",
       "gratitudeEntries_other": "{{count}} записа за благодарност",
       "gratitudeNoData": "Още няма записи за благодарност",
+      "groundingSessions_one": "{{count}} сесия",
+      "groundingSessions_other": "{{count}} сесии",
+      "groundingNoData": "Още няма сесии",
       "comingSoon": "Скоро"
     }
   },
