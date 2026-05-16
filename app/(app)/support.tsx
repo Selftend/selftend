@@ -2,6 +2,7 @@ import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -12,14 +13,38 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
+import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { appEnv } from "@/src/lib/env";
 import { BackButton } from "@/src/components/app/back-button";
+
+type FeedbackCategory = "bug" | "suggestion" | "question";
 
 export default function SupportScreen() {
   const { t } = useTranslation("settings");
   const supportEmail = appEnv.supportEmail;
   const supportSubject = encodeURIComponent("Selftend support");
+
+  const [feedbackCategory, setFeedbackCategory] = useState<FeedbackCategory>("suggestion");
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackError, setFeedbackError] = useState("");
+
+  const handleFeedbackSubmit = () => {
+    const trimmed = feedbackMessage.trim();
+    if (trimmed.length < 10) {
+      setFeedbackError(t("feedback.messageTooShort"));
+      return;
+    }
+    if (trimmed.length > 1000) {
+      setFeedbackError(t("feedback.messageTooLong"));
+      return;
+    }
+    setFeedbackError("");
+    const subject = encodeURIComponent(`Selftend feedback [${feedbackCategory}]`);
+    const body = encodeURIComponent(trimmed);
+    void Linking.openURL(`mailto:${supportEmail}?subject=${subject}&body=${body}`);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -77,6 +102,73 @@ export default function SupportScreen() {
               </View>
             </CardContent>
           </Card>
+
+          {supportEmail ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("feedback.title")}</CardTitle>
+                <CardDescription>{t("feedback.description")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <View className="gap-4">
+                  <Card className="border-destructive/50 bg-destructive/5">
+                    <CardContent className="pt-4">
+                      <Text className="text-sm font-medium text-destructive">
+                        {t("feedback.crisisWarning")}
+                      </Text>
+                      <Button
+                        onPress={() => router.push("/crisis")}
+                        size="sm"
+                        variant="ghost"
+                        className="mt-2 self-start px-0"
+                      >
+                        <Text className="text-sm text-destructive underline">
+                          {t("feedback.openCrisis")}
+                        </Text>
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  <View className="gap-2">
+                    <Label>{t("feedback.categoryLabel")}</Label>
+                    <View className="flex-row gap-2">
+                      {(["bug", "suggestion", "question"] as FeedbackCategory[]).map((cat) => (
+                        <Button
+                          key={cat}
+                          onPress={() => setFeedbackCategory(cat)}
+                          size="sm"
+                          variant={feedbackCategory === cat ? "default" : "outline"}
+                        >
+                          <Text>{t(`feedback.category.${cat}`)}</Text>
+                        </Button>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View className="gap-2">
+                    <Label>{t("feedback.messageLabel")}</Label>
+                    <Textarea
+                      accessibilityLabel={t("feedback.messageLabel")}
+                      numberOfLines={5}
+                      onChangeText={(text) => {
+                        setFeedbackMessage(text);
+                        if (feedbackError) setFeedbackError("");
+                      }}
+                      placeholder={t("feedback.messagePlaceholder")}
+                      value={feedbackMessage}
+                    />
+                    {feedbackError ? (
+                      <Text className="text-sm text-destructive">{feedbackError}</Text>
+                    ) : null}
+                  </View>
+
+                  <Button onPress={handleFeedbackSubmit}>
+                    <Text>{t("feedback.submit")}</Text>
+                  </Button>
+                </View>
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader>

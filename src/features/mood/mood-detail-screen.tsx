@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -15,12 +15,14 @@ import { Badge } from "@/src/components/react-native-reusables/badge";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { BackButton } from "@/src/components/app/back-button";
+import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
-import { useMoodLog, useMoodLogs } from "@/src/features/mood/queries";
+import { useDeleteMoodLog, useMoodLog, useMoodLogs } from "@/src/features/mood/queries";
 import type { MoodLog } from "@/src/features/mood/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useSession } from "@/src/providers/session-provider";
+import { useToastStore } from "@/src/stores/toast-store";
 
 function formatTimestamp(value: string) {
   const date = new Date(value);
@@ -34,6 +36,7 @@ export default function MoodDetailScreen() {
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const moodId = typeof id === "string" ? id : null;
+  const showToast = useToastStore((state) => state.showToast);
 
   const { data: cachedList } = useMoodLogs(user?.id ?? null, 30);
   const fromCache = useMemo(
@@ -47,6 +50,23 @@ export default function MoodDetailScreen() {
   );
 
   const entry: MoodLog | null = fromCache ?? fetched ?? null;
+
+  const deleteMutation = useDeleteMoodLog(user?.id ?? null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  const confirmDelete = async () => {
+    if (!entry) return;
+    setDeleteError("");
+    try {
+      await deleteMutation.mutateAsync(entry.id);
+      setConfirmOpen(false);
+      showToast({ title: t("feedback.deleted"), tone: "success" });
+      router.replace("/tools/mood-tracker" as Parameters<typeof router.replace>[0]);
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : t("detail.deleteError"));
+    }
+  };
 
   if (!fromCache && isLoading) {
     return (
@@ -87,18 +107,23 @@ export default function MoodDetailScreen() {
               <Text variant="h1">{t("detail.title")}</Text>
             </View>
             <Text variant="muted">{when}</Text>
-            <Button
-              onPress={() =>
-                router.push(
-                  `/tools/mood-tracker/${entry.id}/edit` as Parameters<typeof router.push>[0],
-                )
-              }
-              variant="secondary"
-              className="self-start"
-            >
-              <Icon name="edit" className="size-4" />
-              <Text>{t("detail.edit")}</Text>
-            </Button>
+            <View className="flex-row gap-3">
+              <Button
+                onPress={() =>
+                  router.push(
+                    `/tools/mood-tracker/${entry.id}/edit` as Parameters<typeof router.push>[0],
+                  )
+                }
+                variant="secondary"
+              >
+                <Icon name="edit" className="size-4" />
+                <Text>{t("detail.edit")}</Text>
+              </Button>
+              <Button onPress={() => setConfirmOpen(true)} variant="ghost">
+                <Icon name="delete-outline" className="size-4 text-destructive" />
+                <Text>{t("detail.delete")}</Text>
+              </Button>
+            </View>
           </View>
 
           <Card>
@@ -168,6 +193,21 @@ export default function MoodDetailScreen() {
           ) : null}
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        cancelLabel={t("detail.confirmDelete.cancel")}
+        confirmLabel={t("detail.confirmDelete.confirm")}
+        error={deleteError}
+        isPending={deleteMutation.isPending}
+        message={t("detail.confirmDelete.message")}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setDeleteError("");
+        }}
+        onConfirm={() => void confirmDelete()}
+        title={t("detail.confirmDelete.title")}
+        visible={confirmOpen}
+      />
     </SafeAreaView>
   );
 }

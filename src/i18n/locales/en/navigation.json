@@ -117,8 +117,28 @@
       "gratitudeLog": "Gratitude log",
       "gratitudeLogSub": "Notice the small wins",
       "journal": "Journal",
-      "journalSub": "Private free-text reflection"
+      "journalSub": "Private free-text reflection",
+      "progress": "Reflect",
+      "progressSub": "See your 30-day picture"
     }
+  },
+  "progress": {
+    "title": "Reflection summary",
+    "description": "A quiet look at the last 30 days — no scores, no pressure.",
+    "moodTrend": "Mood trend",
+    "moodTrendDescription": "Daily average over the last 14 days.",
+    "noMoodData": "Log a mood to start your trend.",
+    "activityTitle": "Last 30 days",
+    "activityDescription": "How often you checked in across the shared tools.",
+    "moodLogs": "mood logs",
+    "journalEntries": "journal entries",
+    "gratitudeEntries": "gratitude entries",
+    "reflectionTitle": "Reflection prompt",
+    "reflectionDescription": "A quiet question to sit with.",
+    "prompt1": "What felt manageable this month that felt hard before?",
+    "prompt2": "Where did you show up for yourself, even in a small way?",
+    "prompt3": "What would you tell a friend who had a month like yours?",
+    "prompt4": "What is one thing you noticed about your mood or energy?"
   },
   "tools": {
     "title": "Tools",

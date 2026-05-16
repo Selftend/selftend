@@ -51,7 +51,18 @@
     "noEmotions": "No emotions tagged.",
     "linkedStrategy": "Linked strategy",
     "edit": "Edit",
-    "notFound": "We couldn't find that mood entry."
+    "delete": "Delete",
+    "deleteError": "Couldn't delete this entry. Try again.",
+    "notFound": "We couldn't find that mood entry.",
+    "confirmDelete": {
+      "title": "Delete this entry?",
+      "message": "This permanently removes the mood log. It can't be recovered.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    }
+  },
+  "feedback": {
+    "deleted": "Mood entry deleted"
   },
   "relativeTime": {
     "today": "Today",

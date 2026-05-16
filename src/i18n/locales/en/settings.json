@@ -189,5 +189,22 @@
     "actDescription": "Acceptance and Commitment Therapy exercises.",
     "gratitudeLog": "Gratitude log",
     "gratitudeLogDescription": "Notice and record positive moments."
+  },
+  "feedback": {
+    "title": "Send feedback",
+    "description": "Share a bug report, suggestion, or question. This opens your email app.",
+    "crisisWarning": "Do not use this form for urgent crisis situations. If you need immediate help, use local emergency services or crisis resources.",
+    "openCrisis": "Open crisis guidance",
+    "categoryLabel": "Category",
+    "category": {
+      "bug": "Bug",
+      "suggestion": "Suggestion",
+      "question": "Question"
+    },
+    "messageLabel": "Message",
+    "messagePlaceholder": "Describe the issue or idea. Do not include private self-help entries or crisis details.",
+    "submit": "Open email to send",
+    "messageTooShort": "Please write at least 10 characters.",
+    "messageTooLong": "Message must be 1000 characters or fewer."
   }
 }

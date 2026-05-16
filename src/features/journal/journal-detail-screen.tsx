@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, Modal, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,6 +15,7 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
+import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import {
@@ -23,7 +24,6 @@ import {
   useJournalEntry,
 } from "@/src/features/journal/queries";
 import type { JournalEntry } from "@/src/features/journal/types";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -143,65 +143,20 @@ export default function JournalDetailScreen() {
         </View>
       </ScrollView>
 
-      <ConfirmDeleteModal
-        visible={confirmOpen}
+      <ConfirmDialog
+        cancelLabel={t("detail.confirmDelete.cancel")}
+        confirmLabel={t("detail.confirmDelete.confirm")}
+        error={deleteError}
+        isPending={deleteMutation.isPending}
+        message={t("detail.confirmDelete.message")}
         onCancel={() => {
           setConfirmOpen(false);
           setDeleteError("");
         }}
         onConfirm={() => void confirmDelete()}
-        isPending={deleteMutation.isPending}
-        error={deleteError}
+        title={t("detail.confirmDelete.title")}
+        visible={confirmOpen}
       />
     </SafeAreaView>
-  );
-}
-
-interface ConfirmDeleteModalProps {
-  visible: boolean;
-  isPending: boolean;
-  error: string;
-  onCancel: () => void;
-  onConfirm: () => void;
-}
-
-function ConfirmDeleteModal({
-  visible,
-  isPending,
-  error,
-  onCancel,
-  onConfirm,
-}: ConfirmDeleteModalProps) {
-  const { t } = useTranslation("journal");
-  const reduceMotionEnabled = useReduceMotionEnabled();
-
-  return (
-    <Modal
-      animationType={reduceMotionEnabled ? "none" : "fade"}
-      onRequestClose={onCancel}
-      transparent
-      visible={visible}
-    >
-      <View className="flex-1 items-center justify-center bg-black/50 p-6">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>{t("detail.confirmDelete.title")}</CardTitle>
-            <CardDescription>{t("detail.confirmDelete.message")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <View className="gap-3">
-              {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
-              <Button disabled={isPending} onPress={onCancel} variant="secondary">
-                <Text>{t("detail.confirmDelete.cancel")}</Text>
-              </Button>
-              <Button disabled={isPending} onPress={onConfirm} variant="destructive">
-                {isPending ? <ActivityIndicator color="#ffffff" /> : null}
-                <Text>{t("detail.confirmDelete.confirm")}</Text>
-              </Button>
-            </View>
-          </CardContent>
-        </Card>
-      </View>
-    </Modal>
   );
 }

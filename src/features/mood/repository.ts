@@ -51,6 +51,12 @@ export async function getMoodLog(userId: string, id: string) {
   return data ? mapMoodLog(data as MoodLogRow) : null;
 }
 
+export async function deleteMoodLog(userId: string, id: string) {
+  const client = requireSupabase();
+  const { error } = await client.from("mood_logs").delete().eq("user_id", userId).eq("id", id);
+  if (error) throw error;
+}
+
 export async function saveMoodLog(userId: string, input: MoodInput, moodLogId?: string) {
   const client = requireSupabase();
   const payload = {

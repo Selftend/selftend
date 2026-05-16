@@ -137,6 +137,7 @@ export default function ProtectedLayout() {
             <Stack.Screen name="history" />
             <Stack.Screen name="support" />
             <Stack.Screen name="legal" />
+            <Stack.Screen name="progress" />
           </Stack>
         </View>
       </View>

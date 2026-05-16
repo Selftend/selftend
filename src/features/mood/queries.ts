@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getMoodLog, listMoodLogs, saveMoodLog } from "@/src/features/mood/repository";
+import {
+  deleteMoodLog,
+  getMoodLog,
+  listMoodLogs,
+  saveMoodLog,
+} from "@/src/features/mood/repository";
 import type { MoodInput } from "@/src/features/mood/types";
 
 const moodKeys = {
@@ -23,6 +28,17 @@ export function useMoodLog(userId: string | null, id: string | null) {
       userId && id ? moodKeys.detail(userId, id) : ["mood", "detail", "anonymous", id ?? ""],
     queryFn: () => getMoodLog(userId!, id!),
     enabled: Boolean(userId && id),
+  });
+}
+
+export function useDeleteMoodLog(userId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteMoodLog(userId!, id),
+    onSuccess: async () => {
+      if (!userId) return;
+      await queryClient.invalidateQueries({ queryKey: moodKeys.all });
+    },
   });
 }
 

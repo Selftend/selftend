@@ -20,6 +20,7 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/mood/queries", () => ({
+  useDeleteMoodLog: jest.fn(() => ({ mutateAsync: jest.fn(), isPending: false })),
   useMoodLog: jest.fn(),
   useMoodLogs: jest.fn(),
 }));

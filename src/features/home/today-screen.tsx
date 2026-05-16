@@ -115,6 +115,15 @@ const SHARED_TOOLS: SharedTool[] = [
     iconBg: "bg-primary/15",
     iconColor: "text-primary",
   },
+  {
+    key: "progress",
+    href: "/progress",
+    icon: "timeline",
+    nameKey: "today.tools.progress",
+    subKey: "today.tools.progressSub",
+    iconBg: "bg-be/15",
+    iconColor: "text-be",
+  },
 ];
 
 function getDateKey(value: string | null | undefined) {
