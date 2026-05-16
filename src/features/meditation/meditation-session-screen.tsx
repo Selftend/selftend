@@ -12,6 +12,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { cn } from "@/lib/utils";
 import { type BodyScanSegments, currentBodyScanSegment } from "@/src/features/meditation/body-scan";
+import { durationPresetsForStage } from "@/src/features/meditation/duration-presets";
 import { activeEffortlessnessWindow } from "@/src/features/meditation/effortlessness";
 import { obstacleTagsForStage } from "@/src/features/meditation/obstacles";
 import {
@@ -29,8 +30,6 @@ import type {
 import { useSession } from "@/src/providers/session-provider";
 
 const BELL_ASSET = require("@/assets/sounds/bell.wav");
-
-const DURATION_PRESETS = [10, 15, 20, 30];
 
 const BODY_SCAN_OPTIONS: BodyScanSegments[] = [4, 6, 12];
 
@@ -348,7 +347,7 @@ function PreSit({
           {t("duration.label")}
         </Text>
         <View className="flex-row flex-wrap gap-2">
-          {DURATION_PRESETS.map((min) => (
+          {durationPresetsForStage(stageNumber).map((min) => (
             <Pressable
               key={min}
               accessibilityRole="button"

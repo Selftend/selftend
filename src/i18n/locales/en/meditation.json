@@ -164,6 +164,18 @@
         "calvesFeet": "Calves and feet"
       }
     },
+    "dailyLife": {
+      "title": "Daily life mindfulness",
+      "subtitle": "Carry the qualities of the sit into the rest of the day. One line is enough.",
+      "placeholder": "What carried over today?",
+      "save": "Save note",
+      "recent": "Recent notes",
+      "viewAll": "View all",
+      "archiveTitle": "Daily life mindfulness",
+      "archiveSubtitle": "Private notes about how the practice shows up off the cushion.",
+      "allEntries": "All entries",
+      "empty": "No entries yet."
+    },
     "obstacles": {
       "resistance": "Resistance",
       "procrastination": "Procrastination",

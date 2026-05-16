@@ -13,6 +13,7 @@ import {
   type MeditationOnboardingResult,
 } from "@/src/components/app/meditation-onboarding-modal";
 import { cn } from "@/lib/utils";
+import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
 import {
   useMeditationProgramState,
   useMeditationSessions,
@@ -140,6 +141,8 @@ export default function MeditationHomeScreen() {
                 <Text>{t("module.home.openLearn")}</Text>
               </Button>
             </View>
+
+            {currentStage === 10 ? <MeditationDailyLifeCard /> : null}
 
             <View className="gap-3">
               <View className="flex-row items-center justify-between">
