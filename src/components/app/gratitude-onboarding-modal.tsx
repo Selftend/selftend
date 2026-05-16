@@ -1,4 +1,4 @@
-import { Modal, ScrollView, View } from "react-native";
+import { Image, Modal, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,10 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+
+const imgScience = require("../../../assets/images/onboarding/gratitude-science.png");
+const imgLevels = require("../../../assets/images/onboarding/gratitude-levels.png");
+const imgFrequency = require("../../../assets/images/onboarding/gratitude-frequency.png");
 
 type Step = "welcome" | "levels" | "frequency";
 
@@ -52,6 +56,12 @@ export function GratitudeOnboarding({
           {step === "welcome" ? (
             <View className="gap-6">
               <View className="items-center gap-3">
+                <Image
+                  source={imgScience}
+                  style={{ width: 200, height: 200 }}
+                  resizeMode="contain"
+                  accessibilityLabel={t("onboarding.welcome.title")}
+                />
                 <Text variant="h2" className="text-center">
                   {t("onboarding.welcome.title")}
                 </Text>
@@ -84,7 +94,13 @@ export function GratitudeOnboarding({
 
           {step === "levels" ? (
             <View className="gap-6">
-              <View className="gap-3">
+              <View className="items-center gap-3">
+                <Image
+                  source={imgLevels}
+                  style={{ width: 200, height: 200 }}
+                  resizeMode="contain"
+                  accessibilityLabel={t("onboarding.levels.title")}
+                />
                 <Text variant="h2" className="text-center">
                   {t("onboarding.levels.title")}
                 </Text>
@@ -123,7 +139,13 @@ export function GratitudeOnboarding({
 
           {step === "frequency" ? (
             <View className="gap-6">
-              <View className="gap-3">
+              <View className="items-center gap-3">
+                <Image
+                  source={imgFrequency}
+                  style={{ width: 240, height: 160 }}
+                  resizeMode="contain"
+                  accessibilityLabel={t("onboarding.frequency.title")}
+                />
                 <Text variant="h2" className="text-center">
                   {t("onboarding.frequency.title")}
                 </Text>

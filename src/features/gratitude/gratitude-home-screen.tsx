@@ -314,34 +314,12 @@ function BreakCard({ breakIndex, onDismiss }: BreakCardProps) {
             <Icon name="arrow-forward" className="text-muted-foreground" size={18} />
           </Pressable>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() =>
-            router.push({
-              pathname: "/modules/gratitude/breaks/[slug]",
-              params: { slug: breakDef.slug },
-            })
-          }
-        >
-          <View className="gap-1">
-            <Text className="text-base font-semibold">{title}</Text>
-            <Text variant="muted" className="text-sm" numberOfLines={2}>
-              {short}
-            </Text>
-          </View>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() =>
-            router.push({
-              pathname: "/modules/gratitude/breaks/[slug]",
-              params: { slug: breakDef.slug },
-            })
-          }
-          className="self-start"
-        >
-          <Text className="text-sm font-semibold text-primary">{t("breaks.open")}</Text>
-        </Pressable>
+        <View className="gap-1">
+          <Text className="text-base font-semibold">{title}</Text>
+          <Text variant="muted" className="text-sm">
+            {t(`${cardKey}.body` as Parameters<typeof t>[0])}
+          </Text>
+        </View>
       </View>
     </View>
   );
