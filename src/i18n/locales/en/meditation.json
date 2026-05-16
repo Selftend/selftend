@@ -164,6 +164,24 @@
         "calvesFeet": "Calves and feet"
       }
     },
+    "insights": {
+      "title": "Reflect",
+      "subtitle": "A quiet summary of your practice — no scores.",
+      "totalSessions": "Sessions",
+      "totalMinutes": "Total time",
+      "longestSit": "Longest sit",
+      "avgMood": "Avg mood after",
+      "sessionCount_one": "{{count}} sit",
+      "sessionCount_other": "{{count}} sits",
+      "minuteCount_one": "{{count}} min",
+      "minuteCount_other": "{{count}} min",
+      "stageBreakdown": "Time at each stage",
+      "stageLabel": "Stage {{stage}}",
+      "stageValue": "{{sessions}} sits · {{minutes}} min",
+      "mindWanderingDown": "Catches have been about {{count}} per sit lower recently than in the prior two weeks.",
+      "mindWanderingUp": "Catches have been about {{count}} per sit higher recently than in the prior two weeks.",
+      "mindWanderingFlat": "Catches have stayed about the same across the last four weeks."
+    },
     "dailyLife": {
       "title": "Daily life mindfulness",
       "subtitle": "Carry the qualities of the sit into the rest of the day. One line is enough.",

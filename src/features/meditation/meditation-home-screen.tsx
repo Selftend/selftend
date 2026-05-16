@@ -14,6 +14,7 @@ import {
 } from "@/src/components/app/meditation-onboarding-modal";
 import { cn } from "@/lib/utils";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
+import { MeditationInsightsCard } from "@/src/features/meditation/meditation-insights-card";
 import {
   useMeditationProgramState,
   useMeditationSessions,
@@ -32,7 +33,8 @@ export default function MeditationHomeScreen() {
 
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
   const { data: programState } = useMeditationProgramState(userId);
-  const { data: sessions } = useMeditationSessions(userId, 5);
+  const { data: allSessions } = useMeditationSessions(userId, 200);
+  const sessions = allSessions?.slice(0, 5);
 
   const upsertProgramState = useUpsertMeditationProgramState(userId);
   const updatePreferences = useUpdateUserPreferences(userId);
@@ -192,6 +194,10 @@ export default function MeditationHomeScreen() {
                 </View>
               )}
             </View>
+
+            {allSessions && allSessions.length > 0 ? (
+              <MeditationInsightsCard sessions={allSessions} />
+            ) : null}
           </View>
         </ScrollView>
       </SafeAreaView>
