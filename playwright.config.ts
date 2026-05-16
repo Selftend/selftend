@@ -35,7 +35,12 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: `EXPO_PUBLIC_SUPABASE_URL=http://localhost:54321 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${LOCAL_ANON_KEY} EXPO_PUBLIC_PUBLIC_APP_URL=http://localhost:${PORT} npm exec expo -- start --web --port ${PORT}`,
+    command: `npm exec expo -- start --web --port ${PORT}`,
+    env: {
+      EXPO_PUBLIC_SUPABASE_URL: "http://localhost:54321",
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: LOCAL_ANON_KEY,
+      EXPO_PUBLIC_PUBLIC_APP_URL: `http://localhost:${PORT}`,
+    },
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
