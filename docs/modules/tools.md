@@ -50,7 +50,17 @@ Working tool routes:
 - `/tools/mindfulness`, `/tools/mindfulness/[slug]`
 - `/tools/gratitude-log`, `/tools/gratitude-log/new`, `/tools/gratitude-log/[id]`, `/tools/gratitude-log/[id]/edit`
 
-Placeholder routes: `/tools/meditation`, `/tools/act`.
+Working meditation routes:
+
+- `/modules/meditation` — home (stage-aware)
+- `/modules/meditation/learn` — framework primer
+- `/modules/meditation/session/new` — pre-sit primer, timer, post-sit reflection
+- `/modules/meditation/sessions`, `/modules/meditation/sessions/[id]`
+- `/modules/meditation/stages`, `/modules/meditation/stages/[n]`
+
+`/tools/meditation` is kept as a compatibility redirect to `/modules/meditation`.
+
+Placeholder routes: `/tools/act`.
 
 ## Expansion Rule
 
@@ -78,5 +88,5 @@ Planned boundaries:
 - **Mood tracker:** check-ins only; do not mix in generic journaling
 - **Journaling:** private free-text reflection, separate from CBT and check-ins. Spec: [journaling.md](journaling.md)
 - **ACT:** focused exercises after a spec
-- **Meditation:** guided practice, no reminder or progress pressure without review
+- **Meditation:** the ten-stage Mind Illuminated program with onboarding, stage-aware sits, private session history, and optional quiet reminders. Spec: [meditation-tmi.md](meditation-tmi.md)
 - **Gratitude log:** lightweight one-to-three item entries, private history, no reminders or streak pressure. Spec: [gratitude-log.md](gratitude-log.md)

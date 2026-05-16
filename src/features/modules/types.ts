@@ -1,4 +1,4 @@
-export type ModuleKey = "cbt";
+export type ModuleKey = "cbt" | "meditation";
 
 export interface CookieConsent {
   essential: true;
@@ -14,8 +14,13 @@ export interface UserPreferences {
   cbtReminderHour: number;
   cbtReminderMinute: number;
   cbtReminderTimezone: string | null;
+  meditationRemindersEnabled: boolean;
+  meditationReminderHour: number;
+  meditationReminderMinute: number;
+  meditationReminderTimezone: string | null;
   appOnboardingCompleted: boolean;
   cbtOnboardingCompleted: boolean;
+  meditationOnboardingCompleted: boolean;
   privacyPolicyAcceptedAt: string | null;
   termsAcceptedAt: string | null;
   policyVersionAccepted: string | null;
@@ -33,8 +38,13 @@ export const defaultUserPreferences: UserPreferences = {
   cbtReminderHour: 19,
   cbtReminderMinute: 0,
   cbtReminderTimezone: null,
+  meditationRemindersEnabled: false,
+  meditationReminderHour: 7,
+  meditationReminderMinute: 0,
+  meditationReminderTimezone: null,
   appOnboardingCompleted: false,
   cbtOnboardingCompleted: false,
+  meditationOnboardingCompleted: false,
   privacyPolicyAcceptedAt: null,
   termsAcceptedAt: null,
   policyVersionAccepted: null,
@@ -43,6 +53,15 @@ export const defaultUserPreferences: UserPreferences = {
   selectedConcerns: [],
   activeStrategies: [],
 };
+
+const VALID_MODULES: ModuleKey[] = ["cbt", "meditation"];
+
+export function sanitizeEnabledModules(value: unknown): ModuleKey[] {
+  if (!Array.isArray(value)) return ["cbt"];
+  const filtered = value.filter((m): m is ModuleKey => VALID_MODULES.includes(m as ModuleKey));
+  if (!filtered.includes("cbt")) filtered.unshift("cbt");
+  return Array.from(new Set(filtered));
+}
 
 export function mergeUserPreferences(
   preferences: UserPreferences | null | undefined,

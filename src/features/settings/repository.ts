@@ -1,5 +1,6 @@
 import {
   defaultUserPreferences,
+  sanitizeEnabledModules,
   type CookieConsent,
   type UserPreferences,
 } from "@/src/features/modules/types";
@@ -15,8 +16,13 @@ interface UserPreferenceRow {
   cbt_reminder_hour: number | null;
   cbt_reminder_minute: number | null;
   cbt_reminder_timezone: string | null;
+  meditation_reminders_enabled: boolean | null;
+  meditation_reminder_hour: number | null;
+  meditation_reminder_minute: number | null;
+  meditation_reminder_timezone: string | null;
   app_onboarding_completed: boolean | null;
   cbt_onboarding_completed: boolean | null;
+  meditation_onboarding_completed: boolean | null;
   privacy_policy_accepted_at: string | null;
   terms_accepted_at: string | null;
   policy_version_accepted: string | null;
@@ -32,15 +38,22 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
   }
 
   return {
-    enabledModules: row.enabled_modules?.includes("cbt") ? ["cbt"] : ["cbt"],
+    enabledModules: sanitizeEnabledModules(row.enabled_modules),
     reminderConsent: Boolean(row.reminder_consent),
     reminderConsentUpdatedAt: row.reminder_consent_updated_at ?? null,
     cbtRemindersEnabled: Boolean(row.cbt_reminders_enabled),
     cbtReminderHour: row.cbt_reminder_hour ?? defaultUserPreferences.cbtReminderHour,
     cbtReminderMinute: row.cbt_reminder_minute ?? defaultUserPreferences.cbtReminderMinute,
     cbtReminderTimezone: row.cbt_reminder_timezone ?? null,
+    meditationRemindersEnabled: Boolean(row.meditation_reminders_enabled),
+    meditationReminderHour:
+      row.meditation_reminder_hour ?? defaultUserPreferences.meditationReminderHour,
+    meditationReminderMinute:
+      row.meditation_reminder_minute ?? defaultUserPreferences.meditationReminderMinute,
+    meditationReminderTimezone: row.meditation_reminder_timezone ?? null,
     appOnboardingCompleted: Boolean(row.app_onboarding_completed),
     cbtOnboardingCompleted: Boolean(row.cbt_onboarding_completed),
+    meditationOnboardingCompleted: Boolean(row.meditation_onboarding_completed),
     privacyPolicyAcceptedAt: row.privacy_policy_accepted_at ?? null,
     termsAcceptedAt: row.terms_accepted_at ?? null,
     policyVersionAccepted: row.policy_version_accepted ?? null,
@@ -80,8 +93,13 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
         cbt_reminder_hour: preferences.cbtReminderHour,
         cbt_reminder_minute: preferences.cbtReminderMinute,
         cbt_reminder_timezone: preferences.cbtReminderTimezone,
+        meditation_reminders_enabled: preferences.meditationRemindersEnabled,
+        meditation_reminder_hour: preferences.meditationReminderHour,
+        meditation_reminder_minute: preferences.meditationReminderMinute,
+        meditation_reminder_timezone: preferences.meditationReminderTimezone,
         app_onboarding_completed: preferences.appOnboardingCompleted,
         cbt_onboarding_completed: preferences.cbtOnboardingCompleted,
+        meditation_onboarding_completed: preferences.meditationOnboardingCompleted,
         privacy_policy_accepted_at: preferences.privacyPolicyAcceptedAt,
         terms_accepted_at: preferences.termsAcceptedAt,
         policy_version_accepted: preferences.policyVersionAccepted,

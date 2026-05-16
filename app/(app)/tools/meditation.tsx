@@ -1,3 +1,5 @@
-import MeditationScreen from "@/src/features/meditation/meditation-screen";
+import { Redirect } from "expo-router";
 
-export default MeditationScreen;
+export default function MeditationToolRedirect() {
+  return <Redirect href="/modules/meditation" />;
+}
