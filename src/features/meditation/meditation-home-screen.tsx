@@ -68,8 +68,10 @@ export default function MeditationHomeScreen() {
           enabledModules: addModule(preferences.enabledModules, "meditation"),
         }),
       );
-    } catch {
-      setOnboardingError(t("onboarding.commit.error"));
+    } catch (error) {
+      const fallback = t("onboarding.commit.error");
+      const detail = error instanceof Error ? error.message : null;
+      setOnboardingError(detail ? `${fallback} (${detail})` : fallback);
     }
   }
 

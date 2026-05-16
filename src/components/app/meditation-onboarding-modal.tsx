@@ -1,6 +1,6 @@
 import { ActivityIndicator, Modal, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
@@ -17,6 +17,8 @@ type Step = "welcome" | "attention" | "assessment" | "gardener" | "commit";
 const STEP_ORDER: Step[] = ["welcome", "attention", "assessment", "gardener", "commit"];
 
 const DURATIONS: number[] = [10, 15, 20, 30];
+
+const STAGE_OPTIONS: StageNumber[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 export interface MeditationOnboardingResult {
   assessedStage: StageNumber;
@@ -64,6 +66,7 @@ export function MeditationOnboarding({
   const [timeOfDay, setTimeOfDay] = useState("07:00");
   const [duration, setDuration] = useState<number>(15);
   const [remindersEnabled, setRemindersEnabled] = useState(false);
+  const [selectedStage, setSelectedStage] = useState<StageNumber>(1);
 
   const assessedStage = useMemo(() => {
     return suggestStageFromAssessment({
@@ -74,6 +77,11 @@ export function MeditationOnboarding({
       extendedNoThoughts: answers.extendedNoThoughts ?? false,
     });
   }, [answers]);
+
+  // Sync the picker default with the assessment whenever it changes.
+  useEffect(() => {
+    setSelectedStage(assessedStage);
+  }, [assessedStage]);
 
   const stepIndex = STEP_ORDER.indexOf(step);
 
@@ -86,7 +94,7 @@ export function MeditationOnboarding({
 
   function handleFinish() {
     onComplete({
-      assessedStage,
+      assessedStage: selectedStage,
       preferredDurationMinutes: duration,
       preferredTimeOfDay: timeOfDay,
       remindersEnabled,
@@ -318,6 +326,41 @@ export function MeditationOnboarding({
                     </View>
                   </View>
 
+                  <View className="gap-2">
+                    <Text className="text-sm font-semibold">
+                      {t("onboarding.commit.stageLabel")}
+                    </Text>
+                    <Text variant="muted" className="text-xs">
+                      {t("onboarding.commit.stageHint", { stage: assessedStage })}
+                    </Text>
+                    <View className="flex-row flex-wrap gap-1.5">
+                      {STAGE_OPTIONS.map((n) => (
+                        <Pressable
+                          key={n}
+                          accessibilityRole="button"
+                          accessibilityLabel={t("onboarding.commit.stageOption", { stage: n })}
+                          accessibilityState={{ selected: selectedStage === n }}
+                          onPress={() => setSelectedStage(n)}
+                          className={cn(
+                            "size-10 items-center justify-center rounded-md border",
+                            selectedStage === n
+                              ? "border-primary bg-primary"
+                              : "border-border bg-card active:bg-muted",
+                          )}
+                        >
+                          <Text
+                            className={cn(
+                              "text-sm font-bold",
+                              selectedStage === n ? "text-primary-foreground" : "text-foreground",
+                            )}
+                          >
+                            {n}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+
                   <View className="flex-row items-center justify-between gap-3">
                     <View className="flex-1 gap-1">
                       <Text className="text-sm font-semibold">
@@ -335,7 +378,7 @@ export function MeditationOnboarding({
                   </View>
 
                   <Text variant="muted" className="text-center">
-                    {t("onboarding.commit.suggestedStage", { stage: assessedStage })}
+                    {t("onboarding.commit.startingAt", { stage: selectedStage })}
                   </Text>
                 </CardContent>
               </Card>

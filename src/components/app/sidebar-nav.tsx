@@ -42,6 +42,15 @@ const MODULE_ITEMS: NavItemDef[] = [
     activeWhen: (pathname) => pathname === "/modules/cbt" || pathname.startsWith("/modules/cbt/"),
   },
   {
+    labelKey: "sidebar.meditation",
+    href: "/modules/meditation",
+    icon: "self-improvement",
+    matchPrefix: "/modules/meditation",
+    badgeKey: "badgeLive",
+    activeWhen: (pathname) =>
+      pathname === "/modules/meditation" || pathname.startsWith("/modules/meditation/"),
+  },
+  {
     labelKey: "sidebar.act",
     href: "/modules/act",
     icon: "explore",
@@ -77,10 +86,10 @@ const TOOL_ITEMS: NavItemDef[] = [
     matchPrefix: "/tools/mindfulness",
   },
   {
-    labelKey: "sidebar.meditation",
-    href: "/tools/meditation",
-    icon: "self-improvement",
-    matchPrefix: "/tools/meditation",
+    labelKey: "sidebar.timer",
+    href: "/tools/timer",
+    icon: "timer",
+    matchPrefix: "/tools/timer",
   },
   {
     labelKey: "sidebar.gratitudeLog",

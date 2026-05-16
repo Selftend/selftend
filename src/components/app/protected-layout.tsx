@@ -132,6 +132,7 @@ export default function ProtectedLayout() {
             <Stack.Screen name="tools/index" />
             <Stack.Screen name="tools/mood-tracker" />
             <Stack.Screen name="tools/meditation" />
+            <Stack.Screen name="tools/timer" />
             <Stack.Screen name="tools/act" />
             <Stack.Screen name="tools/gratitude-log" />
             <Stack.Screen name="history" />

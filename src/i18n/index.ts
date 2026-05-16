@@ -7,6 +7,7 @@ import enCbt from "./locales/en/cbt.json";
 import enGratitude from "./locales/en/gratitude.json";
 import enJournal from "./locales/en/journal.json";
 import enMeditation from "./locales/en/meditation.json";
+import enTimer from "./locales/en/timer.json";
 import enMood from "./locales/en/mood.json";
 import enModules from "./locales/en/modules.json";
 import enSettings from "./locales/en/settings.json";
@@ -20,6 +21,7 @@ import bgCbt from "./locales/bg/cbt.json";
 import bgGratitude from "./locales/bg/gratitude.json";
 import bgJournal from "./locales/bg/journal.json";
 import bgMeditation from "./locales/bg/meditation.json";
+import bgTimer from "./locales/bg/timer.json";
 import bgMood from "./locales/bg/mood.json";
 import bgModules from "./locales/bg/modules.json";
 import bgSettings from "./locales/bg/settings.json";
@@ -41,6 +43,7 @@ i18n.use(initReactI18next).init({
     "gratitude",
     "journal",
     "meditation",
+    "timer",
     "mood",
     "modules",
     "settings",
@@ -57,6 +60,7 @@ i18n.use(initReactI18next).init({
       gratitude: enGratitude,
       journal: enJournal,
       meditation: enMeditation,
+      timer: enTimer,
       mood: enMood,
       modules: enModules,
       settings: enSettings,
@@ -71,6 +75,7 @@ i18n.use(initReactI18next).init({
       gratitude: bgGratitude,
       journal: bgJournal,
       meditation: bgMeditation,
+      timer: bgTimer,
       mood: bgMood,
       modules: bgModules,
       settings: bgSettings,

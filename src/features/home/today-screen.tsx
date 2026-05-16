@@ -314,7 +314,7 @@ export default function TodayScreen() {
                   icon="self-improvement"
                   label={t("today.quickActions.meditate")}
                   onPress={() =>
-                    router.push("/tools/meditation" as Parameters<typeof router.push>[0])
+                    router.push("/modules/meditation" as Parameters<typeof router.push>[0])
                   }
                 />
               </View>
