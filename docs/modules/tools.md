@@ -52,9 +52,9 @@ Working tool routes:
 
 Working gratitude routes (planned — Phase 1):
 
-- `/modules/gratitude` — home (level strip, recent entries, break card)
+- `/modules/gratitude` — home (new-entry CTA, insights, recent entries, break card)
 - `/modules/gratitude/onboarding` — onboarding modal fallback / revisit
-- `/modules/gratitude/new` — create entry (level-aware)
+- `/modules/gratitude/new` — create gratitude journal entry
 - `/modules/gratitude/entries`, `/modules/gratitude/entries/[id]`, `/modules/gratitude/entries/[id]/edit`
 - `/modules/gratitude/favorites` — Favorite Moments collection for starred entries
 - `/modules/gratitude/breaks/[slug]` — individual exercise or science card

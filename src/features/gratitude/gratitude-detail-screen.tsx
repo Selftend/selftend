@@ -128,9 +128,6 @@ export default function GratitudeDetailScreen() {
             </View>
             <View className="flex-row items-center gap-2">
               <Text variant="muted">{when}</Text>
-              <Text className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                {t("detail.levelBadge", { level: entry.level })}
-              </Text>
             </View>
             <View className="flex-row flex-wrap gap-3">
               <Button
@@ -166,157 +163,50 @@ export default function GratitudeDetailScreen() {
             ) : null}
           </View>
 
-          {entry.level === 1 ? (
-            <>
-              {entry.events.length > 0 ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t("detail.eventsTitle")}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <View className="gap-3">
-                      {entry.events.map((event, index) => (
-                        <View key={`${index}-${event}`} className="flex-row gap-3">
-                          <Text className="w-6 text-base font-semibold text-primary">
-                            {index + 1}
-                          </Text>
-                          <Text className="flex-1 text-base leading-6">{event}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  </CardContent>
-                </Card>
-              ) : null}
-
-              {entry.goodMoment.trim().length > 0 ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t("detail.goodMomentTitle")}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Text className="text-base leading-6">{entry.goodMoment.trim()}</Text>
-                  </CardContent>
-                </Card>
-              ) : null}
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("detail.itemsTitle")}</CardTitle>
-                  <CardDescription>{t("detail.itemsDescription")}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <View className="gap-3">
-                    {entry.items.map((item, index) => (
-                      <View key={`${index}-${item}`} className="flex-row gap-3">
-                        <Text className="w-6 text-base font-semibold text-primary">
-                          {index + 1}
-                        </Text>
-                        <Text className="flex-1 text-base leading-6">{item}</Text>
-                      </View>
-                    ))}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("detail.itemsTitle")}</CardTitle>
+              <CardDescription>{t("detail.itemsDescription")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-3">
+                {entry.items.map((item, index) => (
+                  <View key={`${index}-${item}`} className="flex-row gap-3">
+                    <Text className="w-6 text-base font-semibold text-primary">{index + 1}</Text>
+                    <Text className="flex-1 text-base leading-6">{item}</Text>
                   </View>
-                </CardContent>
-              </Card>
-            </>
+                ))}
+              </View>
+            </CardContent>
+          </Card>
+
+          {entry.lifeItems.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("detail.lifeItemsTitle")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <View className="gap-3">
+                  {entry.lifeItems.map((item, index) => (
+                    <View key={`${index}-${item}`} className="flex-row gap-3">
+                      <Text className="w-6 text-base font-semibold text-primary">{index + 1}</Text>
+                      <Text className="flex-1 text-base leading-6">{item}</Text>
+                    </View>
+                  ))}
+                </View>
+              </CardContent>
+            </Card>
           ) : null}
 
-          {entry.level === 2 ? (
-            <>
-              {entry.missIfGone.trim().length > 0 ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t("detail.missIfGoneTitle")}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Text className="text-base leading-6">{entry.missIfGone.trim()}</Text>
-                  </CardContent>
-                </Card>
-              ) : null}
-
-              {entry.hiddenGood.trim().length > 0 ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t("detail.hiddenGoodTitle")}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Text className="text-base leading-6">{entry.hiddenGood.trim()}</Text>
-                  </CardContent>
-                </Card>
-              ) : null}
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("detail.itemsTitle")}</CardTitle>
-                  <CardDescription>{t("detail.itemsDescription")}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <View className="gap-3">
-                    {entry.items.map((item, index) => (
-                      <View key={`${index}-${item}`} className="flex-row gap-3">
-                        <Text className="w-6 text-base font-semibold text-primary">
-                          {index + 1}
-                        </Text>
-                        <Text className="flex-1 text-base leading-6">{item}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </CardContent>
-              </Card>
-            </>
-          ) : null}
-
-          {entry.level === 3 ? (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("detail.itemsTitle")}</CardTitle>
-                  <CardDescription>{t("detail.itemsDescription")}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <View className="gap-3">
-                    {entry.items.map((item, index) => (
-                      <View key={`${index}-${item}`} className="flex-row gap-3">
-                        <Text className="w-6 text-base font-semibold text-primary">
-                          {index + 1}
-                        </Text>
-                        <Text className="flex-1 text-base leading-6">{item}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </CardContent>
-              </Card>
-
-              {entry.lifeItems.length > 0 ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t("detail.lifeItemsTitle")}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <View className="gap-3">
-                      {entry.lifeItems.map((item, index) => (
-                        <View key={`${index}-${item}`} className="flex-row gap-3">
-                          <Text className="w-6 text-base font-semibold text-primary">
-                            {index + 1}
-                          </Text>
-                          <Text className="flex-1 text-base leading-6">{item}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  </CardContent>
-                </Card>
-              ) : null}
-
-              {entry.note.trim().length > 0 ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t("detail.noteTitle")}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Text className="text-base leading-6">{entry.note.trim()}</Text>
-                  </CardContent>
-                </Card>
-              ) : null}
-            </>
+          {entry.note.trim().length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("detail.noteTitle")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Text className="text-base leading-6">{entry.note.trim()}</Text>
+              </CardContent>
+            </Card>
           ) : null}
 
           <Card>

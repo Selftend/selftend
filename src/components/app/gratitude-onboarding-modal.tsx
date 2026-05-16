@@ -1,4 +1,4 @@
-import { Modal, Pressable, ScrollView, View } from "react-native";
+import { Modal, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,25 +6,17 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { cn } from "@/lib/utils";
-import type { GratitudeLevel } from "@/src/features/modules/types";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
-type Step = "welcome" | "levels" | "frequency" | "pick";
+type Step = "welcome" | "levels" | "frequency";
 
-const STEP_ORDER: Step[] = ["welcome", "levels", "frequency", "pick"];
-
-const LEVELS: GratitudeLevel[] = [1, 2, 3];
-
-export interface GratitudeOnboardingResult {
-  defaultLevel: GratitudeLevel;
-}
+const STEP_ORDER: Step[] = ["welcome", "levels", "frequency"];
 
 interface Props {
   visible: boolean;
   isPending?: boolean;
   errorMessage?: string;
-  onComplete: (result: GratitudeOnboardingResult) => void;
+  onComplete: () => void;
   onDismiss?: () => void;
 }
 
@@ -39,7 +31,6 @@ export function GratitudeOnboarding({
   const reduceMotionEnabled = useReduceMotionEnabled();
 
   const [step, setStep] = useState<Step>("welcome");
-  const [selectedLevel, setSelectedLevel] = useState<GratitudeLevel>(1);
 
   const stepIndex = STEP_ORDER.indexOf(step);
 
@@ -48,9 +39,6 @@ export function GratitudeOnboarding({
   }
   function goBack() {
     if (stepIndex > 0) setStep(STEP_ORDER[stepIndex - 1]);
-  }
-  function handleFinish() {
-    onComplete({ defaultLevel: selectedLevel });
   }
 
   return (
@@ -154,53 +142,9 @@ export function GratitudeOnboarding({
                 </CardContent>
               </Card>
               <View className="gap-3">
-                <Button onPress={goNext}>
-                  <Text>{t("onboarding.frequency.continue")}</Text>
-                </Button>
-                <Button onPress={goBack} variant="ghost">
-                  <Text>{t("onboarding.back")}</Text>
-                </Button>
-              </View>
-            </View>
-          ) : null}
-
-          {step === "pick" ? (
-            <View className="gap-6">
-              <View className="gap-3">
-                <Text variant="h2" className="text-center">
-                  {t("onboarding.pick.title")}
-                </Text>
-                <Text variant="muted" className="text-center">
-                  {t("onboarding.pick.subtitle")}
-                </Text>
-              </View>
-
-              <View className="gap-3">
-                {LEVELS.map((level) => (
-                  <Pressable
-                    key={level}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: selectedLevel === level }}
-                    onPress={() => setSelectedLevel(level)}
-                    className={cn(
-                      "rounded-2xl border p-4 gap-2",
-                      selectedLevel === level
-                        ? "border-primary bg-primary/5"
-                        : "border-border bg-card active:bg-accent/40",
-                    )}
-                  >
-                    <Text className="font-semibold">{t(`onboarding.pick.level${level}Title`)}</Text>
-                    <Text variant="muted" className="text-sm">
-                      {t(`onboarding.pick.level${level}Body`)}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <View className="gap-3">
-                <Button disabled={isPending} onPress={handleFinish}>
+                <Button disabled={isPending} onPress={onComplete}>
                   <Text>
-                    {isPending ? t("onboarding.pick.saving") : t("onboarding.pick.finish")}
+                    {isPending ? t("onboarding.finish.saving") : t("onboarding.finish.start")}
                   </Text>
                 </Button>
                 {errorMessage ? (

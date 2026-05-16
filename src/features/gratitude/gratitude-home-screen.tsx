@@ -8,10 +8,7 @@ import { BackButton } from "@/src/components/app/back-button";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import {
-  GratitudeOnboarding,
-  type GratitudeOnboardingResult,
-} from "@/src/components/app/gratitude-onboarding-modal";
+import { GratitudeOnboarding } from "@/src/components/app/gratitude-onboarding-modal";
 import { GRATITUDE_BREAKS } from "@/src/features/gratitude/breaks";
 import {
   getFavoriteGratitudeEntries,
@@ -23,11 +20,9 @@ import {
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
-import { mergeUserPreferences, type GratitudeLevel } from "@/src/features/modules/types";
+import { mergeUserPreferences } from "@/src/features/modules/types";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/src/providers/session-provider";
-
-const LEVELS: GratitudeLevel[] = [1, 2, 3];
 
 export default function GratitudeHomeScreen() {
   const { t } = useTranslation("gratitude");
@@ -46,36 +41,27 @@ export default function GratitudeHomeScreen() {
     !prefsLoading && Boolean(preferences) && !preferences?.gratitudeOnboardingCompleted;
   const showOnboarding = onboardingNeeded || forceOnboarding;
 
-  const currentLevel = (preferences?.gratitudeDefaultLevel ?? 1) as GratitudeLevel;
   const allEntries = useMemo(() => entries ?? [], [entries]);
   const recentList = useMemo(() => allEntries.slice(0, 7), [allEntries]);
   const frequencyBuckets = useMemo(() => getGratitudeFrequencyBuckets(allEntries), [allEntries]);
   const themes = useMemo(() => getGratitudeThemes(allEntries, 6), [allEntries]);
   const favoriteCount = useMemo(() => getFavoriteGratitudeEntries(allEntries).length, [allEntries]);
 
-  async function handleOnboardingComplete(result: GratitudeOnboardingResult) {
+  async function handleOnboardingComplete() {
     if (!preferences) return;
     setOnboardingError(undefined);
     try {
       await updatePreferences.mutateAsync(
         mergeUserPreferences(preferences, {
           gratitudeOnboardingCompleted: true,
-          gratitudeDefaultLevel: result.defaultLevel,
         }),
       );
       setForceOnboarding(false);
     } catch (error) {
-      const fallback = t("onboarding.pick.error");
+      const fallback = t("onboarding.finish.error");
       const detail = error instanceof Error ? error.message : null;
       setOnboardingError(detail ? `${fallback} (${detail})` : fallback);
     }
-  }
-
-  async function handleLevelChange(level: GratitudeLevel) {
-    if (!preferences || level === currentLevel) return;
-    await updatePreferences.mutateAsync(
-      mergeUserPreferences(preferences, { gratitudeDefaultLevel: level }),
-    );
   }
 
   if (prefsLoading) {
@@ -92,7 +78,7 @@ export default function GratitudeHomeScreen() {
         visible={showOnboarding}
         isPending={updatePreferences.isPending}
         errorMessage={onboardingError}
-        onComplete={(result) => void handleOnboardingComplete(result)}
+        onComplete={() => void handleOnboardingComplete()}
         onDismiss={forceOnboarding ? () => setForceOnboarding(false) : undefined}
       />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -114,43 +100,9 @@ export default function GratitudeHomeScreen() {
               <Text variant="muted">{t("home.subtitle")}</Text>
             </View>
 
-            <View className="gap-2">
-              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {t("home.levelLabel")}
-              </Text>
-              <View className="flex-row gap-2">
-                {LEVELS.map((level) => (
-                  <Pressable
-                    key={level}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: currentLevel === level }}
-                    onPress={() => void handleLevelChange(level)}
-                    className={cn(
-                      "flex-1 items-center rounded-xl border py-3 gap-1",
-                      currentLevel === level
-                        ? "border-primary bg-primary/5"
-                        : "border-border bg-card active:bg-accent/40",
-                    )}
-                  >
-                    <Text
-                      className={cn(
-                        "text-sm font-bold",
-                        currentLevel === level ? "text-primary" : "text-foreground",
-                      )}
-                    >
-                      {t(`home.level${level}Name`)}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-
             <Button
               onPress={() =>
-                router.push({
-                  pathname: "/modules/gratitude/new",
-                  params: { level: String(currentLevel) },
-                })
+                router.push("/modules/gratitude/new" as Parameters<typeof router.push>[0])
               }
               className="self-start"
             >

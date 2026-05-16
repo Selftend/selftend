@@ -17,14 +17,12 @@ import {
   useSaveGratitudeEntry,
 } from "@/src/features/gratitude/queries";
 import {
-  GRATITUDE_EVENT_COUNT,
   GRATITUDE_ITEM_COUNT,
   GRATITUDE_ITEM_MAX,
   GRATITUDE_LIFE_ITEM_COUNT,
   GRATITUDE_NOTE_MAX,
 } from "@/src/features/gratitude/schemas";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import type { GratitudeLevel } from "@/src/features/modules/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -32,12 +30,10 @@ interface GratitudeEntryEditorScreenProps {
   fallbackHref: string;
   mode: "create" | "edit";
   entryId?: string | null;
-  defaultLevel?: GratitudeLevel;
 }
 
 const EMPTY_ITEMS = Array.from({ length: GRATITUDE_ITEM_COUNT }, () => "");
 const EMPTY_LIFE_ITEMS = Array.from({ length: GRATITUDE_LIFE_ITEM_COUNT }, () => "");
-const EMPTY_EVENTS = Array.from({ length: GRATITUDE_EVENT_COUNT }, () => "");
 
 function asStringArray(value: unknown) {
   return Array.isArray(value)
@@ -54,7 +50,6 @@ export function GratitudeEntryEditorScreen({
   fallbackHref,
   mode,
   entryId = null,
-  defaultLevel = 3,
 }: GratitudeEntryEditorScreenProps) {
   const { t } = useTranslation("gratitude");
   const { user } = useSession();
@@ -72,19 +67,9 @@ export function GratitudeEntryEditorScreen({
   );
   const existingEntry: GratitudeEntry | null = editMode ? (fromCache ?? fetched ?? null) : null;
 
-  const level: GratitudeLevel = existingEntry?.level ?? defaultLevel;
-
   const saveMutation = useSaveGratitudeEntry(user?.id ?? null);
 
-  // Level 1 state
-  const [events, setEvents] = useState<string[]>(EMPTY_EVENTS);
-  const [goodMoment, setGoodMoment] = useState("");
-  // Level 2 state
-  const [missIfGone, setMissIfGone] = useState("");
-  const [hiddenGood, setHiddenGood] = useState("");
-  // All levels: main gratitude items
   const [items, setItems] = useState<string[]>(EMPTY_ITEMS);
-  // Level 3: life items + note
   const [lifeItems, setLifeItems] = useState<string[]>(EMPTY_LIFE_ITEMS);
   const [note, setNote] = useState("");
 
@@ -101,14 +86,6 @@ export function GratitudeEntryEditorScreen({
       existingEntry.items[4] ?? "",
     ]);
     setNote(existingEntry.note);
-    setEvents([
-      existingEntry.events[0] ?? "",
-      existingEntry.events[1] ?? "",
-      existingEntry.events[2] ?? "",
-    ]);
-    setGoodMoment(existingEntry.goodMoment);
-    setMissIfGone(existingEntry.missIfGone);
-    setHiddenGood(existingEntry.hiddenGood);
     setLifeItems([
       existingEntry.lifeItems[0] ?? "",
       existingEntry.lifeItems[1] ?? "",
@@ -139,8 +116,6 @@ export function GratitudeEntryEditorScreen({
     setItems((prev) => prev.map((v, i) => (i === index ? value : v)));
   const updateLifeItem = (index: number, value: string) =>
     setLifeItems((prev) => prev.map((v, i) => (i === index ? value : v)));
-  const updateEvent = (index: number, value: string) =>
-    setEvents((prev) => prev.map((v, i) => (i === index ? value : v)));
 
   const handleSave = async () => {
     if (!user) return;
@@ -152,13 +127,13 @@ export function GratitudeEntryEditorScreen({
     try {
       const saved = await saveMutation.mutateAsync({
         input: {
-          level,
+          level: 3,
           items: trimmedItems.map((item) => item.slice(0, GRATITUDE_ITEM_MAX)),
           note: note.trim().slice(0, GRATITUDE_NOTE_MAX),
-          events: events.map((e) => e.trim()).filter((e) => e.length > 0),
-          goodMoment: goodMoment.trim().slice(0, GRATITUDE_ITEM_MAX),
-          missIfGone: missIfGone.trim().slice(0, GRATITUDE_ITEM_MAX),
-          hiddenGood: hiddenGood.trim().slice(0, GRATITUDE_ITEM_MAX),
+          events: [],
+          goodMoment: "",
+          missIfGone: "",
+          hiddenGood: "",
           lifeItems: lifeItems.map((s) => s.trim()).filter((s) => s.length > 0),
         },
         entryId: editMode ? (entryId ?? undefined) : undefined,
@@ -203,22 +178,6 @@ export function GratitudeEntryEditorScreen({
     );
   }
 
-  const levelTitleKey = editMode
-    ? "editor.editTitle"
-    : level === 1
-      ? "editor.level1Title"
-      : level === 2
-        ? "editor.level2Title"
-        : "editor.createTitle";
-
-  const levelDescKey = editMode
-    ? "editor.editDescription"
-    : level === 1
-      ? "editor.level1Description"
-      : level === 2
-        ? "editor.level2Description"
-        : "editor.createDescription";
-
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow gap-6 p-6 pb-12">
@@ -230,138 +189,58 @@ export function GratitudeEntryEditorScreen({
               showLabel={false}
               className="-ml-2"
             />
-            <Text variant="h1">{t(levelTitleKey)}</Text>
+            <Text variant="h1">{editMode ? t("editor.editTitle") : t("editor.createTitle")}</Text>
           </View>
-          <Text variant="muted">{t(levelDescKey)}</Text>
+          <Text variant="muted">
+            {editMode ? t("editor.editDescription") : t("editor.createDescription")}
+          </Text>
         </View>
 
-        {level === 1 ? (
-          <>
-            <View className="gap-4">
-              <Label>{t("editor.eventsLabel")}</Label>
-              {events.map((event, index) => (
-                <View className="gap-2" key={index}>
-                  <Input
-                    accessibilityLabel={t("editor.eventLabel", { number: index + 1 })}
-                    maxLength={GRATITUDE_ITEM_MAX}
-                    onChangeText={(value) => updateEvent(index, value)}
-                    placeholder={t("editor.eventPlaceholder")}
-                    value={event}
-                  />
-                </View>
-              ))}
-            </View>
-
-            <View className="gap-2">
-              <Label>{t("editor.goodMomentLabel")}</Label>
+        <View className="gap-4">
+          <Label>{t("editor.todayItemsLabel")}</Label>
+          {items.map((item, index) => (
+            <View className="gap-2" key={index}>
               <Input
-                accessibilityLabel={t("editor.goodMomentLabel")}
+                accessibilityLabel={t("editor.itemLabel", { number: index + 1 })}
                 maxLength={GRATITUDE_ITEM_MAX}
-                onChangeText={setGoodMoment}
-                placeholder={t("editor.goodMomentPlaceholder")}
-                value={goodMoment}
+                onChangeText={(value) => updateItem(index, value)}
+                placeholder={rotatingPlaceholder(
+                  todaySuggestionPlaceholders,
+                  placeholderOffset,
+                  index,
+                  itemPlaceholderFallback,
+                )}
+                value={item}
               />
             </View>
+          ))}
+        </View>
 
-            <View className="gap-2">
-              <Label>{t("editor.itemLabel", { number: 1 })}</Label>
+        <View className="gap-4">
+          <Label>{t("editor.lifeItemsLabel")}</Label>
+          {lifeItems.map((item, index) => (
+            <View className="gap-2" key={index}>
               <Input
-                accessibilityLabel={t("editor.gratefulTodayLabel")}
+                accessibilityLabel={t("editor.lifeItemLabel", { number: index + 1 })}
                 maxLength={GRATITUDE_ITEM_MAX}
-                onChangeText={(value) => updateItem(0, value)}
-                placeholder={t("editor.gratefulTodayPlaceholder")}
-                value={items[0]}
+                onChangeText={(value) => updateLifeItem(index, value)}
+                placeholder={t("editor.lifeItemPlaceholder")}
+                value={item}
               />
             </View>
-          </>
-        ) : null}
+          ))}
+        </View>
 
-        {level === 2 ? (
-          <>
-            <View className="gap-2">
-              <Label>{t("editor.missIfGoneLabel")}</Label>
-              <Input
-                accessibilityLabel={t("editor.missIfGoneLabel")}
-                maxLength={GRATITUDE_ITEM_MAX}
-                onChangeText={setMissIfGone}
-                placeholder={t("editor.missIfGonePlaceholder")}
-                value={missIfGone}
-              />
-            </View>
-
-            <View className="gap-2">
-              <Label>{t("editor.hiddenGoodLabel")}</Label>
-              <Input
-                accessibilityLabel={t("editor.hiddenGoodLabel")}
-                maxLength={GRATITUDE_ITEM_MAX}
-                onChangeText={setHiddenGood}
-                placeholder={t("editor.hiddenGoodPlaceholder")}
-                value={hiddenGood}
-              />
-            </View>
-
-            <View className="gap-2">
-              <Label>{t("editor.gratefulTodayLabel")}</Label>
-              <Input
-                accessibilityLabel={t("editor.gratefulTodayLabel")}
-                maxLength={GRATITUDE_ITEM_MAX}
-                onChangeText={(value) => updateItem(0, value)}
-                placeholder={t("editor.itemPlaceholder")}
-                value={items[0]}
-              />
-            </View>
-          </>
-        ) : null}
-
-        {level === 3 ? (
-          <>
-            <View className="gap-4">
-              <Label>{t("editor.todayItemsLabel")}</Label>
-              {items.map((item, index) => (
-                <View className="gap-2" key={index}>
-                  <Input
-                    accessibilityLabel={t("editor.itemLabel", { number: index + 1 })}
-                    maxLength={GRATITUDE_ITEM_MAX}
-                    onChangeText={(value) => updateItem(index, value)}
-                    placeholder={rotatingPlaceholder(
-                      todaySuggestionPlaceholders,
-                      placeholderOffset,
-                      index,
-                      itemPlaceholderFallback,
-                    )}
-                    value={item}
-                  />
-                </View>
-              ))}
-            </View>
-
-            <View className="gap-4">
-              <Label>{t("editor.lifeItemsLabel")}</Label>
-              {lifeItems.map((item, index) => (
-                <View className="gap-2" key={index}>
-                  <Input
-                    accessibilityLabel={t("editor.lifeItemLabel", { number: index + 1 })}
-                    maxLength={GRATITUDE_ITEM_MAX}
-                    onChangeText={(value) => updateLifeItem(index, value)}
-                    placeholder={t("editor.lifeItemPlaceholder")}
-                    value={item}
-                  />
-                </View>
-              ))}
-            </View>
-
-            <View className="gap-2">
-              <Label>{t("editor.noteLabel")}</Label>
-              <Textarea
-                accessibilityLabel={t("editor.noteLabel")}
-                maxLength={GRATITUDE_NOTE_MAX}
-                onChangeText={setNote}
-                placeholder={t("editor.notePlaceholder")}
-                value={note}
-              />
-            </View>
-          </>
-        ) : null}
+        <View className="gap-2">
+          <Label>{t("editor.noteLabel")}</Label>
+          <Textarea
+            accessibilityLabel={t("editor.noteLabel")}
+            maxLength={GRATITUDE_NOTE_MAX}
+            onChangeText={setNote}
+            placeholder={t("editor.notePlaceholder")}
+            value={note}
+          />
+        </View>
 
         {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
 

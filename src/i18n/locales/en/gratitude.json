@@ -7,10 +7,6 @@
   "home": {
     "title": "Gratitude",
     "subtitle": "Notice what's good. Write it down. No pressure, no streaks.",
-    "levelLabel": "Practice level",
-    "level1Name": "Level 1",
-    "level2Name": "Level 2",
-    "level3Name": "Level 3",
     "viewAll": "View all"
   },
   "insights": {
@@ -40,13 +36,13 @@
     },
     "levels": {
       "title": "Three Levels of Practice",
-      "subtitle": "You can move between levels at any time. There is no wrong choice.",
+      "subtitle": "The journal teaches gratitude as a progression: notice, appreciate, then write regularly.",
       "level1Title": "Level 1 — Noticing",
       "level1Body": "Simply report what happened today without judgment. A good meal, a calm moment, a conversation. Nothing is too small.",
       "level2Title": "Level 2 — Reflecting & Appreciating",
       "level2Body": "Think about what you would miss if it were gone. Notice things you usually take for granted — running water, sunlight, a friend nearby.",
       "level3Title": "Level 3 — Practicing Gratitude",
-      "level3Body": "Write sentences starting with \"I'm grateful for…\" — for today and for your life. Aim for one to three times a week.",
+      "level3Body": "The ongoing practice brings the earlier steps together: notice what's here, appreciate it, and write \"I'm grateful for…\" reflections.",
       "continue": "Continue"
     },
     "frequency": {
@@ -56,16 +52,8 @@
       "note": "There is no minimum. If you skip a few days, just pick it up again. You can't fail at this.",
       "continue": "Continue"
     },
-    "pick": {
-      "title": "Where Would You Like to Start?",
-      "subtitle": "You can change this any time from the home screen.",
-      "level1Title": "Level 1 — Noticing",
-      "level1Body": "Report small daily events without judgment. Good for beginners or days when you have little energy.",
-      "level2Title": "Level 2 — Reflecting & Appreciating",
-      "level2Body": "Focus on what you would miss if it were gone. Builds on noticing.",
-      "level3Title": "Level 3 — Practicing Gratitude",
-      "level3Body": "Write \"I'm grateful for…\" sentences regularly. The most studied form of gratitude practice.",
-      "finish": "Start",
+    "finish": {
+      "start": "Start",
       "saving": "Saving…",
       "error": "Couldn't save your preferences. Try again."
     }
@@ -87,23 +75,8 @@
     "editTitle": "Edit gratitude entry",
     "createDescription": "Write one to five things you appreciated. Small counts.",
     "editDescription": "Update what you noticed earlier.",
-    "level1Title": "New entry — Noticing",
-    "level1Description": "Notice small events from today. Any moment counts.",
-    "level2Title": "New entry — Reflecting",
-    "level2Description": "What would you miss if it were gone?",
     "itemLabel": "Gratitude {{number}}",
     "itemPlaceholder": "A small thing that mattered.",
-    "eventsLabel": "Events from today",
-    "eventLabel": "Event {{number}}",
-    "eventPlaceholder": "Something that happened today.",
-    "goodMomentLabel": "Best moment",
-    "goodMomentPlaceholder": "A good moment from today.",
-    "gratefulTodayLabel": "Grateful for today",
-    "gratefulTodayPlaceholder": "Something you're grateful for today.",
-    "missIfGoneLabel": "What would you miss if it were gone?",
-    "missIfGonePlaceholder": "Something easy to overlook.",
-    "hiddenGoodLabel": "A hidden good",
-    "hiddenGoodPlaceholder": "Something usually taken for granted.",
     "todayItemsLabel": "Grateful for today",
     "todaySuggestionPlaceholders": [
       "What made you laugh?",
@@ -129,13 +102,8 @@
     "unfavorite": "Favorited",
     "edit": "Edit",
     "delete": "Delete",
-    "levelBadge": "Level {{level}}",
     "itemsTitle": "Things noticed",
     "itemsDescription": "Saved privately for your own reflection.",
-    "eventsTitle": "Events noticed",
-    "goodMomentTitle": "Good moment",
-    "missIfGoneTitle": "Would miss if gone",
-    "hiddenGoodTitle": "Hidden good",
     "lifeItemsTitle": "Grateful for (life)",
     "noteTitle": "Note",
     "loggedAt": "Logged",

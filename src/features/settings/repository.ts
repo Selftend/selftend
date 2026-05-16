@@ -2,16 +2,10 @@ import {
   defaultUserPreferences,
   sanitizeEnabledModules,
   type CookieConsent,
-  type GratitudeLevel,
   type UserPreferences,
 } from "@/src/features/modules/types";
 import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
 import { requireSupabase } from "@/src/lib/supabase";
-
-function sanitizeGratitudeLevel(value: number | null): GratitudeLevel {
-  if (value === 2 || value === 3) return value;
-  return 1;
-}
 
 interface UserPreferenceRow {
   user_id: string;
@@ -31,7 +25,6 @@ interface UserPreferenceRow {
   meditation_onboarding_completed: boolean | null;
   meditation_info_completed: boolean | null;
   gratitude_onboarding_completed: boolean | null;
-  gratitude_default_level: number | null;
   privacy_policy_accepted_at: string | null;
   terms_accepted_at: string | null;
   policy_version_accepted: string | null;
@@ -65,7 +58,6 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     meditationOnboardingCompleted: Boolean(row.meditation_onboarding_completed),
     meditationInfoCompleted: Boolean(row.meditation_info_completed),
     gratitudeOnboardingCompleted: Boolean(row.gratitude_onboarding_completed),
-    gratitudeDefaultLevel: sanitizeGratitudeLevel(row.gratitude_default_level),
     privacyPolicyAcceptedAt: row.privacy_policy_accepted_at ?? null,
     termsAcceptedAt: row.terms_accepted_at ?? null,
     policyVersionAccepted: row.policy_version_accepted ?? null,
@@ -114,7 +106,6 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
         meditation_onboarding_completed: preferences.meditationOnboardingCompleted,
         meditation_info_completed: preferences.meditationInfoCompleted,
         gratitude_onboarding_completed: preferences.gratitudeOnboardingCompleted,
-        gratitude_default_level: preferences.gratitudeDefaultLevel,
         privacy_policy_accepted_at: preferences.privacyPolicyAcceptedAt,
         terms_accepted_at: preferences.termsAcceptedAt,
         policy_version_accepted: preferences.policyVersionAccepted,

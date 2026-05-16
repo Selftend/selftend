@@ -98,14 +98,9 @@ function GratitudeEntryRow({ entry }: GratitudeEntryRowProps) {
         <Text className="flex-1 text-base font-semibold" numberOfLines={1}>
           {firstItem}
         </Text>
-        <View className="flex-row items-center gap-2">
-          <Text className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-            {t("detail.levelBadge", { level: entry.level })}
-          </Text>
-          <Text variant="muted" className="text-xs">
-            {when}
-          </Text>
-        </View>
+        <Text variant="muted" className="text-xs">
+          {when}
+        </Text>
       </View>
       <Text variant="muted" className="text-sm">
         {t("list.itemsCount", { count: entry.items.length })}
