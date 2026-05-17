@@ -209,7 +209,7 @@ npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_pro
 
 ## Linked project status
 
-As of 2026-05-15, the active linked project is aligned with the checked-in migration history through `20260519_expanded_thought_records.sql`. The migration history was repaired on 2026-05-05, the onboarding flags migration was applied on 2026-05-06, the reminder consent timestamp migration was applied on 2026-05-06, the browser push subscription migration was applied on 2026-05-06, and the CBT strategy migrations were applied on 2026-05-15:
+As of 2026-05-17, the active linked project is aligned with the checked-in migration history through `20260534_tool_onboardings.sql`. The migration history was repaired on 2026-05-05, the onboarding flags migration was applied on 2026-05-06, the reminder consent timestamp migration was applied on 2026-05-06, the browser push subscription migration was applied on 2026-05-06, the CBT strategy migrations were applied on 2026-05-15, and the tool-onboarding migrations were applied on 2026-05-17:
 
 - the old remote `20260503` history row was reverted
 - the local consent/deletion migration was renamed to `20260503000000_consent_and_deletion.sql`
@@ -217,7 +217,9 @@ As of 2026-05-15, the active linked project is aligned with the checked-in migra
 - `20260504_add_language_preference.sql` was applied with `supabase db push`
 - `20260507000000_reminder_consent_timestamp.sql` was applied with `supabase db push --yes`
 - `20260508000000_web_push_notifications.sql` was applied with `supabase db push --yes`
-- `20260514_cbt_phase1.sql`, `20260515_cbt_phase3.sql`, `20260516_cbt_phase4.sql`, `20260517_cbt_phase5.sql`, `20260518_cbt_export_coverage.sql`, and `20260519_expanded_thought_records.sql` were applied with `supabase db push --yes`
+- `20260514_cbt_phase1.sql`, `20260515_cbt_phase3.sql`, `20260516000000_cbt_phase4.sql`, `20260517_cbt_phase5.sql`, `20260518_cbt_export_coverage.sql`, and `20260519_expanded_thought_records.sql` were applied with `supabase db push --yes`
+- the legacy remote `20260516` history row was reverted and replaced with `20260516000000` on 2026-05-17 because it conflicted with the later `20260516172952_meditation_info_onboarding.sql` version in Supabase CLI migration matching
+- `20260533_cbt_wizard.sql` and `20260534_tool_onboardings.sql` were applied with `supabase db push --yes --include-all`
 
 - `profiles` includes the avatar columns from `20260503120000_profile_avatars.sql`
 - `profile-pics` exists as a private bucket with a 5 MB limit and JPEG/PNG/WebP MIME types
