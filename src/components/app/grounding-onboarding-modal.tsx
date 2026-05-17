@@ -2,11 +2,14 @@ import { Modal, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+
+const groundingOnboardingImage = require("../../../assets/images/onboarding/grounding-anchor-alt-badge.png");
 
 interface Props {
   visible: boolean;
@@ -35,9 +38,10 @@ export function GroundingOnboarding({
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
           <View className="items-center gap-3">
-            <View className="size-20 items-center justify-center rounded-2xl bg-be/15">
-              <Icon name="anchor" className="size-10 text-be" />
-            </View>
+            <OnboardingIllustration
+              accessibilityLabel={t("grounding.onboarding.welcome.title")}
+              source={groundingOnboardingImage}
+            />
             <Text variant="h2" className="text-center">
               {t("grounding.onboarding.welcome.title")}
             </Text>

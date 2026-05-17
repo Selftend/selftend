@@ -1,5 +1,6 @@
-import { ActivityIndicator, Modal, View } from "react-native";
+import { ActivityIndicator, Modal, type ImageSourcePropType, View } from "react-native";
 
+import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
@@ -15,6 +16,8 @@ interface OnboardingModalProps {
   actionLabel: string;
   body: string[];
   errorMessage?: string;
+  imageAccessibilityLabel?: string;
+  imageSource?: ImageSourcePropType;
   isPending?: boolean;
   onComplete: () => void;
   title: string;
@@ -25,6 +28,8 @@ export function OnboardingModal({
   actionLabel,
   body,
   errorMessage,
+  imageAccessibilityLabel,
+  imageSource,
   isPending = false,
   onComplete,
   title,
@@ -42,6 +47,14 @@ export function OnboardingModal({
       <View className="flex-1 items-center justify-center bg-black/50 p-6">
         <Card className="w-full max-w-lg">
           <CardHeader>
+            {imageSource ? (
+              <OnboardingIllustration
+                accessibilityLabel={imageAccessibilityLabel ?? title}
+                height={190}
+                source={imageSource}
+                width={220}
+              />
+            ) : null}
             <CardTitle>{title}</CardTitle>
             <CardDescription>{body[0]}</CardDescription>
           </CardHeader>

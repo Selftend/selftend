@@ -140,7 +140,7 @@ Mirrors `src/components/app/gratitude-onboarding-modal.tsx` and `meditation-onbo
 
 **Step 1 — Welcome: Small Habits, Remarkable Results**
 
-- Hero illustration adapted from the supplied infographic (the four-law habit loop circle + 1% compounding curve). Asset path: `assets/images/onboarding/habits-loop.png`.
+- Hero illustration from the shared onboarding badge set. Asset path: `assets/images/onboarding/app-journey-growth-badge.png`.
 - Two-sentence summary attributing the framework to _Atomic Habits_ by James Clear and explaining that the practice is about small, repeatable systems — not motivation spikes.
 - Two cards:
   - **The 1% Compounding Effect** — improving 1% daily compounds ~37× in a year; symmetrically, 1% worse decays toward zero.
@@ -149,18 +149,19 @@ Mirrors `src/components/app/gratitude-onboarding-modal.tsx` and `meditation-onbo
 
 **Step 2 — The Habit Loop & Four Laws**
 
-- Hero illustration adapted from the habit-loop circle infographic (Cue → Craving → Response → Reward). Asset path: `assets/images/onboarding/habits-four-laws.png`.
+- The four laws are shown as compact icon rows in the current modal; there is no standalone Step 2 hero image.
 - One short paragraph per Law (Make It Obvious / Attractive / Easy / Satisfying), each with a one-line example pulled from the workbook strategy table.
 - Footer line introduces the **inverse laws** for breaking habits in a single sentence — full inverse-law support arrives in Phase 3.
 
 **Step 3 — Identity-Based Habits**
 
-- Hero illustration adapted from the "Identity" silhouette in the supplied infographic. Asset path: `assets/images/onboarding/habits-identity.png`.
+- The identity section is a text card in the current modal; there is no standalone Step 3 hero image.
 - Body: every habit is a vote for an identity. Instead of _"I want to run a marathon,"_ frame it as _"I'm a runner."_ The new-habit form has a dedicated identity prompt.
 - Note: this prompt is always optional. Leaving it blank is fine.
 
 **Step 4 — Never Miss Twice & The Two-Minute Rule**
 
+- Tracker illustration from the shared onboarding badge set. Asset path: `assets/images/onboarding/habits-tracker-garden-badge.png`.
 - Two cards:
   - **The Two-Minute Rule** — scale the habit until it takes < 2 minutes to start. _"Read one page,"_ not _"Read for an hour."_ The new-habit form will ask for the two-minute version.
   - **Never Miss Twice** — missing once is data; missing twice starts a new habit. Selftend will never punish a missed day, but the home screen quietly notes when you're at risk of missing twice so you can choose to come back.
@@ -271,16 +272,15 @@ Phase 1 is ready to ship when:
 - RLS policies scoped to `auth.uid()` cover insert, select, update, delete on both tables.
 - Empty and list states contain no streak, missed-day, or shame language.
 - Schema tests, one repository round-trip test, and one component state test for tap-to-tick toggling.
-- Asset attribution noted in `assets/images/onboarding/README.md` (or equivalent licence note) for any infographic-derived imagery.
+- Asset attribution noted in `assets/images/onboarding/README.md` (or equivalent licence note) for any externally sourced imagery.
 
 ---
 
 ## 13. Asset & Localisation Notes
 
-- Three onboarding illustrations adapted from the supplied infographic (background-free variant):
-  - `assets/images/onboarding/habits-loop.png` — habit-loop circle.
-  - `assets/images/onboarding/habits-four-laws.png` — four-law cycle with icons.
-  - `assets/images/onboarding/habits-identity.png` — identity silhouette.
+- Current onboarding illustrations:
+  - `assets/images/onboarding/app-journey-growth-badge.png` — welcome / compounding.
+  - `assets/images/onboarding/habits-tracker-garden-badge.png` — tracking / never miss twice.
 - Both languages ship together. Translations land in `src/i18n/locales/{en,bg}/habits.json` and the relevant nav keys (`sidebar.habits`, `today.tools.habits`, `today.tools.habitsSub`) already exist — drop the `badgeSoon` once Phase 1 ships.
 
 ---

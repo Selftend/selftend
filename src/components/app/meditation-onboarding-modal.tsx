@@ -2,6 +2,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, View } from "react-nat
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Input } from "@/src/components/react-native-reusables/input";
@@ -19,6 +20,8 @@ const STEP_ORDER: Step[] = ["welcome", "attention", "assessment", "gardener", "c
 const DURATIONS: number[] = [10, 15, 20, 30];
 
 const STAGE_OPTIONS: StageNumber[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+const meditationOnboardingImage = require("../../../assets/images/onboarding/meditation-lake-alt-badge.png");
 
 export interface MeditationOnboardingResult {
   assessedStage: StageNumber;
@@ -112,6 +115,10 @@ export function MeditationOnboarding({
           {step === "welcome" ? (
             <View className="gap-6">
               <View className="items-center gap-3">
+                <OnboardingIllustration
+                  accessibilityLabel={t("onboarding.welcome.title")}
+                  source={meditationOnboardingImage}
+                />
                 <Text variant="h2" className="text-center">
                   {t("onboarding.welcome.title")}
                 </Text>

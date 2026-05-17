@@ -8,8 +8,8 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
-const imgGrowth = require("../../../assets/images/onboarding/habits-growth.png");
-const imgTracker = require("../../../assets/images/onboarding/habits-tracker.png");
+const imgGrowth = require("../../../assets/images/onboarding/app-journey-growth-badge.png");
+const imgTracker = require("../../../assets/images/onboarding/habits-tracker-garden-badge.png");
 
 interface Props {
   visible: boolean;
@@ -40,7 +40,7 @@ export function HabitsOnboarding({
           <View className="items-center gap-3">
             <Image
               source={imgGrowth}
-              style={{ width: 260, height: 260 }}
+              style={{ width: 260, height: 225 }}
               resizeMode="contain"
               accessibilityLabel={t("onboarding.welcome.title")}
             />
@@ -119,7 +119,7 @@ export function HabitsOnboarding({
             </View>
             <Image
               source={imgTracker}
-              style={{ width: 260, height: 260, alignSelf: "center" }}
+              style={{ width: 260, height: 225, alignSelf: "center" }}
               resizeMode="contain"
               accessibilityLabel={t("onboarding.neverMiss.title")}
             />

@@ -7,9 +7,9 @@ import { Card, CardContent, CardTitle } from "@/src/components/react-native-reus
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
-const imgScience = require("../../../assets/images/onboarding/gratitude-science.png");
-const imgLevels = require("../../../assets/images/onboarding/gratitude-levels.png");
-const imgFrequency = require("../../../assets/images/onboarding/gratitude-frequency.png");
+const imgScience = require("../../../assets/images/onboarding/gratitude-flower-growth-badge.png");
+const imgLevels = require("../../../assets/images/onboarding/gratitude-levels-badge.png");
+const imgFrequency = require("../../../assets/images/onboarding/gratitude-frequency-writing-badge.png");
 
 interface Props {
   visible: boolean;
@@ -41,7 +41,7 @@ export function GratitudeOnboarding({
           <View className="items-center gap-3">
             <Image
               source={imgScience}
-              style={{ width: 200, height: 200 }}
+              style={{ width: 240, height: 210 }}
               resizeMode="contain"
               accessibilityLabel={t("onboarding.welcome.title")}
             />
@@ -71,7 +71,7 @@ export function GratitudeOnboarding({
           <View className="items-center gap-3">
             <Image
               source={imgLevels}
-              style={{ width: 200, height: 200 }}
+              style={{ width: 240, height: 210 }}
               resizeMode="contain"
               accessibilityLabel={t("onboarding.levels.title")}
             />
@@ -108,7 +108,7 @@ export function GratitudeOnboarding({
           <View className="items-center gap-3">
             <Image
               source={imgFrequency}
-              style={{ width: 240, height: 160 }}
+              style={{ width: 240, height: 210 }}
               resizeMode="contain"
               accessibilityLabel={t("onboarding.frequency.title")}
             />

@@ -2,11 +2,13 @@ import { Modal, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
-import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+
+const journalOnboardingImage = require("../../../assets/images/onboarding/journal-thoughts-alt-badge.png");
 
 interface Props {
   visible: boolean;
@@ -35,9 +37,10 @@ export function JournalOnboarding({
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
           <View className="items-center gap-3">
-            <View className="size-20 items-center justify-center rounded-2xl bg-primary/15">
-              <Icon name="edit-note" className="size-10 text-primary" />
-            </View>
+            <OnboardingIllustration
+              accessibilityLabel={t("onboarding.welcome.title")}
+              source={journalOnboardingImage}
+            />
             <Text variant="h2" className="text-center">
               {t("onboarding.welcome.title")}
             </Text>

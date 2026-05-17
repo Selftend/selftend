@@ -6,8 +6,8 @@ import { Card, CardContent, CardTitle } from "@/src/components/react-native-reus
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
-const meditationPath = require("../../../assets/images/onboarding/meditation-path.png");
-const meditationCircles = require("../../../assets/images/onboarding/meditation-circles.png");
+const meditationPath = require("../../../assets/images/onboarding/meditation-lake-alt-badge.png");
+const meditationCircles = require("../../../assets/images/onboarding/meditation-lake-badge.png");
 
 interface MeditationInfoProps {
   visible: boolean;
@@ -40,7 +40,7 @@ export function MeditationInfo({ visible, onComplete, onDismiss }: MeditationInf
             <CardContent className="items-center gap-4 pt-6">
               <Image
                 source={meditationPath}
-                style={{ width: 240, height: 180 }}
+                style={{ width: 240, height: 210 }}
                 resizeMode="contain"
                 accessibilityLabel={t("info.heroAlt")}
               />
@@ -58,7 +58,7 @@ export function MeditationInfo({ visible, onComplete, onDismiss }: MeditationInf
               <CardContent className="items-center gap-4 pt-6">
                 <Image
                   source={meditationCircles}
-                  style={{ width: 200, height: 130 }}
+                  style={{ width: 220, height: 190 }}
                   resizeMode="contain"
                   accessibilityLabel={t("info.circlesAlt")}
                 />

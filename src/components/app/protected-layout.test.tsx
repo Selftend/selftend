@@ -129,7 +129,7 @@ describe("ProtectedLayout app onboarding", () => {
 
     expect(screen.getByText("Welcome to Selftend")).toBeTruthy();
 
-    fireEvent.press(screen.getByText("Start using Selftend"));
+    fireEvent.press(screen.getByText("Got it"));
 
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledWith(
