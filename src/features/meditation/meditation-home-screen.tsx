@@ -46,12 +46,7 @@ export default function MeditationHomeScreen() {
 
   const infoNeeded = !prefsLoading && Boolean(preferences) && !preferences?.meditationInfoCompleted;
   const showInfo = infoNeeded || forceInfo;
-  const onboardingNeeded =
-    !prefsLoading &&
-    Boolean(preferences) &&
-    !preferences?.meditationOnboardingCompleted &&
-    !infoNeeded;
-  const showWizard = onboardingNeeded || forceWizard;
+  const showWizard = forceWizard;
 
   const currentStage = (programState?.currentStage ?? 1) as StageNumber;
   const stage = getStage(currentStage);
@@ -123,6 +118,14 @@ export default function MeditationHomeScreen() {
                 <BackButton showLabel={false} className="-ml-2" />
                 <Text variant="h1">{t("module.home.title")}</Text>
                 <Pressable
+                  accessibilityLabel={t("info.wizardHint")}
+                  accessibilityRole="button"
+                  onPress={() => setForceWizard(true)}
+                  hitSlop={8}
+                >
+                  <Icon name="tune" className="text-muted-foreground" size={20} />
+                </Pressable>
+                <Pressable
                   accessibilityLabel={t("info.helpHint")}
                   accessibilityRole="button"
                   onPress={() => setForceInfo(true)}
@@ -165,10 +168,6 @@ export default function MeditationHomeScreen() {
                 <Text>{t("module.home.openLearn")}</Text>
               </Button>
             </View>
-
-            <Button variant="ghost" onPress={() => setForceWizard(true)}>
-              <Text className="text-sm text-muted-foreground">{t("info.resetWizard")}</Text>
-            </Button>
 
             {currentStage === 10 ? <MeditationDailyLifeCard /> : null}
 

@@ -22,10 +22,16 @@ export interface UserPreferences {
   meditationReminderTimezone: string | null;
   appOnboardingCompleted: boolean;
   cbtOnboardingCompleted: boolean;
+  cbtWizardCompleted: boolean;
   meditationOnboardingCompleted: boolean;
   meditationInfoCompleted: boolean;
   gratitudeOnboardingCompleted: boolean;
   habitsOnboardingCompleted: boolean;
+  moodOnboardingCompleted: boolean;
+  journalOnboardingCompleted: boolean;
+  sleepOnboardingCompleted: boolean;
+  mindfulnessOnboardingCompleted: boolean;
+  groundingOnboardingCompleted: boolean;
   privacyPolicyAcceptedAt: string | null;
   termsAcceptedAt: string | null;
   policyVersionAccepted: string | null;
@@ -49,10 +55,16 @@ export const defaultUserPreferences: UserPreferences = {
   meditationReminderTimezone: null,
   appOnboardingCompleted: false,
   cbtOnboardingCompleted: false,
+  cbtWizardCompleted: false,
   meditationOnboardingCompleted: false,
   meditationInfoCompleted: false,
   gratitudeOnboardingCompleted: false,
   habitsOnboardingCompleted: false,
+  moodOnboardingCompleted: false,
+  journalOnboardingCompleted: false,
+  sleepOnboardingCompleted: false,
+  mindfulnessOnboardingCompleted: false,
+  groundingOnboardingCompleted: false,
   privacyPolicyAcceptedAt: null,
   termsAcceptedAt: null,
   policyVersionAccepted: null,

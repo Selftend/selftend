@@ -53,9 +53,10 @@
       "continue": "Continue"
     },
     "finish": {
-      "start": "Start",
+      "start": "Got it",
       "saving": "Saving…",
-      "error": "Couldn't save your preferences. Try again."
+      "error": "Couldn't save your preferences. Try again.",
+      "dismiss": "Close"
     }
   },
   "list": {

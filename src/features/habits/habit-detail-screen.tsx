@@ -278,15 +278,34 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
 
 function StrategiesCard({ habit }: { habit: Habit }) {
   const { t } = useTranslation("habits");
+  const isBreak = habit.kind === "break";
   const rows = [
-    { icon: "visibility", title: t("detail.strategyCue"), body: habit.cuePlan },
-    { icon: "link", title: t("detail.strategyStack"), body: habit.stackAfter },
-    { icon: "bolt", title: t("detail.strategyTwoMinute"), body: habit.twoMinuteVersion },
-    { icon: "favorite-border", title: t("detail.strategyPairing"), body: habit.cravingPairing },
-    { icon: "emoji-events", title: t("detail.strategyReward"), body: habit.rewardNote },
-  ] as const;
+    {
+      icon: "visibility-off",
+      title: isBreak ? t("detail.strategyInvisible") : t("detail.strategyCue"),
+      body: habit.cuePlan,
+    },
+    isBreak ? null : { icon: "link", title: t("detail.strategyStack"), body: habit.stackAfter },
+    {
+      icon: isBreak ? "block" : "bolt",
+      title: isBreak ? t("detail.strategyDifficult") : t("detail.strategyTwoMinute"),
+      body: habit.twoMinuteVersion,
+    },
+    {
+      icon: "favorite-border",
+      title: isBreak ? t("detail.strategyUnattractive") : t("detail.strategyPairing"),
+      body: habit.cravingPairing,
+    },
+    {
+      icon: isBreak ? "report-problem" : "emoji-events",
+      title: isBreak ? t("detail.strategyUnsatisfying") : t("detail.strategyReward"),
+      body: habit.rewardNote,
+    },
+  ];
 
-  const populated = rows.filter((row) => row.body.trim().length > 0);
+  const populated = rows
+    .filter((row): row is { icon: string; title: string; body: string } => row !== null)
+    .filter((row) => row.body.trim().length > 0);
   if (populated.length === 0) return null;
 
   return (

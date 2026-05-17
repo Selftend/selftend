@@ -95,15 +95,9 @@ export function MeditationInfo({ visible, onComplete, onDismiss }: MeditationInf
           </Card>
 
           <View className="gap-4">
-            {onDismiss ? (
-              <Button onPress={onDismiss}>
-                <Text>{t("info.dismiss")}</Text>
-              </Button>
-            ) : (
-              <Button onPress={onComplete}>
-                <Text>{t("info.begin")}</Text>
-              </Button>
-            )}
+            <Button onPress={onDismiss ?? onComplete}>
+              <Text>{t("info.dismiss")}</Text>
+            </Button>
             <Text className="text-center text-xs text-muted-foreground">
               {t("info.attribution")}
             </Text>

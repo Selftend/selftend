@@ -12,7 +12,8 @@
     "recordHistoryDescription": "Review the records you have already saved without mixing CBT with unrelated modules.",
     "currentFlow": "The current flow",
     "currentFlowDescription": "Capture the situation, name the first thought, choose emotions, notice distortions, and respond with a more balanced thought.",
-    "onboardingHint": "Replay the CBT introduction"
+    "onboardingHint": "Replay the CBT introduction",
+    "wizardHint": "Set up your focus areas"
   },
   "dashboard": {
     "quickActions": "Quick actions",
@@ -95,6 +96,11 @@
       "selfCare": "Self-Care",
       "recovery": "Recovery Plan",
       "weeklyReview": "Weekly Review"
+    },
+    "setup": {
+      "title": "Personalise your plan",
+      "description": "Tell us what brings you here so we can highlight the most relevant strategies for you.",
+      "button": "Set up"
     }
   },
   "pillars": {
@@ -405,6 +411,34 @@
           "Place it on your tongue. Pause. Notice texture before chewing.",
           "Chew slowly, noticing taste change with each bite."
         ]
+      }
+    },
+    "onboarding": {
+      "welcome": {
+        "title": "Return to the present",
+        "subtitle": "Short guided practices for settling attention and reducing mental noise."
+      },
+      "what": {
+        "title": "What mindfulness is",
+        "body": "Intentional, non-judgmental attention to the present moment. Not clearing the mind — noticing what's there without fighting it."
+      },
+      "why": {
+        "title": "Why it works",
+        "body": "MBSR (Mindfulness-Based Stress Reduction) research shows consistent practice lowers cortisol, reduces anxiety, and improves focus. Even 5–10 minutes changes how the nervous system responds to stress."
+      },
+      "exercises": {
+        "title": "Available exercises",
+        "breathLabel": "Breath awareness",
+        "breathBody": "Anchor attention to the breath and return gently when the mind wanders.",
+        "bodyScanLabel": "Body scan",
+        "bodyScanBody": "Move awareness slowly through the body, noticing without trying to change.",
+        "sittingLabel": "Sitting meditation",
+        "sittingBody": "Open awareness sitting — notice thoughts, sounds, and sensations as they arise.",
+        "eatingLabel": "Mindful eating",
+        "eatingBody": "Slow down with one bite and engage every sense."
+      },
+      "finish": {
+        "start": "Choose an exercise"
       }
     }
   },
@@ -1009,6 +1043,34 @@
           "Take three slow breaths while keeping your feet grounded.",
           "Stamp your feet three times and notice the vibration."
         ]
+      }
+    },
+    "onboarding": {
+      "welcome": {
+        "title": "Anchor yourself",
+        "subtitle": "Quick techniques to interrupt anxiety and return to the present moment."
+      },
+      "when": {
+        "title": "When to use grounding",
+        "body": "Anxiety spirals, overwhelm, racing thoughts, dissociation, or any moment when the present feels hard to reach. Grounding is not a cure — it's a circuit breaker."
+      },
+      "how": {
+        "title": "How it works",
+        "body": "Grounding exercises engage the senses and the body, pulling attention out of anxious thought loops and back into physical reality. The nervous system can't be fully activated and fully grounded at the same time."
+      },
+      "techniques": {
+        "title": "Available techniques",
+        "senseLabel": "5-4-3-2-1",
+        "senseBody": "Name five things you see, four you feel, three you hear, two you smell, one you taste.",
+        "breathLabel": "Box breathing",
+        "breathBody": "Inhale 4 counts, hold 4, exhale 4, hold 4 — repeat until calm.",
+        "coldLabel": "Cold water",
+        "coldBody": "Wrists or face in cold water for 30 seconds interrupts the stress response.",
+        "feetLabel": "Feet on the floor",
+        "feetBody": "Press both feet down firmly, breathe slowly, notice the ground."
+      },
+      "finish": {
+        "start": "Try a technique"
       }
     }
   },

@@ -19,15 +19,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface ToolTile {
-  key:
-    | "mood"
-    | "mindfulness"
-    | "timer"
-    | "gratitude"
-    | "journal"
-    | "grounding"
-    | "sleep"
-    | "habits";
+  key: "mood" | "mindfulness" | "gratitude" | "journal" | "grounding" | "sleep" | "habits";
   href: string;
   icon: MaterialIconName;
   nameKey: string;
@@ -53,15 +45,6 @@ const TOOLS: ToolTile[] = [
     icon: "air",
     nameKey: "today.tools.mindfulness",
     subKey: "today.tools.mindfulnessSub",
-    iconBg: "bg-be/15",
-    iconColor: "text-be",
-  },
-  {
-    key: "timer",
-    href: "/tools/timer",
-    icon: "timer",
-    nameKey: "today.tools.timer",
-    subKey: "today.tools.timerSub",
     iconBg: "bg-be/15",
     iconColor: "text-be",
   },
@@ -157,9 +140,6 @@ export default function ToolsScreen() {
       case "mindfulness":
         if (mindfulnessMinutes === 0) return t("tools.stats.mindfulnessNoData");
         return t("tools.stats.mindfulnessMinutes", { minutes: mindfulnessMinutes });
-      case "timer":
-        if (meditationMinutes === 0) return t("tools.stats.timerNoData");
-        return t("tools.stats.timerMinutes", { minutes: meditationMinutes });
       case "journal":
         if (journalCount === 0) return t("tools.stats.journalNoData");
         return t("tools.stats.journalEntries", { count: journalCount });

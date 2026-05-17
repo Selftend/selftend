@@ -18,6 +18,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { BackButton } from "@/src/components/app/back-button";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
+import { CbtWizard } from "@/src/components/app/cbt-wizard-modal";
 import { cn } from "@/lib/utils";
 import { useActivities } from "@/src/features/activities/queries";
 import type { ActivityLog } from "@/src/features/activities/types";
@@ -534,8 +535,11 @@ export default function CbtHomeScreen() {
   const { user } = useSession();
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(user?.id ?? null);
   const cbtOnboardingMutation = useUpdateUserPreferences(user?.id ?? null);
+  const cbtWizardMutation = useUpdateUserPreferences(user?.id ?? null);
   const isFocused = useIsFocused();
   const [forceOnboarding, setForceOnboarding] = useState(false);
+  const [forceWizard, setForceWizard] = useState(false);
+  const [introCompleteInSession, setIntroCompleteInSession] = useState(false);
 
   const { data: goals } = useGoals(user?.id ?? null);
   const { data: activities } = useActivities(user?.id ?? null);
@@ -557,9 +561,17 @@ export default function CbtHomeScreen() {
     topDistortions,
   } = useCbtInsights(user?.id ?? null);
 
-  const showCbtOnboarding =
-    forceOnboarding ||
-    (isFocused && !prefsLoading && Boolean(preferences) && !preferences?.cbtOnboardingCompleted);
+  const onboardingNeeded =
+    isFocused && !prefsLoading && Boolean(preferences) && !preferences?.cbtOnboardingCompleted;
+  const wizardNeeded =
+    isFocused &&
+    !prefsLoading &&
+    Boolean(preferences) &&
+    Boolean(preferences?.cbtOnboardingCompleted) &&
+    !preferences?.cbtWizardCompleted;
+  const showCbtOnboarding = forceOnboarding || (onboardingNeeded && !introCompleteInSession);
+
+  const showCbtWizard = forceWizard || introCompleteInSession || wizardNeeded;
 
   const todaysMoodLogs =
     moodLogs?.filter((log) => getLocalDateKey(new Date(log.loggedAt)) === today) ?? [];
@@ -593,16 +605,39 @@ export default function CbtHomeScreen() {
     Boolean(angerPattern) ||
     Boolean(exposureProgress);
 
-  const completeCbtOnboarding = async (selectedConcerns: string[]) => {
+  const startCbtWizard = () => {
+    setForceOnboarding(false);
+    setIntroCompleteInSession(true);
+  };
+
+  const completeCbtOnboarding = async () => {
     if (!preferences) return;
     try {
       await cbtOnboardingMutation.mutateAsync(
         mergeUserPreferences(preferences, {
           cbtOnboardingCompleted: true,
+          cbtWizardCompleted: true,
+        }),
+      );
+      setIntroCompleteInSession(false);
+      setForceOnboarding(false);
+    } catch {
+      // Error state is shown inside the modal.
+    }
+  };
+
+  const completeCbtWizard = async (selectedConcerns: string[]) => {
+    if (!preferences) return;
+    try {
+      await cbtWizardMutation.mutateAsync(
+        mergeUserPreferences(preferences, {
+          cbtOnboardingCompleted: true,
+          cbtWizardCompleted: true,
           selectedConcerns,
         }),
       );
-      setForceOnboarding(false);
+      setIntroCompleteInSession(false);
+      setForceWizard(false);
     } catch {
       // Error state is shown inside the modal.
     }
@@ -613,9 +648,20 @@ export default function CbtHomeScreen() {
       <CbtOnboarding
         errorMessage={cbtOnboardingMutation.isError ? t("onboarding.error") : undefined}
         isPending={cbtOnboardingMutation.isPending}
-        onComplete={(concerns) => void completeCbtOnboarding(concerns)}
+        onComplete={startCbtWizard}
         onDismiss={forceOnboarding ? () => setForceOnboarding(false) : undefined}
         visible={showCbtOnboarding}
+      />
+      <CbtWizard
+        errorMessage={
+          cbtOnboardingMutation.isError || cbtWizardMutation.isError
+            ? t("onboarding.error")
+            : undefined
+        }
+        isPending={cbtOnboardingMutation.isPending || cbtWizardMutation.isPending}
+        onComplete={(concerns) => void completeCbtWizard(concerns)}
+        onDismiss={() => (forceWizard ? setForceWizard(false) : void completeCbtOnboarding())}
+        visible={showCbtWizard}
       />
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
@@ -624,6 +670,14 @@ export default function CbtHomeScreen() {
               <View className="flex-row items-center gap-2">
                 <BackButton showLabel={false} className="-ml-2" />
                 <Text variant="h1">{t("home.title")}</Text>
+                <Pressable
+                  accessibilityLabel={t("home.wizardHint")}
+                  accessibilityRole="button"
+                  onPress={() => setForceWizard(true)}
+                  hitSlop={8}
+                >
+                  <Icon name="tune" className="text-muted-foreground" size={20} />
+                </Pressable>
                 <Pressable
                   accessibilityLabel={t("home.onboardingHint")}
                   accessibilityRole="button"

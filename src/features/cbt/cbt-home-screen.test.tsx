@@ -192,6 +192,7 @@ describe("CbtHomeScreen onboarding", () => {
         expect.objectContaining({
           appOnboardingCompleted: true,
           cbtOnboardingCompleted: true,
+          cbtWizardCompleted: true,
           selectedConcerns: ["anxiety"],
         }),
       );

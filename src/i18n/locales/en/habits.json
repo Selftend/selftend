@@ -33,6 +33,7 @@
   "list": {
     "tickedToday": "Ticked today",
     "tapToTick": "Tap to tick today",
+    "tapToAvoid": "Tap to mark you avoided this today",
     "lastTicked": "Last ticked {{when}}",
     "noTicksYet": "No ticks yet",
     "openDetail": "Open habit details"
@@ -49,10 +50,20 @@
     "kindLabel": "Build or break",
     "kindBuild": "Build",
     "kindBreak": "Break",
-    "kindBreakSoon": "Soon",
+    "kindBuildHelp": "A new behaviour you want to cast votes for.",
+    "kindBreakHelp": "A behaviour you want to do less. Inverse the four laws — invisible, unattractive, difficult, unsatisfying.",
     "twoMinuteLabel": "Two-minute version (Make It Easy)",
     "twoMinutePlaceholder": "Make the starter version under two minutes. e.g., Read one page.",
     "twoMinuteHelp": "Scale the habit down so it's easy to start.",
+    "difficultLabel": "Friction (Make It Difficult)",
+    "difficultPlaceholder": "Add steps that slow the behaviour. e.g., Log out after every session.",
+    "difficultHelp": "Increase friction so the unwanted action takes more effort than ignoring it.",
+    "invisibleLabel": "Hide the cue (Make It Invisible)",
+    "invisiblePlaceholder": "Remove or hide the trigger. e.g., Put the phone in another room while reading.",
+    "unattractiveLabel": "Reframe the craving (Make It Unattractive)",
+    "unattractivePlaceholder": "Name the cost. e.g., Doom-scrolling steals an hour of my evening.",
+    "unsatisfyingLabel": "Add a cost (Make It Unsatisfying)",
+    "unsatisfyingPlaceholder": "Add a small immediate consequence. e.g., Tell a friend; pay a forfeit.",
     "cueLabel": "Cue plan (Make It Obvious)",
     "cuePlaceholder": "I will [behaviour] at [time] in [location].",
     "stackLabel": "Stack after (Make It Obvious)",
@@ -101,6 +112,10 @@
     "strategyTwoMinute": "Two-minute version",
     "strategyPairing": "Pairing",
     "strategyReward": "Reward",
+    "strategyInvisible": "Hide the cue",
+    "strategyDifficult": "Friction",
+    "strategyUnattractive": "Reframed craving",
+    "strategyUnsatisfying": "Added cost",
     "identityTitle": "Identity",
     "notesTitle": "Recent notes",
     "notesEmpty": "Notes you save with a tick will appear here.",
@@ -166,7 +181,7 @@
       "finish": "Start"
     },
     "finish": {
-      "start": "Start",
+      "start": "Got it",
       "saving": "Saving…",
       "error": "Couldn't save your preferences. Try again."
     }
@@ -176,10 +191,93 @@
     "toggle": "Couldn't update the tick. Try again.",
     "delete": "Couldn't delete the habit. Try again."
   },
+  "insights": {
+    "title": "Insights",
+    "rhythmTitle": "Weekly rhythm",
+    "rhythmSubtitle": "Ticks per day, last 4 weeks.",
+    "rhythmEmpty": "Tick a habit to see your rhythm.",
+    "identityTitle": "Identities this month",
+    "identityEmpty": "Add an identity to a habit to see ticks roll up here.",
+    "identityRow_one": "{{count}} tick",
+    "identityRow_other": "{{count}} ticks",
+    "twoMinuteTitle": "Two-minute floor",
+    "twoMinuteSubtitle_one": "{{filled}} of {{total}} habit has a two-minute starter version.",
+    "twoMinuteSubtitle_other": "{{filled}} of {{total}} habits have a two-minute starter version.",
+    "twoMinuteEmpty": "Add a build habit to see this.",
+    "weekday": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    }
+  },
   "relativeTime": {
     "today": "Today",
     "yesterday": "Yesterday",
     "daysAgo_one": "{{count}} day ago",
     "daysAgo_other": "{{count}} days ago"
+  },
+  "learn": {
+    "sectionLabel": "From the book",
+    "dismiss": "Next card",
+    "openHint": "Read more",
+    "indexTitle": "Atomic Habits — core ideas",
+    "indexSubtitle": "Ten short cards covering the framework. Read them in any order.",
+    "backToHabits": "Back to habits",
+    "cards": {
+      "compounding": {
+        "title": "The 1% compounding effect",
+        "short": "Tiny improvements compound — for better or for worse.",
+        "body": "Improving by 1% a day compounds to roughly 37× better in a year (1.01^365). Drifting 1% worse a day collapses toward zero (0.99^365 ≈ 0.03). Small consistent actions, not heroic effort, move the curve. The lesson: prize consistency over intensity."
+      },
+      "systems-over-goals": {
+        "title": "Systems over goals",
+        "short": "You fall to the level of your systems.",
+        "body": "Goals describe an outcome you want; systems describe the daily process that produces it. You do not rise to the level of your goals — you fall to the level of your systems. Selftend captures the daily action (the system) rather than a target number, because the action is what compounds."
+      },
+      "habit-loop": {
+        "title": "The habit loop",
+        "short": "Cue → craving → response → reward.",
+        "body": "Every habit cycles through four stages: a cue notices a trigger, a craving generates motivation, a response performs the behaviour, and a reward closes the loop. Each of the four laws is a design rule attached to one stage."
+      },
+      "make-obvious": {
+        "title": "1st law — Make it obvious",
+        "short": "Design a cue you cannot miss.",
+        "body": "Behaviours start with a cue. Two strategies make the cue obvious: implementation intentions (\"I will [behaviour] at [time] in [location]\") and habit stacking (\"After [current habit], I will [new habit]\"). Both pin the new habit to a specific moment instead of vague intention."
+      },
+      "make-attractive": {
+        "title": "2nd law — Make it attractive",
+        "short": "Borrow anticipation from something you already enjoy.",
+        "body": "Cravings are dopamine-driven. Temptation bundling pairs an action you want with one you need — only watch the show while folding laundry, only podcast while walking. Joining a culture where the habit is the norm also amplifies the pull."
+      },
+      "make-easy": {
+        "title": "3rd law — Make it easy",
+        "short": "Reduce friction so starting is trivial.",
+        "body": "Habits stop at friction. Lay out the gym clothes the night before. Pre-portion the snack. Disable the notification. The fewer steps between you and the behaviour, the more reliably the habit fires."
+      },
+      "make-satisfying": {
+        "title": "4th law — Make it satisfying",
+        "short": "Reinforce the action with an immediate win.",
+        "body": "What is immediately rewarded gets repeated; what is immediately punished gets avoided. Visible progress — ticking a box, marking a calendar, sliding a paperclip — provides the small reward the brain needs. The longer-term benefits matter, but immediate satisfaction is what closes the loop."
+      },
+      "two-minute-rule": {
+        "title": "The two-minute rule",
+        "short": "Scale every new habit to under two minutes.",
+        "body": "When a new habit feels hard, you've made it too big. \"Read before bed\" becomes \"Read one page.\" \"Run a marathon\" becomes \"Put on the running shoes.\" The two-minute version is not the destination — it's the gateway. Once the ritual is automatic, the duration can grow."
+      },
+      "never-miss-twice": {
+        "title": "Never miss twice",
+        "short": "Missing once is data. Missing twice is a new habit.",
+        "body": "Perfection is unrealistic; consistency is not. The rule isn't \"never miss\" — it's \"never miss twice.\" When you slip, the priority is to do the habit again the next day, even at the two-minute size. Selftend never punishes a missed day; it just quietly notes when you're at risk of missing twice."
+      },
+      "identity": {
+        "title": "Identity-based habits",
+        "short": "Every habit is a vote for the kind of person you want to become.",
+        "body": "Outcome-based goals (\"I want to lose weight\") fade. Identity-based habits (\"I am someone who moves every day\") stick, because every action either reinforces or weakens the identity. The aim isn't to perform a habit once; it's to become the kind of person for whom the habit is natural."
+      }
+    }
   }
 }

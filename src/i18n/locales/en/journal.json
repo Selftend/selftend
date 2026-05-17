@@ -44,6 +44,23 @@
       "cancel": "Cancel"
     }
   },
+  "onboarding": {
+    "welcome": {
+      "title": "Writing heals",
+      "subtitle": "A few minutes on the page can do more than hours of rumination."
+    },
+    "science": {
+      "title": "Expressive writing works",
+      "body": "Decades of research by James Pennebaker show that writing about thoughts and feelings lowers stress, reduces anxiety, and improves physical health — even in short bursts."
+    },
+    "noPressure": {
+      "title": "No pressure, no rules",
+      "body": "There are no streaks, no minimum length, and nothing is ever shared. Write two sentences or two pages — whatever is useful."
+    },
+    "finish": {
+      "start": "Write your first entry"
+    }
+  },
   "relativeTime": {
     "today": "Today",
     "yesterday": "Yesterday",

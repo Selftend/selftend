@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -14,7 +14,10 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
+import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
 import { useSleepLogs } from "@/src/features/sleep/queries";
+import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
+import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useSession } from "@/src/providers/session-provider";
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
@@ -67,7 +70,31 @@ function relativeLabel(
 export default function SleepTrackerScreen() {
   const { t } = useTranslation("sleep");
   const { user } = useSession();
-  const { data: logs } = useSleepLogs(user?.id ?? null, 50);
+  const userId = user?.id ?? null;
+
+  const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
+  const updatePreferences = useUpdateUserPreferences(userId);
+  const { data: logs } = useSleepLogs(userId, 50);
+
+  const [forceOnboarding, setForceOnboarding] = useState(false);
+  const [onboardingError, setOnboardingError] = useState<string | undefined>();
+
+  const onboardingNeeded =
+    !prefsLoading && Boolean(preferences) && !preferences?.sleepOnboardingCompleted;
+  const showOnboarding = onboardingNeeded || forceOnboarding;
+
+  async function handleOnboardingComplete() {
+    if (!preferences) return;
+    setOnboardingError(undefined);
+    try {
+      await updatePreferences.mutateAsync(
+        mergeUserPreferences(preferences, { sleepOnboardingCompleted: true }),
+      );
+      setForceOnboarding(false);
+    } catch (error) {
+      setOnboardingError(error instanceof Error ? error.message : undefined);
+    }
+  }
 
   const allLogs = useMemo(() => logs ?? [], [logs]);
   const recent = useMemo(() => allLogs.slice(0, 10), [allLogs]);
@@ -78,89 +105,97 @@ export default function SleepTrackerScreen() {
   const thirtyDayQuality = useMemo(() => averageQuality(allLogs, 30), [allLogs]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerClassName="grow p-6">
-        <View className="gap-6">
-          <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("title")}</Text>
+    <>
+      <SleepOnboarding
+        visible={showOnboarding}
+        isPending={updatePreferences.isPending}
+        errorMessage={onboardingError}
+        onComplete={handleOnboardingComplete}
+      />
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+        <ScrollView contentContainerClassName="grow p-6">
+          <View className="gap-6">
+            <View className="gap-2">
+              <View className="flex-row items-center gap-2">
+                <BackButton showLabel={false} className="-ml-2" />
+                <Text variant="h1">{t("title")}</Text>
+              </View>
+              <Text variant="muted" className="max-w-[64ch]">
+                {t("description")}
+              </Text>
             </View>
-            <Text variant="muted" className="max-w-[64ch]">
-              {t("description")}
-            </Text>
-          </View>
 
-          <View className="flex-row gap-3">
-            <Button
-              onPress={() => router.push("/tools/sleep/new" as Parameters<typeof router.push>[0])}
-              className="self-start"
-            >
-              <Icon name="bedtime" className="size-4 text-primary-foreground" />
-              <Text>{t("cta.log")}</Text>
-            </Button>
-          </View>
-
-          <View className="gap-3">
-            <Text variant="h3">{t("sections.summary")}</Text>
-            <View className="flex-row flex-wrap gap-3">
-              <SummaryTile
-                label={t("summary.sevenDay")}
-                durationMinutes={sevenDayDuration}
-                quality={sevenDayQuality}
-              />
-              <SummaryTile
-                label={t("summary.thirtyDay")}
-                durationMinutes={thirtyDayDuration}
-                quality={thirtyDayQuality}
-              />
+            <View className="flex-row gap-3">
+              <Button
+                onPress={() => router.push("/tools/sleep/new" as Parameters<typeof router.push>[0])}
+                className="self-start"
+              >
+                <Icon name="bedtime" className="size-4 text-primary-foreground" />
+                <Text>{t("cta.log")}</Text>
+              </Button>
             </View>
-          </View>
 
-          <View className="gap-3">
-            <Text variant="h3">{t("sections.recent")}</Text>
-            {recent.length > 0 ? (
-              <View className="gap-3">
-                {recent.map((log) => (
-                  <Pressable
-                    key={log.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={t("recent.viewEntry", {
-                      when: relativeLabel(log.loggedAt, t),
-                    })}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/tools/sleep/[id]",
-                        params: { id: log.id },
-                      })
-                    }
-                    className="flex-row items-center gap-4 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
-                    role="button"
-                  >
-                    <View className="flex-1 gap-1">
-                      <View className="flex-row items-center justify-between gap-2">
-                        <Text className="text-base font-semibold">
-                          {formatDuration(log.durationMinutes)}
-                        </Text>
-                        <Text variant="muted" className="text-xs">
-                          {relativeLabel(log.loggedAt, t)}
+            <View className="gap-3">
+              <Text variant="h3">{t("sections.summary")}</Text>
+              <View className="flex-row flex-wrap gap-3">
+                <SummaryTile
+                  label={t("summary.sevenDay")}
+                  durationMinutes={sevenDayDuration}
+                  quality={sevenDayQuality}
+                />
+                <SummaryTile
+                  label={t("summary.thirtyDay")}
+                  durationMinutes={thirtyDayDuration}
+                  quality={thirtyDayQuality}
+                />
+              </View>
+            </View>
+
+            <View className="gap-3">
+              <Text variant="h3">{t("sections.recent")}</Text>
+              {recent.length > 0 ? (
+                <View className="gap-3">
+                  {recent.map((log) => (
+                    <Pressable
+                      key={log.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("recent.viewEntry", {
+                        when: relativeLabel(log.loggedAt, t),
+                      })}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/tools/sleep/[id]",
+                          params: { id: log.id },
+                        })
+                      }
+                      className="flex-row items-center gap-4 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
+                      role="button"
+                    >
+                      <View className="flex-1 gap-1">
+                        <View className="flex-row items-center justify-between gap-2">
+                          <Text className="text-base font-semibold">
+                            {formatDuration(log.durationMinutes)}
+                          </Text>
+                          <Text variant="muted" className="text-xs">
+                            {relativeLabel(log.loggedAt, t)}
+                          </Text>
+                        </View>
+                        <Text variant="muted" className="text-sm">
+                          {t(`quality.${log.quality}` as Parameters<typeof t>[0])}
                         </Text>
                       </View>
-                      <Text variant="muted" className="text-sm">
-                        {t(`quality.${log.quality}` as Parameters<typeof t>[0])}
-                      </Text>
-                    </View>
-                    <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
-                  </Pressable>
-                ))}
-              </View>
-            ) : (
-              <Text variant="muted">{t("recent.empty")}</Text>
-            )}
+                      <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <Text variant="muted">{t("recent.empty")}</Text>
+              )}
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 }
 

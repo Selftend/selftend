@@ -199,62 +199,101 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
             />
             <KindChip
               active={input.kind === "break"}
-              disabled
-              label={`${t("form.kindBreak")} · ${t("form.kindBreakSoon")}`}
-              onPress={() => undefined}
+              label={t("form.kindBreak")}
+              onPress={() => update("kind", "break" as HabitKind)}
             />
           </View>
-        </View>
-
-        <View className="gap-2">
-          <Label>{t("form.twoMinuteLabel")}</Label>
-          <Input
-            accessibilityLabel={t("form.twoMinuteLabel")}
-            onChangeText={(v) => update("twoMinuteVersion", v)}
-            placeholder={t("form.twoMinutePlaceholder")}
-            value={input.twoMinuteVersion}
-          />
           <Text variant="muted" className="text-xs">
-            {t("form.twoMinuteHelp")}
+            {input.kind === "break" ? t("form.kindBreakHelp") : t("form.kindBuildHelp")}
           </Text>
         </View>
 
+        {input.kind === "build" ? (
+          <View className="gap-2">
+            <Label>{t("form.twoMinuteLabel")}</Label>
+            <Input
+              accessibilityLabel={t("form.twoMinuteLabel")}
+              onChangeText={(v) => update("twoMinuteVersion", v)}
+              placeholder={t("form.twoMinutePlaceholder")}
+              value={input.twoMinuteVersion}
+            />
+            <Text variant="muted" className="text-xs">
+              {t("form.twoMinuteHelp")}
+            </Text>
+          </View>
+        ) : (
+          <View className="gap-2">
+            <Label>{t("form.difficultLabel")}</Label>
+            <Input
+              accessibilityLabel={t("form.difficultLabel")}
+              onChangeText={(v) => update("twoMinuteVersion", v)}
+              placeholder={t("form.difficultPlaceholder")}
+              value={input.twoMinuteVersion}
+            />
+            <Text variant="muted" className="text-xs">
+              {t("form.difficultHelp")}
+            </Text>
+          </View>
+        )}
+
         <View className="gap-2">
-          <Label>{t("form.cueLabel")}</Label>
+          <Label>{input.kind === "break" ? t("form.invisibleLabel") : t("form.cueLabel")}</Label>
           <Textarea
-            accessibilityLabel={t("form.cueLabel")}
+            accessibilityLabel={
+              input.kind === "break" ? t("form.invisibleLabel") : t("form.cueLabel")
+            }
             onChangeText={(v) => update("cuePlan", v)}
-            placeholder={t("form.cuePlaceholder")}
+            placeholder={
+              input.kind === "break" ? t("form.invisiblePlaceholder") : t("form.cuePlaceholder")
+            }
             value={input.cuePlan}
           />
         </View>
 
-        <View className="gap-2">
-          <Label>{t("form.stackLabel")}</Label>
-          <Input
-            accessibilityLabel={t("form.stackLabel")}
-            onChangeText={(v) => update("stackAfter", v)}
-            placeholder={t("form.stackPlaceholder")}
-            value={input.stackAfter}
-          />
-        </View>
+        {input.kind === "build" ? (
+          <View className="gap-2">
+            <Label>{t("form.stackLabel")}</Label>
+            <Input
+              accessibilityLabel={t("form.stackLabel")}
+              onChangeText={(v) => update("stackAfter", v)}
+              placeholder={t("form.stackPlaceholder")}
+              value={input.stackAfter}
+            />
+          </View>
+        ) : null}
 
         <View className="gap-2">
-          <Label>{t("form.pairingLabel")}</Label>
+          <Label>
+            {input.kind === "break" ? t("form.unattractiveLabel") : t("form.pairingLabel")}
+          </Label>
           <Textarea
-            accessibilityLabel={t("form.pairingLabel")}
+            accessibilityLabel={
+              input.kind === "break" ? t("form.unattractiveLabel") : t("form.pairingLabel")
+            }
             onChangeText={(v) => update("cravingPairing", v)}
-            placeholder={t("form.pairingPlaceholder")}
+            placeholder={
+              input.kind === "break"
+                ? t("form.unattractivePlaceholder")
+                : t("form.pairingPlaceholder")
+            }
             value={input.cravingPairing}
           />
         </View>
 
         <View className="gap-2">
-          <Label>{t("form.rewardLabel")}</Label>
+          <Label>
+            {input.kind === "break" ? t("form.unsatisfyingLabel") : t("form.rewardLabel")}
+          </Label>
           <Input
-            accessibilityLabel={t("form.rewardLabel")}
+            accessibilityLabel={
+              input.kind === "break" ? t("form.unsatisfyingLabel") : t("form.rewardLabel")
+            }
             onChangeText={(v) => update("rewardNote", v)}
-            placeholder={t("form.rewardPlaceholder")}
+            placeholder={
+              input.kind === "break"
+                ? t("form.unsatisfyingPlaceholder")
+                : t("form.rewardPlaceholder")
+            }
             value={input.rewardNote}
           />
         </View>

@@ -229,6 +229,14 @@ export default function SettingsScreen() {
         mergeUserPreferences(data, {
           appOnboardingCompleted: false,
           cbtOnboardingCompleted: false,
+          gratitudeOnboardingCompleted: false,
+          meditationInfoCompleted: false,
+          habitsOnboardingCompleted: false,
+          moodOnboardingCompleted: false,
+          journalOnboardingCompleted: false,
+          sleepOnboardingCompleted: false,
+          mindfulnessOnboardingCompleted: false,
+          groundingOnboardingCompleted: false,
         }),
       );
 

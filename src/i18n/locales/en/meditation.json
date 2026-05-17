@@ -267,7 +267,11 @@
     "begin": "Start setup",
     "dismiss": "Got it",
     "resetWizard": "Reassess or change preferences",
-    "helpHint": "What is this module?"
+    "helpHint": "What is this module?",
+    "wizardHint": "Set up your meditation preferences",
+    "setupTitle": "Set up your meditation",
+    "setupDescription": "Take a short assessment to find your starting stage and set your preferred session time.",
+    "setupButton": "Set up"
   },
   "onboarding": {
     "welcome": {

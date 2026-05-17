@@ -82,12 +82,6 @@ const TOOL_ITEMS: NavItemDef[] = [
     matchPrefix: "/tools/mindfulness",
   },
   {
-    labelKey: "sidebar.timer",
-    href: "/tools/timer",
-    icon: "timer",
-    matchPrefix: "/tools/timer",
-  },
-  {
     labelKey: "sidebar.grounding",
     href: "/tools/grounding",
     icon: "anchor",

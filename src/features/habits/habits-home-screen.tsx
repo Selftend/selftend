@@ -9,6 +9,14 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HabitsOnboarding } from "@/src/components/app/habits-onboarding-modal";
+import { HABITS_LEARN_CARDS } from "@/src/features/habits/learn";
+import {
+  getIdentityRoundUp,
+  getTwoMinuteAdoption,
+  getWeeklyRhythm,
+  type IdentityRoundUp,
+  type WeekdayRhythm,
+} from "@/src/features/habits/insights";
 import { useHabits, useHabitLogs, useToggleHabitLog } from "@/src/features/habits/queries";
 import {
   addDays,
@@ -44,6 +52,7 @@ export default function HabitsHomeScreen() {
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | undefined>();
+  const [learnIndex, setLearnIndex] = useState(0);
 
   const onboardingNeeded =
     !prefsLoading && Boolean(preferences) && !preferences?.habitsOnboardingCompleted;
@@ -74,6 +83,12 @@ export default function HabitsHomeScreen() {
   );
 
   const recentLogs = useMemo(() => allLogs.slice(0, 5), [allLogs]);
+  const weeklyRhythm = useMemo(() => getWeeklyRhythm(allLogs, 4, today), [allLogs, today]);
+  const identityRoundUp = useMemo(
+    () => getIdentityRoundUp(allHabits, allLogs, today),
+    [allHabits, allLogs, today],
+  );
+  const twoMinuteAdoption = useMemo(() => getTwoMinuteAdoption(allHabits), [allHabits]);
 
   async function handleOnboardingComplete() {
     if (!preferences) return;
@@ -204,6 +219,19 @@ export default function HabitsHomeScreen() {
               )}
             </View>
 
+            <LearnCard
+              learnIndex={learnIndex}
+              onDismiss={() => setLearnIndex((prev) => prev + 1)}
+            />
+
+            {allHabits.length > 0 ? (
+              <InsightsSection
+                rhythm={weeklyRhythm}
+                identityRoundUp={identityRoundUp}
+                twoMinuteAdoption={twoMinuteAdoption}
+              />
+            ) : null}
+
             <View className="gap-3">
               <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 {t("home.recentActivity")}
@@ -270,7 +298,13 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
     <View className="gap-3 rounded-2xl border border-border bg-card p-4">
       <View className="flex-row items-center gap-3">
         <Pressable
-          accessibilityLabel={tickedToday ? t("list.tickedToday") : t("list.tapToTick")}
+          accessibilityLabel={
+            tickedToday
+              ? t("list.tickedToday")
+              : habit.kind === "break"
+                ? t("list.tapToAvoid")
+                : t("list.tapToTick")
+          }
           accessibilityRole="button"
           accessibilityState={{ checked: tickedToday }}
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
@@ -334,6 +368,163 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
           })}
         </View>
       </View>
+    </View>
+  );
+}
+
+interface InsightsSectionProps {
+  rhythm: WeekdayRhythm[];
+  identityRoundUp: IdentityRoundUp[];
+  twoMinuteAdoption: { filled: number; total: number; ratio: number };
+}
+
+function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: InsightsSectionProps) {
+  const { t } = useTranslation("habits");
+  const maxCount = Math.max(1, ...rhythm.map((r) => r.count));
+  const hasRhythm = rhythm.some((r) => r.count > 0);
+  const hasIdentities = identityRoundUp.length > 0;
+  const hasTwoMinute = twoMinuteAdoption.total > 0;
+  const adoptionPct = Math.round(twoMinuteAdoption.ratio * 100);
+
+  return (
+    <View className="gap-3">
+      <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        {t("insights.title")}
+      </Text>
+
+      <View className="gap-4 rounded-2xl border border-border bg-card p-4">
+        <View className="gap-2">
+          <Text className="text-base font-semibold">{t("insights.rhythmTitle")}</Text>
+          <Text variant="muted" className="text-xs">
+            {t("insights.rhythmSubtitle")}
+          </Text>
+          {hasRhythm ? (
+            <View className="flex-row items-end gap-2">
+              {rhythm.map((bucket) => {
+                const height = bucket.count > 0 ? Math.max(6, (bucket.count / maxCount) * 64) : 2;
+                return (
+                  <View key={bucket.weekday} className="flex-1 items-center gap-1">
+                    <View className="h-16 w-full justify-end">
+                      <View className="w-full rounded-t-md bg-primary/70" style={{ height }} />
+                    </View>
+                    <Text variant="muted" className="text-[10px] leading-3">
+                      {t(`insights.weekday.${bucket.weekday}` as const)}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <Text variant="muted" className="text-sm">
+              {t("insights.rhythmEmpty")}
+            </Text>
+          )}
+        </View>
+
+        <View className="gap-2">
+          <Text className="text-base font-semibold">{t("insights.identityTitle")}</Text>
+          {hasIdentities ? (
+            <View className="gap-1.5">
+              {identityRoundUp.map((row) => (
+                <View key={row.identity} className="flex-row items-center justify-between gap-3">
+                  <Text className="flex-1 text-sm" numberOfLines={1}>
+                    {row.identity}
+                  </Text>
+                  <Text variant="muted" className="text-xs">
+                    {t("insights.identityRow", { count: row.count })}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text variant="muted" className="text-sm">
+              {t("insights.identityEmpty")}
+            </Text>
+          )}
+        </View>
+
+        <View className="gap-2">
+          <Text className="text-base font-semibold">{t("insights.twoMinuteTitle")}</Text>
+          {hasTwoMinute ? (
+            <View className="gap-1.5">
+              <View className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <View
+                  className="h-full rounded-full bg-primary/70"
+                  style={{ width: `${adoptionPct}%` }}
+                />
+              </View>
+              <Text variant="muted" className="text-xs">
+                {t("insights.twoMinuteSubtitle", {
+                  count: twoMinuteAdoption.total,
+                  filled: twoMinuteAdoption.filled,
+                  total: twoMinuteAdoption.total,
+                })}
+              </Text>
+            </View>
+          ) : (
+            <Text variant="muted" className="text-sm">
+              {t("insights.twoMinuteEmpty")}
+            </Text>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+interface LearnCardProps {
+  learnIndex: number;
+  onDismiss: () => void;
+}
+
+function LearnCard({ learnIndex, onDismiss }: LearnCardProps) {
+  const { t } = useTranslation("habits");
+  const card = HABITS_LEARN_CARDS[learnIndex % HABITS_LEARN_CARDS.length];
+  if (!card) return null;
+  const chip = colorChipClass(card.tone);
+  const cardKey = `learn.cards.${card.slug}` as const;
+
+  return (
+    <View className="gap-2">
+      <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        {t("learn.sectionLabel")}
+      </Text>
+      <Pressable
+        accessibilityLabel={t(`${cardKey}.title` as Parameters<typeof t>[0])}
+        accessibilityHint={t("learn.openHint")}
+        accessibilityRole="button"
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+        onPress={() =>
+          router.push({
+            pathname: "/tools/habits/learn/[slug]",
+            params: { slug: card.slug },
+          })
+        }
+        className="gap-3 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
+        role="button"
+      >
+        <View className="flex-row items-center justify-between">
+          <View className={cn("size-10 items-center justify-center rounded-xl", chip.bg)}>
+            <Icon name={card.icon} className={cn("size-5", chip.text)} />
+          </View>
+          <Pressable
+            accessibilityLabel={t("learn.dismiss")}
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={onDismiss}
+          >
+            <Icon name="arrow-forward" className="size-5 text-muted-foreground" />
+          </Pressable>
+        </View>
+        <View className="gap-1">
+          <Text className="text-base font-semibold">
+            {t(`${cardKey}.title` as Parameters<typeof t>[0])}
+          </Text>
+          <Text variant="muted" className="text-sm">
+            {t(`${cardKey}.short` as Parameters<typeof t>[0])}
+          </Text>
+        </View>
+      </Pressable>
     </View>
   );
 }

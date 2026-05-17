@@ -148,6 +148,8 @@ describe("SettingsScreen onboarding reset", () => {
         ...defaultUserPreferences,
         appOnboardingCompleted: true,
         cbtOnboardingCompleted: true,
+        cbtWizardCompleted: true,
+        meditationOnboardingCompleted: true,
         policyVersionAccepted: "2026-05-01",
       },
       isLoading: false,
@@ -168,6 +170,12 @@ describe("SettingsScreen onboarding reset", () => {
         expect.objectContaining({
           appOnboardingCompleted: false,
           cbtOnboardingCompleted: false,
+          gratitudeOnboardingCompleted: false,
+          meditationInfoCompleted: false,
+          habitsOnboardingCompleted: false,
+          // wizard flags must be preserved
+          cbtWizardCompleted: true,
+          meditationOnboardingCompleted: true,
           policyVersionAccepted: "2026-05-01",
         }),
       );

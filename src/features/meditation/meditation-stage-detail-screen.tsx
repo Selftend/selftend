@@ -87,7 +87,7 @@ export default function MeditationStageDetailScreen() {
                 <Text>{t("module.stages.switchTo")}</Text>
               </Button>
             ) : (
-              <Button variant="outline" onPress={() => router.push("/tools/timer")}>
+              <Button variant="outline" onPress={() => router.back()}>
                 <Text>{t("module.home.startSit")}</Text>
               </Button>
             )}

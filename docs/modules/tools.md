@@ -49,7 +49,7 @@ Working tool routes:
 - `/tools/journal`, `/tools/journal/new`, `/tools/journal/[id]`, `/tools/journal/[id]/edit`
 - `/tools/mindfulness`, `/tools/mindfulness/[slug]`
 - `/tools/gratitude-log`, `/tools/gratitude-log/new`, `/tools/gratitude-log/[id]`, `/tools/gratitude-log/[id]/edit` (compat redirects → `/modules/gratitude/*`)
-- `/tools/habits`, `/tools/habits/new`, `/tools/habits/[id]`, `/tools/habits/[id]/edit`, `/tools/habits/[id]/log`, `/tools/habits/history`, `/tools/habits/onboarding`
+- `/tools/habits`, `/tools/habits/new`, `/tools/habits/[id]`, `/tools/habits/[id]/edit`, `/tools/habits/[id]/log`, `/tools/habits/history`, `/tools/habits/onboarding`, `/tools/habits/learn`, `/tools/habits/learn/[slug]`
 
 Working gratitude routes (planned — Phase 1):
 

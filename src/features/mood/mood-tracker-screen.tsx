@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -15,11 +15,14 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
+import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
 import { MoodEntryCard } from "@/src/features/mood/mood-entry-card";
 import { buildMoodChartData } from "@/src/features/mood/chart-data";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { getMoodSummary, type MoodSummary } from "@/src/features/mood/summaries";
+import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
+import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useSession } from "@/src/providers/session-provider";
 
 const RECENT_LIMIT = 10;
@@ -30,8 +33,31 @@ export default function MoodTrackerScreen() {
   const { t } = useTranslation("mood");
   const { user } = useSession();
   const { width } = useWindowDimensions();
+  const userId = user?.id ?? null;
 
-  const { data: moodLogs } = useMoodLogs(user?.id ?? null, 30);
+  const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
+  const updatePreferences = useUpdateUserPreferences(userId);
+  const { data: moodLogs } = useMoodLogs(userId, 30);
+
+  const [forceOnboarding, setForceOnboarding] = useState(false);
+  const [onboardingError, setOnboardingError] = useState<string | undefined>();
+
+  const onboardingNeeded =
+    !prefsLoading && Boolean(preferences) && !preferences?.moodOnboardingCompleted;
+  const showOnboarding = onboardingNeeded || forceOnboarding;
+
+  async function handleOnboardingComplete() {
+    if (!preferences) return;
+    setOnboardingError(undefined);
+    try {
+      await updatePreferences.mutateAsync(
+        mergeUserPreferences(preferences, { moodOnboardingCompleted: true }),
+      );
+      setForceOnboarding(false);
+    } catch (error) {
+      setOnboardingError(error instanceof Error ? error.message : undefined);
+    }
+  }
 
   const today = useMemo(() => getMoodSummary(moodLogs, 1), [moodLogs]);
   const sevenDay = useMemo(() => getMoodSummary(moodLogs, 7), [moodLogs]);
@@ -42,78 +68,86 @@ export default function MoodTrackerScreen() {
   const chartWidth = Math.min(width, 720) - CHART_HORIZONTAL_PADDING;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerClassName="grow p-6">
-        <View className="gap-6">
-          <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("title")}</Text>
+    <>
+      <MoodOnboarding
+        visible={showOnboarding}
+        isPending={updatePreferences.isPending}
+        errorMessage={onboardingError}
+        onComplete={handleOnboardingComplete}
+      />
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+        <ScrollView contentContainerClassName="grow p-6">
+          <View className="gap-6">
+            <View className="gap-2">
+              <View className="flex-row items-center gap-2">
+                <BackButton showLabel={false} className="-ml-2" />
+                <Text variant="h1">{t("title")}</Text>
+              </View>
+              <Text variant="muted" className="max-w-[64ch]">
+                {t("description")}
+              </Text>
             </View>
-            <Text variant="muted" className="max-w-[64ch]">
-              {t("description")}
-            </Text>
-          </View>
 
-          <TodayCheckInCard
-            summary={today}
-            onLog={() =>
-              router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
-            }
-          />
-
-          {today.count > 0 ? (
-            <Button
-              onPress={() =>
+            <TodayCheckInCard
+              summary={today}
+              onLog={() =>
                 router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
               }
-              variant="outline"
-              className="self-start"
-            >
-              <Icon name="mood" className="size-4" />
-              <Text>{t("today.logAnother")}</Text>
-            </Button>
-          ) : null}
+            />
 
-          <View className="gap-3">
-            <Text variant="h3">{t("sections.summary")}</Text>
-            <View className="flex-row flex-wrap gap-3">
-              <SummaryTile labelKey="summary.sevenDay" summary={sevenDay} />
-              <SummaryTile labelKey="summary.thirtyDay" summary={thirtyDay} />
+            {today.count > 0 ? (
+              <Button
+                onPress={() =>
+                  router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
+                }
+                variant="outline"
+                className="self-start"
+              >
+                <Icon name="mood" className="size-4" />
+                <Text>{t("today.logAnother")}</Text>
+              </Button>
+            ) : null}
+
+            <View className="gap-3">
+              <Text variant="h3">{t("sections.summary")}</Text>
+              <View className="flex-row flex-wrap gap-3">
+                <SummaryTile labelKey="summary.sevenDay" summary={sevenDay} />
+                <SummaryTile labelKey="summary.thirtyDay" summary={thirtyDay} />
+              </View>
+            </View>
+
+            <View className="gap-3">
+              <Text variant="h3">{t("sections.trend")}</Text>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("trend.lastDays")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {chartData.length > 0 ? (
+                    <MoodLineChart data={chartData} width={chartWidth} />
+                  ) : (
+                    <Text variant="muted">{t("trend.empty")}</Text>
+                  )}
+                </CardContent>
+              </Card>
+            </View>
+
+            <View className="gap-3">
+              <Text variant="h3">{t("sections.recent")}</Text>
+              {recent.length > 0 ? (
+                <View className="gap-3">
+                  {recent.map((entry) => (
+                    <MoodEntryCard key={entry.id} entry={entry} />
+                  ))}
+                </View>
+              ) : (
+                <Text variant="muted">{t("recent.empty")}</Text>
+              )}
             </View>
           </View>
-
-          <View className="gap-3">
-            <Text variant="h3">{t("sections.trend")}</Text>
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("trend.lastDays")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {chartData.length > 0 ? (
-                  <MoodLineChart data={chartData} width={chartWidth} />
-                ) : (
-                  <Text variant="muted">{t("trend.empty")}</Text>
-                )}
-              </CardContent>
-            </Card>
-          </View>
-
-          <View className="gap-3">
-            <Text variant="h3">{t("sections.recent")}</Text>
-            {recent.length > 0 ? (
-              <View className="gap-3">
-                {recent.map((entry) => (
-                  <MoodEntryCard key={entry.id} entry={entry} />
-                ))}
-              </View>
-            ) : (
-              <Text variant="muted">{t("recent.empty")}</Text>
-            )}
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 }
 
