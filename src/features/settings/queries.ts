@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { UserPreferences } from "@/src/features/modules/types";
+import type { ModuleKey, UserPreferences } from "@/src/features/modules/types";
 import {
   deleteUserAccount,
   exportUserData,
   getUserPreferences,
   recordPolicyConsent,
+  updateEnabledModules,
   updateUserPreferences,
 } from "@/src/features/settings/repository";
 
@@ -26,6 +27,21 @@ export function useUpdateUserPreferences(userId: string | null) {
 
   return useMutation({
     mutationFn: (preferences: UserPreferences) => updateUserPreferences(userId!, preferences),
+    onSuccess: async () => {
+      if (!userId) {
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: preferenceKeys.detail(userId) });
+    },
+  });
+}
+
+export function useUpdateEnabledModules(userId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (enabledModules: ModuleKey[]) => updateEnabledModules(userId!, enabledModules),
     onSuccess: async () => {
       if (!userId) {
         return;

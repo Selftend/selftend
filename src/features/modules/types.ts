@@ -1,4 +1,4 @@
-export type ModuleKey = "cbt" | "meditation" | "gratitude";
+export type ModuleKey = "cbt" | "meditation" | "gratitude" | "act";
 
 export type GratitudeLevel = 1 | 2 | 3;
 
@@ -20,6 +20,11 @@ export interface UserPreferences {
   meditationReminderHour: number;
   meditationReminderMinute: number;
   meditationReminderTimezone: string | null;
+  actOnboardingCompleted: boolean;
+  actRemindersEnabled: boolean;
+  actReminderHour: number;
+  actReminderMinute: number;
+  actReminderTimezone: string | null;
   appOnboardingCompleted: boolean;
   cbtOnboardingCompleted: boolean;
   cbtWizardCompleted: boolean;
@@ -53,6 +58,11 @@ export const defaultUserPreferences: UserPreferences = {
   meditationReminderHour: 7,
   meditationReminderMinute: 0,
   meditationReminderTimezone: null,
+  actOnboardingCompleted: false,
+  actRemindersEnabled: false,
+  actReminderHour: 19,
+  actReminderMinute: 0,
+  actReminderTimezone: null,
   appOnboardingCompleted: false,
   cbtOnboardingCompleted: false,
   cbtWizardCompleted: false,
@@ -74,7 +84,7 @@ export const defaultUserPreferences: UserPreferences = {
   activeStrategies: [],
 };
 
-const VALID_MODULES: ModuleKey[] = ["cbt", "meditation", "gratitude"];
+const VALID_MODULES: ModuleKey[] = ["cbt", "meditation", "gratitude", "act"];
 
 export function sanitizeEnabledModules(value: unknown): ModuleKey[] {
   if (!Array.isArray(value)) return ["cbt"];

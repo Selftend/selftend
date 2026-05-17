@@ -2,6 +2,7 @@ import {
   defaultUserPreferences,
   sanitizeEnabledModules,
   type CookieConsent,
+  type ModuleKey,
   type UserPreferences,
 } from "@/src/features/modules/types";
 import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
@@ -32,6 +33,11 @@ interface UserPreferenceRow {
   sleep_onboarding_completed: boolean | null;
   mindfulness_onboarding_completed: boolean | null;
   grounding_onboarding_completed: boolean | null;
+  act_onboarding_completed: boolean | null;
+  act_reminders_enabled: boolean | null;
+  act_reminder_hour: number | null;
+  act_reminder_minute: number | null;
+  act_reminder_timezone: string | null;
   privacy_policy_accepted_at: string | null;
   terms_accepted_at: string | null;
   policy_version_accepted: string | null;
@@ -72,6 +78,11 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     sleepOnboardingCompleted: Boolean(row.sleep_onboarding_completed),
     mindfulnessOnboardingCompleted: Boolean(row.mindfulness_onboarding_completed),
     groundingOnboardingCompleted: Boolean(row.grounding_onboarding_completed),
+    actOnboardingCompleted: Boolean(row.act_onboarding_completed),
+    actRemindersEnabled: Boolean(row.act_reminders_enabled),
+    actReminderHour: row.act_reminder_hour ?? defaultUserPreferences.actReminderHour,
+    actReminderMinute: row.act_reminder_minute ?? defaultUserPreferences.actReminderMinute,
+    actReminderTimezone: row.act_reminder_timezone ?? null,
     privacyPolicyAcceptedAt: row.privacy_policy_accepted_at ?? null,
     termsAcceptedAt: row.terms_accepted_at ?? null,
     policyVersionAccepted: row.policy_version_accepted ?? null,
@@ -80,6 +91,16 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     selectedConcerns: row.selected_concerns ?? [],
     activeStrategies: row.active_strategies ?? [],
   };
+}
+
+function isMissingACTPreferenceColumn(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const maybeError = error as { code?: unknown; message?: unknown };
+  return (
+    maybeError.code === "PGRST204" &&
+    typeof maybeError.message === "string" &&
+    maybeError.message.includes("act_")
+  );
 }
 
 export async function getUserPreferences(userId: string) {
@@ -99,41 +120,82 @@ export async function getUserPreferences(userId: string) {
 
 export async function updateUserPreferences(userId: string, preferences: UserPreferences) {
   const client = requireSupabase();
+  const payload = {
+    user_id: userId,
+    enabled_modules: preferences.enabledModules,
+    reminder_consent: preferences.reminderConsent,
+    reminder_consent_updated_at: preferences.reminderConsentUpdatedAt,
+    cbt_reminders_enabled: preferences.cbtRemindersEnabled,
+    cbt_reminder_hour: preferences.cbtReminderHour,
+    cbt_reminder_minute: preferences.cbtReminderMinute,
+    cbt_reminder_timezone: preferences.cbtReminderTimezone,
+    meditation_reminders_enabled: preferences.meditationRemindersEnabled,
+    meditation_reminder_hour: preferences.meditationReminderHour,
+    meditation_reminder_minute: preferences.meditationReminderMinute,
+    meditation_reminder_timezone: preferences.meditationReminderTimezone,
+    app_onboarding_completed: preferences.appOnboardingCompleted,
+    cbt_onboarding_completed: preferences.cbtOnboardingCompleted,
+    cbt_wizard_completed: preferences.cbtWizardCompleted,
+    meditation_onboarding_completed: preferences.meditationOnboardingCompleted,
+    meditation_info_completed: preferences.meditationInfoCompleted,
+    gratitude_onboarding_completed: preferences.gratitudeOnboardingCompleted,
+    habits_onboarding_completed: preferences.habitsOnboardingCompleted,
+    mood_onboarding_completed: preferences.moodOnboardingCompleted,
+    journal_onboarding_completed: preferences.journalOnboardingCompleted,
+    sleep_onboarding_completed: preferences.sleepOnboardingCompleted,
+    mindfulness_onboarding_completed: preferences.mindfulnessOnboardingCompleted,
+    grounding_onboarding_completed: preferences.groundingOnboardingCompleted,
+    act_onboarding_completed: preferences.actOnboardingCompleted,
+    act_reminders_enabled: preferences.actRemindersEnabled,
+    act_reminder_hour: preferences.actReminderHour,
+    act_reminder_minute: preferences.actReminderMinute,
+    act_reminder_timezone: preferences.actReminderTimezone,
+    privacy_policy_accepted_at: preferences.privacyPolicyAcceptedAt,
+    terms_accepted_at: preferences.termsAcceptedAt,
+    policy_version_accepted: preferences.policyVersionAccepted,
+    cookie_consent: preferences.cookieConsent,
+    language: preferences.language,
+    selected_concerns: preferences.selectedConcerns,
+    active_strategies: preferences.activeStrategies,
+  };
+
+  const { data, error } = await client
+    .from("user_preferences")
+    .upsert(payload, { onConflict: "user_id" })
+    .select("*")
+    .single();
+
+  if (error) {
+    if (isMissingACTPreferenceColumn(error)) {
+      const { error: fallbackError } = await client.from("user_preferences").upsert(
+        {
+          ...payload,
+          act_onboarding_completed: undefined,
+          act_reminders_enabled: undefined,
+          act_reminder_hour: undefined,
+          act_reminder_minute: undefined,
+          act_reminder_timezone: undefined,
+        },
+        { onConflict: "user_id" },
+      );
+
+      if (!fallbackError) return preferences;
+    }
+
+    throw error;
+  }
+
+  return mapPreferences(data as UserPreferenceRow);
+}
+
+export async function updateEnabledModules(userId: string, enabledModules: ModuleKey[]) {
+  const client = requireSupabase();
   const { data, error } = await client
     .from("user_preferences")
     .upsert(
       {
         user_id: userId,
-        enabled_modules: preferences.enabledModules,
-        reminder_consent: preferences.reminderConsent,
-        reminder_consent_updated_at: preferences.reminderConsentUpdatedAt,
-        cbt_reminders_enabled: preferences.cbtRemindersEnabled,
-        cbt_reminder_hour: preferences.cbtReminderHour,
-        cbt_reminder_minute: preferences.cbtReminderMinute,
-        cbt_reminder_timezone: preferences.cbtReminderTimezone,
-        meditation_reminders_enabled: preferences.meditationRemindersEnabled,
-        meditation_reminder_hour: preferences.meditationReminderHour,
-        meditation_reminder_minute: preferences.meditationReminderMinute,
-        meditation_reminder_timezone: preferences.meditationReminderTimezone,
-        app_onboarding_completed: preferences.appOnboardingCompleted,
-        cbt_onboarding_completed: preferences.cbtOnboardingCompleted,
-        cbt_wizard_completed: preferences.cbtWizardCompleted,
-        meditation_onboarding_completed: preferences.meditationOnboardingCompleted,
-        meditation_info_completed: preferences.meditationInfoCompleted,
-        gratitude_onboarding_completed: preferences.gratitudeOnboardingCompleted,
-        habits_onboarding_completed: preferences.habitsOnboardingCompleted,
-        mood_onboarding_completed: preferences.moodOnboardingCompleted,
-        journal_onboarding_completed: preferences.journalOnboardingCompleted,
-        sleep_onboarding_completed: preferences.sleepOnboardingCompleted,
-        mindfulness_onboarding_completed: preferences.mindfulnessOnboardingCompleted,
-        grounding_onboarding_completed: preferences.groundingOnboardingCompleted,
-        privacy_policy_accepted_at: preferences.privacyPolicyAcceptedAt,
-        terms_accepted_at: preferences.termsAcceptedAt,
-        policy_version_accepted: preferences.policyVersionAccepted,
-        cookie_consent: preferences.cookieConsent,
-        language: preferences.language,
-        selected_concerns: preferences.selectedConcerns,
-        active_strategies: preferences.activeStrategies,
+        enabled_modules: enabledModules,
       },
       { onConflict: "user_id" },
     )

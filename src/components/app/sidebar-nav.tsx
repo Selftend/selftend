@@ -45,7 +45,6 @@ const MODULE_ITEMS: NavItemDef[] = [
     href: "/modules/act",
     icon: "explore",
     matchPrefix: "/modules/act",
-    badgeKey: "badgeSoon",
   },
   {
     labelKey: "sidebar.dbt",

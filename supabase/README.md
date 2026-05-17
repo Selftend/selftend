@@ -209,7 +209,7 @@ npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_pro
 
 ## Linked project status
 
-As of 2026-05-17, the active linked project is aligned with the checked-in migration history through `20260534_tool_onboardings.sql`. The migration history was repaired on 2026-05-05, the onboarding flags migration was applied on 2026-05-06, the reminder consent timestamp migration was applied on 2026-05-06, the browser push subscription migration was applied on 2026-05-06, the CBT strategy migrations were applied on 2026-05-15, and the tool-onboarding migrations were applied on 2026-05-17:
+As of 2026-05-17, the active linked project is aligned with the checked-in migration history through `20260540_act_committed_action.sql`. The migration history was repaired on 2026-05-05, the onboarding flags migration was applied on 2026-05-06, the reminder consent timestamp migration was applied on 2026-05-06, the browser push subscription migration was applied on 2026-05-06, the CBT strategy migrations were applied on 2026-05-15, the tool-onboarding migrations were applied on 2026-05-17, and the ACT migrations were applied on 2026-05-17:
 
 - the old remote `20260503` history row was reverted
 - the local consent/deletion migration was renamed to `20260503000000_consent_and_deletion.sql`
@@ -220,6 +220,7 @@ As of 2026-05-17, the active linked project is aligned with the checked-in migra
 - `20260514_cbt_phase1.sql`, `20260515_cbt_phase3.sql`, `20260516000000_cbt_phase4.sql`, `20260517_cbt_phase5.sql`, `20260518_cbt_export_coverage.sql`, and `20260519_expanded_thought_records.sql` were applied with `supabase db push --yes`
 - the legacy remote `20260516` history row was reverted and replaced with `20260516000000` on 2026-05-17 because it conflicted with the later `20260516172952_meditation_info_onboarding.sql` version in Supabase CLI migration matching
 - `20260533_cbt_wizard.sql` and `20260534_tool_onboardings.sql` were applied with `supabase db push --yes --include-all`
+- `20260535_act_module.sql`, `20260536_act_expansion.sql`, `20260537_act_presence.sql`, `20260538_act_values.sql`, and `20260540_act_committed_action.sql` were applied with `supabase db push --include-all --yes`
 
 - `profiles` includes the avatar columns from `20260503120000_profile_avatars.sql`
 - `profile-pics` exists as a private bucket with a 5 MB limit and JPEG/PNG/WebP MIME types
@@ -228,6 +229,7 @@ As of 2026-05-17, the active linked project is aligned with the checked-in migra
 - `user_preferences.language` exists with the `user_preferences_language_check` constraint
 - `user_preferences.app_onboarding_completed` and `user_preferences.cbt_onboarding_completed` exist for account-backed onboarding
 - `user_preferences.habits_onboarding_completed`, `habits`, and `habit_logs` exist for account-backed habit onboarding and daily habit ticks
+- `user_preferences.act_onboarding_completed`, `act_program_state`, and the ACT exercise tables exist with owner-scoped RLS policies
 - `user_preferences.reminder_consent_updated_at` exists for timestamped reminder opt-in and withdrawal state
 - `user_preferences.cbt_reminder_timezone` and `web_push_subscriptions` exist for opted-in browser reminders
 - `activity_logs`, `mood_logs`, `self_care_logs`, and the rest of the CBT strategy tables exist with owner-scoped RLS policies
