@@ -26,6 +26,7 @@
     "modules": "Modules",
     "gratitudeLog": "Gratitude log",
     "sleep": "Sleep tracker",
+    "habits": "Habit tracking",
     "tools": "Tools",
     "badgeLive": "Live",
     "badgeSoon": "Soon",
@@ -133,6 +134,8 @@
       "groundingSub": "Anchor to the present",
       "sleep": "Sleep tracker",
       "sleepSub": "Log and review your sleep",
+      "habits": "Habit tracking",
+      "habitsSub": "Build consistent daily habits",
       "progress": "Reflect",
       "progressSub": "See your 30-day picture"
     }

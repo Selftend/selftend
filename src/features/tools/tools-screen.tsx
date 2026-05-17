@@ -18,13 +18,22 @@ import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface ToolTile {
-  key: "mood" | "mindfulness" | "timer" | "gratitude" | "journal" | "grounding" | "sleep";
+  key:
+    | "mood"
+    | "mindfulness"
+    | "timer"
+    | "gratitude"
+    | "journal"
+    | "grounding"
+    | "sleep"
+    | "habits";
   href: string;
   icon: MaterialIconName;
   nameKey: string;
   subKey: string;
   iconBg: string;
   iconColor: string;
+  badgeKey?: "soon";
 }
 
 const TOOLS: ToolTile[] = [
@@ -91,6 +100,16 @@ const TOOLS: ToolTile[] = [
     iconBg: "bg-be/15",
     iconColor: "text-be",
   },
+  {
+    key: "habits",
+    href: "/tools/habits",
+    icon: "task-alt",
+    nameKey: "today.tools.habits",
+    subKey: "today.tools.habitsSub",
+    iconBg: "bg-primary/15",
+    iconColor: "text-primary",
+    badgeKey: "soon",
+  },
 ];
 
 function lastThirtyDaysMinutes(
@@ -151,6 +170,8 @@ export default function ToolsScreen() {
       case "sleep":
         if (sleepCount === 0) return t("tools.stats.sleepNoData");
         return t("tools.stats.sleepLogs", { count: sleepCount });
+      case "habits":
+        return t("tools.stats.comingSoon");
     }
   }
 
@@ -202,7 +223,16 @@ function ToolCard({ tool, stat }: ToolCardProps) {
         <Icon name={tool.icon} className={cn("size-6", tool.iconColor)} />
       </View>
       <View className="flex-1 gap-0.5">
-        <Text className="text-base font-semibold">{name}</Text>
+        <View className="flex-row items-center gap-2">
+          <Text className="text-base font-semibold">{name}</Text>
+          {tool.badgeKey ? (
+            <View className="rounded-full bg-muted px-2 py-0.5">
+              <Text className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {t("sidebar.badgeSoon")}
+              </Text>
+            </View>
+          ) : null}
+        </View>
         <Text variant="muted" className="text-xs">
           {subtitle}
         </Text>

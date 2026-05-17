@@ -17,7 +17,7 @@ interface ModuleTile {
   abbreviation: string;
   nameKey: string;
   descriptionKey: string;
-  badgeKey: "live" | "soon";
+  badgeKey: "soon" | null;
   footerKey: "inDesign" | "onRoadmap" | null;
   containerClass: string;
   markClass: string;
@@ -31,7 +31,7 @@ const MODULES: ModuleTile[] = [
     abbreviation: "CBT",
     nameKey: "today.modules.cbtName",
     descriptionKey: "today.modules.cbtDescription",
-    badgeKey: "live",
+    badgeKey: null,
     footerKey: null,
     containerClass: "border-primary/30",
     markClass: "bg-primary/15 border-primary/30",
@@ -125,13 +125,18 @@ function ModuleCard({ module }: { module: ModuleTile }) {
         <View className="flex-1">
           <Text className="text-base font-semibold">{t(module.nameKey)}</Text>
         </View>
-        <View className={cn("rounded-full px-2 py-0.5", module.badgeClass)}>
-          <Text
-            className={cn("text-[10px] font-semibold uppercase tracking-wider", module.badgeClass)}
-          >
-            {t(`modulesPage.stats.${module.badgeKey}`)}
-          </Text>
-        </View>
+        {module.badgeKey ? (
+          <View className={cn("rounded-full px-2 py-0.5", module.badgeClass)}>
+            <Text
+              className={cn(
+                "text-[10px] font-semibold uppercase tracking-wider",
+                module.badgeClass,
+              )}
+            >
+              {t(`modulesPage.stats.${module.badgeKey}`)}
+            </Text>
+          </View>
+        ) : null}
       </View>
       <Text variant="muted" className="text-sm leading-5">
         {t(module.descriptionKey)}

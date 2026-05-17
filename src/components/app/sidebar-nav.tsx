@@ -38,7 +38,6 @@ const MODULE_ITEMS: NavItemDef[] = [
     href: "/modules/cbt",
     icon: "psychology",
     matchPrefix: "/modules/cbt",
-    badgeKey: "badgeLive",
     activeWhen: (pathname) => pathname === "/modules/cbt" || pathname.startsWith("/modules/cbt/"),
   },
   {
@@ -111,6 +110,13 @@ const TOOL_ITEMS: NavItemDef[] = [
     href: "/tools/sleep",
     icon: "bedtime",
     matchPrefix: "/tools/sleep",
+  },
+  {
+    labelKey: "sidebar.habits",
+    href: "/tools/habits",
+    icon: "task-alt",
+    matchPrefix: "/tools/habits",
+    badgeKey: "badgeSoon",
   },
 ];
 
