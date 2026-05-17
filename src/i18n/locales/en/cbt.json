@@ -438,7 +438,7 @@
         "eatingBody": "Slow down with one bite and engage every sense."
       },
       "finish": {
-        "start": "Choose an exercise"
+        "start": "Got it"
       }
     }
   },
@@ -688,7 +688,7 @@
       "tableRow3Feature": "Negative Filter",
       "tableRow3Focus": "Behavioural activation and cognitive restructuring",
       "attribution": "This section is inspired by Cognitive Behavioral Therapy Made Simple by Seth J. Gillihan PhD.",
-      "continue": "Get started"
+      "continue": "Got it"
     },
     "concerns": {
       "title": "What brings you here?",
@@ -1070,7 +1070,7 @@
         "feetBody": "Press both feet down firmly, breathe slowly, notice the ground."
       },
       "finish": {
-        "start": "Try a technique"
+        "start": "Got it"
       }
     }
   },

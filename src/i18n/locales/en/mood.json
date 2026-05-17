@@ -84,7 +84,7 @@
       "notesBody": "Optional free-text — a trigger, a context, anything worth remembering."
     },
     "finish": {
-      "start": "Start tracking"
+      "start": "Got it"
     }
   },
   "feedback": {

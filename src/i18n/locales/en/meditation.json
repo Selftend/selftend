@@ -332,7 +332,7 @@
       "reminderLabel": "Quiet daily reminder",
       "reminderHint": "Off by default. You can always change this in settings.",
       "suggestedStage": "We'll start you at Stage {{stage}}.",
-      "finish": "Finish",
+      "finish": "Got it",
       "saving": "Saving…",
       "error": "Could not save. Please try again."
     },
