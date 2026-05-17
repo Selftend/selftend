@@ -38,10 +38,10 @@ create table if not exists public.habits (
   constraint habits_cadence_valid check (cadence in ('daily', 'weekdays', 'custom')),
   constraint habits_custom_days_valid check (
     cadence <> 'custom'
-    or (cardinality(custom_days) between 1 and 7
-        and not exists (
-          select 1 from unnest(custom_days) d where d < 0 or d > 6
-        ))
+    or (
+      cardinality(custom_days) between 1 and 7
+      and custom_days <@ array[0, 1, 2, 3, 4, 5, 6]::smallint[]
+    )
   ),
   constraint habits_color_length check (length(color) between 1 and 32)
 );

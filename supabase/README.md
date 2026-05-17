@@ -19,6 +19,7 @@ The initial schema lives in [supabase/migrations/20260415_initial.sql](migration
 - `anger_logs`
 - `self_care_logs`
 - `recovery_plans`, `challenge_plans`
+- `habits`, `habit_logs`
 
 `profiles` stores account-level metadata only: email plus optional avatar fields. Google OAuth avatars are stored as URLs with `avatar_source = 'oauth'`; manually chosen images store a private Storage object path with `avatar_source = 'upload'`; removed photos keep `avatar_source = null` and set `avatar_updated_at` so the app does not immediately re-import the Google photo.
 
@@ -224,6 +225,7 @@ As of 2026-05-15, the active linked project is aligned with the checked-in migra
 - named Storage policies exist for authenticated user-owned objects in `profile-pics`
 - `user_preferences.language` exists with the `user_preferences_language_check` constraint
 - `user_preferences.app_onboarding_completed` and `user_preferences.cbt_onboarding_completed` exist for account-backed onboarding
+- `user_preferences.habits_onboarding_completed`, `habits`, and `habit_logs` exist for account-backed habit onboarding and daily habit ticks
 - `user_preferences.reminder_consent_updated_at` exists for timestamped reminder opt-in and withdrawal state
 - `user_preferences.cbt_reminder_timezone` and `web_push_subscriptions` exist for opted-in browser reminders
 - `activity_logs`, `mood_logs`, `self_care_logs`, and the rest of the CBT strategy tables exist with owner-scoped RLS policies

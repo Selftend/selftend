@@ -75,7 +75,9 @@ export async function dismissPostSignInModals(page: Page) {
     .then(() => true)
     .catch(() => false);
   if (welcomeVisible) {
-    await page.getByRole("button").last().click();
+    const startButton = page.getByRole("button", { name: "Start using Selftend", exact: true });
+    await expect(startButton).toBeEnabled({ timeout: 5_000 });
+    await startButton.click();
     await expect(welcome).toBeHidden({ timeout: 10_000 });
   }
 }
