@@ -112,6 +112,12 @@ const TOOL_ITEMS: NavItemDef[] = [
     icon: "anchor",
     matchPrefix: "/tools/grounding",
   },
+  {
+    labelKey: "sidebar.sleep",
+    href: "/tools/sleep",
+    icon: "bedtime",
+    matchPrefix: "/tools/sleep",
+  },
 ];
 
 const ACCOUNT_ITEMS: NavItemDef[] = [

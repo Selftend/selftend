@@ -25,6 +25,7 @@
     "cbt": "CBT",
     "modules": "Modules",
     "gratitudeLog": "Gratitude log",
+    "sleep": "Sleep tracker",
     "tools": "Tools",
     "badgeLive": "Live",
     "badgeSoon": "Soon",
@@ -130,6 +131,8 @@
       "journalSub": "Private free-text reflection",
       "grounding": "Grounding",
       "groundingSub": "Anchor to the present",
+      "sleep": "Sleep tracker",
+      "sleepSub": "Log and review your sleep",
       "progress": "Reflect",
       "progressSub": "See your 30-day picture"
     }
@@ -173,6 +176,9 @@
       "groundingSessions_one": "{{count}} session",
       "groundingSessions_other": "{{count}} sessions",
       "groundingNoData": "No sessions yet",
+      "sleepLogs_one": "{{count}} log",
+      "sleepLogs_other": "{{count}} logs",
+      "sleepNoData": "No logs yet",
       "comingSoon": "Coming soon"
     }
   },

@@ -25,6 +25,7 @@
     "cbt": "CBT",
     "modules": "Модули",
     "gratitudeLog": "Дневник на благодарността",
+    "sleep": "Проследяване на съня",
     "tools": "Инструменти",
     "badgeLive": "Активно",
     "badgeSoon": "Скоро",
@@ -128,6 +129,8 @@
       "journalSub": "Личен дневник за свободно писане",
       "grounding": "Заземяване",
       "groundingSub": "Закрепи се в настоящото",
+      "sleep": "Проследяване на съня",
+      "sleepSub": "Запиши и прегледай съня си",
       "progress": "Рефлексия",
       "progressSub": "Виж картината за 30 дни"
     }
@@ -169,6 +172,9 @@
       "groundingSessions_one": "{{count}} сесия",
       "groundingSessions_other": "{{count}} сесии",
       "groundingNoData": "Още няма сесии",
+      "sleepLogs_one": "{{count}} запис",
+      "sleepLogs_other": "{{count}} записа",
+      "sleepNoData": "Още няма записи",
       "comingSoon": "Скоро"
     }
   },

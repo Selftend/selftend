@@ -14,6 +14,7 @@ import enSettings from "./locales/en/settings.json";
 import enNavigation from "./locales/en/navigation.json";
 import enPolicies from "./locales/en/policies.json";
 import enErrors from "./locales/en/errors.json";
+import enSleep from "./locales/en/sleep.json";
 
 import bgCommon from "./locales/bg/common.json";
 import bgAuth from "./locales/bg/auth.json";
@@ -28,6 +29,7 @@ import bgSettings from "./locales/bg/settings.json";
 import bgNavigation from "./locales/bg/navigation.json";
 import bgPolicies from "./locales/bg/policies.json";
 import bgErrors from "./locales/bg/errors.json";
+import bgSleep from "./locales/bg/sleep.json";
 
 export const supportedLanguages = ["en", "bg"] as const;
 export type SupportedLanguage = (typeof supportedLanguages)[number];
@@ -50,6 +52,7 @@ i18n.use(initReactI18next).init({
     "navigation",
     "policies",
     "errors",
+    "sleep",
   ],
   interpolation: { escapeValue: false },
   resources: {
@@ -67,6 +70,7 @@ i18n.use(initReactI18next).init({
       navigation: enNavigation,
       policies: enPolicies,
       errors: enErrors,
+      sleep: enSleep,
     },
     bg: {
       common: bgCommon,
@@ -82,6 +86,7 @@ i18n.use(initReactI18next).init({
       navigation: bgNavigation,
       policies: bgPolicies,
       errors: bgErrors,
+      sleep: bgSleep,
     },
   },
 });

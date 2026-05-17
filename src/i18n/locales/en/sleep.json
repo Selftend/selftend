@@ -1,0 +1,79 @@
+{
+  "title": "Sleep tracker",
+  "description": "Log your sleep and spot patterns over time.",
+  "cta": {
+    "log": "Log last night's sleep",
+    "logAnother": "Log another"
+  },
+  "log": {
+    "title": "Log sleep",
+    "editTitle": "Edit sleep entry",
+    "description": "How did you sleep?",
+    "editDescription": "Update this sleep entry.",
+    "durationLabel": "Hours slept",
+    "qualityLabel": "Sleep quality",
+    "qualityHint": "1 = very poor · 5 = excellent",
+    "notesLabel": "Notes (optional)",
+    "notesPlaceholder": "Anything that affected your sleep?",
+    "save": "Save",
+    "update": "Update",
+    "cancel": "Cancel",
+    "saveError": "Couldn't save this entry. Try again.",
+    "durationRequired": "Please select how long you slept.",
+    "qualityRequired": "Please rate your sleep quality."
+  },
+  "sections": {
+    "summary": "Summary",
+    "recent": "Recent entries"
+  },
+  "summary": {
+    "sevenDay": "Last 7 days",
+    "thirtyDay": "Last 30 days",
+    "avgDuration": "{{hours}}h avg",
+    "avgQuality": "{{quality}}/5 quality",
+    "noData": "No logs in this window",
+    "count_one": "{{count}} log",
+    "count_other": "{{count}} logs"
+  },
+  "duration": {
+    "label": "{{hours}}h"
+  },
+  "quality": {
+    "1": "Very poor",
+    "2": "Poor",
+    "3": "Fair",
+    "4": "Good",
+    "5": "Excellent"
+  },
+  "recent": {
+    "empty": "No sleep logged yet. Tap \"Log last night's sleep\" to start.",
+    "viewEntry": "View sleep entry from {{when}}"
+  },
+  "detail": {
+    "title": "Sleep entry",
+    "loggedAt": "Logged at",
+    "duration": "Duration",
+    "quality": "Quality",
+    "notes": "Notes",
+    "noNotes": "No notes for this entry.",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteError": "Couldn't delete this entry. Try again.",
+    "notFound": "We couldn't find that sleep entry.",
+    "confirmDelete": {
+      "title": "Delete this entry?",
+      "message": "This permanently removes the sleep log. It can't be recovered.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    }
+  },
+  "feedback": {
+    "deleted": "Sleep entry deleted"
+  },
+  "relativeTime": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago"
+  }
+}
