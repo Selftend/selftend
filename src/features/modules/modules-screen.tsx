@@ -9,7 +9,7 @@ import { BackButton } from "@/src/components/app/back-button";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
-type ModuleKey = "cbt" | "meditation" | "act" | "dbt" | "gratitude";
+type ModuleKey = "cbt" | "act" | "dbt";
 
 interface ModuleTile {
   key: ModuleKey;
@@ -38,18 +38,6 @@ const MODULES: ModuleTile[] = [
     badgeClass: "bg-act/15 text-act",
   },
   {
-    key: "meditation",
-    href: "/modules/meditation",
-    abbreviation: "TMI",
-    nameKey: "today.modules.meditationName",
-    descriptionKey: "today.modules.meditationDescription",
-    badgeKey: "live",
-    footerKey: null,
-    containerClass: "border-be/30",
-    markClass: "bg-be/15 border-be/30",
-    badgeClass: "bg-be/15 text-be",
-  },
-  {
     key: "act",
     href: "/modules/act",
     abbreviation: "ACT",
@@ -73,26 +61,12 @@ const MODULES: ModuleTile[] = [
     markClass: "bg-be/15 border-be/30",
     badgeClass: "bg-muted text-muted-foreground",
   },
-  {
-    key: "gratitude",
-    href: "/modules/gratitude",
-    abbreviation: "GRT",
-    nameKey: "today.modules.gratitudeName",
-    descriptionKey: "today.modules.gratitudeDescription",
-    badgeKey: "live",
-    footerKey: null,
-    containerClass: "border-act/30",
-    markClass: "bg-act/15 border-act/30",
-    badgeClass: "bg-act/15 text-act",
-  },
 ];
 
 const MARK_TEXT_CLASS: Record<ModuleKey, string> = {
   cbt: "text-primary",
-  meditation: "text-be",
   act: "text-act",
   dbt: "text-be",
-  gratitude: "text-act",
 };
 
 export default function ModulesScreen() {

@@ -156,7 +156,7 @@ export function TimerWidget({ initialDuration = 10 }: TimerWidgetProps) {
             <Button
               onPress={() =>
                 router.push({
-                  pathname: "/modules/meditation/session/log",
+                  pathname: "/tools/meditation/session/log",
                   params: { duration: String(durationMinutes) },
                 })
               }

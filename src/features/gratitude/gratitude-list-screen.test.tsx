@@ -10,7 +10,7 @@ jest.mock("expo-router", () => ({
     push: jest.fn(),
     canGoBack: jest.fn(() => false),
   },
-  usePathname: () => "/modules/gratitude",
+  usePathname: () => "/tools/gratitude-log",
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -75,7 +75,7 @@ describe("GratitudeListScreen", () => {
     expect(screen.getByText("Recent entries")).toBeTruthy();
   });
 
-  it("routes to /modules/gratitude/new when the CTA is pressed", () => {
+  it("routes to /tools/gratitude-log/new when the CTA is pressed", () => {
     mockUseGratitudeEntries.mockReturnValue({
       data: [],
     } as unknown as ReturnType<typeof useGratitudeEntries>);
@@ -84,6 +84,6 @@ describe("GratitudeListScreen", () => {
 
     fireEvent.press(screen.getByText("New entry"));
 
-    expect(mockRouter.push).toHaveBeenCalledWith("/modules/gratitude/new");
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/gratitude-log/new");
   });
 });

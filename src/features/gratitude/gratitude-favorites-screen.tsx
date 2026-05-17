@@ -25,7 +25,7 @@ export default function GratitudeFavoritesScreen() {
         <View className="gap-6">
           <View className="gap-2">
             <View className="flex-row items-center gap-2">
-              <BackButton fallbackHref="/modules/gratitude" showLabel={false} className="-ml-2" />
+              <BackButton fallbackHref="/tools/gratitude-log" showLabel={false} className="-ml-2" />
               <Text variant="h1">{t("favorites.title")}</Text>
             </View>
             <Text variant="muted">{t("favorites.description")}</Text>
@@ -61,7 +61,7 @@ function FavoriteEntryRow({ entry }: { entry: GratitudeEntry }) {
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() =>
         router.push({
-          pathname: "/modules/gratitude/entries/[id]",
+          pathname: "/tools/gratitude-log/[id]",
           params: { id: entry.id },
         })
       }

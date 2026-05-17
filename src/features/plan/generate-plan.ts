@@ -49,7 +49,7 @@ export const TOOL_DEFS: Record<PlanTool, ToolDef> = {
   meditation: {
     toolId: "meditation",
     title: "Meditation session",
-    route: "/modules/meditation",
+    route: "/tools/meditation",
     frequency: "daily",
   },
   gratitude: {

@@ -35,7 +35,7 @@ export default function MeditationSessionsScreen() {
                   accessibilityRole="button"
                   onPress={() =>
                     router.push({
-                      pathname: "/modules/meditation/sessions/[id]",
+                      pathname: "/tools/meditation/sessions/[id]",
                       params: { id: s.id },
                     })
                   }

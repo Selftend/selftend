@@ -1,5 +1,1 @@
-import { Redirect } from "expo-router";
-
-export default function GratitudeLogRedirect() {
-  return <Redirect href="/modules/gratitude" />;
-}
+export { default } from "@/src/features/gratitude/gratitude-home-screen";

@@ -42,15 +42,6 @@ const MODULE_ITEMS: NavItemDef[] = [
     activeWhen: (pathname) => pathname === "/modules/cbt" || pathname.startsWith("/modules/cbt/"),
   },
   {
-    labelKey: "sidebar.meditation",
-    href: "/modules/meditation",
-    icon: "self-improvement",
-    matchPrefix: "/modules/meditation",
-    badgeKey: "badgeLive",
-    activeWhen: (pathname) =>
-      pathname === "/modules/meditation" || pathname.startsWith("/modules/meditation/"),
-  },
-  {
     labelKey: "sidebar.act",
     href: "/modules/act",
     icon: "explore",
@@ -63,15 +54,6 @@ const MODULE_ITEMS: NavItemDef[] = [
     icon: "anchor",
     matchPrefix: "/modules/dbt",
     badgeKey: "badgeSoon",
-  },
-  {
-    labelKey: "sidebar.gratitudeLog",
-    href: "/modules/gratitude",
-    icon: "favorite",
-    matchPrefix: "/modules/gratitude",
-    badgeKey: "badgeLive",
-    activeWhen: (pathname) =>
-      pathname === "/modules/gratitude" || pathname.startsWith("/modules/gratitude/"),
   },
 ];
 
@@ -111,6 +93,18 @@ const TOOL_ITEMS: NavItemDef[] = [
     href: "/tools/grounding",
     icon: "anchor",
     matchPrefix: "/tools/grounding",
+  },
+  {
+    labelKey: "sidebar.gratitudeLog",
+    href: "/tools/gratitude-log",
+    icon: "favorite",
+    matchPrefix: "/tools/gratitude-log",
+  },
+  {
+    labelKey: "sidebar.meditation",
+    href: "/tools/meditation",
+    icon: "self-improvement",
+    matchPrefix: "/tools/meditation",
   },
   {
     labelKey: "sidebar.sleep",

@@ -139,9 +139,7 @@ export function GratitudeEntryEditorScreen({
         entryId: editMode ? (entryId ?? undefined) : undefined,
       });
       showToast({ title: t("feedback.saved"), tone: "success" });
-      router.replace(
-        `/modules/gratitude/entries/${saved.id}` as Parameters<typeof router.replace>[0],
-      );
+      router.replace(`/tools/gratitude-log/${saved.id}` as Parameters<typeof router.replace>[0]);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("editor.saveError"));
     }

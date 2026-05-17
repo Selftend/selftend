@@ -153,14 +153,14 @@ export default function MeditationHomeScreen() {
               <Button
                 variant="outline"
                 className="flex-1 min-w-[160px]"
-                onPress={() => router.push("/modules/meditation/stages")}
+                onPress={() => router.push("/tools/meditation/stages")}
               >
                 <Text>{t("module.home.openStages")}</Text>
               </Button>
               <Button
                 variant="outline"
                 className="flex-1 min-w-[160px]"
-                onPress={() => router.push("/modules/meditation/learn")}
+                onPress={() => router.push("/tools/meditation/learn")}
               >
                 <Text>{t("module.home.openLearn")}</Text>
               </Button>
@@ -180,7 +180,7 @@ export default function MeditationHomeScreen() {
                 {sessions && sessions.length > 0 ? (
                   <Pressable
                     accessibilityRole="link"
-                    onPress={() => router.push("/modules/meditation/sessions")}
+                    onPress={() => router.push("/tools/meditation/sessions")}
                   >
                     <Text className="text-sm text-primary">{t("module.home.viewHistory")}</Text>
                   </Pressable>
@@ -196,7 +196,7 @@ export default function MeditationHomeScreen() {
                       accessibilityRole="button"
                       onPress={() =>
                         router.push({
-                          pathname: "/modules/meditation/sessions/[id]",
+                          pathname: "/tools/meditation/sessions/[id]",
                           params: { id: s.id },
                         })
                       }

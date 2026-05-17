@@ -148,7 +148,7 @@ const BE_SHARED_TOOLS: SharedTool[] = [
   },
   {
     key: "meditation",
-    route: "/modules/meditation",
+    route: "/tools/meditation",
     icon: "self-improvement",
     labelKey: "navigation:sidebar.meditation",
   },

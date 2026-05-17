@@ -204,7 +204,7 @@ export default function TimerScreen() {
                 <Button
                   onPress={() =>
                     router.push({
-                      pathname: "/modules/meditation/session/log",
+                      pathname: "/tools/meditation/session/log",
                       params: { duration: String(durationMinutes) },
                     })
                   }

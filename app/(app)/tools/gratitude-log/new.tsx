@@ -1,5 +1,5 @@
-import { Redirect } from "expo-router";
+import { GratitudeEntryEditorScreen } from "@/src/features/gratitude/gratitude-entry-editor-screen";
 
-export default function NewGratitudeRedirect() {
-  return <Redirect href="/modules/gratitude/new" />;
+export default function NewGratitudeEntryRoute() {
+  return <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />;
 }

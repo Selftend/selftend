@@ -17,7 +17,7 @@ jest.mock("expo-router", () => ({
     back: jest.fn(),
     canGoBack: jest.fn(() => false),
   },
-  usePathname: () => "/modules/gratitude/new",
+  usePathname: () => "/tools/gratitude-log/new",
 }));
 
 jest.mock("@/src/components/react-native-reusables/label", () => {
@@ -68,7 +68,7 @@ describe("GratitudeEntryEditorScreen", () => {
     } as unknown as ReturnType<typeof useSaveGratitudeEntry>);
 
     renderWithProviders(
-      <GratitudeEntryEditorScreen fallbackHref="/modules/gratitude" mode="create" />,
+      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
     expect(screen.getByText("New gratitude entry")).toBeTruthy();
@@ -102,7 +102,7 @@ describe("GratitudeEntryEditorScreen", () => {
     } as unknown as ReturnType<typeof useSaveGratitudeEntry>);
 
     renderWithProviders(
-      <GratitudeEntryEditorScreen fallbackHref="/modules/gratitude" mode="create" />,
+      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
     fireEvent.changeText(screen.getByLabelText("Gratitude 1"), "Warm coffee");
@@ -148,7 +148,7 @@ describe("GratitudeEntryEditorScreen", () => {
     } as unknown as ReturnType<typeof useSaveGratitudeEntry>);
 
     renderWithProviders(
-      <GratitudeEntryEditorScreen fallbackHref="/modules/gratitude" mode="create" />,
+      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
     fireEvent.changeText(screen.getByLabelText("Gratitude 2"), "Sunlight");
@@ -199,7 +199,7 @@ describe("GratitudeEntryEditorScreen", () => {
     } as unknown as ReturnType<typeof useSaveGratitudeEntry>);
 
     renderWithProviders(
-      <GratitudeEntryEditorScreen fallbackHref="/modules/gratitude" mode="edit" entryId="g-9" />,
+      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="edit" entryId="g-9" />,
     );
 
     expect(screen.getByText("Edit gratitude entry")).toBeTruthy();

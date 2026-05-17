@@ -58,7 +58,7 @@ export default function MeditationSessionLogScreen() {
         obstacleTags: skipReflection ? [] : obstacleTags,
       },
       {
-        onSettled: () => router.replace("/modules/meditation"),
+        onSettled: () => router.replace("/tools/meditation"),
       },
     );
   }

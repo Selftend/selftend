@@ -58,7 +58,7 @@ export default function MeditationStagesScreen() {
                   accessibilityRole="button"
                   onPress={() =>
                     router.push({
-                      pathname: "/modules/meditation/stages/[n]",
+                      pathname: "/tools/meditation/stages/[n]",
                       params: { n: String(s.number) },
                     })
                   }

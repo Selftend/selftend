@@ -1,6 +1,16 @@
-import { Redirect, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 
-export default function GratitudeEditRedirect() {
+import { GratitudeEntryEditorScreen } from "@/src/features/gratitude/gratitude-entry-editor-screen";
+
+export default function EditGratitudeEntryRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <Redirect href={`/modules/gratitude/entries/${id}/edit`} />;
+  const entryId = typeof id === "string" ? id : null;
+
+  return (
+    <GratitudeEntryEditorScreen
+      fallbackHref={entryId ? `/tools/gratitude-log/${entryId}` : "/tools/gratitude-log"}
+      mode="edit"
+      entryId={entryId}
+    />
+  );
 }

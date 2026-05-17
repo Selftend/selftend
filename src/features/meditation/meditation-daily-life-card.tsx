@@ -71,7 +71,7 @@ export function MeditationDailyLifeCard() {
             {(notes?.length ?? 0) > MAX_RECENT ? (
               <Pressable
                 accessibilityRole="link"
-                onPress={() => router.push("/modules/meditation/daily-life")}
+                onPress={() => router.push("/tools/meditation/daily-life")}
               >
                 <Text className="text-sm text-primary">{t("module.dailyLife.viewAll")}</Text>
               </Pressable>

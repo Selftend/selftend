@@ -93,7 +93,7 @@ export default function GratitudeDetailScreen() {
       await deleteMutation.mutateAsync(entry.id);
       setConfirmOpen(false);
       showToast({ title: t("feedback.deleted"), tone: "success" });
-      router.replace("/modules/gratitude" as Parameters<typeof router.replace>[0]);
+      router.replace("/tools/gratitude-log" as Parameters<typeof router.replace>[0]);
     } catch (e) {
       setDeleteError(e instanceof Error ? e.message : t("detail.deleteError"));
     }
@@ -144,7 +144,7 @@ export default function GratitudeDetailScreen() {
               <Button
                 onPress={() =>
                   router.push({
-                    pathname: "/modules/gratitude/entries/[id]/edit",
+                    pathname: "/tools/gratitude-log/[id]/edit",
                     params: { id: entry.id },
                   })
                 }

@@ -37,7 +37,7 @@ export default function GratitudeListScreen() {
 
           <Button
             onPress={() =>
-              router.push("/modules/gratitude/new" as Parameters<typeof router.push>[0])
+              router.push("/tools/gratitude-log/new" as Parameters<typeof router.push>[0])
             }
             className="self-start"
           >
@@ -52,7 +52,7 @@ export default function GratitudeListScreen() {
               action={{
                 label: t("list.empty.cta"),
                 onPress: () =>
-                  router.push("/modules/gratitude/new" as Parameters<typeof router.push>[0]),
+                  router.push("/tools/gratitude-log/new" as Parameters<typeof router.push>[0]),
               }}
             />
           ) : (
@@ -87,7 +87,7 @@ function GratitudeEntryRow({ entry }: GratitudeEntryRowProps) {
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() =>
         router.push({
-          pathname: "/modules/gratitude/entries/[id]",
+          pathname: "/tools/gratitude-log/[id]",
           params: { id: entry.id },
         })
       }

@@ -102,7 +102,7 @@ export default function GratitudeHomeScreen() {
 
             <Button
               onPress={() =>
-                router.push("/modules/gratitude/new" as Parameters<typeof router.push>[0])
+                router.push("/tools/gratitude-log/new" as Parameters<typeof router.push>[0])
               }
               className="self-start"
             >
@@ -130,7 +130,9 @@ export default function GratitudeHomeScreen() {
                   <Pressable
                     accessibilityRole="link"
                     onPress={() =>
-                      router.push("/modules/gratitude/entries" as Parameters<typeof router.push>[0])
+                      router.push(
+                        "/tools/gratitude-log/entries" as Parameters<typeof router.push>[0],
+                      )
                     }
                   >
                     <Text className="text-sm text-primary">{t("home.viewAll")}</Text>
@@ -151,7 +153,7 @@ export default function GratitudeHomeScreen() {
                       })}
                       onPress={() =>
                         router.push({
-                          pathname: "/modules/gratitude/entries/[id]",
+                          pathname: "/tools/gratitude-log/[id]",
                           params: { id: entry.id },
                         })
                       }
@@ -201,7 +203,7 @@ function InsightsSection({ buckets, favoriteCount, themes }: InsightsSectionProp
         <Pressable
           accessibilityRole="link"
           onPress={() =>
-            router.push("/modules/gratitude/favorites" as Parameters<typeof router.push>[0])
+            router.push("/tools/gratitude-log/favorites" as Parameters<typeof router.push>[0])
           }
         >
           <Text className="text-sm text-primary">{t("insights.favoritesOpen")}</Text>
