@@ -116,7 +116,6 @@ const TOOL_ITEMS: NavItemDef[] = [
     href: "/tools/habits",
     icon: "task-alt",
     matchPrefix: "/tools/habits",
-    badgeKey: "badgeSoon",
   },
 ];
 

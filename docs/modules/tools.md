@@ -49,6 +49,7 @@ Working tool routes:
 - `/tools/journal`, `/tools/journal/new`, `/tools/journal/[id]`, `/tools/journal/[id]/edit`
 - `/tools/mindfulness`, `/tools/mindfulness/[slug]`
 - `/tools/gratitude-log`, `/tools/gratitude-log/new`, `/tools/gratitude-log/[id]`, `/tools/gratitude-log/[id]/edit` (compat redirects → `/modules/gratitude/*`)
+- `/tools/habits`, `/tools/habits/new`, `/tools/habits/[id]`, `/tools/habits/[id]/edit`, `/tools/habits/[id]/log`, `/tools/habits/history`, `/tools/habits/onboarding`
 
 Working gratitude routes (planned — Phase 1):
 
@@ -99,3 +100,4 @@ Planned boundaries:
 - **ACT:** focused exercises after a spec
 - **Meditation:** the ten-stage Mind Illuminated program with onboarding, stage-aware sits, private session history, and optional quiet reminders. Spec: [meditation-tmi.md](meditation-tmi.md)
 - **Gratitude:** three-level practice (Noticing → Reflecting → Practicing), 9 named exercises from the Kurzgesagt Gratitude Journal, private history, no reminders or streak pressure. Spec: [gratitude.md](gratitude.md)
+- **Habits:** Atomic Habits four-law strategies, identity-based framing, tap-to-tick today list, calendar heat-strip on detail, "Never Miss Twice" copy, no streaks. Spec: [habits.md](habits.md)

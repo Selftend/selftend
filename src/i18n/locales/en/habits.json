@@ -1,0 +1,185 @@
+{
+  "title": "Habits",
+  "description": "Build small habits, one tick at a time. Influenced by James Clear's Atomic Habits.",
+  "cta": {
+    "newHabit": "New habit",
+    "addNote": "Add note",
+    "viewHistory": "View history",
+    "viewAll": "View all",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "archive": "Archive",
+    "restore": "Restore",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this habit and all its ticks? This can't be undone."
+  },
+  "home": {
+    "title": "Habits",
+    "subtitle": "Small habits, repeated. Tap to tick — no streaks, no shame.",
+    "identityBannerPrefix": "You're becoming someone who",
+    "todayHeading": "Today",
+    "todayEmpty": "No habits scheduled for today.",
+    "noHabitsTitle": "Start with one two-minute habit",
+    "noHabitsBody": "Atomic Habits suggests scaling new behaviours under two minutes. Pick something small — the goal is to cast a vote for the kind of person you want to become.",
+    "recentActivity": "Recent activity",
+    "recentEmpty": "Ticks you make will appear here.",
+    "weekStripLabel": "Last 7 days",
+    "neverMissTwiceTitle": "Never miss twice",
+    "neverMissTwiceBody": "You skipped yesterday. Today is a great day to tick this once — one missed day is data, not failure.",
+    "learnHeading": "From the book"
+  },
+  "list": {
+    "tickedToday": "Ticked today",
+    "tapToTick": "Tap to tick today",
+    "lastTicked": "Last ticked {{when}}",
+    "noTicksYet": "No ticks yet",
+    "openDetail": "Open habit details"
+  },
+  "form": {
+    "newTitle": "New habit",
+    "editTitle": "Edit habit",
+    "identityLabel": "Identity (optional)",
+    "identityPlaceholder": "I'm the kind of person who…",
+    "identityHelp": "Every habit is a vote for the kind of person you want to become.",
+    "nameLabel": "Habit name",
+    "namePlaceholder": "Read, Walk after lunch, Stretch…",
+    "nameRequired": "Give the habit a short name.",
+    "kindLabel": "Build or break",
+    "kindBuild": "Build",
+    "kindBreak": "Break",
+    "kindBreakSoon": "Soon",
+    "twoMinuteLabel": "Two-minute version (Make It Easy)",
+    "twoMinutePlaceholder": "Make the starter version under two minutes. e.g., Read one page.",
+    "twoMinuteHelp": "Scale the habit down so it's easy to start.",
+    "cueLabel": "Cue plan (Make It Obvious)",
+    "cuePlaceholder": "I will [behaviour] at [time] in [location].",
+    "stackLabel": "Stack after (Make It Obvious)",
+    "stackPlaceholder": "After [current habit], I will…",
+    "pairingLabel": "Pairing (Make It Attractive)",
+    "pairingPlaceholder": "Only do [want] while doing [need].",
+    "rewardLabel": "Reward (Make It Satisfying)",
+    "rewardPlaceholder": "How will you mark this as a small win?",
+    "cadenceLabel": "Cadence",
+    "cadenceDaily": "Every day",
+    "cadenceWeekdays": "Weekdays",
+    "cadenceCustom": "Custom",
+    "customDaysLabel": "Days of the week",
+    "customDaysHelp": "Pick at least one day.",
+    "customDaysRequired": "Pick at least one day for a custom cadence.",
+    "colorLabel": "Colour",
+    "colors": {
+      "primary": "Primary",
+      "be": "Be",
+      "act": "Act",
+      "amber": "Amber",
+      "emerald": "Emerald",
+      "violet": "Violet",
+      "rose": "Rose"
+    },
+    "weekday": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    },
+    "saveError": "Couldn't save the habit. Try again.",
+    "draftRestored": "Draft restored from your previous edit.",
+    "discardDraft": "Discard draft",
+    "saved": "Saved"
+  },
+  "detail": {
+    "calendarTitle": "Recent ticks",
+    "calendarEmpty": "No ticks recorded yet. Tap any day to tick it.",
+    "strategiesTitle": "Strategies",
+    "strategyCue": "Cue",
+    "strategyStack": "Habit stack",
+    "strategyTwoMinute": "Two-minute version",
+    "strategyPairing": "Pairing",
+    "strategyReward": "Reward",
+    "identityTitle": "Identity",
+    "notesTitle": "Recent notes",
+    "notesEmpty": "Notes you save with a tick will appear here.",
+    "archivedBadge": "Archived",
+    "archiveConfirmTitle": "Archive habit?",
+    "archiveConfirmBody": "Archived habits leave today's list but keep their ticks for history.",
+    "deleteConfirmTitle": "Delete habit?"
+  },
+  "log": {
+    "title": "Add a note",
+    "subtitle": "Optional reflection for the day's tick. Stay private — only you see this.",
+    "placeholder": "What was this like today?",
+    "saveError": "Couldn't save the note. Try again.",
+    "missingTick": "Tick the day first to attach a note."
+  },
+  "history": {
+    "title": "History",
+    "subtitle": "Every tick you've made, newest first.",
+    "empty": "Once you tick a habit, that day will appear here.",
+    "groupedByDate": "{{date}}",
+    "habitFor": "for {{habit}}"
+  },
+  "onboarding": {
+    "helpHint": "Learn about Atomic Habits",
+    "skip": "Skip",
+    "back": "Back",
+    "welcome": {
+      "title": "Small habits, remarkable results",
+      "subtitle": "Influenced by James Clear's Atomic Habits.",
+      "compoundingTitle": "The 1% compounding effect",
+      "compoundingBody": "Improving by 1% a day compounds to ~37× better in a year. Drifting 1% worse a day collapses toward zero. Small consistent actions — not heroic effort — move the curve.",
+      "systemsTitle": "Systems over goals",
+      "systemsBody": "\"You do not rise to the level of your goals; you fall to the level of your systems.\" This tool captures the daily action, not an outcome target.",
+      "continue": "Continue"
+    },
+    "loop": {
+      "title": "The habit loop & four laws",
+      "subtitle": "Every habit cycles through cue, craving, response, reward. Four design rules attach to each stage.",
+      "obviousTitle": "1. Make it obvious",
+      "obviousBody": "Design a clear cue. \"I will read at 8pm in the living room.\"",
+      "attractiveTitle": "2. Make it attractive",
+      "attractiveBody": "Bundle the new habit with something you already enjoy.",
+      "easyTitle": "3. Make it easy",
+      "easyBody": "Scale it under two minutes. Friction is the enemy of consistency.",
+      "satisfyingTitle": "4. Make it satisfying",
+      "satisfyingBody": "Mark the win. Visible progress reinforces the loop.",
+      "breakNote": "To break a habit, invert each law — make it invisible, unattractive, difficult, and unsatisfying.",
+      "continue": "Continue"
+    },
+    "identity": {
+      "title": "Identity-based habits",
+      "subtitle": "Durable change is identity change.",
+      "body": "Instead of \"I want to run a marathon,\" frame it as \"I'm a runner.\" Every tick is a vote for that identity. The habit form has an optional identity field — leave it blank if you'd rather not name one.",
+      "continue": "Continue"
+    },
+    "neverMiss": {
+      "title": "Never miss twice & the two-minute rule",
+      "subtitle": "Two ideas that keep practice non-punitive.",
+      "twoMinuteTitle": "The two-minute rule",
+      "twoMinuteBody": "Scale every habit down so the starter version takes under two minutes. \"Read one page,\" not \"Read for an hour.\"",
+      "neverMissTitle": "Never miss twice",
+      "neverMissBody": "Missing once is data. Missing twice starts a new habit. Selftend will never punish a missed day — we'll just quietly note when you're at risk of missing twice.",
+      "finish": "Start"
+    },
+    "finish": {
+      "start": "Start",
+      "saving": "Saving…",
+      "error": "Couldn't save your preferences. Try again."
+    }
+  },
+  "errors": {
+    "load": "Couldn't load your habits.",
+    "toggle": "Couldn't update the tick. Try again.",
+    "delete": "Couldn't delete the habit. Try again."
+  },
+  "relativeTime": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago"
+  }
+}

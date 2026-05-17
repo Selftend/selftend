@@ -182,6 +182,9 @@
       "sleepLogs_one": "{{count}} log",
       "sleepLogs_other": "{{count}} logs",
       "sleepNoData": "No logs yet",
+      "habits_one": "{{count}} habit",
+      "habits_other": "{{count}} habits",
+      "habitsNoData": "No habits yet",
       "comingSoon": "Coming soon"
     }
   },

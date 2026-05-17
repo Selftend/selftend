@@ -178,6 +178,9 @@
       "sleepLogs_one": "{{count}} запис",
       "sleepLogs_other": "{{count}} записа",
       "sleepNoData": "Още няма записи",
+      "habits_one": "{{count}} навик",
+      "habits_other": "{{count}} навика",
+      "habitsNoData": "Още няма навици",
       "comingSoon": "Скоро"
     }
   },
