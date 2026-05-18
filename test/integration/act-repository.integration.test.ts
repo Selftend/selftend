@@ -120,10 +120,9 @@ describe("act repository (integration)", () => {
       .single();
     expect(second.error).toBeNull();
     expect(second.data?.active_principles).toEqual(["values", "committedAction"]);
-    // The second upsert leaves earlier-set columns intact only when they are
-    // omitted from the patch — Supabase's upsert is a full row write — so
-    // primary_concerns is expected to reset to default here.
-    expect(second.data?.primary_concerns).toEqual([]);
+    // Supabase/PostgREST upsert only updates columns present in the payload;
+    // omitted columns are preserved on conflict, so primary_concerns stays ["anxiety"].
+    expect(second.data?.primary_concerns).toEqual(["anxiety"]);
   });
 
   it("upserts a value entry keyed on (user_id, life_domain)", async () => {
