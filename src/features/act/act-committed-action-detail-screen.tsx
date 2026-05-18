@@ -33,6 +33,11 @@ import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
 const STATUS_ACTIONS: ActionStatus[] = ["active", "completed", "abandoned"];
+const STATUS_TRANSITION_LABEL_KEY: Record<ActionStatus, string> = {
+  active: "committedAction.markActive",
+  completed: "committedAction.markComplete",
+  abandoned: "committedAction.markAbandoned",
+};
 
 export default function ActCommittedActionDetailScreen() {
   const { t } = useTranslation("act");
@@ -174,7 +179,7 @@ export default function ActCommittedActionDetailScreen() {
                     onPress={() => void handleStatusChange(s)}
                   >
                     {updateMutation.isPending ? <ActivityIndicator /> : null}
-                    <Text>{t(`committedAction.mark${capitalize(s)}` as never)}</Text>
+                    <Text>{t(STATUS_TRANSITION_LABEL_KEY[s])}</Text>
                   </Button>
                 ))}
               </View>
@@ -342,8 +347,4 @@ function StatusPill({
       <Text className="text-xs font-medium">{t(`committedAction.status.${status}`)}</Text>
     </View>
   );
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }

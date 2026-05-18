@@ -75,7 +75,10 @@ export async function dismissPostSignInModals(page: Page) {
     .then(() => true)
     .catch(() => false);
   if (welcomeVisible) {
-    const startButton = page.getByRole("button", { name: "Start using Selftend", exact: true });
+    // The app onboarding modal's only button is labelled by settings.json
+    // `onboarding.appContinue` ("Got it"). The modal is the only "Got it"
+    // button visible on (app)/(tabs) once consent has been accepted.
+    const startButton = page.getByRole("button", { name: "Got it", exact: true });
     await expect(startButton).toBeEnabled({ timeout: 5_000 });
     await startButton.click();
     await expect(welcome).toBeHidden({ timeout: 10_000 });

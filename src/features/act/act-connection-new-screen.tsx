@@ -36,7 +36,6 @@ export default function ActConnectionNewScreen() {
   const [activityContext, setActivityContext] = useState("");
   const [noticesFromSenses, setNoticesFromSenses] = useState("");
   const [moodAfter, setMoodAfter] = useState<number | null>(null);
-  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [submitError, setSubmitError] = useState("");
 
@@ -59,7 +58,6 @@ export default function ActConnectionNewScreen() {
         activityContext: activityContext.trim(),
         noticesFromSenses: noticesFromSenses.trim(),
         moodAfter,
-        durationMinutes,
         notes: notes.trim(),
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });

@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 

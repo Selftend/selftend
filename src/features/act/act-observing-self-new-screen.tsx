@@ -44,7 +44,6 @@ export default function ActObservingSelfNewScreen() {
   const [techniqueUsed, setTechniqueUsed] = useState<ObservingTechnique>("tenDeepBreaths");
   const [whatWasObserved, setWhatWasObserved] = useState("");
   const [moodAfter, setMoodAfter] = useState<number | null>(null);
-  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [submitError, setSubmitError] = useState("");
 
@@ -66,7 +65,6 @@ export default function ActObservingSelfNewScreen() {
         techniqueUsed,
         whatWasObserved: whatWasObserved.trim(),
         moodAfter,
-        durationMinutes,
         notes: notes.trim(),
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
