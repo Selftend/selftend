@@ -21,6 +21,7 @@ import {
   ActWizard,
   type ActWizardResult,
 } from "@/src/components/app/act-onboarding-modal";
+import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { useDefusionLogs, useUpsertACTProgramState } from "@/src/features/act/queries";
 import type { ACTPrinciple } from "@/src/features/act/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
@@ -76,6 +77,7 @@ export default function ActHomeScreen() {
 
   const [forceInfo, setForceInfo] = useState(false);
   const [forceWizard, setForceWizard] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [infoError, setInfoError] = useState<string | undefined>();
   const [wizardError, setWizardError] = useState<string | undefined>();
 
@@ -153,6 +155,11 @@ export default function ActHomeScreen() {
         onComplete={(result) => void handleWizardComplete(result)}
         onDismiss={() => setForceWizard(false)}
       />
+      <NotificationSettingsModal
+        targetKey="act"
+        visible={showNotifications}
+        onDismiss={() => setShowNotifications(false)}
+      />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -170,6 +177,14 @@ export default function ActHomeScreen() {
                   hitSlop={8}
                 >
                   <Icon name="tune" className="text-muted-foreground" size={20} />
+                </Pressable>
+                <Pressable
+                  accessibilityLabel={t("notifications:actions.open")}
+                  accessibilityRole="button"
+                  onPress={() => setShowNotifications(true)}
+                  hitSlop={8}
+                >
+                  <Icon name="notifications" className="text-muted-foreground" size={20} />
                 </Pressable>
                 <Pressable
                   accessibilityLabel={t("home.onboardingHint")}

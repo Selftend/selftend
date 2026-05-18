@@ -1,0 +1,85 @@
+{
+  "title": "Notifications",
+  "description": "Manage reminders and notifications across every tool and module.",
+  "globalMaster": {
+    "label": "Notifications enabled",
+    "hint": "When off, all preferences below are paused. Your saved schedules are kept and will resume when you turn this back on."
+  },
+  "perTargetMaster": {
+    "label": "Enable reminders",
+    "hint": "Turns every reminder for this section on or off."
+  },
+  "subToggles": {
+    "dailyReminder": "Daily reminder"
+  },
+  "time": {
+    "hour": "Hour",
+    "hourPlaceholder": "0-23",
+    "minute": "Minute",
+    "minutePlaceholder": "0-59"
+  },
+  "comingSoon": {
+    "badge": "Coming soon",
+    "hint": "Reminders for this tool aren't available yet."
+  },
+  "actions": {
+    "save": "Save",
+    "saving": "Saving…",
+    "open": "Open notifications",
+    "openShort": "Notifications"
+  },
+  "feedback": {
+    "saved": "Saved",
+    "problem": "Something went wrong"
+  },
+  "targets": {
+    "cbt": {
+      "label": "CBT",
+      "description": "Daily thought record reminders."
+    },
+    "act": {
+      "label": "ACT",
+      "description": "Reminders for defusion, values, and committed action."
+    },
+    "meditation": {
+      "label": "Meditation",
+      "description": "Daily meditation reminders."
+    },
+    "gratitude": {
+      "label": "Gratitude log",
+      "description": "Reminders to capture a moment of gratitude."
+    },
+    "mood": {
+      "label": "Mood tracker",
+      "description": "Reminders to log your mood."
+    },
+    "journal": {
+      "label": "Journal",
+      "description": "Reminders to write a journal entry."
+    },
+    "breathing": {
+      "label": "Breathing",
+      "description": "Reminders for a breathing break."
+    },
+    "mindfulness": {
+      "label": "Mindfulness",
+      "description": "Reminders for mindfulness practice."
+    },
+    "grounding": {
+      "label": "Grounding",
+      "description": "Reminders for grounding exercises."
+    },
+    "sleep": {
+      "label": "Sleep tracker",
+      "description": "Reminders to log your sleep."
+    },
+    "habits": {
+      "label": "Habits",
+      "description": "Reminders for your habit check-ins."
+    }
+  },
+  "sections": {
+    "modules": "Modules",
+    "tools": "Tools"
+  }
+}

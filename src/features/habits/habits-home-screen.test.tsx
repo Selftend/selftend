@@ -20,6 +20,10 @@ jest.mock("@react-navigation/native", () => ({
   useIsFocused: () => true,
 }));
 
+jest.mock("@/src/components/app/notification-settings-modal", () => ({
+  NotificationSettingsModal: () => null,
+}));
+
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));

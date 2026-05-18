@@ -9,6 +9,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
+import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { EmptyState } from "@/src/components/app/screen-state";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useJournalEntries } from "@/src/features/journal/queries";
@@ -28,6 +29,7 @@ export default function JournalListScreen() {
   const { data: entries } = useJournalEntries(userId, 50);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | undefined>();
 
   const onboardingNeeded =
@@ -57,6 +59,11 @@ export default function JournalListScreen() {
         errorMessage={onboardingError}
         onComplete={handleOnboardingComplete}
       />
+      <NotificationSettingsModal
+        targetKey="journal"
+        visible={showNotifications}
+        onDismiss={() => setShowNotifications(false)}
+      />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -64,6 +71,14 @@ export default function JournalListScreen() {
               <View className="flex-row items-center gap-2">
                 <BackButton showLabel={false} className="-ml-2" />
                 <Text variant="h1">{t("title")}</Text>
+                <Pressable
+                  accessibilityLabel={t("notifications:actions.open")}
+                  accessibilityRole="button"
+                  onPress={() => setShowNotifications(true)}
+                  hitSlop={8}
+                >
+                  <Icon name="notifications" className="text-muted-foreground" size={20} />
+                </Pressable>
               </View>
               <Text variant="muted" className="max-w-[64ch]">
                 {t("description")}

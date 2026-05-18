@@ -114,6 +114,12 @@ const TOOL_ITEMS: NavItemDef[] = [
 
 const ACCOUNT_ITEMS: NavItemDef[] = [
   {
+    labelKey: "sidebar.notifications",
+    href: "/(app)/notifications",
+    icon: "notifications",
+    matchPrefix: "/notifications",
+  },
+  {
     labelKey: "sidebar.settings",
     href: "/(app)/(tabs)/settings",
     icon: "settings",

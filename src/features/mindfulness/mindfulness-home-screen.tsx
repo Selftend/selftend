@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -11,10 +11,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { BackButton } from "@/src/components/app/back-button";
 import { MindfulnessOnboarding } from "@/src/components/app/mindfulness-onboarding-modal";
+import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { mindfulnessExercises } from "@/src/constants/mindfulness";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
 import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
@@ -31,6 +33,7 @@ export default function MindfulnessHomeScreen() {
   const { data: sessions } = useMindfulnessSessions(userId, 7);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | undefined>();
 
   const onboardingNeeded =
@@ -58,6 +61,11 @@ export default function MindfulnessHomeScreen() {
         errorMessage={onboardingError}
         onComplete={handleOnboardingComplete}
       />
+      <NotificationSettingsModal
+        targetKey="mindfulness"
+        visible={showNotifications}
+        onDismiss={() => setShowNotifications(false)}
+      />
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -65,6 +73,14 @@ export default function MindfulnessHomeScreen() {
               <View className="flex-row items-center gap-2">
                 <BackButton showLabel={false} className="-ml-2" />
                 <Text variant="h1">{t("mindfulness.title")}</Text>
+                <Pressable
+                  accessibilityLabel={t("notifications:actions.open")}
+                  accessibilityRole="button"
+                  onPress={() => setShowNotifications(true)}
+                  hitSlop={8}
+                >
+                  <Icon name="notifications" className="text-muted-foreground" size={20} />
+                </Pressable>
               </View>
               <Text variant="muted">{t("mindfulness.description")}</Text>
             </View>

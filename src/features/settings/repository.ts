@@ -11,6 +11,7 @@ import { requireSupabase } from "@/src/lib/supabase";
 interface UserPreferenceRow {
   user_id: string;
   enabled_modules: string[] | null;
+  notifications_enabled_global: boolean | null;
   reminder_consent: boolean | null;
   reminder_consent_updated_at: string | null;
   cbt_reminders_enabled: boolean | null;
@@ -54,6 +55,8 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
 
   return {
     enabledModules: sanitizeEnabledModules(row.enabled_modules),
+    notificationsEnabledGlobal:
+      row.notifications_enabled_global ?? defaultUserPreferences.notificationsEnabledGlobal,
     reminderConsent: Boolean(row.reminder_consent),
     reminderConsentUpdatedAt: row.reminder_consent_updated_at ?? null,
     cbtRemindersEnabled: Boolean(row.cbt_reminders_enabled),
@@ -123,6 +126,7 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
   const payload = {
     user_id: userId,
     enabled_modules: preferences.enabledModules,
+    notifications_enabled_global: preferences.notificationsEnabledGlobal,
     reminder_consent: preferences.reminderConsent,
     reminder_consent_updated_at: preferences.reminderConsentUpdatedAt,
     cbt_reminders_enabled: preferences.cbtRemindersEnabled,

@@ -10,6 +10,7 @@ export interface CookieConsent {
 
 export interface UserPreferences {
   enabledModules: ModuleKey[];
+  notificationsEnabledGlobal: boolean;
   reminderConsent: boolean;
   reminderConsentUpdatedAt: string | null;
   cbtRemindersEnabled: boolean;
@@ -48,6 +49,7 @@ export interface UserPreferences {
 
 export const defaultUserPreferences: UserPreferences = {
   enabledModules: ["cbt"],
+  notificationsEnabledGlobal: true,
   reminderConsent: false,
   reminderConsentUpdatedAt: null,
   cbtRemindersEnabled: false,

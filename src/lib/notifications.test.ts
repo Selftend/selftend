@@ -3,9 +3,10 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
 import {
-  cancelCbtReminder,
+  cancelAllReminders,
+  cancelReminder,
   registerWebPushServiceWorker,
-  scheduleCbtReminder,
+  scheduleReminder,
 } from "@/src/lib/notifications";
 import {
   deleteWebPushSubscription,
@@ -41,7 +42,9 @@ jest.mock("@/src/features/settings/repository", () => ({
   upsertWebPushSubscription: jest.fn(),
 }));
 
-const REMINDER_KEY = "selftend:cbt-reminder-id";
+const CBT_STORAGE_KEY = "selftend:reminder-id:cbt";
+const MEDITATION_STORAGE_KEY = "selftend:reminder-id:meditation";
+const ACT_STORAGE_KEY = "selftend:reminder-id:act";
 
 const mockCancelScheduledNotificationAsync = jest.mocked(
   Notifications.cancelScheduledNotificationAsync,
@@ -137,7 +140,7 @@ function createWebPushMocks() {
   };
 }
 
-describe("CBT reminder notifications", () => {
+describe("Reminder notifications", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setPlatformOS("ios");
@@ -157,7 +160,7 @@ describe("CBT reminder notifications", () => {
       granted: false,
     } as Awaited<ReturnType<typeof Notifications.requestPermissionsAsync>>);
 
-    await expect(scheduleCbtReminder(19, 0)).resolves.toEqual({
+    await expect(scheduleReminder("cbt", 19, 0)).resolves.toEqual({
       enabled: false,
       reason: "permission-denied",
     });
@@ -167,17 +170,17 @@ describe("CBT reminder notifications", () => {
     expect(mockSetItemAsync).not.toHaveBeenCalled();
   });
 
-  it("cancels any existing native reminder before scheduling a new one", async () => {
+  it("cancels any existing native reminder before scheduling a new one for the same target", async () => {
     mockGetPermissionsAsync.mockResolvedValue({
       granted: true,
     } as Awaited<ReturnType<typeof Notifications.getPermissionsAsync>>);
     mockGetItemAsync.mockResolvedValue("existing-reminder-id");
     mockScheduleNotificationAsync.mockResolvedValue("new-reminder-id");
 
-    await expect(scheduleCbtReminder(8, 30)).resolves.toEqual({ enabled: true });
+    await expect(scheduleReminder("cbt", 8, 30)).resolves.toEqual({ enabled: true });
 
     expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("existing-reminder-id");
-    expect(mockDeleteItemAsync).toHaveBeenCalledWith(REMINDER_KEY);
+    expect(mockDeleteItemAsync).toHaveBeenCalledWith(CBT_STORAGE_KEY);
     expect(mockScheduleNotificationAsync).toHaveBeenCalledWith({
       content: {
         body: expect.any(String),
@@ -189,23 +192,53 @@ describe("CBT reminder notifications", () => {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
       },
     });
-    expect(mockSetItemAsync).toHaveBeenCalledWith(REMINDER_KEY, "new-reminder-id");
+    expect(mockSetItemAsync).toHaveBeenCalledWith(CBT_STORAGE_KEY, "new-reminder-id");
   });
 
-  it("cancels the stored native reminder and clears local storage when disabled", async () => {
+  it("uses a target-specific storage key when scheduling meditation", async () => {
+    mockGetPermissionsAsync.mockResolvedValue({
+      granted: true,
+    } as Awaited<ReturnType<typeof Notifications.getPermissionsAsync>>);
+    mockGetItemAsync.mockResolvedValue(null);
+    mockScheduleNotificationAsync.mockResolvedValue("meditation-reminder-id");
+
+    await expect(scheduleReminder("meditation", 7, 0)).resolves.toEqual({ enabled: true });
+
+    expect(mockSetItemAsync).toHaveBeenCalledWith(MEDITATION_STORAGE_KEY, "meditation-reminder-id");
+  });
+
+  it("cancels the stored native reminder for that target only", async () => {
     mockGetItemAsync.mockResolvedValue("existing-reminder-id");
 
-    await cancelCbtReminder();
+    await cancelReminder("act");
 
     expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("existing-reminder-id");
-    expect(mockDeleteItemAsync).toHaveBeenCalledWith(REMINDER_KEY);
+    expect(mockDeleteItemAsync).toHaveBeenCalledWith(ACT_STORAGE_KEY);
+  });
+
+  it("cancels every target when cancelAllReminders is called", async () => {
+    mockGetItemAsync.mockImplementation(async (key: string) => {
+      if (key === CBT_STORAGE_KEY) return "cbt-id";
+      if (key === MEDITATION_STORAGE_KEY) return "meditation-id";
+      if (key === ACT_STORAGE_KEY) return "act-id";
+      return null;
+    });
+
+    await cancelAllReminders();
+
+    expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("cbt-id");
+    expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("meditation-id");
+    expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("act-id");
+    expect(mockDeleteItemAsync).toHaveBeenCalledWith(CBT_STORAGE_KEY);
+    expect(mockDeleteItemAsync).toHaveBeenCalledWith(MEDITATION_STORAGE_KEY);
+    expect(mockDeleteItemAsync).toHaveBeenCalledWith(ACT_STORAGE_KEY);
   });
 
   it("returns unsupported on web when browser push APIs are unavailable", async () => {
     setPlatformOS("web");
     setWindowProperty("Notification", undefined);
 
-    await expect(scheduleCbtReminder(19, 0, "user-1")).resolves.toEqual({
+    await expect(scheduleReminder("cbt", 19, 0, "user-1")).resolves.toEqual({
       enabled: false,
       reason: "unsupported",
     });
@@ -224,7 +257,7 @@ describe("CBT reminder notifications", () => {
     setPlatformOS("web");
     const { pushManager } = createWebPushMocks();
 
-    await expect(scheduleCbtReminder(19, 0, "user-1")).resolves.toEqual({ enabled: true });
+    await expect(scheduleReminder("cbt", 19, 0, "user-1")).resolves.toEqual({ enabled: true });
 
     expect(pushManager.subscribe).toHaveBeenCalledWith({
       applicationServerKey: expect.any(Uint8Array),
@@ -239,24 +272,53 @@ describe("CBT reminder notifications", () => {
     });
   });
 
+  it("subscribes only once per browser even when multiple targets schedule", async () => {
+    setPlatformOS("web");
+    const { pushManager, subscription } = createWebPushMocks();
+    pushManager.subscribe.mockImplementation(async (...args: unknown[]) => {
+      // After the first subscribe call, getSubscription should return it.
+      pushManager.getSubscription.mockResolvedValue(subscription);
+      return subscription;
+    });
+
+    await expect(scheduleReminder("cbt", 19, 0, "user-1")).resolves.toEqual({ enabled: true });
+    await expect(scheduleReminder("meditation", 7, 0, "user-1")).resolves.toEqual({
+      enabled: true,
+    });
+
+    expect(pushManager.subscribe).toHaveBeenCalledTimes(1);
+    expect(mockUpsertWebPushSubscription).toHaveBeenCalledTimes(2);
+  });
+
   it("returns permission denied when the browser denies notifications", async () => {
     setPlatformOS("web");
     const { notification } = createWebPushMocks();
     notification.requestPermission.mockResolvedValue("denied");
 
-    await expect(scheduleCbtReminder(19, 0, "user-1")).resolves.toEqual({
+    await expect(scheduleReminder("cbt", 19, 0, "user-1")).resolves.toEqual({
       enabled: false,
       reason: "permission-denied",
     });
     expect(mockUpsertWebPushSubscription).not.toHaveBeenCalled();
   });
 
-  it("unsubscribes the current browser subscription when web reminders are disabled", async () => {
+  it("does not unsubscribe a single web target on cancel (subscription is shared)", async () => {
     setPlatformOS("web");
     const { pushManager, subscription } = createWebPushMocks();
     pushManager.getSubscription.mockResolvedValue(subscription);
 
-    await cancelCbtReminder("user-1");
+    await cancelReminder("cbt", "user-1");
+
+    expect(subscription.unsubscribe).not.toHaveBeenCalled();
+    expect(mockDeleteWebPushSubscription).not.toHaveBeenCalled();
+  });
+
+  it("unsubscribes the browser subscription when cancelAllReminders is called", async () => {
+    setPlatformOS("web");
+    const { pushManager, subscription } = createWebPushMocks();
+    pushManager.getSubscription.mockResolvedValue(subscription);
+
+    await cancelAllReminders("user-1");
 
     expect(subscription.unsubscribe).toHaveBeenCalled();
     expect(mockDeleteWebPushSubscription).toHaveBeenCalledWith(

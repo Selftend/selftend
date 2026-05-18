@@ -1,5 +1,9 @@
 {
   "alsoTry": "Also try",
+  "notifications": {
+    "title": "Quiet ACT check-in",
+    "body": "Notice an unhelpful thought and unhook from it. A small practice goes a long way."
+  },
   "home": {
     "title": "Acceptance and Commitment Therapy",
     "subtitle": "Inspired by The Happiness Trap by Russ Harris",

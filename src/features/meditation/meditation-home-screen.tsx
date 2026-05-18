@@ -15,6 +15,7 @@ import {
   MeditationOnboarding,
   type MeditationOnboardingResult,
 } from "@/src/components/app/meditation-onboarding-modal";
+import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
 import { MeditationInsightsCard } from "@/src/features/meditation/meditation-insights-card";
 import {
@@ -43,6 +44,7 @@ export default function MeditationHomeScreen() {
   const [onboardingError, setOnboardingError] = useState<string | undefined>();
   const [forceInfo, setForceInfo] = useState(false);
   const [forceWizard, setForceWizard] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const infoNeeded = !prefsLoading && Boolean(preferences) && !preferences?.meditationInfoCompleted;
   const showInfo = infoNeeded || forceInfo;
@@ -110,6 +112,11 @@ export default function MeditationHomeScreen() {
         onComplete={(result) => void handleOnboardingComplete(result)}
         onDismiss={forceWizard ? () => setForceWizard(false) : undefined}
       />
+      <NotificationSettingsModal
+        targetKey="meditation"
+        visible={showNotifications}
+        onDismiss={() => setShowNotifications(false)}
+      />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -124,6 +131,14 @@ export default function MeditationHomeScreen() {
                   hitSlop={8}
                 >
                   <Icon name="tune" className="text-muted-foreground" size={20} />
+                </Pressable>
+                <Pressable
+                  accessibilityLabel={t("notifications:actions.open")}
+                  accessibilityRole="button"
+                  onPress={() => setShowNotifications(true)}
+                  hitSlop={8}
+                >
+                  <Icon name="notifications" className="text-muted-foreground" size={20} />
                 </Pressable>
                 <Pressable
                   accessibilityLabel={t("info.helpHint")}

@@ -9,6 +9,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HabitsOnboarding } from "@/src/components/app/habits-onboarding-modal";
+import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { HABITS_LEARN_CARDS } from "@/src/features/habits/learn";
 import {
   getIdentityRoundUp,
@@ -51,6 +52,7 @@ export default function HabitsHomeScreen() {
   const toggleLog = useToggleHabitLog(userId);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | undefined>();
   const [learnIndex, setLearnIndex] = useState(0);
 
@@ -128,6 +130,11 @@ export default function HabitsHomeScreen() {
         onComplete={() => void handleOnboardingComplete()}
         onDismiss={forceOnboarding ? () => setForceOnboarding(false) : undefined}
       />
+      <NotificationSettingsModal
+        targetKey="habits"
+        visible={showNotifications}
+        onDismiss={() => setShowNotifications(false)}
+      />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -135,6 +142,14 @@ export default function HabitsHomeScreen() {
               <View className="flex-row items-center gap-2">
                 <BackButton showLabel={false} className="-ml-2" />
                 <Text variant="h1">{t("home.title")}</Text>
+                <Pressable
+                  accessibilityLabel={t("notifications:actions.open")}
+                  accessibilityRole="button"
+                  onPress={() => setShowNotifications(true)}
+                  hitSlop={8}
+                >
+                  <Icon name="notifications" className="text-muted-foreground" size={20} />
+                </Pressable>
                 <Pressable
                   accessibilityLabel={t("onboarding.helpHint")}
                   accessibilityRole="button"

@@ -19,6 +19,7 @@ import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { BackButton } from "@/src/components/app/back-button";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
 import { CbtWizard } from "@/src/components/app/cbt-wizard-modal";
+import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { cn } from "@/lib/utils";
 import { useActivities } from "@/src/features/activities/queries";
 import type { ActivityLog } from "@/src/features/activities/types";
@@ -539,6 +540,7 @@ export default function CbtHomeScreen() {
   const isFocused = useIsFocused();
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [forceWizard, setForceWizard] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [introCompleteInSession, setIntroCompleteInSession] = useState(false);
 
   const { data: goals } = useGoals(user?.id ?? null);
@@ -663,6 +665,11 @@ export default function CbtHomeScreen() {
         onDismiss={() => (forceWizard ? setForceWizard(false) : void completeCbtOnboarding())}
         visible={showCbtWizard}
       />
+      <NotificationSettingsModal
+        targetKey="cbt"
+        visible={showNotifications}
+        onDismiss={() => setShowNotifications(false)}
+      />
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -677,6 +684,14 @@ export default function CbtHomeScreen() {
                   hitSlop={8}
                 >
                   <Icon name="tune" className="text-muted-foreground" size={20} />
+                </Pressable>
+                <Pressable
+                  accessibilityLabel={t("notifications:actions.open")}
+                  accessibilityRole="button"
+                  onPress={() => setShowNotifications(true)}
+                  hitSlop={8}
+                >
+                  <Icon name="notifications" className="text-muted-foreground" size={20} />
                 </Pressable>
                 <Pressable
                   accessibilityLabel={t("home.onboardingHint")}

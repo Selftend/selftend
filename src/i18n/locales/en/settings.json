@@ -33,8 +33,9 @@
     "loadError": "Unable to load profile picture."
   },
   "reminders": {
-    "title": "CBT reminders",
+    "title": "Reminders & notifications",
     "description": "Reminders stay explicit and off by default. They should support use, not create pressure.",
+    "openNotifications": "Open notifications",
     "daily": "Daily reminder",
     "dailyHint": "Enable one quiet daily reminder.",
     "hour": "Hour",

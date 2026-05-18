@@ -1,6 +1,10 @@
 {
   "title": "Meditation",
   "description": "A structured practice based on the ten stages from The Mind Illuminated.",
+  "notifications": {
+    "title": "Quiet meditation reminder",
+    "body": "Take a few minutes to settle the attention. Even a short sit counts."
+  },
   "duration": {
     "label": "Duration",
     "minutes": "{{count}} min"

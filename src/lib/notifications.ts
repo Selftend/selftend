@@ -8,7 +8,11 @@ import {
 import i18n from "@/src/i18n";
 import { appEnv } from "@/src/lib/env";
 
-const REMINDER_KEY = "selftend:cbt-reminder-id";
+export type ReminderTarget = "cbt" | "meditation" | "act";
+
+const REMINDER_TARGETS: ReminderTarget[] = ["cbt", "meditation", "act"];
+const REMINDER_KEY_PREFIX = "selftend:reminder-id:";
+const LEGACY_CBT_REMINDER_KEY = "selftend:cbt-reminder-id";
 const WEB_PUSH_WORKER_PATH = "/selftend-push-worker.js";
 
 export type ReminderScheduleFailureReason =
@@ -32,17 +36,41 @@ Notifications.setNotificationHandler({
   }),
 });
 
-async function getStoredReminderId() {
-  return SecureStore.getItemAsync(REMINDER_KEY);
+function reminderStorageKey(target: ReminderTarget) {
+  return `${REMINDER_KEY_PREFIX}${target}`;
 }
 
-async function setStoredReminderId(notificationId: string | null) {
+async function getStoredReminderId(target: ReminderTarget) {
+  const id = await SecureStore.getItemAsync(reminderStorageKey(target));
+  if (id) return id;
+
+  // Migrate from the legacy CBT-only key the first time we read.
+  if (target === "cbt") {
+    const legacy = await SecureStore.getItemAsync(LEGACY_CBT_REMINDER_KEY);
+    if (legacy) {
+      await SecureStore.setItemAsync(reminderStorageKey(target), legacy);
+      await SecureStore.deleteItemAsync(LEGACY_CBT_REMINDER_KEY);
+      return legacy;
+    }
+  }
+  return null;
+}
+
+async function setStoredReminderId(target: ReminderTarget, notificationId: string | null) {
+  const key = reminderStorageKey(target);
   if (!notificationId) {
-    await SecureStore.deleteItemAsync(REMINDER_KEY);
+    await SecureStore.deleteItemAsync(key);
     return;
   }
 
-  await SecureStore.setItemAsync(REMINDER_KEY, notificationId);
+  await SecureStore.setItemAsync(key, notificationId);
+}
+
+function getNotificationCopy(target: ReminderTarget) {
+  return {
+    title: i18n.t(`${target}:notifications.title`),
+    body: i18n.t(`${target}:notifications.body`),
+  };
 }
 
 function getWebPushGlobals() {
@@ -120,7 +148,7 @@ function getSubscriptionJson(subscription: PushSubscription) {
   };
 }
 
-async function scheduleWebCbtReminder(userId?: string | null): Promise<ReminderScheduleResult> {
+async function ensureWebPushSubscription(userId?: string | null): Promise<ReminderScheduleResult> {
   if (!userId) {
     return { enabled: false, reason: "missing-user" };
   }
@@ -174,7 +202,7 @@ async function scheduleWebCbtReminder(userId?: string | null): Promise<ReminderS
   }
 }
 
-async function cancelWebCbtReminder(userId?: string | null) {
+async function unsubscribeWebPushIfPresent(userId?: string | null) {
   const globals = getWebPushGlobals();
   if (!globals?.serviceWorker) {
     return;
@@ -207,26 +235,28 @@ export async function ensureReminderPermission() {
   return next.granted;
 }
 
-export async function cancelCbtReminder(userId?: string | null) {
+export async function cancelReminder(target: ReminderTarget, userId?: string | null) {
   if (Platform.OS === "web") {
-    await cancelWebCbtReminder(userId);
+    // Web subscription is shared across targets and gated server-side by
+    // each target's *_reminders_enabled flag. Nothing to do here.
     return;
   }
 
-  const existingId = await getStoredReminderId();
+  const existingId = await getStoredReminderId(target);
   if (existingId) {
     await Notifications.cancelScheduledNotificationAsync(existingId);
   }
-  await setStoredReminderId(null);
+  await setStoredReminderId(target, null);
 }
 
-export async function scheduleCbtReminder(
+export async function scheduleReminder(
+  target: ReminderTarget,
   hour: number,
   minute: number,
   userId?: string | null,
 ): Promise<ReminderScheduleResult> {
   if (Platform.OS === "web") {
-    return scheduleWebCbtReminder(userId);
+    return ensureWebPushSubscription(userId);
   }
 
   const granted = await ensureReminderPermission();
@@ -234,12 +264,13 @@ export async function scheduleCbtReminder(
     return { enabled: false, reason: "permission-denied" };
   }
 
-  await cancelCbtReminder();
+  await cancelReminder(target);
 
+  const copy = getNotificationCopy(target);
   const notificationId = await Notifications.scheduleNotificationAsync({
     content: {
-      title: i18n.t("cbt:notifications.title"),
-      body: i18n.t("cbt:notifications.body"),
+      title: copy.title,
+      body: copy.body,
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -248,6 +279,19 @@ export async function scheduleCbtReminder(
     },
   });
 
-  await setStoredReminderId(notificationId);
+  await setStoredReminderId(target, notificationId);
   return { enabled: true };
+}
+
+/**
+ * Cancels every target's scheduled reminder and (on web) unsubscribes the
+ * shared push subscription. Used when the user turns the global master off.
+ */
+export async function cancelAllReminders(userId?: string | null) {
+  for (const target of REMINDER_TARGETS) {
+    await cancelReminder(target, userId);
+  }
+  if (Platform.OS === "web") {
+    await unsubscribeWebPushIfPresent(userId);
+  }
 }

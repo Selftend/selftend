@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { ScrollView, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -16,6 +16,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
+import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
 import { MoodEntryCard } from "@/src/features/mood/mood-entry-card";
 import { buildMoodChartData } from "@/src/features/mood/chart-data";
@@ -40,6 +41,7 @@ export default function MoodTrackerScreen() {
   const { data: moodLogs } = useMoodLogs(userId, 30);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | undefined>();
 
   const onboardingNeeded =
@@ -75,6 +77,11 @@ export default function MoodTrackerScreen() {
         errorMessage={onboardingError}
         onComplete={handleOnboardingComplete}
       />
+      <NotificationSettingsModal
+        targetKey="mood"
+        visible={showNotifications}
+        onDismiss={() => setShowNotifications(false)}
+      />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -82,6 +89,14 @@ export default function MoodTrackerScreen() {
               <View className="flex-row items-center gap-2">
                 <BackButton showLabel={false} className="-ml-2" />
                 <Text variant="h1">{t("title")}</Text>
+                <Pressable
+                  accessibilityLabel={t("notifications:actions.open")}
+                  accessibilityRole="button"
+                  onPress={() => setShowNotifications(true)}
+                  hitSlop={8}
+                >
+                  <Icon name="notifications" className="text-muted-foreground" size={20} />
+                </Pressable>
               </View>
               <Text variant="muted" className="max-w-[64ch]">
                 {t("description")}

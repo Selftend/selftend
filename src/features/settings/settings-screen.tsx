@@ -5,7 +5,7 @@ import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Area } from "react-easy-crop";
 import { useTranslation } from "react-i18next";
 
@@ -19,17 +19,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
-import { Input } from "@/src/components/react-native-reusables/input";
-import { Label } from "@/src/components/react-native-reusables/label";
-import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { signOut } from "@/src/features/auth/api";
-import {
-  defaultUserPreferences,
-  mergeUserPreferences,
-  type UserPreferences,
-} from "@/src/features/modules/types";
+import { mergeUserPreferences } from "@/src/features/modules/types";
 import {
   useRemoveUserAvatar,
   useResetUserAvatarToOAuth,
@@ -44,22 +37,12 @@ import {
   useUserPreferences,
 } from "@/src/features/settings/queries";
 import { appEnv } from "@/src/lib/env";
-import {
-  cancelCbtReminder,
-  getReminderTimeZone,
-  scheduleCbtReminder,
-  type ReminderScheduleFailureReason,
-} from "@/src/lib/notifications";
 import { useSession } from "@/src/providers/session-provider";
 import { AvatarCropModal } from "@/src/components/app/avatar-crop-modal";
 import { useToastStore } from "@/src/stores/toast-store";
 import { BackButton } from "@/src/components/app/back-button";
 
 const AVATAR_MAX_SIZE = 512;
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) {
@@ -78,129 +61,14 @@ function getErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
-function getReminderConsentUpdatedAt(
-  preferences: UserPreferences | null | undefined,
-  reminderConsent: boolean,
-) {
-  const previousReminderConsent =
-    preferences?.reminderConsent ?? defaultUserPreferences.reminderConsent;
-
-  if (previousReminderConsent === reminderConsent) {
-    return preferences?.reminderConsentUpdatedAt ?? defaultUserPreferences.reminderConsentUpdatedAt;
-  }
-
-  return new Date().toISOString();
-}
-
-function getReminderFailureMessageKey(reason: ReminderScheduleFailureReason) {
-  switch (reason) {
-    case "missing-vapid-key":
-      return "reminders.webNotConfigured";
-    case "service-worker-unavailable":
-      return "reminders.serviceWorkerUnavailable";
-    case "subscription-failed":
-      return "reminders.subscriptionFailed";
-    case "unsupported":
-      return "reminders.webUnsupported";
-    case "missing-user":
-    case "permission-denied":
-    default:
-      return "reminders.permissionDenied";
-  }
-}
-
 export default function SettingsScreen() {
   const { t } = useTranslation("settings");
   const { user } = useSession();
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [hourInput, setHourInput] = useState(String(defaultUserPreferences.cbtReminderHour));
-  const [minuteInput, setMinuteInput] = useState(String(defaultUserPreferences.cbtReminderMinute));
-  const [remindersEnabled, setRemindersEnabled] = useState(
-    defaultUserPreferences.cbtRemindersEnabled,
-  );
   const { data, isLoading } = useUserPreferences(user?.id ?? null);
-  const updatePreferencesMutation = useUpdateUserPreferences(user?.id ?? null);
   const resetOnboardingMutation = useUpdateUserPreferences(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
-
-  useEffect(() => {
-    if (!data) {
-      return;
-    }
-
-    setHourInput(String(data.cbtReminderHour));
-    setMinuteInput(String(data.cbtReminderMinute));
-    setRemindersEnabled(data.cbtRemindersEnabled);
-  }, [data]);
-
-  const savePreferences = async () => {
-    if (!user) {
-      return;
-    }
-
-    try {
-      setErrorMessage("");
-      setSuccessMessage("");
-
-      const hour = clamp(Number.parseInt(hourInput || "19", 10), 0, 23);
-      const minute = clamp(Number.parseInt(minuteInput || "0", 10), 0, 59);
-      let reminderConsent = data?.reminderConsent ?? false;
-      let reminderFailureReason: ReminderScheduleFailureReason | null = null;
-
-      if (remindersEnabled) {
-        const result = await scheduleCbtReminder(hour, minute, user.id);
-        reminderConsent = result.enabled;
-        reminderFailureReason = result.enabled ? null : result.reason;
-      } else {
-        await cancelCbtReminder(user.id);
-        reminderConsent = false;
-      }
-
-      const reminderConsentUpdatedAt = getReminderConsentUpdatedAt(data, reminderConsent);
-
-      await updatePreferencesMutation.mutateAsync(
-        mergeUserPreferences(data, {
-          enabledModules: ["cbt"],
-          reminderConsent,
-          reminderConsentUpdatedAt,
-          cbtRemindersEnabled: remindersEnabled && reminderConsent,
-          cbtReminderHour: hour,
-          cbtReminderMinute: minute,
-          cbtReminderTimezone: getReminderTimeZone(),
-        }),
-      );
-
-      if (remindersEnabled && !reminderConsent) {
-        const message = t(
-          getReminderFailureMessageKey(reminderFailureReason ?? "permission-denied"),
-        );
-        setRemindersEnabled(false);
-        setErrorMessage(message);
-        showToast({
-          title: t("problem"),
-          description: message,
-          tone: "error",
-        });
-        return;
-      }
-
-      setSuccessMessage(t("saved"));
-      showToast({
-        title: t("common:feedback.saved"),
-        description: t("saved"),
-        tone: "success",
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t("saveError");
-      setErrorMessage(message);
-      showToast({
-        title: t("problem"),
-        description: message,
-        tone: "error",
-      });
-    }
-  };
 
   const handleSignOut = async () => {
     try {
@@ -295,61 +163,9 @@ export default function SettingsScreen() {
               <CardDescription>{t("reminders.description")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <View className="gap-4">
-                <View className="flex-row items-center justify-between gap-4">
-                  <View className="flex-1 gap-1">
-                    <Text>{t("reminders.daily")}</Text>
-                    <Text variant="muted">{t("reminders.dailyHint")}</Text>
-                  </View>
-                  <Switch
-                    accessibilityHint={t("reminders.dailyHint")}
-                    accessibilityLabel={t("reminders.daily")}
-                    checked={remindersEnabled}
-                    onCheckedChange={setRemindersEnabled}
-                  />
-                </View>
-                <View className="flex-row gap-3">
-                  <View className="flex-1 gap-2">
-                    <Label>{t("reminders.hour")}</Label>
-                    <Input
-                      accessibilityHint={t("reminders.hourPlaceholder")}
-                      accessibilityLabel={t("reminders.hour")}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      keyboardType="number-pad"
-                      onChangeText={setHourInput}
-                      placeholder={t("reminders.hourPlaceholder")}
-                      value={hourInput}
-                    />
-                  </View>
-                  <View className="flex-1 gap-2">
-                    <Label>{t("reminders.minute")}</Label>
-                    <Input
-                      accessibilityHint={t("reminders.minutePlaceholder")}
-                      accessibilityLabel={t("reminders.minute")}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      keyboardType="number-pad"
-                      onChangeText={setMinuteInput}
-                      placeholder={t("reminders.minutePlaceholder")}
-                      value={minuteInput}
-                    />
-                  </View>
-                </View>
-                <Button
-                  disabled={updatePreferencesMutation.isPending}
-                  onPress={() => void savePreferences()}
-                >
-                  {updatePreferencesMutation.isPending ? (
-                    <ActivityIndicator color="#ffffff" />
-                  ) : null}
-                  <Text>
-                    {updatePreferencesMutation.isPending
-                      ? t("savingSettings")
-                      : t("reminders.save")}
-                  </Text>
-                </Button>
-              </View>
+              <Button onPress={() => router.push("/notifications")} variant="secondary">
+                <Text>{t("reminders.openNotifications")}</Text>
+              </Button>
             </CardContent>
           </Card>
 
