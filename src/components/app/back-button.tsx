@@ -1,4 +1,4 @@
-import { router, usePathname } from "expo-router";
+import { router, usePathname, type Href } from "expo-router";
 import { Pressable } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -9,11 +9,11 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface BackButtonProps {
   /** Override the computed parent path. When omitted, derives from pathname. */
-  targetHref?: string;
+  targetHref?: Href;
   /** Use route hierarchy by default. Use history for flows with multiple possible source screens. */
   mode?: "parent" | "history";
   /** Fallback route when history mode has no browser/native history entry. */
-  fallbackHref?: string;
+  fallbackHref?: Href;
   className?: string;
   label?: string;
   /** When true (default), shows the "Back" label next to the icon. */
@@ -34,7 +34,8 @@ export function BackButton({
 }: BackButtonProps) {
   const { t } = useTranslation("navigation");
   const pathname = usePathname();
-  const computed = targetHref ?? (mode === "history" ? fallbackHref : getParentPath(pathname));
+  const computed: Href | null | undefined =
+    targetHref ?? (mode === "history" ? fallbackHref : (getParentPath(pathname) as Href | null));
   const canUseHistory = mode === "history" && router.canGoBack();
 
   if (!computed && !canUseHistory) {
@@ -55,7 +56,7 @@ export function BackButton({
         }
 
         if (computed) {
-          router.push(computed as Parameters<typeof router.push>[0]);
+          router.push(computed);
         }
       }}
       className={cn(

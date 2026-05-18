@@ -49,12 +49,7 @@ export default function ActValuesScreen() {
             <Text variant="muted">{t("values.listSubtitle")}</Text>
           </View>
 
-          <Button
-            variant="secondary"
-            onPress={() =>
-              router.push("/modules/act/values/bulls-eye" as Parameters<typeof router.push>[0])
-            }
-          >
+          <Button variant="secondary" onPress={() => router.push("/modules/act/values/bulls-eye")}>
             <Icon name="my-location" className="size-4 text-foreground" />
             <Text>{t("values.bullsEyeButton")}</Text>
           </Button>
@@ -82,7 +77,7 @@ export default function ActValuesScreen() {
                     router.push({
                       pathname: "/modules/act/values/[domain]",
                       params: { domain },
-                    } as Parameters<typeof router.push>[0])
+                    })
                   }
                   className="rounded-xl border border-border bg-card p-4 active:bg-accent/40"
                 >

@@ -7,7 +7,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useDefusionLogs } from "@/src/features/act/queries";
 import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
@@ -19,11 +19,7 @@ export default function ActDefusionListScreen() {
   const { data: logs, isLoading } = useDefusionLogs(user?.id ?? null);
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <LoadingState title={t("defusion.listTitle")} />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("defusion.listTitle")} />;
   }
 
   return (
@@ -38,11 +34,7 @@ export default function ActDefusionListScreen() {
             <Text variant="muted">{t("defusion.listSubtitle")}</Text>
           </View>
 
-          <Button
-            onPress={() =>
-              router.push("/modules/act/defusion/new" as Parameters<typeof router.push>[0])
-            }
-          >
+          <Button onPress={() => router.push("/modules/act/defusion/new")}>
             <Icon name="add" className="size-4 text-primary-foreground" />
             <Text>{t("home.defuseThought")}</Text>
           </Button>
@@ -64,7 +56,7 @@ export default function ActDefusionListScreen() {
                     router.push({
                       pathname: "/modules/act/defusion/[id]",
                       params: { id: log.id },
-                    } as Parameters<typeof router.push>[0])
+                    })
                   }
                   className="rounded-lg border border-border bg-card p-4 active:bg-accent/40"
                 >

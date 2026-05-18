@@ -109,11 +109,7 @@ export default function MoodDetailScreen() {
             <Text variant="muted">{when}</Text>
             <View className="flex-row gap-3">
               <Button
-                onPress={() =>
-                  router.push(
-                    `/tools/mood-tracker/${entry.id}/edit` as Parameters<typeof router.push>[0],
-                  )
-                }
+                onPress={() => router.push(`/tools/mood-tracker/${entry.id}/edit`)}
                 variant="secondary"
               >
                 <Icon name="edit" className="size-4" />

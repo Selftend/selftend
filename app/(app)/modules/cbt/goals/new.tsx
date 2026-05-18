@@ -45,7 +45,7 @@ export default function NewGoalScreen() {
 
   const stepIndex = useGoalDraftStore((state) => state.stepIndex);
   const storedDraftValues = useGoalDraftStore((state) =>
-    state.mode === draftMode && state.goalId === goalId ? state.values : null,
+    state.mode === draftMode && state.entityId === goalId ? state.values : null,
   );
   const hydrateDraft = useGoalDraftStore((state) => state.hydrate);
   const nextStep = useGoalDraftStore((state) => state.nextStep);

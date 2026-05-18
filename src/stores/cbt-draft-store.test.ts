@@ -10,7 +10,7 @@ describe("cbt draft store", () => {
 
     expect(useCbtDraftStore.getState()).toMatchObject({
       mode: "edit",
-      recordId: "record-1",
+      entityId: "record-1",
       stepIndex: 0,
       values: null,
     });

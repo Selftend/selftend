@@ -1,4 +1,4 @@
-import { router, usePathname } from "expo-router";
+import { router, usePathname, type Href } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,7 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface NavItemDef {
   labelKey: string;
-  href: string;
+  href: Href;
   icon: MaterialIconName;
   matchPrefix: string | null;
   activeWhen?: (pathname: string) => boolean;
@@ -19,7 +19,7 @@ interface NavItemDef {
 
 const TODAY_ITEM: NavItemDef = {
   labelKey: "sidebar.home",
-  href: "/(app)/(tabs)/",
+  href: "/(app)/(tabs)",
   icon: "home",
   matchPrefix: null,
 };
@@ -160,9 +160,9 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
         accessibilityLabel={label}
         accessibilityRole="button"
         accessibilityState={{ selected: active }}
-        key={item.href}
+        key={item.labelKey}
         onPress={() => {
-          router.push(item.href as Parameters<typeof router.push>[0]);
+          router.push(item.href);
           onSelect?.();
         }}
         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
@@ -197,7 +197,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     );
   }
 
-  function renderGroupLabel(label: string, href?: string) {
+  function renderGroupLabel(label: string, href?: Href) {
     const active = href ? pathname === href : false;
     const className = cn(
       "px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider",
@@ -220,7 +220,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
         key={`group-${label}`}
         onPress={() => {
-          router.push(href as Parameters<typeof router.push>[0]);
+          router.push(href);
           onSelect?.();
         }}
         role="button"

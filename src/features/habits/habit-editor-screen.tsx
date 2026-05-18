@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useMemo, useState } from "react";
@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface HabitEditorScreenProps {
-  fallbackHref: string;
+  fallbackHref: Href;
   mode: "create" | "edit";
   habitId?: string | null;
 }
@@ -111,7 +111,7 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
       router.back();
       return;
     }
-    router.push(fallbackHref as Parameters<typeof router.push>[0]);
+    router.push(fallbackHref);
   };
 
   const handleSave = async () => {

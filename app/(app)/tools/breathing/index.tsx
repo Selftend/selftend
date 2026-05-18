@@ -62,11 +62,7 @@ export default function BreathingScreen() {
                 key={pattern.slug}
                 title={t(`breathing.exercises.${pattern.slug}.title`)}
                 description={t(`breathing.exercises.${pattern.slug}.shortDescription`)}
-                onPress={() =>
-                  router.push(
-                    `/tools/breathing/${pattern.slug}` as Parameters<typeof router.push>[0],
-                  )
-                }
+                onPress={() => router.push(`/tools/breathing/${pattern.slug}`)}
               />
             ))}
           </View>

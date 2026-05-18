@@ -77,7 +77,7 @@ export default function ThoughtRecordEditorScreen() {
   const [submitError, setSubmitError] = useState("");
   const stepIndex = useCbtDraftStore((state) => state.stepIndex);
   const storedDraftValues = useCbtDraftStore((state) =>
-    state.mode === draftMode && state.recordId === recordId ? state.values : null,
+    state.mode === draftMode && state.entityId === recordId ? state.values : null,
   );
   const hydrateDraft = useCbtDraftStore((state) => state.hydrate);
   const nextStep = useCbtDraftStore((state) => state.nextStep);

@@ -7,7 +7,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useExpansionLogs } from "@/src/features/act/queries";
 import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
@@ -19,11 +19,7 @@ export default function ActExpansionListScreen() {
   const { data: logs, isLoading } = useExpansionLogs(user?.id ?? null);
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <LoadingState title={t("expansion.listTitle")} />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("expansion.listTitle")} />;
   }
 
   return (
@@ -40,11 +36,7 @@ export default function ActExpansionListScreen() {
 
           <View className="flex-row flex-wrap gap-2">
             <View className="min-w-[160px] flex-1 basis-[160px]">
-              <Button
-                onPress={() =>
-                  router.push("/modules/act/expansion/new" as Parameters<typeof router.push>[0])
-                }
-              >
+              <Button onPress={() => router.push("/modules/act/expansion/new")}>
                 <Icon name="open-in-full" className="size-4 text-primary-foreground" />
                 <Text>{t("expansion.newTitle")}</Text>
               </Button>
@@ -52,11 +44,7 @@ export default function ActExpansionListScreen() {
             <View className="min-w-[160px] flex-1 basis-[160px]">
               <Button
                 variant="secondary"
-                onPress={() =>
-                  router.push(
-                    "/modules/act/expansion/urge-surfing" as Parameters<typeof router.push>[0],
-                  )
-                }
+                onPress={() => router.push("/modules/act/expansion/urge-surfing")}
               >
                 <Icon name="waves" className="size-4" />
                 <Text>{t("expansion.urgeSurfTitle")}</Text>
@@ -84,7 +72,7 @@ export default function ActExpansionListScreen() {
                     router.push({
                       pathname: "/modules/act/expansion/[id]",
                       params: { id: log.id },
-                    } as Parameters<typeof router.push>[0])
+                    })
                   }
                   className="rounded-lg border border-border bg-card p-4 active:bg-accent/40"
                 >

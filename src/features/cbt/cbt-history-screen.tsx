@@ -45,11 +45,7 @@ export default function CbtHistoryScreen() {
                 timestamp: formatTimestamp(record.updatedAt),
                 balancedThought: record.balancedThought.trim() || t("history.recordSummaryEmpty"),
               })}
-              onPress={() =>
-                router.push(
-                  `/modules/cbt/history/${record.id}` as Parameters<typeof router.push>[0],
-                )
-              }
+              onPress={() => router.push(`/modules/cbt/history/${record.id}`)}
               title={getRecordTitle(record, t("history.untitledRecord"))}
             />
           ))}

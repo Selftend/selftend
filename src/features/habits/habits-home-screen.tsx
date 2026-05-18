@@ -159,21 +159,11 @@ export default function HabitsHomeScreen() {
             ) : null}
 
             <View className="flex-row flex-wrap gap-2">
-              <Button
-                onPress={() =>
-                  router.push("/tools/habits/new" as Parameters<typeof router.push>[0])
-                }
-                className="self-start"
-              >
+              <Button onPress={() => router.push("/tools/habits/new")} className="self-start">
                 <Icon name="add" className="size-4 text-primary-foreground" />
                 <Text>{t("cta.newHabit")}</Text>
               </Button>
-              <Button
-                variant="ghost"
-                onPress={() =>
-                  router.push("/tools/habits/history" as Parameters<typeof router.push>[0])
-                }
-              >
+              <Button variant="ghost" onPress={() => router.push("/tools/habits/history")}>
                 <Icon name="history" className="size-4" />
                 <Text>{t("cta.viewHistory")}</Text>
               </Button>

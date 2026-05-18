@@ -70,10 +70,7 @@ export default function JournalListScreen() {
               </Text>
             </View>
 
-            <Button
-              onPress={() => router.push("/tools/journal/new" as Parameters<typeof router.push>[0])}
-              className="self-start"
-            >
+            <Button onPress={() => router.push("/tools/journal/new")} className="self-start">
               <Icon name="add" className="size-4 text-primary-foreground" />
               <Text>{t("cta.new")}</Text>
             </Button>
@@ -84,8 +81,7 @@ export default function JournalListScreen() {
                 description={t("list.empty.description")}
                 action={{
                   label: t("list.empty.cta"),
-                  onPress: () =>
-                    router.push("/tools/journal/new" as Parameters<typeof router.push>[0]),
+                  onPress: () => router.push("/tools/journal/new"),
                 }}
               />
             ) : (
@@ -126,7 +122,7 @@ function JournalEntryRow({ entry }: JournalEntryRowProps) {
       accessibilityLabel={t("list.viewEntry", { when })}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(`/tools/journal/${entry.id}` as Parameters<typeof router.push>[0])}
+      onPress={() => router.push(`/tools/journal/${entry.id}`)}
       className="gap-2 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
       role="button"
     >

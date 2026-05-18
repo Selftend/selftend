@@ -60,9 +60,7 @@ export default function ActivitiesScreen() {
           ? ` Â· ${t("activities.moodLift", { lift: activity.moodAfter - activity.moodBefore })}`
           : ""
       }`}
-      onPress={() =>
-        router.push(`/modules/cbt/activities/${activity.id}` as Parameters<typeof router.push>[0])
-      }
+      onPress={() => router.push(`/modules/cbt/activities/${activity.id}`)}
     />
   );
 

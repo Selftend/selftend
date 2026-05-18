@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { BackButton } from "@/src/components/app/back-button";
@@ -22,6 +22,7 @@ import {
   useObservingSelfSession,
   useObservingSelfSessions,
 } from "@/src/features/act/queries";
+import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -32,22 +33,18 @@ export default function ActObservingSelfDetailScreen() {
   const sessionId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
 
-  const { data: cachedList } = useObservingSelfSessions(user?.id ?? null);
-  const fromCache = useMemo(
-    () => (sessionId ? (cachedList?.find((s) => s.id === sessionId) ?? null) : null),
-    [cachedList, sessionId],
+  const { item: session, isLoading } = useCachedItem(
+    useObservingSelfSessions,
+    useObservingSelfSession,
+    user?.id ?? null,
+    sessionId,
   );
-  const { data: fetched, isLoading } = useObservingSelfSession(
-    fromCache ? null : (user?.id ?? null),
-    fromCache ? null : sessionId,
-  );
-  const session = fromCache ?? fetched ?? null;
 
   const deleteMutation = useDeleteObservingSelfSession(user?.id ?? null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
-  if (!fromCache && isLoading) {
+  if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">

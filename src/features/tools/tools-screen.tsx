@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -20,7 +20,7 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface ToolTile {
   key: "mood" | "mindfulness" | "gratitude" | "journal" | "grounding" | "sleep" | "habits";
-  href: string;
+  href: Href;
   icon: MaterialIconName;
   nameKey: string;
   subKey: string;
@@ -198,7 +198,7 @@ function ToolCard({ tool, stat }: ToolCardProps) {
       accessibilityLabel={name}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(tool.href as Parameters<typeof router.push>[0])}
+      onPress={() => router.push(tool.href)}
       className="min-w-[260px] flex-1 basis-[260px] flex-row items-center gap-4 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
       role="button"
     >

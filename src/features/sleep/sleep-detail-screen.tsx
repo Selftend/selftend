@@ -102,9 +102,7 @@ export default function SleepDetailScreen() {
             </View>
             <View className="flex-row gap-3">
               <Button
-                onPress={() =>
-                  router.push(`/tools/sleep/${entry.id}/edit` as Parameters<typeof router.push>[0])
-                }
+                onPress={() => router.push(`/tools/sleep/${entry.id}/edit`)}
                 variant="secondary"
               >
                 <Icon name="edit" className="size-4" />

@@ -77,11 +77,7 @@ export default function AngerScreen() {
                     key={log.id}
                     title={log.triggerText}
                     description={t("anger.arousalLabel", { value: log.arousalLevel })}
-                    onPress={() =>
-                      router.push(
-                        `/modules/cbt/anger/${log.id}` as Parameters<typeof router.push>[0],
-                      )
-                    }
+                    onPress={() => router.push(`/modules/cbt/anger/${log.id}`)}
                   />
                 ))}
               </View>

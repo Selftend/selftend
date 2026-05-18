@@ -249,9 +249,7 @@ export default function ThoughtRecordDetailScreen() {
 
           <Pressable
             accessibilityRole="button"
-            onPress={() =>
-              router.push("/tools/breathing/box-breathing" as Parameters<typeof router.push>[0])
-            }
+            onPress={() => router.push("/tools/breathing/box-breathing")}
           >
             <Card>
               <CardHeader>

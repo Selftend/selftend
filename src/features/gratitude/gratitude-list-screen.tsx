@@ -35,12 +35,7 @@ export default function GratitudeListScreen() {
             </Text>
           </View>
 
-          <Button
-            onPress={() =>
-              router.push("/tools/gratitude-log/new" as Parameters<typeof router.push>[0])
-            }
-            className="self-start"
-          >
+          <Button onPress={() => router.push("/tools/gratitude-log/new")} className="self-start">
             <Icon name="add" className="size-4 text-primary-foreground" />
             <Text>{t("cta.new")}</Text>
           </Button>
@@ -51,8 +46,7 @@ export default function GratitudeListScreen() {
               description={t("list.empty.description")}
               action={{
                 label: t("list.empty.cta"),
-                onPress: () =>
-                  router.push("/tools/gratitude-log/new" as Parameters<typeof router.push>[0]),
+                onPress: () => router.push("/tools/gratitude-log/new"),
               }}
             />
           ) : (

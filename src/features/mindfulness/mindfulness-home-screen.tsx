@@ -97,11 +97,7 @@ export default function MindfulnessHomeScreen() {
                   key={exercise.slug}
                   title={t(`mindfulness.exercises.${exercise.slug}.title`)}
                   description={t(`mindfulness.exercises.${exercise.slug}.shortDescription`)}
-                  onPress={() =>
-                    router.push(
-                      `/tools/mindfulness/${exercise.slug}` as Parameters<typeof router.push>[0],
-                    )
-                  }
+                  onPress={() => router.push(`/tools/mindfulness/${exercise.slug}`)}
                 />
               ))}
             </View>

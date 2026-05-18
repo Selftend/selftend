@@ -7,7 +7,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useObservingSelfSessions } from "@/src/features/act/queries";
 import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
@@ -19,11 +19,7 @@ export default function ActObservingSelfListScreen() {
   const { data: sessions, isLoading } = useObservingSelfSessions(user?.id ?? null);
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <LoadingState title={t("observingSelf.listTitle")} />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("observingSelf.listTitle")} />;
   }
 
   return (
@@ -38,11 +34,7 @@ export default function ActObservingSelfListScreen() {
             <Text variant="muted">{t("observingSelf.listSubtitle")}</Text>
           </View>
 
-          <Button
-            onPress={() =>
-              router.push("/modules/act/observing-self/new" as Parameters<typeof router.push>[0])
-            }
-          >
+          <Button onPress={() => router.push("/modules/act/observing-self/new")}>
             <Icon name="visibility" className="size-4 text-primary-foreground" />
             <Text>{t("observingSelf.newTitle")}</Text>
           </Button>
@@ -67,7 +59,7 @@ export default function ActObservingSelfListScreen() {
                     router.push({
                       pathname: "/modules/act/observing-self/[id]",
                       params: { id: session.id },
-                    } as Parameters<typeof router.push>[0])
+                    })
                   }
                   className="rounded-lg border border-border bg-card p-4 active:bg-accent/40"
                 >

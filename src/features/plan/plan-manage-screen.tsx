@@ -81,10 +81,7 @@ export function PlanManageScreen() {
                 {t("plan.manage.subtitle")}
               </Text>
             </View>
-            <Button
-              size="sm"
-              onPress={() => router.push("/(app)/plan/new" as Parameters<typeof router.push>[0])}
-            >
+            <Button size="sm" onPress={() => router.push("/(app)/plan/new")}>
               <Icon name="add" className="size-4" />
               <Text>{t("plan.manage.addItem")}</Text>
             </Button>
@@ -100,20 +97,10 @@ export function PlanManageScreen() {
                 </Text>
               </View>
               <View className="flex-row gap-3">
-                <Button
-                  variant="outline"
-                  onPress={() =>
-                    router.push("/(app)/plan/create" as Parameters<typeof router.push>[0])
-                  }
-                >
+                <Button variant="outline" onPress={() => router.push("/(app)/plan/create")}>
                   <Text>{t("plan.emptyWizard")}</Text>
                 </Button>
-                <Button
-                  variant="outline"
-                  onPress={() =>
-                    router.push("/(app)/plan/new" as Parameters<typeof router.push>[0])
-                  }
-                >
+                <Button variant="outline" onPress={() => router.push("/(app)/plan/new")}>
                   <Text>{t("plan.emptyManual")}</Text>
                 </Button>
               </View>
@@ -142,11 +129,7 @@ export function PlanManageScreen() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onPress={() =>
-                          router.push(
-                            `/(app)/plan/${item.id}/edit` as Parameters<typeof router.push>[0],
-                          )
-                        }
+                        onPress={() => router.push(`/(app)/plan/${item.id}/edit`)}
                       >
                         <Icon name="edit" className="size-4 text-muted-foreground" />
                       </Button>
@@ -161,10 +144,7 @@ export function PlanManageScreen() {
           )}
 
           {items && items.length > 0 && (
-            <Button
-              variant="outline"
-              onPress={() => router.push("/(app)/plan/create" as Parameters<typeof router.push>[0])}
-            >
+            <Button variant="outline" onPress={() => router.push("/(app)/plan/create")}>
               <Icon name="auto-awesome" className="size-4" />
               <Text>{t("plan.manage.runWizard")}</Text>
             </Button>

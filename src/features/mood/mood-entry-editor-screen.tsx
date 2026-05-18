@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useMemo, useState } from "react";
@@ -27,7 +27,7 @@ import type { MoodLog } from "@/src/features/mood/types";
 import { useSession } from "@/src/providers/session-provider";
 
 interface MoodEntryEditorScreenProps {
-  fallbackHref: string;
+  fallbackHref: Href;
   mode: "create" | "edit";
   moodId?: string | null;
 }
@@ -85,7 +85,7 @@ export function MoodEntryEditorScreen({
       return;
     }
 
-    router.push(fallbackHref as Parameters<typeof router.push>[0]);
+    router.push(fallbackHref);
   };
 
   const handleSave = async () => {
@@ -188,9 +188,7 @@ export function MoodEntryEditorScreen({
         {showBreathingNudge ? (
           <Pressable
             accessibilityRole="button"
-            onPress={() =>
-              router.push("/tools/breathing/box-breathing" as Parameters<typeof router.push>[0])
-            }
+            onPress={() => router.push("/tools/breathing/box-breathing")}
           >
             <Card>
               <CardHeader>

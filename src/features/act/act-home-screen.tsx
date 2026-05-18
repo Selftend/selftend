@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 interface PrincipleCard {
   key: ACTPrinciple;
   icon: MaterialIconName;
-  route: string | null;
+  route: Href | null;
 }
 
 const PRINCIPLE_CARDS: PrincipleCard[] = [
@@ -190,11 +190,7 @@ export default function ActHomeScreen() {
               <Text variant="h3">{t("home.quickActionsTitle")}</Text>
               <View className="flex-row flex-wrap gap-2">
                 <View className="min-w-[160px] flex-1 basis-[160px]">
-                  <Button
-                    onPress={() =>
-                      router.push("/modules/act/defusion/new" as Parameters<typeof router.push>[0])
-                    }
-                  >
+                  <Button onPress={() => router.push("/modules/act/defusion/new")}>
                     <Icon name="filter-drama" className="size-4 text-primary-foreground" />
                     <Text>{t("home.defuseThought")}</Text>
                   </Button>
@@ -202,9 +198,7 @@ export default function ActHomeScreen() {
                 <View className="min-w-[160px] flex-1 basis-[160px]">
                   <Button
                     variant="secondary"
-                    onPress={() =>
-                      router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
-                    }
+                    onPress={() => router.push("/tools/mood-tracker/new")}
                   >
                     <Text>{t("home.logMood")}</Text>
                   </Button>
@@ -235,9 +229,7 @@ export default function ActHomeScreen() {
                   <Pressable
                     accessibilityRole="link"
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() =>
-                      router.push("/modules/act/defusion" as Parameters<typeof router.push>[0])
-                    }
+                    onPress={() => router.push("/modules/act/defusion")}
                   >
                     <Text className="text-sm text-act">{t("home.viewAllDefusion")}</Text>
                   </Pressable>
@@ -315,7 +307,7 @@ function PrincipleCardItem({ card }: { card: PrincipleCard }) {
       accessibilityLabel={t(`principles.${card.key}.name`)}
       accessibilityHint={t(`principles.${card.key}.desc`)}
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(card.route! as Parameters<typeof router.push>[0])}
+      onPress={() => router.push(card.route!)}
       className="min-w-[240px] flex-1 basis-[240px] active:opacity-80"
     >
       {content}

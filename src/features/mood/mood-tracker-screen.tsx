@@ -90,16 +90,12 @@ export default function MoodTrackerScreen() {
 
             <TodayCheckInCard
               summary={today}
-              onLog={() =>
-                router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
-              }
+              onLog={() => router.push("/tools/mood-tracker/new")}
             />
 
             {today.count > 0 ? (
               <Button
-                onPress={() =>
-                  router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
-                }
+                onPress={() => router.push("/tools/mood-tracker/new")}
                 variant="outline"
                 className="self-start"
               >

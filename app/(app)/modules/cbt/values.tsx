@@ -108,11 +108,7 @@ function DomainEditor({ domain, existing, userId }: DomainEditorProps) {
 
         {saved && gap !== null && gap > 0 ? (
           <Button
-            onPress={() =>
-              router.push(
-                `/modules/cbt/activities/new?domain=${domain}` as Parameters<typeof router.push>[0],
-              )
-            }
+            onPress={() => router.push(`/modules/cbt/activities/new?domain=${domain}`)}
             variant="outline"
           >
             <Text>{t("values.scheduleActivity")}</Text>

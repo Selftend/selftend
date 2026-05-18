@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { BackButton } from "@/src/components/app/back-button";
@@ -28,6 +28,7 @@ import {
   useUpdateCommittedAction,
 } from "@/src/features/act/queries";
 import { type ActionStatus } from "@/src/features/act/types";
+import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
@@ -46,16 +47,12 @@ export default function ActCommittedActionDetailScreen() {
   const actionId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
 
-  const { data: cachedList } = useCommittedActions(user?.id ?? null);
-  const fromCache = useMemo(
-    () => (actionId ? (cachedList?.find((a) => a.id === actionId) ?? null) : null),
-    [cachedList, actionId],
+  const { item: action, isLoading } = useCachedItem(
+    useCommittedActions,
+    useCommittedAction,
+    user?.id ?? null,
+    actionId,
   );
-  const { data: fetched, isLoading } = useCommittedAction(
-    fromCache ? null : (user?.id ?? null),
-    fromCache ? null : actionId,
-  );
-  const action = fromCache ?? fetched ?? null;
 
   const { data: steps = [] } = useActionSteps(user?.id ?? null, actionId);
 
@@ -69,7 +66,7 @@ export default function ActCommittedActionDetailScreen() {
   const [deleteError, setDeleteError] = useState("");
   const [newStepText, setNewStepText] = useState("");
 
-  if (!fromCache && isLoading) {
+  if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">

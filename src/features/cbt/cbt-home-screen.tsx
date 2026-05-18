@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Pressable, ScrollView, useColorScheme, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -41,7 +41,7 @@ type Pillar = "think" | "act" | "be";
 
 interface PillarStrategy {
   key: string;
-  route: string;
+  route: Href;
   icon: MaterialIconName;
   labelKey: string;
   descKey: string;
@@ -49,7 +49,7 @@ interface PillarStrategy {
 
 interface SharedTool {
   key: string;
-  route: string;
+  route: Href;
   icon: MaterialIconName;
   labelKey: string;
 }
@@ -193,7 +193,7 @@ const REVIEW_LINKS = [
 const GUIDANCE_STRATEGIES: Record<
   GuidedStrategyKey,
   {
-    route: string;
+    route: Href;
     icon: MaterialIconName;
     labelKey: string;
     descKey: string;
@@ -440,7 +440,7 @@ function PillarStrategyCard({ pillar, strategy }: PillarStrategyCardProps) {
       accessibilityLabel={label}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(strategy.route as Parameters<typeof router.push>[0])}
+      onPress={() => router.push(strategy.route)}
       className="min-w-[200px] flex-1 basis-[200px] overflow-hidden rounded-xl border border-border bg-card active:bg-accent/40"
       role="button"
     >
@@ -480,7 +480,7 @@ function SharedToolPill({ pillar, tool }: SharedToolPillProps) {
       accessibilityLabel={label}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(tool.route as Parameters<typeof router.push>[0])}
+      onPress={() => router.push(tool.route)}
       className="min-w-[150px] flex-1 basis-[150px] flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
       role="button"
     >
@@ -508,7 +508,7 @@ function GuidanceCard({ strategy }: { strategy: (typeof GUIDANCE_STRATEGIES)[Gui
       accessibilityLabel={t(strategy.labelKey)}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(strategy.route as Parameters<typeof router.push>[0])}
+      onPress={() => router.push(strategy.route)}
       className="min-w-[190px] flex-1 basis-[190px] flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
       role="button"
     >
@@ -721,11 +721,7 @@ export default function CbtHomeScreen() {
                               ? t("dashboard.checkIn.logMoodCompleteLabel")
                               : t("dashboard.logMood")
                           }
-                          onPress={() =>
-                            router.push(
-                              "/tools/mood-tracker/new" as Parameters<typeof router.push>[0],
-                            )
-                          }
+                          onPress={() => router.push("/tools/mood-tracker/new")}
                           size="sm"
                         >
                           {morningCheckInComplete ? (
@@ -734,11 +730,7 @@ export default function CbtHomeScreen() {
                           <Text>{t("dashboard.logMood")}</Text>
                         </Button>
                         <Button
-                          onPress={() =>
-                            router.push(
-                              "/modules/cbt/activities" as Parameters<typeof router.push>[0],
-                            )
-                          }
+                          onPress={() => router.push("/modules/cbt/activities")}
                           size="sm"
                           variant="outline"
                         >
@@ -761,22 +753,11 @@ export default function CbtHomeScreen() {
                     </CardHeader>
                     <CardContent>
                       <View className="flex-row flex-wrap gap-2">
-                        <Button
-                          onPress={() =>
-                            router.push(
-                              "/modules/cbt/self-care" as Parameters<typeof router.push>[0],
-                            )
-                          }
-                          size="sm"
-                        >
+                        <Button onPress={() => router.push("/modules/cbt/self-care")} size="sm">
                           <Text>{t("dashboard.checkIn.openSelfCare")}</Text>
                         </Button>
                         <Button
-                          onPress={() =>
-                            router.push(
-                              "/tools/mood-tracker/new" as Parameters<typeof router.push>[0],
-                            )
-                          }
+                          onPress={() => router.push("/tools/mood-tracker/new")}
                           size="sm"
                           variant="outline"
                         >
@@ -799,7 +780,7 @@ export default function CbtHomeScreen() {
                 </View>
                 <View className="flex-row flex-wrap gap-2">
                   {guidanceStrategies.map((strategy) => (
-                    <GuidanceCard key={strategy.route} strategy={strategy} />
+                    <GuidanceCard key={strategy.labelKey} strategy={strategy} />
                   ))}
                 </View>
               </View>
@@ -850,11 +831,7 @@ export default function CbtHomeScreen() {
                             })
                           : undefined
                       }
-                      onPress={() =>
-                        router.push(
-                          `/modules/cbt/tasks/${task.id}` as Parameters<typeof router.push>[0],
-                        )
-                      }
+                      onPress={() => router.push(`/modules/cbt/tasks/${task.id}`)}
                     />
                   ))}
                 </View>
@@ -903,19 +880,13 @@ export default function CbtHomeScreen() {
               <Text variant="h3">{t("dashboard.quickActions")}</Text>
               <View className="flex-row flex-wrap gap-3">
                 <View className="min-w-[160px] flex-1 basis-[160px]">
-                  <Button
-                    onPress={() =>
-                      router.push("/modules/cbt/new" as Parameters<typeof router.push>[0])
-                    }
-                  >
+                  <Button onPress={() => router.push("/modules/cbt/new")}>
                     <Text>{t("home.newRecord")}</Text>
                   </Button>
                 </View>
                 <View className="min-w-[160px] flex-1 basis-[160px]">
                   <Button
-                    onPress={() =>
-                      router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
-                    }
+                    onPress={() => router.push("/tools/mood-tracker/new")}
                     variant="secondary"
                   >
                     <Text>{t("dashboard.logMood")}</Text>
@@ -923,23 +894,14 @@ export default function CbtHomeScreen() {
                 </View>
                 <View className="min-w-[160px] flex-1 basis-[160px]">
                   <Button
-                    onPress={() =>
-                      router.push(
-                        "/modules/cbt/activities/new" as Parameters<typeof router.push>[0],
-                      )
-                    }
+                    onPress={() => router.push("/modules/cbt/activities/new")}
                     variant="secondary"
                   >
                     <Text>{t("dashboard.scheduleActivity")}</Text>
                   </Button>
                 </View>
                 <View className="min-w-[160px] flex-1 basis-[160px]">
-                  <Button
-                    onPress={() =>
-                      router.push("/modules/cbt/goals/new" as Parameters<typeof router.push>[0])
-                    }
-                    variant="secondary"
-                  >
+                  <Button onPress={() => router.push("/modules/cbt/goals/new")} variant="secondary">
                     <Text>{t("dashboard.newGoal")}</Text>
                   </Button>
                 </View>
@@ -952,9 +914,7 @@ export default function CbtHomeScreen() {
                 <View className="flex-row items-center justify-between">
                   <Text variant="h3">{t("dashboard.activeGoals")}</Text>
                   <Button
-                    onPress={() =>
-                      router.push("/modules/cbt/goals" as Parameters<typeof router.push>[0])
-                    }
+                    onPress={() => router.push("/modules/cbt/goals")}
                     size="sm"
                     variant="ghost"
                   >
@@ -966,11 +926,7 @@ export default function CbtHomeScreen() {
                     key={goal.id}
                     title={goal.title}
                     description={t(`goals.domain.${goal.lifeDomain}`)}
-                    onPress={() =>
-                      router.push(
-                        `/modules/cbt/goals/${goal.id}` as Parameters<typeof router.push>[0],
-                      )
-                    }
+                    onPress={() => router.push(`/modules/cbt/goals/${goal.id}`)}
                   />
                 ))}
               </View>
@@ -1187,7 +1143,7 @@ export default function CbtHomeScreen() {
                       accessibilityLabel={t(link.labelKey)}
                       accessibilityRole="button"
                       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                      onPress={() => router.push(link.route as Parameters<typeof router.push>[0])}
+                      onPress={() => router.push(link.route)}
                       className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
                       role="button"
                     >
@@ -1229,9 +1185,7 @@ export default function CbtHomeScreen() {
               accessibilityLabel={t("home.recordHistory")}
               accessibilityRole="button"
               hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={() =>
-                router.push("/modules/cbt/history" as Parameters<typeof router.push>[0])
-              }
+              onPress={() => router.push("/modules/cbt/history")}
               className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
               role="button"
             >

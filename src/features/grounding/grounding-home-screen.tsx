@@ -96,11 +96,7 @@ export default function GroundingHomeScreen() {
                   key={technique.slug}
                   title={t(`grounding.techniques.${technique.slug}.title`)}
                   description={t(`grounding.techniques.${technique.slug}.shortDescription`)}
-                  onPress={() =>
-                    router.push(
-                      `/tools/grounding/${technique.slug}` as Parameters<typeof router.push>[0],
-                    )
-                  }
+                  onPress={() => router.push(`/tools/grounding/${technique.slug}`)}
                 />
               ))}
             </View>

@@ -58,11 +58,7 @@ export default function BeliefsScreen() {
                     original: belief.originalBeliefStrength,
                     alternative: belief.alternativeBeliefStrength,
                   })}
-                  onPress={() =>
-                    router.push(
-                      `/modules/cbt/beliefs/${belief.id}` as Parameters<typeof router.push>[0],
-                    )
-                  }
+                  onPress={() => router.push(`/modules/cbt/beliefs/${belief.id}`)}
                 />
               ))}
             </View>

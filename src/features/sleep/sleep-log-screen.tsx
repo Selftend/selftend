@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useMemo, useState } from "react";
@@ -17,7 +17,7 @@ import type { SleepLog } from "@/src/features/sleep/types";
 import { useSession } from "@/src/providers/session-provider";
 
 interface SleepLogScreenProps {
-  fallbackHref: string;
+  fallbackHref: Href;
   mode: "create" | "edit";
   logId?: string | null;
 }
@@ -87,7 +87,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
       router.back();
       return;
     }
-    router.push(fallbackHref as Parameters<typeof router.push>[0]);
+    router.push(fallbackHref);
   };
 
   const handleSave = async () => {

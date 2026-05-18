@@ -111,11 +111,7 @@ export default function JournalDetailScreen() {
             <Text variant="muted">{when}</Text>
             <View className="flex-row gap-3">
               <Button
-                onPress={() =>
-                  router.push(
-                    `/tools/journal/${entry.id}/edit` as Parameters<typeof router.push>[0],
-                  )
-                }
+                onPress={() => router.push(`/tools/journal/${entry.id}/edit`)}
                 variant="secondary"
               >
                 <Icon name="edit" className="size-4" />

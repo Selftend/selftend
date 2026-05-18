@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -96,13 +96,12 @@ export default function SleepTrackerScreen() {
     }
   }
 
-  const allLogs = useMemo(() => logs ?? [], [logs]);
-  const recent = useMemo(() => allLogs.slice(0, 10), [allLogs]);
-
-  const sevenDayDuration = useMemo(() => averageDurationMinutes(allLogs, 7), [allLogs]);
-  const thirtyDayDuration = useMemo(() => averageDurationMinutes(allLogs, 30), [allLogs]);
-  const sevenDayQuality = useMemo(() => averageQuality(allLogs, 7), [allLogs]);
-  const thirtyDayQuality = useMemo(() => averageQuality(allLogs, 30), [allLogs]);
+  const allLogs = logs ?? [];
+  const recent = allLogs.slice(0, 10);
+  const sevenDayDuration = averageDurationMinutes(allLogs, 7);
+  const thirtyDayDuration = averageDurationMinutes(allLogs, 30);
+  const sevenDayQuality = averageQuality(allLogs, 7);
+  const thirtyDayQuality = averageQuality(allLogs, 30);
 
   return (
     <>
@@ -126,10 +125,7 @@ export default function SleepTrackerScreen() {
             </View>
 
             <View className="flex-row gap-3">
-              <Button
-                onPress={() => router.push("/tools/sleep/new" as Parameters<typeof router.push>[0])}
-                className="self-start"
-              >
+              <Button onPress={() => router.push("/tools/sleep/new")} className="self-start">
                 <Icon name="bedtime" className="size-4 text-primary-foreground" />
                 <Text>{t("cta.log")}</Text>
               </Button>

@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
@@ -7,7 +7,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 interface RelatedTool {
   icon: MaterialIconName;
   nameKey: string;
-  href: string;
+  href: Href;
 }
 
 interface RelatedToolsProps {
@@ -26,10 +26,10 @@ export function RelatedTools({ tools }: RelatedToolsProps) {
       <View className="flex-row flex-wrap gap-2">
         {tools.map((tool) => (
           <Pressable
-            key={tool.href}
+            key={tool.nameKey}
             accessibilityRole="link"
             accessibilityLabel={tNav(`sidebar.${tool.nameKey}`)}
-            onPress={() => router.push(tool.href as Parameters<typeof router.push>[0])}
+            onPress={() => router.push(tool.href)}
             className="flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 active:bg-accent/40"
           >
             <Icon name={tool.icon} className="size-3.5 text-muted-foreground" />

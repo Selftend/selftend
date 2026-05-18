@@ -53,37 +53,42 @@ import type {
   ValueEntryInput,
 } from "@/src/features/act/types";
 
+const u = (userId: string | null) => userId ?? "anonymous";
+
 const actKeys = {
   all: ["act"] as const,
-  programState: (userId: string) => ["act", "programState", userId] as const,
-  defusionList: (userId: string) => ["act", "defusion", "list", userId] as const,
-  defusionDetail: (userId: string, logId: string) =>
-    ["act", "defusion", "detail", userId, logId] as const,
-  expansionList: (userId: string) => ["act", "expansion", "list", userId] as const,
-  expansionDetail: (userId: string, logId: string) =>
-    ["act", "expansion", "detail", userId, logId] as const,
-  urgeSurfList: (userId: string) => ["act", "urgeSurf", "list", userId] as const,
-  connectionList: (userId: string) => ["act", "connection", "list", userId] as const,
-  connectionDetail: (userId: string, logId: string) =>
-    ["act", "connection", "detail", userId, logId] as const,
-  observingList: (userId: string) => ["act", "observing", "list", userId] as const,
-  observingDetail: (userId: string, sessionId: string) =>
-    ["act", "observing", "detail", userId, sessionId] as const,
-  valuesList: (userId: string) => ["act", "values", "list", userId] as const,
-  valueDomain: (userId: string, domain: string) =>
-    ["act", "values", "domain", userId, domain] as const,
-  bullsEyeList: (userId: string) => ["act", "bullsEye", "list", userId] as const,
-  committedActionList: (userId: string, status?: ActionStatus) =>
-    ["act", "committedAction", "list", userId, status] as const,
-  committedActionDetail: (userId: string, actionId: string) =>
-    ["act", "committedAction", "detail", userId, actionId] as const,
-  actionStepList: (userId: string, actionId: string) =>
-    ["act", "actionStep", "list", userId, actionId] as const,
+  programState: (userId: string | null) => ["act", "programState", u(userId)] as const,
+  defusionList: (userId: string | null) => ["act", "defusion", "list", u(userId)] as const,
+  defusionDetail: (userId: string | null, logId: string | null) =>
+    ["act", "defusion", "detail", u(userId), u(logId)] as const,
+  expansionList: (userId: string | null) => ["act", "expansion", "list", u(userId)] as const,
+  expansionDetail: (userId: string | null, logId: string | null) =>
+    ["act", "expansion", "detail", u(userId), u(logId)] as const,
+  urgeSurfList: (userId: string | null) => ["act", "urgeSurf", "list", u(userId)] as const,
+  connectionList: (userId: string | null) => ["act", "connection", "list", u(userId)] as const,
+  connectionDetail: (userId: string | null, logId: string | null) =>
+    ["act", "connection", "detail", u(userId), u(logId)] as const,
+  observingList: (userId: string | null) => ["act", "observing", "list", u(userId)] as const,
+  observingDetail: (userId: string | null, sessionId: string | null) =>
+    ["act", "observing", "detail", u(userId), u(sessionId)] as const,
+  valuesList: (userId: string | null) => ["act", "values", "list", u(userId)] as const,
+  valueDomain: (userId: string | null, domain: string | null) =>
+    ["act", "values", "domain", u(userId), u(domain)] as const,
+  bullsEyeList: (userId: string | null) => ["act", "bullsEye", "list", u(userId)] as const,
+  committedActionList: (userId: string | null, status?: ActionStatus) =>
+    ["act", "committedAction", "list", u(userId), status] as const,
+  // Prefix matcher used by mutations to invalidate every status filter at once.
+  committedActionListPrefix: (userId: string | null) =>
+    ["act", "committedAction", "list", u(userId)] as const,
+  committedActionDetail: (userId: string | null, actionId: string | null) =>
+    ["act", "committedAction", "detail", u(userId), u(actionId)] as const,
+  actionStepList: (userId: string | null, actionId: string | null) =>
+    ["act", "actionStep", "list", u(userId), u(actionId)] as const,
 };
 
 export function useACTProgramState(userId: string | null) {
   return useQuery({
-    queryKey: userId ? actKeys.programState(userId) : ["act", "programState", "anonymous"],
+    queryKey: actKeys.programState(userId),
     queryFn: () => getACTProgramState(userId!),
     enabled: Boolean(userId),
   });
@@ -102,7 +107,7 @@ export function useUpsertACTProgramState(userId: string | null) {
 
 export function useDefusionLogs(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: userId ? actKeys.defusionList(userId) : ["act", "defusion", "list", "anonymous"],
+    queryKey: actKeys.defusionList(userId),
     queryFn: () => listDefusionLogs(userId!, limit),
     enabled: Boolean(userId),
   });
@@ -110,10 +115,7 @@ export function useDefusionLogs(userId: string | null, limit = 30) {
 
 export function useDefusionLog(userId: string | null, logId: string | null) {
   return useQuery({
-    queryKey:
-      userId && logId
-        ? actKeys.defusionDetail(userId, logId)
-        : ["act", "defusion", "detail", "anonymous"],
+    queryKey: actKeys.defusionDetail(userId, logId),
     queryFn: () => getDefusionLog(userId!, logId!),
     enabled: Boolean(userId) && Boolean(logId),
   });
@@ -145,7 +147,7 @@ export function useDeleteDefusionLog(userId: string | null) {
 
 export function useExpansionLogs(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: userId ? actKeys.expansionList(userId) : ["act", "expansion", "list", "anonymous"],
+    queryKey: actKeys.expansionList(userId),
     queryFn: () => listExpansionLogs(userId!, limit),
     enabled: Boolean(userId),
   });
@@ -153,10 +155,7 @@ export function useExpansionLogs(userId: string | null, limit = 30) {
 
 export function useExpansionLog(userId: string | null, logId: string | null) {
   return useQuery({
-    queryKey:
-      userId && logId
-        ? actKeys.expansionDetail(userId, logId)
-        : ["act", "expansion", "detail", "anonymous"],
+    queryKey: actKeys.expansionDetail(userId, logId),
     queryFn: () => getExpansionLog(userId!, logId!),
     enabled: Boolean(userId) && Boolean(logId),
   });
@@ -188,7 +187,7 @@ export function useDeleteExpansionLog(userId: string | null) {
 
 export function useUrgeSurfLogs(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: userId ? actKeys.urgeSurfList(userId) : ["act", "urgeSurf", "list", "anonymous"],
+    queryKey: actKeys.urgeSurfList(userId),
     queryFn: () => listUrgeSurfLogs(userId!, limit),
     enabled: Boolean(userId),
   });
@@ -220,7 +219,7 @@ export function useDeleteUrgeSurfLog(userId: string | null) {
 
 export function useConnectionLogs(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: userId ? actKeys.connectionList(userId) : ["act", "connection", "list", "anonymous"],
+    queryKey: actKeys.connectionList(userId),
     queryFn: () => listConnectionLogs(userId!, limit),
     enabled: Boolean(userId),
   });
@@ -228,10 +227,7 @@ export function useConnectionLogs(userId: string | null, limit = 30) {
 
 export function useConnectionLog(userId: string | null, logId: string | null) {
   return useQuery({
-    queryKey:
-      userId && logId
-        ? actKeys.connectionDetail(userId, logId)
-        : ["act", "connection", "detail", "anonymous"],
+    queryKey: actKeys.connectionDetail(userId, logId),
     queryFn: () => getConnectionLog(userId!, logId!),
     enabled: Boolean(userId) && Boolean(logId),
   });
@@ -263,7 +259,7 @@ export function useDeleteConnectionLog(userId: string | null) {
 
 export function useObservingSelfSessions(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: userId ? actKeys.observingList(userId) : ["act", "observing", "list", "anonymous"],
+    queryKey: actKeys.observingList(userId),
     queryFn: () => listObservingSelfSessions(userId!, limit),
     enabled: Boolean(userId),
   });
@@ -271,10 +267,7 @@ export function useObservingSelfSessions(userId: string | null, limit = 30) {
 
 export function useObservingSelfSession(userId: string | null, sessionId: string | null) {
   return useQuery({
-    queryKey:
-      userId && sessionId
-        ? actKeys.observingDetail(userId, sessionId)
-        : ["act", "observing", "detail", "anonymous"],
+    queryKey: actKeys.observingDetail(userId, sessionId),
     queryFn: () => getObservingSelfSession(userId!, sessionId!),
     enabled: Boolean(userId) && Boolean(sessionId),
   });
@@ -306,7 +299,7 @@ export function useDeleteObservingSelfSession(userId: string | null) {
 
 export function useValueEntries(userId: string | null) {
   return useQuery({
-    queryKey: userId ? actKeys.valuesList(userId) : ["act", "values", "list", "anonymous"],
+    queryKey: actKeys.valuesList(userId),
     queryFn: () => listValueEntries(userId!),
     enabled: Boolean(userId),
   });
@@ -314,10 +307,7 @@ export function useValueEntries(userId: string | null) {
 
 export function useValueEntryByDomain(userId: string | null, domain: ACTLifeDomain | null) {
   return useQuery({
-    queryKey:
-      userId && domain
-        ? actKeys.valueDomain(userId, domain)
-        : ["act", "values", "domain", "anonymous"],
+    queryKey: actKeys.valueDomain(userId, domain),
     queryFn: () => getValueEntryByDomain(userId!, domain!),
     enabled: Boolean(userId) && Boolean(domain),
   });
@@ -339,7 +329,7 @@ export function useUpsertValueEntry(userId: string | null) {
 
 export function useBullsEyeSnapshots(userId: string | null) {
   return useQuery({
-    queryKey: userId ? actKeys.bullsEyeList(userId) : ["act", "bullsEye", "list", "anonymous"],
+    queryKey: actKeys.bullsEyeList(userId),
     queryFn: () => listBullsEyeSnapshots(userId!),
     enabled: Boolean(userId),
   });
@@ -360,9 +350,7 @@ export function useSaveBullsEyeSnapshot(userId: string | null) {
 
 export function useCommittedActions(userId: string | null, status?: ActionStatus) {
   return useQuery({
-    queryKey: userId
-      ? actKeys.committedActionList(userId, status)
-      : ["act", "committedAction", "list", "anonymous"],
+    queryKey: actKeys.committedActionList(userId, status),
     queryFn: () => listCommittedActions(userId!, status),
     enabled: Boolean(userId),
   });
@@ -370,10 +358,7 @@ export function useCommittedActions(userId: string | null, status?: ActionStatus
 
 export function useCommittedAction(userId: string | null, actionId: string | null) {
   return useQuery({
-    queryKey:
-      userId && actionId
-        ? actKeys.committedActionDetail(userId, actionId)
-        : ["act", "committedAction", "detail", "anonymous"],
+    queryKey: actKeys.committedActionDetail(userId, actionId),
     queryFn: () => getCommittedAction(userId!, actionId!),
     enabled: Boolean(userId) && Boolean(actionId),
   });
@@ -385,7 +370,7 @@ export function useSaveCommittedAction(userId: string | null) {
     mutationFn: (input: CommittedActionInput) => saveCommittedAction(userId!, input),
     onSuccess: async () => {
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: ["act", "committedAction", "list", userId] });
+      await queryClient.invalidateQueries({ queryKey: actKeys.committedActionListPrefix(userId) });
     },
   });
 }
@@ -397,7 +382,7 @@ export function useUpdateCommittedAction(userId: string | null) {
       updateCommittedAction(userId!, actionId, patch),
     onSuccess: async (data) => {
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: ["act", "committedAction", "list", userId] });
+      await queryClient.invalidateQueries({ queryKey: actKeys.committedActionListPrefix(userId) });
       await queryClient.invalidateQueries({
         queryKey: actKeys.committedActionDetail(userId, data.id),
       });
@@ -411,7 +396,7 @@ export function useDeleteCommittedAction(userId: string | null) {
     mutationFn: (actionId: string) => deleteCommittedAction(userId!, actionId),
     onSuccess: async () => {
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: ["act", "committedAction", "list", userId] });
+      await queryClient.invalidateQueries({ queryKey: actKeys.committedActionListPrefix(userId) });
     },
   });
 }
@@ -420,10 +405,7 @@ export function useDeleteCommittedAction(userId: string | null) {
 
 export function useActionSteps(userId: string | null, actionId: string | null) {
   return useQuery({
-    queryKey:
-      userId && actionId
-        ? actKeys.actionStepList(userId, actionId)
-        : ["act", "actionStep", "list", "anonymous"],
+    queryKey: actKeys.actionStepList(userId, actionId),
     queryFn: () => listActionSteps(userId!, actionId!),
     enabled: Boolean(userId) && Boolean(actionId),
   });
@@ -445,15 +427,8 @@ export function useSaveActionStep(userId: string | null) {
 export function useToggleActionStep(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      stepId,
-      completed,
-      actionId,
-    }: {
-      stepId: string;
-      completed: boolean;
-      actionId: string;
-    }) => toggleActionStep(userId!, stepId, completed),
+    mutationFn: ({ stepId, completed }: { stepId: string; completed: boolean; actionId: string }) =>
+      toggleActionStep(userId!, stepId, completed),
     onSuccess: async (data) => {
       if (!userId) return;
       await queryClient.invalidateQueries({
@@ -466,7 +441,7 @@ export function useToggleActionStep(userId: string | null) {
 export function useDeleteActionStep(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ stepId, actionId }: { stepId: string; actionId: string }) =>
+    mutationFn: ({ stepId }: { stepId: string; actionId: string }) =>
       deleteActionStep(userId!, stepId),
     onSuccess: async (_data, variables) => {
       if (!userId) return;

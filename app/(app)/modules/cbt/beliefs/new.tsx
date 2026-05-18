@@ -47,7 +47,7 @@ export default function NewBeliefScreen() {
 
   const stepIndex = useBeliefDraftStore((state) => state.stepIndex);
   const storedDraftValues = useBeliefDraftStore((state) =>
-    state.mode === draftMode && state.beliefId === beliefId ? state.values : null,
+    state.mode === draftMode && state.entityId === beliefId ? state.values : null,
   );
   const hydrateDraft = useBeliefDraftStore((state) => state.hydrate);
   const nextStep = useBeliefDraftStore((state) => state.nextStep);

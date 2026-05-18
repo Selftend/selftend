@@ -61,13 +61,9 @@ interface DefusionLogRow {
 
 function isMissingACTSchemaError(error: unknown) {
   if (!error || typeof error !== "object") return false;
-  const maybeError = error as { code?: unknown; message?: unknown; hint?: unknown };
-  return (
-    maybeError.code === "PGRST205" ||
-    [maybeError.message, maybeError.hint].some(
-      (value) => typeof value === "string" && value.includes("act_"),
-    )
-  );
+  const { code, message, hint } = error as { code?: unknown; message?: unknown; hint?: unknown };
+  if (code === "PGRST205") return true;
+  return [message, hint].some((v) => typeof v === "string" && v.includes("act_"));
 }
 
 function mapProgramState(row: ACTProgramStateRow): ACTProgramState {

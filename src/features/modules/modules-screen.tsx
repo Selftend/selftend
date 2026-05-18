@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -13,7 +13,7 @@ type ModuleKey = "cbt" | "act" | "dbt";
 
 interface ModuleTile {
   key: ModuleKey;
-  href: string;
+  href: Href;
   abbreviation: string;
   nameKey: string;
   descriptionKey: string;
@@ -107,7 +107,7 @@ function ModuleCard({ module }: { module: ModuleTile }) {
       accessibilityLabel={t(module.nameKey)}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(module.href as Parameters<typeof router.push>[0])}
+      onPress={() => router.push(module.href)}
       className={cn(
         "min-w-[280px] flex-1 basis-[280px] gap-4 rounded-2xl border bg-card p-5 active:bg-accent/40",
         module.containerClass,

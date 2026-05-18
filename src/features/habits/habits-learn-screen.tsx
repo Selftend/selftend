@@ -58,10 +58,7 @@ export function HabitsLearnDetailScreen({ slug }: HabitsLearnDetailProps) {
 
         <RelatedCards activeSlug={card.slug} />
 
-        <Button
-          onPress={() => router.push("/tools/habits" as Parameters<typeof router.push>[0])}
-          variant="ghost"
-        >
+        <Button onPress={() => router.push("/tools/habits")} variant="ghost">
           <Icon name="arrow-back" className="size-4" />
           <Text>{t("learn.backToHabits")}</Text>
         </Button>

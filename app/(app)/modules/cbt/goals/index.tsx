@@ -32,9 +32,7 @@ function GoalCard({ goal, userId }: { goal: Goal; userId: string }) {
       accessibilityRole="button"
       className="rounded-xl"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() =>
-        router.push(`/modules/cbt/goals/${goal.id}` as Parameters<typeof router.push>[0])
-      }
+      onPress={() => router.push(`/modules/cbt/goals/${goal.id}`)}
       role="button"
     >
       <Card>
@@ -107,11 +105,7 @@ export default function GoalsScreen() {
                   key={goal.id}
                   title={goal.title}
                   description={t(`goals.status.${goal.status}`)}
-                  onPress={() =>
-                    router.push(
-                      `/modules/cbt/goals/${goal.id}` as Parameters<typeof router.push>[0],
-                    )
-                  }
+                  onPress={() => router.push(`/modules/cbt/goals/${goal.id}`)}
                 />
               ))}
             </View>

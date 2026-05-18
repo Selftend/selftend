@@ -1,4 +1,5 @@
 import { ActivityIndicator, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Button, type ButtonProps } from "@/src/components/react-native-reusables/button";
 import {
@@ -30,6 +31,14 @@ export function LoadingState({ description, title }: StateProps) {
         {description ? <Text variant="muted">{description}</Text> : null}
       </View>
     </View>
+  );
+}
+
+export function ScreenLoading({ title }: { title: string }) {
+  return (
+    <SafeAreaView className="flex-1 bg-background">
+      <LoadingState title={title} />
+    </SafeAreaView>
   );
 }
 

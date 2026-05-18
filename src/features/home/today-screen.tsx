@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -25,7 +25,7 @@ type ModulePillar = "cbt" | "act" | "dbt";
 
 interface ModuleTile {
   key: ModulePillar;
-  href: string;
+  href: Href;
   abbreviation: string;
   nameKey: string;
   descriptionKey: string;
@@ -77,7 +77,7 @@ const MODULES: ModuleTile[] = [
 
 interface SharedTool {
   key: string;
-  href: string;
+  href: Href;
   icon: MaterialIconName;
   nameKey: string;
   subKey: string;
@@ -235,8 +235,7 @@ export default function TodayScreen() {
       title: activity.activityName,
       labelKey: "today.plan.activityLabel",
       actionKey: "today.plan.open",
-      onPress: () =>
-        router.push(`/modules/cbt/activities/${activity.id}` as Parameters<typeof router.push>[0]),
+      onPress: () => router.push(`/modules/cbt/activities/${activity.id}`),
       pillar: "act" as const,
     })),
     ...(incompleteThoughtRecord
@@ -266,8 +265,7 @@ export default function TodayScreen() {
             title: t("today.plan.evening"),
             labelKey: "today.plan.selfCareLabel",
             actionKey: "today.plan.open",
-            onPress: () =>
-              router.push("/modules/cbt/self-care" as Parameters<typeof router.push>[0]),
+            onPress: () => router.push("/modules/cbt/self-care"),
             pillar: "be" as const,
             subtitle: t("today.plan.eveningSub"),
           },
@@ -296,45 +294,35 @@ export default function TodayScreen() {
                 <QuickActionButton
                   icon="mood"
                   label={t("today.quickActions.logMood")}
-                  onPress={() =>
-                    router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
-                  }
+                  onPress={() => router.push("/tools/mood-tracker/new")}
                 />
               </View>
               <View className="min-w-[150px] flex-1 basis-[150px]">
                 <QuickActionButton
                   icon="article"
                   label={t("today.quickActions.thoughtRecord")}
-                  onPress={() =>
-                    router.push("/modules/cbt/new" as Parameters<typeof router.push>[0])
-                  }
+                  onPress={() => router.push("/modules/cbt/new")}
                 />
               </View>
               <View className="min-w-[150px] flex-1 basis-[150px]">
                 <QuickActionButton
                   icon="self-improvement"
                   label={t("today.quickActions.meditate")}
-                  onPress={() =>
-                    router.push("/tools/meditation" as Parameters<typeof router.push>[0])
-                  }
+                  onPress={() => router.push("/tools/meditation")}
                 />
               </View>
               <View className="min-w-[150px] flex-1 basis-[150px]">
                 <QuickActionButton
                   icon="favorite"
                   label={t("today.quickActions.selfCare")}
-                  onPress={() =>
-                    router.push("/modules/cbt/self-care" as Parameters<typeof router.push>[0])
-                  }
+                  onPress={() => router.push("/modules/cbt/self-care")}
                 />
               </View>
               <View className="min-w-[150px] flex-1 basis-[150px]">
                 <QuickActionButton
                   icon="edit-note"
                   label={t("today.quickActions.journal")}
-                  onPress={() =>
-                    router.push("/tools/journal/new" as Parameters<typeof router.push>[0])
-                  }
+                  onPress={() => router.push("/tools/journal/new")}
                 />
               </View>
             </View>
@@ -344,9 +332,7 @@ export default function TodayScreen() {
               <View className="flex-row items-center justify-between">
                 <Text variant="h3">{t("today.moodSnapshot.title")}</Text>
                 <Button
-                  onPress={() =>
-                    router.push("/tools/mood-tracker/new" as Parameters<typeof router.push>[0])
-                  }
+                  onPress={() => router.push("/tools/mood-tracker/new")}
                   size="sm"
                   variant="ghost"
                 >
@@ -621,10 +607,7 @@ function CarePlanSection(props: CarePlanSectionProps) {
             <Text variant="muted" className="text-sm text-center">
               {t("plan.checklist.empty")}
             </Text>
-            <Button
-              size="sm"
-              onPress={() => router.push("/(app)/plan/create" as Parameters<typeof router.push>[0])}
-            >
+            <Button size="sm" onPress={() => router.push("/(app)/plan/create")}>
               <Text>{t("plan.checklist.setup")}</Text>
             </Button>
           </CardContent>
@@ -641,11 +624,7 @@ function CarePlanSection(props: CarePlanSectionProps) {
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
         <Text variant="h3">{t("plan.checklist.title")}</Text>
-        <Button
-          size="sm"
-          variant="ghost"
-          onPress={() => router.push("/(app)/plan" as Parameters<typeof router.push>[0])}
-        >
+        <Button size="sm" variant="ghost" onPress={() => router.push("/(app)/plan")}>
           <Text className="text-xs">{t("plan.checklist.manage")}</Text>
         </Button>
       </View>
@@ -688,7 +667,7 @@ function CarePlanSection(props: CarePlanSectionProps) {
                     <Button
                       size="sm"
                       variant="outline"
-                      onPress={() => router.push(item.route as Parameters<typeof router.push>[0])}
+                      onPress={() => router.push(item.route as Href)}
                     >
                       <Text>{t("today.plan.open")}</Text>
                     </Button>
@@ -711,7 +690,7 @@ function ModuleCard({ module }: { module: ModuleTile }) {
       accessibilityLabel={t(module.nameKey)}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(module.href as Parameters<typeof router.push>[0])}
+      onPress={() => router.push(module.href)}
       className={cn(
         "min-w-[260px] flex-1 basis-[260px] gap-4 rounded-2xl border bg-card p-5 active:bg-accent/40",
         module.containerClass,
@@ -765,7 +744,7 @@ function SharedToolCard({ tool }: { tool: SharedTool }) {
       accessibilityLabel={t(tool.nameKey)}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(tool.href as Parameters<typeof router.push>[0])}
+      onPress={() => router.push(tool.href)}
       className="min-w-[200px] flex-1 basis-[200px] flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
       role="button"
     >

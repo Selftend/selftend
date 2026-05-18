@@ -48,9 +48,7 @@ export function MoodEntryCard({ entry }: MoodEntryCardProps) {
       accessibilityLabel={t("recent.viewEntry", { when })}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() =>
-        router.push(`/tools/mood-tracker/${entry.id}` as Parameters<typeof router.push>[0])
-      }
+      onPress={() => router.push(`/tools/mood-tracker/${entry.id}`)}
       className="gap-2 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
       role="button"
     >

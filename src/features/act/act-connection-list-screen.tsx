@@ -7,7 +7,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useConnectionLogs } from "@/src/features/act/queries";
 import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
@@ -19,11 +19,7 @@ export default function ActConnectionListScreen() {
   const { data: logs, isLoading } = useConnectionLogs(user?.id ?? null);
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <LoadingState title={t("connection.listTitle")} />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("connection.listTitle")} />;
   }
 
   return (
@@ -38,11 +34,7 @@ export default function ActConnectionListScreen() {
             <Text variant="muted">{t("connection.listSubtitle")}</Text>
           </View>
 
-          <Button
-            onPress={() =>
-              router.push("/modules/act/connection/new" as Parameters<typeof router.push>[0])
-            }
-          >
+          <Button onPress={() => router.push("/modules/act/connection/new")}>
             <Icon name="radio-button-checked" className="size-4 text-primary-foreground" />
             <Text>{t("connection.newTitle")}</Text>
           </Button>
@@ -67,7 +59,7 @@ export default function ActConnectionListScreen() {
                     router.push({
                       pathname: "/modules/act/connection/[id]",
                       params: { id: log.id },
-                    } as Parameters<typeof router.push>[0])
+                    })
                   }
                   className="rounded-lg border border-border bg-card p-4 active:bg-accent/40"
                 >

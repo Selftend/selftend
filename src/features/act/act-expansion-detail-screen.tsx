@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { BackButton } from "@/src/components/app/back-button";
@@ -22,6 +22,7 @@ import {
   useExpansionLog,
   useExpansionLogs,
 } from "@/src/features/act/queries";
+import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -32,22 +33,18 @@ export default function ActExpansionDetailScreen() {
   const logId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
 
-  const { data: cachedList } = useExpansionLogs(user?.id ?? null);
-  const fromCache = useMemo(
-    () => (logId ? (cachedList?.find((l) => l.id === logId) ?? null) : null),
-    [cachedList, logId],
+  const { item: log, isLoading } = useCachedItem(
+    useExpansionLogs,
+    useExpansionLog,
+    user?.id ?? null,
+    logId,
   );
-  const { data: fetched, isLoading } = useExpansionLog(
-    fromCache ? null : (user?.id ?? null),
-    fromCache ? null : logId,
-  );
-  const log = fromCache ?? fetched ?? null;
 
   const deleteMutation = useDeleteExpansionLog(user?.id ?? null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
-  if (!fromCache && isLoading) {
+  if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">

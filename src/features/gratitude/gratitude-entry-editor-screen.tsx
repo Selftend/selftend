@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useMemo, useState } from "react";
@@ -27,7 +27,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
 interface GratitudeEntryEditorScreenProps {
-  fallbackHref: string;
+  fallbackHref: Href;
   mode: "create" | "edit";
   entryId?: string | null;
 }
@@ -109,7 +109,7 @@ export function GratitudeEntryEditorScreen({
       router.back();
       return;
     }
-    router.push(fallbackHref as Parameters<typeof router.push>[0]);
+    router.push(fallbackHref);
   };
 
   const updateItem = (index: number, value: string) =>
