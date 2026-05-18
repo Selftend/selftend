@@ -9,6 +9,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useObservingSelfSessions } from "@/src/features/act/queries";
+import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
@@ -45,6 +46,13 @@ export default function ActObservingSelfListScreen() {
             <Icon name="visibility" className="size-4 text-primary-foreground" />
             <Text>{t("observingSelf.newTitle")}</Text>
           </Button>
+
+          <RelatedTools
+            tools={[
+              { icon: "air", nameKey: "mindfulness", href: "/tools/mindfulness" },
+              { icon: "edit-note", nameKey: "journal", href: "/tools/journal" },
+            ]}
+          />
 
           {!sessions || sessions.length === 0 ? (
             <Text variant="muted">{t("observingSelf.noLogs")}</Text>

@@ -9,6 +9,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useBullsEyeSnapshots, useValueEntries } from "@/src/features/act/queries";
+import { RelatedTools } from "@/src/features/act/related-tools";
 import { ACT_LIFE_DOMAINS, type ACTLifeDomain } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
@@ -61,6 +62,10 @@ export default function ActValuesScreen() {
           <Text variant="muted" className="text-xs">
             {t("values.domainIntro")}
           </Text>
+
+          <RelatedTools
+            tools={[{ icon: "edit-note", nameKey: "journal", href: "/tools/journal" }]}
+          />
 
           <View className="gap-3">
             {ACT_LIFE_DOMAINS.map((domain) => {

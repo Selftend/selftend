@@ -9,6 +9,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useDefusionLogs } from "@/src/features/act/queries";
+import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
@@ -45,6 +46,10 @@ export default function ActDefusionListScreen() {
             <Icon name="add" className="size-4 text-primary-foreground" />
             <Text>{t("home.defuseThought")}</Text>
           </Button>
+
+          <RelatedTools
+            tools={[{ icon: "edit-note", nameKey: "journal", href: "/tools/journal" }]}
+          />
 
           {!logs || logs.length === 0 ? (
             <Text variant="muted">{t("defusion.noLogs")}</Text>
