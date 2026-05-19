@@ -56,7 +56,7 @@ export function WidgetCard({
 
   useEffect(() => {
     if (reduceMotionEnabled) return;
-    scale.value = withSpring(1);
+    scale.value = withSpring(1, { damping: 18, stiffness: 180 });
     zIndex.value = 0;
   }, [reduceMotionEnabled, scale, zIndex]);
 
@@ -80,7 +80,10 @@ export function WidgetCard({
       return;
     }
 
-    scale.value = withSequence(withTiming(0.96, { duration: 80 }), withSpring(1));
+    scale.value = withSequence(
+      withTiming(0.96, { duration: 80 }),
+      withSpring(1, { damping: 18, stiffness: 180 }),
+    );
     callback();
   }
 
@@ -147,7 +150,10 @@ function WidgetBadge({
 
   function handlePress() {
     if (!reduceMotionEnabled) {
-      scale.value = withSequence(withTiming(0.82, { duration: 70 }), withSpring(1));
+      scale.value = withSequence(
+        withTiming(0.82, { duration: 70 }),
+        withSpring(1, { damping: 18, stiffness: 180 }),
+      );
     }
     onPress();
   }

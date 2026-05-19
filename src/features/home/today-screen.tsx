@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -50,7 +50,7 @@ export default function HomeScreen() {
     ? t("today.greetingWithName", { greeting, name: displayName })
     : t("today.greetingPlain", { greeting });
 
-  const { data: planItems, isLoading } = usePlanItems(user?.id ?? null);
+  const { data: planItems, isLoading, refetch, isRefetching } = usePlanItems(user?.id ?? null);
   const deleteMutation = useDeletePlanItem(user?.id ?? null);
   const saveMutation = useSavePlanItem(user?.id ?? null);
 
@@ -115,7 +115,10 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerClassName="grow p-6">
+      <ScrollView
+        contentContainerClassName="grow p-6"
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+      >
         <View className="gap-6">
           <View className="flex-row items-start justify-between">
             <View className="flex-1 gap-2">
