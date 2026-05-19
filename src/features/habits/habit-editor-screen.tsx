@@ -160,7 +160,7 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
       <ScrollView contentContainerClassName="grow gap-6 p-6 pb-12">
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <BackButton fallbackHref={fallbackHref} showLabel={false} className="-ml-2" />
+            <BackButton showLabel={false} className="-ml-2" />
             <Text variant="h1">{editMode ? t("form.editTitle") : t("form.newTitle")}</Text>
           </View>
         </View>

@@ -7,8 +7,7 @@ import { renderWithProviders } from "@/test/render-with-providers";
 jest.mock("expo-router", () => ({
   router: {
     back: jest.fn(),
-    canGoBack: jest.fn(() => false),
-    push: jest.fn(),
+    canGoBack: jest.fn(() => true),
   },
   usePathname: () => "/tools/mood-tracker/new",
 }));
@@ -18,33 +17,22 @@ const mockRouter = jest.mocked(router);
 describe("BackButton", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRouter.canGoBack.mockReturnValue(false);
+    mockRouter.canGoBack.mockReturnValue(true);
   });
 
-  it("uses hierarchical parent navigation by default", () => {
+  it("calls router.back on press", () => {
     renderWithProviders(<BackButton />);
 
     fireEvent.press(screen.getByLabelText("Back"));
 
-    expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker");
-  });
-
-  it("uses browser history in history mode when available", () => {
-    mockRouter.canGoBack.mockReturnValue(true);
-
-    renderWithProviders(<BackButton fallbackHref="/tools/mood-tracker" mode="history" />);
-
-    fireEvent.press(screen.getByLabelText("Back"));
-
     expect(mockRouter.back).toHaveBeenCalled();
-    expect(mockRouter.push).not.toHaveBeenCalled();
   });
 
-  it("uses fallback navigation in history mode when history is unavailable", () => {
-    renderWithProviders(<BackButton fallbackHref="/tools/mood-tracker" mode="history" />);
+  it("renders nothing when there is no history", () => {
+    mockRouter.canGoBack.mockReturnValue(false);
 
-    fireEvent.press(screen.getByLabelText("Back"));
+    renderWithProviders(<BackButton />);
 
-    expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker");
+    expect(screen.queryByLabelText("Back")).toBeNull();
   });
 });

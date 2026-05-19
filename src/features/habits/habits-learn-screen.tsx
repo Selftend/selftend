@@ -36,7 +36,7 @@ export function HabitsLearnDetailScreen({ slug }: HabitsLearnDetailProps) {
       <ScrollView contentContainerClassName="grow gap-6 p-6">
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <BackButton fallbackHref="/tools/habits" showLabel={false} className="-ml-2" />
+            <BackButton showLabel={false} className="-ml-2" />
             <Text variant="h1" className="flex-1">
               {t(`${cardKey}.title` as Parameters<typeof t>[0])}
             </Text>
@@ -123,7 +123,7 @@ export function HabitsLearnIndexScreen() {
       <ScrollView contentContainerClassName="grow gap-6 p-6">
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <BackButton fallbackHref="/tools/habits" showLabel={false} className="-ml-2" />
+            <BackButton showLabel={false} className="-ml-2" />
             <Text variant="h1">{t("learn.indexTitle")}</Text>
           </View>
           <Text variant="muted">{t("learn.indexSubtitle")}</Text>

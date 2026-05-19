@@ -141,12 +141,7 @@ export function MoodEntryEditorScreen({
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <View className="flex-row items-center gap-2">
-              <BackButton
-                fallbackHref={fallbackHref}
-                mode="history"
-                showLabel={false}
-                className="-ml-2"
-              />
+              <BackButton showLabel={false} className="-ml-2" />
               <Text variant="h1">{t("mood.editTitle")}</Text>
             </View>
             <Text variant="muted">{t("mood.notFound")}</Text>
@@ -164,12 +159,7 @@ export function MoodEntryEditorScreen({
       <ScrollView contentContainerClassName="grow gap-6 p-6 pb-12">
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <BackButton
-              fallbackHref={fallbackHref}
-              mode="history"
-              showLabel={false}
-              className="-ml-2"
-            />
+            <BackButton showLabel={false} className="-ml-2" />
             <Text variant="h1">{editMode ? t("mood.editTitle") : t("mood.title")}</Text>
           </View>
           <Text variant="muted">

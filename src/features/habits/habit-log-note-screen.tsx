@@ -61,12 +61,7 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
       <ScrollView contentContainerClassName="grow gap-6 p-6">
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <BackButton
-              fallbackHref="/tools/habits"
-              mode="history"
-              showLabel={false}
-              className="-ml-2"
-            />
+            <BackButton showLabel={false} className="-ml-2" />
             <Text variant="h1">{t("log.title")}</Text>
           </View>
           <Text variant="muted">{t("log.subtitle")}</Text>

@@ -161,12 +161,7 @@ export function GratitudeEntryEditorScreen({
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <View className="flex-row items-center gap-2">
-              <BackButton
-                fallbackHref={fallbackHref}
-                mode="history"
-                showLabel={false}
-                className="-ml-2"
-              />
+              <BackButton showLabel={false} className="-ml-2" />
               <Text variant="h1">{t("editor.editTitle")}</Text>
             </View>
             <Text variant="muted">{t("editor.notFound")}</Text>
@@ -181,12 +176,7 @@ export function GratitudeEntryEditorScreen({
       <ScrollView contentContainerClassName="grow gap-6 p-6 pb-12">
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <BackButton
-              fallbackHref={fallbackHref}
-              mode="history"
-              showLabel={false}
-              className="-ml-2"
-            />
+            <BackButton showLabel={false} className="-ml-2" />
             <Text variant="h1">{editMode ? t("editor.editTitle") : t("editor.createTitle")}</Text>
           </View>
           <Text variant="muted">

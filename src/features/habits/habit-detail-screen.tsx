@@ -70,7 +70,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="flex-row items-center gap-2">
-            <BackButton fallbackHref="/tools/habits" showLabel={false} className="-ml-2" />
+            <BackButton showLabel={false} className="-ml-2" />
             <Text variant="h1">{t("home.title")}</Text>
           </View>
         </ScrollView>
@@ -113,7 +113,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
         <ScrollView contentContainerClassName="grow gap-6 p-6">
           <View className="gap-2">
             <View className="flex-row items-center gap-2">
-              <BackButton fallbackHref="/tools/habits" showLabel={false} className="-ml-2" />
+              <BackButton showLabel={false} className="-ml-2" />
               <Text variant="h1" className="flex-1">
                 {habit.name}
               </Text>

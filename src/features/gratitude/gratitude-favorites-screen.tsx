@@ -25,7 +25,7 @@ export default function GratitudeFavoritesScreen() {
         <View className="gap-6">
           <View className="gap-2">
             <View className="flex-row items-center gap-2">
-              <BackButton fallbackHref="/tools/gratitude-log" showLabel={false} className="-ml-2" />
+              <BackButton showLabel={false} className="-ml-2" />
               <Text variant="h1">{t("favorites.title")}</Text>
             </View>
             <Text variant="muted">{t("favorites.description")}</Text>

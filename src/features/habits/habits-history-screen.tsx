@@ -40,7 +40,7 @@ export default function HabitsHistoryScreen() {
       <ScrollView contentContainerClassName="grow gap-6 p-6">
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <BackButton fallbackHref="/tools/habits" showLabel={false} className="-ml-2" />
+            <BackButton showLabel={false} className="-ml-2" />
             <Text variant="h1">{t("history.title")}</Text>
           </View>
           <Text variant="muted">{t("history.subtitle")}</Text>

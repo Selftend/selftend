@@ -128,12 +128,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <View className="flex-row items-center gap-2">
-              <BackButton
-                fallbackHref={fallbackHref}
-                mode="history"
-                showLabel={false}
-                className="-ml-2"
-              />
+              <BackButton showLabel={false} className="-ml-2" />
               <Text variant="h1">{t("log.editTitle")}</Text>
             </View>
             <Text variant="muted">{t("detail.notFound")}</Text>
@@ -148,12 +143,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
       <ScrollView contentContainerClassName="grow gap-6 p-6 pb-12">
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <BackButton
-              fallbackHref={fallbackHref}
-              mode="history"
-              showLabel={false}
-              className="-ml-2"
-            />
+            <BackButton showLabel={false} className="-ml-2" />
             <Text variant="h1">{editMode ? t("log.editTitle") : t("log.title")}</Text>
           </View>
           <Text variant="muted">{editMode ? t("log.editDescription") : t("log.description")}</Text>
