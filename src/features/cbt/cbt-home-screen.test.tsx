@@ -172,7 +172,7 @@ describe("CbtHomeScreen onboarding", () => {
     renderWithProviders(<CbtHomeScreen />);
 
     expect(screen.getByText(/The CBT Toolkit/)).toBeTruthy();
-    expect(screen.getByText("Get started")).toBeTruthy();
+    expect(screen.getByText("Got it")).toBeTruthy();
   });
 
   it("marks CBT onboarding complete when the user continues", async () => {
@@ -187,7 +187,7 @@ describe("CbtHomeScreen onboarding", () => {
 
     renderWithProviders(<CbtHomeScreen />);
 
-    fireEvent.press(screen.getByText("Get started"));
+    fireEvent.press(screen.getByText("Got it"));
     fireEvent.press(screen.getByLabelText("Anxiety / Worry"));
     fireEvent.press(screen.getByText("Continue"));
 

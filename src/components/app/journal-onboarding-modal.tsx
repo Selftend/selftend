@@ -1,12 +1,8 @@
-import { Modal, ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
-import { Button } from "@/src/components/react-native-reusables/button";
+import { OnboardingHero, RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
 const journalOnboardingImage = require("../../../assets/images/onboarding/journal-thoughts-alt-badge.png");
 
@@ -26,51 +22,35 @@ export function JournalOnboarding({
   onDismiss,
 }: Props) {
   const { t } = useTranslation("journal");
-  const reduceMotionEnabled = useReduceMotionEnabled();
 
   return (
-    <Modal
-      animationType={reduceMotionEnabled ? "none" : "slide"}
-      onRequestClose={onDismiss ?? (() => undefined)}
+    <RichOnboardingShell
       visible={visible}
+      isPending={isPending}
+      errorMessage={errorMessage}
+      ctaLabel={t("onboarding.finish.start")}
+      onComplete={onComplete}
+      onDismiss={onDismiss}
     >
-      <SafeAreaView className="flex-1 bg-background">
-        <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
-          <View className="items-center gap-3">
-            <OnboardingIllustration
-              accessibilityLabel={t("onboarding.welcome.title")}
-              source={journalOnboardingImage}
-            />
-            <Text variant="h2" className="text-center">
-              {t("onboarding.welcome.title")}
-            </Text>
-            <Text variant="muted" className="text-center">
-              {t("onboarding.welcome.subtitle")}
-            </Text>
-          </View>
+      <OnboardingHero
+        illustration={journalOnboardingImage}
+        title={t("onboarding.welcome.title")}
+        subtitle={t("onboarding.welcome.subtitle")}
+      />
 
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="gap-2 pt-6">
-              <Text className="font-semibold">{t("onboarding.science.title")}</Text>
-              <Text variant="muted">{t("onboarding.science.body")}</Text>
-            </CardContent>
-          </Card>
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="gap-2 pt-6">
+          <Text className="font-semibold">{t("onboarding.science.title")}</Text>
+          <Text variant="muted">{t("onboarding.science.body")}</Text>
+        </CardContent>
+      </Card>
 
-          <Card>
-            <CardContent className="gap-2 pt-6">
-              <Text className="font-semibold">{t("onboarding.noPressure.title")}</Text>
-              <Text variant="muted">{t("onboarding.noPressure.body")}</Text>
-            </CardContent>
-          </Card>
-
-          <View className="gap-3">
-            <Button disabled={isPending} onPress={onDismiss ?? onComplete}>
-              <Text>{t("onboarding.finish.start")}</Text>
-            </Button>
-            {errorMessage ? <Text className="text-sm text-destructive">{errorMessage}</Text> : null}
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </Modal>
+      <Card>
+        <CardContent className="gap-2 pt-6">
+          <Text className="font-semibold">{t("onboarding.noPressure.title")}</Text>
+          <Text variant="muted">{t("onboarding.noPressure.body")}</Text>
+        </CardContent>
+      </Card>
+    </RichOnboardingShell>
   );
 }

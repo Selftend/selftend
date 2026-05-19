@@ -14,7 +14,7 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
-import { BackButton } from "@/src/components/app/back-button";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MindfulnessOnboarding } from "@/src/components/app/mindfulness-onboarding-modal";
 import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { mindfulnessExercises } from "@/src/constants/mindfulness";
@@ -70,18 +70,16 @@ export default function MindfulnessHomeScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <View className="gap-2">
-              <View className="flex-row items-center gap-2">
-                <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1">{t("mindfulness.title")}</Text>
-                <Pressable
-                  accessibilityLabel={t("notifications:actions.open")}
-                  accessibilityRole="button"
-                  onPress={() => setShowNotifications(true)}
-                  hitSlop={8}
-                >
-                  <Icon name="notifications" className="text-muted-foreground" size={20} />
-                </Pressable>
-              </View>
+              <ModuleHomeHeader
+                title={t("mindfulness.title")}
+                actions={[
+                  {
+                    icon: "notifications",
+                    accessibilityLabel: t("notifications:actions.open"),
+                    onPress: () => setShowNotifications(true),
+                  },
+                ]}
+              />
               <Text variant="muted">{t("mindfulness.description")}</Text>
             </View>
 

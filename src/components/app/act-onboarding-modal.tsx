@@ -7,7 +7,7 @@ import { Card, CardContent, CardTitle } from "@/src/components/react-native-reus
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
+import { OnboardingHero, RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 import { cn } from "@/lib/utils";
 import {
   ACT_CONCERNS,
@@ -39,90 +39,71 @@ export function ActInfo({
   onDismiss,
 }: InfoProps) {
   const { t } = useTranslation("act");
-  const reduceMotionEnabled = useReduceMotionEnabled();
 
   return (
-    <Modal
-      animationType={reduceMotionEnabled ? "none" : "slide"}
-      onRequestClose={onDismiss ?? (() => undefined)}
+    <RichOnboardingShell
       visible={visible}
+      isPending={isPending}
+      errorMessage={errorMessage}
+      ctaLabel={isPending ? t("onboarding.commit.saving") : t("onboarding.info.gotIt")}
+      ctaAlwaysCompletes
+      onComplete={onComplete}
+      onDismiss={onDismiss}
+      footerSlot={
+        <Text className="text-center text-xs text-muted-foreground">
+          {t("onboarding.info.attribution")}
+        </Text>
+      }
     >
-      <SafeAreaView className="flex-1 bg-background">
-        <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
-          <View className="gap-6">
-            <View className="items-center gap-3">
-              <OnboardingIllustration
-                accessibilityLabel={t("onboarding.welcome.title")}
-                source={actOnboardingImage}
-              />
-              <Text variant="h2" className="text-center">
-                {t("onboarding.welcome.title")}
-              </Text>
-              <Text variant="muted" className="text-center">
-                {t("onboarding.welcome.subtitle")}
-              </Text>
-            </View>
+      <OnboardingHero
+        illustration={actOnboardingImage}
+        title={t("onboarding.welcome.title")}
+        subtitle={t("onboarding.welcome.subtitle")}
+      />
 
-            <Card className="border-destructive/30 bg-destructive/5">
-              <CardContent className="gap-3 pt-6">
-                <CardTitle>{t("onboarding.welcome.controlParadox")}</CardTitle>
-                <Text variant="muted">{t("onboarding.welcome.controlParadoxBody")}</Text>
-              </CardContent>
-            </Card>
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="gap-3 pt-6">
+          <CardTitle>{t("onboarding.welcome.controlParadox")}</CardTitle>
+          <Text variant="muted">{t("onboarding.welcome.controlParadoxBody")}</Text>
+        </CardContent>
+      </Card>
 
-            <Card>
-              <CardContent className="gap-2 pt-6">
-                <CardTitle className="mb-1">{t("onboarding.welcome.mythsTitle")}</CardTitle>
-                {(["myth1", "myth2", "myth3", "myth4"] as const).map((key, i) => (
-                  <Text key={key} variant="muted">
-                    {`${i + 1}. ${t(`onboarding.welcome.${key}`)}`}
-                  </Text>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Text variant="muted" className="text-center">
-              {t("onboarding.welcome.body")}
+      <Card>
+        <CardContent className="gap-2 pt-6">
+          <CardTitle className="mb-1">{t("onboarding.welcome.mythsTitle")}</CardTitle>
+          {(["myth1", "myth2", "myth3", "myth4"] as const).map((key, i) => (
+            <Text key={key} variant="muted">
+              {`${i + 1}. ${t(`onboarding.welcome.${key}`)}`}
             </Text>
+          ))}
+        </CardContent>
+      </Card>
 
-            <Card className="border-act/30 bg-act/5">
-              <CardContent className="gap-2 pt-6">
-                <CardTitle>{t("onboarding.model.title")}</CardTitle>
-                <Text variant="muted">{t("onboarding.model.subtitle")}</Text>
-                <Text className="mt-1 font-semibold">{t("onboarding.model.accept")}</Text>
-                <Text className="font-semibold">{t("onboarding.model.connect")}</Text>
-                <Text className="font-semibold">{t("onboarding.model.take")}</Text>
-              </CardContent>
-            </Card>
+      <Text variant="muted" className="text-center">
+        {t("onboarding.welcome.body")}
+      </Text>
 
-            <Card>
-              <CardContent className="gap-1 pt-6">
-                <Text className="text-center text-base font-semibold">
-                  {t("onboarding.model.formula")}
-                </Text>
-                <Text variant="muted" className="text-center text-sm">
-                  {t("onboarding.model.formulaBody")}
-                </Text>
-              </CardContent>
-            </Card>
+      <Card className="border-act/30 bg-act/5">
+        <CardContent className="gap-2 pt-6">
+          <CardTitle>{t("onboarding.model.title")}</CardTitle>
+          <Text variant="muted">{t("onboarding.model.subtitle")}</Text>
+          <Text className="mt-1 font-semibold">{t("onboarding.model.accept")}</Text>
+          <Text className="font-semibold">{t("onboarding.model.connect")}</Text>
+          <Text className="font-semibold">{t("onboarding.model.take")}</Text>
+        </CardContent>
+      </Card>
 
-            <Button disabled={isPending} onPress={onComplete}>
-              {isPending ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{isPending ? t("onboarding.commit.saving") : t("onboarding.info.gotIt")}</Text>
-            </Button>
-            {errorMessage ? <Text className="text-sm text-destructive">{errorMessage}</Text> : null}
-            <Text className="text-center text-xs text-muted-foreground">
-              {t("onboarding.info.attribution")}
-            </Text>
-            {onDismiss ? (
-              <Button onPress={onDismiss} variant="ghost">
-                <Text>{t("onboarding.skip")}</Text>
-              </Button>
-            ) : null}
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </Modal>
+      <Card>
+        <CardContent className="gap-1 pt-6">
+          <Text className="text-center text-base font-semibold">
+            {t("onboarding.model.formula")}
+          </Text>
+          <Text variant="muted" className="text-center text-sm">
+            {t("onboarding.model.formulaBody")}
+          </Text>
+        </CardContent>
+      </Card>
+    </RichOnboardingShell>
   );
 }
 

@@ -130,12 +130,10 @@ describe("activities repository", () => {
   });
 
   it("completes an activity with timestamp and moodAfter", async () => {
-    const single = jest
-      .fn()
-      .mockResolvedValue({
-        data: { ...sampleRow, completed_at: "now", mood_after: 4 },
-        error: null,
-      });
+    const single = jest.fn().mockResolvedValue({
+      data: { ...sampleRow, completed_at: "now", mood_after: 4 },
+      error: null,
+    });
     const select = jest.fn(() => ({ single }));
     const eqId = jest.fn(() => ({ select }));
     const eqUser = jest.fn(() => ({ eq: eqId }));

@@ -14,7 +14,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import {
   ActInfo,
@@ -167,34 +167,26 @@ export default function ActHomeScreen() {
               <Text className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t("home.subtitle")}
               </Text>
-              <View className="flex-row items-center gap-2">
-                <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1">{t("home.title")}</Text>
-                <Pressable
-                  accessibilityLabel={t("home.wizardHint")}
-                  accessibilityRole="button"
-                  onPress={() => setForceWizard(true)}
-                  hitSlop={8}
-                >
-                  <Icon name="tune" className="text-muted-foreground" size={20} />
-                </Pressable>
-                <Pressable
-                  accessibilityLabel={t("notifications:actions.open")}
-                  accessibilityRole="button"
-                  onPress={() => setShowNotifications(true)}
-                  hitSlop={8}
-                >
-                  <Icon name="notifications" className="text-muted-foreground" size={20} />
-                </Pressable>
-                <Pressable
-                  accessibilityLabel={t("home.onboardingHint")}
-                  accessibilityRole="button"
-                  onPress={() => setForceInfo(true)}
-                  hitSlop={8}
-                >
-                  <Icon name="help-outline" className="text-muted-foreground" size={20} />
-                </Pressable>
-              </View>
+              <ModuleHomeHeader
+                title={t("home.title")}
+                actions={[
+                  {
+                    icon: "tune",
+                    accessibilityLabel: t("home.wizardHint"),
+                    onPress: () => setForceWizard(true),
+                  },
+                  {
+                    icon: "notifications",
+                    accessibilityLabel: t("notifications:actions.open"),
+                    onPress: () => setShowNotifications(true),
+                  },
+                  {
+                    icon: "help-outline",
+                    accessibilityLabel: t("home.onboardingHint"),
+                    onPress: () => setForceInfo(true),
+                  },
+                ]}
+              />
               <Text variant="muted" className="max-w-[64ch]">
                 {t("home.description")}
               </Text>

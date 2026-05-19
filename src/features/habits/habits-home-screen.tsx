@@ -4,7 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { BackButton } from "@/src/components/app/back-button";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -139,26 +139,21 @@ export default function HabitsHomeScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <View className="gap-2">
-              <View className="flex-row items-center gap-2">
-                <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1">{t("home.title")}</Text>
-                <Pressable
-                  accessibilityLabel={t("notifications:actions.open")}
-                  accessibilityRole="button"
-                  onPress={() => setShowNotifications(true)}
-                  hitSlop={8}
-                >
-                  <Icon name="notifications" className="text-muted-foreground" size={20} />
-                </Pressable>
-                <Pressable
-                  accessibilityLabel={t("onboarding.helpHint")}
-                  accessibilityRole="button"
-                  onPress={() => setForceOnboarding(true)}
-                  hitSlop={8}
-                >
-                  <Icon name="help-outline" className="text-muted-foreground" size={20} />
-                </Pressable>
-              </View>
+              <ModuleHomeHeader
+                title={t("home.title")}
+                actions={[
+                  {
+                    icon: "notifications",
+                    accessibilityLabel: t("notifications:actions.open"),
+                    onPress: () => setShowNotifications(true),
+                  },
+                  {
+                    icon: "help-outline",
+                    accessibilityLabel: t("onboarding.helpHint"),
+                    onPress: () => setForceOnboarding(true),
+                  },
+                ]}
+              />
               <Text variant="muted">{t("home.subtitle")}</Text>
             </View>
 

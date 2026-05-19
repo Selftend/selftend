@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,15 +12,14 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
-import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { LoadingState } from "@/src/components/app/screen-state";
+import { WizardScreen } from "@/src/components/app/wizard-screen";
 import { useCoreBelief, useSaveCoreBelief } from "@/src/features/beliefs/queries";
 import { coreBeliefFormSchema, type CoreBeliefFormSchema } from "@/src/features/beliefs/schemas";
+import { useWizardDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
 import { useSession } from "@/src/providers/session-provider";
 import { useBeliefDraftStore } from "@/src/stores/belief-draft-store";
-import { useToastStore } from "@/src/stores/toast-store";
-import { BackButton } from "@/src/components/app/back-button";
 
 const defaultValues: CoreBeliefFormSchema = {
   beliefStatement: "",
@@ -43,33 +42,25 @@ export default function NewBeliefScreen() {
   );
   const draftMode = beliefId ? "edit" : "create";
   const { user } = useSession();
-  const showToast = useToastStore((state) => state.showToast);
 
-  const stepIndex = useBeliefDraftStore((state) => state.stepIndex);
-  const storedDraftValues = useBeliefDraftStore((state) =>
-    state.mode === draftMode && state.entityId === beliefId ? state.values : null,
+  const storedDraftValues = useBeliefDraftStore(
+    selectWizardDraftValues<CoreBeliefFormSchema>(draftMode, beliefId),
   );
-  const hydrateDraft = useBeliefDraftStore((state) => state.hydrate);
-  const nextStep = useBeliefDraftStore((state) => state.nextStep);
-  const previousStep = useBeliefDraftStore((state) => state.previousStep);
-  const resetDraft = useBeliefDraftStore((state) => state.reset);
-  const setDraftValues = useBeliefDraftStore((state) => state.setValues);
 
   const { data: existing, isLoading } = useCoreBelief(user?.id ?? null, beliefId);
   const saveMutation = useSaveCoreBelief(user?.id ?? null);
 
-  const {
-    control,
-    formState: { errors, isSubmitting },
-    handleSubmit,
-    reset,
-    setValue,
-    trigger,
-    watch,
-  } = useForm<CoreBeliefFormSchema>({
+  const form = useForm<CoreBeliefFormSchema>({
     defaultValues: storedDraftValues ?? defaultValues,
     resolver: zodResolver(coreBeliefFormSchema),
   });
+  const {
+    control,
+    formState: { errors },
+    reset,
+    setValue,
+    watch,
+  } = form;
 
   const triggeringSituations = watch("triggeringSituations");
   const evidenceFor = watch("evidenceFor");
@@ -107,10 +98,6 @@ export default function NewBeliefScreen() {
   };
 
   useEffect(() => {
-    hydrateDraft(draftMode, beliefId);
-  }, [draftMode, hydrateDraft, beliefId]);
-
-  useEffect(() => {
     if (!existing || storedDraftValues) return;
     reset({
       beliefStatement: existing.beliefStatement,
@@ -126,9 +113,9 @@ export default function NewBeliefScreen() {
     });
   }, [existing, reset, storedDraftValues]);
 
-  const steps = [
-    { title: t("beliefs.step1"), fields: ["beliefStatement", "triggeringSituations"] as const },
-    { title: t("beliefs.step2"), fields: ["evidenceFor", "evidenceAgainst"] as const },
+  const steps: { title: string; fields: readonly (keyof CoreBeliefFormSchema)[] }[] = [
+    { title: t("beliefs.step1"), fields: ["beliefStatement", "triggeringSituations"] },
+    { title: t("beliefs.step2"), fields: ["evidenceFor", "evidenceAgainst"] },
     {
       title: t("beliefs.step3"),
       fields: [
@@ -136,39 +123,35 @@ export default function NewBeliefScreen() {
         "originalBeliefStrength",
         "alternativeBeliefStrength",
         "reinforcementPlan",
-      ] as const,
+      ],
     },
   ];
 
-  const currentStep = steps[stepIndex];
-  const isLastStep = stepIndex === steps.length - 1;
-
-  const handleNext = async () => {
-    const isValid = await trigger(currentStep.fields as unknown as (keyof CoreBeliefFormSchema)[]);
-    if (isValid) nextStep(steps.length - 1);
-  };
-
-  const handleSave = handleSubmit(async (values) => {
-    setDraftValues(values);
-    try {
-      // Drop empty strings from list inputs
+  const wizard = useWizardDraft({
+    store: useBeliefDraftStore,
+    draftMode,
+    entityId: beliefId,
+    stepFields: steps.map((s) => s.fields),
+    form,
+    onSave: (values) => {
       const sanitized = {
         ...values,
         triggeringSituations: values.triggeringSituations.filter((s) => s.trim().length > 0),
         evidenceFor: values.evidenceFor.filter((s) => s.trim().length > 0),
         evidenceAgainst: values.evidenceAgainst.filter((s) => s.trim().length > 0),
       };
-      const saved = await saveMutation.mutateAsync({
+      return saveMutation.mutateAsync({
         input: sanitized,
         beliefId: beliefId ?? undefined,
       });
-      resetDraft();
-      showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace(`/modules/cbt/beliefs/${saved.id}` as Parameters<typeof router.replace>[0]);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : t("beliefs.saveError");
-      showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
-    }
+    },
+    onSaved: (saved) =>
+      router.replace(`/modules/cbt/beliefs/${saved.id}` as Parameters<typeof router.replace>[0]),
+    toastLabels: {
+      saved: t("common:feedback.saved"),
+      problem: t("common:feedback.problem"),
+      fallbackError: t("beliefs.saveError"),
+    },
   });
 
   if (beliefId && isLoading) {
@@ -214,214 +197,163 @@ export default function NewBeliefScreen() {
   );
 
   return (
-    <MobileFormScreen
-      footer={
-        <View className="flex-row gap-3">
-          {stepIndex > 0 ? (
-            <View className="flex-1">
-              <Button onPress={previousStep} variant="ghost">
-                <Text>{t("beliefs.back")}</Text>
-              </Button>
-            </View>
-          ) : null}
-          <View className="flex-1">
-            <Button
-              disabled={isSubmitting || saveMutation.isPending}
-              onPress={() => void (isLastStep ? handleSave() : handleNext())}
-            >
-              {isSubmitting || saveMutation.isPending ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : null}
-              <Text>
-                {isSubmitting || saveMutation.isPending
-                  ? t("beliefs.saving")
-                  : isLastStep
-                    ? t("beliefs.save")
-                    : t("beliefs.continue")}
-              </Text>
-            </Button>
-          </View>
-        </View>
-      }
+    <WizardScreen
+      title={beliefId ? t("beliefs.editTitle") : t("beliefs.newTitle")}
+      description={beliefId ? t("beliefs.editDescription") : t("beliefs.newDescription")}
+      steps={steps}
+      stepIndex={wizard.stepIndex}
+      onJumpToStep={wizard.goToStep}
+      onBack={wizard.previousStep}
+      onPrimary={() => void (wizard.isLastStep ? wizard.handleSave() : wizard.handleNext())}
+      primaryLabel={wizard.isLastStep ? t("beliefs.save") : t("beliefs.continue")}
+      pendingLabel={t("beliefs.saving")}
+      backLabel={t("beliefs.back")}
+      isPending={wizard.isPending}
     >
-      <View className="gap-6">
-        <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1">{beliefId ? t("beliefs.editTitle") : t("beliefs.newTitle")}</Text>
-          </View>
-          <Text variant="muted">
-            {beliefId ? t("beliefs.editDescription") : t("beliefs.newDescription")}
-          </Text>
-        </View>
-
-        <View className="flex-row flex-wrap gap-2">
-          {steps.map((step, index) => {
-            const isActive = stepIndex === index;
-            return (
-              <Button
-                key={step.title}
-                accessibilityState={{ disabled: index > stepIndex, selected: isActive }}
-                disabled={index > stepIndex}
-                onPress={() => {
-                  if (index <= stepIndex) useBeliefDraftStore.getState().setStepIndex(index);
-                }}
-                size="sm"
-                variant={isActive ? "secondary" : "ghost"}
-              >
-                <Text>{step.title}</Text>
-              </Button>
-            );
-          })}
-        </View>
-
-        {stepIndex === 0 ? (
-          <View className="gap-6">
-            <Controller
-              control={control}
-              name="beliefStatement"
-              render={({ field: { onBlur, onChange, value } }) => (
-                <View className="gap-2">
-                  <Label>{t("beliefs.beliefStatement")}</Label>
-                  <Text variant="muted">{t("beliefs.beliefStatementHint")}</Text>
-                  <Textarea
-                    accessibilityLabel={t("beliefs.beliefStatement")}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    placeholder={t("beliefs.beliefStatementPlaceholder")}
-                    value={value}
-                  />
-                  {errors.beliefStatement?.message ? (
-                    <Text className="text-sm text-destructive">
-                      {errors.beliefStatement.message}
-                    </Text>
-                  ) : null}
-                </View>
-              )}
-            />
-
-            {renderList(
-              t("beliefs.triggeringSituations"),
-              t("beliefs.triggeringSituationsHint"),
-              triggeringSituations,
-              "triggeringSituations",
-            )}
-          </View>
-        ) : null}
-
-        {stepIndex === 1 ? (
-          <View className="gap-6">
-            {renderList(
-              t("beliefs.evidenceFor"),
-              t("beliefs.evidenceForHint"),
-              evidenceFor,
-              "evidenceFor",
-            )}
-            {renderList(
-              t("beliefs.evidenceAgainst"),
-              t("beliefs.evidenceAgainstHint"),
-              evidenceAgainst,
-              "evidenceAgainst",
-            )}
-          </View>
-        ) : null}
-
-        {stepIndex === 2 ? (
-          <View className="gap-6">
-            <Controller
-              control={control}
-              name="alternativeBelief"
-              render={({ field: { onBlur, onChange, value } }) => (
-                <View className="gap-2">
-                  <Label>{t("beliefs.alternativeBelief")}</Label>
-                  <Text variant="muted">{t("beliefs.alternativeBeliefHint")}</Text>
-                  <Textarea
-                    accessibilityLabel={t("beliefs.alternativeBelief")}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    placeholder={t("beliefs.alternativeBeliefPlaceholder")}
-                    value={value}
-                  />
-                  {errors.alternativeBelief?.message ? (
-                    <Text className="text-sm text-destructive">
-                      {errors.alternativeBelief.message}
-                    </Text>
-                  ) : null}
-                </View>
-              )}
-            />
-
-            <View className="gap-2">
-              <Label>{t("beliefs.originalStrength")}</Label>
-              <Text variant="muted">{t("beliefs.originalStrengthHint")}</Text>
-              <NumberRating
-                max={100}
-                min={0}
-                step={10}
-                value={originalStrength}
-                onChange={(n) => setValue("originalBeliefStrength", n)}
-              />
-            </View>
-
-            <View className="gap-2">
-              <Label>{t("beliefs.alternativeStrength")}</Label>
-              <Text variant="muted">{t("beliefs.alternativeStrengthHint")}</Text>
-              <NumberRating
-                max={100}
-                min={0}
-                step={10}
-                value={alternativeStrength}
-                onChange={(n) => setValue("alternativeBeliefStrength", n)}
-              />
-            </View>
-
-            <Controller
-              control={control}
-              name="reinforcementPlan"
-              render={({ field: { onBlur, onChange, value } }) => (
-                <View className="gap-2">
-                  <Label>{t("beliefs.reinforcementPlan")}</Label>
-                  <Text variant="muted">{t("beliefs.reinforcementPlanHint")}</Text>
-                  <Textarea
-                    accessibilityLabel={t("beliefs.reinforcementPlan")}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    placeholder={t("beliefs.reinforcementPlanPlaceholder")}
-                    value={value}
-                  />
-                </View>
-              )}
-            />
-
-            <Controller
-              control={control}
-              name="nextReviewDate"
-              render={({ field: { onChange, value } }) => (
-                <View className="gap-2">
-                  <Label>{t("beliefs.nextReviewDate")}</Label>
-                  <Text variant="muted">{t("beliefs.nextReviewDateHint")}</Text>
-                  <Input
-                    accessibilityLabel={t("beliefs.nextReviewDate")}
-                    onChangeText={(text) => onChange(text.length > 0 ? text : null)}
-                    placeholder="YYYY-MM-DD"
-                    value={value ?? ""}
-                  />
-                </View>
-              )}
-            />
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("beliefs.summaryTitle")}</CardTitle>
-              </CardHeader>
-              <View className="px-6 pb-6 gap-2">
-                <Text>{t("beliefs.summaryOriginal", { value: originalStrength })}</Text>
-                <Text>{t("beliefs.summaryAlternative", { value: alternativeStrength })}</Text>
+      {wizard.stepIndex === 0 ? (
+        <View className="gap-6">
+          <Controller
+            control={control}
+            name="beliefStatement"
+            render={({ field: { onBlur, onChange, value } }) => (
+              <View className="gap-2">
+                <Label>{t("beliefs.beliefStatement")}</Label>
+                <Text variant="muted">{t("beliefs.beliefStatementHint")}</Text>
+                <Textarea
+                  accessibilityLabel={t("beliefs.beliefStatement")}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  placeholder={t("beliefs.beliefStatementPlaceholder")}
+                  value={value}
+                />
+                {errors.beliefStatement?.message ? (
+                  <Text className="text-sm text-destructive">{errors.beliefStatement.message}</Text>
+                ) : null}
               </View>
-            </Card>
+            )}
+          />
+
+          {renderList(
+            t("beliefs.triggeringSituations"),
+            t("beliefs.triggeringSituationsHint"),
+            triggeringSituations,
+            "triggeringSituations",
+          )}
+        </View>
+      ) : null}
+
+      {wizard.stepIndex === 1 ? (
+        <View className="gap-6">
+          {renderList(
+            t("beliefs.evidenceFor"),
+            t("beliefs.evidenceForHint"),
+            evidenceFor,
+            "evidenceFor",
+          )}
+          {renderList(
+            t("beliefs.evidenceAgainst"),
+            t("beliefs.evidenceAgainstHint"),
+            evidenceAgainst,
+            "evidenceAgainst",
+          )}
+        </View>
+      ) : null}
+
+      {wizard.stepIndex === 2 ? (
+        <View className="gap-6">
+          <Controller
+            control={control}
+            name="alternativeBelief"
+            render={({ field: { onBlur, onChange, value } }) => (
+              <View className="gap-2">
+                <Label>{t("beliefs.alternativeBelief")}</Label>
+                <Text variant="muted">{t("beliefs.alternativeBeliefHint")}</Text>
+                <Textarea
+                  accessibilityLabel={t("beliefs.alternativeBelief")}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  placeholder={t("beliefs.alternativeBeliefPlaceholder")}
+                  value={value}
+                />
+                {errors.alternativeBelief?.message ? (
+                  <Text className="text-sm text-destructive">
+                    {errors.alternativeBelief.message}
+                  </Text>
+                ) : null}
+              </View>
+            )}
+          />
+
+          <View className="gap-2">
+            <Label>{t("beliefs.originalStrength")}</Label>
+            <Text variant="muted">{t("beliefs.originalStrengthHint")}</Text>
+            <NumberRating
+              max={100}
+              min={0}
+              step={10}
+              value={originalStrength}
+              onChange={(n) => setValue("originalBeliefStrength", n)}
+            />
           </View>
-        ) : null}
-      </View>
-    </MobileFormScreen>
+
+          <View className="gap-2">
+            <Label>{t("beliefs.alternativeStrength")}</Label>
+            <Text variant="muted">{t("beliefs.alternativeStrengthHint")}</Text>
+            <NumberRating
+              max={100}
+              min={0}
+              step={10}
+              value={alternativeStrength}
+              onChange={(n) => setValue("alternativeBeliefStrength", n)}
+            />
+          </View>
+
+          <Controller
+            control={control}
+            name="reinforcementPlan"
+            render={({ field: { onBlur, onChange, value } }) => (
+              <View className="gap-2">
+                <Label>{t("beliefs.reinforcementPlan")}</Label>
+                <Text variant="muted">{t("beliefs.reinforcementPlanHint")}</Text>
+                <Textarea
+                  accessibilityLabel={t("beliefs.reinforcementPlan")}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  placeholder={t("beliefs.reinforcementPlanPlaceholder")}
+                  value={value}
+                />
+              </View>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="nextReviewDate"
+            render={({ field: { onChange, value } }) => (
+              <View className="gap-2">
+                <Label>{t("beliefs.nextReviewDate")}</Label>
+                <Text variant="muted">{t("beliefs.nextReviewDateHint")}</Text>
+                <Input
+                  accessibilityLabel={t("beliefs.nextReviewDate")}
+                  onChangeText={(text) => onChange(text.length > 0 ? text : null)}
+                  placeholder="YYYY-MM-DD"
+                  value={value ?? ""}
+                />
+              </View>
+            )}
+          />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("beliefs.summaryTitle")}</CardTitle>
+            </CardHeader>
+            <View className="px-6 pb-6 gap-2">
+              <Text>{t("beliefs.summaryOriginal", { value: originalStrength })}</Text>
+              <Text>{t("beliefs.summaryAlternative", { value: alternativeStrength })}</Text>
+            </View>
+          </Card>
+        </View>
+      ) : null}
+    </WizardScreen>
   );
 }

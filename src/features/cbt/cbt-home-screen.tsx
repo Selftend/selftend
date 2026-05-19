@@ -16,7 +16,7 @@ import {
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
-import { BackButton } from "@/src/components/app/back-button";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
 import { CbtWizard } from "@/src/components/app/cbt-wizard-modal";
 import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
@@ -674,34 +674,26 @@ export default function CbtHomeScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <View className="gap-2">
-              <View className="flex-row items-center gap-2">
-                <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1">{t("home.title")}</Text>
-                <Pressable
-                  accessibilityLabel={t("home.wizardHint")}
-                  accessibilityRole="button"
-                  onPress={() => setForceWizard(true)}
-                  hitSlop={8}
-                >
-                  <Icon name="tune" className="text-muted-foreground" size={20} />
-                </Pressable>
-                <Pressable
-                  accessibilityLabel={t("notifications:actions.open")}
-                  accessibilityRole="button"
-                  onPress={() => setShowNotifications(true)}
-                  hitSlop={8}
-                >
-                  <Icon name="notifications" className="text-muted-foreground" size={20} />
-                </Pressable>
-                <Pressable
-                  accessibilityLabel={t("home.onboardingHint")}
-                  accessibilityRole="button"
-                  onPress={() => setForceOnboarding(true)}
-                  hitSlop={8}
-                >
-                  <Icon name="help-outline" className="text-muted-foreground" size={20} />
-                </Pressable>
-              </View>
+              <ModuleHomeHeader
+                title={t("home.title")}
+                actions={[
+                  {
+                    icon: "tune",
+                    accessibilityLabel: t("home.wizardHint"),
+                    onPress: () => setForceWizard(true),
+                  },
+                  {
+                    icon: "notifications",
+                    accessibilityLabel: t("notifications:actions.open"),
+                    onPress: () => setShowNotifications(true),
+                  },
+                  {
+                    icon: "help-outline",
+                    accessibilityLabel: t("home.onboardingHint"),
+                    onPress: () => setForceOnboarding(true),
+                  },
+                ]}
+              />
               <Text variant="muted">{t("home.description")}</Text>
             </View>
 

@@ -62,7 +62,7 @@ export default function NewActivityScreen() {
   const showToast = useToastStore((state) => state.showToast);
 
   const storedDraft = useActivityDraftStore((state) =>
-    state.activityId === activityId ? state.values : null,
+    state.entityId === activityId ? state.values : null,
   );
   const hydrateDraft = useActivityDraftStore((state) => state.hydrate);
   const resetDraft = useActivityDraftStore((state) => state.reset);

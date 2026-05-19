@@ -1,10 +1,9 @@
-import { Image, Modal, ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Image, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+
+import { RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 
 const pillarAct = require("../../../assets/images/onboarding/pillar-act.png");
 const pillarThink = require("../../../assets/images/onboarding/pillar-think.png");
@@ -52,179 +51,159 @@ export function CbtOnboarding({
   visible,
 }: CbtOnboardingProps) {
   const { t } = useTranslation("cbt");
-  const reduceMotionEnabled = useReduceMotionEnabled();
 
   return (
-    <Modal
-      animationType={reduceMotionEnabled ? "none" : "slide"}
-      onRequestClose={onDismiss ?? (() => undefined)}
+    <RichOnboardingShell
       visible={visible}
+      isPending={isPending}
+      errorMessage={errorMessage}
+      ctaLabel={t("onboarding.intro.continue")}
+      onComplete={onComplete}
+      onDismiss={onDismiss}
+      footerSlot={
+        <Text className="text-center text-xs text-muted-foreground">
+          {t("onboarding.intro.attribution")}
+        </Text>
+      }
     >
-      <SafeAreaView className="flex-1 bg-background">
-        <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
-          {/* Header */}
-          <View className="items-center gap-3">
-            <Text variant="h2" className="text-center">
-              {t("onboarding.intro.title")}
-            </Text>
+      <View className="items-center gap-3">
+        <Text variant="h2" className="text-center">
+          {t("onboarding.intro.title")}
+        </Text>
+        <Text variant="muted" className="text-center">
+          {t("onboarding.intro.subtitle")}
+        </Text>
+      </View>
+
+      <View className="gap-4">
+        <Card className="border-act/30 bg-act/5">
+          <CardContent className="items-center gap-3 pt-6">
+            <Image
+              source={pillarAct}
+              style={{ width: 200, height: 118 }}
+              resizeMode="contain"
+              accessibilityLabel={t("onboarding.intro.actTitle")}
+            />
+            <CardTitle className="text-center text-act">{t("onboarding.intro.actTitle")}</CardTitle>
             <Text variant="muted" className="text-center">
-              {t("onboarding.intro.subtitle")}
+              {t("onboarding.intro.actBody")}
             </Text>
-          </View>
+          </CardContent>
+        </Card>
 
-          {/* Three pillars */}
-          <View className="gap-4">
-            <Card className="border-act/30 bg-act/5">
-              <CardContent className="items-center gap-3 pt-6">
-                <Image
-                  source={pillarAct}
-                  style={{ width: 200, height: 118 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("onboarding.intro.actTitle")}
-                />
-                <CardTitle className="text-center text-act">
-                  {t("onboarding.intro.actTitle")}
-                </CardTitle>
-                <Text variant="muted" className="text-center">
-                  {t("onboarding.intro.actBody")}
-                </Text>
-              </CardContent>
-            </Card>
-
-            <Card className="border-think/30 bg-think/5">
-              <CardContent className="items-center gap-3 pt-6">
-                <Image
-                  source={pillarThink}
-                  style={{ width: 200, height: 118 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("onboarding.intro.thinkTitle")}
-                />
-                <CardTitle className="text-center text-think">
-                  {t("onboarding.intro.thinkTitle")}
-                </CardTitle>
-                <Text variant="muted" className="text-center">
-                  {t("onboarding.intro.thinkBody")}
-                </Text>
-              </CardContent>
-            </Card>
-
-            <Card className="border-be/30 bg-be/5">
-              <CardContent className="items-center gap-3 pt-6">
-                <Image
-                  source={pillarBe}
-                  style={{ width: 200, height: 118 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("onboarding.intro.beTitle")}
-                />
-                <CardTitle className="text-center text-be">
-                  {t("onboarding.intro.beTitle")}
-                </CardTitle>
-                <Text variant="muted" className="text-center">
-                  {t("onboarding.intro.beBody")}
-                </Text>
-              </CardContent>
-            </Card>
-          </View>
-
-          {/* Tools for Lasting Change */}
-          <View className="gap-4">
-            <Text variant="h3" className="text-center">
-              {t("onboarding.intro.toolsTitle")}
+        <Card className="border-think/30 bg-think/5">
+          <CardContent className="items-center gap-3 pt-6">
+            <Image
+              source={pillarThink}
+              style={{ width: 200, height: 118 }}
+              resizeMode="contain"
+              accessibilityLabel={t("onboarding.intro.thinkTitle")}
+            />
+            <CardTitle className="text-center text-think">
+              {t("onboarding.intro.thinkTitle")}
+            </CardTitle>
+            <Text variant="muted" className="text-center">
+              {t("onboarding.intro.thinkBody")}
             </Text>
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardContent className="flex-row items-center gap-4 pt-6">
-                <Image
-                  source={toolBeliefs}
-                  style={{ width: 72, height: 72 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("onboarding.intro.beliefsTitle")}
-                />
-                <View className="flex-1 gap-1">
-                  <Text className="font-semibold">{t("onboarding.intro.beliefsTitle")}</Text>
-                  <Text variant="muted">{t("onboarding.intro.beliefsBody")}</Text>
-                </View>
-              </CardContent>
-            </Card>
+        <Card className="border-be/30 bg-be/5">
+          <CardContent className="items-center gap-3 pt-6">
+            <Image
+              source={pillarBe}
+              style={{ width: 200, height: 118 }}
+              resizeMode="contain"
+              accessibilityLabel={t("onboarding.intro.beTitle")}
+            />
+            <CardTitle className="text-center text-be">{t("onboarding.intro.beTitle")}</CardTitle>
+            <Text variant="muted" className="text-center">
+              {t("onboarding.intro.beBody")}
+            </Text>
+          </CardContent>
+        </Card>
+      </View>
 
-            <Card>
-              <CardContent className="flex-row items-center gap-4 pt-6">
-                <Image
-                  source={toolExposure}
-                  style={{ width: 72, height: 72 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("onboarding.intro.exposureTitle")}
-                />
-                <View className="flex-1 gap-1">
-                  <Text className="font-semibold">{t("onboarding.intro.exposureTitle")}</Text>
-                  <Text variant="muted">{t("onboarding.intro.exposureBody")}</Text>
-                </View>
-              </CardContent>
-            </Card>
+      <View className="gap-4">
+        <Text variant="h3" className="text-center">
+          {t("onboarding.intro.toolsTitle")}
+        </Text>
 
-            <Card>
-              <CardContent className="flex-row items-center gap-4 pt-6">
-                <Image
-                  source={toolSleep}
-                  style={{ width: 72, height: 72 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("onboarding.intro.sleepTitle")}
-                />
-                <View className="flex-1 gap-1">
-                  <Text className="font-semibold">{t("onboarding.intro.sleepTitle")}</Text>
-                  <Text variant="muted">{t("onboarding.intro.sleepBody")}</Text>
-                </View>
-              </CardContent>
-            </Card>
-          </View>
-
-          {/* Condition table */}
-          <View className="overflow-hidden rounded-lg border border-border">
-            <View className="flex-row border-b border-border">
-              <View className="w-1/4 border-r border-border p-2">
-                <Text className="text-xs font-semibold">
-                  {t("onboarding.intro.tableCondition")}
-                </Text>
-              </View>
-              <View className="w-1/4 border-r border-border p-2">
-                <Text className="text-xs font-semibold">
-                  {t("onboarding.intro.tableCoreFeature")}
-                </Text>
-              </View>
-              <View className="flex-1 p-2">
-                <Text className="text-xs font-semibold">{t("onboarding.intro.tableCbtFocus")}</Text>
-              </View>
+        <Card>
+          <CardContent className="flex-row items-center gap-4 pt-6">
+            <Image
+              source={toolBeliefs}
+              style={{ width: 72, height: 72 }}
+              resizeMode="contain"
+              accessibilityLabel={t("onboarding.intro.beliefsTitle")}
+            />
+            <View className="flex-1 gap-1">
+              <Text className="font-semibold">{t("onboarding.intro.beliefsTitle")}</Text>
+              <Text variant="muted">{t("onboarding.intro.beliefsBody")}</Text>
             </View>
-            <TableRow
-              condition={t("onboarding.intro.tableRow1Condition")}
-              feature={t("onboarding.intro.tableRow1Feature")}
-              focus={t("onboarding.intro.tableRow1Focus")}
-            />
-            <TableRow
-              condition={t("onboarding.intro.tableRow2Condition")}
-              feature={t("onboarding.intro.tableRow2Feature")}
-              focus={t("onboarding.intro.tableRow2Focus")}
-            />
-            <TableRow
-              condition={t("onboarding.intro.tableRow3Condition")}
-              feature={t("onboarding.intro.tableRow3Feature")}
-              focus={t("onboarding.intro.tableRow3Focus")}
-              isLast
-            />
-          </View>
+          </CardContent>
+        </Card>
 
-          {/* CTA + attribution */}
-          <View className="gap-4">
-            <Button disabled={isPending} onPress={onDismiss ?? onComplete}>
-              <Text>{t("onboarding.intro.continue")}</Text>
-            </Button>
-            {errorMessage ? <Text className="text-sm text-destructive">{errorMessage}</Text> : null}
-            <Text className="text-center text-xs text-muted-foreground">
-              {t("onboarding.intro.attribution")}
-            </Text>
+        <Card>
+          <CardContent className="flex-row items-center gap-4 pt-6">
+            <Image
+              source={toolExposure}
+              style={{ width: 72, height: 72 }}
+              resizeMode="contain"
+              accessibilityLabel={t("onboarding.intro.exposureTitle")}
+            />
+            <View className="flex-1 gap-1">
+              <Text className="font-semibold">{t("onboarding.intro.exposureTitle")}</Text>
+              <Text variant="muted">{t("onboarding.intro.exposureBody")}</Text>
+            </View>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex-row items-center gap-4 pt-6">
+            <Image
+              source={toolSleep}
+              style={{ width: 72, height: 72 }}
+              resizeMode="contain"
+              accessibilityLabel={t("onboarding.intro.sleepTitle")}
+            />
+            <View className="flex-1 gap-1">
+              <Text className="font-semibold">{t("onboarding.intro.sleepTitle")}</Text>
+              <Text variant="muted">{t("onboarding.intro.sleepBody")}</Text>
+            </View>
+          </CardContent>
+        </Card>
+      </View>
+
+      <View className="overflow-hidden rounded-lg border border-border">
+        <View className="flex-row border-b border-border">
+          <View className="w-1/4 border-r border-border p-2">
+            <Text className="text-xs font-semibold">{t("onboarding.intro.tableCondition")}</Text>
           </View>
-        </ScrollView>
-      </SafeAreaView>
-    </Modal>
+          <View className="w-1/4 border-r border-border p-2">
+            <Text className="text-xs font-semibold">{t("onboarding.intro.tableCoreFeature")}</Text>
+          </View>
+          <View className="flex-1 p-2">
+            <Text className="text-xs font-semibold">{t("onboarding.intro.tableCbtFocus")}</Text>
+          </View>
+        </View>
+        <TableRow
+          condition={t("onboarding.intro.tableRow1Condition")}
+          feature={t("onboarding.intro.tableRow1Feature")}
+          focus={t("onboarding.intro.tableRow1Focus")}
+        />
+        <TableRow
+          condition={t("onboarding.intro.tableRow2Condition")}
+          feature={t("onboarding.intro.tableRow2Feature")}
+          focus={t("onboarding.intro.tableRow2Focus")}
+        />
+        <TableRow
+          condition={t("onboarding.intro.tableRow3Condition")}
+          feature={t("onboarding.intro.tableRow3Feature")}
+          focus={t("onboarding.intro.tableRow3Focus")}
+          isLast
+        />
+      </View>
+    </RichOnboardingShell>
   );
 }

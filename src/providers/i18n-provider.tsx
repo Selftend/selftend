@@ -38,8 +38,10 @@ export function I18nProvider({ children }: PropsWithChildren) {
   const [hasStoredLanguage, setHasStoredLanguage] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
     AsyncStorage.getItem(LANGUAGE_STORAGE_KEY)
       .then((stored) => {
+        if (!mounted) return;
         if (stored && supportedLanguages.includes(stored as SupportedLanguage)) {
           const lang = stored as SupportedLanguage;
           setLanguageState(lang);
@@ -48,8 +50,11 @@ export function I18nProvider({ children }: PropsWithChildren) {
         }
       })
       .finally(() => {
-        setHydrated(true);
+        if (mounted) setHydrated(true);
       });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const setLanguage = useCallback(async (lang: SupportedLanguage) => {
