@@ -87,19 +87,21 @@ function iconSizeFromClasses(className: string | undefined) {
   return undefined;
 }
 
-function Icon({ name, className, size, ...props }: IconProps) {
+function Icon({ name, className, size, style, ...props }: IconProps) {
   const textClass = React.useContext(TextClassContext);
   const resolvedClassName = cn(
     "size-6 shrink-0 text-foreground leading-none pointer-events-none",
     iconColorClasses(textClass),
     className,
   );
+  const resolvedSize = size ?? iconSizeFromClasses(resolvedClassName);
 
   return (
     <MaterialIcons
       name={name}
       className={resolvedClassName}
-      size={size ?? iconSizeFromClasses(resolvedClassName)}
+      size={resolvedSize}
+      style={resolvedSize ? [{ lineHeight: resolvedSize }, style] : style}
       {...props}
     />
   );
