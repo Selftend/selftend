@@ -247,7 +247,6 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
       <ScrollView contentContainerClassName="grow px-3 py-4">
         <View className="gap-1">
           {renderNavItem(TODAY_ITEM)}
-          {renderNavItem(MY_PLAN_ITEM)}
 
           {renderGroupLabel(t("sidebar.modules"), "/modules")}
           {MODULE_ITEMS.map((item) => renderNavItem(item))}

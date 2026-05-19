@@ -110,7 +110,7 @@ export function PlanWizardScreen() {
       }
       reset();
       showToast({ title: t("plan.wizard.saved"), tone: "success" });
-      router.replace("/(app)/plan" as Parameters<typeof router.replace>[0]);
+      router.replace("/(app)/(tabs)" as Parameters<typeof router.replace>[0]);
     } catch {
       setError(t("plan.wizard.errorSave"));
     } finally {
@@ -167,7 +167,7 @@ export function PlanWizardScreen() {
                 <Button
                   variant="ghost"
                   onPress={() =>
-                    router.replace("/(app)/plan" as Parameters<typeof router.replace>[0])
+                    router.replace("/(app)/(tabs)" as Parameters<typeof router.replace>[0])
                   }
                 >
                   <Text>{t("plan.wizard.skipWizard")}</Text>
