@@ -6,7 +6,7 @@
     "appName": "Selftend"
   },
   "sidebar": {
-    "home": "Today",
+    "home": "Dashboard",
     "notifications": "Notifications",
     "settings": "Settings",
     "support": "Support",
@@ -53,7 +53,7 @@
     "dark": "Dark"
   },
   "tabs": {
-    "home": "Today",
+    "home": "Dashboard",
     "settings": "Settings"
   },
   "notFound": {
@@ -141,7 +141,7 @@
       "progressSub": "See your 30-day picture"
     },
     "dashboard": {
-      "sectionTitle": "Your plan",
+      "sectionTitle": "Dashboard",
       "editLabel": "Edit",
       "doneLabel": "Done",
       "addWidgetTitle": "Add to your plan",
@@ -150,6 +150,9 @@
       "buildWithWizard": "Build with wizard",
       "emptySubtitle": "Add tools you want to check in with each day.",
       "removeWidget": "Remove {{title}}",
+      "moveWidgetUp": "Move {{title}} up",
+      "moveWidgetDown": "Move {{title}} down",
+      "dragWidget": "Drag {{title}} to reorder",
       "allAdded": "All available tools are already on your plan.",
       "doneToday": "Done today",
       "startBreathing": "Start breathing",

@@ -1,12 +1,13 @@
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { usePlanItems, useDeletePlanItem } from "@/src/features/plan/queries";
+import { useDeletePlanItem, usePlanItems, useSavePlanItem } from "@/src/features/plan/queries";
+import type { CarePlanItem } from "@/src/features/plan/types";
 import { useSession } from "@/src/providers/session-provider";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
 import { WidgetCard } from "@/src/features/home/widget-card";
@@ -28,11 +29,12 @@ function getDisplayName(user: { user_metadata?: Record<string, unknown> } | null
   return null;
 }
 
-export default function TodayScreen() {
+export default function HomeScreen() {
   const { t, i18n } = useTranslation("navigation");
   const { user } = useSession();
   const [editMode, setEditMode] = useState(false);
   const [addVisible, setAddVisible] = useState(false);
+  const [displayedItems, setDisplayedItems] = useState<CarePlanItem[] | null>(null);
 
   const today = new Date();
   const hour = today.getHours();
@@ -50,14 +52,71 @@ export default function TodayScreen() {
 
   const { data: planItems, isLoading } = usePlanItems(user?.id ?? null);
   const deleteMutation = useDeletePlanItem(user?.id ?? null);
+  const saveMutation = useSavePlanItem(user?.id ?? null);
+
+  useEffect(() => {
+    if (planItems) {
+      setDisplayedItems(planItems);
+    }
+  }, [planItems]);
 
   const existingToolIds = planItems?.map((i) => i.toolId) ?? [];
+  const dashboardItems = displayedItems ?? planItems ?? [];
+  const nextWidgetOrder =
+    planItems && planItems.length > 0 ? Math.max(...planItems.map((item) => item.order)) + 1 : 0;
+
+  function toPlanItemInput(item: CarePlanItem, order: number) {
+    return {
+      title: item.title,
+      description: item.description,
+      toolId: item.toolId,
+      moduleId: item.moduleId,
+      route: item.route,
+      frequency: item.frequency,
+      reminderEnabled: item.reminderEnabled,
+      order,
+      active: item.active,
+    };
+  }
+
+  async function persistOrder(items: CarePlanItem[]) {
+    await Promise.all(
+      items.map((planItem, order) =>
+        saveMutation.mutateAsync({
+          id: planItem.id,
+          input: toPlanItemInput(planItem, order),
+        }),
+      ),
+    );
+  }
+
+  async function handleMove(index: number, direction: -1 | 1) {
+    if (saveMutation.isPending) return;
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= dashboardItems.length) return;
+
+    const reordered = [...dashboardItems];
+    const [item] = reordered.splice(index, 1);
+    reordered.splice(nextIndex, 0, item);
+    setDisplayedItems(reordered);
+    try {
+      await persistOrder(reordered);
+    } catch {
+      setDisplayedItems(planItems ?? []);
+    }
+  }
+
+  function handleRemove(item: CarePlanItem) {
+    setDisplayedItems((items) =>
+      (items ?? planItems ?? []).filter((candidate) => candidate.id !== item.id),
+    );
+    deleteMutation.mutate(item.id);
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
-          {/* Header */}
           <View className="flex-row items-start justify-between">
             <View className="flex-1 gap-2">
               <Text className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -65,7 +124,7 @@ export default function TodayScreen() {
               </Text>
               <Text variant="h1">{greetingLine}</Text>
             </View>
-            {(planItems?.length ?? 0) > 0 ? (
+            {dashboardItems.length > 0 ? (
               <Button
                 variant="ghost"
                 size="sm"
@@ -79,7 +138,6 @@ export default function TodayScreen() {
             ) : null}
           </View>
 
-          {/* Widget section */}
           <View className="gap-3">
             <View className="flex-row items-center justify-between">
               <Text variant="h3">{t("today.dashboard.sectionTitle")}</Text>
@@ -97,13 +155,17 @@ export default function TodayScreen() {
               <View className="items-center py-8">
                 <ActivityIndicator />
               </View>
-            ) : planItems && planItems.length > 0 ? (
+            ) : dashboardItems.length > 0 ? (
               <View className="gap-3">
-                {planItems.map((item) => (
+                {dashboardItems.map((item, index) => (
                   <WidgetCard
                     key={item.id}
+                    canMoveDown={index < dashboardItems.length - 1 && !saveMutation.isPending}
+                    canMoveUp={index > 0 && !saveMutation.isPending}
                     editMode={editMode}
-                    onRemove={() => deleteMutation.mutate(item.id)}
+                    onMoveDown={() => handleMove(index, 1)}
+                    onMoveUp={() => handleMove(index, -1)}
+                    onRemove={() => handleRemove(item)}
                     title={item.title}
                   >
                     {resolveWidget(item, user?.id ?? "")}
@@ -126,6 +188,7 @@ export default function TodayScreen() {
       </ScrollView>
 
       <AddWidgetModal
+        nextOrder={nextWidgetOrder}
         visible={addVisible}
         onClose={() => setAddVisible(false)}
         userId={user?.id ?? null}

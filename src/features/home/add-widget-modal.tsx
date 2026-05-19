@@ -35,13 +35,20 @@ const EXTRA_DEFS: Record<string, WidgetToolDef> = {
 };
 
 interface AddWidgetModalProps {
+  nextOrder: number;
   visible: boolean;
   onClose: () => void;
   userId: string | null;
   existingToolIds: string[];
 }
 
-export function AddWidgetModal({ visible, onClose, userId, existingToolIds }: AddWidgetModalProps) {
+export function AddWidgetModal({
+  nextOrder,
+  visible,
+  onClose,
+  userId,
+  existingToolIds,
+}: AddWidgetModalProps) {
   const { t } = useTranslation("navigation");
   const reduceMotionEnabled = useReduceMotionEnabled();
   const saveMutation = useSavePlanItem(userId);
@@ -59,7 +66,7 @@ export function AddWidgetModal({ visible, onClose, userId, existingToolIds }: Ad
         route: def.route,
         frequency: def.frequency,
         reminderEnabled: false,
-        order: 99,
+        order: nextOrder,
         active: true,
       },
     });

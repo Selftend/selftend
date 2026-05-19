@@ -6,7 +6,7 @@
     "appName": "Selftend"
   },
   "sidebar": {
-    "home": "Днес",
+    "home": "Табло",
     "notifications": "Известия",
     "settings": "Настройки",
     "support": "Поддръжка",
@@ -53,7 +53,7 @@
     "dark": "Тъмна"
   },
   "tabs": {
-    "home": "Днес",
+    "home": "Табло",
     "settings": "Настройки"
   },
   "notFound": {
@@ -139,7 +139,7 @@
       "progressSub": "Виж картината за 30 дни"
     },
     "dashboard": {
-      "sectionTitle": "Твоят план",
+      "sectionTitle": "Табло",
       "editLabel": "Редактирай",
       "doneLabel": "Готово",
       "addWidgetTitle": "Добави към плана",
@@ -148,6 +148,9 @@
       "buildWithWizard": "Изгради с помощника",
       "emptySubtitle": "Добави инструменти, с които искаш да се проверяваш всеки ден.",
       "removeWidget": "Премахни {{title}}",
+      "moveWidgetUp": "Премести {{title}} нагоре",
+      "moveWidgetDown": "Премести {{title}} надолу",
+      "dragWidget": "Плъзни {{title}} за пренареждане",
       "allAdded": "Всички налични инструменти вече са в плана ти.",
       "doneToday": "Направено днес",
       "startBreathing": "Започни дишане",

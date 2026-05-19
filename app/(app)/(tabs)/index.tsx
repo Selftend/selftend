@@ -1,3 +1,3 @@
-import TodayScreen from "@/src/features/home/today-screen";
+import HomeScreen from "@/src/features/home/today-screen";
 
-export default TodayScreen;
+export default HomeScreen;
