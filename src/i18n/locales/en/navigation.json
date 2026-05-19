@@ -244,6 +244,26 @@
       "comingSoon": "Coming soon"
     }
   },
+  "headerButton": {
+    "tune": "Customise",
+    "notifications": "Notifications",
+    "info": "About this module"
+  },
+  "headerTour": {
+    "skipAll": "Skip all tips",
+    "tune": {
+      "description": "Tap here to customise this module — adjust your schedule and preferences.",
+      "dismiss": "Got it"
+    },
+    "notifications": {
+      "description": "Tap here to manage reminders and notification settings for this feature.",
+      "dismiss": "Got it"
+    },
+    "info": {
+      "description": "Tap here any time to read about how this module works.",
+      "dismiss": "Got it"
+    }
+  },
   "modulesPage": {
     "title": "Modules",
     "description": "Structured therapeutic programs you can work through over time. Each draws on the shared tools.",

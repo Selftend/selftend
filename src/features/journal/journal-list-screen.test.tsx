@@ -11,6 +11,7 @@ jest.mock("expo-router", () => ({
     canGoBack: jest.fn(() => false),
   },
   usePathname: () => "/tools/journal",
+  useFocusEffect: jest.fn(),
 }));
 
 jest.mock("@/src/components/app/notification-settings-modal", () => ({

@@ -9,7 +9,6 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HabitsOnboarding } from "@/src/components/app/habits-onboarding-modal";
-import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { HABITS_LEARN_CARDS } from "@/src/features/habits/learn";
 import {
   getIdentityRoundUp,
@@ -29,8 +28,6 @@ import {
   todayLocalDateString,
 } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
-import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
-import { mergeUserPreferences } from "@/src/features/modules/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
@@ -41,24 +38,16 @@ export default function HabitsHomeScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
   const { data: habits, isLoading: habitsLoading } = useHabits(userId);
   const sinceDate = useMemo(() => {
     const start = addDays(new Date(), -30);
     return toLocalDateString(start);
   }, []);
   const { data: logs } = useHabitLogs(userId, { sinceDate });
-  const updatePreferences = useUpdateUserPreferences(userId);
   const toggleLog = useToggleHabitLog(userId);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [onboardingError, setOnboardingError] = useState<string | undefined>();
   const [learnIndex, setLearnIndex] = useState(0);
-
-  const onboardingNeeded =
-    !prefsLoading && Boolean(preferences) && !preferences?.habitsOnboardingCompleted;
-  const showOnboarding = onboardingNeeded || forceOnboarding;
 
   const allHabits = useMemo(() => habits ?? [], [habits]);
   const allLogs = useMemo(() => logs ?? [], [logs]);
@@ -92,28 +81,11 @@ export default function HabitsHomeScreen() {
   );
   const twoMinuteAdoption = useMemo(() => getTwoMinuteAdoption(allHabits), [allHabits]);
 
-  async function handleOnboardingComplete() {
-    if (!preferences) return;
-    setOnboardingError(undefined);
-    try {
-      await updatePreferences.mutateAsync(
-        mergeUserPreferences(preferences, {
-          habitsOnboardingCompleted: true,
-        }),
-      );
-      setForceOnboarding(false);
-    } catch (error) {
-      const fallback = t("onboarding.finish.error");
-      const detail = error instanceof Error ? error.message : null;
-      setOnboardingError(detail ? `${fallback} (${detail})` : fallback);
-    }
-  }
-
   function handleToggle(habitId: string) {
     toggleLog.mutate({ habitId, loggedOn: todayStr });
   }
 
-  if (prefsLoading || habitsLoading) {
+  if (habitsLoading) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator />
@@ -124,16 +96,9 @@ export default function HabitsHomeScreen() {
   return (
     <>
       <HabitsOnboarding
-        visible={showOnboarding}
-        isPending={updatePreferences.isPending}
-        errorMessage={onboardingError}
-        onComplete={() => void handleOnboardingComplete()}
-        onDismiss={forceOnboarding ? () => setForceOnboarding(false) : undefined}
-      />
-      <NotificationSettingsModal
-        targetKey="habits"
-        visible={showNotifications}
-        onDismiss={() => setShowNotifications(false)}
+        visible={forceOnboarding}
+        onComplete={() => setForceOnboarding(false)}
+        onDismiss={() => setForceOnboarding(false)}
       />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
@@ -142,16 +107,8 @@ export default function HabitsHomeScreen() {
               <ModuleHomeHeader
                 title={t("home.title")}
                 actions={[
-                  {
-                    icon: "notifications",
-                    accessibilityLabel: t("notifications:actions.open"),
-                    onPress: () => setShowNotifications(true),
-                  },
-                  {
-                    icon: "help-outline",
-                    accessibilityLabel: t("onboarding.helpHint"),
-                    onPress: () => setForceOnboarding(true),
-                  },
+                  { type: "notifications", targetKey: "habits" },
+                  { type: "info", onPress: () => setForceOnboarding(true) },
                 ]}
               />
               <Text variant="muted">{t("home.subtitle")}</Text>

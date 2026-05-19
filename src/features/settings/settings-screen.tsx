@@ -105,6 +105,7 @@ export default function SettingsScreen() {
           sleepOnboardingCompleted: false,
           mindfulnessOnboardingCompleted: false,
           groundingOnboardingCompleted: false,
+          shownButtonTours: [],
         }),
       );
 

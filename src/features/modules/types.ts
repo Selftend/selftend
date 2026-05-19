@@ -1,5 +1,7 @@
 export type ModuleKey = "cbt" | "meditation" | "gratitude" | "act";
 
+export type ButtonTourKey = "tune" | "notifications" | "info";
+
 export type GratitudeLevel = 1 | 2 | 3;
 
 export interface CookieConsent {
@@ -45,6 +47,7 @@ export interface UserPreferences {
   language: string;
   selectedConcerns: string[];
   activeStrategies: string[];
+  shownButtonTours: ButtonTourKey[];
 }
 
 export const defaultUserPreferences: UserPreferences = {
@@ -84,6 +87,7 @@ export const defaultUserPreferences: UserPreferences = {
   language: "en",
   selectedConcerns: [],
   activeStrategies: [],
+  shownButtonTours: [],
 };
 
 const VALID_MODULES: ModuleKey[] = ["cbt", "meditation", "gratitude", "act"];

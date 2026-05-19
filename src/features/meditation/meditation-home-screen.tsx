@@ -14,7 +14,6 @@ import {
   MeditationOnboarding,
   type MeditationOnboardingResult,
 } from "@/src/components/app/meditation-onboarding-modal";
-import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
 import { MeditationInsightsCard } from "@/src/features/meditation/meditation-insights-card";
 import {
@@ -43,22 +42,14 @@ export default function MeditationHomeScreen() {
   const [onboardingError, setOnboardingError] = useState<string | undefined>();
   const [forceInfo, setForceInfo] = useState(false);
   const [forceWizard, setForceWizard] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-
-  const infoNeeded = !prefsLoading && Boolean(preferences) && !preferences?.meditationInfoCompleted;
-  const showInfo = infoNeeded || forceInfo;
-  const showWizard = forceWizard;
 
   const currentStage = (programState?.currentStage ?? 1) as StageNumber;
   const stage = getStage(currentStage);
   const suggestedDuration = programState?.preferredDurationMinutes ?? 15;
   const phaseLabel = t(`module.home.phase${capitalize(stage.phase)}`);
 
-  async function handleInfoComplete() {
-    if (!preferences) return;
-    await updatePreferences.mutateAsync(
-      mergeUserPreferences(preferences, { meditationInfoCompleted: true }),
-    );
+  function handleInfoComplete() {
+    setForceInfo(false);
   }
 
   async function handleOnboardingComplete(result: MeditationOnboardingResult) {
@@ -100,21 +91,16 @@ export default function MeditationHomeScreen() {
   return (
     <>
       <MeditationInfo
-        visible={showInfo}
-        onComplete={() => void handleInfoComplete()}
-        onDismiss={forceInfo ? () => setForceInfo(false) : undefined}
+        visible={forceInfo}
+        onComplete={handleInfoComplete}
+        onDismiss={() => setForceInfo(false)}
       />
       <MeditationOnboarding
-        visible={showWizard}
+        visible={forceWizard}
         isPending={upsertProgramState.isPending || updatePreferences.isPending}
         errorMessage={onboardingError}
         onComplete={(result) => void handleOnboardingComplete(result)}
         onDismiss={forceWizard ? () => setForceWizard(false) : undefined}
-      />
-      <NotificationSettingsModal
-        targetKey="meditation"
-        visible={showNotifications}
-        onDismiss={() => setShowNotifications(false)}
       />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
@@ -123,21 +109,9 @@ export default function MeditationHomeScreen() {
               <ModuleHomeHeader
                 title={t("module.home.title")}
                 actions={[
-                  {
-                    icon: "tune",
-                    accessibilityLabel: t("info.wizardHint"),
-                    onPress: () => setForceWizard(true),
-                  },
-                  {
-                    icon: "notifications",
-                    accessibilityLabel: t("notifications:actions.open"),
-                    onPress: () => setShowNotifications(true),
-                  },
-                  {
-                    icon: "help-outline",
-                    accessibilityLabel: t("info.helpHint"),
-                    onPress: () => setForceInfo(true),
-                  },
+                  { type: "tune", onPress: () => setForceWizard(true) },
+                  { type: "notifications", targetKey: "meditation" },
+                  { type: "info", onPress: () => setForceInfo(true) },
                 ]}
               />
               <Text variant="muted">

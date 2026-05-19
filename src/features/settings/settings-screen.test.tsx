@@ -9,6 +9,7 @@ import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: {
+    canGoBack: jest.fn(() => false),
     push: jest.fn(),
   },
   usePathname: () => "/(app)/(tabs)/settings",
@@ -120,6 +121,7 @@ describe("SettingsScreen onboarding reset", () => {
         cbtWizardCompleted: true,
         meditationOnboardingCompleted: true,
         policyVersionAccepted: "2026-05-01",
+        shownButtonTours: ["tune", "notifications", "info"],
       },
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
@@ -142,6 +144,7 @@ describe("SettingsScreen onboarding reset", () => {
           gratitudeOnboardingCompleted: false,
           meditationInfoCompleted: false,
           habitsOnboardingCompleted: false,
+          shownButtonTours: [],
           // wizard flags must be preserved
           cbtWizardCompleted: true,
           meditationOnboardingCompleted: true,

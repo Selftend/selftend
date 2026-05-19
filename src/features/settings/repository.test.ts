@@ -85,6 +85,7 @@ describe("settings repository", () => {
       privacy_policy_accepted_at: "2026-05-01T10:00:00.000Z",
       reminder_consent: true,
       reminder_consent_updated_at: "2026-05-01T10:05:00.000Z",
+      shown_button_tours: ["tune", "notifications"],
       terms_accepted_at: "2026-05-01T10:00:00.000Z",
       user_id: "user-1",
     });
@@ -95,6 +96,7 @@ describe("settings repository", () => {
       cbtReminderTimezone: "Europe/Sofia",
       language: "bg",
       reminderConsentUpdatedAt: "2026-05-01T10:05:00.000Z",
+      shownButtonTours: ["tune", "notifications"],
     });
   });
 
@@ -125,6 +127,7 @@ describe("settings repository", () => {
       cbtReminderTimezone: "Europe/Sofia",
       reminderConsent: true,
       reminderConsentUpdatedAt: "2026-05-01T10:05:00.000Z",
+      shownButtonTours: ["tune"],
     });
 
     expect(upsert).toHaveBeenCalledWith(
@@ -134,7 +137,40 @@ describe("settings repository", () => {
         cbt_reminder_timezone: "Europe/Sofia",
         reminder_consent: true,
         reminder_consent_updated_at: "2026-05-01T10:05:00.000Z",
+        shown_button_tours: ["tune"],
         user_id: "user-1",
+      }),
+      { onConflict: "user_id" },
+    );
+  });
+
+  it("falls back without newer optional columns when PostgREST has stale schema cache", async () => {
+    const staleSchemaError = {
+      code: "PGRST204",
+      message: "Could not find the 'shown_button_tours' column of 'user_preferences'",
+    };
+    const single = jest.fn().mockResolvedValue({ data: null, error: staleSchemaError });
+    const select = jest.fn(() => ({ single }));
+    const upsert = jest.fn().mockImplementation((payload: unknown) => {
+      if ((payload as Record<string, unknown>).shown_button_tours) {
+        return { select };
+      }
+      return Promise.resolve({ error: null });
+    });
+    const from = jest.fn(() => ({ upsert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      updateUserPreferences("user-1", {
+        ...defaultUserPreferences,
+        shownButtonTours: ["tune"],
+      }),
+    ).resolves.toMatchObject({ shownButtonTours: ["tune"] });
+
+    expect(upsert).toHaveBeenLastCalledWith(
+      expect.not.objectContaining({
+        act_onboarding_completed: expect.anything(),
+        shown_button_tours: expect.anything(),
       }),
       { onConflict: "user_id" },
     );

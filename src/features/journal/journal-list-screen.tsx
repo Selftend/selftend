@@ -9,13 +9,10 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
-import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { EmptyState } from "@/src/components/app/screen-state";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useJournalEntries } from "@/src/features/journal/queries";
 import type { JournalEntry } from "@/src/features/journal/types";
-import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
-import { mergeUserPreferences } from "@/src/features/modules/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -24,45 +21,18 @@ export default function JournalListScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
-  const updatePreferences = useUpdateUserPreferences(userId);
   const { data: entries } = useJournalEntries(userId, 50);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [onboardingError, setOnboardingError] = useState<string | undefined>();
-
-  const onboardingNeeded =
-    !prefsLoading && Boolean(preferences) && !preferences?.journalOnboardingCompleted;
-  const showOnboarding = onboardingNeeded || forceOnboarding;
-
-  async function handleOnboardingComplete() {
-    if (!preferences) return;
-    setOnboardingError(undefined);
-    try {
-      await updatePreferences.mutateAsync(
-        mergeUserPreferences(preferences, { journalOnboardingCompleted: true }),
-      );
-      setForceOnboarding(false);
-    } catch (error) {
-      setOnboardingError(error instanceof Error ? error.message : undefined);
-    }
-  }
 
   const list = entries ?? [];
 
   return (
     <>
       <JournalOnboarding
-        visible={showOnboarding}
-        isPending={updatePreferences.isPending}
-        errorMessage={onboardingError}
-        onComplete={handleOnboardingComplete}
-      />
-      <NotificationSettingsModal
-        targetKey="journal"
-        visible={showNotifications}
-        onDismiss={() => setShowNotifications(false)}
+        visible={forceOnboarding}
+        onComplete={() => setForceOnboarding(false)}
+        onDismiss={() => setForceOnboarding(false)}
       />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
@@ -71,11 +41,8 @@ export default function JournalListScreen() {
               <ModuleHomeHeader
                 title={t("title")}
                 actions={[
-                  {
-                    icon: "notifications",
-                    accessibilityLabel: t("notifications:actions.open"),
-                    onPress: () => setShowNotifications(true),
-                  },
+                  { type: "notifications", targetKey: "journal" },
+                  { type: "info", onPress: () => setForceOnboarding(true) },
                 ]}
               />
               <Text variant="muted" className="max-w-[64ch]">

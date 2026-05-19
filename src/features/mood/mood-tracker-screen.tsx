@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { ScrollView, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -16,14 +16,11 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
-import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
 import { MoodEntryCard } from "@/src/features/mood/mood-entry-card";
 import { buildMoodChartData } from "@/src/features/mood/chart-data";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { getMoodSummary, type MoodSummary } from "@/src/features/mood/summaries";
-import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
-import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useSession } from "@/src/providers/session-provider";
 
 const RECENT_LIMIT = 10;
@@ -36,30 +33,9 @@ export default function MoodTrackerScreen() {
   const { width } = useWindowDimensions();
   const userId = user?.id ?? null;
 
-  const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
-  const updatePreferences = useUpdateUserPreferences(userId);
   const { data: moodLogs } = useMoodLogs(userId, 30);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [onboardingError, setOnboardingError] = useState<string | undefined>();
-
-  const onboardingNeeded =
-    !prefsLoading && Boolean(preferences) && !preferences?.moodOnboardingCompleted;
-  const showOnboarding = onboardingNeeded || forceOnboarding;
-
-  async function handleOnboardingComplete() {
-    if (!preferences) return;
-    setOnboardingError(undefined);
-    try {
-      await updatePreferences.mutateAsync(
-        mergeUserPreferences(preferences, { moodOnboardingCompleted: true }),
-      );
-      setForceOnboarding(false);
-    } catch (error) {
-      setOnboardingError(error instanceof Error ? error.message : undefined);
-    }
-  }
 
   const today = useMemo(() => getMoodSummary(moodLogs, 1), [moodLogs]);
   const sevenDay = useMemo(() => getMoodSummary(moodLogs, 7), [moodLogs]);
@@ -72,15 +48,9 @@ export default function MoodTrackerScreen() {
   return (
     <>
       <MoodOnboarding
-        visible={showOnboarding}
-        isPending={updatePreferences.isPending}
-        errorMessage={onboardingError}
-        onComplete={handleOnboardingComplete}
-      />
-      <NotificationSettingsModal
-        targetKey="mood"
-        visible={showNotifications}
-        onDismiss={() => setShowNotifications(false)}
+        visible={forceOnboarding}
+        onComplete={() => setForceOnboarding(false)}
+        onDismiss={() => setForceOnboarding(false)}
       />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
@@ -89,11 +59,8 @@ export default function MoodTrackerScreen() {
               <ModuleHomeHeader
                 title={t("title")}
                 actions={[
-                  {
-                    icon: "notifications",
-                    accessibilityLabel: t("notifications:actions.open"),
-                    onPress: () => setShowNotifications(true),
-                  },
+                  { type: "notifications", targetKey: "mood" },
+                  { type: "info", onPress: () => setForceOnboarding(true) },
                 ]}
               />
               <Text variant="muted" className="max-w-[64ch]">

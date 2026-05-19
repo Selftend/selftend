@@ -53,6 +53,7 @@ jest.mock("expo-router", () => {
   return {
     Redirect: ({ href }: { href: string }) => <Text>Redirect: {href}</Text>,
     Stack,
+    usePathname: () => "/",
   };
 });
 

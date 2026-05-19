@@ -10,10 +10,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
-import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { useSleepLogs } from "@/src/features/sleep/queries";
-import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
-import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useSession } from "@/src/providers/session-provider";
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
@@ -68,30 +65,9 @@ export default function SleepTrackerScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
-  const updatePreferences = useUpdateUserPreferences(userId);
   const { data: logs } = useSleepLogs(userId, 50);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [onboardingError, setOnboardingError] = useState<string | undefined>();
-
-  const onboardingNeeded =
-    !prefsLoading && Boolean(preferences) && !preferences?.sleepOnboardingCompleted;
-  const showOnboarding = onboardingNeeded || forceOnboarding;
-
-  async function handleOnboardingComplete() {
-    if (!preferences) return;
-    setOnboardingError(undefined);
-    try {
-      await updatePreferences.mutateAsync(
-        mergeUserPreferences(preferences, { sleepOnboardingCompleted: true }),
-      );
-      setForceOnboarding(false);
-    } catch (error) {
-      setOnboardingError(error instanceof Error ? error.message : undefined);
-    }
-  }
 
   const allLogs = logs ?? [];
   const recent = allLogs.slice(0, 10);
@@ -103,15 +79,9 @@ export default function SleepTrackerScreen() {
   return (
     <>
       <SleepOnboarding
-        visible={showOnboarding}
-        isPending={updatePreferences.isPending}
-        errorMessage={onboardingError}
-        onComplete={handleOnboardingComplete}
-      />
-      <NotificationSettingsModal
-        targetKey="sleep"
-        visible={showNotifications}
-        onDismiss={() => setShowNotifications(false)}
+        visible={forceOnboarding}
+        onComplete={() => setForceOnboarding(false)}
+        onDismiss={() => setForceOnboarding(false)}
       />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
@@ -120,11 +90,8 @@ export default function SleepTrackerScreen() {
               <ModuleHomeHeader
                 title={t("title")}
                 actions={[
-                  {
-                    icon: "notifications",
-                    accessibilityLabel: t("notifications:actions.open"),
-                    onPress: () => setShowNotifications(true),
-                  },
+                  { type: "notifications", targetKey: "sleep" },
+                  { type: "info", onPress: () => setForceOnboarding(true) },
                 ]}
               />
               <Text variant="muted" className="max-w-[64ch]">

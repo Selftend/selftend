@@ -7,9 +7,11 @@ import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: {
+    canGoBack: jest.fn(() => false),
     push: jest.fn(),
   },
   usePathname: () => "/modules/cbt/history",
+  useFocusEffect: jest.fn(),
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({

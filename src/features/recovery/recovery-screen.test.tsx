@@ -25,6 +25,14 @@ import { useValuesProfiles } from "@/src/features/values/queries";
 import { useWorryEntries } from "@/src/features/worry/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+jest.mock("expo-router", () => ({
+  router: {
+    back: jest.fn(),
+    canGoBack: jest.fn(() => false),
+  },
+  useFocusEffect: jest.fn(),
+}));
+
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({
     user: {

@@ -10,10 +10,12 @@ import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: {
+    canGoBack: jest.fn(() => false),
     push: jest.fn(),
     replace: jest.fn(),
   },
   usePathname: () => "/tools/habits",
+  useFocusEffect: jest.fn(),
 }));
 
 jest.mock("@react-navigation/native", () => ({

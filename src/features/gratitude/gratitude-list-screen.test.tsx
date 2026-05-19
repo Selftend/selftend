@@ -11,6 +11,7 @@ jest.mock("expo-router", () => ({
     canGoBack: jest.fn(() => false),
   },
   usePathname: () => "/tools/gratitude-log",
+  useFocusEffect: jest.fn(),
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({

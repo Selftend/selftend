@@ -7,9 +7,11 @@ import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: {
+    canGoBack: jest.fn(() => false),
     push: jest.fn(),
   },
   usePathname: () => "/tools/mood-tracker",
+  useFocusEffect: jest.fn(),
 }));
 
 jest.mock("@/src/components/app/notification-settings-modal", () => ({

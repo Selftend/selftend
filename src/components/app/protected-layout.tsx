@@ -1,4 +1,4 @@
-import { Redirect, Stack } from "expo-router";
+import { Redirect, Stack, usePathname } from "expo-router";
 import { ActivityIndicator, Platform, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -26,6 +26,7 @@ export default function ProtectedLayout() {
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(user?.id ?? null);
   const appOnboardingMutation = useUpdateUserPreferences(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
+  const pathname = usePathname();
 
   useLanguageSync(user?.id ?? null, preferences);
 
@@ -56,7 +57,11 @@ export default function ProtectedLayout() {
   const needsConsent =
     !consentDismissed && !prefsLoading && preferences?.policyVersionAccepted !== policyVersion;
   const needsAppOnboarding =
-    !needsConsent && !prefsLoading && Boolean(preferences) && !preferences?.appOnboardingCompleted;
+    !needsConsent &&
+    !prefsLoading &&
+    Boolean(preferences) &&
+    !preferences?.appOnboardingCompleted &&
+    pathname === "/";
 
   const completeAppOnboarding = async () => {
     if (!preferences) {

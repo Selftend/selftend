@@ -3,7 +3,6 @@ import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useIsFocused } from "@react-navigation/native";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -21,7 +20,6 @@ import {
   ActWizard,
   type ActWizardResult,
 } from "@/src/components/app/act-onboarding-modal";
-import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { useDefusionLogs, useUpsertACTProgramState } from "@/src/features/act/queries";
 import type { ACTPrinciple } from "@/src/features/act/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
@@ -57,19 +55,12 @@ function parseMinute(time: string): number {
   return Number.isFinite(n) && n >= 0 && n <= 59 ? n : 0;
 }
 
-function addModule<T extends string>(modules: T[], key: T): T[] {
-  return modules.includes(key) ? modules : [...modules, key];
-}
-
 export default function ActHomeScreen() {
   const { t } = useTranslation("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
-  const isFocused = useIsFocused();
-
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
-  const actIntroCompleted = Boolean(preferences?.actOnboardingCompleted);
-  const { data: defusionLogs } = useDefusionLogs(actIntroCompleted ? userId : null, 50);
+  const { data: defusionLogs } = useDefusionLogs(userId, 50);
   const recentLogs = defusionLogs?.slice(0, 3) ?? [];
 
   const upsertProgramState = useUpsertACTProgramState(userId);
@@ -77,32 +68,7 @@ export default function ActHomeScreen() {
 
   const [forceInfo, setForceInfo] = useState(false);
   const [forceWizard, setForceWizard] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [infoError, setInfoError] = useState<string | undefined>();
   const [wizardError, setWizardError] = useState<string | undefined>();
-
-  const infoNeeded =
-    isFocused && !prefsLoading && Boolean(preferences) && !preferences?.actOnboardingCompleted;
-  const showInfo = forceInfo || infoNeeded;
-  const showWizard = forceWizard;
-
-  async function handleInfoComplete() {
-    if (!preferences || !userId) return;
-    setInfoError(undefined);
-    try {
-      await updatePreferences.mutateAsync(
-        mergeUserPreferences(preferences, {
-          actOnboardingCompleted: true,
-          enabledModules: addModule(preferences.enabledModules, "act"),
-        }),
-      );
-      setForceInfo(false);
-    } catch (error) {
-      const fallback = t("onboarding.commit.error");
-      const detail = error instanceof Error ? error.message : null;
-      setInfoError(detail ? `${fallback} (${detail})` : fallback);
-    }
-  }
 
   async function handleWizardComplete(result: ActWizardResult) {
     if (!userId) return;
@@ -142,23 +108,16 @@ export default function ActHomeScreen() {
   return (
     <>
       <ActInfo
-        visible={showInfo}
-        isPending={updatePreferences.isPending}
-        errorMessage={infoError}
-        onComplete={() => void handleInfoComplete()}
-        onDismiss={forceInfo ? () => setForceInfo(false) : undefined}
+        visible={forceInfo}
+        onComplete={() => setForceInfo(false)}
+        onDismiss={() => setForceInfo(false)}
       />
       <ActWizard
-        visible={showWizard}
+        visible={forceWizard}
         isPending={upsertProgramState.isPending || updatePreferences.isPending}
         errorMessage={wizardError}
         onComplete={(result) => void handleWizardComplete(result)}
         onDismiss={() => setForceWizard(false)}
-      />
-      <NotificationSettingsModal
-        targetKey="act"
-        visible={showNotifications}
-        onDismiss={() => setShowNotifications(false)}
       />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
@@ -170,21 +129,9 @@ export default function ActHomeScreen() {
               <ModuleHomeHeader
                 title={t("home.title")}
                 actions={[
-                  {
-                    icon: "tune",
-                    accessibilityLabel: t("home.wizardHint"),
-                    onPress: () => setForceWizard(true),
-                  },
-                  {
-                    icon: "notifications",
-                    accessibilityLabel: t("notifications:actions.open"),
-                    onPress: () => setShowNotifications(true),
-                  },
-                  {
-                    icon: "help-outline",
-                    accessibilityLabel: t("home.onboardingHint"),
-                    onPress: () => setForceInfo(true),
-                  },
+                  { type: "tune", onPress: () => setForceWizard(true) },
+                  { type: "notifications", targetKey: "act" },
+                  { type: "info", onPress: () => setForceInfo(true) },
                 ]}
               />
               <Text variant="muted" className="max-w-[64ch]">

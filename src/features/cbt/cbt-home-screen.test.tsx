@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 import { Pressable as mockPressable, Text as mockText } from "react-native";
 import type { ReactNode } from "react";
@@ -18,9 +18,11 @@ import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: {
+    canGoBack: jest.fn(() => false),
     push: jest.fn(),
   },
   usePathname: () => "/modules/cbt",
+  useFocusEffect: jest.fn(),
 }));
 
 jest.mock("@react-navigation/native", () => ({
@@ -157,49 +159,6 @@ describe("CbtHomeScreen onboarding", () => {
       selfCareTrend: null,
       slogan: "",
       topDistortions: [],
-    });
-  });
-
-  it("shows CBT onboarding when the account flag is incomplete", () => {
-    mockUseUserPreferences.mockReturnValue({
-      data: {
-        ...defaultUserPreferences,
-        cbtOnboardingCompleted: false,
-      },
-      isLoading: false,
-    } as unknown as ReturnType<typeof useUserPreferences>);
-
-    renderWithProviders(<CbtHomeScreen />);
-
-    expect(screen.getByText(/The CBT Toolkit/)).toBeTruthy();
-    expect(screen.getByText("Got it")).toBeTruthy();
-  });
-
-  it("marks CBT onboarding complete when the user continues", async () => {
-    mockUseUserPreferences.mockReturnValue({
-      data: {
-        ...defaultUserPreferences,
-        appOnboardingCompleted: true,
-        cbtOnboardingCompleted: false,
-      },
-      isLoading: false,
-    } as unknown as ReturnType<typeof useUserPreferences>);
-
-    renderWithProviders(<CbtHomeScreen />);
-
-    fireEvent.press(screen.getByText("Got it"));
-    fireEvent.press(screen.getByLabelText("Anxiety / Worry"));
-    fireEvent.press(screen.getByText("Continue"));
-
-    await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({
-          appOnboardingCompleted: true,
-          cbtOnboardingCompleted: true,
-          cbtWizardCompleted: true,
-          selectedConcerns: ["anxiety"],
-        }),
-      );
     });
   });
 

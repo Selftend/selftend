@@ -101,7 +101,11 @@ function Icon({ name, className, size, style, ...props }: IconProps) {
       name={name}
       className={resolvedClassName}
       size={resolvedSize}
-      style={resolvedSize ? [{ lineHeight: resolvedSize }, style] : style}
+      style={
+        resolvedSize
+          ? [{ lineHeight: resolvedSize, alignContent: "center", textAlign: "center" }, style]
+          : style
+      }
       {...props}
     />
   );

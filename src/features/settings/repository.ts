@@ -1,6 +1,7 @@
 import {
   defaultUserPreferences,
   sanitizeEnabledModules,
+  type ButtonTourKey,
   type CookieConsent,
   type ModuleKey,
   type UserPreferences,
@@ -46,6 +47,7 @@ interface UserPreferenceRow {
   language: string | null;
   selected_concerns: string[] | null;
   active_strategies: string[] | null;
+  shown_button_tours: string[] | null;
 }
 
 function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
@@ -93,17 +95,31 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     language: row.language ?? defaultUserPreferences.language,
     selectedConcerns: row.selected_concerns ?? [],
     activeStrategies: row.active_strategies ?? [],
+    shownButtonTours: (row.shown_button_tours ?? []) as ButtonTourKey[],
   };
 }
 
-function isMissingACTPreferenceColumn(error: unknown) {
+function isMissingOptionalPreferenceColumn(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const maybeError = error as { code?: unknown; message?: unknown };
   return (
     maybeError.code === "PGRST204" &&
     typeof maybeError.message === "string" &&
-    maybeError.message.includes("act_")
+    (maybeError.message.includes("act_") || maybeError.message.includes("shown_button_tours"))
   );
+}
+
+function omitOptionalPreferenceColumns<T extends Record<string, unknown>>(payload: T) {
+  const fallbackPayload: Partial<T> = { ...payload };
+
+  delete fallbackPayload.act_onboarding_completed;
+  delete fallbackPayload.act_reminders_enabled;
+  delete fallbackPayload.act_reminder_hour;
+  delete fallbackPayload.act_reminder_minute;
+  delete fallbackPayload.act_reminder_timezone;
+  delete fallbackPayload.shown_button_tours;
+
+  return fallbackPayload;
 }
 
 export async function getUserPreferences(userId: string) {
@@ -161,6 +177,7 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     language: preferences.language,
     selected_concerns: preferences.selectedConcerns,
     active_strategies: preferences.activeStrategies,
+    shown_button_tours: preferences.shownButtonTours,
   };
 
   const { data, error } = await client
@@ -170,18 +187,10 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     .single();
 
   if (error) {
-    if (isMissingACTPreferenceColumn(error)) {
-      const { error: fallbackError } = await client.from("user_preferences").upsert(
-        {
-          ...payload,
-          act_onboarding_completed: undefined,
-          act_reminders_enabled: undefined,
-          act_reminder_hour: undefined,
-          act_reminder_minute: undefined,
-          act_reminder_timezone: undefined,
-        },
-        { onConflict: "user_id" },
-      );
+    if (isMissingOptionalPreferenceColumn(error)) {
+      const { error: fallbackError } = await client
+        .from("user_preferences")
+        .upsert(omitOptionalPreferenceColumns(payload), { onConflict: "user_id" });
 
       if (!fallbackError) return preferences;
     }
