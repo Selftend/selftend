@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { Audio } from "expo-av";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -21,6 +22,19 @@ interface TimerWidgetProps {
   initialDuration?: number;
 }
 
+async function playBell() {
+  try {
+    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+    const { sound } = await Audio.Sound.createAsync(require("@/assets/sounds/bell.wav"));
+    await sound.playAsync();
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if (status.isLoaded && status.didJustFinish) sound.unloadAsync();
+    });
+  } catch (e) {
+    console.error("[bell] error", e);
+  }
+}
+
 export function TimerWidget({ initialDuration = 10 }: TimerWidgetProps) {
   const { t } = useTranslation("timer");
 
@@ -41,6 +55,7 @@ export function TimerWidget({ initialDuration = 10 }: TimerWidgetProps) {
           if (prev <= 1) {
             if (intervalRef.current) clearInterval(intervalRef.current);
             setTimerState("completed");
+            void playBell();
             return 0;
           }
           return prev - 1;
@@ -112,7 +127,13 @@ export function TimerWidget({ initialDuration = 10 }: TimerWidgetProps) {
 
       <View className="flex-row items-center gap-2">
         {timerState === "idle" ? (
-          <Button onPress={() => setTimerState("running")} className="flex-1">
+          <Button
+            onPress={() => {
+              void playBell();
+              setTimerState("running");
+            }}
+            className="flex-1"
+          >
             <Text>{t("timer.start")}</Text>
           </Button>
         ) : timerState === "running" ? (
