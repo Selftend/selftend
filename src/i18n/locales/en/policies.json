@@ -21,7 +21,7 @@
           "Account data: your email address and authentication identifiers provided during sign-in via passwordless email link or Google OAuth.",
           "App data: user preferences (enabled modules, onboarding status, reminder settings) and private CBT thought records or other self-help entries you create. These entries may include wellness or mental-health reflection content if you choose to enter it.",
           "Device data: a local notification identifier on native apps, or a browser push subscription endpoint and keys on web, only when you explicitly enable reminders. No device fingerprinting or hardware identifiers are collected.",
-          "Session data: an authentication token stored in browser localStorage (web) or Expo SecureStore (mobile) to maintain your signed-in session."
+          "Session and local preference data: an authentication token stored in browser localStorage (web) or Expo SecureStore (mobile) to maintain your signed-in session, plus small local app preferences such as language, theme, and last timer session duration stored on your device."
         ]
       },
       {
@@ -351,7 +351,7 @@
         "body": [
           "We use browser localStorage to store your authentication session token. This is strictly necessary for the app to function — it keeps you signed in between visits.",
           "This storage cannot be disabled while using the app. If you clear your browser storage, you will need to sign in again.",
-          "No personal data beyond the session token is stored in localStorage by the app itself."
+          "The app also stores small local preferences, such as language, theme, and last timer session duration. These preferences stay on your device and are not used for tracking."
         ]
       },
       {

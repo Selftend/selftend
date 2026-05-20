@@ -1,25 +1,43 @@
 import { router } from "expo-router";
 import { Audio } from "expo-av";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, View } from "react-native";
+import { PanResponder, Pressable, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { cn } from "@/lib/utils";
-
-const DURATION_PRESETS = [5, 10, 15, 20, 30];
+import {
+  DEFAULT_TIMER_DURATION_MINUTES,
+  loadLastSessionDuration,
+  MAX_TIMER_DURATION_MINUTES,
+  MIN_TIMER_DURATION_MINUTES,
+  normalizeTimerDuration,
+  saveLastSessionDuration,
+} from "@/src/features/timer/storage";
 
 type TimerState = "idle" | "running" | "paused" | "completed";
+
+// Each "bar slot" is this many pixels wide (center to center)
+const BAR_SPACING = 14;
+const BAR_W = 3;
+const BAR_MAX_H = 72;
+const BAR_MIN_H = 3;
+// Sigma in bar-units: how quickly bars shrink away from center
+const SIGMA = 4.5;
+
+function clampDuration(value: number): number {
+  return Math.max(MIN_TIMER_DURATION_MINUTES, Math.min(MAX_TIMER_DURATION_MINUTES, value));
+}
+
+function bellH(distInBars: number): number {
+  const t = Math.exp(-0.5 * Math.pow(distInBars / SIGMA, 2));
+  return BAR_MIN_H + (BAR_MAX_H - BAR_MIN_H) * t;
+}
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
-
-interface TimerWidgetProps {
-  initialDuration?: number;
 }
 
 async function playBell() {
@@ -35,14 +53,201 @@ async function playBell() {
   }
 }
 
-export function TimerWidget({ initialDuration = 10 }: TimerWidgetProps) {
+function DurationPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   const { t } = useTranslation("timer");
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputText, setInputText] = useState(String(value));
+  // continuousPos drives bar rendering — it's a float, e.g. 15.3
+  const [continuousPos, setContinuousPos] = useState<number>(value);
+  const [containerWidth, setContainerWidth] = useState(0);
 
-  const validInitial = DURATION_PRESETS.includes(initialDuration) ? initialDuration : 10;
-  const [durationMinutes, setDurationMinutes] = useState(validInitial);
+  const continuousPosRef = useRef<number>(value);
+  const dragStartPosRef = useRef<number>(value);
+  const inputRef = useRef<TextInput>(null);
+
+  // Sync when value changes externally (e.g. text input commit)
+  useEffect(() => {
+    if (Math.round(continuousPosRef.current) !== value) {
+      continuousPosRef.current = value;
+      setContinuousPos(value);
+    }
+    if (!isEditing) setInputText(String(value));
+  }, [value, isEditing]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        dragStartPosRef.current = continuousPosRef.current;
+      },
+      onPanResponderMove: (_e, gs) => {
+        // Drag left = value increases (opposite of drag direction)
+        const raw = dragStartPosRef.current - gs.dx / BAR_SPACING;
+        const clamped = clampDuration(raw);
+        continuousPosRef.current = clamped;
+        setContinuousPos(clamped);
+        onChange(clampDuration(Math.round(clamped)));
+      },
+      onPanResponderRelease: () => {
+        const snapped = clampDuration(Math.round(continuousPosRef.current));
+        continuousPosRef.current = snapped;
+        setContinuousPos(snapped);
+        onChange(snapped);
+      },
+      onPanResponderTerminate: () => {
+        const snapped = clampDuration(Math.round(continuousPosRef.current));
+        continuousPosRef.current = snapped;
+        setContinuousPos(snapped);
+        onChange(snapped);
+      },
+    }),
+  ).current;
+
+  function startEditing() {
+    setInputText(String(Math.round(continuousPosRef.current)));
+    setIsEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function handleInputChange(text: string) {
+    setInputText(text);
+
+    if (!/^\d+$/.test(text)) return;
+
+    const parsed = Number(text);
+    if (!Number.isFinite(parsed)) return;
+
+    const next = clampDuration(parsed);
+    continuousPosRef.current = next;
+    setContinuousPos(next);
+    onChange(next);
+  }
+
+  function commitInput() {
+    const parsed = /^\d+$/.test(inputText) ? Number(inputText) : NaN;
+    const next = Number.isFinite(parsed)
+      ? clampDuration(parsed)
+      : clampDuration(Math.round(continuousPosRef.current));
+    continuousPosRef.current = next;
+    setContinuousPos(next);
+    setInputText(String(next));
+    onChange(next);
+    setIsEditing(false);
+  }
+
+  // Build bars: each integer value v gets a physical X position based on
+  // its distance from continuousPos. Bars outside the container are skipped.
+  const centerX = containerWidth / 2;
+  const halfRange = containerWidth > 0 ? Math.ceil(centerX / BAR_SPACING) + 2 : 0;
+  const bars: React.ReactNode[] = [];
+
+  for (
+    let v = Math.floor(continuousPos) - halfRange;
+    v <= Math.ceil(continuousPos) + halfRange;
+    v++
+  ) {
+    if (v < MIN_TIMER_DURATION_MINUTES || v > MAX_TIMER_DURATION_MINUTES) continue;
+    const distInBars = v - continuousPos; // 0 = center, negative = left
+    const screenX = centerX + distInBars * BAR_SPACING;
+    if (screenX < -BAR_W || screenX > containerWidth + BAR_W) continue;
+    const h = bellH(distInBars);
+    const opacity = 0.2 + 0.8 * (h / BAR_MAX_H);
+    bars.push(
+      <View
+        key={v}
+        className="bg-foreground"
+        style={{
+          position: "absolute",
+          left: screenX - BAR_W / 2,
+          bottom: 0,
+          width: BAR_W,
+          height: h,
+          borderRadius: 2,
+          opacity,
+        }}
+      />,
+    );
+  }
+
+  return (
+    <View className="items-center gap-1">
+      <Pressable onPress={startEditing} className="items-center py-1">
+        {isEditing ? (
+          <TextInput
+            ref={inputRef}
+            value={inputText}
+            onChangeText={handleInputChange}
+            onBlur={commitInput}
+            onSubmitEditing={commitInput}
+            keyboardType="number-pad"
+            returnKeyType="done"
+            selectTextOnFocus
+            className="text-center text-5xl font-bold text-foreground"
+            // @ts-ignore — web only
+            style={{ outline: "none", minWidth: 90 }}
+          />
+        ) : (
+          <Text className="text-5xl font-bold">{Math.round(continuousPos)}</Text>
+        )}
+        <Text className="text-xs text-muted-foreground">{t("duration.minutesUnit")}</Text>
+      </Pressable>
+
+      <View
+        {...panResponder.panHandlers}
+        onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+        style={{
+          width: "100%",
+          height: BAR_MAX_H + 8,
+          overflow: "hidden",
+          cursor: "pointer",
+          userSelect: "none",
+        }}
+      >
+        {containerWidth > 0 ? bars : null}
+      </View>
+    </View>
+  );
+}
+
+interface TimerWidgetProps {
+  initialDuration?: number;
+}
+
+export function TimerWidget({
+  initialDuration = DEFAULT_TIMER_DURATION_MINUTES,
+}: TimerWidgetProps) {
+  const { t } = useTranslation("timer");
+  const suggestedDuration = normalizeTimerDuration(initialDuration);
+
+  const [durationMinutes, setDurationMinutesState] = useState(suggestedDuration);
   const [timerState, setTimerState] = useState<TimerState>("idle");
-  const [secondsLeft, setSecondsLeft] = useState(validInitial * 60);
+  const [secondsLeft, setSecondsLeft] = useState(durationMinutes * 60);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hasUserSelectedDurationRef = useRef(false);
+
+  useEffect(() => {
+    if (hasUserSelectedDurationRef.current) return;
+    setDurationMinutesState(suggestedDuration);
+  }, [suggestedDuration]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    loadLastSessionDuration()
+      .then((storedDuration) => {
+        if (!mounted || storedDuration === null || hasUserSelectedDurationRef.current) return;
+        hasUserSelectedDurationRef.current = true;
+        setDurationMinutesState(storedDuration);
+      })
+      .catch((error) => {
+        console.error("[timer] failed to load last session duration", error);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (timerState === "idle") setSecondsLeft(durationMinutes * 60);
@@ -72,6 +277,20 @@ export function TimerWidget({ initialDuration = 10 }: TimerWidgetProps) {
 
   const isActive = timerState === "running" || timerState === "paused";
 
+  function setDurationMinutes(minutes: number) {
+    hasUserSelectedDurationRef.current = true;
+    setDurationMinutesState(normalizeTimerDuration(minutes));
+  }
+
+  function start() {
+    const sessionDuration = normalizeTimerDuration(durationMinutes);
+    void saveLastSessionDuration(sessionDuration).catch((error) => {
+      console.error("[timer] failed to save last session duration", error);
+    });
+    void playBell();
+    setTimerState("running");
+  }
+
   function reset() {
     setTimerState("idle");
     setSecondsLeft(durationMinutes * 60);
@@ -80,36 +299,7 @@ export function TimerWidget({ initialDuration = 10 }: TimerWidgetProps) {
   return (
     <View className="gap-4">
       {!isActive && timerState !== "completed" ? (
-        <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t("duration.label")}
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            {DURATION_PRESETS.map((min) => (
-              <Pressable
-                key={min}
-                accessibilityRole="button"
-                accessibilityState={{ selected: durationMinutes === min }}
-                onPress={() => setDurationMinutes(min)}
-                className={cn(
-                  "rounded-full border px-3 py-1.5",
-                  durationMinutes === min
-                    ? "border-primary bg-primary"
-                    : "border-border bg-card active:bg-muted",
-                )}
-              >
-                <Text
-                  className={cn(
-                    "text-sm font-semibold",
-                    durationMinutes === min ? "text-primary-foreground" : "text-foreground",
-                  )}
-                >
-                  {t("duration.minutes", { count: min })}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+        <DurationPicker value={durationMinutes} onChange={setDurationMinutes} />
       ) : null}
 
       {timerState === "completed" ? (
@@ -127,13 +317,7 @@ export function TimerWidget({ initialDuration = 10 }: TimerWidgetProps) {
 
       <View className="flex-row items-center gap-2">
         {timerState === "idle" ? (
-          <Button
-            onPress={() => {
-              void playBell();
-              setTimerState("running");
-            }}
-            className="flex-1"
-          >
+          <Button onPress={start} className="flex-1">
             <Text>{t("timer.start")}</Text>
           </Button>
         ) : timerState === "running" ? (
