@@ -2,6 +2,7 @@ import { Pressable, View } from "react-native";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, {
+  Easing,
   FadeIn,
   LinearTransition,
   runOnJS,
@@ -92,7 +93,9 @@ export function WidgetCard({
       className={editMode ? "pr-9" : undefined}
       entering={reduceMotionEnabled ? undefined : FadeIn.duration(160)}
       layout={
-        reduceMotionEnabled ? undefined : LinearTransition.springify().damping(18).stiffness(180)
+        reduceMotionEnabled
+          ? undefined
+          : LinearTransition.easing(Easing.out(Easing.ease)).duration(200)
       }
       style={animatedStyle}
     >
