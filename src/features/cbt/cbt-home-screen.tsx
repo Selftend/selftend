@@ -139,7 +139,37 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
   ],
 };
 
+const THINK_SHARED_TOOLS: SharedTool[] = [
+  {
+    key: "journal",
+    route: "/tools/journal",
+    icon: "edit-note",
+    labelKey: "navigation:sidebar.journal",
+  },
+  {
+    key: "gratitudeLog",
+    route: "/tools/gratitude-log",
+    icon: "favorite",
+    labelKey: "navigation:sidebar.gratitudeLog",
+  },
+];
+
+const ACT_SHARED_TOOLS: SharedTool[] = [
+  {
+    key: "habits",
+    route: "/tools/habits",
+    icon: "task-alt",
+    labelKey: "navigation:sidebar.habits",
+  },
+];
+
 const BE_SHARED_TOOLS: SharedTool[] = [
+  {
+    key: "breathing",
+    route: "/tools/breathing",
+    icon: "air",
+    labelKey: "navigation:sidebar.breathing",
+  },
   {
     key: "mindfulness",
     route: "/tools/mindfulness",
@@ -153,22 +183,22 @@ const BE_SHARED_TOOLS: SharedTool[] = [
     labelKey: "navigation:sidebar.meditation",
   },
   {
+    key: "grounding",
+    route: "/tools/grounding",
+    icon: "anchor",
+    labelKey: "navigation:sidebar.grounding",
+  },
+  {
     key: "moodTracker",
     route: "/tools/mood-tracker",
     icon: "mood",
     labelKey: "navigation:sidebar.moodTracker",
   },
   {
-    key: "gratitudeLog",
-    route: "/tools/gratitude-log",
-    icon: "favorite",
-    labelKey: "navigation:sidebar.gratitudeLog",
-  },
-  {
-    key: "journal",
-    route: "/tools/journal",
-    icon: "edit-note",
-    labelKey: "navigation:sidebar.journal",
+    key: "sleep",
+    route: "/tools/sleep",
+    icon: "bedtime",
+    labelKey: "navigation:sidebar.sleep",
   },
 ];
 
@@ -1069,6 +1099,7 @@ export default function CbtHomeScreen() {
                   subKey="pillars.think.sub"
                   descKey="pillars.think.description"
                   strategies={PILLAR_STRATEGIES.think}
+                  sharedTools={THINK_SHARED_TOOLS}
                 />
                 <PillarPane
                   pillar="act"
@@ -1076,6 +1107,7 @@ export default function CbtHomeScreen() {
                   subKey="pillars.act.sub"
                   descKey="pillars.act.description"
                   strategies={PILLAR_STRATEGIES.act}
+                  sharedTools={ACT_SHARED_TOOLS}
                 />
                 <PillarPane
                   pillar="be"
