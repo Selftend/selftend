@@ -1,7 +1,6 @@
-import { Audio } from "expo-av";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, Vibration, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -29,8 +28,6 @@ import type {
 } from "@/src/features/meditation/types";
 import { useSession } from "@/src/providers/session-provider";
 
-const BELL_ASSET = require("@/assets/sounds/bell.wav");
-
 const BODY_SCAN_OPTIONS: BodyScanSegments[] = [4, 6, 12];
 
 type Phase = "preSit" | "running" | "paused" | "completed";
@@ -42,20 +39,6 @@ function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
-
-async function playBell() {
-  try {
-    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-    const { sound } = await Audio.Sound.createAsync(BELL_ASSET, { shouldPlay: true });
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && status.didJustFinish) {
-        void sound.unloadAsync();
-      }
-    });
-  } catch {
-    Vibration.vibrate([0, 200, 100, 200]);
-  }
 }
 
 export default function MeditationSessionScreen() {
@@ -95,7 +78,6 @@ export default function MeditationSessionScreen() {
           if (prev <= 1) {
             if (intervalRef.current) clearInterval(intervalRef.current);
             setPhase("completed");
-            void playBell();
             return 0;
           }
           return prev - 1;
@@ -111,7 +93,6 @@ export default function MeditationSessionScreen() {
   }, [phase]);
 
   function start() {
-    void playBell();
     setPhase("running");
   }
   function pause() {

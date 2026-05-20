@@ -1,14 +1,12 @@
-import { Audio } from "expo-av";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, View, Vibration } from "react-native";
+import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 
-const BELL_ASSET = require("@/assets/sounds/bell.wav");
 const DURATION_PRESETS = [5, 10, 15, 20, 30];
 
 type TimerState = "idle" | "running" | "paused" | "completed";
@@ -17,18 +15,6 @@ function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
-
-async function playBell() {
-  try {
-    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-    const { sound } = await Audio.Sound.createAsync(BELL_ASSET, { shouldPlay: true });
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && status.didJustFinish) void sound.unloadAsync();
-    });
-  } catch {
-    Vibration.vibrate([0, 200, 100, 200]);
-  }
 }
 
 interface TimerWidgetProps {
@@ -55,7 +41,6 @@ export function TimerWidget({ initialDuration = 10 }: TimerWidgetProps) {
           if (prev <= 1) {
             if (intervalRef.current) clearInterval(intervalRef.current);
             setTimerState("completed");
-            void playBell();
             return 0;
           }
           return prev - 1;
