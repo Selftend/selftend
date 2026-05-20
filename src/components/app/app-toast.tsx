@@ -40,8 +40,7 @@ export function AppToast() {
   return (
     <View
       className="absolute inset-x-0 z-[80] items-center px-4"
-      pointerEvents="box-none"
-      style={{ top: insets.top + 12 }}
+      style={{ pointerEvents: "box-none", top: insets.top + 12 }}
     >
       <Pressable
         accessibilityHint={t("toast.dismissHint")}

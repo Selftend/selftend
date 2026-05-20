@@ -44,7 +44,6 @@ export function WidgetCard({
   const translateY = useSharedValue(0);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
-  const zIndex = useSharedValue(0);
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [
@@ -52,14 +51,12 @@ export function WidgetCard({
       { translateY: translateY.value },
       { scale: scale.value },
     ],
-    zIndex: zIndex.value,
   }));
 
   useEffect(() => {
     if (reduceMotionEnabled) return;
     scale.value = withSpring(1, { damping: 18, stiffness: 180 });
-    zIndex.value = 0;
-  }, [reduceMotionEnabled, scale, zIndex]);
+  }, [reduceMotionEnabled, scale]);
 
   function animateRemove() {
     if (reduceMotionEnabled) {
@@ -90,41 +87,41 @@ export function WidgetCard({
 
   return (
     <Animated.View
-      className={editMode ? "pr-9" : undefined}
       entering={reduceMotionEnabled ? undefined : FadeIn.duration(160)}
       layout={
         reduceMotionEnabled
           ? undefined
           : LinearTransition.easing(Easing.out(Easing.ease)).duration(200)
       }
-      style={animatedStyle}
     >
-      {children}
-      {editMode ? (
-        <View className="absolute -right-3 top-2 gap-1">
-          <WidgetBadge
-            accessibilityLabel={t("today.dashboard.removeWidget", { title })}
-            icon="close"
-            onPress={animateRemove}
-            reduceMotionEnabled={reduceMotionEnabled}
-            tone="destructive"
-          />
-          <WidgetBadge
-            accessibilityLabel={t("today.dashboard.moveWidgetUp", { title })}
-            disabled={!canMoveUp}
-            icon="keyboard-arrow-up"
-            onPress={() => animateMove(onMoveUp)}
-            reduceMotionEnabled={reduceMotionEnabled}
-          />
-          <WidgetBadge
-            accessibilityLabel={t("today.dashboard.moveWidgetDown", { title })}
-            disabled={!canMoveDown}
-            icon="keyboard-arrow-down"
-            onPress={() => animateMove(onMoveDown)}
-            reduceMotionEnabled={reduceMotionEnabled}
-          />
-        </View>
-      ) : null}
+      <Animated.View className={editMode ? "pr-9" : undefined} style={animatedStyle}>
+        {children}
+        {editMode ? (
+          <View className="absolute -right-3 top-2 gap-1">
+            <WidgetBadge
+              accessibilityLabel={t("today.dashboard.removeWidget", { title })}
+              icon="close"
+              onPress={animateRemove}
+              reduceMotionEnabled={reduceMotionEnabled}
+              tone="destructive"
+            />
+            <WidgetBadge
+              accessibilityLabel={t("today.dashboard.moveWidgetUp", { title })}
+              disabled={!canMoveUp}
+              icon="keyboard-arrow-up"
+              onPress={() => animateMove(onMoveUp)}
+              reduceMotionEnabled={reduceMotionEnabled}
+            />
+            <WidgetBadge
+              accessibilityLabel={t("today.dashboard.moveWidgetDown", { title })}
+              disabled={!canMoveDown}
+              icon="keyboard-arrow-down"
+              onPress={() => animateMove(onMoveDown)}
+              reduceMotionEnabled={reduceMotionEnabled}
+            />
+          </View>
+        ) : null}
+      </Animated.View>
     </Animated.View>
   );
 }

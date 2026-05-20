@@ -1,5 +1,4 @@
 import { Platform } from "react-native";
-import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import {
   deleteWebPushSubscription,
@@ -14,6 +13,8 @@ const REMINDER_TARGETS: ReminderTarget[] = ["cbt", "meditation", "act"];
 const REMINDER_KEY_PREFIX = "selftend:reminder-id:";
 const LEGACY_CBT_REMINDER_KEY = "selftend:cbt-reminder-id";
 const WEB_PUSH_WORKER_PATH = "/selftend-push-worker.js";
+type NotificationsModule = typeof import("expo-notifications");
+let notificationsModule: NotificationsModule | null = null;
 
 export type ReminderScheduleFailureReason =
   | "missing-user"
@@ -27,14 +28,30 @@ export type ReminderScheduleResult =
   | { enabled: true }
   | { enabled: false; reason: ReminderScheduleFailureReason };
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowList: true,
-  }),
-});
+function getNativeNotifications() {
+  if (Platform.OS === "web") {
+    return null;
+  }
+
+  if (!notificationsModule) {
+    // Lazy-load on native only; the web module registers a push-token listener at import time.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Notifications = require("expo-notifications") as NotificationsModule;
+
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+        shouldShowList: true,
+      }),
+    });
+
+    notificationsModule = Notifications;
+  }
+
+  return notificationsModule;
+}
 
 function reminderStorageKey(target: ReminderTarget) {
   return `${REMINDER_KEY_PREFIX}${target}`;
@@ -226,6 +243,11 @@ export async function ensureReminderPermission() {
     return false;
   }
 
+  const Notifications = await getNativeNotifications();
+  if (!Notifications) {
+    return false;
+  }
+
   const permissions = await Notifications.getPermissionsAsync();
   if (permissions.granted) {
     return true;
@@ -239,6 +261,11 @@ export async function cancelReminder(target: ReminderTarget, userId?: string | n
   if (Platform.OS === "web") {
     // Web subscription is shared across targets and gated server-side by
     // each target's *_reminders_enabled flag. Nothing to do here.
+    return;
+  }
+
+  const Notifications = await getNativeNotifications();
+  if (!Notifications) {
     return;
   }
 
@@ -257,6 +284,11 @@ export async function scheduleReminder(
 ): Promise<ReminderScheduleResult> {
   if (Platform.OS === "web") {
     return ensureWebPushSubscription(userId);
+  }
+
+  const Notifications = await getNativeNotifications();
+  if (!Notifications) {
+    return { enabled: false, reason: "unsupported" };
   }
 
   const granted = await ensureReminderPermission();

@@ -1,7 +1,6 @@
 import { router } from "expo-router";
-import { Audio } from "expo-av";
 import { useEffect, useRef, useState } from "react";
-import { PanResponder, Pressable, TextInput, View } from "react-native";
+import { Image, PanResponder, Platform, Pressable, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -24,6 +23,9 @@ const BAR_MAX_H = 72;
 const BAR_MIN_H = 3;
 // Sigma in bar-units: how quickly bars shrink away from center
 const SIGMA = 4.5;
+const bellSound = require("@/assets/sounds/bell.wav");
+let nativeAudioModeConfigured = false;
+type ExpoAvModule = typeof import("expo-av");
 
 function clampDuration(value: number): number {
   return Math.max(MIN_TIMER_DURATION_MINUTES, Math.min(MAX_TIMER_DURATION_MINUTES, value));
@@ -42,8 +44,22 @@ function formatTime(seconds: number) {
 
 async function playBell() {
   try {
-    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-    const { sound } = await Audio.Sound.createAsync(require("@/assets/sounds/bell.wav"));
+    if (Platform.OS === "web") {
+      const source = Image.resolveAssetSource(bellSound);
+      const audio = new window.Audio(source.uri);
+      await audio.play();
+      return;
+    }
+
+    // Keep expo-av out of the web startup path; native still uses it until the expo-audio migration.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { Audio } = require("expo-av") as ExpoAvModule;
+    if (!nativeAudioModeConfigured) {
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      nativeAudioModeConfigured = true;
+    }
+
+    const { sound } = await Audio.Sound.createAsync(bellSound);
     await sound.playAsync();
     sound.setOnPlaybackStatusUpdate((status) => {
       if (status.isLoaded && status.didJustFinish) sound.unloadAsync();

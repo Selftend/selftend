@@ -403,8 +403,14 @@ function PillarPane({
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         locations={[0, 0.55]}
-        pointerEvents="none"
-        style={{ position: "absolute", left: 0, right: 0, top: 0, height: 280 }}
+        style={{
+          height: 280,
+          left: 0,
+          pointerEvents: "none",
+          position: "absolute",
+          right: 0,
+          top: 0,
+        }}
       />
       <View className="flex-row items-start gap-4">
         <View

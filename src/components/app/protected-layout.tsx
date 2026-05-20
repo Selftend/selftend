@@ -136,13 +136,13 @@ export default function ProtectedLayout() {
             <Stack.Screen name="modules/cbt/anger/[id]" />
             <Stack.Screen name="modules/cbt/self-care" />
             <Stack.Screen name="modules/cbt/recovery" />
-            <Stack.Screen name="modules/act" />
+            <Stack.Screen name="modules/act/index" />
             <Stack.Screen name="modules/dbt" />
             <Stack.Screen name="tools/index" />
-            <Stack.Screen name="tools/mood-tracker" />
-            <Stack.Screen name="tools/meditation" />
+            <Stack.Screen name="tools/mood-tracker/index" />
+            <Stack.Screen name="tools/meditation/index" />
             <Stack.Screen name="tools/act" />
-            <Stack.Screen name="tools/gratitude-log" />
+            <Stack.Screen name="tools/gratitude-log/index" />
             <Stack.Screen name="history" />
             <Stack.Screen name="support" />
             <Stack.Screen name="legal" />
