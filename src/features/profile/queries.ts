@@ -5,6 +5,7 @@ import {
   getOrSyncUserProfile,
   removeUserAvatar,
   resetUserAvatarToOAuth,
+  updateUserDisplayName,
   uploadUserAvatar,
   type AvatarUploadInput,
 } from "@/src/features/profile/repository";
@@ -62,6 +63,21 @@ export function useRemoveUserAvatar(userId: string | null) {
   return useMutation({
     mutationFn: (previousStoragePath?: string | null) =>
       removeUserAvatar(userId!, previousStoragePath),
+    onSuccess: async () => {
+      if (!userId) {
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: profileKeys.detail(userId) });
+    },
+  });
+}
+
+export function useUpdateUserDisplayName(userId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (displayName: string) => updateUserDisplayName(userId!, displayName),
     onSuccess: async () => {
       if (!userId) {
         return;

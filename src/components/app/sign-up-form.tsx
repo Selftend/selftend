@@ -16,7 +16,11 @@ import {
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { signInWithGoogle, signUpWithPassword } from "@/src/features/auth/api";
+import {
+  EMAIL_ALREADY_EXISTS_ERROR,
+  signInWithGoogle,
+  signUpWithPassword,
+} from "@/src/features/auth/api";
 import { signUpSchema, type SignUpSchema } from "@/src/features/auth/schemas";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { useSession } from "@/src/providers/session-provider";
@@ -27,6 +31,7 @@ export function SignUpForm() {
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
   const {
@@ -34,7 +39,7 @@ export function SignUpForm() {
     formState: { errors, isSubmitting },
     handleSubmit,
   } = useForm<SignUpSchema>({
-    defaultValues: { email: "", password: "", confirmPassword: "" },
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
     resolver: zodResolver(signUpSchema),
   });
 
@@ -55,15 +60,19 @@ export function SignUpForm() {
     }
   };
 
-  const onSubmit = handleSubmit(async ({ email, password }) => {
+  const onSubmit = handleSubmit(async ({ name, email, password }) => {
     try {
       setSubmitError("");
-      await signUpWithPassword(email, password);
+      await signUpWithPassword(email, password, name);
       recordSuccess();
       router.replace({ pathname: "/(auth)/verify-email", params: { email } });
     } catch (error) {
       recordFailure(error);
-      setSubmitError(error instanceof Error ? error.message : t("signUp.error"));
+      if (error instanceof Error && error.message === EMAIL_ALREADY_EXISTS_ERROR) {
+        setSubmitError(t("signUp.emailAlreadyExists"));
+      } else {
+        setSubmitError(error instanceof Error ? error.message : t("signUp.error"));
+      }
     }
   });
 
@@ -76,11 +85,35 @@ export function SignUpForm() {
       <CardContent className="gap-4">
         <Controller
           control={control}
+          name="name"
+          render={({ field: { onBlur, onChange, value } }) => (
+            <View className="gap-2">
+              <Label>{t("signUp.name")}</Label>
+              <Input
+                autoCapitalize="words"
+                autoCorrect={false}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                onSubmitEditing={() => emailRef.current?.focus()}
+                placeholder={t("signUp.namePlaceholder")}
+                returnKeyType="next"
+                value={value}
+              />
+              {errors.name?.message ? (
+                <Text className="text-sm text-destructive">{errors.name.message}</Text>
+              ) : null}
+            </View>
+          )}
+        />
+
+        <Controller
+          control={control}
           name="email"
           render={({ field: { onBlur, onChange, value } }) => (
             <View className="gap-2">
               <Label>{t("signUp.email")}</Label>
               <Input
+                ref={emailRef}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"

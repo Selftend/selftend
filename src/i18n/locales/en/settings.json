@@ -12,8 +12,14 @@
     "bulgarian": "Български"
   },
   "profile": {
-    "title": "Profile picture",
-    "description": "Used on your signed-in account surfaces. You can restore your Google photo after choosing or removing a custom photo.",
+    "title": "Profile",
+    "description": "Your display name and profile picture. You can restore your Google photo after choosing or removing a custom photo.",
+    "name": "Display name",
+    "namePlaceholder": "Your name (optional)",
+    "saveName": "Save name",
+    "savingName": "Saving...",
+    "nameSaved": "Display name saved.",
+    "nameError": "Unable to save display name.",
     "add": "Add picture",
     "change": "Change photo",
     "uploading": "Uploading...",

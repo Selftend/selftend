@@ -113,6 +113,7 @@ describe("ProtectedLayout app onboarding", () => {
     mockUseUpdateUserPreferences.mockReturnValue({
       isError: false,
       isPending: false,
+      mutate: jest.fn(),
       mutateAsync,
     } as unknown as ReturnType<typeof useUpdateUserPreferences>);
     mockUseUserPreferences.mockReturnValue({

@@ -23,6 +23,11 @@ export type SignInSchema = z.infer<typeof signInSchema>;
 
 export const signUpSchema = z
   .object({
+    name: z
+      .string()
+      .trim()
+      .max(100, { message: "Name must be 100 characters or fewer." })
+      .optional(),
     email: emailField,
     password: newPasswordField,
     confirmPassword: z.string().min(1, { message: "Confirm your password." }),

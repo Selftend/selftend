@@ -13,7 +13,7 @@ import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import { useLanguageSync } from "@/src/features/settings/use-language-sync";
+import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useSession } from "@/src/providers/session-provider";
 
 const appOnboardingImage = require("../../../assets/images/onboarding/app-journey-growth-badge.png");
@@ -28,7 +28,7 @@ export default function ProtectedLayout() {
   const [consentDismissed, setConsentDismissed] = useState(false);
   const pathname = usePathname();
 
-  useLanguageSync(user?.id ?? null, preferences);
+  useSettingsSync(user?.id ?? null, preferences);
 
   if (status === "loading") {
     return (

@@ -5,12 +5,14 @@ import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Area } from "react-easy-crop";
 import { useTranslation } from "react-i18next";
 
 import { ProfileAvatar } from "@/src/components/app/profile-avatar";
 import { Button } from "@/src/components/react-native-reusables/button";
+import { Input } from "@/src/components/react-native-reusables/input";
+import { Label } from "@/src/components/react-native-reusables/label";
 import { DeleteAccountModal } from "@/src/components/app/delete-account-modal";
 import {
   Card,
@@ -26,6 +28,7 @@ import { mergeUserPreferences } from "@/src/features/modules/types";
 import {
   useRemoveUserAvatar,
   useResetUserAvatarToOAuth,
+  useUpdateUserDisplayName,
   useUploadUserAvatar,
   useUserProfile,
 } from "@/src/features/profile/queries";
@@ -242,9 +245,17 @@ function ProfilePictureCard({ user }: { user: User | null }) {
   const uploadMutation = useUploadUserAvatar(user?.id ?? null);
   const resetMutation = useResetUserAvatarToOAuth(user);
   const removeMutation = useRemoveUserAvatar(user?.id ?? null);
+  const updateNameMutation = useUpdateUserDisplayName(user?.id ?? null);
+  const [nameValue, setNameValue] = useState("");
+  const [nameMessage, setNameMessage] = useState("");
+  const [nameError, setNameError] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [cropUri, setCropUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    setNameValue(profile?.displayName ?? "");
+  }, [profile?.displayName]);
 
   const googleAvatarUrl = getOAuthAvatarUrl(user);
   const isPending = uploadMutation.isPending || resetMutation.isPending || removeMutation.isPending;
@@ -380,6 +391,17 @@ function ProfilePictureCard({ user }: { user: User | null }) {
     }
   };
 
+  const saveName = async () => {
+    try {
+      setNameMessage("");
+      setNameError("");
+      await updateNameMutation.mutateAsync(nameValue);
+      setNameMessage(t("profile.nameSaved"));
+    } catch (nameErr) {
+      setNameError(getErrorMessage(nameErr, t("profile.nameError")));
+    }
+  };
+
   return (
     <>
       <Card>
@@ -396,8 +418,40 @@ function ProfilePictureCard({ user }: { user: User | null }) {
                 email={user?.email}
               />
               <View className="flex-1 gap-1">
-                <Text numberOfLines={1}>{user?.email ?? t("account.signedIn")}</Text>
+                {profile?.displayName ? <Text numberOfLines={1}>{profile.displayName}</Text> : null}
+                <Text
+                  numberOfLines={1}
+                  className={profile?.displayName ? "text-sm text-muted-foreground" : undefined}
+                >
+                  {user?.email ?? t("account.signedIn")}
+                </Text>
               </View>
+            </View>
+
+            <View className="gap-2">
+              <Label>{t("profile.name")}</Label>
+              <Input
+                value={nameValue}
+                onChangeText={setNameValue}
+                placeholder={t("profile.namePlaceholder")}
+                maxLength={100}
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+              <Button
+                disabled={updateNameMutation.isPending}
+                onPress={() => void saveName()}
+                variant="secondary"
+              >
+                {updateNameMutation.isPending ? <ActivityIndicator /> : null}
+                <Text>
+                  {updateNameMutation.isPending ? t("profile.savingName") : t("profile.saveName")}
+                </Text>
+              </Button>
+              {nameMessage ? (
+                <Text className="text-sm text-muted-foreground">{nameMessage}</Text>
+              ) : null}
+              {nameError ? <Text className="text-sm text-destructive">{nameError}</Text> : null}
             </View>
 
             <View className="flex-row flex-wrap gap-3">

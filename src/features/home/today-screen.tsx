@@ -8,6 +8,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useDeletePlanItem, usePlanItems, useSavePlanItem } from "@/src/features/plan/queries";
 import type { CarePlanItem } from "@/src/features/plan/types";
+import { useUserProfile } from "@/src/features/profile/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
 import { WidgetCard } from "@/src/features/home/widget-card";
@@ -19,7 +20,7 @@ function pickGreetingKey(hour: number) {
   return "today.greetingEvening";
 }
 
-function getDisplayName(user: { user_metadata?: Record<string, unknown> } | null) {
+function getMetaName(user: { user_metadata?: Record<string, unknown> } | null) {
   if (!user) return null;
   const metadata = user.user_metadata ?? {};
   const fullName = typeof metadata.full_name === "string" ? metadata.full_name : null;
@@ -32,6 +33,7 @@ function getDisplayName(user: { user_metadata?: Record<string, unknown> } | null
 export default function HomeScreen() {
   const { t, i18n } = useTranslation("navigation");
   const { user } = useSession();
+  const { data: profile } = useUserProfile(user);
   const [editMode, setEditMode] = useState(false);
   const [addVisible, setAddVisible] = useState(false);
   const [displayedItems, setDisplayedItems] = useState<CarePlanItem[] | null>(null);
@@ -45,7 +47,7 @@ export default function HomeScreen() {
   }).format(today);
 
   const greeting = t(pickGreetingKey(hour));
-  const displayName = getDisplayName(user);
+  const displayName = profile?.displayName?.trim().split(/\s+/)[0] ?? getMetaName(user);
   const greetingLine = displayName
     ? t("today.greetingWithName", { greeting, name: displayName })
     : t("today.greetingPlain", { greeting });

@@ -81,17 +81,27 @@ export async function signInWithPassword(email: string, password: string) {
   }
 }
 
-export async function signUpWithPassword(email: string, password: string) {
+export const EMAIL_ALREADY_EXISTS_ERROR = "EMAIL_ALREADY_EXISTS";
+
+export async function signUpWithPassword(email: string, password: string, name?: string) {
   const client = requireSupabase();
+  const trimmedName = name?.trim();
   const { data, error } = await client.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: getEmailRedirectUrl(),
+      ...(trimmedName ? { data: { full_name: trimmedName } } : {}),
     },
   });
   if (error) {
     throw error;
+  }
+
+  // When email enumeration protection is on, Supabase silently succeeds for
+  // existing accounts — identities will be empty instead of throwing an error.
+  if (data.user && data.user.identities?.length === 0) {
+    throw new Error(EMAIL_ALREADY_EXISTS_ERROR);
   }
 
   return data;

@@ -22,7 +22,3 @@ body:
     attributes:
       label: Acceptance criteria
       description: Optional. What should be true when this is done?
-      value: |
-        - [ ]
-        - [ ]
-        - [ ]

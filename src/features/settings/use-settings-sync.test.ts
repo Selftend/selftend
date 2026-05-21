@@ -1,0 +1,168 @@
+import { act, renderHook } from "@testing-library/react-native";
+
+import { defaultUserPreferences, type UserPreferences } from "@/src/features/modules/types";
+import { useUpdateUserPreferences } from "@/src/features/settings/queries";
+import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
+import { useLanguage } from "@/src/providers/i18n-provider";
+import { isThemePreference, useThemeStore } from "@/src/stores/theme-store";
+
+jest.mock("@/src/providers/i18n-provider", () => ({
+  useLanguage: jest.fn(),
+}));
+
+jest.mock("@/src/features/settings/queries", () => ({
+  useUpdateUserPreferences: jest.fn(),
+}));
+
+jest.mock("@/src/stores/theme-store", () => ({
+  useThemeStore: jest.fn(),
+  isThemePreference: (v: unknown) => v === "light" || v === "dark" || v === "system",
+}));
+
+const mockUseLanguage = useLanguage as jest.MockedFunction<typeof useLanguage>;
+const mockUseThemeStore = useThemeStore as jest.MockedFunction<typeof useThemeStore>;
+const mockIsThemePreference = isThemePreference as jest.MockedFunction<typeof isThemePreference>;
+const mockUseUpdatePreferences = useUpdateUserPreferences as jest.MockedFunction<
+  typeof useUpdateUserPreferences
+>;
+
+void mockIsThemePreference;
+
+function makePreferences(overrides: Partial<UserPreferences> = {}): UserPreferences {
+  return { ...defaultUserPreferences, ...overrides };
+}
+
+type ContextState = {
+  language?: "en" | "bg";
+  hydrated?: boolean;
+  theme?: "system" | "light" | "dark";
+};
+
+const mutate = jest.fn();
+const setLanguage = jest.fn().mockResolvedValue(undefined);
+const setThemePreference = jest.fn();
+
+function mockContexts({ language = "en", hydrated = true, theme = "system" }: ContextState = {}) {
+  mockUseLanguage.mockReturnValue({ language, setLanguage, hydrated });
+  mockUseThemeStore.mockImplementation((selector: (s: any) => unknown) =>
+    selector({ preference: theme, setPreference: setThemePreference, hydrate: jest.fn() }),
+  );
+}
+
+describe("useSettingsSync", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseUpdatePreferences.mockReturnValue({
+      mutate,
+    } as unknown as ReturnType<typeof useUpdateUserPreferences>);
+  });
+
+  it("applies DB language over local on first login", () => {
+    mockContexts({ language: "en" });
+    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "bg" })));
+    expect(setLanguage).toHaveBeenCalledWith("bg");
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it("applies DB theme over local on first login", () => {
+    mockContexts({ theme: "system" });
+    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "en", theme: "dark" })));
+    expect(setThemePreference).toHaveBeenCalledWith("dark");
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it("applies DB values even when local storage already had a different value", () => {
+    mockContexts({ language: "bg", theme: "light" });
+    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "en", theme: "dark" })));
+    expect(setLanguage).toHaveBeenCalledWith("en");
+    expect(setThemePreference).toHaveBeenCalledWith("dark");
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it("does not update when DB and local values already match", () => {
+    mockContexts({ language: "bg", theme: "dark" });
+    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "bg", theme: "dark" })));
+    expect(setLanguage).not.toHaveBeenCalled();
+    expect(setThemePreference).not.toHaveBeenCalled();
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it("does not overwrite local theme when DB has no theme saved yet", () => {
+    mockContexts({ language: "en", theme: "dark" });
+    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "en", theme: null })));
+    // Local theme is preserved — DB null does not reset it to system.
+    expect(setThemePreference).not.toHaveBeenCalled();
+    // Local theme is pushed to DB to save it for the first time.
+    expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ theme: "dark" }));
+  });
+
+  it("ignores unsupported DB language values", () => {
+    mockContexts({ language: "en" });
+    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "xx" })));
+    expect(setLanguage).not.toHaveBeenCalled();
+  });
+
+  it("does nothing until the i18n provider has hydrated", () => {
+    mockContexts({ language: "en", hydrated: false });
+    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "bg", theme: "dark" })));
+    expect(setLanguage).not.toHaveBeenCalled();
+    expect(setThemePreference).not.toHaveBeenCalled();
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it("pushes local language change to DB after initial sync", () => {
+    const preferences = makePreferences({ language: "en", theme: "system" });
+    const { rerender } = renderHook(
+      ({ lang }: { lang: "en" | "bg" }) => {
+        mockContexts({ language: lang });
+        return useSettingsSync("user-1", preferences);
+      },
+      { initialProps: { lang: "en" } },
+    );
+
+    expect(mutate).not.toHaveBeenCalled();
+
+    act(() => {
+      rerender({ lang: "bg" });
+    });
+
+    expect(mutate).toHaveBeenCalledTimes(1);
+    expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ language: "bg" }));
+  });
+
+  it("pushes local theme change to DB after initial sync", () => {
+    const preferences = makePreferences({ language: "en", theme: "system" });
+    const { rerender } = renderHook(
+      ({ theme }: { theme: "system" | "light" | "dark" }) => {
+        mockContexts({ theme });
+        return useSettingsSync("user-1", preferences);
+      },
+      { initialProps: { theme: "system" as const } },
+    );
+
+    expect(mutate).not.toHaveBeenCalled();
+
+    act(() => {
+      rerender({ theme: "dark" });
+    });
+
+    expect(mutate).toHaveBeenCalledTimes(1);
+    expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ theme: "dark" }));
+  });
+
+  it("does not push when the user is signed out", () => {
+    const { rerender } = renderHook(
+      ({ lang }: { lang: "en" | "bg" }) => {
+        mockContexts({ language: lang });
+        return useSettingsSync(null, makePreferences({ language: "en" }));
+      },
+      { initialProps: { lang: "en" } },
+    );
+
+    act(() => {
+      rerender({ lang: "bg" });
+    });
+
+    expect(mutate).not.toHaveBeenCalled();
+  });
+});

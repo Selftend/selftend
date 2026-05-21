@@ -45,6 +45,7 @@ export interface UserPreferences {
   policyVersionAccepted: string | null;
   cookieConsent: CookieConsent | null;
   language: string;
+  theme: string | null;
   selectedConcerns: string[];
   activeStrategies: string[];
   shownButtonTours: ButtonTourKey[];
@@ -85,6 +86,7 @@ export const defaultUserPreferences: UserPreferences = {
   policyVersionAccepted: null,
   cookieConsent: null,
   language: "en",
+  theme: null,
   selectedConcerns: [],
   activeStrategies: [],
   shownButtonTours: [],

@@ -11,7 +11,7 @@ interface ThemeState {
   hydrate: () => Promise<void>;
 }
 
-function isThemePreference(value: unknown): value is ThemePreference {
+export function isThemePreference(value: unknown): value is ThemePreference {
   return value === "light" || value === "dark" || value === "system";
 }
 

@@ -45,6 +45,7 @@ interface UserPreferenceRow {
   policy_version_accepted: string | null;
   cookie_consent: CookieConsent | null;
   language: string | null;
+  theme: string | null;
   selected_concerns: string[] | null;
   active_strategies: string[] | null;
   shown_button_tours: string[] | null;
@@ -93,6 +94,7 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     policyVersionAccepted: row.policy_version_accepted ?? null,
     cookieConsent: row.cookie_consent ?? null,
     language: row.language ?? defaultUserPreferences.language,
+    theme: row.theme ?? null,
     selectedConcerns: row.selected_concerns ?? [],
     activeStrategies: row.active_strategies ?? [],
     shownButtonTours: (row.shown_button_tours ?? []) as ButtonTourKey[],
@@ -175,6 +177,7 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     policy_version_accepted: preferences.policyVersionAccepted,
     cookie_consent: preferences.cookieConsent,
     language: preferences.language,
+    theme: preferences.theme,
     selected_concerns: preferences.selectedConcerns,
     active_strategies: preferences.activeStrategies,
     shown_button_tours: preferences.shownButtonTours,

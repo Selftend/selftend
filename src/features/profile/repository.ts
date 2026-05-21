@@ -10,6 +10,7 @@ export type AvatarSource = "oauth" | "upload" | "none";
 interface ProfileRow {
   user_id: string;
   email: string | null;
+  display_name: string | null;
   avatar_url: string | null;
   avatar_storage_path: string | null;
   avatar_source: AvatarSource | null;
@@ -21,6 +22,7 @@ interface ProfileRow {
 export interface UserProfile {
   userId: string;
   email: string | null;
+  displayName: string | null;
   avatarUrl: string | null;
   avatarStoragePath: string | null;
   avatarSource: AvatarSource | null;
@@ -68,6 +70,16 @@ function getErrorMessage(error: unknown) {
   }
 
   return "";
+}
+
+function isMissingDisplayNameColumn(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const maybeError = error as { code?: unknown; message?: unknown };
+  return (
+    maybeError.code === "PGRST204" &&
+    typeof maybeError.message === "string" &&
+    maybeError.message.includes("display_name")
+  );
 }
 
 function getAvatarSetupError(error: unknown) {
@@ -128,6 +140,7 @@ function toUserProfile(row: ProfileRow, avatarUrl: string | null): UserProfile {
   return {
     userId: row.user_id,
     email: row.email,
+    displayName: row.display_name,
     avatarUrl,
     avatarStoragePath: row.avatar_storage_path,
     avatarSource: row.avatar_source,
@@ -262,13 +275,17 @@ export async function getOrSyncUserProfile(user: User) {
   const row = data as ProfileRow | null;
   const next = buildSyncedProfileFields(row, user.email ?? null, getOAuthAvatarUrl(user), now);
 
-  if (!row || hasProfileFieldChanges(row, next)) {
+  const metaName = getStringMetadataValue(user.user_metadata, "full_name");
+  const shouldSyncName = Boolean(metaName && !row?.display_name);
+
+  if (!row || hasProfileFieldChanges(row, next) || shouldSyncName) {
     const { data: updatedRow, error: updateError } = await client
       .from("profiles")
       .upsert(
         {
           user_id: user.id,
           ...next,
+          ...(shouldSyncName ? { display_name: metaName } : {}),
         },
         { onConflict: "user_id" },
       )
@@ -276,6 +293,16 @@ export async function getOrSyncUserProfile(user: User) {
       .single();
 
     if (updateError) {
+      if (isMissingDisplayNameColumn(updateError)) {
+        const { data: fallbackRow, error: fallbackError } = await client
+          .from("profiles")
+          .upsert({ user_id: user.id, ...next }, { onConflict: "user_id" })
+          .select("*")
+          .single();
+
+        if (fallbackError) throw getAvatarSetupError(fallbackError);
+        return mapProfileRow(fallbackRow as ProfileRow);
+      }
       throw getAvatarSetupError(updateError);
     }
 
@@ -405,6 +432,29 @@ export async function removeUserAvatar(userId: string, previousStoragePath?: str
   }
 
   await removeStoredAvatar(previousStoragePath);
+  return mapProfileRow(data as ProfileRow);
+}
+
+export async function updateUserDisplayName(userId: string, displayName: string) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("profiles")
+    .upsert(
+      { user_id: userId, display_name: displayName.trim() || null },
+      { onConflict: "user_id" },
+    )
+    .select("*")
+    .single();
+
+  if (error) {
+    if (isMissingDisplayNameColumn(error)) {
+      throw new Error(
+        "Display name is not available yet. Run the latest database migration to enable this feature.",
+      );
+    }
+    throw error;
+  }
+
   return mapProfileRow(data as ProfileRow);
 }
 

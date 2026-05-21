@@ -10,15 +10,12 @@ interface I18nContextValue {
   setLanguage: (lang: SupportedLanguage) => Promise<void>;
   /** True after the AsyncStorage hydration step has completed. */
   hydrated: boolean;
-  /** True if AsyncStorage held a stored language at hydration time. */
-  hasStoredLanguage: boolean;
 }
 
 const I18nContext = createContext<I18nContextValue>({
   language: "en",
   setLanguage: async () => {},
   hydrated: false,
-  hasStoredLanguage: false,
 });
 
 export function useLanguage() {
@@ -28,7 +25,6 @@ export function useLanguage() {
 export function I18nProvider({ children }: PropsWithChildren) {
   const [language, setLanguageState] = useState<SupportedLanguage>("en");
   const [hydrated, setHydrated] = useState(false);
-  const [hasStoredLanguage, setHasStoredLanguage] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -39,7 +35,6 @@ export function I18nProvider({ children }: PropsWithChildren) {
           const lang = stored as SupportedLanguage;
           setLanguageState(lang);
           void i18n.changeLanguage(lang);
-          setHasStoredLanguage(true);
         }
       })
       .finally(() => {
@@ -54,11 +49,10 @@ export function I18nProvider({ children }: PropsWithChildren) {
     setLanguageState(lang);
     await i18n.changeLanguage(lang);
     await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
-    setHasStoredLanguage(true);
   };
 
   return (
-    <I18nContext.Provider value={{ language, setLanguage, hydrated, hasStoredLanguage }}>
+    <I18nContext.Provider value={{ language, setLanguage, hydrated }}>
       {children}
     </I18nContext.Provider>
   );

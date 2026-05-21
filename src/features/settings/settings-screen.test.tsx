@@ -87,6 +87,7 @@ jest.mock("@/src/features/auth/api", () => ({
 jest.mock("@/src/features/profile/queries", () => ({
   useRemoveUserAvatar: () => ({ isPending: false, mutateAsync: jest.fn() }),
   useResetUserAvatarToOAuth: () => ({ isPending: false, mutateAsync: jest.fn() }),
+  useUpdateUserDisplayName: () => ({ isPending: false, mutateAsync: jest.fn() }),
   useUploadUserAvatar: () => ({ isPending: false, mutateAsync: jest.fn() }),
   useUserProfile: () => ({ data: null, error: null }),
 }));
