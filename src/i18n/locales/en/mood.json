@@ -16,9 +16,27 @@
   "today": {
     "title": "Today",
     "pending": "No mood logged yet today.",
+    "howAreYou": "How are you feeling right now?",
     "completeOne": "Logged today · {{score}}",
     "completeMany": "{{count}} logs today · avg {{average}}",
     "logAnother": "Log another"
+  },
+  "emotions": {
+    "manage": {
+      "title": "Manage emotions",
+      "close": "Close",
+      "edit": "Edit emotion",
+      "emoji": "Emoji",
+      "name": "Name",
+      "namePlaceholder": "e.g. Joyful",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "custom": "Custom",
+      "addTitle": "New emotion",
+      "addButton": "Add emotion",
+      "add": "Add"
+    }
   },
   "sections": {
     "summary": "Summary",

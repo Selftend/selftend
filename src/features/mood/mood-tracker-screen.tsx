@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { ScrollView, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, View, type LayoutChangeEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -17,25 +17,26 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
+import { STEPS } from "@/src/components/app/mood-scale";
 import { MoodEntryCard } from "@/src/features/mood/mood-entry-card";
 import { buildMoodChartData } from "@/src/features/mood/chart-data";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { getMoodSummary, type MoodSummary } from "@/src/features/mood/summaries";
 import { useSession } from "@/src/providers/session-provider";
+import { cn } from "@/lib/utils";
 
 const RECENT_LIMIT = 10;
 const CHART_DAYS = 14;
-const CHART_HORIZONTAL_PADDING = 48; // p-6 on the ScrollView = 24px each side
 
 export default function MoodTrackerScreen() {
   const { t } = useTranslation("mood");
   const { user } = useSession();
-  const { width } = useWindowDimensions();
   const userId = user?.id ?? null;
 
   const { data: moodLogs } = useMoodLogs(userId, 30);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
+  const [chartContainerWidth, setChartContainerWidth] = useState(300);
 
   const today = getMoodSummary(moodLogs, 1);
   const sevenDay = getMoodSummary(moodLogs, 7);
@@ -43,7 +44,9 @@ export default function MoodTrackerScreen() {
   const chartData = buildMoodChartData(moodLogs, CHART_DAYS);
   const recent = moodLogs?.slice(0, RECENT_LIMIT) ?? [];
 
-  const chartWidth = Math.min(width, 720) - CHART_HORIZONTAL_PADDING;
+  const handleChartLayout = (e: LayoutChangeEvent) => {
+    setChartContainerWidth(e.nativeEvent.layout.width);
+  };
 
   return (
     <>
@@ -68,21 +71,7 @@ export default function MoodTrackerScreen() {
               </Text>
             </View>
 
-            <TodayCheckInCard
-              summary={today}
-              onLog={() => router.push("/tools/mood-tracker/new")}
-            />
-
-            {today.count > 0 ? (
-              <Button
-                onPress={() => router.push("/tools/mood-tracker/new")}
-                variant="outline"
-                className="self-start"
-              >
-                <Icon name="mood" className="size-4" />
-                <Text>{t("today.logAnother")}</Text>
-              </Button>
-            ) : null}
+            <TodayCheckInCard summary={today} />
 
             <View className="gap-3">
               <Text variant="h3">{t("sections.summary")}</Text>
@@ -99,11 +88,13 @@ export default function MoodTrackerScreen() {
                   <CardTitle>{t("trend.lastDays")}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {chartData.length > 0 ? (
-                    <MoodLineChart data={chartData} width={chartWidth} />
-                  ) : (
-                    <Text variant="muted">{t("trend.empty")}</Text>
-                  )}
+                  <View onLayout={handleChartLayout}>
+                    {chartData.length > 0 ? (
+                      <MoodLineChart data={chartData} width={chartContainerWidth} />
+                    ) : (
+                      <Text variant="muted">{t("trend.empty")}</Text>
+                    )}
+                  </View>
                 </CardContent>
               </Card>
             </View>
@@ -129,14 +120,13 @@ export default function MoodTrackerScreen() {
 
 interface TodayCheckInCardProps {
   summary: MoodSummary;
-  onLog: () => void;
 }
 
-function TodayCheckInCard({ summary, onLog }: TodayCheckInCardProps) {
+function TodayCheckInCard({ summary }: TodayCheckInCardProps) {
   const { t } = useTranslation("mood");
   const logged = summary.count > 0;
   const description = !logged
-    ? t("today.pending")
+    ? t("today.howAreYou")
     : summary.count === 1
       ? t("today.completeOne", { score: summary.average })
       : t("today.completeMany", { count: summary.count, average: summary.average });
@@ -150,14 +140,42 @@ function TodayCheckInCard({ summary, onLog }: TodayCheckInCardProps) {
         </View>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      {!logged ? (
-        <CardContent>
-          <Button onPress={onLog} className="self-start">
-            <Icon name="mood" className="size-4 text-primary-foreground" />
-            <Text>{t("cta.logMood")}</Text>
+      <CardContent>
+        <View className="flex-row gap-2">
+          {STEPS.map((step) => (
+            <Pressable
+              key={step.score}
+              accessibilityLabel={t(`scale.steps.${step.score}`)}
+              accessibilityRole="button"
+              onPress={() =>
+                router.push(
+                  `/tools/mood-tracker/new?score=${step.score}` as Parameters<
+                    typeof router.push
+                  >[0],
+                )
+              }
+              className={cn(
+                "min-w-10 flex-1 basis-10 items-center justify-center gap-1 rounded-2xl border-2 px-1 py-3",
+                `bg-card ${step.unselectedClass}`,
+              )}
+            >
+              <Text className="text-2xl">{step.emoji}</Text>
+              <Text className="text-xs font-semibold text-muted-foreground">{step.score}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {logged ? (
+          <Button
+            onPress={() => router.push("/tools/mood-tracker/new")}
+            variant="ghost"
+            size="sm"
+            className="mt-3 self-start"
+          >
+            <Icon name="add" className="size-4" />
+            <Text>{t("today.logAnother")}</Text>
           </Button>
-        </CardContent>
-      ) : null}
+        ) : null}
+      </CardContent>
     </Card>
   );
 }

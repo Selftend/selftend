@@ -14,4 +14,5 @@ export interface MoodInput {
   emotions: string[];
   notes: string;
   linkedStrategy: string | null;
+  loggedAt?: string; // ISO string; defaults to now if omitted
 }

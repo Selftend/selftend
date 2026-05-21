@@ -59,20 +59,18 @@ export async function deleteMoodLog(userId: string, id: string) {
 
 export async function saveMoodLog(userId: string, input: MoodInput, moodLogId?: string) {
   const client = requireSupabase();
+  const loggedAt = input.loggedAt ?? new Date().toISOString();
   const payload = {
     mood_score: input.moodScore,
     emotions: input.emotions,
     notes: input.notes.trim(),
     linked_strategy: input.linkedStrategy ?? null,
+    logged_at: loggedAt,
   };
 
   const query = moodLogId
     ? client.from("mood_logs").update(payload).eq("user_id", userId).eq("id", moodLogId)
-    : client.from("mood_logs").insert({
-        ...payload,
-        user_id: userId,
-        logged_at: new Date().toISOString(),
-      });
+    : client.from("mood_logs").insert({ ...payload, user_id: userId });
 
   const { data, error } = await query.select("*").single();
 

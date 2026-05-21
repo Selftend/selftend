@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
-import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
@@ -20,9 +19,12 @@ import { BackButton } from "@/src/components/app/back-button";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { MoodScale } from "@/src/components/app/mood-scale";
-import { emotionOptions } from "@/src/constants/emotions";
+import { DateTimeField } from "@/src/components/app/date-time-field";
+import { cn } from "@/lib/utils";
 import { useCompleteActivity } from "@/src/features/activities/queries";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
+import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
+import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import type { MoodLog } from "@/src/features/mood/types";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -42,13 +44,16 @@ export function MoodEntryEditorScreen({
   moodId = null,
 }: MoodEntryEditorScreenProps) {
   const { t } = useTranslation("cbt");
+  const { t: tMood } = useTranslation("mood");
   const { user } = useSession();
   const params = useLocalSearchParams<{
     completeActivityId?: string | string[];
     linkedStrategy?: string | string[];
+    score?: string | string[];
   }>();
   const linkedStrategy = paramValue(params.linkedStrategy) ?? null;
   const completeActivityId = paramValue(params.completeActivityId) ?? null;
+  const initialScore = paramValue(params.score) ? Number(paramValue(params.score)) : null;
 
   const { data: cachedList } = useMoodLogs(mode === "edit" ? (user?.id ?? null) : null, 30);
   const fromCache = moodId ? (cachedList?.find((log) => log.id === moodId) ?? null) : null;
@@ -60,12 +65,15 @@ export function MoodEntryEditorScreen({
 
   const saveMutation = useSaveMoodLog(user?.id ?? null);
   const completeActivityMutation = useCompleteActivity(user?.id ?? null);
-  const [moodScore, setMoodScore] = useState<number | null>(null);
+  const [moodScore, setMoodScore] = useState<number | null>(initialScore);
   const [emotions, setEmotions] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+  const [loggedAt, setLoggedAt] = useState<string>(new Date().toISOString());
   const [error, setError] = useState("");
+  const [manageEmotionsOpen, setManageEmotionsOpen] = useState(false);
   const editMode = mode === "edit";
   const saving = saveMutation.isPending || completeActivityMutation.isPending;
+  const { allEmotions } = useEmotionDisplay();
 
   useEffect(() => {
     if (!existingEntry) return;
@@ -73,6 +81,7 @@ export function MoodEntryEditorScreen({
     setMoodScore(existingEntry.moodScore);
     setEmotions(existingEntry.emotions);
     setNotes(existingEntry.notes);
+    setLoggedAt(existingEntry.loggedAt);
     setError("");
   }, [existingEntry]);
 
@@ -95,6 +104,7 @@ export function MoodEntryEditorScreen({
           emotions,
           notes,
           linkedStrategy: linkedStrategy ?? existingEntry?.linkedStrategy ?? null,
+          loggedAt,
         },
         moodLogId: editMode ? (moodId ?? undefined) : undefined,
       });
@@ -192,21 +202,59 @@ export function MoodEntryEditorScreen({
         ) : null}
 
         <View className="gap-3">
-          <Label>{t("mood.emotionsLabel")}</Label>
-          {emotionOptions.map((emotion) => {
-            const checked = emotions.includes(emotion);
-            const label = t(`emotions.${emotion.toLowerCase()}`);
-            return (
-              <View key={emotion} className="flex-row items-center gap-3">
-                <Checkbox
-                  accessibilityLabel={label}
-                  checked={checked}
-                  onCheckedChange={() => toggleEmotion(emotion)}
-                />
-                <Label onPress={() => toggleEmotion(emotion)}>{label}</Label>
-              </View>
-            );
-          })}
+          <View className="flex-row items-center justify-between">
+            <Label>{t("mood.emotionsLabel")}</Label>
+            <Pressable
+              onPress={() => setManageEmotionsOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={tMood("emotions.manage.title")}
+            >
+              <Text className="text-xs text-primary">{tMood("emotions.manage.title")}</Text>
+            </Pressable>
+          </View>
+          <View className="flex-row flex-wrap gap-2">
+            {allEmotions.map((emotion) => {
+              const selected = emotions.includes(emotion.id);
+              return (
+                <Pressable
+                  key={emotion.id}
+                  accessibilityLabel={emotion.name}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: selected }}
+                  onPress={() => toggleEmotion(emotion.id)}
+                  className={cn(
+                    "min-w-[72px] items-center gap-1 rounded-2xl border-2 px-2 py-2",
+                    selected ? "border-primary bg-primary/10" : "border-border bg-card",
+                  )}
+                >
+                  <Text className="text-2xl">{emotion.emoji}</Text>
+                  <Text
+                    className={cn(
+                      "text-center text-[11px]",
+                      selected ? "font-semibold text-primary" : "text-muted-foreground",
+                    )}
+                    numberOfLines={1}
+                  >
+                    {emotion.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        <ManageEmotionsModal
+          visible={manageEmotionsOpen}
+          onClose={() => setManageEmotionsOpen(false)}
+        />
+
+        <View className="gap-2">
+          <Label>{t("mood.loggedAtLabel")}</Label>
+          <DateTimeField
+            value={loggedAt}
+            onChange={setLoggedAt}
+            accessibilityLabel={t("mood.loggedAtLabel")}
+          />
         </View>
 
         <View className="gap-2">

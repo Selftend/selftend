@@ -174,6 +174,7 @@ describe("mood repository", () => {
       emotions: ["Joy"],
       notes: "Better after lunch",
       linked_strategy: "thoughts",
+      logged_at: expect.any(String),
     });
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
     expect(eqId).toHaveBeenCalledWith("id", "log-1");

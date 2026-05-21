@@ -130,7 +130,7 @@ export default function ThoughtRecordEditorScreen() {
   ];
 
   const wizard = useWizardDraft({
-    store: useCbtDraftStore,
+    useDraftStore: useCbtDraftStore,
     draftMode,
     entityId: recordId,
     stepFields: steps.map((s) => s.fields),

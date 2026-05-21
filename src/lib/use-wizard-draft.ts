@@ -8,7 +8,7 @@ import { useToastStore } from "@/src/stores/toast-store";
 export type WizardStoreHook<TForm> = UseBoundStore<StoreApi<WizardDraftStore<TForm>>>;
 
 interface UseWizardDraftArgs<TForm extends FieldValues, TSaved> {
-  store: WizardStoreHook<TForm>;
+  useDraftStore: WizardStoreHook<TForm>;
   draftMode: "create" | "edit";
   entityId: string | null;
   stepFields: readonly (readonly FieldPath<TForm>[])[];
@@ -34,7 +34,7 @@ interface UseWizardDraftReturn {
 }
 
 export function useWizardDraft<TForm extends FieldValues, TSaved>({
-  store,
+  useDraftStore,
   draftMode,
   entityId,
   stepFields,
@@ -44,13 +44,13 @@ export function useWizardDraft<TForm extends FieldValues, TSaved>({
   onError,
   toastLabels,
 }: UseWizardDraftArgs<TForm, TSaved>): UseWizardDraftReturn {
-  const rawStepIndex = store((state) => state.stepIndex);
-  const hydrate = store((state) => state.hydrate);
-  const nextStep = store((state) => state.nextStep);
-  const previousStep = store((state) => state.previousStep);
-  const reset = store((state) => state.reset);
-  const setValues = store((state) => state.setValues);
-  const setStepIndex = store((state) => state.setStepIndex);
+  const rawStepIndex = useDraftStore((state) => state.stepIndex);
+  const hydrate = useDraftStore((state) => state.hydrate);
+  const nextStep = useDraftStore((state) => state.nextStep);
+  const previousStep = useDraftStore((state) => state.previousStep);
+  const reset = useDraftStore((state) => state.reset);
+  const setValues = useDraftStore((state) => state.setValues);
+  const setStepIndex = useDraftStore((state) => state.setStepIndex);
   const showToast = useToastStore((state) => state.showToast);
 
   useEffect(() => {

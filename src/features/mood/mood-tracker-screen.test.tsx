@@ -44,8 +44,8 @@ describe("MoodTrackerScreen", () => {
     renderWithProviders(<MoodTrackerScreen />);
 
     expect(screen.getByText("Mood tracker")).toBeTruthy();
-    expect(screen.getByText("No mood logged yet today.")).toBeTruthy();
-    expect(screen.getByText("Log mood")).toBeTruthy();
+    expect(screen.getByText("How are you feeling right now?")).toBeTruthy();
+    expect(screen.getByLabelText("3, neutral")).toBeTruthy();
     expect(screen.getByText("Log a mood to start your 14-day trend.")).toBeTruthy();
     expect(
       screen.getByText('Nothing logged yet. Tap "Log mood" to add your first entry.'),
@@ -123,8 +123,8 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    fireEvent.press(screen.getByText("Log mood"));
+    fireEvent.press(screen.getByLabelText("3, neutral"));
 
-    expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/new");
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/new?score=3");
   });
 });

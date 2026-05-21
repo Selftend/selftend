@@ -125,7 +125,7 @@ export default function NewBeliefScreen() {
   ];
 
   const wizard = useWizardDraft({
-    store: useBeliefDraftStore,
+    useDraftStore: useBeliefDraftStore,
     draftMode,
     entityId: beliefId,
     stepFields: steps.map((s) => s.fields),

@@ -16,9 +16,27 @@
   "today": {
     "title": "Днес",
     "pending": "Все още няма запис на настроението за днес.",
+    "howAreYou": "Как се чувстваш в момента?",
     "completeOne": "Записано днес · {{score}}",
     "completeMany": "{{count}} записа днес · средно {{average}}",
     "logAnother": "Запиши още един"
+  },
+  "emotions": {
+    "manage": {
+      "title": "Управление на емоции",
+      "close": "Затвори",
+      "edit": "Редактирай емоция",
+      "emoji": "Емоджи",
+      "name": "Наименование",
+      "namePlaceholder": "напр. Радостен",
+      "save": "Запази",
+      "cancel": "Откажи",
+      "delete": "Изтрий",
+      "custom": "Персонален",
+      "addTitle": "Нова емоция",
+      "addButton": "Добави емоция",
+      "add": "Добави"
+    }
   },
   "sections": {
     "summary": "Обобщение",

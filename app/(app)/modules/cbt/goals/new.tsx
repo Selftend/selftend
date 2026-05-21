@@ -90,7 +90,7 @@ export default function NewGoalScreen() {
   ];
 
   const wizard = useWizardDraft({
-    store: useGoalDraftStore,
+    useDraftStore: useGoalDraftStore,
     draftMode,
     entityId: goalId,
     stepFields: steps.map((s) => s.fields),

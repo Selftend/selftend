@@ -63,7 +63,7 @@ export default function NewTaskScreen() {
   ];
 
   const wizard = useWizardDraft({
-    store: useProcrastinationDraftStore,
+    useDraftStore: useProcrastinationDraftStore,
     draftMode: "create",
     entityId: null,
     stepFields: wizardSteps.map((s) => s.fields),

@@ -21,6 +21,7 @@ import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import { useDeleteMoodLog, useMoodLog, useMoodLogs } from "@/src/features/mood/queries";
 import type { MoodLog } from "@/src/features/mood/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -32,8 +33,8 @@ function formatTimestamp(value: string) {
 
 export default function MoodDetailScreen() {
   const { t } = useTranslation("mood");
-  const { t: tCbt } = useTranslation("cbt");
   const { user } = useSession();
+  const { resolveEmotion } = useEmotionDisplay();
   const { id } = useLocalSearchParams<{ id: string }>();
   const moodId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
@@ -147,11 +148,16 @@ export default function MoodDetailScreen() {
             <CardContent>
               {entry.emotions.length > 0 ? (
                 <View className="flex-row flex-wrap gap-1.5">
-                  {entry.emotions.map((emotion) => (
-                    <Badge key={emotion} variant="secondary">
-                      <Text className="text-xs">{tCbt(`emotions.${emotion.toLowerCase()}`)}</Text>
-                    </Badge>
-                  ))}
+                  {entry.emotions.map((emotionId) => {
+                    const display = resolveEmotion(emotionId);
+                    return (
+                      <Badge key={emotionId} variant="secondary">
+                        <Text className="text-xs">
+                          {display.emoji} {display.name}
+                        </Text>
+                      </Badge>
+                    );
+                  })}
                 </View>
               ) : (
                 <Text variant="muted">{t("detail.noEmotions")}</Text>

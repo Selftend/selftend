@@ -9,6 +9,7 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import type { MoodLog } from "@/src/features/mood/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 
 interface MoodEntryCardProps {
   entry: MoodLog;
@@ -33,13 +34,11 @@ function scoreToneClass(score: number): string {
 
 export function MoodEntryCard({ entry }: MoodEntryCardProps) {
   const { t } = useTranslation("mood");
-  const { t: tCbt } = useTranslation("cbt");
+  const { resolveEmotion } = useEmotionDisplay();
 
   const when = formatMoodRelativeTime(entry.loggedAt, t);
-  const emotionLabels = entry.emotions
-    .slice(0, 3)
-    .map((emotion) => tCbt(`emotions.${emotion.toLowerCase()}`));
-  const remainingEmotions = Math.max(0, entry.emotions.length - emotionLabels.length);
+  const emotionDisplays = entry.emotions.slice(0, 3).map(resolveEmotion);
+  const remainingEmotions = Math.max(0, entry.emotions.length - emotionDisplays.length);
   const trimmedNotes = entry.notes.trim();
 
   return (
@@ -67,11 +66,13 @@ export function MoodEntryCard({ entry }: MoodEntryCardProps) {
         </Text>
       </View>
 
-      {emotionLabels.length > 0 ? (
+      {emotionDisplays.length > 0 ? (
         <View className="flex-row flex-wrap gap-1.5">
-          {emotionLabels.map((label) => (
-            <Badge key={label} variant="secondary">
-              <Text className="text-xs">{label}</Text>
+          {emotionDisplays.map((display) => (
+            <Badge key={display.id} variant="secondary">
+              <Text className="text-xs">
+                {display.emoji} {display.name}
+              </Text>
             </Badge>
           ))}
           {remainingEmotions > 0 ? (

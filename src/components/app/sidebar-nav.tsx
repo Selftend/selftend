@@ -24,14 +24,6 @@ const TODAY_ITEM: NavItemDef = {
   matchPrefix: null,
 };
 
-const MY_PLAN_ITEM: NavItemDef = {
-  labelKey: "sidebar.myPlan",
-  href: "/(app)/plan",
-  icon: "checklist",
-  matchPrefix: "/plan",
-  activeWhen: (pathname) => pathname === "/plan" || pathname.startsWith("/plan/"),
-};
-
 const MODULE_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.cbt",

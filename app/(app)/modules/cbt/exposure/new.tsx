@@ -56,7 +56,7 @@ export default function NewExposureHierarchyScreen() {
   ];
 
   const wizard = useWizardDraft({
-    store: useExposureDraftStore,
+    useDraftStore: useExposureDraftStore,
     draftMode: "create",
     entityId: null,
     stepFields: steps.map((s) => s.fields),

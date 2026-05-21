@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, View } from "react-native";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -43,13 +43,16 @@ export default function NewActivityScreen() {
       ? (rawDomain as LifeDomain)
       : null;
   const domainLabel = valueDomain ? t(`goals.domain.${valueDomain}`) : null;
-  const valueLinkedDefaults =
-    valueDomain && domainLabel
-      ? {
-          ...defaultValues,
-          notes: t("activities.valuePrompt", { domain: domainLabel }),
-        }
-      : defaultValues;
+  const valueLinkedDefaults = useMemo(
+    () =>
+      valueDomain && domainLabel
+        ? {
+            ...defaultValues,
+            notes: t("activities.valuePrompt", { domain: domainLabel }),
+          }
+        : defaultValues,
+    [domainLabel, t, valueDomain],
+  );
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
 

@@ -13,7 +13,7 @@ interface MoodScaleProps {
   onChange: (value: number) => void;
 }
 
-interface ScaleStep {
+export interface ScaleStep {
   score: number;
   emoji: string;
   selectedClass: string;
@@ -21,7 +21,7 @@ interface ScaleStep {
   a11yKey: string;
 }
 
-const STEPS: ScaleStep[] = [
+export const STEPS: ScaleStep[] = [
   {
     score: 1,
     emoji: "😭",

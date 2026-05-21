@@ -125,6 +125,7 @@ describe("MoodEntryEditorScreen", () => {
         input: {
           emotions: [],
           linkedStrategy: null,
+          loggedAt: expect.any(String),
           moodScore: 3,
           notes: "",
         },
@@ -163,6 +164,7 @@ describe("MoodEntryEditorScreen", () => {
         input: {
           emotions: [],
           linkedStrategy: null,
+          loggedAt,
           moodScore: 5,
           notes: "",
         },
