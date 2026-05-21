@@ -1,4 +1,4 @@
-# Android Development Build
+﻿# Android Development Build
 
 Use the Android development build for normal development, reminder testing, and device verification. Do not use Expo Go as the primary Android runtime for this project.
 
@@ -177,7 +177,7 @@ Use the Android development build for reliable OAuth testing. Expo documents Exp
 
 `npm run build:android:development:local` runs the EAS development build on your machine instead of in the cloud. Useful for iterating on a fresh dev client without consuming EAS cloud build minutes, or when offline.
 
-The APK is written to `local-builds/android/selftend-dev-<timestamp>.apk` (gitignored). After the build finishes, the script starts a one-shot HTTP server on your LAN and prints a QR code so you can download the APK directly to a phone on the same Wi-Fi — no cable required. Open the QR in your phone camera, install when the browser/Files app prompts (you may need to enable "install unknown apps" once for that source), then Ctrl+C the server. Override the port with `SELFTEND_APK_SERVE_PORT`. In CI (`CI=true`) the server is skipped and the script just exits after the build.
+The APK is written to `local-builds/android/selftend-dev-<timestamp>.apk` (gitignored). After the build finishes, the script starts a one-shot HTTP server on your LAN and prints a QR code so you can download the APK directly to a phone on the same Wi-Fi - no cable required. Open the QR in your phone camera, install when the browser/Files app prompts (you may need to enable "install unknown apps" once for that source), then Ctrl+C the server. Override the port with `SELFTEND_APK_SERVE_PORT`. In CI (`CI=true`) the server is skipped and the script just exits after the build.
 
 Prerequisites:
 

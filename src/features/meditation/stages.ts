@@ -191,7 +191,7 @@ export function suggestStageFromAssessment(answers: {
   if (answers.catchesDistractionEarly && candidate < 3) candidate = 3;
   if (answers.extendedNoThoughts && candidate < 4) candidate = 4;
 
-  // Cap at 4 from onboarding — practitioners beyond Stage 4 can self-promote later.
+  // Cap at 4 from onboarding - practitioners beyond Stage 4 can self-promote later.
   if (candidate > 4) return 4;
   return candidate;
 }

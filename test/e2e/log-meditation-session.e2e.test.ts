@@ -28,7 +28,7 @@ test.describe("log meditation session", () => {
     await page.getByRole("button", { name: "Skip reflection", exact: true }).click();
 
     // After save the app redirects to /tools/meditation. Look for a stable
-    // element on the meditation home — its title.
+    // element on the meditation home - its title.
     await expect(page).toHaveURL(/\/tools\/meditation/, { timeout: 15_000 });
 
     // Verify a row landed in the database (visible across UI listings).

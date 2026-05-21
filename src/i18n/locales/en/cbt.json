@@ -119,7 +119,7 @@
     "be": {
       "title": "Be",
       "sub": "Mindfulness",
-      "description": "Present-moment awareness without judgment. Use the shared meditation and mood tools — and the self-care log to protect baseline mood."
+      "description": "Present-moment awareness without judgment. Use the shared meditation and mood tools - and the self-care log to protect baseline mood."
     },
     "review": {
       "title": "Review"
@@ -147,7 +147,7 @@
   },
   "weeklyReview": {
     "title": "Weekly review",
-    "description": "A quiet look at the past seven days — mood, activity, goals, and what to carry forward.",
+    "description": "A quiet look at the past seven days - mood, activity, goals, and what to carry forward.",
     "loading": "Loading your week...",
     "moodTrend": "Mood trend",
     "moodTrendDescription": "Average score per day over the past seven days.",
@@ -289,7 +289,7 @@
     "description": "Sort worries into hypothetical or real problems. Each gets its own response.",
     "loading": "Loading...",
     "empty": "No worries logged yet",
-    "emptyDescription": "Add an entry when a worry starts circling — getting it on paper often helps.",
+    "emptyDescription": "Add an entry when a worry starts circling - getting it on paper often helps.",
     "new": "New entry",
     "newTitle": "New worry entry",
     "newDescription": "Capture the worry, then choose how to respond to it.",
@@ -346,7 +346,7 @@
         "shortDescription": "Anchor your attention to the breath, returning gently when the mind wanders.",
         "instructions": [
           "Sit comfortably and close your eyes if it feels right.",
-          "Notice the breath where it feels strongest — nose, chest, or belly.",
+          "Notice the breath where it feels strongest - nose, chest, or belly.",
           "When you notice your mind has wandered, gently bring it back to the breath.",
           "Continue at a relaxed pace until the timer ends."
         ]
@@ -379,7 +379,7 @@
           "Bring to mind someone you care about easily.",
           "Silently wish them: may you be safe, may you be well, may you be at ease.",
           "Direct the same wishes to yourself.",
-          "Extend the wishes to others — a neutral person, then someone difficult, then all beings."
+          "Extend the wishes to others - a neutral person, then someone difficult, then all beings."
         ]
       },
       "observing-thoughts": {
@@ -420,7 +420,7 @@
       },
       "what": {
         "title": "What mindfulness is",
-        "body": "Intentional, non-judgmental attention to the present moment. Not clearing the mind — noticing what's there without fighting it."
+        "body": "Intentional, non-judgmental attention to the present moment. Not clearing the mind - noticing what's there without fighting it."
       },
       "why": {
         "title": "Why it works",
@@ -433,7 +433,7 @@
         "bodyScanLabel": "Body scan",
         "bodyScanBody": "Move awareness slowly through the body, noticing without trying to change.",
         "sittingLabel": "Sitting meditation",
-        "sittingBody": "Open awareness sitting — notice thoughts, sounds, and sensations as they arise.",
+        "sittingBody": "Open awareness sitting - notice thoughts, sounds, and sensations as they arise.",
         "eatingLabel": "Mindful eating",
         "eatingBody": "Slow down with one bite and engage every sense."
       },
@@ -1018,9 +1018,9 @@
         "shortDescription": "Anchor yourself in the present through all five senses.",
         "steps": [
           "Name 5 things you can see right now.",
-          "Notice 4 things you can physically feel — clothes on skin, feet on floor.",
+          "Notice 4 things you can physically feel - clothes on skin, feet on floor.",
           "Listen for 3 things you can hear.",
-          "Find 2 things you can smell — or recall a familiar scent.",
+          "Find 2 things you can smell - or recall a familiar scent.",
           "Notice 1 thing you can taste."
         ]
       },
@@ -1052,7 +1052,7 @@
       },
       "when": {
         "title": "When to use grounding",
-        "body": "Anxiety spirals, overwhelm, racing thoughts, dissociation, or any moment when the present feels hard to reach. Grounding is not a cure — it's a circuit breaker."
+        "body": "Anxiety spirals, overwhelm, racing thoughts, dissociation, or any moment when the present feels hard to reach. Grounding is not a cure - it's a circuit breaker."
       },
       "how": {
         "title": "How it works",
@@ -1063,7 +1063,7 @@
         "senseLabel": "5-4-3-2-1",
         "senseBody": "Name five things you see, four you feel, three you hear, two you smell, one you taste.",
         "breathLabel": "Box breathing",
-        "breathBody": "Inhale 4 counts, hold 4, exhale 4, hold 4 — repeat until calm.",
+        "breathBody": "Inhale 4 counts, hold 4, exhale 4, hold 4 - repeat until calm.",
         "coldLabel": "Cold water",
         "coldBody": "Wrists or face in cold water for 30 seconds interrupts the stress response.",
         "feetLabel": "Feet on the floor",
@@ -1096,7 +1096,7 @@
     "exercises": {
       "box-breathing": {
         "title": "Box breathing",
-        "shortDescription": "Equal counts of inhale, hold, exhale, hold — used to quickly reduce acute stress.",
+        "shortDescription": "Equal counts of inhale, hold, exhale, hold - used to quickly reduce acute stress.",
         "benefit": "Activates the parasympathetic nervous system within a few cycles."
       },
       "4-7-8": {

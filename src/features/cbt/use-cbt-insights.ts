@@ -1,5 +1,3 @@
-import { useMemo } from "react";
-
 import { useActivities } from "@/src/features/activities/queries";
 import type { ActivityCategory } from "@/src/features/activities/types";
 import { useAngerLogs } from "@/src/features/anger/queries";
@@ -82,7 +80,7 @@ export function useCbtInsights(userId: string | null) {
   const { data: coreBeliefs } = useCoreBeliefs(userId);
   const { data: recoveryPlan } = useRecoveryPlan(userId);
 
-  const topDistortions = useMemo<TopDistortion[]>(() => {
+  const topDistortions: TopDistortion[] = (() => {
     if (!thoughtRecords || thoughtRecords.length < 5) {
       return [];
     }
@@ -98,9 +96,9 @@ export function useCbtInsights(userId: string | null) {
       .map(([key, count]) => ({ key, count }))
       .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key))
       .slice(0, 3);
-  }, [thoughtRecords]);
+  })();
 
-  const exerciseMoodLift = useMemo<ExerciseMoodLift | null>(() => {
+  const exerciseMoodLift: ExerciseMoodLift | null = (() => {
     if (!selfCareLogs || selfCareLogs.length < 7 || !moodLogs) {
       return null;
     }
@@ -140,9 +138,9 @@ export function useCbtInsights(userId: string | null) {
       withExercise: roundedTenth(average(withExercise)),
       withoutExercise: roundedTenth(average(withoutExercise)),
     };
-  }, [moodLogs, selfCareLogs]);
+  })();
 
-  const activityMoodLiftByCategory = useMemo<ActivityMoodLift[]>(() => {
+  const activityMoodLiftByCategory: ActivityMoodLift[] = (() => {
     const completedWithMood =
       activities?.filter(
         (activity) => activity.moodBefore !== null && activity.moodAfter !== null,
@@ -173,9 +171,9 @@ export function useCbtInsights(userId: string | null) {
         count: lifts.length,
       }))
       .sort((a, b) => b.averageLift - a.averageLift || b.count - a.count);
-  }, [activities]);
+  })();
 
-  const beliefReviewSuggestions = useMemo<CoreBelief[]>(() => {
+  const beliefReviewSuggestions: CoreBelief[] = (() => {
     if (!coreBeliefs || coreBeliefs.length < 3) {
       return [];
     }
@@ -192,9 +190,9 @@ export function useCbtInsights(userId: string | null) {
       const isDueForReview = reviewDate ? reviewDate <= reviewSoonCutoff : false;
       return isDueForReview || belief.alternativeBeliefStrength <= 30;
     });
-  }, [coreBeliefs]);
+  })();
 
-  const recurringThoughtSuggestions = useMemo<RecurringThoughtSuggestion[]>(() => {
+  const recurringThoughtSuggestions: RecurringThoughtSuggestion[] = (() => {
     if (!thoughtRecords || thoughtRecords.length < 5) {
       return [];
     }
@@ -221,9 +219,9 @@ export function useCbtInsights(userId: string | null) {
       .filter((item) => item.count >= 2)
       .sort((a, b) => b.count - a.count || a.thought.localeCompare(b.thought))
       .slice(0, 2);
-  }, [coreBeliefs, thoughtRecords]);
+  })();
 
-  const selfCareTrend = useMemo<SelfCareTrend | null>(() => {
+  const selfCareTrend: SelfCareTrend | null = (() => {
     if (!selfCareLogs || selfCareLogs.length < 5) {
       return null;
     }
@@ -242,9 +240,9 @@ export function useCbtInsights(userId: string | null) {
       gratitudeDays: recentLogs.filter((log) => log.gratitude.some((item) => item.trim())).length,
       averageSleepHours: sleepHours.length > 0 ? roundedTenth(average(sleepHours)) : null,
     };
-  }, [selfCareLogs]);
+  })();
 
-  const angerPattern = useMemo<AngerPattern | null>(() => {
+  const angerPattern: AngerPattern | null = (() => {
     if (!angerLogs || angerLogs.length < 3) {
       return null;
     }
@@ -275,9 +273,9 @@ export function useCbtInsights(userId: string | null) {
       totalLogs: angerLogs.length,
       commonUrge,
     };
-  }, [angerLogs]);
+  })();
 
-  const exposureProgress = useMemo<ExposureProgress | null>(() => {
+  const exposureProgress: ExposureProgress | null = (() => {
     if (!exposureItems || exposureItems.length === 0) {
       return null;
     }
@@ -286,7 +284,7 @@ export function useCbtInsights(userId: string | null) {
       completed: exposureItems.filter((item) => item.completedAt).length,
       total: exposureItems.length,
     };
-  }, [exposureItems]);
+  })();
 
   const slogan = recoveryPlan?.personalSlogan.trim() ?? "";
 

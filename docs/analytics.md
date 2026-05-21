@@ -1,4 +1,4 @@
-# Analytics Strategy
+﻿# Analytics Strategy
 
 ## Current state
 
@@ -123,11 +123,11 @@ Do not add analytics preemptively. Advance to the next phase only when:
 
 ## Related files
 
-- `src/stores/cookie-consent-store.ts` — consent state with `analytics` toggle
-- `src/components/app/cookie-consent-banner.tsx` — consent UI
-- `src/providers/app-providers.tsx` — provider tree for future analytics provider
-- `src/features/policies/policy-content.ts` — privacy and cookie policy text
-- `docs/policies.md` — data processor list
-- `docs/self-hosting.md` — self-hosting setup
-- `docs/costs.md` — cost estimates
-- `docs/product-principles.md` — principle #7 (privacy and dignity)
+- `src/stores/cookie-consent-store.ts` - consent state with `analytics` toggle
+- `src/components/app/cookie-consent-banner.tsx` - consent UI
+- `src/providers/app-providers.tsx` - provider tree for future analytics provider
+- `src/features/policies/policy-content.ts` - privacy and cookie policy text
+- `docs/policies.md` - data processor list
+- `docs/self-hosting.md` - self-hosting setup
+- `docs/costs.md` - cost estimates
+- `docs/product-principles.md` - principle #7 (privacy and dignity)

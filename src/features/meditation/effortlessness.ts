@@ -1,5 +1,5 @@
 /**
- * Stage 7 — mid-sit effortlessness nudge.
+ * Stage 7 - mid-sit effortlessness nudge.
  *
  * The book recommends periodically relaxing effort to see whether vigilance
  * is still necessary. The tool surfaces this as a quiet banner around the
@@ -16,7 +16,7 @@ export type EffortlessnessWindow = 0 | 1;
 /**
  * Returns the active prompt window (0 = around 1/3, 1 = around 2/3) if the
  * elapsed time is within `WINDOW_SECONDS` of one of the prompt points.
- * Returns null otherwise. Returns null for sits shorter than 3 minutes —
+ * Returns null otherwise. Returns null for sits shorter than 3 minutes -
  * the prompts would overlap.
  */
 export function activeEffortlessnessWindow(

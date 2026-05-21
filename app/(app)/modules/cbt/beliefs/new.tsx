@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { View } from "react-native";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -36,10 +36,7 @@ const defaultValues: CoreBeliefFormSchema = {
 export default function NewBeliefScreen() {
   const { t } = useTranslation("cbt");
   const { beliefId: rawBeliefId } = useLocalSearchParams<{ beliefId?: string }>();
-  const beliefId = useMemo(
-    () => (typeof rawBeliefId === "string" && rawBeliefId.length > 0 ? rawBeliefId : null),
-    [rawBeliefId],
-  );
+  const beliefId = typeof rawBeliefId === "string" && rawBeliefId.length > 0 ? rawBeliefId : null;
   const draftMode = beliefId ? "edit" : "create";
   const { user } = useSession();
 

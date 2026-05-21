@@ -1,4 +1,4 @@
-# Third-Party Notices
+﻿# Third-Party Notices
 
 This file tracks copied or generated third-party code that needs explicit notice handling. It is not a complete dependency license inventory.
 
@@ -57,7 +57,7 @@ The app bundles Noto Sans via `@expo-google-fonts/noto-sans`. The font itself is
 
 Source: https://fonts.google.com/noto/specimen/Noto+Sans
 
-License: SIL Open Font License 1.1 — see the full text shipped with the package at `node_modules/@expo-google-fonts/noto-sans/LICENSE`.
+License: SIL Open Font License 1.1 - see the full text shipped with the package at `node_modules/@expo-google-fonts/noto-sans/LICENSE`.
 
 ## Google Sign-In Branding
 

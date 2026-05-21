@@ -10,7 +10,7 @@ import {
   type ACTConcern,
 } from "@/src/features/act/types";
 
-describe("act types — RECOMMENDED_PRINCIPLE", () => {
+describe("act types - RECOMMENDED_PRINCIPLE", () => {
   it("covers every concern listed in ACT_CONCERNS", () => {
     for (const concern of ACT_CONCERNS) {
       expect(RECOMMENDED_PRINCIPLE[concern]).toBeDefined();
@@ -23,7 +23,7 @@ describe("act types — RECOMMENDED_PRINCIPLE", () => {
   });
 });
 
-describe("act types — constant lists", () => {
+describe("act types - constant lists", () => {
   it("technique enums have no duplicates", () => {
     for (const list of [
       DEFUSION_TECHNIQUES,

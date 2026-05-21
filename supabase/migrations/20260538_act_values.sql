@@ -1,7 +1,7 @@
--- ACT Phase 4 — Values.
+-- ACT Phase 4 - Values.
 -- Adds act_value_entries and act_bulls_eye_snapshots tables.
 
--- 1. Value entries — one per (user, domain); upsert on conflict.
+-- 1. Value entries - one per (user, domain); upsert on conflict.
 CREATE TABLE IF NOT EXISTS act_value_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -31,7 +31,7 @@ CREATE POLICY "Users can manage their own ACT value entries"
 CREATE INDEX IF NOT EXISTS act_value_entries_user_domain
   ON act_value_entries (user_id, life_domain);
 
--- 2. Bull's-Eye snapshots — time-series alignment ratings per domain.
+-- 2. Bull's-Eye snapshots - time-series alignment ratings per domain.
 CREATE TABLE IF NOT EXISTS act_bulls_eye_snapshots (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,

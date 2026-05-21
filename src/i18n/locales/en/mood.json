@@ -68,7 +68,7 @@
     },
     "affectLabel": {
       "title": "Name it to tame it",
-      "body": "Labelling an emotion — even with one word — reduces the brain's stress response. Logging mood is a small act with a measurable effect."
+      "body": "Labelling an emotion - even with one word - reduces the brain's stress response. Logging mood is a small act with a measurable effect."
     },
     "patterns": {
       "title": "Spot what moves the needle",
@@ -77,11 +77,11 @@
     "howToUse": {
       "title": "How to log",
       "scaleLabel": "1–5 scale",
-      "scaleBody": "1 is very low, 5 is very good — pick the number that fits how you feel right now.",
+      "scaleBody": "1 is very low, 5 is very good - pick the number that fits how you feel right now.",
       "emotionsLabel": "Emotion tags",
       "emotionsBody": "Optional tags that add texture to the number.",
       "notesLabel": "Notes",
-      "notesBody": "Optional free-text — a trigger, a context, anything worth remembering."
+      "notesBody": "Optional free-text - a trigger, a context, anything worth remembering."
     },
     "finish": {
       "start": "Got it"

@@ -2,8 +2,8 @@
 -- Backed by James Clear's Atomic Habits framework. See docs/modules/habits.md.
 --
 -- Two tables:
---   public.habits        — a habit definition with identity + four-law strategies.
---   public.habit_logs    — one row per (habit_id, logged_on) tick. Absence of a
+--   public.habits        - a habit definition with identity + four-law strategies.
+--   public.habit_logs    - one row per (habit_id, logged_on) tick. Absence of a
 --                          row means "not ticked"; we do not record misses.
 
 -- ---------------------------------------------------------------------------
@@ -128,7 +128,7 @@ alter table public.user_preferences
   add column if not exists habits_onboarding_completed boolean not null default false;
 
 -- ---------------------------------------------------------------------------
--- Extend export_user_data() — rename-then-wrap pattern.
+-- Extend export_user_data() - rename-then-wrap pattern.
 -- ---------------------------------------------------------------------------
 alter function public.export_user_data() rename to export_user_data_before_habits;
 revoke execute on function public.export_user_data_before_habits() from public;

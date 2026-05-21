@@ -1,12 +1,12 @@
-# Public Policy Surfaces
+﻿# Public Policy Surfaces
 
 The app has public policy routes hosted from the Expo web export:
 
-- `/privacy` — Privacy policy (GDPR + CCPA compliant)
-- `/terms` — Terms of service
-- `/cookies` — Cookie policy
-- `/crisis` — Crisis guidance
-- `/account-deletion` — Account deletion info
+- `/privacy` - Privacy policy (GDPR + CCPA compliant)
+- `/terms` - Terms of service
+- `/cookies` - Cookie policy
+- `/crisis` - Crisis guidance
+- `/account-deletion` - Account deletion info
 
 The policy version constants and fallback source text live in [src/features/policies/policy-content.ts](../src/features/policies/policy-content.ts). Displayed policy copy is loaded from the locale files in `src/i18n/locales/{lang}/policies.json`.
 

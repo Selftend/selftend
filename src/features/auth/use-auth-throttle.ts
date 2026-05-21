@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 const MAX_ATTEMPTS = 5;
 const COOLDOWN_MS = 30_000;
@@ -8,41 +8,38 @@ export function useAuthThrottle() {
   const attemptsRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const startCooldown = useCallback(() => {
+  const startCooldown = () => {
     setIsThrottled(true);
     timerRef.current = setTimeout(() => {
       setIsThrottled(false);
       attemptsRef.current = 0;
     }, COOLDOWN_MS);
-  }, []);
+  };
 
-  const recordFailure = useCallback(
-    (error?: unknown) => {
-      const isRateLimited =
-        error instanceof Error &&
-        (error.message.toLowerCase().includes("rate") || error.message.includes("429"));
+  const recordFailure = (error?: unknown) => {
+    const isRateLimited =
+      error instanceof Error &&
+      (error.message.toLowerCase().includes("rate") || error.message.includes("429"));
 
-      if (isRateLimited) {
-        startCooldown();
-        return;
-      }
+    if (isRateLimited) {
+      startCooldown();
+      return;
+    }
 
-      attemptsRef.current += 1;
-      if (attemptsRef.current >= MAX_ATTEMPTS) {
-        startCooldown();
-      }
-    },
-    [startCooldown],
-  );
+    attemptsRef.current += 1;
+    if (attemptsRef.current >= MAX_ATTEMPTS) {
+      startCooldown();
+    }
+  };
 
-  const recordSuccess = useCallback(() => {
+  const recordSuccess = () => {
     attemptsRef.current = 0;
     setIsThrottled(false);
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-  }, []);
+  };
 
   return { isThrottled, recordFailure, recordSuccess };
 }

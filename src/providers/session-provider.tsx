@@ -1,11 +1,4 @@
-import {
-  createContext,
-  type PropsWithChildren,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, type PropsWithChildren, useContext, useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 
 import { hasSupabaseConfig } from "@/src/lib/env";
@@ -56,15 +49,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  const value = useMemo<SessionContextValue>(
-    () => ({
-      hasSupabaseConfig,
-      session,
-      status,
-      user: session?.user ?? null,
-    }),
-    [session, status],
-  );
+  const value: SessionContextValue = {
+    hasSupabaseConfig,
+    session,
+    status,
+    user: session?.user ?? null,
+  };
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

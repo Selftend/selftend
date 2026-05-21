@@ -1,7 +1,7 @@
--- ACT Phase 3 — Presence.
+-- ACT Phase 3 - Presence.
 -- Adds act_connection_logs and act_observing_self_sessions tables.
 
--- 1. Connection log — present-moment awareness exercises.
+-- 1. Connection log - present-moment awareness exercises.
 CREATE TABLE IF NOT EXISTS act_connection_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -29,7 +29,7 @@ CREATE POLICY "Users can manage their own ACT connection logs"
 CREATE INDEX IF NOT EXISTS act_connection_logs_user_created
   ON act_connection_logs (user_id, created_at DESC);
 
--- 2. Observing Self sessions — the stable witness exercises.
+-- 2. Observing Self sessions - the stable witness exercises.
 CREATE TABLE IF NOT EXISTS act_observing_self_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,

@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, Platform, View } from "react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { TFunction } from "i18next";
@@ -302,7 +302,7 @@ export default function RecoveryScreen() {
     });
   }, [recoveryPlan, reset]);
 
-  const activeStrategyKeys = useMemo(() => {
+  const activeStrategyKeys = (() => {
     const configured = preferences?.activeStrategies.filter(isStrategyKey) ?? [];
     if (configured.length > 0) {
       return configured;
@@ -322,22 +322,9 @@ export default function RecoveryScreen() {
     if ((selfCareLogs?.length ?? 0) > 0) recordBacked.push("selfCare");
 
     return recordBacked.length > 0 ? recordBacked : [...strategyKeys];
-  }, [
-    activities,
-    angerLogs,
-    beliefs,
-    goals,
-    hierarchies,
-    mindfulnessSessions,
-    preferences,
-    selfCareLogs,
-    tasks,
-    thoughtRecords,
-    valuesProfiles,
-    worries,
-  ]);
+  })();
 
-  const recoveryStats = useMemo<RecoveryStat[]>(() => {
+  const recoveryStats: RecoveryStat[] = (() => {
     const moodDays = new Set((moodLogs ?? []).map((log) => log.loggedAt.slice(0, 10)));
 
     return [
@@ -356,9 +343,9 @@ export default function RecoveryScreen() {
         value: activities?.filter((activity) => activity.completedAt).length ?? 0,
       },
     ];
-  }, [activities, exposureItems, goals, moodLogs, thoughtRecords]);
+  })();
 
-  const timelineItems = useMemo<TimelineItem[]>(() => {
+  const timelineItems: TimelineItem[] = (() => {
     const items = [
       createTimelineItem("mood", moodLogs, (log) => log.loggedAt),
       createTimelineItem("goals", goals, (goal) => goal.createdAt),
@@ -378,21 +365,7 @@ export default function RecoveryScreen() {
     return items
       .filter((item): item is TimelineItem => Boolean(item))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [
-    activities,
-    angerLogs,
-    beliefs,
-    goals,
-    hierarchies,
-    mindfulnessSessions,
-    moodLogs,
-    recoveryPlan,
-    selfCareLogs,
-    tasks,
-    thoughtRecords,
-    valuesProfiles,
-    worries,
-  ]);
+  })();
 
   const updateListItem = (fieldName: ListFieldName, index: number, value: string) => {
     const next = [...watch(fieldName)];

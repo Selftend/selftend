@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { View } from "react-native";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -34,10 +34,7 @@ const defaultValues: GoalFormSchema = {
 export default function NewGoalScreen() {
   const { t } = useTranslation("cbt");
   const { goalId: rawGoalId } = useLocalSearchParams<{ goalId?: string }>();
-  const goalId = useMemo(
-    () => (typeof rawGoalId === "string" && rawGoalId.length > 0 ? rawGoalId : null),
-    [rawGoalId],
-  );
+  const goalId = typeof rawGoalId === "string" && rawGoalId.length > 0 ? rawGoalId : null;
   const draftMode = goalId ? "edit" : "create";
   const { user } = useSession();
 

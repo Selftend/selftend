@@ -1,7 +1,7 @@
 import { router, type Href } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { BackButton } from "@/src/components/app/back-button";
@@ -57,10 +57,7 @@ export function GratitudeEntryEditorScreen({
   const editMode = mode === "edit";
 
   const { data: cachedList } = useGratitudeEntries(user?.id ?? null, 50);
-  const fromCache = useMemo(
-    () => (entryId ? (cachedList?.find((entry) => entry.id === entryId) ?? null) : null),
-    [cachedList, entryId],
-  );
+  const fromCache = entryId ? (cachedList?.find((entry) => entry.id === entryId) ?? null) : null;
   const { data: fetched, isLoading } = useGratitudeEntry(
     editMode && !fromCache ? (user?.id ?? null) : null,
     editMode && !fromCache ? entryId : null,
@@ -97,9 +94,8 @@ export function GratitudeEntryEditorScreen({
   const trimmedItems = items.map((s) => s.trim()).filter((s) => s.length > 0);
   const canSave = trimmedItems.length > 0 && !saving && Boolean(user);
   const itemPlaceholderFallback = t("editor.itemPlaceholder");
-  const todaySuggestionPlaceholders = useMemo(
-    () => asStringArray(t("editor.todaySuggestionPlaceholders", { returnObjects: true })),
-    [t],
+  const todaySuggestionPlaceholders = asStringArray(
+    t("editor.todaySuggestionPlaceholders", { returnObjects: true }),
   );
   const placeholderOffset =
     (cachedList?.length ?? 0) % Math.max(todaySuggestionPlaceholders.length, 1);

@@ -1,7 +1,7 @@
-# Gratitude Module Spec — Kurzgesagt Gratitude Journal
+﻿# Gratitude Module Spec - Kurzgesagt Gratitude Journal
 
-**Source:** _Gratitude Journal_ — Kurzgesagt / in a nutshell (kurzgesagt GmbH, 2021, ISBN 9783000635205)
-**Status:** Canonical spec for the gratitude module — replaces the lightweight `gratitude-log.md`
+**Source:** _Gratitude Journal_ - Kurzgesagt / in a nutshell (kurzgesagt GmbH, 2021, ISBN 9783000635205)
+**Status:** Canonical spec for the gratitude module - replaces the lightweight `gratitude-log.md`
 **Audience:** Developers and product contributors
 
 ---
@@ -10,7 +10,7 @@
 
 ### The Three Levels of Practice
 
-The book structures gratitude practice as three progressive levels, each building on the last. Unlike the meditation module's ten stages, these levels are not mutually exclusive — a user may operate at all three simultaneously once they reach Level 3.
+The book structures gratitude practice as three progressive levels, each building on the last. Unlike the meditation module's ten stages, these levels are not mutually exclusive - a user may operate at all three simultaneously once they reach Level 3.
 
 | Level | Name                      | Core skill                                      |
 | ----- | ------------------------- | ----------------------------------------------- |
@@ -20,10 +20,10 @@ The book structures gratitude practice as three progressive levels, each buildin
 
 ### Core Principles
 
-- **Non-competitive** — nobody is watching; there is no failure mode.
-- **Frequency** — 1–3 times per week outperforms daily in several studies (hedonic adaptation). The tool must never pressure daily entries.
-- **Small things count** — a croissant, sunshine, sleeping in. Copy must never imply that only big events qualify.
-- **Non-clinical** — gratitude practice is a private reflection tool, not therapy or treatment.
+- **Non-competitive** - nobody is watching; there is no failure mode.
+- **Frequency** - 1–3 times per week outperforms daily in several studies (hedonic adaptation). The tool must never pressure daily entries.
+- **Small things count** - a croissant, sunshine, sleeping in. Copy must never imply that only big events qualify.
+- **Non-clinical** - gratitude practice is a private reflection tool, not therapy or treatment.
 
 ### Science Basis (from the book and the supplied data table)
 
@@ -46,15 +46,15 @@ The book structures gratitude practice as three progressive levels, each buildin
 
 ## 2. Exercises (Break Cards)
 
-The book interleaves seven named exercises and six science-input cards throughout its journaling pages. These become the interactive "breaks" inside the module — surfaced in the home or as optional prompts.
+The book interleaves seven named exercises and six science-input cards throughout its journaling pages. These become the interactive "breaks" inside the module - surfaced in the home or as optional prompts.
 
 ### Exercises from Positive Psychology
 
 | Exercise              | Description                                                                                                                                    |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Gratitude Letter**  | Write a letter to someone you are grateful for. Detail how they affect your life. You don't have to send it — writing it alone shifts mindset. |
+| **Gratitude Letter**  | Write a letter to someone you are grateful for. Detail how they affect your life. You don't have to send it - writing it alone shifts mindset. |
 | **Acts of Kindness**  | Perform deliberate small acts of kindness for others and note them. Extends gratitude outward.                                                 |
-| **The I-Did-It List** | At day's end, write everything you accomplished — big or small — instead of a to-do list. Counteracts the feeling of never doing enough.       |
+| **The I-Did-It List** | At day's end, write everything you accomplished - big or small - instead of a to-do list. Counteracts the feeling of never doing enough.       |
 
 ### Exercises from Stoicism
 
@@ -77,7 +77,7 @@ The book interleaves seven named exercises and six science-input cards throughou
 
 The book introduces gratitude as three progressive training levels. The app explains that progression during onboarding, then uses the ongoing journaling form for actual entries. `level` remains stored internally as `3` for compatibility with earlier migrations and exports, but users do not choose levels per entry.
 
-### Level 1 — Noticing
+### Level 1 - Noticing
 
 | Prompt                                | Field                                  |
 | ------------------------------------- | -------------------------------------- |
@@ -85,7 +85,7 @@ The book introduces gratitude as three progressive training levels. The app expl
 | Did something good happen?            | `good_moment` (text, 240 chars)        |
 | What could you be grateful for?       | `item_1` (text, 240 chars, required)   |
 
-### Level 2 — Reflecting & Appreciating
+### Level 2 - Reflecting & Appreciating
 
 | Prompt                                         | Field                                |
 | ---------------------------------------------- | ------------------------------------ |
@@ -93,7 +93,7 @@ The book introduces gratitude as three progressive training levels. The app expl
 | Things you usually don't think about?          | `hidden_good` (text, 240 chars)      |
 | What are you grateful for today?               | `item_1` (text, 240 chars, required) |
 
-### Level 3 — Practicing Gratitude
+### Level 3 - Practicing Gratitude
 
 | Prompt                                  | Field                                                    |
 | --------------------------------------- | -------------------------------------------------------- |
@@ -103,7 +103,7 @@ The book introduces gratitude as three progressive training levels. The app expl
 
 New entries are saved with `level = 3`. Level 1 and Level 2 columns remain in the table as compatibility fields and are exported if present, but the user-facing editor does not expose separate Level 1/2 modes.
 
-### Full Table — `public.gratitude_entries`
+### Full Table - `public.gratitude_entries`
 
 | column       | type        | notes                                              |
 | ------------ | ----------- | -------------------------------------------------- |
@@ -138,13 +138,13 @@ Indexes: `(user_id, logged_at desc)` and `(user_id, starred, logged_at desc)` fo
 
 This module follows the contract in `tools.md`:
 
-- `ModuleKey`: `"gratitude"` — added to the union in `src/features/modules/types.ts`.
+- `ModuleKey`: `"gratitude"` - added to the union in `src/features/modules/types.ts`.
 - Default `enabledModules` stays `["cbt"]`; gratitude is opt-in via the modules discovery screen.
 - i18n namespace: `gratitude:*`.
 - Route group: `/modules/gratitude/*` (see §6). Existing `/tools/gratitude-log/*` routes become compatibility redirects.
 - New `user_preferences` fields:
   - `gratitudeOnboardingCompleted: boolean` (default `false`)
-- No reminder fields — reminders remain out of scope for this module.
+- No reminder fields - reminders remain out of scope for this module.
 - Settings can reset the onboarding flag (same pattern as CBT and meditation).
 
 ---
@@ -155,7 +155,7 @@ This module follows the contract in `tools.md`:
 | -------------------------------------- | -------------------------------------------------------------------- |
 | `/modules/gratitude`                   | Home: new-entry CTA, insights, recent entries, break card carousel   |
 | `/modules/gratitude/onboarding`        | Full-screen fallback / revisit route for the onboarding modal        |
-| `/modules/gratitude/new`               | Create entry — ongoing gratitude journal form                        |
+| `/modules/gratitude/new`               | Create entry - ongoing gratitude journal form                        |
 | `/modules/gratitude/entries`           | Private history list                                                 |
 | `/modules/gratitude/entries/[id]`      | Entry detail; edit / delete                                          |
 | `/modules/gratitude/entries/[id]/edit` | Edit an entry                                                        |
@@ -172,22 +172,22 @@ This module follows the contract in `tools.md`:
 
 Mirrors `src/components/app/meditation-onboarding-modal.tsx`. Three steps; only Step 1 is mandatory. Completion tracked via `gratitudeOnboardingCompleted` on `user_preferences`. A `?` icon next to the module title re-opens the modal (same pattern as meditation).
 
-**Step 1 — Welcome: The Science of Gratitude**
+**Step 1 - Welcome: The Science of Gratitude**
 
 - Infographic (the supplied "Science of Gratitude: A Guide to a Happier Mind" image).
-- Two-sentence summary: gratitude is one of the strongest predictors of happiness, friendship, and resilience — and it is backed by peer-reviewed research.
+- Two-sentence summary: gratitude is one of the strongest predictors of happiness, friendship, and resilience - and it is backed by peer-reviewed research.
 - Continue / Skip available.
 
-**Step 2 — The Three Levels**
+**Step 2 - The Three Levels**
 
 - Show the three-levels illustration (Level 1: noticing the small things; Level 2: mental subtraction; Level 3: building the habit).
 - One short paragraph per level.
 - Emphasis: no pressure, no failure, no competition.
 
-**Step 3 — How Often**
+**Step 3 - How Often**
 
 - Science says 1–3× per week works better than daily (hedonic adaptation).
-- No frequency commitment required — this is information only, not a goal the app will track.
+- No frequency commitment required - this is information only, not a goal the app will track.
 
 Confirm writes `gratitudeOnboardingCompleted: true` to `user_preferences`. There is no level picker in the shipped product flow.
 
@@ -195,11 +195,11 @@ Confirm writes `gratitudeOnboardingCompleted: true` to `user_preferences`. There
 
 ## 7. Home Screen
 
-- **New Entry button** — always visible, opens the ongoing gratitude journal form.
-- **Recent entries** — last 5–7 entries, each showing date, first item, and item count.
-- **Insights** — quiet local frequency, common themes, and Favorite Moments entry points. No streak language.
-- **Break Card** — one rotating exercise card (from the 9 named exercises above). Tapping opens the full break screen at `/modules/gratitude/breaks/[slug]`. Cards cycle in a fixed order; the user can dismiss the current card to advance.
-- **`?` icon** in the title row — re-opens the onboarding modal.
+- **New Entry button** - always visible, opens the ongoing gratitude journal form.
+- **Recent entries** - last 5–7 entries, each showing date, first item, and item count.
+- **Insights** - quiet local frequency, common themes, and Favorite Moments entry points. No streak language.
+- **Break Card** - one rotating exercise card (from the 9 named exercises above). Tapping opens the full break screen at `/modules/gratitude/breaks/[slug]`. Cards cycle in a fixed order; the user can dismiss the current card to advance.
+- **`?` icon** in the title row - re-opens the onboarding modal.
 
 ---
 
@@ -230,12 +230,12 @@ Confirm writes `gratitudeOnboardingCompleted: true` to `user_preferences`. There
 
 | Phase                        | Scope                                                                                                                                                                                                                                                          | Notes                                                                                                                      |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **0 — Spec & plan**          | This document. Data model finalized. Asset paths decided.                                                                                                                                                                                                      | Done when this file is merged.                                                                                             |
-| **1 — Foundation**           | Module contract (`ModuleKey: "gratitude"`, `UserPreferences` fields, i18n namespace). Onboarding modal, `?` re-open icon. Home screen with new-entry CTA and recent entries. Ongoing gratitude entry form. Compat redirects from old `/tools/gratitude-log/*`. | Migrates the existing feature into the module pattern.                                                                     |
-| **2 — Compatibility fields** | DB migration adding `events`, `good_moment`, `miss_if_gone`, `hidden_good`, `level` columns and backfilling existing rows to `level = 3`. These fields remain compatibility/export fields rather than separate product modes.                                  | Reflects the book's progression without making levels a permanent switcher.                                                |
-| **3 — Break Cards**          | Break card carousel on home screen. Individual break screens for all 9 exercises. Card dismissal / rotation state (local, not persisted).                                                                                                                      | Can ship incrementally — start with 3 cards (Gratitude Letter, What if That Didn't Happen?, Instructions for Unhappiness). |
-| **4 — Journal enhancements** | 5-item today list + 3-item "in my life" list. Pre-fill suggestions on some prompts (e.g., rotating variant questions from the book: "What made you laugh?", "Who was kind to you?", "What simple pleasure did you enjoy?").                                    | Enriches the core journaling experience.                                                                                   |
-| **5 — Insights**             | Entry frequency chart (quiet, no streak language). Most-common gratitude themes (word frequency, private, never uploaded). Favorite Moments collection (surfaced from highest-rated or starred entries).                                                       | Deferred — same posture as meditation insights.                                                                            |
+| **0 - Spec & plan**          | This document. Data model finalized. Asset paths decided.                                                                                                                                                                                                      | Done when this file is merged.                                                                                             |
+| **1 - Foundation**           | Module contract (`ModuleKey: "gratitude"`, `UserPreferences` fields, i18n namespace). Onboarding modal, `?` re-open icon. Home screen with new-entry CTA and recent entries. Ongoing gratitude entry form. Compat redirects from old `/tools/gratitude-log/*`. | Migrates the existing feature into the module pattern.                                                                     |
+| **2 - Compatibility fields** | DB migration adding `events`, `good_moment`, `miss_if_gone`, `hidden_good`, `level` columns and backfilling existing rows to `level = 3`. These fields remain compatibility/export fields rather than separate product modes.                                  | Reflects the book's progression without making levels a permanent switcher.                                                |
+| **3 - Break Cards**          | Break card carousel on home screen. Individual break screens for all 9 exercises. Card dismissal / rotation state (local, not persisted).                                                                                                                      | Can ship incrementally - start with 3 cards (Gratitude Letter, What if That Didn't Happen?, Instructions for Unhappiness). |
+| **4 - Journal enhancements** | 5-item today list + 3-item "in my life" list. Pre-fill suggestions on some prompts (e.g., rotating variant questions from the book: "What made you laugh?", "Who was kind to you?", "What simple pleasure did you enjoy?").                                    | Enriches the core journaling experience.                                                                                   |
+| **5 - Insights**             | Entry frequency chart (quiet, no streak language). Most-common gratitude themes (word frequency, private, never uploaded). Favorite Moments collection (surfaced from highest-rated or starred entries).                                                       | Deferred - same posture as meditation insights.                                                                            |
 
 ---
 
@@ -261,7 +261,7 @@ The full module is ready to widen after all five phases pass their own per-phase
 
 | Question                   | Decision                                                                                                                                                     |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Level picker               | **Removed** — levels are onboarding education only. New entries use the ongoing gratitude journal form and persist `level = 3` internally for compatibility. |
-| Break card cycling         | **Explicit dismiss only** — card stays until the user taps an X or "Next". State stored locally (session). Phase 3 will wire up AsyncStorage persistence.    |
-| Favorite Moments (Phase 5) | **Separate collection page** — `/modules/gratitude/favorites` route showing starred entries. Mirrors the book's "Favorite Moments" section.                  |
-| Localization               | **Both languages from the start** — English and Bulgarian translations ship together, matching the existing app coverage.                                    |
+| Level picker               | **Removed** - levels are onboarding education only. New entries use the ongoing gratitude journal form and persist `level = 3` internally for compatibility. |
+| Break card cycling         | **Explicit dismiss only** - card stays until the user taps an X or "Next". State stored locally (session). Phase 3 will wire up AsyncStorage persistence.    |
+| Favorite Moments (Phase 5) | **Separate collection page** - `/modules/gratitude/favorites` route showing starred entries. Mirrors the book's "Favorite Moments" section.                  |
+| Localization               | **Both languages from the start** - English and Bulgarian translations ship together, matching the existing app coverage.                                    |

@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -41,10 +41,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
   const userId = user?.id ?? null;
 
   const { data: habit, isLoading } = useHabit(userId, habitId);
-  const sinceDate = useMemo(() => {
-    const start = addDays(new Date(), -CALENDAR_WEEKS * 7 + 1);
-    return toLocalDateString(start);
-  }, []);
+  const sinceDate = toLocalDateString(addDays(new Date(), -CALENDAR_WEEKS * 7 + 1));
   const { data: logs } = useHabitLogs(userId, { habitId, sinceDate });
   const toggleLog = useToggleHabitLog(userId);
   const archive = useArchiveHabit(userId);
@@ -214,18 +211,18 @@ interface CalendarStripProps {
 function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) {
   const { t } = useTranslation("habits");
   const totalDays = weeks * 7;
-  const today = useMemo(() => {
+  const today = (() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d;
-  }, []);
-  const days = useMemo(() => {
+  })();
+  const days = (() => {
     const arr: Date[] = [];
     for (let i = totalDays - 1; i >= 0; i -= 1) {
       arr.push(addDays(today, -i));
     }
     return arr;
-  }, [today, totalDays]);
+  })();
 
   const chip = colorChipClass(habit.color);
   const todayStr = toLocalDateString(today);

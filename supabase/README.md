@@ -61,7 +61,7 @@ Run a full local Supabase stack (Postgres, Auth, Storage, Studio, Inbucket) via 
 
 ### Prerequisites
 
-- Docker (Docker Desktop or `docker` + `docker compose`). The CLI shells out to Docker; nothing else to install — the Supabase CLI is already a dev dependency invoked through `npm exec supabase`.
+- Docker (Docker Desktop or `docker` + `docker compose`). The CLI shells out to Docker; nothing else to install - the Supabase CLI is already a dev dependency invoked through `npm exec supabase`.
 
 ### Commands
 
@@ -106,7 +106,7 @@ Pick the path that matches how long you need the user:
 | Persistent (back after `db:reset`) | Add a block to `supabase/seed.sql` mirroring alice's pattern: `auth.users` + `auth.identities` + `profiles` + `user_preferences`                         | Use a fresh UUID and a unique email. Also update `SEED_USERS` in `test/integration/helpers.ts` if you want integration tests to reach the new user. |
 | One-off, throwaway                 | Studio UI at `http://localhost:54323` → **Authentication → Users → Add user**                                                                            | Fastest. Gone on next `db:reset`.                                                                                                                   |
 | One-off via signup flow            | Just sign up in the app                                                                                                                                  | Local Auth has auto-confirm so the user is immediately usable. Gone on `db:reset`.                                                                  |
-| Programmatic / scripted            | Service-role admin API: `client.auth.admin.createUser({ email, password, email_confirm: true })` — see `ensureSeedUser` in `test/integration/helpers.ts` | Works against the local stack via the deterministic CLI service-role key.                                                                           |
+| Programmatic / scripted            | Service-role admin API: `client.auth.admin.createUser({ email, password, email_confirm: true })` - see `ensureSeedUser` in `test/integration/helpers.ts` | Works against the local stack via the deterministic CLI service-role key.                                                                           |
 
 ### Inspecting auth emails
 
@@ -126,7 +126,7 @@ Only needed if you want to exercise the full Google sign-in flow locally. The se
    export GOOGLE_LOCAL_CLIENT_SECRET=...
    npm run db:start
    ```
-4. Sign in with any real Google account — local Auth creates the user on first sign-in.
+4. Sign in with any real Google account - local Auth creates the user on first sign-in.
 
 ### Integration tests
 
@@ -139,12 +139,12 @@ npm run test:integration               # run real-DB tests
 
 Coverage:
 
-- `cbt-repository.integration.test.ts` — thought_records CRUD + ordering + archived_at filter
-- `settings-repository.integration.test.ts` — user_preferences upserts, web_push_subscriptions, check constraints
-- `profile-repository.integration.test.ts` — profiles upserts + profile-pics storage round-trip
-- `rls.integration.test.ts` — cross-user isolation across all owner-scoped tables and the storage bucket
-- `db-functions.integration.test.ts` — `export_user_data()` coverage for private app data and `delete_user_account()`
-- `auth.integration.test.ts` — sign-in success/failure, sign-up, password-reset email landing in Mailpit (`http://localhost:54324`)
+- `cbt-repository.integration.test.ts` - thought_records CRUD + ordering + archived_at filter
+- `settings-repository.integration.test.ts` - user_preferences upserts, web_push_subscriptions, check constraints
+- `profile-repository.integration.test.ts` - profiles upserts + profile-pics storage round-trip
+- `rls.integration.test.ts` - cross-user isolation across all owner-scoped tables and the storage bucket
+- `db-functions.integration.test.ts` - `export_user_data()` coverage for private app data and `delete_user_account()`
+- `auth.integration.test.ts` - sign-in success/failure, sign-up, password-reset email landing in Mailpit (`http://localhost:54324`)
 
 Tests clean up after themselves (per-test teardown) so the suite is rerunnable without `db:reset` between runs. Local anon and service-role keys are deterministic Supabase CLI defaults and are hardcoded in `test/integration/helpers.ts`.
 
@@ -163,10 +163,10 @@ npm run test:e2e:ui                     # Playwright UI mode for debugging
 
 Coverage:
 
-- `sign-in.e2e.test.ts` — seeded user signs in via the UI and reaches the authenticated app; wrong password shows an inline error.
-- `create-thought-record.e2e.test.ts` — alice signs in, walks the 5-step CBT wizard, and the saved record renders on detail + history.
-- `sign-out.e2e.test.ts` — bob signs out from settings and lands back on the landing screen.
-- `sign-up-onboarding.e2e.test.ts` — brand-new user signs up, completes consent + app + CBT onboarding, and saves their first record.
+- `sign-in.e2e.test.ts` - seeded user signs in via the UI and reaches the authenticated app; wrong password shows an inline error.
+- `create-thought-record.e2e.test.ts` - alice signs in, walks the 5-step CBT wizard, and the saved record renders on detail + history.
+- `sign-out.e2e.test.ts` - bob signs out from settings and lands back on the landing screen.
+- `sign-up-onboarding.e2e.test.ts` - brand-new user signs up, completes consent + app + CBT onboarding, and saves their first record.
 
 Each test cleans up its own data via the service-role admin API (`test/e2e/helpers.ts` re-exports the integration helpers). Running E2E does not need `db:reset` between runs as long as the seed users still exist.
 

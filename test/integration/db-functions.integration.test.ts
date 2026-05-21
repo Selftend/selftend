@@ -139,7 +139,7 @@ describe("delete_user_account() (integration)", () => {
 
   afterEach(async () => {
     const admin = createServiceClient();
-    // Belt and braces — if the test failed before delete_user_account, clean up.
+    // Belt and braces - if the test failed before delete_user_account, clean up.
     await admin.auth.admin.deleteUser(testUserId).catch(() => undefined);
   });
 

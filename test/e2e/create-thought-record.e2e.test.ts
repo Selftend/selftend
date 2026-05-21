@@ -52,7 +52,7 @@ test.describe("create thought record", () => {
       .fill(automaticThought);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Step 3: Emotions — toggle a checkbox by clicking its label
+    // Step 3: Emotions - toggle a checkbox by clicking its label
     await page.getByText("Anxious", { exact: true }).first().click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 

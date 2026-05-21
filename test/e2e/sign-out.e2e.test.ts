@@ -15,7 +15,7 @@ test.describe("sign out", () => {
     await expect(signOut).toBeVisible({ timeout: 10_000 });
     await signOut.click();
 
-    // Back on landing — sign-in form is visible again.
+    // Back on landing - sign-in form is visible again.
     await expect(page.getByText("Sign in to your account")).toBeVisible({ timeout: 10_000 });
   });
 });

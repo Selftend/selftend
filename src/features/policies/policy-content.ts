@@ -50,7 +50,7 @@ export const privacyPolicySections: PolicySection[] = [
   {
     title: "4. Legal basis for processing (GDPR Articles 6 and 9)",
     body: [
-      "Contract (Art. 6(1)(b)): Processing your email and app data is necessary to provide the service you signed up for — maintaining your account, syncing your records, and delivering the self-help features.",
+      "Contract (Art. 6(1)(b)): Processing your email and app data is necessary to provide the service you signed up for - maintaining your account, syncing your records, and delivering the self-help features.",
       "Consent (Art. 6(1)(a)): Notification reminders are only scheduled after you explicitly opt in. You can withdraw consent at any time in Settings.",
       "Explicit consent for sensitive content (GDPR Art. 9(2)(a), where applicable): if your self-help entries include wellness, mental-health, or other special-category information, we process that content only to provide the app features you choose to use. You can withdraw this consent by deleting your account or contacting privacy@selftend.org.",
       "Legitimate interest (Art. 6(1)(f)): Minimal security logging (e.g., authentication events managed by Supabase) to protect the service and users from abuse.",
@@ -140,7 +140,7 @@ export const privacyPolicySections: PolicySection[] = [
     title: "13. Security measures",
     body: [
       "All data in transit is encrypted via HTTPS/TLS.",
-      "Database access is protected by Row-Level Security (RLS) — each user can only access their own data.",
+      "Database access is protected by Row-Level Security (RLS) - each user can only access their own data.",
       "Mobile session credentials are stored in the device's secure enclave via Expo SecureStore.",
       "No service-role keys or database passwords are exposed in the client application.",
       "Supabase infrastructure provides encryption at rest for stored data.",
@@ -286,7 +286,7 @@ export const termsSections: PolicySection[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Crisis Guidance (unchanged — still requires jurisdiction review)
+// Crisis Guidance (unchanged - still requires jurisdiction review)
 // ---------------------------------------------------------------------------
 
 export const crisisSections: PolicySection[] = [
@@ -365,7 +365,7 @@ export const cookiePolicySections: PolicySection[] = [
   {
     title: "Essential storage (required)",
     body: [
-      "We use browser localStorage to store your authentication session token. This is strictly necessary for the app to function — it keeps you signed in between visits.",
+      "We use browser localStorage to store your authentication session token. This is strictly necessary for the app to function - it keeps you signed in between visits.",
       "This storage cannot be disabled while using the app. If you clear your browser storage, you will need to sign in again.",
       "The app also stores small local preferences, such as language, theme, and last timer session duration. These preferences stay on your device and are not used for tracking.",
     ],

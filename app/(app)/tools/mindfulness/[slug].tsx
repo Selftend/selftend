@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -54,13 +54,13 @@ export default function MindfulnessExerciseScreen() {
     return () => clearInterval(id);
   }, [phase, secondsLeft]);
 
-  const instructions = useMemo(() => {
+  const instructions = (() => {
     if (!exercise) return [];
     const list = t(`mindfulness.exercises.${exercise.slug}.instructions`, {
       returnObjects: true,
     });
     return Array.isArray(list) ? (list as string[]) : [];
-  }, [exercise, t]);
+  })();
 
   if (!exercise) {
     return (

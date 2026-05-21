@@ -1,4 +1,4 @@
-# AGENTS.md
+﻿# AGENTS.md
 
 This file defines how AI agents should work in this repository.
 
@@ -91,7 +91,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Prefer concrete decisions over vague aspiration.
 - When pricing or platform policy is mentioned, link to official sources where possible and record the date checked.
 - If a decision is uncertain, mark it as an assumption or open question instead of hiding the uncertainty.
-- After each meaningful product, infrastructure, or process change, update any human-facing doc whose content the change affects — setup, commands, deployment, store submission, environment variables, safety/legal boundaries, blockers, or expected user inputs. If a change affects setup commands or contributor-visible defaults, update `README.md` in the same change.
+- After each meaningful product, infrastructure, or process change, update any human-facing doc whose content the change affects - setup, commands, deployment, store submission, environment variables, safety/legal boundaries, blockers, or expected user inputs. If a change affects setup commands or contributor-visible defaults, update `README.md` in the same change.
 - Per-PR review gates live in `.github/pull_request_template.md`.
 
 ## Git safety rule
@@ -101,7 +101,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 
 ## Product discipline
 
-- Do not add task checklists to docs in `docs/`, `supabase/`, or anywhere else — task tracking lives outside the repo.
+- Do not add task checklists to docs in `docs/`, `supabase/`, or anywhere else - task tracking lives outside the repo.
 - MVP should stay focused on guided self-help.
 - Community operations can start early outside the app, but community product features should not crowd out MVP utility.
 - Expansion beyond CBT is allowed, but the product should avoid becoming a vague "everything app."

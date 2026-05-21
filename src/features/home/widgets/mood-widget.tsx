@@ -61,7 +61,7 @@ export function MoodWidget({ userId }: { userId: string }) {
                 sevenDay.average === null && "text-muted-foreground",
               )}
             >
-              {sevenDay.average === null ? "—" : sevenDay.average.toFixed(1)}
+              {sevenDay.average === null ? "-" : sevenDay.average.toFixed(1)}
             </Text>
           </View>
           <View className="flex-1 gap-0.5 rounded-lg border border-border bg-background px-3 py-2">
@@ -71,7 +71,7 @@ export function MoodWidget({ userId }: { userId: string }) {
             <Text
               className={cn("text-xl font-semibold", moodToday === null && "text-muted-foreground")}
             >
-              {moodToday !== null ? String(moodToday) : "—"}
+              {moodToday !== null ? String(moodToday) : "-"}
             </Text>
           </View>
         </View>

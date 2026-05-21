@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -51,10 +51,7 @@ export function MoodEntryEditorScreen({
   const completeActivityId = paramValue(params.completeActivityId) ?? null;
 
   const { data: cachedList } = useMoodLogs(mode === "edit" ? (user?.id ?? null) : null, 30);
-  const fromCache = useMemo(
-    () => (moodId ? (cachedList?.find((log) => log.id === moodId) ?? null) : null),
-    [cachedList, moodId],
-  );
+  const fromCache = moodId ? (cachedList?.find((log) => log.id === moodId) ?? null) : null;
   const { data: fetched, isLoading } = useMoodLog(
     mode === "edit" && !fromCache ? (user?.id ?? null) : null,
     mode === "edit" && !fromCache ? moodId : null,

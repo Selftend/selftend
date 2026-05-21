@@ -112,6 +112,7 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
   ],
   experiments: {
     typedRoutes: true,
+    reactCompiler: true,
   },
   extra: {
     eas: {

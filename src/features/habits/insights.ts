@@ -36,7 +36,7 @@ export function getWeeklyRhythm(
 
 /**
  * Counts ticks contributing to each distinct identity in the current calendar
- * month. Habits with no identity are skipped — identity is the unit, not the
+ * month. Habits with no identity are skipped - identity is the unit, not the
  * habit.
  */
 export function getIdentityRoundUp(
@@ -68,7 +68,7 @@ export function getIdentityRoundUp(
 
 /**
  * Share of active (non-archived) build habits that have filled in a two-minute
- * version. Returns 0 when there are no build habits — a clean empty state.
+ * version. Returns 0 when there are no build habits - a clean empty state.
  */
 export function getTwoMinuteAdoption(habits: Habit[]): {
   filled: number;

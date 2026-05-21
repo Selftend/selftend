@@ -2,11 +2,11 @@
   "act": {
     "eyebrow": "Module · ACT",
     "title": "Acceptance & commitment therapy",
-    "description": "Building psychological flexibility through six interconnected processes. We're designing this module carefully — it'll arrive in the next major release.",
+    "description": "Building psychological flexibility through six interconnected processes. We're designing this module carefully - it'll arrive in the next major release.",
     "statusTitle": "In design · Coming after the CBT program ships",
     "statusBody": "ACT teaches that psychological pain is unavoidable, but suffering can be reduced by changing your relationship with thoughts and feelings rather than their content.",
     "processesTitle": "The six processes",
-    "processesDescription": "The 'hexaflex' — six skills that reinforce each other. Each will get its own structured program inside the module.",
+    "processesDescription": "The 'hexaflex' - six skills that reinforce each other. Each will get its own structured program inside the module.",
     "processes": {
       "defusion": {
         "name": "Cognitive defusion",
@@ -14,7 +14,7 @@
       },
       "acceptance": {
         "name": "Acceptance",
-        "desc": "Opening to difficult feelings rather than fighting or avoiding them — willingness as a skill."
+        "desc": "Opening to difficult feelings rather than fighting or avoiding them - willingness as a skill."
       },
       "present": {
         "name": "Present-moment",
@@ -22,7 +22,7 @@
       },
       "selfAsContext": {
         "name": "Self-as-context",
-        "desc": "The noticing self — bigger than any single thought or feeling."
+        "desc": "The noticing self - bigger than any single thought or feeling."
       },
       "values": {
         "name": "Values",
@@ -34,12 +34,12 @@
       }
     },
     "toolsTitle": "Shared tools you can already use",
-    "toolsDescription": "ACT will lean on these — they're available now from the sidebar."
+    "toolsDescription": "ACT will lean on these - they're available now from the sidebar."
   },
   "dbt": {
     "eyebrow": "Module · DBT",
     "title": "Dialectical behavior therapy",
-    "description": "Skills for high emotion intensity — distress tolerance, emotion regulation, mindfulness, and interpersonal effectiveness. On the roadmap.",
+    "description": "Skills for high emotion intensity - distress tolerance, emotion regulation, mindfulness, and interpersonal effectiveness. On the roadmap.",
     "statusTitle": "On the roadmap",
     "statusBody": "DBT was developed for high-emotion-intensity experiences. It pairs acceptance with change in equal measure.",
     "skillsTitle": "The four skill groups",

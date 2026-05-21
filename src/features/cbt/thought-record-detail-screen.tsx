@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -44,7 +44,7 @@ function displayText(value: string, fallback: string) {
 export default function ThoughtRecordDetailScreen() {
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
-  const recordId = useMemo(() => (typeof id === "string" ? id : null), [id]);
+  const recordId = typeof id === "string" ? id : null;
   const { user } = useSession();
   const [archiveError, setArchiveError] = useState("");
   const { data, isLoading } = useThoughtRecord(user?.id ?? null, recordId);

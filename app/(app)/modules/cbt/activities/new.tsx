@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, View } from "react-native";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -36,28 +36,20 @@ export default function NewActivityScreen() {
     activityId?: string;
     domain?: string;
   }>();
-  const activityId = useMemo(
-    () => (typeof rawActivityId === "string" && rawActivityId.length > 0 ? rawActivityId : null),
-    [rawActivityId],
-  );
-  const valueDomain = useMemo(
-    () =>
-      typeof rawDomain === "string" && lifeDomains.includes(rawDomain as LifeDomain)
-        ? (rawDomain as LifeDomain)
-        : null,
-    [rawDomain],
-  );
+  const activityId =
+    typeof rawActivityId === "string" && rawActivityId.length > 0 ? rawActivityId : null;
+  const valueDomain =
+    typeof rawDomain === "string" && lifeDomains.includes(rawDomain as LifeDomain)
+      ? (rawDomain as LifeDomain)
+      : null;
   const domainLabel = valueDomain ? t(`goals.domain.${valueDomain}`) : null;
-  const valueLinkedDefaults = useMemo(
-    () =>
-      valueDomain && domainLabel
-        ? {
-            ...defaultValues,
-            notes: t("activities.valuePrompt", { domain: domainLabel }),
-          }
-        : defaultValues,
-    [domainLabel, t, valueDomain],
-  );
+  const valueLinkedDefaults =
+    valueDomain && domainLabel
+      ? {
+          ...defaultValues,
+          notes: t("activities.valuePrompt", { domain: domainLabel }),
+        }
+      : defaultValues;
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
 

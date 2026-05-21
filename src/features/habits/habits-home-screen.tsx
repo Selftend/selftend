@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -39,47 +39,37 @@ export default function HabitsHomeScreen() {
   const userId = user?.id ?? null;
 
   const { data: habits, isLoading: habitsLoading } = useHabits(userId);
-  const sinceDate = useMemo(() => {
-    const start = addDays(new Date(), -30);
-    return toLocalDateString(start);
-  }, []);
+  const sinceDate = toLocalDateString(addDays(new Date(), -30));
   const { data: logs } = useHabitLogs(userId, { sinceDate });
   const toggleLog = useToggleHabitLog(userId);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [learnIndex, setLearnIndex] = useState(0);
 
-  const allHabits = useMemo(() => habits ?? [], [habits]);
-  const allLogs = useMemo(() => logs ?? [], [logs]);
+  const allHabits = habits ?? [];
+  const allLogs = logs ?? [];
   const todayStr = todayLocalDateString();
-  const today = useMemo(() => new Date(), []);
+  const today = new Date();
 
-  const todayHabits = useMemo(
-    () => allHabits.filter((habit) => isScheduledOn(habit, today)),
-    [allHabits, today],
-  );
+  const todayHabits = allHabits.filter((habit) => isScheduledOn(habit, today));
 
-  const identities = useMemo(() => {
+  const identities = (() => {
     const seen = new Set<string>();
     for (const habit of allHabits) {
       const id = habit.identity.trim();
       if (id) seen.add(id);
     }
     return Array.from(seen);
-  }, [allHabits]);
+  })();
 
-  const missTwiceRiskHabits = useMemo(
-    () => todayHabits.filter((habit) => isAtMissTwiceRisk(habit, allLogs, today)),
-    [todayHabits, allLogs, today],
+  const missTwiceRiskHabits = todayHabits.filter((habit) =>
+    isAtMissTwiceRisk(habit, allLogs, today),
   );
 
-  const recentLogs = useMemo(() => allLogs.slice(0, 5), [allLogs]);
-  const weeklyRhythm = useMemo(() => getWeeklyRhythm(allLogs, 4, today), [allLogs, today]);
-  const identityRoundUp = useMemo(
-    () => getIdentityRoundUp(allHabits, allLogs, today),
-    [allHabits, allLogs, today],
-  );
-  const twoMinuteAdoption = useMemo(() => getTwoMinuteAdoption(allHabits), [allHabits]);
+  const recentLogs = allLogs.slice(0, 5);
+  const weeklyRhythm = getWeeklyRhythm(allLogs, 4, today);
+  const identityRoundUp = getIdentityRoundUp(allHabits, allLogs, today);
+  const twoMinuteAdoption = getTwoMinuteAdoption(allHabits);
 
   function handleToggle(habitId: string) {
     toggleLog.mutate({ habitId, loggedOn: todayStr });
@@ -248,7 +238,7 @@ interface HabitRowProps {
 function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
   const { t } = useTranslation("habits");
   const tickedToday = isTickedOn(logs, habit.id, todayStr);
-  const days = useMemo(() => lastSevenDays(), []);
+  const days = lastSevenDays();
   const colorClass = colorChipClass(habit.color);
 
   return (
@@ -446,42 +436,46 @@ function LearnCard({ learnIndex, onDismiss }: LearnCardProps) {
       <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         {t("learn.sectionLabel")}
       </Text>
-      <Pressable
-        accessibilityLabel={t(`${cardKey}.title` as Parameters<typeof t>[0])}
-        accessibilityHint={t("learn.openHint")}
-        accessibilityRole="button"
-        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-        onPress={() =>
-          router.push({
-            pathname: "/tools/habits/learn/[slug]",
-            params: { slug: card.slug },
-          })
-        }
-        className="gap-3 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
-        role="button"
-      >
-        <View className="flex-row items-center justify-between">
-          <View className={cn("size-10 items-center justify-center rounded-xl", chip.bg)}>
-            <Icon name={card.icon} className={cn("size-5", chip.text)} />
+      <View className="relative">
+        <Pressable
+          accessibilityLabel={t(`${cardKey}.title` as Parameters<typeof t>[0])}
+          accessibilityHint={t("learn.openHint")}
+          accessibilityRole="button"
+          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+          onPress={() =>
+            router.push({
+              pathname: "/tools/habits/learn/[slug]",
+              params: { slug: card.slug },
+            })
+          }
+          className="gap-3 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
+          role="button"
+        >
+          <View className="flex-row items-center justify-between">
+            <View className={cn("size-10 items-center justify-center rounded-xl", chip.bg)}>
+              <Icon name={card.icon} className={cn("size-5", chip.text)} />
+            </View>
+            <View className="size-5" />
           </View>
-          <Pressable
-            accessibilityLabel={t("learn.dismiss")}
-            accessibilityRole="button"
-            hitSlop={8}
-            onPress={onDismiss}
-          >
-            <Icon name="arrow-forward" className="size-5 text-muted-foreground" />
-          </Pressable>
-        </View>
-        <View className="gap-1">
-          <Text className="text-base font-semibold">
-            {t(`${cardKey}.title` as Parameters<typeof t>[0])}
-          </Text>
-          <Text variant="muted" className="text-sm">
-            {t(`${cardKey}.short` as Parameters<typeof t>[0])}
-          </Text>
-        </View>
-      </Pressable>
+          <View className="gap-1">
+            <Text className="text-base font-semibold">
+              {t(`${cardKey}.title` as Parameters<typeof t>[0])}
+            </Text>
+            <Text variant="muted" className="text-sm">
+              {t(`${cardKey}.short` as Parameters<typeof t>[0])}
+            </Text>
+          </View>
+        </Pressable>
+        <Pressable
+          accessibilityLabel={t("learn.dismiss")}
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={onDismiss}
+          className="absolute right-4 top-4"
+        >
+          <Icon name="arrow-forward" className="size-5 text-muted-foreground" />
+        </Pressable>
+      </View>
     </View>
   );
 }

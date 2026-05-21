@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Image, PanResponder, Platform, Pressable, TextInput, View } from "react-native";
+import { PanResponder, Platform, Pressable, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -45,8 +45,7 @@ function formatTime(seconds: number) {
 async function playBell() {
   try {
     if (Platform.OS === "web") {
-      const source = Image.resolveAssetSource(bellSound);
-      const audio = new window.Audio(source.uri);
+      const audio = new window.Audio(bellSound as string);
       await audio.play();
       return;
     }
@@ -73,7 +72,7 @@ function DurationPicker({ value, onChange }: { value: number; onChange: (n: numb
   const { t } = useTranslation("timer");
   const [isEditing, setIsEditing] = useState(false);
   const [inputText, setInputText] = useState(String(value));
-  // continuousPos drives bar rendering — it's a float, e.g. 15.3
+  // continuousPos drives bar rendering - it's a float, e.g. 15.3
   const [continuousPos, setContinuousPos] = useState<number>(value);
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -200,7 +199,7 @@ function DurationPicker({ value, onChange }: { value: number; onChange: (n: numb
             returnKeyType="done"
             selectTextOnFocus
             className="text-center text-5xl font-bold text-foreground"
-            // @ts-ignore — web only
+            // @ts-ignore - web only
             style={{ outline: "none", minWidth: 90 }}
           />
         ) : (

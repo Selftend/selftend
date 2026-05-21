@@ -1,6 +1,5 @@
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -66,9 +65,9 @@ export default function ProgressScreen() {
 
   const isLoading = moodLoading || journalLoading || gratitudeLoading;
 
-  const last14Dates = useMemo(() => getLast14Dates(), []);
+  const last14Dates = getLast14Dates();
 
-  const chartData = useMemo(() => {
+  const chartData = (() => {
     if (!moodLogs) return [];
     return last14Dates.map((date, i) => {
       const logsOnDay = moodLogs.filter((l) => l.loggedAt.slice(0, 10) === date);
@@ -80,29 +79,24 @@ export default function ProgressScreen() {
       const label = i % 2 === 0 ? getDayLabel(date) : "";
       return { day: label, date, score: avgScore };
     });
-  }, [moodLogs, last14Dates]);
+  })();
 
   const chartPoints = chartData.filter((d) => d.score !== null) as {
     day: string;
     score: number;
   }[];
 
-  const thirtyDayCutoff = useMemo(() => getCutoff(30), []);
+  const thirtyDayCutoff = getCutoff(30);
 
-  const thirtyDayMoodCount = useMemo(() => {
-    if (!moodLogs) return 0;
-    return moodLogs.filter((l) => new Date(l.loggedAt) >= thirtyDayCutoff).length;
-  }, [moodLogs, thirtyDayCutoff]);
-
-  const thirtyDayJournalCount = useMemo(() => {
-    if (!journalEntries) return 0;
-    return journalEntries.filter((e) => new Date(e.createdAt) >= thirtyDayCutoff).length;
-  }, [journalEntries, thirtyDayCutoff]);
-
-  const thirtyDayGratitudeCount = useMemo(() => {
-    if (!gratitudeEntries) return 0;
-    return gratitudeEntries.filter((e) => new Date(e.loggedAt) >= thirtyDayCutoff).length;
-  }, [gratitudeEntries, thirtyDayCutoff]);
+  const thirtyDayMoodCount = moodLogs
+    ? moodLogs.filter((l) => new Date(l.loggedAt) >= thirtyDayCutoff).length
+    : 0;
+  const thirtyDayJournalCount = journalEntries
+    ? journalEntries.filter((e) => new Date(e.createdAt) >= thirtyDayCutoff).length
+    : 0;
+  const thirtyDayGratitudeCount = gratitudeEntries
+    ? gratitudeEntries.filter((e) => new Date(e.loggedAt) >= thirtyDayCutoff).length
+    : 0;
 
   const promptKey = REFLECTION_PROMPTS[new Date().getDay() % REFLECTION_PROMPTS.length];
   const chartWidth = Math.min(width - 48, 400);

@@ -67,7 +67,7 @@
     "greetingEvening": "Good evening",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "subtitle": "A small check-in goes a long way. Pick one thing — there's no pressure to do everything.",
+    "subtitle": "A small check-in goes a long way. Pick one thing - there's no pressure to do everything.",
     "quickActions": {
       "logMood": "Log mood",
       "thoughtRecord": "Thought record",
@@ -83,7 +83,7 @@
       "logsCount": "{{count}} log",
       "logsCount_other": "{{count}} logs",
       "notLogged": "Not logged yet",
-      "noData": "—",
+      "noData": "-",
       "logMood": "Log mood"
     },
     "plan": {
@@ -100,17 +100,17 @@
     },
     "modules": {
       "title": "Therapeutic modules",
-      "subtitle": "Bigger structured programs. Pick one to work through over time — the shared tools feed into all of them.",
+      "subtitle": "Bigger structured programs. Pick one to work through over time - the shared tools feed into all of them.",
       "cbtName": "Cognitive behavioral therapy",
       "cbtDescription": "The Think · Act · Be framework. Evidence-based strategies for anxiety, depression, anger, panic and worry.",
-      "meditationName": "Meditation — The Mind Illuminated",
+      "meditationName": "Meditation - The Mind Illuminated",
       "meditationDescription": "A ten-stage structured practice for developing stable attention and powerful mindfulness. Patient, non-pushy, self-paced.",
-      "gratitudeName": "Gratitude — Kurzgesagt Journal",
+      "gratitudeName": "Gratitude - Kurzgesagt Journal",
       "gratitudeDescription": "Three levels of practice backed by research: noticing small things, mental subtraction, and building the journaling habit.",
       "actName": "Acceptance & commitment",
-      "actDescription": "Six processes for psychological flexibility — values, defusion, acceptance, present-moment, self-as-context, committed action.",
+      "actDescription": "Six processes for psychological flexibility - values, defusion, acceptance, present-moment, self-as-context, committed action.",
       "dbtName": "Dialectical behavior therapy",
-      "dbtDescription": "Four skill groups — mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness.",
+      "dbtDescription": "Four skill groups - mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness.",
       "live": "Live",
       "soon": "Soon",
       "inDesign": "In design",
@@ -176,7 +176,7 @@
       "meditationStage": "Current stage: {{stage}}",
       "startSession": "Start session",
       "gratitudeHint": "Notice what went well today.",
-      "journalHint": "Write freely — no prompts, no judgment.",
+      "journalHint": "Write freely - no prompts, no judgment.",
       "habitsHint": "No activities scheduled for today.",
       "habitsAllDone": "All done for today!",
       "newHabit": "New habit",
@@ -198,7 +198,7 @@
   },
   "progress": {
     "title": "Reflection summary",
-    "description": "A quiet look at the last 30 days — no scores, no pressure.",
+    "description": "A quiet look at the last 30 days - no scores, no pressure.",
     "moodTrend": "Mood trend",
     "moodTrendDescription": "Daily average over the last 14 days.",
     "noMoodData": "Log a mood to start your trend.",
@@ -252,7 +252,7 @@
   "headerTour": {
     "skipAll": "Skip all tips",
     "tune": {
-      "description": "Tap here to customise this module — adjust your schedule and preferences.",
+      "description": "Tap here to customise this module - adjust your schedule and preferences.",
       "dismiss": "Got it"
     },
     "notifications": {
@@ -337,7 +337,7 @@
     },
     "wizard": {
       "concernsTitle": "What do you want support with?",
-      "concernsSubtitle": "Pick everything that feels relevant — you can change this later.",
+      "concernsSubtitle": "Pick everything that feels relevant - you can change this later.",
       "toolsTitle": "What tools feel useful?",
       "toolsSubtitle": "Select the practices you'd like in your routine.",
       "routineTitle": "How much do you want to take on?",
@@ -366,9 +366,9 @@
       "toolJournal": "Journal",
       "toolHabits": "Habit tracking",
       "routineLight": "Light",
-      "routineLightDesc": "2–3 items — a gentle daily check-in",
+      "routineLightDesc": "2–3 items - a gentle daily check-in",
       "routineStandard": "Standard",
-      "routineStandardDesc": "4–5 items — a balanced routine",
+      "routineStandardDesc": "4–5 items - a balanced routine",
       "routineCustom": "Custom",
       "routineCustomDesc": "All selected tools, no cap"
     },

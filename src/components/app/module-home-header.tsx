@@ -175,13 +175,13 @@ export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps)
     }
   }
 
-  const setActionRef = useCallback((key: ButtonTourKey, ref: View | null) => {
+  const setActionRef = (key: ButtonTourKey, ref: View | null) => {
     if (ref) {
       buttonViewRefs.current.set(key, ref);
       return;
     }
     buttonViewRefs.current.delete(key);
-  }, []);
+  };
 
   return (
     <View>

@@ -1,4 +1,4 @@
-# Architecture
+﻿# Architecture
 
 A map of how the app is organized. For stack choices, see [stack.md](stack.md). For stored data, see [data-privacy-model.md](data-privacy-model.md).
 
@@ -69,7 +69,7 @@ Public routes stay reachable without sign-in. The `(app)` group is gated by [src
 - **Chunked native auth storage:** `src/lib/secure-store-storage.ts` splits oversized session values across SecureStore keys.
 - **`detectSessionInUrl: false`.** The app handles callback URLs explicitly through `app/(auth)/auth-callback.tsx` and `src/features/auth/callback.ts` instead of letting Supabase auto-parse the URL. This makes Expo Router + deep linking + magic-link + OAuth + recovery flows behave consistently across platforms.
 
-`requireSupabase()` is the call-site helper that throws if the client is `null` (i.e., env vars missing). All repository code uses it — no caller hand-rolls null checks.
+`requireSupabase()` is the call-site helper that throws if the client is `null` (i.e., env vars missing). All repository code uses it - no caller hand-rolls null checks.
 
 On native, [`initializeSupabaseAutoRefresh()`](../src/lib/supabase.ts) wires `AppState` so token refresh pauses in background and resumes in foreground.
 
@@ -127,7 +127,7 @@ Web:
 - Uses the browser **Push API** plus a service worker registered at `/selftend-push-worker.js`.
 - The browser subscription endpoint and keys are stored in the `web_push_subscriptions` table (per browser, not per user).
 - A scheduled **Supabase Edge Function** (`send-web-reminders`) runs on a Vault-stored cron secret and sends pushes to subscribed endpoints whose local-time matches.
-- iOS Safari requires the user to add the site to the Home Screen before web push works — this is documented at the consent surface.
+- iOS Safari requires the user to add the site to the Home Screen before web push works - this is documented at the consent surface.
 
 Controls are shared; delivery differs. Reminder copy/consent usually changes one surface. Reminder scheduling changes both.
 
@@ -163,11 +163,11 @@ Repository errors bubble to TanStack Query. Screens use `src/components/app/scre
 
 When a placeholder route becomes real, add:
 
-1. `src/features/{name}/types.ts` — types
-2. `src/features/{name}/schemas.ts` (+ `.test.ts`) — Zod validation
-3. `src/features/{name}/repository.ts` — Supabase queries with `requireSupabase()`
-4. `src/features/{name}/queries.ts` — TanStack Query hooks
-5. A migration in `supabase/migrations/` — table, RLS policies, ownership column, export coverage update, deletion coverage update
+1. `src/features/{name}/types.ts` - types
+2. `src/features/{name}/schemas.ts` (+ `.test.ts`) - Zod validation
+3. `src/features/{name}/repository.ts` - Supabase queries with `requireSupabase()`
+4. `src/features/{name}/queries.ts` - TanStack Query hooks
+5. A migration in `supabase/migrations/` - table, RLS policies, ownership column, export coverage update, deletion coverage update
 6. Screens under `app/(app)/{name}/` that use the queries
 7. i18n keys in all seven namespaces, in every supported locale
 8. At least one schema/repository test and one component-state test

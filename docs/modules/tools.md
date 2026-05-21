@@ -1,4 +1,4 @@
-# Tools Navigation Spec
+﻿# Tools Navigation Spec
 
 The product stays modular without implying planned tools are already ready.
 
@@ -51,20 +51,20 @@ Working tool routes:
 - `/tools/gratitude-log`, `/tools/gratitude-log/new`, `/tools/gratitude-log/[id]`, `/tools/gratitude-log/[id]/edit` (compat redirects → `/modules/gratitude/*`)
 - `/tools/habits`, `/tools/habits/new`, `/tools/habits/[id]`, `/tools/habits/[id]/edit`, `/tools/habits/[id]/log`, `/tools/habits/history`, `/tools/habits/onboarding`, `/tools/habits/learn`, `/tools/habits/learn/[slug]`
 
-Working gratitude routes (planned — Phase 1):
+Working gratitude routes (planned - Phase 1):
 
-- `/modules/gratitude` — home (new-entry CTA, insights, recent entries, break card)
-- `/modules/gratitude/onboarding` — onboarding modal fallback / revisit
-- `/modules/gratitude/new` — create gratitude journal entry
+- `/modules/gratitude` - home (new-entry CTA, insights, recent entries, break card)
+- `/modules/gratitude/onboarding` - onboarding modal fallback / revisit
+- `/modules/gratitude/new` - create gratitude journal entry
 - `/modules/gratitude/entries`, `/modules/gratitude/entries/[id]`, `/modules/gratitude/entries/[id]/edit`
-- `/modules/gratitude/favorites` — Favorite Moments collection for starred entries
-- `/modules/gratitude/breaks/[slug]` — individual exercise or science card
+- `/modules/gratitude/favorites` - Favorite Moments collection for starred entries
+- `/modules/gratitude/breaks/[slug]` - individual exercise or science card
 
 Working meditation routes:
 
-- `/modules/meditation` — home (stage-aware)
-- `/modules/meditation/learn` — framework primer
-- `/modules/meditation/session/new` — pre-sit primer, timer, post-sit reflection
+- `/modules/meditation` - home (stage-aware)
+- `/modules/meditation/learn` - framework primer
+- `/modules/meditation/session/new` - pre-sit primer, timer, post-sit reflection
 - `/modules/meditation/sessions`, `/modules/meditation/sessions/[id]`
 - `/modules/meditation/stages`, `/modules/meditation/stages/[n]`
 

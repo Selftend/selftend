@@ -104,7 +104,7 @@ export function computeBreadcrumbs(pathname: string, t: (key: string) => string)
       crumbs.push({ label: t(STATIC_ROUTES[path]), href: isLast ? undefined : path });
       prevWasKnown = true;
     } else if (TRANSPARENT_SEGMENTS.has(segment)) {
-      // transparent group — skip but keep prevWasKnown
+      // transparent group - skip but keep prevWasKnown
     } else if (KNOWN_SUB_SEGMENTS[segment] !== undefined) {
       crumbs.push({ label: t(KNOWN_SUB_SEGMENTS[segment]), href: isLast ? undefined : path });
       prevWasKnown = true;

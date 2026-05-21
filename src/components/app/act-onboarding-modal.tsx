@@ -271,7 +271,7 @@ export function ActWizard({
               {ACT_LIFE_DOMAINS.map((domain) => (
                 <View key={domain} className="gap-2">
                   <Text className="text-sm font-semibold">
-                    {t(`onboarding.bullsEye.${domain}`)} — {bullsEyeRatings[domain]}/10
+                    {t(`onboarding.bullsEye.${domain}`)} - {bullsEyeRatings[domain]}/10
                   </Text>
                   <View className="flex-row flex-wrap gap-1.5">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {

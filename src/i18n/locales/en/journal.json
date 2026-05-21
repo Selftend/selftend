@@ -1,6 +1,6 @@
 {
   "title": "Journal",
-  "description": "Private free-text reflection. Write as little or as much as you want — no streaks, no pressure.",
+  "description": "Private free-text reflection. Write as little or as much as you want - no streaks, no pressure.",
   "cta": {
     "new": "New entry"
   },
@@ -51,11 +51,11 @@
     },
     "science": {
       "title": "Expressive writing works",
-      "body": "Decades of research by James Pennebaker show that writing about thoughts and feelings lowers stress, reduces anxiety, and improves physical health — even in short bursts."
+      "body": "Decades of research by James Pennebaker show that writing about thoughts and feelings lowers stress, reduces anxiety, and improves physical health - even in short bursts."
     },
     "noPressure": {
       "title": "No pressure, no rules",
-      "body": "There are no streaks, no minimum length, and nothing is ever shared. Write two sentences or two pages — whatever is useful."
+      "body": "There are no streaks, no minimum length, and nothing is ever shared. Write two sentences or two pages - whatever is useful."
     },
     "finish": {
       "start": "Got it"

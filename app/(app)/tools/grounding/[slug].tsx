@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -33,11 +33,11 @@ export default function GroundingExerciseScreen() {
 
   const saveMutation = useSaveGroundingSession(user?.id ?? null);
 
-  const steps = useMemo(() => {
+  const steps = (() => {
     if (!technique) return [];
     const list = t(`grounding.techniques.${technique.slug}.steps`, { returnObjects: true });
     return Array.isArray(list) ? (list as string[]) : [];
-  }, [technique, t]);
+  })();
 
   if (!technique) {
     return (

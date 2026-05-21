@@ -32,12 +32,12 @@ export function CbtModuleWidget({ userId }: { userId: string }) {
     },
     {
       label: t("today.dashboard.cbtModuleActivities"),
-      value: scheduledToday.length > 0 ? `${completedActivities}/${scheduledToday.length}` : "—",
+      value: scheduledToday.length > 0 ? `${completedActivities}/${scheduledToday.length}` : "-",
       done: scheduledToday.length > 0 && completedActivities === scheduledToday.length,
     },
     {
       label: t("today.dashboard.cbtModuleSelfCare"),
-      value: selfCareDone ? t("today.dashboard.done") : "—",
+      value: selfCareDone ? t("today.dashboard.done") : "-",
       done: selfCareDone,
     },
   ];

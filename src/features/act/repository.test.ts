@@ -24,7 +24,7 @@ function buildClient(builders: Record<string, unknown>) {
   >;
 }
 
-describe("act repository — getACTProgramState", () => {
+describe("act repository - getACTProgramState", () => {
   it("returns null when no row exists for the user", async () => {
     const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
     const eq = jest.fn(() => ({ maybeSingle }));
@@ -84,7 +84,7 @@ describe("act repository — getACTProgramState", () => {
   });
 });
 
-describe("act repository — upsertACTProgramState", () => {
+describe("act repository - upsertACTProgramState", () => {
   it("only writes columns for fields present in the patch", async () => {
     const single = jest.fn().mockResolvedValue({
       data: {
@@ -124,7 +124,7 @@ describe("act repository — upsertACTProgramState", () => {
   });
 });
 
-describe("act repository — saveDefusionLog", () => {
+describe("act repository - saveDefusionLog", () => {
   it("trims text fields and writes nulls for omitted optional ratings", async () => {
     const row = {
       id: "log-1",
@@ -167,7 +167,7 @@ describe("act repository — saveDefusionLog", () => {
   });
 });
 
-describe("act repository — listDefusionLogs", () => {
+describe("act repository - listDefusionLogs", () => {
   it("returns an empty list when the table is missing", async () => {
     const limit = jest
       .fn()
@@ -182,7 +182,7 @@ describe("act repository — listDefusionLogs", () => {
   });
 });
 
-describe("act repository — value entries and committed actions", () => {
+describe("act repository - value entries and committed actions", () => {
   it("upsertValueEntry trims text fields and uses (user_id, life_domain) as the conflict key", async () => {
     const row = {
       id: "v1",
@@ -315,7 +315,7 @@ describe("act repository — value entries and committed actions", () => {
   });
 });
 
-describe("act repository — action steps", () => {
+describe("act repository - action steps", () => {
   it("saveActionStep trims the description before insert", async () => {
     const row = {
       id: "s1",

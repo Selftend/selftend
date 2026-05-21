@@ -1,7 +1,7 @@
--- ACT Phase 2 — Expansion (Acceptance).
+-- ACT Phase 2 - Expansion (Acceptance).
 -- Adds act_expansion_logs and act_urge_surf_logs tables.
 
--- 1. Expansion log — 4-step exercise, Struggle Switch, clean/dirty distinction.
+-- 1. Expansion log - 4-step exercise, Struggle Switch, clean/dirty distinction.
 CREATE TABLE IF NOT EXISTS act_expansion_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -34,7 +34,7 @@ CREATE POLICY "Users can manage their own ACT expansion logs"
 CREATE INDEX IF NOT EXISTS act_expansion_logs_user_created
   ON act_expansion_logs (user_id, created_at DESC);
 
--- 2. Urge surfing log — separate from expansion as it has a distinct data shape.
+-- 2. Urge surfing log - separate from expansion as it has a distinct data shape.
 CREATE TABLE IF NOT EXISTS act_urge_surf_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,

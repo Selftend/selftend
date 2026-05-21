@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -39,10 +39,7 @@ export default function MoodDetailScreen() {
   const showToast = useToastStore((state) => state.showToast);
 
   const { data: cachedList } = useMoodLogs(user?.id ?? null, 30);
-  const fromCache = useMemo(
-    () => (moodId ? (cachedList?.find((log) => log.id === moodId) ?? null) : null),
-    [cachedList, moodId],
-  );
+  const fromCache = moodId ? (cachedList?.find((log) => log.id === moodId) ?? null) : null;
 
   const { data: fetched, isLoading } = useMoodLog(
     fromCache ? null : (user?.id ?? null),

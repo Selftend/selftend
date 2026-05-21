@@ -1,6 +1,5 @@
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -83,9 +82,9 @@ export default function WeeklyReviewScreen() {
   const { data: goals, isLoading: goalsLoading } = useGoals(user?.id ?? null);
   const { data: thoughtRecords, isLoading: recordsLoading } = useThoughtRecords(user?.id ?? null);
 
-  const weekDates = useMemo(() => getWeekDates(), []);
+  const weekDates = getWeekDates();
 
-  const chartData = useMemo(() => {
+  const chartData = (() => {
     if (!moodLogs) return [];
     return weekDates.map((date) => {
       const logsOnDay = moodLogs.filter((l) => l.loggedAt.slice(0, 10) === date);
@@ -95,14 +94,14 @@ export default function WeeklyReviewScreen() {
           : null;
       return { day: getDayLabel(date), date, score: avgScore };
     });
-  }, [moodLogs, weekDates]);
+  })();
 
   const chartPoints = chartData.filter((d) => d.score !== null) as {
     day: string;
     score: number;
   }[];
 
-  const weekActivities = useMemo(() => {
+  const weekActivities = (() => {
     if (!activities) return { planned: 0, completed: 0 };
     const weekStart = weekDates[0];
     const weekEnd = weekDates[6];
@@ -114,15 +113,15 @@ export default function WeeklyReviewScreen() {
       planned: inRange.length,
       completed: inRange.filter((a) => a.completedAt !== null).length,
     };
-  }, [activities, weekDates]);
+  })();
 
   const activeGoals = goals?.filter((g) => g.status === "active") ?? [];
 
-  const weekRecords = useMemo(() => {
+  const weekRecords = (() => {
     if (!thoughtRecords) return [];
     const weekStart = weekDates[0];
     return thoughtRecords.filter((r) => r.createdAt.slice(0, 10) >= weekStart);
-  }, [thoughtRecords, weekDates]);
+  })();
 
   const promptKey = REFLECTION_PROMPTS[new Date().getDay() % REFLECTION_PROMPTS.length];
   const isLoading = moodLoading || activitiesLoading || goalsLoading || recordsLoading;

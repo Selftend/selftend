@@ -166,7 +166,7 @@ export default function BreathingExerciseScreen() {
                   <View className="gap-1">
                     {pattern.phases.map((phase, i) => (
                       <Text key={i} variant="muted">
-                        {t(`breathing.phases.${phase.label}`)} — {phase.durationSeconds}s
+                        {t(`breathing.phases.${phase.label}`)} - {phase.durationSeconds}s
                       </Text>
                     ))}
                   </View>

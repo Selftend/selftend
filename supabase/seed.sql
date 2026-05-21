@@ -2,9 +2,9 @@
 -- Auto-applied by `supabase db reset`. Never runs against the linked cloud project.
 --
 -- Accounts (all password: password123):
---   alice@test.local — fresh post-onboarding, no records
---   bob@test.local   — mid-use, 5 thought records, reminders on
---   demo@test.local  — polished demo/screenshot account, 10 records
+--   alice@test.local - fresh post-onboarding, no records
+--   bob@test.local   - mid-use, 5 thought records, reminders on
+--   demo@test.local  - polished demo/screenshot account, 10 records
 
 -- auth.users
 -- The empty-string token columns (confirmation_token, recovery_token, etc.) are
@@ -241,7 +241,7 @@ values (
   timezone('utc', now())
 );
 
--- public.thought_records — bob (5)
+-- public.thought_records - bob (5)
 insert into public.thought_records (
   user_id, situation, automatic_thought, emotions, distortions, balanced_thought, created_at, updated_at
 )
@@ -297,7 +297,7 @@ values
     timezone('utc', now()) - interval '1 days'
   );
 
--- public.thought_records — demo (10, spread across 60 days, polished for screenshots)
+-- public.thought_records - demo (10, spread across 60 days, polished for screenshots)
 insert into public.thought_records (
   user_id, situation, automatic_thought, emotions, distortions, balanced_thought, created_at, updated_at
 )

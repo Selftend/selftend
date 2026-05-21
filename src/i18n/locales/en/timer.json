@@ -1,6 +1,6 @@
 {
   "title": "Timer",
-  "description": "A quiet timer with start and end bells. No tracking, no plan — just sit.",
+  "description": "A quiet timer with start and end bells. No tracking, no plan - just sit.",
   "duration": {
     "label": "Duration",
     "minutes": "{{count}} min",

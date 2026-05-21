@@ -7,12 +7,12 @@
   "home": {
     "title": "ACT",
     "subtitle": "Inspired by The Happiness Trap by Russ Harris",
-    "description": "Six skills that build psychological flexibility — the ability to act on your values even when difficult thoughts and feelings are present.",
+    "description": "Six skills that build psychological flexibility - the ability to act on your values even when difficult thoughts and feelings are present.",
     "onboardingHint": "Learn about ACT",
     "wizardHint": "Personalise ACT",
     "settingsHint": "Adjust settings",
     "principlesTitle": "The six principles",
-    "principlesDescription": "Mindfulness skills, values, and committed action — working together.",
+    "principlesDescription": "Mindfulness skills, values, and committed action - working together.",
     "quickActionsTitle": "Quick actions",
     "defuseThought": "Defuse a thought",
     "logMood": "Log mood",
@@ -36,7 +36,7 @@
     "connection": {
       "name": "Connection",
       "short": "Present-moment awareness",
-      "desc": "Notice what is happening right now — not the past, not the future."
+      "desc": "Notice what is happening right now - not the past, not the future."
     },
     "observingSelf": {
       "name": "Observing Self",
@@ -46,7 +46,7 @@
     "values": {
       "name": "Values",
       "short": "What matters most",
-      "desc": "Your chosen directions in life. Not goals to achieve — ways to be."
+      "desc": "Your chosen directions in life. Not goals to achieve - ways to be."
     },
     "committedAction": {
       "name": "Committed Action",
@@ -77,9 +77,9 @@
     "model": {
       "title": "The ACT Model",
       "subtitle": "Three moves. One formula.",
-      "accept": "A — Accept thoughts and feelings, and be present",
-      "connect": "C — Connect with your values",
-      "take": "T — Take effective action",
+      "accept": "A - Accept thoughts and feelings, and be present",
+      "connect": "C - Connect with your values",
+      "take": "T - Take effective action",
       "formula": "Mindfulness + Values + Action = Psychological Flexibility",
       "formulaBody": "Psychological flexibility is the ability to act on what matters even when difficult thoughts and feelings are present. That is the goal.",
       "mindfulnessGroup": "Mindfulness skills",
@@ -108,14 +108,14 @@
       "leisure": "Leisure & play",
       "relationships": "Relationships",
       "personalGrowth": "Health & personal growth",
-      "ratingLabel": "{{domain}} — {{rating}}/10",
+      "ratingLabel": "{{domain}} - {{rating}}/10",
       "continue": "That's my starting point"
     },
     "commit": {
       "title": "Your first step",
       "subtitle": "Based on what you shared, we suggest starting here.",
       "startingWith": "Starting with: {{principle}}",
-      "switchHint": "You can start with any principle — tap to change.",
+      "switchHint": "You can start with any principle - tap to change.",
       "reminderLabel": "Daily reminder",
       "reminderHint": "Off by default. You can change this any time in settings.",
       "timeLabel": "Reminder time",
@@ -134,16 +134,16 @@
     "editTitle": "Edit log",
     "thoughtLabel": "What is the thought?",
     "thoughtPlaceholder": "Write the thought as it appeared",
-    "thoughtHint": "Don't soften it — write it exactly as your mind said it.",
+    "thoughtHint": "Don't soften it - write it exactly as your mind said it.",
     "categoryLabel": "What kind of thought is this?",
     "fusionBeforeLabel": "How strongly is this thought pulling you right now?",
     "fusionBeforeHint": "0 = no pull at all, 100 = completely fused, feels like an absolute fact",
     "techniqueLabel": "Pick a defusion technique",
-    "techniqueHint": "First time? Try \"I'm having the thought that...\" — it works for most situations.",
+    "techniqueHint": "First time? Try \"I'm having the thought that...\" - it works for most situations.",
     "defusedVersionLabel": "How does the thought look after the technique? (optional)",
     "defusedVersionPlaceholder": "e.g. \"I'm having the thought that I'm going to fail\"",
     "fusionAfterLabel": "How strongly is it pulling you now?",
-    "fusionAfterHint": "You don't need it to disappear — any reduction counts.",
+    "fusionAfterHint": "You don't need it to disappear - any reduction counts.",
     "notesLabel": "Anything to note? (optional)",
     "notesPlaceholder": "How did that feel? What did you notice?",
     "saveLog": "Save",
@@ -168,7 +168,7 @@
       "subtitles": "Subtitles"
     },
     "techniqueDescriptions": {
-      "havingTheThoughtThat": "Prefix the thought with \"I'm having the thought that…\" — this one line creates distance instantly.",
+      "havingTheThoughtThat": "Prefix the thought with \"I'm having the thought that…\" - this one line creates distance instantly.",
       "musicalThoughts": "Silently sing the thought to a silly tune (Happy Birthday, Jingle Bells). Observe what happens.",
       "namingTheStory": "Give the recurring pattern a name: \"There's the Not Good Enough story again.\" Notice it as a story, not a fact.",
       "thankingYourMind": "Say to yourself: \"Thanks, mind, for that thought.\" Acknowledge it without engaging.",
@@ -185,7 +185,7 @@
       "other": "Other"
     },
     "fusionDrop": "Fusion dropped from {{before}} to {{after}}.",
-    "noFusionDrop": "Fusion stayed at {{after}}. That's ok — noticing is enough.",
+    "noFusionDrop": "Fusion stayed at {{after}}. That's ok - noticing is enough.",
     "deletedToast": "Log deleted",
     "deleteConfirm": "Delete this log?",
     "deleteConfirmBody": "This cannot be undone.",
@@ -208,21 +208,21 @@
     "emotionHint": "Name it as precisely as you can. Where is the line between anxiety and dread for you?",
     "bodyLabel": "Where do you feel it in your body?",
     "bodyPlaceholder": "e.g. tightness in the chest, heaviness in the stomach",
-    "bodyHint": "Locate it, then describe its qualities — size, weight, temperature, movement.",
+    "bodyHint": "Locate it, then describe its qualities - size, weight, temperature, movement.",
     "intensityBeforeLabel": "How intense is the feeling right now?",
     "intensityBeforeHint": "0 = barely there, 100 = overwhelming",
     "struggleSwitchLabel": "Struggle switch",
     "struggleSwitchQuestion": "Are you currently fighting this feeling?",
-    "struggleSwitchOn": "Yes — I'm resisting or trying to get rid of it",
-    "struggleSwitchOff": "No — I'm just noticing it",
+    "struggleSwitchOn": "Yes - I'm resisting or trying to get rid of it",
+    "struggleSwitchOff": "No - I'm just noticing it",
     "discomfortTypeLabel": "Is this clean or dirty discomfort?",
     "discomfortTypeHint": "Clean discomfort is the original feeling. Dirty discomfort is the extra suffering added by fighting it.",
-    "clean": "Clean — the original feeling, as it is",
-    "dirty": "Dirty — I'm adding struggle on top of it",
+    "clean": "Clean - the original feeling, as it is",
+    "dirty": "Dirty - I'm adding struggle on top of it",
     "techniqueLabel": "Choose a technique",
     "techniqueHint": "New to this? Four-Step Expansion is the core practice.",
     "intensityAfterLabel": "How intense is it now?",
-    "intensityAfterHint": "The goal is not to eliminate the feeling — making room is enough.",
+    "intensityAfterHint": "The goal is not to eliminate the feeling - making room is enough.",
     "notesLabel": "Anything to note? (optional)",
     "notesPlaceholder": "What did you notice? Any shift?",
     "saveLog": "Save",
@@ -245,21 +245,21 @@
     "techniqueDescriptions": {
       "fourStepExpansion": "Observe → Breathe → Create space → Allow. The core expansion practice from the book.",
       "acceptanceSelfTalk": "Speak to the feeling with compassion: \"It's okay to feel this.\" Let the words soften the resistance.",
-      "acceptanceImagery": "Imagine the feeling as an object — its shape, color, texture. Watch it shift when you stop fighting."
+      "acceptanceImagery": "Imagine the feeling as an object - its shape, color, texture. Watch it shift when you stop fighting."
     },
     "fourStepGuide": {
       "title": "The Four Steps",
       "step1Title": "1. Observe",
       "step1Body": "Notice the sensation. Where is it in your body? What shape is it? What is its weight and temperature?",
       "step2Title": "2. Breathe",
-      "step2Body": "Breathe slowly into the area where you feel it most. Each breath, you're breathing into it — not away from it.",
+      "step2Body": "Breathe slowly into the area where you feel it most. Each breath, you're breathing into it - not away from it.",
       "step3Title": "3. Create space",
-      "step3Body": "Imagine space opening up around the sensation. It can be there — it doesn't have to take up the whole room.",
+      "step3Body": "Imagine space opening up around the sensation. It can be there - it doesn't have to take up the whole room.",
       "step4Title": "4. Allow",
       "step4Body": "Let it be there. You don't have to like it, want it, or approve of it. Just let it exist without fighting."
     },
     "intensityDrop": "Intensity dropped from {{before}} to {{after}}.",
-    "noIntensityDrop": "Intensity stayed at {{after}}. Making room is the goal — not eliminating the feeling.",
+    "noIntensityDrop": "Intensity stayed at {{after}}. Making room is the goal - not eliminating the feeling.",
     "deletedToast": "Log deleted",
     "deleteConfirm": "Delete this log?",
     "deleteConfirmBody": "This cannot be undone.",
@@ -273,7 +273,7 @@
       "triggerPlaceholder": "e.g. stress, boredom, a specific situation",
       "triggerHint": "Optional. What happened just before the urge appeared?",
       "observeTitle": "Surfing the wave",
-      "observeBody": "Urges are like ocean waves — they rise, peak, and fall. Your job is to surf, not to resist.\n\nNotice where the urge lives in your body. Breathe. Watch it rise. It will peak and then subside.",
+      "observeBody": "Urges are like ocean waves - they rise, peak, and fall. Your job is to surf, not to resist.\n\nNotice where the urge lives in your body. Breathe. Watch it rise. It will peak and then subside.",
       "peakLabel": "Peak intensity (0–100)",
       "peakHint": "Rate the urge at its strongest point.",
       "actedOnLabel": "Did you act on the urge?",
@@ -311,7 +311,7 @@
     "activityHint": "Any activity can become a connection practice.",
     "noticesLabel": "What did you notice?",
     "noticesPlaceholder": "What you saw, heard, felt, smelled, tasted…",
-    "noticesHint": "No need to evaluate — just describe what was there.",
+    "noticesHint": "No need to evaluate - just describe what was there.",
     "moodLabel": "Mood after (1–10)",
     "moodHint": "1 = very low, 10 = very good",
     "durationLabel": "How long? (minutes, optional)",
@@ -336,7 +336,7 @@
     },
     "techniqueDescriptions": {
       "noticeFiveThings": "5 things you see · 4 you hear · 3 you feel · 1 you smell or taste. Takes about 60 seconds.",
-      "mindfulActivity": "Bring full attention to whatever you're already doing — eating, walking, washing up. No extra time needed.",
+      "mindfulActivity": "Bring full attention to whatever you're already doing - eating, walking, washing up. No extra time needed.",
       "tenDeepBreaths": "Ten slow, deliberate breaths. Notice the physical sensation of each one. Simple and effective anywhere."
     },
     "noticeFiveGuide": {
@@ -346,7 +346,7 @@
       "hear": "4 things you can HEAR",
       "feel": "3 things you can physically FEEL (temperature, texture, pressure)",
       "smell": "1 thing you can SMELL or TASTE",
-      "outro": "You don't have to stop your thoughts — just notice them and return to now."
+      "outro": "You don't have to stop your thoughts - just notice them and return to now."
     },
     "deletedToast": "Log deleted",
     "deleteConfirm": "Delete this log?",
@@ -359,13 +359,13 @@
     "listSubtitle": "A record of moments you accessed the stable witness within.",
     "noLogs": "No sessions yet. Try \"Ten Deep Breaths\" to step into the Observing Self.",
     "newTitle": "Step into the witness",
-    "newSubtitle": "Access the part of you that notices — steady, unjudging, always here.",
+    "newSubtitle": "Access the part of you that notices - steady, unjudging, always here.",
     "editTitle": "Edit session",
     "techniqueLabel": "Which practice?",
     "techniqueHint": "\"Ten Deep Breaths\" is the entry point. Try the Chessboard once you're familiar.",
     "observedLabel": "What did you observe from this vantage point?",
-    "observedPlaceholder": "Thoughts, feelings, sensations you noticed — without judging them",
-    "observedHint": "You are not reporting what was bad or good — just what was there.",
+    "observedPlaceholder": "Thoughts, feelings, sensations you noticed - without judging them",
+    "observedHint": "You are not reporting what was bad or good - just what was there.",
     "moodLabel": "Mood after (1–10)",
     "moodHint": "1 = very low, 10 = very good",
     "durationLabel": "How long? (minutes, optional)",
@@ -389,24 +389,24 @@
       "bodyAwareness": "Body awareness"
     },
     "techniqueDescriptions": {
-      "tenDeepBreaths": "Take ten slow, deep breaths. With each breath, notice what you observe — thoughts, feelings, sensations — from a witness perspective.",
-      "observingFromBoard": "The Chessboard metaphor: thoughts and feelings are pieces. You are the board — stable, unchanged, unable to be harmed by any piece.",
-      "bodyAwareness": "Scan the body from feet to head. Notice sensations as a witness — without judgment or the urge to change anything."
+      "tenDeepBreaths": "Take ten slow, deep breaths. With each breath, notice what you observe - thoughts, feelings, sensations - from a witness perspective.",
+      "observingFromBoard": "The Chessboard metaphor: thoughts and feelings are pieces. You are the board - stable, unchanged, unable to be harmed by any piece.",
+      "bodyAwareness": "Scan the body from feet to head. Notice sensations as a witness - without judgment or the urge to change anything."
     },
     "tenBreathsGuide": {
       "title": "Ten Deep Breaths",
-      "instruction": "Take a slow, deep breath — right down into your belly.",
+      "instruction": "Take a slow, deep breath - right down into your belly.",
       "inhale": "As you breathe IN: say to yourself \"I notice I'm having the feeling of ___\"",
       "exhale": "As you breathe OUT: look around and notice five things you can see.",
-      "repeat": "Repeat for ten breaths. You are the one noticing — not the thoughts or feelings themselves."
+      "repeat": "Repeat for ten breaths. You are the one noticing - not the thoughts or feelings themselves."
     },
     "chessboardGuide": {
       "title": "The Chessboard",
-      "body": "Imagine a chessboard. White pieces and black pieces — your difficult thoughts and easier ones — are playing against each other.\n\nYou are not any of the pieces. You are the board itself.\n\nThe board holds all the pieces. It is not threatened by any move. No piece can harm the board.\n\nFrom this perspective, observe what pieces are on the board right now."
+      "body": "Imagine a chessboard. White pieces and black pieces - your difficult thoughts and easier ones - are playing against each other.\n\nYou are not any of the pieces. You are the board itself.\n\nThe board holds all the pieces. It is not threatened by any move. No piece can harm the board.\n\nFrom this perspective, observe what pieces are on the board right now."
     },
     "bodyAwarenessGuide": {
       "title": "Body Awareness Scan",
-      "body": "Start at the soles of your feet. Slowly scan upward: ankles, calves, knees, thighs, hips, belly, chest, shoulders, arms, hands, neck, face.\n\nAt each area, simply notice what is there — warmth, tension, tingling, nothing. You are the witness. You are not trying to change anything.\n\nIf you notice discomfort, breathe into it and continue scanning."
+      "body": "Start at the soles of your feet. Slowly scan upward: ankles, calves, knees, thighs, hips, belly, chest, shoulders, arms, hands, neck, face.\n\nAt each area, simply notice what is there - warmth, tension, tingling, nothing. You are the witness. You are not trying to change anything.\n\nIf you notice discomfort, breathe into it and continue scanning."
     },
     "deletedToast": "Session deleted",
     "deleteConfirm": "Delete this session?",
@@ -435,7 +435,7 @@
     "currentActionsHint": "Even small actions pointing in the right direction count.",
     "desiredActionsLabel": "What would you like to do more of?",
     "desiredActionsPlaceholder": "Actions you want to take or increase",
-    "desiredActionsHint": "Be specific — what would doing more actually look like?",
+    "desiredActionsHint": "Be specific - what would doing more actually look like?",
     "barriersLabel": "What gets in the way?",
     "barriersPlaceholder": "Thoughts, feelings, situations, habits",
     "barriersHint": "Often: difficult thoughts or feelings, lack of time, old habits. Naming them is the first step.",

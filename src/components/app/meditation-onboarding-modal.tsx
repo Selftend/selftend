@@ -1,6 +1,6 @@
 import { ActivityIndicator, Modal, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -71,15 +71,13 @@ export function MeditationOnboarding({
   const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [selectedStage, setSelectedStage] = useState<StageNumber>(1);
 
-  const assessedStage = useMemo(() => {
-    return suggestStageFromAssessment({
-      hasDailyHabit: answers.hasDailyHabit ?? false,
-      breathFocusLength: answers.breathFocusLength ?? "seconds",
-      fallsAsleep: answers.fallsAsleep ?? false,
-      catchesDistractionEarly: answers.catchesDistractionEarly ?? false,
-      extendedNoThoughts: answers.extendedNoThoughts ?? false,
-    });
-  }, [answers]);
+  const assessedStage = suggestStageFromAssessment({
+    hasDailyHabit: answers.hasDailyHabit ?? false,
+    breathFocusLength: answers.breathFocusLength ?? "seconds",
+    fallsAsleep: answers.fallsAsleep ?? false,
+    catchesDistractionEarly: answers.catchesDistractionEarly ?? false,
+    extendedNoThoughts: answers.extendedNoThoughts ?? false,
+  });
 
   // Sync the picker default with the assessment whenever it changes.
   useEffect(() => {

@@ -1,5 +1,4 @@
 import { router } from "expo-router";
-import { useMemo } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -19,13 +18,13 @@ export default function HabitsHistoryScreen() {
   const { data: habits } = useHabits(userId, { includeArchived: true });
   const { data: logs } = useHabitLogs(userId, { limit: 365 });
 
-  const habitsById = useMemo(() => {
+  const habitsById = (() => {
     const map = new Map<string, typeof habits extends (infer T)[] | undefined ? T : never>();
     (habits ?? []).forEach((habit) => map.set(habit.id, habit));
     return map;
-  }, [habits]);
+  })();
 
-  const grouped = useMemo(() => {
+  const grouped = (() => {
     const groups = new Map<string, typeof logs>();
     (logs ?? []).forEach((log) => {
       const existing = groups.get(log.loggedOn) ?? [];
@@ -33,7 +32,7 @@ export default function HabitsHistoryScreen() {
       groups.set(log.loggedOn, existing as never);
     });
     return Array.from(groups.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1));
-  }, [logs]);
+  })();
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>

@@ -27,7 +27,7 @@ test.describe("create habit", () => {
     await signInAsViaUi(page, "alice");
     await dismissPostSignInModals(page);
 
-    // Navigate directly to the editor — bypasses the home-screen onboarding gate.
+    // Navigate directly to the editor - bypasses the home-screen onboarding gate.
     await page.goto("/tools/habits/new");
 
     await page.getByPlaceholder("Read, Walk after lunch, Stretch…").fill(habitName);

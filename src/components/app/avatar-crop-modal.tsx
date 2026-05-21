@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Modal, View, StyleSheet } from "react-native";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
@@ -22,9 +22,9 @@ export function AvatarCropModal({ imageUri, onCancel, onCrop, visible }: AvatarC
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const reduceMotionEnabled = useReduceMotionEnabled();
 
-  const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
+  const onCropComplete = (_: Area, croppedPixels: Area) => {
     setCroppedAreaPixels(croppedPixels);
-  }, []);
+  };
 
   const handleConfirm = () => {
     if (croppedAreaPixels) {

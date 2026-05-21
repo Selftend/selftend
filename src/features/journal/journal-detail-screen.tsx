@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -41,10 +41,7 @@ export default function JournalDetailScreen() {
   const showToast = useToastStore((state) => state.showToast);
 
   const { data: cachedList } = useJournalEntries(user?.id ?? null, 50);
-  const fromCache = useMemo(
-    () => (entryId ? (cachedList?.find((entry) => entry.id === entryId) ?? null) : null),
-    [cachedList, entryId],
-  );
+  const fromCache = entryId ? (cachedList?.find((entry) => entry.id === entryId) ?? null) : null;
   const { data: fetched, isLoading } = useJournalEntry(
     fromCache ? null : (user?.id ?? null),
     fromCache ? null : entryId,

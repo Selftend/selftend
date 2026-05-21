@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ScrollView, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -37,11 +37,11 @@ export default function MoodTrackerScreen() {
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
-  const today = useMemo(() => getMoodSummary(moodLogs, 1), [moodLogs]);
-  const sevenDay = useMemo(() => getMoodSummary(moodLogs, 7), [moodLogs]);
-  const thirtyDay = useMemo(() => getMoodSummary(moodLogs, 30), [moodLogs]);
-  const chartData = useMemo(() => buildMoodChartData(moodLogs, CHART_DAYS), [moodLogs]);
-  const recent = useMemo(() => moodLogs?.slice(0, RECENT_LIMIT) ?? [], [moodLogs]);
+  const today = getMoodSummary(moodLogs, 1);
+  const sevenDay = getMoodSummary(moodLogs, 7);
+  const thirtyDay = getMoodSummary(moodLogs, 30);
+  const chartData = buildMoodChartData(moodLogs, CHART_DAYS);
+  const recent = moodLogs?.slice(0, RECENT_LIMIT) ?? [];
 
   const chartWidth = Math.min(width, 720) - CHART_HORIZONTAL_PADDING;
 

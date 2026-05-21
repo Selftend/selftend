@@ -1,7 +1,7 @@
 import { router, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -70,10 +70,7 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
   const userId = user?.id ?? null;
 
   const { data: cachedList } = useHabits(mode === "edit" ? userId : null);
-  const fromCache = useMemo(
-    () => (habitId ? (cachedList?.find((h) => h.id === habitId) ?? null) : null),
-    [cachedList, habitId],
-  );
+  const fromCache = habitId ? (cachedList?.find((h) => h.id === habitId) ?? null) : null;
   const { data: fetched, isLoading } = useHabit(
     mode === "edit" && !fromCache ? userId : null,
     mode === "edit" && !fromCache ? habitId : null,

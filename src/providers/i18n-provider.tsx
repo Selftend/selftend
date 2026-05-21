@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type PropsWithChildren,
-} from "react";
+import { createContext, useContext, useEffect, useState, type PropsWithChildren } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import i18n, { type SupportedLanguage, supportedLanguages } from "@/src/i18n";
@@ -57,12 +50,12 @@ export function I18nProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  const setLanguage = useCallback(async (lang: SupportedLanguage) => {
+  const setLanguage = async (lang: SupportedLanguage) => {
     setLanguageState(lang);
     await i18n.changeLanguage(lang);
     await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
     setHasStoredLanguage(true);
-  }, []);
+  };
 
   return (
     <I18nContext.Provider value={{ language, setLanguage, hydrated, hasStoredLanguage }}>

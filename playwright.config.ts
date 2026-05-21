@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 8081;
 
-// Deterministic Supabase CLI defaults — same on every dev machine and in CI,
+// Deterministic Supabase CLI defaults - same on every dev machine and in CI,
 // matches the keys used by integration tests (test/integration/helpers.ts).
 const LOCAL_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";

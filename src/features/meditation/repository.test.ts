@@ -17,7 +17,7 @@ function buildClient(builders: Record<string, unknown>) {
   >;
 }
 
-describe("meditation repository — saveMeditationSession", () => {
+describe("meditation repository - saveMeditationSession", () => {
   it("trims reflection text and writes stage-aware fields", async () => {
     const row = {
       id: "s1",
@@ -68,7 +68,7 @@ describe("meditation repository — saveMeditationSession", () => {
   });
 });
 
-describe("meditation repository — getMeditationProgramState", () => {
+describe("meditation repository - getMeditationProgramState", () => {
   it("returns null when no row exists for the user", async () => {
     const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
     const eq = jest.fn(() => ({ maybeSingle }));
@@ -109,7 +109,7 @@ describe("meditation repository — getMeditationProgramState", () => {
   });
 });
 
-describe("meditation repository — upsertMeditationProgramState", () => {
+describe("meditation repository - upsertMeditationProgramState", () => {
   it("only sends fields that were passed in the patch", async () => {
     const single = jest.fn().mockResolvedValue({
       data: {

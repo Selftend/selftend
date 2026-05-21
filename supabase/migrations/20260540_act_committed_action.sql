@@ -1,7 +1,7 @@
--- ACT Phase 5 — Committed Action.
+-- ACT Phase 5 - Committed Action.
 -- Adds act_committed_actions and act_action_steps tables.
 
--- 1. Committed actions — one plan per commitment
+-- 1. Committed actions - one plan per commitment
 CREATE TABLE IF NOT EXISTS act_committed_actions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -28,7 +28,7 @@ CREATE POLICY "Users can manage their own committed actions"
 CREATE INDEX IF NOT EXISTS act_committed_actions_user_status
   ON act_committed_actions (user_id, status, created_at DESC);
 
--- 2. Action steps — checklist items within a committed action
+-- 2. Action steps - checklist items within a committed action
 CREATE TABLE IF NOT EXISTS act_action_steps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,

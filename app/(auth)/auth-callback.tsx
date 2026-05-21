@@ -2,7 +2,7 @@ import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -54,7 +54,7 @@ export default function AuthCallbackScreen() {
   const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
   const linkingUrl = Linking.useLinkingURL();
-  const url = useMemo(() => linkingUrl ?? getCurrentWebUrl(), [linkingUrl]);
+  const url = linkingUrl ?? getCurrentWebUrl();
   const processedUrl = useRef<string | null>(null);
   const fallbackErrorMessage = useRef(t("callback.unableToContinue"));
   const timeoutErrorMessage = useRef(t("callback.timeout"));

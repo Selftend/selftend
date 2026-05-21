@@ -29,7 +29,7 @@
       "title": "The Science of Gratitude",
       "subtitle": "A short guide to what this practice is and why it works.",
       "scienceTitle": "Brain-level changes",
-      "scienceBody": "Acting selflessly and expressing gratitude activates specific brain regions — including the reward system and the cingulate cortex responsible for ethics and decision-making.",
+      "scienceBody": "Acting selflessly and expressing gratitude activates specific brain regions - including the reward system and the cingulate cortex responsible for ethics and decision-making.",
       "antidoteTitle": "An antidote to dissatisfaction",
       "antidoteBody": "Gratitude is one of the strongest predictors of happiness, the ability to make friends, and how well we handle hardship. A 2015 randomised trial found gratitude journaling produced significantly better mental health outcomes than psychotherapy alone.",
       "continue": "Continue"
@@ -37,18 +37,18 @@
     "levels": {
       "title": "Three Levels of Practice",
       "subtitle": "The journal teaches gratitude as a progression: notice, appreciate, then write regularly.",
-      "level1Title": "Level 1 — Noticing",
+      "level1Title": "Level 1 - Noticing",
       "level1Body": "Simply report what happened today without judgment. A good meal, a calm moment, a conversation. Nothing is too small.",
-      "level2Title": "Level 2 — Reflecting & Appreciating",
-      "level2Body": "Think about what you would miss if it were gone. Notice things you usually take for granted — running water, sunlight, a friend nearby.",
-      "level3Title": "Level 3 — Practicing Gratitude",
+      "level2Title": "Level 2 - Reflecting & Appreciating",
+      "level2Body": "Think about what you would miss if it were gone. Notice things you usually take for granted - running water, sunlight, a friend nearby.",
+      "level3Title": "Level 3 - Practicing Gratitude",
       "level3Body": "The ongoing practice brings the earlier steps together: notice what's here, appreciate it, and write \"I'm grateful for…\" reflections.",
       "continue": "Continue"
     },
     "frequency": {
       "title": "How Often?",
       "subtitle": "Research points to a sweet spot.",
-      "body": "Researchers suggest writing one to three times a week rather than daily. Daily writing can lead to hedonic adaptation — the positive feeling fades as gratitude becomes routine.",
+      "body": "Researchers suggest writing one to three times a week rather than daily. Daily writing can lead to hedonic adaptation - the positive feeling fades as gratitude becomes routine.",
       "note": "There is no minimum. If you skip a few days, just pick it up again. You can't fail at this.",
       "continue": "Continue"
     },
@@ -146,42 +146,42 @@
       "gratitude-letter": {
         "title": "Gratitude Letter",
         "short": "Write a letter to someone who changed your life.",
-        "body": "Think of someone who has made a meaningful difference in your life. Write them a letter detailing exactly how they have affected you. You don't have to send it — the act of writing alone shifts your perspective and activates gratitude at a deeper level."
+        "body": "Think of someone who has made a meaningful difference in your life. Write them a letter detailing exactly how they have affected you. You don't have to send it - the act of writing alone shifts your perspective and activates gratitude at a deeper level."
       },
       "acts-of-kindness": {
         "title": "Acts of Kindness",
         "short": "Do something small for someone else today.",
-        "body": "Perform one deliberate small act of kindness for another person — hold a door, leave a note, pay for someone's coffee. Notice how extending gratitude outward changes the texture of your day. Research shows that helping others activates the same brain reward areas as receiving help."
+        "body": "Perform one deliberate small act of kindness for another person - hold a door, leave a note, pay for someone's coffee. Notice how extending gratitude outward changes the texture of your day. Research shows that helping others activates the same brain reward areas as receiving help."
       },
       "i-did-it-list": {
         "title": "The I-Did-It List",
         "short": "Replace your to-do list with what you actually accomplished.",
-        "body": "At the end of today, write down everything you got done — big or small. The meeting you sat through, the errand you ran, the email you answered. A to-do list always feels unfinished; an I-Did-It list shows you how much you actually do."
+        "body": "At the end of today, write down everything you got done - big or small. The meeting you sat through, the errand you ran, the email you answered. A to-do list always feels unfinished; an I-Did-It list shows you how much you actually do."
       },
       "you-get-to-choose": {
         "title": "You Get to Choose",
         "short": "Identify one stress that is outside your control.",
-        "body": "Think of something that is worrying you right now. Ask: is this within my control? If yes — what is one small step? If no — can you practice letting it be? The Stoic practice of distinguishing what is and isn't in our power is one of the most durable tools for reducing anxiety."
+        "body": "Think of something that is worrying you right now. Ask: is this within my control? If yes - what is one small step? If no - can you practice letting it be? The Stoic practice of distinguishing what is and isn't in our power is one of the most durable tools for reducing anxiety."
       },
       "dont-make-things-harder": {
         "title": "Don't Make Things Harder",
         "short": "When the list feels hard, notice what's already here.",
-        "body": "When gratitude feels forced or the list feels impossible, look around you. The color of the wall. The temperature of the air. The fact that you are breathing. Nothing is too small. Gratitude does not require a good day — it only requires a moment of attention."
+        "body": "When gratitude feels forced or the list feels impossible, look around you. The color of the wall. The temperature of the air. The fact that you are breathing. Nothing is too small. Gratitude does not require a good day - it only requires a moment of attention."
       },
       "instructions-for-unhappiness": {
         "title": "Instructions for Unhappiness",
-        "short": "Notice conditional happiness — then flip it.",
-        "body": "Write down something you are waiting on before you allow yourself to feel happy: \"I'll be happy once I get the job,\" \"once I lose weight,\" \"once I find the right person.\" Now ask: what did past-you want that present-you already has? Conditional happiness is always one step ahead — this exercise helps you find what is already here."
+        "short": "Notice conditional happiness - then flip it.",
+        "body": "Write down something you are waiting on before you allow yourself to feel happy: \"I'll be happy once I get the job,\" \"once I lose weight,\" \"once I find the right person.\" Now ask: what did past-you want that present-you already has? Conditional happiness is always one step ahead - this exercise helps you find what is already here."
       },
       "what-if-that-didnt-happen": {
         "title": "What if That Didn't Happen?",
         "short": "Imagine a positive event that almost wasn't.",
-        "body": "Pick one good thing in your life — a friendship, a job, a place you love. Now imagine the small circumstances that could have prevented it. A different train. A cancelled meeting. A moment of hesitation. Mental Subtraction (Koo & Algoe, 2008) shows that imagining the absence of something we take for granted reliably increases appreciation for it."
+        "body": "Pick one good thing in your life - a friendship, a job, a place you love. Now imagine the small circumstances that could have prevented it. A different train. A cancelled meeting. A moment of hesitation. Mental Subtraction (Koo & Algoe, 2008) shows that imagining the absence of something we take for granted reliably increases appreciation for it."
       },
       "give-it-up": {
         "title": "Give It Up",
         "short": "Temporarily stop something you enjoy.",
-        "body": "Choose something you enjoy regularly — morning coffee, a TV show, a comfort food. Give it up for one week. When you reintroduce it, notice how the enjoyment returns. This is a deliberate experiment in fighting hedonic adaptation — the process by which familiar good things stop feeling good. Absence renews appreciation."
+        "body": "Choose something you enjoy regularly - morning coffee, a TV show, a comfort food. Give it up for one week. When you reintroduce it, notice how the enjoyment returns. This is a deliberate experiment in fighting hedonic adaptation - the process by which familiar good things stop feeling good. Absence renews appreciation."
       }
     }
   },

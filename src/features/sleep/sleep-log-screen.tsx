@@ -1,7 +1,7 @@
 import { router, type Href } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -55,10 +55,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
   const { user } = useSession();
 
   const { data: cachedList } = useSleepLogs(mode === "edit" ? (user?.id ?? null) : null, 50);
-  const fromCache = useMemo(
-    () => (logId ? (cachedList?.find((l) => l.id === logId) ?? null) : null),
-    [cachedList, logId],
-  );
+  const fromCache = logId ? (cachedList?.find((l) => l.id === logId) ?? null) : null;
   const { data: fetched, isLoading } = useSleepLog(
     mode === "edit" && !fromCache ? (user?.id ?? null) : null,
     mode === "edit" && !fromCache ? logId : null,

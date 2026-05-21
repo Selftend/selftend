@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -35,10 +35,7 @@ export default function SleepDetailScreen() {
   const showToast = useToastStore((state) => state.showToast);
 
   const { data: cachedList } = useSleepLogs(user?.id ?? null, 50);
-  const fromCache = useMemo(
-    () => (logId ? (cachedList?.find((l) => l.id === logId) ?? null) : null),
-    [cachedList, logId],
-  );
+  const fromCache = logId ? (cachedList?.find((l) => l.id === logId) ?? null) : null;
 
   const { data: fetched, isLoading } = useSleepLog(
     fromCache ? null : (user?.id ?? null),

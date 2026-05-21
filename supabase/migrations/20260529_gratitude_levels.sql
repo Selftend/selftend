@@ -3,13 +3,13 @@
 ALTER TABLE public.gratitude_entries
   ADD COLUMN IF NOT EXISTS level SMALLINT NOT NULL DEFAULT 3
     CHECK (level BETWEEN 1 AND 3),
-  -- Level 1 — Noticing
+  -- Level 1 - Noticing
   ADD COLUMN IF NOT EXISTS events TEXT[] NOT NULL DEFAULT '{}',
   ADD COLUMN IF NOT EXISTS good_moment TEXT NOT NULL DEFAULT '',
-  -- Level 2 — Reflecting & Appreciating
+  -- Level 2 - Reflecting & Appreciating
   ADD COLUMN IF NOT EXISTS miss_if_gone TEXT NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS hidden_good TEXT NOT NULL DEFAULT '',
-  -- Level 3 — in-my-life items (separate from today items)
+  -- Level 3 - in-my-life items (separate from today items)
   ADD COLUMN IF NOT EXISTS life_item_1 TEXT NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS life_item_2 TEXT NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS life_item_3 TEXT NOT NULL DEFAULT '';

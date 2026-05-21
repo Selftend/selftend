@@ -1,4 +1,4 @@
--- The Mind Illuminated meditation module — Phase 1 (Foundation).
+-- The Mind Illuminated meditation module - Phase 1 (Foundation).
 -- Extends meditation_sessions, adds meditation_program_state and stage_practice_notes,
 -- and adds meditation_* preference fields to user_preferences.
 

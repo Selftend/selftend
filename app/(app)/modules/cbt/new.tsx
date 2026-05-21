@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -66,10 +66,7 @@ type ThoughtRecordStepKey =
 export default function ThoughtRecordEditorScreen() {
   const { t } = useTranslation("cbt");
   const { recordId: rawRecordId } = useLocalSearchParams<{ recordId?: string }>();
-  const recordId = useMemo(
-    () => (typeof rawRecordId === "string" && rawRecordId.length > 0 ? rawRecordId : null),
-    [rawRecordId],
-  );
+  const recordId = typeof rawRecordId === "string" && rawRecordId.length > 0 ? rawRecordId : null;
   const draftMode = recordId ? "edit" : "create";
   const { user } = useSession();
   const [submitError, setSubmitError] = useState("");

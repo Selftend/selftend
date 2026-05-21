@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -29,10 +29,7 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
   const { data: logs } = useHabitLogs(userId, { habitId, sinceDate: dateStr, limit: 5 });
   const upsertNote = useUpsertHabitLogNote(userId);
 
-  const existing = useMemo(
-    () => (logs ?? []).find((log) => log.loggedOn === dateStr),
-    [logs, dateStr],
-  );
+  const existing = (logs ?? []).find((log) => log.loggedOn === dateStr);
 
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | undefined>();

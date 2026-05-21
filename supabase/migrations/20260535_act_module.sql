@@ -1,4 +1,4 @@
--- ACT (Acceptance and Commitment Therapy) module — Phase 1 (Foundation).
+-- ACT (Acceptance and Commitment Therapy) module - Phase 1 (Foundation).
 -- Based on "The Happiness Trap" by Russ Harris.
 -- Creates act_program_state and act_defusion_logs, and adds act_* preference
 -- fields to user_preferences.

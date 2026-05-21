@@ -21,7 +21,7 @@ export function useLanguageSync(userId: string | null, preferences: UserPreferen
 
     if (!initialPullDone.current) {
       initialPullDone.current = true;
-      // Local AsyncStorage wins on first load if it has a value — refresh must
+      // Local AsyncStorage wins on first load if it has a value - refresh must
       // preserve what the user chose. Pull from the DB only when the device
       // has no stored language (e.g. fresh install / new device sign-in).
       if (

@@ -22,7 +22,7 @@ test.describe("log sleep", () => {
     await signInAsViaUi(page, "alice");
     await dismissPostSignInModals(page);
 
-    // Go directly to the log form — bypasses the sleep tracker's onboarding gate.
+    // Go directly to the log form - bypasses the sleep tracker's onboarding gate.
     await page.goto("/tools/sleep/new");
 
     // Pick 8 hours (480 min) duration and quality 4.

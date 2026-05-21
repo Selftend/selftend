@@ -32,17 +32,17 @@ export function ActModuleWidget({ userId }: { userId: string }) {
   const stats = [
     {
       label: t("today.dashboard.actActions"),
-      value: activeActions.length > 0 ? String(activeActions.length) : "—",
+      value: activeActions.length > 0 ? String(activeActions.length) : "-",
       done: activeActions.length > 0,
     },
     {
       label: t("today.dashboard.actDefusion"),
-      value: recentDefusion > 0 ? String(recentDefusion) : "—",
+      value: recentDefusion > 0 ? String(recentDefusion) : "-",
       done: recentDefusion > 0,
     },
     {
       label: t("today.dashboard.actConnection"),
-      value: recentConnection > 0 ? String(recentConnection) : "—",
+      value: recentConnection > 0 ? String(recentConnection) : "-",
       done: recentConnection > 0,
     },
   ];

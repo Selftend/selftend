@@ -1,6 +1,6 @@
-# CBT Program Spec — Gillihan: Cognitive Behavioral Therapy Made Simple
+﻿# CBT Program Spec - Gillihan: Cognitive Behavioral Therapy Made Simple
 
-**Source:** _Cognitive Behavioral Therapy Made Simple: 10 Strategies for Managing Anxiety, Depression, Anger, Panic, and Worry_ — Seth J. Gillihan PhD (Althea Press, 2018)  
+**Source:** _Cognitive Behavioral Therapy Made Simple: 10 Strategies for Managing Anxiety, Depression, Anger, Panic, and Worry_ - Seth J. Gillihan PhD (Althea Press, 2018)  
 **Status:** Canonical spec for the real CBT feature  
 **Audience:** Developers and product contributors
 
@@ -27,7 +27,7 @@ Thoughts, feelings, and behaviors are interconnected. Changing any one influence
 ```
         Thoughts
        /        \
-Feelings ——— Behaviors
+Feelings --- Behaviors
 ```
 
 Examples:
@@ -38,17 +38,17 @@ Examples:
 
 ### The Three Waves of CBT
 
-1. **Behavioral therapy** — change behavior to improve mood
-2. **Cognitive therapy** — change thoughts to change feelings
-3. **Mindfulness-based therapy** — change attention and acceptance to reduce suffering
+1. **Behavioral therapy** - change behavior to improve mood
+2. **Cognitive therapy** - change thoughts to change feelings
+3. **Mindfulness-based therapy** - change attention and acceptance to reduce suffering
 
 ### Core Principles
 
-- **Collaborative and active** — the user defines goals and works toward them; the tool is a guide, not a prescriber
-- **Goal-oriented** — every module ties back to a goal
-- **Present-focused** — emphasize what can be changed now, not just what happened in the past
-- **Self-therapy** — the user learns skills to apply independently and to future challenges
-- **Relapse prevention** — the program builds toward a personal maintenance plan
+- **Collaborative and active** - the user defines goals and works toward them; the tool is a guide, not a prescriber
+- **Goal-oriented** - every module ties back to a goal
+- **Present-focused** - emphasize what can be changed now, not just what happened in the past
+- **Self-therapy** - the user learns skills to apply independently and to future challenges
+- **Relapse prevention** - the program builds toward a personal maintenance plan
 
 ---
 
@@ -56,11 +56,11 @@ Examples:
 
 ### Strategy 1: Goal Setting
 
-**What it is:** Clear, compelling goals transform dissatisfaction into determination. Goals must be specific, measurable, and anchored to personal values — not vague statements like "feel better."
+**What it is:** Clear, compelling goals transform dissatisfaction into determination. Goals must be specific, measurable, and anchored to personal values - not vague statements like "feel better."
 
 **Key concepts from the book:**
 
-- Find the "right gear" — moderately challenging goals you can sustain (not too easy, not overwhelming)
+- Find the "right gear" - moderately challenging goals you can sustain (not too easy, not overwhelming)
 - Goals should reflect what you want to do more of, less of, and how relationships and quality of life would improve
 - Goals must align with personal values, not others' expectations
 - Think marathon, not sprint
@@ -68,7 +68,7 @@ Examples:
 **Tool features:**
 
 - Goal creation with life domain, type, and target date
-- Milestone breakdown — at least one milestone required before a goal is considered active
+- Milestone breakdown - at least one milestone required before a goal is considered active
 - Progress indicator (milestones completed / total)
 - Weekly review prompt to check goal status
 - Goal can be paused or abandoned without data loss
@@ -97,7 +97,7 @@ Examples:
 
 ### Strategy 2: Behavioral Activation
 
-**What it is:** Action precedes motivation. Engaging in meaningful activities breaks the depression cycle — you don't wait to feel like doing something; you do it and the motivation follows. Avoidance provides short-term relief (negative reinforcement) but removes opportunities for reward, deepening low mood.
+**What it is:** Action precedes motivation. Engaging in meaningful activities breaks the depression cycle - you don't wait to feel like doing something; you do it and the motivation follows. Avoidance provides short-term relief (negative reinforcement) but removes opportunities for reward, deepening low mood.
 
 **Key concepts from the book:**
 
@@ -138,29 +138,29 @@ Examples:
 
 - "Which area of your life feels most out of balance right now?"
 - "What's one thing you used to enjoy that you've been putting off?"
-- "Schedule one small activity for tomorrow — something you can actually do."
+- "Schedule one small activity for tomorrow - something you can actually do."
 - After activity: "How did that go? Rate your mood before and after."
 
 ---
 
 ### Strategy 3: Thought Records
 
-**What it is:** Negative automatic thoughts arise effortlessly when we're triggered. They feel like facts but are often opinions or distortions. The Thought Record is the core CBT tool — a structured process to examine a thought and form a more balanced response.
+**What it is:** Negative automatic thoughts arise effortlessly when we're triggered. They feel like facts but are often opinions or distortions. The Thought Record is the core CBT tool - a structured process to examine a thought and form a more balanced response.
 
 **Key concepts from the book:**
 
 - Our minds are biased toward negative interpretations, especially during emotional states
 - A sudden shift toward negative emotion, persistent feelings, or physical tension signals an automatic thought worth examining
 - Self-compassion: speak to yourself as you would to a good friend
-- The goal is not forced positivity — it is a more accurate, balanced view
+- The goal is not forced positivity - it is a more accurate, balanced view
 
 **The 5-step Thought Record (Gillihan model):**
 
-1. **Situation** — what happened? (facts only, no interpretation)
-2. **Automatic Thought** — what thought arose?
-3. **Emotions** — what feelings came up, and how intense (0–100)?
-4. **Likely Distortions** — which cognitive distortions apply?
-5. **Balanced Thought** — given the evidence, what's a more accurate view?
+1. **Situation** - what happened? (facts only, no interpretation)
+2. **Automatic Thought** - what thought arose?
+3. **Emotions** - what feelings came up, and how intense (0–100)?
+4. **Likely Distortions** - which cognitive distortions apply?
+5. **Balanced Thought** - given the evidence, what's a more accurate view?
 
 **Cognitive distortions to present as selectable tags:**
 
@@ -210,7 +210,7 @@ Examples:
 
 ### Strategy 4: Core Beliefs
 
-**What it is:** Automatic thoughts are not random — they cluster around deep-seated global beliefs that filter how we interpret reality. Core beliefs act like a radio station: the songs change but belong to the same genre. Changing core beliefs creates lasting change in thought patterns.
+**What it is:** Automatic thoughts are not random - they cluster around deep-seated global beliefs that filter how we interpret reality. Core beliefs act like a radio station: the songs change but belong to the same genre. Changing core beliefs creates lasting change in thought patterns.
 
 **Key concepts from the book:**
 
@@ -255,7 +255,7 @@ Examples:
 
 **Key concepts from the book:**
 
-- Mindfulness is not a separate activity — it's bringing full attention to what you're already doing
+- Mindfulness is not a separate activity - it's bringing full attention to what you're already doing
 - Deliberate openness: observe without judgment or resistance
 - Accept difficult emotions when they arise rather than fighting them
 - Application: notice sensory details (colors, sounds, textures, smells) in routine activities
@@ -294,20 +294,20 @@ Examples:
 
 - "Bring your full attention to what you can see right now."
 - "Notice the thought, and let it pass like a cloud."
-- "You don't have to make the feeling go away — just observe it."
+- "You don't have to make the feeling go away - just observe it."
 
 ---
 
 ### Strategy 6: Overcome Procrastination
 
-**What it is:** Procrastination is maintained by negative reinforcement — the relief from avoidance feels like a reward, making avoidance more likely. It is driven by fear the task will be unpleasant, fear of not doing it well, and permission-giving thoughts ("I'll do it later").
+**What it is:** Procrastination is maintained by negative reinforcement - the relief from avoidance feels like a reward, making avoidance more likely. It is driven by fear the task will be unpleasant, fear of not doing it well, and permission-giving thoughts ("I'll do it later").
 
 **Key concepts from the book:**
 
 - Don't wait to feel motivated; start despite discomfort
 - Break large tasks into small, specific steps
 - Reward progress, not just completion
-- Address perfectionism — the belief that something must be done perfectly fuels avoidance
+- Address perfectionism - the belief that something must be done perfectly fuels avoidance
 
 **Tool features:**
 
@@ -337,20 +337,20 @@ Examples:
 - "What feels hard about getting started?"
 - "What's the worst you imagine happening if you do this task?"
 - "Is that fear realistic, or is your mind predicting disaster?"
-- "What is the very first tiny step — so small you could do it in 2 minutes?"
+- "What is the very first tiny step - so small you could do it in 2 minutes?"
 - On step completion: "You did it. What did you notice?"
 
 ---
 
 ### Strategy 7: Anxiety and Exposure
 
-**What it is:** Fear is a response to an actual, present threat. Anxiety is a response to an imagined threat. Avoidance maintains anxiety by preventing habituation — the natural reduction of anxiety that occurs during prolonged, repeated exposure. The treatment is graduated exposure: deliberately facing feared situations without using safety behaviors.
+**What it is:** Fear is a response to an actual, present threat. Anxiety is a response to an imagined threat. Avoidance maintains anxiety by preventing habituation - the natural reduction of anxiety that occurs during prolonged, repeated exposure. The treatment is graduated exposure: deliberately facing feared situations without using safety behaviors.
 
 **Key concepts from the book:**
 
 - **Yerkes-Dodson Law:** Optimal performance occurs at moderate anxiety. Too little or too much impairs it.
 - **SUDS:** Subjective Units of Distress Scale (0–100) measures anxiety intensity
-- **Safety behaviors** (reassurance-seeking, escape, checking) provide short-term relief but prevent long-term habituation — they must be reduced during exposure
+- **Safety behaviors** (reassurance-seeking, escape, checking) provide short-term relief but prevent long-term habituation - they must be reduced during exposure
 - **Habituation:** anxiety peaks and then drops naturally during exposure; the user's job is to stay with it
 - **ERP (Exposure and Response Prevention):** for OCD-type patterns, expose to the feared thought while preventing the compulsive response
 
@@ -431,7 +431,7 @@ Trigger → Interpretation → Physical Arousal → Urge → Behavior → Conseq
 - The central feature of anger is the sense of having been wronged
 - Catastrophic interpretations ("they're deliberately disrespecting me," "this is unbearable") escalate anger
 - Time-out (cooling off) is a behavioral intervention; it prevents impulsive responses
-- The goal is not suppression — it is responding to the actual problem effectively
+- The goal is not suppression - it is responding to the actual problem effectively
 
 **Tool features:**
 
@@ -480,7 +480,7 @@ Trigger → Interpretation → Physical Arousal → Urge → Behavior → Conseq
 **Tool features:**
 
 - Evening daily log covering all domains
-- Color-coded daily scorecard (do not rely on color alone — use icons)
+- Color-coded daily scorecard (do not rely on color alone - use icons)
 - Weekly trend charts: sleep, exercise frequency, mood correlation
 - Gratitude log archive
 - Insight: "On days you exercise, your average mood is X vs. Y on days you don't"
@@ -504,7 +504,7 @@ Trigger → Interpretation → Physical Arousal → Urge → Behavior → Conseq
 
 **Key prompts:**
 
-- "Three things from today, however small — what are you grateful for?"
+- "Three things from today, however small - what are you grateful for?"
 - "Did you move your body today?"
 - "Did you connect with someone who matters to you?"
 
@@ -512,7 +512,7 @@ Trigger → Interpretation → Physical Arousal → Urge → Behavior → Conseq
 
 ### Strategy 10: Integration and Recovery Plan
 
-**What it is:** After working through the other strategies, the user synthesizes what they've learned into a personal Recovery Plan — a living document capturing their recovery keys, personal slogan, anticipatory plans for future challenges, and maintenance commitments.
+**What it is:** After working through the other strategies, the user synthesizes what they've learned into a personal Recovery Plan - a living document capturing their recovery keys, personal slogan, anticipatory plans for future challenges, and maintenance commitments.
 
 **Key concepts from the book:**
 
@@ -764,7 +764,7 @@ type AnxietyType =
 ### Onboarding
 
 1. Welcome: explain the Think–Act–Be model; set expectation that this is a practice, not a quick fix
-2. Brief self-report: which concerns apply? (anxiety, depression, anger, procrastination — multi-select)
+2. Brief self-report: which concerns apply? (anxiety, depression, anger, procrastination - multi-select)
 3. Goal setting: create at least one goal before proceeding (enforces Strategy 1)
 4. Values clarification: rate importance and satisfaction across life domains (feeds Strategy 2)
 5. Strategy recommendation: suggest starting strategies based on self-report; user can override
@@ -780,9 +780,9 @@ type AnxietyType =
 
 1. Mood trend chart (7-day)
 2. Activities completed vs. planned
-3. Milestone review — prompt to mark any complete
-4. Open thought records — any unresolved?
-5. Exposure hierarchy progress — how many items habituated?
+3. Milestone review - prompt to mark any complete
+4. Open thought records - any unresolved?
+5. Exposure hierarchy progress - how many items habituated?
 6. Reflection prompt tied to active strategies
 
 ### Program Milestones
@@ -800,11 +800,11 @@ type AnxietyType =
 
 | Phase               | Modules                                                                 | Notes                                          |
 | ------------------- | ----------------------------------------------------------------------- | ---------------------------------------------- |
-| **1 — Foundation**  | Goal setting, behavioral activation, mood logging, values clarification | Daily scaffolding and the core motivation loop |
-| **2 — Central CBT** | Thought records (full 5-step model), weekly review                      | The primary therapeutic tool                   |
-| **3 — Deeper work** | Core beliefs, anxiety/exposure, worry journal                           | Depends on thought records being solid         |
-| **4 — Supportive**  | Mindfulness, procrastination, anger management                          | Broadens the toolkit                           |
-| **5 — Synthesis**   | Integration/recovery plan, pattern detection, insights, export          | Capstone of the full program                   |
+| **1 - Foundation**  | Goal setting, behavioral activation, mood logging, values clarification | Daily scaffolding and the core motivation loop |
+| **2 - Central CBT** | Thought records (full 5-step model), weekly review                      | The primary therapeutic tool                   |
+| **3 - Deeper work** | Core beliefs, anxiety/exposure, worry journal                           | Depends on thought records being solid         |
+| **4 - Supportive**  | Mindfulness, procrastination, anger management                          | Broadens the toolkit                           |
+| **5 - Synthesis**   | Integration/recovery plan, pattern detection, insights, export          | Capstone of the full program                   |
 
 ---
 
@@ -843,7 +843,7 @@ Deferred or out of scope for MVP notifications:
 ### Safety
 
 - Mood of 1–2 → display crisis support message and local crisis line information
-- Tool is not a substitute for professional help — disclaimer shown during onboarding and accessible from settings at any time
+- Tool is not a substitute for professional help - disclaimer shown during onboarding and accessible from settings at any time
 - No clinical diagnoses or clinical language in UI copy
 
 ### Tone
@@ -861,7 +861,7 @@ Deferred or out of scope for MVP notifications:
 - Generic journaling mixed into the CBT flow
 - Clinical diagnostic labels in UI copy
 - Diagnostic or scored anxiety/depression scales in the MVP app
-- Therapist portal (flag for architecture consideration only — single-user in v1)
+- Therapist portal (flag for architecture consideration only - single-user in v1)
 
 ---
 
@@ -890,7 +890,7 @@ Deferred or out of scope for MVP notifications:
 | LifeDomain           | A category of life area: work, relationships, health, leisure, personal growth                                  |
 | RecoveryKey          | A personally identified insight or practice that supports ongoing wellbeing                                     |
 | Habituation          | The natural reduction of anxiety that occurs during prolonged, repeated exposure                                |
-| ERP                  | Exposure and Response Prevention — used for OCD-type patterns                                                   |
+| ERP                  | Exposure and Response Prevention - used for OCD-type patterns                                                   |
 | Think-Act-Be         | The three-pillar framework of the Gillihan model: cognitive, behavioral, mindfulness                            |
 
 ---

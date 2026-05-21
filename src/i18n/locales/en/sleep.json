@@ -79,11 +79,11 @@
     "whatToLog": {
       "title": "What to log",
       "durationLabel": "Hours slept",
-      "durationBody": "Estimate to the nearest half-hour — precision is less important than consistency.",
+      "durationBody": "Estimate to the nearest half-hour - precision is less important than consistency.",
       "qualityLabel": "Quality 1–5",
       "qualityBody": "1 is very poor, 5 is excellent. Your own sense of rest matters more than the number of hours.",
       "notesLabel": "Notes",
-      "notesBody": "Optional — caffeine, alcohol, stress, late screens, anything that might explain the pattern."
+      "notesBody": "Optional - caffeine, alcohol, stress, late screens, anything that might explain the pattern."
     },
     "finish": {
       "start": "Got it"

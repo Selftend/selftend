@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -32,11 +32,11 @@ export default function GratitudeHomeScreen() {
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [breakIndex, setBreakIndex] = useState(0);
 
-  const allEntries = useMemo(() => entries ?? [], [entries]);
-  const recentList = useMemo(() => allEntries.slice(0, 7), [allEntries]);
-  const frequencyBuckets = useMemo(() => getGratitudeFrequencyBuckets(allEntries), [allEntries]);
-  const themes = useMemo(() => getGratitudeThemes(allEntries, 6), [allEntries]);
-  const favoriteCount = useMemo(() => getFavoriteGratitudeEntries(allEntries).length, [allEntries]);
+  const allEntries = entries ?? [];
+  const recentList = allEntries.slice(0, 7);
+  const frequencyBuckets = getGratitudeFrequencyBuckets(allEntries);
+  const themes = getGratitudeThemes(allEntries, 6);
+  const favoriteCount = getFavoriteGratitudeEntries(allEntries).length;
 
   return (
     <>

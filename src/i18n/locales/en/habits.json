@@ -17,17 +17,17 @@
   },
   "home": {
     "title": "Habits",
-    "subtitle": "Small habits, repeated. Tap to tick — no streaks, no shame.",
+    "subtitle": "Small habits, repeated. Tap to tick - no streaks, no shame.",
     "identityBannerPrefix": "You're becoming someone who",
     "todayHeading": "Today",
     "todayEmpty": "No habits scheduled for today.",
     "noHabitsTitle": "Start with one two-minute habit",
-    "noHabitsBody": "Atomic Habits suggests scaling new behaviours under two minutes. Pick something small — the goal is to cast a vote for the kind of person you want to become.",
+    "noHabitsBody": "Atomic Habits suggests scaling new behaviours under two minutes. Pick something small - the goal is to cast a vote for the kind of person you want to become.",
     "recentActivity": "Recent activity",
     "recentEmpty": "Ticks you make will appear here.",
     "weekStripLabel": "Last 7 days",
     "neverMissTwiceTitle": "Never miss twice",
-    "neverMissTwiceBody": "You skipped yesterday. Today is a great day to tick this once — one missed day is data, not failure.",
+    "neverMissTwiceBody": "You skipped yesterday. Today is a great day to tick this once - one missed day is data, not failure.",
     "learnHeading": "From the book"
   },
   "list": {
@@ -51,7 +51,7 @@
     "kindBuild": "Build",
     "kindBreak": "Break",
     "kindBuildHelp": "A new behaviour you want to cast votes for.",
-    "kindBreakHelp": "A behaviour you want to do less. Inverse the four laws — invisible, unattractive, difficult, unsatisfying.",
+    "kindBreakHelp": "A behaviour you want to do less. Inverse the four laws - invisible, unattractive, difficult, unsatisfying.",
     "twoMinuteLabel": "Two-minute version (Make It Easy)",
     "twoMinutePlaceholder": "Make the starter version under two minutes. e.g., Read one page.",
     "twoMinuteHelp": "Scale the habit down so it's easy to start.",
@@ -126,7 +126,7 @@
   },
   "log": {
     "title": "Add a note",
-    "subtitle": "Optional reflection for the day's tick. Stay private — only you see this.",
+    "subtitle": "Optional reflection for the day's tick. Stay private - only you see this.",
     "placeholder": "What was this like today?",
     "saveError": "Couldn't save the note. Try again.",
     "missingTick": "Tick the day first to attach a note."
@@ -146,7 +146,7 @@
       "title": "Small habits, remarkable results",
       "subtitle": "Influenced by James Clear's Atomic Habits.",
       "compoundingTitle": "The 1% compounding effect",
-      "compoundingBody": "Improving by 1% a day compounds to ~37× better in a year. Drifting 1% worse a day collapses toward zero. Small consistent actions — not heroic effort — move the curve.",
+      "compoundingBody": "Improving by 1% a day compounds to ~37× better in a year. Drifting 1% worse a day collapses toward zero. Small consistent actions - not heroic effort - move the curve.",
       "systemsTitle": "Systems over goals",
       "systemsBody": "\"You do not rise to the level of your goals; you fall to the level of your systems.\" This tool captures the daily action, not an outcome target.",
       "continue": "Continue"
@@ -162,13 +162,13 @@
       "easyBody": "Scale it under two minutes. Friction is the enemy of consistency.",
       "satisfyingTitle": "4. Make it satisfying",
       "satisfyingBody": "Mark the win. Visible progress reinforces the loop.",
-      "breakNote": "To break a habit, invert each law — make it invisible, unattractive, difficult, and unsatisfying.",
+      "breakNote": "To break a habit, invert each law - make it invisible, unattractive, difficult, and unsatisfying.",
       "continue": "Continue"
     },
     "identity": {
       "title": "Identity-based habits",
       "subtitle": "Durable change is identity change.",
-      "body": "Instead of \"I want to run a marathon,\" frame it as \"I'm a runner.\" Every tick is a vote for that identity. The habit form has an optional identity field — leave it blank if you'd rather not name one.",
+      "body": "Instead of \"I want to run a marathon,\" frame it as \"I'm a runner.\" Every tick is a vote for that identity. The habit form has an optional identity field - leave it blank if you'd rather not name one.",
       "continue": "Continue"
     },
     "neverMiss": {
@@ -177,7 +177,7 @@
       "twoMinuteTitle": "The two-minute rule",
       "twoMinuteBody": "Scale every habit down so the starter version takes under two minutes. \"Read one page,\" not \"Read for an hour.\"",
       "neverMissTitle": "Never miss twice",
-      "neverMissBody": "Missing once is data. Missing twice starts a new habit. Selftend will never punish a missed day — we'll just quietly note when you're at risk of missing twice.",
+      "neverMissBody": "Missing once is data. Missing twice starts a new habit. Selftend will never punish a missed day - we'll just quietly note when you're at risk of missing twice.",
       "finish": "Start"
     },
     "finish": {
@@ -224,19 +224,19 @@
     "sectionLabel": "From the book",
     "dismiss": "Next card",
     "openHint": "Read more",
-    "indexTitle": "Atomic Habits — core ideas",
+    "indexTitle": "Atomic Habits - core ideas",
     "indexSubtitle": "Ten short cards covering the framework. Read them in any order.",
     "backToHabits": "Back to habits",
     "cards": {
       "compounding": {
         "title": "The 1% compounding effect",
-        "short": "Tiny improvements compound — for better or for worse.",
+        "short": "Tiny improvements compound - for better or for worse.",
         "body": "Improving by 1% a day compounds to roughly 37× better in a year (1.01^365). Drifting 1% worse a day collapses toward zero (0.99^365 ≈ 0.03). Small consistent actions, not heroic effort, move the curve. The lesson: prize consistency over intensity."
       },
       "systems-over-goals": {
         "title": "Systems over goals",
         "short": "You fall to the level of your systems.",
-        "body": "Goals describe an outcome you want; systems describe the daily process that produces it. You do not rise to the level of your goals — you fall to the level of your systems. Selftend captures the daily action (the system) rather than a target number, because the action is what compounds."
+        "body": "Goals describe an outcome you want; systems describe the daily process that produces it. You do not rise to the level of your goals - you fall to the level of your systems. Selftend captures the daily action (the system) rather than a target number, because the action is what compounds."
       },
       "habit-loop": {
         "title": "The habit loop",
@@ -244,34 +244,34 @@
         "body": "Every habit cycles through four stages: a cue notices a trigger, a craving generates motivation, a response performs the behaviour, and a reward closes the loop. Each of the four laws is a design rule attached to one stage."
       },
       "make-obvious": {
-        "title": "1st law — Make it obvious",
+        "title": "1st law - Make it obvious",
         "short": "Design a cue you cannot miss.",
         "body": "Behaviours start with a cue. Two strategies make the cue obvious: implementation intentions (\"I will [behaviour] at [time] in [location]\") and habit stacking (\"After [current habit], I will [new habit]\"). Both pin the new habit to a specific moment instead of vague intention."
       },
       "make-attractive": {
-        "title": "2nd law — Make it attractive",
+        "title": "2nd law - Make it attractive",
         "short": "Borrow anticipation from something you already enjoy.",
-        "body": "Cravings are dopamine-driven. Temptation bundling pairs an action you want with one you need — only watch the show while folding laundry, only podcast while walking. Joining a culture where the habit is the norm also amplifies the pull."
+        "body": "Cravings are dopamine-driven. Temptation bundling pairs an action you want with one you need - only watch the show while folding laundry, only podcast while walking. Joining a culture where the habit is the norm also amplifies the pull."
       },
       "make-easy": {
-        "title": "3rd law — Make it easy",
+        "title": "3rd law - Make it easy",
         "short": "Reduce friction so starting is trivial.",
         "body": "Habits stop at friction. Lay out the gym clothes the night before. Pre-portion the snack. Disable the notification. The fewer steps between you and the behaviour, the more reliably the habit fires."
       },
       "make-satisfying": {
-        "title": "4th law — Make it satisfying",
+        "title": "4th law - Make it satisfying",
         "short": "Reinforce the action with an immediate win.",
-        "body": "What is immediately rewarded gets repeated; what is immediately punished gets avoided. Visible progress — ticking a box, marking a calendar, sliding a paperclip — provides the small reward the brain needs. The longer-term benefits matter, but immediate satisfaction is what closes the loop."
+        "body": "What is immediately rewarded gets repeated; what is immediately punished gets avoided. Visible progress - ticking a box, marking a calendar, sliding a paperclip - provides the small reward the brain needs. The longer-term benefits matter, but immediate satisfaction is what closes the loop."
       },
       "two-minute-rule": {
         "title": "The two-minute rule",
         "short": "Scale every new habit to under two minutes.",
-        "body": "When a new habit feels hard, you've made it too big. \"Read before bed\" becomes \"Read one page.\" \"Run a marathon\" becomes \"Put on the running shoes.\" The two-minute version is not the destination — it's the gateway. Once the ritual is automatic, the duration can grow."
+        "body": "When a new habit feels hard, you've made it too big. \"Read before bed\" becomes \"Read one page.\" \"Run a marathon\" becomes \"Put on the running shoes.\" The two-minute version is not the destination - it's the gateway. Once the ritual is automatic, the duration can grow."
       },
       "never-miss-twice": {
         "title": "Never miss twice",
         "short": "Missing once is data. Missing twice is a new habit.",
-        "body": "Perfection is unrealistic; consistency is not. The rule isn't \"never miss\" — it's \"never miss twice.\" When you slip, the priority is to do the habit again the next day, even at the two-minute size. Selftend never punishes a missed day; it just quietly notes when you're at risk of missing twice."
+        "body": "Perfection is unrealistic; consistency is not. The rule isn't \"never miss\" - it's \"never miss twice.\" When you slip, the priority is to do the habit again the next day, even at the two-minute size. Selftend never punishes a missed day; it just quietly notes when you're at risk of missing twice."
       },
       "identity": {
         "title": "Identity-based habits",

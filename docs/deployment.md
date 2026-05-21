@@ -1,4 +1,4 @@
-# Web Deployment
+﻿# Web Deployment
 
 This project should launch the browser app as a single-page Expo web export. Do not add a separate backend, analytics SDK, or server-rendered web stack for v1 unless a concrete requirement appears.
 
@@ -344,7 +344,7 @@ Run this against a real Supabase instance (staging or production) to confirm the
    ```sql
    select public.delete_user_account();
    ```
-7. Verify cleanup — all of the following should return zero rows:
+7. Verify cleanup - all of the following should return zero rows:
    ```sql
    select * from auth.users where email = 'delete-test@example.com';
    select * from public.profiles where user_id = '<uid>';

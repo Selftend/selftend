@@ -45,9 +45,9 @@
     },
     "learn": {
       "title": "Learn the framework",
-      "subtitle": "Three short pieces of context — read once, revisit as needed.",
+      "subtitle": "Three short pieces of context - read once, revisit as needed.",
       "attentionTitle": "Attention and peripheral awareness",
-      "attentionBody": "Attention is selective and focused — it isolates one object. Peripheral awareness is global and contextual; it includes how aware you are of the state of your own mind. The practice trains both, in balance.",
+      "attentionBody": "Attention is selective and focused - it isolates one object. Peripheral awareness is global and contextual; it includes how aware you are of the state of your own mind. The practice trains both, in balance.",
       "gardenerTitle": "The gardener's mindset",
       "gardenerBody": "You can't pull a sapling to make it grow. Progress comes from clear intentions, not from force. Patience over willpower; intention over striving; every sit is the right sit.",
       "nonLinearTitle": "The path is not linear",
@@ -59,14 +59,14 @@
       "currentStageBadge": "Where you are",
       "switchTo": "Set this as my current stage",
       "switchedTo": "You're now working at Stage {{stage}}.",
-      "phaseNovice": "Novice — Stages 1 to 3",
-      "phaseSkilled": "Skilled — Stages 4 to 6",
-      "phaseTransition": "Transition — Stage 7",
-      "phaseAdept": "Adept — Stages 8 to 10",
-      "milestone1Title": "Milestone One — Continuous attention to the breath",
-      "milestone2Title": "Milestone Two — Sustained exclusive focus",
-      "milestone3Title": "Milestone Three — Effortless stability of attention",
-      "milestone4Title": "Milestone Four — Persistence of an adept's qualities",
+      "phaseNovice": "Novice - Stages 1 to 3",
+      "phaseSkilled": "Skilled - Stages 4 to 6",
+      "phaseTransition": "Transition - Stage 7",
+      "phaseAdept": "Adept - Stages 8 to 10",
+      "milestone1Title": "Milestone One - Continuous attention to the breath",
+      "milestone2Title": "Milestone Two - Sustained exclusive focus",
+      "milestone3Title": "Milestone Three - Effortless stability of attention",
+      "milestone4Title": "Milestone Four - Persistence of an adept's qualities",
       "goalLabel": "Goal",
       "obstaclesLabel": "Obstacles",
       "skillsLabel": "Skills and methods",
@@ -77,14 +77,14 @@
       "title": "Start a sit",
       "preSitTitle": "Before you sit",
       "preSitSubtitle": "Stage {{stage}} · a short primer",
-      "preSitFamiliar": "I've got it — start the timer",
+      "preSitFamiliar": "I've got it - start the timer",
       "sixPointTitle": "Six-point preparation",
-      "sixPointMotivation": "Motivation — why am I sitting today?",
+      "sixPointMotivation": "Motivation - why am I sitting today?",
       "sixPointGoals": "Goals for this sit",
-      "sixPointExpectations": "Expectations — realistic for today",
-      "sixPointDiligence": "Diligence — engage wholeheartedly",
-      "sixPointDistractions": "Distractions — what's likely to pull at me",
-      "sixPointPosture": "Posture — comfortable and alert",
+      "sixPointExpectations": "Expectations - realistic for today",
+      "sixPointDiligence": "Diligence - engage wholeheartedly",
+      "sixPointDistractions": "Distractions - what's likely to pull at me",
+      "sixPointPosture": "Posture - comfortable and alert",
       "fourStepTitle": "Four-step transition",
       "fourStep1": "Rest in open awareness",
       "fourStep2": "Notice the body",
@@ -94,7 +94,7 @@
       "technique": {
         "breathAtNose": "Breath at the nose",
         "followingTheBreath": "Following the breath",
-        "connecting": "Connecting — comparing breaths",
+        "connecting": "Connecting - comparing breaths",
         "bodyScan": "Body scan",
         "wholeBodyWithBreath": "Whole body with the breath",
         "metacognitiveAwareness": "Metacognitive awareness",
@@ -103,12 +103,12 @@
       "stageNote": {
         "s1": "Stage 1 is about showing up. The Six-Point Preparation helps if you'd like a checklist; otherwise, just begin.",
         "s2": "Catching mind-wandering is success, not failure. Each time you notice, gently come back to the breath.",
-        "s3": "Following the full arc of each breath — including the pauses — keeps attention sharp. A silent half-time chime can help.",
+        "s3": "Following the full arc of each breath - including the pauses - keeps attention sharp. A silent half-time chime can help.",
         "s4": "Continuous introspective awareness lets you catch subtle distractions before they take over the breath. Pain, when it arises, can itself be a meditation object.",
         "s5": "Subtle dullness is pleasant and easy to miss. The body scan refreshes mindfulness without breaking stability.",
         "s6": "Refine the scope of attention. 'Whole body with the breath' keeps the breath central while opening peripheral awareness.",
-        "s7": "Practice patiently. Periodically test for effortlessness — relax effort and see what happens. Bizarre sensations can arise; let them be.",
-        "s8": "Unusual sensations, energy currents, and intense joy may arise. Let them be — they're part of the process, not problems.",
+        "s7": "Practice patiently. Periodically test for effortlessness - relax effort and see what happens. Bizarre sensations can arise; let them be.",
+        "s8": "Unusual sensations, energy currents, and intense joy may arise. Let them be - they're part of the process, not problems.",
         "s9": "The intensity of joy itself softens with familiarity. Allow tranquility and equanimity to emerge.",
         "s10": "Carry the qualities of the sit into the rest of the day. Mindfulness in daily life is what makes the practice stick."
       },
@@ -145,7 +145,7 @@
       "discard": "Discard sit"
     },
     "bodyScan": {
-      "indicator": "Body scan — where to rest attention",
+      "indicator": "Body scan - where to rest attention",
       "segmentLabel": "Body-scan segments",
       "segmentCount": "{{count}} segments",
       "segments": {
@@ -170,7 +170,7 @@
     },
     "insights": {
       "title": "Reflect",
-      "subtitle": "A quiet summary of your practice — no scores.",
+      "subtitle": "A quiet summary of your practice - no scores.",
       "totalSessions": "Sessions",
       "totalMinutes": "Total time",
       "longestSit": "Longest sit",
@@ -256,17 +256,17 @@
     "title": "The mind can be trained.",
     "subtitle": "Ten stages. One breath at a time.",
     "heroAlt": "Meditation path",
-    "heroBody": "This module follows The Mind Illuminated — a structured path through ten distinct stages, from establishing a daily habit to deep meditative mastery.",
+    "heroBody": "This module follows The Mind Illuminated - a structured path through ten distinct stages, from establishing a daily habit to deep meditative mastery.",
     "circlesAlt": "Attention and awareness",
     "conceptsTitle": "Two modes of knowing",
     "attentionTitle": "Attention",
-    "attentionBody": "Selective and focused. Isolates one object — like the breath — for closer inspection.",
+    "attentionBody": "Selective and focused. Isolates one object - like the breath - for closer inspection.",
     "awarenessTitle": "Peripheral awareness",
-    "awarenessBody": "Global and contextual. Holds the background of your experience — including the state of your own mind.",
+    "awarenessBody": "Global and contextual. Holds the background of your experience - including the state of your own mind.",
     "principlesTitle": "Three things to know",
-    "patience": "Patience, not force — you can't pull a sapling to make it grow.",
-    "intention": "Intention, not willpower — clear intentions, repeated daily, do the work.",
-    "everySit": "Every sit counts — even a restless sit is practice.",
+    "patience": "Patience, not force - you can't pull a sapling to make it grow.",
+    "intention": "Intention, not willpower - clear intentions, repeated daily, do the work.",
+    "everySit": "Every sit counts - even a restless sit is practice.",
     "attribution": "Based on The Mind Illuminated by Culadasa (John Yates, Ph.D.)",
     "begin": "Start setup",
     "dismiss": "Got it",
@@ -280,15 +280,15 @@
   "onboarding": {
     "welcome": {
       "title": "The path to awakening",
-      "subtitle": "Ten stages, four milestones — a practice, not a finish line.",
+      "subtitle": "Ten stages, four milestones - a practice, not a finish line.",
       "body": "The Mind Illuminated organizes meditative training as a sequence of ten distinct stages. The path is not linear: a single sit can move between stages, and a hard day can drop you back. That's normal.",
       "continue": "Begin"
     },
     "attention": {
       "title": "Attention and peripheral awareness",
-      "subtitle": "Two modes of knowing — the practice trains both.",
+      "subtitle": "Two modes of knowing - the practice trains both.",
       "attentionTitle": "Attention",
-      "attentionBody": "Selective and focused. Isolates one object — like the breath — for closer inspection.",
+      "attentionBody": "Selective and focused. Isolates one object - like the breath - for closer inspection.",
       "awarenessTitle": "Peripheral awareness",
       "awarenessBody": "Global and contextual. Includes outward sensory awareness and a quiet introspective sense of what your mind is doing.",
       "continue": "Continue"
@@ -318,9 +318,9 @@
     "gardener": {
       "title": "The gardener's mindset",
       "subtitle": "Three short reminders for the path.",
-      "patience": "Patience over force — you can't pull a sapling to make it grow.",
-      "intention": "Intention over willpower — clear intentions, repeated, do the work.",
-      "everySit": "Every sit is the right sit — even the ones that feel bad are practice.",
+      "patience": "Patience over force - you can't pull a sapling to make it grow.",
+      "intention": "Intention over willpower - clear intentions, repeated, do the work.",
+      "everySit": "Every sit is the right sit - even the ones that feel bad are practice.",
       "continue": "Continue"
     },
     "commit": {
@@ -330,7 +330,7 @@
       "timePlaceholder": "07:00",
       "durationLabel": "Length",
       "stageLabel": "Starting stage",
-      "stageHint": "Based on your answers, Stage {{stage}} is suggested — you can override it.",
+      "stageHint": "Based on your answers, Stage {{stage}} is suggested - you can override it.",
       "stageOption": "Stage {{stage}}",
       "startingAt": "We'll start you at Stage {{stage}}.",
       "reminderLabel": "Quiet daily reminder",
@@ -345,7 +345,7 @@
   },
   "stages": {
     "s1": {
-      "title": "Stage 1 — Establishing a Practice",
+      "title": "Stage 1 - Establishing a Practice",
       "short": "Establishing a practice",
       "goal": "Develop a regular, consistent meditation practice.",
       "obstacles": "Resistance, procrastination, fatigue, impatience, boredom, lack of motivation.",
@@ -358,11 +358,11 @@
       }
     },
     "s2": {
-      "title": "Stage 2 — Overcoming Mind-Wandering",
+      "title": "Stage 2 - Overcoming Mind-Wandering",
       "short": "Overcoming mind-wandering",
       "goal": "Shorten mind-wandering and extend periods of sustained attention to the breath.",
       "obstacles": "Mind-wandering, monkey-mind, impatience.",
-      "skills": "Reinforcing the 'aha' moment of catching mind-wandering — appreciating it, not judging it. Gently redirecting attention to the breath.",
+      "skills": "Reinforcing the 'aha' moment of catching mind-wandering - appreciating it, not judging it. Gently redirecting attention to the breath.",
       "mastery": "Attention can stay on the breath for minutes while mind-wandering lasts only seconds.",
       "prompts": {
         "wanderingCount": "About how many times did you catch yourself off the breath?",
@@ -371,7 +371,7 @@
       }
     },
     "s3": {
-      "title": "Stage 3 — Overcoming Forgetting",
+      "title": "Stage 3 - Overcoming Forgetting",
       "short": "Overcoming forgetting",
       "goal": "Overcome forgetting the breath and falling asleep.",
       "obstacles": "Distractions, forgetting, mind-wandering, sleepiness.",
@@ -384,11 +384,11 @@
       }
     },
     "s4": {
-      "title": "Stage 4 — Overcoming Gross Distraction and Strong Dullness",
+      "title": "Stage 4 - Overcoming Gross Distraction and Strong Dullness",
       "short": "Overcoming gross distraction and strong dullness",
       "goal": "Overcome gross distraction and strong dullness.",
       "obstacles": "Distractions, pain and discomfort, intellectual insights, emotionally charged visions and memories.",
-      "skills": "Continuous introspective awareness — catching subtle problems before they grow. Learning to take pain as a meditation object. Old emotional material may surface; let it be.",
+      "skills": "Continuous introspective awareness - catching subtle problems before they grow. Learning to take pain as a meditation object. Old emotional material may surface; let it be.",
       "mastery": "Gross distractions no longer push the breath into the background; breath sensations don't fade due to strong dullness.",
       "prompts": {
         "grossDistraction": "Was there a distraction that took over the breath today?",
@@ -397,7 +397,7 @@
       }
     },
     "s5": {
-      "title": "Stage 5 — Overcoming Subtle Dullness",
+      "title": "Stage 5 - Overcoming Subtle Dullness",
       "short": "Overcoming subtle dullness",
       "goal": "Overcome subtle dullness and increase the power of mindfulness.",
       "obstacles": "Subtle dullness is hard to recognize, creates an illusion of stability, and is seductively pleasant.",
@@ -410,7 +410,7 @@
       }
     },
     "s6": {
-      "title": "Stage 6 — Subduing Subtle Distractions",
+      "title": "Stage 6 - Subduing Subtle Distractions",
       "short": "Subduing subtle distractions",
       "goal": "Subdue subtle distractions and develop metacognitive introspective awareness.",
       "obstacles": "Subtle thoughts and mental objects alternate with the breath in peripheral awareness.",
@@ -422,12 +422,12 @@
       }
     },
     "s7": {
-      "title": "Stage 7 — Exclusive Attention and Unifying the Mind",
+      "title": "Stage 7 - Exclusive Attention and Unifying the Mind",
       "short": "Exclusive attention and unifying the mind",
       "goal": "Reach effortlessly sustained exclusive attention and powerful mindfulness.",
       "obstacles": "Effort is still required; boredom, restlessness, and doubt can arise. Bizarre sensations and involuntary movements may appear. Knowing when to drop effort is its own challenge.",
       "skills": "Patient, diligent practice. Periodically relaxing effort on purpose to test whether it's still needed. Letting go of the need to control.",
-      "mastery": "Effort can be dropped entirely and the mind still maintains unprecedented stability and clarity — mental pliancy.",
+      "mastery": "Effort can be dropped entirely and the mind still maintains unprecedented stability and clarity - mental pliancy.",
       "prompts": {
         "droppedEffort": "Did you try dropping effort during this sit?",
         "whatHappened": "What happened when you did?",
@@ -435,11 +435,11 @@
       }
     },
     "s8": {
-      "title": "Stage 8 — Mental Pliancy and Pacifying the Senses",
+      "title": "Stage 8 - Mental Pliancy and Pacifying the Senses",
       "short": "Mental pliancy and pacifying the senses",
       "goal": "Complete pacification of the senses and the full arising of meditative joy.",
       "obstacles": "Unusual sensations, energy currents, and intense joy can themselves become distracting.",
-      "skills": "Effortless attention and continuous introspective awareness. Let extraordinary experiences be — they're part of unification, not problems to fix.",
+      "skills": "Effortless attention and continuous introspective awareness. Let extraordinary experiences be - they're part of unification, not problems to fix.",
       "mastery": "Body suffused with comfort, mental state of intense joy; you can sit for hours without dullness, distraction, or discomfort.",
       "prompts": {
         "unusual": "Anything unusual to note from today?",
@@ -447,19 +447,19 @@
       }
     },
     "s9": {
-      "title": "Stage 9 — Calming the Intensity of Meditative Joy",
+      "title": "Stage 9 - Calming the Intensity of Meditative Joy",
       "short": "Calming the intensity of meditative joy",
       "goal": "Mature meditative joy into tranquility and equanimity.",
       "obstacles": "The intensity of joy can perturb the mind and disrupt practice.",
       "skills": "Continued practice; allowing familiarity with joy to soften its intensity.",
       "mastery": "Consistently evoking mental and physical pliancy with profound tranquility and equanimity.",
       "prompts": {
-        "joyShape": "How did joy feel today — sharp, settled, or somewhere in between?",
+        "joyShape": "How did joy feel today - sharp, settled, or somewhere in between?",
         "equanimity": "Was there a sense of equanimity by the end of the sit?"
       }
     },
     "s10": {
-      "title": "Stage 10 — Tranquility and Equanimity",
+      "title": "Stage 10 - Tranquility and Equanimity",
       "short": "Tranquility and equanimity",
       "goal": "Establish the qualities of śamatha as the normal condition of the mind.",
       "obstacles": "The qualities of śamatha fade after the meditation session ends.",
