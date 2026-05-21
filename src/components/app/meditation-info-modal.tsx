@@ -6,8 +6,8 @@ import { Card, CardContent, CardTitle } from "@/src/components/react-native-reus
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
-const meditationPath = require("../../../assets/images/onboarding/meditation-lake-alt-badge.png");
-const meditationCircles = require("../../../assets/images/onboarding/meditation-lake-badge.png");
+const meditationPath = require("../../../assets/images/onboarding/mind_illuminated_ten_stage_path.png");
+const meditationCircles = require("../../../assets/images/onboarding/mind_illuminated_breath_focus.png");
 
 interface MeditationInfoProps {
   visible: boolean;

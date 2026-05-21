@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 
-const sleepOnboardingImage = require("../../../assets/images/onboarding/sleep-bedroom-badge.png");
+const sleepOnboardingImage = require("../../../assets/images/onboarding/sleep_recovery_one_eye.png");
 
 interface Props {
   visible: boolean;

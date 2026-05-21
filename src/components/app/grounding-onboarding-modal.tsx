@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 
-const groundingOnboardingImage = require("../../../assets/images/onboarding/grounding-anchor-alt-badge.png");
+const groundingOnboardingImage = require("../../../assets/images/onboarding/grounding_sweet_spot_frequency.png");
 
 interface Props {
   visible: boolean;

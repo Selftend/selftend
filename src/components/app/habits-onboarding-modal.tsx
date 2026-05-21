@@ -6,8 +6,8 @@ import { Card, CardContent, CardTitle } from "@/src/components/react-native-reus
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 
-const imgGrowth = require("../../../assets/images/onboarding/app-journey-growth-badge.png");
-const imgTracker = require("../../../assets/images/onboarding/habits-tracker-garden-badge.png");
+const imgGrowth = require("../../../assets/images/onboarding/habits_compounding_path.png");
+const imgTracker = require("../../../assets/images/onboarding/habits_loop_two_minute_rule.png");
 
 interface Props {
   visible: boolean;

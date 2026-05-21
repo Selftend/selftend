@@ -1,4 +1,4 @@
-import { ActivityIndicator, Modal, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardTitle } from "@/src/components/react-native-reus
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { OnboardingHero, RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
+import { RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 import { cn } from "@/lib/utils";
 import {
   ACT_CONCERNS,
@@ -19,7 +19,9 @@ import {
 } from "@/src/features/act/types";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
-const actOnboardingImage = require("../../../assets/images/onboarding/brain-heart-badge.png");
+const actControlParadox = require("../../../assets/images/onboarding/act_control_paradox_thought_spiral.png");
+const actFourMyths = require("../../../assets/images/onboarding/act_four_myths_trap.png");
+const actValuesHeart = require("../../../assets/images/onboarding/act_values_rooted_heart.png");
 
 // ─── Info modal (single page) ─────────────────────────────────────────────────
 
@@ -55,22 +57,39 @@ export function ActInfo({
         </Text>
       }
     >
-      <OnboardingHero
-        illustration={actOnboardingImage}
-        title={t("onboarding.welcome.title")}
-        subtitle={t("onboarding.welcome.subtitle")}
-      />
+      <View className="items-center gap-3">
+        <Text variant="h2" className="text-center">
+          {t("onboarding.welcome.title")}
+        </Text>
+        <Text variant="muted" className="text-center">
+          {t("onboarding.welcome.subtitle")}
+        </Text>
+      </View>
 
       <Card className="border-destructive/30 bg-destructive/5">
-        <CardContent className="gap-3 pt-6">
-          <CardTitle>{t("onboarding.welcome.controlParadox")}</CardTitle>
-          <Text variant="muted">{t("onboarding.welcome.controlParadoxBody")}</Text>
+        <CardContent className="items-center gap-3 pt-6">
+          <Image
+            source={actControlParadox}
+            style={{ width: 180, height: 180 }}
+            resizeMode="contain"
+            accessibilityLabel={t("onboarding.welcome.controlParadox")}
+          />
+          <CardTitle className="text-center">{t("onboarding.welcome.controlParadox")}</CardTitle>
+          <Text variant="muted" className="text-center">
+            {t("onboarding.welcome.controlParadoxBody")}
+          </Text>
         </CardContent>
       </Card>
 
       <Card>
-        <CardContent className="gap-2 pt-6">
-          <CardTitle className="mb-1">{t("onboarding.welcome.mythsTitle")}</CardTitle>
+        <CardContent className="items-center gap-2 pt-6">
+          <Image
+            source={actFourMyths}
+            style={{ width: 180, height: 180 }}
+            resizeMode="contain"
+            accessibilityLabel={t("onboarding.welcome.mythsTitle")}
+          />
+          <CardTitle className="mb-1 text-center">{t("onboarding.welcome.mythsTitle")}</CardTitle>
           {(["myth1", "myth2", "myth3", "myth4"] as const).map((key, i) => (
             <Text key={key} variant="muted">
               {`${i + 1}. ${t(`onboarding.welcome.${key}`)}`}
@@ -84,9 +103,17 @@ export function ActInfo({
       </Text>
 
       <Card className="border-act/30 bg-act/5">
-        <CardContent className="gap-2 pt-6">
-          <CardTitle>{t("onboarding.model.title")}</CardTitle>
-          <Text variant="muted">{t("onboarding.model.subtitle")}</Text>
+        <CardContent className="items-center gap-2 pt-6">
+          <Image
+            source={actValuesHeart}
+            style={{ width: 180, height: 180 }}
+            resizeMode="contain"
+            accessibilityLabel={t("onboarding.model.title")}
+          />
+          <CardTitle className="text-center">{t("onboarding.model.title")}</CardTitle>
+          <Text variant="muted" className="text-center">
+            {t("onboarding.model.subtitle")}
+          </Text>
           <Text className="mt-1 font-semibold">{t("onboarding.model.accept")}</Text>
           <Text className="font-semibold">{t("onboarding.model.connect")}</Text>
           <Text className="font-semibold">{t("onboarding.model.take")}</Text>

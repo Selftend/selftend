@@ -5,12 +5,12 @@ import { Text } from "@/src/components/react-native-reusables/text";
 
 import { RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 
-const pillarAct = require("../../../assets/images/onboarding/pillar-act.png");
-const pillarThink = require("../../../assets/images/onboarding/pillar-think.png");
-const pillarBe = require("../../../assets/images/onboarding/pillar-be.png");
-const toolBeliefs = require("../../../assets/images/onboarding/tool-beliefs.png");
-const toolExposure = require("../../../assets/images/onboarding/tool-exposure.png");
-const toolSleep = require("../../../assets/images/onboarding/tool-sleep.png");
+const pillarAct = require("../../../assets/images/onboarding/cbt_act_lead_with_action.png");
+const pillarThink = require("../../../assets/images/onboarding/cbt_think_challenge_patterns.png");
+const pillarBe = require("../../../assets/images/onboarding/cbt_be_mindful_presence.png");
+const toolBeliefs = require("../../../assets/images/onboarding/cbt_core_beliefs_schemas.png");
+const toolExposure = require("../../../assets/images/onboarding/cbt_exposure_door.png");
+const toolSleep = require("../../../assets/images/onboarding/cbt_sleep_target.png");
 
 interface TableRowProps {
   condition: string;
@@ -80,7 +80,7 @@ export function CbtOnboarding({
           <CardContent className="items-center gap-3 pt-6">
             <Image
               source={pillarAct}
-              style={{ width: 200, height: 118 }}
+              style={{ width: 180, height: 180 }}
               resizeMode="contain"
               accessibilityLabel={t("onboarding.intro.actTitle")}
             />
@@ -95,7 +95,7 @@ export function CbtOnboarding({
           <CardContent className="items-center gap-3 pt-6">
             <Image
               source={pillarThink}
-              style={{ width: 200, height: 118 }}
+              style={{ width: 180, height: 180 }}
               resizeMode="contain"
               accessibilityLabel={t("onboarding.intro.thinkTitle")}
             />
@@ -112,7 +112,7 @@ export function CbtOnboarding({
           <CardContent className="items-center gap-3 pt-6">
             <Image
               source={pillarBe}
-              style={{ width: 200, height: 118 }}
+              style={{ width: 180, height: 180 }}
               resizeMode="contain"
               accessibilityLabel={t("onboarding.intro.beTitle")}
             />

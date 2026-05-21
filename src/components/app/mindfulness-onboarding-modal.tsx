@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 
-const mindfulnessOnboardingImage = require("../../../assets/images/onboarding/mindfulness-stream-alt-badge.png");
+const mindfulnessOnboardingImage = require("../../../assets/images/onboarding/mindfulness_return_to_present.png");
 
 interface Props {
   visible: boolean;

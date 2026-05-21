@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 
-const moodOnboardingImage = require("../../../assets/images/onboarding/mood-connection-badge.png");
+const moodOnboardingImage = require("../../../assets/images/onboarding/mood_emotional_weather.png");
 
 interface Props {
   visible: boolean;

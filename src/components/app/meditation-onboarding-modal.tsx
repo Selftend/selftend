@@ -21,7 +21,7 @@ const DURATIONS: number[] = [10, 15, 20, 30];
 
 const STAGE_OPTIONS: StageNumber[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-const meditationOnboardingImage = require("../../../assets/images/onboarding/meditation-lake-alt-badge.png");
+const meditationOnboardingImage = require("../../../assets/images/onboarding/mind_illuminated_attention_training.png");
 
 export interface MeditationOnboardingResult {
   assessedStage: StageNumber;

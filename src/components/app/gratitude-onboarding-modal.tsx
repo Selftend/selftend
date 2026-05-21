@@ -5,9 +5,9 @@ import { RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell"
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 
-const imgScience = require("../../../assets/images/onboarding/gratitude-flower-growth-badge.png");
-const imgLevels = require("../../../assets/images/onboarding/gratitude-levels-badge.png");
-const imgFrequency = require("../../../assets/images/onboarding/gratitude-frequency-writing-badge.png");
+const imgScience = require("../../../assets/images/onboarding/gratitude_science.png");
+const imgLevels = require("../../../assets/images/onboarding/gratitude_three_levels_practice.png");
+const imgFrequency = require("../../../assets/images/onboarding/gratitude_frequency_sweet_spot.png");
 
 interface Props {
   visible: boolean;
