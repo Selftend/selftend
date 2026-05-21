@@ -97,7 +97,7 @@ export default function SupportScreen() {
                   <Text variant="muted">{t("supportPage.emailNotConfigured")}</Text>
                 )}
                 <Button onPress={() => router.push("/account-deletion")} variant="ghost">
-                  <Text>{t("supportPage.requestDeletion")}</Text>
+                  <Text>{t("supportPage.deleteAccount")}</Text>
                 </Button>
               </View>
             </CardContent>

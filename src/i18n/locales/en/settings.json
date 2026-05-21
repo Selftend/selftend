@@ -94,7 +94,7 @@
     "signOut": "Sign out",
     "signOutError": "Unable to sign out.",
     "deleteWarning": "This action is permanent. Your account, profile, preferences, and app data will be deleted unless we are required to keep limited data for legal, security, or abuse-prevention reasons.",
-    "requestDeletion": "Request deletion"
+    "deleteAccount": "Delete account"
   },
   "home": {
     "title": "A calm starting point",
@@ -152,7 +152,7 @@
     "contactDescription": "For support, include only the minimum details needed. Do not email urgent crisis details or private self-help entries.",
     "emailSupport": "Email support",
     "emailNotConfigured": "Set EXPO_PUBLIC_SUPPORT_EMAIL before public launch. Until then, use GitHub issues for project feedback that does not include private health details.",
-    "requestDeletion": "Request account deletion",
+    "deleteAccount": "Delete account",
     "projectLinks": "Project links",
     "openRepo": "Open repository",
     "openContributing": "Open contribution guide",

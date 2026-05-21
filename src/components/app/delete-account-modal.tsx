@@ -86,7 +86,7 @@ export function DeleteAccountModal({
 
                 <Button disabled={!canSubmit} onPress={onConfirm} variant="destructive">
                   {isPending ? <ActivityIndicator color="#ffffff" /> : null}
-                  <Text>{isPending ? t("account.deleting") : t("account.requestDeletion")}</Text>
+                  <Text>{isPending ? t("account.deleting") : t("account.deleteAccount")}</Text>
                 </Button>
               </View>
             </View>
