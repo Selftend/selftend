@@ -12,16 +12,13 @@ import {
 import { ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { PortalHost } from "@rn-primitives/portal";
-import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "nativewind";
 import { useEffect, useRef } from "react";
-import { Pressable, useWindowDimensions, View } from "react-native";
-import { useTranslation } from "react-i18next";
+import { View } from "react-native";
 
-import { AppHeader } from "@/src/components/app/app-header";
-import { SidebarNav } from "@/src/components/app/sidebar-nav";
+import { AppShell } from "@/src/components/app/app-shell";
 import { AppErrorBoundary } from "@/src/components/app/app-error-boundary";
 import { AppToast } from "@/src/components/app/app-toast";
 import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner";
@@ -30,12 +27,8 @@ import {
   resolveThemePreference,
   useSystemColorScheme,
 } from "@/src/lib/color-scheme";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { AppProviders } from "@/src/providers/app-providers";
-import { useSession } from "@/src/providers/session-provider";
 import { NAV_THEME, THEME_VARIABLES } from "@/lib/theme";
-import { useSidebarStore } from "@/src/stores/sidebar-store";
 import { useThemeStore } from "@/src/stores/theme-store";
 
 SplashScreen.preventAutoHideAsync();
@@ -89,58 +82,5 @@ export default function RootLayout() {
         </View>
       </ThemeProvider>
     </AppProviders>
-  );
-}
-
-function AppShell() {
-  const { t } = useTranslation("navigation");
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= DESKTOP_BREAKPOINT;
-  const { session } = useSession();
-  const isOpen = useSidebarStore((s) => s.isOpen);
-  const toggle = useSidebarStore((s) => s.toggle);
-  const close = useSidebarStore((s) => s.close);
-  const showMobileNav = Boolean(session) && !isDesktop;
-
-  useEffect(() => {
-    if (!showMobileNav) {
-      close();
-    }
-  }, [close, showMobileNav]);
-
-  return (
-    <View className="flex-1 bg-background">
-      <AppHeader showHamburger={showMobileNav} onMenuPress={toggle} />
-      <View className="flex-1">
-        <Stack
-          screenOptions={{
-            headerShown: false,
-          }}
-        >
-          <Stack.Screen name="index" />
-          <Stack.Screen name="privacy" />
-          <Stack.Screen name="terms" />
-          <Stack.Screen name="cookies" />
-          <Stack.Screen name="crisis" />
-          <Stack.Screen name="account-deletion" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(app)" />
-        </Stack>
-      </View>
-
-      {showMobileNav && isOpen ? (
-        <View className="absolute inset-0 z-50 flex-row">
-          <SidebarNav includeTopInset onSelect={close} />
-          <Pressable
-            accessibilityLabel={t("header.closeNav")}
-            accessibilityRole="button"
-            className="flex-1 bg-black/50"
-            hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-            onPress={close}
-            role="button"
-          />
-        </View>
-      ) : null}
-    </View>
   );
 }
