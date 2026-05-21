@@ -1,85 +1,23 @@
-import { useEffect, useState } from "react";
-import { Appearance, Platform } from "react-native";
+import { useEffect } from "react";
+import { useColorScheme } from "react-native";
+import { colorScheme as nwColorScheme } from "nativewind";
 
-import type { ThemePreference } from "@/src/stores/theme-store";
+import { useThemeStore } from "@/src/stores/theme-store";
 
 export type ResolvedColorScheme = "light" | "dark";
 
-const DARK_COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
-
-function getWebSystemColorScheme(): ResolvedColorScheme {
-  if (typeof globalThis.window?.matchMedia !== "function") {
-    return "light";
-  }
-
-  return globalThis.window.matchMedia(DARK_COLOR_SCHEME_QUERY).matches ? "dark" : "light";
-}
-
-function getSystemColorScheme(): ResolvedColorScheme {
-  if (Platform.OS === "web") {
-    return getWebSystemColorScheme();
-  }
-
-  return Appearance.getColorScheme() === "dark" ? "dark" : "light";
-}
-
-export function resolveThemePreference(
-  preference: ThemePreference,
-  systemColorScheme: ResolvedColorScheme,
-): ResolvedColorScheme {
-  return preference === "system" ? systemColorScheme : preference;
-}
-
-export function getNativeWindColorScheme(
-  preference: ThemePreference,
-  systemColorScheme: ResolvedColorScheme,
-): ThemePreference {
-  if (Platform.OS === "web" && preference === "system") {
-    return systemColorScheme;
-  }
-
-  return preference;
-}
-
-export function useSystemColorScheme(): ResolvedColorScheme {
-  const [systemColorScheme, setSystemColorScheme] =
-    useState<ResolvedColorScheme>(getSystemColorScheme);
+export function useAppColorScheme(): ResolvedColorScheme {
+  const { preference, hydrate } = useThemeStore();
+  const systemColorScheme: ResolvedColorScheme = useColorScheme() === "dark" ? "dark" : "light";
+  const colorScheme: ResolvedColorScheme = preference === "system" ? systemColorScheme : preference;
 
   useEffect(() => {
-    if (Platform.OS === "web") {
-      const mediaQuery = globalThis.window?.matchMedia?.(DARK_COLOR_SCHEME_QUERY);
+    void hydrate();
+  }, [hydrate]);
 
-      if (!mediaQuery) {
-        return;
-      }
+  useEffect(() => {
+    nwColorScheme.set(colorScheme);
+  }, [colorScheme]);
 
-      const updateSystemColorScheme = (event: MediaQueryListEvent) => {
-        setSystemColorScheme(event.matches ? "dark" : "light");
-      };
-
-      setSystemColorScheme(mediaQuery.matches ? "dark" : "light");
-
-      if (typeof mediaQuery.addEventListener === "function") {
-        mediaQuery.addEventListener("change", updateSystemColorScheme);
-        return () => {
-          mediaQuery.removeEventListener("change", updateSystemColorScheme);
-        };
-      }
-
-      mediaQuery.addListener(updateSystemColorScheme);
-      return () => {
-        mediaQuery.removeListener(updateSystemColorScheme);
-      };
-    }
-
-    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
-      setSystemColorScheme(colorScheme === "dark" ? "dark" : "light");
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-
-  return systemColorScheme;
+  return colorScheme;
 }

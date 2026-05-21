@@ -14,31 +14,21 @@ import { useFonts } from "expo-font";
 import { PortalHost } from "@rn-primitives/portal";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "nativewind";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { View } from "react-native";
 
 import { AppShell } from "@/src/components/app/app-shell";
 import { AppErrorBoundary } from "@/src/components/app/app-error-boundary";
 import { AppToast } from "@/src/components/app/app-toast";
 import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner";
-import {
-  getNativeWindColorScheme,
-  resolveThemePreference,
-  useSystemColorScheme,
-} from "@/src/lib/color-scheme";
+import { useAppColorScheme } from "@/src/lib/color-scheme";
 import { AppProviders } from "@/src/providers/app-providers";
 import { NAV_THEME, THEME_VARIABLES } from "@/lib/theme";
-import { useThemeStore } from "@/src/stores/theme-store";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const { setColorScheme } = useColorScheme();
-  const { preference, hydrate } = useThemeStore();
-  const systemColorScheme = useSystemColorScheme();
-  const colorScheme = resolveThemePreference(preference, systemColorScheme);
-  const nativeWindColorScheme = getNativeWindColorScheme(preference, systemColorScheme);
+  const colorScheme = useAppColorScheme();
   const [fontsLoaded] = useFonts({
     NotoSans_400Regular,
     NotoSans_500Medium,
@@ -46,17 +36,6 @@ export default function RootLayout() {
     NotoSans_700Bold,
     NotoSans_800ExtraBold,
   });
-
-  useEffect(() => {
-    void hydrate();
-  }, [hydrate]);
-
-  const setColorSchemeRef = useRef(setColorScheme);
-  setColorSchemeRef.current = setColorScheme;
-
-  useEffect(() => {
-    setColorSchemeRef.current(nativeWindColorScheme);
-  }, [nativeWindColorScheme]);
 
   useEffect(() => {
     if (fontsLoaded) {
