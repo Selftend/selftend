@@ -17,6 +17,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { appEnv } from "@/src/lib/env";
+import { requireSupabase } from "@/src/lib/supabase";
 import { BackButton } from "@/src/components/app/back-button";
 
 type FeedbackCategory = "bug" | "suggestion" | "question";
@@ -29,8 +30,10 @@ export default function SupportScreen() {
   const [feedbackCategory, setFeedbackCategory] = useState<FeedbackCategory>("suggestion");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackError, setFeedbackError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  const handleFeedbackSubmit = () => {
+  const handleFeedbackSubmit = async () => {
     const trimmed = feedbackMessage.trim();
     if (trimmed.length < 10) {
       setFeedbackError(t("feedback.messageTooShort"));
@@ -41,9 +44,20 @@ export default function SupportScreen() {
       return;
     }
     setFeedbackError("");
-    const subject = encodeURIComponent(`Selftend feedback [${feedbackCategory}]`);
-    const body = encodeURIComponent(trimmed);
-    void Linking.openURL(`mailto:${supportEmail}?subject=${subject}&body=${body}`);
+    setIsSubmitting(true);
+    try {
+      const { error } = await requireSupabase().functions.invoke("send-feedback", {
+        body: { category: feedbackCategory, message: trimmed },
+      });
+      if (error) throw error;
+      setSubmitSuccess(true);
+      setFeedbackMessage("");
+      setFeedbackCategory("suggestion");
+    } catch {
+      setFeedbackError(t("feedback.submitError"));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -162,9 +176,13 @@ export default function SupportScreen() {
                     ) : null}
                   </View>
 
-                  <Button onPress={handleFeedbackSubmit}>
-                    <Text>{t("feedback.submit")}</Text>
-                  </Button>
+                  {submitSuccess ? (
+                    <Text className="text-sm">{t("feedback.submitSuccess")}</Text>
+                  ) : (
+                    <Button disabled={isSubmitting} onPress={() => void handleFeedbackSubmit()}>
+                      <Text>{isSubmitting ? t("feedback.submitting") : t("feedback.submit")}</Text>
+                    </Button>
+                  )}
                 </View>
               </CardContent>
             </Card>

@@ -199,7 +199,7 @@
   },
   "feedback": {
     "title": "Send feedback",
-    "description": "Share a bug report, suggestion, or question. This opens your email app.",
+    "description": "Share a bug report, suggestion, or question. Your message is sent directly.",
     "crisisWarning": "Do not use this form for urgent crisis situations. If you need immediate help, use local emergency services or crisis resources.",
     "openCrisis": "Open crisis guidance",
     "categoryLabel": "Category",
@@ -210,7 +210,10 @@
     },
     "messageLabel": "Message",
     "messagePlaceholder": "Describe the issue or idea. Do not include private self-help entries or crisis details.",
-    "submit": "Open email to send",
+    "submit": "Send feedback",
+    "submitting": "Sending…",
+    "submitSuccess": "Your feedback was sent. Thank you!",
+    "submitError": "Failed to send feedback. Please try again.",
     "messageTooShort": "Please write at least 10 characters.",
     "messageTooLong": "Message must be 1000 characters or fewer."
   }
