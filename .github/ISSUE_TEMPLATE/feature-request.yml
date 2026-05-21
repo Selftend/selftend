@@ -5,67 +5,24 @@ labels:
   - needs triage
 type: Feature
 body:
-  - type: markdown
+  - type: textarea
+    id: description
     attributes:
-      value: |
-        Thanks for suggesting an improvement for Selftend.
-
-        Selftend is a free wellness and self-help product. Please avoid proposals that depend on ads, subscription paywalls, manipulative retention mechanics, diagnosis, treatment claims, AI therapist framing, broad social feeds, or default-on reminders/streaks.
-
-  - type: dropdown
-    id: area
-    attributes:
-      label: Area
-      description: Which part of the project would this affect most?
-      options:
-        - Guided self-help flow
-        - Mood, journaling, or progress
-        - Account, privacy, or data controls
-        - Notifications or reminders
-        - Accessibility
-        - Design or UI
-        - Contributor tooling
-        - Documentation
-        - Other or not sure
+      label: What should be added or improved?
+      description: |
+        Please include:
+        - the problem or user need
+        - the proposed solution
+        - any important context, constraints, or alternatives
     validations:
       required: true
-
-  - type: textarea
-    id: problem
-    attributes:
-      label: Problem
-      description: What user problem is this trying to solve?
-    validations:
-      required: true
-
-  - type: textarea
-    id: proposal
-    attributes:
-      label: Proposal
-      description: Describe the smallest useful version first.
-    validations:
-      required: true
-
-  - type: textarea
-    id: audience
-    attributes:
-      label: Who benefits?
-      description: Which users or contributors need this, and when would they use it?
-
-  - type: textarea
-    id: non_goals
-    attributes:
-      label: Non-goals
-      description: What should this proposal deliberately avoid or defer?
-
-  - type: textarea
-    id: guardrails
-    attributes:
-      label: Guardrails
-      description: Call out privacy, safety, accessibility, licensing, i18n, dependency, data-model, notification, or roadmap concerns.
 
   - type: textarea
     id: acceptance
     attributes:
       label: Acceptance criteria
-      description: Optional. List the observable behavior that would make this done.
+      description: Optional. What should be true when this is done?
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]

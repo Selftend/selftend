@@ -52,7 +52,7 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
         </Pressable>
         <UserMenu />
       </View>
-      <Breadcrumbs />
+      {isSignedIn ? <Breadcrumbs /> : null}
     </SafeAreaView>
   );
 }

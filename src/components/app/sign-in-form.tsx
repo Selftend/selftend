@@ -1,8 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { useState } from "react";
-import { ActivityIndicator, Image, View } from "react-native";
+import { useRef, useState } from "react";
+import { ActivityIndicator, Image, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -33,6 +33,7 @@ export function SignInForm() {
   const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false);
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
   const {
     control,
     formState: { errors, isSubmitting },
@@ -111,7 +112,9 @@ export function SignInForm() {
                 keyboardType="email-address"
                 onBlur={onBlur}
                 onChangeText={onChange}
+                onSubmitEditing={() => passwordRef.current?.focus()}
                 placeholder={t("signIn.emailPlaceholder")}
+                returnKeyType="next"
                 value={value}
               />
               {errors.email?.message ? (
@@ -137,11 +140,14 @@ export function SignInForm() {
                 </Button>
               </View>
               <Input
+                ref={passwordRef}
                 autoCapitalize="none"
                 autoCorrect={false}
                 onBlur={onBlur}
                 onChangeText={onChange}
+                onSubmitEditing={() => void onSubmit()}
                 placeholder=""
+                returnKeyType="go"
                 secureTextEntry
                 value={value}
               />
