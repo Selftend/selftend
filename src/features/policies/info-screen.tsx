@@ -17,13 +17,13 @@ import type { PolicyAction } from "@/src/features/policies/policy-content";
 import { policyLastUpdated } from "@/src/features/policies/policy-content";
 import { BackButton } from "@/src/components/app/back-button";
 
-interface PolicyScreenProps extends PropsWithChildren {
+interface InfoScreenProps extends PropsWithChildren {
   actions?: PolicyAction[];
   /** i18n key prefix for action labels (e.g. "crisis.actions") */
-  actionLabelsKey?: string;
   notice?: string;
   /** i18n key for the sections array (e.g. "privacy.sections") */
   sectionKey: string;
+  showLastUpdated?: boolean;
   subtitle: string;
   title: string;
 }
@@ -33,15 +33,15 @@ interface TranslatedSection {
   body: string[];
 }
 
-export function PolicyScreen({
+export function InfoScreen({
   actions = [],
-  actionLabelsKey,
   children,
   notice,
   sectionKey,
+  showLastUpdated = false,
   subtitle,
   title,
-}: PolicyScreenProps) {
+}: InfoScreenProps) {
   const { t } = useTranslation("policies");
   const sections = t(sectionKey, { returnObjects: true }) as TranslatedSection[];
 
@@ -55,7 +55,8 @@ export function PolicyScreen({
               <Text variant="h1">{title}</Text>
             </View>
             <Text variant="muted">
-              {subtitle} {t("lastUpdated", { date: policyLastUpdated })}
+              {subtitle}
+              {showLastUpdated ? ` ${t("lastUpdated", { date: policyLastUpdated })}` : null}
             </Text>
           </View>
 

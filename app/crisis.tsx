@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import { crisisActionUrls } from "@/src/features/policies/policy-content";
-import { PolicyScreen } from "@/src/features/policies/policy-screen";
+import { InfoScreen } from "@/src/features/policies/info-screen";
 
 export default function CrisisScreen() {
   const { t } = useTranslation("policies");
@@ -12,7 +12,7 @@ export default function CrisisScreen() {
   }));
 
   return (
-    <PolicyScreen
+    <InfoScreen
       actions={actions}
       sectionKey="crisis.sections"
       subtitle={t("crisis.pageDescription")}
