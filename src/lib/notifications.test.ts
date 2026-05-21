@@ -42,9 +42,11 @@ jest.mock("@/src/features/settings/repository", () => ({
   upsertWebPushSubscription: jest.fn(),
 }));
 
-const CBT_STORAGE_KEY = "selftend:reminder-id:cbt";
-const MEDITATION_STORAGE_KEY = "selftend:reminder-id:meditation";
-const ACT_STORAGE_KEY = "selftend:reminder-id:act";
+const CBT_STORAGE_KEY = "selftend-reminder-id-cbt";
+const MEDITATION_STORAGE_KEY = "selftend-reminder-id-meditation";
+const ACT_STORAGE_KEY = "selftend-reminder-id-act";
+const LEGACY_COLON_CBT_KEY = "selftend:reminder-id:cbt";
+const LEGACY_CBT_KEY = "selftend:cbt-reminder-id";
 
 const mockCancelScheduledNotificationAsync = jest.mocked(
   Notifications.cancelScheduledNotificationAsync,
@@ -325,5 +327,44 @@ describe("Reminder notifications", () => {
       "user-1",
       "https://push.example/subscription",
     );
+  });
+
+  it("migrates a reminder ID from the old colon-format key to the new hyphen key on first read", async () => {
+    mockGetItemAsync.mockImplementation(async (key: string) => {
+      if (key === CBT_STORAGE_KEY) return null;
+      if (key === LEGACY_COLON_CBT_KEY) return "old-cbt-id";
+      return null;
+    });
+
+    await cancelReminder("cbt");
+
+    expect(mockSetItemAsync).toHaveBeenCalledWith(CBT_STORAGE_KEY, "old-cbt-id");
+    expect(mockDeleteItemAsync).toHaveBeenCalledWith(LEGACY_COLON_CBT_KEY);
+    expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("old-cbt-id");
+  });
+
+  it("silently ignores a thrown error from the old colon-format key (native behaviour)", async () => {
+    mockGetItemAsync.mockImplementation(async (key: string) => {
+      if (key === CBT_STORAGE_KEY) return null;
+      if (key === LEGACY_COLON_CBT_KEY) throw new Error("Invalid key provided to SecureStore");
+      return null;
+    });
+
+    await cancelReminder("cbt");
+
+    expect(mockCancelScheduledNotificationAsync).not.toHaveBeenCalled();
+  });
+
+  it("silently ignores a thrown error from the legacy CBT key (native behaviour)", async () => {
+    mockGetItemAsync.mockImplementation(async (key: string) => {
+      if (key === CBT_STORAGE_KEY) return null;
+      if (key === LEGACY_COLON_CBT_KEY) throw new Error("Invalid key provided to SecureStore");
+      if (key === LEGACY_CBT_KEY) throw new Error("Invalid key provided to SecureStore");
+      return null;
+    });
+
+    await cancelReminder("cbt");
+
+    expect(mockCancelScheduledNotificationAsync).not.toHaveBeenCalled();
   });
 });

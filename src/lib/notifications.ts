@@ -10,7 +10,8 @@ import { appEnv } from "@/src/lib/env";
 export type ReminderTarget = "cbt" | "meditation" | "act";
 
 const REMINDER_TARGETS: ReminderTarget[] = ["cbt", "meditation", "act"];
-const REMINDER_KEY_PREFIX = "selftend:reminder-id:";
+const REMINDER_KEY_PREFIX = "selftend-reminder-id-";
+const LEGACY_COLON_KEY_PREFIX = "selftend:reminder-id:";
 const LEGACY_CBT_REMINDER_KEY = "selftend:cbt-reminder-id";
 const WEB_PUSH_WORKER_PATH = "/selftend-push-worker.js";
 type NotificationsModule = typeof import("expo-notifications");
@@ -61,13 +62,39 @@ async function getStoredReminderId(target: ReminderTarget) {
   const id = await SecureStore.getItemAsync(reminderStorageKey(target));
   if (id) return id;
 
-  // Migrate from the legacy CBT-only key the first time we read.
+  // Migrate from the old colon-format key. The colon is valid on web (localStorage)
+  // but rejected by the native OS keystore — wrap in try/catch so native doesn't throw.
+  try {
+    const oldColonKey = `${LEGACY_COLON_KEY_PREFIX}${target}`;
+    const fromOld = await SecureStore.getItemAsync(oldColonKey);
+    if (fromOld) {
+      await SecureStore.setItemAsync(reminderStorageKey(target), fromOld);
+      try {
+        await SecureStore.deleteItemAsync(oldColonKey);
+      } catch {
+        // best effort
+      }
+      return fromOld;
+    }
+  } catch {
+    // Key format rejected on native; treat as not found.
+  }
+
+  // Migrate from the legacy CBT-only key (also contains a colon — same guard needed).
   if (target === "cbt") {
-    const legacy = await SecureStore.getItemAsync(LEGACY_CBT_REMINDER_KEY);
-    if (legacy) {
-      await SecureStore.setItemAsync(reminderStorageKey(target), legacy);
-      await SecureStore.deleteItemAsync(LEGACY_CBT_REMINDER_KEY);
-      return legacy;
+    try {
+      const legacy = await SecureStore.getItemAsync(LEGACY_CBT_REMINDER_KEY);
+      if (legacy) {
+        await SecureStore.setItemAsync(reminderStorageKey(target), legacy);
+        try {
+          await SecureStore.deleteItemAsync(LEGACY_CBT_REMINDER_KEY);
+        } catch {
+          // best effort
+        }
+        return legacy;
+      }
+    } catch {
+      // Key format rejected on native; treat as not found.
     }
   }
   return null;

@@ -13,6 +13,7 @@ import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import { useNotificationSync } from "@/src/features/notifications/use-notification-sync";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -29,6 +30,7 @@ export default function ProtectedLayout() {
   const pathname = usePathname();
 
   useSettingsSync(user?.id ?? null, preferences);
+  useNotificationSync(user?.id ?? null, preferences);
 
   if (status === "loading") {
     return (
