@@ -367,4 +367,19 @@ describe("Reminder notifications", () => {
 
     expect(mockCancelScheduledNotificationAsync).not.toHaveBeenCalled();
   });
+
+  it("migrates a reminder ID from the legacy CBT key to the new hyphen key on first read", async () => {
+    mockGetItemAsync.mockImplementation(async (key: string) => {
+      if (key === CBT_STORAGE_KEY) return null;
+      if (key === LEGACY_COLON_CBT_KEY) return null;
+      if (key === LEGACY_CBT_KEY) return "legacy-cbt-id";
+      return null;
+    });
+
+    await cancelReminder("cbt");
+
+    expect(mockSetItemAsync).toHaveBeenCalledWith(CBT_STORAGE_KEY, "legacy-cbt-id");
+    expect(mockDeleteItemAsync).toHaveBeenCalledWith(LEGACY_CBT_KEY);
+    expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("legacy-cbt-id");
+  });
 });

@@ -10,6 +10,8 @@ import {
 } from "@/src/features/notifications/registry";
 import { cancelReminder, scheduleReminder, type ReminderTarget } from "@/src/lib/notifications";
 
+const REMINDER_TARGET_KEYS = new Set<string>(["cbt", "act", "meditation"]);
+
 export function useNotificationSync(
   userId: string | null,
   preferences: UserPreferences | undefined,
@@ -19,6 +21,8 @@ export function useNotificationSync(
   useEffect(() => {
     if (Platform.OS === "web" || !preferences || !userId) return;
 
+    isSyncing.current = false;
+
     const prefs = preferences;
     const uid = userId;
 
@@ -27,10 +31,11 @@ export function useNotificationSync(
       isSyncing.current = true;
 
       try {
-        const globalEnabled = prefs.notificationsEnabledGlobal ?? true;
+        const globalEnabled = prefs.notificationsEnabledGlobal;
 
         for (const target of NOTIFICATION_TARGETS) {
           if (target.status !== "live" || !target.schedulesOs) continue;
+          if (!REMINDER_TARGET_KEYS.has(target.key)) continue;
 
           const osTarget = target.key as ReminderTarget;
           const enabled = globalEnabled && readEnabled(prefs, target);
