@@ -1,8 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { useState } from "react";
-import { ActivityIndicator, Image, View } from "react-native";
+import { useRef, useState } from "react";
+import { ActivityIndicator, Image, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -27,6 +27,8 @@ export function SignUpForm() {
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
   const {
     control,
     formState: { errors, isSubmitting },
@@ -58,7 +60,7 @@ export function SignUpForm() {
       setSubmitError("");
       await signUpWithPassword(email, password);
       recordSuccess();
-      router.replace("/(auth)/verify-email");
+      router.replace({ pathname: "/(auth)/verify-email", params: { email } });
     } catch (error) {
       recordFailure(error);
       setSubmitError(error instanceof Error ? error.message : t("signUp.error"));
@@ -84,7 +86,9 @@ export function SignUpForm() {
                 keyboardType="email-address"
                 onBlur={onBlur}
                 onChangeText={onChange}
+                onSubmitEditing={() => passwordRef.current?.focus()}
                 placeholder={t("signUp.emailPlaceholder")}
+                returnKeyType="next"
                 value={value}
               />
               {errors.email?.message ? (
@@ -101,11 +105,14 @@ export function SignUpForm() {
             <View className="gap-2">
               <Label>{t("signUp.password")}</Label>
               <Input
+                ref={passwordRef}
                 autoCapitalize="none"
                 autoCorrect={false}
                 onBlur={onBlur}
                 onChangeText={onChange}
+                onSubmitEditing={() => confirmPasswordRef.current?.focus()}
                 placeholder=""
+                returnKeyType="next"
                 secureTextEntry
                 value={value}
               />
@@ -126,11 +133,14 @@ export function SignUpForm() {
             <View className="gap-2">
               <Label>{t("signUp.confirmPassword")}</Label>
               <Input
+                ref={confirmPasswordRef}
                 autoCapitalize="none"
                 autoCorrect={false}
                 onBlur={onBlur}
                 onChangeText={onChange}
+                onSubmitEditing={() => void onSubmit()}
                 placeholder=""
+                returnKeyType="go"
                 secureTextEntry
                 value={value}
               />

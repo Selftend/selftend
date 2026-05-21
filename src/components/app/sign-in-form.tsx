@@ -16,7 +16,11 @@ import {
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { signInWithGoogle, signInWithPassword } from "@/src/features/auth/api";
+import {
+  resendVerificationEmail,
+  signInWithGoogle,
+  signInWithPassword,
+} from "@/src/features/auth/api";
 import { signInSchema, type SignInSchema } from "@/src/features/auth/schemas";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { useSession } from "@/src/providers/session-provider";
@@ -26,10 +30,13 @@ export function SignInForm() {
   const { hasSupabaseConfig } = useSession();
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
+  const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false);
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const {
     control,
     formState: { errors, isSubmitting },
+    getValues,
     handleSubmit,
   } = useForm<SignInSchema>({
     defaultValues: { email: "", password: "" },
@@ -56,14 +63,34 @@ export function SignInForm() {
   const onSubmit = handleSubmit(async ({ email, password }) => {
     try {
       setSubmitError("");
+      setIsEmailNotConfirmed(false);
+      setResendStatus("idle");
       await signInWithPassword(email, password);
       recordSuccess();
       router.replace("/(app)/(tabs)");
     } catch (error) {
       recordFailure(error);
-      setSubmitError(error instanceof Error ? error.message : t("signIn.error"));
+      const message = error instanceof Error ? error.message : t("signIn.error");
+      setSubmitError(message);
+      if (message.toLowerCase().includes("not confirmed")) {
+        setIsEmailNotConfirmed(true);
+      }
     }
   });
+
+  const onResend = async () => {
+    const email = getValues("email");
+    if (!email) return;
+    try {
+      setResendStatus("sending");
+      await resendVerificationEmail(email);
+      setResendStatus("sent");
+    } catch {
+      setResendStatus("idle");
+      setSubmitError(t("signIn.resendError"));
+      setIsEmailNotConfirmed(false);
+    }
+  };
 
   return (
     <Card>
@@ -129,7 +156,25 @@ export function SignInForm() {
           <Text variant="muted">{t("signIn.supabaseNotConfigured")}</Text>
         ) : null}
 
-        {submitError ? <Text className="text-sm text-destructive">{submitError}</Text> : null}
+        {resendStatus === "sent" ? (
+          <Text className="text-sm text-muted-foreground">{t("signIn.resendSuccess")}</Text>
+        ) : submitError ? (
+          <View className="flex-row flex-wrap items-center gap-x-1">
+            <Text className="text-sm text-destructive">{submitError}</Text>
+            {isEmailNotConfirmed ? (
+              <Button
+                disabled={resendStatus === "sending"}
+                onPress={() => void onResend()}
+                variant="link"
+                size="sm"
+              >
+                <Text className="text-xs">
+                  {resendStatus === "sending" ? t("signIn.resendSending") : t("signIn.resendLink")}
+                </Text>
+              </Button>
+            ) : null}
+          </View>
+        ) : null}
 
         {isThrottled ? (
           <Text className="text-sm text-destructive">{t("signIn.rateLimited")}</Text>
