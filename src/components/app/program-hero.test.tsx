@@ -16,8 +16,8 @@ const baseWeek = {
   done: false,
   tasks: [
     {
-      key: "threeThoughtRecords",
-      labelKey: "program.tasks.threeThoughtRecords",
+      key: "thoughtRecordDays",
+      labelKey: "program.tasks.thoughtRecordDays",
       route: "/modules/cbt/new" as const,
       current: 1,
       target: 3,
@@ -83,7 +83,7 @@ describe("ProgramHero", () => {
 
   it("renders the current week's tasks and routes on tap", () => {
     renderWithProviders(<ProgramHero program={view({})} onStart={jest.fn()} />);
-    fireEvent.press(screen.getByText("Log 3 thought records"));
+    fireEvent.press(screen.getByText("Complete a thought record on 3 days"));
     expect(router.push).toHaveBeenCalledWith("/modules/cbt/new");
   });
 

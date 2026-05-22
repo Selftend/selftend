@@ -47,16 +47,12 @@
     "tasks": {
       "setGoals": "Set 1-2 goals",
       "clarifyValues": "Clarify your values",
-      "firstThoughtRecord": "Log your first thought record",
-      "startMoodCheckIn": "Start a daily mood check-in",
-      "threeThoughtRecords": "Log 3 thought records",
-      "spotDistortion": "Spot a distortion in a thought record",
+      "dailyMoodCheckIn": "Check in with your mood on 4 days",
+      "thoughtRecordDays": "Complete a thought record on 3 days",
       "examineBelief": "Examine one core belief",
-      "scheduleActivities": "Schedule 3 meaningful activities",
+      "activityDays": "Do a meaningful activity on 4 days",
       "exposureOrTask": "Build an exposure ladder or break down a stuck task",
-      "completeActivity": "Complete an activity and rate your mood",
-      "dailySelfCare": "Do a self-care check-in",
-      "beExercise": "Try a breathing, mindfulness, or meditation exercise",
+      "calmingDays": "Do a calming exercise on 4 days",
       "resiliencePlan": "Write your resilience plan and personal slogan"
     }
   },

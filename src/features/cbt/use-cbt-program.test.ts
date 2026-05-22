@@ -94,29 +94,31 @@ const mockUseRecoveryPlan = useRecoveryPlan as jest.MockedFunction<typeof useRec
 const STARTED_AT = "2026-05-01T00:00:00.000Z";
 const AFTER = "2026-05-02T00:00:00.000Z";
 
-/** Minimal data that satisfies all 13 task signals. */
+const DAYS = ["2026-05-02", "2026-05-03", "2026-05-04", "2026-05-05"];
+
+/** Minimal data that satisfies every task signal, including distinct-day practices. */
 const allCompleteData = {
-  // Week 1 — foundation
+  // Week 1 — foundation: a goal, values, and mood check-in on 4 distinct days.
   goals: [{ id: "g", createdAt: AFTER }],
   values: [{ id: "v", updatedAt: AFTER }],
+  moodLogs: DAYS.map((d, i) => ({ id: `m${i}`, loggedAt: `${d}T08:00:00Z` })),
+  // Week 2 — think: thought records on 3 distinct days + a belief.
   thoughtRecords: [
-    { id: "t1", createdAt: AFTER, distortions: ["x"] },
-    { id: "t2", createdAt: AFTER, distortions: [] },
-    { id: "t3", createdAt: AFTER, distortions: [] },
+    { id: "t1", createdAt: "2026-05-02T08:00:00Z", distortions: ["x"] },
+    { id: "t2", createdAt: "2026-05-03T08:00:00Z", distortions: [] },
+    { id: "t3", createdAt: "2026-05-04T08:00:00Z", distortions: [] },
   ],
-  moodLogs: [{ id: "m", loggedAt: AFTER }],
-  // Week 2 — think (thought records + spotDistortion already covered above)
   beliefs: [{ id: "b", createdAt: AFTER }],
-  // Week 3 — act
-  activities: [
-    { id: "a1", createdAt: AFTER, completedAt: AFTER },
-    { id: "a2", createdAt: AFTER, completedAt: null },
-    { id: "a3", createdAt: AFTER, completedAt: null },
-  ],
+  // Week 3 — act: a completed activity on 4 distinct days + an exposure.
+  activities: DAYS.map((d, i) => ({
+    id: `a${i}`,
+    createdAt: `${d}T00:00:00Z`,
+    completedAt: `${d}T18:00:00Z`,
+  })),
   exposures: [{ id: "e", createdAt: AFTER }],
-  // Week 4 — be
+  // Week 4 — be: a calming session on 4 distinct days + a resilience plan.
   selfCareLogs: [{ id: "sc", createdAt: AFTER }],
-  mindfulnessSessions: [{ id: "s", completedAt: AFTER }],
+  mindfulnessSessions: DAYS.map((d, i) => ({ id: `s${i}`, completedAt: `${d}T19:00:00Z` })),
   recoveryPlan: { updatedAt: AFTER, personalSlogan: "Onward" },
 };
 

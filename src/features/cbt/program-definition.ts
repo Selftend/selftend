@@ -55,6 +55,22 @@ export const atOrAfter = (iso: string | null | undefined, since: number) =>
 const countSince = (items: { createdAt: string }[], since: number) =>
   items.filter((item) => atOrAfter(item.createdAt, since)).length;
 
+// Number of distinct calendar days (UTC) on which a qualifying event occurred
+// at or after the program start. Used for recurring "daily practice" tasks so
+// they cannot be completed in a single sitting.
+const distinctDays = (timestamps: (string | null | undefined)[], since: number) => {
+  const days = new Set<string>();
+  for (const ts of timestamps) {
+    if (atOrAfter(ts, since)) days.add(new Date(ts as string).toISOString().slice(0, 10));
+  }
+  return days.size;
+};
+
+// Distinct-day target for the recurring "daily practice" in each week. Counted
+// across the whole program (not within a fixed week window), so the practice
+// can't be cleared in one sitting but a missed week isn't punished.
+const DAILY_PRACTICE_TARGET = 4;
+
 export const CBT_PROGRAM: ProgramWeek[] = [
   {
     key: "noticeUnderstand",
@@ -80,21 +96,16 @@ export const CBT_PROGRAM: ProgramWeek[] = [
         }),
       },
       {
-        key: "firstThoughtRecord",
-        labelKey: "program.tasks.firstThoughtRecord",
-        route: "/modules/cbt/new",
-        signal: ({ thoughtRecords, since }) => ({
-          current: countSince(thoughtRecords, since),
-          target: 1,
-        }),
-      },
-      {
-        key: "startMoodCheckIn",
-        labelKey: "program.tasks.startMoodCheckIn",
+        // Daily practice: fold the old morning/evening check-in into the program.
+        key: "dailyMoodCheckIn",
+        labelKey: "program.tasks.dailyMoodCheckIn",
         route: "/tools/mood-tracker/new",
         signal: ({ moodLogs, since }) => ({
-          current: moodLogs.filter((m) => atOrAfter(m.loggedAt, since)).length,
-          target: 1,
+          current: distinctDays(
+            moodLogs.map((m) => m.loggedAt),
+            since,
+          ),
+          target: DAILY_PRACTICE_TARGET,
         }),
       },
     ],
@@ -105,23 +116,16 @@ export const CBT_PROGRAM: ProgramWeek[] = [
     pillar: "think",
     tasks: [
       {
-        key: "threeThoughtRecords",
-        labelKey: "program.tasks.threeThoughtRecords",
+        // Daily practice: a thought record on several separate days.
+        key: "thoughtRecordDays",
+        labelKey: "program.tasks.thoughtRecordDays",
         route: "/modules/cbt/new",
         signal: ({ thoughtRecords, since }) => ({
-          current: countSince(thoughtRecords, since),
+          current: distinctDays(
+            thoughtRecords.map((r) => r.createdAt),
+            since,
+          ),
           target: 3,
-        }),
-      },
-      {
-        key: "spotDistortion",
-        labelKey: "program.tasks.spotDistortion",
-        route: "/modules/cbt/new",
-        signal: ({ thoughtRecords, since }) => ({
-          current: thoughtRecords.filter(
-            (r) => atOrAfter(r.createdAt, since) && r.distortions.length > 0,
-          ).length,
-          target: 1,
         }),
       },
       {
@@ -141,12 +145,17 @@ export const CBT_PROGRAM: ProgramWeek[] = [
     pillar: "act",
     tasks: [
       {
-        key: "scheduleActivities",
-        labelKey: "program.tasks.scheduleActivities",
-        route: "/modules/cbt/activities/new",
+        // Daily practice: PACE-style - complete a meaningful activity on
+        // several separate days.
+        key: "activityDays",
+        labelKey: "program.tasks.activityDays",
+        route: "/modules/cbt/activities",
         signal: ({ activities, since }) => ({
-          current: countSince(activities, since),
-          target: 3,
+          current: distinctDays(
+            activities.map((a) => a.completedAt),
+            since,
+          ),
+          target: DAILY_PRACTICE_TARGET,
         }),
       },
       {
@@ -158,15 +167,6 @@ export const CBT_PROGRAM: ProgramWeek[] = [
           target: 1,
         }),
       },
-      {
-        key: "completeActivity",
-        labelKey: "program.tasks.completeActivity",
-        route: "/modules/cbt/activities",
-        signal: ({ activities, since }) => ({
-          current: activities.filter((a) => atOrAfter(a.completedAt, since)).length,
-          target: 1,
-        }),
-      },
     ],
   },
   {
@@ -175,21 +175,16 @@ export const CBT_PROGRAM: ProgramWeek[] = [
     pillar: "be",
     tasks: [
       {
-        key: "dailySelfCare",
-        labelKey: "program.tasks.dailySelfCare",
-        route: "/modules/cbt/self-care",
-        signal: ({ selfCareLogs, since }) => ({
-          current: countSince(selfCareLogs, since),
-          target: 1,
-        }),
-      },
-      {
-        key: "beExercise",
-        labelKey: "program.tasks.beExercise",
+        // Daily practice: a calming exercise on several separate days.
+        key: "calmingDays",
+        labelKey: "program.tasks.calmingDays",
         route: "/tools/mindfulness",
         signal: ({ mindfulnessSessions, since }) => ({
-          current: mindfulnessSessions.filter((s) => atOrAfter(s.completedAt, since)).length,
-          target: 1,
+          current: distinctDays(
+            mindfulnessSessions.map((s) => s.completedAt),
+            since,
+          ),
+          target: DAILY_PRACTICE_TARGET,
         }),
       },
       {
