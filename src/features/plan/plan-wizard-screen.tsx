@@ -30,7 +30,7 @@ const CONCERNS: { id: PlanConcern; labelKey: string }[] = [
 
 const TOOLS: { id: PlanTool; labelKey: string }[] = [
   { id: "mood", labelKey: "plan.wizard.toolMood" },
-  { id: "cbt", labelKey: "plan.wizard.toolCbt" },
+  { id: "module-cbt", labelKey: "plan.wizard.toolCbt" },
   { id: "breathing", labelKey: "plan.wizard.toolBreathing" },
   { id: "meditation", labelKey: "plan.wizard.toolMeditation" },
   { id: "gratitude", labelKey: "plan.wizard.toolGratitude" },

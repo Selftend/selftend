@@ -59,6 +59,14 @@ function mockWebPushDelete() {
   return { deleteFn, eqEndpoint, eqUser, from };
 }
 
+describe("cbt program preference fields", () => {
+  it("defaults program timestamps to null", () => {
+    expect(defaultUserPreferences.cbtProgramStartedAt).toBeNull();
+    expect(defaultUserPreferences.cbtProgramCompletedAt).toBeNull();
+    expect(defaultUserPreferences.cbtProgramPromptDismissedAt).toBeNull();
+  });
+});
+
 describe("settings repository", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -74,6 +82,9 @@ describe("settings repository", () => {
     mockPreferenceSelect({
       app_onboarding_completed: true,
       cbt_onboarding_completed: false,
+      cbt_program_completed_at: null,
+      cbt_program_prompt_dismissed_at: "2026-05-22T11:00:00.000Z",
+      cbt_program_started_at: "2026-05-22T10:00:00.000Z",
       cbt_reminder_hour: 8,
       cbt_reminder_minute: 30,
       cbt_reminder_timezone: "Europe/Sofia",
@@ -93,6 +104,9 @@ describe("settings repository", () => {
     await expect(getUserPreferences("user-1")).resolves.toMatchObject({
       appOnboardingCompleted: true,
       cbtOnboardingCompleted: false,
+      cbtProgramCompletedAt: null,
+      cbtProgramPromptDismissedAt: "2026-05-22T11:00:00.000Z",
+      cbtProgramStartedAt: "2026-05-22T10:00:00.000Z",
       cbtReminderTimezone: "Europe/Sofia",
       language: "bg",
       reminderConsentUpdatedAt: "2026-05-01T10:05:00.000Z",
@@ -104,6 +118,9 @@ describe("settings repository", () => {
     const updatedRow = {
       app_onboarding_completed: true,
       cbt_onboarding_completed: true,
+      cbt_program_completed_at: null,
+      cbt_program_prompt_dismissed_at: null,
+      cbt_program_started_at: null,
       cbt_reminder_hour: 19,
       cbt_reminder_minute: 0,
       cbt_reminder_timezone: null,
@@ -124,6 +141,7 @@ describe("settings repository", () => {
       ...defaultUserPreferences,
       appOnboardingCompleted: true,
       cbtOnboardingCompleted: true,
+      cbtProgramPromptDismissedAt: "2026-05-22T11:00:00.000Z",
       cbtReminderTimezone: "Europe/Sofia",
       reminderConsent: true,
       reminderConsentUpdatedAt: "2026-05-01T10:05:00.000Z",
@@ -134,6 +152,7 @@ describe("settings repository", () => {
       expect.objectContaining({
         app_onboarding_completed: true,
         cbt_onboarding_completed: true,
+        cbt_program_prompt_dismissed_at: "2026-05-22T11:00:00.000Z",
         cbt_reminder_timezone: "Europe/Sofia",
         reminder_consent: true,
         reminder_consent_updated_at: "2026-05-01T10:05:00.000Z",
@@ -167,13 +186,43 @@ describe("settings repository", () => {
       }),
     ).resolves.toMatchObject({ shownButtonTours: ["tune"] });
 
-    expect(upsert).toHaveBeenLastCalledWith(
-      expect.not.objectContaining({
-        act_onboarding_completed: expect.anything(),
-        shown_button_tours: expect.anything(),
+    const fallbackPayload = upsert.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(fallbackPayload).not.toHaveProperty("act_onboarding_completed");
+    expect(fallbackPayload).not.toHaveProperty("cbt_program_completed_at");
+    expect(fallbackPayload).not.toHaveProperty("cbt_program_prompt_dismissed_at");
+    expect(fallbackPayload).not.toHaveProperty("cbt_program_started_at");
+    expect(fallbackPayload).not.toHaveProperty("shown_button_tours");
+    expect(upsert.mock.calls.at(-1)?.[1]).toEqual({ onConflict: "user_id" });
+  });
+
+  it("treats CBT program columns as optional while schema caches catch up", async () => {
+    const staleSchemaError = {
+      code: "PGRST204",
+      message: "Could not find the 'cbt_program_completed_at' column of 'user_preferences'",
+    };
+    const single = jest.fn().mockResolvedValue({ data: null, error: staleSchemaError });
+    const select = jest.fn(() => ({ single }));
+    const upsert = jest.fn().mockImplementation((payload: unknown) => {
+      if ("cbt_program_completed_at" in (payload as Record<string, unknown>)) {
+        return { select };
+      }
+      return Promise.resolve({ error: null });
+    });
+    const from = jest.fn(() => ({ upsert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      updateUserPreferences("user-1", {
+        ...defaultUserPreferences,
+        cbtProgramStartedAt: "2026-05-22T10:00:00.000Z",
       }),
-      { onConflict: "user_id" },
-    );
+    ).resolves.toMatchObject({ cbtProgramStartedAt: "2026-05-22T10:00:00.000Z" });
+
+    const fallbackPayload = upsert.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(fallbackPayload).not.toHaveProperty("cbt_program_completed_at");
+    expect(fallbackPayload).not.toHaveProperty("cbt_program_prompt_dismissed_at");
+    expect(fallbackPayload).not.toHaveProperty("cbt_program_started_at");
+    expect(upsert.mock.calls.at(-1)?.[1]).toEqual({ onConflict: "user_id" });
   });
 
   it("upserts web push subscriptions for the current user", async () => {

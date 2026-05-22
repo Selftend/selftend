@@ -1,18 +1,12 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { router } from "expo-router";
-import { Pressable as mockPressable, Text as mockText } from "react-native";
-import type { ReactNode } from "react";
 
 import CbtHomeScreen from "./cbt-home-screen";
-import { useActivities } from "@/src/features/activities/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
+import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
 import { useGoals } from "@/src/features/goals/queries";
-import { useMoodLogs } from "@/src/features/mood/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import { useTasks } from "@/src/features/procrastination/queries";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
-import { useSelfCareLog } from "@/src/features/self-care/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -50,22 +44,6 @@ jest.mock("@/src/features/goals/queries", () => ({
   useGoals: jest.fn(),
 }));
 
-jest.mock("@/src/features/activities/queries", () => ({
-  useActivities: jest.fn(),
-}));
-
-jest.mock("@/src/features/mood/queries", () => ({
-  useMoodLogs: jest.fn(),
-}));
-
-jest.mock("@/src/features/procrastination/queries", () => ({
-  useTasks: jest.fn(),
-}));
-
-jest.mock("@/src/features/self-care/queries", () => ({
-  useSelfCareLog: jest.fn(),
-}));
-
 jest.mock("@/src/features/cbt/queries", () => ({
   useThoughtRecords: jest.fn(),
 }));
@@ -78,52 +56,19 @@ jest.mock("@/src/features/cbt/use-cbt-insights", () => ({
   useCbtInsights: jest.fn(),
 }));
 
-jest.mock("@/src/components/react-native-reusables/checkbox", () => {
-  const Pressable = mockPressable;
-
-  return {
-    Checkbox: ({
-      accessibilityLabel,
-      checked,
-      onCheckedChange,
-    }: {
-      accessibilityLabel?: string;
-      checked?: boolean;
-      onCheckedChange?: (checked: boolean) => void;
-    }) => (
-      <Pressable
-        accessibilityLabel={accessibilityLabel}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: Boolean(checked) }}
-        onPress={() => onCheckedChange?.(!checked)}
-      />
-    ),
-  };
-});
-
-jest.mock("@/src/components/react-native-reusables/label", () => {
-  const Text = mockText;
-
-  return {
-    Label: ({ children, onPress }: { children?: ReactNode; onPress?: () => void }) => (
-      <Text onPress={onPress}>{children}</Text>
-    ),
-  };
-});
+jest.mock("@/src/features/cbt/use-cbt-program", () => ({
+  useCbtProgram: jest.fn(),
+}));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
 >;
 const mockUseGoals = useGoals as jest.MockedFunction<typeof useGoals>;
-const mockUseActivities = useActivities as jest.MockedFunction<typeof useActivities>;
-const mockUseMoodLogs = useMoodLogs as jest.MockedFunction<typeof useMoodLogs>;
-const mockUseTasks = useTasks as jest.MockedFunction<typeof useTasks>;
-const mockUseSelfCareLog = useSelfCareLog as jest.MockedFunction<typeof useSelfCareLog>;
 const mockUseThoughtRecords = useThoughtRecords as jest.MockedFunction<typeof useThoughtRecords>;
 const mockUseRecoveryPlan = useRecoveryPlan as jest.MockedFunction<typeof useRecoveryPlan>;
 const mockUseCbtInsights = useCbtInsights as jest.MockedFunction<typeof useCbtInsights>;
-const mockRouter = jest.mocked(router);
+const mockUseCbtProgram = useCbtProgram as jest.MockedFunction<typeof useCbtProgram>;
 
 describe("CbtHomeScreen onboarding", () => {
   const mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences);
@@ -137,12 +82,6 @@ describe("CbtHomeScreen onboarding", () => {
       mutateAsync,
     } as unknown as ReturnType<typeof useUpdateUserPreferences>);
     mockUseGoals.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useGoals>);
-    mockUseActivities.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useActivities>);
-    mockUseMoodLogs.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useMoodLogs>);
-    mockUseTasks.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useTasks>);
-    mockUseSelfCareLog.mockReturnValue({
-      data: null,
-    } as unknown as ReturnType<typeof useSelfCareLog>);
     mockUseThoughtRecords.mockReturnValue({
       data: [],
     } as unknown as ReturnType<typeof useThoughtRecords>);
@@ -160,6 +99,31 @@ describe("CbtHomeScreen onboarding", () => {
       slogan: "",
       topDistortions: [],
     });
+    mockUseCbtProgram.mockReturnValue({
+      program: {
+        status: "not_started",
+        startedAt: null,
+        currentWeekIndex: 0,
+        totalWeeks: 4,
+        weeks: [],
+        weeksComplete: 0,
+        allWeeksComplete: false,
+        summaryStats: {
+          thoughtRecords: 0,
+          activitiesCompleted: 0,
+          goalsSet: 0,
+          beliefsExamined: 0,
+        },
+      },
+      isLoading: false,
+      isUpdating: false,
+      abandonProgram: jest.fn(),
+      dismissProgramPrompt: jest.fn(),
+      promptDismissedAt: null,
+      startProgram: jest.fn(),
+      showProgramPrompt: jest.fn(),
+      replayProgram: jest.fn(),
+    } as unknown as ReturnType<typeof useCbtProgram>);
   });
 
   it("does not show CBT onboarding after completion", () => {
@@ -176,37 +140,116 @@ describe("CbtHomeScreen onboarding", () => {
     expect(screen.queryByText(/The CBT Toolkit/)).toBeNull();
   });
 
-  it("marks the morning mood button complete when mood is already logged today", () => {
-    const today = new Date();
-    today.setHours(12, 0, 0, 0);
+  it("shows the program start card and no concern guidance", () => {
     mockUseUserPreferences.mockReturnValue({
-      data: {
-        ...defaultUserPreferences,
-        cbtOnboardingCompleted: true,
-      },
+      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
-    mockUseMoodLogs.mockReturnValue({
-      data: [
-        {
-          id: "log-1",
-          userId: "user-1",
-          moodScore: 4,
-          emotions: [],
-          notes: "",
-          linkedStrategy: null,
-          loggedAt: today.toISOString(),
-          createdAt: today.toISOString(),
-        },
-      ],
-    } as unknown as ReturnType<typeof useMoodLogs>);
 
     renderWithProviders(<CbtHomeScreen />);
 
-    expect(
-      screen.getByText("Mood is logged for today. Review your plan when you need a next step."),
-    ).toBeTruthy();
-    fireEvent.press(screen.getByLabelText("Log mood, completed today"));
-    expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/new");
+    expect(screen.getByText("Start program")).toBeTruthy();
+    expect(screen.queryByText("Today check-in")).toBeNull();
+    expect(screen.queryByText("Today")).toBeNull();
+    expect(screen.queryByText("Mood summaries")).toBeNull();
+    expect(screen.queryByText("Quick actions")).toBeNull();
+    expect(screen.queryByText(/Suggested for/)).toBeNull();
+  });
+
+  it("hides a dismissed start card and restores it from the header program action", () => {
+    const showProgramPrompt = jest.fn();
+    mockUseUserPreferences.mockReturnValue({
+      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+    mockUseCbtProgram.mockReturnValue({
+      program: {
+        status: "not_started",
+        startedAt: null,
+        currentWeekIndex: 0,
+        totalWeeks: 4,
+        weeks: [],
+        weeksComplete: 0,
+        allWeeksComplete: false,
+        summaryStats: {
+          thoughtRecords: 0,
+          activitiesCompleted: 0,
+          goalsSet: 0,
+          beliefsExamined: 0,
+        },
+      },
+      isLoading: false,
+      isUpdating: false,
+      abandonProgram: jest.fn(),
+      dismissProgramPrompt: jest.fn(),
+      promptDismissedAt: "2026-05-22T09:00:00.000Z",
+      replayProgram: jest.fn(),
+      showProgramPrompt,
+      startProgram: jest.fn(),
+    } as unknown as ReturnType<typeof useCbtProgram>);
+
+    renderWithProviders(<CbtHomeScreen />);
+
+    expect(screen.queryByText("Start program")).toBeNull();
+    fireEvent.press(screen.getByLabelText("Show the CBT program invitation"));
+    expect(showProgramPrompt).toHaveBeenCalled();
+  });
+
+  it("confirms before abandoning an in-progress program", () => {
+    const abandonProgram = jest.fn();
+    mockUseUserPreferences.mockReturnValue({
+      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+    mockUseCbtProgram.mockReturnValue({
+      program: {
+        status: "in_progress",
+        startedAt: "2026-05-01T00:00:00.000Z",
+        currentWeekIndex: 0,
+        totalWeeks: 4,
+        weeks: [
+          {
+            key: "foundation",
+            themeLabelKey: "program.weeks.foundation",
+            pillar: "think",
+            done: false,
+            tasks: [
+              {
+                key: "thoughtRecord",
+                labelKey: "program.tasks.oneThoughtRecord",
+                route: "/modules/cbt/new",
+                current: 0,
+                target: 1,
+                done: false,
+              },
+            ],
+          },
+        ],
+        weeksComplete: 0,
+        allWeeksComplete: false,
+        summaryStats: {
+          thoughtRecords: 0,
+          activitiesCompleted: 0,
+          goalsSet: 0,
+          beliefsExamined: 0,
+        },
+      },
+      isLoading: false,
+      isUpdating: false,
+      abandonProgram,
+      dismissProgramPrompt: jest.fn(),
+      promptDismissedAt: null,
+      replayProgram: jest.fn(),
+      showProgramPrompt: jest.fn(),
+      startProgram: jest.fn(),
+    } as unknown as ReturnType<typeof useCbtProgram>);
+
+    renderWithProviders(<CbtHomeScreen />);
+
+    fireEvent.press(screen.getByText("Abandon program"));
+    expect(screen.getByText("Abandon this program?")).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId("confirm-dialog-confirm"));
+    expect(abandonProgram).toHaveBeenCalled();
   });
 });

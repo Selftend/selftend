@@ -11,7 +11,7 @@ export type PlanConcern =
 
 export type PlanTool =
   | "mood"
-  | "cbt"
+  | "module-cbt"
   | "breathing"
   | "meditation"
   | "gratitude"
@@ -34,11 +34,11 @@ export const TOOL_DEFS: Record<PlanTool, ToolDef> = {
     route: "/tools/mood-tracker/new",
     frequency: "daily",
   },
-  cbt: {
-    toolId: "cbt",
-    title: "CBT thought record",
-    route: "/modules/cbt/new",
-    frequency: "as_needed",
+  "module-cbt": {
+    toolId: "module-cbt",
+    title: "CBT",
+    route: "/modules/cbt",
+    frequency: "daily",
   },
   breathing: {
     toolId: "breathing",
@@ -95,7 +95,7 @@ export function generatePlan(
     priorityOrder.push("gratitude", "journal");
   }
   if (concerns.includes("negative_thoughts")) {
-    priorityOrder.push("cbt");
+    priorityOrder.push("module-cbt");
   }
   if (concerns.includes("emotional_regulation")) {
     priorityOrder.push("breathing", "meditation", "journal");

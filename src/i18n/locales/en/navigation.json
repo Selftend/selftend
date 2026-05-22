@@ -188,6 +188,9 @@
       "actExercise": "Do exercise",
       "cbtModuleSubtitle": "Think · Act · Be",
       "actModuleSubtitle": "Psychological flexibility",
+      "cbtModuleProgramReady": "4-week program",
+      "cbtModuleProgramReadyDesc": "Guided structure is ready when you want it.",
+      "cbtModuleProgramCompleteDesc": "Complete. Keep using the CBT tools as needed.",
       "cbtModuleRecords": "Records",
       "cbtModuleActivities": "Activities",
       "cbtModuleSelfCare": "Self-care",
@@ -247,6 +250,7 @@
   "headerButton": {
     "tune": "Customise",
     "notifications": "Notifications",
+    "program": "CBT program",
     "info": "About this module"
   },
   "headerTour": {
@@ -257,6 +261,10 @@
     },
     "notifications": {
       "description": "Tap here to manage reminders and notification settings for this feature.",
+      "dismiss": "Got it"
+    },
+    "program": {
+      "description": "Tap here to show or restart the CBT program invitation.",
       "dismiss": "Got it"
     },
     "info": {
@@ -359,7 +367,7 @@
       "concernSelfCompassion": "Self-compassion",
       "concernEmotionalRegulation": "Emotional regulation",
       "toolMood": "Mood check-in",
-      "toolCbt": "CBT thought record",
+      "toolCbt": "CBT",
       "toolBreathing": "Breathing exercise",
       "toolMeditation": "Meditation",
       "toolGratitude": "Gratitude log",

@@ -60,6 +60,7 @@ export function ConfirmDialog({
               <Button
                 disabled={isPending}
                 onPress={onConfirm}
+                testID="confirm-dialog-confirm"
                 variant={destructive ? "destructive" : "default"}
               >
                 {isPending ? <ActivityIndicator color="#ffffff" /> : null}

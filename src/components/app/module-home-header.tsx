@@ -27,15 +27,22 @@ export type NotificationsAction = {
   accessibilityLabel?: string;
 };
 export type InfoAction = { type: "info"; onPress: () => void; accessibilityLabel?: string };
-export type HeaderAction = TuneAction | NotificationsAction | InfoAction;
+export type ProgramAction = { type: "program"; onPress: () => void; accessibilityLabel?: string };
+export type HeaderAction = TuneAction | NotificationsAction | InfoAction | ProgramAction;
 
 const ICON_FOR_TYPE = {
   tune: "tune",
   notifications: "notifications",
+  program: "flag",
   info: "help-outline",
 } as const;
 
-const ALL_TOUR_KEYS = Object.keys(ICON_FOR_TYPE) as ButtonTourKey[];
+const TOURABLE_ACTION_TYPES = ["tune", "notifications", "program", "info"] as const;
+const ALL_TOUR_KEYS = [...TOURABLE_ACTION_TYPES];
+
+function isTourableActionType(value: HeaderAction["type"]): value is ButtonTourKey {
+  return (TOURABLE_ACTION_TYPES as readonly string[]).includes(value);
+}
 
 // hsl(260, 18%, 13%) dark card, hsl(260, 28%, 99%) light card from global.css.
 const CARD_COLOR = { dark: "#1f1b27", light: "#fdfcfe" } as const;
@@ -101,6 +108,7 @@ export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps)
   const tourQueue: ButtonTourKey[] = preferences
     ? actions
         .map((action) => action.type)
+        .filter(isTourableActionType)
         .filter((key) => !preferences.shownButtonTours.includes(key))
     : [];
   const currentTourKey = tourQueue[0] ?? null;
@@ -215,7 +223,11 @@ export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps)
                 key={action.type}
                 action={action}
                 onPress={() => handleActionPress(action)}
-                setRef={(ref) => setActionRef(action.type, ref)}
+                setRef={(ref) => {
+                  if (isTourableActionType(action.type)) {
+                    setActionRef(action.type, ref);
+                  }
+                }}
               />
             ))}
           </View>
@@ -234,6 +246,7 @@ interface TourButtonProps {
 function TourButton({ action, onPress, setRef }: TourButtonProps) {
   const { t } = useTranslation("navigation");
   const label = action.accessibilityLabel ?? t(`headerButton.${action.type}`);
+  const iconClass = action.type === "program" ? "text-act" : "text-muted-foreground";
   return (
     <Pressable
       accessibilityLabel={label}
@@ -243,7 +256,7 @@ function TourButton({ action, onPress, setRef }: TourButtonProps) {
       style={buttonStyle}
     >
       <View ref={setRef}>
-        <Icon name={ICON_FOR_TYPE[action.type]} size={20} className="text-muted-foreground" />
+        <Icon name={ICON_FOR_TYPE[action.type]} size={20} className={iconClass} />
       </View>
     </Pressable>
   );

@@ -15,6 +15,51 @@
     "onboardingHint": "Replay the CBT introduction",
     "wizardHint": "Set up your focus areas"
   },
+  "program": {
+    "startTitle": "Your 4-week program",
+    "startDescription": "A guided journey through CBT, using the tools in this module. Go at your own pace.",
+    "startCta": "Start program",
+    "dismissStartLabel": "Hide the program invitation",
+    "showPromptLabel": "Show the CBT program invitation",
+    "heroTitle": "Your Program",
+    "weekProgress": "Week {{current}} of {{total}}",
+    "weekTasksDone": "{{done}}/{{total}} done this week",
+    "otherWeeks": "Other weeks",
+    "graduationTitle": "Program complete",
+    "graduationBody": "You built real momentum. Here's what you did:",
+    "statThoughtRecords": "{{count}} thought records",
+    "statActivities": "{{count}} activities completed",
+    "statGoals": "{{count}} goals set",
+    "statBeliefs": "{{count}} beliefs examined",
+    "graduationDismiss": "Continue with my tools",
+    "replay": "Replay the program",
+    "abandon": "Abandon program",
+    "abandonTitle": "Abandon this program?",
+    "abandonDescription": "This only stops the 4-week program tracking. Your saved thought records, activities, goals, and logs stay in place.",
+    "abandonConfirm": "Abandon program",
+    "abandonCancel": "Keep going",
+    "weeks": {
+      "noticeUnderstand": "Notice & Understand",
+      "challengeThinking": "Challenge Your Thinking",
+      "actEngage": "Act & Engage",
+      "sustainBe": "Sustain & Be"
+    },
+    "tasks": {
+      "setGoals": "Set 1-2 goals",
+      "clarifyValues": "Clarify your values",
+      "firstThoughtRecord": "Log your first thought record",
+      "startMoodCheckIn": "Start a daily mood check-in",
+      "threeThoughtRecords": "Log 3 thought records",
+      "spotDistortion": "Spot a distortion in a thought record",
+      "examineBelief": "Examine one core belief",
+      "scheduleActivities": "Schedule 3 meaningful activities",
+      "exposureOrTask": "Build an exposure ladder or break down a stuck task",
+      "completeActivity": "Complete an activity and rate your mood",
+      "dailySelfCare": "Do a self-care check-in",
+      "beExercise": "Try a breathing, mindfulness, or meditation exercise",
+      "resiliencePlan": "Write your resilience plan and personal slogan"
+    }
+  },
   "dashboard": {
     "quickActions": "Quick actions",
     "logMood": "Log mood",
@@ -44,10 +89,6 @@
       "taskDue": "Due {{value}}",
       "emptyTitle": "No scheduled CBT items today",
       "emptyDescription": "You can still log mood, schedule an activity, or choose one small task."
-    },
-    "guidance": {
-      "title": "Suggested starting points",
-      "description": "Based on your selected focus areas: {{concerns}}. These are optional shortcuts, not a score or diagnosis."
     },
     "moodSummary": {
       "title": "Mood summaries",
@@ -689,18 +730,6 @@
       "tableRow3Focus": "Behavioural activation and cognitive restructuring",
       "attribution": "This section is inspired by Cognitive Behavioral Therapy Made Simple by Seth J. Gillihan PhD.",
       "continue": "Got it"
-    },
-    "concerns": {
-      "title": "What brings you here?",
-      "subtitle": "Choose anything that feels relevant. Your selections help shape which strategies are highlighted for you.",
-      "depression": "Depression",
-      "anxiety": "Anxiety / Worry",
-      "panic": "Panic",
-      "socialAnxiety": "Social Anxiety",
-      "anger": "Anger",
-      "procrastination": "Procrastination",
-      "continue": "Continue",
-      "back": "Back"
     },
     "error": "Unable to save CBT onboarding.",
     "dismiss": "Close"

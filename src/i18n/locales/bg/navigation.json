@@ -186,6 +186,9 @@
       "actExercise": "Направи упражнение",
       "cbtModuleSubtitle": "Мисли · Действай · Бъди",
       "actModuleSubtitle": "Психологическа гъвкавост",
+      "cbtModuleProgramReady": "4-седмична програма",
+      "cbtModuleProgramReadyDesc": "Водената структура е готова, когато я поискаш.",
+      "cbtModuleProgramCompleteDesc": "Завършена. Продължи да ползваш КПТ инструментите според нуждите си.",
       "cbtModuleRecords": "Записи",
       "cbtModuleActivities": "Дейности",
       "cbtModuleSelfCare": "Самогрижа",
@@ -243,6 +246,7 @@
   "headerButton": {
     "tune": "Настройки",
     "notifications": "Известия",
+    "program": "КПТ програма",
     "info": "За този модул"
   },
   "headerTour": {
@@ -253,6 +257,10 @@
     },
     "notifications": {
       "description": "Натисни тук, за да управляваш напомняния и известия за тази функция.",
+      "dismiss": "Разбрах"
+    },
+    "program": {
+      "description": "Натисни тук, за да покажеш или започнеш отново поканата за КПТ програмата.",
       "dismiss": "Разбрах"
     },
     "info": {
@@ -355,7 +363,7 @@
       "concernSelfCompassion": "Самосъчувствие",
       "concernEmotionalRegulation": "Емоционална регулация",
       "toolMood": "Проследяване на настроението",
-      "toolCbt": "КПТ запис на мисли",
+      "toolCbt": "КПТ",
       "toolBreathing": "Дихателно упражнение",
       "toolMeditation": "Медитация",
       "toolGratitude": "Дневник на благодарността",

@@ -26,6 +26,9 @@ interface UserPreferenceRow {
   app_onboarding_completed: boolean | null;
   cbt_onboarding_completed: boolean | null;
   cbt_wizard_completed: boolean | null;
+  cbt_program_started_at: string | null;
+  cbt_program_completed_at: string | null;
+  cbt_program_prompt_dismissed_at: string | null;
   meditation_onboarding_completed: boolean | null;
   meditation_info_completed: boolean | null;
   gratitude_onboarding_completed: boolean | null;
@@ -75,6 +78,9 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     appOnboardingCompleted: Boolean(row.app_onboarding_completed),
     cbtOnboardingCompleted: Boolean(row.cbt_onboarding_completed),
     cbtWizardCompleted: Boolean(row.cbt_wizard_completed),
+    cbtProgramStartedAt: row.cbt_program_started_at ?? null,
+    cbtProgramCompletedAt: row.cbt_program_completed_at ?? null,
+    cbtProgramPromptDismissedAt: row.cbt_program_prompt_dismissed_at ?? null,
     meditationOnboardingCompleted: Boolean(row.meditation_onboarding_completed),
     meditationInfoCompleted: Boolean(row.meditation_info_completed),
     gratitudeOnboardingCompleted: Boolean(row.gratitude_onboarding_completed),
@@ -107,7 +113,9 @@ function isMissingOptionalPreferenceColumn(error: unknown) {
   return (
     maybeError.code === "PGRST204" &&
     typeof maybeError.message === "string" &&
-    (maybeError.message.includes("act_") || maybeError.message.includes("shown_button_tours"))
+    (maybeError.message.includes("act_") ||
+      maybeError.message.includes("cbt_program_") ||
+      maybeError.message.includes("shown_button_tours"))
   );
 }
 
@@ -119,6 +127,9 @@ function omitOptionalPreferenceColumns<T extends Record<string, unknown>>(payloa
   delete fallbackPayload.act_reminder_hour;
   delete fallbackPayload.act_reminder_minute;
   delete fallbackPayload.act_reminder_timezone;
+  delete fallbackPayload.cbt_program_started_at;
+  delete fallbackPayload.cbt_program_completed_at;
+  delete fallbackPayload.cbt_program_prompt_dismissed_at;
   delete fallbackPayload.shown_button_tours;
 
   return fallbackPayload;
@@ -158,6 +169,9 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     app_onboarding_completed: preferences.appOnboardingCompleted,
     cbt_onboarding_completed: preferences.cbtOnboardingCompleted,
     cbt_wizard_completed: preferences.cbtWizardCompleted,
+    cbt_program_started_at: preferences.cbtProgramStartedAt,
+    cbt_program_completed_at: preferences.cbtProgramCompletedAt,
+    cbt_program_prompt_dismissed_at: preferences.cbtProgramPromptDismissedAt,
     meditation_onboarding_completed: preferences.meditationOnboardingCompleted,
     meditation_info_completed: preferences.meditationInfoCompleted,
     gratitude_onboarding_completed: preferences.gratitudeOnboardingCompleted,

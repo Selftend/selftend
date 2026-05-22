@@ -12,7 +12,11 @@ import { useUserProfile } from "@/src/features/profile/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
 import { WidgetCard } from "@/src/features/home/widget-card";
-import { resolveWidget } from "@/src/features/home/widget-registry";
+import {
+  existingWidgetToolIds,
+  resolveWidget,
+  visibleDashboardItems,
+} from "@/src/features/home/widget-registry";
 
 function pickGreetingKey(hour: number) {
   if (hour < 12) return "today.greetingMorning";
@@ -62,8 +66,8 @@ export default function HomeScreen() {
     }
   }, [planItems]);
 
-  const existingToolIds = planItems?.map((i) => i.toolId) ?? [];
-  const dashboardItems = displayedItems ?? planItems ?? [];
+  const existingToolIds = existingWidgetToolIds(planItems ?? []);
+  const dashboardItems = visibleDashboardItems(displayedItems ?? planItems ?? []);
   const nextWidgetOrder =
     planItems && planItems.length > 0 ? Math.max(...planItems.map((item) => item.order)) + 1 : 0;
 

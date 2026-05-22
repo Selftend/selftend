@@ -19,7 +19,7 @@ import { useToastStore } from "@/src/stores/toast-store";
 
 const TOOL_OPTIONS: { id: PlanTool; labelKey: string }[] = [
   { id: "mood", labelKey: "plan.wizard.toolMood" },
-  { id: "cbt", labelKey: "plan.wizard.toolCbt" },
+  { id: "module-cbt", labelKey: "plan.wizard.toolCbt" },
   { id: "breathing", labelKey: "plan.wizard.toolBreathing" },
   { id: "meditation", labelKey: "plan.wizard.toolMeditation" },
   { id: "gratitude", labelKey: "plan.wizard.toolGratitude" },
@@ -58,7 +58,9 @@ export function PlanItemFormScreen({ mode, itemId = null }: PlanItemFormScreenPr
   useEffect(() => {
     if (existingItem) {
       setTitle(existingItem.title);
-      setSelectedTool((existingItem.toolId as PlanTool) ?? "mood");
+      setSelectedTool(
+        existingItem.toolId === "cbt" ? "module-cbt" : (existingItem.toolId as PlanTool),
+      );
       setFrequency(existingItem.frequency);
       setDescription(existingItem.description ?? "");
     }

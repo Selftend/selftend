@@ -4,7 +4,7 @@ describe("generatePlan", () => {
   it("respects the light routine cap of 3", () => {
     const plan = generatePlan(
       ["anxiety", "low_mood", "negative_thoughts"],
-      ["mood", "breathing", "meditation", "gratitude", "journal", "cbt", "habits"],
+      ["mood", "breathing", "meditation", "gratitude", "journal", "module-cbt", "habits"],
       "light",
     );
     expect(plan).toHaveLength(3);
@@ -13,7 +13,7 @@ describe("generatePlan", () => {
   it("respects the standard routine cap of 5", () => {
     const plan = generatePlan(
       ["anxiety", "low_mood", "negative_thoughts"],
-      ["mood", "breathing", "meditation", "gratitude", "journal", "cbt", "habits"],
+      ["mood", "breathing", "meditation", "gratitude", "journal", "module-cbt", "habits"],
       "standard",
     );
     expect(plan).toHaveLength(5);
@@ -22,7 +22,7 @@ describe("generatePlan", () => {
   it("custom routine has no cap", () => {
     const plan = generatePlan(
       ["anxiety", "low_mood", "negative_thoughts"],
-      ["mood", "breathing", "meditation", "gratitude", "journal", "cbt", "habits"],
+      ["mood", "breathing", "meditation", "gratitude", "journal", "module-cbt", "habits"],
       "custom",
     );
     expect(plan).toHaveLength(7);
@@ -30,11 +30,17 @@ describe("generatePlan", () => {
 
   it("orders items by concern-driven priority", () => {
     const plan = generatePlan(
-      ["anxiety"],
-      ["habits", "breathing", "mood", "meditation"],
+      ["anxiety", "negative_thoughts"],
+      ["habits", "breathing", "mood", "meditation", "module-cbt"],
       "standard",
     );
-    expect(plan.map((p) => p.toolId)).toEqual(["mood", "breathing", "meditation", "habits"]);
+    expect(plan.map((p) => p.toolId)).toEqual([
+      "mood",
+      "breathing",
+      "meditation",
+      "module-cbt",
+      "habits",
+    ]);
   });
 
   it("appends user-selected tools not driven by any concern", () => {

@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -8,13 +8,75 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
+import type { CbtProgramView } from "@/src/features/cbt/derive-program";
+import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
 import { useActivities } from "@/src/features/activities/queries";
 import { useSelfCareLog } from "@/src/features/self-care/queries";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+
+function ProgramSummary({ program }: { program: CbtProgramView }) {
+  const { t } = useTranslation(["navigation", "cbt"]);
+  const current = program.weeks[program.currentWeekIndex] ?? null;
+  const currentDone = current?.tasks.filter((task) => task.done).length ?? 0;
+  const currentTotal = current?.tasks.length ?? 0;
+  const progressUnits =
+    program.status === "graduated"
+      ? program.totalWeeks
+      : program.weeksComplete + (currentTotal > 0 ? currentDone / currentTotal : 0);
+  const progressPercent =
+    program.totalWeeks > 0 ? Math.min(100, (progressUnits / program.totalWeeks) * 100) : 0;
+
+  const title =
+    program.status === "in_progress"
+      ? t("program.weekProgress", {
+          ns: "cbt",
+          current: program.currentWeekIndex + 1,
+          total: program.totalWeeks,
+        })
+      : program.status === "graduated"
+        ? t("program.graduationTitle", { ns: "cbt" })
+        : t("today.dashboard.cbtModuleProgramReady");
+
+  const description =
+    program.status === "in_progress"
+      ? t("program.weekTasksDone", { ns: "cbt", done: currentDone, total: currentTotal })
+      : program.status === "graduated"
+        ? t("today.dashboard.cbtModuleProgramCompleteDesc")
+        : t("today.dashboard.cbtModuleProgramReadyDesc");
+
+  return (
+    <Pressable
+      accessibilityLabel={`${title}. ${description}`}
+      accessibilityRole="button"
+      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+      onPress={() => router.push("/modules/cbt")}
+      className="gap-2 rounded-xl border border-act/30 bg-act/5 p-3 active:bg-act/10"
+      role="button"
+    >
+      <View className="flex-row items-center gap-3">
+        <View className="size-8 items-center justify-center rounded-lg bg-act/15">
+          <Icon name="flag" className="size-5 text-act" />
+        </View>
+        <View className="flex-1">
+          <Text className="text-sm font-semibold">{title}</Text>
+          <Text variant="muted" className="text-xs">
+            {description}
+          </Text>
+        </View>
+        <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
+      </View>
+      <View className="h-1.5 overflow-hidden rounded-full bg-muted">
+        <View className="h-1.5 rounded-full bg-act" style={{ width: `${progressPercent}%` }} />
+      </View>
+    </Pressable>
+  );
+}
 
 export function CbtModuleWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
   const todayKey = new Date().toISOString().slice(0, 10);
 
+  const { program } = useCbtProgram(userId || null);
   const { data: records } = useThoughtRecords(userId);
   const { data: activities } = useActivities(userId);
   const { data: selfCareLog } = useSelfCareLog(userId, todayKey);
@@ -56,6 +118,8 @@ export function CbtModuleWidget({ userId }: { userId: string }) {
             </Text>
           </View>
         </View>
+
+        <ProgramSummary program={program} />
 
         <View className="flex-row gap-2">
           {stats.map((stat) => (

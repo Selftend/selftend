@@ -1,6 +1,6 @@
 export type ModuleKey = "cbt" | "meditation" | "gratitude" | "act";
 
-export type ButtonTourKey = "tune" | "notifications" | "info";
+export type ButtonTourKey = "tune" | "notifications" | "program" | "info";
 
 export type GratitudeLevel = 1 | 2 | 3;
 
@@ -31,6 +31,9 @@ export interface UserPreferences {
   appOnboardingCompleted: boolean;
   cbtOnboardingCompleted: boolean;
   cbtWizardCompleted: boolean;
+  cbtProgramStartedAt: string | null;
+  cbtProgramCompletedAt: string | null;
+  cbtProgramPromptDismissedAt: string | null;
   meditationOnboardingCompleted: boolean;
   meditationInfoCompleted: boolean;
   gratitudeOnboardingCompleted: boolean;
@@ -72,6 +75,9 @@ export const defaultUserPreferences: UserPreferences = {
   appOnboardingCompleted: false,
   cbtOnboardingCompleted: false,
   cbtWizardCompleted: false,
+  cbtProgramStartedAt: null,
+  cbtProgramCompletedAt: null,
+  cbtProgramPromptDismissedAt: null,
   meditationOnboardingCompleted: false,
   meditationInfoCompleted: false,
   gratitudeOnboardingCompleted: false,

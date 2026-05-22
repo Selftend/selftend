@@ -58,7 +58,10 @@ const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunc
   typeof useUpdateUserPreferences
 >;
 
-function renderHeader({ shownButtonTours = [] }: { shownButtonTours?: string[] } = {}) {
+function renderHeader({
+  includeProgram = false,
+  shownButtonTours = [],
+}: { includeProgram?: boolean; shownButtonTours?: string[] } = {}) {
   mockUseUserPreferences.mockReturnValue({
     data: {
       ...defaultUserPreferences,
@@ -73,6 +76,7 @@ function renderHeader({ shownButtonTours = [] }: { shownButtonTours?: string[] }
       actions={[
         { type: "tune", onPress: jest.fn() },
         { type: "notifications", targetKey: "cbt" },
+        ...(includeProgram ? [{ type: "program" as const, onPress: jest.fn() }] : []),
         { type: "info", onPress: jest.fn() },
       ]}
     />,
@@ -113,7 +117,7 @@ describe("ModuleHomeHeader button tours", () => {
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledWith(
         expect.objectContaining({
-          shownButtonTours: ["tune", "notifications", "info"],
+          shownButtonTours: ["tune", "notifications", "program", "info"],
         }),
       );
     });
@@ -126,6 +130,14 @@ describe("ModuleHomeHeader button tours", () => {
       await screen.findByText(
         "Tap here to manage reminders and notification settings for this feature.",
       ),
+    ).toBeTruthy();
+  });
+
+  it("shows the program tip when the program action is present", async () => {
+    renderHeader({ includeProgram: true, shownButtonTours: ["tune", "notifications"] });
+
+    expect(
+      await screen.findByText("Tap here to show or restart the CBT program invitation."),
     ).toBeTruthy();
   });
 });

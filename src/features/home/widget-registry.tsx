@@ -1,7 +1,6 @@
 import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 
 import { MoodWidget } from "@/src/features/home/widgets/mood-widget";
-import { CbtWidget } from "@/src/features/home/widgets/cbt-widget";
 import { BreathingWidget } from "@/src/features/home/widgets/breathing-widget";
 import { MeditationWidget } from "@/src/features/home/widgets/meditation-widget";
 import { GratitudeWidget } from "@/src/features/home/widgets/gratitude-widget";
@@ -23,7 +22,6 @@ export interface WidgetMeta {
 
 export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   mood: MoodWidget,
-  cbt: CbtWidget,
   breathing: BreathingWidget,
   meditation: MeditationWidget,
   gratitude: GratitudeWidget,
@@ -39,11 +37,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     icon: "mood",
     titleKey: "plan.wizard.toolMood",
     descriptionKey: "today.tools.moodTrackerSub",
-  },
-  cbt: {
-    icon: "article",
-    titleKey: "plan.wizard.toolCbt",
-    descriptionKey: "today.dashboard.cbtToolDesc",
   },
   breathing: {
     icon: "air",
@@ -91,7 +84,6 @@ export const WIDGET_TOOL_ORDER = [
   "module-cbt",
   "module-act",
   "mood",
-  "cbt",
   "breathing",
   "meditation",
   "gratitude",
@@ -100,8 +92,21 @@ export const WIDGET_TOOL_ORDER = [
   "self-care",
 ] as const;
 
+export function normalizeWidgetToolId(toolId: string) {
+  return toolId === "cbt" ? "module-cbt" : toolId;
+}
+
+export function visibleDashboardItems(items: CarePlanItem[]) {
+  const hasCanonicalCbt = items.some((item) => item.toolId === "module-cbt");
+  return items.filter((item) => !(hasCanonicalCbt && item.toolId === "cbt"));
+}
+
+export function existingWidgetToolIds(items: CarePlanItem[]) {
+  return Array.from(new Set(items.map((item) => normalizeWidgetToolId(item.toolId))));
+}
+
 export function resolveWidget(item: CarePlanItem, userId: string): React.ReactElement {
-  const Component = WIDGET_REGISTRY[item.toolId];
+  const Component = WIDGET_REGISTRY[normalizeWidgetToolId(item.toolId)];
   if (Component) {
     return <Component userId={userId} />;
   }
