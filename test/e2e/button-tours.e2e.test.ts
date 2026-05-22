@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { SEED_USERS, createServiceClient, dismissPostSignInModals, signInAsViaUi } from "./helpers";
 import { policyVersion } from "../../src/features/policies/policy-content";
 
-const TOUR_KEYS = ["tune", "notifications", "info"] as const;
+const TOUR_KEYS = ["tune", "notifications", "program", "info"] as const;
 const USER_ID = SEED_USERS.alice.id;
 
 type PreferenceRow = Record<string, unknown>;
@@ -75,7 +75,7 @@ test.describe("button tours", () => {
     await signInAsViaUi(page, "alice");
     await dismissPostSignInModals(page);
 
-    await page.goto("/modules/cbt");
+    await page.goto("/modules/act");
     await expect(page.getByText(/Tap here to customise this module/i)).toBeVisible();
 
     await page.getByRole("button", { name: "Got it", exact: true }).click();
@@ -88,7 +88,7 @@ test.describe("button tours", () => {
     await signInAsViaUi(page, "alice");
     await dismissPostSignInModals(page);
 
-    await page.goto("/modules/cbt");
+    await page.goto("/modules/act");
     await expect(page.getByText(/Tap here to customise this module/i)).toBeVisible();
 
     await page.getByRole("button", { name: "Skip all tips", exact: true }).click();
