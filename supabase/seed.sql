@@ -243,13 +243,13 @@ values (
 
 -- public.thought_records - bob (5)
 insert into public.thought_records (
-  user_id, situation, automatic_thought, emotions, distortions, balanced_thought, created_at, updated_at
+  user_id, situation, nats, emotions, distortions, balanced_thought, created_at, updated_at
 )
 values
   (
     '00000000-0000-0000-0000-000000000002',
     'My manager scheduled a 1:1 without an agenda.',
-    'I am about to be put on a performance plan.',
+    '[{"text": "I am about to be put on a performance plan.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Anxious','Fearful']::text[],
     array['fortune-telling','catastrophizing']::text[],
     'Most 1:1s are routine check-ins. I will ask about the agenda before assuming the worst.',
@@ -259,7 +259,7 @@ values
   (
     '00000000-0000-0000-0000-000000000002',
     'A friend did not reply to my message for two days.',
-    'They are mad at me and want to drop the friendship.',
+    '[{"text": "They are mad at me and want to drop the friendship.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Anxious','Sad']::text[],
     array['mind-reading']::text[],
     'They are usually slow when work is busy. I have no evidence of anger; I can check in lightly.',
@@ -269,7 +269,7 @@ values
   (
     '00000000-0000-0000-0000-000000000002',
     'I missed a small detail in a code review.',
-    'I am a sloppy engineer and I do not deserve this role.',
+    '[{"text": "I am a sloppy engineer and I do not deserve this role.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Ashamed','Frustrated']::text[],
     array['labeling','all-or-nothing']::text[],
     'One missed nit is not an identity. I caught the bigger issues; I will note this for next time.',
@@ -279,7 +279,7 @@ values
   (
     '00000000-0000-0000-0000-000000000002',
     'I felt anxious before a casual social event.',
-    'If I am this anxious, something must be really wrong.',
+    '[{"text": "If I am this anxious, something must be really wrong.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Anxious','Overwhelmed']::text[],
     array['emotional-reasoning']::text[],
     'A feeling is not proof. Anxiety can show up before any new social setting and pass once I arrive.',
@@ -289,7 +289,7 @@ values
   (
     '00000000-0000-0000-0000-000000000002',
     'I skipped one workout this week.',
-    'I should never miss a workout, otherwise I am undisciplined.',
+    '[{"text": "I should never miss a workout, otherwise I am undisciplined.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Guilty']::text[],
     array['should-statements']::text[],
     'I would prefer to keep my routine, and one missed session does not erase the rest of the week.',
@@ -299,13 +299,13 @@ values
 
 -- public.thought_records - demo (10, spread across 60 days, polished for screenshots)
 insert into public.thought_records (
-  user_id, situation, automatic_thought, emotions, distortions, balanced_thought, created_at, updated_at
+  user_id, situation, nats, emotions, distortions, balanced_thought, created_at, updated_at
 )
 values
   (
     '00000000-0000-0000-0000-000000000003',
     'I gave a short presentation at work and stumbled on one slide.',
-    'Everyone noticed and now they think I am unprepared.',
+    '[{"text": "Everyone noticed and now they think I am unprepared.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Anxious','Ashamed']::text[],
     array['mind-reading','catastrophizing']::text[],
     'A small stumble is normal. The questions afterward suggested people followed the content.',
@@ -315,7 +315,7 @@ values
   (
     '00000000-0000-0000-0000-000000000003',
     'I noticed an old friend has not reached out in months.',
-    'I must have done something to push them away.',
+    '[{"text": "I must have done something to push them away.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Sad','Lonely']::text[],
     array['personalization','mind-reading']::text[],
     'People drift in and out of contact for many reasons. I can reach out without assigning blame.',
@@ -325,7 +325,7 @@ values
   (
     '00000000-0000-0000-0000-000000000003',
     'I got positive feedback in a review but also one piece of growth feedback.',
-    'The growth feedback is the only thing that really matters here.',
+    '[{"text": "The growth feedback is the only thing that really matters here.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Frustrated']::text[],
     array['discounting-the-positive']::text[],
     'Both pieces of feedback are real. The strengths I heard are not erased by one growth area.',
@@ -335,7 +335,7 @@ values
   (
     '00000000-0000-0000-0000-000000000003',
     'I had trouble falling asleep before an important morning.',
-    'If I do not sleep perfectly, tomorrow will be ruined.',
+    '[{"text": "If I do not sleep perfectly, tomorrow will be ruined.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Anxious','Overwhelmed']::text[],
     array['catastrophizing','all-or-nothing']::text[],
     'I have done well on imperfect sleep before. I can rest, even if I do not fall asleep right away.',
@@ -345,7 +345,7 @@ values
   (
     '00000000-0000-0000-0000-000000000003',
     'A small project of mine did not get the response I hoped for.',
-    'Nothing I make ever lands. I should stop trying.',
+    '[{"text": "Nothing I make ever lands. I should stop trying.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Hopeless','Sad']::text[],
     array['overgeneralization','labeling']::text[],
     'One quiet launch is one data point. Earlier projects did connect with people.',
@@ -355,7 +355,7 @@ values
   (
     '00000000-0000-0000-0000-000000000003',
     'My partner seemed quiet at dinner.',
-    'They are upset with me and not telling me.',
+    '[{"text": "They are upset with me and not telling me.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Anxious']::text[],
     array['mind-reading']::text[],
     'They had a long workday. I can ask gently rather than assume the silence is about me.',
@@ -365,7 +365,7 @@ values
   (
     '00000000-0000-0000-0000-000000000003',
     'I sent an email and noticed a small typo afterwards.',
-    'The recipient will think I am careless and unprofessional.',
+    '[{"text": "The recipient will think I am careless and unprofessional.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Ashamed']::text[],
     array['catastrophizing','mind-reading']::text[],
     'Most readers skim past small typos. The substance of the email is what they will respond to.',
@@ -375,7 +375,7 @@ values
   (
     '00000000-0000-0000-0000-000000000003',
     'I felt low energy on a planned rest day.',
-    'I should be using this time better. I am wasting the day.',
+    '[{"text": "I should be using this time better. I am wasting the day.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Guilty','Frustrated']::text[],
     array['should-statements']::text[],
     'Rest is part of the plan, not a failure of it. Low energy is information, not a moral problem.',
@@ -385,7 +385,7 @@ values
   (
     '00000000-0000-0000-0000-000000000003',
     'A teammate disagreed with my proposal in a meeting.',
-    'They think I do not know what I am doing.',
+    '[{"text": "They think I do not know what I am doing.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Anxious','Frustrated']::text[],
     array['mind-reading','personalization']::text[],
     'Disagreement is about the proposal, not my competence. Their pushback might even improve it.',
@@ -395,7 +395,7 @@ values
   (
     '00000000-0000-0000-0000-000000000003',
     'I felt anxious for no clear reason on a calm afternoon.',
-    'If I feel anxious, something bad must be coming.',
+    '[{"text": "If I feel anxious, something bad must be coming.", "beliefRating": null, "isHotThought": true}]'::jsonb,
     array['Anxious']::text[],
     array['emotional-reasoning','fortune-telling']::text[],
     'Anxiety can show up without a cause. The feeling is real; the prediction it suggests is not evidence.',
