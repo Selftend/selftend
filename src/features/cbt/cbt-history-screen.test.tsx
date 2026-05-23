@@ -63,7 +63,7 @@ describe("CbtHistoryScreen", () => {
           evidenceAgainst: [],
           evidenceFor: [],
           id: "record-1",
-          nats: [{ id: "nat-1", text: "I cannot handle this", isHotThought: true }],
+          nats: [{ text: "I cannot handle this", beliefRating: null, isHotThought: true }],
           outcomeNotes: "",
           situation: "A hard moment",
           updatedAt: "2026-05-03T12:00:00.000Z",
