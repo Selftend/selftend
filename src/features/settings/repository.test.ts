@@ -67,6 +67,14 @@ describe("cbt program preference fields", () => {
   });
 });
 
+describe("act program preference flags", () => {
+  it("defaults the three act program flags to null", () => {
+    expect(defaultUserPreferences.actProgramStartedAt).toBeNull();
+    expect(defaultUserPreferences.actProgramCompletedAt).toBeNull();
+    expect(defaultUserPreferences.actProgramPromptDismissedAt).toBeNull();
+  });
+});
+
 describe("settings repository", () => {
   beforeEach(() => {
     jest.clearAllMocks();

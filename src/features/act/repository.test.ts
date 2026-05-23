@@ -1,8 +1,10 @@
 import {
   deleteCommittedAction,
   getACTProgramState,
+  listChoicePoints,
   listDefusionLogs,
   saveActionStep,
+  saveChoicePoint,
   saveCommittedAction,
   saveDefusionLog,
   toggleActionStep,
@@ -397,5 +399,55 @@ describe("act repository - action steps", () => {
       is_completed: false,
       completed_at: null,
     });
+  });
+});
+
+describe("act repository - choice points", () => {
+  it("saveChoicePoint trims notes and defaults arrays", async () => {
+    const row = {
+      id: "cp-1",
+      user_id: "u1",
+      hooks: ["work deadline"],
+      away_moves: ["doomscroll"],
+      toward_moves: ["take one small step"],
+      notes: "first map",
+      created_at: "2026-05-23T08:00:00.000Z",
+      updated_at: "2026-05-23T08:00:00.000Z",
+    };
+    const single = jest.fn().mockResolvedValue({ data: row, error: null });
+    const select = jest.fn(() => ({ single }));
+    const insert = jest.fn(() => ({ select }));
+
+    mockRequireSupabase.mockReturnValue(buildClient({ act_choice_points: { insert } }));
+
+    const result = await saveChoicePoint("u1", {
+      hooks: ["work deadline"],
+      awayMoves: ["doomscroll"],
+      towardMoves: ["take one small step"],
+      notes: "  first map  ",
+    });
+
+    expect(insert).toHaveBeenCalledWith({
+      user_id: "u1",
+      hooks: ["work deadline"],
+      away_moves: ["doomscroll"],
+      toward_moves: ["take one small step"],
+      notes: "first map",
+    });
+    expect(result.towardMoves).toEqual(["take one small step"]);
+    expect(result.notes).toBe("first map");
+  });
+
+  it("listChoicePoints returns an empty list when the table is missing", async () => {
+    const limit = jest
+      .fn()
+      .mockResolvedValue({ data: null, error: { message: "relation act_choice_points missing" } });
+    const order = jest.fn(() => ({ limit }));
+    const eq = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq }));
+
+    mockRequireSupabase.mockReturnValue(buildClient({ act_choice_points: { select } }));
+
+    expect(await listChoicePoints("u1")).toEqual([]);
   });
 });

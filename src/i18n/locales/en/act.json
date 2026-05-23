@@ -332,12 +332,16 @@
     "techniques": {
       "noticeFiveThings": "Notice Five Things",
       "mindfulActivity": "Mindful activity",
-      "tenDeepBreaths": "Ten deep breaths"
+      "tenDeepBreaths": "Ten deep breaths",
+      "dropAnchor": "Drop anchor (ACE)",
+      "bodyScan": "Body scan"
     },
     "techniqueDescriptions": {
       "noticeFiveThings": "5 things you see · 4 you hear · 3 you feel · 1 you smell or taste. Takes about 60 seconds.",
       "mindfulActivity": "Bring full attention to whatever you're already doing - eating, walking, washing up. No extra time needed.",
-      "tenDeepBreaths": "Ten slow, deliberate breaths. Notice the physical sensation of each one. Simple and effective anywhere."
+      "tenDeepBreaths": "Ten slow, deliberate breaths. Notice the physical sensation of each one. Simple and effective anywhere.",
+      "dropAnchor": "Acknowledge · Connect with body · Engage. A three-step grounding practice for when you feel pulled off course.",
+      "bodyScan": "A slow, mindful scan from head to toe. Notice sensations without trying to change anything."
     },
     "noticeFiveGuide": {
       "title": "Notice Five Things",
@@ -470,6 +474,70 @@
       "savedToast": "Ratings saved"
     }
   },
+  "program": {
+    "startTitle": "Start the ACT program",
+    "startDescription": "A guided four-week path: notice your choice points, be present, open up, and do what matters.",
+    "startCta": "Start the program",
+    "dismissStartLabel": "Dismiss program invitation",
+    "heroTitle": "ACT program",
+    "weekProgress": "Week {{current}} of {{total}}",
+    "weekTasksDone": "{{done}}/{{total}} this week",
+    "otherWeeks": "Other weeks",
+    "abandon": "Leave the program",
+    "abandonTitle": "Leave the ACT program?",
+    "abandonDescription": "Your logged practices stay saved. You can start the program again any time.",
+    "abandonConfirm": "Leave",
+    "abandonCancel": "Stay",
+    "showPromptLabel": "Show the program invitation",
+    "replay": "Replay the ACT program",
+    "graduationTitle": "You finished the ACT program",
+    "graduationBody": "You built skills to be present, open up, and do what matters. Keep using them.",
+    "graduationDismiss": "Done",
+    "statChoicePoints": "{{count}} choice point mapped",
+    "statChoicePoints_other": "{{count}} choice points mapped",
+    "statDefusion": "{{count}} thought unhooked",
+    "statDefusion_other": "{{count}} thoughts unhooked",
+    "statExpansion": "{{count}} feeling made room for",
+    "statExpansion_other": "{{count}} feelings made room for",
+    "statActions": "{{count}} committed action",
+    "statActions_other": "{{count}} committed actions",
+    "weeks": {
+      "foundation": "Foundation",
+      "bePresent": "Be present",
+      "openUp": "Open up",
+      "doWhatMatters": "Do what matters"
+    },
+    "tasks": {
+      "dropAnchorDays": "Drop anchor (ACE) on several days",
+      "mapChoicePoint": "Map your choice point",
+      "bePresentDays": "Come back to the present on several days",
+      "observeSelf": "Meet your observing self",
+      "unhookThoughtDays": "Unhook from a thought on several days",
+      "makeRoomOrSurf": "Make room for a feeling, or surf an urge",
+      "valuesStepDays": "Take a values-guided step on several days",
+      "clarifyValue": "Clarify what matters to you",
+      "buildActionPlan": "Set a committed-action plan"
+    }
+  },
+  "choicePoint": {
+    "title": "Choice point",
+    "listTitle": "Your choice points",
+    "empty": "Map your first choice point to see what hooks you and where you want to go.",
+    "newCta": "New choice point",
+    "hooksLabel": "What hooks you?",
+    "hooksHint": "Difficult situations, thoughts, feelings, urges, or memories.",
+    "awayLabel": "Away moves",
+    "awayHint": "What you do that makes things worse in the long run.",
+    "towardLabel": "Toward moves",
+    "towardHint": "What you'd do as the person you want to be.",
+    "notesLabel": "Notes",
+    "save": "Save",
+    "addItem": "Add",
+    "primer": "At any moment you can move toward the life you want or away from it. When difficult thoughts and feelings hook you, you get pulled into away moves. Unhooking skills give you the choice.",
+    "deleteConfirm": "Delete this choice point?",
+    "deleteConfirmBody": "This cannot be undone.",
+    "deleted": "Choice point deleted"
+  },
   "committedAction": {
     "listTitle": "Committed Action",
     "listSubtitle": "Values-guided actions you have committed to taking.",
@@ -524,5 +592,13 @@
     "delete": "Delete",
     "cancel": "Cancel",
     "progressLabel": "{{done}}/{{total}} steps done"
+  },
+  "dropAnchor": {
+    "title": "Drop anchor",
+    "intro": "When you feel pulled off course, drop anchor to steady yourself. Repeat the cycle as many times as you need.",
+    "acknowledge": "Acknowledge your thoughts and feelings. Silently name what's here: \"I'm noticing anxiety.\"",
+    "connect": "Connect with your body. Press your feet into the floor, straighten your spine, and breathe.",
+    "engage": "Engage with the world. Notice where you are, what you can see and hear, and refocus.",
+    "logCta": "Log this practice"
   }
 }

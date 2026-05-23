@@ -30,6 +30,8 @@ import type {
   ActionStep,
   ActionStepInput,
   ActionStatus,
+  ChoicePoint,
+  ChoicePointInput,
 } from "@/src/features/act/types";
 import { requireSupabase } from "@/src/lib/supabase";
 
@@ -837,6 +839,23 @@ export async function listActionSteps(userId: string, actionId: string) {
   return (data as ActionStepRow[]).map(mapActionStep);
 }
 
+// All of a user's action steps across every committed-action plan. Used by the
+// program engine's "take a values-guided step" daily signal.
+export async function listAllActionSteps(userId: string) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("act_action_steps")
+    .select("*")
+    .eq("user_id", userId)
+    .order("completed_at", { ascending: false });
+
+  if (error) {
+    if (isMissingACTSchemaError(error)) return [];
+    throw error;
+  }
+  return (data as ActionStepRow[]).map(mapActionStep);
+}
+
 export async function saveActionStep(userId: string, input: ActionStepInput) {
   const client = requireSupabase();
   const { data, error } = await client
@@ -878,6 +897,94 @@ export async function deleteActionStep(userId: string, stepId: string) {
     .delete()
     .eq("user_id", userId)
     .eq("id", stepId);
+
+  if (error) throw error;
+}
+
+// ─── Choice Points ────────────────────────────────────────────────────────────
+
+interface ChoicePointRow {
+  id: string;
+  user_id: string;
+  hooks: string[] | null;
+  away_moves: string[] | null;
+  toward_moves: string[] | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+function mapChoicePoint(row: ChoicePointRow): ChoicePoint {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    hooks: row.hooks ?? [],
+    awayMoves: row.away_moves ?? [],
+    towardMoves: row.toward_moves ?? [],
+    notes: row.notes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function listChoicePoints(userId: string, limit = 30) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("act_choice_points")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    if (isMissingACTSchemaError(error)) return [];
+    throw error;
+  }
+  return (data as ChoicePointRow[]).map(mapChoicePoint);
+}
+
+export async function getChoicePoint(userId: string, choicePointId: string) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("act_choice_points")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("id", choicePointId)
+    .maybeSingle();
+
+  if (error) {
+    if (isMissingACTSchemaError(error)) return null;
+    throw error;
+  }
+  if (!data) return null;
+  return mapChoicePoint(data as ChoicePointRow);
+}
+
+export async function saveChoicePoint(userId: string, input: ChoicePointInput) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("act_choice_points")
+    .insert({
+      user_id: userId,
+      hooks: input.hooks ?? [],
+      away_moves: input.awayMoves ?? [],
+      toward_moves: input.towardMoves ?? [],
+      notes: input.notes?.trim() ?? "",
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return mapChoicePoint(data as ChoicePointRow);
+}
+
+export async function deleteChoicePoint(userId: string, choicePointId: string) {
+  const client = requireSupabase();
+  const { error } = await client
+    .from("act_choice_points")
+    .delete()
+    .eq("user_id", userId)
+    .eq("id", choicePointId);
 
   if (error) throw error;
 }

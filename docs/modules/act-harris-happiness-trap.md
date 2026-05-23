@@ -1,8 +1,24 @@
-﻿# ACT Program Spec - Harris: The Happiness Trap
+# ACT Program Spec - Harris: The Happiness Trap
 
-**Source:** _The Happiness Trap: How to Stop Struggling and Start Living_ - Russ Harris (Shambhala / Trumpeter, 2011)  
-**Status:** Canonical spec for the ACT feature - not yet implemented  
+**Source:** _The Happiness Trap: How to Stop Struggling and Start Living_ - Russ Harris, **second edition** (Trumpeter / Shambhala, 2022)
+**Status:** Canonical spec for the ACT module. The six core principle tools are implemented; this revision (a) reconciles the module to the second edition, and (b) adds a guided four-week program mirroring the CBT program.
 **Audience:** Developers and product contributors
+
+---
+
+## 0. What This Revision Changes
+
+The first edition of this spec described the 1st-edition hexaflex (six principles, `ACE = Accept / Connect / Take action`, Bull's-Eye). The second edition reorganizes ACT around the **Choice Point** and **three pillars** - **Be Present, Open Up, Do What Matters** - and foregrounds several signature tools the module does not yet have. This revision keeps the six implemented principle tools as the catalog and layers the second-edition framing on top.
+
+**Added / changed in this revision:**
+
+- **Foundation layer:** the Choice Point (toward/away moves, hooks, OBEY/STRUGGLE), a fillable Choice Point map, and a creative-hopelessness reflection.
+- **Be Present:** Drop Anchor (the **ACE** formula), guided body scan.
+- **Open Up:** expansion reframed as **TAME**; new defusion techniques (Name the Process, Play with Text, Adding a Soundtrack, Shifting Locations); a discrete **self-compassion** tool (kind hands + kind self-talk); a worry/rumination "dipping in and out of the stream" variant; healing-the-past reflection; savoring linked to the gratitude-log tool.
+- **Do What Matters:** **willingness** and **HARD barriers** on committed action; the Challenge Formula / Values Square flow; **breaking bad habits** (5 questions); **difficult decisions** (10-step); a **maintenance plan** capstone (the 7 R's) that the program graduates on.
+- **A four-week guided program** (`ACT_PROGRAM`) mirroring the CBT program machinery.
+
+The implemented module already covers: defusion, expansion (1st-ed four-step), connection, observing self, values + Bull's-Eye, committed action, urge surfing, program-state, and onboarding scaffolding. Those remain; the items above extend or reframe them.
 
 ---
 
@@ -10,468 +26,456 @@
 
 ### The Happiness Trap
 
-Society holds four myths about happiness that make us miserable:
+Society holds several myths about happiness that keep us stuck. The most load-bearing for ACT:
 
-1. **Happiness is the natural state of human beings.** It is not - the mind evolved to scan for danger, compare, and judge. Negative thoughts and feelings are a built-in feature, not a malfunction.
+1. **Happiness is the natural state of human beings.** It is not - the mind evolved to scan for danger, compare, and judge. Painful thoughts and feelings are a built-in feature, not a malfunction.
 2. **If you're not happy, something is wrong with you.** Unhappiness is a normal part of a full life, not evidence of defect.
-3. **To have a good life you must get rid of negative feelings.** Trying to eliminate them traps you in a vicious cycle.
-4. **You should be able to control your thoughts and feelings.** You can control your external behavior far more readily than you can control internal states.
+3. **You should be able to control what you think and feel.** We control external behavior far more readily than internal states; the harder we fight thoughts and feelings, the stronger their grip.
 
-These myths create the **Happiness Trap**: the harder we try to feel happy and avoid pain, the more we suffer. Two ineffective control strategies maintain the trap:
+These create the **Happiness Trap**: the harder we try to feel good and avoid pain, the more we suffer. The technical term for the maintaining process is **experiential avoidance**.
 
-| Strategy                | Forms                                                                      |
-| ----------------------- | -------------------------------------------------------------------------- |
-| **Flight (Avoidance)**  | Distraction, "zoning out," hiding from situations, numbing with substances |
-| **Fight (Suppression)** | Arguing with thoughts, self-bullying, forcing a "happy" state              |
+### The Choice Point (the second-edition spine)
 
-Both strategies provide brief relief but increase long-term suffering. The technical term is **experiential avoidance**.
+At any moment, the things we say and do are either **toward moves** (behaviors that take us toward the life and the person we want to be) or **away moves** (behaviors that keep us stuck or make life worse in the long term). Whether a given behavior is "toward" or "away" depends entirely on the situation and on the individual - the technical name for this is **workability**.
 
-### The ACT Model
+Difficult situations, thoughts, and feelings (collectively, **hooks**) tend to pull us into away moves. We get hooked in two overlapping modes:
 
-ACT stands for three core moves:
+| Mode         | What happens                                               | ACT technical term     |
+| ------------ | ---------------------------------------------------------- | ---------------------- |
+| **OBEY**     | Thoughts/feelings dominate attention or dictate action     | Fusion                 |
+| **STRUGGLE** | We fight, avoid, suppress, or escape the thoughts/feelings | Experiential avoidance |
 
-- **A** - Accept your thoughts and feelings, and be present
-- **C** - Choose a valued direction
-- **T** - Take effective action
+```
+            TOWARD MOVES  (values-guided, life-enhancing)
+                  ^
+                  |
+   hooked? ---- unhook ----  CHOICE POINT
+                  |
+                  v
+            AWAY MOVES  (OBEY / STRUGGLE, life-diminishing)
 
-The formula underlying the model: **Mindfulness + Values + Action = Psychological Flexibility**
+   hooks (at the bottom): difficult situations, thoughts, feelings, urges, memories
+```
 
-Psychological flexibility - the ability to adapt with awareness, openness, and focus to take values-guided action, even when pain is present - is the overarching goal of the entire program.
+**Unhooking skills** are what create the choice. Without them, the default is to get hooked and pulled into away moves. The whole program builds the ability to unhook and choose toward moves.
 
-### The Six Core Principles
+### The Three Pillars
 
-The program has six inter-related principles. The first four constitute **ACT mindfulness**:
+The second edition groups the six core processes into three practical pillars:
 
-| Principle               | What it develops                                   |
-| ----------------------- | -------------------------------------------------- |
-| **1. Defusion**         | Unhooking from unhelpful thoughts                  |
-| **2. Expansion**        | Making room for difficult feelings and sensations  |
-| **3. Connection**       | Present-moment awareness                           |
-| **4. Observing Self**   | Contact with the stable, non-judgmental witness    |
-| **5. Values**           | Clarity about what matters most                    |
-| **6. Committed Action** | Taking action aligned with values despite barriers |
+| Pillar              | ACT processes it contains                         | One-line aim                                 |
+| ------------------- | ------------------------------------------------- | -------------------------------------------- |
+| **Be Present**      | Contact with the present moment + Observing Self  | Notice and engage with the here and now      |
+| **Open Up**         | Defusion + Acceptance/Expansion (+ self-kindness) | Unhook from thoughts; make room for feelings |
+| **Do What Matters** | Values + Committed Action                         | Clarify what counts and take guided action   |
 
-Paired groupings from the model:
+The three-word summary used throughout the book and the UI: **Be Present, Open Up, Do What Matters.** The overarching goal is **psychological flexibility** - the ability to be present, open up, and do what matters, even when painful thoughts and feelings are present.
 
-- **Defusion + Expansion** - the ACT mindfulness skills: unhook from thoughts, make room for feelings
-- **Connection + Values** - stay present while moving toward what is truly significant
-- **Committed Action + Observing Self** - take effective action while accessing the non-judgmental part of the mind
+### Core Principles (tone and stance)
 
-### Core Principles
-
-- **Acceptance-based** - the goal is not to feel better but to get better at feeling; pain is inevitable, suffering is optional
-- **Values-driven** - every principle ultimately serves the user's clarified values, not symptom reduction
-- **Present-focused** - each exercise returns attention to what is happening now
-- **Non-clinical tone** - second person, warm, no pathologizing language
-- **Self-directed** - the user learns reusable skills that apply to any future situation
+- **Acceptance-based** - the aim is not to feel better but to get better at feeling; pain is inevitable, struggle is optional.
+- **Values-driven** - every tool ultimately serves the user's clarified values, not symptom reduction.
+- **Present-focused** - each exercise returns attention to what is happening now.
+- **Workability over truth** - we never debate whether a thought is "true"; we ask whether acting on it is a toward or away move.
+- **Experiment and practice** - every tool is offered as an experiment; skills come from repeated practice, not reading.
+- **Non-clinical tone** - second person, warm, no pathologizing language.
 
 ---
 
-## 2. The Six Core Principles
+## 2. Tool Inventory & Gap Status
 
-### Principle 1: Defusion
+Audit of the second-edition tools against the implemented module (`src/features/act/types.ts` + routes). **Legend:** Have / Partial (exists but not in 2nd-ed form) / Missing.
 
-**What it is:** The mind generates a continuous stream of thoughts - stories, judgments, memories, plans, and predictions. **Fusion** happens when we treat these thoughts as literal facts and allow them to dictate our behavior. **Defusion** is stepping back from the thought stream and seeing thoughts as mental events rather than objective reality.
+### Foundation
 
-**Key concepts from the book:**
+| Tool (book ch.)                                        | Status  | Disposition                                               |
+| ------------------------------------------------------ | ------- | --------------------------------------------------------- |
+| Choice Point - toward/away, hooks, OBEY/STRUGGLE (2)   | Missing | Add primer + fillable map (`act_choice_points`)           |
+| Happiness-trap myths (1, 3)                            | Partial | Reframe onboarding to 2nd-ed wording                      |
+| Creative hopelessness - tried / worked? / cost? (3, 4) | Missing | Add 3-prompt reflection in onboarding + revisitable entry |
 
-- The mind is a "Great Storyteller" - our stories feel real and urgent but are just words
-- Helpful thought: does acting on this thought help move toward your values? → keep it
-- Unhelpful thought: does acting on this thought move you away from what matters? → defuse from it
-- Defusion does not mean the thought disappears - it loses its grip
-- Naming recurring thought patterns ("The Not Good Enough story," "The Catastrophe story") reduces their power
+### Be Present
 
-**Defusion techniques:**
+| Tool (book ch.)                             | Status  | Disposition                                             |
+| ------------------------------------------- | ------- | ------------------------------------------------------- |
+| Drop Anchor / **ACE** (5)                   | Missing | Add `dropAnchor` connection technique + guided ACE flow |
+| Noticing env / body / breath / sounds (16)  | Have    | `connection: noticeFiveThings, mindfulActivity`         |
+| Ten slow breaths (9)                        | Have    | `tenDeepBreaths`                                        |
+| Reinhabiting the body / body scan (17)      | Partial | Add `bodyScan`; link to meditation tools                |
+| Observing/Noticing Self, chessboard (9, 19) | Have    | `observing-self: observingFromBoard`                    |
 
-| Technique                        | How to use                                                                      |
-| -------------------------------- | ------------------------------------------------------------------------------- |
-| "I'm having the thought that..." | Prefix any thought with this phrase ("I'm having the thought that I'll fail")   |
-| Musical Thoughts                 | Silently sing the thought to a silly tune (Happy Birthday, Jingle Bells)        |
-| Naming Your Stories              | Label the recurring narrative ("There's the Not Good Enough story again")       |
-| Thanking Your Mind               | "Thanks, mind, for that thought" - acknowledge without engaging                 |
-| Silly Voices                     | Imagine the thought in a cartoon character's voice                              |
-| Television Screen                | Imagine the thought appearing as text scrolling across a TV screen              |
-| Subtitles                        | For distressing mental images - imagine foreign-language subtitles beneath them |
+### Open Up
+
+| Tool (book ch.)                                            | Status  | Disposition                                              |
+| ---------------------------------------------------------- | ------- | -------------------------------------------------------- |
+| Defusion: having-the-thought, musical, name the story (6)  | Have    | -                                                        |
+| Name the **Process** (6)                                   | Missing | Add to `DefusionTechnique`                               |
+| Thank your mind, silly voices (7)                          | Have    | -                                                        |
+| **Play with Text** (7)                                     | Missing | Add to `DefusionTechnique`                               |
+| Images/memories: TV screen, subtitles (8)                  | Have    | -                                                        |
+| Adding a Soundtrack, Shifting Locations (8)                | Missing | Add to `DefusionTechnique`                               |
+| Expansion / Making Room -> **TAME** (14)                   | Partial | Rename `fourStepExpansion` -> `tame` (legacy alias kept) |
+| Struggle Switch, clean/dirty (13)                          | Have    | `struggleSwitchOn`, `discomfortType`                     |
+| Urge surfing (15)                                          | Have    | `UrgeSurfLog` + screen                                   |
+| **Self-compassion** / kind hands / kind self-talk (11, 15) | Missing | Add discrete tool (`act_self_compassion_logs`)           |
+| Emotions psychoeducation (12)                              | Partial | Add learn surface                                        |
+| Worry/rumination - dipping in & out of the stream (18)     | Missing | Add as a defusion-technique variant                      |
+| Healing the past - support the younger you (20)            | Missing | Guided reflection (reuses observing/connection entry)    |
+| Appreciation / savoring (21)                               | Missing | Link to existing gratitude-log tool                      |
+
+### Do What Matters
+
+| Tool (book ch.)                             | Status  | Disposition                                     |
+| ------------------------------------------- | ------- | ----------------------------------------------- |
+| Values + Bull's-Eye, domains (10, 22)       | Have    | `ValueEntry`, `BullsEyeSnapshot`                |
+| Values checklist (10, 22)                   | Partial | Add guided checklist                            |
+| Challenge Formula, **Values Square** (23)   | Partial | Add guided flow feeding committed action        |
+| Committed action / SMART goals + steps (23) | Have    | `CommittedAction` + `ActionStep`                |
+| **Willingness** (23)                        | Partial | Add `willingnessLevel` to committed action      |
+| **HARD barriers** (24)                      | Missing | Add structured `hardBarriers` + antidotes       |
+| Difficult decisions - 10-step (25)          | Missing | Add `act_decisions` worksheet                   |
+| Breaking bad habits - 5 questions (26)      | Missing | Add `act_habit_plans`; link `habits` feature    |
+| Staying the distance - **7 R's** (27)       | Missing | Add `act_maintenance_plans` capstone            |
+| Ups & downs / redefining success (28, 29)   | Missing | Maintenance/relapse content in capstone + learn |
+
+---
+
+## 3. The Pillars and Their Tools
+
+Each tool below lists: what it is, key concepts, techniques, tool features, user inputs, and key prompts. The six implemented principle tools are described in their pillar; new tools are marked **(new)** or **(reframe)**.
+
+### Foundation
+
+#### 3.0.1 The Choice Point map **(new)**
+
+**What it is:** The orienting tool for the whole module. The user maps their current life onto a Choice Point: the hooks at the bottom, the away moves they get pulled into, and the toward moves they want more of.
 
 **Tool features:**
 
-- Defusion log: capture a fused thought, choose a technique, note the shift
-- Thought-type tagging to surface recurring story patterns after 3+ entries
-- Fusion level before/after (0–100) to build personal evidence
-- Technique library with brief instructions (shown on first use of each)
+- Primer screen explaining toward/away moves, hooks, OBEY/STRUGGLE, and workability.
+- Fillable map the user can create and revisit; later maps show movement over time.
+- Becomes the onboarding centerpiece and the home-screen mental model.
 
-**User inputs:**
+**User inputs (`ChoicePoint`):**
 
-| Field               | Type          | Notes                                                                         |
-| ------------------- | ------------- | ----------------------------------------------------------------------------- |
-| `fusedThought`      | string        | The thought as it appeared                                                    |
-| `thoughtCategory`   | enum          | `selfJudgment`, `worry`, `pastRegret`, `prediction`, `ruleStatement`, `other` |
-| `fusionLevelBefore` | integer 0–100 | How much this thought had a hold                                              |
-| `techniqueUsed`     | enum          | From the techniques above                                                     |
-| `defusedVersion`    | string        | Optional - how it appeared after defusion                                     |
-| `fusionLevelAfter`  | integer 0–100 |                                                                               |
-| `notes`             | string        | Optional                                                                      |
+| Field         | Type     | Notes                                                     |
+| ------------- | -------- | --------------------------------------------------------- |
+| `hooks`       | string[] | Difficult situations, thoughts, feelings, urges, memories |
+| `awayMoves`   | string[] | What the user does in OBEY/STRUGGLE mode                  |
+| `towardMoves` | string[] | Values-guided behaviors to do more of                     |
+| `notes`       | string   | Optional reflection                                       |
 
 **Key prompts:**
 
-- "Is this a fact or a story your mind is telling?"
-- "If you believed this thought less, what would you do differently?"
-- "You've heard this one before - what is your mind calling it?"
-- After technique: "Did that change how strongly the thought pulled you? Rate 0–100."
+- "What hooks you - the situations, thoughts, and feelings that pull you off course?"
+- "When you get hooked, what do you do that makes things worse in the long run?"
+- "If you were unhooked, what would you do instead - the person you want to be?"
+
+#### 3.0.2 Creative-hopelessness reflection **(new)**
+
+**What it is:** A short, one-time-then-revisitable reflection that surfaces the cost of the struggle, opening willingness to a different approach.
+
+**User inputs:** `triedStrategies` (string), `shortTermEffect` (string), `longTermResult` (string), `cost` (string). Persisted as a single revisitable entry (or folded into onboarding state).
+
+**Key prompts:** "What have you tried to get rid of these feelings?" / "How has that worked in the long term?" / "What has the struggle cost you?"
+
+### Be Present
+
+#### 3.1.1 Drop Anchor - the ACE formula **(new)**
+
+**What it is:** The foundational regulation skill of the second edition. When hooked or overwhelmed, the user "drops anchor" to steady themselves - not to make feelings go away, but to take back control of their actions while the emotional storm is present.
+
+**The ACE formula:**
+
+- **A - Acknowledge** your thoughts and feelings (notice and name them: "I'm noticing anxiety," "here's the I'm-not-good-enough story").
+- **C - Connect** with your body (push feet into the floor, straighten the spine, stretch, breathe).
+- **E - Engage** in what you're doing (notice where you are, what you can see/hear; refocus on the activity at hand).
+
+Repeat the cycle as many times as needed. The goal is not relaxation or distraction - it is grounding so the user can choose a toward move.
+
+**Tool features:** guided ACE flow with optional timer; can be run any length; logged as a `connection` entry with `technique: "dropAnchor"`.
+
+**Key prompts:** "Acknowledge what showed up - silently name it." / "Press your feet into the floor; notice your body." / "Now look around - where are you, what's here with you?"
+
+#### 3.1.2 Connection - noticing **(have)**
+
+Present-moment awareness: noticing five things, mindful activity, ten deep breaths. Notice without judging; the mind keeps chattering and that's fine - just return to now. (`ConnectionTechnique: noticeFiveThings | mindfulActivity | tenDeepBreaths | dropAnchor | bodyScan`.)
+
+#### 3.1.3 Body scan **(new technique)**
+
+A brief guided pass through the body, reinhabiting physical sensation. Adds `bodyScan` to connection techniques and links to the existing meditation/mindfulness tools rather than rebuilding audio.
+
+#### 3.1.4 The Observing (Noticing) Self **(have)**
+
+The stable, non-judgmental part of mind that notices experience - the chessboard, not the pieces; the screen, not the movie. Techniques: `tenDeepBreaths`, `observingFromBoard` (chessboard), `bodyAwareness`. A safe vantage point from which to do defusion and expansion.
+
+### Open Up
+
+#### 3.2.1 Defusion **(have + new techniques)**
+
+Unhooking from thoughts: seeing them as words and pictures, not commands or facts. We never ask whether a thought is true - only whether acting on it is workable.
+
+**Techniques (`DefusionTechnique`):**
+
+| Technique              | How to use                                                        | Status  |
+| ---------------------- | ----------------------------------------------------------------- | ------- |
+| `havingTheThoughtThat` | Prefix the thought: "I'm having the thought that..."              | have    |
+| `musicalThoughts`      | Sing the thought to a silly tune                                  | have    |
+| `namingTheStory`       | Name the recurring narrative ("the Not-Good-Enough story")        | have    |
+| `thankingYourMind`     | "Thanks, mind, for that thought"                                  | have    |
+| `sillyVoices`          | Hear the thought in a cartoon voice                               | have    |
+| `televisionScreen`     | See the thought as scrolling text on a TV                         | have    |
+| `subtitles`            | Put foreign-language subtitles under a distressing image          | have    |
+| `nameTheProcess`       | Name what the mind is doing ("worrying," "judging," "rehearsing") | **new** |
+| `playWithText`         | Change the font, color, or layout of the words in your mind       | **new** |
+| `addingASoundtrack`    | Add a comedic soundtrack to a painful image/memory                | **new** |
+| `shiftingLocations`    | Move a distressing mental image to a different place/screen       | **new** |
+
+**Worry/rumination - "dipping in and out of the stream" (new variant):** for repetitive cognitive away moves (worrying, ruminating, obsessing), notice the process, name it, and practice dipping attention in and out rather than being swept along. Implemented as a defusion technique + prompt set, not a new table.
+
+`DefusionLog` fields unchanged: `fusedThought`, `thoughtCategory`, `fusionLevelBefore`, `techniqueUsed`, `defusedVersion`, `fusionLevelAfter`, `notes`.
+
+#### 3.2.2 Expansion -> TAME **(reframe)**
+
+**What it is:** Making room for difficult emotions and sensations rather than fighting them. The **Struggle Switch**: when on, every unpleasant feeling generates a second layer of suffering. Clean discomfort = the original feeling; dirty discomfort = the struggle we add.
+
+**TAME (replaces the 1st-ed four-step):**
+
+1. **T - Take note** - observe and name the feeling; locate it in the body (size, shape, weight, temperature, movement).
+2. **A - Allow** - let it be there; stop fighting it.
+3. **M - Make room** - breathe into it; open up space around it.
+4. **E - Expand awareness** - widen attention to include the feeling _and_ the world around you, then re-engage with a toward move.
+
+Migration: `ExpansionTechnique` value `fourStepExpansion` is renamed to `tame`; `fourStepExpansion` is retained as a legacy alias so existing rows render. Other techniques unchanged (`acceptanceSelfTalk`, `acceptanceImagery`). `ExpansionLog` fields unchanged.
+
+#### 3.2.3 Urge surfing **(have)**
+
+Treat an urge as a wave - it rises, peaks, and falls. Notice it, scan the body, breathe into it, watch it pass without acting. `UrgeSurfLog`: `urgeDescription`, `trigger`, `peakIntensity`, `surfingNotes`, `urgeActedOn`, `completedAt`.
+
+#### 3.2.4 Self-compassion - kind hands & kind self-talk **(new)**
+
+**What it is:** The second edition treats kindness as central to opening up ("TAME it with kindness"). Treating yourself as you would a good friend who is struggling.
+
+**Techniques:**
+
+- **Kind hands** - place a hand where the feeling is most intense; let warmth and kindness flow through it (kind self-touch).
+- **Kind self-talk** - acknowledge the difficulty and offer yourself supportive words.
+
+**Tool features:** short guided exercise + log; surfaced after expansion. Common objections ("this isn't me," "it feels weird," "it stirs up self-criticism") addressed in copy.
+
+**User inputs (`SelfCompassionLog`):** `technique` (`kindHands | kindSelfTalk`), `whatIsHard` (string), `kindWords` (string, optional), `intensityBefore` (0-100), `intensityAfter` (0-100), `notes`.
+
+**Key prompts:** "What would you say to a good friend feeling this?" / "Place a kind hand where it hurts." / "You don't have to like this feeling - can you hold it kindly?"
+
+#### 3.2.5 Healing the past **(new, light)**
+
+A guided "support the younger you" reflection for painful memories. Reuses an observing/connection-style reflective entry; no new table. Always paired with a one-tap crisis-support link given the content.
+
+#### 3.2.6 Savoring / appreciation **(new, link-out)**
+
+Enjoy-but-don't-cling: deliberately savoring pleasant experiences. Links to the existing gratitude-log tool with an ACT-flavored savoring prompt rather than a new data model.
+
+### Do What Matters
+
+#### 3.3.1 Values + Bull's-Eye + Values Square **(have + guided flow)**
+
+Values are chosen directions, not goals - they can't be completed, only lived. Four domains: Work/Education, Leisure, Relationships, Personal Growth/Health. The Bull's-Eye rates current alignment per domain over time. **Values Square / Challenge Formula (new guided flow):** pick a domain -> name the value -> set one small, specific step -> hand it to committed action. Mostly orchestration of existing `ValueEntry` + `BullsEyeSnapshot` data.
+
+#### 3.3.2 Committed Action + Willingness + HARD barriers **(have + new fields)**
+
+**What it is:** Values without action are wishes. Committed action = taking values-guided steps while _willingly_ carrying the inner barriers (uncomfortable thoughts, feelings, urges) along for the ride.
+
+**Willingness (new field):** a 0-100 slider - "How willing are you to make room for the discomfort this will bring?" Willingness is not wanting or liking; it is allowing.
+
+**HARD barriers (new):** when an action stalls, classify the barrier and apply the antidote:
+
+| Barrier (HARD)                 | Antidote                                   |
+| ------------------------------ | ------------------------------------------ |
+| **H** - Hooked                 | Unhook (defusion, drop anchor)             |
+| **A** - Avoiding discomfort    | Make room (TAME), willingness              |
+| **R** - Remoteness from values | Reconnect to the value the action serves   |
+| **D** - Doubtful goals         | Make the goal smaller, specific, realistic |
+
+**Updated `CommittedAction` inputs:** existing (`lifeDomain`, `title`, `description`, `status`, `targetDate`) **plus** `willingnessLevel` (0-100, nullable) and `hardBarriers` (`HardBarrier[]`). `ActionStep` unchanged.
+
+**Key prompts:** "Which value does this serve?" / "What discomfort will show up - are you willing to carry it?" / "What's the smallest step you could take today?"
+
+#### 3.3.3 Breaking bad habits - 5 questions **(new)**
+
+**What it is:** A structured plan for changing an away-move habit, using the book's five questions. Links to the existing `habits` feature.
+
+**User inputs (`HabitPlan`):**
+
+| Field                 | Type     | Question                                       |
+| --------------------- | -------- | ---------------------------------------------- | --------- | ---------- |
+| `habitDescription`    | string   | The away-move habit                            |
+| `triggers`            | string   | Q1: What are the triggers?                     |
+| `payoffs`             | string   | Q2a: What are the payoffs?                     |
+| `costs`               | string   | Q2b: What are the costs?                       |
+| `alternativeBehavior` | string   | Q3: A good alternative (toward move), and why? |
+| `unhookingSkills`     | string[] | Q4: Which unhooking skills are needed?         |
+| `supports`            | string   | Q5: What or who can help?                      |
+| `status`              | enum     | `active                                        | completed | abandoned` |
+
+#### 3.3.4 Difficult decisions - 10-step worksheet **(new, persisted)**
+
+**What it is:** A worksheet for tough dilemmas, following the book's ten steps (acknowledge the dilemma; weigh costs/benefits and gather info; accept there's no perfect solution; recognize not choosing is itself a choice; acknowledge today's choice; take a stand; make time to reflect; name the story; open up and make room; self-compassion).
+
+**User inputs (`DecisionWorksheet`):** `dilemma` (string), `optionA`/`optionB` (string), `costsBenefits` (string), `chosenStand` (string), `storyName` (string, optional), `notes` (string), `decidedAt` (timestamp, nullable). Light persistence - the user can save and return.
+
+#### 3.3.5 Maintenance plan - the 7 R's **(new capstone)**
+
+**What it is:** The ACT analogue of the CBT recovery plan and the artifact the program graduates on. A living document of what keeps the user moving toward their values and how they'll handle setbacks.
+
+**User inputs (`MaintenancePlan`, one per user):**
+
+| Field               | Type     | Notes                                                                                         |
+| ------------------- | -------- | --------------------------------------------------------------------------------------------- |
+| `personalDirection` | string   | The user's short statement of the toward direction (the graduation key)                       |
+| `recoveryKeys`      | string[] | What helps most                                                                               |
+| `sevenRs`           | object   | Reminders, Records, Rewards, Routines, Relationships, Reflecting, Restructuring (string each) |
+| `setbackPlan`       | string   | Anticipated challenges and the unhooking response                                             |
+
+**Key prompts:** "What's the short version of the direction you want to keep moving in?" / "When you slip into an away move, what will you do?" / "Which of the 7 R's will keep your new behavior going?"
 
 ---
 
-### Principle 2: Expansion
+## 4. The Four-Week Program
 
-**What it is:** Difficult emotions and physical sensations cause suffering not because they are inherently painful but because we fight them. The **Struggle Switch** - when turned on, every unpleasant feeling generates a secondary layer of anxiety, anger, or self-judgment about having the feeling. Turning the Struggle Switch off means making room for the original sensation (**clean discomfort**) without amplifying it with struggle (**dirty discomfort**).
+Mirrors the CBT program (`src/features/cbt/program-definition.ts`, `derive-program.ts`, `use-cbt-program.ts`) exactly. One pillar per week; each week mixes one **recurring daily-practice** task (counted by distinct calendar days so it cannot be cleared in a single sitting) with one or two **milestone** tasks. The program **graduates** when all four weeks are complete; graduation latches once.
 
-**The clean/dirty distinction:**
-
-| Type                 | Description                                                       |
-| -------------------- | ----------------------------------------------------------------- |
-| **Clean discomfort** | The original emotion as it naturally exists - pain, sadness, fear |
-| **Dirty discomfort** | The secondary suffering created by fighting the original emotion  |
-
-**Key concepts from the book:**
-
-- An emotion is a cluster of physical changes (sensations, urges, movements, expressions)
-- Emotions have three phases: trigger → physical changes → action urge
-- The four steps of Expansion: Observe → Breathe → Create Space → Allow
-- Urge surfing: treat urges as waves - they rise, peak, and fall; the goal is to surf them without acting
-
-**The Four Steps of Expansion:**
-
-1. **Observe** - locate the sensation in the body; describe its qualities (size, shape, weight, temperature, movement)
-2. **Breathe** - breathe into the area where you feel it
-3. **Create Space** - imagine space opening up around the sensation, giving it room to exist
-4. **Allow** - let it be there; you don't have to like it, just stop fighting it
-
-**The Five Steps of Urge Surfing:**
-
-1. Notice the urge is present
-2. Scan the body - where do you feel it most?
-3. Observe the sensations without acting on them
-4. Breathe into the area
-5. Watch the urge rise and fall like an ocean wave; it will peak and subside
-
-**Tool features:**
-
-- Expansion exercise with guided four-step flow
-- Struggle Switch check-in (before/after clean vs. dirty label)
-- Urge surfing log for addiction and behavioral urges
-- Emotion library: 9 basic emotions with body-sensation descriptions to aid observation
-- Intensity before/after display as evidence that expansion works
-
-**User inputs (Expansion):**
-
-| Field              | Type          | Notes                                                                         |
-| ------------------ | ------------- | ----------------------------------------------------------------------------- |
-| `emotion`          | string        | What emotion is present                                                       |
-| `bodySensation`    | string        | Where and how it feels                                                        |
-| `intensityBefore`  | integer 0–100 |                                                                               |
-| `struggleSwitchOn` | boolean       | Was I fighting it?                                                            |
-| `discomfortType`   | enum          | `clean` / `dirty` - after reflection                                          |
-| `techniqueUsed`    | enum          | `fourStepExpansion`, `urgeSurfing`, `acceptanceSelfTalk`, `acceptanceImagery` |
-| `intensityAfter`   | integer 0–100 |                                                                               |
-| `notes`            | string        | Optional                                                                      |
-
-**User inputs (Urge Surfing):**
-
-| Field             | Type          | Notes                    |
-| ----------------- | ------------- | ------------------------ |
-| `urgeDescription` | string        | What the urge is         |
-| `trigger`         | string        | What preceded the urge   |
-| `peakIntensity`   | integer 0–100 |                          |
-| `surfingNotes`    | string        | What the wave felt like  |
-| `urgeActedOn`     | boolean       | Did you act on the urge? |
-| `completedAt`     | timestamp     |                          |
-
-**Key prompts:**
-
-- "Where do you feel this in your body right now?"
-- "You don't have to like this feeling - just make room for it."
-- "Is this clean discomfort, or are you adding a second layer of struggle?"
-- During urge surfing: "The urge is a wave. What does it feel like right now?"
-- After: "The urge rose and fell. You didn't have to act on it."
-
----
-
-### Principle 3: Connection
-
-**What it is:** The mind habitually travels to the past (regret, guilt, nostalgia) or the future (worry, planning, anticipation), missing the present moment. **Connection** is deliberately bringing full attention to what is happening right now - not as a technique to relax but as a way of fully engaging with life.
-
-**Key concepts from the book:**
-
-- Noticing without judging: observe what is present (sounds, sensations, smells, sights) without labeling it good or bad
-- Connection does not require an empty mind - thoughts continue; you simply notice them and return to now
-- Any activity can become a connection practice: eating, walking, listening to another person
-
-**Primary technique - Notice Five Things:**
-
-1. Pause and look around.
-2. Notice five things you can see.
-3. Notice four things you can hear.
-4. Notice three things you can physically feel (temperature, texture, pressure).
-5. Notice one thing you can smell or taste.
-
-**Tool features:**
-
-- Guided "Notice Five Things" exercise (text-based, timed)
-- Post-connection mood rating
-- Free-text field for what the user noticed - builds a personal library of grounding details
-- Mindful engagement prompt for chosen daily activities
-
-**User inputs:**
-
-| Field               | Type         | Notes                                                   |
-| ------------------- | ------------ | ------------------------------------------------------- |
-| `technique`         | enum         | `noticeFiveThings`, `mindfulActivity`, `tenDeepBreaths` |
-| `activityContext`   | string       | What the user was doing                                 |
-| `noticesFromSenses` | string       | What they observed (optional free text)                 |
-| `durationMinutes`   | integer      | How long the practice lasted                            |
-| `moodAfter`         | integer 1–10 |                                                         |
-| `notes`             | string       | Optional                                                |
-
-**Key prompts:**
-
-- "Before continuing, pause. What are five things you can see right now?"
-- "Bring your full attention to what you're doing - not to what it means, just what it is."
-- "You don't have to stop your thoughts - just notice they're there and return to now."
-
----
-
-### Principle 4: The Observing Self
-
-**What it is:** We all have two aspects of mind. The **Thinking Self** generates thoughts, feelings, memories, images, and sensations - the content of experience. The **Observing Self** is the part that notices that content - the stable, non-judgmental witness that is always present and can never be hurt.
-
-**Key concepts from the book:**
-
-- You cannot observe your own Observing Self - it is the observer, not the observed
-- Unlike thoughts and feelings (which come and go), the Observing Self is continuous and unchanging throughout life
-- The Chessboard metaphor: thoughts and feelings are pieces (white and black); you are the board - the board is not threatened by any piece
-- Accessing the Observing Self creates a safe vantage point from which to do defusion and expansion work
-- The "Ten Deep Breaths" exercise is a simple way to step into the Observing Self perspective
-
-**Ten Deep Breaths exercise:**
-
-1. Take a slow, deep breath - breathe right down into the belly.
-2. As you breathe in, say to yourself: "I notice I'm having the feeling of \_\_\_."
-3. As you breathe out, look around and notice five things you can see.
-4. Repeat for ten breaths.
-
-**Tool features:**
-
-- Guided "Ten Deep Breaths" exercise with optional timer
-- Reflection field: what did you observe from this vantage point?
-- Chessboard metaphor display on first use
-- Optional "Observing Self journal": a private space to note what was observed without evaluating it
-
-**User inputs:**
-
-| Field             | Type         | Notes                                                   |
-| ----------------- | ------------ | ------------------------------------------------------- |
-| `techniqueUsed`   | enum         | `tenDeepBreaths`, `observingFromBoard`, `bodyAwareness` |
-| `whatWasObserved` | string       | Optional free-text - what came up                       |
-| `durationMinutes` | integer      |                                                         |
-| `moodAfter`       | integer 1–10 | Optional                                                |
-| `notes`           | string       | Optional                                                |
-
-**Key prompts:**
-
-- "You are not your thoughts. You are the one noticing them."
-- "From this perspective - the part of you that notices - what do you observe?"
-- "The feeling is there. The part of you that notices the feeling is here too."
-
----
-
-### Principle 5: Values
-
-**What it is:** Values are not goals (destinations) - they are chosen directions of movement. They define how you want to act in the world, what kind of person you want to be, and what matters most to you. They cannot be completed or crossed off a list; they are always available to guide the next step.
-
-**Key concepts from the book:**
-
-- Values give meaning to committed action - without clarity on values, action is just busyness
-- The **Bull's-Eye** tool maps current alignment across four life domains: Work/Education, Leisure, Relationships, Personal Growth/Health/Spirituality
-- A bull's-eye in a domain means current actions closely match values; outer rings = drift
-- Values ≠ morality: there is no "right" value; what matters is that it is genuinely your own and not others' expectations
-- Values clarification questions: "What do I want to stand for?", "What sort of relationships do I want to build?", "What would I want people to say about me at my 80th birthday?"
-
-**Bull's-Eye domains:**
-
-| Domain                                    | Example values                                         |
-| ----------------------------------------- | ------------------------------------------------------ |
-| Work / Education                          | Learning, creativity, contribution, diligence, honesty |
-| Leisure / Play                            | Adventure, pleasure, humor, connection with nature     |
-| Relationships (family, friends, intimate) | Love, care, kindness, presence, honesty, reliability   |
-| Personal Growth / Health / Spirituality   | Courage, self-care, mindfulness, faith, community      |
-
-**Tool features:**
-
-- Life Values Questionnaire (guided prompts per domain)
-- Bull's-Eye interactive map: user rates current alignment 1–10 per domain
-- Value statement builder per domain
-- Alignment trend over time (monthly Bull's-Eye snapshots)
-- Values card: a short, printable/shareable summary of the user's top values
-
-**User inputs (Value Entry):**
-
-| Field                    | Type         | Notes                                                |
-| ------------------------ | ------------ | ---------------------------------------------------- |
-| `lifeDomain`             | enum         | `work`, `leisure`, `relationships`, `personalGrowth` |
-| `valueStatement`         | string       | e.g., "Be a caring, present parent"                  |
-| `importanceRating`       | integer 1–10 | How much this value matters to you                   |
-| `currentAlignmentRating` | integer 1–10 | Bull's-Eye position - 10 = bull's-eye                |
-| `currentActionsNote`     | string       | What you are currently doing in this domain          |
-| `desiredActionsNote`     | string       | What you would do if acting on this value            |
-| `barriers`               | string       | What gets in the way                                 |
-
-**User inputs (Bull's-Eye snapshot):**
-
-| Field             | Type         | Notes                  |
-| ----------------- | ------------ | ---------------------- |
-| `domain`          | enum         | Same four domains      |
-| `alignmentRating` | integer 1–10 | Current position       |
-| `reviewedAt`      | timestamp    | One snapshot per month |
-
-**Key prompts:**
-
-- "In this area of your life, what do you want to stand for?"
-- "If you could wave a magic wand, what kind of person would you be in this domain?"
-- "How close is how you're living now to your Bull's-Eye?"
-- "What is one small step that would move you even slightly toward your value?"
-
----
-
-### Principle 6: Committed Action
-
-**What it is:** Values without action remain wishes. Committed Action is setting goals and taking steps guided by values - not because you feel confident or ready, but because you are willing to bring discomfort along for the ride. The **Willingness-and-Action Plan** makes this concrete.
-
-**Key concepts from the book:**
-
-- Willingness = allowing inner barriers (uncomfortable thoughts, feelings, urges) to be present while acting
-- Goals derived from values are SMART: specific, meaningful (connected to a value), adaptive (improves life quality), realistic, time-framed
-- Two types of barriers: **inner barriers** (thoughts, feelings, memories) and **outer barriers** (practical obstacles, other people's behavior)
-- The Demons on the Boat metaphor: your demons (inner barriers) cannot steer the boat - you can carry them while continuing your journey
-- Even a tiny step in the valued direction is a committed action
-
-**Willingness-and-Action Plan structure:**
-
-1. The value this action serves
-2. The specific action/goal (SMART)
-3. The inner barriers I am willing to have while acting
-4. The outer barriers and how to address them
-5. Concrete steps with dates
-6. Review date
-
-**Tool features:**
-
-- Action plan builder with values linkage
-- Inner/outer barrier classification
-- Step breakdown with target dates and completion tracking
-- Willingness slider (0–100): "How willing are you to experience the inner barriers?"
-- Weekly commitment review prompt
-- Completed action archive as evidence that action despite discomfort is possible
-
-**User inputs:**
-
-| Field               | Type              | Notes                                              |
-| ------------------- | ----------------- | -------------------------------------------------- |
-| `actionDescription` | string            | What specifically will be done                     |
-| `linkedValueId`     | string            | Foreign key to ValueEntry                          |
-| `linkedDomain`      | enum              | Same four domains                                  |
-| `willingnessLevel`  | integer 0–100     | How willing to bring inner barriers along          |
-| `innerBarriers`     | string            | Thoughts/feelings that will arise                  |
-| `outerBarriers`     | string            | Practical obstacles                                |
-| `steps`             | ActionStep[]      | Specific steps with due dates                      |
-| `targetDate`        | date \| null      |                                                    |
-| `status`            | enum              | `active` \| `completed` \| `paused` \| `abandoned` |
-| `reviewedAt`        | timestamp \| null |                                                    |
-
-**ActionStep fields:** `description` (string), `dueDate` (date, optional), `completedAt` (timestamp, null until done)
-
-**Key prompts:**
-
-- "Which of your values does this action serve?"
-- "What thoughts and feelings will show up when you try to do this?"
-- "Are you willing to carry those feelings and act anyway?"
-- "What is the smallest step you could take today - even five minutes?"
-- On step completion: "You acted despite discomfort. What did you notice?"
-- On completion: "This was an act of psychological flexibility. What did it cost, and what did it give you?"
-
----
-
-## 3. Core Data Model
-
-All entities use camelCase field names (TypeScript convention) and are stored in Supabase with RLS owner-only policies, mirroring the CBT module. Every entity has implicit `id` (uuid), `userId` (foreign key), `createdAt`, and `updatedAt` fields unless noted.
+### Pillars
 
 ```typescript
-// Program state - one row per user
-ACTProgramState {
-  activePrinciples: ACTPrinciple[]
-  onboardingCompletedAt: timestamp | null
-  primaryConcerns: ACTConcern[]           // set during onboarding
-  mythsAcknowledged: boolean
-  lastCheckInAt: timestamp | null
-  preferredCheckInTime: string | null     // 'HH:MM' local-time hint
-}
+type ProgramPillar = "foundation" | "bePresent" | "openUp" | "doWhatMatters";
+```
 
-// Principle 1: Defusion
-DefusionLog {
-  fusedThought: string
-  thoughtCategory: ThoughtCategory
-  fusionLevelBefore: integer              // 0–100
-  techniqueUsed: DefusionTechnique
-  defusedVersion: string                  // optional
-  fusionLevelAfter: integer               // 0–100
+### Weeks, tasks, and signals
+
+The program follows the book's teaching order (Foundation: Choice Point + Dropping Anchor → Be Present → Open Up → Do What Matters). It deliberately contains **no mood-tracking task** - ACT teaches getting better at feeling, not monitoring or improving mood, so a daily mood check-in is a CBT convention, not an ACT one. The book's first daily skill is Dropping Anchor (Ch 5), which it instructs the reader to practice repeatedly throughout the day; that is the Foundation week's daily practice.
+
+| Week | Pillar        | Task                                                | Signal (since program start)                                     | Target | Route                                 |
+| ---- | ------------- | --------------------------------------------------- | ---------------------------------------------------------------- | ------ | ------------------------------------- |
+| 1    | foundation    | _Daily:_ drop anchor (ACE) - Ch 5                   | distinct days with a `connection` log, technique `dropAnchor`    | 4      | `/modules/act/connection/drop-anchor` |
+| 1    | foundation    | Map your Choice Point - Ch 2                        | `choicePoints` created                                           | 1      | `/modules/act/choice-point/new`       |
+| 2    | bePresent     | _Daily:_ come back to the present - Ch 16-17        | distinct days with a `connection` log, technique != `dropAnchor` | 3      | `/modules/act/connection`             |
+| 2    | bePresent     | Meet your Observing Self - Ch 9, 19                 | `observingSelfSessions` created                                  | 1      | `/modules/act/observing-self`         |
+| 3    | openUp        | _Daily:_ unhook from a thought - Ch 6-8             | distinct days with a `defusion` log                              | 3      | `/modules/act/defusion`               |
+| 3    | openUp        | Make room for a feeling, or surf an urge - Ch 12-15 | `expansionLogs` + `urgeSurfLogs` created                         | 1      | `/modules/act/expansion`              |
+| 4    | doWhatMatters | _Daily:_ take a values-guided step - Ch 23          | distinct days with a completed `actionStep`                      | 4      | `/modules/act/committed-action`       |
+| 4    | doWhatMatters | Clarify what matters - Ch 22                        | `valueEntries` updated                                           | 1      | `/modules/act/values`                 |
+| 4    | doWhatMatters | Set a committed-action plan - Ch 23                 | `committedActions` created                                       | 1      | `/modules/act/committed-action/new`   |
+
+Daily-practice targets (4, 3, 3, 4) keep the recurring practices achievable so a missed day is not punished. Phase 3 adds a maintenance-plan (7 R's) capstone to the Do What Matters week, and folds self-compassion (Ch 11) into the Week-3 "make room or surf an urge" task.
+
+### Machinery
+
+New files in `src/features/act/`, mirroring CBT:
+
+- `program-definition.ts` - exports `ACT_PROGRAM: ProgramWeek[]`, the `ProgramPillar` type, `ActProgramSignalData` (choice points, connection/defusion/expansion/urge logs, observing sessions, value entries, committed actions, action steps - no mood logs), and shared helpers (`atOrAfter`, `countSince`, `distinctDays`, `DAILY_PRACTICE_TARGET`).
+- `derive-act-program.ts` - `deriveActProgram(input): ActProgramView` with statuses `not_started | in_progress | graduated`, per-week/-task progress, `summaryStats`, `currentWeekIndex`.
+- `use-act-program.ts` - reads the ACT queries + `useUserPreferences`; exposes `startProgram`, `dismissProgramPrompt`, `showProgramPrompt`, `abandonProgram`, `replayProgram`; latches graduation by persisting `actProgramCompletedAt` once when `allWeeksComplete`.
+
+Preference flags on `user_preferences` (mirror `cbt_program_*`): `act_program_started_at`, `act_program_completed_at`, `act_program_prompt_dismissed_at`.
+
+**Shared UI:** parameterize `src/components/app/program-hero.tsx` and `program-graduation.tsx` by module (labels, pillar names, and i18n namespace) so both CBT and ACT reuse one component rather than forking. The ACT home screen (`/modules/act`) renders the hero; the program prompt and graduation surfaces follow the CBT pattern.
+
+### Program milestones (informational)
+
+| Milestone  | Conditions                                                                          |
+| ---------- | ----------------------------------------------------------------------------------- |
+| Week 1     | Choice Point mapped; dropping anchor on several days                                |
+| Week 2     | Present-moment practice on several days; an observing-self session                  |
+| Week 3     | Defusion on several days; a feeling made room for, or an urge surfed                |
+| Week 4     | A value clarified; a committed-action plan set; values-guided steps on several days |
+| Graduation | All four weeks complete                                                             |
+
+---
+
+## 5. Core Data Model
+
+camelCase fields, stored in Supabase with RLS owner-only policies, mirroring CBT. Every entity has implicit `id` (uuid), `userId`, `createdAt`, `updatedAt` unless noted.
+
+```typescript
+// Foundation (new)
+ChoicePoint {
+  hooks: string[]
+  awayMoves: string[]
+  towardMoves: string[]
   notes: string
 }
 
-// Principle 2: Expansion
-ExpansionLog {
+CreativeHopelessnessEntry {        // single revisitable entry (or fold into program state)
+  triedStrategies: string
+  shortTermEffect: string
+  longTermResult: string
+  cost: string
+}
+
+// Be Present (existing, technique enums extended)
+ConnectionLog {
+  technique: ConnectionTechnique   // + dropAnchor, bodyScan
+  activityContext: string
+  noticesFromSenses: string
+  durationMinutes: integer | null
+  moodAfter: integer | null        // 1-10
+  notes: string
+}
+
+ObservingSelfSession {
+  techniqueUsed: ObservingTechnique
+  whatWasObserved: string
+  durationMinutes: integer | null
+  moodAfter: integer | null
+  notes: string
+}
+
+// Open Up
+DefusionLog {                      // technique enum extended
+  fusedThought: string
+  thoughtCategory: ThoughtCategory
+  fusionLevelBefore: integer | null   // 0-100
+  techniqueUsed: DefusionTechnique
+  defusedVersion: string
+  fusionLevelAfter: integer | null    // 0-100
+  notes: string
+}
+
+ExpansionLog {                     // techniqueUsed: 'tame' (was 'fourStepExpansion')
   emotion: string
   bodySensation: string
-  intensityBefore: integer                // 0–100
-  struggleSwitchOn: boolean
-  discomfortType: 'clean' | 'dirty'
+  intensityBefore: integer | null  // 0-100
+  struggleSwitchOn: boolean | null
+  discomfortType: 'clean' | 'dirty' | null
   techniqueUsed: ExpansionTechnique
-  intensityAfter: integer                 // 0–100
+  intensityAfter: integer | null
   notes: string
 }
 
 UrgeSurfLog {
   urgeDescription: string
   trigger: string
-  peakIntensity: integer                  // 0–100
+  peakIntensity: integer | null
   surfingNotes: string
   urgeActedOn: boolean
   completedAt: timestamp
 }
 
-// Principle 3: Connection
-ConnectionLog {
-  technique: ConnectionTechnique
-  activityContext: string
-  noticesFromSenses: string               // optional free text
-  durationMinutes: integer
-  moodAfter: integer | null               // 1–10
+SelfCompassionLog {                // new
+  technique: 'kindHands' | 'kindSelfTalk'
+  whatIsHard: string
+  kindWords: string
+  intensityBefore: integer | null  // 0-100
+  intensityAfter: integer | null   // 0-100
   notes: string
 }
 
-// Principle 4: Observing Self
-ObservingSelfSession {
-  techniqueUsed: ObservingTechnique
-  whatWasObserved: string                 // optional
-  durationMinutes: integer
-  moodAfter: integer | null               // 1–10
-  notes: string
-}
-
-// Principle 5: Values
+// Do What Matters
 ValueEntry {
   lifeDomain: ACTLifeDomain
   valueStatement: string
-  importanceRating: integer               // 1–10
-  currentAlignmentRating: integer         // 1–10 (Bull's-Eye)
+  importanceRating: integer | null        // 1-10
+  currentAlignmentRating: integer | null   // 1-10 (Bull's-Eye)
   currentActionsNote: string
   desiredActionsNote: string
   barriers: string
@@ -479,34 +483,77 @@ ValueEntry {
 
 BullsEyeSnapshot {
   domain: ACTLifeDomain
-  alignmentRating: integer                // 1–10
-  reviewedAt: timestamp                   // one snapshot per month
+  alignmentRating: integer          // 1-10
+  reviewedAt: timestamp
 }
 
-// Principle 6: Committed Action
-CommittedActionPlan {
-  actionDescription: string
-  linkedValueId: string                   // foreign key to ValueEntry
-  linkedDomain: ACTLifeDomain
-  willingnessLevel: integer               // 0–100
-  innerBarriers: string
-  outerBarriers: string
-  steps: ActionStep[]
+CommittedAction {                   // + willingnessLevel, hardBarriers
+  lifeDomain: ACTLifeDomain
+  title: string
+  description: string
+  status: 'active' | 'completed' | 'abandoned'
   targetDate: date | null
-  status: 'active' | 'completed' | 'paused' | 'abandoned'
-  reviewedAt: timestamp | null
+  willingnessLevel: integer | null  // 0-100  (new)
+  hardBarriers: HardBarrier[]       // new
 }
 
 ActionStep {
-  planId: string
+  actionId: string
   description: string
-  dueDate: date | null
+  isCompleted: boolean
   completedAt: timestamp | null
+}
+
+HabitPlan {                         // new
+  habitDescription: string
+  triggers: string
+  payoffs: string
+  costs: string
+  alternativeBehavior: string
+  unhookingSkills: string[]
+  supports: string
+  status: 'active' | 'completed' | 'abandoned'
+}
+
+DecisionWorksheet {                 // new (light)
+  dilemma: string
+  optionA: string
+  optionB: string
+  costsBenefits: string
+  chosenStand: string
+  storyName: string
+  notes: string
+  decidedAt: timestamp | null
+}
+
+MaintenancePlan {                   // new, one per user
+  personalDirection: string         // graduation key
+  recoveryKeys: string[]
+  sevenRs: {
+    reminders: string
+    records: string
+    rewards: string
+    routines: string
+    relationships: string
+    reflecting: string
+    restructuring: string
+  }
+  setbackPlan: string
+}
+
+// Program state (existing) + new program flags live on user_preferences
+ACTProgramState {
+  activePrinciples: ACTPrinciple[]
+  primaryConcerns: ACTConcern[]
+  mythsAcknowledged: boolean
+  onboardingCompletedAt: timestamp | null
+  lastCheckInAt: timestamp | null
+  preferredCheckInTime: string | null
 }
 
 // Global
 MoodLog {
-  moodScore: integer                      // 1–10
+  moodScore: integer                // 1-10
   emotions: string[]
   notes: string
   linkedPrinciple: ACTPrinciple | null
@@ -524,6 +571,8 @@ type ACTPrinciple =
   | "observingSelf"
   | "values"
   | "committedAction";
+
+type ProgramPillar = "foundation" | "bePresent" | "openUp" | "doWhatMatters";
 
 type ACTLifeDomain = "work" | "leisure" | "relationships" | "personalGrowth";
 
@@ -552,291 +601,230 @@ type DefusionTechnique =
   | "thankingYourMind"
   | "sillyVoices"
   | "televisionScreen"
-  | "subtitles";
+  | "subtitles"
+  | "nameTheProcess"
+  | "playWithText"
+  | "addingASoundtrack"
+  | "shiftingLocations"; // new
 
-type ExpansionTechnique =
-  | "fourStepExpansion"
-  | "urgeSurfing"
-  | "acceptanceSelfTalk"
-  | "acceptanceImagery";
+type ExpansionTechnique = "tame" | "acceptanceSelfTalk" | "acceptanceImagery";
+// legacy alias: "fourStepExpansion" maps to "tame" for existing rows
 
-type ConnectionTechnique = "noticeFiveThings" | "mindfulActivity" | "tenDeepBreaths";
+type ConnectionTechnique =
+  | "noticeFiveThings"
+  | "mindfulActivity"
+  | "tenDeepBreaths"
+  | "dropAnchor"
+  | "bodyScan"; // new
 
 type ObservingTechnique = "tenDeepBreaths" | "observingFromBoard" | "bodyAwareness";
+
+type HardBarrier = "hooked" | "avoidingDiscomfort" | "remotenessFromValues" | "doubtfulGoals";
 ```
 
-### Tables (planned, not yet migrated)
+### Tables
 
-- `act_program_state` - one row per user; primary key `user_id`
-- `act_defusion_logs` - RLS owner-only
-- `act_expansion_logs` - RLS owner-only
-- `act_urge_surf_logs` - RLS owner-only
-- `act_connection_logs` - RLS owner-only
-- `act_observing_self_sessions` - RLS owner-only
-- `act_value_entries` - RLS owner-only
-- `act_bulls_eye_snapshots` - RLS owner-only
-- `act_committed_action_plans` - RLS owner-only
-- `act_action_steps` - foreign key to `act_committed_action_plans`; RLS owner-only
+Existing (RLS owner-only): `act_program_state`, `act_defusion_logs`, `act_expansion_logs`, `act_urge_surf_logs`, `act_connection_logs`, `act_observing_self_sessions`, `act_value_entries`, `act_bulls_eye_snapshots`, `act_committed_actions`, `act_action_steps`.
 
-All tables mirror the CBT module's RLS pattern.
+New (RLS owner-only): `act_choice_points`, `act_self_compassion_logs`, `act_habit_plans`, `act_decisions`, `act_maintenance_plans` (one row per user), and optionally `act_creative_hopelessness` (or fold into `act_program_state`).
+
+Column additions: `act_committed_actions.willingness_level`, `act_committed_actions.hard_barriers`; `CHECK`-constraint updates for the extended `act_defusion_logs.technique_used`, `act_expansion_logs.technique_used`, and `act_connection_logs.technique`.
 
 ---
 
-## 4. Module Contract
+## 6. Module Contract
 
-This module follows the contract documented in `tools.md`:
+Follows the contract in `tools.md`:
 
-- New `ModuleKey`: `"act"`. Added to the union in `src/features/modules/types.ts` alongside `"cbt"` and `"meditation"`. Default `enabledModules` stays `["cbt"]` - ACT is opt-in via the modules discovery screen.
-- i18n namespace: `act:*`.
-- Route group: `/modules/act/*` (see §5).
-- New `user_preferences` fields, mirroring the CBT and meditation reminder fields:
-  - `act_onboarding_completed: boolean`
-  - `act_reminders_enabled: boolean`
-  - `act_reminder_hour: integer` (0–23)
-  - `act_reminder_minute: integer` (0–59)
-  - `act_reminder_timezone: string | null`
-- Reminders default off, single daily check-in at the chosen time, non-punitive copy.
-- Settings can reset the onboarding flag (same pattern as CBT and meditation).
-- The placeholder route at `/tools/act` becomes a compatibility redirect to `/modules/act`.
+- `ModuleKey: "act"` (already in the union). ACT is opt-in via the modules discovery screen; default `enabledModules` stays `["cbt"]`.
+- i18n namespace: `act:*`. Program strings live under `act:program.*` (weeks, tasks, pillars), mirroring `cbt:program.*`.
+- Route group: `/modules/act/*` (see §7).
+- `user_preferences` fields: existing onboarding/reminder fields plus the three new program flags (`act_program_started_at`, `act_program_completed_at`, `act_program_prompt_dismissed_at`).
+- Reminders default off; single daily check-in; non-punitive copy.
+- Settings can reset the onboarding flag and abandon/replay the program (same pattern as CBT).
 
 ---
 
-## 5. Routes
+## 7. Routes
 
-| Route                                 | Purpose                                                                                    |
-| ------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `/modules/act`                        | Home: daily check-in card, Bull's-Eye overview, active action plans, recent practice log.  |
-| `/modules/act/onboarding`             | Full-screen fallback for the onboarding modal (used when modal is dismissed or revisited). |
-| `/modules/act/learn`                  | Primer: The Happiness Trap, 4 myths, the ACT model overview.                               |
-| `/modules/act/defusion`               | Defusion log entry, technique library, log history.                                        |
-| `/modules/act/expansion`              | Expansion exercise (guided 4-step), Struggle Switch check-in, log history.                 |
-| `/modules/act/expansion/urge-surfing` | Urge surfing guided flow and log.                                                          |
-| `/modules/act/connection`             | "Notice Five Things" guided exercise, mindful activity log.                                |
-| `/modules/act/observing-self`         | "Ten Deep Breaths" exercise, Observing Self session log.                                   |
-| `/modules/act/values`                 | Values questionnaire, Bull's-Eye interactive map, value entries per domain.                |
-| `/modules/act/values/bulls-eye`       | Full Bull's-Eye view with history snapshots.                                               |
-| `/modules/act/committed-action`       | Action plan list, new plan builder, step completion tracker.                               |
-| `/modules/act/committed-action/[id]`  | Single plan detail: steps, barriers, linked value, progress.                               |
-| `/modules/act/log`                    | Unified practice history across all six principles.                                        |
-| `/tools/act`                          | Compatibility redirect to `/modules/act`.                                                  |
-
----
-
-## 6. Onboarding Flow (Modal Wizard)
-
-Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 is mandatory. Completion is tracked via `act_onboarding_completed` on `user_preferences`. The full content is also available at `/modules/act/onboarding`.
-
-1. **Welcome - The Happiness Trap**
-   - Infographic: "The Anatomy of the Happiness Trap" (Control Paradox + Experiential Avoidance → Fight/Flight strategies).
-   - One paragraph on the four myths. Emphasis: your mind is not broken; it evolved for survival, not happiness.
-   - This is not about fixing your feelings - it is about building a rich, full, meaningful life.
-
-2. **The ACT Model**
-   - Infographic: "The Path to Psychological Flexibility" (Defusion + Expansion → Mindfulness Skills; Connection + Values → Values-Guided Action; Committed Action + Observing Self).
-   - The ACT acronym: Accept → Connect → Take action.
-   - Formula: Mindfulness + Values + Action = Psychological Flexibility.
-   - Brief one-sentence description of each of the six principles.
-
-3. **What brings you here?**
-   - Multi-select concern picker: Anxiety, Depression, Anger, Urges or addictive behaviors, Self-criticism, Procrastination, Grief or loss, Something else.
-   - Selected concerns are stored on `act_program_state.primaryConcerns` and used to recommend a starting principle (see §11).
-   - No clinical language; the labels in the UI are plain ("worry and anxiety," "low mood," "harsh self-talk").
-
-4. **Your Values - a quick look**
-   - Brief intro: "ACT is about moving toward what matters. Let's find out what that is for you."
-   - Display the four Bull's-Eye domains. Ask the user to rate current alignment (1–10) for each domain - quick tap, no free text required yet.
-   - Writes initial `BullsEyeSnapshot` rows.
-   - Prompt: "You can come back and deepen this any time. We just need a starting direction."
-
-5. **Your first practice**
-   - Based on the concern selection and Bull's-Eye input, recommend one principle to start with.
-   - User can accept or switch.
-   - Optional daily check-in time and reminder toggle (default off).
-   - Writes `act_program_state` and marks onboarding complete.
-
-Onboarding can be skipped after Step 1; the user lands with all six principles available and defusion recommended as the default starting point.
+| Route                                 | Purpose                                                                  |
+| ------------------------------------- | ------------------------------------------------------------------------ |
+| `/modules/act`                        | Home: program hero, daily check-in, Bull's-Eye overview, recent practice |
+| `/modules/act/onboarding`             | Full-screen onboarding fallback                                          |
+| `/modules/act/learn`                  | Primer: happiness trap, Choice Point, three pillars, ACT overview        |
+| `/modules/act/choice-point`           | Choice Point list **(new)**                                              |
+| `/modules/act/choice-point/new`       | Create/edit a Choice Point map **(new)**                                 |
+| `/modules/act/choice-point/[id]`      | Choice Point detail **(new)**                                            |
+| `/modules/act/defusion`               | Defusion log + technique library                                         |
+| `/modules/act/expansion`              | Expansion (TAME) + Struggle Switch                                       |
+| `/modules/act/expansion/urge-surfing` | Urge surfing flow                                                        |
+| `/modules/act/self-compassion`        | Kind hands / kind self-talk **(new)**                                    |
+| `/modules/act/connection`             | Noticing + Drop Anchor (ACE) flow                                        |
+| `/modules/act/observing-self`         | Ten Deep Breaths / chessboard                                            |
+| `/modules/act/values`                 | Values questionnaire + Bull's-Eye + Values Square flow                   |
+| `/modules/act/values/bulls-eye`       | Full Bull's-Eye with snapshot history                                    |
+| `/modules/act/committed-action`       | Action plans (willingness + HARD barriers)                               |
+| `/modules/act/committed-action/[id]`  | Plan detail                                                              |
+| `/modules/act/break-habit`            | Breaking-habits 5-question plans **(new)**                               |
+| `/modules/act/decisions`              | Difficult-decisions worksheets **(new)**                                 |
+| `/modules/act/maintenance`            | Maintenance plan / 7 R's capstone **(new)**                              |
+| `/tools/act`                          | Compatibility redirect to `/modules/act`                                 |
 
 ---
 
-## 7. Daily Flow
+## 8. Onboarding Flow (Modal Wizard)
 
-- **Morning check-in:** Mood log (1–10), one-line intention ("Today I will act on my value of \_\_\_"), Bull's-Eye domain highlight.
-- **During-day (on-demand):** Defusion log when a sticky thought appears; expansion exercise for difficult emotions; urge surfing for behavioral urges; connection pause ("Notice Five Things") any time.
-- **Evening check-in:** Mood log, one committed action taken today (even tiny), one thing noticed using the Observing Self.
-- **Weekly review (user-configured day):**
-  1. Mood trend chart (7-day)
-  2. Bull's-Eye self-rating update
-  3. Committed action plan review - steps completed?
-  4. Defusion log patterns - any recurring story worth naming?
-  5. Values alignment: any domain drifting? What would bring it closer?
-  6. Open reflection: "What was your biggest act of psychological flexibility this week?"
+Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 mandatory. Completion tracked via `act_onboarding_completed`. Full content also at `/modules/act/onboarding`.
 
-### Program Milestones
+1. **Welcome - The Happiness Trap.** The myths; your mind isn't broken, it evolved for survival. This is about building a rich, meaningful life, not fixing your feelings.
+2. **The Choice Point + Three Pillars.** Toward/away moves, getting hooked (OBEY/STRUGGLE), and the three pillars (Be Present, Open Up, Do What Matters). Optionally fill a first Choice Point map.
+3. **What brings you here?** Multi-select concern picker (plain language). Stored on `act_program_state.primaryConcerns`.
+4. **Your values - a quick look.** Rate current alignment (1-10) per Bull's-Eye domain; writes initial `BullsEyeSnapshot` rows.
+5. **Start the program or a first practice.** Offer to start the four-week program, or recommend one principle (see §11). Optional daily check-in time + reminder toggle (default off).
 
-| Milestone  | Conditions                                                                                     |
-| ---------- | ---------------------------------------------------------------------------------------------- |
-| Week 1     | Onboarding complete, first defusion log, first Bull's-Eye snapshot                             |
-| Weeks 2–4  | At least one expansion log, one connection session, one committed action step completed        |
-| Weeks 4–8  | Values entries for all four domains, active committed action plan, regular daily check-ins     |
-| Weeks 8–12 | Second Bull's-Eye snapshot showing movement, multiple completed action steps, patterns visible |
+Skippable after Step 1; user lands with all six principle tools available and defusion as the default starting point.
 
 ---
 
-## 8. Implementation Sequencing
+## 9. Daily Flow
 
-| Phase              | Modules                                                                                                 | Notes                                                 |
-| ------------------ | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| **1 - Foundation** | `act_program_state`, onboarding modal, home screen, defusion log, mood logging, daily check-in skeleton | The daily hook and the most immediately usable skill  |
-| **2 - Acceptance** | Expansion log (4-step), Struggle Switch, clean/dirty distinction, urge surfing log                      | Depends on Phase 1; enables the full mindfulness half |
-| **3 - Presence**   | Connection log ("Notice Five Things"), Observing Self session ("Ten Deep Breaths"), Chessboard primer   | Lighter phase - two exercises with minimal data model |
-| **4 - Values**     | Values questionnaire, value entries per domain, Bull's-Eye interactive map, snapshot history            | Central to committed action; must ship before Phase 5 |
-| **5 - Action**     | Committed Action plan builder, step tracker, weekly commitment review, completed plan archive           | The capstone of the full program                      |
-| **6 - Synthesis**  | Pattern detection (recurring stories, Bull's-Eye trends), cross-principle insights, values card export  | Deferred to when enough data exists to be meaningful  |
+- **Morning check-in:** mood log (1-10), one-line intention ("Today I will act on my value of \_\_\_"), Bull's-Eye highlight.
+- **During the day (on-demand):** drop anchor when overwhelmed; defusion for a sticky thought; TAME for a difficult feeling; urge surfing; self-compassion; a connection pause.
+- **Evening check-in:** mood log, one committed action taken today (even tiny), one thing noticed from the Observing Self.
+- **Weekly review (configurable day):** 7-day mood trend; Bull's-Eye update; committed-action review; recurring-story patterns; values drift; "What was your biggest act of psychological flexibility this week?"
 
 ---
 
-## 9. Cross-Cutting Features
+## 10. Implementation Sequencing
 
-### Mood Tracking (Global)
+| Phase                                  | Scope                                                                                                                                                                                                                                                     |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1 - Foundation & scaffolding**       | Choice Point primer + map, creative-hopelessness reflection, Drop Anchor/ACE, 2nd-ed onboarding & learn; program scaffolding (`program-definition`, `derive-act-program`, `use-act-program`); parameterize `program-hero`/`program-graduation` by module. |
+| **2 - Open Up reconciliation**         | TAME rename (+ legacy alias), new defusion techniques, worry/rumination variant, self-compassion tool.                                                                                                                                                    |
+| **3 - Do What Matters reconciliation** | Willingness + HARD barriers on committed action, Challenge Formula / Values Square flow, maintenance-plan capstone.                                                                                                                                       |
+| **4 - Supplementary**                  | Break-habit 5-Q, difficult decisions, healing the past, savoring link.                                                                                                                                                                                    |
+| **5 - Activate program**               | Wire `ACT_PROGRAM` weeks/tasks/signals to the above, graduation latch, home insights.                                                                                                                                                                     |
 
-Mood is logged at morning and evening check-ins, after connection and Observing Self sessions, and optionally after defusion and expansion exercises. Dashboard shows 7-day and 30-day charts. A mood of 1–2 triggers a crisis support prompt.
+Phases 1-4 build the tools the program references; Phase 5 activates the program once the capstone (maintenance plan), Choice Point, and self-compassion exist.
 
-### Dashboard
+---
 
-- Daily card: morning/evening check-in status, active action plan step, Bull's-Eye domain of the week
-- Quick-access: log mood, defuse a thought, start expansion, Notice Five Things
-- Bull's-Eye mini-map: current alignment per domain at a glance
-- Recent practice: last three logs across all principles
+## 11. Concern -> Starting Principle Mapping
+
+Used in onboarding to recommend a first principle. Stored on `act_program_state.primaryConcerns`. (Matches the implemented `RECOMMENDED_PRINCIPLE` map.)
+
+| Concern                    | Recommend first                       | Why                                                                                      |
+| -------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Anxiety / worry            | Defusion, then Expansion              | Fusion with "what if" stories + struggle against the sensations                          |
+| Depression / low mood      | Values, then Committed Action         | Disconnection from values + withdrawal; values-guided action breaks the cycle            |
+| Harsh self-criticism       | Defusion, then Observing Self         | A fused "I am a failure" story; the Observing Self can witness it without being it       |
+| Urges / addictive patterns | Expansion (urge surfing), then Values | Surfing the wave + reconnecting to values weakens the pull                               |
+| Anger                      | Defusion, then Connection             | Fused "I've been wronged" stories; defusion + present-moment grounding interrupt it      |
+| Procrastination            | Committed Action, then Defusion       | Permission-giving thoughts + discomfort avoidance; willingness + small steps cut through |
+| Grief / loss               | Expansion, then Values                | Make room for sorrow (not eliminate it); values reconnect to meaning ahead               |
+
+If multiple concerns are selected, default to defusion (it underlies the others). For depression, seed the values questionnaire with activation prompts.
+
+---
+
+## 12. Cross-Cutting Features
+
+### Mood tracking (global)
+
+Logged at morning/evening check-ins, after connection and observing sessions, optionally after defusion/expansion. Dashboard shows 7-day and 30-day charts. Mood of 1-2 triggers a crisis-support prompt.
+
+### Dashboard (`/modules/act`)
+
+Program hero (current week/tasks or prompt to start); daily check-in card; Bull's-Eye mini-map; quick-access (log mood, drop anchor, defuse a thought, TAME a feeling); recent practice across principles.
 
 ### Notifications
 
-All notifications are explicit opt-in, quiet by default, and easy to disable.
-
-Allowed:
-
-- Daily check-in reminder at the user's chosen time
-- Weekly review prompt (off by default)
-- Scheduled committed action step reminders (only when the user has set a step due date)
-
-Out of scope for MVP:
-
-- Default-on reminders
-- Streak or habit-preservation reminders
-- Missed-day warnings
-- Milestone celebration pushes
-- Crisis or low-mood follow-up notifications (crisis support stays in-app and user-initiated)
+Explicit opt-in, quiet by default, easy to disable. Allowed: daily check-in reminder; weekly review prompt (off by default); committed-action step reminders when a due date is set. Out of scope: default-on reminders, streak/habit-preservation reminders, missed-day warnings, milestone pushes, crisis follow-ups.
 
 ### Safety
 
-- Mood of 1–2 → display crisis support message and local crisis line information
-- The Expansion and Observing Self sections note that intense emotions may surface - a one-tap link to crisis support is always available
-- The tool is not a substitute for professional help - disclaimer shown during onboarding and accessible from settings
-- No clinical diagnostic labels in UI copy
+Mood 1-2 -> crisis support message + local crisis line. Expansion, observing-self, and healing-the-past surfaces note that intense emotions may surface and keep a one-tap crisis-support link. Not a substitute for professional help (disclaimer in onboarding + settings). No clinical diagnostic labels in UI copy.
 
 ### Tone
 
-- Second person, warm, non-judgmental
-- Avoid pathologizing language: say "a difficult feeling" not "a symptom"; "a sticky thought" not "a cognitive distortion"
-- Normalize struggle: "Your mind is doing its job - it's trying to protect you"
-- Celebrate small acts of willingness, not just completed tasks
-- Never shame incomplete logs or abandoned plans
+Second person, warm, non-judgmental. Avoid pathologizing language ("a difficult feeling," not "a symptom"; "a sticky thought," not "a distortion"). Normalize struggle ("your mind is doing its job"). Celebrate small acts of willingness, not just completed tasks. Never shame incomplete logs or abandoned plans or an abandoned program.
 
 ---
 
-## 10. Non-Goals
+## 13. Non-Goals
 
-- AI features
-- Community or peer-sharing features
-- Generic journaling mixed into the ACT flow
-- Clinical diagnostic labels in UI copy
-- PHQ-9 / GAD-7 or other scored clinical scales in MVP
-- Therapist portal (single-user in v1)
-- Streak pressure or habit-preservation language
-- Claims that ACT will eliminate painful emotions
-
----
-
-## 11. Concern → Principle Mapping
-
-Reference table for implementing the onboarding assessment flow. When a user selects concerns during onboarding, use this table to recommend a starting principle and surface relevant examples.
-
-| Concern                        | Primary Principle(s) to Recommend First | Why                                                                                                                                |
-| ------------------------------ | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **Anxiety / Worry**            | Defusion, then Expansion                | Anxiety is driven by fusion with "what if" stories and struggle against the accompanying sensations                                |
-| **Depression / Low mood**      | Values, then Committed Action           | Depression involves disconnection from values and behavioral withdrawal; action in service of values breaks the cycle              |
-| **Harsh self-criticism**       | Defusion, then Observing Self           | Self-criticism is a fused story ("I am a failure") seen from the Thinking Self; the Observing Self can witness it without being it |
-| **Urges / Addictive patterns** | Expansion (Urge Surfing), then Values   | Urges are fought through avoidance; surfing the wave and reconnecting with values weakens the pull                                 |
-| **Anger**                      | Defusion, then Connection               | Anger is fused with "I've been wronged" stories; defusion + present-moment grounding interrupt the cycle                           |
-| **Procrastination**            | Committed Action, then Defusion         | Procrastination is permission-giving thoughts + avoidance of discomfort; willingness + small steps cut through both                |
-| **Grief / Loss**               | Expansion, then Values                  | Grief requires making room for sorrow (expansion), not eliminating it; values reconnect to meaning ahead                           |
-
-### How to use this table in code
-
-- **Onboarding assessment**: present the concern options as multi-select. Store selections on `act_program_state.primaryConcerns`.
-- **Starting principle recommendation**: map selected concerns to their recommended starting principle using the table. If multiple concerns are selected, the highest-priority principle is defusion (it underlies all the others).
-- **Exercise pre-selection**: surface the relevant technique examples first - e.g., for self-criticism, open the Defusion log pre-filled with `thoughtCategory: "selfJudgment"`.
-- **Values prompts**: for depression, seed the values questionnaire with domain-specific activation questions ("What did you used to care about in this area of life?").
+- AI features.
+- Community or peer-sharing features.
+- Generic journaling mixed into the ACT flow.
+- Clinical diagnostic labels in UI copy.
+- PHQ-9 / GAD-7 or other scored clinical scales in MVP.
+- Therapist portal (single-user in v1).
+- Streak pressure or habit-preservation language.
+- Claims that ACT will eliminate painful emotions.
 
 ---
 
-## 12. Glossary
+## 14. Glossary
 
-| Term                        | Definition as used in this tool                                                                                                |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| ACT                         | Acceptance and Commitment Therapy. The acronym also describes the three moves: Accept → Connect → Take action                  |
-| Psychological Flexibility   | The ability to adapt with awareness, openness, and focus to take values-guided action even when pain is present                |
-| Experiential Avoidance      | Attempting to escape or suppress unwanted thoughts and feelings; the root cause of the Happiness Trap                          |
-| The Happiness Trap          | The vicious cycle in which trying to avoid pain creates more suffering                                                         |
-| Fusion                      | Treating thoughts as literal facts and allowing them to dictate behavior                                                       |
-| Defusion                    | Stepping back from a thought and seeing it as a mental event rather than objective reality                                     |
-| Expansion                   | Making room for difficult emotions and sensations rather than fighting them; also called acceptance                            |
-| Struggle Switch             | The metaphorical switch that, when on, adds secondary suffering (anger, anxiety, self-judgment) on top of the original feeling |
-| Clean Discomfort            | The natural emotion as it exists before struggle is added                                                                      |
-| Dirty Discomfort            | The amplified suffering that results from fighting the original emotion                                                        |
-| Connection                  | Deliberate present-moment awareness; one of the four ACT mindfulness principles                                                |
-| Thinking Self               | The part of the mind that generates thoughts, feelings, images, memories, and sensations                                       |
-| Observing Self              | The stable, non-judgmental part of the mind that notices experience; the chessboard rather than the pieces                     |
-| Values                      | Chosen directions of movement that define how you want to act and what matters most; not goals                                 |
-| Bull's-Eye                  | A four-domain self-rating tool showing alignment between current actions and values                                            |
-| Committed Action            | Taking steps guided by values while willingly carrying inner barriers (thoughts, feelings, urges)                              |
-| Willingness                 | Allowing inner barriers to be present while acting; not the same as wanting or liking them                                     |
-| Urge Surfing                | Observing an urge as a wave - rising, peaking, and falling - without acting on it                                              |
-| Inner Barriers              | Psychological obstacles to committed action: uncomfortable thoughts, feelings, memories, urges                                 |
-| Outer Barriers              | Practical obstacles to committed action: time, money, other people's behavior                                                  |
-| Willingness-and-Action Plan | A structured plan that names the value, the action, the inner barriers to be carried, and the concrete steps                   |
-
----
-
-## 13. Open Questions
-
-| Question                                                                                      | Decision needed by                         |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| Should the Bull's-Eye use four domains (Harris) or the broader six-domain CBT LifeDomain set? | Before values module implementation        |
-| Should defusion and expansion share a single "mindfulness" log entry or stay separate tables? | Before Phase 2 implementation              |
-| Audio support for guided expansion and Observing Self exercises                               | Phase 3 planning                           |
-| Multi-language support from v1 or later                                                       | Before Phase 1 ships                       |
-| ACT and CBT modules share the `MoodLog` - single table or module-tagged rows?                 | Before Phase 1 ships; flag in architecture |
+| Term                       | Definition as used in this tool                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| ACT                        | Acceptance and Commitment Therapy; pronounced "act"                                                  |
+| Psychological flexibility  | Being present, opening up, and doing what matters even when pain is present                          |
+| The Happiness Trap         | The vicious cycle where trying to avoid pain creates more suffering                                  |
+| Experiential avoidance     | Trying to escape or suppress unwanted inner experiences (the STRUGGLE mode)                          |
+| Choice Point               | The moment where we respond to a hook with a toward move or an away move                             |
+| Toward move                | A behavior that takes you toward the life/person you want; "workable"                                |
+| Away move                  | A behavior that keeps you stuck or makes life worse long term; "unworkable"                          |
+| Hook                       | A difficult situation, thought, feeling, urge, or memory that pulls toward away moves                |
+| OBEY mode                  | Letting thoughts/feelings dominate attention or dictate action (fusion)                              |
+| STRUGGLE mode              | Fighting, avoiding, or suppressing thoughts/feelings (experiential avoidance)                        |
+| Workability                | Whether a behavior moves you toward the life you want, in this situation                             |
+| Be Present                 | Pillar: contact with the present moment + the Observing Self                                         |
+| Open Up                    | Pillar: defusion + acceptance/expansion + self-kindness                                              |
+| Do What Matters            | Pillar: values + committed action                                                                    |
+| Drop Anchor / ACE          | Grounding skill: Acknowledge thoughts & feelings, Connect with the body, Engage in what you're doing |
+| Fusion / Defusion          | Treating thoughts as facts/commands / seeing them as words and pictures                              |
+| Expansion / TAME           | Making room for feelings: Take note, Allow, Make room, Expand awareness                              |
+| Struggle Switch            | When on, adds a second layer of suffering on top of the original feeling                             |
+| Clean / dirty discomfort   | The original feeling / the extra suffering added by struggling against it                            |
+| Self-compassion            | Treating yourself as you would a struggling friend (kind hands, kind self-talk)                      |
+| Observing (Noticing) Self  | The stable part of mind that notices experience; the chessboard, not the pieces                      |
+| Values                     | Chosen directions of how you want to act; not goals                                                  |
+| Bull's-Eye / Values Square | Self-rating of current alignment between actions and values across four domains                      |
+| Committed action           | Values-guided steps taken while willingly carrying inner barriers                                    |
+| Willingness                | Allowing inner barriers to be present while acting; not wanting or liking them                       |
+| HARD barriers              | Hooked, Avoiding discomfort, Remoteness from values, Doubtful goals                                  |
+| Urge surfing               | Observing an urge as a wave - rising, peaking, falling - without acting on it                        |
+| The 7 R's                  | Maintenance: Reminders, Records, Rewards, Routines, Relationships, Reflecting, Restructuring         |
 
 ---
 
-## 14. Acceptance Bar
+## 15. Open Questions
+
+| Question                                                                                         | Decision needed by                  |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| Creative-hopelessness: own table (`act_creative_hopelessness`) or fold into `act_program_state`? | Phase 1                             |
+| Should the worry/rumination "stream" variant be a defusion technique or its own light tool?      | Phase 2                             |
+| Healing-the-past: reuse an observing/connection entry, or a dedicated reflective table?          | Phase 4                             |
+| Savoring: gratitude-log link only, or a distinct ACT savoring log?                               | Phase 4                             |
+| ACT and CBT share `MoodLog` - single table or module-tagged rows?                                | Before Phase 1 ships (flag in arch) |
+| Audio support for guided Drop Anchor / TAME / body scan                                          | Phase 1-2 planning                  |
+
+---
+
+## 16. Acceptance Bar
 
 This spec is ready to drive implementation when:
 
-- All six principles are documented with concepts, techniques, user inputs, and prompts.
-- The data model is sufficient for partial-save semantics matching the CBT module.
-- The module contract maps cleanly onto the existing CBT and meditation module contract (ModuleKey, route group, settings flags, reminder fields, i18n namespace).
-- The onboarding flow covers the four myths, the ACT model, concern selection, and a first Bull's-Eye snapshot.
-- Safety, tone, and non-goals explicitly rule out clinical language and streak pressure in UI copy.
-- The spec is reviewed and linked from `tools.md`.
+- The three pillars and the Choice Point are documented, with the six principle tools mapped under them.
+- Every new tool (Choice Point, Drop Anchor, self-compassion, TAME reframe, HARD barriers, breaking habits, decisions, maintenance plan) has concepts, inputs, and prompts.
+- The four-week program is fully specified (pillars, weeks, tasks, signals, targets, graduation) and maps onto the CBT program machinery.
+- The data model covers new entities/columns with partial-save semantics matching CBT.
+- Safety, tone, and non-goals rule out clinical language and streak pressure.
 
-The module itself is ready to ship its first phase when:
+The program is ready to activate (Phase 5) when:
 
-- Auth works across platforms (already true).
-- `act_program_state` and `act_defusion_logs` persist safely under RLS.
-- Onboarding lands a user with concerns captured, initial Bull's-Eye written, and a recommended starting principle.
-- The daily check-in loop (morning mood + intention, evening reflection) works.
-- The defusion log full flow (capture → technique → before/after rating) works end-to-end.
-- Reminder defaults stay quiet.
-- Accessibility baseline matches the CBT module's.
-- Tests cover the program-state repository, the onboarding state machine, and the defusion log save flow.
+- The Choice Point map, self-compassion tool, and maintenance-plan capstone persist under RLS.
+- `ACT_PROGRAM`, `deriveActProgram`, and `useActProgram` exist and pass tests (program-state, week/task derivation, graduation latch).
+- The shared program hero/graduation render for ACT.
+- Reminder defaults stay quiet; accessibility baseline matches CBT.

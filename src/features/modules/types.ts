@@ -34,6 +34,9 @@ export interface UserPreferences {
   cbtProgramStartedAt: string | null;
   cbtProgramCompletedAt: string | null;
   cbtProgramPromptDismissedAt: string | null;
+  actProgramStartedAt: string | null;
+  actProgramCompletedAt: string | null;
+  actProgramPromptDismissedAt: string | null;
   meditationOnboardingCompleted: boolean;
   meditationInfoCompleted: boolean;
   gratitudeOnboardingCompleted: boolean;
@@ -78,6 +81,9 @@ export const defaultUserPreferences: UserPreferences = {
   cbtProgramStartedAt: null,
   cbtProgramCompletedAt: null,
   cbtProgramPromptDismissedAt: null,
+  actProgramStartedAt: null,
+  actProgramCompletedAt: null,
+  actProgramPromptDismissedAt: null,
   meditationOnboardingCompleted: false,
   meditationInfoCompleted: false,
   gratitudeOnboardingCompleted: false,

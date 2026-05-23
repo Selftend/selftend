@@ -546,7 +546,13 @@ export default function CbtHomeScreen() {
 
             {program.status === "graduated" ? (
               <ProgramGraduation
-                stats={program.summaryStats}
+                namespace="cbt"
+                lines={[
+                  t("program.statThoughtRecords", { count: program.summaryStats.thoughtRecords }),
+                  t("program.statActivities", { count: program.summaryStats.activitiesCompleted }),
+                  t("program.statGoals", { count: program.summaryStats.goalsSet }),
+                  t("program.statBeliefs", { count: program.summaryStats.beliefsExamined }),
+                ]}
                 dismissed={graduationDismissed}
                 onDismiss={() => setGraduationDismissed(true)}
                 onReplay={replayProgram}

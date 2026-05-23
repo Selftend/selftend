@@ -7,19 +7,33 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { HelpButton } from "@/src/components/app/help-button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import type { CbtProgramView, ProgramTaskView } from "@/src/features/cbt/derive-program";
+import type { ProgramTaskView } from "@/src/features/cbt/derive-program";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+
+// Structural shape shared by CbtProgramView and ActProgramView.
+type ProgramView = {
+  status: "not_started" | "in_progress" | "graduated";
+  weeks: {
+    key: string;
+    themeLabelKey: string;
+    tasks: ProgramTaskView[];
+  }[];
+  currentWeekIndex: number;
+  totalWeeks: number;
+  weeksComplete: number;
+};
 
 interface ProgramHeroProps {
   isPending?: boolean;
-  program: CbtProgramView;
+  program: ProgramView;
+  namespace?: string;
   onAbandon?: () => void;
   onDismissStart?: () => void;
   onStart: () => void;
 }
 
-function TaskRow({ task }: { task: ProgramTaskView }) {
-  const { t } = useTranslation("cbt");
+function TaskRow({ task, namespace }: { task: ProgramTaskView; namespace: string }) {
+  const { t } = useTranslation(namespace);
   const label = t(task.labelKey);
   return (
     <Pressable
@@ -45,11 +59,12 @@ function TaskRow({ task }: { task: ProgramTaskView }) {
 export function ProgramHero({
   isPending = false,
   program,
+  namespace = "cbt",
   onAbandon,
   onDismissStart,
   onStart,
 }: ProgramHeroProps) {
-  const { t } = useTranslation("cbt");
+  const { t } = useTranslation(namespace);
   const [showOthers, setShowOthers] = useState(false);
 
   if (program.status === "graduated") return null;
@@ -115,7 +130,7 @@ export function ProgramHero({
 
       <View className="gap-2">
         {current.tasks.map((task) => (
-          <TaskRow key={task.key} task={task} />
+          <TaskRow key={task.key} task={task} namespace={namespace} />
         ))}
       </View>
 
@@ -141,7 +156,7 @@ export function ProgramHero({
             <View key={week.key} className="gap-2 rounded-lg border border-border p-3">
               <Text className="text-sm font-semibold">{t(week.themeLabelKey)}</Text>
               {week.tasks.map((task) => (
-                <TaskRow key={task.key} task={task} />
+                <TaskRow key={task.key} task={task} namespace={namespace} />
               ))}
             </View>
           ))}

@@ -169,7 +169,12 @@ export interface UrgeSurfLogInput {
   completedAt?: string;
 }
 
-export type ConnectionTechnique = "noticeFiveThings" | "mindfulActivity" | "tenDeepBreaths";
+export type ConnectionTechnique =
+  | "noticeFiveThings"
+  | "mindfulActivity"
+  | "tenDeepBreaths"
+  | "dropAnchor"
+  | "bodyScan";
 
 export interface ConnectionLog {
   id: string;
@@ -258,6 +263,8 @@ export const CONNECTION_TECHNIQUES: ConnectionTechnique[] = [
   "noticeFiveThings",
   "mindfulActivity",
   "tenDeepBreaths",
+  "dropAnchor",
+  "bodyScan",
 ];
 
 export const OBSERVING_TECHNIQUES: ObservingTechnique[] = [
@@ -330,3 +337,30 @@ export const RECOMMENDED_PRINCIPLE: Record<ACTConcern, ACTPrinciple> = {
   grief: "expansion",
   other: "defusion",
 };
+
+export type ProgramPillar = "foundation" | "bePresent" | "openUp" | "doWhatMatters";
+
+export const ACT_PROGRAM_PILLARS: ProgramPillar[] = [
+  "foundation",
+  "bePresent",
+  "openUp",
+  "doWhatMatters",
+];
+
+export interface ChoicePoint {
+  id: string;
+  userId: string;
+  hooks: string[];
+  awayMoves: string[];
+  towardMoves: string[];
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChoicePointInput {
+  hooks?: string[];
+  awayMoves?: string[];
+  towardMoves?: string[];
+  notes?: string;
+}

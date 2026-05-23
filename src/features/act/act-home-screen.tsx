@@ -13,6 +13,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import {
@@ -20,7 +21,10 @@ import {
   ActWizard,
   type ActWizardResult,
 } from "@/src/components/app/act-onboarding-modal";
+import { ProgramHero } from "@/src/components/app/program-hero";
+import { ProgramGraduation } from "@/src/components/app/program-graduation";
 import { useDefusionLogs, useUpsertACTProgramState } from "@/src/features/act/queries";
+import { useActProgram } from "@/src/features/act/use-act-program";
 import type { ACTPrinciple } from "@/src/features/act/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { mergeUserPreferences } from "@/src/features/modules/types";
@@ -66,9 +70,22 @@ export default function ActHomeScreen() {
   const upsertProgramState = useUpsertACTProgramState(userId);
   const updatePreferences = useUpdateUserPreferences(userId);
 
+  const {
+    program,
+    startProgram,
+    dismissProgramPrompt,
+    showProgramPrompt,
+    abandonProgram,
+    replayProgram,
+    promptDismissedAt,
+    isUpdating,
+  } = useActProgram(user?.id ?? null);
+
   const [forceInfo, setForceInfo] = useState(false);
   const [forceWizard, setForceWizard] = useState(false);
   const [wizardError, setWizardError] = useState<string | undefined>();
+  const [graduationDismissed, setGraduationDismissed] = useState(false);
+  const [abandonConfirmVisible, setAbandonConfirmVisible] = useState(false);
 
   async function handleWizardComplete(result: ActWizardResult) {
     if (!userId) return;
@@ -107,6 +124,19 @@ export default function ActHomeScreen() {
 
   return (
     <>
+      <ConfirmDialog
+        visible={abandonConfirmVisible}
+        isPending={isUpdating}
+        title={t("program.abandonTitle")}
+        message={t("program.abandonDescription")}
+        confirmLabel={t("program.abandonConfirm")}
+        cancelLabel={t("program.abandonCancel")}
+        onCancel={() => setAbandonConfirmVisible(false)}
+        onConfirm={() => {
+          abandonProgram();
+          setAbandonConfirmVisible(false);
+        }}
+      />
       <ActInfo
         visible={forceInfo}
         onComplete={() => setForceInfo(false)}
@@ -131,6 +161,15 @@ export default function ActHomeScreen() {
                 actions={[
                   { type: "tune", onPress: () => setForceWizard(true) },
                   { type: "notifications", targetKey: "act" },
+                  ...(program.status === "not_started"
+                    ? [
+                        {
+                          type: "program" as const,
+                          onPress: showProgramPrompt,
+                          accessibilityLabel: t("program.showPromptLabel"),
+                        },
+                      ]
+                    : []),
                   { type: "info", onPress: () => setForceInfo(true) },
                 ]}
               />
@@ -138,6 +177,34 @@ export default function ActHomeScreen() {
                 {t("home.description")}
               </Text>
             </View>
+
+            {program.status === "graduated" ? (
+              <ProgramGraduation
+                namespace="act"
+                lines={[
+                  t("program.statChoicePoints", { count: program.summaryStats.choicePoints }),
+                  t("program.statDefusion", { count: program.summaryStats.defusionLogs }),
+                  t("program.statExpansion", { count: program.summaryStats.expansionLogs }),
+                  t("program.statActions", { count: program.summaryStats.committedActions }),
+                ]}
+                dismissed={graduationDismissed}
+                onDismiss={() => setGraduationDismissed(true)}
+                onReplay={replayProgram}
+              />
+            ) : program.status === "not_started" && promptDismissedAt ? null : (
+              <ProgramHero
+                namespace="act"
+                isPending={isUpdating}
+                program={program}
+                onStart={startProgram}
+                onDismissStart={program.status === "not_started" ? dismissProgramPrompt : undefined}
+                onAbandon={
+                  program.status === "in_progress"
+                    ? () => setAbandonConfirmVisible(true)
+                    : undefined
+                }
+              />
+            )}
 
             {/* Quick actions */}
             <View className="gap-3">

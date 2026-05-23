@@ -4,23 +4,24 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import type { ProgramSummaryStats } from "@/src/features/cbt/derive-program";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface ProgramGraduationProps {
-  stats: ProgramSummaryStats;
+  lines: string[];
+  namespace?: string;
   dismissed: boolean;
   onDismiss: () => void;
   onReplay: () => void;
 }
 
 export function ProgramGraduation({
-  stats,
+  lines,
+  namespace = "cbt",
   dismissed,
   onDismiss,
   onReplay,
 }: ProgramGraduationProps) {
-  const { t } = useTranslation("cbt");
+  const { t } = useTranslation(namespace);
 
   if (dismissed) {
     return (
@@ -37,13 +38,6 @@ export function ProgramGraduation({
       </Pressable>
     );
   }
-
-  const lines = [
-    t("program.statThoughtRecords", { count: stats.thoughtRecords }),
-    t("program.statActivities", { count: stats.activitiesCompleted }),
-    t("program.statGoals", { count: stats.goalsSet }),
-    t("program.statBeliefs", { count: stats.beliefsExamined }),
-  ];
 
   return (
     <View className="gap-3 rounded-2xl border border-be/30 bg-be/5 p-5">

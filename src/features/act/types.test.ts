@@ -1,6 +1,7 @@
 import {
   ACT_CONCERNS,
   ACT_LIFE_DOMAINS,
+  ACT_PROGRAM_PILLARS,
   CONNECTION_TECHNIQUES,
   DEFUSION_TECHNIQUES,
   EXPANSION_TECHNIQUES,
@@ -42,5 +43,18 @@ describe("act types - constant lists", () => {
     expect([...ACT_LIFE_DOMAINS].sort()).toEqual(
       ["leisure", "personalGrowth", "relationships", "work"].sort(),
     );
+  });
+});
+
+describe("ACT connection techniques", () => {
+  it("includes dropAnchor and bodyScan", () => {
+    expect(CONNECTION_TECHNIQUES).toContain("dropAnchor");
+    expect(CONNECTION_TECHNIQUES).toContain("bodyScan");
+  });
+});
+
+describe("ACT program pillars", () => {
+  it("lists the four 2nd-edition pillars in order", () => {
+    expect(ACT_PROGRAM_PILLARS).toEqual(["foundation", "bePresent", "openUp", "doWhatMatters"]);
   });
 });

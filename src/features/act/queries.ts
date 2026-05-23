@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   deleteActionStep,
+  deleteChoicePoint,
   deleteCommittedAction,
   deleteConnectionLog,
   deleteDefusionLog,
@@ -9,6 +10,7 @@ import {
   deleteObservingSelfSession,
   deleteUrgeSurfLog,
   getACTProgramState,
+  getChoicePoint,
   getCommittedAction,
   getConnectionLog,
   getDefusionLog,
@@ -16,7 +18,9 @@ import {
   getObservingSelfSession,
   getValueEntryByDomain,
   listActionSteps,
+  listAllActionSteps,
   listBullsEyeSnapshots,
+  listChoicePoints,
   listCommittedActions,
   listConnectionLogs,
   listDefusionLogs,
@@ -26,6 +30,7 @@ import {
   listValueEntries,
   saveBullsEyeSnapshot,
   saveActionStep,
+  saveChoicePoint,
   saveCommittedAction,
   saveConnectionLog,
   saveDefusionLog,
@@ -43,6 +48,7 @@ import type {
   ActionStatus,
   ActionStepInput,
   BullsEyeSnapshotInput,
+  ChoicePointInput,
   CommittedActionInput,
   CommittedActionPatch,
   ConnectionLogInput,
@@ -84,6 +90,10 @@ const actKeys = {
     ["act", "committedAction", "detail", u(userId), u(actionId)] as const,
   actionStepList: (userId: string | null, actionId: string | null) =>
     ["act", "actionStep", "list", u(userId), u(actionId)] as const,
+  actionStepAll: (userId: string | null) => ["act", "actionStep", "all", u(userId)] as const,
+  choicePointList: (userId: string | null) => ["act", "choicePoint", "list", u(userId)] as const,
+  choicePointDetail: (userId: string | null, id: string | null) =>
+    ["act", "choicePoint", "detail", u(userId), u(id)] as const,
 };
 
 export function useACTProgramState(userId: string | null) {
@@ -411,6 +421,14 @@ export function useActionSteps(userId: string | null, actionId: string | null) {
   });
 }
 
+export function useAllActionSteps(userId: string | null) {
+  return useQuery({
+    queryKey: actKeys.actionStepAll(userId),
+    queryFn: () => listAllActionSteps(userId!),
+    enabled: Boolean(userId),
+  });
+}
+
 export function useSaveActionStep(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -448,6 +466,46 @@ export function useDeleteActionStep(userId: string | null) {
       await queryClient.invalidateQueries({
         queryKey: actKeys.actionStepList(userId, variables.actionId),
       });
+    },
+  });
+}
+
+// ─── Choice Points ────────────────────────────────────────────────────────────
+
+export function useChoicePoints(userId: string | null, limit = 30) {
+  return useQuery({
+    queryKey: actKeys.choicePointList(userId),
+    queryFn: () => listChoicePoints(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useChoicePoint(userId: string | null, id: string | null) {
+  return useQuery({
+    queryKey: actKeys.choicePointDetail(userId, id),
+    queryFn: () => getChoicePoint(userId!, id!),
+    enabled: Boolean(userId) && Boolean(id),
+  });
+}
+
+export function useSaveChoicePoint(userId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ChoicePointInput) => saveChoicePoint(userId!, input),
+    onSuccess: async () => {
+      if (!userId) return;
+      await queryClient.invalidateQueries({ queryKey: actKeys.choicePointList(userId) });
+    },
+  });
+}
+
+export function useDeleteChoicePoint(userId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteChoicePoint(userId!, id),
+    onSuccess: async () => {
+      if (!userId) return;
+      await queryClient.invalidateQueries({ queryKey: actKeys.choicePointList(userId) });
     },
   });
 }
