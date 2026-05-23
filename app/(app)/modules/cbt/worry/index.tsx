@@ -19,6 +19,7 @@ import { useToggleWorryResolved, useWorryEntries } from "@/src/features/worry/qu
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { BackButton } from "@/src/components/app/back-button";
+import { HelpButton } from "@/src/components/app/help-button";
 
 export default function WorryScreen() {
   const { t } = useTranslation("cbt");
@@ -43,7 +44,10 @@ export default function WorryScreen() {
             <View className="flex-1 gap-2">
               <View className="flex-row items-center gap-2">
                 <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1">{t("worry.title")}</Text>
+                <Text variant="h1" className="flex-1">
+                  {t("worry.title")}
+                </Text>
+                <HelpButton helpKey="worry" />
               </View>
               <Text variant="muted">{t("worry.description")}</Text>
             </View>

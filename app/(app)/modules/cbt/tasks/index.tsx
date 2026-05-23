@@ -16,6 +16,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { useTasks } from "@/src/features/procrastination/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { BackButton } from "@/src/components/app/back-button";
+import { HelpButton } from "@/src/components/app/help-button";
 
 export default function TasksScreen() {
   const { t } = useTranslation("cbt");
@@ -33,7 +34,10 @@ export default function TasksScreen() {
             <View className="flex-1 gap-2">
               <View className="flex-row items-center gap-2">
                 <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1">{t("tasks.title")}</Text>
+                <Text variant="h1" className="flex-1">
+                  {t("tasks.title")}
+                </Text>
+                <HelpButton helpKey="tasks" />
               </View>
               <Text variant="muted">{t("tasks.description")}</Text>
             </View>

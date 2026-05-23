@@ -2,6 +2,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, View } from "react-nat
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HelpSections } from "@/src/components/app/help-sections";
 import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
@@ -129,6 +130,7 @@ export function MeditationOnboarding({
                   <Text className="text-center">{t("onboarding.welcome.body")}</Text>
                 </CardContent>
               </Card>
+              <HelpSections helpKey="meditation" />
               <Button onPress={goNext}>
                 <Text>{t("onboarding.welcome.continue")}</Text>
               </Button>

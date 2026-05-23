@@ -21,6 +21,7 @@ import { useSelfCareLog, useUpsertSelfCareLog } from "@/src/features/self-care/q
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { BackButton } from "@/src/components/app/back-button";
+import { HelpButton } from "@/src/components/app/help-button";
 
 interface FormState {
   sleepHours: string;
@@ -122,7 +123,10 @@ export default function SelfCareScreen() {
           <View className="gap-2">
             <View className="flex-row items-center gap-2">
               <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("selfCare.title")}</Text>
+              <Text variant="h1" className="flex-1">
+                {t("selfCare.title")}
+              </Text>
+              <HelpButton helpKey="selfCare" />
             </View>
             <Text variant="muted">{t("selfCare.description", { date: today })}</Text>
           </View>

@@ -24,6 +24,7 @@ interface WizardScreenProps {
   backLabel: string;
   isPending: boolean;
   headerSlot?: ReactNode;
+  titleAction?: ReactNode;
   children: ReactNode;
 }
 
@@ -41,6 +42,7 @@ export function WizardScreen({
   backLabel,
   isPending,
   headerSlot,
+  titleAction,
   children,
 }: WizardScreenProps) {
   return (
@@ -67,7 +69,10 @@ export function WizardScreen({
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
             <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1">{title}</Text>
+            <Text variant="h1" className="flex-1">
+              {title}
+            </Text>
+            {titleAction}
           </View>
           {description ? <Text variant="muted">{description}</Text> : null}
         </View>

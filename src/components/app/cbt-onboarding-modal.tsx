@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 
+import { HelpSections } from "@/src/components/app/help-sections";
 import { RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 
 const pillarAct = require("../../../assets/images/onboarding/cbt_act_lead_with_action.png");
@@ -204,6 +205,8 @@ export function CbtOnboarding({
           isLast
         />
       </View>
+
+      <HelpSections helpKey="program" />
     </RichOnboardingShell>
   );
 }

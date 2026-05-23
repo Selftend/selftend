@@ -16,6 +16,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { useHierarchies } from "@/src/features/exposure/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { BackButton } from "@/src/components/app/back-button";
+import { HelpButton } from "@/src/components/app/help-button";
 
 export default function ExposureScreen() {
   const { t } = useTranslation("cbt");
@@ -30,7 +31,10 @@ export default function ExposureScreen() {
             <View className="flex-1 gap-2">
               <View className="flex-row items-center gap-2">
                 <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1">{t("exposure.title")}</Text>
+                <Text variant="h1" className="flex-1">
+                  {t("exposure.title")}
+                </Text>
+                <HelpButton helpKey="exposure" />
               </View>
               <Text variant="muted">{t("exposure.description")}</Text>
             </View>

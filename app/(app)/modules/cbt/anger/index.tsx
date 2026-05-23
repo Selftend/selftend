@@ -16,6 +16,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { useAngerLogs } from "@/src/features/anger/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { BackButton } from "@/src/components/app/back-button";
+import { HelpButton } from "@/src/components/app/help-button";
 
 export default function AngerScreen() {
   const { t } = useTranslation("cbt");
@@ -36,7 +37,10 @@ export default function AngerScreen() {
             <View className="flex-1 gap-2">
               <View className="flex-row items-center gap-2">
                 <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1">{t("anger.title")}</Text>
+                <Text variant="h1" className="flex-1">
+                  {t("anger.title")}
+                </Text>
+                <HelpButton helpKey="anger" />
               </View>
               <Text variant="muted">{t("anger.description")}</Text>
             </View>

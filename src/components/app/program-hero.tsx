@@ -4,6 +4,7 @@ import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
+import { HelpButton } from "@/src/components/app/help-button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import type { CbtProgramView, ProgramTaskView } from "@/src/features/cbt/derive-program";
@@ -60,6 +61,7 @@ export function ProgramHero({
           <Text variant="h3" className="flex-1 text-act">
             {t("program.startTitle")}
           </Text>
+          <HelpButton helpKey="program" size={18} />
           {onDismissStart ? (
             <Pressable
               accessibilityLabel={t("program.dismissStartLabel")}
@@ -88,9 +90,12 @@ export function ProgramHero({
   return (
     <View className="gap-3 rounded-2xl border border-act/30 bg-act/5 p-5">
       <View className="gap-1">
-        <Text variant="h3" className="text-act">
-          {t("program.heroTitle")} - {t(current.themeLabelKey)}
-        </Text>
+        <View className="flex-row items-start gap-2">
+          <Text variant="h3" className="flex-1 text-act">
+            {t("program.heroTitle")} - {t(current.themeLabelKey)}
+          </Text>
+          <HelpButton helpKey="program" size={18} />
+        </View>
         <Text variant="muted" className="text-sm">
           {t("program.weekProgress", {
             current: program.currentWeekIndex + 1,

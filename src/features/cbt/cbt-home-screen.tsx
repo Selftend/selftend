@@ -19,6 +19,8 @@ import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
 import { ProgramHero } from "@/src/components/app/program-hero";
 import { ProgramGraduation } from "@/src/components/app/program-graduation";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
+import { HelpButton } from "@/src/components/app/help-button";
+import type { HelpKey } from "@/src/features/help/help-content";
 import { cn } from "@/lib/utils";
 import { useGoals } from "@/src/features/goals/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
@@ -36,6 +38,7 @@ interface PillarStrategy {
   icon: MaterialIconName;
   labelKey: string;
   descKey: string;
+  helpKey: HelpKey;
 }
 
 interface SharedTool {
@@ -43,6 +46,7 @@ interface SharedTool {
   route: Href;
   icon: MaterialIconName;
   labelKey: string;
+  helpKey: HelpKey;
 }
 
 const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
@@ -53,6 +57,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "article",
       labelKey: "dashboard.strategies.thoughts",
       descKey: "pillars.strategyDescriptions.thoughts",
+      helpKey: "thoughtRecords",
     },
     {
       key: "beliefs",
@@ -60,6 +65,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "anchor",
       labelKey: "dashboard.strategies.beliefs",
       descKey: "pillars.strategyDescriptions.beliefs",
+      helpKey: "beliefs",
     },
     {
       key: "worry",
@@ -67,6 +73,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "psychology",
       labelKey: "dashboard.strategies.worry",
       descKey: "pillars.strategyDescriptions.worry",
+      helpKey: "worry",
     },
     {
       key: "distortions",
@@ -74,6 +81,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "menu-book",
       labelKey: "home.distortionGuide",
       descKey: "pillars.strategyDescriptions.distortions",
+      helpKey: "distortions",
     },
   ],
   act: [
@@ -83,6 +91,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "gps-fixed",
       labelKey: "dashboard.strategies.goals",
       descKey: "pillars.strategyDescriptions.goals",
+      helpKey: "goals",
     },
     {
       key: "values",
@@ -90,6 +99,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "explore",
       labelKey: "dashboard.strategies.values",
       descKey: "pillars.strategyDescriptions.values",
+      helpKey: "values",
     },
     {
       key: "activities",
@@ -97,6 +107,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "directions-run",
       labelKey: "dashboard.strategies.activities",
       descKey: "pillars.strategyDescriptions.activities",
+      helpKey: "activities",
     },
     {
       key: "exposure",
@@ -104,6 +115,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "layers",
       labelKey: "dashboard.strategies.exposure",
       descKey: "pillars.strategyDescriptions.exposure",
+      helpKey: "exposure",
     },
     {
       key: "tasks",
@@ -111,6 +123,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "hiking",
       labelKey: "dashboard.strategies.tasks",
       descKey: "pillars.strategyDescriptions.tasks",
+      helpKey: "tasks",
     },
     {
       key: "anger",
@@ -118,6 +131,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "local-fire-department",
       labelKey: "dashboard.strategies.anger",
       descKey: "pillars.strategyDescriptions.anger",
+      helpKey: "anger",
     },
   ],
   be: [
@@ -127,6 +141,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "favorite",
       labelKey: "dashboard.strategies.selfCare",
       descKey: "pillars.strategyDescriptions.selfCare",
+      helpKey: "selfCare",
     },
   ],
 };
@@ -137,12 +152,14 @@ const THINK_SHARED_TOOLS: SharedTool[] = [
     route: "/tools/journal",
     icon: "edit-note",
     labelKey: "navigation:sidebar.journal",
+    helpKey: "journal",
   },
   {
     key: "gratitudeLog",
     route: "/tools/gratitude-log",
     icon: "favorite",
     labelKey: "navigation:sidebar.gratitudeLog",
+    helpKey: "gratitude",
   },
 ];
 
@@ -152,6 +169,7 @@ const ACT_SHARED_TOOLS: SharedTool[] = [
     route: "/tools/habits",
     icon: "task-alt",
     labelKey: "navigation:sidebar.habits",
+    helpKey: "habits",
   },
 ];
 
@@ -161,36 +179,42 @@ const BE_SHARED_TOOLS: SharedTool[] = [
     route: "/tools/breathing",
     icon: "air",
     labelKey: "navigation:sidebar.breathing",
+    helpKey: "breathing",
   },
   {
     key: "mindfulness",
     route: "/tools/mindfulness",
     icon: "air",
     labelKey: "navigation:sidebar.mindfulness",
+    helpKey: "mindfulness",
   },
   {
     key: "meditation",
     route: "/tools/meditation",
     icon: "self-improvement",
     labelKey: "navigation:sidebar.meditation",
+    helpKey: "meditation",
   },
   {
     key: "grounding",
     route: "/tools/grounding",
     icon: "anchor",
     labelKey: "navigation:sidebar.grounding",
+    helpKey: "grounding",
   },
   {
     key: "moodTracker",
     route: "/tools/mood-tracker",
     icon: "mood",
     labelKey: "navigation:sidebar.moodTracker",
+    helpKey: "mood",
   },
   {
     key: "sleep",
     route: "/tools/sleep",
     icon: "bedtime",
     labelKey: "navigation:sidebar.sleep",
+    helpKey: "sleep",
   },
 ];
 
@@ -357,18 +381,18 @@ function PillarStrategyCard({ pillar, strategy }: PillarStrategyCardProps) {
   const label = t(strategy.labelKey);
 
   return (
-    <Pressable
-      accessibilityHint={t(strategy.descKey)}
-      accessibilityLabel={label}
-      accessibilityRole="button"
-      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(strategy.route)}
-      className="min-w-[200px] flex-1 basis-[200px] overflow-hidden rounded-xl border border-border bg-card active:bg-accent/40"
-      role="button"
-    >
-      <View className={cn("h-1", PILLAR_STRIPE_CLASS[pillar])} />
-      <View className="gap-2 p-4">
-        <View className="flex-row items-center justify-between">
+    <View className="relative min-w-[200px] flex-1 basis-[200px]">
+      <Pressable
+        accessibilityHint={t(strategy.descKey)}
+        accessibilityLabel={label}
+        accessibilityRole="button"
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+        onPress={() => router.push(strategy.route)}
+        className="overflow-hidden rounded-xl border border-border bg-card active:bg-accent/40"
+        role="button"
+      >
+        <View className={cn("h-1", PILLAR_STRIPE_CLASS[pillar])} />
+        <View className="gap-2 p-4">
           <View
             className={cn(
               "size-9 items-center justify-center rounded-lg",
@@ -377,14 +401,16 @@ function PillarStrategyCard({ pillar, strategy }: PillarStrategyCardProps) {
           >
             <Icon name={strategy.icon} className={cn("size-6", PILLAR_TEXT_CLASS[pillar])} />
           </View>
-          <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
+          <Text className="text-base font-semibold leading-tight">{label}</Text>
+          <Text variant="muted" className="text-xs leading-snug">
+            {t(strategy.descKey)}
+          </Text>
         </View>
-        <Text className="text-base font-semibold leading-tight">{label}</Text>
-        <Text variant="muted" className="text-xs leading-snug">
-          {t(strategy.descKey)}
-        </Text>
+      </Pressable>
+      <View className="absolute right-1 top-1">
+        <HelpButton helpKey={strategy.helpKey} size={18} />
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -398,26 +424,29 @@ function SharedToolPill({ pillar, tool }: SharedToolPillProps) {
   const label = t(tool.labelKey);
 
   return (
-    <Pressable
-      accessibilityLabel={label}
-      accessibilityRole="button"
-      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(tool.route)}
-      className="min-w-[150px] flex-1 basis-[150px] flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
-      role="button"
-    >
-      <View
-        className={cn(
-          "size-9 items-center justify-center rounded-lg",
-          PILLAR_ICON_BG_CLASS[pillar],
-        )}
+    <View className="min-w-[150px] flex-1 basis-[150px] flex-row items-center gap-1 rounded-xl border border-border bg-card pr-2">
+      <Pressable
+        accessibilityLabel={label}
+        accessibilityRole="button"
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+        onPress={() => router.push(tool.route)}
+        className="flex-1 flex-row items-center gap-3 rounded-xl p-3 active:bg-accent/40"
+        role="button"
       >
-        <Icon name={tool.icon} className={cn("size-6", PILLAR_TEXT_CLASS[pillar])} />
-      </View>
-      <Text className="flex-1 text-sm font-semibold" numberOfLines={1}>
-        {label}
-      </Text>
-    </Pressable>
+        <View
+          className={cn(
+            "size-9 items-center justify-center rounded-lg",
+            PILLAR_ICON_BG_CLASS[pillar],
+          )}
+        >
+          <Icon name={tool.icon} className={cn("size-6", PILLAR_TEXT_CLASS[pillar])} />
+        </View>
+        <Text className="flex-1 text-sm font-semibold" numberOfLines={1}>
+          {label}
+        </Text>
+      </Pressable>
+      <HelpButton helpKey={tool.helpKey} size={16} />
+    </View>
   );
 }
 

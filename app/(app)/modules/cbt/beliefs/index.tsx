@@ -16,6 +16,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { useCoreBeliefs } from "@/src/features/beliefs/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { BackButton } from "@/src/components/app/back-button";
+import { HelpButton } from "@/src/components/app/help-button";
 
 export default function BeliefsScreen() {
   const { t } = useTranslation("cbt");
@@ -30,7 +31,10 @@ export default function BeliefsScreen() {
             <View className="flex-1 gap-2">
               <View className="flex-row items-center gap-2">
                 <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1">{t("beliefs.title")}</Text>
+                <Text variant="h1" className="flex-1">
+                  {t("beliefs.title")}
+                </Text>
+                <HelpButton helpKey="beliefs" />
               </View>
               <Text variant="muted">{t("beliefs.description")}</Text>
             </View>

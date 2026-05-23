@@ -13,6 +13,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { BackButton } from "@/src/components/app/back-button";
+import { HelpButton } from "@/src/components/app/help-button";
 import { breathingPatterns } from "@/src/constants/breathing";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -29,7 +30,10 @@ export default function BreathingScreen() {
           <View className="gap-2">
             <View className="flex-row items-center gap-2">
               <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("breathing.title")}</Text>
+              <Text variant="h1" className="flex-1">
+                {t("breathing.title")}
+              </Text>
+              <HelpButton helpKey="breathing" />
             </View>
             <Text variant="muted">{t("breathing.description")}</Text>
           </View>

@@ -1,0 +1,135 @@
+{
+  "ui": {
+    "whatLabel": "What it is",
+    "howLabel": "How it works",
+    "whyLabel": "Why it helps",
+    "close": "Close",
+    "helpPrefix": "Help: "
+  },
+  "program": {
+    "title": "The 4-week program",
+    "what": "A guided 4-week journey through CBT, built from the tools already in this module.",
+    "how": "Each week pairs a recurring daily practice with a one-time milestone; do the practice across several days and the week completes itself.",
+    "why": "Spacing practice over days builds real habits and lasting change rather than a one-off burst."
+  },
+  "thoughtRecords": {
+    "title": "Thought records",
+    "what": "A structured way to capture a distressing thought and examine it.",
+    "how": "Note the situation and automatic thought, weigh the evidence for and against, then write a more balanced thought.",
+    "why": "Putting thoughts on paper loosens their grip and trains you to question unhelpful thinking."
+  },
+  "beliefs": {
+    "title": "Core beliefs",
+    "what": "Deep, long-held rules about yourself, others, or the world.",
+    "how": "Name the belief, gather evidence for and against, and craft a kinder, more accurate alternative to rehearse.",
+    "why": "Core beliefs sit beneath many negative thoughts; softening them eases problems at the root."
+  },
+  "worry": {
+    "title": "Worry time",
+    "what": "A method for containing repetitive worry instead of letting it run all day.",
+    "how": "Postpone worries to a short daily worry time, then sort each into solvable (problem-solve) or hypothetical (let go).",
+    "why": "Worry rarely changes outcomes; scheduling it frees the rest of your day and breaks the worry habit."
+  },
+  "distortions": {
+    "title": "Thinking distortions",
+    "what": "Common biased thinking patterns, like catastrophising or all-or-nothing thinking.",
+    "how": "Learn to spot the distortion behind a thought, then reframe it more realistically.",
+    "why": "Naming the pattern makes an automatic thought easier to challenge and let go."
+  },
+  "goals": {
+    "title": "Goals",
+    "what": "Clear, value-driven targets that give your work direction.",
+    "how": "Set specific 'start' goals - what you want to move toward, not just stop - and track progress.",
+    "why": "Concrete goals turn vague intentions into steps you can act on and measure."
+  },
+  "values": {
+    "title": "Values",
+    "what": "What matters most to you across life areas, used to guide goals and actions.",
+    "how": "Rate how important and how satisfied you are in each life domain to spot the gaps.",
+    "why": "Acting in line with your values builds meaning and motivation that outlast any single goal."
+  },
+  "activities": {
+    "title": "Activity scheduling",
+    "what": "Planning meaningful activities across Physical, Achievement, Connection and Enjoyment (PACE).",
+    "how": "Schedule small activities, do them, and rate your mood before and after.",
+    "why": "Doing comes before feeling - active engagement lifts mood and breaks cycles of withdrawal."
+  },
+  "exposure": {
+    "title": "Graded exposure",
+    "what": "Facing feared situations step by step instead of avoiding them.",
+    "how": "Build a ladder of situations by difficulty, start low, and repeat each step until the anxiety eases.",
+    "why": "Repeated exposure teaches your brain the feared outcome rarely happens, normalising the anxiety response."
+  },
+  "tasks": {
+    "title": "Stuck-task breakdown",
+    "what": "A way to get moving on tasks you've been avoiding or putting off.",
+    "how": "Break the task into the smallest next steps, name the fear behind the avoidance, and act on one step.",
+    "why": "Small wins reduce avoidance and prove the task is more manageable than it felt."
+  },
+  "anger": {
+    "title": "Anger log",
+    "what": "Tracking anger episodes to understand triggers and urges.",
+    "how": "Log what set it off, how intense it was, the urge you felt, and whether you took a time-out.",
+    "why": "Seeing your patterns helps you respond on purpose instead of reacting on impulse."
+  },
+  "selfCare": {
+    "title": "Self-care check-in",
+    "what": "A daily check on the basics that protect wellbeing - sleep, movement, connection, nourishment.",
+    "how": "Log how you slept, moved, ate and connected, plus one meaningful activity or gratitude.",
+    "why": "Looking after the basics steadies mood and builds resilience against setbacks."
+  },
+  "breathing": {
+    "title": "Breathing",
+    "what": "Slow, abdominal breathing to calm the body.",
+    "how": "Breathe gently into the belly, letting each out-breath release tension; practise a few minutes at a time.",
+    "why": "Slowing the breath settles the nervous system and lowers physical arousal."
+  },
+  "mindfulness": {
+    "title": "Mindfulness",
+    "what": "Paying open, non-judgemental attention to the present moment.",
+    "how": "Notice thoughts, feelings and sensations as they come and go, gently returning focus when the mind wanders.",
+    "why": "Stepping back from thoughts reduces rumination and builds emotional steadiness."
+  },
+  "meditation": {
+    "title": "Meditation",
+    "what": "Longer, guided attention practice to train focus and calm.",
+    "how": "Follow a guided session, resting attention on the breath or body and returning when distracted.",
+    "why": "Regular practice strengthens attention and lowers stress over time."
+  },
+  "grounding": {
+    "title": "Grounding",
+    "what": "Quick techniques to anchor you in the present during distress.",
+    "how": "Engage your senses - name what you can see, hear, feel and smell - to shift focus out of the mind and into the moment.",
+    "why": "Grounding interrupts spirals of anxiety or overwhelm and restores a sense of safety."
+  },
+  "mood": {
+    "title": "Mood tracker",
+    "what": "A daily log of how you feel.",
+    "how": "Rate your mood and note emotions and context, then review the trends over time.",
+    "why": "Tracking reveals patterns and links between what you do and how you feel."
+  },
+  "sleep": {
+    "title": "Sleep",
+    "what": "Tracking and improving the basics of restful sleep.",
+    "how": "Log your sleep and review hygiene factors - wind-down routine, screens, light, caffeine.",
+    "why": "Good sleep underpins mood, focus and resilience; small habit changes can make a big difference."
+  },
+  "journal": {
+    "title": "Journal",
+    "what": "Free writing to process thoughts and feelings.",
+    "how": "Write openly about what's on your mind, without editing or judging.",
+    "why": "Putting experience into words helps you make sense of it and lowers its emotional charge."
+  },
+  "gratitude": {
+    "title": "Gratitude log",
+    "what": "Noting things you're thankful for.",
+    "how": "Record a few small or large things you appreciate, regularly.",
+    "why": "Deliberately noticing the good shifts attention away from threat and lifts mood over time."
+  },
+  "habits": {
+    "title": "Habits",
+    "what": "Building and tracking small, repeatable routines.",
+    "how": "Choose a small habit, attach it to a daily cue, and check it off each day.",
+    "why": "Consistent small actions compound into lasting change."
+  }
+}

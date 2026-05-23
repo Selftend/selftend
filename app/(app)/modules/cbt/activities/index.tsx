@@ -17,6 +17,7 @@ import { useActivities } from "@/src/features/activities/queries";
 import { useSession } from "@/src/providers/session-provider";
 import type { ActivityLog } from "@/src/features/activities/types";
 import { BackButton } from "@/src/components/app/back-button";
+import { HelpButton } from "@/src/components/app/help-button";
 
 function groupActivities(activities: ActivityLog[]) {
   const now = new Date();
@@ -72,7 +73,10 @@ export default function ActivitiesScreen() {
             <View className="flex-1 gap-2">
               <View className="flex-row items-center gap-2">
                 <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1">{t("activities.title")}</Text>
+                <Text variant="h1" className="flex-1">
+                  {t("activities.title")}
+                </Text>
+                <HelpButton helpKey="activities" />
               </View>
               <Text variant="muted">{t("activities.description")}</Text>
             </View>
