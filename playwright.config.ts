@@ -3,7 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 // E2E tests run against the Expo web dev server pointed at local Supabase.
 // They live in test/e2e/ and are kept separate from unit and integration suites.
 
-const PORT = 8081;
+const PORT = Number(process.env.E2E_PORT ?? 8082);
 
 // Deterministic Supabase CLI defaults - same on every dev machine and in CI,
 // matches the keys used by integration tests (test/integration/helpers.ts).
@@ -42,7 +42,7 @@ export default defineConfig({
       EXPO_PUBLIC_PUBLIC_APP_URL: `http://localhost:${PORT}`,
     },
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: process.env.E2E_REUSE_EXISTING_SERVER === "1",
     timeout: 180_000,
     stdout: "pipe",
     stderr: "pipe",

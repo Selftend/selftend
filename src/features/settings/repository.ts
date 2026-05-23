@@ -251,6 +251,116 @@ export async function updateEnabledModules(userId: string, enabledModules: Modul
   return mapPreferences(data as UserPreferenceRow);
 }
 
+export async function updateShownButtonTours(userId: string, shownButtonTours: ButtonTourKey[]) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("user_preferences")
+    .upsert(
+      {
+        user_id: userId,
+        shown_button_tours: shownButtonTours,
+      },
+      { onConflict: "user_id" },
+    )
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapPreferences(data as UserPreferenceRow);
+}
+
+export async function updateAppOnboardingCompleted(userId: string, completed: boolean) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("user_preferences")
+    .upsert(
+      {
+        user_id: userId,
+        app_onboarding_completed: completed,
+      },
+      { onConflict: "user_id" },
+    )
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapPreferences(data as UserPreferenceRow);
+}
+
+interface OnboardingPreferencesPatch {
+  appOnboardingCompleted?: boolean;
+  cbtOnboardingCompleted?: boolean;
+  gratitudeOnboardingCompleted?: boolean;
+  meditationInfoCompleted?: boolean;
+  habitsOnboardingCompleted?: boolean;
+  moodOnboardingCompleted?: boolean;
+  journalOnboardingCompleted?: boolean;
+  sleepOnboardingCompleted?: boolean;
+  mindfulnessOnboardingCompleted?: boolean;
+  groundingOnboardingCompleted?: boolean;
+  shownButtonTours?: ButtonTourKey[];
+}
+
+export async function updateOnboardingPreferences(
+  userId: string,
+  patch: OnboardingPreferencesPatch,
+) {
+  const client = requireSupabase();
+  const payload: Record<string, unknown> = { user_id: userId };
+
+  if (patch.appOnboardingCompleted !== undefined) {
+    payload.app_onboarding_completed = patch.appOnboardingCompleted;
+  }
+  if (patch.cbtOnboardingCompleted !== undefined) {
+    payload.cbt_onboarding_completed = patch.cbtOnboardingCompleted;
+  }
+  if (patch.gratitudeOnboardingCompleted !== undefined) {
+    payload.gratitude_onboarding_completed = patch.gratitudeOnboardingCompleted;
+  }
+  if (patch.meditationInfoCompleted !== undefined) {
+    payload.meditation_info_completed = patch.meditationInfoCompleted;
+  }
+  if (patch.habitsOnboardingCompleted !== undefined) {
+    payload.habits_onboarding_completed = patch.habitsOnboardingCompleted;
+  }
+  if (patch.moodOnboardingCompleted !== undefined) {
+    payload.mood_onboarding_completed = patch.moodOnboardingCompleted;
+  }
+  if (patch.journalOnboardingCompleted !== undefined) {
+    payload.journal_onboarding_completed = patch.journalOnboardingCompleted;
+  }
+  if (patch.sleepOnboardingCompleted !== undefined) {
+    payload.sleep_onboarding_completed = patch.sleepOnboardingCompleted;
+  }
+  if (patch.mindfulnessOnboardingCompleted !== undefined) {
+    payload.mindfulness_onboarding_completed = patch.mindfulnessOnboardingCompleted;
+  }
+  if (patch.groundingOnboardingCompleted !== undefined) {
+    payload.grounding_onboarding_completed = patch.groundingOnboardingCompleted;
+  }
+  if (patch.shownButtonTours !== undefined) {
+    payload.shown_button_tours = patch.shownButtonTours;
+  }
+
+  const { data, error } = await client
+    .from("user_preferences")
+    .upsert(payload, { onConflict: "user_id" })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapPreferences(data as UserPreferenceRow);
+}
+
 export async function recordPolicyConsent(userId: string, policyVersion: string) {
   const client = requireSupabase();
   const now = new Date().toISOString();

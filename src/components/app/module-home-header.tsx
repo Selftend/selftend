@@ -15,8 +15,8 @@ import { BackButton } from "@/src/components/app/back-button";
 import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import { mergeUserPreferences, type ButtonTourKey } from "@/src/features/modules/types";
+import { useUpdateShownButtonTours, useUserPreferences } from "@/src/features/settings/queries";
+import type { ButtonTourKey } from "@/src/features/modules/types";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -38,7 +38,6 @@ const ICON_FOR_TYPE = {
 } as const;
 
 const TOURABLE_ACTION_TYPES = ["tune", "notifications", "program", "info"] as const;
-const ALL_TOUR_KEYS = [...TOURABLE_ACTION_TYPES];
 
 function isTourableActionType(value: HeaderAction["type"]): value is ButtonTourKey {
   return (TOURABLE_ACTION_TYPES as readonly string[]).includes(value);
@@ -82,7 +81,7 @@ export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps)
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { data: preferences } = useUserPreferences(userId);
-  const updatePreferences = useUpdateUserPreferences(userId);
+  const updateShownButtonTours = useUpdateShownButtonTours(userId);
   const { width: screenWidth } = useWindowDimensions();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -105,16 +104,19 @@ export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps)
     (a): a is NotificationsAction => a.type === "notifications",
   );
 
-  const tourQueue: ButtonTourKey[] = preferences
-    ? actions
-        .map((action) => action.type)
-        .filter(isTourableActionType)
-        .filter((key) => !preferences.shownButtonTours.includes(key))
+  const tourableActions = actions
+    .map((action) => action.type)
+    .filter(isTourableActionType)
+    .map((actionType) => ({ actionType, storageKey: actionType }));
+  const tourQueue = preferences
+    ? tourableActions.filter(({ storageKey }) => !preferences.shownButtonTours.includes(storageKey))
     : [];
-  const currentTourKey = tourQueue[0] ?? null;
+  const currentTour = tourQueue[0] ?? null;
+  const currentTourActionType = currentTour?.actionType ?? null;
+  const currentTourStorageKey = currentTour?.storageKey ?? null;
 
   useEffect(() => {
-    if (!currentTourKey || !isFocused) {
+    if (!currentTourActionType || !isFocused) {
       setButtonRect(null);
       return;
     }
@@ -122,7 +124,7 @@ export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps)
       setButtonRect({ x: 0, y: 0, width: CIRCLE_DIAMETER, height: CIRCLE_DIAMETER });
       return;
     }
-    const viewRef = buttonViewRefs.current.get(currentTourKey);
+    const viewRef = buttonViewRefs.current.get(currentTourActionType);
     if (!viewRef) return;
 
     function measure() {
@@ -154,26 +156,27 @@ export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps)
     }
 
     return () => clearTimeout(timeout);
-  }, [currentTourKey, isFocused]);
+  }, [currentTourActionType, isFocused]);
 
   async function dismissTour() {
-    if (!preferences || !currentTourKey || updatePreferences.isPending) return;
-    await updatePreferences.mutateAsync(
-      mergeUserPreferences(preferences, {
-        shownButtonTours: [...new Set([...preferences.shownButtonTours, currentTourKey])],
-      }),
-    );
+    if (!preferences || !currentTourStorageKey || updateShownButtonTours.isPending) return;
+    await updateShownButtonTours.mutateAsync([
+      ...new Set([...preferences.shownButtonTours, currentTourStorageKey]),
+    ]);
   }
 
   async function dismissAllTours() {
-    if (!preferences || updatePreferences.isPending) return;
-    await updatePreferences.mutateAsync(
-      mergeUserPreferences(preferences, { shownButtonTours: ALL_TOUR_KEYS }),
-    );
+    if (!preferences || updateShownButtonTours.isPending) return;
+    await updateShownButtonTours.mutateAsync([
+      ...new Set([
+        ...preferences.shownButtonTours,
+        ...tourableActions.map(({ storageKey }) => storageKey),
+      ]),
+    ]);
   }
 
   function handleActionPress(action: HeaderAction) {
-    if (currentTourKey === action.type) {
+    if (currentTourActionType === action.type) {
       void dismissTour();
     }
     if (action.type === "notifications") {
@@ -200,11 +203,11 @@ export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps)
           onDismiss={() => setShowNotifications(false)}
         />
       ) : null}
-      {currentTourKey && buttonRect && isFocused ? (
+      {currentTourActionType && buttonRect && isFocused ? (
         <TourOverlay
           buttonRect={buttonRect}
-          tourKey={currentTourKey}
-          isPending={updatePreferences.isPending}
+          tourKey={currentTourActionType}
+          isPending={updateShownButtonTours.isPending}
           cardColor={CARD_COLOR[colorScheme ?? "dark"]}
           screenWidth={screenWidth}
           onDismiss={() => void dismissTour()}

@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 
 import { ModuleHomeHeader } from "./module-home-header";
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import { useUpdateShownButtonTours, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("react-native", () => {
@@ -49,13 +49,13 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/settings/queries", () => ({
-  useUpdateUserPreferences: jest.fn(),
+  useUpdateShownButtonTours: jest.fn(),
   useUserPreferences: jest.fn(),
 }));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
-const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
-  typeof useUpdateUserPreferences
+const mockUseUpdateShownButtonTours = useUpdateShownButtonTours as jest.MockedFunction<
+  typeof useUpdateShownButtonTours
 >;
 
 function renderHeader({
@@ -89,10 +89,10 @@ describe("ModuleHomeHeader button tours", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mutateAsync.mockResolvedValue(defaultUserPreferences);
-    mockUseUpdateUserPreferences.mockReturnValue({
+    mockUseUpdateShownButtonTours.mockReturnValue({
       isPending: false,
       mutateAsync,
-    } as unknown as ReturnType<typeof useUpdateUserPreferences>);
+    } as unknown as ReturnType<typeof useUpdateShownButtonTours>);
   });
 
   it("marks only the current tour as shown when Got it is pressed", async () => {
@@ -101,25 +101,17 @@ describe("ModuleHomeHeader button tours", () => {
     fireEvent.press(await screen.findByText("Got it"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({
-          shownButtonTours: ["tune"],
-        }),
-      );
+      expect(mutateAsync).toHaveBeenCalledWith(["tune"]);
     });
   });
 
   it("marks every header tour as shown when Skip all tips is pressed", async () => {
-    renderHeader();
+    renderHeader({ includeProgram: true });
 
     fireEvent.press(await screen.findByText("Skip all tips"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({
-          shownButtonTours: ["tune", "notifications", "program", "info"],
-        }),
-      );
+      expect(mutateAsync).toHaveBeenCalledWith(["tune", "notifications", "program", "info"]);
     });
   });
 
@@ -138,6 +130,14 @@ describe("ModuleHomeHeader button tours", () => {
 
     expect(
       await screen.findByText("Tap here to show or restart the CBT program invitation."),
+    ).toBeTruthy();
+  });
+
+  it("hides a button tour when the same button was shown on another screen", async () => {
+    renderHeader({ shownButtonTours: ["tune", "notifications"] });
+
+    expect(
+      await screen.findByText("Tap here any time to read about how this module works."),
     ).toBeTruthy();
   });
 });

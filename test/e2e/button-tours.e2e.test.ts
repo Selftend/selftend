@@ -4,6 +4,7 @@ import { SEED_USERS, createServiceClient, dismissPostSignInModals, signInAsViaUi
 import { policyVersion } from "../../src/features/policies/policy-content";
 
 const TOUR_KEYS = ["tune", "notifications", "program", "info"] as const;
+const ACT_TOUR_KEYS = ["notifications", "program", "info"] as const;
 const USER_ID = SEED_USERS.alice.id;
 
 type PreferenceRow = Record<string, unknown>;
@@ -76,11 +77,13 @@ test.describe("button tours", () => {
     await dismissPostSignInModals(page);
 
     await page.goto("/modules/act");
-    await expect(page.getByText(/Tap here to customise this module/i)).toBeVisible();
+    await expect(
+      page.getByText(/Tap here to manage reminders and notification settings/i),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: "Got it", exact: true }).click();
 
-    await expect.poll(getShownButtonTours).toEqual(["tune"]);
+    await expect.poll(getShownButtonTours).toEqual(["notifications"]);
   });
 
   test("Skip all tips dismisses every header tip", async ({ page }) => {
@@ -89,11 +92,13 @@ test.describe("button tours", () => {
     await dismissPostSignInModals(page);
 
     await page.goto("/modules/act");
-    await expect(page.getByText(/Tap here to customise this module/i)).toBeVisible();
+    await expect(
+      page.getByText(/Tap here to manage reminders and notification settings/i),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: "Skip all tips", exact: true }).click();
 
-    await expect.poll(getShownButtonTours).toEqual([...TOUR_KEYS]);
+    await expect.poll(getShownButtonTours).toEqual([...ACT_TOUR_KEYS]);
   });
 
   test("settings reset makes header tips eligible again", async ({ page }) => {

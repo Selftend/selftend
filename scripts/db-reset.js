@@ -5,8 +5,14 @@
 
 const { spawnSync } = require("node:child_process");
 
+const isWindows = process.platform === "win32";
+
 function run(cmd, args, opts = {}) {
   const result = spawnSync(cmd, args, { stdio: "inherit", ...opts });
+  if (result.error) {
+    console.error(`[db-reset] Failed to run ${cmd}: ${result.error.message}`);
+    process.exit(1);
+  }
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
@@ -16,7 +22,11 @@ function tryRun(cmd, args) {
   return spawnSync(cmd, args, { stdio: ["ignore", "pipe", "pipe"] });
 }
 
-run("npm", ["exec", "supabase", "--", "db", "reset"]);
+if (isWindows) {
+  run(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", "npm exec supabase -- db reset"]);
+} else {
+  run("npm", ["exec", "supabase", "--", "db", "reset"]);
+}
 
 const ps = tryRun("docker", ["ps", "-q", "--filter", "name=^supabase_kong_"]);
 const kongIds = ps.stdout?.toString().trim().split("\n").filter(Boolean) ?? [];

@@ -5,7 +5,11 @@ import HabitsHomeScreen from "./habits-home-screen";
 import { useHabitLogs, useHabits, useToggleHabitLog } from "@/src/features/habits/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { todayLocalDateString } from "@/src/features/habits/scheduling";
-import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import {
+  useUpdateShownButtonTours,
+  useUpdateUserPreferences,
+  useUserPreferences,
+} from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -31,6 +35,7 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/settings/queries", () => ({
+  useUpdateShownButtonTours: jest.fn(),
   useUpdateUserPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
 }));
@@ -42,6 +47,9 @@ jest.mock("@/src/features/habits/queries", () => ({
 }));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
+const mockUseUpdateShownButtonTours = useUpdateShownButtonTours as jest.MockedFunction<
+  typeof useUpdateShownButtonTours
+>;
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
 >;
@@ -66,6 +74,10 @@ describe("HabitsHomeScreen tap-to-tick", () => {
       isPending: false,
       mutateAsync: jest.fn(),
     } as unknown as ReturnType<typeof useUpdateUserPreferences>);
+    mockUseUpdateShownButtonTours.mockReturnValue({
+      isPending: false,
+      mutateAsync: jest.fn(),
+    } as unknown as ReturnType<typeof useUpdateShownButtonTours>);
 
     mockUseHabits.mockReturnValue({
       data: [
