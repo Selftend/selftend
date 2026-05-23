@@ -155,9 +155,38 @@ export default function ThoughtRecordDetailScreen() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>{t("record.automaticThought")}</CardTitle>
-              <CardDescription>{displayText(data.automaticThought, notFilled)}</CardDescription>
+              <CardTitle>{t("record.nats")}</CardTitle>
             </CardHeader>
+            <CardContent>
+              <View className="gap-3">
+                {data.nats.length > 0 ? (
+                  [...data.nats]
+                    .sort((a, b) => (b.isHotThought ? 1 : 0) - (a.isHotThought ? 1 : 0))
+                    .map((nat, index) => (
+                      <Card
+                        key={index}
+                        className={nat.isHotThought ? "border-primary border-2" : ""}
+                      >
+                        <CardHeader>
+                          <View className="flex-row items-center justify-between gap-3">
+                            <CardTitle className="flex-1">{nat.text}</CardTitle>
+                            {nat.isHotThought ? (
+                              <Text variant="muted">{t("record.hotThoughtBadge")} 🔥</Text>
+                            ) : null}
+                          </View>
+                          {nat.beliefRating !== null ? (
+                            <CardDescription>
+                              {t("record.beliefRating")}: {nat.beliefRating}%
+                            </CardDescription>
+                          ) : null}
+                        </CardHeader>
+                      </Card>
+                    ))
+                ) : (
+                  <Text variant="muted">{notFilled}</Text>
+                )}
+              </View>
+            </CardContent>
           </Card>
           <Card>
             <CardHeader>
