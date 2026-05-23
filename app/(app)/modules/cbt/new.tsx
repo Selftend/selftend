@@ -102,9 +102,10 @@ function NatAddForm({ onAdd }: { onAdd: (nat: NegativeAutomaticThought) => void 
           />
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{ disabled: !text.trim() }}
             onPress={handleAdd}
             disabled={!text.trim()}
-            className="mt-1"
+            className={`mt-1 ${!text.trim() ? "opacity-40" : ""}`}
           >
             <Text className="text-primary font-medium">{t("record.addThought")}</Text>
           </Pressable>
@@ -349,7 +350,12 @@ export default function ThoughtRecordEditorScreen() {
                   </CardContent>
                 </Card>
               ))}
-              <NatAddForm onAdd={(nat) => onChange([...value, nat])} />
+              <NatAddForm
+                onAdd={(nat) => {
+                  onChange([...value, nat]);
+                  setNatsError("");
+                }}
+              />
               {natsError ? <Text variant="muted">{natsError}</Text> : null}
             </View>
           )}
@@ -370,6 +376,8 @@ export default function ThoughtRecordEditorScreen() {
                 <Pressable
                   key={index}
                   accessibilityRole="button"
+                  accessibilityLabel={nat.text}
+                  accessibilityState={{ selected: nat.isHotThought }}
                   onPress={() =>
                     onChange(value.map((n, i) => ({ ...n, isHotThought: i === index })))
                   }
