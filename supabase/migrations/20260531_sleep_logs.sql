@@ -114,7 +114,7 @@ begin
         select
           id,
           situation,
-          automatic_thought,
+          nats,
           emotions,
           emotion_intensity_before,
           distortions,
