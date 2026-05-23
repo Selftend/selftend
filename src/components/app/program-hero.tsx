@@ -8,6 +8,7 @@ import { HelpButton } from "@/src/components/app/help-button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import type { ProgramTaskView } from "@/src/features/cbt/derive-program";
+import type { HelpKey } from "@/src/features/help/help-content";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 // Structural shape shared by CbtProgramView and ActProgramView.
@@ -66,6 +67,7 @@ export function ProgramHero({
 }: ProgramHeroProps) {
   const { t } = useTranslation(namespace);
   const [showOthers, setShowOthers] = useState(false);
+  const programHelpKey: HelpKey = namespace === "act" ? "actProgram" : "program";
 
   if (program.status === "graduated") return null;
 
@@ -76,7 +78,7 @@ export function ProgramHero({
           <Text variant="h3" className="flex-1 text-act">
             {t("program.startTitle")}
           </Text>
-          <HelpButton helpKey="program" size={18} />
+          <HelpButton helpKey={programHelpKey} size={18} />
           {onDismissStart ? (
             <Pressable
               accessibilityLabel={t("program.dismissStartLabel")}
@@ -109,7 +111,7 @@ export function ProgramHero({
           <Text variant="h3" className="flex-1 text-act">
             {t("program.heroTitle")} - {t(current.themeLabelKey)}
           </Text>
-          <HelpButton helpKey="program" size={18} />
+          <HelpButton helpKey={programHelpKey} size={18} />
         </View>
         <Text variant="muted" className="text-sm">
           {t("program.weekProgress", {

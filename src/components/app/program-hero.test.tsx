@@ -50,6 +50,24 @@ describe("ProgramHero", () => {
     expect(screen.getByText("Start program")).toBeTruthy();
   });
 
+  it("uses ACT help copy when rendered for the ACT namespace", () => {
+    renderWithProviders(
+      <ProgramHero
+        namespace="act"
+        program={view({ status: "not_started", weeks: [] })}
+        onStart={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByLabelText("Help: The ACT program"));
+
+    expect(
+      screen.getByText(
+        "A guided 4-week ACT path for practicing psychological flexibility: be present, open up, and do what matters.",
+      ),
+    ).toBeTruthy();
+  });
+
   it("calls onStart when the start button is pressed", () => {
     const onStart = jest.fn();
     renderWithProviders(

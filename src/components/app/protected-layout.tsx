@@ -10,9 +10,11 @@ import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
 import { ConsentGate } from "@/src/components/app/consent-gate";
 import { OnboardingModal } from "@/src/components/app/onboarding-modal";
 import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
-import { mergeUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
-import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import {
+  useUpdateOnboardingPreferences,
+  useUserPreferences,
+} from "@/src/features/settings/queries";
 import { useNotificationSync } from "@/src/features/notifications/use-notification-sync";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useSession } from "@/src/providers/session-provider";
@@ -25,7 +27,7 @@ export default function ProtectedLayout() {
   const isDesktop = width >= DESKTOP_BREAKPOINT;
   const { session, status, user } = useSession();
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(user?.id ?? null);
-  const appOnboardingMutation = useUpdateUserPreferences(user?.id ?? null);
+  const appOnboardingMutation = useUpdateOnboardingPreferences(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
   const pathname = usePathname();
 
@@ -71,9 +73,7 @@ export default function ProtectedLayout() {
     }
 
     try {
-      await appOnboardingMutation.mutateAsync(
-        mergeUserPreferences(preferences, { appOnboardingCompleted: true }),
-      );
+      await appOnboardingMutation.mutateAsync({ appOnboardingCompleted: true });
     } catch {
       // Error state is shown inside the modal.
     }

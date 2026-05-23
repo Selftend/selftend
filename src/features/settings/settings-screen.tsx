@@ -24,7 +24,6 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { signOut } from "@/src/features/auth/api";
-import { mergeUserPreferences } from "@/src/features/modules/types";
 import {
   useRemoveUserAvatar,
   useResetUserAvatarToOAuth,
@@ -36,7 +35,7 @@ import { getOAuthAvatarUrl } from "@/src/features/profile/repository";
 import {
   useDeleteUserAccount,
   useExportUserData,
-  useUpdateUserPreferences,
+  useUpdateOnboardingPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
 import { appEnv } from "@/src/lib/env";
@@ -70,7 +69,7 @@ export default function SettingsScreen() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const { data, isLoading } = useUserPreferences(user?.id ?? null);
-  const resetOnboardingMutation = useUpdateUserPreferences(user?.id ?? null);
+  const resetOnboardingMutation = useUpdateOnboardingPreferences(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
 
   const handleSignOut = async () => {
@@ -96,21 +95,19 @@ export default function SettingsScreen() {
       setErrorMessage("");
       setSuccessMessage("");
 
-      await resetOnboardingMutation.mutateAsync(
-        mergeUserPreferences(data, {
-          appOnboardingCompleted: false,
-          cbtOnboardingCompleted: false,
-          gratitudeOnboardingCompleted: false,
-          meditationInfoCompleted: false,
-          habitsOnboardingCompleted: false,
-          moodOnboardingCompleted: false,
-          journalOnboardingCompleted: false,
-          sleepOnboardingCompleted: false,
-          mindfulnessOnboardingCompleted: false,
-          groundingOnboardingCompleted: false,
-          shownButtonTours: [],
-        }),
-      );
+      await resetOnboardingMutation.mutateAsync({
+        appOnboardingCompleted: false,
+        cbtOnboardingCompleted: false,
+        gratitudeOnboardingCompleted: false,
+        meditationInfoCompleted: false,
+        habitsOnboardingCompleted: false,
+        moodOnboardingCompleted: false,
+        journalOnboardingCompleted: false,
+        sleepOnboardingCompleted: false,
+        mindfulnessOnboardingCompleted: false,
+        groundingOnboardingCompleted: false,
+        shownButtonTours: [],
+      });
 
       setSuccessMessage(t("onboarding.resetSaved"));
       showToast({

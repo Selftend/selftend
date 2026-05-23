@@ -2,6 +2,8 @@ import { defaultUserPreferences } from "@/src/features/modules/types";
 import {
   deleteWebPushSubscription,
   getUserPreferences,
+  updateOnboardingPreferences,
+  updateShownButtonTours,
   updateUserPreferences,
   upsertWebPushSubscription,
 } from "@/src/features/settings/repository";
@@ -231,6 +233,90 @@ describe("settings repository", () => {
     expect(fallbackPayload).not.toHaveProperty("cbt_program_prompt_dismissed_at");
     expect(fallbackPayload).not.toHaveProperty("cbt_program_started_at");
     expect(upsert.mock.calls.at(-1)?.[1]).toEqual({ onConflict: "user_id" });
+  });
+
+  it("treats ACT program columns as optional while schema caches catch up", async () => {
+    const staleSchemaError = {
+      code: "PGRST204",
+      message: "Could not find the 'act_program_completed_at' column of 'user_preferences'",
+    };
+    const single = jest.fn().mockResolvedValue({ data: null, error: staleSchemaError });
+    const select = jest.fn(() => ({ single }));
+    const upsert = jest.fn().mockImplementation((payload: unknown) => {
+      if ("act_program_completed_at" in (payload as Record<string, unknown>)) {
+        return { select };
+      }
+      return Promise.resolve({ error: null });
+    });
+    const from = jest.fn(() => ({ upsert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      updateUserPreferences("user-1", {
+        ...defaultUserPreferences,
+        actProgramStartedAt: "2026-05-23T10:00:00.000Z",
+      }),
+    ).resolves.toMatchObject({ actProgramStartedAt: "2026-05-23T10:00:00.000Z" });
+
+    const fallbackPayload = upsert.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(fallbackPayload).not.toHaveProperty("act_program_completed_at");
+    expect(fallbackPayload).not.toHaveProperty("act_program_prompt_dismissed_at");
+    expect(fallbackPayload).not.toHaveProperty("act_program_started_at");
+    expect(upsert.mock.calls.at(-1)?.[1]).toEqual({ onConflict: "user_id" });
+  });
+
+  it("updates shown button tours without sending unrelated preference columns", async () => {
+    const updatedRow = {
+      enabled_modules: ["cbt"],
+      shown_button_tours: ["program"],
+      user_id: "user-1",
+    };
+    const { upsert } = mockPreferenceUpdate(updatedRow);
+
+    await expect(updateShownButtonTours("user-1", ["program"])).resolves.toMatchObject({
+      shownButtonTours: ["program"],
+    });
+
+    expect(upsert).toHaveBeenCalledWith(
+      {
+        shown_button_tours: ["program"],
+        user_id: "user-1",
+      },
+      { onConflict: "user_id" },
+    );
+  });
+
+  it("updates onboarding flags without sending unrelated preference columns", async () => {
+    const updatedRow = {
+      app_onboarding_completed: false,
+      cbt_onboarding_completed: false,
+      enabled_modules: ["cbt"],
+      shown_button_tours: [],
+      user_id: "user-1",
+    };
+    const { upsert } = mockPreferenceUpdate(updatedRow);
+
+    await expect(
+      updateOnboardingPreferences("user-1", {
+        appOnboardingCompleted: false,
+        cbtOnboardingCompleted: false,
+        shownButtonTours: [],
+      }),
+    ).resolves.toMatchObject({
+      appOnboardingCompleted: false,
+      cbtOnboardingCompleted: false,
+      shownButtonTours: [],
+    });
+
+    expect(upsert).toHaveBeenCalledWith(
+      {
+        app_onboarding_completed: false,
+        cbt_onboarding_completed: false,
+        shown_button_tours: [],
+        user_id: "user-1",
+      },
+      { onConflict: "user_id" },
+    );
   });
 
   it("upserts web push subscriptions for the current user", async () => {

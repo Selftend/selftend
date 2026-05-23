@@ -5,7 +5,11 @@ import type { ReactNode } from "react";
 import ProtectedLayout from "./protected-layout";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
-import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import {
+  useUpdateOnboardingPreferences,
+  useUpdateUserPreferences,
+  useUserPreferences,
+} from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 type MockSessionState = {
@@ -82,11 +86,15 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/settings/queries", () => ({
+  useUpdateOnboardingPreferences: jest.fn(),
   useUpdateUserPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
 }));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
+const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jest.MockedFunction<
+  typeof useUpdateOnboardingPreferences
+>;
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
 >;
@@ -110,11 +118,16 @@ describe("ProtectedLayout app onboarding", () => {
       },
     };
     mutateAsync.mockResolvedValue(defaultUserPreferences);
-    mockUseUpdateUserPreferences.mockReturnValue({
+    mockUseUpdateOnboardingPreferences.mockReturnValue({
       isError: false,
       isPending: false,
       mutate: jest.fn(),
       mutateAsync,
+    } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
+    mockUseUpdateUserPreferences.mockReturnValue({
+      isPending: false,
+      mutate: jest.fn(),
+      mutateAsync: jest.fn(),
     } as unknown as ReturnType<typeof useUpdateUserPreferences>);
     mockUseUserPreferences.mockReturnValue({
       data: {
@@ -134,12 +147,7 @@ describe("ProtectedLayout app onboarding", () => {
     fireEvent.press(screen.getByText("Got it"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({
-          appOnboardingCompleted: true,
-          cbtOnboardingCompleted: false,
-        }),
-      );
+      expect(mutateAsync).toHaveBeenCalledWith({ appOnboardingCompleted: true });
     });
   });
 

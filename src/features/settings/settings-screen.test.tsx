@@ -4,7 +4,10 @@ import type { ReactNode } from "react";
 
 import SettingsScreen from "./settings-screen";
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import {
+  useUpdateOnboardingPreferences,
+  useUserPreferences,
+} from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -99,13 +102,13 @@ jest.mock("@/src/features/profile/repository", () => ({
 jest.mock("@/src/features/settings/queries", () => ({
   useDeleteUserAccount: () => ({ isPending: false, mutateAsync: jest.fn() }),
   useExportUserData: () => ({ isError: false, isPending: false, mutateAsync: jest.fn() }),
-  useUpdateUserPreferences: jest.fn(),
+  useUpdateOnboardingPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
 }));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
-const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
-  typeof useUpdateUserPreferences
+const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jest.MockedFunction<
+  typeof useUpdateOnboardingPreferences
 >;
 
 describe("SettingsScreen onboarding reset", () => {
@@ -126,10 +129,10 @@ describe("SettingsScreen onboarding reset", () => {
       },
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
-    mockUseUpdateUserPreferences.mockReturnValue({
+    mockUseUpdateOnboardingPreferences.mockReturnValue({
       isPending: false,
       mutateAsync,
-    } as unknown as ReturnType<typeof useUpdateUserPreferences>);
+    } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
   });
 
   it("resets all onboarding flags while preserving the rest of preferences", async () => {
@@ -138,20 +141,19 @@ describe("SettingsScreen onboarding reset", () => {
     fireEvent.press(screen.getByText("Reset onboarding"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({
-          appOnboardingCompleted: false,
-          cbtOnboardingCompleted: false,
-          gratitudeOnboardingCompleted: false,
-          meditationInfoCompleted: false,
-          habitsOnboardingCompleted: false,
-          shownButtonTours: [],
-          // wizard flags must be preserved
-          cbtWizardCompleted: true,
-          meditationOnboardingCompleted: true,
-          policyVersionAccepted: "2026-05-01",
-        }),
-      );
+      expect(mutateAsync).toHaveBeenCalledWith({
+        appOnboardingCompleted: false,
+        cbtOnboardingCompleted: false,
+        gratitudeOnboardingCompleted: false,
+        meditationInfoCompleted: false,
+        habitsOnboardingCompleted: false,
+        moodOnboardingCompleted: false,
+        journalOnboardingCompleted: false,
+        sleepOnboardingCompleted: false,
+        mindfulnessOnboardingCompleted: false,
+        groundingOnboardingCompleted: false,
+        shownButtonTours: [],
+      });
     });
   });
 });

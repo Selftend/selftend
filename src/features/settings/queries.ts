@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { ModuleKey, UserPreferences } from "@/src/features/modules/types";
+import type { ButtonTourKey, ModuleKey, UserPreferences } from "@/src/features/modules/types";
 import {
   deleteUserAccount,
   exportUserData,
   getUserPreferences,
   recordPolicyConsent,
   updateEnabledModules,
+  updateOnboardingPreferences,
+  updateShownButtonTours,
   updateUserPreferences,
 } from "@/src/features/settings/repository";
 
@@ -42,6 +44,38 @@ export function useUpdateEnabledModules(userId: string | null) {
 
   return useMutation({
     mutationFn: (enabledModules: ModuleKey[]) => updateEnabledModules(userId!, enabledModules),
+    onSuccess: async () => {
+      if (!userId) {
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: preferenceKeys.detail(userId) });
+    },
+  });
+}
+
+export function useUpdateShownButtonTours(userId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (shownButtonTours: ButtonTourKey[]) =>
+      updateShownButtonTours(userId!, shownButtonTours),
+    onSuccess: async () => {
+      if (!userId) {
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: preferenceKeys.detail(userId) });
+    },
+  });
+}
+
+export function useUpdateOnboardingPreferences(userId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (patch: Parameters<typeof updateOnboardingPreferences>[1]) =>
+      updateOnboardingPreferences(userId!, patch),
     onSuccess: async () => {
       if (!userId) {
         return;

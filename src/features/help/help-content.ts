@@ -1,5 +1,6 @@
 export const HELP_KEYS = [
   "program",
+  "actProgram",
   "thoughtRecords",
   "beliefs",
   "worry",
