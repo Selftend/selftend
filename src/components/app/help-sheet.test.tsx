@@ -7,6 +7,7 @@ describe("HelpSheet", () => {
   it("renders the title and all three sections for a key", () => {
     renderWithProviders(<HelpSheet helpKey="beliefs" visible onDismiss={jest.fn()} />);
     expect(screen.getByText("Core beliefs")).toBeTruthy();
+    expect(screen.getByLabelText("Core beliefs")).toBeTruthy();
     expect(
       screen.getByText("Deep, long-held rules about yourself, others, or the world."),
     ).toBeTruthy();
