@@ -131,5 +131,35 @@
     "what": "Building and tracking small, repeatable routines.",
     "how": "Choose a small habit, attach it to a daily cue, and check it off each day.",
     "why": "Consistent small actions compound into lasting change."
+  },
+  "defusion": {
+    "title": "Defusion",
+    "what": "A way to step back from unhelpful thoughts and see them as mental events rather than facts.",
+    "how": "Notice the thought, name it (\"I'm having the thought that…\"), then use a technique to create distance — labelling, singing, or watching it like a passing cloud.",
+    "why": "When fused with a thought it controls your behaviour. Defusion reduces its grip without arguing, fixing, or suppressing it."
+  },
+  "expansion": {
+    "title": "Expansion",
+    "what": "Making room for difficult emotions and sensations instead of fighting or avoiding them.",
+    "how": "Locate the feeling in your body, breathe into it, and observe it with curiosity — its shape, size, weight — rather than trying to push it away.",
+    "why": "Struggling against difficult feelings amplifies them. Expanding around them turns off the fight response and lets them pass naturally."
+  },
+  "connection": {
+    "title": "Connection",
+    "what": "Present-moment awareness — noticing what is happening right now rather than getting lost in the past or future.",
+    "how": "Engage your five senses to anchor attention: notice what you can see, hear, feel, smell, and taste right now.",
+    "why": "Most suffering happens in thoughts about past or future. Returning to the present interrupts rumination and creates a moment of calm."
+  },
+  "observingSelf": {
+    "title": "Observing Self",
+    "what": "The stable part of you that notices thoughts and feelings without being defined by them — your inner witness.",
+    "how": "Step into the observer perspective: notice that you are the one who has thoughts, not the thoughts themselves.",
+    "why": "Identifying with a constant observer reduces the power of fluctuating thoughts and feelings to dictate your sense of self."
+  },
+  "committedAction": {
+    "title": "Committed Action",
+    "what": "Taking values-guided steps even when discomfort, fear, or difficult feelings are present.",
+    "how": "Choose a small, concrete action toward your values, commit to it, and follow through regardless of how you feel in the moment.",
+    "why": "Waiting to feel ready means waiting forever. Small committed steps build momentum and prove values-guided living is possible even in difficulty."
   }
 }

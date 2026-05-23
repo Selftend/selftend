@@ -20,6 +20,11 @@ export const HELP_KEYS = [
   "journal",
   "gratitude",
   "habits",
+  "defusion",
+  "expansion",
+  "connection",
+  "observingSelf",
+  "committedAction",
 ] as const;
 
 export type HelpKey = (typeof HELP_KEYS)[number];
