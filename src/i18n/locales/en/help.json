@@ -90,54 +90,6 @@
     "how": "Breathe gently into the belly, letting each out-breath release tension; practise a few minutes at a time.",
     "why": "Slowing the breath settles the nervous system and lowers physical arousal."
   },
-  "mindfulness": {
-    "title": "Mindfulness",
-    "what": "Paying open, non-judgemental attention to the present moment.",
-    "how": "Notice thoughts, feelings and sensations as they come and go, gently returning focus when the mind wanders.",
-    "why": "Stepping back from thoughts reduces rumination and builds emotional steadiness."
-  },
-  "meditation": {
-    "title": "Meditation",
-    "what": "Longer, guided attention practice to train focus and calm.",
-    "how": "Follow a guided session, resting attention on the breath or body and returning when distracted.",
-    "why": "Regular practice strengthens attention and lowers stress over time."
-  },
-  "grounding": {
-    "title": "Grounding",
-    "what": "Quick techniques to anchor you in the present during distress.",
-    "how": "Engage your senses - name what you can see, hear, feel and smell - to shift focus out of the mind and into the moment.",
-    "why": "Grounding interrupts spirals of anxiety or overwhelm and restores a sense of safety."
-  },
-  "mood": {
-    "title": "Mood tracker",
-    "what": "A daily log of how you feel.",
-    "how": "Rate your mood and note emotions and context, then review the trends over time.",
-    "why": "Tracking reveals patterns and links between what you do and how you feel."
-  },
-  "sleep": {
-    "title": "Sleep",
-    "what": "Tracking and improving the basics of restful sleep.",
-    "how": "Log your sleep and review hygiene factors - wind-down routine, screens, light, caffeine.",
-    "why": "Good sleep underpins mood, focus and resilience; small habit changes can make a big difference."
-  },
-  "journal": {
-    "title": "Journal",
-    "what": "Free writing to process thoughts and feelings.",
-    "how": "Write openly about what's on your mind, without editing or judging.",
-    "why": "Putting experience into words helps you make sense of it and lowers its emotional charge."
-  },
-  "gratitude": {
-    "title": "Gratitude log",
-    "what": "Noting things you're thankful for.",
-    "how": "Record a few small or large things you appreciate, regularly.",
-    "why": "Deliberately noticing the good shifts attention away from threat and lifts mood over time."
-  },
-  "habits": {
-    "title": "Habits",
-    "what": "Building and tracking small, repeatable routines.",
-    "how": "Choose a small habit, attach it to a daily cue, and check it off each day.",
-    "why": "Consistent small actions compound into lasting change."
-  },
   "defusion": {
     "title": "Defusion",
     "what": "A way to step back from unhelpful thoughts and see them as mental events rather than facts.",

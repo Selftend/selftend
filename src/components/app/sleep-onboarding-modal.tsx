@@ -1,7 +1,6 @@
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { HelpSections } from "@/src/components/app/help-sections";
 import {
   OnboardingHero,
   OnboardingInfoRow,
@@ -75,8 +74,6 @@ export function SleepOnboarding({
           />
         </View>
       </View>
-
-      <HelpSections helpKey="sleep" />
     </RichOnboardingShell>
   );
 }

@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 
-import { HelpSections } from "@/src/components/app/help-sections";
 import { OnboardingHero, RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -52,8 +51,6 @@ export function JournalOnboarding({
           <Text variant="muted">{t("onboarding.noPressure.body")}</Text>
         </CardContent>
       </Card>
-
-      <HelpSections helpKey="journal" />
     </RichOnboardingShell>
   );
 }

@@ -1,7 +1,6 @@
 import { Image, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { HelpSections } from "@/src/components/app/help-sections";
 import { OnboardingInfoRow, RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -135,8 +134,6 @@ export function HabitsOnboarding({
           </CardContent>
         </Card>
       </View>
-
-      <HelpSections helpKey="habits" />
     </RichOnboardingShell>
   );
 }
