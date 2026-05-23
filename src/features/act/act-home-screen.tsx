@@ -1,5 +1,5 @@
 import { router, type Href } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,20 +14,16 @@ import {
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
+import { HelpButton } from "@/src/components/app/help-button";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
-import {
-  ActInfo,
-  ActWizard,
-  type ActWizardResult,
-} from "@/src/components/app/act-onboarding-modal";
+import { ActInfo } from "@/src/components/app/act-onboarding-modal";
 import { ProgramHero } from "@/src/components/app/program-hero";
 import { ProgramGraduation } from "@/src/components/app/program-graduation";
-import { useDefusionLogs, useUpsertACTProgramState } from "@/src/features/act/queries";
+import { useDefusionLogs } from "@/src/features/act/queries";
 import { useActProgram } from "@/src/features/act/use-act-program";
 import type { ACTPrinciple } from "@/src/features/act/types";
-import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import { mergeUserPreferences } from "@/src/features/modules/types";
+import type { HelpKey } from "@/src/features/help/help-content";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { cn } from "@/lib/utils";
@@ -36,39 +32,39 @@ interface PrincipleCard {
   key: ACTPrinciple;
   icon: MaterialIconName;
   route: Href | null;
+  helpKey: HelpKey;
 }
 
 const PRINCIPLE_CARDS: PrincipleCard[] = [
-  { key: "defusion", icon: "filter-drama", route: "/modules/act/defusion" },
-  { key: "expansion", icon: "open-in-full", route: "/modules/act/expansion" },
-  { key: "connection", icon: "radio-button-checked", route: "/modules/act/connection" },
-  { key: "observingSelf", icon: "visibility", route: "/modules/act/observing-self" },
-  { key: "values", icon: "explore", route: "/modules/act/values" },
-  { key: "committedAction", icon: "directions-run", route: "/modules/act/committed-action" },
+  { key: "defusion", icon: "filter-drama", route: "/modules/act/defusion", helpKey: "defusion" },
+  { key: "expansion", icon: "open-in-full", route: "/modules/act/expansion", helpKey: "expansion" },
+  {
+    key: "connection",
+    icon: "radio-button-checked",
+    route: "/modules/act/connection",
+    helpKey: "connection",
+  },
+  {
+    key: "observingSelf",
+    icon: "visibility",
+    route: "/modules/act/observing-self",
+    helpKey: "observingSelf",
+  },
+  { key: "values", icon: "explore", route: "/modules/act/values", helpKey: "values" },
+  {
+    key: "committedAction",
+    icon: "directions-run",
+    route: "/modules/act/committed-action",
+    helpKey: "committedAction",
+  },
 ];
-
-function parseHour(time: string): number {
-  const [h] = time.split(":");
-  const n = Number(h);
-  return Number.isFinite(n) && n >= 0 && n <= 23 ? n : 19;
-}
-
-function parseMinute(time: string): number {
-  const [, m] = time.split(":");
-  const n = Number(m);
-  return Number.isFinite(n) && n >= 0 && n <= 59 ? n : 0;
-}
 
 export default function ActHomeScreen() {
   const { t } = useTranslation("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
-  const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
   const { data: defusionLogs } = useDefusionLogs(userId, 50);
   const recentLogs = defusionLogs?.slice(0, 3) ?? [];
-
-  const upsertProgramState = useUpsertACTProgramState(userId);
-  const updatePreferences = useUpdateUserPreferences(userId);
 
   const {
     program,
@@ -82,45 +78,8 @@ export default function ActHomeScreen() {
   } = useActProgram(user?.id ?? null);
 
   const [forceInfo, setForceInfo] = useState(false);
-  const [forceWizard, setForceWizard] = useState(false);
-  const [wizardError, setWizardError] = useState<string | undefined>();
   const [graduationDismissed, setGraduationDismissed] = useState(false);
   const [abandonConfirmVisible, setAbandonConfirmVisible] = useState(false);
-
-  async function handleWizardComplete(result: ActWizardResult) {
-    if (!userId) return;
-    setWizardError(undefined);
-    try {
-      await upsertProgramState.mutateAsync({
-        primaryConcerns: result.primaryConcerns,
-        activePrinciples: [result.startingPrinciple],
-        onboardingCompletedAt: new Date().toISOString(),
-        preferredCheckInTime: result.preferredCheckInTime,
-      });
-      if (preferences) {
-        await updatePreferences.mutateAsync(
-          mergeUserPreferences(preferences, {
-            actRemindersEnabled: result.remindersEnabled,
-            actReminderHour: parseHour(result.preferredCheckInTime),
-            actReminderMinute: parseMinute(result.preferredCheckInTime),
-          }),
-        );
-      }
-      setForceWizard(false);
-    } catch (error) {
-      const fallback = t("onboarding.commit.error");
-      const detail = error instanceof Error ? error.message : null;
-      setWizardError(detail ? `${fallback} (${detail})` : fallback);
-    }
-  }
-
-  if (prefsLoading) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
-      </SafeAreaView>
-    );
-  }
 
   return (
     <>
@@ -142,13 +101,6 @@ export default function ActHomeScreen() {
         onComplete={() => setForceInfo(false)}
         onDismiss={() => setForceInfo(false)}
       />
-      <ActWizard
-        visible={forceWizard}
-        isPending={upsertProgramState.isPending || updatePreferences.isPending}
-        errorMessage={wizardError}
-        onComplete={(result) => void handleWizardComplete(result)}
-        onDismiss={() => setForceWizard(false)}
-      />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -159,7 +111,6 @@ export default function ActHomeScreen() {
               <ModuleHomeHeader
                 title={t("home.title")}
                 actions={[
-                  { type: "tune", onPress: () => setForceWizard(true) },
                   { type: "notifications", targetKey: "act" },
                   ...(program.status === "not_started"
                     ? [
@@ -290,13 +241,8 @@ function PrincipleCardItem({ card }: { card: PrincipleCard }) {
   const { t } = useTranslation("act");
   const available = card.route !== null;
 
-  const content = (
-    <Card
-      className={cn(
-        "min-w-[240px] flex-1 basis-[240px]",
-        available ? "border-act/30" : "opacity-60",
-      )}
-    >
+  const cardContent = (
+    <Card className={cn("flex-1", available ? "border-act/30" : "opacity-60")}>
       <CardHeader>
         <View className="mb-1 flex-row items-center gap-3">
           <View
@@ -320,18 +266,25 @@ function PrincipleCardItem({ card }: { card: PrincipleCard }) {
     </Card>
   );
 
-  if (!available) return content;
-
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={t(`principles.${card.key}.name`)}
-      accessibilityHint={t(`principles.${card.key}.desc`)}
-      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(card.route!)}
-      className="min-w-[240px] flex-1 basis-[240px] active:opacity-80"
-    >
-      {content}
-    </Pressable>
+    <View className="relative min-w-[240px] flex-1 basis-[240px]">
+      {available ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t(`principles.${card.key}.name`)}
+          accessibilityHint={t(`principles.${card.key}.desc`)}
+          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+          onPress={() => router.push(card.route!)}
+          className="flex-1 active:opacity-80"
+        >
+          {cardContent}
+        </Pressable>
+      ) : (
+        cardContent
+      )}
+      <View className="absolute right-1 top-1">
+        <HelpButton helpKey={card.helpKey} size={18} />
+      </View>
+    </View>
   );
 }
