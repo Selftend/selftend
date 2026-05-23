@@ -1,11 +1,15 @@
-import type { ThoughtRecord, ThoughtRecordInput } from "@/src/features/cbt/types";
+import type {
+  NegativeAutomaticThought,
+  ThoughtRecord,
+  ThoughtRecordInput,
+} from "@/src/features/cbt/types";
 import { requireSupabase } from "@/src/lib/supabase";
 
 interface ThoughtRecordRow {
   id: string;
   user_id: string;
   situation: string;
-  automatic_thought: string;
+  nats: NegativeAutomaticThought[];
   emotions: string[] | null;
   emotion_intensity_before: number | null;
   distortions: string[] | null;
@@ -24,7 +28,7 @@ function mapThoughtRecord(row: ThoughtRecordRow): ThoughtRecord {
     id: row.id,
     userId: row.user_id,
     situation: row.situation,
-    automaticThought: row.automatic_thought,
+    nats: row.nats ?? [],
     emotions: row.emotions ?? [],
     emotionIntensityBefore: row.emotion_intensity_before,
     distortions: row.distortions ?? [],
@@ -84,7 +88,7 @@ export async function saveThoughtRecord(
   const payload = {
     user_id: userId,
     situation: input.situation.trim(),
-    automatic_thought: input.automaticThought.trim(),
+    nats: input.nats,
     emotions: input.emotions,
     emotion_intensity_before: input.emotionIntensityBefore,
     distortions: input.distortions,

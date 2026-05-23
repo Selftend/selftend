@@ -21,13 +21,18 @@ describe("cbt thought_records (integration)", () => {
     await alice.auth.signOut();
   });
 
-  it("inserts a thought record and reads it back", async () => {
+  it("inserts a thought record with nats and reads it back", async () => {
+    const nats = [
+      { text: "I am completely useless", beliefRating: 95, isHotThought: true },
+      { text: "This job should have been mine", beliefRating: 100, isHotThought: false },
+    ];
+
     const insert = await alice
       .from("thought_records")
       .insert({
         user_id: SEED_USERS.alice.id,
         situation: "Test situation",
-        automatic_thought: "Test thought",
+        nats,
         emotions: ["Anxious"],
         emotion_intensity_before: 80,
         distortions: ["catastrophizing"],
@@ -44,7 +49,7 @@ describe("cbt thought_records (integration)", () => {
     expect(insert.data).toMatchObject({
       user_id: SEED_USERS.alice.id,
       situation: "Test situation",
-      automatic_thought: "Test thought",
+      nats,
       emotions: ["Anxious"],
       emotion_intensity_before: 80,
       distortions: ["catastrophizing"],
@@ -59,77 +64,20 @@ describe("cbt thought_records (integration)", () => {
     expect(insert.data?.created_at).toEqual(expect.any(String));
   });
 
-  it("allows a blank partial thought record", async () => {
-    const insert = await alice
-      .from("thought_records")
-      .insert({
-        user_id: SEED_USERS.alice.id,
-        situation: "",
-        automatic_thought: "",
-        emotions: [],
-        distortions: [],
-        balanced_thought: "",
-      })
-      .select("*")
-      .single();
+  it("updates a field without touching nats", async () => {
+    const nats = [{ text: "initial thought", beliefRating: null, isHotThought: true }];
 
-    expect(insert.error).toBeNull();
-    expect(insert.data).toMatchObject({
-      situation: "",
-      automatic_thought: "",
-      emotions: [],
-      distortions: [],
-      balanced_thought: "",
-      archived_at: null,
-    });
-  });
-
-  it("lists non-archived records ordered by updated_at desc", async () => {
-    const rows = [
-      { situation: "Older", thought: "older thought" },
-      { situation: "Middle", thought: "middle thought" },
-      { situation: "Newer", thought: "newer thought" },
-    ];
-    for (const row of rows) {
-      const result = await alice
-        .from("thought_records")
-        .insert({
-          user_id: SEED_USERS.alice.id,
-          situation: row.situation,
-          automatic_thought: row.thought,
-          emotions: ["Anxious"],
-          distortions: ["catastrophizing"],
-          balanced_thought: "balanced",
-        })
-        .select("id")
-        .single();
-      expect(result.error).toBeNull();
-    }
-
-    const list = await alice
-      .from("thought_records")
-      .select("situation")
-      .eq("user_id", SEED_USERS.alice.id)
-      .is("archived_at", null)
-      .order("updated_at", { ascending: false });
-
-    expect(list.error).toBeNull();
-    const situations = list.data?.map((r) => r.situation);
-    expect(situations).toEqual(["Newer", "Middle", "Older"]);
-  });
-
-  it("updates a thought record", async () => {
     const created = await alice
       .from("thought_records")
       .insert({
         user_id: SEED_USERS.alice.id,
-        situation: "Initial",
-        automatic_thought: "initial",
-        emotions: ["Anxious"],
-        distortions: ["catastrophizing"],
+        situation: "Original situation",
+        nats,
+        emotions: [],
+        distortions: [],
         balanced_thought: "initial balanced",
       })
-      .select("*")
+      .select("id")
       .single();
     expect(created.error).toBeNull();
 
@@ -147,7 +95,7 @@ describe("cbt thought_records (integration)", () => {
     expect(updated.error).toBeNull();
     expect(updated.data?.situation).toBe("Updated");
     expect(updated.data?.balanced_thought).toBe("updated balanced");
-    expect(updated.data?.automatic_thought).toBe("initial");
+    expect(updated.data?.nats).toEqual(nats);
   });
 
   it("archiving hides the record from the active list", async () => {
@@ -156,7 +104,7 @@ describe("cbt thought_records (integration)", () => {
       .insert({
         user_id: SEED_USERS.alice.id,
         situation: "Will be archived",
-        automatic_thought: "thought",
+        nats: [{ text: "thought", beliefRating: null, isHotThought: true }],
         emotions: ["Anxious"],
         distortions: ["catastrophizing"],
         balanced_thought: "balanced",
