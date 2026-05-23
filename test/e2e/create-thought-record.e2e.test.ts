@@ -46,24 +46,26 @@ test.describe("create thought record", () => {
       .fill(situation);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Step 2: Automatic thought
-    await page
-      .getByPlaceholder("Example: I am about to be told I messed everything up.")
-      .fill(automaticThought);
+    // Step 2: NATs — type thought, add it, then continue
+    await page.getByPlaceholder("What did your mind say?").fill(automaticThought);
+    await page.getByRole("button", { name: "Add thought", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Step 3: Emotions - toggle a checkbox by clicking its label
+    // Step 3: Hot thought — one is auto-selected; just continue
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    // Step 4: Emotions - toggle a checkbox by clicking its label
     await page.getByText("Anxious", { exact: true }).first().click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Step 4: Evidence is optional in this flow.
+    // Step 5: Evidence is optional in this flow.
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Step 5: Distortions
+    // Step 6: Distortions
     await page.getByRole("checkbox", { name: "Catastrophizing", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Step 6: Balanced thought
+    // Step 7: Balanced thought
     await page
       .getByPlaceholder(
         "Example: I do not know what the email means yet. One message is not proof that I failed.",
@@ -71,7 +73,7 @@ test.describe("create thought record", () => {
       .fill(balancedThought);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Step 7: Outcome is optional; save from the final step.
+    // Step 8: Outcome is optional; save from the final step.
     await page.getByRole("button", { name: "Save record", exact: true }).click();
 
     // After save, app routes to /cbt/history/<id>. Verify the saved values render.
