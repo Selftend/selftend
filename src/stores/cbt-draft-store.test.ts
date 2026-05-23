@@ -18,7 +18,7 @@ describe("cbt draft store", () => {
 
   it("keeps values for the same draft and clears them after save", () => {
     const values = {
-      automaticThought: "This will fail",
+      nats: [{ text: "This will fail", beliefRating: 80, isHotThought: true }],
       balancedThought: "It may still be recoverable",
       distortions: ["catastrophizing"],
       emotionIntensityAfter: null,
