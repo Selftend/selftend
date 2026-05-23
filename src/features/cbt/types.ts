@@ -5,11 +5,17 @@ export interface DistortionDefinition {
   reflectionPrompt: string;
 }
 
+export interface NegativeAutomaticThought {
+  text: string;
+  beliefRating: number | null; // 0–100; how strongly the user believes this thought
+  isHotThought: boolean;
+}
+
 export interface ThoughtRecord {
   id: string;
   userId: string;
   situation: string;
-  automaticThought: string;
+  nats: NegativeAutomaticThought[];
   emotions: string[];
   emotionIntensityBefore: number | null;
   distortions: string[];
@@ -25,7 +31,7 @@ export interface ThoughtRecord {
 
 export interface ThoughtRecordInput {
   situation: string;
-  automaticThought: string;
+  nats: NegativeAutomaticThought[];
   emotions: string[];
   emotionIntensityBefore: number | null;
   distortions: string[];
