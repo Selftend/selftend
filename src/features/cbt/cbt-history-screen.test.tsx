@@ -54,7 +54,6 @@ describe("CbtHistoryScreen", () => {
       data: [
         {
           archivedAt: null,
-          automaticThought: "I cannot handle this",
           balancedThought: "I can take this one step at a time",
           createdAt: "2026-05-03T12:00:00.000Z",
           distortions: ["catastrophizing"],
@@ -64,6 +63,7 @@ describe("CbtHistoryScreen", () => {
           evidenceAgainst: [],
           evidenceFor: [],
           id: "record-1",
+          nats: [{ id: "nat-1", text: "I cannot handle this", isHotThought: true }],
           outcomeNotes: "",
           situation: "A hard moment",
           updatedAt: "2026-05-03T12:00:00.000Z",
@@ -85,7 +85,6 @@ describe("CbtHistoryScreen", () => {
       data: [
         {
           archivedAt: null,
-          automaticThought: "",
           balancedThought: "",
           createdAt: "2026-05-03T12:00:00.000Z",
           distortions: [],
@@ -95,6 +94,7 @@ describe("CbtHistoryScreen", () => {
           evidenceAgainst: [],
           evidenceFor: [],
           id: "record-1",
+          nats: [],
           outcomeNotes: "",
           situation: "",
           updatedAt: "2026-05-03T12:00:00.000Z",

@@ -929,7 +929,10 @@ export default function CbtHomeScreen() {
               <View className="gap-3">
                 <Text variant="h3">{t("dashboard.recentThought")}</Text>
                 <AccessibleCardLink
-                  title={latestRecord.automaticThought}
+                  title={
+                    (latestRecord.nats.find((n) => n.isHotThought) ?? latestRecord.nats[0])?.text ??
+                    ""
+                  }
                   description={latestRecord.balancedThought}
                   onPress={() =>
                     router.push(

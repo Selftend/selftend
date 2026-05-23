@@ -203,7 +203,9 @@ export function useCbtInsights(userId: string | null) {
     const counts = new Map<string, { count: number; thought: string }>();
 
     for (const record of thoughtRecords) {
-      const normalized = normalizeThought(record.automaticThought);
+      const hotNat = record.nats.find((n) => n.isHotThought) ?? record.nats[0];
+      if (!hotNat) continue;
+      const normalized = normalizeThought(hotNat.text);
       if (normalized.length < 8 || (beliefText && beliefText.includes(normalized))) {
         continue;
       }
@@ -211,7 +213,7 @@ export function useCbtInsights(userId: string | null) {
       const existing = counts.get(normalized);
       counts.set(normalized, {
         count: (existing?.count ?? 0) + 1,
-        thought: existing?.thought ?? record.automaticThought.trim(),
+        thought: existing?.thought ?? hotNat.text.trim(),
       });
     }
 

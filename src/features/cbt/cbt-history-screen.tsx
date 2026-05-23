@@ -7,12 +7,17 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { EmptyState, LoadingState } from "@/src/components/app/screen-state";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
+import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
 import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
 import { BackButton } from "@/src/components/app/back-button";
 
-function getRecordTitle(record: { automaticThought: string; situation: string }, fallback: string) {
-  return record.automaticThought.trim() || record.situation.trim() || fallback;
+function getRecordTitle(
+  record: { nats: NegativeAutomaticThought[]; situation: string },
+  fallback: string,
+) {
+  const hotNat = record.nats.find((n) => n.isHotThought) ?? record.nats[0];
+  return hotNat?.text.trim() || record.situation.trim() || fallback;
 }
 
 export default function CbtHistoryScreen() {
