@@ -1,7 +1,6 @@
 import { Image, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { HelpSections } from "@/src/components/app/help-sections";
 import { RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -127,8 +126,6 @@ export function GratitudeOnboarding({
           <Text variant="muted">{t("onboarding.frequency.note")}</Text>
         </CardContent>
       </Card>
-
-      <HelpSections helpKey="gratitude" />
     </RichOnboardingShell>
   );
 }

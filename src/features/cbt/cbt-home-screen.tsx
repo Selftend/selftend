@@ -16,10 +16,18 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
+import { GratitudeOnboarding } from "@/src/components/app/gratitude-onboarding-modal";
+import { GroundingOnboarding } from "@/src/components/app/grounding-onboarding-modal";
+import { HabitsOnboarding } from "@/src/components/app/habits-onboarding-modal";
 import { ProgramHero } from "@/src/components/app/program-hero";
 import { ProgramGraduation } from "@/src/components/app/program-graduation";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { HelpButton } from "@/src/components/app/help-button";
+import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
+import { MeditationInfo } from "@/src/components/app/meditation-info-modal";
+import { MindfulnessOnboarding } from "@/src/components/app/mindfulness-onboarding-modal";
+import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
+import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
 import type { HelpKey } from "@/src/features/help/help-content";
 import { cn } from "@/lib/utils";
 import { useGoals } from "@/src/features/goals/queries";
@@ -41,13 +49,34 @@ interface PillarStrategy {
   helpKey: HelpKey;
 }
 
-interface SharedTool {
+interface SharedToolBase {
   key: string;
   route: Href;
   icon: MaterialIconName;
   labelKey: string;
-  helpKey: HelpKey;
 }
+
+type SharedTool = SharedToolBase &
+  (
+    | {
+        helpKey: HelpKey;
+        infoKey?: never;
+      }
+    | {
+        helpKey?: never;
+        infoKey: AdvancedToolInfoKey;
+      }
+  );
+
+type AdvancedToolInfoKey =
+  | "gratitude"
+  | "grounding"
+  | "habits"
+  | "journal"
+  | "meditation"
+  | "mindfulness"
+  | "mood"
+  | "sleep";
 
 const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
   think: [
@@ -152,14 +181,14 @@ const THINK_SHARED_TOOLS: SharedTool[] = [
     route: "/tools/journal",
     icon: "edit-note",
     labelKey: "navigation:sidebar.journal",
-    helpKey: "journal",
+    infoKey: "journal",
   },
   {
     key: "gratitudeLog",
     route: "/tools/gratitude-log",
     icon: "favorite",
     labelKey: "navigation:sidebar.gratitudeLog",
-    helpKey: "gratitude",
+    infoKey: "gratitude",
   },
 ];
 
@@ -169,7 +198,7 @@ const ACT_SHARED_TOOLS: SharedTool[] = [
     route: "/tools/habits",
     icon: "task-alt",
     labelKey: "navigation:sidebar.habits",
-    helpKey: "habits",
+    infoKey: "habits",
   },
 ];
 
@@ -186,35 +215,35 @@ const BE_SHARED_TOOLS: SharedTool[] = [
     route: "/tools/mindfulness",
     icon: "air",
     labelKey: "navigation:sidebar.mindfulness",
-    helpKey: "mindfulness",
+    infoKey: "mindfulness",
   },
   {
     key: "meditation",
     route: "/tools/meditation",
     icon: "self-improvement",
     labelKey: "navigation:sidebar.meditation",
-    helpKey: "meditation",
+    infoKey: "meditation",
   },
   {
     key: "grounding",
     route: "/tools/grounding",
     icon: "anchor",
     labelKey: "navigation:sidebar.grounding",
-    helpKey: "grounding",
+    infoKey: "grounding",
   },
   {
     key: "moodTracker",
     route: "/tools/mood-tracker",
     icon: "mood",
     labelKey: "navigation:sidebar.moodTracker",
-    helpKey: "mood",
+    infoKey: "mood",
   },
   {
     key: "sleep",
     route: "/tools/sleep",
     icon: "bedtime",
     labelKey: "navigation:sidebar.sleep",
-    helpKey: "sleep",
+    infoKey: "sleep",
   },
 ];
 
@@ -284,6 +313,7 @@ interface PillarPaneProps {
   subKey: string;
   descKey: string;
   strategies: PillarStrategy[];
+  onOpenToolInfo: (infoKey: AdvancedToolInfoKey) => void;
   sharedTools?: SharedTool[];
 }
 
@@ -293,6 +323,7 @@ function PillarPane({
   subKey,
   descKey,
   strategies,
+  onOpenToolInfo,
   sharedTools,
 }: PillarPaneProps) {
   const { t } = useTranslation("cbt");
@@ -362,7 +393,12 @@ function PillarPane({
           </View>
           <View className="flex-row flex-wrap gap-2">
             {sharedTools.map((tool) => (
-              <SharedToolPill key={tool.key} pillar={pillar} tool={tool} />
+              <SharedToolPill
+                key={tool.key}
+                pillar={pillar}
+                tool={tool}
+                onOpenInfo={onOpenToolInfo}
+              />
             ))}
           </View>
         </View>
@@ -416,12 +452,14 @@ function PillarStrategyCard({ pillar, strategy }: PillarStrategyCardProps) {
 
 interface SharedToolPillProps {
   pillar: Pillar;
+  onOpenInfo: (infoKey: AdvancedToolInfoKey) => void;
   tool: SharedTool;
 }
 
-function SharedToolPill({ pillar, tool }: SharedToolPillProps) {
+function SharedToolPill({ pillar, onOpenInfo, tool }: SharedToolPillProps) {
   const { t } = useTranslation(["navigation", "cbt"]);
   const label = t(tool.labelKey);
+  const helpLabel = `${t("help:ui.helpPrefix")}${label}`;
 
   return (
     <View className="min-w-[150px] flex-1 basis-[150px] flex-row items-center gap-1 rounded-xl border border-border bg-card pr-2">
@@ -445,8 +483,52 @@ function SharedToolPill({ pillar, tool }: SharedToolPillProps) {
           {label}
         </Text>
       </Pressable>
-      <HelpButton helpKey={tool.helpKey} size={16} />
+      {tool.infoKey ? (
+        <Pressable
+          accessibilityLabel={helpLabel}
+          accessibilityRole="button"
+          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+          onPress={() => onOpenInfo(tool.infoKey!)}
+          role="button"
+        >
+          <Icon name="help-outline" size={16} className="text-muted-foreground" />
+        </Pressable>
+      ) : tool.helpKey ? (
+        <HelpButton helpKey={tool.helpKey} size={16} />
+      ) : null}
     </View>
+  );
+}
+
+interface AdvancedToolInfoModalsProps {
+  active: AdvancedToolInfoKey | null;
+  onClose: () => void;
+}
+
+function AdvancedToolInfoModals({ active, onClose }: AdvancedToolInfoModalsProps) {
+  return (
+    <>
+      <JournalOnboarding visible={active === "journal"} onComplete={onClose} onDismiss={onClose} />
+      <GratitudeOnboarding
+        visible={active === "gratitude"}
+        onComplete={onClose}
+        onDismiss={onClose}
+      />
+      <HabitsOnboarding visible={active === "habits"} onComplete={onClose} onDismiss={onClose} />
+      <MeditationInfo visible={active === "meditation"} onComplete={onClose} onDismiss={onClose} />
+      <MindfulnessOnboarding
+        visible={active === "mindfulness"}
+        onComplete={onClose}
+        onDismiss={onClose}
+      />
+      <GroundingOnboarding
+        visible={active === "grounding"}
+        onComplete={onClose}
+        onDismiss={onClose}
+      />
+      <MoodOnboarding visible={active === "mood"} onComplete={onClose} onDismiss={onClose} />
+      <SleepOnboarding visible={active === "sleep"} onComplete={onClose} onDismiss={onClose} />
+    </>
   );
 }
 
@@ -464,6 +546,7 @@ export default function CbtHomeScreen() {
     isUpdating: isProgramUpdating,
   } = useCbtProgram(user?.id ?? null);
   const [forceOnboarding, setForceOnboarding] = useState(false);
+  const [activeToolInfo, setActiveToolInfo] = useState<AdvancedToolInfoKey | null>(null);
   const [graduationDismissed, setGraduationDismissed] = useState(false);
   const [abandonConfirmVisible, setAbandonConfirmVisible] = useState(false);
 
@@ -521,6 +604,7 @@ export default function CbtHomeScreen() {
         onDismiss={() => setForceOnboarding(false)}
         visible={forceOnboarding}
       />
+      <AdvancedToolInfoModals active={activeToolInfo} onClose={() => setActiveToolInfo(null)} />
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -785,6 +869,7 @@ export default function CbtHomeScreen() {
                   subKey="pillars.think.sub"
                   descKey="pillars.think.description"
                   strategies={PILLAR_STRATEGIES.think}
+                  onOpenToolInfo={setActiveToolInfo}
                   sharedTools={THINK_SHARED_TOOLS}
                 />
                 <PillarPane
@@ -793,6 +878,7 @@ export default function CbtHomeScreen() {
                   subKey="pillars.act.sub"
                   descKey="pillars.act.description"
                   strategies={PILLAR_STRATEGIES.act}
+                  onOpenToolInfo={setActiveToolInfo}
                   sharedTools={ACT_SHARED_TOOLS}
                 />
                 <PillarPane
@@ -801,6 +887,7 @@ export default function CbtHomeScreen() {
                   subKey="pillars.be.sub"
                   descKey="pillars.be.description"
                   strategies={PILLAR_STRATEGIES.be}
+                  onOpenToolInfo={setActiveToolInfo}
                   sharedTools={BE_SHARED_TOOLS}
                 />
               </View>

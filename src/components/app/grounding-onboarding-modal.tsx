@@ -1,7 +1,6 @@
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { HelpSections } from "@/src/components/app/help-sections";
 import {
   OnboardingHero,
   OnboardingInfoRow,
@@ -89,8 +88,6 @@ export function GroundingOnboarding({
           />
         </View>
       </View>
-
-      <HelpSections helpKey="grounding" />
     </RichOnboardingShell>
   );
 }
