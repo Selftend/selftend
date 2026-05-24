@@ -258,6 +258,7 @@ describe("CbtHomeScreen onboarding", () => {
 
     renderWithProviders(<CbtHomeScreen />);
 
+    fireEvent.press(screen.getByLabelText("Program options"));
     fireEvent.press(screen.getByText("Abandon program"));
     expect(screen.getByText("Abandon this program?")).toBeTruthy();
 

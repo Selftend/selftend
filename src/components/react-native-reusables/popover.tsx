@@ -53,3 +53,4 @@ function PopoverContent({
 }
 
 export { Popover, PopoverContent, PopoverTrigger };
+export type { TriggerRef } from "@rn-primitives/popover";

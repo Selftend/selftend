@@ -9,6 +9,8 @@ jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
 }));
 
+jest.mock("@rn-primitives/popover");
+
 const baseWeek = {
   key: "challengeThinking",
   themeLabelKey: "program.weeks.challengeThinking",
@@ -32,7 +34,7 @@ function view(overrides: Partial<CbtProgramView>): CbtProgramView {
     startedAt: "2026-05-01T00:00:00Z",
     currentWeekIndex: 1,
     totalWeeks: 4,
-    weeks: [baseWeek, baseWeek, baseWeek, baseWeek],
+    weeks: [0, 1, 2, 3].map((index) => ({ ...baseWeek, key: `week-${index}` })),
     weeksComplete: 0,
     allWeeksComplete: false,
     summaryStats: { thoughtRecords: 0, activitiesCompleted: 0, goalsSet: 0, beliefsExamined: 0 },
@@ -90,11 +92,16 @@ describe("ProgramHero", () => {
     expect(onDismissStart).toHaveBeenCalled();
   });
 
-  it("calls onAbandon from an in-progress program", () => {
+  it("calls onAbandon via the cogwheel menu", () => {
     const onAbandon = jest.fn();
     renderWithProviders(
       <ProgramHero program={view({})} onAbandon={onAbandon} onStart={jest.fn()} />,
     );
+    // Abandon option not visible until menu is opened
+    expect(screen.queryByText("Abandon program")).toBeNull();
+    // Open the cogwheel menu
+    fireEvent.press(screen.getByLabelText("Program options"));
+    // Abandon option now visible; press it
     fireEvent.press(screen.getByText("Abandon program"));
     expect(onAbandon).toHaveBeenCalled();
   });

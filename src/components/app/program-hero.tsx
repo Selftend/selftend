@@ -1,11 +1,17 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { HelpButton } from "@/src/components/app/help-button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  type TriggerRef,
+} from "@/src/components/react-native-reusables/popover";
 import { Text } from "@/src/components/react-native-reusables/text";
 import type { ProgramTaskView } from "@/src/features/cbt/derive-program";
 import type { HelpKey } from "@/src/features/help/help-content";
@@ -68,6 +74,7 @@ export function ProgramHero({
   const { t } = useTranslation(namespace);
   const [showOthers, setShowOthers] = useState(false);
   const programHelpKey: HelpKey = namespace === "act" ? "actProgram" : "program";
+  const triggerRef = useRef<TriggerRef>(null);
 
   if (program.status === "graduated") return null;
 
@@ -111,6 +118,36 @@ export function ProgramHero({
           <Text variant="h3" className="flex-1 text-act">
             {t("program.heroTitle")} - {t(current.themeLabelKey)}
           </Text>
+          {onAbandon ? (
+            <Popover>
+              <PopoverTrigger asChild ref={triggerRef}>
+                <Pressable
+                  accessibilityLabel={t("program.manageLabel")}
+                  accessibilityRole="button"
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  className="-mr-1 -mt-1 size-8 items-center justify-center rounded-full active:bg-act/10"
+                  role="button"
+                >
+                  <Icon name="settings" size={18} className="text-muted-foreground" />
+                </Pressable>
+              </PopoverTrigger>
+              <PopoverContent align="end" side="bottom" className="w-52 p-1">
+                <Pressable
+                  accessibilityRole="button"
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={() => {
+                    triggerRef.current?.close();
+                    onAbandon();
+                  }}
+                  className="flex-row items-center gap-3 rounded-sm px-3 py-2 active:bg-accent"
+                  role="button"
+                >
+                  <Icon name="warning" className="size-4 text-destructive" />
+                  <Text className="text-sm text-destructive">{t("program.abandon")}</Text>
+                </Pressable>
+              </PopoverContent>
+            </Popover>
+          ) : null}
           <HelpButton helpKey={programHelpKey} size={18} />
         </View>
         <Text variant="muted" className="text-sm">
@@ -163,12 +200,6 @@ export function ProgramHero({
             </View>
           ))}
         </View>
-      ) : null}
-
-      {onAbandon ? (
-        <Button disabled={isPending} variant="outline" onPress={onAbandon}>
-          <Text>{t("program.abandon")}</Text>
-        </Button>
       ) : null}
     </View>
   );

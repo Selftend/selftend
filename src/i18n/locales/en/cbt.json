@@ -34,6 +34,7 @@
     "graduationDismiss": "Continue with my tools",
     "replay": "Replay the program",
     "abandon": "Abandon program",
+    "manageLabel": "Program options",
     "abandonTitle": "Abandon this program?",
     "abandonDescription": "This only stops the 4-week program tracking. Your saved thought records, activities, goals, and logs stay in place.",
     "abandonConfirm": "Abandon program",
