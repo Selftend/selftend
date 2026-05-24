@@ -104,6 +104,7 @@ const allCompleteData = {
     id: "v",
     userId: "user-1",
     personalValues: [{ key: "honest", tier: 1 as const }],
+    priorityValues: ["honest"],
     updatedAt: AFTER,
   },
   moodLogs: DAYS.map((d, i) => ({ id: `m${i}`, loggedAt: `${d}T08:00:00Z` })),

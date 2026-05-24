@@ -9,9 +9,11 @@ export interface ValuesProfile {
   id: string;
   userId: string;
   personalValues: PersonalValue[];
+  priorityValues: string[];
   updatedAt: string;
 }
 
 export interface ValuesProfileInput {
   personalValues: PersonalValue[];
+  priorityValues: string[];
 }

@@ -10,14 +10,16 @@ const mockRequireSupabase = jest.mocked(requireSupabase);
 const sampleRow = {
   id: "v-1",
   user_id: "user-1",
-  personal_values: [{ key: "honest", tier: 1 }],
+  personal_values: [{ key: "honesty", tier: 1 }],
+  priority_values: ["honesty"],
   updated_at: "2026-05-24T10:00:00.000Z",
 };
 
 const sampleMapped = {
   id: "v-1",
   userId: "user-1",
-  personalValues: [{ key: "honest", tier: 1 }],
+  personalValues: [{ key: "honesty", tier: 1 }],
+  priorityValues: ["honesty"],
   updatedAt: "2026-05-24T10:00:00.000Z",
 };
 
@@ -54,13 +56,15 @@ describe("values repository", () => {
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
     const result = await saveValuesProfile("user-1", {
-      personalValues: [{ key: "honest", tier: 1 }],
+      personalValues: [{ key: "honesty", tier: 1 }],
+      priorityValues: ["honesty"],
     });
 
     expect(upsert).toHaveBeenCalledWith(
       {
         user_id: "user-1",
-        personal_values: [{ key: "honest", tier: 1 }],
+        personal_values: [{ key: "honesty", tier: 1 }],
+        priority_values: ["honesty"],
       },
       { onConflict: "user_id" },
     );

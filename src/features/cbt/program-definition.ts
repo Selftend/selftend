@@ -93,7 +93,7 @@ export const CBT_PROGRAM: ProgramWeek[] = [
         signal: ({ valuesProfile, since }) => ({
           current:
             valuesProfile &&
-            valuesProfile.personalValues.some((p) => p.tier === 1) &&
+            valuesProfile.priorityValues.length > 0 &&
             atOrAfter(valuesProfile.updatedAt, since)
               ? 1
               : 0,

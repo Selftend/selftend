@@ -92,6 +92,7 @@ describe("deriveCbtProgram", () => {
           id: "v",
           userId: "user-1",
           personalValues: [{ key: "honest", tier: 1 as const }],
+          priorityValues: ["honest"],
           updatedAt: "2026-05-02T00:00:00Z",
         },
         // Mood check-in on 4 distinct days (Week 1 daily practice).

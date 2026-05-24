@@ -5,6 +5,7 @@ interface ValuesProfileRow {
   id: string;
   user_id: string;
   personal_values: { key: string; tier: number }[];
+  priority_values: string[];
   updated_at: string;
 }
 
@@ -13,6 +14,7 @@ function mapValuesProfile(row: ValuesProfileRow): ValuesProfile {
     id: row.id,
     userId: row.user_id,
     personalValues: row.personal_values as ValuesProfile["personalValues"],
+    priorityValues: (row.priority_values ?? []) as string[],
     updatedAt: row.updated_at,
   };
 }
@@ -40,6 +42,7 @@ export async function saveValuesProfile(
       {
         user_id: userId,
         personal_values: input.personalValues,
+        priority_values: input.priorityValues,
       },
       { onConflict: "user_id" },
     )

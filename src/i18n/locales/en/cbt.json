@@ -856,65 +856,168 @@
   },
   "values": {
     "title": "Values clarification",
-    "description": "Choose the values that matter most to you. Mark your top values — these anchor your goals and guide your decisions.",
+    "description": "Rate the values that matter to you, then choose the few that will be most instrumental in reaching your goals.",
     "loading": "Loading values...",
     "save": "Save values",
     "saving": "Saving…",
     "saveError": "Unable to save values.",
-    "topValuesTitle": "Your top values",
-    "topValuesEmpty": "Mark at least one value as Very Important to see your top values here.",
     "tierLabel": "How important is this to you?",
-    "tier1": "Very Important",
-    "tier2": "Important",
+    "tier1": "Highly Important",
+    "tier2": "Moderately Important",
     "tier3": "Less Important",
-    "tierRequired": "Mark at least one value as Very Important to save.",
-    "allValues": "All values"
+    "allValues": "All values",
+    "prioritiesTitle": "Your top priorities",
+    "prioritiesHint": "Pick up to 6 of your Highly Important values, in priority order — the ones most instrumental to your goals.",
+    "prioritiesEmpty": "Mark values as Highly Important below, then add up to 6 here in priority order.",
+    "candidatesTitle": "Highly Important values",
+    "priorityAdd": "Add to priorities",
+    "priorityRemove": "Remove",
+    "priorityMoveUp": "Move up",
+    "priorityMoveDown": "Move down",
+    "priorityFull": "You've reached the maximum of 6 priorities.",
+    "priorityRequired": "Add at least one priority value to save."
   },
   "personalValues": {
-    "accepting": "Accepting",
-    "affectionate": "Affectionate",
-    "aspiring": "Aspiring",
-    "authentic": "Authentic",
-    "balanced": "Balanced",
-    "caring": "Caring",
-    "committed": "Committed",
-    "compassionate": "Compassionate",
-    "connected": "Connected",
-    "courageous": "Courageous",
-    "creative": "Creative",
-    "dependable": "Dependable",
-    "devoted": "Devoted",
-    "empathic": "Empathic",
-    "equitable": "Equitable",
-    "expressive": "Expressive",
-    "flexible": "Flexible",
-    "focused": "Focused",
-    "forgiving": "Forgiving",
-    "free": "Free",
-    "fun-loving": "Fun-loving",
-    "generous": "Generous",
-    "grateful": "Grateful",
-    "grounded": "Grounded",
-    "honest": "Honest",
-    "humble": "Humble",
-    "independent": "Independent",
-    "inspired": "Inspired",
-    "integrity": "Integrity",
-    "kind": "Kind",
-    "open-minded": "Open-minded",
-    "optimistic": "Optimistic",
-    "patient": "Patient",
-    "peaceful": "Peaceful",
-    "playful": "Playful",
-    "purposeful": "Purposeful",
-    "resilient": "Resilient",
-    "responsible": "Responsible",
-    "self-aware": "Self-aware",
-    "spiritual": "Spiritual",
-    "supportive": "Supportive",
-    "tolerant": "Tolerant",
-    "trustworthy": "Trustworthy",
-    "wise": "Wise"
+    "accepting": {
+      "label": "Accepting",
+      "description": "Open to and willing to experience thoughts and feelings without resistance or judgement."
+    },
+    "affectionate": {
+      "label": "Affectionate",
+      "description": "Displaying and expressing love or strong feelings for others."
+    },
+    "aspiring": {
+      "label": "Aspiring",
+      "description": "Actively seeking opportunities and striving for success."
+    },
+    "assertive": {
+      "label": "Assertive",
+      "description": "Respectfully standing up for my rights and balancing my needs with the needs of others."
+    },
+    "authentic": {
+      "label": "Authentic",
+      "description": "Being genuine, honest and true to myself."
+    },
+    "caring": { "label": "Caring", "description": "Helpful and considerate to myself and others." },
+    "challenging": {
+      "label": "Challenging",
+      "description": "Willing to examine and challenge unhelpful or unworkable patterns of behaviour."
+    },
+    "compassionate": {
+      "label": "Compassionate",
+      "description": "Recognising and acting to alleviate suffering for myself and others."
+    },
+    "conforming": {
+      "label": "Conforming",
+      "description": "Respectful and obedient of helpful rules and obligations."
+    },
+    "cooperating": {
+      "label": "Cooperating",
+      "description": "Working collaboratively and harmoniously with others."
+    },
+    "courageous": {
+      "label": "Courageous",
+      "description": "Brave and persistent in the face of fear, threat or difficulty."
+    },
+    "creative": { "label": "Creative", "description": "Imaginative, resourceful and innovative." },
+    "curious": {
+      "label": "Curious",
+      "description": "Open-minded, exploratory and interested in new and alternative approaches."
+    },
+    "emotionally-aware": {
+      "label": "Emotionally aware",
+      "description": "Receptive to my own feelings and the feelings of others."
+    },
+    "encouraging": {
+      "label": "Encouraging",
+      "description": "Promoting and rewarding behaviour that I value in myself and others."
+    },
+    "equality": {
+      "label": "Equality",
+      "description": "Treating others fairly, consistently and equally."
+    },
+    "fairness": { "label": "Fairness", "description": "Just, rational and reasonable." },
+    "fitness": {
+      "label": "Fitness",
+      "description": "Maintaining or improving my physical, psychological and emotional wellbeing."
+    },
+    "flexible": {
+      "label": "Flexible",
+      "description": "Adjusting and adapting readily to changing circumstances."
+    },
+    "forgiving": {
+      "label": "Forgiving",
+      "description": "Coming to terms with or letting go of negative feelings towards myself and others."
+    },
+    "friendliness": {
+      "label": "Friendliness",
+      "description": "Friendly and companionable towards others."
+    },
+    "generosity": {
+      "label": "Generosity",
+      "description": "Sharing and offering time, attention and resources to myself and others."
+    },
+    "gratitude": {
+      "label": "Gratitude",
+      "description": "Appreciative and valuing of the things that I have in my life."
+    },
+    "honesty": {
+      "label": "Honesty",
+      "description": "Truthful and sincere with myself and others."
+    },
+    "humility": {
+      "label": "Humility",
+      "description": "Modest about my contributions whilst allowing my achievements to speak for themselves."
+    },
+    "humour": {
+      "label": "Humour",
+      "description": "Seeking out and engaging in the humorous side of life; not taking myself too seriously."
+    },
+    "independent": {
+      "label": "Independent",
+      "description": "Self-directive, contained and able to support myself."
+    },
+    "industrious": {
+      "label": "Industrious",
+      "description": "Hard-working and productive with my time and resources."
+    },
+    "open-minded": {
+      "label": "Open-minded",
+      "description": "Approaching issues from an objective position, listening and considering other views."
+    },
+    "orderly": {
+      "label": "Orderly",
+      "description": "Planning, prioritising and being organized in my life."
+    },
+    "patient": {
+      "label": "Patient",
+      "description": "Waiting calmly and in line for what I want or need."
+    },
+    "respectful": {
+      "label": "Respectful",
+      "description": "Polite, considerate and showing positive regard to others."
+    },
+    "safe": { "label": "Safe", "description": "Acting in a secure, protective and stable manner." },
+    "self-aware": {
+      "label": "Self-aware",
+      "description": "Aware of my own thoughts, feelings and actions, considering how I come across to others."
+    },
+    "self-disciplined": {
+      "label": "Self-disciplined",
+      "description": "Acting according to my values and commitments, over my mood or vulnerabilities."
+    },
+    "tenacious": {
+      "label": "Tenacious",
+      "description": "Persisting despite problems and difficulties and without giving up."
+    },
+    "tolerant": {
+      "label": "Tolerant",
+      "description": "Coming to terms with, acknowledging and respecting things that clash with my own opinions."
+    },
+    "trusted": {
+      "label": "Trusted",
+      "description": "Discrete, loyal, faithful, sincere and reliable."
+    }
   },
   "mood": {
     "title": "Log mood",
