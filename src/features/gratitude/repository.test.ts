@@ -166,23 +166,25 @@ describe("gratitude repository", () => {
       note: "  A steady morning.  ",
     });
 
-    expect(insert).toHaveBeenCalledWith({
-      user_id: "user-1",
-      level: 3,
-      item_1: "Warm coffee",
-      item_2: "Sunlight",
-      item_3: "",
-      item_4: "",
-      item_5: "",
-      note: "A steady morning.",
-      events: [],
-      good_moment: "",
-      miss_if_gone: "",
-      hidden_good: "",
-      life_item_1: "",
-      life_item_2: "",
-      life_item_3: "",
-    });
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user-1",
+        level: 3,
+        item_1: "Warm coffee",
+        item_2: "Sunlight",
+        item_3: "",
+        item_4: "",
+        item_5: "",
+        note: "A steady morning.",
+        events: [],
+        good_moment: "",
+        miss_if_gone: "",
+        hidden_good: "",
+        life_item_1: "",
+        life_item_2: "",
+        life_item_3: "",
+      }),
+    );
   });
 
   it("trims and updates an existing entry", async () => {

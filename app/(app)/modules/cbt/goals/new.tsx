@@ -12,6 +12,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { Input } from "@/src/components/react-native-reusables/input";
+import { DateField } from "@/src/components/app/date-field";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
 import { goalTypes } from "@/src/constants/goal-types";
@@ -230,11 +231,10 @@ export default function NewGoalScreen() {
               <View className="gap-2">
                 <Label>{t("goals.targetDate")}</Label>
                 <Text variant="muted">{t("goals.targetDateHint")}</Text>
-                <Input
+                <DateField
                   accessibilityLabel={t("goals.targetDate")}
-                  onChangeText={(text) => onChange(text.length > 0 ? text : null)}
-                  placeholder="YYYY-MM-DD"
-                  value={value ?? ""}
+                  onChange={onChange}
+                  value={value}
                 />
               </View>
             )}

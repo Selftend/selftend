@@ -12,4 +12,5 @@ export interface SleepInput {
   durationMinutes: number;
   quality: number;
   notes: string;
+  loggedAt?: string;
 }

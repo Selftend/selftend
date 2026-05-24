@@ -10,6 +10,10 @@ interface MoodLogRow {
   linked_strategy: string | null;
   logged_at: string;
   created_at: string;
+  situation: string;
+  thoughts: string;
+  behaviours: string;
+  bodily_sensations: string;
 }
 
 function mapMoodLog(row: MoodLogRow): MoodLog {
@@ -22,6 +26,10 @@ function mapMoodLog(row: MoodLogRow): MoodLog {
     linkedStrategy: row.linked_strategy,
     loggedAt: row.logged_at,
     createdAt: row.created_at,
+    situation: row.situation,
+    thoughts: row.thoughts,
+    behaviours: row.behaviours,
+    bodilySensations: row.bodily_sensations,
   };
 }
 
@@ -66,6 +74,10 @@ export async function saveMoodLog(userId: string, input: MoodInput, moodLogId?: 
     notes: input.notes.trim(),
     linked_strategy: input.linkedStrategy ?? null,
     logged_at: loggedAt,
+    situation: input.situation.trim(),
+    thoughts: input.thoughts.trim(),
+    behaviours: input.behaviours.trim(),
+    bodily_sensations: input.bodilySensations.trim(),
   };
 
   const query = moodLogId

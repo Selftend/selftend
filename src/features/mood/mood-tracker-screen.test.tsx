@@ -43,7 +43,7 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect(screen.getByText("Mood tracker")).toBeTruthy();
+    expect(screen.getByText("Check-in")).toBeTruthy();
     expect(screen.getByText("How are you feeling right now?")).toBeTruthy();
     expect(screen.getByLabelText("3, neutral")).toBeTruthy();
     expect(screen.getByText("Log a mood to start your 14-day trend.")).toBeTruthy();
@@ -54,8 +54,9 @@ describe("MoodTrackerScreen", () => {
   });
 
   it("renders the completed Today card with score when a single entry was logged today", () => {
-    const today = new Date();
-    today.setHours(12, 0, 0, 0);
+    // Build on today's UTC date key (the app's date convention) so the test is
+    // independent of timezone / time of day.
+    const loggedAt = `${new Date().toISOString().slice(0, 10)}T12:00:00.000Z`;
     mockUseMoodLogs.mockReturnValue({
       data: [
         {
@@ -65,15 +66,15 @@ describe("MoodTrackerScreen", () => {
           emotions: ["Anxious"],
           notes: "Felt steadier after a walk",
           linkedStrategy: null,
-          loggedAt: today.toISOString(),
-          createdAt: today.toISOString(),
+          loggedAt,
+          createdAt: loggedAt,
         },
       ],
     } as unknown as ReturnType<typeof useMoodLogs>);
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect(screen.getByText("Logged today · 4")).toBeTruthy();
+    expect(screen.getByText("Logged · 4")).toBeTruthy();
     expect(screen.getByText("Log another")).toBeTruthy();
     expect(screen.getAllByText("Avg 4")).toHaveLength(2);
     expect(screen.getAllByText("1 log")).toHaveLength(2);
@@ -81,10 +82,9 @@ describe("MoodTrackerScreen", () => {
   });
 
   it("shows the average and count when multiple entries were logged today", () => {
-    const today = new Date();
-    today.setHours(9, 0, 0, 0);
-    const later = new Date(today);
-    later.setHours(18, 0, 0, 0);
+    const dayKey = new Date().toISOString().slice(0, 10);
+    const morning = `${dayKey}T09:00:00.000Z`;
+    const evening = `${dayKey}T18:00:00.000Z`;
     mockUseMoodLogs.mockReturnValue({
       data: [
         {
@@ -94,8 +94,8 @@ describe("MoodTrackerScreen", () => {
           emotions: [],
           notes: "",
           linkedStrategy: null,
-          loggedAt: later.toISOString(),
-          createdAt: later.toISOString(),
+          loggedAt: evening,
+          createdAt: evening,
         },
         {
           id: "log-1",
@@ -104,15 +104,15 @@ describe("MoodTrackerScreen", () => {
           emotions: [],
           notes: "",
           linkedStrategy: null,
-          loggedAt: today.toISOString(),
-          createdAt: today.toISOString(),
+          loggedAt: morning,
+          createdAt: morning,
         },
       ],
     } as unknown as ReturnType<typeof useMoodLogs>);
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect(screen.getByText("2 logs today · avg 3")).toBeTruthy();
+    expect(screen.getByText("2 logs · avg 3")).toBeTruthy();
     expect(screen.getByText("Log another")).toBeTruthy();
   });
 

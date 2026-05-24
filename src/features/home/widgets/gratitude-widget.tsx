@@ -7,12 +7,13 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function GratitudeWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
   const { data: entries } = useGratitudeEntries(userId);
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const { selectedDate: todayKey } = useSelectedDate();
   const todayEntries = entries?.filter((e) => e.loggedAt.startsWith(todayKey)) ?? [];
   const latestToday = todayEntries.at(-1);
   const preview = latestToday?.items.at(0) ?? latestToday?.note ?? null;

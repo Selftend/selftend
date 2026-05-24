@@ -33,6 +33,7 @@ function formatTimestamp(value: string) {
 
 export default function MoodDetailScreen() {
   const { t } = useTranslation("mood");
+  const { t: tCbt } = useTranslation("cbt");
   const { user } = useSession();
   const { resolveEmotion } = useEmotionDisplay();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -177,6 +178,24 @@ export default function MoodDetailScreen() {
               )}
             </CardContent>
           </Card>
+
+          {[
+            { title: tCbt("mood.situationLabel"), value: entry.situation.trim() },
+            { title: tCbt("mood.thoughtsLabel"), value: entry.thoughts.trim() },
+            { title: tCbt("mood.behavioursLabel"), value: entry.behaviours.trim() },
+            { title: tCbt("mood.sensationsLabel"), value: entry.bodilySensations.trim() },
+          ]
+            .filter((box) => box.value.length > 0)
+            .map((box) => (
+              <Card key={box.title}>
+                <CardHeader>
+                  <CardTitle>{box.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Text>{box.value}</Text>
+                </CardContent>
+              </Card>
+            ))}
 
           {entry.linkedStrategy ? (
             <Card>

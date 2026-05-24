@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from "@testing-library/react-native";
+import { act, renderHook } from "@testing-library/react-native";
 
 import { useActivities } from "@/src/features/activities/queries";
 import { useCoreBeliefs } from "@/src/features/beliefs/queries";
@@ -8,11 +8,11 @@ import { useGoals } from "@/src/features/goals/queries";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import { useTasks } from "@/src/features/procrastination/queries";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useValuesProfile } from "@/src/features/values/queries";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
 
 // ---------------------------------------------------------------------------
@@ -47,10 +47,6 @@ jest.mock("@/src/features/exposure/queries", () => ({
   useHierarchies: jest.fn(),
 }));
 
-jest.mock("@/src/features/procrastination/queries", () => ({
-  useTasks: jest.fn(),
-}));
-
 jest.mock("@/src/features/mindfulness/queries", () => ({
   useMindfulnessSessions: jest.fn(),
 }));
@@ -59,12 +55,14 @@ jest.mock("@/src/features/self-care/queries", () => ({
   useSelfCareLogs: jest.fn(),
 }));
 
-jest.mock("@/src/features/mood/queries", () => ({
-  useMoodLogs: jest.fn(),
-}));
+jest.mock("@/src/features/mood/queries", () => ({ useMoodLogs: jest.fn() }));
 
 jest.mock("@/src/features/recovery/queries", () => ({
   useRecoveryPlan: jest.fn(),
+}));
+
+jest.mock("@/src/stores/selected-date-store", () => ({
+  useSelectedDate: jest.fn(),
 }));
 
 // ---------------------------------------------------------------------------
@@ -80,25 +78,25 @@ const mockUseThoughtRecords = useThoughtRecords as jest.MockedFunction<typeof us
 const mockUseCoreBeliefs = useCoreBeliefs as jest.MockedFunction<typeof useCoreBeliefs>;
 const mockUseActivities = useActivities as jest.MockedFunction<typeof useActivities>;
 const mockUseHierarchies = useHierarchies as jest.MockedFunction<typeof useHierarchies>;
-const mockUseTasks = useTasks as jest.MockedFunction<typeof useTasks>;
 const mockUseMindfulnessSessions = useMindfulnessSessions as jest.MockedFunction<
   typeof useMindfulnessSessions
 >;
 const mockUseSelfCareLogs = useSelfCareLogs as jest.MockedFunction<typeof useSelfCareLogs>;
 const mockUseMoodLogs = useMoodLogs as jest.MockedFunction<typeof useMoodLogs>;
 const mockUseRecoveryPlan = useRecoveryPlan as jest.MockedFunction<typeof useRecoveryPlan>;
+const mockUseSelectedDate = useSelectedDate as jest.MockedFunction<typeof useSelectedDate>;
 
 // ---------------------------------------------------------------------------
-// Fixtures — mirrors "graduates when all weeks complete" in derive-program.test.ts
+// Fixtures
 // ---------------------------------------------------------------------------
 const STARTED_AT = "2026-05-01T00:00:00.000Z";
 const AFTER = "2026-05-02T00:00:00.000Z";
+const TODAY = "2026-05-24";
 
 const DAYS = ["2026-05-02", "2026-05-03", "2026-05-04", "2026-05-05"];
 
 /** Minimal data that satisfies every task signal, including distinct-day practices. */
 const allCompleteData = {
-  // Week 1 — foundation: a goal, values, and mood check-in on 4 distinct days.
   goals: [{ id: "g", createdAt: AFTER }],
   valuesProfile: {
     id: "v",
@@ -107,28 +105,34 @@ const allCompleteData = {
     priorityValues: ["honest"],
     updatedAt: AFTER,
   },
-  moodLogs: DAYS.map((d, i) => ({ id: `m${i}`, loggedAt: `${d}T08:00:00Z` })),
-  // Week 2 — think: thought records on 3 distinct days + a belief.
+  moodLogs: DAYS.map((d, i) => ({
+    id: `m${i}`,
+    loggedAt: `${d}T08:00:00Z`,
+    situation: "x",
+    thoughts: "",
+    behaviours: "",
+    bodilySensations: "",
+  })),
   thoughtRecords: [
     { id: "t1", createdAt: "2026-05-02T08:00:00Z", distortions: ["x"] },
     { id: "t2", createdAt: "2026-05-03T08:00:00Z", distortions: [] },
     { id: "t3", createdAt: "2026-05-04T08:00:00Z", distortions: [] },
   ],
   beliefs: [{ id: "b", createdAt: AFTER }],
-  // Week 3 — act: a completed activity on 4 distinct days + an exposure.
   activities: DAYS.map((d, i) => ({
     id: `a${i}`,
     createdAt: `${d}T00:00:00Z`,
     completedAt: `${d}T18:00:00Z`,
   })),
   exposures: [{ id: "e", createdAt: AFTER }],
-  // Week 4 — be: a calming session on 4 distinct days + a resilience plan.
   selfCareLogs: [{ id: "sc", createdAt: AFTER }],
   mindfulnessSessions: DAYS.map((d, i) => ({ id: `s${i}`, completedAt: `${d}T19:00:00Z` })),
   recoveryPlan: { updatedAt: AFTER, personalSlogan: "Onward" },
 };
 
 function setupBaseMocks(mutateAsync: jest.Mock, isPending = false) {
+  mockUseSelectedDate.mockReturnValue({ selectedDate: TODAY, isToday: true });
+
   mockUseUpdateUserPreferences.mockReturnValue({
     mutateAsync,
     isPending,
@@ -152,18 +156,15 @@ function setupBaseMocks(mutateAsync: jest.Mock, isPending = false) {
   mockUseHierarchies.mockReturnValue({
     data: allCompleteData.exposures,
   } as unknown as ReturnType<typeof useHierarchies>);
-  mockUseTasks.mockReturnValue({
-    data: [],
-  } as unknown as ReturnType<typeof useTasks>);
   mockUseMindfulnessSessions.mockReturnValue({
     data: allCompleteData.mindfulnessSessions,
   } as unknown as ReturnType<typeof useMindfulnessSessions>);
   mockUseSelfCareLogs.mockReturnValue({
     data: allCompleteData.selfCareLogs,
   } as unknown as ReturnType<typeof useSelfCareLogs>);
-  mockUseMoodLogs.mockReturnValue({
-    data: allCompleteData.moodLogs,
-  } as unknown as ReturnType<typeof useMoodLogs>);
+  mockUseMoodLogs.mockReturnValue({ data: allCompleteData.moodLogs } as unknown as ReturnType<
+    typeof useMoodLogs
+  >);
   mockUseRecoveryPlan.mockReturnValue({
     data: allCompleteData.recoveryPlan,
   } as unknown as ReturnType<typeof useRecoveryPlan>);
@@ -172,12 +173,12 @@ function setupBaseMocks(mutateAsync: jest.Mock, isPending = false) {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
-describe("useCbtProgram — graduation latch", () => {
+describe("useCbtProgram — advancePhase", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("fires mutateAsync exactly once when all weeks are complete and the program is in progress", async () => {
+  it("advancePhase when not on last phase increments cbtProgramPhaseIndex and sets cbtProgramPhaseStartedAt", () => {
     const mutateAsync = jest.fn().mockResolvedValue(undefined);
     setupBaseMocks(mutateAsync, false);
 
@@ -186,55 +187,59 @@ describe("useCbtProgram — graduation latch", () => {
         ...defaultUserPreferences,
         cbtProgramStartedAt: STARTED_AT,
         cbtProgramCompletedAt: null,
+        cbtProgramPhaseIndex: 0,
+        cbtProgramPhaseStartedAt: STARTED_AT,
       },
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
 
-    renderHook(() => useCbtProgram("user-1"));
+    const { result } = renderHook(() => useCbtProgram("user-1"));
 
-    await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
+    act(() => result.current.advancePhase());
+
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cbtProgramPhaseIndex: 1,
+        cbtProgramPhaseStartedAt: expect.any(String),
+      }),
+    );
+    // Should NOT set completedAt
+    expect(mutateAsync).not.toHaveBeenCalledWith(
+      expect.objectContaining({ cbtProgramCompletedAt: expect.any(String) }),
+    );
   });
 
-  it("does NOT fire mutateAsync when updatePreferences.isPending is true (in-flight guard)", async () => {
+  it("advancePhase on the last phase sets cbtProgramCompletedAt instead of incrementing", () => {
     const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync, true /* isPending */);
+    setupBaseMocks(mutateAsync, false);
 
+    // Last phase index = totalPhases - 1 = 4 (CBT_PROGRAM has 5 entries)
     mockUseUserPreferences.mockReturnValue({
       data: {
         ...defaultUserPreferences,
         cbtProgramStartedAt: STARTED_AT,
         cbtProgramCompletedAt: null,
+        cbtProgramPhaseIndex: 4,
+        cbtProgramPhaseStartedAt: STARTED_AT,
       },
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
 
-    renderHook(() => useCbtProgram("user-1"));
+    const { result } = renderHook(() => useCbtProgram("user-1"));
 
-    // Give effects a chance to flush; none should fire
-    await new Promise((r) => setTimeout(r, 50));
-    expect(mutateAsync).not.toHaveBeenCalled();
+    act(() => result.current.advancePhase());
+
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cbtProgramCompletedAt: expect.any(String),
+      }),
+    );
+    expect(mutateAsync).not.toHaveBeenCalledWith(
+      expect.objectContaining({ cbtProgramPhaseIndex: 5 }),
+    );
   });
 
-  it("does NOT fire mutateAsync when cbtProgramCompletedAt is already set (already-complete guard)", async () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync, false);
-
-    mockUseUserPreferences.mockReturnValue({
-      data: {
-        ...defaultUserPreferences,
-        cbtProgramStartedAt: STARTED_AT,
-        cbtProgramCompletedAt: "2026-05-10T00:00:00.000Z",
-      },
-      isLoading: false,
-    } as unknown as ReturnType<typeof useUserPreferences>);
-
-    renderHook(() => useCbtProgram("user-1"));
-
-    await new Promise((r) => setTimeout(r, 50));
-    expect(mutateAsync).not.toHaveBeenCalled();
-  });
-
-  it("starts the program and clears any dismissed prompt state", () => {
+  it("startProgram sets cbtProgramPhaseIndex: 0 and cbtProgramPhaseStartedAt", () => {
     const mutateAsync = jest.fn().mockResolvedValue(undefined);
     setupBaseMocks(mutateAsync, false);
 
@@ -256,8 +261,46 @@ describe("useCbtProgram — graduation latch", () => {
         cbtProgramCompletedAt: null,
         cbtProgramPromptDismissedAt: null,
         cbtProgramStartedAt: expect.any(String),
+        cbtProgramPhaseIndex: 0,
+        cbtProgramPhaseStartedAt: expect.any(String),
       }),
     );
+  });
+
+  it("replayProgram resets cbtProgramPhaseIndex to 0 and sets cbtProgramPhaseStartedAt", () => {
+    const mutateAsync = jest.fn().mockResolvedValue(undefined);
+    setupBaseMocks(mutateAsync, false);
+
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        cbtProgramStartedAt: STARTED_AT,
+        cbtProgramCompletedAt: "2026-05-10T00:00:00.000Z",
+        cbtProgramPhaseIndex: 4,
+        cbtProgramPhaseStartedAt: STARTED_AT,
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    const { result } = renderHook(() => useCbtProgram("user-1"));
+
+    act(() => result.current.replayProgram());
+
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cbtProgramStartedAt: expect.any(String),
+        cbtProgramCompletedAt: null,
+        cbtProgramPromptDismissedAt: null,
+        cbtProgramPhaseIndex: 0,
+        cbtProgramPhaseStartedAt: expect.any(String),
+      }),
+    );
+  });
+});
+
+describe("useCbtProgram — dismiss / show / abandon", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   it("dismisses and restores the start-program prompt", () => {

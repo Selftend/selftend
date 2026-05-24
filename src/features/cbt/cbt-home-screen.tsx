@@ -19,7 +19,7 @@ import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
 import { GratitudeOnboarding } from "@/src/components/app/gratitude-onboarding-modal";
 import { GroundingOnboarding } from "@/src/components/app/grounding-onboarding-modal";
 import { HabitsOnboarding } from "@/src/components/app/habits-onboarding-modal";
-import { ProgramHero } from "@/src/components/app/program-hero";
+import { CbtProgramCard } from "@/src/components/app/cbt-program-card";
 import { ProgramGraduation } from "@/src/components/app/program-graduation";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { HelpButton } from "@/src/components/app/help-button";
@@ -542,6 +542,7 @@ export default function CbtHomeScreen() {
     showProgramPrompt,
     abandonProgram,
     replayProgram,
+    advancePhase,
     promptDismissedAt,
     isUpdating: isProgramUpdating,
   } = useCbtProgram(user?.id ?? null);
@@ -632,26 +633,29 @@ export default function CbtHomeScreen() {
               <ProgramGraduation
                 namespace="cbt"
                 lines={[
-                  t("program.statThoughtRecords", { count: program.summaryStats.thoughtRecords }),
-                  t("program.statActivities", { count: program.summaryStats.activitiesCompleted }),
-                  t("program.statGoals", { count: program.summaryStats.goalsSet }),
-                  t("program.statBeliefs", { count: program.summaryStats.beliefsExamined }),
-                ]}
+                  { n: program.summaryStats.thoughtRecords, key: "program.statThoughtRecords" },
+                  { n: program.summaryStats.activitiesCompleted, key: "program.statActivities" },
+                  { n: program.summaryStats.goalsSet, key: "program.statGoals" },
+                  { n: program.summaryStats.beliefsExamined, key: "program.statBeliefs" },
+                ]
+                  .filter((stat) => stat.n > 0)
+                  .map((stat) => t(stat.key, { count: stat.n }))}
                 dismissed={graduationDismissed}
                 onDismiss={() => setGraduationDismissed(true)}
                 onReplay={replayProgram}
               />
             ) : showProgramCard ? (
-              <ProgramHero
-                isPending={isProgramUpdating}
+              <CbtProgramCard
                 program={program}
+                isPending={isProgramUpdating}
+                onStart={startProgram}
+                onAdvance={advancePhase}
                 onAbandon={
                   program.status === "in_progress"
                     ? () => setAbandonConfirmVisible(true)
                     : undefined
                 }
                 onDismissStart={program.status === "not_started" ? dismissProgramPrompt : undefined}
-                onStart={startProgram}
               />
             ) : null}
 

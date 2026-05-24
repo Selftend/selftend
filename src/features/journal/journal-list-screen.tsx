@@ -15,6 +15,7 @@ import { useJournalEntries } from "@/src/features/journal/queries";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function JournalListScreen() {
   const { t } = useTranslation("journal");
@@ -22,10 +23,11 @@ export default function JournalListScreen() {
   const userId = user?.id ?? null;
 
   const { data: entries } = useJournalEntries(userId, 50);
+  const { selectedDate } = useSelectedDate();
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
-  const list = entries ?? [];
+  const list = (entries ?? []).filter((entry) => entry.createdAt.slice(0, 10) === selectedDate);
 
   return (
     <>

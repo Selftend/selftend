@@ -26,4 +26,5 @@ export interface AngerLogInput {
   alternativeInterpretation: string;
   outcomeRating: number | null;
   notes: string;
+  createdAt?: string;
 }

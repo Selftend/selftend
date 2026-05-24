@@ -8,6 +8,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { useMoodLogs } from "@/src/features/mood/queries";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 function computeAverage(logs: { loggedAt: string; moodScore: number }[], days: number) {
   const cutoff = new Date();
@@ -25,7 +26,7 @@ export function MoodWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
   const { data: moodLogs } = useMoodLogs(userId, 30);
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const { selectedDate: todayKey } = useSelectedDate();
   const logs = moodLogs ?? [];
   const sevenDay = computeAverage(logs, 7);
   const todayLogs = logs.filter((l) => l.loggedAt.startsWith(todayKey));

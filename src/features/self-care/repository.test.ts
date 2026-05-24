@@ -15,8 +15,6 @@ const sampleRow = {
   id: "sc-1",
   user_id: "user-1",
   log_date: "2026-05-15",
-  sleep_hours: 7,
-  sleep_quality: 4,
   exercise_done: true,
   exercise_minutes: 30,
   exercise_type: "walk",
@@ -25,7 +23,6 @@ const sampleRow = {
   social_connection_made: true,
   social_notes: "talked to friend",
   meaningful_activity: "read",
-  gratitude: ["sun", "coffee"],
   created_at: "2026-05-15T08:00:00.000Z",
   updated_at: "2026-05-15T08:00:00.000Z",
 };
@@ -59,21 +56,7 @@ describe("self-care repository", () => {
     expect(limit).toHaveBeenCalledWith(14);
   });
 
-  it("coerces null gratitude to empty array when mapping rows", async () => {
-    const limit = jest
-      .fn()
-      .mockResolvedValue({ data: [{ ...sampleRow, gratitude: null }], error: null });
-    const order = jest.fn(() => ({ limit }));
-    const eq = jest.fn(() => ({ order }));
-    const select = jest.fn(() => ({ eq }));
-    const from = jest.fn(() => ({ select }));
-    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
-
-    const result = await listSelfCareLogs("user-1");
-    expect(result[0].gratitude).toEqual([]);
-  });
-
-  it("upserts on (user_id, log_date), trims text fields, drops empty gratitude entries", async () => {
+  it("upserts on (user_id, log_date) and trims text fields", async () => {
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
     const select = jest.fn(() => ({ single }));
     const upsert = jest.fn(() => ({ select }));
@@ -82,8 +65,6 @@ describe("self-care repository", () => {
 
     await upsertSelfCareLog("user-1", {
       logDate: "2026-05-15",
-      sleepHours: 7,
-      sleepQuality: 4,
       exerciseDone: true,
       exerciseMinutes: 30,
       exerciseType: "  walk  ",
@@ -92,7 +73,6 @@ describe("self-care repository", () => {
       socialConnectionMade: true,
       socialNotes: "  hi  ",
       meaningfulActivity: "  read  ",
-      gratitude: ["sun", "  ", "coffee"],
     });
 
     expect(upsert).toHaveBeenCalledWith(
@@ -102,7 +82,6 @@ describe("self-care repository", () => {
         exercise_type: "walk",
         social_notes: "hi",
         meaningful_activity: "read",
-        gratitude: ["sun", "coffee"],
       }),
       { onConflict: "user_id,log_date" },
     );

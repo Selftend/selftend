@@ -77,6 +77,13 @@ export default function BreathingExerciseScreen() {
   };
 
   useEffect(() => {
+    if (pattern && selectedDuration === null) {
+      const durations = pattern.durations;
+      setSelectedDuration(durations[Math.floor(durations.length / 2)] ?? durations[0] ?? null);
+    }
+  }, [pattern, selectedDuration]);
+
+  useEffect(() => {
     if (screenPhase !== "active" || !pattern || secondsLeft <= 0) return;
 
     const id = setInterval(() => {

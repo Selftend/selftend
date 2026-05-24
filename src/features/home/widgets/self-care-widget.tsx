@@ -7,10 +7,11 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useSelfCareLog } from "@/src/features/self-care/queries";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function SelfCareWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const { selectedDate: todayKey } = useSelectedDate();
   const { data: log } = useSelfCareLog(userId, todayKey);
   const done = Boolean(log);
 

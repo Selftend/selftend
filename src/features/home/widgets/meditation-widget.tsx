@@ -7,12 +7,13 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function MeditationWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
   const { data: sessions } = useMeditationSessions(userId);
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const { selectedDate: todayKey } = useSelectedDate();
   const doneToday = sessions?.some((s) => s.completedAt.startsWith(todayKey)) ?? false;
 
   const weekStart = new Date();

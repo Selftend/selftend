@@ -53,6 +53,10 @@ describe("MoodDetailScreen", () => {
           linkedStrategy: null,
           loggedAt,
           createdAt: loggedAt,
+          situation: "",
+          thoughts: "",
+          behaviours: "",
+          bodilySensations: "",
         },
       ],
     } as unknown as ReturnType<typeof useMoodLogs>);

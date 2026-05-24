@@ -30,6 +30,7 @@ import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
 import { useWizardDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
 import { useSession } from "@/src/providers/session-provider";
 import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
+import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 
 const defaultValues: ThoughtRecordFormSchema = {
   situation: "",
@@ -121,6 +122,7 @@ export default function ThoughtRecordEditorScreen() {
   const recordId = typeof rawRecordId === "string" && rawRecordId.length > 0 ? rawRecordId : null;
   const draftMode = recordId ? "edit" : "create";
   const { user } = useSession();
+  const { selectedDate } = useSelectedDate();
   const [submitError, setSubmitError] = useState("");
 
   const storedDraftValues = useCbtDraftStore(
@@ -197,7 +199,10 @@ export default function ThoughtRecordEditorScreen() {
         evidenceFor: cleanList(values.evidenceFor),
         outcomeNotes: values.outcomeNotes.trim(),
       };
-      return saveMutation.mutateAsync({ input, recordId: recordId ?? undefined });
+      const inputWithDate = !recordId
+        ? { ...input, createdAt: loggedAtForSelectedDate(selectedDate) }
+        : input;
+      return saveMutation.mutateAsync({ input: inputWithDate, recordId: recordId ?? undefined });
     },
     onSaved: (saved) =>
       router.replace(`/modules/cbt/history/${saved.id}` as Parameters<typeof router.replace>[0]),

@@ -25,6 +25,7 @@ import {
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 
 interface GratitudeEntryEditorScreenProps {
   fallbackHref: Href;
@@ -54,6 +55,7 @@ export function GratitudeEntryEditorScreen({
   const { t } = useTranslation("gratitude");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
+  const { selectedDate } = useSelectedDate();
   const editMode = mode === "edit";
 
   const { data: cachedList } = useGratitudeEntries(user?.id ?? null, 50);
@@ -126,6 +128,7 @@ export function GratitudeEntryEditorScreen({
           level: 3,
           items: trimmedItems.map((item) => item.slice(0, GRATITUDE_ITEM_MAX)),
           note: note.trim().slice(0, GRATITUDE_NOTE_MAX),
+          ...(!editMode ? { loggedAt: loggedAtForSelectedDate(selectedDate) } : {}),
           events: [],
           goodMoment: "",
           missIfGone: "",

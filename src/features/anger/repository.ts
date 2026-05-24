@@ -78,6 +78,7 @@ export async function saveAngerLog(userId: string, input: AngerLogInput) {
       alternative_interpretation: input.alternativeInterpretation.trim(),
       outcome_rating: input.outcomeRating ?? null,
       notes: input.notes.trim(),
+      ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
     .single();

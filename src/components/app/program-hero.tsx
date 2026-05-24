@@ -23,6 +23,8 @@ type ProgramView = {
   weeks: {
     key: string;
     themeLabelKey: string;
+    themeSubKey?: string;
+    themeDescKey?: string;
     tasks: ProgramTaskView[];
   }[];
   currentWeekIndex: number;
@@ -115,9 +117,16 @@ export function ProgramHero({
     <View className="gap-3 rounded-2xl border border-act/30 bg-act/5 p-5">
       <View className="gap-1">
         <View className="flex-row items-start gap-2">
-          <Text variant="h3" className="flex-1 text-act">
-            {t("program.heroTitle")} - {t(current.themeLabelKey)}
-          </Text>
+          <View className="flex-1 flex-row flex-wrap items-baseline gap-2">
+            <Text variant="h3" className="text-act">
+              {t("program.heroTitle")} - {t(current.themeLabelKey)}
+            </Text>
+            {current.themeSubKey ? (
+              <Text variant="muted" className="text-sm">
+                · {t(current.themeSubKey)}
+              </Text>
+            ) : null}
+          </View>
           {onAbandon ? (
             <Popover>
               <PopoverTrigger asChild ref={triggerRef}>
@@ -150,6 +159,11 @@ export function ProgramHero({
           ) : null}
           <HelpButton helpKey={programHelpKey} size={18} />
         </View>
+        {current.themeDescKey ? (
+          <Text variant="muted" className="text-sm leading-5">
+            {t(current.themeDescKey)}
+          </Text>
+        ) : null}
         <Text variant="muted" className="text-sm">
           {t("program.weekProgress", {
             current: program.currentWeekIndex + 1,

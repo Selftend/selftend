@@ -7,9 +7,9 @@
     "helpPrefix": "Help: "
   },
   "program": {
-    "title": "The 4-week program",
-    "what": "A guided 4-week journey through CBT, built from the tools already in this module.",
-    "how": "Each week pairs a recurring daily practice with a one-time milestone; do the practice across several days and the week completes itself.",
+    "title": "The CBT program",
+    "what": "A guided journey through the CBT process, built from the tools already in this module.",
+    "how": "Each phase follows a stage of the CBT process — from assessment through to resilience — mixing recurring daily practices with one-time milestones. Work through them at your own pace.",
     "why": "Spacing practice over days builds real habits and lasting change rather than a one-off burst."
   },
   "actProgram": {

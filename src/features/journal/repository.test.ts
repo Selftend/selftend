@@ -84,11 +84,13 @@ describe("journal repository", () => {
       body: "  Walked outside  ",
     });
 
-    expect(insert).toHaveBeenCalledWith({
-      user_id: "user-1",
-      title: "Today",
-      body: "Walked outside",
-    });
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user-1",
+        title: "Today",
+        body: "Walked outside",
+      }),
+    );
   });
 
   it("trims and updates an existing entry", async () => {

@@ -57,9 +57,12 @@ export async function saveSleepLog(userId: string, input: SleepInput, logId?: st
     notes: input.notes.trim(),
   };
 
+  const insertPayload: Record<string, unknown> = { ...payload, user_id: userId };
+  if (!logId && input.loggedAt) insertPayload.logged_at = input.loggedAt;
+
   const query = logId
     ? client.from("sleep_logs").update(payload).eq("user_id", userId).eq("id", logId)
-    : client.from("sleep_logs").insert({ ...payload, user_id: userId });
+    : client.from("sleep_logs").insert(insertPayload);
 
   const { data, error } = await query.select("*").single();
 

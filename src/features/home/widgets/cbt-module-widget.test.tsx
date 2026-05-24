@@ -37,49 +37,41 @@ function program(overrides: Partial<CbtProgramView> = {}): CbtProgramView {
   return {
     status: "in_progress",
     startedAt: "2026-05-01T00:00:00.000Z",
-    currentWeekIndex: 1,
-    totalWeeks: 4,
-    weeksComplete: 1,
-    allWeeksComplete: false,
     summaryStats: {
       thoughtRecords: 0,
       activitiesCompleted: 0,
       goalsSet: 0,
       beliefsExamined: 0,
     },
-    weeks: [
-      {
-        key: "noticeUnderstand",
-        themeLabelKey: "program.weeks.noticeUnderstand",
-        pillar: "think",
-        done: true,
-        tasks: [],
-      },
-      {
-        key: "challengeThinking",
-        themeLabelKey: "program.weeks.challengeThinking",
-        pillar: "think",
-        done: false,
-        tasks: [
-          {
-            key: "one",
-            labelKey: "program.tasks.threeThoughtRecords",
-            route: "/modules/cbt/new",
-            current: 1,
-            target: 1,
-            done: true,
-          },
-          {
-            key: "two",
-            labelKey: "program.tasks.examineBelief",
-            route: "/modules/cbt/beliefs",
-            current: 0,
-            target: 1,
-            done: false,
-          },
-        ],
-      },
-    ],
+    phaseIndex: 1,
+    totalPhases: 5,
+    isLastPhase: false,
+    phase: {
+      key: "formulation",
+      themeLabelKey: "program.weeks.formulation.title",
+      themeSubKey: "program.weeks.formulation.sub",
+      themeDescKey: "program.weeks.formulation.description",
+      milestones: [
+        {
+          key: "one",
+          labelKey: "program.tasks.examineBelief",
+          route: "/modules/cbt/beliefs",
+          current: 1,
+          target: 1,
+          done: true,
+        },
+        {
+          key: "two",
+          labelKey: "program.tasks.setGoals",
+          route: "/modules/cbt/goals/new",
+          current: 0,
+          target: 1,
+          done: false,
+        },
+      ],
+      dailyPractice: null,
+    },
+    phaseReady: false,
     ...overrides,
   };
 }
@@ -92,6 +84,7 @@ describe("CbtModuleWidget", () => {
       isLoading: false,
       isUpdating: false,
       abandonProgram: jest.fn(),
+      advancePhase: jest.fn(),
       dismissProgramPrompt: jest.fn(),
       promptDismissedAt: null,
       replayProgram: jest.fn(),
@@ -110,8 +103,8 @@ describe("CbtModuleWidget", () => {
   it("shows the current CBT program summary", () => {
     renderWithProviders(<CbtModuleWidget userId="user-1" />);
 
-    expect(screen.getByText("Week 2 of 4")).toBeTruthy();
-    expect(screen.getByText("1/2 done this week")).toBeTruthy();
+    expect(screen.getByText("Phase 2 of 5")).toBeTruthy();
+    expect(screen.getByText("1/2 done this phase")).toBeTruthy();
   });
 
   it("shows the available program when it has not started", () => {
@@ -119,13 +112,14 @@ describe("CbtModuleWidget", () => {
       program: program({
         status: "not_started",
         startedAt: null,
-        currentWeekIndex: 0,
-        weeks: [],
-        weeksComplete: 0,
+        phaseIndex: 0,
+        phase: null,
+        phaseReady: false,
       }),
       isLoading: false,
       isUpdating: false,
       abandonProgram: jest.fn(),
+      advancePhase: jest.fn(),
       dismissProgramPrompt: jest.fn(),
       promptDismissedAt: null,
       replayProgram: jest.fn(),
@@ -135,7 +129,7 @@ describe("CbtModuleWidget", () => {
 
     renderWithProviders(<CbtModuleWidget userId="user-1" />);
 
-    expect(screen.getByText("4-week program")).toBeTruthy();
+    expect(screen.getByText("CBT program")).toBeTruthy();
     expect(screen.getByText("Guided structure is ready when you want it.")).toBeTruthy();
   });
 });

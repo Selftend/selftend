@@ -64,16 +64,41 @@ describe("worry repository", () => {
       actionSteps: ["ping team"],
     });
 
-    expect(insert).toHaveBeenCalledWith({
-      user_id: "user-1",
-      worry_statement: "I'll miss the deadline",
-      worry_category: "real_problem",
-      probability_estimate: 30,
-      evidence_for: ["lots to do"],
-      evidence_against: ["plan exists"],
-      coping_statement: "I can ask for help",
-      action_steps: ["ping team"],
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user-1",
+        worry_statement: "I'll miss the deadline",
+        worry_category: "real_problem",
+        probability_estimate: 30,
+        evidence_for: ["lots to do"],
+        evidence_against: ["plan exists"],
+        coping_statement: "I can ask for help",
+        action_steps: ["ping team"],
+      }),
+    );
+  });
+
+  it("includes created_at when createdAt is provided", async () => {
+    const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
+    const select = jest.fn(() => ({ single }));
+    const insert = jest.fn(() => ({ select }));
+    const from = jest.fn(() => ({ insert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await saveWorryEntry("user-1", {
+      worryStatement: "x",
+      worryCategory: "hypothetical",
+      probabilityEstimate: null,
+      evidenceFor: [],
+      evidenceAgainst: [],
+      copingStatement: "",
+      actionSteps: [],
+      createdAt: "2026-05-20T10:00:00.000Z",
     });
+
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({ created_at: "2026-05-20T10:00:00.000Z" }),
+    );
   });
 
   it("coerces missing probability to null", async () => {

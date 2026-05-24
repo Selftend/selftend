@@ -58,6 +58,7 @@ export async function saveWorryEntry(userId: string, input: WorryEntryInput) {
       evidence_against: input.evidenceAgainst,
       coping_statement: input.copingStatement.trim(),
       action_steps: input.actionSteps,
+      ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
     .single();

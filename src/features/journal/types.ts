@@ -10,4 +10,5 @@ export interface JournalEntry {
 export interface JournalInput {
   title: string;
   body: string;
+  createdAt?: string;
 }

@@ -101,7 +101,9 @@ export async function saveThoughtRecord(
 
   const query = recordId
     ? client.from("thought_records").update(payload).eq("user_id", userId).eq("id", recordId)
-    : client.from("thought_records").insert(payload);
+    : client
+        .from("thought_records")
+        .insert(input.createdAt ? { ...payload, created_at: input.createdAt } : payload);
 
   const { data, error } = await query.select("*").single();
 

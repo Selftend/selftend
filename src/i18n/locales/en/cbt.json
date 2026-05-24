@@ -16,17 +16,15 @@
     "wizardHint": "Set up your focus areas"
   },
   "program": {
-    "startTitle": "Your 4-week program",
-    "startDescription": "A guided journey through CBT, using the tools in this module. Go at your own pace.",
+    "startTitle": "Your CBT program",
+    "startDescription": "A guided journey through the CBT process — from assessment to lasting resilience — using the tools in this module. Go at your own pace.",
     "startCta": "Start program",
     "dismissStartLabel": "Hide the program invitation",
     "showPromptLabel": "Show the CBT program invitation",
     "heroTitle": "Your Program",
-    "weekProgress": "Week {{current}} of {{total}}",
-    "weekTasksDone": "{{done}}/{{total}} done this week",
-    "otherWeeks": "Other weeks",
     "graduationTitle": "Program complete",
     "graduationBody": "You built real momentum. Here's what you did:",
+    "graduationBodyEmpty": "You reached the end at your own pace. Your tools are here whenever you need them.",
     "statThoughtRecords": "{{count}} thought records",
     "statActivities": "{{count}} activities completed",
     "statGoals": "{{count}} goals set",
@@ -36,26 +34,63 @@
     "abandon": "Abandon program",
     "manageLabel": "Program options",
     "abandonTitle": "Abandon this program?",
-    "abandonDescription": "This only stops the 4-week program tracking. Your saved thought records, activities, goals, and logs stay in place.",
+    "abandonDescription": "This only stops the program tracking. Your saved thought records, activities, goals, and logs stay in place.",
     "abandonConfirm": "Abandon program",
     "abandonCancel": "Keep going",
     "weeks": {
-      "noticeUnderstand": "Notice & Understand",
-      "challengeThinking": "Challenge Your Thinking",
-      "actEngage": "Act & Engage",
-      "sustainBe": "Sustain & Be"
+      "assessment": {
+        "title": "Understand where you are",
+        "sub": "Assessment",
+        "description": "Map the problem, set goals, clarify your values, and start noticing how you think, feel and act day to day."
+      },
+      "formulation": {
+        "title": "See how the problem works",
+        "sub": "Formulation",
+        "description": "Trace the layers of thinking and beliefs that keep the problem going."
+      },
+      "thinking": {
+        "title": "Work with your thinking",
+        "sub": "Thinking processes",
+        "description": "Catch and re-balance negative automatic thoughts with thought records."
+      },
+      "behavioural": {
+        "title": "Change what you do",
+        "sub": "Behavioural change",
+        "description": "Re-engage with meaningful activity (PACE) and face avoidance step by step."
+      },
+      "resilience": {
+        "title": "Build lasting resilience",
+        "sub": "Emotions & resilience",
+        "description": "Steady your emotions with brief mindfulness, then consolidate everything into a personal resilience plan."
+      }
     },
     "tasks": {
       "setGoals": "Set 1-2 goals",
       "clarifyValues": "Clarify your values",
-      "dailyMoodCheckIn": "Check in with your mood on 4 days",
+      "dailyNoticing": "Notice your thoughts, feelings & behaviours today",
       "thoughtRecordDays": "Complete a thought record on 3 days",
       "examineBelief": "Examine one core belief",
       "activityDays": "Do a meaningful activity on 4 days",
-      "exposureOrTask": "Build an exposure ladder or break down a stuck task",
+      "exposureLadder": "Build a graded exposure ladder",
       "calmingDays": "Do a calming exercise on 4 days",
-      "resiliencePlan": "Write your resilience plan and personal slogan"
-    }
+      "resiliencePlan": "Write your resilience plan and personal slogan",
+      "thoughtRecordOnce": "Do your first thought record",
+      "thoughtRecordDaily": "Do a thought record today",
+      "activityOnce": "Do your first meaningful activity",
+      "activityDaily": "Do a meaningful activity today",
+      "calmingOnce": "Do your first calming exercise",
+      "calmingDaily": "Do a calming exercise today"
+    },
+    "advance": "Advance to next phase",
+    "ready": "You've finished this phase — ready for the next?",
+    "advanceEarlyConfirmTitle": "Advance anyway?",
+    "advanceEarlyConfirmBody": "You haven't finished this phase's steps yet. Move on anyway?",
+    "advanceConfirm": "Advance",
+    "advanceCancel": "Not yet",
+    "milestonesLabel": "This phase",
+    "practiceLabel": "Today's practice",
+    "noDailyPractice": "No daily task this phase — take your time with the step above.",
+    "graduateCta": "Finish the program"
   },
   "dashboard": {
     "quickActions": "Quick actions",
@@ -399,17 +434,6 @@
           "Pause at each area for a few breaths, noticing sensation without judgement."
         ]
       },
-      "grounding-54321": {
-        "title": "5-4-3-2-1 grounding",
-        "shortDescription": "Anchor yourself to the present using your five senses.",
-        "instructions": [
-          "Name 5 things you can see.",
-          "Name 4 things you can feel.",
-          "Name 3 things you can hear.",
-          "Name 2 things you can smell.",
-          "Name 1 thing you can taste."
-        ]
-      },
       "loving-kindness": {
         "title": "Loving-kindness",
         "shortDescription": "Direct warm wishes towards yourself and gradually outward.",
@@ -593,9 +617,10 @@
     "loading": "Loading today's log...",
     "save": "Save log",
     "update": "Update log",
-    "sleep": "Sleep",
-    "sleepHours": "Hours of sleep",
-    "sleepQuality": "Sleep quality (1–5)",
+    "sleepLinkTitle": "Track sleep",
+    "sleepLinkDesc": "Log sleep in the Sleep tool.",
+    "gratitudeLinkTitle": "Gratitude",
+    "gratitudeLinkDesc": "Capture gratitude in the Gratitude tool.",
     "exercise": "Exercise",
     "exerciseDone": "I exercised today",
     "exerciseMinutes": "Minutes",
@@ -610,10 +635,7 @@
     "socialNotes": "Notes",
     "socialNotesPlaceholder": "Who, and how was it?",
     "meaningfulActivity": "A meaningful activity today",
-    "meaningfulActivityPlaceholder": "Example: Played guitar for 20 minutes.",
-    "gratitude": "Three things I'm grateful for",
-    "gratitudeItem": "Gratitude {{n}}",
-    "gratitudePlaceholder": "Even small things count."
+    "meaningfulActivityPlaceholder": "Example: Played guitar for 20 minutes."
   },
   "recovery": {
     "title": "Recovery plan",
@@ -624,17 +646,23 @@
     "stats": {
       "title": "Personal stats",
       "description": "A simple snapshot of the CBT work you have recorded so far.",
-      "thoughtRecords": "Thought records",
-      "exposuresCompleted": "Exposures completed",
-      "moodDays": "Mood days logged",
-      "goalsAchieved": "Goals achieved",
-      "activitiesCompleted": "Activities completed"
+      "thoughtRecords_one": "Thought record",
+      "thoughtRecords_other": "Thought records",
+      "exposuresCompleted_one": "Exposure completed",
+      "exposuresCompleted_other": "Exposures completed",
+      "moodDays_one": "Mood day logged",
+      "moodDays_other": "Mood days logged",
+      "goalsAchieved_one": "Goal achieved",
+      "goalsAchieved_other": "Goals achieved",
+      "activitiesCompleted_one": "Activity completed",
+      "activitiesCompleted_other": "Activities completed"
     },
     "timeline": {
       "title": "Journey timeline",
       "description": "When each part of your CBT toolkit first showed up.",
       "empty": "Your timeline will appear after you save records across the CBT tools.",
-      "count": "{{count}} record(s)",
+      "count_one": "{{count}} record",
+      "count_other": "{{count}} records",
       "mood": "Mood check-ins",
       "recovery": "Recovery plan"
     },
@@ -692,7 +720,7 @@
   },
   "learn": {
     "title": "Distortion guide",
-    "description": "Short, app-owned explanations of the distortion patterns the first CBT slice supports.",
+    "description": "Short explanations of the common thinking patterns to watch for.",
     "useGently": "Use gently",
     "useGentlyDescription": "These patterns are prompts for reflection, not labels to pin on yourself."
   },
@@ -766,7 +794,7 @@
     "descriptionLabel": "Description (optional)",
     "descriptionPlaceholder": "Add context or motivation if it helps.",
     "targetDate": "Target date (optional)",
-    "targetDateHint": "Enter a date in YYYY-MM-DD format.",
+    "targetDateHint": "Pick a date you're aiming for, if it helps.",
     "milestonesLabel": "Milestones",
     "milestonesHint": "Break the goal into concrete steps. Add at least one.",
     "milestone": "Milestone {{n}}",
@@ -867,8 +895,8 @@
     "tier3": "Less Important",
     "allValues": "All values",
     "prioritiesTitle": "Your top priorities",
-    "prioritiesHint": "Pick up to 6 of your Highly Important values, in priority order — the ones most instrumental to your goals.",
-    "prioritiesEmpty": "Mark values as Highly Important below, then add up to 6 here in priority order.",
+    "prioritiesHint": "Pick up to 6 Highly Important values, in priority order.",
+    "prioritiesEmpty": "Mark values Highly Important below to add them here.",
     "candidatesTitle": "Highly Important values",
     "priorityAdd": "Add to priorities",
     "priorityRemove": "Remove",
@@ -1020,10 +1048,19 @@
     }
   },
   "mood": {
-    "title": "Log mood",
+    "title": "Check-in",
     "description": "A quick check on how you are feeling right now.",
-    "editTitle": "Edit mood",
+    "editTitle": "Edit check-in",
     "editDescription": "Adjust the score, emotions, date, or notes.",
+    "goDeeper": "Go deeper — notice (optional)",
+    "situationLabel": "Situation / trigger",
+    "situationPlaceholder": "What was happening? e.g. an email from my boss",
+    "thoughtsLabel": "Thoughts",
+    "thoughtsPlaceholder": "What went through your mind?",
+    "behavioursLabel": "Behaviours",
+    "behavioursPlaceholder": "What did you do (or avoid doing)?",
+    "sensationsLabel": "Bodily sensations",
+    "sensationsPlaceholder": "What did you notice in your body?",
     "scoreLabel": "Mood score (1–5)",
     "scoreHint": "1 is very low, 5 is very good.",
     "emotionsLabel": "Emotions (optional)",

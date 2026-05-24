@@ -187,7 +187,7 @@ function buildRecoveryPlanExport({
 
   lines.push("", `## ${t("recovery.stats.title")}`);
   for (const stat of stats) {
-    lines.push(`- ${t(`recovery.stats.${stat.key}`)}: ${stat.value}`);
+    lines.push(`- ${t(`recovery.stats.${stat.key}`, { count: stat.value })}: ${stat.value}`);
   }
 
   lines.push("", `## ${t("recovery.timeline.title")}`);
@@ -608,7 +608,9 @@ export default function RecoveryScreen() {
                   className="min-w-[44%] flex-1 gap-1 rounded-md border border-border p-3"
                 >
                   <Text className="text-2xl font-semibold">{stat.value}</Text>
-                  <Text variant="muted">{t(`recovery.stats.${stat.key}`)}</Text>
+                  <Text variant="muted">
+                    {t(`recovery.stats.${stat.key}`, { count: stat.value })}
+                  </Text>
                 </View>
               ))}
             </View>

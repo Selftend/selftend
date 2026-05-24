@@ -20,13 +20,17 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { BackButton } from "@/src/components/app/back-button";
 import { HelpButton } from "@/src/components/app/help-button";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function WorryScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
+  const { selectedDate } = useSelectedDate();
   const { data: entries, isLoading } = useWorryEntries(user?.id ?? null);
   const toggleMutation = useToggleWorryResolved(user?.id ?? null);
+
+  const filteredEntries = entries?.filter((e) => e.createdAt.slice(0, 10) === selectedDate) ?? [];
 
   const handleToggle = async (entryId: string, resolved: boolean) => {
     try {
@@ -58,7 +62,7 @@ export default function WorryScreen() {
 
           {isLoading ? (
             <LoadingState title={t("worry.loading")} />
-          ) : (entries?.length ?? 0) === 0 ? (
+          ) : filteredEntries.length === 0 ? (
             <Card>
               <CardHeader>
                 <CardTitle>{t("worry.empty")}</CardTitle>
@@ -67,7 +71,7 @@ export default function WorryScreen() {
             </Card>
           ) : (
             <View className="gap-3">
-              {entries!.map((entry) => (
+              {filteredEntries.map((entry) => (
                 <Card key={entry.id}>
                   <CardHeader>
                     <CardTitle>{entry.worryStatement}</CardTitle>

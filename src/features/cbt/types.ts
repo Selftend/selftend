@@ -40,6 +40,7 @@ export interface ThoughtRecordInput {
   balancedThought: string;
   emotionIntensityAfter: number | null;
   outcomeNotes: string;
+  createdAt?: string;
 }
 
 export type ThoughtRecordFormValues = ThoughtRecordInput;

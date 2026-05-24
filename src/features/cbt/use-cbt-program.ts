@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-
 import { useActivities } from "@/src/features/activities/queries";
 import { useCoreBeliefs } from "@/src/features/beliefs/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
@@ -9,11 +7,11 @@ import { useGoals } from "@/src/features/goals/queries";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { mergeUserPreferences } from "@/src/features/modules/types";
-import { useTasks } from "@/src/features/procrastination/queries";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useValuesProfile } from "@/src/features/values/queries";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export interface UseCbtProgramResult {
   program: CbtProgramView;
@@ -23,6 +21,7 @@ export interface UseCbtProgramResult {
   showProgramPrompt: () => void;
   abandonProgram: () => void;
   replayProgram: () => void;
+  advancePhase: () => void;
   promptDismissedAt: string | null;
   isUpdating: boolean;
 }
@@ -30,6 +29,7 @@ export interface UseCbtProgramResult {
 export function useCbtProgram(userId: string | null): UseCbtProgramResult {
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
   const updatePreferences = useUpdateUserPreferences(userId);
+  const { selectedDate } = useSelectedDate();
 
   const goals = useGoals(userId);
   const valuesProfile = useValuesProfile(userId);
@@ -37,7 +37,6 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
   const beliefs = useCoreBeliefs(userId);
   const activities = useActivities(userId);
   const exposures = useHierarchies(userId);
-  const tasks = useTasks(userId);
   const mindfulnessSessions = useMindfulnessSessions(userId);
   const selfCareLogs = useSelfCareLogs(userId);
   const moodLogs = useMoodLogs(userId, 180);
@@ -46,37 +45,37 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
   const program = deriveCbtProgram({
     startedAt: preferences?.cbtProgramStartedAt ?? null,
     completedAt: preferences?.cbtProgramCompletedAt ?? null,
-    now: Date.now(),
+    selectedDate,
+    phaseIndex: preferences?.cbtProgramPhaseIndex ?? 0,
+    phaseStartedAt:
+      preferences?.cbtProgramPhaseStartedAt ?? preferences?.cbtProgramStartedAt ?? null,
     goals: goals.data ?? [],
     valuesProfile: valuesProfile.data ?? null,
     thoughtRecords: thoughtRecords.data ?? [],
     beliefs: beliefs.data ?? [],
     activities: activities.data ?? [],
     exposures: exposures.data ?? [],
-    tasks: tasks.data ?? [],
     mindfulnessSessions: mindfulnessSessions.data ?? [],
     selfCareLogs: selfCareLogs.data ?? [],
     moodLogs: moodLogs.data ?? [],
     recoveryPlan: recoveryPlan.data ?? null,
   });
 
-  // Latch graduation: once every week is complete, persist completedAt once.
-  useEffect(() => {
+  const advancePhase = () => {
     if (!preferences) return;
-    if (updatePreferences.isPending) return;
-    if (preferences.cbtProgramCompletedAt) return;
-    if (program.status === "in_progress" && program.allWeeksComplete) {
-      void updatePreferences
-        .mutateAsync(
-          mergeUserPreferences(preferences, {
-            cbtProgramCompletedAt: new Date().toISOString(),
-          }),
-        )
-        .catch(() => undefined);
-    }
-    // updatePreferences is stable; intentionally excluded to avoid re-fires.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preferences, program.status, program.allWeeksComplete]);
+    const idx = preferences.cbtProgramPhaseIndex ?? 0;
+    const last = program.totalPhases - 1;
+    void updatePreferences
+      .mutateAsync(
+        idx >= last
+          ? mergeUserPreferences(preferences, { cbtProgramCompletedAt: new Date().toISOString() })
+          : mergeUserPreferences(preferences, {
+              cbtProgramPhaseIndex: idx + 1,
+              cbtProgramPhaseStartedAt: new Date().toISOString(),
+            }),
+      )
+      .catch(() => undefined);
+  };
 
   const startProgram = () => {
     if (!preferences) return;
@@ -87,6 +86,8 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
           cbtProgramCompletedAt: null,
           cbtProgramPromptDismissedAt: null,
           cbtOnboardingCompleted: true,
+          cbtProgramPhaseIndex: 0,
+          cbtProgramPhaseStartedAt: new Date().toISOString(),
         }),
       )
       .catch(() => undefined);
@@ -135,6 +136,8 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
           cbtProgramStartedAt: new Date().toISOString(),
           cbtProgramCompletedAt: null,
           cbtProgramPromptDismissedAt: null,
+          cbtProgramPhaseIndex: 0,
+          cbtProgramPhaseStartedAt: new Date().toISOString(),
         }),
       )
       .catch(() => undefined);
@@ -148,6 +151,7 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
     showProgramPrompt,
     abandonProgram,
     replayProgram,
+    advancePhase,
     promptDismissedAt: preferences?.cbtProgramPromptDismissedAt ?? null,
     isUpdating: updatePreferences.isPending,
   };

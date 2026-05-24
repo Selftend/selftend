@@ -17,13 +17,16 @@ import { useAngerLogs } from "@/src/features/anger/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { BackButton } from "@/src/components/app/back-button";
 import { HelpButton } from "@/src/components/app/help-button";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function AngerScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
+  const { selectedDate } = useSelectedDate();
   const { data: logs, isLoading } = useAngerLogs(user?.id ?? null);
 
-  const recent = logs?.slice(0, 5) ?? [];
+  const filteredLogs = logs?.filter((l) => l.createdAt.slice(0, 10) === selectedDate) ?? [];
+  const recent = filteredLogs.slice(0, 5);
   const avgArousal =
     recent.length > 0
       ? Math.round(recent.reduce((sum, l) => sum + l.arousalLevel, 0) / recent.length)
@@ -51,7 +54,7 @@ export default function AngerScreen() {
 
           {isLoading ? (
             <LoadingState title={t("anger.loading")} />
-          ) : (logs?.length ?? 0) === 0 ? (
+          ) : filteredLogs.length === 0 ? (
             <Card>
               <CardHeader>
                 <CardTitle>{t("anger.empty")}</CardTitle>
@@ -60,13 +63,13 @@ export default function AngerScreen() {
             </Card>
           ) : (
             <>
-              {(logs?.length ?? 0) >= 3 ? (
+              {filteredLogs.length >= 3 ? (
                 <Card>
                   <CardHeader>
                     <CardTitle>{t("anger.patternInsightTitle")}</CardTitle>
                     <CardDescription>
                       {t("anger.patternInsightDescription", {
-                        count: logs!.length,
+                        count: filteredLogs.length,
                         average: avgArousal,
                       })}
                     </CardDescription>
@@ -76,7 +79,7 @@ export default function AngerScreen() {
 
               <View className="gap-3">
                 <Text variant="h3">{t("anger.recent")}</Text>
-                {logs!.map((log) => (
+                {filteredLogs.map((log) => (
                   <AccessibleCardLink
                     key={log.id}
                     title={log.triggerText}

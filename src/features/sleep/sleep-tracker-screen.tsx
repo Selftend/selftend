@@ -12,6 +12,7 @@ import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -66,11 +67,13 @@ export default function SleepTrackerScreen() {
   const userId = user?.id ?? null;
 
   const { data: logs } = useSleepLogs(userId, 50);
+  const { selectedDate } = useSelectedDate();
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
   const allLogs = logs ?? [];
-  const recent = allLogs.slice(0, 10);
+  const dayLogs = allLogs.filter((log) => log.loggedAt.slice(0, 10) === selectedDate);
+  const recent = dayLogs.slice(0, 10);
   const sevenDayDuration = averageDurationMinutes(allLogs, 7);
   const thirtyDayDuration = averageDurationMinutes(allLogs, 30);
   const sevenDayQuality = averageQuality(allLogs, 7);

@@ -23,6 +23,7 @@ import { angerLogFormSchema, type AngerLogFormSchema } from "@/src/features/ange
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { BackButton } from "@/src/components/app/back-button";
+import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 
 const defaultValues: AngerLogFormSchema = {
   triggerText: "",
@@ -41,6 +42,7 @@ export default function NewAngerLogScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
+  const { selectedDate } = useSelectedDate();
   const { data: existingLogs } = useAngerLogs(user?.id ?? null);
   const isFirstTime = (existingLogs?.length ?? 0) === 0;
   const saveMutation = useSaveAngerLog(user?.id ?? null);
@@ -62,7 +64,10 @@ export default function NewAngerLogScreen() {
 
   const handleSave = handleSubmit(async (values) => {
     try {
-      await saveMutation.mutateAsync(values);
+      await saveMutation.mutateAsync({
+        ...values,
+        createdAt: loggedAtForSelectedDate(selectedDate),
+      });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.replace("/modules/cbt/anger" as Parameters<typeof router.replace>[0]);
     } catch (e) {

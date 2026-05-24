@@ -13,13 +13,15 @@ import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function GratitudeListScreen() {
   const { t } = useTranslation("gratitude");
   const { user } = useSession();
+  const { selectedDate } = useSelectedDate();
   const { data: entries } = useGratitudeEntries(user?.id ?? null, 50);
 
-  const list = entries ?? [];
+  const list = (entries ?? []).filter((entry) => entry.loggedAt.slice(0, 10) === selectedDate);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>

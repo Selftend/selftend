@@ -20,6 +20,10 @@ jest.mock("@/src/providers/session-provider", () => ({
   }),
 }));
 
+jest.mock("@/src/stores/selected-date-store", () => ({
+  useSelectedDate: () => ({ selectedDate: "2026-05-24", isToday: true }),
+}));
+
 jest.mock("@/src/features/gratitude/queries", () => ({
   useGratitudeEntries: jest.fn(),
 }));
@@ -61,9 +65,9 @@ describe("GratitudeListScreen", () => {
           lifeItems: [],
           starred: false,
           note: "The morning felt steady.",
-          loggedAt: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          loggedAt: "2026-05-24T08:00:00.000Z",
+          createdAt: "2026-05-24T08:00:00.000Z",
+          updatedAt: "2026-05-24T08:00:00.000Z",
         },
       ],
     } as unknown as ReturnType<typeof useGratitudeEntries>);

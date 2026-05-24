@@ -28,6 +28,10 @@ jest.mock("@/src/features/journal/queries", () => ({
   useJournalEntries: jest.fn(),
 }));
 
+jest.mock("@/src/stores/selected-date-store", () => ({
+  useSelectedDate: jest.fn(() => ({ selectedDate: "2026-05-24", isToday: true })),
+}));
+
 const mockUseJournalEntries = useJournalEntries as jest.MockedFunction<typeof useJournalEntries>;
 const mockRouter = jest.mocked(router);
 
@@ -56,8 +60,8 @@ describe("JournalListScreen", () => {
           userId: "user-1",
           title: "Quiet morning",
           body: "Walked outside\nFelt better after coffee.",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: "2026-05-24T08:00:00.000Z",
+          updatedAt: "2026-05-24T08:00:00.000Z",
         },
       ],
     } as unknown as ReturnType<typeof useJournalEntries>);
@@ -77,8 +81,8 @@ describe("JournalListScreen", () => {
           userId: "user-1",
           title: "",
           body: "Just a quick thought.",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: "2026-05-24T09:00:00.000Z",
+          updatedAt: "2026-05-24T09:00:00.000Z",
         },
       ],
     } as unknown as ReturnType<typeof useJournalEntries>);

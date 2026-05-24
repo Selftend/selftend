@@ -1,5 +1,5 @@
 {
-  "title": "Mood tracker",
+  "title": "Check-in",
   "description": "Log how you're feeling and see how it shifts over time.",
   "cta": {
     "logMood": "Log mood"
@@ -17,8 +17,9 @@
     "title": "Today",
     "pending": "No mood logged yet today.",
     "howAreYou": "How are you feeling right now?",
-    "completeOne": "Logged today · {{score}}",
-    "completeMany": "{{count}} logs today · avg {{average}}",
+    "howWasDay": "How were you feeling this day?",
+    "completeOne": "Logged · {{score}}",
+    "completeMany": "{{count}} logs · avg {{average}}",
     "logAnother": "Log another"
   },
   "emotions": {

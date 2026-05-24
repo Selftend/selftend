@@ -128,6 +128,10 @@ describe("MoodEntryEditorScreen", () => {
           loggedAt: expect.any(String),
           moodScore: 3,
           notes: "",
+          situation: "",
+          thoughts: "",
+          behaviours: "",
+          bodilySensations: "",
         },
         moodLogId: undefined,
       });
@@ -148,6 +152,10 @@ describe("MoodEntryEditorScreen", () => {
           linkedStrategy: null,
           loggedAt,
           createdAt: loggedAt,
+          situation: "",
+          thoughts: "",
+          behaviours: "",
+          bodilySensations: "",
         },
       ],
     } as unknown as ReturnType<typeof useMoodLogs>);
@@ -167,9 +175,28 @@ describe("MoodEntryEditorScreen", () => {
           loggedAt,
           moodScore: 5,
           notes: "",
+          situation: "",
+          thoughts: "",
+          behaviours: "",
+          bodilySensations: "",
         },
         moodLogId: "log-1",
       });
+    });
+  });
+
+  it("captures the four-box notice when expanded", async () => {
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+    fireEvent.press(screen.getByLabelText("3, neutral"));
+    fireEvent.press(screen.getByText("Go deeper — notice (optional)"));
+    fireEvent.changeText(screen.getByLabelText("Situation / trigger"), "Email from boss");
+    fireEvent.press(screen.getByText("Save"));
+    await waitFor(() => {
+      expect(saveMood).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: expect.objectContaining({ moodScore: 3, situation: "Email from boss" }),
+        }),
+      );
     });
   });
 

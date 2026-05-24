@@ -13,7 +13,7 @@
     "cbtOverview": "Overview",
     "cbtHistory": "History",
     "cbtLearn": "Learn",
-    "moodTracker": "Mood tracker",
+    "moodTracker": "Check-in",
     "journal": "Journal",
     "breathing": "Breathing",
     "meditation": "Meditation",
@@ -62,6 +62,7 @@
   },
   "today": {
     "eyebrow": "Today · {{date}}",
+    "eyebrowPast": "{{date}}",
     "greetingMorning": "Good morning",
     "greetingAfternoon": "Good afternoon",
     "greetingEvening": "Good evening",
@@ -188,7 +189,7 @@
       "actExercise": "Do exercise",
       "cbtModuleSubtitle": "Think · Act · Be",
       "actModuleSubtitle": "Psychological flexibility",
-      "cbtModuleProgramReady": "4-week program",
+      "cbtModuleProgramReady": "CBT program",
       "cbtModuleProgramReadyDesc": "Guided structure is ready when you want it.",
       "cbtModuleProgramCompleteDesc": "Complete. Keep using the CBT tools as needed.",
       "cbtModuleRecords": "Records",
@@ -288,7 +289,7 @@
     "activities": "Activities",
     "beliefs": "Core beliefs",
     "exposure": "Exposure",
-    "tasks": "Tasks",
+    "tasks": "Procrastination",
     "anger": "Anger log",
     "worry": "Worry log",
     "values": "Values",
@@ -317,6 +318,14 @@
       "inDesign": "In design",
       "onRoadmap": "On the roadmap"
     }
+  },
+  "dateBar": {
+    "today": "Today",
+    "openCalendar": "Open calendar",
+    "selectDate": "Select date",
+    "scrollOlder": "Show earlier days",
+    "scrollNewer": "Show later days",
+    "clear": "Clear date"
   },
   "plan": {
     "empty": "No plan set up yet.",

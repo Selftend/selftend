@@ -39,20 +39,26 @@ export function ProgramGraduation({
     );
   }
 
+  const hasStats = lines.length > 0;
+
   return (
     <View className="gap-3 rounded-2xl border border-be/30 bg-be/5 p-5">
       <Text variant="h3" className="text-be">
         {t("program.graduationTitle")}
       </Text>
-      <Text variant="muted">{t("program.graduationBody")}</Text>
-      <View className="gap-1">
-        {lines.map((line) => (
-          <View key={line} className="flex-row items-center gap-2">
-            <Icon name="check-circle" className="size-4 text-be" />
-            <Text className="text-sm">{line}</Text>
-          </View>
-        ))}
-      </View>
+      <Text variant="muted">
+        {hasStats ? t("program.graduationBody") : t("program.graduationBodyEmpty")}
+      </Text>
+      {hasStats ? (
+        <View className="gap-1">
+          {lines.map((line) => (
+            <View key={line} className="flex-row items-center gap-2">
+              <Icon name="check-circle" className="size-4 text-be" />
+              <Text className="text-sm">{line}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
       <Button onPress={onDismiss}>
         <Text>{t("program.graduationDismiss")}</Text>
       </Button>

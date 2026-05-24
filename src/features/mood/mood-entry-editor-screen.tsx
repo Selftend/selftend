@@ -15,6 +15,7 @@ import {
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { BackButton } from "@/src/components/app/back-button";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { LoadingState } from "@/src/components/app/screen-state";
@@ -27,6 +28,7 @@ import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import type { MoodLog } from "@/src/features/mood/types";
 import { useSession } from "@/src/providers/session-provider";
+import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 
 interface MoodEntryEditorScreenProps {
   fallbackHref: Href;
@@ -55,6 +57,7 @@ export function MoodEntryEditorScreen({
   const completeActivityId = paramValue(params.completeActivityId) ?? null;
   const initialScore = paramValue(params.score) ? Number(paramValue(params.score)) : null;
 
+  const { selectedDate } = useSelectedDate();
   const { data: cachedList } = useMoodLogs(mode === "edit" ? (user?.id ?? null) : null, 30);
   const fromCache = moodId ? (cachedList?.find((log) => log.id === moodId) ?? null) : null;
   const { data: fetched, isLoading } = useMoodLog(
@@ -68,8 +71,15 @@ export function MoodEntryEditorScreen({
   const [moodScore, setMoodScore] = useState<number | null>(initialScore);
   const [emotions, setEmotions] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
-  const [loggedAt, setLoggedAt] = useState<string>(new Date().toISOString());
+  const [loggedAt, setLoggedAt] = useState<string>(
+    mode === "create" ? loggedAtForSelectedDate(selectedDate) : new Date().toISOString(),
+  );
   const [error, setError] = useState("");
+  const [situation, setSituation] = useState("");
+  const [thoughts, setThoughts] = useState("");
+  const [behaviours, setBehaviours] = useState("");
+  const [bodilySensations, setBodilySensations] = useState("");
+  const [showDeeper, setShowDeeper] = useState(false);
   const [manageEmotionsOpen, setManageEmotionsOpen] = useState(false);
   const editMode = mode === "edit";
   const saving = saveMutation.isPending || completeActivityMutation.isPending;
@@ -82,6 +92,18 @@ export function MoodEntryEditorScreen({
     setEmotions(existingEntry.emotions);
     setNotes(existingEntry.notes);
     setLoggedAt(existingEntry.loggedAt);
+    setSituation(existingEntry.situation);
+    setThoughts(existingEntry.thoughts);
+    setBehaviours(existingEntry.behaviours);
+    setBodilySensations(existingEntry.bodilySensations);
+    setShowDeeper(
+      Boolean(
+        existingEntry.situation ||
+        existingEntry.thoughts ||
+        existingEntry.behaviours ||
+        existingEntry.bodilySensations,
+      ),
+    );
     setError("");
   }, [existingEntry]);
 
@@ -105,6 +127,10 @@ export function MoodEntryEditorScreen({
           notes,
           linkedStrategy: linkedStrategy ?? existingEntry?.linkedStrategy ?? null,
           loggedAt,
+          situation,
+          thoughts,
+          behaviours,
+          bodilySensations,
         },
         moodLogId: editMode ? (moodId ?? undefined) : undefined,
       });
@@ -265,6 +291,61 @@ export function MoodEntryEditorScreen({
             placeholder={t("mood.notesPlaceholder")}
             value={notes}
           />
+        </View>
+
+        <View className="gap-3">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("mood.goDeeper")}
+            onPress={() => setShowDeeper((v) => !v)}
+            className="flex-row items-center gap-2"
+          >
+            <Icon
+              name={showDeeper ? "expand-less" : "expand-more"}
+              className="size-5 text-muted-foreground"
+            />
+            <Text className="text-sm font-medium">{t("mood.goDeeper")}</Text>
+          </Pressable>
+          {showDeeper ? (
+            <View className="gap-4">
+              <View className="gap-2">
+                <Label>{t("mood.situationLabel")}</Label>
+                <Textarea
+                  accessibilityLabel={t("mood.situationLabel")}
+                  onChangeText={setSituation}
+                  placeholder={t("mood.situationPlaceholder")}
+                  value={situation}
+                />
+              </View>
+              <View className="gap-2">
+                <Label>{t("mood.thoughtsLabel")}</Label>
+                <Textarea
+                  accessibilityLabel={t("mood.thoughtsLabel")}
+                  onChangeText={setThoughts}
+                  placeholder={t("mood.thoughtsPlaceholder")}
+                  value={thoughts}
+                />
+              </View>
+              <View className="gap-2">
+                <Label>{t("mood.behavioursLabel")}</Label>
+                <Textarea
+                  accessibilityLabel={t("mood.behavioursLabel")}
+                  onChangeText={setBehaviours}
+                  placeholder={t("mood.behavioursPlaceholder")}
+                  value={behaviours}
+                />
+              </View>
+              <View className="gap-2">
+                <Label>{t("mood.sensationsLabel")}</Label>
+                <Textarea
+                  accessibilityLabel={t("mood.sensationsLabel")}
+                  onChangeText={setBodilySensations}
+                  placeholder={t("mood.sensationsPlaceholder")}
+                  value={bodilySensations}
+                />
+              </View>
+            </View>
+          ) : null}
         </View>
 
         {error ? <Text className="text-sm text-destructive">{error}</Text> : null}

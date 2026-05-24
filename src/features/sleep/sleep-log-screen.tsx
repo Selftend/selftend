@@ -15,6 +15,7 @@ import { SLEEP_DURATION_OPTIONS } from "@/src/features/sleep/schemas";
 import { useSleepLog, useSleepLogs, useSaveSleepLog } from "@/src/features/sleep/queries";
 import type { SleepLog } from "@/src/features/sleep/types";
 import { useSession } from "@/src/providers/session-provider";
+import { useSelectedDate, loggedAtForSelectedDate } from "@/src/stores/selected-date-store";
 
 interface SleepLogScreenProps {
   fallbackHref: Href;
@@ -62,6 +63,8 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
   );
   const existingLog: SleepLog | null = mode === "edit" ? (fromCache ?? fetched ?? null) : null;
 
+  const { selectedDate } = useSelectedDate();
+
   const saveMutation = useSaveSleepLog(user?.id ?? null);
   const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
   const [quality, setQuality] = useState<number | null>(null);
@@ -100,7 +103,12 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
     setError("");
     try {
       const saved = await saveMutation.mutateAsync({
-        input: { durationMinutes, quality, notes },
+        input: {
+          durationMinutes,
+          quality,
+          notes,
+          ...(!editMode && { loggedAt: loggedAtForSelectedDate(selectedDate) }),
+        },
         logId: editMode ? (logId ?? undefined) : undefined,
       });
       router.replace(`/tools/sleep/${saved.id}` as Parameters<typeof router.replace>[0]);

@@ -1,7 +1,8 @@
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { router } from "expo-router";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -11,6 +12,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -20,12 +22,11 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { useSelfCareLog, useUpsertSelfCareLog } from "@/src/features/self-care/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { BackButton } from "@/src/components/app/back-button";
 import { HelpButton } from "@/src/components/app/help-button";
 
 interface FormState {
-  sleepHours: string;
-  sleepQuality: number | null;
   exerciseDone: boolean;
   exerciseMinutes: string;
   exerciseType: string;
@@ -34,12 +35,9 @@ interface FormState {
   socialConnectionMade: boolean;
   socialNotes: string;
   meaningfulActivity: string;
-  gratitude: string[];
 }
 
 const emptyForm: FormState = {
-  sleepHours: "",
-  sleepQuality: null,
   exerciseDone: false,
   exerciseMinutes: "",
   exerciseType: "",
@@ -48,15 +46,14 @@ const emptyForm: FormState = {
   socialConnectionMade: false,
   socialNotes: "",
   meaningfulActivity: "",
-  gratitude: ["", "", ""],
 };
 
 export default function SelfCareScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
-  const today = new Date().toISOString().slice(0, 10);
-  const { data: existing, isLoading } = useSelfCareLog(user?.id ?? null, today);
+  const { selectedDate } = useSelectedDate();
+  const { data: existing, isLoading } = useSelfCareLog(user?.id ?? null, selectedDate);
   const upsertMutation = useUpsertSelfCareLog(user?.id ?? null);
 
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -64,8 +61,6 @@ export default function SelfCareScreen() {
   useEffect(() => {
     if (existing) {
       setForm({
-        sleepHours: existing.sleepHours !== null ? String(existing.sleepHours) : "",
-        sleepQuality: existing.sleepQuality,
         exerciseDone: existing.exerciseDone,
         exerciseMinutes: existing.exerciseMinutes !== null ? String(existing.exerciseMinutes) : "",
         exerciseType: existing.exerciseType,
@@ -74,22 +69,15 @@ export default function SelfCareScreen() {
         socialConnectionMade: existing.socialConnectionMade,
         socialNotes: existing.socialNotes,
         meaningfulActivity: existing.meaningfulActivity,
-        gratitude:
-          existing.gratitude.length >= 3
-            ? existing.gratitude.slice(0, 3)
-            : [...existing.gratitude, ...Array(3 - existing.gratitude.length).fill("")],
       });
     }
   }, [existing]);
 
   const handleSave = async () => {
     try {
-      const sleep = form.sleepHours.length > 0 ? parseFloat(form.sleepHours) : null;
       const minutes = form.exerciseMinutes.length > 0 ? parseInt(form.exerciseMinutes, 10) : null;
       await upsertMutation.mutateAsync({
-        logDate: today,
-        sleepHours: Number.isFinite(sleep ?? NaN) ? sleep : null,
-        sleepQuality: form.sleepQuality,
+        logDate: selectedDate,
         exerciseDone: form.exerciseDone,
         exerciseMinutes: Number.isFinite(minutes ?? NaN) ? minutes : null,
         exerciseType: form.exerciseType,
@@ -98,7 +86,6 @@ export default function SelfCareScreen() {
         socialConnectionMade: form.socialConnectionMade,
         socialNotes: form.socialNotes,
         meaningfulActivity: form.meaningfulActivity,
-        gratitude: form.gratitude,
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
     } catch {
@@ -128,35 +115,44 @@ export default function SelfCareScreen() {
               </Text>
               <HelpButton helpKey="selfCare" />
             </View>
-            <Text variant="muted">{t("selfCare.description", { date: today })}</Text>
+            <Text variant="muted">{t("selfCare.description", { date: selectedDate })}</Text>
           </View>
 
-          {/* Sleep */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("selfCare.sleep")}</CardTitle>
-            </CardHeader>
-            <CardContent className="gap-4">
-              <View className="gap-2">
-                <Label>{t("selfCare.sleepHours")}</Label>
-                <Input
-                  accessibilityLabel={t("selfCare.sleepHours")}
-                  keyboardType="numeric"
-                  onChangeText={(text) => setForm((p) => ({ ...p, sleepHours: text }))}
-                  placeholder="7.5"
-                  value={form.sleepHours}
-                />
-              </View>
-              <View className="gap-2">
-                <Label>{t("selfCare.sleepQuality")}</Label>
-                <NumberRating
-                  max={5}
-                  value={form.sleepQuality}
-                  onChange={(n) => setForm((p) => ({ ...p, sleepQuality: n }))}
-                />
-              </View>
-            </CardContent>
-          </Card>
+          {/* Sleep link */}
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={t("selfCare.sleepLinkTitle")}
+            accessibilityHint={t("selfCare.sleepLinkDesc")}
+            onPress={() => router.push("/tools/sleep")}
+            className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
+          >
+            <Icon name="bedtime" className="size-6 text-foreground" />
+            <View className="flex-1">
+              <Text className="text-sm font-semibold">{t("selfCare.sleepLinkTitle")}</Text>
+              <Text variant="muted" className="text-xs">
+                {t("selfCare.sleepLinkDesc")}
+              </Text>
+            </View>
+            <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
+          </Pressable>
+
+          {/* Gratitude link */}
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={t("selfCare.gratitudeLinkTitle")}
+            accessibilityHint={t("selfCare.gratitudeLinkDesc")}
+            onPress={() => router.push("/tools/gratitude-log")}
+            className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
+          >
+            <Icon name="favorite" className="size-6 text-foreground" />
+            <View className="flex-1">
+              <Text className="text-sm font-semibold">{t("selfCare.gratitudeLinkTitle")}</Text>
+              <Text variant="muted" className="text-xs">
+                {t("selfCare.gratitudeLinkDesc")}
+              </Text>
+            </View>
+            <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
+          </Pressable>
 
           {/* Exercise */}
           <Card>
@@ -276,30 +272,6 @@ export default function SelfCareScreen() {
                   value={form.meaningfulActivity}
                 />
               </View>
-            </CardContent>
-          </Card>
-
-          {/* Gratitude */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("selfCare.gratitude")}</CardTitle>
-            </CardHeader>
-            <CardContent className="gap-3">
-              {form.gratitude.map((value, index) => (
-                <View key={index} className="gap-1">
-                  <Label>{t("selfCare.gratitudeItem", { n: index + 1 })}</Label>
-                  <Input
-                    accessibilityLabel={t("selfCare.gratitudeItem", { n: index + 1 })}
-                    onChangeText={(text) => {
-                      const next = [...form.gratitude];
-                      next[index] = text;
-                      setForm((p) => ({ ...p, gratitude: next }));
-                    }}
-                    placeholder={t("selfCare.gratitudePlaceholder")}
-                    value={value}
-                  />
-                </View>
-              ))}
             </CardContent>
           </Card>
 

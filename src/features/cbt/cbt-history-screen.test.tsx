@@ -5,6 +5,10 @@ import CbtHistoryScreen from "./cbt-history-screen";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+jest.mock("@/src/stores/selected-date-store", () => ({
+  useSelectedDate: jest.fn(() => ({ selectedDate: "2026-05-03", isToday: false })),
+}));
+
 jest.mock("expo-router", () => ({
   router: {
     canGoBack: jest.fn(() => false),

@@ -7,12 +7,13 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function BreathingWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
   const { data: sessions } = useBreathingSessions(userId);
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const { selectedDate: todayKey } = useSelectedDate();
   const todaySessions = sessions?.filter((s) => s.completedAt.startsWith(todayKey)) ?? [];
   const doneToday = todaySessions.length > 0;
   const lastSession = sessions?.at(0);

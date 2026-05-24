@@ -67,6 +67,11 @@ describe("cbt program preference fields", () => {
     expect(defaultUserPreferences.cbtProgramCompletedAt).toBeNull();
     expect(defaultUserPreferences.cbtProgramPromptDismissedAt).toBeNull();
   });
+
+  it("defaults cbtProgramPhaseIndex to 0 and cbtProgramPhaseStartedAt to null", () => {
+    expect(defaultUserPreferences.cbtProgramPhaseIndex).toBe(0);
+    expect(defaultUserPreferences.cbtProgramPhaseStartedAt).toBeNull();
+  });
 });
 
 describe("act program preference flags", () => {
@@ -93,6 +98,8 @@ describe("settings repository", () => {
       app_onboarding_completed: true,
       cbt_onboarding_completed: false,
       cbt_program_completed_at: null,
+      cbt_program_phase_index: 2,
+      cbt_program_phase_started_at: "2026-05-23T08:00:00.000Z",
       cbt_program_prompt_dismissed_at: "2026-05-22T11:00:00.000Z",
       cbt_program_started_at: "2026-05-22T10:00:00.000Z",
       cbt_reminder_hour: 8,
@@ -115,6 +122,8 @@ describe("settings repository", () => {
       appOnboardingCompleted: true,
       cbtOnboardingCompleted: false,
       cbtProgramCompletedAt: null,
+      cbtProgramPhaseIndex: 2,
+      cbtProgramPhaseStartedAt: "2026-05-23T08:00:00.000Z",
       cbtProgramPromptDismissedAt: "2026-05-22T11:00:00.000Z",
       cbtProgramStartedAt: "2026-05-22T10:00:00.000Z",
       cbtReminderTimezone: "Europe/Sofia",
@@ -129,6 +138,8 @@ describe("settings repository", () => {
       app_onboarding_completed: true,
       cbt_onboarding_completed: true,
       cbt_program_completed_at: null,
+      cbt_program_phase_index: 0,
+      cbt_program_phase_started_at: null,
       cbt_program_prompt_dismissed_at: null,
       cbt_program_started_at: null,
       cbt_reminder_hour: 19,
@@ -162,6 +173,8 @@ describe("settings repository", () => {
       expect.objectContaining({
         app_onboarding_completed: true,
         cbt_onboarding_completed: true,
+        cbt_program_phase_index: 0,
+        cbt_program_phase_started_at: null,
         cbt_program_prompt_dismissed_at: "2026-05-22T11:00:00.000Z",
         cbt_reminder_timezone: "Europe/Sofia",
         reminder_consent: true,
@@ -199,6 +212,8 @@ describe("settings repository", () => {
     const fallbackPayload = upsert.mock.calls.at(-1)?.[0] as Record<string, unknown>;
     expect(fallbackPayload).not.toHaveProperty("act_onboarding_completed");
     expect(fallbackPayload).not.toHaveProperty("cbt_program_completed_at");
+    expect(fallbackPayload).not.toHaveProperty("cbt_program_phase_index");
+    expect(fallbackPayload).not.toHaveProperty("cbt_program_phase_started_at");
     expect(fallbackPayload).not.toHaveProperty("cbt_program_prompt_dismissed_at");
     expect(fallbackPayload).not.toHaveProperty("cbt_program_started_at");
     expect(fallbackPayload).not.toHaveProperty("shown_button_tours");
@@ -230,6 +245,8 @@ describe("settings repository", () => {
 
     const fallbackPayload = upsert.mock.calls.at(-1)?.[0] as Record<string, unknown>;
     expect(fallbackPayload).not.toHaveProperty("cbt_program_completed_at");
+    expect(fallbackPayload).not.toHaveProperty("cbt_program_phase_index");
+    expect(fallbackPayload).not.toHaveProperty("cbt_program_phase_started_at");
     expect(fallbackPayload).not.toHaveProperty("cbt_program_prompt_dismissed_at");
     expect(fallbackPayload).not.toHaveProperty("cbt_program_started_at");
     expect(upsert.mock.calls.at(-1)?.[1]).toEqual({ onConflict: "user_id" });

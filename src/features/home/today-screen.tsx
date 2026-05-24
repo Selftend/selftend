@@ -10,6 +10,7 @@ import { useDeletePlanItem, usePlanItems, useSavePlanItem } from "@/src/features
 import type { CarePlanItem } from "@/src/features/plan/types";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
 import { WidgetCard } from "@/src/features/home/widget-card";
 import {
@@ -42,13 +43,14 @@ export default function HomeScreen() {
   const [addVisible, setAddVisible] = useState(false);
   const [displayedItems, setDisplayedItems] = useState<CarePlanItem[] | null>(null);
 
-  const today = new Date();
-  const hour = today.getHours();
+  const { selectedDate, isToday } = useSelectedDate();
+  const now = new Date();
+  const hour = now.getHours();
   const dateLabel = new Intl.DateTimeFormat(i18n.language, {
     weekday: "long",
     day: "numeric",
     month: "long",
-  }).format(today);
+  }).format(new Date(selectedDate + "T12:00:00"));
 
   const greeting = t(pickGreetingKey(hour));
   const displayName = profile?.displayName?.trim().split(/\s+/)[0] ?? getMetaName(user);
@@ -129,7 +131,7 @@ export default function HomeScreen() {
           <View className="flex-row items-start justify-between">
             <View className="flex-1 gap-2">
               <Text className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {t("today.eyebrow", { date: dateLabel })}
+                {t(isToday ? "today.eyebrow" : "today.eyebrowPast", { date: dateLabel })}
               </Text>
               <Text variant="h1">{greetingLine}</Text>
             </View>

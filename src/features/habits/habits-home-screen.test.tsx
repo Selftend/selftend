@@ -11,6 +11,7 @@ import {
   useUserPreferences,
 } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -46,6 +47,10 @@ jest.mock("@/src/features/habits/queries", () => ({
   useToggleHabitLog: jest.fn(),
 }));
 
+jest.mock("@/src/stores/selected-date-store", () => ({
+  useSelectedDate: jest.fn(),
+}));
+
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseUpdateShownButtonTours = useUpdateShownButtonTours as jest.MockedFunction<
   typeof useUpdateShownButtonTours
@@ -56,6 +61,7 @@ const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunc
 const mockUseHabits = useHabits as jest.MockedFunction<typeof useHabits>;
 const mockUseHabitLogs = useHabitLogs as jest.MockedFunction<typeof useHabitLogs>;
 const mockUseToggleHabitLog = useToggleHabitLog as jest.MockedFunction<typeof useToggleHabitLog>;
+const mockUseSelectedDate = useSelectedDate as jest.MockedFunction<typeof useSelectedDate>;
 
 void router;
 
@@ -64,6 +70,11 @@ describe("HabitsHomeScreen tap-to-tick", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    mockUseSelectedDate.mockReturnValue({
+      selectedDate: todayLocalDateString(),
+      isToday: true,
+    });
 
     mockUseUserPreferences.mockReturnValue({
       data: { ...defaultUserPreferences, habitsOnboardingCompleted: true },
@@ -113,7 +124,7 @@ describe("HabitsHomeScreen tap-to-tick", () => {
     } as unknown as ReturnType<typeof useToggleHabitLog>);
   });
 
-  it("calls toggleHabitLog with today's date when the tick is pressed", async () => {
+  it("calls toggleHabitLog with the selected date when the tick is pressed", async () => {
     renderWithProviders(<HabitsHomeScreen />);
 
     const tickButton = await screen.findByRole("checkbox", {
@@ -126,6 +137,26 @@ describe("HabitsHomeScreen tap-to-tick", () => {
       expect(toggleMutate).toHaveBeenCalledWith({
         habitId: "h-1",
         loggedOn: todayLocalDateString(),
+      });
+    });
+  });
+
+  it("calls toggleHabitLog with a past selectedDate when a non-today date is active", async () => {
+    const pastDate = "2026-05-20";
+    mockUseSelectedDate.mockReturnValue({ selectedDate: pastDate, isToday: false });
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    const tickButton = await screen.findByRole("checkbox", {
+      name: /Tap to tick today/i,
+    });
+
+    fireEvent.press(tickButton);
+
+    await waitFor(() => {
+      expect(toggleMutate).toHaveBeenCalledWith({
+        habitId: "h-1",
+        loggedOn: pastDate,
       });
     });
   });

@@ -11,6 +11,7 @@ import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
 import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
 import { BackButton } from "@/src/components/app/back-button";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 function getRecordTitle(
   record: { nats: NegativeAutomaticThought[]; situation: string },
@@ -23,7 +24,9 @@ function getRecordTitle(
 export default function CbtHistoryScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
+  const { selectedDate } = useSelectedDate();
   const { data, isLoading } = useThoughtRecords(user?.id ?? null);
+  const records = (data ?? []).filter((record) => record.createdAt.slice(0, 10) === selectedDate);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -39,11 +42,11 @@ export default function CbtHistoryScreen() {
 
           {isLoading ? <LoadingState title={t("history.loading")} /> : null}
 
-          {!isLoading && !data?.length ? (
+          {!isLoading && !records.length ? (
             <EmptyState title={t("history.empty")} description={t("history.emptyDescription")} />
           ) : null}
 
-          {data?.map((record) => (
+          {records.map((record) => (
             <AccessibleCardLink
               key={record.id}
               description={t("history.recordSummary", {

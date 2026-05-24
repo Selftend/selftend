@@ -134,11 +134,14 @@ export async function saveGratitudeEntry(userId: string, input: GratitudeInput, 
     life_item_3: lifeItems[2] ?? "",
   };
 
+  const loggedAt = input.loggedAt ?? new Date().toISOString();
+
   const query = entryId
     ? client.from("gratitude_entries").update(payload).eq("user_id", userId).eq("id", entryId)
     : client.from("gratitude_entries").insert({
         ...payload,
         user_id: userId,
+        logged_at: loggedAt,
       });
 
   const { data, error } = await query.select("*").single();

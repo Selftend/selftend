@@ -23,4 +23,5 @@ export interface WorryEntryInput {
   evidenceAgainst: string[];
   copingStatement: string;
   actionSteps: string[];
+  createdAt?: string;
 }

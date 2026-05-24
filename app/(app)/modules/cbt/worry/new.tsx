@@ -16,6 +16,7 @@ import { worryEntryFormSchema, type WorryEntryFormSchema } from "@/src/features/
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { BackButton } from "@/src/components/app/back-button";
+import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 
 const defaultValues: WorryEntryFormSchema = {
   worryStatement: "",
@@ -31,6 +32,7 @@ export default function NewWorryScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
+  const { selectedDate } = useSelectedDate();
   const saveMutation = useSaveWorryEntry(user?.id ?? null);
 
   const {
@@ -84,7 +86,10 @@ export default function NewWorryScreen() {
           values.worryCategory === "hypothetical" ? values.probabilityEstimate : null,
         copingStatement: values.worryCategory === "hypothetical" ? values.copingStatement : "",
       };
-      await saveMutation.mutateAsync(sanitized);
+      await saveMutation.mutateAsync({
+        ...sanitized,
+        createdAt: loggedAtForSelectedDate(selectedDate),
+      });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.replace("/modules/cbt/worry" as Parameters<typeof router.replace>[0]);
     } catch (e) {

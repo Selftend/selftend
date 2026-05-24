@@ -36,6 +36,11 @@ jest.mock("@/src/providers/session-provider", () => ({
   }),
 }));
 
+jest.mock("@/src/stores/selected-date-store", () => ({
+  useSelectedDate: () => ({ selectedDate: "2026-05-24", isToday: true }),
+  loggedAtForSelectedDate: (date: string) => `${date}T12:00:00.000Z`,
+}));
+
 jest.mock("@/src/features/gratitude/queries", () => ({
   useGratitudeEntries: jest.fn(),
   useGratitudeEntry: jest.fn(),
@@ -114,6 +119,7 @@ describe("GratitudeEntryEditorScreen", () => {
           level: 3,
           items: ["Warm coffee"],
           note: "",
+          loggedAt: "2026-05-24T12:00:00.000Z",
           events: [],
           goodMoment: "",
           missIfGone: "",
@@ -161,6 +167,7 @@ describe("GratitudeEntryEditorScreen", () => {
           level: 3,
           items: ["Sunlight"],
           note: "Small thing.",
+          loggedAt: "2026-05-24T12:00:00.000Z",
           events: [],
           goodMoment: "",
           missIfGone: "",

@@ -21,28 +21,37 @@ import { STEPS } from "@/src/components/app/mood-scale";
 import { MoodEntryCard } from "@/src/features/mood/mood-entry-card";
 import { buildMoodChartData } from "@/src/features/mood/chart-data";
 import { useMoodLogs } from "@/src/features/mood/queries";
-import { getMoodSummary, type MoodSummary } from "@/src/features/mood/summaries";
+import { getDayMoodSummary, getMoodSummary, type MoodSummary } from "@/src/features/mood/summaries";
 import { useSession } from "@/src/providers/session-provider";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { cn } from "@/lib/utils";
 
 const RECENT_LIMIT = 10;
 const CHART_DAYS = 14;
 
 export default function MoodTrackerScreen() {
-  const { t } = useTranslation("mood");
+  const { t, i18n } = useTranslation("mood");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
   const { data: moodLogs } = useMoodLogs(userId, 30);
+  const { selectedDate, isToday } = useSelectedDate();
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [chartContainerWidth, setChartContainerWidth] = useState(300);
 
-  const today = getMoodSummary(moodLogs, 1);
+  const daySummary = getDayMoodSummary(moodLogs, selectedDate);
+  const dayLabel = new Intl.DateTimeFormat(i18n.language, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(selectedDate + "T12:00:00"));
   const sevenDay = getMoodSummary(moodLogs, 7);
   const thirtyDay = getMoodSummary(moodLogs, 30);
   const chartData = buildMoodChartData(moodLogs, CHART_DAYS);
-  const recent = moodLogs?.slice(0, RECENT_LIMIT) ?? [];
+  const recent = (moodLogs ?? [])
+    .filter((log) => log.loggedAt.slice(0, 10) === selectedDate)
+    .slice(0, RECENT_LIMIT);
 
   const handleChartLayout = (e: LayoutChangeEvent) => {
     setChartContainerWidth(e.nativeEvent.layout.width);
@@ -71,7 +80,7 @@ export default function MoodTrackerScreen() {
               </Text>
             </View>
 
-            <TodayCheckInCard summary={today} />
+            <TodayCheckInCard summary={daySummary} isToday={isToday} dayLabel={dayLabel} />
 
             <View className="gap-3">
               <Text variant="h3">{t("sections.summary")}</Text>
@@ -120,13 +129,17 @@ export default function MoodTrackerScreen() {
 
 interface TodayCheckInCardProps {
   summary: MoodSummary;
+  isToday: boolean;
+  dayLabel: string;
 }
 
-function TodayCheckInCard({ summary }: TodayCheckInCardProps) {
+function TodayCheckInCard({ summary, isToday, dayLabel }: TodayCheckInCardProps) {
   const { t } = useTranslation("mood");
   const logged = summary.count > 0;
   const description = !logged
-    ? t("today.howAreYou")
+    ? isToday
+      ? t("today.howAreYou")
+      : t("today.howWasDay")
     : summary.count === 1
       ? t("today.completeOne", { score: summary.average })
       : t("today.completeMany", { count: summary.count, average: summary.average });
@@ -136,7 +149,7 @@ function TodayCheckInCard({ summary }: TodayCheckInCardProps) {
       <CardHeader>
         <View className="flex-row items-center gap-2">
           {logged ? <Icon name="check-circle" className="size-5 text-primary" /> : null}
-          <CardTitle>{t("today.title")}</CardTitle>
+          <CardTitle>{isToday ? t("today.title") : dayLabel}</CardTitle>
         </View>
         <CardDescription>{description}</CardDescription>
       </CardHeader>

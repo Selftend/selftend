@@ -26,6 +26,7 @@ supabase/.temp/
 playwright-report/
 test-results/
 .playwright/
+.playwright-mcp/
 
 # Logs
 *.log

@@ -2,7 +2,7 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import { ProgramHero } from "./program-hero";
-import type { CbtProgramView } from "@/src/features/cbt/derive-program";
+import type { ActProgramView } from "@/src/features/act/derive-act-program";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -12,9 +12,9 @@ jest.mock("expo-router", () => ({
 jest.mock("@rn-primitives/popover");
 
 const baseWeek = {
-  key: "challengeThinking",
-  themeLabelKey: "program.weeks.challengeThinking",
-  pillar: "think" as const,
+  key: "thinking",
+  themeLabelKey: "program.weeks.thinking.title",
+  pillar: "bePresent" as const,
   done: false,
   tasks: [
     {
@@ -28,7 +28,7 @@ const baseWeek = {
   ],
 };
 
-function view(overrides: Partial<CbtProgramView>): CbtProgramView {
+function view(overrides: Partial<ActProgramView>): ActProgramView {
   return {
     status: "in_progress",
     startedAt: "2026-05-01T00:00:00Z",
@@ -37,7 +37,7 @@ function view(overrides: Partial<CbtProgramView>): CbtProgramView {
     weeks: [0, 1, 2, 3].map((index) => ({ ...baseWeek, key: `week-${index}` })),
     weeksComplete: 0,
     allWeeksComplete: false,
-    summaryStats: { thoughtRecords: 0, activitiesCompleted: 0, goalsSet: 0, beliefsExamined: 0 },
+    summaryStats: { choicePoints: 0, defusionLogs: 0, expansionLogs: 0, committedActions: 0 },
     ...overrides,
   };
 }
@@ -117,5 +117,27 @@ describe("ProgramHero", () => {
       <ProgramHero program={view({ status: "graduated" })} onStart={jest.fn()} />,
     );
     expect(toJSON()).toBeNull();
+  });
+
+  it("shows the current phase subtitle and description when provided", () => {
+    renderWithProviders(
+      <ProgramHero
+        program={view({
+          weeks: [0, 1, 2, 3].map((index) => ({
+            ...baseWeek,
+            key: `week-${index}`,
+            themeSubKey: "program.weeks.assessment.sub",
+            themeDescKey: "program.weeks.assessment.description",
+          })),
+        })}
+        onStart={jest.fn()}
+      />,
+    );
+    expect(screen.getByText(/Assessment/)).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Map the problem, set goals, clarify your values, and start noticing how you think, feel and act day to day.",
+      ),
+    ).toBeTruthy();
   });
 });

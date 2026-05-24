@@ -7,12 +7,13 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useJournalEntries } from "@/src/features/journal/queries";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function JournalWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
   const { data: entries } = useJournalEntries(userId);
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const { selectedDate: todayKey } = useSelectedDate();
   const todayEntries = entries?.filter((e) => e.createdAt.startsWith(todayKey)) ?? [];
   const latest = todayEntries.at(-1) ?? entries?.at(0) ?? null;
 

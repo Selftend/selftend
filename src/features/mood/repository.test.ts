@@ -23,6 +23,10 @@ describe("mood repository", () => {
         linked_strategy: null,
         logged_at: "2026-05-10T08:00:00.000Z",
         created_at: "2026-05-10T08:00:01.000Z",
+        situation: "",
+        thoughts: "",
+        behaviours: "",
+        bodily_sensations: "",
       },
     ];
     const limit = jest.fn().mockResolvedValue({ data: rows, error: null });
@@ -42,6 +46,10 @@ describe("mood repository", () => {
         linkedStrategy: null,
         loggedAt: "2026-05-10T08:00:00.000Z",
         createdAt: "2026-05-10T08:00:01.000Z",
+        situation: "",
+        thoughts: "",
+        behaviours: "",
+        bodilySensations: "",
       },
     ]);
     expect(from).toHaveBeenCalledWith("mood_logs");
@@ -73,6 +81,10 @@ describe("mood repository", () => {
       linked_strategy: "thoughts",
       logged_at: "2026-05-10T08:00:00.000Z",
       created_at: "2026-05-10T08:00:01.000Z",
+      situation: "Email",
+      thoughts: "",
+      behaviours: "",
+      bodily_sensations: "",
     };
     const maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
     const eqId = jest.fn(() => ({ maybeSingle }));
@@ -90,6 +102,10 @@ describe("mood repository", () => {
       linkedStrategy: "thoughts",
       loggedAt: "2026-05-10T08:00:00.000Z",
       createdAt: "2026-05-10T08:00:01.000Z",
+      situation: "Email",
+      thoughts: "",
+      behaviours: "",
+      bodilySensations: "",
     });
   });
 
@@ -103,6 +119,10 @@ describe("mood repository", () => {
       linked_strategy: null,
       logged_at: "2026-05-10T08:00:00.000Z",
       created_at: "2026-05-10T08:00:01.000Z",
+      situation: "S",
+      thoughts: "",
+      behaviours: "",
+      bodily_sensations: "",
     };
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
     const select = jest.fn(() => ({ single }));
@@ -115,6 +135,10 @@ describe("mood repository", () => {
       emotions: ["Anxious"],
       notes: "  Walked it off  ",
       linkedStrategy: null,
+      situation: " S ",
+      thoughts: "",
+      behaviours: "",
+      bodilySensations: "",
     });
 
     expect(insert).toHaveBeenCalledWith(
@@ -124,6 +148,10 @@ describe("mood repository", () => {
         emotions: ["Anxious"],
         notes: "Walked it off",
         linked_strategy: null,
+        situation: "S",
+        thoughts: "",
+        behaviours: "",
+        bodily_sensations: "",
       }),
     );
   });
@@ -138,6 +166,10 @@ describe("mood repository", () => {
       linked_strategy: "thoughts",
       logged_at: "2026-05-10T08:00:00.000Z",
       created_at: "2026-05-10T08:00:01.000Z",
+      situation: "",
+      thoughts: "All good",
+      behaviours: "",
+      bodily_sensations: "",
     };
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
     const select = jest.fn(() => ({ single }));
@@ -155,6 +187,10 @@ describe("mood repository", () => {
           emotions: ["Joy"],
           notes: "  Better after lunch  ",
           linkedStrategy: "thoughts",
+          situation: "",
+          thoughts: "All good",
+          behaviours: "",
+          bodilySensations: "",
         },
         "log-1",
       ),
@@ -167,6 +203,10 @@ describe("mood repository", () => {
       linkedStrategy: "thoughts",
       loggedAt: "2026-05-10T08:00:00.000Z",
       createdAt: "2026-05-10T08:00:01.000Z",
+      situation: "",
+      thoughts: "All good",
+      behaviours: "",
+      bodilySensations: "",
     });
 
     expect(update).toHaveBeenCalledWith({
@@ -175,6 +215,10 @@ describe("mood repository", () => {
       notes: "Better after lunch",
       linked_strategy: "thoughts",
       logged_at: expect.any(String),
+      situation: "",
+      thoughts: "All good",
+      behaviours: "",
+      bodily_sensations: "",
     });
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
     expect(eqId).toHaveBeenCalledWith("id", "log-1");

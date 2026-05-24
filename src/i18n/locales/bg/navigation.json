@@ -13,7 +13,7 @@
     "cbtOverview": "Преглед",
     "cbtHistory": "История",
     "cbtLearn": "Научи",
-    "moodTracker": "Проследяване на настроението",
+    "moodTracker": "Отчитане",
     "journal": "Дневник",
     "breathing": "Дишане",
     "meditation": "Медитация",
@@ -62,6 +62,7 @@
   },
   "today": {
     "eyebrow": "Днес · {{date}}",
+    "eyebrowPast": "{{date}}",
     "greetingMorning": "Добро утро",
     "greetingAfternoon": "Добър ден",
     "greetingEvening": "Добър вечер",
@@ -186,7 +187,7 @@
       "actExercise": "Направи упражнение",
       "cbtModuleSubtitle": "Мисли · Действай · Бъди",
       "actModuleSubtitle": "Психологическа гъвкавост",
-      "cbtModuleProgramReady": "4-седмична програма",
+      "cbtModuleProgramReady": "КПТ програма",
       "cbtModuleProgramReadyDesc": "Водената структура е готова, когато я поискаш.",
       "cbtModuleProgramCompleteDesc": "Завършена. Продължи да ползваш КПТ инструментите според нуждите си.",
       "cbtModuleRecords": "Записи",
@@ -284,7 +285,7 @@
     "activities": "Дейности",
     "beliefs": "Основни убеждения",
     "exposure": "Излагане",
-    "tasks": "Задачи",
+    "tasks": "Прокрастинация",
     "anger": "Дневник на гнева",
     "worry": "Дневник на тревогите",
     "values": "Ценности",
@@ -313,6 +314,14 @@
       "inDesign": "В дизайн",
       "onRoadmap": "В пътната карта"
     }
+  },
+  "dateBar": {
+    "today": "Днес",
+    "openCalendar": "Отвори календар",
+    "selectDate": "Избери дата",
+    "scrollOlder": "Покажи по-ранни дни",
+    "scrollNewer": "Покажи по-късни дни",
+    "clear": "Изчисти датата"
   },
   "plan": {
     "empty": "Още нямаш план.",

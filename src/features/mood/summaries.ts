@@ -28,3 +28,21 @@ export function getMoodSummary(logs: MoodSample[] | undefined, days: number): Mo
   const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
   return { average: Math.round(average * 10) / 10, count: scores.length };
 }
+
+/** Summary for a single `YYYY-MM-DD` day, used to scope the screen to the date bar. */
+export function getDayMoodSummary(logs: MoodSample[] | undefined, dateKey: string): MoodSummary {
+  if (!logs || logs.length === 0) {
+    return { average: null, count: 0 };
+  }
+
+  const scores = logs
+    .filter((log) => log.loggedAt.slice(0, 10) === dateKey)
+    .map((log) => log.moodScore);
+
+  if (scores.length === 0) {
+    return { average: null, count: 0 };
+  }
+
+  const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+  return { average: Math.round(average * 10) / 10, count: scores.length };
+}

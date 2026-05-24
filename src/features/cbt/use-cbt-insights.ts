@@ -5,9 +5,11 @@ import { useCoreBeliefs } from "@/src/features/beliefs/queries";
 import type { CoreBelief } from "@/src/features/beliefs/types";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useAllExposureItems } from "@/src/features/exposure/queries";
+import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
+import { useSleepLogs } from "@/src/features/sleep/queries";
 
 export interface TopDistortion {
   key: string;
@@ -77,6 +79,8 @@ export function useCbtInsights(userId: string | null) {
   const { data: exposureItems } = useAllExposureItems(userId);
   const { data: selfCareLogs } = useSelfCareLogs(userId);
   const { data: moodLogs } = useMoodLogs(userId, 60);
+  const { data: sleepLogs } = useSleepLogs(userId, 50);
+  const { data: gratitudeEntries } = useGratitudeEntries(userId, 50);
   const { data: coreBeliefs } = useCoreBeliefs(userId);
   const { data: recoveryPlan } = useRecoveryPlan(userId);
 
@@ -231,16 +235,30 @@ export function useCbtInsights(userId: string | null) {
     const recentLogs = [...selfCareLogs]
       .sort((a, b) => b.logDate.localeCompare(a.logDate))
       .slice(0, 7);
-    const sleepHours = recentLogs
-      .map((log) => log.sleepHours)
-      .filter((value): value is number => value !== null);
+
+    // Bound the sleep/gratitude lookups to the same date span as the recent
+    // self-care logs so the trend stays comparable across tools.
+    const windowStart = recentLogs[recentLogs.length - 1]?.logDate ?? "";
+    const windowEnd = recentLogs[0]?.logDate ?? "";
+    const inWindow = (loggedAt: string) => {
+      const day = loggedAt.slice(0, 10);
+      return day >= windowStart && day <= windowEnd;
+    };
+    const sleepDurations = (sleepLogs ?? [])
+      .filter((s) => inWindow(s.loggedAt))
+      .map((s) => s.durationMinutes / 60);
+    const gratitudeDayKeys = new Set(
+      (gratitudeEntries ?? [])
+        .filter((g) => inWindow(g.loggedAt))
+        .map((g) => g.loggedAt.slice(0, 10)),
+    );
 
     return {
       totalDays: recentLogs.length,
       exerciseDays: recentLogs.filter((log) => log.exerciseDone).length,
       socialDays: recentLogs.filter((log) => log.socialConnectionMade).length,
-      gratitudeDays: recentLogs.filter((log) => log.gratitude.some((item) => item.trim())).length,
-      averageSleepHours: sleepHours.length > 0 ? roundedTenth(average(sleepHours)) : null,
+      gratitudeDays: gratitudeDayKeys.size,
+      averageSleepHours: sleepDurations.length > 0 ? roundedTenth(average(sleepDurations)) : null,
     };
   })();
 

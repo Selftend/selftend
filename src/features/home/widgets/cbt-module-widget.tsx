@@ -13,33 +13,33 @@ import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
 import { useActivities } from "@/src/features/activities/queries";
 import { useSelfCareLog } from "@/src/features/self-care/queries";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 function ProgramSummary({ program }: { program: CbtProgramView }) {
   const { t } = useTranslation(["navigation", "cbt"]);
-  const current = program.weeks[program.currentWeekIndex] ?? null;
-  const currentDone = current?.tasks.filter((task) => task.done).length ?? 0;
-  const currentTotal = current?.tasks.length ?? 0;
+
+  // Progress bar: phase-based fraction (milestones done / total milestones in current phase)
+  const milestoneDone = program.phase?.milestones.filter((m) => m.done).length ?? 0;
+  const milestoneTotal = program.phase?.milestones.length ?? 0;
   const progressUnits =
     program.status === "graduated"
-      ? program.totalWeeks
-      : program.weeksComplete + (currentTotal > 0 ? currentDone / currentTotal : 0);
+      ? program.totalPhases
+      : program.phaseIndex + (milestoneTotal > 0 ? milestoneDone / milestoneTotal : 0);
   const progressPercent =
-    program.totalWeeks > 0 ? Math.min(100, (progressUnits / program.totalWeeks) * 100) : 0;
+    program.totalPhases > 0 ? Math.min(100, (progressUnits / program.totalPhases) * 100) : 0;
 
   const title =
     program.status === "in_progress"
-      ? t("program.weekProgress", {
-          ns: "cbt",
-          current: program.currentWeekIndex + 1,
-          total: program.totalWeeks,
-        })
+      ? `Phase ${program.phaseIndex + 1} of ${program.totalPhases}`
       : program.status === "graduated"
         ? t("program.graduationTitle", { ns: "cbt" })
         : t("today.dashboard.cbtModuleProgramReady");
 
   const description =
     program.status === "in_progress"
-      ? t("program.weekTasksDone", { ns: "cbt", done: currentDone, total: currentTotal })
+      ? program.phaseReady
+        ? t("program.ready", { ns: "cbt" })
+        : `${milestoneDone}/${milestoneTotal} done this phase`
       : program.status === "graduated"
         ? t("today.dashboard.cbtModuleProgramCompleteDesc")
         : t("today.dashboard.cbtModuleProgramReadyDesc");
@@ -74,7 +74,7 @@ function ProgramSummary({ program }: { program: CbtProgramView }) {
 
 export function CbtModuleWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const { selectedDate: todayKey } = useSelectedDate();
 
   const { program } = useCbtProgram(userId || null);
   const { data: records } = useThoughtRecords(userId);

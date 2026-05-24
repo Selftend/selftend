@@ -4,8 +4,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { DateBar } from "@/src/components/app/date-bar";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { isDatedRoute } from "@/src/features/navigation/dated-routes";
 import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
 import { ConsentGate } from "@/src/components/app/consent-gate";
 import { OnboardingModal } from "@/src/components/app/onboarding-modal";
@@ -99,6 +101,7 @@ export default function ProtectedLayout() {
       <View className="flex-1 flex-row bg-background">
         {isDesktop ? <SidebarNav /> : null}
         <View className="flex-1">
+          {isDatedRoute(pathname) ? <DateBar /> : null}
           <Stack
             screenOptions={{
               headerShown: false,

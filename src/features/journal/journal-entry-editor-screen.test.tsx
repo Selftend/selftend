@@ -42,6 +42,11 @@ jest.mock("@/src/features/journal/queries", () => ({
   useSaveJournalEntry: jest.fn(),
 }));
 
+jest.mock("@/src/stores/selected-date-store", () => ({
+  useSelectedDate: jest.fn(() => ({ selectedDate: "2026-05-24", isToday: true })),
+  loggedAtForSelectedDate: jest.fn(() => "2026-05-24T10:00:00.000Z"),
+}));
+
 const mockUseJournalEntries = useJournalEntries as jest.MockedFunction<typeof useJournalEntries>;
 const mockUseJournalEntry = useJournalEntry as jest.MockedFunction<typeof useJournalEntry>;
 const mockUseSaveJournalEntry = useSaveJournalEntry as jest.MockedFunction<
@@ -94,7 +99,7 @@ describe("JournalEntryEditorScreen", () => {
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({
-        input: { title: "", body: "Hello world" },
+        input: { title: "", body: "Hello world", createdAt: "2026-05-24T10:00:00.000Z" },
         entryId: undefined,
       }),
     );

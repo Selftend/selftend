@@ -20,6 +20,7 @@ import { JOURNAL_BODY_MAX, JOURNAL_TITLE_MAX } from "@/src/features/journal/sche
 import type { JournalEntry } from "@/src/features/journal/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 
 interface JournalEntryEditorScreenProps {
   fallbackHref: Href;
@@ -35,6 +36,7 @@ export function JournalEntryEditorScreen({
   const { t } = useTranslation("journal");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
+  const { selectedDate } = useSelectedDate();
   const editMode = mode === "edit";
 
   const { data: cachedList } = useJournalEntries(editMode ? (user?.id ?? null) : null, 50);
@@ -79,6 +81,7 @@ export function JournalEntryEditorScreen({
         input: {
           title: title.trim().slice(0, JOURNAL_TITLE_MAX),
           body: trimmedBody.slice(0, JOURNAL_BODY_MAX),
+          ...(!editMode ? { createdAt: loggedAtForSelectedDate(selectedDate) } : {}),
         },
         entryId: editMode ? (entryId ?? undefined) : undefined,
       });

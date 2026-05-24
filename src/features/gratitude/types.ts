@@ -21,6 +21,7 @@ export interface GratitudeInput {
   level: GratitudeLevel;
   items: string[];
   note: string;
+  loggedAt?: string;
   events?: string[];
   goodMoment?: string;
   missIfGone?: string;
