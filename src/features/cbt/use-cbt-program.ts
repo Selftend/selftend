@@ -13,7 +13,7 @@ import { useTasks } from "@/src/features/procrastination/queries";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import { useValuesProfiles } from "@/src/features/values/queries";
+import { useValuesProfile } from "@/src/features/values/queries";
 
 export interface UseCbtProgramResult {
   program: CbtProgramView;
@@ -32,7 +32,7 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
   const updatePreferences = useUpdateUserPreferences(userId);
 
   const goals = useGoals(userId);
-  const values = useValuesProfiles(userId);
+  const valuesProfile = useValuesProfile(userId);
   const thoughtRecords = useThoughtRecords(userId);
   const beliefs = useCoreBeliefs(userId);
   const activities = useActivities(userId);
@@ -48,7 +48,7 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
     completedAt: preferences?.cbtProgramCompletedAt ?? null,
     now: Date.now(),
     goals: goals.data ?? [],
-    values: values.data ?? [],
+    valuesProfile: valuesProfile.data ?? null,
     thoughtRecords: thoughtRecords.data ?? [],
     beliefs: beliefs.data ?? [],
     activities: activities.data ?? [],

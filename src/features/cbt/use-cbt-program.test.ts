@@ -12,7 +12,7 @@ import { useTasks } from "@/src/features/procrastination/queries";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import { useValuesProfiles } from "@/src/features/values/queries";
+import { useValuesProfile } from "@/src/features/values/queries";
 import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
 
 // ---------------------------------------------------------------------------
@@ -28,7 +28,7 @@ jest.mock("@/src/features/goals/queries", () => ({
 }));
 
 jest.mock("@/src/features/values/queries", () => ({
-  useValuesProfiles: jest.fn(),
+  useValuesProfile: jest.fn(),
 }));
 
 jest.mock("@/src/features/cbt/queries", () => ({
@@ -75,7 +75,7 @@ const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunc
   typeof useUpdateUserPreferences
 >;
 const mockUseGoals = useGoals as jest.MockedFunction<typeof useGoals>;
-const mockUseValuesProfiles = useValuesProfiles as jest.MockedFunction<typeof useValuesProfiles>;
+const mockUseValuesProfile = useValuesProfile as jest.MockedFunction<typeof useValuesProfile>;
 const mockUseThoughtRecords = useThoughtRecords as jest.MockedFunction<typeof useThoughtRecords>;
 const mockUseCoreBeliefs = useCoreBeliefs as jest.MockedFunction<typeof useCoreBeliefs>;
 const mockUseActivities = useActivities as jest.MockedFunction<typeof useActivities>;
@@ -100,7 +100,12 @@ const DAYS = ["2026-05-02", "2026-05-03", "2026-05-04", "2026-05-05"];
 const allCompleteData = {
   // Week 1 — foundation: a goal, values, and mood check-in on 4 distinct days.
   goals: [{ id: "g", createdAt: AFTER }],
-  values: [{ id: "v", updatedAt: AFTER }],
+  valuesProfile: {
+    id: "v",
+    userId: "user-1",
+    personalValues: [{ key: "honest", tier: 1 as const }],
+    updatedAt: AFTER,
+  },
   moodLogs: DAYS.map((d, i) => ({ id: `m${i}`, loggedAt: `${d}T08:00:00Z` })),
   // Week 2 — think: thought records on 3 distinct days + a belief.
   thoughtRecords: [
@@ -131,9 +136,9 @@ function setupBaseMocks(mutateAsync: jest.Mock, isPending = false) {
   mockUseGoals.mockReturnValue({
     data: allCompleteData.goals,
   } as unknown as ReturnType<typeof useGoals>);
-  mockUseValuesProfiles.mockReturnValue({
-    data: allCompleteData.values,
-  } as unknown as ReturnType<typeof useValuesProfiles>);
+  mockUseValuesProfile.mockReturnValue({
+    data: allCompleteData.valuesProfile,
+  } as unknown as ReturnType<typeof useValuesProfile>);
   mockUseThoughtRecords.mockReturnValue({
     data: allCompleteData.thoughtRecords,
   } as unknown as ReturnType<typeof useThoughtRecords>);

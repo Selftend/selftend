@@ -5,7 +5,7 @@ const NOW = new Date("2026-05-09T00:00:00.000Z").getTime(); // day 8 -> week 2
 
 const emptyData = {
   goals: [],
-  values: [],
+  valuesProfile: null,
   thoughtRecords: [],
   beliefs: [],
   activities: [],
@@ -88,7 +88,12 @@ describe("deriveCbtProgram", () => {
     const full = deriveCbtProgram(
       input({
         goals: [{ id: "g", createdAt: "2026-05-02T00:00:00Z" }] as never,
-        values: [{ id: "v", updatedAt: "2026-05-02T00:00:00Z" }] as never,
+        valuesProfile: {
+          id: "v",
+          userId: "user-1",
+          personalValues: [{ key: "honest", tier: 1 as const }],
+          updatedAt: "2026-05-02T00:00:00Z",
+        },
         // Mood check-in on 4 distinct days (Week 1 daily practice).
         moodLogs: fourDays.map((d, i) => ({ id: `m${i}`, loggedAt: `${d}T08:00:00Z` })) as never,
         // Thought records on 3 distinct days (Week 2 daily practice).

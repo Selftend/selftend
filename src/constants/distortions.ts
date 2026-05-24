@@ -61,6 +61,53 @@ export const distortionDefinitions: DistortionDefinition[] = [
     shortDescription: "Taking on more blame or responsibility than the facts justify.",
     reflectionPrompt: "What part is mine, and what part is not actually under my control?",
   },
+  {
+    key: "blaming",
+    title: "Blaming",
+    shortDescription:
+      "Holding others responsible for your pain, or taking the blame for everything yourself.",
+    reflectionPrompt: "What part of this situation is mine, and what part belongs to someone else?",
+  },
+  {
+    key: "perfectionistic-thinking",
+    title: "Perfectionistic thinking",
+    shortDescription: "Setting standards so high that anything short of perfect counts as failure.",
+    reflectionPrompt: "What would 'good enough' look like here, and is that actually acceptable?",
+  },
+  {
+    key: "comparing",
+    title: "Comparing",
+    shortDescription: "Measuring yourself against others and deciding you come up short.",
+    reflectionPrompt: "Am I comparing my inside to someone else's outside?",
+  },
+  {
+    key: "change-fallacy",
+    title: "Change fallacy",
+    shortDescription: "Believing others must change before you can feel better.",
+    reflectionPrompt: "What can I do that does not depend on someone else changing first?",
+  },
+  {
+    key: "control-fallacy",
+    title: "Control fallacy",
+    shortDescription:
+      "Either feeling fully controlled by external forces, or responsible for controlling everything.",
+    reflectionPrompt: "What is actually within my control, and what do I need to let go of?",
+  },
+  {
+    key: "fairness-fallacy",
+    title: "Fairness fallacy",
+    shortDescription:
+      "Feeling resentful when life or other people don't match your sense of what is fair.",
+    reflectionPrompt:
+      "Is fairness the right lens here, or am I making a demand the world can't always meet?",
+  },
+  {
+    key: "reward-fallacy",
+    title: "Reward fallacy",
+    shortDescription:
+      "Expecting that sacrifice or hard work will always pay off, and feeling bitter when it doesn't.",
+    reflectionPrompt: "Was I doing this for the outcome, or for the value of the action itself?",
+  },
 ];
 
 export const distortionLookup = Object.fromEntries(

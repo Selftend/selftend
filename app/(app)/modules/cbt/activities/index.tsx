@@ -56,11 +56,15 @@ export default function ActivitiesScreen() {
     <AccessibleCardLink
       key={activity.id}
       title={activity.activityName}
-      description={`${t(`activities.category.${activity.category}`)}${
+      description={[
+        t(`activities.category.${activity.category}`),
+        activity.paceCategory ? t(`activities.pace.${activity.paceCategory}`) : null,
         activity.moodBefore && activity.moodAfter
-          ? ` Â· ${t("activities.moodLift", { lift: activity.moodAfter - activity.moodBefore })}`
-          : ""
-      }`}
+          ? t("activities.moodLift", { lift: activity.moodAfter - activity.moodBefore })
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")}
       onPress={() => router.push(`/modules/cbt/activities/${activity.id}`)}
     />
   );

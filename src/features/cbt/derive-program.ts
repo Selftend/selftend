@@ -25,7 +25,7 @@ export interface DeriveProgramInput {
   completedAt: string | null;
   now: number;
   goals: Goal[];
-  values: ValuesProfile[];
+  valuesProfile: ValuesProfile | null;
   thoughtRecords: ThoughtRecord[];
   beliefs: CoreBelief[];
   activities: ActivityLog[];
@@ -95,7 +95,7 @@ export function deriveCbtProgram(inputData: DeriveProgramInput): CbtProgramView 
   const signalData: ProgramSignalData = {
     since,
     goals: inputData.goals,
-    values: inputData.values,
+    valuesProfile: inputData.valuesProfile,
     thoughtRecords: inputData.thoughtRecords,
     beliefs: inputData.beliefs,
     activities: inputData.activities,

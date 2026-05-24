@@ -827,6 +827,14 @@
     "namePlaceholder": "What will you do?",
     "categoryLabel": "Category",
     "categoryHint": "Is this about enjoyment or building skill?",
+    "paceCategory": "PACE category",
+    "paceCategoryHint": "Optional: categorise this activity to help balance your week.",
+    "pace": {
+      "physical": "Physical",
+      "achievement": "Achievement",
+      "connection": "Connection",
+      "enjoyment": "Enjoyment"
+    },
     "scheduledAt": "Scheduled date & time",
     "scheduledAtHint": "Enter in YYYY-MM-DD HH:MM format.",
     "moodBefore": "Mood before (1–5)",
@@ -848,16 +856,65 @@
   },
   "values": {
     "title": "Values clarification",
-    "description": "Rate each life domain by how important it is and how satisfied you feel. Gaps highlight where change could matter most.",
+    "description": "Choose the values that matter most to you. Mark your top values — these anchor your goals and guide your decisions.",
     "loading": "Loading values...",
-    "importance": "Importance (1–5)",
-    "satisfaction": "Satisfaction (1–5)",
-    "note": "Note (optional)",
-    "notePlaceholder": "Anything you want to remember about this domain.",
-    "save": "Save",
-    "update": "Update",
-    "gap": "Gap: {{gap}}",
-    "scheduleActivity": "Schedule one activity"
+    "save": "Save values",
+    "saving": "Saving…",
+    "saveError": "Unable to save values.",
+    "topValuesTitle": "Your top values",
+    "topValuesEmpty": "Mark at least one value as Very Important to see your top values here.",
+    "tierLabel": "How important is this to you?",
+    "tier1": "Very Important",
+    "tier2": "Important",
+    "tier3": "Less Important",
+    "tierRequired": "Mark at least one value as Very Important to save.",
+    "allValues": "All values"
+  },
+  "personalValues": {
+    "accepting": "Accepting",
+    "affectionate": "Affectionate",
+    "aspiring": "Aspiring",
+    "authentic": "Authentic",
+    "balanced": "Balanced",
+    "caring": "Caring",
+    "committed": "Committed",
+    "compassionate": "Compassionate",
+    "connected": "Connected",
+    "courageous": "Courageous",
+    "creative": "Creative",
+    "dependable": "Dependable",
+    "devoted": "Devoted",
+    "empathic": "Empathic",
+    "equitable": "Equitable",
+    "expressive": "Expressive",
+    "flexible": "Flexible",
+    "focused": "Focused",
+    "forgiving": "Forgiving",
+    "free": "Free",
+    "fun-loving": "Fun-loving",
+    "generous": "Generous",
+    "grateful": "Grateful",
+    "grounded": "Grounded",
+    "honest": "Honest",
+    "humble": "Humble",
+    "independent": "Independent",
+    "inspired": "Inspired",
+    "integrity": "Integrity",
+    "kind": "Kind",
+    "open-minded": "Open-minded",
+    "optimistic": "Optimistic",
+    "patient": "Patient",
+    "peaceful": "Peaceful",
+    "playful": "Playful",
+    "purposeful": "Purposeful",
+    "resilient": "Resilient",
+    "responsible": "Responsible",
+    "self-aware": "Self-aware",
+    "spiritual": "Spiritual",
+    "supportive": "Supportive",
+    "tolerant": "Tolerant",
+    "trustworthy": "Trustworthy",
+    "wise": "Wise"
   },
   "mood": {
     "title": "Log mood",
@@ -912,7 +969,7 @@
     "intensityBefore": "Emotion intensity before (0-100)",
     "intensityBeforeHint": "Optional. 0 means no intensity; 100 means as strong as it gets.",
     "patternsLabel": "Thinking patterns",
-    "patternsChooseHint": "Choose the patterns that seem closest. You can pick more than one.",
+    "patternsChooseHint": "Optional: choose the thinking patterns that seem closest. You can pick more than one, or skip this step.",
     "evidenceFor": "Evidence supporting the thought",
     "evidenceForHint": "Optional. Add one fact per line.",
     "evidenceForPlaceholder": "Example: The message says we need to talk.",
@@ -1036,6 +1093,41 @@
       "title": "Personalization",
       "shortDescription": "Taking on more blame or responsibility than the facts justify.",
       "reflectionPrompt": "What part is mine, and what part is not actually under my control?"
+    },
+    "blaming": {
+      "title": "Blaming",
+      "shortDescription": "Holding others responsible for your pain, or taking the blame for everything yourself.",
+      "reflectionPrompt": "What part of this situation is mine, and what part belongs to someone else?"
+    },
+    "perfectionistic-thinking": {
+      "title": "Perfectionistic thinking",
+      "shortDescription": "Setting standards so high that anything short of perfect counts as failure.",
+      "reflectionPrompt": "What would 'good enough' look like here, and is that actually acceptable?"
+    },
+    "comparing": {
+      "title": "Comparing",
+      "shortDescription": "Measuring yourself against others and deciding you come up short.",
+      "reflectionPrompt": "Am I comparing my inside to someone else's outside?"
+    },
+    "change-fallacy": {
+      "title": "Change fallacy",
+      "shortDescription": "Believing others must change before you can feel better.",
+      "reflectionPrompt": "What can I do that does not depend on someone else changing first?"
+    },
+    "control-fallacy": {
+      "title": "Control fallacy",
+      "shortDescription": "Either feeling fully controlled by external forces, or responsible for controlling everything.",
+      "reflectionPrompt": "What is actually within my control, and what do I need to let go of?"
+    },
+    "fairness-fallacy": {
+      "title": "Fairness fallacy",
+      "shortDescription": "Feeling resentful when life or other people don't match your sense of what is fair.",
+      "reflectionPrompt": "Is fairness the right lens here, or am I making a demand the world can't always meet?"
+    },
+    "reward-fallacy": {
+      "title": "Reward fallacy",
+      "shortDescription": "Expecting that sacrifice or hard work will always pay off, and feeling bitter when it doesn't.",
+      "reflectionPrompt": "Was I doing this for the outcome, or for the value of the action itself?"
     }
   },
   "notifications": {

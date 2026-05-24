@@ -7,6 +7,6 @@ describe("distortion definitions", () => {
   });
 
   it("keeps the list focused", () => {
-    expect(distortionDefinitions.length).toBeGreaterThanOrEqual(8);
+    expect(distortionDefinitions.length).toBeGreaterThanOrEqual(17);
   });
 });

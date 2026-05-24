@@ -1,129 +1,69 @@
 import { router } from "expo-router";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
-import { Label } from "@/src/components/react-native-reusables/label";
+import { Card, CardHeader, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { Textarea } from "@/src/components/react-native-reusables/textarea";
-import { NumberRating } from "@/src/components/app/number-rating";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { lifeDomains } from "@/src/constants/life-domains";
-import { useValuesProfiles, useUpsertValuesProfile } from "@/src/features/values/queries";
-import type { ValuesProfile } from "@/src/features/values/types";
-import { useSession } from "@/src/providers/session-provider";
-import { useToastStore } from "@/src/stores/toast-store";
 import { BackButton } from "@/src/components/app/back-button";
 import { HelpButton } from "@/src/components/app/help-button";
+import { personalValuesList } from "@/src/constants/personal-values-list";
+import { useValuesProfile, useSaveValuesProfile } from "@/src/features/values/queries";
+import type { PersonalValue, ValueTier } from "@/src/features/values/types";
+import { useSession } from "@/src/providers/session-provider";
+import { useToastStore } from "@/src/stores/toast-store";
 
-interface DomainEditorProps {
-  domain: string;
-  existing: ValuesProfile | undefined;
-  userId: string;
-}
-
-function DomainEditor({ domain, existing, userId }: DomainEditorProps) {
-  const { t } = useTranslation("cbt");
-  const showToast = useToastStore((state) => state.showToast);
-  const upsertMutation = useUpsertValuesProfile(userId);
-
-  const [importance, setImportance] = useState<number | null>(existing?.importanceRating ?? null);
-  const [satisfaction, setSatisfaction] = useState<number | null>(
-    existing?.satisfactionRating ?? null,
-  );
-  const [note, setNote] = useState(existing?.domainNote ?? "");
-  const [saved, setSaved] = useState(Boolean(existing));
-
-  const gap = importance !== null && satisfaction !== null ? importance - satisfaction : null;
-
-  const handleSave = async () => {
-    if (importance === null || satisfaction === null) return;
-    try {
-      await upsertMutation.mutateAsync({
-        lifeDomain: domain,
-        importanceRating: importance,
-        satisfactionRating: satisfaction,
-        domainNote: note,
-      });
-      setSaved(true);
-      showToast({ title: t("common:feedback.saved"), tone: "success" });
-    } catch {
-      showToast({ title: t("common:feedback.problem"), tone: "error" });
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t(`goals.domain.${domain}`)}</CardTitle>
-        {gap !== null ? (
-          <View className="flex-row items-center gap-2">
-            <View className="h-2 overflow-hidden rounded-full bg-muted flex-1">
-              <View
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${(importance! / 5) * 100}%` }}
-              />
-            </View>
-            {gap > 0 ? (
-              <Text className="text-xs text-muted-foreground">{t("values.gap", { gap })}</Text>
-            ) : null}
-          </View>
-        ) : null}
-      </CardHeader>
-      <CardContent className="gap-4">
-        <View className="gap-2">
-          <Label>{t("values.importance")}</Label>
-          <NumberRating max={5} value={importance} onChange={setImportance} />
-        </View>
-
-        <View className="gap-2">
-          <Label>{t("values.satisfaction")}</Label>
-          <NumberRating max={5} value={satisfaction} onChange={setSatisfaction} />
-        </View>
-
-        <View className="gap-2">
-          <Label>{t("values.note")}</Label>
-          <Textarea
-            accessibilityLabel={t("values.note")}
-            onChangeText={setNote}
-            placeholder={t("values.notePlaceholder")}
-            value={note}
-          />
-        </View>
-
-        <Button
-          disabled={!importance || !satisfaction || upsertMutation.isPending}
-          onPress={() => void handleSave()}
-        >
-          {upsertMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
-          <Text>{saved ? t("values.update") : t("values.save")}</Text>
-        </Button>
-
-        {saved && gap !== null && gap > 0 ? (
-          <Button
-            onPress={() => router.push(`/modules/cbt/activities/new?domain=${domain}`)}
-            variant="outline"
-          >
-            <Text>{t("values.scheduleActivity")}</Text>
-          </Button>
-        ) : null}
-      </CardContent>
-    </Card>
-  );
-}
+const TIERS: ValueTier[] = [1, 2, 3];
 
 export default function ValuesScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
-  const { data: profiles, isLoading } = useValuesProfiles(user?.id ?? null);
+  const showToast = useToastStore((s) => s.showToast);
+  const { data: profile, isLoading } = useValuesProfile(user?.id ?? null);
+  const saveMutation = useSaveValuesProfile(user?.id ?? null);
+
+  const [selections, setSelections] = useState<PersonalValue[]>(
+    () => profile?.personalValues ?? [],
+  );
+
+  // Sync initial load into local state once
+  const [initialised, setInitialised] = useState(false);
+  if (profile && !initialised) {
+    setSelections(profile.personalValues);
+    setInitialised(true);
+  }
+
+  const getTier = (key: string): ValueTier | null => {
+    return (selections.find((s) => s.key === key)?.tier as ValueTier) ?? null;
+  };
+
+  const setTier = (key: string, tier: ValueTier | null) => {
+    if (tier === null) {
+      setSelections((prev) => prev.filter((s) => s.key !== key));
+    } else {
+      setSelections((prev) => {
+        const without = prev.filter((s) => s.key !== key);
+        return [...without, { key, tier }];
+      });
+    }
+  };
+
+  const topValues = selections.filter((s) => s.tier === 1);
+  const hasTopValue = topValues.length > 0;
+
+  const handleSave = async () => {
+    if (!hasTopValue) return;
+    try {
+      await saveMutation.mutateAsync({ personalValues: selections });
+      showToast({ title: t("common:feedback.saved"), tone: "success" });
+      router.back();
+    } catch {
+      showToast({ title: t("common:feedback.problem"), tone: "error" });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -150,14 +90,72 @@ export default function ValuesScreen() {
             <Text variant="muted">{t("values.description")}</Text>
           </View>
 
-          {lifeDomains.map((domain) => (
-            <DomainEditor
-              key={domain}
-              domain={domain}
-              existing={profiles?.find((p) => p.lifeDomain === domain)}
-              userId={user!.id}
-            />
-          ))}
+          {topValues.length > 0 ? (
+            <View className="gap-2">
+              <Text variant="h2">{t("values.topValuesTitle")}</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {topValues.map((v) => (
+                  <View key={v.key} className="rounded-full bg-primary px-3 py-1">
+                    <Text className="text-primary-foreground text-sm">
+                      {t(`personalValues.${v.key}`)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <Text variant="muted">{t("values.topValuesEmpty")}</Text>
+          )}
+
+          <Text variant="h2">{t("values.allValues")}</Text>
+
+          {personalValuesList.map((def) => {
+            const currentTier = getTier(def.key);
+            const label = t(`personalValues.${def.key}`);
+            return (
+              <Card key={def.key}>
+                <CardHeader>
+                  <CardTitle>{label}</CardTitle>
+                  <View className="flex-row gap-2 mt-2">
+                    {TIERS.map((tier) => (
+                      <Pressable
+                        key={tier}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${label} — ${t(`values.tier${tier}`)}`}
+                        accessibilityState={{ selected: currentTier === tier }}
+                        onPress={() => setTier(def.key, currentTier === tier ? null : tier)}
+                        className="flex-1"
+                      >
+                        <View
+                          className={`rounded-md border px-2 py-1 items-center ${
+                            currentTier === tier ? "bg-primary border-primary" : "border-border"
+                          }`}
+                        >
+                          <Text
+                            className={`text-xs ${
+                              currentTier === tier ? "text-primary-foreground" : "text-foreground"
+                            }`}
+                          >
+                            {t(`values.tier${tier}`)}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    ))}
+                  </View>
+                </CardHeader>
+              </Card>
+            );
+          })}
+
+          {!hasTopValue ? <Text variant="muted">{t("values.tierRequired")}</Text> : null}
+
+          <Button
+            disabled={!hasTopValue || saveMutation.isPending}
+            onPress={() => void handleSave()}
+          >
+            {saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
+            <Text>{saveMutation.isPending ? t("values.saving") : t("values.save")}</Text>
+          </Button>
         </View>
       </ScrollView>
     </SafeAreaView>

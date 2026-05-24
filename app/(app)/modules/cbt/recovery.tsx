@@ -44,7 +44,7 @@ import {
 import type { ChallengePlan } from "@/src/features/recovery/types";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useUserPreferences } from "@/src/features/settings/queries";
-import { useValuesProfiles } from "@/src/features/values/queries";
+import { useValuesProfile } from "@/src/features/values/queries";
 import { useWorryEntries } from "@/src/features/worry/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -261,7 +261,7 @@ export default function RecoveryScreen() {
   const { data: goals } = useGoals(user?.id ?? null);
   const { data: activities } = useActivities(user?.id ?? null);
   const { data: thoughtRecords } = useThoughtRecords(user?.id ?? null);
-  const { data: valuesProfiles } = useValuesProfiles(user?.id ?? null);
+  const { data: valuesProfile } = useValuesProfile(user?.id ?? null);
   const { data: beliefs } = useCoreBeliefs(user?.id ?? null);
   const { data: hierarchies } = useHierarchies(user?.id ?? null);
   const { data: exposureItems } = useAllExposureItems(user?.id ?? null);
@@ -312,7 +312,8 @@ export default function RecoveryScreen() {
     if ((goals?.length ?? 0) > 0) recordBacked.push("goals");
     if ((activities?.length ?? 0) > 0) recordBacked.push("activities");
     if ((thoughtRecords?.length ?? 0) > 0) recordBacked.push("thoughts");
-    if ((valuesProfiles?.length ?? 0) > 0) recordBacked.push("values");
+    if (valuesProfile != null && valuesProfile.personalValues.length > 0)
+      recordBacked.push("values");
     if ((beliefs?.length ?? 0) > 0) recordBacked.push("beliefs");
     if ((hierarchies?.length ?? 0) > 0) recordBacked.push("exposure");
     if ((worries?.length ?? 0) > 0) recordBacked.push("worry");
@@ -351,7 +352,11 @@ export default function RecoveryScreen() {
       createTimelineItem("goals", goals, (goal) => goal.createdAt),
       createTimelineItem("activities", activities, (activity) => activity.createdAt),
       createTimelineItem("thoughts", thoughtRecords, (record) => record.createdAt),
-      createTimelineItem("values", valuesProfiles, (profile) => profile.createdAt),
+      createTimelineItem(
+        "values",
+        valuesProfile ? [valuesProfile] : undefined,
+        (profile) => profile.updatedAt,
+      ),
       createTimelineItem("beliefs", beliefs, (belief) => belief.createdAt),
       createTimelineItem("exposure", hierarchies, (hierarchy) => hierarchy.createdAt),
       createTimelineItem("worry", worries, (worry) => worry.createdAt),

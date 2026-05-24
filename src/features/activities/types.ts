@@ -1,10 +1,13 @@
 export type ActivityCategory = "pleasure" | "mastery";
 
+export type PACECategory = "physical" | "achievement" | "connection" | "enjoyment";
+
 export interface ActivityLog {
   id: string;
   userId: string;
   activityName: string;
   category: ActivityCategory;
+  paceCategory: PACECategory | null;
   scheduledAt: string | null;
   completedAt: string | null;
   moodBefore: number | null;
@@ -17,6 +20,7 @@ export interface ActivityLog {
 export interface ActivityInput {
   activityName: string;
   category: ActivityCategory;
+  paceCategory: PACECategory | null;
   scheduledAt: string | null;
   moodBefore: number | null;
   notes: string;

@@ -18,7 +18,7 @@ export type ProgramPillar = "foundation" | "think" | "act" | "be";
 export interface ProgramSignalData {
   since: number; // Date.now() of program start; only data created at/after counts
   goals: Goal[];
-  values: ValuesProfile[];
+  valuesProfile: ValuesProfile | null;
   thoughtRecords: ThoughtRecord[];
   beliefs: CoreBelief[];
   activities: ActivityLog[];
@@ -90,8 +90,13 @@ export const CBT_PROGRAM: ProgramWeek[] = [
         key: "clarifyValues",
         labelKey: "program.tasks.clarifyValues",
         route: "/modules/cbt/values",
-        signal: ({ values, since }) => ({
-          current: values.filter((v) => atOrAfter(v.updatedAt, since)).length,
+        signal: ({ valuesProfile, since }) => ({
+          current:
+            valuesProfile &&
+            valuesProfile.personalValues.some((p) => p.tier === 1) &&
+            atOrAfter(valuesProfile.updatedAt, since)
+              ? 1
+              : 0,
           target: 1,
         }),
       },

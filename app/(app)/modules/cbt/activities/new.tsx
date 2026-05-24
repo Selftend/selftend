@@ -17,6 +17,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { lifeDomains, type LifeDomain } from "@/src/constants/life-domains";
 import { useActivity, useSaveActivity } from "@/src/features/activities/queries";
 import { activityFormSchema, type ActivityFormSchema } from "@/src/features/activities/schemas";
+import type { PACECategory } from "@/src/features/activities/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useActivityDraftStore } from "@/src/stores/activity-draft-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -25,6 +26,7 @@ import { BackButton } from "@/src/components/app/back-button";
 const defaultValues: ActivityFormSchema = {
   activityName: "",
   category: "pleasure",
+  paceCategory: null,
   scheduledAt: null,
   moodBefore: null,
   notes: "",
@@ -78,6 +80,7 @@ export default function NewActivityScreen() {
   });
 
   const selectedCategory = watch("category");
+  const selectedPaceCategory = watch("paceCategory");
 
   useEffect(() => {
     hydrateDraft(activityId);
@@ -88,6 +91,7 @@ export default function NewActivityScreen() {
     reset({
       activityName: existing.activityName,
       category: existing.category,
+      paceCategory: existing.paceCategory,
       scheduledAt: existing.scheduledAt,
       moodBefore: existing.moodBefore,
       notes: existing.notes,
@@ -192,6 +196,31 @@ export default function NewActivityScreen() {
                     </Button>
                   </View>
                 ))}
+              </View>
+            </View>
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="paceCategory"
+          render={({ field: { onChange } }) => (
+            <View className="gap-2">
+              <Label>{t("activities.paceCategory")}</Label>
+              <Text variant="muted">{t("activities.paceCategoryHint")}</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {(["physical", "achievement", "connection", "enjoyment"] as PACECategory[]).map(
+                  (cat) => (
+                    <Button
+                      key={cat}
+                      onPress={() => onChange(selectedPaceCategory === cat ? null : cat)}
+                      variant={selectedPaceCategory === cat ? "default" : "outline"}
+                      className="flex-1"
+                    >
+                      <Text>{t(`activities.pace.${cat}`)}</Text>
+                    </Button>
+                  ),
+                )}
               </View>
             </View>
           )}

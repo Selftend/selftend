@@ -6,6 +6,7 @@ interface ActivityLogRow {
   user_id: string;
   activity_name: string;
   category: string;
+  pace_category: string | null;
   scheduled_at: string | null;
   completed_at: string | null;
   mood_before: number | null;
@@ -21,6 +22,7 @@ function mapActivity(row: ActivityLogRow): ActivityLog {
     userId: row.user_id,
     activityName: row.activity_name,
     category: row.category as ActivityLog["category"],
+    paceCategory: row.pace_category as ActivityLog["paceCategory"],
     scheduledAt: row.scheduled_at,
     completedAt: row.completed_at,
     moodBefore: row.mood_before,
@@ -62,6 +64,7 @@ export async function saveActivity(userId: string, input: ActivityInput, activit
     user_id: userId,
     activity_name: input.activityName.trim(),
     category: input.category,
+    pace_category: input.paceCategory ?? null,
     scheduled_at: input.scheduledAt ?? null,
     mood_before: input.moodBefore ?? null,
     notes: input.notes.trim(),

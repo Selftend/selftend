@@ -4,11 +4,7 @@ import { requireSupabase } from "@/src/lib/supabase";
 interface ValuesProfileRow {
   id: string;
   user_id: string;
-  life_domain: string;
-  importance_rating: number;
-  satisfaction_rating: number;
-  domain_note: string;
-  created_at: string;
+  personal_values: { key: string; tier: number }[];
   updated_at: string;
 }
 
@@ -16,36 +12,36 @@ function mapValuesProfile(row: ValuesProfileRow): ValuesProfile {
   return {
     id: row.id,
     userId: row.user_id,
-    lifeDomain: row.life_domain,
-    importanceRating: row.importance_rating,
-    satisfactionRating: row.satisfaction_rating,
-    domainNote: row.domain_note,
-    createdAt: row.created_at,
+    personalValues: row.personal_values as ValuesProfile["personalValues"],
     updatedAt: row.updated_at,
   };
 }
 
-export async function listValuesProfiles(userId: string) {
+export async function getValuesProfile(userId: string): Promise<ValuesProfile | null> {
   const client = requireSupabase();
-  const { data, error } = await client.from("values_profile").select("*").eq("user_id", userId);
+  const { data, error } = await client
+    .from("values_profile")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
 
   if (error) throw error;
-  return (data as ValuesProfileRow[]).map(mapValuesProfile);
+  return data ? mapValuesProfile(data as ValuesProfileRow) : null;
 }
 
-export async function upsertValuesProfile(userId: string, input: ValuesProfileInput) {
+export async function saveValuesProfile(
+  userId: string,
+  input: ValuesProfileInput,
+): Promise<ValuesProfile> {
   const client = requireSupabase();
   const { data, error } = await client
     .from("values_profile")
     .upsert(
       {
         user_id: userId,
-        life_domain: input.lifeDomain,
-        importance_rating: input.importanceRating,
-        satisfaction_rating: input.satisfactionRating,
-        domain_note: input.domainNote.trim(),
+        personal_values: input.personalValues,
       },
-      { onConflict: "user_id,life_domain" },
+      { onConflict: "user_id" },
     )
     .select("*")
     .single();

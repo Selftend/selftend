@@ -1,17 +1,17 @@
+export type ValueTier = 1 | 2 | 3;
+
+export interface PersonalValue {
+  key: string;
+  tier: ValueTier;
+}
+
 export interface ValuesProfile {
   id: string;
   userId: string;
-  lifeDomain: string;
-  importanceRating: number;
-  satisfactionRating: number;
-  domainNote: string;
-  createdAt: string;
+  personalValues: PersonalValue[];
   updatedAt: string;
 }
 
 export interface ValuesProfileInput {
-  lifeDomain: string;
-  importanceRating: number;
-  satisfactionRating: number;
-  domainNote: string;
+  personalValues: PersonalValue[];
 }

@@ -21,7 +21,7 @@ import {
 } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useUserPreferences } from "@/src/features/settings/queries";
-import { useValuesProfiles } from "@/src/features/values/queries";
+import { useValuesProfile } from "@/src/features/values/queries";
 import { useWorryEntries } from "@/src/features/worry/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -105,7 +105,7 @@ jest.mock("@/src/features/settings/queries", () => ({
 }));
 
 jest.mock("@/src/features/values/queries", () => ({
-  useValuesProfiles: jest.fn(),
+  useValuesProfile: jest.fn(),
 }));
 
 jest.mock("@/src/features/worry/queries", () => ({
@@ -139,7 +139,7 @@ const mockUseUpsertRecoveryPlan = useUpsertRecoveryPlan as jest.MockedFunction<
 >;
 const mockUseSelfCareLogs = useSelfCareLogs as jest.MockedFunction<typeof useSelfCareLogs>;
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
-const mockUseValuesProfiles = useValuesProfiles as jest.MockedFunction<typeof useValuesProfiles>;
+const mockUseValuesProfile = useValuesProfile as jest.MockedFunction<typeof useValuesProfile>;
 const mockUseWorryEntries = useWorryEntries as jest.MockedFunction<typeof useWorryEntries>;
 
 function mockEmptyStrategyData() {
@@ -162,9 +162,9 @@ function mockEmptyStrategyData() {
   mockUseSelfCareLogs.mockReturnValue({ data: [] } as unknown as ReturnType<
     typeof useSelfCareLogs
   >);
-  mockUseValuesProfiles.mockReturnValue({
-    data: [],
-  } as unknown as ReturnType<typeof useValuesProfiles>);
+  mockUseValuesProfile.mockReturnValue({
+    data: null,
+  } as unknown as ReturnType<typeof useValuesProfile>);
   mockUseWorryEntries.mockReturnValue({ data: [] } as unknown as ReturnType<
     typeof useWorryEntries
   >);

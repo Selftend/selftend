@@ -4,6 +4,7 @@ describe("activityFormSchema", () => {
   const base = {
     activityName: "Walk",
     category: "pleasure" as const,
+    paceCategory: null,
     scheduledAt: null,
     moodBefore: null,
     notes: "",
@@ -40,5 +41,24 @@ describe("activityFormSchema", () => {
     for (const m of [1, 2, 3, 4, 5]) {
       expect(activityFormSchema.safeParse({ ...base, moodBefore: m }).success).toBe(true);
     }
+  });
+
+  it("accepts a valid PACE category", () => {
+    expect(activityFormSchema.safeParse({ ...base, paceCategory: "physical" }).success).toBe(true);
+    expect(activityFormSchema.safeParse({ ...base, paceCategory: "achievement" }).success).toBe(
+      true,
+    );
+    expect(activityFormSchema.safeParse({ ...base, paceCategory: "connection" }).success).toBe(
+      true,
+    );
+    expect(activityFormSchema.safeParse({ ...base, paceCategory: "enjoyment" }).success).toBe(true);
+  });
+
+  it("accepts null paceCategory", () => {
+    expect(activityFormSchema.safeParse({ ...base, paceCategory: null }).success).toBe(true);
+  });
+
+  it("rejects an invalid PACE category", () => {
+    expect(activityFormSchema.safeParse({ ...base, paceCategory: "other" }).success).toBe(false);
   });
 });
