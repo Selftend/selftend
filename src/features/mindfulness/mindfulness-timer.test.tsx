@@ -12,6 +12,8 @@ jest.mock("react-i18next", () => ({
 
 jest.mock("@/src/lib/color-scheme", () => ({ useAppColorScheme: () => "dark" }));
 
+jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
+
 describe("MindfulnessTimer", () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
@@ -23,7 +25,6 @@ describe("MindfulnessTimer", () => {
         exercise={mindfulnessLookup["breath-awareness"]}
         durationMinutes={1}
         onComplete={onComplete}
-        onBack={() => {}}
       />,
     );
 

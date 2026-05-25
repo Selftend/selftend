@@ -67,7 +67,6 @@ export default function MindfulnessExerciseScreen() {
         duration={duration}
         onChangeDuration={setDuration}
         onStart={() => setPhase("active")}
-        onBack={() => router.back()}
       />
     );
   }
@@ -78,7 +77,6 @@ export default function MindfulnessExerciseScreen() {
         exercise={exercise}
         durationMinutes={duration}
         onComplete={() => setPhase("complete")}
-        onBack={() => setPhase("entry")}
       />
     );
   }

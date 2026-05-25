@@ -88,6 +88,15 @@ const KNOWN_SUB_SEGMENTS: Record<string, string> = {
   log: "breadcrumb.log",
 };
 
+// Detail routes whose dynamic segment is a known slug (not an opaque id): map the
+// slug to its real title key (resolved cross-namespace from `cbt`). Opaque-id
+// routes (e.g. UUID records) aren't here and fall back to the generic label.
+const SLUG_LABEL_KEYS: Record<string, (slug: string) => string> = {
+  "/tools/mindfulness": (slug) => `cbt:mindfulness.exercises.${slug}.title`,
+  "/tools/breathing": (slug) => `cbt:breathing.exercises.${slug}.title`,
+  "/tools/grounding": (slug) => `cbt:grounding.techniques.${slug}.title`,
+};
+
 export function computeBreadcrumbs(pathname: string, t: (key: string) => string): Breadcrumb[] {
   if (pathname === "/" || pathname === "") return [];
 
@@ -109,8 +118,12 @@ export function computeBreadcrumbs(pathname: string, t: (key: string) => string)
       crumbs.push({ label: t(KNOWN_SUB_SEGMENTS[segment]), href: isLast ? undefined : path });
       prevWasKnown = true;
     } else if (prevWasKnown) {
-      // dynamic segment following a known path
-      crumbs.push({ label: t("breadcrumb.entry"), href: isLast ? undefined : path });
+      // Dynamic segment following a known path. A slug-based route resolves to a
+      // real title; an opaque id falls back to the generic label.
+      const parentPath = "/" + segments.slice(0, i).join("/");
+      const resolveKey = SLUG_LABEL_KEYS[parentPath];
+      const label = resolveKey ? t(resolveKey(segment)) : t("breadcrumb.entry");
+      crumbs.push({ label, href: isLast ? undefined : path });
       prevWasKnown = false;
     }
     // unknown segment after already-unknown parent → skip

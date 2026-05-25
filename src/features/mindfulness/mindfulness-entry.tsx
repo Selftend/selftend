@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import type { MindfulnessExercise } from "@/src/constants/mindfulness";
 import { exerciseHue, hueGradient } from "@/src/features/mindfulness/exercise-hue";
 import { useAppColorScheme } from "@/src/lib/color-scheme";
@@ -16,7 +17,6 @@ interface MindfulnessEntryProps {
   duration: number;
   onChangeDuration: (minutes: number) => void;
   onStart: () => void;
-  onBack: () => void;
 }
 
 export function MindfulnessEntry({
@@ -24,7 +24,6 @@ export function MindfulnessEntry({
   duration,
   onChangeDuration,
   onStart,
-  onBack,
 }: MindfulnessEntryProps) {
   const { t } = useTranslation("cbt");
   const isDark = useAppColorScheme() === "dark";
@@ -38,18 +37,9 @@ export function MindfulnessEntry({
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <View className="px-4 pt-2">
-        <Pressable
-          accessibilityRole="button"
-          hitSlop={8}
-          onPress={onBack}
-          className="size-10 items-center justify-center -ml-2"
-        >
-          <Icon name="arrow-back" className="size-6 text-foreground" />
-        </Pressable>
-      </View>
-      <ScrollView contentContainerClassName="grow px-6 pb-8">
+      <ScrollView contentContainerClassName="grow px-6 pb-8 pt-3">
         <View className="gap-6">
+          <ScreenBreadcrumb />
           <View
             className={cn("overflow-hidden rounded-2xl border bg-card p-6", hue.classes.border)}
           >

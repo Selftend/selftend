@@ -14,6 +14,7 @@ import Animated, {
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import type { MindfulnessExercise } from "@/src/constants/mindfulness";
 import { exerciseHue, hueGradient, hueHsl } from "@/src/features/mindfulness/exercise-hue";
 import { useAppColorScheme } from "@/src/lib/color-scheme";
@@ -26,15 +27,9 @@ interface MindfulnessTimerProps {
   exercise: MindfulnessExercise;
   durationMinutes: number;
   onComplete: () => void;
-  onBack: () => void;
 }
 
-export function MindfulnessTimer({
-  exercise,
-  durationMinutes,
-  onComplete,
-  onBack,
-}: MindfulnessTimerProps) {
+export function MindfulnessTimer({ exercise, durationMinutes, onComplete }: MindfulnessTimerProps) {
   const { t } = useTranslation("cbt");
   const isDark = useAppColorScheme() === "dark";
   const hue = exerciseHue(exercise.hue);
@@ -116,15 +111,8 @@ export function MindfulnessTimer({
           pointerEvents: "none",
         }}
       />
-      <View className="px-4 pt-2">
-        <Pressable
-          accessibilityRole="button"
-          hitSlop={8}
-          onPress={onBack}
-          className="-ml-2 size-10 items-center justify-center"
-        >
-          <Icon name="arrow-back" className="size-6 text-foreground" />
-        </Pressable>
+      <View className="px-6 pt-3">
+        <ScreenBreadcrumb />
       </View>
 
       <View className="flex-1 items-center justify-center gap-10 px-6">
