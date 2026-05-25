@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { Breadcrumbs } from "@/src/components/app/breadcrumbs";
 import { UserMenu } from "@/src/components/app/user-menu";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -52,7 +51,6 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
         </Pressable>
         <UserMenu />
       </View>
-      {isSignedIn ? <Breadcrumbs /> : null}
     </SafeAreaView>
   );
 }

@@ -11,7 +11,7 @@ import { useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useColorScheme } from "nativewind";
 
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -195,7 +195,7 @@ export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps)
   };
 
   return (
-    <View>
+    <View className="gap-1">
       {notificationsAction ? (
         <NotificationSettingsModal
           targetKey={notificationsAction.targetKey}
@@ -214,8 +214,8 @@ export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps)
           onDismissAll={() => void dismissAllTours()}
         />
       ) : null}
+      <ScreenBreadcrumb />
       <View className="flex-row items-center gap-2">
-        <BackButton showLabel={false} className="-ml-2" />
         <Text variant="h1" className="flex-1">
           {title}
         </Text>

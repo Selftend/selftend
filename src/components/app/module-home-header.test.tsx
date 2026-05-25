@@ -33,7 +33,9 @@ jest.mock("expo-router", () => {
     router: {
       back: jest.fn(),
       canGoBack: jest.fn(() => false),
+      push: jest.fn(),
     },
+    usePathname: () => "/modules/cbt",
     useFocusEffect: (callback: () => void | (() => void)) => {
       React.useEffect(callback, [callback]);
     },
