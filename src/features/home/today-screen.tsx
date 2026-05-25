@@ -186,9 +186,11 @@ export default function HomeScreen() {
             ) : (
               <Pressable
                 onPress={() => setAddVisible(true)}
-                className="items-center gap-3 rounded-2xl border border-dashed border-border py-10 active:bg-muted/30"
+                className="items-center gap-4 rounded-2xl border border-dashed border-border py-12 active:bg-muted/30"
               >
-                <Icon name="add-circle-outline" className="size-8 text-muted-foreground" />
+                <View className="size-14 items-center justify-center rounded-full bg-muted">
+                  <Icon name="add" className="size-7 text-muted-foreground" />
+                </View>
                 <Text variant="muted" className="text-sm text-center max-w-[36ch]">
                   {t("today.dashboard.emptySubtitle")}
                 </Text>

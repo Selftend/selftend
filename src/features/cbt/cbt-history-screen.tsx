@@ -45,7 +45,11 @@ export default function CbtHistoryScreen() {
           {isLoading ? <LoadingState title={t("history.loading")} /> : null}
 
           {!isLoading && !records.length ? (
-            <EmptyState title={t("history.empty")} description={t("history.emptyDescription")} />
+            <EmptyState
+              icon="history"
+              title={t("history.empty")}
+              description={t("history.emptyDescription")}
+            />
           ) : null}
 
           {records.map((record) => (

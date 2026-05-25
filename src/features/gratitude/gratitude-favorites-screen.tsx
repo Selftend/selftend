@@ -33,6 +33,7 @@ export default function GratitudeFavoritesScreen() {
 
           {favoriteList.length === 0 ? (
             <EmptyState
+              icon="star"
               title={t("favorites.empty.title")}
               description={t("favorites.empty.description")}
             />

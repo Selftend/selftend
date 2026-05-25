@@ -44,6 +44,7 @@ export default function GratitudeListScreen() {
 
           {list.length === 0 ? (
             <EmptyState
+              icon="favorite"
               title={t("list.empty.title")}
               description={t("list.empty.description")}
               action={{

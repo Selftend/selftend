@@ -59,6 +59,7 @@ export default function JournalListScreen() {
 
             {list.length === 0 ? (
               <EmptyState
+                icon="edit-note"
                 title={t("list.empty.title")}
                 description={t("list.empty.description")}
                 action={{
