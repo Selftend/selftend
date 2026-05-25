@@ -5,11 +5,13 @@ import { router } from "expo-router";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { cn } from "@/lib/utils";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { TOOL_DEFS } from "@/src/features/plan/generate-plan";
 import { useSavePlanItem } from "@/src/features/plan/queries";
 import type { CarePlanItemInput } from "@/src/features/plan/types";
 import { WIDGET_META, WIDGET_TOOL_ORDER } from "@/src/features/home/widget-registry";
+import { toolAccent } from "@/src/features/home/tool-accent";
 
 type WidgetToolDef = Pick<CarePlanItemInput, "toolId" | "title" | "route" | "frequency">;
 
@@ -119,6 +121,7 @@ export function AddWidgetModal({
               available.map((toolId) => {
                 const meta = WIDGET_META[toolId];
                 if (!meta) return null;
+                const accent = toolAccent(toolId);
                 const isPending =
                   saveMutation.isPending && saveMutation.variables?.input?.toolId === toolId;
                 return (
@@ -126,8 +129,10 @@ export function AddWidgetModal({
                     key={toolId}
                     className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3"
                   >
-                    <View className="size-9 items-center justify-center rounded-lg bg-primary/10">
-                      <Icon name={meta.icon} className="size-5 text-primary" />
+                    <View
+                      className={cn("size-9 items-center justify-center rounded-lg", accent.chip)}
+                    >
+                      <Icon name={meta.icon} className={cn("size-5", accent.icon)} />
                     </View>
                     <View className="flex-1">
                       <Text className="text-sm font-semibold">{t(meta.titleKey)}</Text>

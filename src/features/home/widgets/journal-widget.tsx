@@ -22,8 +22,8 @@ export function JournalWidget({ userId }: { userId: string }) {
       <CardContent className="gap-3 pt-4 pb-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
-            <View className="size-8 items-center justify-center rounded-lg bg-primary/10">
-              <Icon name="edit-note" className="size-5 text-primary" />
+            <View className="size-8 items-center justify-center rounded-lg bg-ink/10">
+              <Icon name="edit-note" className="size-5 text-ink" />
             </View>
             <Text className="text-sm font-semibold">{t("plan.wizard.toolJournal")}</Text>
           </View>

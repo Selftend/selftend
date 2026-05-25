@@ -20,8 +20,8 @@ export function SelfCareWidget({ userId }: { userId: string }) {
       <CardContent className="gap-3 pt-4 pb-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
-            <View className="size-8 items-center justify-center rounded-lg bg-primary/10">
-              <Icon name="spa" className="size-5 text-primary" />
+            <View className="size-8 items-center justify-center rounded-lg bg-be/10">
+              <Icon name="spa" className="size-5 text-be" />
             </View>
             <Text className="text-sm font-semibold">{t("today.dashboard.selfCareTitle")}</Text>
           </View>

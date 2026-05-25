@@ -7,6 +7,7 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { toolAccent } from "@/src/features/home/tool-accent";
 
 interface NavItemDef {
   labelKey: string;
@@ -15,6 +16,7 @@ interface NavItemDef {
   matchPrefix: string | null;
   activeWhen?: (pathname: string) => boolean;
   badgeKey?: "badgeLive" | "badgeSoon";
+  accentKey?: string;
 }
 
 const TODAY_ITEM: NavItemDef = {
@@ -31,12 +33,14 @@ const MODULE_ITEMS: NavItemDef[] = [
     icon: "psychology",
     matchPrefix: "/modules/cbt",
     activeWhen: (pathname) => pathname === "/modules/cbt" || pathname.startsWith("/modules/cbt/"),
+    accentKey: "module-cbt",
   },
   {
     labelKey: "sidebar.act",
     href: "/modules/act",
     icon: "explore",
     matchPrefix: "/modules/act",
+    accentKey: "module-act",
   },
   {
     labelKey: "sidebar.dbt",
@@ -53,54 +57,63 @@ const TOOL_ITEMS: NavItemDef[] = [
     href: "/tools/mood-tracker",
     icon: "mood",
     matchPrefix: "/tools/mood-tracker",
+    accentKey: "mood",
   },
   {
     labelKey: "sidebar.journal",
     href: "/tools/journal",
     icon: "edit-note",
     matchPrefix: "/tools/journal",
+    accentKey: "journal",
   },
   {
     labelKey: "sidebar.breathing",
     href: "/tools/breathing",
     icon: "air",
     matchPrefix: "/tools/breathing",
+    accentKey: "breathing",
   },
   {
     labelKey: "sidebar.mindfulness",
     href: "/tools/mindfulness",
     icon: "self-improvement",
     matchPrefix: "/tools/mindfulness",
+    accentKey: "mindfulness",
   },
   {
     labelKey: "sidebar.grounding",
     href: "/tools/grounding",
     icon: "anchor",
     matchPrefix: "/tools/grounding",
+    accentKey: "grounding",
   },
   {
     labelKey: "sidebar.gratitudeLog",
     href: "/tools/gratitude-log",
     icon: "favorite",
     matchPrefix: "/tools/gratitude-log",
+    accentKey: "gratitude",
   },
   {
     labelKey: "sidebar.meditation",
     href: "/tools/meditation",
     icon: "self-improvement",
     matchPrefix: "/tools/meditation",
+    accentKey: "meditation",
   },
   {
     labelKey: "sidebar.sleep",
     href: "/tools/sleep",
     icon: "bedtime",
     matchPrefix: "/tools/sleep",
+    accentKey: "sleep",
   },
   {
     labelKey: "sidebar.habits",
     href: "/tools/habits",
     icon: "task-alt",
     matchPrefix: "/tools/habits",
+    accentKey: "habits",
   },
 ];
 
@@ -152,6 +165,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     const label = t(item.labelKey);
     const badgeLabel = item.badgeKey ? t(`sidebar.${item.badgeKey}`) : null;
     const isLive = item.badgeKey === "badgeLive";
+    const accent = toolAccent(item.accentKey ?? "");
 
     return (
       <Pressable
@@ -167,15 +181,15 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
         role="button"
         className={cn(
           "flex-row items-center gap-3 rounded-md px-3 py-2.5",
-          active ? "bg-primary/10" : "active:bg-muted/50",
+          active ? accent.chip : "active:bg-muted/50",
         )}
       >
         <Icon
           name={item.icon}
-          className={cn("size-6", active ? "text-primary" : "text-muted-foreground")}
+          className={cn("size-6", active ? accent.icon : "text-muted-foreground")}
         />
         <Text
-          className={cn("flex-1 text-sm font-medium", active ? "text-primary" : "text-foreground")}
+          className={cn("flex-1 text-sm font-medium", active ? accent.icon : "text-foreground")}
         >
           {label}
         </Text>

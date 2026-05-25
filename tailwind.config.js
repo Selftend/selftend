@@ -44,6 +44,11 @@ module.exports = {
         think: "hsl(var(--think))",
         act: "hsl(var(--act))",
         be: "hsl(var(--be))",
+        aqua: "hsl(var(--aqua))",
+        mist: "hsl(var(--mist))",
+        iris: "hsl(var(--iris))",
+        ink: "hsl(var(--ink))",
+        clay: "hsl(var(--clay))",
       },
       borderRadius: {
         lg: "var(--radius)",
