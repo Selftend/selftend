@@ -9,8 +9,9 @@ describe("DateBar", () => {
 
   it("renders today as the selected chip by default", () => {
     renderWithProviders(<DateBar />);
-    // The chip for today carries the accessible 'Today' label.
-    expect(screen.getByLabelText(/Today/)).toBeTruthy();
+    // The chip for today carries an accessible 'Today <date>' label
+    // (distinct from the jump-to-today button, labelled just 'Today').
+    expect(screen.getByLabelText(/Today \d{4}-\d{2}-\d{2}/)).toBeTruthy();
   });
 
   it("selecting a past chip updates the store", () => {
