@@ -10,6 +10,9 @@ verify_jwt = false
 site_url = "http://localhost:8081"
 additional_redirect_urls = ["http://localhost:8081/auth-callback", "selftend://**", "selftend-dev://**"]
 
+[auth.email]
+enable_confirmations = true
+
 [auth.external.google]
 enabled = true
 client_id = "env(GOOGLE_LOCAL_CLIENT_ID)"
