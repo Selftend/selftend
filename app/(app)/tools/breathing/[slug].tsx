@@ -8,6 +8,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   Easing,
+  interpolate,
 } from "react-native-reanimated";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -22,6 +23,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { BackButton } from "@/src/components/app/back-button";
 import { breathingLookup } from "@/src/constants/breathing";
 import type { BreathingPhase } from "@/src/constants/breathing";
+import { useAppColorScheme } from "@/src/lib/color-scheme";
 import { useSaveBreathingSession } from "@/src/features/breathing/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -52,11 +54,33 @@ export default function BreathingExerciseScreen() {
   const circleSize = useSharedValue(CIRCLE_MIN);
   const saveMutation = useSaveBreathingSession(user?.id ?? null);
 
+  // Colours live in the animated style (not className) because NativeWind class
+  // styles get dropped on an Animated.View that carries an animated style. Mirrors
+  // the --aqua token for light/dark.
+  const colorScheme = useAppColorScheme();
+  const aqua = colorScheme === "dark" ? "196, 58%, 62%" : "196, 52%, 45%";
+
   const circleStyle = useAnimatedStyle(() => ({
     width: circleSize.value,
     height: circleSize.value,
     borderRadius: circleSize.value / 2,
+    backgroundColor: `hsla(${aqua}, 0.22)`,
+    borderWidth: 2,
+    borderColor: `hsl(${aqua})`,
   }));
+
+  const haloStyle = useAnimatedStyle(() => {
+    const size = circleSize.value * 1.5;
+    return {
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      backgroundColor: `hsla(${aqua}, 0.1)`,
+      opacity: interpolate(circleSize.value, [CIRCLE_MIN, CIRCLE_MAX], [0.45, 1]),
+      alignItems: "center",
+      justifyContent: "center",
+    };
+  });
 
   const advancePhase = (phases: BreathingPhase[], idx: number) => {
     const phase = phases[idx % phases.length];
@@ -203,11 +227,13 @@ export default function BreathingExerciseScreen() {
 
           {screenPhase === "active" ? (
             <View className="gap-6 items-center">
-              <View className="items-center justify-center" style={{ height: CIRCLE_MAX + 40 }}>
-                <Animated.View
-                  style={circleStyle}
-                  className="bg-primary/20 border-2 border-primary"
-                />
+              <View
+                className="items-center justify-center"
+                style={{ height: CIRCLE_MAX * 1.5 + 40 }}
+              >
+                <Animated.View style={haloStyle}>
+                  <Animated.View style={circleStyle} />
+                </Animated.View>
               </View>
 
               {phaseLabelKey ? (
