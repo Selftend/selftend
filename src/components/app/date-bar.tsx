@@ -165,18 +165,16 @@ export function DateBar() {
 
   return (
     <View className="flex-row items-center gap-2 border-b border-border bg-background px-3 py-2">
-      {/* Calendar jump: opens an in-app month picker. Month navigation only
-          browses — the date changes only when a day is tapped. */}
-      {Platform.OS === "web" ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("dateBar.openCalendar")}
-          onPress={() => setPickerOpen(true)}
-          className="size-9 items-center justify-center rounded-lg active:bg-muted/50"
-        >
-          <Icon name="calendar-month" className="size-5 text-muted-foreground" />
-        </Pressable>
-      ) : null}
+      {/* Calendar jump: opens an in-app month picker (all platforms). Month
+          navigation only browses — the date changes only when a day is tapped. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t("dateBar.openCalendar")}
+        onPress={() => setPickerOpen(true)}
+        className="size-9 shrink-0 items-center justify-center rounded-lg active:bg-muted/50"
+      >
+        <Icon name="calendar-month" className="size-5 text-muted-foreground" />
+      </Pressable>
 
       {Platform.OS === "web" ? (
         <Pressable
