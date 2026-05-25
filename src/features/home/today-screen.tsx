@@ -174,6 +174,7 @@ export default function HomeScreen() {
                     canMoveDown={index < dashboardItems.length - 1 && !saveMutation.isPending}
                     canMoveUp={index > 0 && !saveMutation.isPending}
                     editMode={editMode}
+                    index={index}
                     onMoveDown={() => handleMove(index, 1)}
                     onMoveUp={() => handleMove(index, -1)}
                     onRemove={() => handleRemove(item)}

@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, {
   Easing,
-  FadeIn,
+  FadeInDown,
   LinearTransition,
   runOnJS,
   useAnimatedStyle,
@@ -22,6 +22,7 @@ interface WidgetCardProps {
   canMoveUp: boolean;
   children: React.ReactNode;
   editMode: boolean;
+  index?: number;
   onMoveDown: () => void;
   onMoveUp: () => void;
   onRemove: () => void;
@@ -33,6 +34,7 @@ export function WidgetCard({
   canMoveUp,
   children,
   editMode,
+  index = 0,
   onMoveDown,
   onMoveUp,
   onRemove,
@@ -87,7 +89,13 @@ export function WidgetCard({
 
   return (
     <Animated.View
-      entering={reduceMotionEnabled ? undefined : FadeIn.duration(160)}
+      entering={
+        reduceMotionEnabled
+          ? undefined
+          : FadeInDown.duration(320)
+              .delay(Math.min(index, 8) * 70)
+              .easing(Easing.out(Easing.cubic))
+      }
       layout={
         reduceMotionEnabled
           ? undefined
