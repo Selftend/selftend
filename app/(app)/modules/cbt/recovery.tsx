@@ -49,7 +49,7 @@ import { useWorryEntries } from "@/src/features/worry/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 
 const strategyKeys = [
   "goals",
@@ -589,10 +589,7 @@ export default function RecoveryScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1">{t("recovery.title")}</Text>
-          </View>
+          <ScreenHeader title={t("recovery.title")} />
           <Text variant="muted">{t("recovery.description")}</Text>
         </View>
 

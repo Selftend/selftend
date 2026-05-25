@@ -19,7 +19,7 @@ import { useArchiveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/qu
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatTimestamp } from "@/src/utils/date";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 
 function hasExpandedDetail(data: {
   emotionIntensityBefore: number | null;
@@ -90,10 +90,7 @@ export default function ThoughtRecordDetailScreen() {
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("detail.notFound")}</Text>
-            </View>
+            <ScreenHeader title={t("detail.notFound")} />
             <ErrorState
               title={t("detail.notFoundLabel")}
               description={t("detail.notFoundDescription")}
@@ -132,7 +129,7 @@ export default function ThoughtRecordDetailScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <Text variant="h1">{t("detail.title")}</Text>
+            <ScreenHeader title={t("detail.title")} />
             <Text variant="muted">
               {t("detail.updated", { timestamp: formatTimestamp(data.updatedAt) })}
             </Text>

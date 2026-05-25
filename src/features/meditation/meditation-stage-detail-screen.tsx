@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { getStage } from "@/src/features/meditation/stages";
 import {
   useMeditationProgramState,
@@ -35,12 +35,7 @@ export default function MeditationStageDetailScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
-          <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h2">{t(stage.titleKey)}</Text>
-            </View>
-          </View>
+          <ScreenHeader title={t(stage.titleKey)} titleVariant="h2" />
 
           <Card>
             <CardContent className="gap-2 pt-6">

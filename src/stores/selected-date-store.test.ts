@@ -1,6 +1,7 @@
 import {
   currentDateKey,
   loggedAtForSelectedDate,
+  toLocalDateKey,
   useSelectedDateStore,
 } from "@/src/stores/selected-date-store";
 
@@ -29,6 +30,8 @@ describe("selected-date-store", () => {
 
   it("loggedAtForSelectedDate returns a timestamp on the selected day", () => {
     const iso = loggedAtForSelectedDate("2026-05-01");
-    expect(iso.slice(0, 10)).toBe("2026-05-01");
+    // The function guarantees the LOCAL date equals the selected day (the app's
+    // date convention), which differs from the UTC slice near midnight.
+    expect(toLocalDateKey(iso)).toBe("2026-05-01");
   });
 });

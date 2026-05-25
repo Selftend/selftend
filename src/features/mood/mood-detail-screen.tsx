@@ -14,7 +14,7 @@ import {
 import { Badge } from "@/src/components/react-native-reusables/badge";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Icon } from "@/src/components/react-native-reusables/icon";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
@@ -82,10 +82,7 @@ export default function MoodDetailScreen() {
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("detail.title")}</Text>
-            </View>
+            <ScreenHeader title={t("detail.title")} />
             <Text variant="muted">{t("detail.notFound")}</Text>
           </View>
         </ScrollView>
@@ -101,10 +98,7 @@ export default function MoodDetailScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("detail.title")}</Text>
-            </View>
+            <ScreenHeader title={t("detail.title")} />
             <Text variant="muted">{when}</Text>
             <View className="flex-row gap-3">
               <Button

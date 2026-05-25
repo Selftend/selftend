@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useMeditationSession } from "@/src/features/meditation/queries";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -27,8 +27,7 @@ export default function MeditationSessionDetailScreen() {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="gap-3 p-6">
-          <BackButton showLabel={false} className="-ml-2" />
-          <Text variant="h2">{t("module.sessionDetail.notFound")}</Text>
+          <ScreenHeader title={t("module.sessionDetail.notFound")} titleVariant="h2" />
         </View>
       </SafeAreaView>
     );
@@ -39,10 +38,7 @@ export default function MeditationSessionDetailScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("module.sessionDetail.title")}</Text>
-            </View>
+            <ScreenHeader title={t("module.sessionDetail.title")} />
             <Text variant="muted">
               {t("module.sessionDetail.completedAt", {
                 date: new Date(session.completedAt).toLocaleString(),

@@ -15,7 +15,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import type { PolicyAction } from "@/src/features/policies/policy-content";
 import { policyLastUpdated } from "@/src/features/policies/policy-content";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 
 interface InfoScreenProps extends PropsWithChildren {
   actions?: PolicyAction[];
@@ -50,10 +50,7 @@ export function InfoScreen({
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{title}</Text>
-            </View>
+            <ScreenHeader title={title} />
             <Text variant="muted">
               {subtitle}
               {showLastUpdated ? ` ${t("lastUpdated", { date: policyLastUpdated })}` : null}

@@ -11,7 +11,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { localDateKey, toLocalDateKey } from "@/src/stores/selected-date-store";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
@@ -117,10 +117,7 @@ export default function ProgressScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("progress.title")}</Text>
-            </View>
+            <ScreenHeader title={t("progress.title")} />
             <Text variant="muted">{t("progress.description")}</Text>
           </View>
 

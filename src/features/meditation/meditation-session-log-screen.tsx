@@ -8,7 +8,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { cn } from "@/lib/utils";
 import { obstacleTagsForStage } from "@/src/features/meditation/obstacles";
 import {
@@ -79,10 +79,7 @@ export default function MeditationSessionLogScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h2">{t("module.session.title")}</Text>
-          </View>
+          <ScreenHeader title={t("module.session.title")} titleVariant="h2" />
 
           <View className="gap-4">
             <Card className="border-primary/30 bg-primary/5">

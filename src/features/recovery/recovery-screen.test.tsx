@@ -30,8 +30,11 @@ jest.mock("expo-router", () => ({
     back: jest.fn(),
     canGoBack: jest.fn(() => false),
   },
+  usePathname: () => "/modules/cbt/recovery",
   useFocusEffect: jest.fn(),
 }));
+
+jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({

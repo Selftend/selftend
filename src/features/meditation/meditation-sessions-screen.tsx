@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -18,10 +18,7 @@ export default function MeditationSessionsScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("module.sessions.title")}</Text>
-            </View>
+            <ScreenHeader title={t("module.sessions.title")} />
             <Text variant="muted">{t("module.sessions.subtitle")}</Text>
           </View>
 

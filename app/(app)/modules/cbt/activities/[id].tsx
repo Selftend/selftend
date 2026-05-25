@@ -14,7 +14,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useActivity } from "@/src/features/activities/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 
 export default function ActivityDetailScreen() {
   const { t } = useTranslation("cbt");
@@ -54,10 +54,7 @@ export default function ActivityDetailScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <View className="gap-2">
-              <View className="flex-row items-center gap-2">
-                <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1">{activity.activityName}</Text>
-              </View>
+              <ScreenHeader title={activity.activityName} />
               <View className="flex-row gap-2">
                 <View className="rounded-full bg-muted px-3 py-1">
                   <Text className="text-xs">{t(`activities.category.${activity.category}`)}</Text>

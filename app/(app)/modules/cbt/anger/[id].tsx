@@ -14,7 +14,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useAngerLog } from "@/src/features/anger/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 
 export default function AngerDetailScreen() {
   const { t } = useTranslation("cbt");
@@ -59,10 +59,7 @@ export default function AngerDetailScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("anger.detailTitle")}</Text>
-            </View>
+            <ScreenHeader title={t("anger.detailTitle")} />
             <Text variant="muted">{log.triggerText}</Text>
           </View>
 

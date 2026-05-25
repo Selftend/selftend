@@ -29,7 +29,7 @@ import type { ExposureItem } from "@/src/features/exposure/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 
 interface SessionFormState {
   preSuds: number | null;
@@ -288,10 +288,7 @@ export default function ExposureHierarchyDetailScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <View className="gap-2">
-              <View className="flex-row items-center gap-2">
-                <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1">{hierarchy.title}</Text>
-              </View>
+              <ScreenHeader title={hierarchy.title} />
               <Text variant="muted">{hierarchy.anxietyType}</Text>
             </View>
 

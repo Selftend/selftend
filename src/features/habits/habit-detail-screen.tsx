@@ -4,7 +4,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -66,10 +66,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
     return (
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1">{t("home.title")}</Text>
-          </View>
+          <ScreenHeader title={t("home.title")} />
         </ScrollView>
       </SafeAreaView>
     );
@@ -109,19 +106,18 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow gap-6 p-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1" className="flex-1">
-                {habit.name}
-              </Text>
-              {habit.archivedAt ? (
-                <View className="rounded-full bg-muted px-2 py-0.5">
-                  <Text className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t("detail.archivedBadge")}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
+            <ScreenHeader
+              title={habit.name}
+              right={
+                habit.archivedAt ? (
+                  <View className="rounded-full bg-muted px-2 py-0.5">
+                    <Text className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("detail.archivedBadge")}
+                    </Text>
+                  </View>
+                ) : null
+              }
+            />
             {habit.identity ? <Text variant="muted">{habit.identity}</Text> : null}
           </View>
 

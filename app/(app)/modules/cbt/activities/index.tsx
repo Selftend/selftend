@@ -17,7 +17,7 @@ import { useActivities } from "@/src/features/activities/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, toLocalDateKey } from "@/src/stores/selected-date-store";
 import type { ActivityLog } from "@/src/features/activities/types";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { HelpButton } from "@/src/components/app/help-button";
 
 function groupActivities(activities: ActivityLog[]) {
@@ -75,13 +75,10 @@ export default function ActivitiesScreen() {
         <View className="gap-6">
           <View className="flex-row items-center justify-between gap-4">
             <View className="flex-1 gap-2">
-              <View className="flex-row items-center gap-2">
-                <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1" className="flex-1">
-                  {t("activities.title")}
-                </Text>
-                <HelpButton helpKey="activities" />
-              </View>
+              <ScreenHeader
+                title={t("activities.title")}
+                right={<HelpButton helpKey="activities" />}
+              />
               <Text variant="muted">{t("activities.description")}</Text>
             </View>
             <Button onPress={() => router.push("/modules/cbt/activities/new")} size="sm">

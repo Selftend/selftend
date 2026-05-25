@@ -23,7 +23,7 @@ import { useSelfCareLog, useUpsertSelfCareLog } from "@/src/features/self-care/q
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { HelpButton } from "@/src/components/app/help-button";
 
 interface FormState {
@@ -112,13 +112,7 @@ export default function SelfCareScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1" className="flex-1">
-                {t("selfCare.title")}
-              </Text>
-              <HelpButton helpKey="selfCare" />
-            </View>
+            <ScreenHeader title={t("selfCare.title")} right={<HelpButton helpKey="selfCare" />} />
             <Text variant="muted">{t("selfCare.description", { date: selectedDate })}</Text>
           </View>
 

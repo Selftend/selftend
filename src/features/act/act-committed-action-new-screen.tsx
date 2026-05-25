@@ -13,7 +13,7 @@ import {
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { useSaveCommittedAction } from "@/src/features/act/queries";
 import { ACT_LIFE_DOMAINS, type ACTLifeDomain } from "@/src/features/act/types";
@@ -103,10 +103,7 @@ export default function ActCommittedActionNewScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1">{t("act:committedAction.newTitle")}</Text>
-          </View>
+          <ScreenHeader title={t("act:committedAction.newTitle")} />
           <Text variant="muted">{t("act:committedAction.newSubtitle")}</Text>
         </View>
 

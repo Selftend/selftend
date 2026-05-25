@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -59,10 +59,7 @@ export default function ActExpansionDetailScreen() {
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("expansion.listTitle")}</Text>
-            </View>
+            <ScreenHeader title={t("expansion.listTitle")} />
             <Text variant="muted">{t("expansion.noLogs")}</Text>
           </View>
         </ScrollView>
@@ -87,12 +84,7 @@ export default function ActExpansionDetailScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1" numberOfLines={2}>
-                {log.emotion}
-              </Text>
-            </View>
+            <ScreenHeader title={log.emotion} />
             <Text variant="muted">{new Date(log.createdAt).toLocaleString()}</Text>
             <View className="flex-row">
               <Button onPress={() => setConfirmOpen(true)} variant="ghost">

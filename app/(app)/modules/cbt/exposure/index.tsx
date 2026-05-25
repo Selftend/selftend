@@ -15,7 +15,7 @@ import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useHierarchies } from "@/src/features/exposure/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { HelpButton } from "@/src/components/app/help-button";
 
 export default function ExposureScreen() {
@@ -29,13 +29,7 @@ export default function ExposureScreen() {
         <View className="gap-6">
           <View className="flex-row items-center justify-between gap-4">
             <View className="flex-1 gap-2">
-              <View className="flex-row items-center gap-2">
-                <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1" className="flex-1">
-                  {t("exposure.title")}
-                </Text>
-                <HelpButton helpKey="exposure" />
-              </View>
+              <ScreenHeader title={t("exposure.title")} right={<HelpButton helpKey="exposure" />} />
               <Text variant="muted">{t("exposure.description")}</Text>
             </View>
             <Button onPress={() => router.push("/modules/cbt/exposure/new")} size="sm">

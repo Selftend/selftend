@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { cn } from "@/lib/utils";
 import { STAGES } from "@/src/features/meditation/stages";
 import { useMeditationProgramState } from "@/src/features/meditation/queries";
@@ -39,10 +39,7 @@ export default function MeditationStagesScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("module.stages.title")}</Text>
-            </View>
+            <ScreenHeader title={t("module.stages.title")} />
             <Text variant="muted">{t("module.stages.subtitle")}</Text>
           </View>
 

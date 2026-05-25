@@ -8,7 +8,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { SLEEP_DURATION_OPTIONS } from "@/src/features/sleep/schemas";
@@ -132,10 +132,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("log.editTitle")}</Text>
-            </View>
+            <ScreenHeader title={t("log.editTitle")} />
             <Text variant="muted">{t("detail.notFound")}</Text>
           </View>
         </ScrollView>
@@ -147,10 +144,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow gap-6 p-6 pb-12">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1">{editMode ? t("log.editTitle") : t("log.title")}</Text>
-          </View>
+          <ScreenHeader title={editMode ? t("log.editTitle") : t("log.title")} />
           <Text variant="muted">{editMode ? t("log.editDescription") : t("log.description")}</Text>
         </View>
 

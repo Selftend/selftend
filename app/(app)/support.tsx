@@ -18,7 +18,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { appEnv } from "@/src/lib/env";
 import { requireSupabase } from "@/src/lib/supabase";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 
 type FeedbackCategory = "bug" | "suggestion" | "question";
 
@@ -65,10 +65,7 @@ export default function SupportScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("supportPage.title")}</Text>
-            </View>
+            <ScreenHeader title={t("supportPage.title")} />
             <Text variant="muted">{t("supportPage.description")}</Text>
           </View>
 

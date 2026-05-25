@@ -3,7 +3,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useHabits, useHabitLogs } from "@/src/features/habits/queries";
@@ -38,10 +38,7 @@ export default function HabitsHistoryScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow gap-6 p-6">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1">{t("history.title")}</Text>
-          </View>
+          <ScreenHeader title={t("history.title")} />
           <Text variant="muted">{t("history.subtitle")}</Text>
         </View>
 

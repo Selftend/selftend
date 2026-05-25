@@ -10,7 +10,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 
 const SKILL_KEYS = [
@@ -31,10 +31,7 @@ export default function DbtModuleScreen() {
             <Text className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               {t("dbt.eyebrow")}
             </Text>
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("dbt.title")}</Text>
-            </View>
+            <ScreenHeader title={t("dbt.title")} />
             <Text variant="muted" className="max-w-[64ch]">
               {t("dbt.description")}
             </Text>

@@ -14,6 +14,8 @@ jest.mock("expo-router", () => ({
   useFocusEffect: jest.fn(),
 }));
 
+jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
+
 jest.mock("@/src/components/app/notification-settings-modal", () => ({
   NotificationSettingsModal: () => null,
 }));

@@ -10,7 +10,7 @@ import { useThoughtRecords } from "@/src/features/cbt/queries";
 import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
 import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 function getRecordTitle(
@@ -35,10 +35,7 @@ export default function CbtHistoryScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("history.title")}</Text>
-            </View>
+            <ScreenHeader title={t("history.title")} />
             <Text variant="muted">{t("history.description")}</Text>
           </View>
 

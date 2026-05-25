@@ -9,7 +9,7 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { colorChipClass } from "@/src/features/habits/habits-home-screen";
 import { useHabit, useHabits, useSaveHabit } from "@/src/features/habits/queries";
@@ -156,10 +156,7 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow gap-6 p-6 pb-12">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1">{editMode ? t("form.editTitle") : t("form.newTitle")}</Text>
-          </View>
+          <ScreenHeader title={editMode ? t("form.editTitle") : t("form.newTitle")} />
         </View>
 
         <View className="gap-2">

@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useSaveConnectionLog } from "@/src/features/act/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
@@ -43,10 +43,7 @@ export default function ActDropAnchorScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("act:dropAnchor.title")}</Text>
-            </View>
+            <ScreenHeader title={t("act:dropAnchor.title")} />
             <Text variant="muted">{t("act:dropAnchor.intro")}</Text>
           </View>
 

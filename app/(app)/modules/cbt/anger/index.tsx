@@ -15,7 +15,7 @@ import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useAngerLogs } from "@/src/features/anger/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { HelpButton } from "@/src/components/app/help-button";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -38,13 +38,7 @@ export default function AngerScreen() {
         <View className="gap-6">
           <View className="flex-row items-center justify-between gap-4">
             <View className="flex-1 gap-2">
-              <View className="flex-row items-center gap-2">
-                <BackButton showLabel={false} className="-ml-2" />
-                <Text variant="h1" className="flex-1">
-                  {t("anger.title")}
-                </Text>
-                <HelpButton helpKey="anger" />
-              </View>
+              <ScreenHeader title={t("anger.title")} right={<HelpButton helpKey="anger" />} />
               <Text variant="muted">{t("anger.description")}</Text>
             </View>
             <Button onPress={() => router.push("/modules/cbt/anger/new")} size="sm">

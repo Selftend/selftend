@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useBullsEyeSnapshots, useValueEntries } from "@/src/features/act/queries";
 import { RelatedTools } from "@/src/features/act/related-tools";
@@ -42,10 +42,7 @@ export default function ActValuesScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("values.listTitle")}</Text>
-            </View>
+            <ScreenHeader title={t("values.listTitle")} />
             <Text variant="muted">{t("values.listSubtitle")}</Text>
           </View>
 

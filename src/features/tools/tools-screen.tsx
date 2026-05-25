@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { cn } from "@/lib/utils";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { useGroundingSessions } from "@/src/features/grounding/queries";
@@ -160,10 +160,7 @@ export default function ToolsScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("tools.title")}</Text>
-            </View>
+            <ScreenHeader title={t("tools.title")} />
             <Text variant="muted" className="max-w-[64ch]">
               {t("tools.description")}
             </Text>

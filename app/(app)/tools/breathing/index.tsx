@@ -12,7 +12,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { HelpButton } from "@/src/components/app/help-button";
 import { breathingPatterns } from "@/src/constants/breathing";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
@@ -28,13 +28,7 @@ export default function BreathingScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1" className="flex-1">
-                {t("breathing.title")}
-              </Text>
-              <HelpButton helpKey="breathing" />
-            </View>
+            <ScreenHeader title={t("breathing.title")} right={<HelpButton helpKey="breathing" />} />
             <Text variant="muted">{t("breathing.description")}</Text>
           </View>
 

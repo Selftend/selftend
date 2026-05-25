@@ -14,7 +14,7 @@ import {
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { useSaveDefusionLog } from "@/src/features/act/queries";
@@ -114,10 +114,7 @@ export default function ActDefusionNewScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1">{t("act:defusion.newTitle")}</Text>
-          </View>
+          <ScreenHeader title={t("act:defusion.newTitle")} />
           <Text variant="muted">{t("act:defusion.newSubtitle")}</Text>
         </View>
 

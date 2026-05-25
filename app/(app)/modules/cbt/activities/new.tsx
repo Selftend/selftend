@@ -21,7 +21,7 @@ import type { PACECategory } from "@/src/features/activities/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useActivityDraftStore } from "@/src/stores/activity-draft-store";
 import { useToastStore } from "@/src/stores/toast-store";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 
 const defaultValues: ActivityFormSchema = {
   activityName: "",
@@ -142,12 +142,7 @@ export default function NewActivityScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1">
-              {activityId ? t("activities.editTitle") : t("activities.newTitle")}
-            </Text>
-          </View>
+          <ScreenHeader title={activityId ? t("activities.editTitle") : t("activities.newTitle")} />
           <Text variant="muted">
             {activityId ? t("activities.editDescription") : t("activities.newDescription")}
           </Text>

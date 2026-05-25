@@ -3,6 +3,7 @@ import { router } from "expo-router";
 
 import MoodTrackerScreen from "@/src/features/mood/mood-tracker-screen";
 import { useMoodLogs } from "@/src/features/mood/queries";
+import { currentDateKey } from "@/src/stores/selected-date-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -13,6 +14,8 @@ jest.mock("expo-router", () => ({
   usePathname: () => "/tools/mood-tracker",
   useFocusEffect: jest.fn(),
 }));
+
+jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
 
 jest.mock("@/src/components/app/notification-settings-modal", () => ({
   NotificationSettingsModal: () => null,
@@ -54,9 +57,9 @@ describe("MoodTrackerScreen", () => {
   });
 
   it("renders the completed Today card with score when a single entry was logged today", () => {
-    // Build on today's UTC date key (the app's date convention) so the test is
-    // independent of timezone / time of day.
-    const loggedAt = `${new Date().toISOString().slice(0, 10)}T12:00:00.000Z`;
+    // Anchor to today's LOCAL date (the app groups entries by local date via
+    // toLocalDateKey), so the test is independent of timezone / time of day.
+    const loggedAt = new Date(`${currentDateKey()}T12:00:00`).toISOString();
     mockUseMoodLogs.mockReturnValue({
       data: [
         {
@@ -82,9 +85,9 @@ describe("MoodTrackerScreen", () => {
   });
 
   it("shows the average and count when multiple entries were logged today", () => {
-    const dayKey = new Date().toISOString().slice(0, 10);
-    const morning = `${dayKey}T09:00:00.000Z`;
-    const evening = `${dayKey}T18:00:00.000Z`;
+    const dayKey = currentDateKey();
+    const morning = new Date(`${dayKey}T09:00:00`).toISOString();
+    const evening = new Date(`${dayKey}T18:00:00`).toISOString();
     mockUseMoodLogs.mockReturnValue({
       data: [
         {

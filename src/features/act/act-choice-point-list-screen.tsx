@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useChoicePoints } from "@/src/features/act/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -32,10 +32,7 @@ export default function ActChoicePointListScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("choicePoint.listTitle")}</Text>
-            </View>
+            <ScreenHeader title={t("choicePoint.listTitle")} />
             <Text variant="muted">{t("choicePoint.primer")}</Text>
           </View>
 

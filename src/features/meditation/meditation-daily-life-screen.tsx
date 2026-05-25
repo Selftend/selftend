@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
 import { useStagePracticeNotes } from "@/src/features/meditation/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -20,10 +20,7 @@ export default function MeditationDailyLifeScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("module.dailyLife.archiveTitle")}</Text>
-            </View>
+            <ScreenHeader title={t("module.dailyLife.archiveTitle")} />
             <Text variant="muted">{t("module.dailyLife.archiveSubtitle")}</Text>
           </View>
 

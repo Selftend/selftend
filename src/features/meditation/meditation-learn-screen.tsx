@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 
 export default function MeditationLearnScreen() {
   const { t } = useTranslation("meditation");
@@ -13,10 +13,7 @@ export default function MeditationLearnScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t("module.learn.title")}</Text>
-            </View>
+            <ScreenHeader title={t("module.learn.title")} />
             <Text variant="muted">{t("module.learn.subtitle")}</Text>
           </View>
 

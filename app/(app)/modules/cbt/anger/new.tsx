@@ -22,7 +22,7 @@ import { useAngerLogs, useSaveAngerLog } from "@/src/features/anger/queries";
 import { angerLogFormSchema, type AngerLogFormSchema } from "@/src/features/anger/schemas";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 
 const defaultValues: AngerLogFormSchema = {
@@ -89,10 +89,7 @@ export default function NewAngerLogScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1">{t("anger.newTitle")}</Text>
-          </View>
+          <ScreenHeader title={t("anger.newTitle")} />
           <Text variant="muted">{t("anger.newDescription")}</Text>
         </View>
 

@@ -13,7 +13,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { HelpButton } from "@/src/components/app/help-button";
 import { personalValuesList } from "@/src/constants/personal-values-list";
 import { useValuesProfile, useSaveValuesProfile } from "@/src/features/values/queries";
@@ -120,13 +120,7 @@ export default function ValuesScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1" className="flex-1">
-                {t("values.title")}
-              </Text>
-              <HelpButton helpKey="values" />
-            </View>
+            <ScreenHeader title={t("values.title")} right={<HelpButton helpKey="values" />} />
             <Text variant="muted">{t("values.description")}</Text>
           </View>
 

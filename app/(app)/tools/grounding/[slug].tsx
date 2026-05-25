@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { groundingLookup } from "@/src/constants/grounding";
 import { useSaveGroundingSession } from "@/src/features/grounding/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -77,10 +77,7 @@ export default function GroundingExerciseScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <BackButton showLabel={false} className="-ml-2" />
-              <Text variant="h1">{t(`grounding.techniques.${technique.slug}.title`)}</Text>
-            </View>
+            <ScreenHeader title={t(`grounding.techniques.${technique.slug}.title`)} />
             <Text variant="muted">
               {t(`grounding.techniques.${technique.slug}.shortDescription`)}
             </Text>

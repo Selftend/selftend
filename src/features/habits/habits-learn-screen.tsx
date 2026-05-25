@@ -3,7 +3,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { BackButton } from "@/src/components/app/back-button";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -35,12 +35,7 @@ export function HabitsLearnDetailScreen({ slug }: HabitsLearnDetailProps) {
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow gap-6 p-6">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1" className="flex-1">
-              {t(`${cardKey}.title` as Parameters<typeof t>[0])}
-            </Text>
-          </View>
+          <ScreenHeader title={t(`${cardKey}.title` as Parameters<typeof t>[0])} />
           <Text variant="muted">{t(`${cardKey}.short` as Parameters<typeof t>[0])}</Text>
         </View>
 
@@ -122,10 +117,7 @@ export function HabitsLearnIndexScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow gap-6 p-6">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1">{t("learn.indexTitle")}</Text>
-          </View>
+          <ScreenHeader title={t("learn.indexTitle")} />
           <Text variant="muted">{t("learn.indexSubtitle")}</Text>
         </View>
 

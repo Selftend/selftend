@@ -1,8 +1,8 @@
 import { type ReactNode } from "react";
 import { ActivityIndicator, View } from "react-native";
 
-import { BackButton } from "@/src/components/app/back-button";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 
@@ -67,13 +67,7 @@ export function WizardScreen({
     >
       <View className="gap-6">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <BackButton showLabel={false} className="-ml-2" />
-            <Text variant="h1" className="flex-1">
-              {title}
-            </Text>
-            {titleAction}
-          </View>
+          <ScreenHeader title={title} right={titleAction} />
           {description ? <Text variant="muted">{description}</Text> : null}
         </View>
 
