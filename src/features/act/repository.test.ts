@@ -167,6 +167,37 @@ describe("act repository - saveDefusionLog", () => {
     expect(result.fusedThought).toBe("I am going to fail");
     expect(result.fusionLevelAfter).toBeNull();
   });
+
+  it("includes created_at when createdAt is provided", async () => {
+    const row = {
+      id: "log-1",
+      user_id: "u1",
+      fused_thought: "x",
+      thought_category: "selfJudgment",
+      fusion_level_before: null,
+      technique_used: "havingTheThoughtThat",
+      defused_version: "",
+      fusion_level_after: null,
+      notes: "",
+      created_at: "2026-05-20T10:00:00.000Z",
+      updated_at: "2026-05-20T10:00:00.000Z",
+    };
+    const single = jest.fn().mockResolvedValue({ data: row, error: null });
+    const select = jest.fn(() => ({ single }));
+    const insert = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_defusion_logs: { insert } }));
+
+    await saveDefusionLog("u1", {
+      fusedThought: "x",
+      thoughtCategory: "selfJudgment",
+      techniqueUsed: "havingTheThoughtThat",
+      createdAt: "2026-05-20T10:00:00.000Z",
+    });
+
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({ created_at: "2026-05-20T10:00:00.000Z" }),
+    );
+  });
 });
 
 describe("act repository - listDefusionLogs", () => {

@@ -1,5 +1,6 @@
 import type { Href } from "expo-router";
 
+import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import type {
   ChoicePoint,
   CommittedAction,
@@ -8,14 +9,14 @@ import type {
   DefusionLog,
   ExpansionLog,
   ObservingSelfSession,
-  ProgramPillar,
   UrgeSurfLog,
   ValueEntry,
 } from "@/src/features/act/types";
 
-/** All data the signal functions may read. Arrays are the user's full history. */
+/** Data the signal functions read. `since` = the current phase's start (ms). */
 export interface ActProgramSignalData {
-  since: number; // Date.now() of program start; only data created at/after counts
+  since: number;
+  selectedDate: string; // YYYY-MM-DD (local) for daily-practice tasks
   choicePoints: ChoicePoint[];
   valueEntries: ValueEntry[];
   connectionLogs: ConnectionLog[];
@@ -39,11 +40,13 @@ export interface ProgramTaskDef {
   signal: (data: ActProgramSignalData) => SignalResult;
 }
 
-export interface ProgramWeek {
+export interface ProgramPhase {
   key: string;
-  themeLabelKey: string; // i18n key under act:program.weeks
-  pillar: ProgramPillar;
-  tasks: ProgramTaskDef[];
+  themeLabelKey: string; // act:program.phases.<key>.title
+  themeSubKey: string; // act:program.phases.<key>.sub
+  themeDescKey: string; // act:program.phases.<key>.description
+  milestones: ProgramTaskDef[];
+  dailyPractice?: ProgramTaskDef;
 }
 
 export const atOrAfter = (iso: string | null | undefined, since: number) =>
@@ -52,46 +55,18 @@ export const atOrAfter = (iso: string | null | undefined, since: number) =>
 const countSince = (items: { createdAt: string }[], since: number) =>
   items.filter((item) => atOrAfter(item.createdAt, since)).length;
 
-// Number of distinct calendar days (UTC) on which a qualifying event occurred
-// at or after the program start. Used for recurring "daily practice" tasks so
-// they cannot be completed in a single sitting.
-const distinctDays = (timestamps: (string | null | undefined)[], since: number) => {
-  const days = new Set<string>();
-  for (const ts of timestamps) {
-    if (atOrAfter(ts, since)) days.add(new Date(ts as string).toISOString().slice(0, 10));
-  }
-  return days.size;
-};
+// 1 if a qualifying event happened on the selected local day, else 0.
+const didOnDate = (timestamps: (string | null | undefined)[], date: string) =>
+  timestamps.some((ts) => typeof ts === "string" && toLocalDateKey(ts) === date) ? 1 : 0;
 
-const DAILY_PRACTICE_TARGET = 4;
-
-// The program follows the structure of The Happiness Trap (2nd ed): a Foundation
-// week (the Choice Point + Dropping Anchor, the book's first daily skill), then
-// the three pillars - Be Present, Open Up, Do What Matters. There is no mood
-// tracking: ACT teaches getting better at feeling, not monitoring/improving mood.
-export const ACT_PROGRAM: ProgramWeek[] = [
+export const ACT_PROGRAM: ProgramPhase[] = [
   {
     key: "foundation",
-    themeLabelKey: "program.weeks.foundation",
-    pillar: "foundation",
-    tasks: [
+    themeLabelKey: "program.phases.foundation.title",
+    themeSubKey: "program.phases.foundation.sub",
+    themeDescKey: "program.phases.foundation.description",
+    milestones: [
       {
-        // Ch 5: Dropping Anchor is the book's first practical skill, meant to be
-        // practiced repeatedly throughout the day. Drop anchor is logged as a
-        // connection entry with technique "dropAnchor".
-        key: "dropAnchorDays",
-        labelKey: "program.tasks.dropAnchorDays",
-        route: "/modules/act/connection/drop-anchor",
-        signal: ({ connectionLogs, since }) => ({
-          current: distinctDays(
-            connectionLogs.filter((c) => c.technique === "dropAnchor").map((c) => c.createdAt),
-            since,
-          ),
-          target: DAILY_PRACTICE_TARGET,
-        }),
-      },
-      {
-        // Ch 2: map the toward/away moves and the hooks.
         key: "mapChoicePoint",
         labelKey: "program.tasks.mapChoicePoint",
         route: "/modules/act/choice-point/new",
@@ -101,31 +76,28 @@ export const ACT_PROGRAM: ProgramWeek[] = [
         }),
       },
     ],
+    dailyPractice: {
+      key: "dropAnchorDaily",
+      labelKey: "program.tasks.dropAnchorDaily",
+      route: "/modules/act/connection/drop-anchor",
+      signal: ({ connectionLogs, selectedDate }) => ({
+        current: didOnDate(
+          connectionLogs.filter((c) => c.technique === "dropAnchor").map((c) => c.createdAt),
+          selectedDate,
+        ),
+        target: 1,
+      }),
+    },
   },
   {
     key: "bePresent",
-    themeLabelKey: "program.weeks.bePresent",
-    pillar: "bePresent",
-    tasks: [
+    themeLabelKey: "program.phases.bePresent.title",
+    themeSubKey: "program.phases.bePresent.sub",
+    themeDescKey: "program.phases.bePresent.description",
+    milestones: [
       {
-        // Ch 16-17: bring full attention to the present. Counts present-moment
-        // connection practices (anything other than dropAnchor, which belongs to
-        // the Foundation week's daily).
-        key: "bePresentDays",
-        labelKey: "program.tasks.bePresentDays",
-        route: "/modules/act/connection",
-        signal: ({ connectionLogs, since }) => ({
-          current: distinctDays(
-            connectionLogs.filter((c) => c.technique !== "dropAnchor").map((c) => c.createdAt),
-            since,
-          ),
-          target: 3,
-        }),
-      },
-      {
-        // Ch 9, 19: the observing/noticing self.
-        key: "observeSelf",
-        labelKey: "program.tasks.observeSelf",
+        key: "observeSelfOnce",
+        labelKey: "program.tasks.observeSelfOnce",
         route: "/modules/act/observing-self",
         signal: ({ observingSessions, since }) => ({
           current: countSince(observingSessions, since),
@@ -133,29 +105,37 @@ export const ACT_PROGRAM: ProgramWeek[] = [
         }),
       },
     ],
+    dailyPractice: {
+      key: "bePresentDaily",
+      labelKey: "program.tasks.bePresentDaily",
+      route: "/modules/act/connection",
+      signal: ({ connectionLogs, selectedDate }) => ({
+        current: didOnDate(
+          connectionLogs.filter((c) => c.technique !== "dropAnchor").map((c) => c.createdAt),
+          selectedDate,
+        ),
+        target: 1,
+      }),
+    },
   },
   {
     key: "openUp",
-    themeLabelKey: "program.weeks.openUp",
-    pillar: "openUp",
-    tasks: [
+    themeLabelKey: "program.phases.openUp.title",
+    themeSubKey: "program.phases.openUp.sub",
+    themeDescKey: "program.phases.openUp.description",
+    milestones: [
       {
-        // Ch 6-8: unhook from thoughts (defusion).
-        key: "unhookThoughtDays",
-        labelKey: "program.tasks.unhookThoughtDays",
+        key: "unhookOnce",
+        labelKey: "program.tasks.unhookOnce",
         route: "/modules/act/defusion",
         signal: ({ defusionLogs, since }) => ({
-          current: distinctDays(
-            defusionLogs.map((d) => d.createdAt),
-            since,
-          ),
-          target: 3,
+          current: countSince(defusionLogs, since),
+          target: 1,
         }),
       },
       {
-        // Ch 12-15: make room for a feeling (TAME) or surf an urge.
-        key: "makeRoomOrSurf",
-        labelKey: "program.tasks.makeRoomOrSurf",
+        key: "makeRoomOnce",
+        labelKey: "program.tasks.makeRoomOnce",
         route: "/modules/act/expansion",
         signal: ({ expansionLogs, urgeSurfLogs, since }) => ({
           current: countSince(expansionLogs, since) + countSince(urgeSurfLogs, since),
@@ -163,28 +143,30 @@ export const ACT_PROGRAM: ProgramWeek[] = [
         }),
       },
     ],
+    dailyPractice: {
+      key: "unhookOrMakeRoomDaily",
+      labelKey: "program.tasks.unhookOrMakeRoomDaily",
+      route: "/modules/act/defusion",
+      signal: ({ defusionLogs, expansionLogs, urgeSurfLogs, selectedDate }) => ({
+        current: didOnDate(
+          [
+            ...defusionLogs.map((d) => d.createdAt),
+            ...expansionLogs.map((e) => e.createdAt),
+            ...urgeSurfLogs.map((u) => u.createdAt),
+          ],
+          selectedDate,
+        ),
+        target: 1,
+      }),
+    },
   },
   {
     key: "doWhatMatters",
-    themeLabelKey: "program.weeks.doWhatMatters",
-    pillar: "doWhatMatters",
-    tasks: [
+    themeLabelKey: "program.phases.doWhatMatters.title",
+    themeSubKey: "program.phases.doWhatMatters.sub",
+    themeDescKey: "program.phases.doWhatMatters.description",
+    milestones: [
       {
-        // Ch 23, 27: take values-guided steps and keep them going (a completed
-        // action step on several separate days).
-        key: "valuesStepDays",
-        labelKey: "program.tasks.valuesStepDays",
-        route: "/modules/act/committed-action",
-        signal: ({ actionSteps, since }) => ({
-          current: distinctDays(
-            actionSteps.map((s) => s.completedAt),
-            since,
-          ),
-          target: DAILY_PRACTICE_TARGET,
-        }),
-      },
-      {
-        // Ch 22: clarify what matters (a value entry, e.g. via the Bull's-Eye).
         key: "clarifyValue",
         labelKey: "program.tasks.clarifyValue",
         route: "/modules/act/values",
@@ -194,10 +176,8 @@ export const ACT_PROGRAM: ProgramWeek[] = [
         }),
       },
       {
-        // Ch 23: set a committed-action plan. Phase 3 replaces this capstone with
-        // the maintenance plan (the 7 R's).
-        key: "buildActionPlan",
-        labelKey: "program.tasks.buildActionPlan",
+        key: "commitActionOnce",
+        labelKey: "program.tasks.commitActionOnce",
         route: "/modules/act/committed-action/new",
         signal: ({ committedActions, since }) => ({
           current: countSince(committedActions, since),
@@ -205,5 +185,17 @@ export const ACT_PROGRAM: ProgramWeek[] = [
         }),
       },
     ],
+    dailyPractice: {
+      key: "valuesStepDaily",
+      labelKey: "program.tasks.valuesStepDaily",
+      route: "/modules/act/committed-action",
+      signal: ({ actionSteps, selectedDate }) => ({
+        current: didOnDate(
+          actionSteps.map((s) => s.completedAt),
+          selectedDate,
+        ),
+        target: 1,
+      }),
+    },
   },
 ];

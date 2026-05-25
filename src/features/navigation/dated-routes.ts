@@ -11,6 +11,12 @@
 // own date.
 const DATED_EXACT = new Set<string>([
   "/",
+  "/modules/act",
+  "/modules/act/defusion",
+  "/modules/act/expansion",
+  "/modules/act/connection",
+  "/modules/act/observing-self",
+  "/modules/act/choice-point",
   "/modules/cbt",
   "/tools/mood-tracker",
   "/tools/mood-tracker/new",

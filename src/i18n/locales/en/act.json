@@ -29,7 +29,7 @@
       "desc": "Step back from unhelpful thoughts. See them as mental events, not facts."
     },
     "expansion": {
-      "name": "Expansion",
+      "name": "Acceptance",
       "short": "Make room for feelings",
       "desc": "Stop fighting difficult emotions. Turn off the Struggle Switch and let them be."
     },
@@ -74,6 +74,12 @@
       "controlParadoxBody": "Fighting unwanted thoughts and feelings intensifies them. Trying to fix feelings from the inside creates a vicious cycle.",
       "continue": "That makes sense"
     },
+    "choicePoint": {
+      "title": "The Choice Point",
+      "body": "In any situation, difficult thoughts and feelings can show up and hook us. When we're hooked, we drift into away moves. Unhooking gives us the choice to make a toward move instead.",
+      "away": "Away moves: what you do when hooked that takes you away from the life you want.",
+      "toward": "Toward moves: what you'd do as the person you want to be."
+    },
     "model": {
       "title": "The ACT Model",
       "subtitle": "Three moves. One formula.",
@@ -83,7 +89,7 @@
       "formula": "Mindfulness + Values + Action = Psychological Flexibility",
       "formulaBody": "Psychological flexibility is the ability to act on what matters even when difficult thoughts and feelings are present. That is the goal.",
       "mindfulnessGroup": "Mindfulness skills",
-      "mindfulnessDesc": "Defusion and Expansion unhook you from thoughts and make room for feelings.",
+      "mindfulnessDesc": "Defusion and Acceptance unhook you from thoughts and make room for feelings.",
       "valuesGroup": "Values and action",
       "valuesDesc": "Connecting with what matters most provides direction. Committed action puts it into practice.",
       "continue": "Got it"
@@ -193,10 +199,10 @@
     "cancel": "Cancel"
   },
   "expansion": {
-    "listTitle": "Expansion log",
+    "listTitle": "Acceptance log",
     "listSubtitle": "A record of times you made room for difficult feelings.",
     "urgeSurfingTitle": "Urge surfing log",
-    "noLogs": "No entries yet. Use expansion when a difficult emotion or sensation is present.",
+    "noLogs": "No entries yet. Use acceptance when a difficult emotion or sensation is present.",
     "noUrgeLogs": "No urge surfing entries yet. Try it when an urge or craving shows up.",
     "newTitle": "Make room for a feeling",
     "newSubtitle": "Stop fighting the feeling. Make space for it instead.",
@@ -220,7 +226,7 @@
     "clean": "Clean - the original feeling, as it is",
     "dirty": "Dirty - I'm adding struggle on top of it",
     "techniqueLabel": "Choose a technique",
-    "techniqueHint": "New to this? Four-Step Expansion is the core practice.",
+    "techniqueHint": "New to this? TAME It with Kindness is the core practice.",
     "intensityAfterLabel": "How intense is it now?",
     "intensityAfterHint": "The goal is not to eliminate the feeling - making room is enough.",
     "notesLabel": "Anything to note? (optional)",
@@ -238,25 +244,25 @@
       "after": "After & notes"
     },
     "techniques": {
-      "fourStepExpansion": "Four-Step Expansion",
+      "fourStepExpansion": "TAME It with Kindness",
       "acceptanceSelfTalk": "Acceptance self-talk",
       "acceptanceImagery": "Acceptance imagery"
     },
     "techniqueDescriptions": {
-      "fourStepExpansion": "Observe → Breathe → Create space → Allow. The core expansion practice from the book.",
+      "fourStepExpansion": "Take note → Allow → Make room → Expand awareness — with kindness. The core acceptance practice from the book.",
       "acceptanceSelfTalk": "Speak to the feeling with compassion: \"It's okay to feel this.\" Let the words soften the resistance.",
       "acceptanceImagery": "Imagine the feeling as an object - its shape, color, texture. Watch it shift when you stop fighting."
     },
     "fourStepGuide": {
-      "title": "The Four Steps",
-      "step1Title": "1. Observe",
-      "step1Body": "Notice the sensation. Where is it in your body? What shape is it? What is its weight and temperature?",
-      "step2Title": "2. Breathe",
-      "step2Body": "Breathe slowly into the area where you feel it most. Each breath, you're breathing into it - not away from it.",
-      "step3Title": "3. Create space",
-      "step3Body": "Imagine space opening up around the sensation. It can be there - it doesn't have to take up the whole room.",
-      "step4Title": "4. Allow",
-      "step4Body": "Let it be there. You don't have to like it, want it, or approve of it. Just let it exist without fighting."
+      "title": "TAME It with Kindness",
+      "step1Title": "1. Take note",
+      "step1Body": "Notice and name what's here: \"I'm noticing anxiety.\" Locate where the feeling sits in your body.",
+      "step2Title": "2. Allow",
+      "step2Body": "Give the feeling permission to be here, even though you don't like it. Stop trying to push it away.",
+      "step3Title": "3. Make room",
+      "step3Body": "Breathe into it and open up around it. Place a hand where you feel it most, as if breathing warmth and kindness into the feeling.",
+      "step4Title": "4. Expand awareness",
+      "step4Body": "Keep the feeling in your awareness and, at the same time, broaden your focus to the world around you — what you can see, hear, and do."
     },
     "intensityDrop": "Intensity dropped from {{before}} to {{after}}.",
     "noIntensityDrop": "Intensity stayed at {{after}}. Making room is the goal - not eliminating the feeling.",
@@ -273,7 +279,7 @@
       "triggerPlaceholder": "e.g. stress, boredom, a specific situation",
       "triggerHint": "Optional. What happened just before the urge appeared?",
       "observeTitle": "Surfing the wave",
-      "observeBody": "Urges are like ocean waves - they rise, peak, and fall. Your job is to surf, not to resist.\n\nNotice where the urge lives in your body. Breathe. Watch it rise. It will peak and then subside.",
+      "observeBody": "This is TAME applied to urges: Take note of the urge, Allow it, Make room for it, and Expand your awareness.\n\nUrges are like ocean waves - they rise, peak, and fall. Your job is to surf, not to resist.\n\nNotice where the urge lives in your body. Breathe. Watch it rise. It will peak and then subside.",
       "peakLabel": "Peak intensity (0–100)",
       "peakHint": "Rate the urge at its strongest point.",
       "actedOnLabel": "Did you act on the urge?",
@@ -340,7 +346,7 @@
       "noticeFiveThings": "5 things you see · 4 you hear · 3 you feel · 1 you smell or taste. Takes about 60 seconds.",
       "mindfulActivity": "Bring full attention to whatever you're already doing - eating, walking, washing up. No extra time needed.",
       "tenDeepBreaths": "Ten slow, deliberate breaths. Notice the physical sensation of each one. Simple and effective anywhere.",
-      "dropAnchor": "Acknowledge · Connect with body · Engage. A three-step grounding practice for when you feel pulled off course.",
+      "dropAnchor": "Acknowledge · Come back to your body · Engage. A three-step grounding practice for when you feel pulled off course.",
       "bodyScan": "A slow, mindful scan from head to toe. Notice sensations without trying to change anything."
     },
     "noticeFiveGuide": {
@@ -476,13 +482,21 @@
   },
   "program": {
     "startTitle": "Start the ACT program",
-    "startDescription": "A guided four-week path: notice your choice points, be present, open up, and do what matters.",
+    "startDescription": "A guided path through four phases — notice your choice points, be present, open up, and do what matters. Go at your own pace.",
     "startCta": "Start the program",
     "dismissStartLabel": "Dismiss program invitation",
     "heroTitle": "ACT program",
-    "weekProgress": "Week {{current}} of {{total}}",
-    "weekTasksDone": "{{done}}/{{total}} this week",
-    "otherWeeks": "Other weeks",
+    "milestonesLabel": "This phase",
+    "practiceLabel": "Today's practice",
+    "noDailyPractice": "No daily task this phase — take your time with the step above.",
+    "advance": "Advance to next phase",
+    "advanceEarlyConfirmTitle": "Advance anyway?",
+    "advanceEarlyConfirmBody": "You haven't finished this phase's steps yet. Move on anyway?",
+    "advanceConfirm": "Advance",
+    "advanceCancel": "Not yet",
+    "graduateCta": "Finish the program",
+    "ready": "You've finished this phase — ready for the next?",
+    "manageLabel": "Manage program",
     "abandon": "Leave the program",
     "abandonTitle": "Leave the ACT program?",
     "abandonDescription": "Your logged practices stay saved. You can start the program again any time.",
@@ -501,22 +515,39 @@
     "statExpansion_other": "{{count}} feelings made room for",
     "statActions": "{{count}} committed action",
     "statActions_other": "{{count}} committed actions",
-    "weeks": {
-      "foundation": "Foundation",
-      "bePresent": "Be present",
-      "openUp": "Open up",
-      "doWhatMatters": "Do what matters"
+    "phases": {
+      "foundation": {
+        "title": "Build a foundation",
+        "sub": "Choice Point & Drop Anchor",
+        "description": "Notice what hooks you, map your toward and away moves, and learn to drop anchor when you're pulled off course."
+      },
+      "bePresent": {
+        "title": "Be present",
+        "sub": "Contact the present moment",
+        "description": "Come back to the here and now — through your senses, your body, and the part of you that simply notices."
+      },
+      "openUp": {
+        "title": "Open up",
+        "sub": "Defusion & acceptance",
+        "description": "Unhook from sticky thoughts and make room for difficult feelings instead of fighting them."
+      },
+      "doWhatMatters": {
+        "title": "Do what matters",
+        "sub": "Values & committed action",
+        "description": "Clarify what you care about and take small, values-guided steps — even when it's uncomfortable."
+      }
     },
     "tasks": {
-      "dropAnchorDays": "Drop anchor (ACE) on several days",
-      "mapChoicePoint": "Map your choice point",
-      "bePresentDays": "Come back to the present on several days",
-      "observeSelf": "Meet your observing self",
-      "unhookThoughtDays": "Unhook from a thought on several days",
-      "makeRoomOrSurf": "Make room for a feeling, or surf an urge",
-      "valuesStepDays": "Take a values-guided step on several days",
-      "clarifyValue": "Clarify what matters to you",
-      "buildActionPlan": "Set a committed-action plan"
+      "mapChoicePoint": "Map your first choice point",
+      "dropAnchorDaily": "Drop anchor today",
+      "observeSelfOnce": "Do your first observing-self session",
+      "bePresentDaily": "Connect with the present today",
+      "unhookOnce": "Do your first defusion",
+      "makeRoomOnce": "Make room for a feeling once",
+      "unhookOrMakeRoomDaily": "Unhook or make room today",
+      "clarifyValue": "Clarify a value",
+      "commitActionOnce": "Take your first committed action",
+      "valuesStepDaily": "Take a values-guided step today"
     }
   },
   "choicePoint": {
@@ -555,9 +586,9 @@
     "descriptionPlaceholder": "Anything that helps you remember why and how",
     "targetDateLabel": "Target date (optional)",
     "targetDatePlaceholder": "YYYY-MM-DD",
-    "obstaclesLabel": "What might get in the way?",
-    "obstaclesPlaceholder": "Thoughts, feelings, situations, competing priorities",
-    "obstaclesHint": "Anticipating obstacles makes you more likely to follow through.",
+    "obstaclesLabel": "What might get in the way? (HARD barriers)",
+    "obstaclesPlaceholder": "e.g. Hooked: \"I'll fail\" → unhook. Avoiding: dread → make room.",
+    "obstaclesHint": "Name the HARD barriers and your answer to each: Hooked by thoughts (unhook), Avoiding discomfort (make room), Remoteness from values (reconnect to your why), Doubting yourself (be kind to yourself).",
     "saveLog": "Save",
     "saving": "Saving…",
     "saveProblem": "Could not save",
@@ -597,7 +628,7 @@
     "title": "Drop anchor",
     "intro": "When you feel pulled off course, drop anchor to steady yourself. Repeat the cycle as many times as you need.",
     "acknowledge": "Acknowledge your thoughts and feelings. Silently name what's here: \"I'm noticing anxiety.\"",
-    "connect": "Connect with your body. Press your feet into the floor, straighten your spine, and breathe.",
+    "connect": "Come back to your body. Press your feet into the floor, straighten your spine, and breathe.",
     "engage": "Engage with the world. Notice where you are, what you can see and hear, and refocus.",
     "logCta": "Log this practice"
   }

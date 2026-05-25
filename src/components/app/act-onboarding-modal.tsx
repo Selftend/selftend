@@ -103,6 +103,19 @@ export function ActInfo({
       </Text>
 
       <Card className="border-act/30 bg-act/5">
+        <CardContent className="gap-2 pt-6">
+          <CardTitle className="text-center">{t("onboarding.choicePoint.title")}</CardTitle>
+          <Text variant="muted" className="text-center">
+            {t("onboarding.choicePoint.body")}
+          </Text>
+          <Text className="mt-1 text-sm font-semibold">{t("onboarding.choicePoint.toward")}</Text>
+          <Text variant="muted" className="text-sm">
+            {t("onboarding.choicePoint.away")}
+          </Text>
+        </CardContent>
+      </Card>
+
+      <Card className="border-act/30 bg-act/5">
         <CardContent className="items-center gap-2 pt-6">
           <Image
             source={actValuesHeart}

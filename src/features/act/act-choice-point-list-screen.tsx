@@ -11,15 +11,21 @@ import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useChoicePoints } from "@/src/features/act/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function ActChoicePointListScreen() {
   const { t } = useTranslation("act");
   const { user } = useSession();
+  const { selectedDate } = useSelectedDate();
   const { data: choicePoints, isLoading } = useChoicePoints(user?.id ?? null);
 
   if (isLoading) {
     return <ScreenLoading title={t("choicePoint.listTitle")} />;
   }
+
+  const dayChoicePoints = (choicePoints ?? []).filter(
+    (cp) => toLocalDateKey(cp.createdAt) === selectedDate,
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -38,11 +44,11 @@ export default function ActChoicePointListScreen() {
             <Text>{t("choicePoint.newCta")}</Text>
           </Button>
 
-          {!choicePoints || choicePoints.length === 0 ? (
+          {dayChoicePoints.length === 0 ? (
             <Text variant="muted">{t("choicePoint.empty")}</Text>
           ) : (
             <View className="gap-2">
-              {choicePoints.map((cp) => (
+              {dayChoicePoints.map((cp) => (
                 <Pressable
                   key={cp.id}
                   accessibilityRole="button"

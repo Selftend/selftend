@@ -23,6 +23,7 @@ import {
   type ExpansionTechnique,
 } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
+import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ const STEP_ORDER: Step[] = ["emotion", "body", "struggle", "technique", "after"]
 export default function ActExpansionNewScreen() {
   const { t } = useTranslation(["act", "common"]);
   const { user } = useSession();
+  const { selectedDate } = useSelectedDate();
   const saveMutation = useSaveExpansionLog(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
 
@@ -69,6 +71,7 @@ export default function ActExpansionNewScreen() {
         techniqueUsed,
         intensityAfter,
         notes: notes.trim(),
+        createdAt: loggedAtForSelectedDate(selectedDate),
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.back();

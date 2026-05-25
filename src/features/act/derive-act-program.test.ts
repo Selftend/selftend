@@ -2,28 +2,10 @@ import {
   deriveActProgram,
   type DeriveActProgramInput,
 } from "@/src/features/act/derive-act-program";
-import type { ConnectionTechnique } from "@/src/features/act/types";
 
-function connectionLog(technique: ConnectionTechnique, createdAt: string) {
-  return {
-    id: createdAt,
-    userId: "u1",
-    technique,
-    activityContext: "",
-    noticesFromSenses: "",
-    durationMinutes: null,
-    moodAfter: null,
-    notes: "",
-    createdAt,
-    updatedAt: createdAt,
-  } satisfies DeriveActProgramInput["connectionLogs"][number];
-}
+const START = "2026-05-01T00:00:00.000Z";
 
-function taskCurrent(view: ReturnType<typeof deriveActProgram>, weekIndex: number, key: string) {
-  return view.weeks[weekIndex].tasks.find((t) => t.key === key)!.current;
-}
-
-const empty: Omit<DeriveActProgramInput, "startedAt" | "completedAt" | "now"> = {
+const emptyData = {
   choicePoints: [],
   valueEntries: [],
   connectionLogs: [],
@@ -35,87 +17,183 @@ const empty: Omit<DeriveActProgramInput, "startedAt" | "completedAt" | "now"> = 
   actionSteps: [],
 };
 
+function input(overrides: Partial<DeriveActProgramInput> = {}): DeriveActProgramInput {
+  return {
+    startedAt: START,
+    completedAt: null,
+    selectedDate: "2026-05-09",
+    phaseIndex: 0,
+    phaseStartedAt: START,
+    ...emptyData,
+    ...overrides,
+  };
+}
+
 describe("deriveActProgram", () => {
-  it("returns not_started when there is no start date", () => {
-    const view = deriveActProgram({
-      startedAt: null,
-      completedAt: null,
-      now: Date.now(),
-      ...empty,
-    });
-    expect(view.status).toBe("not_started");
-    expect(view.weeks).toEqual([]);
-    expect(view.totalWeeks).toBe(4);
+  it("reports not_started when there is no start timestamp", () => {
+    const result = deriveActProgram(input({ startedAt: null }));
+    expect(result.status).toBe("not_started");
   });
 
-  it("marks the foundation choice-point task done after one map is created since start", () => {
-    const startedAt = "2026-05-01T00:00:00.000Z";
-    const view = deriveActProgram({
-      startedAt,
-      completedAt: null,
-      now: new Date("2026-05-02T00:00:00.000Z").getTime(),
-      ...empty,
-      choicePoints: [
-        {
-          id: "cp1",
-          userId: "u1",
-          hooks: [],
-          awayMoves: [],
-          towardMoves: [],
-          notes: "",
-          createdAt: "2026-05-01T09:00:00.000Z",
-          updatedAt: "2026-05-01T09:00:00.000Z",
-        },
-      ],
-    });
-    const foundation = view.weeks[0];
-    const task = foundation.tasks.find((t) => t.key === "mapChoicePoint")!;
-    expect(task.current).toBe(1);
-    expect(task.done).toBe(true);
+  it("reports in_progress when started", () => {
+    expect(deriveActProgram(input()).status).toBe("in_progress");
   });
 
   it("reports graduated when completedAt is set", () => {
-    const view = deriveActProgram({
-      startedAt: "2026-05-01T00:00:00.000Z",
-      completedAt: "2026-05-28T00:00:00.000Z",
-      now: new Date("2026-05-28T00:00:00.000Z").getTime(),
-      ...empty,
-    });
-    expect(view.status).toBe("graduated");
+    const result = deriveActProgram(input({ completedAt: "2026-05-20T00:00:00Z" }));
+    expect(result.status).toBe("graduated");
   });
 
-  it("buckets drop-anchor logs to the Foundation daily, not the Be Present daily", () => {
-    const view = deriveActProgram({
-      startedAt: "2026-05-01T00:00:00.000Z",
-      completedAt: null,
-      now: new Date("2026-05-03T00:00:00.000Z").getTime(),
-      ...empty,
-      connectionLogs: [
-        connectionLog("dropAnchor", "2026-05-01T09:00:00.000Z"),
-        connectionLog("dropAnchor", "2026-05-02T09:00:00.000Z"),
-      ],
-    });
-    // Foundation week (0) dropAnchorDays counts both distinct days.
-    expect(taskCurrent(view, 0, "dropAnchorDays")).toBe(2);
-    // Be Present week (1) bePresentDays must NOT count drop-anchor logs.
-    expect(taskCurrent(view, 1, "bePresentDays")).toBe(0);
+  it("counts only data created at/after startedAt toward summaryStats", () => {
+    const before = {
+      id: "cp0",
+      userId: "u",
+      hooks: [],
+      awayMoves: [],
+      towardMoves: [],
+      notes: "",
+      createdAt: "2026-04-01T00:00:00Z",
+      updatedAt: "2026-04-01T00:00:00Z",
+    } as never;
+    const after = {
+      id: "cp1",
+      userId: "u",
+      hooks: [],
+      awayMoves: [],
+      towardMoves: [],
+      notes: "",
+      createdAt: "2026-05-02T00:00:00Z",
+      updatedAt: "2026-05-02T00:00:00Z",
+    } as never;
+    const result = deriveActProgram(input({ choicePoints: [before, after] }));
+    expect(result.summaryStats.choicePoints).toBe(1);
   });
 
-  it("buckets noticing logs to the Be Present daily and counts distinct days only", () => {
-    const view = deriveActProgram({
-      startedAt: "2026-05-01T00:00:00.000Z",
-      completedAt: null,
-      now: new Date("2026-05-03T00:00:00.000Z").getTime(),
-      ...empty,
-      connectionLogs: [
-        // two on the same day -> counts as one distinct day
-        connectionLog("noticeFiveThings", "2026-05-01T08:00:00.000Z"),
-        connectionLog("mindfulActivity", "2026-05-01T20:00:00.000Z"),
-        connectionLog("bodyScan", "2026-05-02T08:00:00.000Z"),
-      ],
-    });
-    expect(taskCurrent(view, 1, "bePresentDays")).toBe(2);
-    // None of these are drop anchor, so the Foundation daily stays at 0.
-    expect(taskCurrent(view, 0, "dropAnchorDays")).toBe(0);
+  // ── Phase-based view ──────────────────────────────────────────────────────
+
+  it("phaseReady is true when all milestones are satisfied since phaseStartedAt", () => {
+    const PHASE_START = "2026-05-05T00:00:00.000Z";
+    const result = deriveActProgram(
+      input({
+        phaseIndex: 0,
+        phaseStartedAt: PHASE_START,
+        choicePoints: [
+          {
+            id: "cp1",
+            userId: "u",
+            hooks: [],
+            awayMoves: [],
+            towardMoves: [],
+            notes: "",
+            createdAt: "2026-05-06T00:00:00Z",
+            updatedAt: "2026-05-06T00:00:00Z",
+          },
+        ] as never,
+      }),
+    );
+    expect(result.phaseReady).toBe(true);
+    expect(result.phase).not.toBeNull();
+    expect(result.phase!.milestones.every((m) => m.done)).toBe(true);
+  });
+
+  it("phaseReady is false when a milestone action is dated before phaseStartedAt", () => {
+    const PHASE_START = "2026-05-05T00:00:00.000Z";
+    const result = deriveActProgram(
+      input({
+        phaseIndex: 0,
+        phaseStartedAt: PHASE_START,
+        // choice point created BEFORE phase entry — must not count
+        choicePoints: [
+          {
+            id: "cp0",
+            userId: "u",
+            hooks: [],
+            awayMoves: [],
+            towardMoves: [],
+            notes: "",
+            createdAt: "2026-05-03T00:00:00Z",
+            updatedAt: "2026-05-03T00:00:00Z",
+          },
+        ] as never,
+      }),
+    );
+    expect(result.phaseReady).toBe(false);
+    const mapChoicePoint = result.phase!.milestones.find((m) => m.key === "mapChoicePoint")!;
+    expect(mapChoicePoint.done).toBe(false);
+  });
+
+  it("dailyPractice is done only when an entity exists on selectedDate (foundation: dropAnchor)", () => {
+    const selected = "2026-05-09";
+    const done = deriveActProgram(
+      input({
+        phaseIndex: 0,
+        selectedDate: selected,
+        connectionLogs: [
+          {
+            id: "cl1",
+            userId: "u",
+            technique: "dropAnchor",
+            activityContext: "",
+            noticesFromSenses: "",
+            durationMinutes: null,
+            moodAfter: null,
+            notes: "",
+            createdAt: `${selected}T10:00:00Z`,
+            updatedAt: `${selected}T10:00:00Z`,
+          },
+        ] as never,
+      }),
+    );
+    expect(done.phase!.dailyPractice!.done).toBe(true);
+
+    const notDone = deriveActProgram(
+      input({
+        phaseIndex: 0,
+        selectedDate: selected,
+        connectionLogs: [
+          {
+            id: "cl2",
+            userId: "u",
+            technique: "dropAnchor",
+            activityContext: "",
+            noticesFromSenses: "",
+            durationMinutes: null,
+            moodAfter: null,
+            notes: "",
+            createdAt: "2026-05-08T10:00:00Z",
+            updatedAt: "2026-05-08T10:00:00Z",
+          },
+        ] as never,
+      }),
+    );
+    expect(notDone.phase!.dailyPractice!.done).toBe(false);
+  });
+
+  it("isLastPhase is true at phaseIndex 3 (doWhatMatters)", () => {
+    const result = deriveActProgram(input({ phaseIndex: 3 }));
+    expect(result.isLastPhase).toBe(true);
+    expect(result.phaseIndex).toBe(3);
+    expect(result.phase!.key).toBe("doWhatMatters");
+  });
+
+  it("clamps phaseIndex within [0, 3]", () => {
+    const low = deriveActProgram(input({ phaseIndex: -5 }));
+    expect(low.phaseIndex).toBe(0);
+    const high = deriveActProgram(input({ phaseIndex: 99 }));
+    expect(high.phaseIndex).toBe(3);
+  });
+
+  it("phase is null when status is not_started", () => {
+    const result = deriveActProgram(input({ startedAt: null }));
+    expect(result.status).toBe("not_started");
+    expect(result.phase).toBeNull();
+    expect(result.phaseReady).toBe(false);
+    expect(result.totalPhases).toBe(4);
+  });
+
+  it("phase is null when graduated (completedAt set)", () => {
+    const result = deriveActProgram(input({ completedAt: "2026-05-20T00:00:00Z" }));
+    expect(result.status).toBe("graduated");
+    expect(result.phase).toBeNull();
   });
 });

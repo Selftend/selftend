@@ -188,6 +188,7 @@ export async function saveDefusionLog(userId: string, input: DefusionLogInput) {
       defused_version: input.defusedVersion?.trim() ?? "",
       fusion_level_after: input.fusionLevelAfter ?? null,
       notes: input.notes?.trim() ?? "",
+      ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
     .single();
@@ -282,6 +283,7 @@ export async function saveExpansionLog(userId: string, input: ExpansionLogInput)
       technique_used: input.techniqueUsed,
       intensity_after: input.intensityAfter ?? null,
       notes: input.notes?.trim() ?? "",
+      ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
     .single();
@@ -356,6 +358,7 @@ export async function saveUrgeSurfLog(userId: string, input: UrgeSurfLogInput) {
       surfing_notes: input.surfingNotes?.trim() ?? "",
       urge_acted_on: input.urgeActedOn ?? false,
       completed_at: input.completedAt ?? new Date().toISOString(),
+      ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
     .single();
@@ -444,6 +447,7 @@ export async function saveConnectionLog(userId: string, input: ConnectionLogInpu
       duration_minutes: input.durationMinutes ?? null,
       mood_after: input.moodAfter ?? null,
       notes: input.notes?.trim() ?? "",
+      ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
     .single();
@@ -529,6 +533,7 @@ export async function saveObservingSelfSession(userId: string, input: ObservingS
       duration_minutes: input.durationMinutes ?? null,
       mood_after: input.moodAfter ?? null,
       notes: input.notes?.trim() ?? "",
+      ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
     .single();
@@ -970,6 +975,7 @@ export async function saveChoicePoint(userId: string, input: ChoicePointInput) {
       away_moves: input.awayMoves ?? [],
       toward_moves: input.towardMoves ?? [],
       notes: input.notes?.trim() ?? "",
+      ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
     .single();

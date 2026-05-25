@@ -78,6 +78,7 @@ export interface DefusionLogInput {
   defusedVersion?: string;
   fusionLevelAfter?: number | null;
   notes?: string;
+  createdAt?: string;
 }
 
 export const DEFUSION_TECHNIQUES: DefusionTechnique[] = [
@@ -145,6 +146,7 @@ export interface ExpansionLogInput {
   techniqueUsed: ExpansionTechnique;
   intensityAfter?: number | null;
   notes?: string;
+  createdAt?: string;
 }
 
 export interface UrgeSurfLog {
@@ -167,6 +169,7 @@ export interface UrgeSurfLogInput {
   surfingNotes?: string;
   urgeActedOn?: boolean;
   completedAt?: string;
+  createdAt?: string;
 }
 
 export type ConnectionTechnique =
@@ -196,6 +199,7 @@ export interface ConnectionLogInput {
   durationMinutes?: number | null;
   moodAfter?: number | null;
   notes?: string;
+  createdAt?: string;
 }
 
 export type ObservingTechnique = "tenDeepBreaths" | "observingFromBoard" | "bodyAwareness";
@@ -218,6 +222,7 @@ export interface ObservingSelfSessionInput {
   durationMinutes?: number | null;
   moodAfter?: number | null;
   notes?: string;
+  createdAt?: string;
 }
 
 export interface ValueEntry {
@@ -363,4 +368,5 @@ export interface ChoicePointInput {
   awayMoves?: string[];
   towardMoves?: string[];
   notes?: string;
+  createdAt?: string;
 }

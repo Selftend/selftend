@@ -19,6 +19,7 @@ import { NumberRating } from "@/src/components/app/number-rating";
 import { useSaveObservingSelfSession } from "@/src/features/act/queries";
 import { OBSERVING_TECHNIQUES, type ObservingTechnique } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
+import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ const GUIDE_KEY: Record<
 export default function ActObservingSelfNewScreen() {
   const { t } = useTranslation(["act", "common"]);
   const { user } = useSession();
+  const { selectedDate } = useSelectedDate();
   const saveMutation = useSaveObservingSelfSession(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
 
@@ -66,6 +68,7 @@ export default function ActObservingSelfNewScreen() {
         whatWasObserved: whatWasObserved.trim(),
         moodAfter,
         notes: notes.trim(),
+        createdAt: loggedAtForSelectedDate(selectedDate),
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.back();

@@ -3,6 +3,7 @@ import { isDatedRoute } from "@/src/features/navigation/dated-routes";
 describe("isDatedRoute", () => {
   it.each([
     "/",
+    "/modules/act",
     "/modules/cbt",
     "/tools/mood-tracker",
     "/tools/mood-tracker/new",
@@ -22,6 +23,11 @@ describe("isDatedRoute", () => {
     "/modules/cbt/anger/new",
     "/modules/cbt/worry",
     "/modules/cbt/worry/new",
+    "/modules/act/defusion",
+    "/modules/act/expansion",
+    "/modules/act/connection",
+    "/modules/act/observing-self",
+    "/modules/act/choice-point",
   ])("is dated: %s", (p) => expect(isDatedRoute(p)).toBe(true));
 
   it.each([
@@ -30,6 +36,8 @@ describe("isDatedRoute", () => {
     "/modules/cbt/values",
     "/modules/cbt/beliefs",
     "/modules/cbt/recovery",
+    "/modules/act/committed-action", // long-lived commitments structure
+    "/modules/act/values", // long-lived values structure
     "/tools/breathing",
     "/tools/meditation",
     "/tools/habits/history", // full chronological log, not a single-day view

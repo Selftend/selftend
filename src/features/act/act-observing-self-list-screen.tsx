@@ -12,15 +12,21 @@ import { useObservingSelfSessions } from "@/src/features/act/queries";
 import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function ActObservingSelfListScreen() {
   const { t } = useTranslation("act");
   const { user } = useSession();
+  const { selectedDate } = useSelectedDate();
   const { data: sessions, isLoading } = useObservingSelfSessions(user?.id ?? null);
 
   if (isLoading) {
     return <ScreenLoading title={t("observingSelf.listTitle")} />;
   }
+
+  const daySessions = (sessions ?? []).filter(
+    (session) => toLocalDateKey(session.createdAt) === selectedDate,
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -46,11 +52,11 @@ export default function ActObservingSelfListScreen() {
             ]}
           />
 
-          {!sessions || sessions.length === 0 ? (
+          {daySessions.length === 0 ? (
             <Text variant="muted">{t("observingSelf.noLogs")}</Text>
           ) : (
             <View className="gap-2">
-              {sessions.map((session) => (
+              {daySessions.map((session) => (
                 <Pressable
                   key={session.id}
                   accessibilityRole="button"

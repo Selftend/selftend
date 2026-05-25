@@ -19,6 +19,7 @@ import { NumberRating } from "@/src/components/app/number-rating";
 import { useSaveConnectionLog } from "@/src/features/act/queries";
 import { CONNECTION_TECHNIQUES, type ConnectionTechnique } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
+import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,7 @@ const STEP_ORDER: Step[] = ["technique", "exercise", "notices", "after"];
 export default function ActConnectionNewScreen() {
   const { t } = useTranslation(["act", "common"]);
   const { user } = useSession();
+  const { selectedDate } = useSelectedDate();
   const saveMutation = useSaveConnectionLog(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
 
@@ -59,6 +61,7 @@ export default function ActConnectionNewScreen() {
         noticesFromSenses: noticesFromSenses.trim(),
         moodAfter,
         notes: notes.trim(),
+        createdAt: loggedAtForSelectedDate(selectedDate),
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.back();

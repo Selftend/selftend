@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-
 import {
   useAllActionSteps,
   useChoicePoints,
@@ -14,6 +12,7 @@ import {
 import { deriveActProgram, type ActProgramView } from "@/src/features/act/derive-act-program";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export interface UseActProgramResult {
   program: ActProgramView;
@@ -23,6 +22,7 @@ export interface UseActProgramResult {
   showProgramPrompt: () => void;
   abandonProgram: () => void;
   replayProgram: () => void;
+  advancePhase: () => void;
   promptDismissedAt: string | null;
   isUpdating: boolean;
 }
@@ -30,6 +30,7 @@ export interface UseActProgramResult {
 export function useActProgram(userId: string | null): UseActProgramResult {
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
   const updatePreferences = useUpdateUserPreferences(userId);
+  const { selectedDate } = useSelectedDate();
 
   const choicePoints = useChoicePoints(userId);
   const valueEntries = useValueEntries(userId);
@@ -44,7 +45,10 @@ export function useActProgram(userId: string | null): UseActProgramResult {
   const program = deriveActProgram({
     startedAt: preferences?.actProgramStartedAt ?? null,
     completedAt: preferences?.actProgramCompletedAt ?? null,
-    now: Date.now(),
+    selectedDate,
+    phaseIndex: preferences?.actProgramPhaseIndex ?? 0,
+    phaseStartedAt:
+      preferences?.actProgramPhaseStartedAt ?? preferences?.actProgramStartedAt ?? null,
     choicePoints: choicePoints.data ?? [],
     valueEntries: valueEntries.data ?? [],
     connectionLogs: connectionLogs.data ?? [],
@@ -56,22 +60,21 @@ export function useActProgram(userId: string | null): UseActProgramResult {
     actionSteps: actionSteps.data ?? [],
   });
 
-  useEffect(() => {
+  const advancePhase = () => {
     if (!preferences) return;
-    if (updatePreferences.isPending) return;
-    if (preferences.actProgramCompletedAt) return;
-    if (program.status === "in_progress" && program.allWeeksComplete) {
-      void updatePreferences
-        .mutateAsync(
-          mergeUserPreferences(preferences, {
-            actProgramCompletedAt: new Date().toISOString(),
-          }),
-        )
-        .catch(() => undefined);
-    }
-    // updatePreferences is stable; intentionally excluded to avoid re-fires.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preferences, program.status, program.allWeeksComplete]);
+    const idx = preferences.actProgramPhaseIndex ?? 0;
+    const last = program.totalPhases - 1;
+    void updatePreferences
+      .mutateAsync(
+        idx >= last
+          ? mergeUserPreferences(preferences, { actProgramCompletedAt: new Date().toISOString() })
+          : mergeUserPreferences(preferences, {
+              actProgramPhaseIndex: idx + 1,
+              actProgramPhaseStartedAt: new Date().toISOString(),
+            }),
+      )
+      .catch(() => undefined);
+  };
 
   const startProgram = () => {
     if (!preferences) return;
@@ -82,6 +85,8 @@ export function useActProgram(userId: string | null): UseActProgramResult {
           actProgramCompletedAt: null,
           actProgramPromptDismissedAt: null,
           actOnboardingCompleted: true,
+          actProgramPhaseIndex: 0,
+          actProgramPhaseStartedAt: new Date().toISOString(),
         }),
       )
       .catch(() => undefined);
@@ -126,6 +131,8 @@ export function useActProgram(userId: string | null): UseActProgramResult {
           actProgramStartedAt: new Date().toISOString(),
           actProgramCompletedAt: null,
           actProgramPromptDismissedAt: null,
+          actProgramPhaseIndex: 0,
+          actProgramPhaseStartedAt: new Date().toISOString(),
         }),
       )
       .catch(() => undefined);
@@ -139,6 +146,7 @@ export function useActProgram(userId: string | null): UseActProgramResult {
     showProgramPrompt,
     abandonProgram,
     replayProgram,
+    advancePhase,
     promptDismissedAt: preferences?.actProgramPromptDismissedAt ?? null,
     isUpdating: updatePreferences.isPending,
   };

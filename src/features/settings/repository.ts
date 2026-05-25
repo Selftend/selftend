@@ -48,6 +48,8 @@ interface UserPreferenceRow {
   act_program_started_at: string | null;
   act_program_completed_at: string | null;
   act_program_prompt_dismissed_at: string | null;
+  act_program_phase_index: number | null;
+  act_program_phase_started_at: string | null;
   privacy_policy_accepted_at: string | null;
   terms_accepted_at: string | null;
   policy_version_accepted: string | null;
@@ -105,6 +107,8 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     actProgramStartedAt: row.act_program_started_at ?? null,
     actProgramCompletedAt: row.act_program_completed_at ?? null,
     actProgramPromptDismissedAt: row.act_program_prompt_dismissed_at ?? null,
+    actProgramPhaseIndex: row.act_program_phase_index ?? 0,
+    actProgramPhaseStartedAt: row.act_program_phase_started_at ?? null,
     privacyPolicyAcceptedAt: row.privacy_policy_accepted_at ?? null,
     termsAcceptedAt: row.terms_accepted_at ?? null,
     policyVersionAccepted: row.policy_version_accepted ?? null,
@@ -145,6 +149,8 @@ function omitOptionalPreferenceColumns<T extends Record<string, unknown>>(payloa
   delete fallbackPayload.act_program_started_at;
   delete fallbackPayload.act_program_completed_at;
   delete fallbackPayload.act_program_prompt_dismissed_at;
+  delete fallbackPayload.act_program_phase_index;
+  delete fallbackPayload.act_program_phase_started_at;
   delete fallbackPayload.shown_button_tours;
 
   return fallbackPayload;
@@ -206,6 +212,8 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     act_program_started_at: preferences.actProgramStartedAt,
     act_program_completed_at: preferences.actProgramCompletedAt,
     act_program_prompt_dismissed_at: preferences.actProgramPromptDismissedAt,
+    act_program_phase_index: preferences.actProgramPhaseIndex,
+    act_program_phase_started_at: preferences.actProgramPhaseStartedAt,
     privacy_policy_accepted_at: preferences.privacyPolicyAcceptedAt,
     terms_accepted_at: preferences.termsAcceptedAt,
     policy_version_accepted: preferences.policyVersionAccepted,

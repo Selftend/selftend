@@ -18,6 +18,7 @@ import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { useUrgeSurfLogs, useSaveUrgeSurfLog } from "@/src/features/act/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +41,7 @@ function UrgeSurfHistoryItem({ urge, date }: { urge: string; date: string }) {
 export default function ActUrgeSurfScreen() {
   const { t } = useTranslation(["act", "common"]);
   const { user } = useSession();
+  const { selectedDate } = useSelectedDate();
   const saveMutation = useSaveUrgeSurfLog(user?.id ?? null);
   const { data: logs } = useUrgeSurfLogs(user?.id ?? null, 5);
   const showToast = useToastStore((state) => state.showToast);
@@ -89,6 +91,7 @@ export default function ActUrgeSurfScreen() {
         urgeActedOn,
         surfingNotes: surfingNotes.trim(),
         completedAt: new Date().toISOString(),
+        createdAt: loggedAtForSelectedDate(selectedDate),
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       setMode("list");

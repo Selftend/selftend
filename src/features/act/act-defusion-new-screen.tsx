@@ -25,6 +25,7 @@ import {
   type ThoughtCategory,
 } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
+import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ const STEP_ORDER: Step[] = ["thought", "category", "before", "technique", "after
 export default function ActDefusionNewScreen() {
   const { t } = useTranslation(["act", "common"]);
   const { user } = useSession();
+  const { selectedDate } = useSelectedDate();
   const saveMutation = useSaveDefusionLog(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
 
@@ -69,6 +71,7 @@ export default function ActDefusionNewScreen() {
         defusedVersion: defusedVersion.trim(),
         fusionLevelAfter,
         notes: notes.trim(),
+        createdAt: loggedAtForSelectedDate(selectedDate),
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.back();

@@ -1,10 +1,9 @@
 import {
-  atOrAfter,
   ACT_PROGRAM,
+  atOrAfter,
   type ActProgramSignalData,
 } from "@/src/features/act/program-definition";
 import type { Href } from "expo-router";
-
 import type {
   ChoicePoint,
   CommittedAction,
@@ -15,7 +14,6 @@ import type {
   ObservingSelfSession,
   UrgeSurfLog,
   ValueEntry,
-  ProgramPillar,
 } from "@/src/features/act/types";
 
 export type ProgramStatus = "not_started" | "in_progress" | "graduated";
@@ -23,7 +21,9 @@ export type ProgramStatus = "not_started" | "in_progress" | "graduated";
 export interface DeriveActProgramInput {
   startedAt: string | null;
   completedAt: string | null;
-  now: number;
+  selectedDate: string;
+  phaseIndex: number;
+  phaseStartedAt: string | null;
   choicePoints: ChoicePoint[];
   valueEntries: ValueEntry[];
   connectionLogs: ConnectionLog[];
@@ -44,12 +44,13 @@ export interface ProgramTaskView {
   done: boolean;
 }
 
-export interface ProgramWeekView {
+export interface CurrentActPhaseView {
   key: string;
   themeLabelKey: string;
-  pillar: ProgramPillar;
-  tasks: ProgramTaskView[];
-  done: boolean;
+  themeSubKey: string;
+  themeDescKey: string;
+  milestones: ProgramTaskView[];
+  dailyPractice: ProgramTaskView | null;
 }
 
 export interface ActProgramSummaryStats {
@@ -62,97 +63,107 @@ export interface ActProgramSummaryStats {
 export interface ActProgramView {
   status: ProgramStatus;
   startedAt: string | null;
-  currentWeekIndex: number;
-  totalWeeks: number;
-  weeks: ProgramWeekView[];
-  weeksComplete: number;
-  allWeeksComplete: boolean;
+  phaseIndex: number;
+  totalPhases: number;
+  isLastPhase: boolean;
+  phase: CurrentActPhaseView | null;
+  phaseReady: boolean;
   summaryStats: ActProgramSummaryStats;
 }
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-export function deriveActProgram(inputData: DeriveActProgramInput): ActProgramView {
-  const { startedAt, completedAt, now } = inputData;
-  const totalWeeks = ACT_PROGRAM.length;
-
-  const emptyStats: ActProgramSummaryStats = {
-    choicePoints: 0,
-    defusionLogs: 0,
-    expansionLogs: 0,
-    committedActions: 0,
-  };
-
-  if (!startedAt) {
-    return {
-      status: "not_started",
-      startedAt: null,
-      currentWeekIndex: 0,
-      totalWeeks,
-      weeks: [],
-      weeksComplete: 0,
-      allWeeksComplete: false,
-      summaryStats: emptyStats,
-    };
-  }
-
-  const since = new Date(startedAt).getTime();
-  const signalData: ActProgramSignalData = {
+function buildSignalData(input: DeriveActProgramInput, since: number): ActProgramSignalData {
+  return {
     since,
-    choicePoints: inputData.choicePoints,
-    valueEntries: inputData.valueEntries,
-    connectionLogs: inputData.connectionLogs,
-    observingSessions: inputData.observingSessions,
-    defusionLogs: inputData.defusionLogs,
-    expansionLogs: inputData.expansionLogs,
-    urgeSurfLogs: inputData.urgeSurfLogs,
-    committedActions: inputData.committedActions,
-    actionSteps: inputData.actionSteps,
+    selectedDate: input.selectedDate,
+    choicePoints: input.choicePoints,
+    valueEntries: input.valueEntries,
+    connectionLogs: input.connectionLogs,
+    observingSessions: input.observingSessions,
+    defusionLogs: input.defusionLogs,
+    expansionLogs: input.expansionLogs,
+    urgeSurfLogs: input.urgeSurfLogs,
+    committedActions: input.committedActions,
+    actionSteps: input.actionSteps,
   };
+}
 
-  const weeks: ProgramWeekView[] = ACT_PROGRAM.map((week) => {
-    const tasks: ProgramTaskView[] = week.tasks.map((task) => {
-      const { current, target } = task.signal(signalData);
-      return {
-        key: task.key,
-        labelKey: task.labelKey,
-        route: task.route,
-        current,
-        target,
-        done: current >= target,
-      };
-    });
-    return {
-      key: week.key,
-      themeLabelKey: week.themeLabelKey,
-      pillar: week.pillar,
-      tasks,
-      done: tasks.every((t) => t.done),
-    };
-  });
-
-  const weeksComplete = weeks.filter((w) => w.done).length;
-  const allWeeksComplete = weeksComplete === totalWeeks;
-
-  const daysSinceStart = Math.floor((now - since) / MS_PER_DAY);
-  const currentWeekIndex = Math.min(Math.max(Math.floor(daysSinceStart / 7), 0), totalWeeks - 1);
-
+export function deriveActProgram(input: DeriveActProgramInput): ActProgramView {
+  const totalPhases = ACT_PROGRAM.length;
+  const startedSince = input.startedAt ? new Date(input.startedAt).getTime() : 0;
   const summaryStats: ActProgramSummaryStats = {
-    choicePoints: inputData.choicePoints.filter((c) => atOrAfter(c.createdAt, since)).length,
-    defusionLogs: inputData.defusionLogs.filter((d) => atOrAfter(d.createdAt, since)).length,
-    expansionLogs: inputData.expansionLogs.filter((e) => atOrAfter(e.createdAt, since)).length,
-    committedActions: inputData.committedActions.filter((a) => atOrAfter(a.createdAt, since))
+    choicePoints: input.choicePoints.filter((c) => atOrAfter(c.createdAt, startedSince)).length,
+    defusionLogs: input.defusionLogs.filter((d) => atOrAfter(d.createdAt, startedSince)).length,
+    expansionLogs: input.expansionLogs.filter((e) => atOrAfter(e.createdAt, startedSince)).length,
+    committedActions: input.committedActions.filter((a) => atOrAfter(a.createdAt, startedSince))
       .length,
   };
 
+  if (!input.startedAt) {
+    return {
+      status: "not_started",
+      startedAt: null,
+      phaseIndex: 0,
+      totalPhases,
+      isLastPhase: false,
+      phase: null,
+      phaseReady: false,
+      summaryStats,
+    };
+  }
+  if (input.completedAt) {
+    return {
+      status: "graduated",
+      startedAt: input.startedAt,
+      phaseIndex: input.phaseIndex,
+      totalPhases,
+      isLastPhase: input.phaseIndex >= totalPhases - 1,
+      phase: null,
+      phaseReady: false,
+      summaryStats,
+    };
+  }
+
+  const phaseIndex = Math.min(Math.max(input.phaseIndex, 0), totalPhases - 1);
+  const def = ACT_PROGRAM[phaseIndex];
+  const since = new Date(input.phaseStartedAt ?? input.startedAt).getTime();
+  const data = buildSignalData(input, since);
+
+  const toView = (task: {
+    key: string;
+    labelKey: string;
+    route: Href;
+    signal: (d: ActProgramSignalData) => { current: number; target: number };
+  }): ProgramTaskView => {
+    const { current, target } = task.signal(data);
+    return {
+      key: task.key,
+      labelKey: task.labelKey,
+      route: task.route,
+      current,
+      target,
+      done: current >= target,
+    };
+  };
+
+  const milestones = def.milestones.map(toView);
+  const dailyPractice = def.dailyPractice ? toView(def.dailyPractice) : null;
+  const phaseReady = milestones.every((m) => m.done);
+
   return {
-    status: completedAt ? "graduated" : "in_progress",
-    startedAt,
-    currentWeekIndex,
-    totalWeeks,
-    weeks,
-    weeksComplete,
-    allWeeksComplete,
+    status: "in_progress",
+    startedAt: input.startedAt,
+    phaseIndex,
+    totalPhases,
+    isLastPhase: phaseIndex >= totalPhases - 1,
+    phase: {
+      key: def.key,
+      themeLabelKey: def.themeLabelKey,
+      themeSubKey: def.themeSubKey,
+      themeDescKey: def.themeDescKey,
+      milestones,
+      dailyPractice,
+    },
+    phaseReady,
     summaryStats,
   };
 }

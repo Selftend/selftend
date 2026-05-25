@@ -12,15 +12,19 @@ import { useConnectionLogs } from "@/src/features/act/queries";
 import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function ActConnectionListScreen() {
   const { t } = useTranslation("act");
   const { user } = useSession();
+  const { selectedDate } = useSelectedDate();
   const { data: logs, isLoading } = useConnectionLogs(user?.id ?? null);
 
   if (isLoading) {
     return <ScreenLoading title={t("connection.listTitle")} />;
   }
+
+  const dayLogs = (logs ?? []).filter((log) => toLocalDateKey(log.createdAt) === selectedDate);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -46,11 +50,11 @@ export default function ActConnectionListScreen() {
             ]}
           />
 
-          {!logs || logs.length === 0 ? (
+          {dayLogs.length === 0 ? (
             <Text variant="muted">{t("connection.noLogs")}</Text>
           ) : (
             <View className="gap-2">
-              {logs.map((log) => (
+              {dayLogs.map((log) => (
                 <Pressable
                   key={log.id}
                   accessibilityRole="button"

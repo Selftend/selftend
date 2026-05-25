@@ -18,7 +18,7 @@ import { HelpButton } from "@/src/components/app/help-button";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { ActInfo } from "@/src/components/app/act-onboarding-modal";
-import { ProgramHero } from "@/src/components/app/program-hero";
+import { ActProgramCard } from "@/src/components/app/act-program-card";
 import { ProgramGraduation } from "@/src/components/app/program-graduation";
 import { useDefusionLogs } from "@/src/features/act/queries";
 import { useActProgram } from "@/src/features/act/use-act-program";
@@ -73,6 +73,7 @@ export default function ActHomeScreen() {
     showProgramPrompt,
     abandonProgram,
     replayProgram,
+    advancePhase,
     promptDismissedAt,
     isUpdating,
   } = useActProgram(user?.id ?? null);
@@ -143,11 +144,11 @@ export default function ActHomeScreen() {
                 onReplay={replayProgram}
               />
             ) : program.status === "not_started" && promptDismissedAt ? null : (
-              <ProgramHero
-                namespace="act"
-                isPending={isUpdating}
+              <ActProgramCard
                 program={program}
+                isPending={isUpdating}
                 onStart={startProgram}
+                onAdvance={advancePhase}
                 onDismissStart={program.status === "not_started" ? dismissProgramPrompt : undefined}
                 onAbandon={
                   program.status === "in_progress"
