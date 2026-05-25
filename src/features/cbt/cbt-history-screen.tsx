@@ -11,7 +11,7 @@ import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
 import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
 import { BackButton } from "@/src/components/app/back-button";
-import { useSelectedDate } from "@/src/stores/selected-date-store";
+import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 function getRecordTitle(
   record: { nats: NegativeAutomaticThought[]; situation: string },
@@ -26,7 +26,9 @@ export default function CbtHistoryScreen() {
   const { user } = useSession();
   const { selectedDate } = useSelectedDate();
   const { data, isLoading } = useThoughtRecords(user?.id ?? null);
-  const records = (data ?? []).filter((record) => record.createdAt.slice(0, 10) === selectedDate);
+  const records = (data ?? []).filter(
+    (record) => toLocalDateKey(record.createdAt) === selectedDate,
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>

@@ -10,6 +10,7 @@ import { useMoodLogs } from "@/src/features/mood/queries";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
+import { toLocalDateKey } from "@/src/stores/selected-date-store";
 
 export interface TopDistortion {
   key: string;
@@ -109,7 +110,7 @@ export function useCbtInsights(userId: string | null) {
 
     const moodScoresByDate = new Map<string, number[]>();
     for (const moodLog of moodLogs) {
-      const logDate = moodLog.loggedAt.slice(0, 10);
+      const logDate = toLocalDateKey(moodLog.loggedAt);
       moodScoresByDate.set(logDate, [...(moodScoresByDate.get(logDate) ?? []), moodLog.moodScore]);
     }
 
@@ -241,7 +242,7 @@ export function useCbtInsights(userId: string | null) {
     const windowStart = recentLogs[recentLogs.length - 1]?.logDate ?? "";
     const windowEnd = recentLogs[0]?.logDate ?? "";
     const inWindow = (loggedAt: string) => {
-      const day = loggedAt.slice(0, 10);
+      const day = toLocalDateKey(loggedAt);
       return day >= windowStart && day <= windowEnd;
     };
     const sleepDurations = (sleepLogs ?? [])
@@ -250,7 +251,7 @@ export function useCbtInsights(userId: string | null) {
     const gratitudeDayKeys = new Set(
       (gratitudeEntries ?? [])
         .filter((g) => inWindow(g.loggedAt))
-        .map((g) => g.loggedAt.slice(0, 10)),
+        .map((g) => toLocalDateKey(g.loggedAt)),
     );
 
     return {

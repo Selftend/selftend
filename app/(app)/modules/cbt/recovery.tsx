@@ -47,6 +47,7 @@ import { useUserPreferences } from "@/src/features/settings/queries";
 import { useValuesProfile } from "@/src/features/values/queries";
 import { useWorryEntries } from "@/src/features/worry/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { BackButton } from "@/src/components/app/back-button";
 
@@ -326,7 +327,7 @@ export default function RecoveryScreen() {
   })();
 
   const recoveryStats: RecoveryStat[] = (() => {
-    const moodDays = new Set((moodLogs ?? []).map((log) => log.loggedAt.slice(0, 10)));
+    const moodDays = new Set((moodLogs ?? []).map((log) => toLocalDateKey(log.loggedAt)));
 
     return [
       { key: "thoughtRecords", value: thoughtRecords?.length ?? 0 },

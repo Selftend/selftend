@@ -15,13 +15,13 @@ import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useActivities } from "@/src/features/activities/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { currentDateKey, toLocalDateKey } from "@/src/stores/selected-date-store";
 import type { ActivityLog } from "@/src/features/activities/types";
 import { BackButton } from "@/src/components/app/back-button";
 import { HelpButton } from "@/src/components/app/help-button";
 
 function groupActivities(activities: ActivityLog[]) {
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
+  const todayStr = currentDateKey();
 
   const today: ActivityLog[] = [];
   const upcoming: ActivityLog[] = [];
@@ -31,7 +31,7 @@ function groupActivities(activities: ActivityLog[]) {
     if (a.completedAt) {
       completed.push(a);
     } else if (a.scheduledAt) {
-      const dateStr = a.scheduledAt.slice(0, 10);
+      const dateStr = toLocalDateKey(a.scheduledAt);
       if (dateStr === todayStr) {
         today.push(a);
       } else {

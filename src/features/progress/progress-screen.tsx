@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { localDateKey, toLocalDateKey } from "@/src/stores/selected-date-store";
 import { BackButton } from "@/src/components/app/back-button";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
 import { LoadingState } from "@/src/components/app/screen-state";
@@ -31,7 +32,7 @@ function getLast14Dates(): string[] {
   for (let i = 13; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    dates.push(d.toISOString().slice(0, 10));
+    dates.push(localDateKey(d));
   }
   return dates;
 }
@@ -70,7 +71,7 @@ export default function ProgressScreen() {
   const chartData = (() => {
     if (!moodLogs) return [];
     return last14Dates.map((date, i) => {
-      const logsOnDay = moodLogs.filter((l) => l.loggedAt.slice(0, 10) === date);
+      const logsOnDay = moodLogs.filter((l) => toLocalDateKey(l.loggedAt) === date);
       const avgScore =
         logsOnDay.length > 0
           ? Math.round(logsOnDay.reduce((sum, l) => sum + l.moodScore, 0) / logsOnDay.length)

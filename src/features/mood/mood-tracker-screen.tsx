@@ -23,7 +23,7 @@ import { buildMoodChartData } from "@/src/features/mood/chart-data";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { getDayMoodSummary, getMoodSummary, type MoodSummary } from "@/src/features/mood/summaries";
 import { useSession } from "@/src/providers/session-provider";
-import { useSelectedDate } from "@/src/stores/selected-date-store";
+import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 import { cn } from "@/lib/utils";
 
 const RECENT_LIMIT = 10;
@@ -34,7 +34,9 @@ export default function MoodTrackerScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  const { data: moodLogs } = useMoodLogs(userId, 30);
+  // Fetch enough history to cover the 60-day DateBar window even for users who
+  // log several times a day, so day-scoped views aren't empty for older dates.
+  const { data: moodLogs } = useMoodLogs(userId, 200);
   const { selectedDate, isToday } = useSelectedDate();
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
@@ -50,7 +52,7 @@ export default function MoodTrackerScreen() {
   const thirtyDay = getMoodSummary(moodLogs, 30);
   const chartData = buildMoodChartData(moodLogs, CHART_DAYS);
   const recent = (moodLogs ?? [])
-    .filter((log) => log.loggedAt.slice(0, 10) === selectedDate)
+    .filter((log) => toLocalDateKey(log.loggedAt) === selectedDate)
     .slice(0, RECENT_LIMIT);
 
   const handleChartLayout = (e: LayoutChangeEvent) => {

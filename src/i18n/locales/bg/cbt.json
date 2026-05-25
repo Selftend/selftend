@@ -90,6 +90,8 @@
     "milestonesLabel": "Тази фаза",
     "practiceLabel": "Практика за днес",
     "noDailyPractice": "Няма ежедневна задача в тази фаза — отдели време за стъпката по-горе.",
+    "phaseProgress": "Фаза {{current}} от {{total}}",
+    "phaseTasksDone": "{{done}}/{{total}} завършени в тази фаза",
     "graduateCta": "Завърши програмата"
   },
   "dashboard": {

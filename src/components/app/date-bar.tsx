@@ -5,27 +5,32 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
-import { currentDateKey, useSelectedDateStore } from "@/src/stores/selected-date-store";
+import {
+  currentDateKey,
+  localDateKey,
+  useSelectedDateStore,
+} from "@/src/stores/selected-date-store";
 
 const WINDOW_DAYS = 60; // how many past days the strip renders before the calendar is needed
 
-/** `YYYY-MM-DD` keys for the last WINDOW_DAYS days, oldest first, today last. */
+/** Local `YYYY-MM-DD` keys for the last WINDOW_DAYS days, oldest first, today last. */
 function recentDayKeys(): string[] {
   const keys: string[] = [];
-  const base = new Date(`${currentDateKey()}T00:00:00.000Z`);
+  const base = new Date();
+  base.setHours(12, 0, 0, 0); // local noon avoids DST/midnight edge cases
   for (let i = WINDOW_DAYS - 1; i >= 0; i--) {
     const d = new Date(base);
-    d.setUTCDate(base.getUTCDate() - i);
-    keys.push(d.toISOString().slice(0, 10));
+    d.setDate(base.getDate() - i);
+    keys.push(localDateKey(d));
   }
   return keys;
 }
 
 function chipLabels(key: string): { weekday: string; day: string } {
-  const d = new Date(`${key}T00:00:00.000Z`);
+  const d = new Date(`${key}T12:00:00`); // parsed as local
   return {
-    weekday: d.toLocaleDateString(undefined, { weekday: "short", timeZone: "UTC" }),
-    day: String(d.getUTCDate()),
+    weekday: d.toLocaleDateString(undefined, { weekday: "short" }),
+    day: String(d.getDate()),
   };
 }
 

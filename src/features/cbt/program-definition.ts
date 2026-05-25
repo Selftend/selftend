@@ -1,5 +1,6 @@
 import type { Href } from "expo-router";
 
+import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import type { ActivityLog } from "@/src/features/activities/types";
 import type { CoreBelief } from "@/src/features/beliefs/types";
 import type { ThoughtRecord } from "@/src/features/cbt/types";
@@ -56,7 +57,7 @@ const countSince = (items: { createdAt: string }[], since: number) =>
 
 // True (1) if a qualifying event occurred on the given YYYY-MM-DD; else 0.
 const didOnDate = (timestamps: (string | null | undefined)[], date: string) =>
-  timestamps.some((ts) => typeof ts === "string" && ts.slice(0, 10) === date) ? 1 : 0;
+  timestamps.some((ts) => typeof ts === "string" && toLocalDateKey(ts) === date) ? 1 : 0;
 
 // ── Task const definitions ──────────────────────────────────────────────────
 

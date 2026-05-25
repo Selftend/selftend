@@ -1,4 +1,5 @@
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
+import { localDateKey } from "@/src/stores/selected-date-store";
 
 export interface GratitudeFrequencyBucket {
   id: string;
@@ -69,7 +70,7 @@ function addDays(value: Date, days: number) {
 }
 
 function bucketId(value: Date) {
-  return value.toISOString().slice(0, 10);
+  return localDateKey(value);
 }
 
 export function getGratitudeFrequencyBuckets(

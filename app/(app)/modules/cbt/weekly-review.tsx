@@ -17,6 +17,7 @@ import { useGoals, useMilestones } from "@/src/features/goals/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { localDateKey, toLocalDateKey } from "@/src/stores/selected-date-store";
 import { BackButton } from "@/src/components/app/back-button";
 
 const REFLECTION_PROMPTS = [
@@ -32,7 +33,7 @@ function getWeekDates(): string[] {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    dates.push(d.toISOString().slice(0, 10));
+    dates.push(localDateKey(d));
   }
   return dates;
 }
@@ -87,7 +88,7 @@ export default function WeeklyReviewScreen() {
   const chartData = (() => {
     if (!moodLogs) return [];
     return weekDates.map((date) => {
-      const logsOnDay = moodLogs.filter((l) => l.loggedAt.slice(0, 10) === date);
+      const logsOnDay = moodLogs.filter((l) => toLocalDateKey(l.loggedAt) === date);
       const avgScore =
         logsOnDay.length > 0
           ? Math.round(logsOnDay.reduce((sum, l) => sum + l.moodScore, 0) / logsOnDay.length)
@@ -106,7 +107,7 @@ export default function WeeklyReviewScreen() {
     const weekStart = weekDates[0];
     const weekEnd = weekDates[6];
     const inRange = activities.filter((a) => {
-      const date = (a.scheduledAt ?? a.createdAt).slice(0, 10);
+      const date = toLocalDateKey(a.scheduledAt ?? a.createdAt);
       return date >= weekStart && date <= weekEnd;
     });
     return {
@@ -120,7 +121,7 @@ export default function WeeklyReviewScreen() {
   const weekRecords = (() => {
     if (!thoughtRecords) return [];
     const weekStart = weekDates[0];
-    return thoughtRecords.filter((r) => r.createdAt.slice(0, 10) >= weekStart);
+    return thoughtRecords.filter((r) => toLocalDateKey(r.createdAt) >= weekStart);
   })();
 
   const promptKey = REFLECTION_PROMPTS[new Date().getDay() % REFLECTION_PROMPTS.length];

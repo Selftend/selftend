@@ -63,6 +63,7 @@ jest.mock("@/src/features/recovery/queries", () => ({
 
 jest.mock("@/src/stores/selected-date-store", () => ({
   useSelectedDate: jest.fn(),
+  toLocalDateKey: (iso: string) => iso.slice(0, 10),
 }));
 
 // ---------------------------------------------------------------------------

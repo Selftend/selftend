@@ -30,7 +30,11 @@ function ProgramSummary({ program }: { program: CbtProgramView }) {
 
   const title =
     program.status === "in_progress"
-      ? `Phase ${program.phaseIndex + 1} of ${program.totalPhases}`
+      ? t("program.phaseProgress", {
+          ns: "cbt",
+          current: program.phaseIndex + 1,
+          total: program.totalPhases,
+        })
       : program.status === "graduated"
         ? t("program.graduationTitle", { ns: "cbt" })
         : t("today.dashboard.cbtModuleProgramReady");
@@ -39,7 +43,7 @@ function ProgramSummary({ program }: { program: CbtProgramView }) {
     program.status === "in_progress"
       ? program.phaseReady
         ? t("program.ready", { ns: "cbt" })
-        : `${milestoneDone}/${milestoneTotal} done this phase`
+        : t("program.phaseTasksDone", { ns: "cbt", done: milestoneDone, total: milestoneTotal })
       : program.status === "graduated"
         ? t("today.dashboard.cbtModuleProgramCompleteDesc")
         : t("today.dashboard.cbtModuleProgramReadyDesc");

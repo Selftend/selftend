@@ -21,7 +21,7 @@ import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/src/providers/session-provider";
-import { useSelectedDate } from "@/src/stores/selected-date-store";
+import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function GratitudeHomeScreen() {
   const { t } = useTranslation("gratitude");
@@ -36,7 +36,7 @@ export default function GratitudeHomeScreen() {
 
   const allEntries = entries ?? [];
   const recentList = allEntries
-    .filter((entry) => entry.loggedAt.slice(0, 10) === selectedDate)
+    .filter((entry) => toLocalDateKey(entry.loggedAt) === selectedDate)
     .slice(0, 7);
   const frequencyBuckets = getGratitudeFrequencyBuckets(allEntries);
   const themes = getGratitudeThemes(allEntries, 6);

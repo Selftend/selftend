@@ -17,7 +17,7 @@ import { useAngerLogs } from "@/src/features/anger/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { BackButton } from "@/src/components/app/back-button";
 import { HelpButton } from "@/src/components/app/help-button";
-import { useSelectedDate } from "@/src/stores/selected-date-store";
+import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function AngerScreen() {
   const { t } = useTranslation("cbt");
@@ -25,7 +25,7 @@ export default function AngerScreen() {
   const { selectedDate } = useSelectedDate();
   const { data: logs, isLoading } = useAngerLogs(user?.id ?? null);
 
-  const filteredLogs = logs?.filter((l) => l.createdAt.slice(0, 10) === selectedDate) ?? [];
+  const filteredLogs = logs?.filter((l) => toLocalDateKey(l.createdAt) === selectedDate) ?? [];
   const recent = filteredLogs.slice(0, 5);
   const avgArousal =
     recent.length > 0

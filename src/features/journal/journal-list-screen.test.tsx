@@ -30,6 +30,7 @@ jest.mock("@/src/features/journal/queries", () => ({
 
 jest.mock("@/src/stores/selected-date-store", () => ({
   useSelectedDate: jest.fn(() => ({ selectedDate: "2026-05-24", isToday: true })),
+  toLocalDateKey: (iso: string) => iso.slice(0, 10),
 }));
 
 const mockUseJournalEntries = useJournalEntries as jest.MockedFunction<typeof useJournalEntries>;

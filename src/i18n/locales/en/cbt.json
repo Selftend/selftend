@@ -90,6 +90,8 @@
     "milestonesLabel": "This phase",
     "practiceLabel": "Today's practice",
     "noDailyPractice": "No daily task this phase — take your time with the step above.",
+    "phaseProgress": "Phase {{current}} of {{total}}",
+    "phaseTasksDone": "{{done}}/{{total}} done this phase",
     "graduateCta": "Finish the program"
   },
   "dashboard": {

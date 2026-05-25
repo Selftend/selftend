@@ -1,3 +1,5 @@
+import { toLocalDateKey } from "@/src/stores/selected-date-store";
+
 export interface MoodSummary {
   average: number | null;
   count: number;
@@ -36,7 +38,7 @@ export function getDayMoodSummary(logs: MoodSample[] | undefined, dateKey: strin
   }
 
   const scores = logs
-    .filter((log) => log.loggedAt.slice(0, 10) === dateKey)
+    .filter((log) => toLocalDateKey(log.loggedAt) === dateKey)
     .map((log) => log.moodScore);
 
   if (scores.length === 0) {

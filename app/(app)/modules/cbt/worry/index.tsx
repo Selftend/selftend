@@ -20,7 +20,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { BackButton } from "@/src/components/app/back-button";
 import { HelpButton } from "@/src/components/app/help-button";
-import { useSelectedDate } from "@/src/stores/selected-date-store";
+import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function WorryScreen() {
   const { t } = useTranslation("cbt");
@@ -30,7 +30,8 @@ export default function WorryScreen() {
   const { data: entries, isLoading } = useWorryEntries(user?.id ?? null);
   const toggleMutation = useToggleWorryResolved(user?.id ?? null);
 
-  const filteredEntries = entries?.filter((e) => e.createdAt.slice(0, 10) === selectedDate) ?? [];
+  const filteredEntries =
+    entries?.filter((e) => toLocalDateKey(e.createdAt) === selectedDate) ?? [];
 
   const handleToggle = async (entryId: string, resolved: boolean) => {
     try {
