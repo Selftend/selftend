@@ -3,7 +3,7 @@ import { vars } from "nativewind";
 
 export const THEME = {
   light: {
-    background: "hsl(260 30% 98%)",
+    background: "hsl(260 28% 96%)",
     foreground: "hsl(260 18% 14%)",
     card: "hsl(260 28% 99%)",
     cardForeground: "hsl(258 22% 15%)",
@@ -32,7 +32,7 @@ export const THEME = {
   dark: {
     background: "hsl(260 20% 9%)",
     foreground: "hsl(260 30% 96%)",
-    card: "hsl(260 18% 13%)",
+    card: "hsl(260 16% 16%)",
     cardForeground: "hsl(260 30% 96%)",
     popover: "hsl(260 18% 13%)",
     popoverForeground: "hsl(260 30% 96%)",
@@ -85,7 +85,7 @@ export const NAV_THEME: Record<"light" | "dark", Theme> = {
 
 export const THEME_VARIABLES = {
   light: vars({
-    "--background": "260 30% 98%",
+    "--background": "260 28% 96%",
     "--foreground": "260 18% 14%",
     "--card": "260 28% 99%",
     "--card-foreground": "258 22% 15%",
@@ -114,7 +114,7 @@ export const THEME_VARIABLES = {
   dark: vars({
     "--background": "260 20% 9%",
     "--foreground": "260 30% 96%",
-    "--card": "260 18% 13%",
+    "--card": "260 16% 16%",
     "--card-foreground": "260 30% 96%",
     "--popover": "260 18% 13%",
     "--popover-foreground": "260 30% 96%",
