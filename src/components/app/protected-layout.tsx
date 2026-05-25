@@ -105,6 +105,8 @@ export default function ProtectedLayout() {
           <Stack
             screenOptions={{
               headerShown: false,
+              animation: "fade",
+              animationDuration: 220,
             }}
           >
             <Stack.Screen name="(tabs)" />
