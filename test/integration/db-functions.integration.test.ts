@@ -42,7 +42,7 @@ describe("export_user_data() (integration)", () => {
     expect(Array.isArray(data.thoughtRecords)).toBe(true);
     expect(data.thoughtRecords.length).toBeGreaterThanOrEqual(5);
     expect(data.thoughtRecords[0]).toHaveProperty("situation");
-    expect(data.thoughtRecords[0]).toHaveProperty("automatic_thought");
+    expect(data.thoughtRecords[0]).toHaveProperty("nats");
     expect(data.thoughtRecords[0]).toHaveProperty("emotion_intensity_before");
     expect(data.thoughtRecords[0]).toHaveProperty("evidence_for");
     expect(data.thoughtRecords[0]).toHaveProperty("evidence_against");
@@ -115,7 +115,7 @@ describe("delete_user_account() (integration)", () => {
     await admin.from("thought_records").insert({
       user_id: testUserId,
       situation: "About to be deleted",
-      automatic_thought: "doomed",
+      nats: [{ text: "doomed", beliefRating: null, isHotThought: true }],
       emotions: ["Anxious"],
       distortions: ["catastrophizing"],
       balanced_thought: "balanced",

@@ -202,7 +202,7 @@ export interface ConnectionLogInput {
   createdAt?: string;
 }
 
-export type ObservingTechnique = "tenDeepBreaths" | "observingFromBoard" | "bodyAwareness";
+export type ObservingTechnique = "tenDeepBreaths" | "skyAndWeather" | "bodyAwareness";
 
 export interface ObservingSelfSession {
   id: string;
@@ -274,7 +274,7 @@ export const CONNECTION_TECHNIQUES: ConnectionTechnique[] = [
 
 export const OBSERVING_TECHNIQUES: ObservingTechnique[] = [
   "tenDeepBreaths",
-  "observingFromBoard",
+  "skyAndWeather",
   "bodyAwareness",
 ];
 

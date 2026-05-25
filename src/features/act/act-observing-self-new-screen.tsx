@@ -28,10 +28,10 @@ const STEP_ORDER: Step[] = ["technique", "exercise", "observed", "after"];
 
 const GUIDE_KEY: Record<
   ObservingTechnique,
-  "tenBreathsGuide" | "chessboardGuide" | "bodyAwarenessGuide"
+  "tenBreathsGuide" | "skyWeatherGuide" | "bodyAwarenessGuide"
 > = {
   tenDeepBreaths: "tenBreathsGuide",
-  observingFromBoard: "chessboardGuide",
+  skyAndWeather: "skyWeatherGuide",
   bodyAwareness: "bodyAwarenessGuide",
 };
 

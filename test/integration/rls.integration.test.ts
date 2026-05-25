@@ -18,7 +18,7 @@ describe("RLS: thought_records", () => {
       .insert({
         user_id: SEED_USERS.bob.id,
         situation: "RLS test situation",
-        automatic_thought: "RLS thought",
+        nats: [{ text: "RLS thought", beliefRating: null, isHotThought: true }],
         emotions: ["Anxious"],
         distortions: ["catastrophizing"],
         balanced_thought: "RLS balanced",
@@ -49,7 +49,7 @@ describe("RLS: thought_records", () => {
     const { error } = await alice.from("thought_records").insert({
       user_id: SEED_USERS.bob.id,
       situation: "spoofed",
-      automatic_thought: "spoofed",
+      nats: [{ text: "spoofed", beliefRating: null, isHotThought: true }],
       emotions: [],
       distortions: [],
       balanced_thought: "spoofed",

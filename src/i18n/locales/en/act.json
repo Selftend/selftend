@@ -109,7 +109,7 @@
     },
     "bullsEye": {
       "title": "A quick look at your values",
-      "subtitle": "How close are you to living your values right now? 1 = far off, 10 = bull's-eye.",
+      "subtitle": "How close are you to living your values right now? 1 = far off, 10 = living it fully.",
       "work": "Work & education",
       "leisure": "Leisure & play",
       "relationships": "Relationships",
@@ -221,10 +221,10 @@
     "struggleSwitchQuestion": "Are you currently fighting this feeling?",
     "struggleSwitchOn": "Yes - I'm resisting or trying to get rid of it",
     "struggleSwitchOff": "No - I'm just noticing it",
-    "discomfortTypeLabel": "Is this clean or dirty discomfort?",
-    "discomfortTypeHint": "Clean discomfort is the original feeling. Dirty discomfort is the extra suffering added by fighting it.",
-    "clean": "Clean - the original feeling, as it is",
-    "dirty": "Dirty - I'm adding struggle on top of it",
+    "discomfortTypeLabel": "Is this the original feeling, or extra suffering from struggling?",
+    "discomfortTypeHint": "The original feeling is what's naturally here. Extra suffering is what gets piled on when we fight it.",
+    "clean": "The original feeling, as it is",
+    "dirty": "Extra suffering I'm adding by struggling",
     "techniqueLabel": "Choose a technique",
     "techniqueHint": "New to this? TAME It with Kindness is the core practice.",
     "intensityAfterLabel": "How intense is it now?",
@@ -372,7 +372,7 @@
     "newSubtitle": "Access the part of you that notices - steady, unjudging, always here.",
     "editTitle": "Edit session",
     "techniqueLabel": "Which practice?",
-    "techniqueHint": "\"Ten Deep Breaths\" is the entry point. Try the Chessboard once you're familiar.",
+    "techniqueHint": "\"Ten Deep Breaths\" is the entry point. Try Sky & Weather once you're familiar.",
     "observedLabel": "What did you observe from this vantage point?",
     "observedPlaceholder": "Thoughts, feelings, sensations you noticed - without judging them",
     "observedHint": "You are not reporting what was bad or good - just what was there.",
@@ -395,12 +395,12 @@
     },
     "techniques": {
       "tenDeepBreaths": "Ten deep breaths",
-      "observingFromBoard": "The Chessboard",
+      "skyAndWeather": "Sky & weather",
       "bodyAwareness": "Body awareness"
     },
     "techniqueDescriptions": {
       "tenDeepBreaths": "Take ten slow, deep breaths. With each breath, notice what you observe - thoughts, feelings, sensations - from a witness perspective.",
-      "observingFromBoard": "The Chessboard metaphor: thoughts and feelings are pieces. You are the board - stable, unchanged, unable to be harmed by any piece.",
+      "skyAndWeather": "The sky & weather metaphor: thoughts and feelings are the weather. You are the sky - vast, unchanged, never harmed by any storm passing through.",
       "bodyAwareness": "Scan the body from feet to head. Notice sensations as a witness - without judgment or the urge to change anything."
     },
     "tenBreathsGuide": {
@@ -410,9 +410,9 @@
       "exhale": "As you breathe OUT: look around and notice five things you can see.",
       "repeat": "Repeat for ten breaths. You are the one noticing - not the thoughts or feelings themselves."
     },
-    "chessboardGuide": {
-      "title": "The Chessboard",
-      "body": "Imagine a chessboard. White pieces and black pieces - your difficult thoughts and easier ones - are playing against each other.\n\nYou are not any of the pieces. You are the board itself.\n\nThe board holds all the pieces. It is not threatened by any move. No piece can harm the board.\n\nFrom this perspective, observe what pieces are on the board right now."
+    "skyWeatherGuide": {
+      "title": "Sky & Weather",
+      "body": "Imagine you are the sky. Your thoughts and feelings are the weather.\n\nThe weather changes constantly - storms, sunshine, fog, wind. But the sky always has room for it, and no weather, no matter how wild, can harm the sky.\n\nYou are not the weather. You are the vast space in which it all comes and goes.\n\nFrom this perspective, notice what weather is passing through right now."
     },
     "bodyAwarenessGuide": {
       "title": "Body Awareness Scan",
@@ -427,7 +427,7 @@
   "values": {
     "listTitle": "Values",
     "listSubtitle": "Your chosen directions in the four key areas of life.",
-    "bullsEyeButton": "Update Bull's-Eye",
+    "bullsEyeButton": "Update values check-in",
     "domainIntro": "Tap a domain to clarify what matters most to you there.",
     "work": "Work & education",
     "leisure": "Leisure & play",
@@ -466,8 +466,8 @@
       "ratings": "Ratings"
     },
     "bullsEye": {
-      "title": "Bull's-Eye",
-      "subtitle": "Rate how closely your current life matches each value direction. 1 = far off, 10 = bull's-eye.",
+      "title": "Values check-in",
+      "subtitle": "Rate how closely your current life matches each value direction. 1 = far off, 10 = living it fully.",
       "work": "Work & education",
       "leisure": "Leisure & play",
       "relationships": "Relationships",
@@ -588,7 +588,7 @@
     "targetDatePlaceholder": "YYYY-MM-DD",
     "obstaclesLabel": "What might get in the way? (HARD barriers)",
     "obstaclesPlaceholder": "e.g. Hooked: \"I'll fail\" → unhook. Avoiding: dread → make room.",
-    "obstaclesHint": "Name the HARD barriers and your answer to each: Hooked by thoughts (unhook), Avoiding discomfort (make room), Remoteness from values (reconnect to your why), Doubting yourself (be kind to yourself).",
+    "obstaclesHint": "Name the HARD barriers and your answer to each: Hooked by thoughts (unhook), Avoiding discomfort (make room), Remoteness from values (reconnect to your why), Doubtful goals (break it into a smaller, realistic step).",
     "saveLog": "Save",
     "saving": "Saving…",
     "saveProblem": "Could not save",
