@@ -160,7 +160,7 @@ export default function BreathingExerciseScreen() {
         exerciseName: pattern.slug,
         durationMinutes: selectedDuration,
         reflection: "",
-        moodAfter: null,
+        feelingAfter: null,
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.replace("/tools/breathing" as Parameters<typeof router.replace>[0]);

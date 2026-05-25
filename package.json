@@ -8,9 +8,9 @@
   },
   "scripts": {
     "start": "node --env-file=.env.local scripts/start-dev-client.js",
-    "start:prod": "node --env-file=.env scripts/start-dev-client.js",
+    "start:prod": "node --env-file=.env scripts/start-dev-client.js --clear",
     "start:emulator": "node --env-file=.env.local scripts/android-dev.js",
-    "start:prod:emulator": "node --env-file=.env scripts/android-dev.js",
+    "start:prod:emulator": "node --env-file=.env scripts/android-dev.js --clear",
     "build:android:development": "npm exec eas-cli -- build --platform android --profile development",
     "build:android:development:local": "node scripts/build-android-dev-local.js",
     "build:android:preview": "npm exec eas-cli -- build --platform android --profile preview",

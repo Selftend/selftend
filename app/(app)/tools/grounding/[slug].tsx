@@ -63,7 +63,7 @@ export default function GroundingExerciseScreen() {
         exerciseName: technique.slug,
         durationMinutes: 1,
         reflection: "",
-        moodAfter: null,
+        feelingAfter: null,
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.replace("/tools/grounding" as Parameters<typeof router.replace>[0]);

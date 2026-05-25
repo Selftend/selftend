@@ -13,10 +13,11 @@ const mockRequireSupabase = jest.mocked(requireSupabase);
 const sampleRow = {
   id: "ms-1",
   user_id: "user-1",
-  exercise_name: "Breath awareness",
+  exercise_name: "breath-awareness",
   duration_minutes: 5,
   reflection: "felt calm",
-  mood_after: 4,
+  mood_after: null,
+  feeling_after: "calmer",
   completed_at: "2026-05-15T08:05:00.000Z",
   created_at: "2026-05-15T08:00:00.000Z",
 };
@@ -32,10 +33,11 @@ describe("mindfulness repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await listMindfulnessSessions("user-1", 10);
+    const sessions = await listMindfulnessSessions("user-1", 10);
     expect(from).toHaveBeenCalledWith("mindfulness_sessions");
     expect(order).toHaveBeenCalledWith("completed_at", { ascending: false });
     expect(limit).toHaveBeenCalledWith(10);
+    expect(sessions[0].feelingAfter).toBe("calmer");
   });
 
   it("uses default limit of 30 when none given", async () => {
@@ -50,7 +52,7 @@ describe("mindfulness repository", () => {
     expect(limit).toHaveBeenCalledWith(30);
   });
 
-  it("trims reflection and inserts a session", async () => {
+  it("trims reflection and inserts a session with feeling", async () => {
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
     const select = jest.fn(() => ({ single }));
     const insert = jest.fn(() => ({ select }));
@@ -58,22 +60,23 @@ describe("mindfulness repository", () => {
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
     await saveMindfulnessSession("user-1", {
-      exerciseName: "Breath awareness",
+      exerciseName: "breath-awareness",
       durationMinutes: 5,
       reflection: "  felt calm  ",
-      moodAfter: 4,
+      feelingAfter: "calmer",
     });
 
     expect(insert).toHaveBeenCalledWith({
       user_id: "user-1",
-      exercise_name: "Breath awareness",
+      exercise_name: "breath-awareness",
       duration_minutes: 5,
       reflection: "felt calm",
-      mood_after: 4,
+      feeling_after: "calmer",
+      mood_after: null,
     });
   });
 
-  it("null-coerces missing moodAfter", async () => {
+  it("null-coerces missing feelingAfter", async () => {
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
     const select = jest.fn(() => ({ single }));
     const insert = jest.fn(() => ({ select }));
@@ -84,9 +87,9 @@ describe("mindfulness repository", () => {
       exerciseName: "x",
       durationMinutes: 1,
       reflection: "",
-      moodAfter: null,
+      feelingAfter: null,
     });
-    const calls = insert.mock.calls as unknown as [{ mood_after: number | null }][];
-    expect(calls[0][0].mood_after).toBeNull();
+    const calls = insert.mock.calls as unknown as [{ feeling_after: string | null }][];
+    expect(calls[0][0].feeling_after).toBeNull();
   });
 });

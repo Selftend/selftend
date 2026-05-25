@@ -410,11 +410,29 @@
     "finishEarly": "Finish early",
     "afterTitle": "Well done",
     "afterDescription": "Take a moment to notice how you feel now.",
-    "moodAfter": "Mood now (1–5)",
     "reflection": "Reflection (optional)",
     "reflectionPlaceholder": "Anything you noticed, or want to remember.",
     "save": "Save session",
     "notFound": "Exercise not found",
+    "takeAMoment": "Take a moment.",
+    "allExercises": "All exercises",
+    "begin": "Begin · {{value}} min",
+    "wellDone": "Well done.",
+    "completeIntro": "Take a moment to notice how you feel now. There is no streak to protect here.",
+    "loggedJustNow": "Logged just now",
+    "feelingPrompt": "How do you feel now?",
+    "rememberPrompt": "Anything to remember? (optional)",
+    "skipClose": "Skip & close",
+    "pause": "Pause",
+    "resume": "Resume",
+    "paused": "Paused",
+    "feelings": {
+      "calmer": "calmer",
+      "softer": "softer",
+      "clearer": "clearer",
+      "present": "present",
+      "tender": "tender"
+    },
     "exercises": {
       "breath-awareness": {
         "title": "Breath awareness",
@@ -424,7 +442,8 @@
           "Notice the breath where it feels strongest - nose, chest, or belly.",
           "When you notice your mind has wandered, gently bring it back to the breath.",
           "Continue at a relaxed pace until the timer ends."
-        ]
+        ],
+        "cues": ["Settle.", "Breathe in.", "Breathe out.", "Notice.", "Return."]
       },
       "body-scan": {
         "title": "Body scan",
@@ -434,7 +453,8 @@
           "Bring attention to the crown of your head.",
           "Slowly move your awareness down through the face, neck, shoulders, arms, torso, legs, and feet.",
           "Pause at each area for a few breaths, noticing sensation without judgement."
-        ]
+        ],
+        "cues": ["Crown.", "Face.", "Shoulders.", "Chest.", "Belly.", "Hips.", "Legs.", "Feet."]
       },
       "loving-kindness": {
         "title": "Loving-kindness",
@@ -444,6 +464,14 @@
           "Silently wish them: may you be safe, may you be well, may you be at ease.",
           "Direct the same wishes to yourself.",
           "Extend the wishes to others - a neutral person, then someone difficult, then all beings."
+        ],
+        "cues": [
+          "May you be safe.",
+          "May you be well.",
+          "May you be at ease.",
+          "May I be safe.",
+          "May I be well.",
+          "May all beings be at ease."
         ]
       },
       "observing-thoughts": {
@@ -454,7 +482,8 @@
           "Imagine thoughts as clouds drifting across the sky, or leaves floating down a stream.",
           "Notice each thought, then let it pass without following it.",
           "Return to noticing whenever you find yourself caught in a thought."
-        ]
+        ],
+        "cues": ["Notice.", "Let it pass.", "Notice.", "Let it pass.", "Return."]
       },
       "mindful-walking": {
         "title": "Mindful walking",
@@ -464,7 +493,8 @@
           "Begin walking slowly. Notice the lifting, moving, and placing of each foot.",
           "If your attention wanders, return it gently to the sensations of walking.",
           "Keep a relaxed pace throughout."
-        ]
+        ],
+        "cues": ["Lift.", "Move.", "Place.", "Lift.", "Move.", "Place."]
       },
       "mindful-eating": {
         "title": "Mindful eating",
@@ -474,7 +504,8 @@
           "Smell it before bringing it to your mouth.",
           "Place it on your tongue. Pause. Notice texture before chewing.",
           "Chew slowly, noticing taste change with each bite."
-        ]
+        ],
+        "cues": ["See.", "Smell.", "Taste.", "Chew.", "Swallow.", "Notice."]
       }
     },
     "onboarding": {

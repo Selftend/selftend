@@ -15,23 +15,25 @@ export function Breadcrumbs() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerClassName="flex-row items-center gap-1 px-4 py-1.5"
+        contentContainerClassName="flex-row items-center gap-2 px-4 py-1.5"
       >
         {crumbs.map((crumb, i) => (
           <Fragment key={i}>
-            {i > 0 ? <Text className="text-xs text-muted-foreground/60">/</Text> : null}
+            {i > 0 ? <Text className="text-[11px] text-muted-foreground/50">·</Text> : null}
             {crumb.href ? (
               <Pressable
                 accessibilityRole="link"
                 hitSlop={4}
                 onPress={() => router.push(crumb.href as never)}
               >
-                <Text className="text-xs text-muted-foreground active:opacity-70">
+                <Text className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground active:opacity-70">
                   {crumb.label}
                 </Text>
               </Pressable>
             ) : (
-              <Text className="text-xs font-medium text-foreground">{crumb.label}</Text>
+              <Text className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground">
+                {crumb.label}
+              </Text>
             )}
           </Fragment>
         ))}
