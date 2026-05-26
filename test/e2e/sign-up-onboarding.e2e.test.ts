@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  confirmSignupViaMailpit,
   deleteUserByEmail,
   dismissCbtOnboarding,
   dismissCookieBanner,
@@ -36,13 +37,20 @@ test.describe("sign-up + onboarding + first record", () => {
     // Sign-up routes the user to /verify-email.
     await expect(page.getByText("Verify your email")).toBeVisible({ timeout: 15_000 });
 
-    // With local auto-confirm, the user is already signed in. Navigate directly
-    // to the app to trigger the consent + onboarding flow.
-    await page.goto("/(app)/(tabs)");
-    await dismissPostSignInModals(page);
+    // Email confirmations are enabled locally, so complete verification via the
+    // link Mailpit received, then sign in to establish the browser session.
+    await confirmSignupViaMailpit(page, email);
+
+    await page.goto("/");
+    await dismissCookieBanner(page);
+    await page.locator('input[placeholder="m@example.com"]:visible').fill(email);
+    await page.locator('input[type="password"]:visible').fill(password);
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await expect(page.getByText("Sign in to your account")).toBeHidden({ timeout: 15_000 });
 
     // First-time user must accept consent + complete app onboarding before
     // anything else. dismissPostSignInModals handles both.
+    await dismissPostSignInModals(page);
     await expect(page.getByText("Quick policy check")).toBeHidden();
     await expect(page.getByText(/Welcome to Selftend/)).toBeHidden();
 

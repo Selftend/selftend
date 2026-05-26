@@ -108,6 +108,48 @@ export async function gotoAndSettle(page: Page, path: string) {
   });
 }
 
+// Local mail server bundled with the Supabase CLI stack (Mailpit). Its REST API
+// lets tests read the messages the app sends.
+const MAILPIT_URL = process.env.MAILPIT_URL ?? "http://localhost:54324";
+
+interface MailpitMessageSummary {
+  ID: string;
+  To?: { Address?: string }[];
+}
+
+// Finds the most recent message Mailpit holds for `email` and pulls the Supabase
+// `/auth/v1/verify` confirmation link out of its body. Polls because the email
+// arrives a beat after sign-up.
+async function fetchConfirmationLink(page: Page, email: string): Promise<string> {
+  const target = email.toLowerCase();
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const listRes = await page.request.get(`${MAILPIT_URL}/api/v1/messages?limit=50`);
+    if (listRes.ok()) {
+      const { messages = [] } = (await listRes.json()) as { messages?: MailpitMessageSummary[] };
+      const match = messages.find((m) => m.To?.some((to) => to.Address?.toLowerCase() === target));
+      if (match) {
+        const msgRes = await page.request.get(`${MAILPIT_URL}/api/v1/message/${match.ID}`);
+        const body = (await msgRes.json()) as { HTML?: string; Text?: string };
+        const haystack = `${body.Text ?? ""}\n${body.HTML ?? ""}`.replace(/&amp;/g, "&");
+        const link = haystack.match(/https?:\/\/[^\s"'<>]*\/auth\/v1\/verify[^\s"'<>]*/);
+        if (link) return link[0];
+      }
+    }
+    await page.waitForTimeout(500);
+  }
+  throw new Error(`No Mailpit confirmation email found for ${email}`);
+}
+
+// Completes local email verification for a freshly signed-up user. Hitting the
+// verify endpoint confirms the address server-side; we deliberately do NOT follow
+// its redirect (it targets site_url :8081, not the e2e server :8082), so the
+// caller establishes the browser session by signing in afterward.
+export async function confirmSignupViaMailpit(page: Page, email: string) {
+  const link = await fetchConfirmationLink(page, email);
+  const res = await page.request.get(link, { maxRedirects: 0 });
+  expect([200, 301, 302, 303]).toContain(res.status());
+}
+
 // Removes a user via service role admin API. Used for sign-up tests that
 // create throwaway users.
 export async function deleteUserByEmail(email: string) {
