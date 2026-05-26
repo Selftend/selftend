@@ -16,8 +16,9 @@
     "deleteConfirm": "Да изтрия този навик и всички отбелязвания? Това не може да бъде върнато."
   },
   "hero": {
-    "habits_one": "{{count}} навик",
-    "habits_other": "{{count}} навика"
+    "habits_one": "{{count}} активен навик",
+    "habits_other": "{{count}} активни навика",
+    "today": "Днес"
   },
   "home": {
     "title": "Навици",
@@ -110,6 +111,13 @@
   "detail": {
     "calendarTitle": "Скорошни отбелязвания",
     "calendarEmpty": "Няма отбелязвания. Натисни ден, за да отбележиш.",
+    "detailsTitle": "Подробности",
+    "scheduleTitle": "График",
+    "scheduleEveryDay": "Всеки ден",
+    "scheduleWeekdays": "Делнични дни",
+    "kindTitle": "Тип",
+    "kindBuild": "Изграждане",
+    "kindBreak": "Прекъсване",
     "strategiesTitle": "Стратегии",
     "strategyCue": "Сигнал",
     "strategyStack": "Стек на навика",

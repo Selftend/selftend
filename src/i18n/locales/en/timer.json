@@ -11,7 +11,8 @@
     "pause": "Pause",
     "resume": "Resume",
     "reset": "Reset",
-    "again": "Sit again"
+    "again": "Sit again",
+    "finishEarly": "Finish early"
   },
   "complete": {
     "title": "Sit complete"

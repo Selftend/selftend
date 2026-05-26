@@ -48,15 +48,19 @@ export default function GroundingHomeScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
               meta={
-                sessions != null && sessions.length > 0 ? (
-                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                    <Text variant="muted" className="text-xs">
-                      <Text className="text-xs font-bold text-clay">
-                        {t("grounding.hero.recentSessions", { count: sessions.length })}
-                      </Text>
+                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                  <Text variant="muted" className="text-xs">
+                    <Text className="text-xs font-bold text-clay">
+                      {t("grounding.hero.techniques", { count: groundingTechniques.length })}
                     </Text>
-                  </View>
-                ) : null
+                  </Text>
+                  <Text variant="muted" className="text-xs">
+                    {t("grounding.hero.takes")}{" "}
+                    <Text className="text-xs font-bold text-clay">
+                      {t("grounding.hero.takesValue")}
+                    </Text>
+                  </Text>
+                </View>
               }
             />
 

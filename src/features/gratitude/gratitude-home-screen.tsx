@@ -41,6 +41,7 @@ export default function GratitudeHomeScreen() {
   const frequencyBuckets = getGratitudeFrequencyBuckets(allEntries);
   const themes = getGratitudeThemes(allEntries, 6);
   const favoriteCount = getFavoriteGratitudeEntries(allEntries).length;
+  const thisWeekCount = frequencyBuckets.slice(-7).reduce((sum, bucket) => sum + bucket.count, 0);
 
   return (
     <>
@@ -62,22 +63,22 @@ export default function GratitudeHomeScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
               meta={
-                entries != null ? (
-                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                    <Text variant="muted" className="text-xs">
-                      <Text className="text-xs font-bold text-think">
-                        {t("hero.entries", { count: allEntries.length })}
-                      </Text>
+                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                  <Text variant="muted" className="text-xs">
+                    <Text className="text-xs font-bold text-think">
+                      {t("hero.entries", { count: allEntries.length })}
                     </Text>
-                    {favoriteCount > 0 ? (
-                      <Text variant="muted" className="text-xs">
-                        <Text className="text-xs font-bold text-think">
-                          {t("hero.favorites", { count: favoriteCount })}
-                        </Text>
-                      </Text>
-                    ) : null}
-                  </View>
-                ) : null
+                  </Text>
+                  <Text variant="muted" className="text-xs">
+                    <Text className="text-xs font-bold text-think">
+                      {t("hero.favorites", { count: favoriteCount })}
+                    </Text>
+                  </Text>
+                  <Text variant="muted" className="text-xs">
+                    {t("hero.thisWeek")} ·{" "}
+                    <Text className="text-xs font-bold text-think">{thisWeekCount}</Text>
+                  </Text>
+                </View>
               }
             />
 

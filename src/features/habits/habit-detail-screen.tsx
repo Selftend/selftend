@@ -163,6 +163,8 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
             weeks={CALENDAR_WEEKS}
           />
 
+          <ScheduleKindCard habit={habit} />
+
           <StrategiesCard habit={habit} />
 
           <RecentNotesSection logs={logs ?? []} />
@@ -320,6 +322,42 @@ function StrategiesCard({ habit }: { habit: Habit }) {
             </View>
           </View>
         ))}
+      </View>
+    </View>
+  );
+}
+
+function ScheduleKindCard({ habit }: { habit: Habit }) {
+  const { t } = useTranslation("habits");
+  const scheduleLabel =
+    habit.cadence === "daily"
+      ? t("detail.scheduleEveryDay")
+      : habit.cadence === "weekdays"
+        ? t("detail.scheduleWeekdays")
+        : [...habit.customDays]
+            .sort((a, b) => a - b)
+            .map((d) => t(`insights.weekday.${d}` as const))
+            .join(", ");
+  const kindLabel = habit.kind === "break" ? t("detail.kindBreak") : t("detail.kindBuild");
+
+  return (
+    <View className="gap-2">
+      <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        {t("detail.detailsTitle")}
+      </Text>
+      <View className="gap-3 rounded-2xl border border-border bg-card p-4">
+        <View className="flex-row items-center justify-between gap-3">
+          <Text variant="muted" className="text-sm">
+            {t("detail.scheduleTitle")}
+          </Text>
+          <Text className="text-sm font-semibold">{scheduleLabel}</Text>
+        </View>
+        <View className="flex-row items-center justify-between gap-3">
+          <Text variant="muted" className="text-sm">
+            {t("detail.kindTitle")}
+          </Text>
+          <Text className="text-sm font-semibold">{kindLabel}</Text>
+        </View>
       </View>
     </View>
   );

@@ -84,4 +84,9 @@ describe("isAtMissTwiceRisk", () => {
     const weekdayHabit: Habit = { ...baseHabit, cadence: "weekdays" };
     expect(isAtMissTwiceRisk(weekdayHabit, [], monday)).toBe(false);
   });
+
+  it("returns false for a habit created today (it couldn't have been missed yesterday)", () => {
+    const createdToday: Habit = { ...baseHabit, createdAt: "2026-05-17T09:00:00.000Z" };
+    expect(isAtMissTwiceRisk(createdToday, [], today)).toBe(false);
+  });
 });

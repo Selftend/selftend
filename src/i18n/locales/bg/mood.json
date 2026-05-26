@@ -29,8 +29,8 @@
     "pending": "Все още няма запис на настроението за днес.",
     "howAreYou": "Как се чувстваш в момента?",
     "howWasDay": "Как се чувстваше този ден?",
-    "completeOne": "Записано · {{score}}",
-    "completeMany": "{{count}} записа · средно {{average}}",
+    "completeOne": "Записано · {{score}}/5",
+    "completeMany": "{{count}} записа · средно {{average}}/5",
     "logAnother": "Запиши още един"
   },
   "emotions": {

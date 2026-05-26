@@ -21,6 +21,7 @@ import {
   useMeditationSessions,
   useUpsertMeditationProgramState,
 } from "@/src/features/meditation/queries";
+import { median } from "@/src/features/meditation/median";
 import { getStage } from "@/src/features/meditation/stages";
 import type { StageNumber } from "@/src/features/meditation/types";
 import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
@@ -29,6 +30,7 @@ import { useSession } from "@/src/providers/session-provider";
 
 export default function MeditationHomeScreen() {
   const { t } = useTranslation("meditation");
+  const { t: tc } = useTranslation("common");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -47,6 +49,7 @@ export default function MeditationHomeScreen() {
   const stage = getStage(currentStage);
   const suggestedDuration = programState?.preferredDurationMinutes ?? 15;
   const phaseLabel = t(`module.home.phase${capitalize(stage.phase)}`);
+  const medianMinutes = median((allSessions ?? []).map((s) => s.durationMinutes));
 
   function handleInfoComplete() {
     setForceInfo(false);
@@ -121,13 +124,21 @@ export default function MeditationHomeScreen() {
                     {t("hero.stage")} ·{" "}
                     <Text className="text-xs font-bold text-iris">{stage.number}</Text>
                   </Text>
-                  {allSessions != null ? (
-                    <Text variant="muted" className="text-xs">
-                      <Text className="text-xs font-bold text-iris">
-                        {t("hero.sessions", { count: allSessions.length })}
-                      </Text>
+                  <Text variant="muted" className="text-xs">
+                    <Text className="text-xs font-bold text-iris">
+                      {t("hero.sessions", { count: (allSessions ?? []).length })}
                     </Text>
-                  ) : null}
+                  </Text>
+                  <Text variant="muted" className="text-xs">
+                    {t("hero.median")} ·{" "}
+                    {medianMinutes !== null ? (
+                      <Text className="text-xs font-bold text-iris">
+                        {t("hero.minutes", { count: medianMinutes })}
+                      </Text>
+                    ) : (
+                      <Text className="text-xs font-bold text-iris/60">{tc("noData")}</Text>
+                    )}
+                  </Text>
                 </View>
               }
             />

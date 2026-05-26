@@ -25,7 +25,10 @@
   "hero": {
     "stage": "Stage",
     "sessions_one": "{{count}} session",
-    "sessions_other": "{{count}} sessions"
+    "sessions_other": "{{count}} sessions",
+    "median": "Median",
+    "minutes_one": "{{count}} min",
+    "minutes_other": "{{count}} min"
   },
   "module": {
     "home": {

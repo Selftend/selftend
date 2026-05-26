@@ -6,7 +6,10 @@
   },
   "hero": {
     "entries_one": "{{count}} запис",
-    "entries_other": "{{count}} записа"
+    "entries_other": "{{count}} записа",
+    "words_one": "{{count}} дума",
+    "words_other": "{{count}} думи",
+    "last": "Последно"
   },
   "list": {
     "recent": "Скорошни записи",

@@ -5,11 +5,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MindfulnessOnboarding } from "@/src/components/app/mindfulness-onboarding-modal";
-import { mindfulnessExercises } from "@/src/constants/mindfulness";
+import { mindfulnessExercises, mindfulnessLookup } from "@/src/constants/mindfulness";
+import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
+import { useSession } from "@/src/providers/session-provider";
 import type { MindfulnessExercise } from "@/src/constants/mindfulness";
 import { exerciseHue, hueGradient } from "@/src/features/mindfulness/exercise-hue";
 import { useAppColorScheme } from "@/src/lib/color-scheme";
@@ -20,6 +29,9 @@ export default function MindfulnessHomeScreen() {
   const { t } = useTranslation("cbt");
   const isDark = useAppColorScheme() === "dark";
   const [forceOnboarding, setForceOnboarding] = useState(false);
+  const { user } = useSession();
+  const { data: sessions } = useMindfulnessSessions(user?.id ?? null, 7);
+  const recentSessions = (sessions ?? []).filter((s) => s.exerciseName in mindfulnessLookup);
 
   const open = (slug: string) => router.push(`/tools/mindfulness/${slug}`);
 
@@ -36,7 +48,7 @@ export default function MindfulnessHomeScreen() {
             <ModuleHomeHeader
               title={t("mindfulness.takeAMoment")}
               hue="mist"
-              icon="air"
+              icon="self-improvement"
               description={t("mindfulness.description")}
               actions={[
                 { type: "notifications", targetKey: "mindfulness" },
@@ -49,9 +61,47 @@ export default function MindfulnessHomeScreen() {
                       {t("mindfulness.hero.practices", { count: mindfulnessExercises.length })}
                     </Text>
                   </Text>
+                  <Text variant="muted" className="text-xs">
+                    <Text className="text-xs font-bold text-mist">
+                      {t("mindfulness.hero.sessions", { count: recentSessions.length })}
+                    </Text>
+                  </Text>
                 </View>
               }
             />
+
+            {recentSessions.length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("mindfulness.streakTitle")}</CardTitle>
+                  <CardDescription>
+                    {t("mindfulness.recentCount", { count: recentSessions.length })}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <View className="gap-1">
+                    {recentSessions.slice(0, 3).map((s) => (
+                      <Pressable
+                        key={s.id}
+                        accessibilityRole="button"
+                        onPress={() =>
+                          router.push({
+                            pathname: "/tools/mindfulness/session/[id]",
+                            params: { id: s.id },
+                          })
+                        }
+                        className="active:opacity-70"
+                      >
+                        <Text variant="muted" className="text-sm">
+                          • {t(`mindfulness.exercises.${s.exerciseName}.title`)} ·{" "}
+                          {t("mindfulness.minutes", { value: s.durationMinutes })}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </CardContent>
+              </Card>
+            ) : null}
 
             <View className="gap-3">
               <Text className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">

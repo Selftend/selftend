@@ -23,7 +23,7 @@ import {
   useSelectedDateStore,
 } from "@/src/stores/selected-date-store";
 
-const INITIAL_DAYS = 120;
+const INITIAL_DAYS = 60;
 const LOAD_CHUNK = 120;
 const ITEM_WIDTH = 52; // fixed cell width keeps getItemLayout/scrollToIndex reliable
 

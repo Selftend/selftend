@@ -77,7 +77,7 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect(screen.getByText("Logged · 4")).toBeTruthy();
+    expect(screen.getByText("Logged · 4/5")).toBeTruthy();
     expect(screen.getByText("Log another")).toBeTruthy();
     expect(screen.getAllByText("Avg 4")).toHaveLength(2);
     expect(screen.getAllByText("1 log")).toHaveLength(3); // 2 summary tiles + hero meta
@@ -115,7 +115,7 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect(screen.getByText("2 logs · avg 3")).toBeTruthy();
+    expect(screen.getByText("2 logs · avg 3/5")).toBeTruthy();
     expect(screen.getByText("Log another")).toBeTruthy();
   });
 

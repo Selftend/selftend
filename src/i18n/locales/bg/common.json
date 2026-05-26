@@ -14,6 +14,8 @@
   "appName": "Selftend",
   "underConstruction": "В процес на разработка",
   "toolNotAvailable": "Този инструмент идва скоро. Провери по-късно.",
+  "never": "никога",
+  "noData": "няма данни",
   "feedback": {
     "saved": "Запазено",
     "problem": "Нещо не беше запазено",

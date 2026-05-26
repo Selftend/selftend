@@ -13,7 +13,8 @@
     "entries_one": "{{count}} запис",
     "entries_other": "{{count}} записа",
     "favorites_one": "{{count}} любим",
-    "favorites_other": "{{count}} любими"
+    "favorites_other": "{{count}} любими",
+    "thisWeek": "Тази седмица"
   },
   "insights": {
     "title": "Прозрения",

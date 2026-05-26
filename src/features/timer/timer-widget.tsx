@@ -311,6 +311,17 @@ export function TimerWidget({
     setSecondsLeft(durationMinutes * 60);
   }
 
+  function finishEarly() {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    const elapsedMinutes = Math.max(1, Math.round((durationMinutes * 60 - secondsLeft) / 60));
+    setTimerState("idle");
+    setSecondsLeft(durationMinutes * 60);
+    router.push({
+      pathname: "/tools/meditation/session/log",
+      params: { duration: String(elapsedMinutes) },
+    });
+  }
+
   return (
     <View className="gap-4">
       {!isActive && timerState !== "completed" ? (
@@ -340,6 +351,9 @@ export function TimerWidget({
             <Button onPress={() => setTimerState("paused")} variant="outline" className="flex-1">
               <Text>{t("timer.pause")}</Text>
             </Button>
+            <Button onPress={finishEarly} variant="ghost">
+              <Text>{t("timer.finishEarly")}</Text>
+            </Button>
             <Button onPress={reset} variant="ghost">
               <Text>{t("timer.reset")}</Text>
             </Button>
@@ -348,6 +362,9 @@ export function TimerWidget({
           <>
             <Button onPress={() => setTimerState("running")} className="flex-1">
               <Text>{t("timer.resume")}</Text>
+            </Button>
+            <Button onPress={finishEarly} variant="ghost">
+              <Text>{t("timer.finishEarly")}</Text>
             </Button>
             <Button onPress={reset} variant="ghost">
               <Text>{t("timer.reset")}</Text>

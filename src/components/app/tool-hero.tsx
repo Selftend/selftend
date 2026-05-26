@@ -16,6 +16,9 @@ interface ToolHeroProps {
   meta?: ReactNode;
 }
 
+// The eyebrow breadcrumb above the hero already shows the tool name, so the hero
+// no longer renders a visible title. The title is kept as a visually-hidden
+// heading to preserve the screen's heading landmark for assistive tech.
 export function ToolHero({ hue, icon, title, tagline, meta }: ToolHeroProps) {
   const isDark = useAppColorScheme() === "dark";
   const { classes } = exerciseHue(hue);
@@ -36,7 +39,13 @@ export function ToolHero({ hue, icon, title, tagline, meta }: ToolHeroProps) {
           pointerEvents: "none",
         }}
       />
-      <View className="flex-row items-center gap-3">
+      <Text
+        variant="h1"
+        style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 }}
+      >
+        {title}
+      </Text>
+      <View className="flex-row items-start gap-3">
         <View
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
@@ -44,15 +53,12 @@ export function ToolHero({ hue, icon, title, tagline, meta }: ToolHeroProps) {
         >
           <Icon name={icon} className={classes.text} size={26} />
         </View>
-        <Text variant="h1" className="flex-1">
-          {title}
-        </Text>
+        {tagline ? (
+          <Text variant="muted" className="flex-1 self-center text-[15px] leading-snug">
+            {tagline}
+          </Text>
+        ) : null}
       </View>
-      {tagline ? (
-        <Text variant="muted" className="mt-3 max-w-[38ch]">
-          {tagline}
-        </Text>
-      ) : null}
       {meta ? <View className="mt-4">{meta}</View> : null}
     </View>
   );

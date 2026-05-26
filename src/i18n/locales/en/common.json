@@ -14,6 +14,8 @@
   "appName": "Selftend",
   "underConstruction": "Under construction",
   "toolNotAvailable": "This tool is coming soon. Check back later.",
+  "never": "never",
+  "noData": "no data",
   "feedback": {
     "saved": "Saved",
     "problem": "Something did not save",

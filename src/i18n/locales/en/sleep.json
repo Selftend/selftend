@@ -24,7 +24,9 @@
   },
   "hero": {
     "avg": "7-day avg",
-    "quality": "Quality"
+    "quality": "Quality",
+    "nights_one": "{{count}} night",
+    "nights_other": "{{count}} nights"
   },
   "sections": {
     "summary": "Summary",

@@ -13,7 +13,8 @@
     "entries_one": "{{count}} entry",
     "entries_other": "{{count}} entries",
     "favorites_one": "{{count}} favorite",
-    "favorites_other": "{{count}} favorites"
+    "favorites_other": "{{count}} favorites",
+    "thisWeek": "This week"
   },
   "insights": {
     "title": "Insights",

@@ -401,12 +401,22 @@
     "description": "Кратки направлявани практики за установяване на вниманието в настоящия момент.",
     "hero": {
       "practices_one": "{{count}} практика",
-      "practices_other": "{{count}} практики"
+      "practices_other": "{{count}} практики",
+      "from": "От",
+      "fromValue": "3 мин нагоре",
+      "sessions_one": "{{count}} сесия",
+      "sessions_other": "{{count}} сесии"
+    },
+    "sessionDetail": {
+      "notFound": "Сесията не е намерена",
+      "completedAt": "Завършена {{date}}",
+      "feeling": "Усещане след това: {{feeling}}"
     },
     "choose": "Избери упражнение",
     "minutes": "{{value}} мин",
     "streakTitle": "Скорошни сесии",
-    "recentCount": "{{count}} записани сесии.",
+    "recentCount_one": "{{count}} записана сесия.",
+    "recentCount_other": "{{count}} записани сесии.",
     "chooseDuration": "Избери продължителност",
     "start": "Започни упражнение",
     "howTo": "Как да го направиш",
@@ -1316,7 +1326,11 @@
     "description": "Бързи техники за закрепване в настоящия момент, когато тревожността или стресът се засили.",
     "hero": {
       "recentSessions_one": "{{count}} скорошна сесия",
-      "recentSessions_other": "{{count}} скорошни сесии"
+      "recentSessions_other": "{{count}} скорошни сесии",
+      "techniques_one": "{{count}} техника",
+      "techniques_other": "{{count}} техники",
+      "takes": "Отнема",
+      "takesValue": "2–3 мин"
     },
     "choose": "Избери техника",
     "howTo": "Как се прави",
@@ -1329,7 +1343,8 @@
     "save": "Запази сесията",
     "notFound": "Техниката не е намерена",
     "streakTitle": "Скорошни сесии",
-    "recentCount": "{{count}} записани сесии.",
+    "recentCount_one": "{{count}} записана сесия.",
+    "recentCount_other": "{{count}} записани сесии.",
     "techniques": {
       "54321": {
         "title": "5-4-3-2-1",
@@ -1403,7 +1418,8 @@
     },
     "choose": "Избери модел",
     "minutes": "{{value}} мин",
-    "recentCount": "{{count}} сесии",
+    "recentCount_one": "{{count}} сесия",
+    "recentCount_other": "{{count}} сесии",
     "chooseDuration": "Избери продължителност",
     "start": "Започни",
     "finishEarly": "Завърши по-рано",

@@ -6,7 +6,10 @@
   },
   "hero": {
     "entries_one": "{{count}} entry",
-    "entries_other": "{{count}} entries"
+    "entries_other": "{{count}} entries",
+    "words_one": "{{count}} word",
+    "words_other": "{{count}} words",
+    "last": "Last"
   },
   "list": {
     "recent": "Recent entries",

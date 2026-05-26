@@ -60,6 +60,9 @@
   "hero": {
     "stage": "Етап",
     "sessions_one": "{{count}} сесия",
-    "sessions_other": "{{count}} сесии"
+    "sessions_other": "{{count}} сесии",
+    "median": "Медиана",
+    "minutes_one": "{{count}} мин",
+    "minutes_other": "{{count}} мин"
   }
 }

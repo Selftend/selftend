@@ -32,6 +32,7 @@ const CHART_DAYS = 14;
 
 export default function MoodTrackerScreen() {
   const { t, i18n } = useTranslation("mood");
+  const { t: tc } = useTranslation("common");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -84,21 +85,24 @@ export default function MoodTrackerScreen() {
               ]}
               meta={
                 <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                  {lastEntry ? (
-                    <Text variant="muted" className="text-xs">
-                      {t("hero.lastEntry")} · {MOOD_EMOJI_BY_SCORE[lastEntry.moodScore] ?? ""}{" "}
-                      <Text className="text-xs font-bold text-be">{lastEntry.moodScore}/5</Text>
-                      {lastEntryWhen ? ` · ${lastEntryWhen}` : ""}
-                    </Text>
-                  ) : null}
-                  {sevenDay.count > 0 ? (
-                    <Text variant="muted" className="text-xs">
-                      {t("hero.thisWeek")} ·{" "}
-                      <Text className="text-xs font-bold text-be">
-                        {t("summary.count", { count: sevenDay.count })}
+                  <Text variant="muted" className="text-xs">
+                    {t("hero.lastEntry")} ·{" "}
+                    {lastEntry ? (
+                      <Text className="text-xs">
+                        {MOOD_EMOJI_BY_SCORE[lastEntry.moodScore] ?? ""}{" "}
+                        <Text className="text-xs font-bold text-be">{lastEntry.moodScore}/5</Text>
+                        {lastEntryWhen ? ` · ${lastEntryWhen}` : ""}
                       </Text>
+                    ) : (
+                      <Text className="text-xs font-bold text-be/60">{tc("never")}</Text>
+                    )}
+                  </Text>
+                  <Text variant="muted" className="text-xs">
+                    {t("hero.thisWeek")} ·{" "}
+                    <Text className="text-xs font-bold text-be">
+                      {t("summary.count", { count: sevenDay.count })}
                     </Text>
-                  ) : null}
+                  </Text>
                 </View>
               }
             />

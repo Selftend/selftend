@@ -63,6 +63,7 @@ function relativeLabel(
 
 export default function SleepTrackerScreen() {
   const { t } = useTranslation("sleep");
+  const { t: tc } = useTranslation("common");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -99,24 +100,32 @@ export default function SleepTrackerScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
               meta={
-                sevenDayDuration !== null || sevenDayQuality !== null ? (
-                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                    {sevenDayDuration !== null ? (
+                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                  {sevenDayDuration !== null ? (
+                    <>
                       <Text variant="muted" className="text-xs">
                         {t("hero.avg")} ·{" "}
                         <Text className="text-xs font-bold text-ink">
                           {(sevenDayDuration / 60).toFixed(1)}h
                         </Text>
                       </Text>
-                    ) : null}
-                    {sevenDayQuality !== null ? (
                       <Text variant="muted" className="text-xs">
                         {t("hero.quality")} ·{" "}
                         <Text className="text-xs font-bold text-ink">{sevenDayQuality}/5</Text>
                       </Text>
-                    ) : null}
-                  </View>
-                ) : null
+                    </>
+                  ) : (
+                    <Text variant="muted" className="text-xs">
+                      {t("hero.avg")} ·{" "}
+                      <Text className="text-xs font-bold text-ink/60">{tc("noData")}</Text>
+                    </Text>
+                  )}
+                  <Text variant="muted" className="text-xs">
+                    <Text className="text-xs font-bold text-ink">
+                      {t("hero.nights", { count: allLogs.length })}
+                    </Text>
+                  </Text>
+                </View>
               }
             />
 

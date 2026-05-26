@@ -29,8 +29,8 @@
     "pending": "No mood logged yet today.",
     "howAreYou": "How are you feeling right now?",
     "howWasDay": "How were you feeling this day?",
-    "completeOne": "Logged · {{score}}",
-    "completeMany": "{{count}} logs · avg {{average}}",
+    "completeOne": "Logged · {{score}}/5",
+    "completeMany": "{{count}} logs · avg {{average}}/5",
     "logAnother": "Log another"
   },
   "emotions": {

@@ -155,10 +155,13 @@ export default function BreathingExerciseScreen() {
 
   const handleFinish = async () => {
     if (!selectedDuration) return;
+    const plannedSeconds = selectedDuration * 60;
+    const elapsedSeconds = plannedSeconds - Math.max(0, totalSecondsRef.current);
+    const elapsedMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
     try {
       await saveMutation.mutateAsync({
         exerciseName: pattern.slug,
-        durationMinutes: selectedDuration,
+        durationMinutes: elapsedMinutes,
         reflection: "",
         feelingAfter: null,
       });

@@ -79,7 +79,7 @@ export default function GratitudeDetailScreen() {
   }
 
   const when = formatMoodRelativeTime(entry.loggedAt, t);
-  const heading = entry.items[0] ?? t("detail.title");
+  const heading = t("detail.title");
 
   const confirmDelete = async () => {
     setDeleteError("");

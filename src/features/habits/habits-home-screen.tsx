@@ -59,6 +59,7 @@ export default function HabitsHomeScreen() {
   }).format(today);
 
   const todayHabits = allHabits.filter((habit) => isScheduledOn(habit, today));
+  const todayTicked = todayHabits.filter((habit) => isTickedOn(allLogs, habit.id, todayStr)).length;
 
   const identities = (() => {
     const seen = new Set<string>();
@@ -110,15 +111,19 @@ export default function HabitsHomeScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
               meta={
-                habits != null ? (
-                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                    <Text variant="muted" className="text-xs">
-                      <Text className="text-xs font-bold text-act">
-                        {t("hero.habits", { count: allHabits.length })}
-                      </Text>
+                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                  <Text variant="muted" className="text-xs">
+                    {t("hero.today")} ·{" "}
+                    <Text className="text-xs font-bold text-act">
+                      {todayTicked}/{todayHabits.length}
                     </Text>
-                  </View>
-                ) : null
+                  </Text>
+                  <Text variant="muted" className="text-xs">
+                    <Text className="text-xs font-bold text-act">
+                      {t("hero.habits", { count: allHabits.length })}
+                    </Text>
+                  </Text>
+                </View>
               }
             />
 

@@ -401,12 +401,22 @@
     "description": "Short guided practices to settle your attention in the present moment.",
     "hero": {
       "practices_one": "{{count}} practice",
-      "practices_other": "{{count}} practices"
+      "practices_other": "{{count}} practices",
+      "from": "From",
+      "fromValue": "3 min upward",
+      "sessions_one": "{{count}} session",
+      "sessions_other": "{{count}} sessions"
+    },
+    "sessionDetail": {
+      "notFound": "Session not found",
+      "completedAt": "Completed {{date}}",
+      "feeling": "Felt {{feeling}} afterwards"
     },
     "choose": "Choose an exercise",
     "minutes": "{{value}} min",
     "streakTitle": "Recent sessions",
-    "recentCount": "{{count}} sessions logged.",
+    "recentCount_one": "{{count}} session logged.",
+    "recentCount_other": "{{count}} sessions logged.",
     "chooseDuration": "Choose a duration",
     "start": "Start exercise",
     "howTo": "How to do it",
@@ -1316,7 +1326,11 @@
     "description": "Quick techniques to anchor yourself in the present moment when anxiety or distress spikes.",
     "hero": {
       "recentSessions_one": "{{count}} recent session",
-      "recentSessions_other": "{{count}} recent sessions"
+      "recentSessions_other": "{{count}} recent sessions",
+      "techniques_one": "{{count}} technique",
+      "techniques_other": "{{count}} techniques",
+      "takes": "Takes",
+      "takesValue": "2–3 min"
     },
     "choose": "Choose a technique",
     "howTo": "How to do it",
@@ -1329,7 +1343,8 @@
     "save": "Save session",
     "notFound": "Technique not found",
     "streakTitle": "Recent sessions",
-    "recentCount": "{{count}} sessions logged.",
+    "recentCount_one": "{{count}} session logged.",
+    "recentCount_other": "{{count}} sessions logged.",
     "techniques": {
       "54321": {
         "title": "5-4-3-2-1",
@@ -1403,7 +1418,8 @@
     },
     "choose": "Choose a pattern",
     "minutes": "{{value}} min",
-    "recentCount": "{{count}} sessions",
+    "recentCount_one": "{{count}} session",
+    "recentCount_other": "{{count}} sessions",
     "chooseDuration": "Choose a duration",
     "start": "Start",
     "finishEarly": "Finish early",

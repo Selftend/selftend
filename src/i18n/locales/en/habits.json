@@ -16,8 +16,9 @@
     "deleteConfirm": "Delete this habit and all its ticks? This can't be undone."
   },
   "hero": {
-    "habits_one": "{{count}} habit",
-    "habits_other": "{{count}} habits"
+    "habits_one": "{{count}} active habit",
+    "habits_other": "{{count}} active habits",
+    "today": "Today"
   },
   "home": {
     "title": "Habits",
@@ -110,6 +111,13 @@
   "detail": {
     "calendarTitle": "Recent ticks",
     "calendarEmpty": "No ticks recorded yet. Tap any day to tick it.",
+    "detailsTitle": "Details",
+    "scheduleTitle": "Schedule",
+    "scheduleEveryDay": "Every day",
+    "scheduleWeekdays": "Weekdays",
+    "kindTitle": "Type",
+    "kindBuild": "Build",
+    "kindBreak": "Break",
     "strategiesTitle": "Strategies",
     "strategyCue": "Cue",
     "strategyStack": "Habit stack",

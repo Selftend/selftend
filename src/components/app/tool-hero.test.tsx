@@ -11,7 +11,7 @@ jest.mock("expo-linear-gradient", () => {
 });
 
 describe("ToolHero", () => {
-  it("renders the title, tagline and meta", () => {
+  it("renders the title as a heading, plus tagline and meta", () => {
     renderWithProviders(
       <ToolHero
         hue="be"
@@ -22,7 +22,7 @@ describe("ToolHero", () => {
       />,
     );
 
-    expect(screen.getByText("Check-in")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
     expect(screen.getByText("Log how you're feeling.")).toBeTruthy();
     expect(screen.getByText("This week · 5 logs")).toBeTruthy();
   });

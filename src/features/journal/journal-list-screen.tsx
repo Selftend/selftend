@@ -11,6 +11,7 @@ import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
 import { EmptyState } from "@/src/components/app/screen-state";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { countWords } from "@/src/features/journal/word-count";
 import { useJournalEntries } from "@/src/features/journal/queries";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
@@ -19,6 +20,7 @@ import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-stor
 
 export default function JournalListScreen() {
   const { t } = useTranslation("journal");
+  const { t: tc } = useTranslation("common");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -28,6 +30,11 @@ export default function JournalListScreen() {
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
   const list = (entries ?? []).filter((entry) => toLocalDateKey(entry.createdAt) === selectedDate);
+
+  const allEntries = entries ?? [];
+  const lastEntry = allEntries[0] ?? null;
+  const lastWhen = lastEntry ? formatMoodRelativeTime(lastEntry.createdAt, t) : null;
+  const totalWords = allEntries.reduce((sum, entry) => sum + countWords(entry.body), 0);
 
   return (
     <>
@@ -49,15 +56,26 @@ export default function JournalListScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
               meta={
-                entries != null ? (
-                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                    <Text variant="muted" className="text-xs">
-                      <Text className="text-xs font-bold text-ink">
-                        {t("hero.entries", { count: entries.length })}
-                      </Text>
+                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                  <Text variant="muted" className="text-xs">
+                    <Text className="text-xs font-bold text-ink">
+                      {t("hero.entries", { count: allEntries.length })}
                     </Text>
-                  </View>
-                ) : null
+                  </Text>
+                  <Text variant="muted" className="text-xs">
+                    <Text className="text-xs font-bold text-ink">
+                      {t("hero.words", { count: totalWords })}
+                    </Text>
+                  </Text>
+                  <Text variant="muted" className="text-xs">
+                    {t("hero.last")} ·{" "}
+                    {lastWhen ? (
+                      <Text className="text-xs font-bold text-ink">{lastWhen}</Text>
+                    ) : (
+                      <Text className="text-xs font-bold text-ink/60">{tc("never")}</Text>
+                    )}
+                  </Text>
+                </View>
               }
             />
 

@@ -24,7 +24,9 @@
   },
   "hero": {
     "avg": "Средно за 7 дни",
-    "quality": "Качество"
+    "quality": "Качество",
+    "nights_one": "{{count}} нощ",
+    "nights_other": "{{count}} нощи"
   },
   "sections": {
     "summary": "Обобщение",
