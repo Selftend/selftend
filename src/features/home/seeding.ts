@@ -1,0 +1,40 @@
+// Widgets seeded for a brand-new user (pinned mood-checkin is NOT here — it is
+// rendered separately and never stored as a row). Plan 1 ships this subset;
+// Plan 2 extends it with the brand-new-data default widgets.
+export const DEFAULT_WIDGET_IDS = [
+  "mood-trend",
+  "journal-latest",
+  "breathing-suggested",
+  "gratitude-latest",
+  "meditation-pick",
+  "habits-today",
+] as const;
+
+// Maps a legacy plan_items.tool_id to the equivalent widget id.
+const TOOL_TO_WIDGET_ID: Record<string, string> = {
+  mood: "mood-trend",
+  journal: "journal-latest",
+  breathing: "breathing-suggested",
+  meditation: "meditation-pick",
+  gratitude: "gratitude-latest",
+  habits: "habits-today",
+  "self-care": "self-care",
+  cbt: "cbt-open-record",
+  "module-cbt": "cbt-open-record",
+  "module-act": "act-values",
+};
+
+export function resolveInitialWidgetIds(planItems: { toolId: string; order: number }[]): string[] {
+  if (planItems.length === 0) return [...DEFAULT_WIDGET_IDS];
+
+  const ordered = [...planItems].sort((a, b) => a.order - b.order);
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const { toolId } of ordered) {
+    const widgetId = TOOL_TO_WIDGET_ID[toolId];
+    if (!widgetId || seen.has(widgetId)) continue;
+    seen.add(widgetId);
+    result.push(widgetId);
+  }
+  return result;
+}
