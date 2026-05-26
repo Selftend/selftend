@@ -1,168 +1,190 @@
-import { ActivityIndicator, Modal, Pressable, ScrollView, View } from "react-native";
+import { Modal, Pressable, ScrollView, View } from "react-native";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { router } from "expo-router";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
-import { TOOL_DEFS } from "@/src/features/plan/generate-plan";
-import { useSavePlanItem } from "@/src/features/plan/queries";
-import type { CarePlanItemInput } from "@/src/features/plan/types";
-import { WIDGET_META, WIDGET_TOOL_ORDER } from "@/src/features/home/widget-registry";
-import { toolAccent } from "@/src/features/home/tool-accent";
-
-type WidgetToolDef = Pick<CarePlanItemInput, "toolId" | "title" | "route" | "frequency">;
-
-const EXTRA_DEFS: Record<string, WidgetToolDef> = {
-  "self-care": {
-    toolId: "self-care",
-    title: "Self-care log",
-    route: "/modules/cbt/self-care",
-    frequency: "daily",
-  },
-  "module-cbt": {
-    toolId: "module-cbt",
-    title: "CBT",
-    route: "/modules/cbt",
-    frequency: "daily",
-  },
-  "module-act": {
-    toolId: "module-act",
-    title: "ACT",
-    route: "/modules/act",
-    frequency: "daily",
-  },
-};
+import { WIDGET_META, isImplemented, type WidgetMeta } from "@/src/features/home/widget-registry";
+import { tintClasses } from "@/src/features/home/widget-tint";
 
 interface AddWidgetModalProps {
-  nextOrder: number;
   visible: boolean;
   onClose: () => void;
   userId: string | null;
-  existingToolIds: string[];
+  existingWidgetIds: string[];
+  onAdd: (widgetId: string) => void;
+}
+
+const CATEGORY_ORDER = [
+  "mood",
+  "cbt",
+  "act",
+  "journal",
+  "breathing",
+  "mindfulness",
+  "grounding",
+  "gratitude",
+  "meditation",
+  "sleep",
+  "habits",
+];
+
+const CATEGORY_ICON: Record<string, WidgetMeta["icon"]> = {
+  mood: "mood",
+  cbt: "psychology",
+  act: "explore",
+  journal: "edit-note",
+  breathing: "air",
+  mindfulness: "self-improvement",
+  grounding: "anchor",
+  gratitude: "favorite",
+  meditation: "self-improvement",
+  sleep: "bedtime",
+  habits: "task-alt",
+};
+
+function widgetsByCategory(): Record<string, WidgetMeta[]> {
+  const grouped: Record<string, WidgetMeta[]> = {};
+  for (const meta of Object.values(WIDGET_META)) {
+    if (meta.id === "mood-checkin") continue; // pinned, not addable
+    (grouped[meta.toolKey] ??= []).push(meta);
+  }
+  return grouped;
 }
 
 export function AddWidgetModal({
-  nextOrder,
   visible,
   onClose,
-  userId,
-  existingToolIds,
+  existingWidgetIds,
+  onAdd,
 }: AddWidgetModalProps) {
   const { t } = useTranslation("navigation");
   const reduceMotionEnabled = useReduceMotionEnabled();
-  const saveMutation = useSavePlanItem(userId);
+  const [category, setCategory] = useState<string | null>(null);
+  const grouped = useMemo(widgetsByCategory, []);
 
-  const available = WIDGET_TOOL_ORDER.filter((id) => !existingToolIds.includes(id));
-
-  async function handleAdd(toolId: string) {
-    if (!userId) return;
-    const def = EXTRA_DEFS[toolId] ?? TOOL_DEFS[toolId as keyof typeof TOOL_DEFS];
-    if (!def) return;
-    await saveMutation.mutateAsync({
-      input: {
-        title: def.title,
-        toolId: def.toolId,
-        route: def.route,
-        frequency: def.frequency,
-        reminderEnabled: false,
-        order: nextOrder,
-        active: true,
-      },
-    });
+  function handleClose() {
+    setCategory(null);
     onClose();
   }
 
-  function handleWizard() {
-    onClose();
-    router.push("/(app)/plan/create");
-  }
+  const categories = CATEGORY_ORDER.filter((c) => grouped[c]?.length);
 
   return (
     <Modal
       animationType={reduceMotionEnabled ? "none" : "slide"}
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
       transparent
       visible={visible}
     >
-      <Pressable className="flex-1 bg-black/50" onPress={onClose}>
+      <Pressable className="flex-1 bg-black/50" onPress={handleClose}>
         <View className="flex-1" />
         <Pressable className="rounded-t-2xl bg-background">
-          <View className="gap-4 px-6 pt-6 pb-4">
+          <View className="gap-4 px-6 pt-6 pb-2">
             <View className="flex-row items-center justify-between">
-              <View className="gap-0.5">
-                <Text className="text-base font-semibold">
-                  {t("today.dashboard.addWidgetTitle")}
-                </Text>
-                <Text variant="muted" className="text-sm">
-                  {t("today.dashboard.addWidgetSubtitle")}
-                </Text>
+              <View className="flex-row items-center gap-2">
+                {category ? (
+                  <Button variant="ghost" size="sm" onPress={() => setCategory(null)}>
+                    <Icon name="arrow-back" className="size-5 text-muted-foreground" />
+                  </Button>
+                ) : null}
+                <View className="gap-0.5">
+                  <Text className="text-base font-semibold">
+                    {category
+                      ? t(`home.categories.${category}`)
+                      : t("today.dashboard.addWidgetTitle")}
+                  </Text>
+                  <Text variant="muted" className="text-sm">
+                    {t("today.dashboard.addWidgetSubtitle")}
+                  </Text>
+                </View>
               </View>
-              <Button variant="ghost" size="sm" onPress={onClose}>
+              <Button variant="ghost" size="sm" onPress={handleClose}>
                 <Icon name="close" className="size-5 text-muted-foreground" />
               </Button>
             </View>
           </View>
 
-          <ScrollView
-            contentContainerClassName="px-6 pb-6 gap-2"
-            style={{ maxHeight: 400 }}
-            scrollEnabled={available.length > 5}
-          >
-            {available.length === 0 ? (
-              <View className="items-center py-6">
-                <Text variant="muted" className="text-sm text-center">
-                  {t("today.dashboard.allAdded")}
-                </Text>
-              </View>
-            ) : (
-              available.map((toolId) => {
-                const meta = WIDGET_META[toolId];
-                if (!meta) return null;
-                const accent = toolAccent(toolId);
-                const isPending =
-                  saveMutation.isPending && saveMutation.variables?.input?.toolId === toolId;
-                return (
-                  <View
-                    key={toolId}
-                    className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3"
-                  >
+          <ScrollView contentContainerClassName="px-6 pb-8 gap-2" style={{ maxHeight: 440 }}>
+            {category === null
+              ? categories.map((cat) => {
+                  const items = grouped[cat] ?? [];
+                  const addedCount = items.filter((m) => existingWidgetIds.includes(m.id)).length;
+                  const accent = tintClasses(items[0]?.tint ?? "primary");
+                  return (
+                    <Pressable
+                      key={cat}
+                      onPress={() => setCategory(cat)}
+                      className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
+                    >
+                      <View
+                        className={cn("size-9 items-center justify-center rounded-lg", accent.chip)}
+                      >
+                        <Icon
+                          name={CATEGORY_ICON[cat] ?? "widgets"}
+                          className={cn("size-5", accent.icon)}
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-sm font-semibold">{t(`home.categories.${cat}`)}</Text>
+                        <Text variant="muted" className="text-xs">
+                          {t("home.widgetCount", { count: items.length })}
+                          {addedCount > 0
+                            ? ` · ${t("home.addedCount", { count: addedCount })}`
+                            : ""}
+                        </Text>
+                      </View>
+                      <Icon name="chevron-right" className="size-5 text-muted-foreground" />
+                    </Pressable>
+                  );
+                })
+              : (grouped[category] ?? []).map((meta) => {
+                  const accent = tintClasses(meta.tint);
+                  const added = existingWidgetIds.includes(meta.id);
+                  const available = isImplemented(meta.id);
+                  return (
                     <View
-                      className={cn("size-9 items-center justify-center rounded-lg", accent.chip)}
+                      key={meta.id}
+                      className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3"
                     >
-                      <Icon name={meta.icon} className={cn("size-5", accent.icon)} />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-sm font-semibold">{t(meta.titleKey)}</Text>
-                      <Text variant="muted" className="text-xs">
-                        {t(meta.descriptionKey)}
-                      </Text>
-                    </View>
-                    <Button
-                      size="sm"
-                      onPress={() => handleAdd(toolId)}
-                      disabled={!userId || saveMutation.isPending}
-                    >
-                      {isPending ? (
-                        <ActivityIndicator size="small" color="#ffffff" />
+                      <View
+                        className={cn("size-9 items-center justify-center rounded-lg", accent.chip)}
+                      >
+                        <Icon name={meta.icon} className={cn("size-5", accent.icon)} />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-sm font-semibold">{t(meta.titleKey)}</Text>
+                        <Text variant="muted" className="text-xs">
+                          {t(meta.descriptionKey)}
+                        </Text>
+                      </View>
+                      {!available ? (
+                        <View className="rounded-full bg-muted px-2 py-0.5">
+                          <Text className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            {t("sidebar.badgeSoon")}
+                          </Text>
+                        </View>
                       ) : (
-                        <Text>{t("today.dashboard.addToolButton")}</Text>
+                        <Button
+                          size="sm"
+                          disabled={added}
+                          onPress={() => {
+                            onAdd(meta.id);
+                            handleClose();
+                          }}
+                        >
+                          <Text>
+                            {added ? t("home.added") : t("today.dashboard.addToolButton")}
+                          </Text>
+                        </Button>
                       )}
-                    </Button>
-                  </View>
-                );
-              })
-            )}
+                    </View>
+                  );
+                })}
           </ScrollView>
-
-          <View className="border-t border-border px-6 py-4">
-            <Button variant="ghost" onPress={handleWizard}>
-              <Icon name="auto-awesome" className="size-4 text-muted-foreground" />
-              <Text className="text-muted-foreground">{t("today.dashboard.buildWithWizard")}</Text>
-            </Button>
-          </View>
         </Pressable>
       </Pressable>
     </Modal>
