@@ -32,8 +32,7 @@
     "badgeLive": "Активно",
     "badgeSoon": "Скоро",
     "collapse": "Свий {{label}}",
-    "expand": "Разгъни {{label}}",
-    "myPlan": "Моят план"
+    "expand": "Разгъни {{label}}"
   },
   "userMenu": {
     "account": "Профил",
@@ -147,7 +146,6 @@
       "addWidgetTitle": "Добави към плана",
       "addWidgetSubtitle": "Избери инструменти за твоето табло",
       "addToolButton": "Добави",
-      "buildWithWizard": "Изгради с помощника",
       "emptySubtitle": "Добави инструменти, с които искаш да се проверяваш всеки ден.",
       "removeWidget": "Премахни {{title}}",
       "moveWidgetUp": "Премести {{title}} нагоре",
@@ -331,7 +329,6 @@
     "legal": "Правна информация",
     "entry": "Запис",
     "new": "Нов",
-    "create": "Създай",
     "newRecord": "Нов запис",
     "newSession": "Нова сесия",
     "logSession": "Запис на сесия",

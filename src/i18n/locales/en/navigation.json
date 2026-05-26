@@ -32,8 +32,7 @@
     "badgeLive": "Live",
     "badgeSoon": "Soon",
     "collapse": "Collapse {{label}}",
-    "expand": "Expand {{label}}",
-    "myPlan": "My Plan"
+    "expand": "Expand {{label}}"
   },
   "userMenu": {
     "account": "Account",
@@ -149,7 +148,6 @@
       "addWidgetTitle": "Add to your plan",
       "addWidgetSubtitle": "Pick tools to add to your dashboard",
       "addToolButton": "Add",
-      "buildWithWizard": "Build with wizard",
       "emptySubtitle": "Add tools you want to check in with each day.",
       "removeWidget": "Remove {{title}}",
       "moveWidgetUp": "Move {{title}} up",
@@ -332,7 +330,6 @@
     "legal": "Legal",
     "entry": "Entry",
     "new": "New",
-    "create": "Create",
     "newRecord": "New record",
     "newSession": "New session",
     "logSession": "Log session",
