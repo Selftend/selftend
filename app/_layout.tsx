@@ -16,6 +16,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { AppShell } from "@/src/components/app/app-shell";
 import { AppErrorBoundary } from "@/src/components/app/app-error-boundary";
@@ -48,18 +49,20 @@ export default function RootLayout() {
   }
 
   return (
-    <AppProviders>
-      <ThemeProvider value={NAV_THEME[colorScheme]}>
-        <View className="flex-1 bg-background" style={THEME_VARIABLES[colorScheme]}>
-          <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-          <AppErrorBoundary>
-            <AppShell />
-            <CookieConsentBanner />
-            <AppToast />
-          </AppErrorBoundary>
-          <PortalHost />
-        </View>
-      </ThemeProvider>
-    </AppProviders>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppProviders>
+        <ThemeProvider value={NAV_THEME[colorScheme]}>
+          <View className="flex-1 bg-background" style={THEME_VARIABLES[colorScheme]}>
+            <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+            <AppErrorBoundary>
+              <AppShell />
+              <CookieConsentBanner />
+              <AppToast />
+            </AppErrorBoundary>
+            <PortalHost />
+          </View>
+        </ThemeProvider>
+      </AppProviders>
+    </GestureHandlerRootView>
   );
 }
