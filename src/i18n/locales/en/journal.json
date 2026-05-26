@@ -4,6 +4,10 @@
   "cta": {
     "new": "New entry"
   },
+  "hero": {
+    "entries_one": "{{count}} entry",
+    "entries_other": "{{count}} entries"
+  },
   "list": {
     "recent": "Recent entries",
     "empty": {

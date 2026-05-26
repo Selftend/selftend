@@ -9,6 +9,12 @@
     "subtitle": "Notice what's good. Write it down. No pressure, no streaks.",
     "viewAll": "View all"
   },
+  "hero": {
+    "entries_one": "{{count}} entry",
+    "entries_other": "{{count}} entries",
+    "favorites_one": "{{count}} favorite",
+    "favorites_other": "{{count}} favorites"
+  },
   "insights": {
     "title": "Insights",
     "frequencyTitle": "Recent rhythm",

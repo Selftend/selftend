@@ -22,6 +22,11 @@
     "save": "Save",
     "discard": "Discard"
   },
+  "hero": {
+    "stage": "Stage",
+    "sessions_one": "{{count}} session",
+    "sessions_other": "{{count}} sessions"
+  },
   "module": {
     "home": {
       "title": "Meditation",

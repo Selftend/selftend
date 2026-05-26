@@ -22,6 +22,10 @@
     "durationRequired": "Please select how long you slept.",
     "qualityRequired": "Please rate your sleep quality."
   },
+  "hero": {
+    "avg": "7-day avg",
+    "quality": "Quality"
+  },
   "sections": {
     "summary": "Summary",
     "recent": "Recent entries"

@@ -399,6 +399,10 @@
   "mindfulness": {
     "title": "Mindfulness",
     "description": "Short guided practices to settle your attention in the present moment.",
+    "hero": {
+      "practices_one": "{{count}} practice",
+      "practices_other": "{{count}} practices"
+    },
     "choose": "Choose an exercise",
     "minutes": "{{value}} min",
     "streakTitle": "Recent sessions",
@@ -1310,6 +1314,10 @@
   "grounding": {
     "title": "Grounding",
     "description": "Quick techniques to anchor yourself in the present moment when anxiety or distress spikes.",
+    "hero": {
+      "recentSessions_one": "{{count}} recent session",
+      "recentSessions_other": "{{count}} recent sessions"
+    },
     "choose": "Choose a technique",
     "howTo": "How to do it",
     "step": "Step {{current}} of {{total}}",
@@ -1387,6 +1395,12 @@
   "breathing": {
     "title": "Breathing exercises",
     "description": "Short guided patterns to calm your nervous system right now.",
+    "hero": {
+      "patterns_one": "{{count}} pattern",
+      "patterns_other": "{{count}} patterns",
+      "recentSessions_one": "{{count}} recent session",
+      "recentSessions_other": "{{count}} recent sessions"
+    },
     "choose": "Choose a pattern",
     "minutes": "{{value}} min",
     "recentCount": "{{count}} sessions",

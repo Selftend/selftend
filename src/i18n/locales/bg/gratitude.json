@@ -9,6 +9,12 @@
     "subtitle": "Забелязвай доброто. Запиши го. Без натиск и без серии.",
     "viewAll": "Виж всички"
   },
+  "hero": {
+    "entries_one": "{{count}} запис",
+    "entries_other": "{{count}} записа",
+    "favorites_one": "{{count}} любим",
+    "favorites_other": "{{count}} любими"
+  },
   "insights": {
     "title": "Прозрения",
     "frequencyTitle": "Скорошен ритъм",

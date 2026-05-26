@@ -98,6 +98,15 @@ export function MoodScale({ value, onChange }: MoodScaleProps) {
             >
               {step.score}
             </Text>
+            <Text
+              className={cn(
+                "text-[10.5px] leading-tight",
+                selected ? "text-white/90" : "text-muted-foreground",
+              )}
+              numberOfLines={1}
+            >
+              {t(`mood:scale.shortLabels.${step.score}`)}
+            </Text>
           </Pressable>
         );
       })}

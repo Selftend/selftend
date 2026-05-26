@@ -4,6 +4,10 @@
   "cta": {
     "new": "Нов запис"
   },
+  "hero": {
+    "entries_one": "{{count}} запис",
+    "entries_other": "{{count}} записа"
+  },
   "list": {
     "recent": "Скорошни записи",
     "empty": {

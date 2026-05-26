@@ -11,7 +11,18 @@
       "3": "3, neutral",
       "4": "4, good",
       "5": "5, very good"
+    },
+    "shortLabels": {
+      "1": "very low",
+      "2": "low",
+      "3": "neutral",
+      "4": "good",
+      "5": "very good"
     }
+  },
+  "hero": {
+    "lastEntry": "Last entry",
+    "thisWeek": "This week"
   },
   "today": {
     "title": "Today",

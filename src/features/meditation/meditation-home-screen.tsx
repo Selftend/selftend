@@ -105,19 +105,32 @@ export default function MeditationHomeScreen() {
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <View className="gap-2">
-              <ModuleHomeHeader
-                title={t("module.home.title")}
-                actions={[
-                  { type: "tune", onPress: () => setForceWizard(true) },
-                  { type: "notifications", targetKey: "meditation" },
-                  { type: "info", onPress: () => setForceInfo(true) },
-                ]}
-              />
-              <Text variant="muted">
-                {t("module.home.subtitle", { stage: stage.number, phase: phaseLabel })}
-              </Text>
-            </View>
+            <ModuleHomeHeader
+              title={t("module.home.title")}
+              hue="iris"
+              icon="self-improvement"
+              description={t("module.home.subtitle", { stage: stage.number, phase: phaseLabel })}
+              actions={[
+                { type: "tune", onPress: () => setForceWizard(true) },
+                { type: "notifications", targetKey: "meditation" },
+                { type: "info", onPress: () => setForceInfo(true) },
+              ]}
+              meta={
+                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                  <Text variant="muted" className="text-xs">
+                    {t("hero.stage")} ·{" "}
+                    <Text className="text-xs font-bold text-iris">{stage.number}</Text>
+                  </Text>
+                  {allSessions != null ? (
+                    <Text variant="muted" className="text-xs">
+                      <Text className="text-xs font-bold text-iris">
+                        {t("hero.sessions", { count: allSessions.length })}
+                      </Text>
+                    </Text>
+                  ) : null}
+                </View>
+              }
+            />
 
             <Card className="border-primary/30">
               <CardContent className="gap-3 pt-6">

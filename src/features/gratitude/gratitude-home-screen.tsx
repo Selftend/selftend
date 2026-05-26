@@ -52,16 +52,34 @@ export default function GratitudeHomeScreen() {
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <View className="gap-2">
-              <ModuleHomeHeader
-                title={t("home.title")}
-                actions={[
-                  { type: "notifications", targetKey: "gratitude" },
-                  { type: "info", onPress: () => setForceOnboarding(true) },
-                ]}
-              />
-              <Text variant="muted">{t("home.subtitle")}</Text>
-            </View>
+            <ModuleHomeHeader
+              title={t("home.title")}
+              hue="think"
+              icon="favorite"
+              description={t("home.subtitle")}
+              actions={[
+                { type: "notifications", targetKey: "gratitude" },
+                { type: "info", onPress: () => setForceOnboarding(true) },
+              ]}
+              meta={
+                entries != null ? (
+                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                    <Text variant="muted" className="text-xs">
+                      <Text className="text-xs font-bold text-think">
+                        {t("hero.entries", { count: allEntries.length })}
+                      </Text>
+                    </Text>
+                    {favoriteCount > 0 ? (
+                      <Text variant="muted" className="text-xs">
+                        <Text className="text-xs font-bold text-think">
+                          {t("hero.favorites", { count: favoriteCount })}
+                        </Text>
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null
+              }
+            />
 
             <Button onPress={() => router.push("/tools/gratitude-log/new")} className="self-start">
               <Icon name="add" className="size-4 text-primary-foreground" />

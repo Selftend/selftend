@@ -39,18 +39,27 @@ export default function JournalListScreen() {
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <View className="gap-2">
-              <ModuleHomeHeader
-                title={t("title")}
-                actions={[
-                  { type: "notifications", targetKey: "journal" },
-                  { type: "info", onPress: () => setForceOnboarding(true) },
-                ]}
-              />
-              <Text variant="muted" className="max-w-[64ch]">
-                {t("description")}
-              </Text>
-            </View>
+            <ModuleHomeHeader
+              title={t("title")}
+              hue="ink"
+              icon="edit-note"
+              description={t("description")}
+              actions={[
+                { type: "notifications", targetKey: "journal" },
+                { type: "info", onPress: () => setForceOnboarding(true) },
+              ]}
+              meta={
+                entries != null ? (
+                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                    <Text variant="muted" className="text-xs">
+                      <Text className="text-xs font-bold text-ink">
+                        {t("hero.entries", { count: entries.length })}
+                      </Text>
+                    </Text>
+                  </View>
+                ) : null
+              }
+            />
 
             <Button onPress={() => router.push("/tools/journal/new")} className="self-start">
               <Icon name="add" className="size-4 text-primary-foreground" />

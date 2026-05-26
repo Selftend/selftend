@@ -399,6 +399,10 @@
   "mindfulness": {
     "title": "Осъзнатост",
     "description": "Кратки направлявани практики за установяване на вниманието в настоящия момент.",
+    "hero": {
+      "practices_one": "{{count}} практика",
+      "practices_other": "{{count}} практики"
+    },
     "choose": "Избери упражнение",
     "minutes": "{{value}} мин",
     "streakTitle": "Скорошни сесии",
@@ -1310,6 +1314,10 @@
   "grounding": {
     "title": "Заземяване",
     "description": "Бързи техники за закрепване в настоящия момент, когато тревожността или стресът се засили.",
+    "hero": {
+      "recentSessions_one": "{{count}} скорошна сесия",
+      "recentSessions_other": "{{count}} скорошни сесии"
+    },
     "choose": "Избери техника",
     "howTo": "Как се прави",
     "step": "Стъпка {{current}} от {{total}}",
@@ -1387,6 +1395,12 @@
   "breathing": {
     "title": "Дихателни упражнения",
     "description": "Кратки насочени модели за успокояване на нервната система точно сега.",
+    "hero": {
+      "patterns_one": "{{count}} модел",
+      "patterns_other": "{{count}} модела",
+      "recentSessions_one": "{{count}} скорошна сесия",
+      "recentSessions_other": "{{count}} скорошни сесии"
+    },
     "choose": "Избери модел",
     "minutes": "{{value}} мин",
     "recentCount": "{{count}} сесии",

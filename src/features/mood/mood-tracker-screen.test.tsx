@@ -80,7 +80,7 @@ describe("MoodTrackerScreen", () => {
     expect(screen.getByText("Logged · 4")).toBeTruthy();
     expect(screen.getByText("Log another")).toBeTruthy();
     expect(screen.getAllByText("Avg 4")).toHaveLength(2);
-    expect(screen.getAllByText("1 log")).toHaveLength(2);
+    expect(screen.getAllByText("1 log")).toHaveLength(3); // 2 summary tiles + hero meta
     expect(screen.getByText("Felt steadier after a walk")).toBeTruthy();
   });
 
@@ -117,6 +117,16 @@ describe("MoodTrackerScreen", () => {
 
     expect(screen.getByText("2 logs · avg 3")).toBeTruthy();
     expect(screen.getByText("Log another")).toBeTruthy();
+  });
+
+  it("renders score labels on the home check-in tiles", async () => {
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodLogs>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    expect((await screen.findAllByText("neutral")).length).toBeGreaterThan(0);
   });
 
   it("routes to the new mood entry page when the CTA is pressed", () => {

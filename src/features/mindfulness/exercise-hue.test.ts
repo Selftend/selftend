@@ -6,6 +6,32 @@ import {
 } from "@/src/features/mindfulness/exercise-hue";
 
 describe("exercise-hue", () => {
+  it("includes the think and aqua tool hues", () => {
+    expect(EXERCISE_HUES).toEqual(
+      expect.arrayContaining(["mist", "iris", "be", "ink", "act", "clay", "think", "aqua"]),
+    );
+  });
+
+  it("exposes Tailwind classes for aqua", () => {
+    expect(exerciseHue("aqua").classes).toEqual({
+      text: "text-aqua",
+      chipBg: "bg-aqua/15",
+      border: "border-aqua/30",
+      fill: "bg-aqua",
+    });
+  });
+
+  it("returns light and dark gradient stops for think", () => {
+    expect(hueGradient("think", false)).toEqual([
+      "hsla(43, 74%, 52%, 0.14)",
+      "hsla(43, 74%, 52%, 0)",
+    ]);
+    expect(hueGradient("think", true)).toEqual([
+      "hsla(43, 86%, 65%, 0.18)",
+      "hsla(43, 86%, 65%, 0)",
+    ]);
+  });
+
   it("exposes a definition for every hue", () => {
     for (const hue of EXERCISE_HUES) {
       const def = exerciseHue(hue);

@@ -17,7 +17,8 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
-import { STEPS } from "@/src/components/app/mood-scale";
+import { MOOD_EMOJI_BY_SCORE, STEPS } from "@/src/components/app/mood-scale";
+import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { MoodEntryCard } from "@/src/features/mood/mood-entry-card";
 import { buildMoodChartData } from "@/src/features/mood/chart-data";
 import { useMoodLogs } from "@/src/features/mood/queries";
@@ -55,6 +56,9 @@ export default function MoodTrackerScreen() {
     .filter((log) => toLocalDateKey(log.loggedAt) === selectedDate)
     .slice(0, RECENT_LIMIT);
 
+  const lastEntry = (moodLogs ?? [])[0] ?? null;
+  const lastEntryWhen = lastEntry ? formatMoodRelativeTime(lastEntry.loggedAt, t) : null;
+
   const handleChartLayout = (e: LayoutChangeEvent) => {
     setChartContainerWidth(e.nativeEvent.layout.width);
   };
@@ -69,18 +73,35 @@ export default function MoodTrackerScreen() {
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <View className="gap-2">
-              <ModuleHomeHeader
-                title={t("title")}
-                actions={[
-                  { type: "notifications", targetKey: "mood" },
-                  { type: "info", onPress: () => setForceOnboarding(true) },
-                ]}
-              />
-              <Text variant="muted" className="max-w-[64ch]">
-                {t("description")}
-              </Text>
-            </View>
+            <ModuleHomeHeader
+              title={t("title")}
+              hue="be"
+              icon="mood"
+              description={t("description")}
+              actions={[
+                { type: "notifications", targetKey: "mood" },
+                { type: "info", onPress: () => setForceOnboarding(true) },
+              ]}
+              meta={
+                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                  {lastEntry ? (
+                    <Text variant="muted" className="text-xs">
+                      {t("hero.lastEntry")} · {MOOD_EMOJI_BY_SCORE[lastEntry.moodScore] ?? ""}{" "}
+                      <Text className="text-xs font-bold text-be">{lastEntry.moodScore}/5</Text>
+                      {lastEntryWhen ? ` · ${lastEntryWhen}` : ""}
+                    </Text>
+                  ) : null}
+                  {sevenDay.count > 0 ? (
+                    <Text variant="muted" className="text-xs">
+                      {t("hero.thisWeek")} ·{" "}
+                      <Text className="text-xs font-bold text-be">
+                        {t("summary.count", { count: sevenDay.count })}
+                      </Text>
+                    </Text>
+                  ) : null}
+                </View>
+              }
+            />
 
             <TodayCheckInCard summary={daySummary} isToday={isToday} dayLabel={dayLabel} />
 
@@ -176,6 +197,9 @@ function TodayCheckInCard({ summary, isToday, dayLabel }: TodayCheckInCardProps)
             >
               <Text className="text-2xl">{step.emoji}</Text>
               <Text className="text-xs font-semibold text-muted-foreground">{step.score}</Text>
+              <Text className="text-[10.5px] leading-tight text-muted-foreground" numberOfLines={1}>
+                {t(`scale.shortLabels.${step.score}`)}
+              </Text>
             </Pressable>
           ))}
         </View>

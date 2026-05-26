@@ -100,16 +100,27 @@ export default function HabitsHomeScreen() {
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <View className="gap-2">
-              <ModuleHomeHeader
-                title={t("home.title")}
-                actions={[
-                  { type: "notifications", targetKey: "habits" },
-                  { type: "info", onPress: () => setForceOnboarding(true) },
-                ]}
-              />
-              <Text variant="muted">{t("home.subtitle")}</Text>
-            </View>
+            <ModuleHomeHeader
+              title={t("home.title")}
+              hue="act"
+              icon="task-alt"
+              description={t("home.subtitle")}
+              actions={[
+                { type: "notifications", targetKey: "habits" },
+                { type: "info", onPress: () => setForceOnboarding(true) },
+              ]}
+              meta={
+                habits != null ? (
+                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                    <Text variant="muted" className="text-xs">
+                      <Text className="text-xs font-bold text-act">
+                        {t("hero.habits", { count: allHabits.length })}
+                      </Text>
+                    </Text>
+                  </View>
+                ) : null
+              }
+            />
 
             {identities.length > 0 ? (
               <View className="rounded-2xl border border-primary/30 bg-primary/5 p-4">

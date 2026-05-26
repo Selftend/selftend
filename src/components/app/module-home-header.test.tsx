@@ -46,6 +46,12 @@ jest.mock("@/src/components/app/notification-settings-modal", () => ({
   NotificationSettingsModal: () => null,
 }));
 
+jest.mock("expo-linear-gradient", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { View } = require("react-native");
+  return { LinearGradient: View };
+});
+
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));
@@ -141,5 +147,34 @@ describe("ModuleHomeHeader button tours", () => {
     expect(
       await screen.findByText("Tap here any time to read about how this module works."),
     ).toBeTruthy();
+  });
+});
+
+describe("ModuleHomeHeader hero mode", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseUpdateShownButtonTours.mockReturnValue({
+      isPending: false,
+      mutateAsync: jest.fn(),
+    } as unknown as ReturnType<typeof useUpdateShownButtonTours>);
+    mockUseUserPreferences.mockReturnValue({
+      data: { ...defaultUserPreferences, shownButtonTours: ["tune", "notifications", "info"] },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+  });
+
+  it("renders the title and tagline when hue and icon are provided", async () => {
+    renderWithProviders(
+      <ModuleHomeHeader
+        title="Check-in"
+        hue="be"
+        icon="mood"
+        description="Log how you're feeling."
+        actions={[{ type: "info", onPress: jest.fn() }]}
+      />,
+    );
+
+    expect(await screen.findByText("Check-in")).toBeTruthy();
+    expect(await screen.findByText("Log how you're feeling.")).toBeTruthy();
   });
 });

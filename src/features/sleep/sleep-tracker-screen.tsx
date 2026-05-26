@@ -89,18 +89,36 @@ export default function SleepTrackerScreen() {
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <View className="gap-2">
-              <ModuleHomeHeader
-                title={t("title")}
-                actions={[
-                  { type: "notifications", targetKey: "sleep" },
-                  { type: "info", onPress: () => setForceOnboarding(true) },
-                ]}
-              />
-              <Text variant="muted" className="max-w-[64ch]">
-                {t("description")}
-              </Text>
-            </View>
+            <ModuleHomeHeader
+              title={t("title")}
+              hue="ink"
+              icon="bedtime"
+              description={t("description")}
+              actions={[
+                { type: "notifications", targetKey: "sleep" },
+                { type: "info", onPress: () => setForceOnboarding(true) },
+              ]}
+              meta={
+                sevenDayDuration !== null || sevenDayQuality !== null ? (
+                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                    {sevenDayDuration !== null ? (
+                      <Text variant="muted" className="text-xs">
+                        {t("hero.avg")} ·{" "}
+                        <Text className="text-xs font-bold text-ink">
+                          {(sevenDayDuration / 60).toFixed(1)}h
+                        </Text>
+                      </Text>
+                    ) : null}
+                    {sevenDayQuality !== null ? (
+                      <Text variant="muted" className="text-xs">
+                        {t("hero.quality")} ·{" "}
+                        <Text className="text-xs font-bold text-ink">{sevenDayQuality}/5</Text>
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null
+              }
+            />
 
             <View className="flex-row gap-3">
               <Button onPress={() => router.push("/tools/sleep/new")} className="self-start">

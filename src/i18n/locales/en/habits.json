@@ -15,6 +15,10 @@
     "delete": "Delete",
     "deleteConfirm": "Delete this habit and all its ticks? This can't be undone."
   },
+  "hero": {
+    "habits_one": "{{count}} habit",
+    "habits_other": "{{count}} habits"
+  },
   "home": {
     "title": "Habits",
     "subtitle": "Small habits, repeated. Tap to tick - no streaks, no shame.",

@@ -200,6 +200,11 @@ describe("MoodEntryEditorScreen", () => {
     });
   });
 
+  it("shows score labels under the mood scale", async () => {
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+    expect(await screen.findByText("very good")).toBeTruthy();
+  });
+
   it("completes a linked activity after saving from the activity flow", async () => {
     mockUseLocalSearchParams.mockReturnValue({
       completeActivityId: "activity-1",

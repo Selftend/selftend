@@ -56,5 +56,10 @@
     "commit": {
       "finish": "Разбрах"
     }
+  },
+  "hero": {
+    "stage": "Етап",
+    "sessions_one": "{{count}} сесия",
+    "sessions_other": "{{count}} сесии"
   }
 }

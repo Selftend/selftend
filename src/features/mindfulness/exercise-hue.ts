@@ -3,9 +3,21 @@
 // HSL triples are copied verbatim from global.css and used for LinearGradient and
 // reanimated colour props, which cannot read CSS variables.
 
-export type ExerciseHue = "mist" | "iris" | "be" | "ink" | "act" | "clay";
+export type ExerciseHue = "mist" | "iris" | "be" | "ink" | "act" | "clay" | "think" | "aqua";
 
-export const EXERCISE_HUES: ExerciseHue[] = ["mist", "iris", "be", "ink", "act", "clay"];
+// Alias for tool-level usage (the hero spans the full tool palette).
+export type ToolHue = ExerciseHue;
+
+export const EXERCISE_HUES: ExerciseHue[] = [
+  "mist",
+  "iris",
+  "be",
+  "ink",
+  "act",
+  "clay",
+  "think",
+  "aqua",
+];
 
 export interface HueClasses {
   text: string;
@@ -43,6 +55,24 @@ const HUES: Record<ExerciseHue, HueDef> = {
   clay: {
     classes: { text: "text-clay", chipBg: "bg-clay/15", border: "border-clay/30", fill: "bg-clay" },
     hsl: { light: "20, 52%, 50%", dark: "20, 60%, 66%" },
+  },
+  think: {
+    classes: {
+      text: "text-think",
+      chipBg: "bg-think/15",
+      border: "border-think/30",
+      fill: "bg-think",
+    },
+    hsl: { light: "43, 74%, 52%", dark: "43, 86%, 65%" },
+  },
+  aqua: {
+    classes: {
+      text: "text-aqua",
+      chipBg: "bg-aqua/15",
+      border: "border-aqua/30",
+      fill: "bg-aqua",
+    },
+    hsl: { light: "196, 52%, 45%", dark: "196, 58%, 62%" },
   },
 };
 

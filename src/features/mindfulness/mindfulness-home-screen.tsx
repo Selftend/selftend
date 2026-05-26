@@ -33,18 +33,25 @@ export default function MindfulnessHomeScreen() {
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <View className="gap-2">
-              <ModuleHomeHeader
-                title={t("mindfulness.takeAMoment")}
-                actions={[
-                  { type: "notifications", targetKey: "mindfulness" },
-                  { type: "info", onPress: () => setForceOnboarding(true) },
-                ]}
-              />
-              <Text variant="muted" className="max-w-[40ch]">
-                {t("mindfulness.description")}
-              </Text>
-            </View>
+            <ModuleHomeHeader
+              title={t("mindfulness.takeAMoment")}
+              hue="mist"
+              icon="air"
+              description={t("mindfulness.description")}
+              actions={[
+                { type: "notifications", targetKey: "mindfulness" },
+                { type: "info", onPress: () => setForceOnboarding(true) },
+              ]}
+              meta={
+                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                  <Text variant="muted" className="text-xs">
+                    <Text className="text-xs font-bold text-mist">
+                      {t("mindfulness.hero.practices", { count: mindfulnessExercises.length })}
+                    </Text>
+                  </Text>
+                </View>
+              }
+            />
 
             <View className="gap-3">
               <Text className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">

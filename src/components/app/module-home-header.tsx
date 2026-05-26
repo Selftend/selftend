@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import {
   Modal,
   Platform,
@@ -13,8 +14,10 @@ import { useColorScheme } from "nativewind";
 
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
-import { Icon } from "@/src/components/react-native-reusables/icon";
+import { ToolHero } from "@/src/components/app/tool-hero";
+import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import type { ToolHue } from "@/src/features/mindfulness/exercise-hue";
 import { useUpdateShownButtonTours, useUserPreferences } from "@/src/features/settings/queries";
 import type { ButtonTourKey } from "@/src/features/modules/types";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
@@ -74,9 +77,20 @@ interface ButtonRect {
 interface ModuleHomeHeaderProps {
   title: string;
   actions?: readonly HeaderAction[];
+  hue?: ToolHue;
+  icon?: MaterialIconName;
+  description?: string;
+  meta?: ReactNode;
 }
 
-export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps) {
+export function ModuleHomeHeader({
+  title,
+  actions = [],
+  hue,
+  icon,
+  description,
+  meta,
+}: ModuleHomeHeaderProps) {
   const { colorScheme } = useColorScheme();
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -194,8 +208,28 @@ export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps)
     buttonViewRefs.current.delete(key);
   };
 
+  const heroMode = hue != null && icon != null;
+
+  const actionsRow =
+    actions.length > 0 ? (
+      <View className="flex-row items-center gap-3">
+        {actions.map((action) => (
+          <TourButton
+            key={action.type}
+            action={action}
+            onPress={() => handleActionPress(action)}
+            setRef={(ref) => {
+              if (isTourableActionType(action.type)) {
+                setActionRef(action.type, ref);
+              }
+            }}
+          />
+        ))}
+      </View>
+    ) : null;
+
   return (
-    <View className="gap-1">
+    <View className={heroMode ? "gap-3" : "gap-1"}>
       {notificationsAction ? (
         <NotificationSettingsModal
           targetKey={notificationsAction.targetKey}
@@ -214,28 +248,27 @@ export function ModuleHomeHeader({ title, actions = [] }: ModuleHomeHeaderProps)
           onDismissAll={() => void dismissAllTours()}
         />
       ) : null}
-      <ScreenBreadcrumb />
-      <View className="flex-row items-center gap-2">
-        <Text variant="h1" className="flex-1">
-          {title}
-        </Text>
-        {actions.length > 0 ? (
-          <View className="flex-row items-center gap-3">
-            {actions.map((action) => (
-              <TourButton
-                key={action.type}
-                action={action}
-                onPress={() => handleActionPress(action)}
-                setRef={(ref) => {
-                  if (isTourableActionType(action.type)) {
-                    setActionRef(action.type, ref);
-                  }
-                }}
-              />
-            ))}
+      {heroMode ? (
+        <>
+          <View className="flex-row items-center gap-2">
+            <View className="flex-1">
+              <ScreenBreadcrumb />
+            </View>
+            {actionsRow}
           </View>
-        ) : null}
-      </View>
+          <ToolHero hue={hue} icon={icon} title={title} tagline={description} meta={meta} />
+        </>
+      ) : (
+        <>
+          <ScreenBreadcrumb />
+          <View className="flex-row items-center gap-2">
+            <Text variant="h1" className="flex-1">
+              {title}
+            </Text>
+            {actionsRow}
+          </View>
+        </>
+      )}
     </View>
   );
 }
