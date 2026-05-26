@@ -71,11 +71,12 @@ export function SignInForm() {
       router.replace("/(app)/(tabs)");
     } catch (error) {
       recordFailure(error);
-      const message = error instanceof Error ? error.message : t("signIn.error");
-      setSubmitError(message);
-      if (message.toLowerCase().includes("not confirmed")) {
-        setIsEmailNotConfirmed(true);
-      }
+      const rawMessage = error instanceof Error ? error.message : "";
+      const isNotConfirmed = rawMessage.toLowerCase().includes("not confirmed");
+      setIsEmailNotConfirmed(isNotConfirmed);
+      setSubmitError(
+        isNotConfirmed ? t("signIn.emailNotConfirmed") : rawMessage || t("signIn.error"),
+      );
     }
   });
 

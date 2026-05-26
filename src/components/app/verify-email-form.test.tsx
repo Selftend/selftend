@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 
 import { VerifyEmailForm } from "./verify-email-form";
-import { resendVerificationEmail, signOut } from "@/src/features/auth/api";
+import { resendVerificationEmail } from "@/src/features/auth/api";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 const mockReplace = jest.fn();
@@ -24,7 +24,6 @@ jest.mock("@/src/providers/session-provider", () => ({
 
 jest.mock("@/src/features/auth/api", () => ({
   resendVerificationEmail: jest.fn().mockResolvedValue(undefined),
-  signOut: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("@/src/lib/supabase", () => ({
@@ -37,7 +36,6 @@ jest.mock("@/src/lib/supabase", () => ({
 }));
 
 const mockResend = resendVerificationEmail as jest.MockedFunction<typeof resendVerificationEmail>;
-const mockSignOut = signOut as jest.MockedFunction<typeof signOut>;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -62,12 +60,10 @@ describe("VerifyEmailForm", () => {
     expect(await screen.findByText("Verification email resent. Check your inbox.")).toBeTruthy();
   });
 
-  it("signs the user out when they start over", async () => {
+  it("returns to sign in when 'Back to sign in' is pressed", () => {
     renderWithProviders(<VerifyEmailForm />);
-    fireEvent.press(screen.getByText("Sign out and start over"));
-    await waitFor(() => {
-      expect(mockSignOut).toHaveBeenCalled();
-    });
+    fireEvent.press(screen.getByText("Back to sign in"));
+    expect(mockReplace).toHaveBeenCalledWith("/");
   });
 
   it("shows a rate-limit message and disables resend after a rate-limited attempt", async () => {

@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { resendVerificationEmail, signOut } from "@/src/features/auth/api";
+import { resendVerificationEmail } from "@/src/features/auth/api";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { supabase } from "@/src/lib/supabase";
 import { useSession } from "@/src/providers/session-provider";
@@ -27,18 +27,13 @@ export function VerifyEmailForm() {
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [errorMessage, setErrorMessage] = useState("");
-  const [isSigningOut, setIsSigningOut] = useState(false);
 
-  // Advance as soon as the provider observes a confirmed session
-  // (covers the email-link callback and web cross-tab storage sync).
   useEffect(() => {
     if (session && user?.email_confirmed_at) {
       router.replace("/(app)/(tabs)");
     }
   }, [session, user?.email_confirmed_at]);
 
-  // Backstop poll: re-read the session and, if one exists but is not yet
-  // confirmed, refresh it to pick up a newly flipped email_confirmed_at.
   useEffect(() => {
     const client = supabase;
     if (!client) {
@@ -83,15 +78,6 @@ export function VerifyEmailForm() {
     }
   };
 
-  const onSignOut = async () => {
-    try {
-      setIsSigningOut(true);
-      await signOut();
-    } catch {
-      setIsSigningOut(false);
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -122,8 +108,8 @@ export function VerifyEmailForm() {
           </Text>
         </Button>
         <View className="items-center">
-          <Button disabled={isSigningOut} onPress={() => void onSignOut()} variant="outline">
-            <Text>{t("verifyEmail.signOutButton")}</Text>
+          <Button onPress={() => router.replace("/")} variant="link">
+            <Text>{t("verifyEmail.backToSignIn")}</Text>
           </Button>
         </View>
       </CardContent>

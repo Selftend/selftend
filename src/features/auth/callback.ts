@@ -21,7 +21,11 @@ export interface ParsedAuthCallbackUrl {
   errorDescription: string | null;
 }
 
-export type CompletedAuthRedirect = "authenticated" | "confirmed" | "password-recovery";
+export type CompletedAuthRedirect =
+  | "authenticated"
+  | "confirmed"
+  | "password-recovery"
+  | "email-verified";
 
 function splitAuthUrl(url: string) {
   const [pathAndQuery, hash = ""] = url.split("#", 2);
@@ -82,6 +86,10 @@ export async function completeAuthRedirect(url: string): Promise<CompletedAuthRe
       return "password-recovery";
     }
 
+    if (params.type === "signup") {
+      return "email-verified";
+    }
+
     return data.session ? "authenticated" : "confirmed";
   }
 
@@ -99,6 +107,10 @@ export async function completeAuthRedirect(url: string): Promise<CompletedAuthRe
       return "password-recovery";
     }
 
+    if (otpType === "signup") {
+      return "email-verified";
+    }
+
     return data.session ? "authenticated" : "confirmed";
   }
 
@@ -113,6 +125,10 @@ export async function completeAuthRedirect(url: string): Promise<CompletedAuthRe
 
     if (params.type === "recovery") {
       return "password-recovery";
+    }
+
+    if (params.type === "signup") {
+      return "email-verified";
     }
 
     return data.session ? "authenticated" : "confirmed";
