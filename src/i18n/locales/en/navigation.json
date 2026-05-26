@@ -85,7 +85,8 @@
       "logsCount_other": "{{count}} logs",
       "notLogged": "Not logged yet",
       "noData": "-",
-      "logMood": "Log mood"
+      "logMood": "Log mood",
+      "entries": "Entries"
     },
     "plan": {
       "title": "On your plate today",
@@ -198,6 +199,58 @@
       "actActions": "Actions",
       "actDefusion": "Defusion",
       "actConnection": "Connection"
+    }
+  },
+  "home": {
+    "sectionTitle": "Home",
+    "editLabel": "Edit widgets",
+    "doneLabel": "Done",
+    "editingHint": "Drag to rearrange",
+    "added": "Added",
+    "widgetCount": "{{count}} widget",
+    "widgetCount_other": "{{count}} widgets",
+    "addedCount": "{{count}} added",
+    "categories": {
+      "mood": "Check-in",
+      "cbt": "CBT",
+      "act": "ACT",
+      "journal": "Journal",
+      "breathing": "Breathing",
+      "mindfulness": "Mindfulness",
+      "grounding": "Grounding",
+      "gratitude": "Gratitude",
+      "meditation": "Meditation",
+      "sleep": "Sleep",
+      "habits": "Habits"
+    },
+    "widgets": {
+      "moodCheckin": {
+        "title": "Daily check-in",
+        "desc": "A quick five-face mood check-in.",
+        "faceLabel": "Mood {{score}} of 5"
+      },
+      "moodTrend": {
+        "title": "Mood, last 7 days",
+        "desc": "Your running average and recent entries."
+      },
+      "journalLatest": {
+        "title": "Latest entry",
+        "desc": "Pick up your most recent journal entry."
+      },
+      "breathingSuggested": {
+        "title": "Suggested pattern",
+        "desc": "A breathing pattern for right now."
+      },
+      "gratitudeLatest": {
+        "title": "Latest gratitude",
+        "desc": "Your most recent gratitude note."
+      },
+      "meditationPick": {
+        "title": "Today's pick",
+        "desc": "A short sit chosen for the time of day."
+      },
+      "habitsToday": { "title": "Habits, today", "desc": "Your habits with this week's progress." },
+      "selfCare": { "title": "Self-care log", "desc": "Today's self-care check-in." }
     }
   },
   "progress": {

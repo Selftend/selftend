@@ -85,7 +85,8 @@
       "logsCount_other": "{{count}} записа",
       "notLogged": "Още не е записано",
       "noData": "-",
-      "logMood": "Запиши настроение"
+      "logMood": "Запиши настроение",
+      "entries": "Записи"
     },
     "plan": {
       "title": "Какво те чака днес",
@@ -196,6 +197,61 @@
       "actActions": "Действия",
       "actDefusion": "Дефузия",
       "actConnection": "Свързаност"
+    }
+  },
+  "home": {
+    "sectionTitle": "Начало",
+    "editLabel": "Редактирай джаджите",
+    "doneLabel": "Готово",
+    "editingHint": "Плъзни за пренареждане",
+    "added": "Добавено",
+    "widgetCount": "{{count}} джаджа",
+    "widgetCount_other": "{{count}} джаджи",
+    "addedCount": "{{count}} добавено",
+    "categories": {
+      "mood": "Отчитане",
+      "cbt": "CBT",
+      "act": "ACT",
+      "journal": "Дневник",
+      "breathing": "Дишане",
+      "mindfulness": "Осъзнатост",
+      "grounding": "Заземяване",
+      "gratitude": "Благодарност",
+      "meditation": "Медитация",
+      "sleep": "Сън",
+      "habits": "Навици"
+    },
+    "widgets": {
+      "moodCheckin": {
+        "title": "Ежедневно отчитане",
+        "desc": "Бърза проверка на настроението с пет лица.",
+        "faceLabel": "Настроение {{score}} от 5"
+      },
+      "moodTrend": {
+        "title": "Настроение, последни 7 дни",
+        "desc": "Текущото ти средно и последните записи."
+      },
+      "journalLatest": {
+        "title": "Последен запис",
+        "desc": "Продължи последния си запис в дневника."
+      },
+      "breathingSuggested": {
+        "title": "Препоръчан модел",
+        "desc": "Дихателен модел за точно сега."
+      },
+      "gratitudeLatest": {
+        "title": "Последна благодарност",
+        "desc": "Последната ти бележка за благодарност."
+      },
+      "meditationPick": {
+        "title": "Изборът за днес",
+        "desc": "Кратка сесия, избрана за часа на деня."
+      },
+      "habitsToday": {
+        "title": "Навици, днес",
+        "desc": "Твоите навици с напредъка за тази седмица."
+      },
+      "selfCare": { "title": "Дневник за самогрижа", "desc": "Днешната проверка за самогрижа." }
     }
   },
   "progress": {
