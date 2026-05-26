@@ -1,114 +1,126 @@
 import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import type { WidgetTint } from "@/src/features/home/widget-tint";
 
-import { MoodWidget } from "@/src/features/home/widgets/mood-widget";
+import { MoodCheckinWidget } from "@/src/features/home/widgets/mood-checkin-widget";
+import { MoodTrendWidget } from "@/src/features/home/widgets/mood-trend-widget";
 import { BreathingWidget } from "@/src/features/home/widgets/breathing-widget";
 import { MeditationWidget } from "@/src/features/home/widgets/meditation-widget";
 import { GratitudeWidget } from "@/src/features/home/widgets/gratitude-widget";
 import { JournalWidget } from "@/src/features/home/widgets/journal-widget";
 import { HabitsWidget } from "@/src/features/home/widgets/habits-widget";
 import { SelfCareWidget } from "@/src/features/home/widgets/self-care-widget";
-import { CbtModuleWidget } from "@/src/features/home/widgets/cbt-module-widget";
-import { ActModuleWidget } from "@/src/features/home/widgets/act-module-widget";
-import { GenericWidget } from "@/src/features/home/widgets/generic-widget";
-import type { CarePlanItem } from "@/src/features/plan/types";
 
 export type WidgetComponent = React.ComponentType<{ userId: string }>;
+export type WidgetStatus = "default" | "available" | "soon" | "composite";
 
 export interface WidgetMeta {
+  id: string;
+  toolKey: string;
   icon: MaterialIconName;
   titleKey: string;
   descriptionKey: string;
+  tint: WidgetTint;
+  status: WidgetStatus;
 }
 
+export const PINNED_WIDGET_ID = "mood-checkin";
+
 export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
-  mood: MoodWidget,
-  breathing: BreathingWidget,
-  meditation: MeditationWidget,
-  gratitude: GratitudeWidget,
-  journal: JournalWidget,
-  habits: HabitsWidget,
+  "mood-checkin": MoodCheckinWidget,
+  "mood-trend": MoodTrendWidget,
+  "journal-latest": JournalWidget,
+  "breathing-suggested": BreathingWidget,
+  "gratitude-latest": GratitudeWidget,
+  "meditation-pick": MeditationWidget,
+  "habits-today": HabitsWidget,
   "self-care": SelfCareWidget,
-  "module-cbt": CbtModuleWidget,
-  "module-act": ActModuleWidget,
 };
 
 export const WIDGET_META: Record<string, WidgetMeta> = {
-  mood: {
+  "mood-checkin": {
+    id: "mood-checkin",
+    toolKey: "mood",
     icon: "mood",
-    titleKey: "plan.wizard.toolMood",
-    descriptionKey: "today.tools.moodTrackerSub",
+    titleKey: "home.widgets.moodCheckin.title",
+    descriptionKey: "home.widgets.moodCheckin.desc",
+    tint: "be",
+    status: "default",
   },
-  breathing: {
-    icon: "air",
-    titleKey: "plan.wizard.toolBreathing",
-    descriptionKey: "today.tools.mindfulnessSub",
+  "mood-trend": {
+    id: "mood-trend",
+    toolKey: "mood",
+    icon: "show-chart",
+    titleKey: "home.widgets.moodTrend.title",
+    descriptionKey: "home.widgets.moodTrend.desc",
+    tint: "be",
+    status: "default",
   },
-  meditation: {
-    icon: "self-improvement",
-    titleKey: "plan.wizard.toolMeditation",
-    descriptionKey: "today.tools.meditationSub",
-  },
-  gratitude: {
-    icon: "favorite",
-    titleKey: "plan.wizard.toolGratitude",
-    descriptionKey: "today.tools.gratitudeLogSub",
-  },
-  journal: {
+  "journal-latest": {
+    id: "journal-latest",
+    toolKey: "journal",
     icon: "edit-note",
-    titleKey: "plan.wizard.toolJournal",
-    descriptionKey: "today.tools.journalSub",
+    titleKey: "home.widgets.journalLatest.title",
+    descriptionKey: "home.widgets.journalLatest.desc",
+    tint: "ink",
+    status: "default",
   },
-  habits: {
-    icon: "directions-run",
-    titleKey: "plan.wizard.toolHabits",
-    descriptionKey: "today.tools.habitsSub",
+  "breathing-suggested": {
+    id: "breathing-suggested",
+    toolKey: "breathing",
+    icon: "air",
+    titleKey: "home.widgets.breathingSuggested.title",
+    descriptionKey: "home.widgets.breathingSuggested.desc",
+    tint: "aqua",
+    status: "default",
+  },
+  "gratitude-latest": {
+    id: "gratitude-latest",
+    toolKey: "gratitude",
+    icon: "favorite",
+    titleKey: "home.widgets.gratitudeLatest.title",
+    descriptionKey: "home.widgets.gratitudeLatest.desc",
+    tint: "think",
+    status: "default",
+  },
+  "meditation-pick": {
+    id: "meditation-pick",
+    toolKey: "meditation",
+    icon: "self-improvement",
+    titleKey: "home.widgets.meditationPick.title",
+    descriptionKey: "home.widgets.meditationPick.desc",
+    tint: "iris",
+    status: "default",
+  },
+  "habits-today": {
+    id: "habits-today",
+    toolKey: "habits",
+    icon: "task-alt",
+    titleKey: "home.widgets.habitsToday.title",
+    descriptionKey: "home.widgets.habitsToday.desc",
+    tint: "act",
+    status: "default",
   },
   "self-care": {
+    id: "self-care",
+    toolKey: "cbt",
     icon: "spa",
-    titleKey: "today.dashboard.selfCareTitle",
-    descriptionKey: "today.dashboard.selfCareDesc",
-  },
-  "module-cbt": {
-    icon: "psychology",
-    titleKey: "today.modules.cbtName",
-    descriptionKey: "today.dashboard.cbtModuleSubtitle",
-  },
-  "module-act": {
-    icon: "explore",
-    titleKey: "today.modules.actName",
-    descriptionKey: "today.dashboard.actModuleSubtitle",
+    titleKey: "home.widgets.selfCare.title",
+    descriptionKey: "home.widgets.selfCare.desc",
+    tint: "primary",
+    status: "available",
   },
 };
 
-export const WIDGET_TOOL_ORDER = [
-  "module-cbt",
-  "module-act",
-  "mood",
-  "breathing",
-  "meditation",
-  "gratitude",
-  "journal",
-  "habits",
-  "self-care",
-] as const;
-
-export function normalizeWidgetToolId(toolId: string) {
-  return toolId === "cbt" ? "module-cbt" : toolId;
+export function metaForWidget(widgetId: string): WidgetMeta | undefined {
+  return WIDGET_META[widgetId];
 }
 
-export function visibleDashboardItems(items: CarePlanItem[]) {
-  const hasCanonicalCbt = items.some((item) => item.toolId === "module-cbt");
-  return items.filter((item) => !(hasCanonicalCbt && item.toolId === "cbt"));
+export function isImplemented(widgetId: string): boolean {
+  return widgetId in WIDGET_REGISTRY;
 }
 
-export function existingWidgetToolIds(items: CarePlanItem[]) {
-  return Array.from(new Set(items.map((item) => normalizeWidgetToolId(item.toolId))));
-}
-
-export function resolveWidget(item: CarePlanItem, userId: string): React.ReactElement {
-  const Component = WIDGET_REGISTRY[normalizeWidgetToolId(item.toolId)];
-  if (Component) {
-    return <Component userId={userId} />;
-  }
-  return <GenericWidget userId={userId} item={item} />;
+export function resolveWidget(widgetId: string, userId: string): React.ReactElement | null {
+  const Component = WIDGET_REGISTRY[widgetId];
+  if (!Component) return null;
+  return <Component userId={userId} />;
 }
