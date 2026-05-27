@@ -19,6 +19,7 @@ interface AddWidgetModalProps {
 }
 
 const CATEGORY_ORDER = [
+  "composite",
   "mood",
   "cbt",
   "act",
@@ -33,6 +34,7 @@ const CATEGORY_ORDER = [
 ];
 
 const CATEGORY_ICON: Record<string, WidgetMeta["icon"]> = {
+  composite: "auto-awesome",
   mood: "mood",
   cbt: "psychology",
   act: "explore",

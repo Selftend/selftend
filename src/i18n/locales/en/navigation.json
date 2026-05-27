@@ -210,6 +210,7 @@
     "widgetCount_other": "{{count}} widgets",
     "addedCount": "{{count}} added",
     "categories": {
+      "composite": "For you",
       "mood": "Check-in",
       "cbt": "CBT",
       "act": "ACT",
@@ -288,6 +289,215 @@
         "title": "Last 7 nights",
         "metaDesc": "Your recent sleep, at a glance.",
         "empty": "Log a few nights to see your sleep."
+      },
+      "cbtRecentRecords": {
+        "title": "Recent records",
+        "metaDesc": "Your latest thought records.",
+        "untitled": "Untitled record",
+        "empty": "No thought records yet.",
+        "newRecord": "New record"
+      },
+      "cbtDistortionPatterns": {
+        "title": "Distortion patterns",
+        "metaDesc": "The thinking patterns you notice most.",
+        "empty": "Log a few more thought records to reveal your patterns.",
+        "count": "{{count}}×",
+        "learnMore": "Learn more"
+      },
+      "cbtDistortionGuide": {
+        "title": "Distortion guide",
+        "metaDesc": "A reference for common thinking patterns.",
+        "count": "Spot {{count}} thinking patterns",
+        "explore": "Explore"
+      },
+      "cbtProgramme": {
+        "title": "CBT programme",
+        "metaDesc": "Your guided programme progress.",
+        "notStarted": "Start the guided CBT programme.",
+        "complete": "Programme complete — nicely done.",
+        "open": "Open programme"
+      },
+      "actCommittedActions": {
+        "title": "Committed actions",
+        "metaDesc": "Your active values-based actions.",
+        "empty": "No active actions yet.",
+        "steps": "{{done}}/{{total}} steps",
+        "setAction": "Set a committed action"
+      },
+      "actDefusion": {
+        "title": "Defusion",
+        "metaDesc": "Unhook from sticky thoughts.",
+        "last": "Last practice",
+        "tryIt": "Unhook from a sticky thought.",
+        "start": "Try it",
+        "again": "Practice again"
+      },
+      "actProgramme": {
+        "title": "ACT programme",
+        "metaDesc": "Your ACT programme progress.",
+        "notStarted": "Start the ACT programme.",
+        "phaseProgress": "Phase {{current}} of {{total}}",
+        "complete": "Programme complete — well done.",
+        "open": "Open programme"
+      },
+      "actAcceptancePrompt": {
+        "title": "Make room",
+        "metaDesc": "A willingness prompt for hard feelings.",
+        "prompt": "Can you let this feeling be here, just for now, without struggling against it?",
+        "practice": "Practice"
+      },
+      "journalWeek": {
+        "title": "This week",
+        "metaDesc": "Your journaling this week.",
+        "entriesLabel": "Entries",
+        "wordsLabel": "Words",
+        "empty": "Nothing written this week yet."
+      },
+      "journalPrompt": {
+        "title": "Writing prompt",
+        "metaDesc": "A fresh prompt to write to.",
+        "prompt1": "What's taking up the most space in your mind right now?",
+        "prompt2": "Describe a small moment from today you'd like to remember.",
+        "prompt3": "What would feel like a kind thing to do for yourself this week?",
+        "prompt4": "What's something you're avoiding, and what makes it hard?",
+        "write": "Write about this"
+      },
+      "journalResurface": {
+        "title": "Resurface",
+        "metaDesc": "Revisit a past entry.",
+        "empty": "Your past entries will resurface here.",
+        "start": "Start journaling"
+      },
+      "breathingLibrary": {
+        "title": "Breathing patterns",
+        "metaDesc": "Browse all breathing patterns.",
+        "count": "{{count}} patterns"
+      },
+      "breathingLog": {
+        "title": "Breathing sessions",
+        "metaDesc": "Your recent breathing practice.",
+        "sessionsLabel": "Sessions",
+        "minutesLabel": "Minutes",
+        "empty": "No sessions yet."
+      },
+      "mindfulnessLibrary": {
+        "title": "Mindfulness practices",
+        "metaDesc": "Browse all mindfulness practices.",
+        "count": "{{count}} practices"
+      },
+      "mindfulnessLog": {
+        "title": "Mindfulness sessions",
+        "metaDesc": "Your recent mindfulness practice.",
+        "sessionsLabel": "Sessions",
+        "minutesLabel": "Minutes",
+        "empty": "No sessions yet."
+      },
+      "groundingLibrary": {
+        "title": "Grounding techniques",
+        "metaDesc": "Browse all grounding techniques.",
+        "count": "{{count}} techniques"
+      },
+      "groundingLog": {
+        "title": "Grounding sessions",
+        "metaDesc": "Your recent grounding practice.",
+        "sessionsLabel": "Sessions",
+        "minutesLabel": "Minutes",
+        "empty": "No sessions yet."
+      },
+      "gratitudeWeek": {
+        "title": "This week",
+        "metaDesc": "Your gratitude this week.",
+        "entriesLabel": "Entries",
+        "itemsLabel": "Items",
+        "empty": "Nothing noted this week yet."
+      },
+      "gratitudeResurface": {
+        "title": "Resurface",
+        "metaDesc": "Revisit a gratitude entry.",
+        "empty": "Your gratitude will resurface here.",
+        "add": "Add entry"
+      },
+      "gratitudePrompt": {
+        "title": "Gratitude prompt",
+        "metaDesc": "A nudge for what to notice.",
+        "prompt1": "What's something small that went right today?",
+        "prompt2": "Who are you grateful to have in your life, and why?",
+        "prompt3": "What's something your body let you do today?",
+        "prompt4": "What's a comfort you'd miss if it were gone?",
+        "add": "Add entry"
+      },
+      "meditationSitTime": {
+        "title": "Sit time",
+        "metaDesc": "Your recent meditation.",
+        "sessionsLabel": "Sessions",
+        "minutesLabel": "Minutes",
+        "empty": "No sits yet."
+      },
+      "meditationContinue": {
+        "title": "Continue program",
+        "metaDesc": "Pick up your meditation stage.",
+        "stage": "Stage {{stage}} of {{total}}",
+        "continue": "Continue"
+      },
+      "sleepNotes": {
+        "title": "Sleep notes",
+        "metaDesc": "Your latest sleep note.",
+        "empty": "No sleep notes yet."
+      },
+      "sleepWindDown": {
+        "title": "Wind down",
+        "metaDesc": "A gentle pre-sleep nudge.",
+        "tip": "Dim the lights and step away from screens about 30 minutes before bed.",
+        "open": "Open"
+      },
+      "habitsQuiet": {
+        "title": "Gone quiet",
+        "metaDesc": "A habit you haven't logged lately.",
+        "nudge": "Haven't logged this in a while.",
+        "empty": "Add a habit to begin.",
+        "add": "New habit"
+      },
+      "habitsOneDeep": {
+        "title": "One habit, deep",
+        "metaDesc": "Focus on a single habit.",
+        "empty": "Add a habit to begin.",
+        "add": "New habit"
+      },
+      "compositeParagraph": {
+        "title": "This week",
+        "metaDesc": "A short recap across your tools.",
+        "summary": "{{m}} check-ins, {{j}} journal entries, and {{g}} gratitude notes this week.",
+        "empty": "A fresh week — log something to see your recap."
+      },
+      "compositePickup": {
+        "title": "Pick up",
+        "metaDesc": "Your next small step.",
+        "checkin": "A quick check-in is a good place to start.",
+        "checkinCta": "Check in",
+        "record": "Finish your thought record",
+        "recordCta": "Continue"
+      },
+      "compositeQuietWeek": {
+        "title": "A gentle week",
+        "metaDesc": "A kind read on your week.",
+        "quiet": "It's been a quiet week — and that's okay. Even a small moment counts.",
+        "active": "You've shown up {{count}} times this week.",
+        "cta": "Check in"
+      },
+      "compositeFromPast": {
+        "title": "From your past",
+        "metaDesc": "Resurface a past moment.",
+        "empty": "Your memories will appear here as you log.",
+        "fromJournal": "From your journal",
+        "fromGratitude": "From your gratitude"
+      },
+      "compositeSafety": {
+        "title": "Steady yourself",
+        "metaDesc": "Calming tools when things feel hard.",
+        "fallback": "One small step at a time. You don't have to do this alone.",
+        "ground": "Ground",
+        "breathe": "Breathe",
+        "support": "Get more support"
       }
     }
   },
