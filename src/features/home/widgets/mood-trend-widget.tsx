@@ -25,7 +25,7 @@ export function MoodTrendWidget({ userId }: { userId: string }) {
   const sevenDay = computeAverage(logs, 7);
 
   return (
-    <Card>
+    <Card className="flex-1">
       <CardContent className="gap-3 pt-4 pb-4">
         <View className="flex-row items-center gap-2">
           <View className="size-8 items-center justify-center rounded-lg bg-be/10">

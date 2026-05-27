@@ -36,7 +36,7 @@ import {
 const GAP = 12;
 const PADDING = 24;
 const MIN_WIDGET_WIDTH = 280;
-const BASE_ROW_HEIGHT = 160;
+const BASE_ROW_HEIGHT = 196;
 const MAX_COLUMNS = 3;
 
 function pickGreetingKey(hour: number) {
@@ -63,12 +63,16 @@ function computeColumns(gridWidth: number) {
   );
 }
 
+function spanFor(id: string, numColumns: number): { colSpan: number; rowSpan: number } {
+  // The pinned check-in spans the full width as the top row.
+  if (id === PINNED_WIDGET_ID) return { colSpan: Math.max(1, numColumns), rowSpan: 1 };
+  return clampSpan(spanForWidget(id), numColumns);
+}
+
 function computeGridLayout(widgetIds: string[], numColumns: number, cellWidth: number) {
-  const packing = packGrid(widgetIds.length, numColumns, (i) =>
-    clampSpan(spanForWidget(widgetIds[i]), numColumns),
-  );
+  const packing = packGrid(widgetIds.length, numColumns, (i) => spanFor(widgetIds[i], numColumns));
   const positions = packing.positions.map((pos, i) => {
-    const span = clampSpan(spanForWidget(widgetIds[i]), numColumns);
+    const span = spanFor(widgetIds[i], numColumns);
     return {
       left: pos.col * (cellWidth + GAP),
       top: pos.row * (BASE_ROW_HEIGHT + GAP),
@@ -111,20 +115,22 @@ export default function HomeScreen() {
 
   const widgetIds = useMemo(() => (preferences ?? []).map((p) => p.widgetId), [preferences]);
   const existingIds = [PINNED_WIDGET_ID, ...widgetIds];
+  // The pinned check-in renders as the first (full-width, non-draggable) grid item.
+  const gridIds = useMemo(() => [PINNED_WIDGET_ID, ...widgetIds], [widgetIds]);
 
   const gridWidth = Math.max(0, containerWidth - PADDING * 2);
   const numColumns = computeColumns(gridWidth);
   const cellWidth = numColumns > 0 ? (gridWidth - (numColumns - 1) * GAP) / numColumns : 0;
 
   const sortable = useSortableList({
-    data: widgetIds,
+    data: gridIds,
     numColumns,
     keyExtractor: (id) => id,
-    getItemSpan: (id) => clampSpan(spanForWidget(id), numColumns),
+    getItemSpan: (id) => spanFor(id, numColumns),
     longPressDelay: 0,
     animationConfig: "spring",
     itemEntering: FadeInDown,
-    onReorder: ({ data }) => reorderMutation.mutate(data),
+    onReorder: ({ data }) => reorderMutation.mutate(data.filter((id) => id !== PINNED_WIDGET_ID)),
   });
 
   const layout = useMemo(
@@ -150,8 +156,6 @@ export default function HomeScreen() {
           <Icon name={editMode ? "check" : "edit"} className="size-5 text-muted-foreground" />
         </Button>
       </View>
-
-      {userId ? resolveWidget(PINNED_WIDGET_ID, userId) : null}
 
       {editMode ? (
         <View className="flex-row items-center justify-between rounded-xl border border-primary/25 bg-primary/[0.08] px-3 py-2">
@@ -198,31 +202,21 @@ export default function HomeScreen() {
                 <View className="items-center py-8">
                   <ActivityIndicator />
                 </View>
-              ) : widgetIds.length === 0 ? (
-                <Pressable
-                  onPress={() => setAddVisible(true)}
-                  className="items-center gap-4 rounded-2xl border border-dashed border-border py-12 active:bg-muted/30"
-                >
-                  <View className="size-14 items-center justify-center rounded-full bg-muted">
-                    <Icon name="add" className="size-7 text-muted-foreground" />
-                  </View>
-                  <Text variant="muted" className="text-sm text-center max-w-[36ch]">
-                    {t("today.dashboard.emptySubtitle")}
-                  </Text>
-                </Pressable>
               ) : (
                 <View style={{ height: layout.totalHeight }}>
                   {sortable.data.map((id, index) => {
                     const pos = layout.positions[index];
                     if (!pos) return null;
                     const meta = metaForWidget(id);
+                    const isPinned = id === PINNED_WIDGET_ID;
+                    const showChrome = editMode && !isPinned;
                     return (
                       <SortableItem
                         key={sortable.stableKeyExtractor(id, index)}
                         sortable={sortable}
                         index={index}
-                        draggable={editMode}
-                        dragHandle={editMode}
+                        draggable={editMode && !isPinned}
+                        dragHandle={editMode && !isPinned}
                         style={{
                           position: "absolute",
                           left: pos.left,
@@ -232,7 +226,7 @@ export default function HomeScreen() {
                         }}
                       >
                         {resolveWidget(id, userId ?? "")}
-                        {editMode ? (
+                        {showChrome ? (
                           <>
                             <DraxHandle style={{ position: "absolute", left: 4, top: 4 }}>
                               <View className="size-7 items-center justify-center rounded-md border border-border bg-background/90">

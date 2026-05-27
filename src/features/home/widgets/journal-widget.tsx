@@ -18,7 +18,7 @@ export function JournalWidget({ userId }: { userId: string }) {
   const latest = todayEntries.at(-1) ?? entries?.at(0) ?? null;
 
   return (
-    <Card>
+    <Card className="flex-1">
       <CardContent className="gap-3 pt-4 pb-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">

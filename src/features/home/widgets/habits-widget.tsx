@@ -19,7 +19,7 @@ export function HabitsWidget({ userId }: { userId: string }) {
   const firstIncomplete = scheduledToday.find((a) => !a.completedAt) ?? null;
 
   return (
-    <Card>
+    <Card className="flex-1">
       <CardContent className="gap-3 pt-4 pb-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
