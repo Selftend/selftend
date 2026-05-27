@@ -1,23 +1,30 @@
-import { ActivityIndicator, Pressable, RefreshControl, View } from "react-native";
-import type { ListRenderItemInfo } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { DraxProvider, DraxList, DraxHandle } from "react-native-drax";
+import {
+  DraxProvider,
+  DraxHandle,
+  SortableContainer,
+  SortableItem,
+  useSortableList,
+  packGrid,
+} from "react-native-drax";
 import { FadeInDown } from "react-native-reanimated";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { cn } from "@/lib/utils";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
 import {
   PINNED_WIDGET_ID,
+  clampSpan,
   metaForWidget,
   resolveWidget,
+  spanForWidget,
 } from "@/src/features/home/widget-registry";
 import {
   useAddWidget,
@@ -25,6 +32,12 @@ import {
   useReorderWidgets,
   useWidgetPreferences,
 } from "@/src/features/home/queries";
+
+const GAP = 12;
+const PADDING = 24;
+const MIN_WIDGET_WIDTH = 280;
+const BASE_ROW_HEIGHT = 160;
+const MAX_COLUMNS = 3;
 
 function pickGreetingKey(hour: number) {
   if (hour < 12) return "today.greetingMorning";
@@ -42,6 +55,31 @@ function getMetaName(user: { user_metadata?: Record<string, unknown> } | null) {
   return null;
 }
 
+function computeColumns(gridWidth: number) {
+  if (gridWidth <= 0) return 1;
+  return Math.max(
+    1,
+    Math.min(MAX_COLUMNS, Math.floor((gridWidth + GAP) / (MIN_WIDGET_WIDTH + GAP))),
+  );
+}
+
+function computeGridLayout(widgetIds: string[], numColumns: number, cellWidth: number) {
+  const packing = packGrid(widgetIds.length, numColumns, (i) =>
+    clampSpan(spanForWidget(widgetIds[i]), numColumns),
+  );
+  const positions = packing.positions.map((pos, i) => {
+    const span = clampSpan(spanForWidget(widgetIds[i]), numColumns);
+    return {
+      left: pos.col * (cellWidth + GAP),
+      top: pos.row * (BASE_ROW_HEIGHT + GAP),
+      width: span.colSpan * cellWidth + (span.colSpan - 1) * GAP,
+      height: span.rowSpan * BASE_ROW_HEIGHT + (span.rowSpan - 1) * GAP,
+    };
+  });
+  const totalHeight = Math.max(0, packing.totalRows * (BASE_ROW_HEIGHT + GAP) - GAP);
+  return { positions, totalHeight };
+}
+
 export default function HomeScreen() {
   const { t, i18n } = useTranslation("navigation");
   const { user } = useSession();
@@ -49,15 +87,10 @@ export default function HomeScreen() {
   const { data: profile } = useUserProfile(user);
   const [editMode, setEditMode] = useState(false);
   const [addVisible, setAddVisible] = useState(false);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
 
   const { selectedDate, isToday } = useSelectedDate();
-  const [containerWidth, setContainerWidth] = useState(0);
-  // Auto-fit: fit as many ~280px-min widgets as possible, each flexing to fill
-  // leftover space. Naturally collapses to 1 column on narrow/mobile widths —
-  // no separate mobile breakpoints needed. 48 = list padding (24 each side), 12 = gap.
-  const usableWidth = containerWidth - 48;
-  const columns =
-    usableWidth > 0 ? Math.max(1, Math.min(3, Math.floor((usableWidth + 12) / 292))) : 1;
   const hour = new Date().getHours();
   const dateLabel = new Intl.DateTimeFormat(i18n.language, {
     weekday: "long",
@@ -76,8 +109,28 @@ export default function HomeScreen() {
   const removeMutation = useRemoveWidget(userId);
   const reorderMutation = useReorderWidgets(userId);
 
-  const widgetIds = (preferences ?? []).map((p) => p.widgetId);
+  const widgetIds = useMemo(() => (preferences ?? []).map((p) => p.widgetId), [preferences]);
   const existingIds = [PINNED_WIDGET_ID, ...widgetIds];
+
+  const gridWidth = Math.max(0, containerWidth - PADDING * 2);
+  const numColumns = computeColumns(gridWidth);
+  const cellWidth = numColumns > 0 ? (gridWidth - (numColumns - 1) * GAP) / numColumns : 0;
+
+  const sortable = useSortableList({
+    data: widgetIds,
+    numColumns,
+    keyExtractor: (id) => id,
+    getItemSpan: (id) => clampSpan(spanForWidget(id), numColumns),
+    longPressDelay: 0,
+    animationConfig: "spring",
+    itemEntering: FadeInDown,
+    onReorder: ({ data }) => reorderMutation.mutate(data),
+  });
+
+  const layout = useMemo(
+    () => computeGridLayout(sortable.data, numColumns, cellWidth),
+    [sortable.data, numColumns, cellWidth],
+  );
 
   const header = (
     <View className="gap-6 pb-3">
@@ -126,57 +179,26 @@ export default function HomeScreen() {
     </View>
   );
 
-  function renderItem({ item }: ListRenderItemInfo<string>) {
-    const meta = metaForWidget(item);
-    return (
-      <View className={cn("mb-3", editMode && "pl-9 pr-9", columns > 1 && "flex-1 min-w-0")}>
-        {resolveWidget(item, userId ?? "")}
-        {editMode ? (
-          <>
-            <DraxHandle style={{ position: "absolute", left: 0, top: 8 }}>
-              <View className="size-7 items-center justify-center rounded-md border border-border bg-background/90">
-                <Icon name="drag-indicator" className="size-4 text-muted-foreground" />
-              </View>
-            </DraxHandle>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("today.dashboard.removeWidget", {
-                title: meta ? t(meta.titleKey) : item,
-              })}
-              onPress={() => removeMutation.mutate(item)}
-              className="absolute right-0 top-2 size-7 items-center justify-center rounded-full border border-destructive/35 bg-card"
-            >
-              <Icon name="close" className="size-4 text-destructive" />
-            </Pressable>
-          </>
-        ) : null}
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <View className="flex-1" onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}>
         <DraxProvider style={{ flex: 1 }}>
-          <DraxList<string>
-            key={`grid-${columns}`}
-            numColumns={columns}
-            longPressDelay={0}
-            data={widgetIds}
-            keyExtractor={(id) => id}
-            onReorder={({ data }) => reorderMutation.mutate(data)}
-            renderItem={renderItem}
-            itemEntering={FadeInDown}
-            style={{ flex: 1 }}
-            containerStyle={{ flex: 1 }}
-            columnWrapperStyle={columns > 1 ? { gap: 12 } : undefined}
-            ListHeaderComponent={header}
-            ListEmptyComponent={
-              isLoading ? (
+          <SortableContainer sortable={sortable} scrollRef={scrollRef} style={{ flex: 1 }}>
+            <ScrollView
+              ref={scrollRef}
+              onScroll={sortable.onScroll}
+              onContentSizeChange={sortable.onContentSizeChange}
+              scrollEventThrottle={16}
+              contentContainerStyle={{ padding: PADDING }}
+              refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+            >
+              {header}
+
+              {isLoading ? (
                 <View className="items-center py-8">
                   <ActivityIndicator />
                 </View>
-              ) : (
+              ) : widgetIds.length === 0 ? (
                 <Pressable
                   onPress={() => setAddVisible(true)}
                   className="items-center gap-4 rounded-2xl border border-dashed border-border py-12 active:bg-muted/30"
@@ -188,12 +210,57 @@ export default function HomeScreen() {
                     {t("today.dashboard.emptySubtitle")}
                   </Text>
                 </Pressable>
-              )
-            }
-            contentContainerStyle={{ padding: 24 }}
-            refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
-            itemDraxViewProps={{ draggable: editMode, dragHandle: editMode }}
-          />
+              ) : (
+                <View style={{ height: layout.totalHeight }}>
+                  {sortable.data.map((id, index) => {
+                    const pos = layout.positions[index];
+                    if (!pos) return null;
+                    const meta = metaForWidget(id);
+                    return (
+                      <SortableItem
+                        key={sortable.stableKeyExtractor(id, index)}
+                        sortable={sortable}
+                        index={index}
+                        draggable={editMode}
+                        dragHandle={editMode}
+                        style={{
+                          position: "absolute",
+                          left: pos.left,
+                          top: pos.top,
+                          width: pos.width,
+                          height: pos.height,
+                        }}
+                      >
+                        {resolveWidget(id, userId ?? "")}
+                        {editMode ? (
+                          <>
+                            <DraxHandle style={{ position: "absolute", left: 4, top: 4 }}>
+                              <View className="size-7 items-center justify-center rounded-md border border-border bg-background/90">
+                                <Icon
+                                  name="drag-indicator"
+                                  className="size-4 text-muted-foreground"
+                                />
+                              </View>
+                            </DraxHandle>
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel={t("today.dashboard.removeWidget", {
+                                title: meta ? t(meta.titleKey) : id,
+                              })}
+                              onPress={() => removeMutation.mutate(id)}
+                              className="absolute right-1 top-1 size-7 items-center justify-center rounded-full border border-destructive/35 bg-card"
+                            >
+                              <Icon name="close" className="size-4 text-destructive" />
+                            </Pressable>
+                          </>
+                        ) : null}
+                      </SortableItem>
+                    );
+                  })}
+                </View>
+              )}
+            </ScrollView>
+          </SortableContainer>
         </DraxProvider>
       </View>
 
