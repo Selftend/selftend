@@ -11,6 +11,8 @@ export const MOOD_SCALE_MAX = 5;
 interface MoodScaleProps {
   value: number | null;
   onChange: (value: number) => void;
+  /** Emoji-only, compact buttons (no number/label) so all 5 fit one row in tight spaces. */
+  compact?: boolean;
 }
 
 export interface ScaleStep {
@@ -67,7 +69,7 @@ export const MOOD_EMOJI_BY_SCORE: Record<number, string> = STEPS.reduce(
   {} as Record<number, string>,
 );
 
-export function MoodScale({ value, onChange }: MoodScaleProps) {
+export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) {
   const { t } = useTranslation();
 
   return (
@@ -84,29 +86,34 @@ export function MoodScale({ value, onChange }: MoodScaleProps) {
             hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
             onPress={() => onChange(step.score)}
             className={cn(
-              "min-w-14 flex-1 basis-14 items-center justify-center gap-1 rounded-2xl border-2 px-2 py-3",
+              "flex-1 items-center justify-center rounded-2xl border-2",
+              compact ? "min-w-10 basis-10 px-1 py-2.5" : "min-w-14 basis-14 gap-1 px-2 py-3",
               selected ? step.selectedClass : `bg-card ${step.unselectedClass}`,
             )}
             role="button"
           >
             <Text className="text-2xl">{step.emoji}</Text>
-            <Text
-              className={cn(
-                "text-xs font-semibold",
-                selected ? "text-white" : "text-muted-foreground",
-              )}
-            >
-              {step.score}
-            </Text>
-            <Text
-              className={cn(
-                "text-[10.5px] leading-tight",
-                selected ? "text-white/90" : "text-muted-foreground",
-              )}
-              numberOfLines={1}
-            >
-              {t(`mood:scale.shortLabels.${step.score}`)}
-            </Text>
+            {compact ? null : (
+              <>
+                <Text
+                  className={cn(
+                    "text-xs font-semibold",
+                    selected ? "text-white" : "text-muted-foreground",
+                  )}
+                >
+                  {step.score}
+                </Text>
+                <Text
+                  className={cn(
+                    "text-[10.5px] leading-tight",
+                    selected ? "text-white/90" : "text-muted-foreground",
+                  )}
+                  numberOfLines={1}
+                >
+                  {t(`mood:scale.shortLabels.${step.score}`)}
+                </Text>
+              </>
+            )}
           </Pressable>
         );
       })}

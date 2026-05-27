@@ -30,6 +30,7 @@ export default function BreathingScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <ModuleHomeHeader
+            addWidgetCategory="breathing"
             title={t("breathing.title")}
             hue="aqua"
             icon="air"

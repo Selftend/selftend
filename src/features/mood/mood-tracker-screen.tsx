@@ -75,6 +75,7 @@ export default function MoodTrackerScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ModuleHomeHeader
+              addWidgetCategory="mood"
               title={t("title")}
               hue="be"
               icon="mood"

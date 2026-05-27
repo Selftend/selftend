@@ -41,14 +41,9 @@ import { SleepNotesWidget } from "@/src/features/home/widgets/sleep-notes-widget
 import { SleepWindDownWidget } from "@/src/features/home/widgets/sleep-wind-down-widget";
 import { HabitsQuietWidget } from "@/src/features/home/widgets/habits-quiet-widget";
 import { HabitsOneDeepWidget } from "@/src/features/home/widgets/habits-one-deep-widget";
-import { CompositeParagraphWidget } from "@/src/features/home/widgets/composite-paragraph-widget";
-import { CompositePickupWidget } from "@/src/features/home/widgets/composite-pickup-widget";
-import { CompositeQuietWeekWidget } from "@/src/features/home/widgets/composite-quiet-week-widget";
-import { CompositeFromPastWidget } from "@/src/features/home/widgets/composite-from-past-widget";
-import { CompositeSafetyWidget } from "@/src/features/home/widgets/composite-safety-widget";
 
 export type WidgetComponent = React.ComponentType<{ userId: string }>;
-export type WidgetStatus = "default" | "available" | "soon" | "composite";
+export type WidgetStatus = "default" | "available" | "soon";
 
 export interface GridSpan {
   colSpan: number;
@@ -65,8 +60,6 @@ export interface WidgetMeta {
   status: WidgetStatus;
   span: GridSpan;
 }
-
-export const PINNED_WIDGET_ID = "mood-checkin";
 
 export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "mood-checkin": MoodCheckinWidget,
@@ -109,11 +102,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "sleep-wind-down": SleepWindDownWidget,
   "habits-quiet": HabitsQuietWidget,
   "habits-one-deep": HabitsOneDeepWidget,
-  "composite-paragraph": CompositeParagraphWidget,
-  "composite-pickup": CompositePickupWidget,
-  "composite-quiet-week": CompositeQuietWeekWidget,
-  "composite-from-past": CompositeFromPastWidget,
-  "composite-safety": CompositeSafetyWidget,
 };
 
 export const WIDGET_META: Record<string, WidgetMeta> = {
@@ -125,7 +113,7 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.moodCheckin.desc",
     tint: "be",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
+    span: { colSpan: 2, rowSpan: 1 },
   },
   "mood-trend": {
     id: "mood-trend",
@@ -515,56 +503,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.habitsOneDeep.metaDesc",
     tint: "act",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
-  },
-  "composite-paragraph": {
-    id: "composite-paragraph",
-    toolKey: "composite",
-    icon: "summarize",
-    titleKey: "home.widgets.compositeParagraph.title",
-    descriptionKey: "home.widgets.compositeParagraph.metaDesc",
-    tint: "primary",
-    status: "composite",
-    span: { colSpan: 1, rowSpan: 1 },
-  },
-  "composite-pickup": {
-    id: "composite-pickup",
-    toolKey: "composite",
-    icon: "play-arrow",
-    titleKey: "home.widgets.compositePickup.title",
-    descriptionKey: "home.widgets.compositePickup.metaDesc",
-    tint: "primary",
-    status: "composite",
-    span: { colSpan: 1, rowSpan: 1 },
-  },
-  "composite-quiet-week": {
-    id: "composite-quiet-week",
-    toolKey: "composite",
-    icon: "spa",
-    titleKey: "home.widgets.compositeQuietWeek.title",
-    descriptionKey: "home.widgets.compositeQuietWeek.metaDesc",
-    tint: "primary",
-    status: "composite",
-    span: { colSpan: 1, rowSpan: 1 },
-  },
-  "composite-from-past": {
-    id: "composite-from-past",
-    toolKey: "composite",
-    icon: "auto-stories",
-    titleKey: "home.widgets.compositeFromPast.title",
-    descriptionKey: "home.widgets.compositeFromPast.metaDesc",
-    tint: "primary",
-    status: "composite",
-    span: { colSpan: 1, rowSpan: 1 },
-  },
-  "composite-safety": {
-    id: "composite-safety",
-    toolKey: "composite",
-    icon: "favorite",
-    titleKey: "home.widgets.compositeSafety.title",
-    descriptionKey: "home.widgets.compositeSafety.metaDesc",
-    tint: "primary",
-    status: "composite",
     span: { colSpan: 1, rowSpan: 1 },
   },
 };

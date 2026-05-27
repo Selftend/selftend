@@ -1,7 +1,6 @@
 import {
   WIDGET_META,
   WIDGET_REGISTRY,
-  PINNED_WIDGET_ID,
   isImplemented,
   metaForWidget,
   spanForWidget,
@@ -9,8 +8,7 @@ import {
 } from "@/src/features/home/widget-registry";
 
 describe("widget registry", () => {
-  it("exposes the pinned mood-checkin meta", () => {
-    expect(PINNED_WIDGET_ID).toBe("mood-checkin");
+  it("exposes the daily check-in (mood-checkin) meta", () => {
     expect(WIDGET_META["mood-checkin"]).toBeDefined();
     expect(WIDGET_META["mood-checkin"].status).toBe("default");
   });
@@ -120,18 +118,6 @@ describe("widget registry", () => {
     expect(isImplemented(id)).toBe(true);
     expect(WIDGET_META[id].status).toBe("available");
     expect(WIDGET_META[id].toolKey).toBe(toolKey);
-  });
-
-  it.each([
-    "composite-paragraph",
-    "composite-pickup",
-    "composite-quiet-week",
-    "composite-from-past",
-    "composite-safety",
-  ])("registers %s as a composite widget", (id) => {
-    expect(isImplemented(id)).toBe(true);
-    expect(WIDGET_META[id].status).toBe("composite");
-    expect(WIDGET_META[id].toolKey).toBe("composite");
   });
 
   it("metaForWidget returns undefined for unknown ids", () => {

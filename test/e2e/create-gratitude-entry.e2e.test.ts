@@ -30,8 +30,9 @@ test.describe("create gratitude entry", () => {
 
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
-    // After save the app redirects to the detail page.
-    await expect(page.getByRole("heading", { name: item })).toBeVisible({ timeout: 15_000 });
+    // After save the app redirects to the detail page, which lists the item
+    // (the hero is title-less, so the item is body text, not a heading).
+    await expect(page.getByText(item)).toBeVisible({ timeout: 15_000 });
 
     // The entry also appears in the gratitude list.
     await page.goto("/tools/gratitude-log");

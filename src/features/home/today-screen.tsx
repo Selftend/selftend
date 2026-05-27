@@ -1,16 +1,9 @@
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  DraxProvider,
-  DraxHandle,
-  SortableContainer,
-  SortableItem,
-  useSortableList,
-  packGrid,
-} from "react-native-drax";
-import { FadeInDown } from "react-native-reanimated";
+import Animated, { useAnimatedRef } from "react-native-reanimated";
+import Sortable from "react-native-sortables";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -20,8 +13,8 @@ import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
 import {
-  PINNED_WIDGET_ID,
   clampSpan,
+  isImplemented,
   metaForWidget,
   resolveWidget,
   spanForWidget,
@@ -36,7 +29,7 @@ import {
 const GAP = 12;
 const PADDING = 24;
 const MIN_WIDGET_WIDTH = 280;
-const BASE_ROW_HEIGHT = 200;
+const WIDGET_HEIGHT = 200;
 const MAX_COLUMNS = 3;
 
 function pickGreetingKey(hour: number) {
@@ -63,27 +56,6 @@ function computeColumns(gridWidth: number) {
   );
 }
 
-function spanFor(id: string, numColumns: number): { colSpan: number; rowSpan: number } {
-  // The pinned check-in spans the full width as the top row.
-  if (id === PINNED_WIDGET_ID) return { colSpan: Math.max(1, numColumns), rowSpan: 1 };
-  return clampSpan(spanForWidget(id), numColumns);
-}
-
-function computeGridLayout(widgetIds: string[], numColumns: number, cellWidth: number) {
-  const packing = packGrid(widgetIds.length, numColumns, (i) => spanFor(widgetIds[i], numColumns));
-  const positions = packing.positions.map((pos, i) => {
-    const span = spanFor(widgetIds[i], numColumns);
-    return {
-      left: pos.col * (cellWidth + GAP),
-      top: pos.row * (BASE_ROW_HEIGHT + GAP),
-      width: span.colSpan * cellWidth + (span.colSpan - 1) * GAP,
-      height: span.rowSpan * BASE_ROW_HEIGHT + (span.rowSpan - 1) * GAP,
-    };
-  });
-  const totalHeight = Math.max(0, packing.totalRows * (BASE_ROW_HEIGHT + GAP) - GAP);
-  return { positions, totalHeight };
-}
-
 export default function HomeScreen() {
   const { t, i18n } = useTranslation("navigation");
   const { user } = useSession();
@@ -92,7 +64,7 @@ export default function HomeScreen() {
   const [editMode, setEditMode] = useState(false);
   const [addVisible, setAddVisible] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
   const { selectedDate, isToday } = useSelectedDate();
   const hour = new Date().getHours();
@@ -113,30 +85,14 @@ export default function HomeScreen() {
   const removeMutation = useRemoveWidget(userId);
   const reorderMutation = useReorderWidgets(userId);
 
-  const widgetIds = useMemo(() => (preferences ?? []).map((p) => p.widgetId), [preferences]);
-  const existingIds = [PINNED_WIDGET_ID, ...widgetIds];
-  // The pinned check-in renders as the first (full-width, non-draggable) grid item.
-  const gridIds = useMemo(() => [PINNED_WIDGET_ID, ...widgetIds], [widgetIds]);
+  const widgetIds = useMemo(
+    () => (preferences ?? []).map((p) => p.widgetId).filter(isImplemented),
+    [preferences],
+  );
 
   const gridWidth = Math.max(0, containerWidth - PADDING * 2);
   const numColumns = computeColumns(gridWidth);
   const cellWidth = numColumns > 0 ? (gridWidth - (numColumns - 1) * GAP) / numColumns : 0;
-
-  const sortable = useSortableList({
-    data: gridIds,
-    numColumns,
-    keyExtractor: (id) => id,
-    getItemSpan: (id) => spanFor(id, numColumns),
-    longPressDelay: 0,
-    animationConfig: "spring",
-    itemEntering: FadeInDown,
-    onReorder: ({ data }) => reorderMutation.mutate(data.filter((id) => id !== PINNED_WIDGET_ID)),
-  });
-
-  const layout = useMemo(
-    () => computeGridLayout(sortable.data, numColumns, cellWidth),
-    [sortable.data, numColumns, cellWidth],
-  );
 
   const header = (
     <View className="gap-6 pb-3">
@@ -184,84 +140,64 @@ export default function HomeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <View className="flex-1" onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}>
-        <DraxProvider style={{ flex: 1 }}>
-          <SortableContainer sortable={sortable} scrollRef={scrollRef} style={{ flex: 1 }}>
-            <ScrollView
-              ref={scrollRef}
-              onScroll={sortable.onScroll}
-              onContentSizeChange={sortable.onContentSizeChange}
-              scrollEventThrottle={16}
-              contentContainerStyle={{ padding: PADDING }}
-              refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
-            >
-              {header}
+        <Animated.ScrollView
+          ref={scrollableRef}
+          contentContainerStyle={{ padding: PADDING }}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+        >
+          {header}
 
-              {isLoading ? (
-                <View className="items-center py-8">
-                  <ActivityIndicator />
-                </View>
-              ) : (
-                <View style={{ height: layout.totalHeight }}>
-                  {sortable.data.map((id, index) => {
-                    const pos = layout.positions[index];
-                    if (!pos) return null;
-                    const meta = metaForWidget(id);
-                    const isPinned = id === PINNED_WIDGET_ID;
-                    const showChrome = editMode && !isPinned;
-                    return (
-                      <SortableItem
-                        key={sortable.stableKeyExtractor(id, index)}
-                        sortable={sortable}
-                        index={index}
-                        draggable={editMode && !isPinned}
-                        dragHandle={editMode && !isPinned}
-                        style={{
-                          position: "absolute",
-                          left: pos.left,
-                          top: pos.top,
-                          width: pos.width,
-                          height: pos.height,
-                        }}
+          {isLoading ? (
+            <View className="items-center py-8">
+              <ActivityIndicator />
+            </View>
+          ) : cellWidth > 0 ? (
+            <Sortable.Flex
+              width={gridWidth}
+              flexDirection="row"
+              flexWrap="wrap"
+              gap={GAP}
+              scrollableRef={scrollableRef}
+              dragActivationDelay={0}
+              sortEnabled={editMode}
+              onDragEnd={({ order }) => reorderMutation.mutate(order(widgetIds))}
+            >
+              {widgetIds.map((id) => {
+                const span = clampSpan(spanForWidget(id), numColumns);
+                const width = span.colSpan * cellWidth + (span.colSpan - 1) * GAP;
+                const meta = metaForWidget(id);
+                return (
+                  <View key={id} style={{ width, height: WIDGET_HEIGHT }}>
+                    <View style={{ flex: 1, pointerEvents: editMode ? "none" : "auto" }}>
+                      {resolveWidget(id, userId ?? "")}
+                    </View>
+                    {editMode ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={t("today.dashboard.removeWidget", {
+                          title: meta ? t(meta.titleKey) : id,
+                        })}
+                        onPress={() => removeMutation.mutate(id)}
+                        className="absolute right-1 top-1 size-7 items-center justify-center rounded-full border border-destructive/35 bg-card"
                       >
-                        {resolveWidget(id, userId ?? "")}
-                        {showChrome ? (
-                          <>
-                            <DraxHandle style={{ position: "absolute", left: 4, top: 4 }}>
-                              <View className="size-7 items-center justify-center rounded-md border border-border bg-background/90">
-                                <Icon
-                                  name="drag-indicator"
-                                  className="size-4 text-muted-foreground"
-                                />
-                              </View>
-                            </DraxHandle>
-                            <Pressable
-                              accessibilityRole="button"
-                              accessibilityLabel={t("today.dashboard.removeWidget", {
-                                title: meta ? t(meta.titleKey) : id,
-                              })}
-                              onPress={() => removeMutation.mutate(id)}
-                              className="absolute right-1 top-1 size-7 items-center justify-center rounded-full border border-destructive/35 bg-card"
-                            >
-                              <Icon name="close" className="size-4 text-destructive" />
-                            </Pressable>
-                          </>
-                        ) : null}
-                      </SortableItem>
-                    );
-                  })}
-                </View>
-              )}
-            </ScrollView>
-          </SortableContainer>
-        </DraxProvider>
+                        <Icon name="close" className="size-4 text-destructive" />
+                      </Pressable>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </Sortable.Flex>
+          ) : null}
+        </Animated.ScrollView>
       </View>
 
       <AddWidgetModal
         visible={addVisible}
         onClose={() => setAddVisible(false)}
         userId={userId}
-        existingWidgetIds={existingIds}
+        existingWidgetIds={widgetIds}
         onAdd={(widgetId) => addMutation.mutate(widgetId)}
+        onRemove={(widgetId) => removeMutation.mutate(widgetId)}
       />
     </SafeAreaView>
   );

@@ -17,6 +17,7 @@ import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { LoadingState } from "@/src/components/app/screen-state";
@@ -266,7 +267,12 @@ export default function ThoughtRecordEditorScreen() {
     <WizardScreen
       title={recordId ? t("record.editTitle") : t("record.newTitle")}
       description={recordId ? t("record.editDescription") : t("record.newDescription")}
-      titleAction={<HelpButton helpKey="thoughtRecords" />}
+      titleAction={
+        <View className="flex-row items-center gap-3">
+          <AddToHomeButton widgetId="cbt-open-record" />
+          <HelpButton helpKey="thoughtRecords" />
+        </View>
+      }
       steps={steps}
       stepIndex={wizard.stepIndex}
       numberedSteps

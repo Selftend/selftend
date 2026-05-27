@@ -611,6 +611,7 @@ export default function CbtHomeScreen() {
           <View className="gap-6">
             <View className="gap-2">
               <ModuleHomeHeader
+                addWidgetCategory="cbt"
                 title={t("home.title")}
                 actions={[
                   { type: "notifications", targetKey: "cbt" },

@@ -1,7 +1,7 @@
-// Widgets seeded for a brand-new user (pinned mood-checkin is NOT here — it is
-// rendered separately and never stored as a row). Plan 1 ships this subset;
-// Plan 2 extends it with the brand-new-data default widgets.
+// Widgets seeded for a brand-new user. The daily check-in (mood-checkin) is a
+// normal, movable, removable widget seeded at the top — no longer pinned.
 export const DEFAULT_WIDGET_IDS = [
+  "mood-checkin",
   "mood-trend",
   "cbt-open-record",
   "act-values",

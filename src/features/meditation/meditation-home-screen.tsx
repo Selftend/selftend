@@ -109,6 +109,7 @@ export default function MeditationHomeScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ModuleHomeHeader
+              addWidgetCategory="meditation"
               title={t("module.home.title")}
               hue="iris"
               icon="self-improvement"

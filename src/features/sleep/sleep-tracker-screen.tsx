@@ -91,6 +91,7 @@ export default function SleepTrackerScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ModuleHomeHeader
+              addWidgetCategory="sleep"
               title={t("title")}
               hue="ink"
               icon="bedtime"

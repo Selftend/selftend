@@ -46,6 +46,7 @@ export default function MindfulnessHomeScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ModuleHomeHeader
+              addWidgetCategory="mindfulness"
               title={t("mindfulness.takeAMoment")}
               hue="mist"
               icon="self-improvement"

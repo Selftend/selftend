@@ -110,6 +110,7 @@ export default function ActHomeScreen() {
                 {t("home.subtitle")}
               </Text>
               <ModuleHomeHeader
+                addWidgetCategory="act"
                 title={t("home.title")}
                 actions={[
                   { type: "notifications", targetKey: "act" },

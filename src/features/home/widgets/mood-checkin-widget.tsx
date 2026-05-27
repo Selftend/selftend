@@ -27,6 +27,7 @@ export function MoodCheckinWidget({ userId }: { userId: string }) {
           <Text className="text-sm font-semibold">{t("home.widgets.moodCheckin.title")}</Text>
         </View>
         <MoodScale
+          compact
           value={moodToday}
           onChange={(score) => router.push(`/tools/mood-tracker/new?score=${score}`)}
         />

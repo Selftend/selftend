@@ -12,6 +12,7 @@ import { useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useColorScheme } from "nativewind";
 
+import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { ToolHero } from "@/src/components/app/tool-hero";
@@ -81,6 +82,8 @@ interface ModuleHomeHeaderProps {
   icon?: MaterialIconName;
   description?: string;
   meta?: ReactNode;
+  /** When set, shows an "add to home" button (dropdown of this category's widgets) in the actions row. */
+  addWidgetCategory?: string;
 }
 
 export function ModuleHomeHeader({
@@ -90,6 +93,7 @@ export function ModuleHomeHeader({
   icon,
   description,
   meta,
+  addWidgetCategory,
 }: ModuleHomeHeaderProps) {
   const { colorScheme } = useColorScheme();
   const { user } = useSession();
@@ -211,7 +215,7 @@ export function ModuleHomeHeader({
   const heroMode = hue != null && icon != null;
 
   const actionsRow =
-    actions.length > 0 ? (
+    actions.length > 0 || addWidgetCategory ? (
       <View className="flex-row items-center gap-3">
         {actions.map((action) => (
           <TourButton
@@ -225,6 +229,7 @@ export function ModuleHomeHeader({
             }}
           />
         ))}
+        {addWidgetCategory ? <AddToHomeButton category={addWidgetCategory} /> : null}
       </View>
     ) : null;
 

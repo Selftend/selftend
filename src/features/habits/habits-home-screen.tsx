@@ -102,6 +102,7 @@ export default function HabitsHomeScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ModuleHomeHeader
+              addWidgetCategory="habits"
               title={t("home.title")}
               hue="act"
               icon="task-alt"

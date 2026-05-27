@@ -206,11 +206,22 @@
     "doneLabel": "Done",
     "editingHint": "Drag to rearrange",
     "added": "Added",
+    "addToHome": {
+      "button": "Add to home",
+      "title": "Add to home"
+    },
     "widgetCount": "{{count}} widget",
     "widgetCount_other": "{{count}} widgets",
     "addedCount": "{{count}} added",
+    "sectionModules": "Modules",
+    "sectionTools": "Tools",
+    "addPanel": {
+      "subtitle": "Pick a tool — its widgets appear below. There's nothing here you have to use.",
+      "searchPlaceholder": "Search widgets…",
+      "allCategories": "All categories",
+      "noResults": "No widgets match your search."
+    },
     "categories": {
-      "composite": "For you",
       "mood": "Check-in",
       "cbt": "CBT",
       "act": "ACT",
@@ -462,42 +473,6 @@
         "metaDesc": "Focus on a single habit.",
         "empty": "Add a habit to begin.",
         "add": "New habit"
-      },
-      "compositeParagraph": {
-        "title": "This week",
-        "metaDesc": "A short recap across your tools.",
-        "summary": "{{m}} check-ins, {{j}} journal entries, and {{g}} gratitude notes this week.",
-        "empty": "A fresh week — log something to see your recap."
-      },
-      "compositePickup": {
-        "title": "Pick up",
-        "metaDesc": "Your next small step.",
-        "checkin": "A quick check-in is a good place to start.",
-        "checkinCta": "Check in",
-        "record": "Finish your thought record",
-        "recordCta": "Continue"
-      },
-      "compositeQuietWeek": {
-        "title": "A gentle week",
-        "metaDesc": "A kind read on your week.",
-        "quiet": "It's been a quiet week — and that's okay. Even a small moment counts.",
-        "active": "You've shown up {{count}} times this week.",
-        "cta": "Check in"
-      },
-      "compositeFromPast": {
-        "title": "From your past",
-        "metaDesc": "Resurface a past moment.",
-        "empty": "Your memories will appear here as you log.",
-        "fromJournal": "From your journal",
-        "fromGratitude": "From your gratitude"
-      },
-      "compositeSafety": {
-        "title": "Steady yourself",
-        "metaDesc": "Calming tools when things feel hard.",
-        "fallback": "One small step at a time. You don't have to do this alone.",
-        "ground": "Ground",
-        "breathe": "Breathe",
-        "support": "Get more support"
       }
     }
   },

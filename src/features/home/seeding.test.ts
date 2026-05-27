@@ -13,7 +13,7 @@ describe("resolveInitialWidgetIds", () => {
     expect(result).toEqual(["journal-latest", "breathing-suggested"]);
   });
 
-  it("drops the legacy mood plan-item (mood-checkin is pinned, not a row) by mapping to mood-trend", () => {
+  it("maps the legacy mood plan-item to mood-trend", () => {
     expect(resolveInitialWidgetIds([{ toolId: "mood", order: 0 }])).toEqual(["mood-trend"]);
   });
 
@@ -30,9 +30,8 @@ describe("resolveInitialWidgetIds", () => {
     expect(resolveInitialWidgetIds([{ toolId: "totally-unknown", order: 0 }])).toEqual([]);
   });
 
-  it("never includes the pinned mood-checkin in the seeded rows", () => {
-    expect(DEFAULT_WIDGET_IDS).not.toContain("mood-checkin");
-    expect(resolveInitialWidgetIds([{ toolId: "mood", order: 0 }])).not.toContain("mood-checkin");
+  it("seeds the daily check-in as a normal default widget", () => {
+    expect(DEFAULT_WIDGET_IDS).toContain("mood-checkin");
   });
 
   it("default set includes the phase-1 default widgets", () => {
@@ -46,6 +45,6 @@ describe("resolveInitialWidgetIds", () => {
     ]) {
       expect(DEFAULT_WIDGET_IDS).toContain(id);
     }
-    expect(DEFAULT_WIDGET_IDS).toHaveLength(12);
+    expect(DEFAULT_WIDGET_IDS).toHaveLength(13);
   });
 });

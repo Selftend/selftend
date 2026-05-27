@@ -47,6 +47,7 @@ export default function JournalListScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ModuleHomeHeader
+              addWidgetCategory="journal"
               title={t("title")}
               hue="ink"
               icon="edit-note"
