@@ -38,7 +38,7 @@ describe("widget registry", () => {
   });
 
   it("spanForWidget returns the widget's declared span", () => {
-    expect(spanForWidget("mood-trend")).toEqual({ colSpan: 1, rowSpan: 2 });
+    expect(spanForWidget("mood-trend")).toEqual({ colSpan: 1, rowSpan: 1 });
     expect(spanForWidget("journal-latest")).toEqual({ colSpan: 1, rowSpan: 1 });
   });
 

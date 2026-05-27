@@ -36,7 +36,7 @@ import {
 const GAP = 12;
 const PADDING = 24;
 const MIN_WIDGET_WIDTH = 280;
-const BASE_ROW_HEIGHT = 196;
+const BASE_ROW_HEIGHT = 200;
 const MAX_COLUMNS = 3;
 
 function pickGreetingKey(hour: number) {

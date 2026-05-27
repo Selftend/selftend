@@ -61,7 +61,7 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.moodTrend.desc",
     tint: "be",
     status: "default",
-    span: { colSpan: 1, rowSpan: 2 },
+    span: { colSpan: 1, rowSpan: 1 },
   },
   "journal-latest": {
     id: "journal-latest",
@@ -101,7 +101,7 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.meditationPick.desc",
     tint: "iris",
     status: "default",
-    span: { colSpan: 1, rowSpan: 2 },
+    span: { colSpan: 1, rowSpan: 1 },
   },
   "habits-today": {
     id: "habits-today",
@@ -111,7 +111,7 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.habitsToday.desc",
     tint: "act",
     status: "default",
-    span: { colSpan: 1, rowSpan: 2 },
+    span: { colSpan: 1, rowSpan: 1 },
   },
   "self-care": {
     id: "self-care",
