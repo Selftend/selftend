@@ -1,21 +1,13 @@
 import { router } from "expo-router";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
-import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { cn } from "@/lib/utils";
+import { MoodScale } from "@/src/components/app/mood-scale";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
-
-const FACES: { score: number; icon: MaterialIconName }[] = [
-  { score: 1, icon: "sentiment-very-dissatisfied" },
-  { score: 2, icon: "sentiment-dissatisfied" },
-  { score: 3, icon: "sentiment-neutral" },
-  { score: 4, icon: "sentiment-satisfied" },
-  { score: 5, icon: "sentiment-very-satisfied" },
-];
 
 export function MoodCheckinWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
@@ -34,28 +26,10 @@ export function MoodCheckinWidget({ userId }: { userId: string }) {
           </View>
           <Text className="text-sm font-semibold">{t("home.widgets.moodCheckin.title")}</Text>
         </View>
-        <View className="flex-row items-center justify-between">
-          {FACES.map((face) => (
-            <Pressable
-              key={face.score}
-              accessibilityRole="button"
-              accessibilityLabel={t("home.widgets.moodCheckin.faceLabel", { score: face.score })}
-              onPress={() => router.push(`/tools/mood-tracker/new?score=${face.score}`)}
-              className={cn(
-                "size-11 items-center justify-center rounded-full",
-                moodToday === face.score ? "bg-be/20" : "bg-muted/50",
-              )}
-            >
-              <Icon
-                name={face.icon}
-                className={cn(
-                  "size-6",
-                  moodToday === face.score ? "text-be" : "text-muted-foreground",
-                )}
-              />
-            </Pressable>
-          ))}
-        </View>
+        <MoodScale
+          value={moodToday}
+          onChange={(score) => router.push(`/tools/mood-tracker/new?score=${score}`)}
+        />
       </CardContent>
     </Card>
   );
