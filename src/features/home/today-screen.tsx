@@ -147,14 +147,24 @@ export default function HomeScreen() {
           </Text>
           <Text variant="h1">{greetingLine}</Text>
         </View>
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={() => setEditMode((v) => !v)}
-          accessibilityLabel={editMode ? t("home.doneLabel") : t("home.editLabel")}
-        >
-          <Icon name={editMode ? "check" : "edit"} className="size-5 text-muted-foreground" />
-        </Button>
+        <View className="flex-row items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => setAddVisible(true)}
+            accessibilityLabel={t("today.dashboard.addWidgetTitle")}
+          >
+            <Icon name="add" className="size-5 text-muted-foreground" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => setEditMode((v) => !v)}
+            accessibilityLabel={editMode ? t("home.doneLabel") : t("home.editLabel")}
+          >
+            <Icon name={editMode ? "check" : "edit"} className="size-5 text-muted-foreground" />
+          </Button>
+        </View>
       </View>
 
       {editMode ? (
@@ -168,18 +178,6 @@ export default function HomeScreen() {
           </Button>
         </View>
       ) : null}
-
-      <View className="flex-row items-center justify-between">
-        <Text variant="h3">{t("home.sectionTitle")}</Text>
-        <Button
-          size="sm"
-          variant="ghost"
-          onPress={() => setAddVisible(true)}
-          accessibilityLabel={t("today.dashboard.addWidgetTitle")}
-        >
-          <Icon name="add" className="size-5 text-muted-foreground" />
-        </Button>
-      </View>
     </View>
   );
 
