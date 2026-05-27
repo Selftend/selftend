@@ -1,4 +1,10 @@
-import { ActivityIndicator, Pressable, RefreshControl, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import type { ListRenderItemInfo } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -13,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
+import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
 import {
   PINNED_WIDGET_ID,
@@ -51,6 +58,8 @@ export default function HomeScreen() {
   const [addVisible, setAddVisible] = useState(false);
 
   const { selectedDate, isToday } = useSelectedDate();
+  const { width } = useWindowDimensions();
+  const columns = width >= 1024 ? 3 : width >= DESKTOP_BREAKPOINT ? 2 : 1;
   const hour = new Date().getHours();
   const dateLabel = new Intl.DateTimeFormat(i18n.language, {
     weekday: "long",
@@ -122,7 +131,7 @@ export default function HomeScreen() {
   function renderItem({ item }: ListRenderItemInfo<string>) {
     const meta = metaForWidget(item);
     return (
-      <View className={cn("mb-3", editMode && "pl-9 pr-9")}>
+      <View className={cn("mb-3", editMode && "pl-9 pr-9", columns > 1 && "flex-1")}>
         {resolveWidget(item, userId ?? "")}
         {editMode ? (
           <>
@@ -151,6 +160,8 @@ export default function HomeScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <DraxProvider style={{ flex: 1 }}>
         <DraxList<string>
+          key={`grid-${columns}`}
+          numColumns={columns}
           data={widgetIds}
           keyExtractor={(id) => id}
           onReorder={({ data }) => reorderMutation.mutate(data)}
@@ -158,6 +169,7 @@ export default function HomeScreen() {
           itemEntering={FadeInDown}
           style={{ flex: 1 }}
           containerStyle={{ flex: 1 }}
+          columnWrapperStyle={columns > 1 ? { gap: 12 } : undefined}
           ListHeaderComponent={header}
           ListEmptyComponent={
             isLoading ? (
