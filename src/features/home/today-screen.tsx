@@ -1,10 +1,4 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, View } from "react-native";
 import type { ListRenderItemInfo } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -19,7 +13,6 @@ import { cn } from "@/lib/utils";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
-import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
 import {
   PINNED_WIDGET_ID,
@@ -58,8 +51,13 @@ export default function HomeScreen() {
   const [addVisible, setAddVisible] = useState(false);
 
   const { selectedDate, isToday } = useSelectedDate();
-  const { width } = useWindowDimensions();
-  const columns = width >= 1024 ? 3 : width >= DESKTOP_BREAKPOINT ? 2 : 1;
+  const [containerWidth, setContainerWidth] = useState(0);
+  // Auto-fit: fit as many ~280px-min widgets as possible, each flexing to fill
+  // leftover space. Naturally collapses to 1 column on narrow/mobile widths —
+  // no separate mobile breakpoints needed. 48 = list padding (24 each side), 12 = gap.
+  const usableWidth = containerWidth - 48;
+  const columns =
+    usableWidth > 0 ? Math.max(1, Math.min(3, Math.floor((usableWidth + 12) / 292))) : 1;
   const hour = new Date().getHours();
   const dateLabel = new Intl.DateTimeFormat(i18n.language, {
     weekday: "long",
@@ -131,7 +129,7 @@ export default function HomeScreen() {
   function renderItem({ item }: ListRenderItemInfo<string>) {
     const meta = metaForWidget(item);
     return (
-      <View className={cn("mb-3", editMode && "pl-9 pr-9", columns > 1 && "flex-1")}>
+      <View className={cn("mb-3", editMode && "pl-9 pr-9", columns > 1 && "flex-1 min-w-0")}>
         {resolveWidget(item, userId ?? "")}
         {editMode ? (
           <>
@@ -158,43 +156,46 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <DraxProvider style={{ flex: 1 }}>
-        <DraxList<string>
-          key={`grid-${columns}`}
-          numColumns={columns}
-          data={widgetIds}
-          keyExtractor={(id) => id}
-          onReorder={({ data }) => reorderMutation.mutate(data)}
-          renderItem={renderItem}
-          itemEntering={FadeInDown}
-          style={{ flex: 1 }}
-          containerStyle={{ flex: 1 }}
-          columnWrapperStyle={columns > 1 ? { gap: 12 } : undefined}
-          ListHeaderComponent={header}
-          ListEmptyComponent={
-            isLoading ? (
-              <View className="items-center py-8">
-                <ActivityIndicator />
-              </View>
-            ) : (
-              <Pressable
-                onPress={() => setAddVisible(true)}
-                className="items-center gap-4 rounded-2xl border border-dashed border-border py-12 active:bg-muted/30"
-              >
-                <View className="size-14 items-center justify-center rounded-full bg-muted">
-                  <Icon name="add" className="size-7 text-muted-foreground" />
+      <View className="flex-1" onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}>
+        <DraxProvider style={{ flex: 1 }}>
+          <DraxList<string>
+            key={`grid-${columns}`}
+            numColumns={columns}
+            longPressDelay={0}
+            data={widgetIds}
+            keyExtractor={(id) => id}
+            onReorder={({ data }) => reorderMutation.mutate(data)}
+            renderItem={renderItem}
+            itemEntering={FadeInDown}
+            style={{ flex: 1 }}
+            containerStyle={{ flex: 1 }}
+            columnWrapperStyle={columns > 1 ? { gap: 12 } : undefined}
+            ListHeaderComponent={header}
+            ListEmptyComponent={
+              isLoading ? (
+                <View className="items-center py-8">
+                  <ActivityIndicator />
                 </View>
-                <Text variant="muted" className="text-sm text-center max-w-[36ch]">
-                  {t("today.dashboard.emptySubtitle")}
-                </Text>
-              </Pressable>
-            )
-          }
-          contentContainerStyle={{ padding: 24 }}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
-          itemDraxViewProps={{ draggable: editMode, dragHandle: editMode }}
-        />
-      </DraxProvider>
+              ) : (
+                <Pressable
+                  onPress={() => setAddVisible(true)}
+                  className="items-center gap-4 rounded-2xl border border-dashed border-border py-12 active:bg-muted/30"
+                >
+                  <View className="size-14 items-center justify-center rounded-full bg-muted">
+                    <Icon name="add" className="size-7 text-muted-foreground" />
+                  </View>
+                  <Text variant="muted" className="text-sm text-center max-w-[36ch]">
+                    {t("today.dashboard.emptySubtitle")}
+                  </Text>
+                </Pressable>
+              )
+            }
+            contentContainerStyle={{ padding: 24 }}
+            refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+            itemDraxViewProps={{ draggable: editMode, dragHandle: editMode }}
+          />
+        </DraxProvider>
+      </View>
 
       <AddWidgetModal
         visible={addVisible}
