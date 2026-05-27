@@ -249,7 +249,42 @@
         "desc": "A short sit chosen for the time of day."
       },
       "habitsToday": { "title": "Habits, today", "desc": "Your habits with this week's progress." },
-      "selfCare": { "title": "Self-care log", "desc": "Today's self-care check-in." }
+      "selfCare": { "title": "Self-care log", "desc": "Today's self-care check-in." },
+      "cbtOpenRecord": {
+        "title": "Open thought record",
+        "metaDesc": "Pick up your latest thought record.",
+        "untitled": "Untitled record",
+        "continue": "Continue",
+        "reread": "Reread",
+        "start": "Start a thought record",
+        "empty": "No thought records yet."
+      },
+      "actValues": {
+        "title": "Your values",
+        "metaDesc": "Your top named values.",
+        "empty": "Choose your values",
+        "cta": "Choose your values"
+      },
+      "mindfulnessAnchor": {
+        "title": "Today's anchor",
+        "metaDesc": "A short mindfulness practice.",
+        "desc": "A 5-minute practice to anchor your attention.",
+        "cta": "Start"
+      },
+      "grounding54321": {
+        "title": "5-4-3-2-1",
+        "metaDesc": "A quick grounding exercise.",
+        "desc": "Five things you see, four you feel, three you hear…",
+        "cta": "Ground now"
+      },
+      "sleepLastNight": {
+        "title": "Last night",
+        "metaDesc": "Hours slept last night.",
+        "hoursValue": "{{hours}}h {{mins}}m",
+        "empty": "Log last night's sleep",
+        "cta": "Log sleep"
+      },
+      "sleep7Nights": { "title": "Last 7 nights", "metaDesc": "Your recent sleep, at a glance." }
     }
   },
   "progress": {

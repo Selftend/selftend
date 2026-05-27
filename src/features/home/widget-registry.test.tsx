@@ -23,7 +23,8 @@ describe("widget registry", () => {
 
   it("isImplemented reflects registry membership", () => {
     expect(isImplemented("mood-trend")).toBe(true);
-    expect(isImplemented("cbt-open-record")).toBe(false);
+    expect(isImplemented("cbt-open-record")).toBe(true);
+    expect(isImplemented("not-a-widget")).toBe(false);
   });
 
   it("metaForWidget returns undefined for unknown ids", () => {

@@ -9,6 +9,12 @@ import { GratitudeWidget } from "@/src/features/home/widgets/gratitude-widget";
 import { JournalWidget } from "@/src/features/home/widgets/journal-widget";
 import { HabitsWidget } from "@/src/features/home/widgets/habits-widget";
 import { SelfCareWidget } from "@/src/features/home/widgets/self-care-widget";
+import { SleepLastNightWidget } from "@/src/features/home/widgets/sleep-last-night-widget";
+import { Sleep7NightsWidget } from "@/src/features/home/widgets/sleep-7-nights-widget";
+import { CbtOpenRecordWidget } from "@/src/features/home/widgets/cbt-open-record-widget";
+import { ActValuesWidget } from "@/src/features/home/widgets/act-values-widget";
+import { MindfulnessAnchorWidget } from "@/src/features/home/widgets/mindfulness-anchor-widget";
+import { Grounding54321Widget } from "@/src/features/home/widgets/grounding-54321-widget";
 
 export type WidgetComponent = React.ComponentType<{ userId: string }>;
 export type WidgetStatus = "default" | "available" | "soon" | "composite";
@@ -40,6 +46,12 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "meditation-pick": MeditationWidget,
   "habits-today": HabitsWidget,
   "self-care": SelfCareWidget,
+  "cbt-open-record": CbtOpenRecordWidget,
+  "act-values": ActValuesWidget,
+  "mindfulness-anchor": MindfulnessAnchorWidget,
+  "grounding-54321": Grounding54321Widget,
+  "sleep-last-night": SleepLastNightWidget,
+  "sleep-7-nights": Sleep7NightsWidget,
 };
 
 export const WIDGET_META: Record<string, WidgetMeta> = {
@@ -121,6 +133,66 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.selfCare.desc",
     tint: "primary",
     status: "available",
+    span: { colSpan: 1, rowSpan: 1 },
+  },
+  "cbt-open-record": {
+    id: "cbt-open-record",
+    toolKey: "cbt",
+    icon: "psychology",
+    titleKey: "home.widgets.cbtOpenRecord.title",
+    descriptionKey: "home.widgets.cbtOpenRecord.metaDesc",
+    tint: "primary",
+    status: "default",
+    span: { colSpan: 1, rowSpan: 1 },
+  },
+  "act-values": {
+    id: "act-values",
+    toolKey: "act",
+    icon: "explore",
+    titleKey: "home.widgets.actValues.title",
+    descriptionKey: "home.widgets.actValues.metaDesc",
+    tint: "act",
+    status: "default",
+    span: { colSpan: 1, rowSpan: 1 },
+  },
+  "mindfulness-anchor": {
+    id: "mindfulness-anchor",
+    toolKey: "mindfulness",
+    icon: "self-improvement",
+    titleKey: "home.widgets.mindfulnessAnchor.title",
+    descriptionKey: "home.widgets.mindfulnessAnchor.metaDesc",
+    tint: "mist",
+    status: "default",
+    span: { colSpan: 1, rowSpan: 1 },
+  },
+  "grounding-54321": {
+    id: "grounding-54321",
+    toolKey: "grounding",
+    icon: "anchor",
+    titleKey: "home.widgets.grounding54321.title",
+    descriptionKey: "home.widgets.grounding54321.metaDesc",
+    tint: "clay",
+    status: "default",
+    span: { colSpan: 1, rowSpan: 1 },
+  },
+  "sleep-last-night": {
+    id: "sleep-last-night",
+    toolKey: "sleep",
+    icon: "bedtime",
+    titleKey: "home.widgets.sleepLastNight.title",
+    descriptionKey: "home.widgets.sleepLastNight.metaDesc",
+    tint: "ink",
+    status: "default",
+    span: { colSpan: 1, rowSpan: 1 },
+  },
+  "sleep-7-nights": {
+    id: "sleep-7-nights",
+    toolKey: "sleep",
+    icon: "bar-chart",
+    titleKey: "home.widgets.sleep7Nights.title",
+    descriptionKey: "home.widgets.sleep7Nights.metaDesc",
+    tint: "ink",
+    status: "default",
     span: { colSpan: 1, rowSpan: 1 },
   },
 };

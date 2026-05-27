@@ -34,4 +34,18 @@ describe("resolveInitialWidgetIds", () => {
     expect(DEFAULT_WIDGET_IDS).not.toContain("mood-checkin");
     expect(resolveInitialWidgetIds([{ toolId: "mood", order: 0 }])).not.toContain("mood-checkin");
   });
+
+  it("default set includes the phase-1 default widgets", () => {
+    for (const id of [
+      "cbt-open-record",
+      "act-values",
+      "mindfulness-anchor",
+      "grounding-54321",
+      "sleep-last-night",
+      "sleep-7-nights",
+    ]) {
+      expect(DEFAULT_WIDGET_IDS).toContain(id);
+    }
+    expect(DEFAULT_WIDGET_IDS).toHaveLength(12);
+  });
 });

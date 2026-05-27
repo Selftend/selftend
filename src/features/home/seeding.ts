@@ -3,10 +3,16 @@
 // Plan 2 extends it with the brand-new-data default widgets.
 export const DEFAULT_WIDGET_IDS = [
   "mood-trend",
+  "cbt-open-record",
+  "act-values",
   "journal-latest",
   "breathing-suggested",
+  "mindfulness-anchor",
+  "grounding-54321",
   "gratitude-latest",
   "meditation-pick",
+  "sleep-last-night",
+  "sleep-7-nights",
   "habits-today",
 ] as const;
 
