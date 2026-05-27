@@ -22,8 +22,6 @@ export function MoodTrendWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
   const { data: moodLogs } = useMoodLogs(userId, 30);
   const logs = moodLogs ?? [];
-  if (logs.length === 0) return null;
-
   const sevenDay = computeAverage(logs, 7);
 
   return (

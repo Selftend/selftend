@@ -6,7 +6,7 @@
     "appName": "Selftend"
   },
   "sidebar": {
-    "home": "Dashboard",
+    "home": "Home",
     "notifications": "Notifications",
     "settings": "Settings",
     "support": "Support",
@@ -52,7 +52,7 @@
     "dark": "Dark"
   },
   "tabs": {
-    "home": "Dashboard",
+    "home": "Home",
     "settings": "Settings"
   },
   "notFound": {
@@ -176,6 +176,7 @@
       "meditationStage": "Current stage: {{stage}}",
       "startSession": "Start session",
       "gratitudeHint": "Notice what went well today.",
+      "addEntry": "Add entry",
       "journalHint": "Write freely - no prompts, no judgment.",
       "habitsHint": "No activities scheduled for today.",
       "habitsAllDone": "All done for today!",

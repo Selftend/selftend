@@ -156,6 +156,8 @@ export default function HomeScreen() {
           onReorder={({ data }) => reorderMutation.mutate(data)}
           renderItem={renderItem}
           itemEntering={FadeInDown}
+          style={{ flex: 1 }}
+          containerStyle={{ flex: 1 }}
           ListHeaderComponent={header}
           ListEmptyComponent={
             isLoading ? (
