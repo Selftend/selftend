@@ -284,7 +284,11 @@
         "empty": "Log last night's sleep",
         "cta": "Log sleep"
       },
-      "sleep7Nights": { "title": "Last 7 nights", "metaDesc": "Your recent sleep, at a glance." }
+      "sleep7Nights": {
+        "title": "Last 7 nights",
+        "metaDesc": "Your recent sleep, at a glance.",
+        "empty": "Log a few nights to see your sleep."
+      }
     }
   },
   "progress": {
