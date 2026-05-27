@@ -13,6 +13,11 @@ import { SelfCareWidget } from "@/src/features/home/widgets/self-care-widget";
 export type WidgetComponent = React.ComponentType<{ userId: string }>;
 export type WidgetStatus = "default" | "available" | "soon" | "composite";
 
+export interface GridSpan {
+  colSpan: number;
+  rowSpan: number;
+}
+
 export interface WidgetMeta {
   id: string;
   toolKey: string;
@@ -21,6 +26,7 @@ export interface WidgetMeta {
   descriptionKey: string;
   tint: WidgetTint;
   status: WidgetStatus;
+  span: GridSpan;
 }
 
 export const PINNED_WIDGET_ID = "mood-checkin";
@@ -45,6 +51,7 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.moodCheckin.desc",
     tint: "be",
     status: "default",
+    span: { colSpan: 1, rowSpan: 1 },
   },
   "mood-trend": {
     id: "mood-trend",
@@ -54,6 +61,7 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.moodTrend.desc",
     tint: "be",
     status: "default",
+    span: { colSpan: 1, rowSpan: 2 },
   },
   "journal-latest": {
     id: "journal-latest",
@@ -63,6 +71,7 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.journalLatest.desc",
     tint: "ink",
     status: "default",
+    span: { colSpan: 1, rowSpan: 1 },
   },
   "breathing-suggested": {
     id: "breathing-suggested",
@@ -72,6 +81,7 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.breathingSuggested.desc",
     tint: "aqua",
     status: "default",
+    span: { colSpan: 1, rowSpan: 1 },
   },
   "gratitude-latest": {
     id: "gratitude-latest",
@@ -81,6 +91,7 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.gratitudeLatest.desc",
     tint: "think",
     status: "default",
+    span: { colSpan: 1, rowSpan: 1 },
   },
   "meditation-pick": {
     id: "meditation-pick",
@@ -90,6 +101,7 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.meditationPick.desc",
     tint: "iris",
     status: "default",
+    span: { colSpan: 1, rowSpan: 2 },
   },
   "habits-today": {
     id: "habits-today",
@@ -99,6 +111,7 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.habitsToday.desc",
     tint: "act",
     status: "default",
+    span: { colSpan: 1, rowSpan: 2 },
   },
   "self-care": {
     id: "self-care",
@@ -108,6 +121,7 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.selfCare.desc",
     tint: "primary",
     status: "available",
+    span: { colSpan: 1, rowSpan: 1 },
   },
 };
 
@@ -123,4 +137,15 @@ export function resolveWidget(widgetId: string, userId: string): React.ReactElem
   const Component = WIDGET_REGISTRY[widgetId];
   if (!Component) return null;
   return <Component userId={userId} />;
+}
+
+export function spanForWidget(widgetId: string): GridSpan {
+  return WIDGET_META[widgetId]?.span ?? { colSpan: 1, rowSpan: 1 };
+}
+
+export function clampSpan(span: GridSpan, numColumns: number): GridSpan {
+  return {
+    colSpan: Math.min(span.colSpan, Math.max(1, numColumns)),
+    rowSpan: span.rowSpan,
+  };
 }
