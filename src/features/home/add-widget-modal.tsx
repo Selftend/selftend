@@ -11,7 +11,6 @@ import { tintClasses } from "@/src/features/home/widget-tint";
 interface AddWidgetModalProps {
   visible: boolean;
   onClose: () => void;
-  userId: string | null;
   existingWidgetIds: string[];
   onAdd: (widgetId: string) => void;
   onRemove: (widgetId: string) => void;
@@ -296,8 +295,7 @@ export function AddWidgetModal({
               value={query}
               onChangeText={setQuery}
               placeholder={t("home.addPanel.searchPlaceholder")}
-              placeholderTextColor="hsl(var(--muted-foreground))"
-              className="h-9 flex-1 text-[13px] text-foreground"
+              className="h-9 flex-1 text-[13px] text-foreground placeholder:text-muted-foreground"
             />
           </View>
 

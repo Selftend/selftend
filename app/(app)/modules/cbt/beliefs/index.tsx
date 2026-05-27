@@ -16,6 +16,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { useCoreBeliefs } from "@/src/features/beliefs/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 
 export default function BeliefsScreen() {
@@ -29,7 +30,15 @@ export default function BeliefsScreen() {
         <View className="gap-6">
           <View className="flex-row items-center justify-between gap-4">
             <View className="flex-1 gap-2">
-              <ScreenHeader title={t("beliefs.title")} right={<HelpButton helpKey="beliefs" />} />
+              <ScreenHeader
+                title={t("beliefs.title")}
+                right={
+                  <View className="flex-row items-center gap-3">
+                    <AddToHomeButton widgetId="cbt-beliefs" />
+                    <HelpButton helpKey="beliefs" />
+                  </View>
+                }
+              />
               <Text variant="muted">{t("beliefs.description")}</Text>
             </View>
             <Button onPress={() => router.push("/modules/cbt/beliefs/new")} size="sm">

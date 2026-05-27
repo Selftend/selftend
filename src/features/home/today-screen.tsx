@@ -160,6 +160,7 @@ export default function HomeScreen() {
               scrollableRef={scrollableRef}
               dragActivationDelay={0}
               sortEnabled={editMode}
+              customHandle
               onDragEnd={({ order }) => reorderMutation.mutate(order(widgetIds))}
             >
               {widgetIds.map((id) => {
@@ -167,10 +168,16 @@ export default function HomeScreen() {
                 const width = span.colSpan * cellWidth + (span.colSpan - 1) * GAP;
                 const meta = metaForWidget(id);
                 return (
-                  <View key={id} style={{ width, height: WIDGET_HEIGHT }}>
-                    <View style={{ flex: 1, pointerEvents: editMode ? "none" : "auto" }}>
-                      {resolveWidget(id, userId ?? "")}
-                    </View>
+                  <View key={id} style={{ width, height: WIDGET_HEIGHT, overflow: "hidden" }}>
+                    {editMode ? (
+                      <Sortable.Handle style={{ flex: 1 }}>
+                        <View style={{ flex: 1, pointerEvents: "none" }}>
+                          {resolveWidget(id, userId ?? "")}
+                        </View>
+                      </Sortable.Handle>
+                    ) : (
+                      <View style={{ flex: 1 }}>{resolveWidget(id, userId ?? "")}</View>
+                    )}
                     {editMode ? (
                       <Pressable
                         accessibilityRole="button"
@@ -194,7 +201,6 @@ export default function HomeScreen() {
       <AddWidgetModal
         visible={addVisible}
         onClose={() => setAddVisible(false)}
-        userId={userId}
         existingWidgetIds={widgetIds}
         onAdd={(widgetId) => addMutation.mutate(widgetId)}
         onRemove={(widgetId) => removeMutation.mutate(widgetId)}

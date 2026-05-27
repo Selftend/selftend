@@ -30,6 +30,27 @@ export async function listWidgetPreferences(userId: string): Promise<WidgetPrefe
   return (data as WidgetPreferenceRow[]).map(mapRow);
 }
 
+// Whether this user's Home defaults have already been seeded. Used to keep an emptied
+// Home empty instead of re-seeding. Degrades to false if the column is missing (pre-migration).
+export async function getWidgetsSeeded(userId: string): Promise<boolean> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("user_preferences")
+    .select("widgets_seeded")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) return false;
+  return Boolean((data as { widgets_seeded?: boolean } | null)?.widgets_seeded);
+}
+
+// Best-effort marker that seeding has run; ignores failures (e.g. column missing pre-migration).
+export async function markWidgetsSeeded(userId: string): Promise<void> {
+  const client = requireSupabase();
+  await client
+    .from("user_preferences")
+    .upsert({ user_id: userId, widgets_seeded: true }, { onConflict: "user_id" });
+}
+
 export async function insertWidgetPreferences(
   userId: string,
   widgetIds: string[],

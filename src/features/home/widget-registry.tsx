@@ -16,6 +16,11 @@ import { CbtDistortionPatternsWidget } from "@/src/features/home/widgets/cbt-dis
 import { CbtDistortionGuideWidget } from "@/src/features/home/widgets/cbt-distortion-guide-widget";
 import { CbtProgrammeWidget } from "@/src/features/home/widgets/cbt-programme-widget";
 import { CbtOpenRecordWidget } from "@/src/features/home/widgets/cbt-open-record-widget";
+import { CbtWorryWidget } from "@/src/features/home/widgets/cbt-worry-widget";
+import { CbtBeliefsWidget } from "@/src/features/home/widgets/cbt-beliefs-widget";
+import { CbtActivitiesWidget } from "@/src/features/home/widgets/cbt-activities-widget";
+import { CbtExposureWidget } from "@/src/features/home/widgets/cbt-exposure-widget";
+import { CbtGoalsWidget } from "@/src/features/home/widgets/cbt-goals-widget";
 import { ActValuesWidget } from "@/src/features/home/widgets/act-values-widget";
 import { ActCommittedActionsWidget } from "@/src/features/home/widgets/act-committed-actions-widget";
 import { ActDefusionWidget } from "@/src/features/home/widgets/act-defusion-widget";
@@ -80,6 +85,11 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "cbt-distortion-patterns": CbtDistortionPatternsWidget,
   "cbt-distortion-guide": CbtDistortionGuideWidget,
   "cbt-programme": CbtProgrammeWidget,
+  "cbt-worry": CbtWorryWidget,
+  "cbt-beliefs": CbtBeliefsWidget,
+  "cbt-activities": CbtActivitiesWidget,
+  "cbt-exposure": CbtExposureWidget,
+  "cbt-goals": CbtGoalsWidget,
   "act-committed-actions": ActCommittedActionsWidget,
   "act-defusion": ActDefusionWidget,
   "act-programme": ActProgrammeWidget,
@@ -281,6 +291,56 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     icon: "school",
     titleKey: "home.widgets.cbtProgramme.title",
     descriptionKey: "home.widgets.cbtProgramme.metaDesc",
+    tint: "primary",
+    status: "available",
+    span: { colSpan: 1, rowSpan: 1 },
+  },
+  "cbt-worry": {
+    id: "cbt-worry",
+    toolKey: "cbt",
+    icon: "psychology",
+    titleKey: "home.widgets.cbtWorry.title",
+    descriptionKey: "home.widgets.cbtWorry.metaDesc",
+    tint: "primary",
+    status: "available",
+    span: { colSpan: 1, rowSpan: 1 },
+  },
+  "cbt-beliefs": {
+    id: "cbt-beliefs",
+    toolKey: "cbt",
+    icon: "anchor",
+    titleKey: "home.widgets.cbtBeliefs.title",
+    descriptionKey: "home.widgets.cbtBeliefs.metaDesc",
+    tint: "primary",
+    status: "available",
+    span: { colSpan: 1, rowSpan: 1 },
+  },
+  "cbt-activities": {
+    id: "cbt-activities",
+    toolKey: "cbt",
+    icon: "directions-run",
+    titleKey: "home.widgets.cbtActivities.title",
+    descriptionKey: "home.widgets.cbtActivities.metaDesc",
+    tint: "primary",
+    status: "available",
+    span: { colSpan: 1, rowSpan: 1 },
+  },
+  "cbt-exposure": {
+    id: "cbt-exposure",
+    toolKey: "cbt",
+    icon: "layers",
+    titleKey: "home.widgets.cbtExposure.title",
+    descriptionKey: "home.widgets.cbtExposure.metaDesc",
+    tint: "primary",
+    status: "available",
+    span: { colSpan: 1, rowSpan: 1 },
+  },
+  "cbt-goals": {
+    id: "cbt-goals",
+    toolKey: "cbt",
+    icon: "gps-fixed",
+    titleKey: "home.widgets.cbtGoals.title",
+    descriptionKey: "home.widgets.cbtGoals.metaDesc",
     tint: "primary",
     status: "available",
     span: { colSpan: 1, rowSpan: 1 },

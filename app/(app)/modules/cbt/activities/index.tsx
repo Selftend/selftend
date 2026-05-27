@@ -18,6 +18,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, toLocalDateKey } from "@/src/stores/selected-date-store";
 import type { ActivityLog } from "@/src/features/activities/types";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 
 function groupActivities(activities: ActivityLog[]) {
@@ -77,7 +78,12 @@ export default function ActivitiesScreen() {
             <View className="flex-1 gap-2">
               <ScreenHeader
                 title={t("activities.title")}
-                right={<HelpButton helpKey="activities" />}
+                right={
+                  <View className="flex-row items-center gap-3">
+                    <AddToHomeButton widgetId="cbt-activities" />
+                    <HelpButton helpKey="activities" />
+                  </View>
+                }
               />
               <Text variant="muted">{t("activities.description")}</Text>
             </View>

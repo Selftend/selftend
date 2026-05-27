@@ -213,6 +213,7 @@
     "widgetCount": "{{count}} widget",
     "widgetCount_other": "{{count}} widgets",
     "addedCount": "{{count}} added",
+    "addedCount_other": "{{count}} added",
     "sectionModules": "Modules",
     "sectionTools": "Tools",
     "addPanel": {
@@ -327,6 +328,53 @@
         "notStarted": "Start the guided CBT programme.",
         "complete": "Programme complete — nicely done.",
         "open": "Open programme"
+      },
+      "cbtWorry": {
+        "title": "Worry journal",
+        "metaDesc": "Sort what-if worries from real, solvable problems.",
+        "stat": "{{count}} to revisit",
+        "stat_other": "{{count}} to revisit",
+        "empty": "Sort a worry when one comes up.",
+        "revisit": "Revisit",
+        "start": "Start"
+      },
+      "cbtBeliefs": {
+        "title": "Core beliefs",
+        "metaDesc": "Surface the recurring beliefs under your reactions.",
+        "stat": "{{count}} belief",
+        "stat_other": "{{count}} beliefs",
+        "due": "{{count}} due for review",
+        "due_other": "{{count}} due for review",
+        "empty": "Start with one belief.",
+        "review": "Review",
+        "start": "Start"
+      },
+      "cbtActivities": {
+        "title": "Behavioral activation",
+        "metaDesc": "Plan small, mood-lifting activities.",
+        "stat": "{{count}} upcoming",
+        "stat_other": "{{count}} upcoming",
+        "empty": "Plan a small, mood-lifting activity.",
+        "view": "View plan",
+        "plan": "Plan one"
+      },
+      "cbtExposure": {
+        "title": "Exposure ladder",
+        "metaDesc": "Face avoided situations step by step.",
+        "progress": "{{done}} / {{total}} steps done",
+        "allDone": "Every step complete — nicely done.",
+        "empty": "Build a fear ladder to start.",
+        "continue": "Continue",
+        "build": "Build a ladder"
+      },
+      "cbtGoals": {
+        "title": "Goals",
+        "metaDesc": "Track the goals you're working toward.",
+        "stat": "{{count}} active",
+        "stat_other": "{{count}} active",
+        "empty": "Set a goal to work toward.",
+        "open": "Open",
+        "set": "Set a goal"
       },
       "actCommittedActions": {
         "title": "Committed actions",

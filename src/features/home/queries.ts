@@ -4,8 +4,10 @@ import { listPlanItems } from "@/src/features/plan/repository";
 import { resolveInitialWidgetIds } from "@/src/features/home/seeding";
 import {
   deleteWidgetPreference,
+  getWidgetsSeeded,
   insertWidgetPreferences,
   listWidgetPreferences,
+  markWidgetsSeeded,
   updateWidgetPositions,
 } from "@/src/features/home/widget-repository";
 import type { WidgetPreference } from "@/src/features/home/types";
@@ -19,11 +21,15 @@ async function listOrSeed(userId: string): Promise<WidgetPreference[]> {
   const existing = await listWidgetPreferences(userId);
   if (existing.length > 0) return existing;
 
+  // Seed defaults only once per user. If seeding already ran, an empty Home stays empty.
+  if (await getWidgetsSeeded(userId)) return [];
+
   const planItems = await listPlanItems(userId);
   const initial = resolveInitialWidgetIds(
     planItems.map((item) => ({ toolId: item.toolId, order: item.order })),
   );
   await insertWidgetPreferences(userId, initial, 0);
+  await markWidgetsSeeded(userId);
   return listWidgetPreferences(userId);
 }
 

@@ -19,6 +19,7 @@ import { useToggleWorryResolved, useWorryEntries } from "@/src/features/worry/qu
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -47,7 +48,15 @@ export default function WorryScreen() {
         <View className="gap-6">
           <View className="flex-row items-center justify-between gap-4">
             <View className="flex-1 gap-2">
-              <ScreenHeader title={t("worry.title")} right={<HelpButton helpKey="worry" />} />
+              <ScreenHeader
+                title={t("worry.title")}
+                right={
+                  <View className="flex-row items-center gap-3">
+                    <AddToHomeButton widgetId="cbt-worry" />
+                    <HelpButton helpKey="worry" />
+                  </View>
+                }
+              />
               <Text variant="muted">{t("worry.description")}</Text>
             </View>
             <Button onPress={() => router.push("/modules/cbt/worry/new")} size="sm">
