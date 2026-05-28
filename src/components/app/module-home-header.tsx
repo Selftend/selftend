@@ -82,8 +82,8 @@ interface ModuleHomeHeaderProps {
   icon?: MaterialIconName;
   description?: string;
   meta?: ReactNode;
-  /** Short chip label (e.g. "CBT"). Defaults to title. */
-  moduleLabel?: string;
+  /** Short chip label (e.g. "CBT"). Defaults to title. Pass `null` to omit the chip entirely. */
+  moduleLabel?: string | null;
   /** When set, shows an "add to home" button (dropdown of this category's widgets) in the actions row. */
   addWidgetCategory?: string;
 }
@@ -265,11 +265,13 @@ export function ModuleHomeHeader({
             {actionsRow}
           </View>
           <View className="mt-2">
-            <View className="flex-row items-center gap-2 mb-3">
-              <Badge variant="tint" tint={hueToTint(hue)} icon={icon}>
-                <Text>{moduleLabel ?? title}</Text>
-              </Badge>
-            </View>
+            {moduleLabel !== null ? (
+              <View className="flex-row items-center gap-2 mb-3">
+                <Badge variant="tint" tint={hueToTint(hue)} icon={icon}>
+                  <Text>{moduleLabel ?? title}</Text>
+                </Badge>
+              </View>
+            ) : null}
             <Text variant="h1" className="text-[40px] font-extrabold leading-[1.05] tracking-tight">
               {title}
             </Text>
