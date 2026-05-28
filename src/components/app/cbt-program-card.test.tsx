@@ -9,6 +9,11 @@ jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
 }));
 
+jest.mock("expo-linear-gradient", () => {
+  const { View } = require("react-native");
+  return { LinearGradient: View };
+});
+
 jest.mock("@rn-primitives/popover");
 
 const assessmentPhase: CurrentPhaseView = {

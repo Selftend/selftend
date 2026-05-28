@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -133,7 +134,13 @@ export function CbtProgramCard({
         destructive={false}
       />
 
-      <Card tint="act" className="gap-3 p-5">
+      <Card className="relative overflow-hidden gap-3 p-5">
+        <LinearGradient
+          colors={["hsl(160, 46%, 38%)", "hsla(160, 46%, 38%, 0.5)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3 }}
+        />
         {/* Header */}
         <View className="gap-2">
           {/* Eyebrow row: route-icon glyph + uppercase label */}
