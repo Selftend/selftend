@@ -174,7 +174,8 @@ describe("ModuleHomeHeader hero mode", () => {
       />,
     );
 
-    expect(await screen.findByText("Check-in")).toBeTruthy();
+    // ToolHero renders title in both the chip label and the h1 heading; use heading role.
+    expect(await screen.findByRole("heading", { name: "Check-in" })).toBeTruthy();
     expect(await screen.findByText("Log how you're feeling.")).toBeTruthy();
   });
 });

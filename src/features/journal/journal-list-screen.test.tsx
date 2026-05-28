@@ -50,7 +50,8 @@ describe("JournalListScreen", () => {
 
     renderWithProviders(<JournalListScreen />);
 
-    expect(screen.getByText("Journal")).toBeTruthy();
+    // ToolHero renders title in chip + heading; use heading role for uniqueness.
+    expect(screen.getByRole("heading", { name: "Journal" })).toBeTruthy();
     expect(screen.getByText("Nothing here yet")).toBeTruthy();
     expect(screen.getByText("Start writing")).toBeTruthy();
   });

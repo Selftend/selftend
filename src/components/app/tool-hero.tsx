@@ -1,65 +1,54 @@
 import type { ReactNode } from "react";
 import { View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 
-import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import { Badge } from "@/src/components/react-native-reusables/badge";
+import { type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { exerciseHue, hueGradient, type ToolHue } from "@/src/features/mindfulness/exercise-hue";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
-import { cn } from "@/lib/utils";
+import type { ToolHue } from "@/src/features/mindfulness/exercise-hue";
+import type { TintToken } from "@/src/lib/design-tokens";
+
+// ToolHue is a strict subset of TintToken. All 8 ToolHue values map 1:1
+// to a TintToken with the same name.
+function hueToTint(hue: ToolHue): TintToken {
+  return hue;
+}
 
 interface ToolHeroProps {
   hue: ToolHue;
   icon: MaterialIconName;
   title: string;
+  /** Short module label shown in the leading chip (e.g. "Breathing"). Defaults to title. */
+  moduleLabel?: string;
+  /** Muted body line beneath the title. */
   tagline?: string;
+  /** Optional trailing meta line (e.g. "3 patterns · 1–10 min" or a custom node). */
   meta?: ReactNode;
 }
 
-// The eyebrow breadcrumb above the hero already shows the tool name, so the hero
-// no longer renders a visible title. The title is kept as a visually-hidden
-// heading to preserve the screen's heading landmark for assistive tech.
-export function ToolHero({ hue, icon, title, tagline, meta }: ToolHeroProps) {
-  const isDark = useAppColorScheme() === "dark";
-  const { classes } = exerciseHue(hue);
-
+export function ToolHero({ hue, icon, title, moduleLabel, tagline, meta }: ToolHeroProps) {
+  const tint = hueToTint(hue);
   return (
-    <View className={cn("overflow-hidden rounded-[20px] border bg-card p-6", classes.border)}>
-      <LinearGradient
-        colors={hueGradient(hue, isDark)}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        locations={[0, 0.7]}
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 0,
-          height: 200,
-          pointerEvents: "none",
-        }}
-      />
-      <Text
-        variant="h1"
-        style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 }}
-      >
-        {title}
-      </Text>
-      <View className="flex-row items-start gap-3">
-        <View
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          className={cn("size-12 items-center justify-center rounded-[14px]", classes.chipBg)}
-        >
-          <Icon name={icon} className={classes.text} size={26} />
-        </View>
-        {tagline ? (
-          <Text variant="muted" className="flex-1 self-center text-[15px] leading-snug">
-            {tagline}
-          </Text>
+    <View className="mt-2">
+      <View className="flex-row items-center gap-2.5 mb-3">
+        <Badge variant="tint" tint={tint} icon={icon}>
+          <Text>{moduleLabel ?? title}</Text>
+        </Badge>
+        {meta ? (
+          typeof meta === "string" ? (
+            <Text className="text-xs text-muted-foreground">{meta}</Text>
+          ) : (
+            meta
+          )
         ) : null}
       </View>
-      {meta ? <View className="mt-4">{meta}</View> : null}
+      <Text variant="h1" className="text-[36px] font-extrabold leading-[1.1] tracking-tight">
+        {title}
+      </Text>
+      {tagline ? (
+        <Text className="mt-2.5 text-[15px] leading-[1.55] text-muted-foreground max-w-[58ch]">
+          {tagline}
+        </Text>
+      ) : null}
     </View>
   );
 }
