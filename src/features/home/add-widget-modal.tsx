@@ -223,15 +223,16 @@ export function AddWidgetModal({
       transparent
       visible={visible}
     >
-      <Pressable className="flex-1 bg-black/40" onPress={handleClose}>
-        {!isWide ? <View className="flex-1" /> : null}
-        <Pressable
+      {/* Backdrop and panel are siblings — nesting them caused the panel Pressable to absorb */}
+      {/* touches on Android before the ScrollView could claim them. */}
+      <View className="flex-1">
+        <Pressable className="absolute inset-0 bg-black/40" onPress={handleClose} />
+        <View
           className={cn(
-            "bg-card",
+            "absolute bg-card",
             isWide
-              ? "absolute bottom-0 right-0 top-0 w-[440px] max-w-[88%] border-l border-border"
-              : "max-h-[86%] rounded-t-2xl",
-            !isWide ? "mt-auto" : "",
+              ? "bottom-0 right-0 top-0 w-[440px] max-w-[88%] border-l border-border"
+              : "bottom-0 left-0 right-0 max-h-[86%] rounded-t-2xl",
           )}
         >
           {/* Header */}
@@ -343,8 +344,8 @@ export function AddWidgetModal({
               })
             )}
           </ScrollView>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }
