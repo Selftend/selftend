@@ -4,7 +4,7 @@ import { Pressable, View } from "react-native";
 import { Card } from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import type { TintToken } from "@/src/lib/design-tokens";
+import { TINT_TEXT, type TintToken } from "@/src/lib/design-tokens";
 import { cn } from "@/lib/utils";
 
 interface PillarCardProps {
@@ -51,18 +51,6 @@ const TOOL_ICON_BG: Record<TintToken, string> = {
   ink: "bg-[hsl(var(--ink)/0.10)]",
   clay: "bg-[hsl(var(--clay)/0.10)]",
   mist: "bg-[hsl(var(--mist)/0.10)]",
-};
-
-const TINT_TEXT: Record<TintToken, string> = {
-  primary: "text-primary",
-  act: "text-[hsl(var(--act))]",
-  be: "text-[hsl(var(--be))]",
-  think: "text-[hsl(var(--think))]",
-  aqua: "text-[hsl(var(--aqua))]",
-  iris: "text-[hsl(var(--iris))]",
-  ink: "text-[hsl(var(--ink))]",
-  clay: "text-[hsl(var(--clay))]",
-  mist: "text-[hsl(var(--mist))]",
 };
 
 function PillarCardRoot({

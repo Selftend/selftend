@@ -4,14 +4,7 @@ import { View } from "react-native";
 import { Badge } from "@/src/components/react-native-reusables/badge";
 import { type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import type { ToolHue } from "@/src/features/mindfulness/exercise-hue";
-import type { TintToken } from "@/src/lib/design-tokens";
-
-// ToolHue is a strict subset of TintToken. All 8 ToolHue values map 1:1
-// to a TintToken with the same name.
-function hueToTint(hue: ToolHue): TintToken {
-  return hue;
-}
+import { hueToTint, type ToolHue } from "@/src/features/mindfulness/exercise-hue";
 
 interface ToolHeroProps {
   hue: ToolHue;

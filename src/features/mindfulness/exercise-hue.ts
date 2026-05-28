@@ -3,6 +3,8 @@
 // HSL triples are copied verbatim from global.css and used for LinearGradient and
 // reanimated colour props, which cannot read CSS variables.
 
+import type { TintToken } from "@/src/lib/design-tokens";
+
 export type ExerciseHue = "mist" | "iris" | "be" | "ink" | "act" | "clay" | "think" | "aqua";
 
 // Alias for tool-level usage (the hero spans the full tool palette).
@@ -88,4 +90,13 @@ export function hueHsl(hue: ExerciseHue, isDark: boolean, alpha: number): string
 export function hueGradient(hue: ExerciseHue, isDark: boolean): [string, string] {
   const triple = isDark ? exerciseHue(hue).hsl.dark : exerciseHue(hue).hsl.light;
   return [`hsla(${triple}, ${isDark ? 0.18 : 0.14})`, `hsla(${triple}, 0)`];
+}
+
+/**
+ * ToolHue is a strict subset of TintToken — all 8 hue values exist as tint tokens
+ * with the same name. This identity function makes the relationship explicit
+ * and type-checks the subset constraint at compile time.
+ */
+export function hueToTint(hue: ToolHue): TintToken {
+  return hue;
 }

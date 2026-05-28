@@ -18,8 +18,7 @@ import { NotificationSettingsModal } from "@/src/components/app/notification-set
 import { Badge } from "@/src/components/react-native-reusables/badge";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import type { ToolHue } from "@/src/features/mindfulness/exercise-hue";
-import type { TintToken } from "@/src/lib/design-tokens";
+import { hueToTint, type ToolHue } from "@/src/features/mindfulness/exercise-hue";
 import { useUpdateShownButtonTours, useUserPreferences } from "@/src/features/settings/queries";
 import type { ButtonTourKey } from "@/src/features/modules/types";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
@@ -267,7 +266,7 @@ export function ModuleHomeHeader({
           </View>
           <View className="mt-2">
             <View className="flex-row items-center gap-2 mb-3">
-              <Badge variant="tint" tint={hue as TintToken} icon={icon}>
+              <Badge variant="tint" tint={hueToTint(hue)} icon={icon}>
                 <Text>{moduleLabel ?? title}</Text>
               </Badge>
             </View>

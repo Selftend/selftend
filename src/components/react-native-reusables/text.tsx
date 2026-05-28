@@ -3,19 +3,7 @@ import { Slot } from "@rn-primitives/slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 import { Platform, Text as RNText, type Role, type TextStyle } from "react-native";
-import type { TintToken } from "@/src/lib/design-tokens";
-
-const TINT_TEXT: Record<TintToken, string> = {
-  primary: "text-primary",
-  act: "text-[hsl(var(--act))]",
-  be: "text-[hsl(var(--be))]",
-  think: "text-[hsl(var(--think))]",
-  aqua: "text-[hsl(var(--aqua))]",
-  iris: "text-[hsl(var(--iris))]",
-  ink: "text-[hsl(var(--ink))]",
-  clay: "text-[hsl(var(--clay))]",
-  mist: "text-[hsl(var(--mist))]",
-};
+import { TINT_TEXT, type TintToken } from "@/src/lib/design-tokens";
 
 const FONT_FAMILY = {
   regular: "NotoSans_400Regular",
