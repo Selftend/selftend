@@ -1,4 +1,8 @@
 {
+  "module": {
+    "label": "ACT",
+    "authorEyebrow": "Inspired by The Happiness Trap · Russ Harris"
+  },
   "alsoTry": "Also try",
   "notifications": {
     "title": "Quiet ACT check-in",

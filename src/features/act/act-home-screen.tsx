@@ -5,12 +5,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
@@ -106,12 +100,18 @@ export default function ActHomeScreen() {
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <View className="gap-2">
-              <Text className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {t("home.subtitle")}
-              </Text>
               <ModuleHomeHeader
                 addWidgetCategory="act"
+                hue="act"
+                icon="explore"
+                moduleLabel={t("module.label")}
                 title={t("home.title")}
+                description={t("home.description")}
+                meta={
+                  <Text variant="eyebrow" tint="act">
+                    {t("module.authorEyebrow")}
+                  </Text>
+                }
                 actions={[
                   { type: "notifications", targetKey: "act" },
                   ...(program.status === "not_started"
@@ -126,9 +126,6 @@ export default function ActHomeScreen() {
                   { type: "info", onPress: () => setForceInfo(true) },
                 ]}
               />
-              <Text variant="muted" className="max-w-[64ch]">
-                {t("home.description")}
-              </Text>
             </View>
 
             {program.status === "graduated" ? (
@@ -182,13 +179,17 @@ export default function ActHomeScreen() {
 
             {/* Six principles */}
             <View className="gap-3">
-              <Text variant="h3">{t("home.principlesTitle")}</Text>
-              <Text variant="muted" className="max-w-[64ch]">
-                {t("home.principlesDescription")}
-              </Text>
-              <View className="flex-row flex-wrap gap-3">
+              <View>
+                <Text variant="h2" className="text-xl font-bold tracking-tight">
+                  {t("home.principlesTitle")}
+                </Text>
+                <Text variant="muted" className="mt-1 text-sm leading-snug max-w-[60ch]">
+                  {t("home.principlesDescription")}
+                </Text>
+              </View>
+              <View className="flex-row flex-wrap gap-2.5">
                 {PRINCIPLE_CARDS.map((card) => (
-                  <PrincipleCardItem key={card.key} card={card} />
+                  <PrincipleTile key={card.key} card={card} icon={card.icon} />
                 ))}
               </View>
             </View>
@@ -239,37 +240,43 @@ export default function ActHomeScreen() {
   );
 }
 
-function PrincipleCardItem({ card }: { card: PrincipleCard }) {
+function PrincipleTile({ card, icon }: { card: PrincipleCard; icon: MaterialIconName }) {
   const { t } = useTranslation("act");
   const available = card.route !== null;
 
-  const cardContent = (
-    <Card className={cn("flex-1", available ? "border-act/30" : "opacity-60")}>
-      <CardHeader>
-        <View className="mb-1 flex-row items-center gap-3">
-          <View
-            className={cn(
-              "size-9 items-center justify-center rounded-lg",
-              available ? "bg-act/15" : "bg-muted",
-            )}
-          >
-            <Icon
-              name={card.icon}
-              className={cn("size-5", available ? "text-act" : "text-muted-foreground")}
-            />
-          </View>
-          {!available ? (
-            <Text className="text-xs text-muted-foreground">{t("home.comingSoon")}</Text>
-          ) : null}
-        </View>
-        <CardTitle>{t(`principles.${card.key}.name`)}</CardTitle>
-        <CardDescription>{t(`principles.${card.key}.desc`)}</CardDescription>
-      </CardHeader>
-    </Card>
+  const tileContent = (
+    <View
+      className={cn(
+        "basis-[calc(50%-5px)] gap-2 rounded-xl border border-border bg-card p-4",
+        !available && "opacity-60",
+      )}
+    >
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+        className={cn(
+          "h-8 w-8 items-center justify-center rounded-lg",
+          available ? "bg-act/10" : "bg-muted",
+        )}
+      >
+        <Icon
+          name={icon}
+          size={18}
+          className={cn(available ? "text-act" : "text-muted-foreground")}
+        />
+      </View>
+      <Text className="text-sm font-semibold">{t(`principles.${card.key}.name`)}</Text>
+      <Text variant="muted" className="text-xs leading-snug">
+        {t(`principles.${card.key}.desc`)}
+      </Text>
+      {!available ? (
+        <Text className="text-xs text-muted-foreground">{t("home.comingSoon")}</Text>
+      ) : null}
+    </View>
   );
 
   return (
-    <View className="relative min-w-[240px] flex-1 basis-[240px]">
+    <View className="relative basis-[calc(50%-5px)]">
       {available ? (
         <Pressable
           accessibilityRole="button"
@@ -277,12 +284,12 @@ function PrincipleCardItem({ card }: { card: PrincipleCard }) {
           accessibilityHint={t(`principles.${card.key}.desc`)}
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
           onPress={() => router.push(card.route!)}
-          className="flex-1 active:opacity-80"
+          className="active:opacity-80"
         >
-          {cardContent}
+          {tileContent}
         </Pressable>
       ) : (
-        cardContent
+        tileContent
       )}
       <View className="absolute right-1 top-1">
         <HelpButton helpKey={card.helpKey} size={18} />

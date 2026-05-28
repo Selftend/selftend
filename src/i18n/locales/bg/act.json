@@ -1,4 +1,8 @@
 {
+  "module": {
+    "label": "ACT",
+    "authorEyebrow": "Вдъхновено от The Happiness Trap · Ръс Харис"
+  },
   "alsoTry": "Опитай също",
   "notifications": {
     "title": "Тихо ACT напомняне",
