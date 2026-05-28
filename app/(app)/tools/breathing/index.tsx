@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Card } from "@/src/components/react-native-reusables/card";
@@ -8,7 +9,6 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HelpSheet } from "@/src/components/app/help-sheet";
 import { ToolHero } from "@/src/components/app/tool-hero";
-import { breathingPatterns } from "@/src/constants/breathing";
 import {
   Pattern478Diagram,
   PatternBoxDiagram,
@@ -27,70 +27,84 @@ export default function BreathingScreen() {
   const lastSession = sessions && sessions.length > 0 ? sessions[0] : null;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 24 }}>
-      <ToolHero
-        hue="aqua"
-        icon="air"
-        title={t("breathing.title")}
-        moduleLabel={t("breathing.moduleLabel")}
-        tagline={t("breathing.tagline")}
-        meta={t("breathing.meta")}
-      />
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <ScrollView contentContainerClassName="grow gap-6 p-4">
+        <ToolHero
+          hue="aqua"
+          icon="air"
+          title={t("breathing.title")}
+          moduleLabel={t("breathing.moduleLabel")}
+          tagline={t("breathing.tagline")}
+          meta={
+            <View className="flex-row items-center gap-2">
+              <Text className="text-xs text-muted-foreground">{t("breathing.meta")}</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("breathing.helpLabel")}
+                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                onPress={() => setHelpOpen(true)}
+              >
+                <Icon name="help-outline" size={16} className="text-muted-foreground" />
+              </Pressable>
+            </View>
+          }
+        />
 
-      <HelpSheet helpKey="breathing" visible={helpOpen} onDismiss={() => setHelpOpen(false)} />
+        <HelpSheet helpKey="breathing" visible={helpOpen} onDismiss={() => setHelpOpen(false)} />
 
-      {lastSession ? (
-        <Card spine="aqua" className="px-5 py-4">
-          <Text variant="eyebrow">{t("breathing.recentEyebrow")}</Text>
-          <View className="mt-1.5 flex-row items-center justify-between">
-            <View className="flex-row items-baseline gap-2">
-              <Text className="text-sm font-semibold">
-                {t(`breathing.exercises.${lastSession.exerciseName}.title`)}
-              </Text>
+        {lastSession ? (
+          <Card spine="aqua" className="px-5 py-4">
+            <Text variant="eyebrow">{t("breathing.recentEyebrow")}</Text>
+            <View className="mt-1.5 flex-row items-center justify-between">
+              <View className="flex-row items-baseline gap-2">
+                <Text className="text-sm font-semibold">
+                  {t(`breathing.exercises.${lastSession.exerciseName}.title`)}
+                </Text>
+                <Text variant="muted" className="text-xs">
+                  · {t("breathing.minutes", { value: lastSession.durationMinutes })}
+                </Text>
+              </View>
               <Text variant="muted" className="text-xs">
-                · {t("breathing.minutes", { value: lastSession.durationMinutes })}
+                {t("breathing.recentCount", { count: sessions!.length })}
               </Text>
             </View>
+          </Card>
+        ) : null}
+
+        <View className="gap-3">
+          <View className="flex-row items-baseline justify-between">
+            <Text variant="h2" className="text-xl font-bold tracking-tight border-0 pb-0">
+              {t("breathing.choosePatternTitle")}
+            </Text>
             <Text variant="muted" className="text-xs">
-              {t("breathing.recentCount", { count: sessions!.length })}
+              {t("breathing.choosePatternHint")}
             </Text>
           </View>
-        </Card>
-      ) : null}
 
-      <View className="gap-3">
-        <View className="flex-row items-baseline justify-between">
-          <Text variant="h2" className="text-xl font-bold tracking-tight border-0 pb-0">
-            {t("breathing.choosePatternTitle")}
-          </Text>
-          <Text variant="muted" className="text-xs">
-            {t("breathing.choosePatternHint")}
-          </Text>
+          <PatternRow
+            Diagram={PatternBoxDiagram}
+            title={t("breathing.exercises.box-breathing.title")}
+            desc={t("breathing.exercises.box-breathing.shortDescription")}
+            meta={t("breathing.exercises.box-breathing.meta")}
+            onPress={() => router.push("/tools/breathing/box-breathing")}
+          />
+          <PatternRow
+            Diagram={Pattern478Diagram}
+            title={t("breathing.exercises.4-7-8.title")}
+            desc={t("breathing.exercises.4-7-8.shortDescription")}
+            meta={t("breathing.exercises.4-7-8.meta")}
+            onPress={() => router.push("/tools/breathing/4-7-8")}
+          />
+          <PatternRow
+            Diagram={PatternCoherentDiagram}
+            title={t("breathing.exercises.coherent-breathing.title")}
+            desc={t("breathing.exercises.coherent-breathing.shortDescription")}
+            meta={t("breathing.exercises.coherent-breathing.meta")}
+            onPress={() => router.push("/tools/breathing/coherent-breathing")}
+          />
         </View>
-
-        <PatternRow
-          Diagram={PatternBoxDiagram}
-          title={t("breathing.exercises.box-breathing.title")}
-          desc={t("breathing.exercises.box-breathing.shortDescription")}
-          meta={t("breathing.exercises.box-breathing.meta")}
-          onPress={() => router.push("/tools/breathing/box-breathing")}
-        />
-        <PatternRow
-          Diagram={Pattern478Diagram}
-          title={t("breathing.exercises.4-7-8.title")}
-          desc={t("breathing.exercises.4-7-8.shortDescription")}
-          meta={t("breathing.exercises.4-7-8.meta")}
-          onPress={() => router.push("/tools/breathing/4-7-8")}
-        />
-        <PatternRow
-          Diagram={PatternCoherentDiagram}
-          title={t("breathing.exercises.coherent-breathing.title")}
-          desc={t("breathing.exercises.coherent-breathing.shortDescription")}
-          meta={t("breathing.exercises.coherent-breathing.meta")}
-          onPress={() => router.push("/tools/breathing/coherent-breathing")}
-        />
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

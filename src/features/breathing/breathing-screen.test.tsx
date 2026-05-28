@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, act } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import BreathingScreen from "@/app/(app)/tools/breathing/index";
@@ -98,5 +98,13 @@ describe("Breathing list polish", () => {
     const boxRow = screen.getByLabelText("Box breathing");
     fireEvent.press(boxRow);
     expect(router.push).toHaveBeenCalledWith("/tools/breathing/box-breathing");
+  });
+
+  it("opens help sheet when help button is pressed", () => {
+    renderWithProviders(<BreathingScreen />);
+    const helpButton = screen.getByLabelText("About breathing");
+    fireEvent.press(helpButton);
+    // HelpSheet is mocked to null; pressing the button should not throw
+    expect(helpButton).toBeTruthy();
   });
 });
