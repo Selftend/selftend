@@ -1408,7 +1408,13 @@
     }
   },
   "breathing": {
+    "moduleLabel": "Breathing",
     "title": "Breathing exercises",
+    "tagline": "Short guided patterns to calm your nervous system right now.",
+    "meta": "3 patterns · 1–10 min",
+    "recentEyebrow": "Recent sessions",
+    "choosePatternTitle": "Choose a pattern",
+    "choosePatternHint": "Tap to begin",
     "description": "Short guided patterns to calm your nervous system right now.",
     "hero": {
       "patterns_one": "{{count}} pattern",
@@ -1437,16 +1443,19 @@
       "box-breathing": {
         "title": "Box breathing",
         "shortDescription": "Equal counts of inhale, hold, exhale, hold - used to quickly reduce acute stress.",
+        "meta": "1–5 min",
         "benefit": "Activates the parasympathetic nervous system within a few cycles."
       },
       "4-7-8": {
         "title": "4-7-8 breathing",
         "shortDescription": "A longer exhale that down-regulates the nervous system quickly.",
+        "meta": "2–4 min",
         "benefit": "The extended hold and slow exhale trigger the relaxation response."
       },
       "coherent-breathing": {
         "title": "Coherent breathing",
         "shortDescription": "Slow, equal inhale and exhale at about 5 breaths per minute.",
+        "meta": "5–10 min",
         "benefit": "Maximises heart rate variability and reduces anxiety over time."
       }
     }
