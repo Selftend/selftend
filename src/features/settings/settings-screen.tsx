@@ -10,7 +10,6 @@ import { useEffect, useState } from "react";
 import type { Area } from "react-easy-crop";
 import { useTranslation } from "react-i18next";
 
-import { Badge } from "@/src/components/react-native-reusables/badge";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -487,7 +486,7 @@ function ProfilePictureCard({ user }: { user: User | null }) {
           </Text>
         </View>
 
-        {/* Identity row: gradient avatar + name + email + Signed in badge */}
+        {/* Identity row: gradient avatar + name + email */}
         <View className="flex-row items-center gap-4 rounded-xl border border-border p-3">
           <View
             accessibilityElementsHidden
@@ -515,9 +514,6 @@ function ProfilePictureCard({ user }: { user: User | null }) {
               </View>
             ) : null}
           </View>
-          <Badge variant="tint" tint="act" icon="verified">
-            <Text>{t("profile.signedIn")}</Text>
-          </Badge>
         </View>
 
         {/* Display name input + Save button */}

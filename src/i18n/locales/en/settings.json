@@ -14,7 +14,6 @@
     "title": "Profile",
     "description": "Your display name and profile picture. You can restore your Google photo after choosing or removing a custom photo.",
     "displayNameLabel": "Display name",
-    "signedIn": "Signed in",
     "namePlaceholder": "Your name (optional)",
     "saveName": "Save name",
     "savingName": "Saving...",

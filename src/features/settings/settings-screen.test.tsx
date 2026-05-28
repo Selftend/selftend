@@ -133,11 +133,6 @@ describe("SettingsScreen hero and profile badge", () => {
     expect(screen.getAllByText("Account").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Settings")).toBeTruthy();
   });
-
-  it("renders 'Signed in' badge in profile section", () => {
-    renderWithProviders(<SettingsScreen />);
-    expect(screen.getByText("Signed in")).toBeTruthy();
-  });
 });
 
 describe("SettingsScreen onboarding reset", () => {
