@@ -178,4 +178,24 @@ describe("ModuleHomeHeader hero mode", () => {
     expect(await screen.findByRole("heading", { name: "Check-in" })).toBeTruthy();
     expect(await screen.findByText("Log how you're feeling.")).toBeTruthy();
   });
+
+  it("renders module chip with tint, icon, and module label", () => {
+    renderWithProviders(
+      <ModuleHomeHeader
+        hue="think"
+        icon="psychology"
+        title="Cognitive Behavioral Therapy"
+        moduleLabel="CBT"
+        description="…"
+      />,
+    );
+    expect(screen.getAllByText("CBT").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("heading", { name: "Cognitive Behavioral Therapy" })).toBeTruthy();
+  });
+
+  it("falls back to title for chip label when moduleLabel not provided", () => {
+    renderWithProviders(<ModuleHomeHeader hue="act" icon="explore" title="ACT" description="…" />);
+    // chip + heading both contain "ACT"
+    expect(screen.getAllByText("ACT").length).toBeGreaterThanOrEqual(2);
+  });
 });

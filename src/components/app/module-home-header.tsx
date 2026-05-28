@@ -15,10 +15,11 @@ import { useColorScheme } from "nativewind";
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
-import { ToolHero } from "@/src/components/app/tool-hero";
+import { Badge } from "@/src/components/react-native-reusables/badge";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import type { ToolHue } from "@/src/features/mindfulness/exercise-hue";
+import type { TintToken } from "@/src/lib/design-tokens";
 import { useUpdateShownButtonTours, useUserPreferences } from "@/src/features/settings/queries";
 import type { ButtonTourKey } from "@/src/features/modules/types";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
@@ -82,6 +83,8 @@ interface ModuleHomeHeaderProps {
   icon?: MaterialIconName;
   description?: string;
   meta?: ReactNode;
+  /** Short chip label (e.g. "CBT"). Defaults to title. */
+  moduleLabel?: string;
   /** When set, shows an "add to home" button (dropdown of this category's widgets) in the actions row. */
   addWidgetCategory?: string;
 }
@@ -93,6 +96,7 @@ export function ModuleHomeHeader({
   icon,
   description,
   meta,
+  moduleLabel,
   addWidgetCategory,
 }: ModuleHomeHeaderProps) {
   const { colorScheme } = useColorScheme();
@@ -261,7 +265,28 @@ export function ModuleHomeHeader({
             </View>
             {actionsRow}
           </View>
-          <ToolHero hue={hue} icon={icon} title={title} tagline={description} meta={meta} />
+          <View className="mt-2">
+            <View className="flex-row items-center gap-2 mb-3">
+              <Badge variant="tint" tint={hue as TintToken} icon={icon}>
+                <Text>{moduleLabel ?? title}</Text>
+              </Badge>
+            </View>
+            <Text variant="h1" className="text-[40px] font-extrabold leading-[1.05] tracking-tight">
+              {title}
+            </Text>
+            {description ? (
+              <Text className="mt-2.5 text-[15px] leading-[1.55] text-muted-foreground max-w-[62ch]">
+                {description}
+              </Text>
+            ) : null}
+            {meta ? (
+              typeof meta === "string" ? (
+                <Text className="mt-2.5 text-xs text-muted-foreground">{meta}</Text>
+              ) : (
+                <View className="mt-2.5">{meta}</View>
+              )
+            ) : null}
+          </View>
         </>
       ) : (
         <>
