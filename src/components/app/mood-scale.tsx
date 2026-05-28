@@ -11,7 +11,7 @@ export const MOOD_SCALE_MAX = 5;
 interface MoodScaleProps {
   value: number | null;
   onChange: (value: number) => void;
-  /** Compact mode: smaller emoji + padding, no YOU pill. Fits tight spaces. */
+  /** Compact mode: smaller emoji + padding. Fits tight spaces. */
   compact?: boolean;
 }
 
@@ -109,17 +109,6 @@ export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) 
             >
               {label}
             </Text>
-            {selected && !compact ? (
-              <View
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-                className="absolute -right-2 -top-2.5 rounded-full bg-[hsl(var(--act))] px-2 py-[3px]"
-              >
-                <Text className="text-[10px] font-bold uppercase tracking-wider text-white">
-                  {t("checkin.youPill")}
-                </Text>
-              </View>
-            ) : null}
           </Pressable>
         );
       })}

@@ -164,8 +164,8 @@ export default function HomeScreen() {
       </View>
 
       {/* Section heading row */}
-      <View className="flex-row items-baseline justify-between border-b border-border pb-3">
-        <View>
+      <View className="flex-row items-start justify-between gap-3 border-b border-border pb-3">
+        <View className="flex-1 min-w-0">
           <Text variant="h2" className="text-xl font-bold tracking-tight">
             {t("today.dashboardLabel")}
           </Text>

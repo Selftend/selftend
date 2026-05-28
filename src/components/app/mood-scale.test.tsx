@@ -23,13 +23,9 @@ describe("MoodScale", () => {
     expect(onChange).toHaveBeenCalledWith(5);
   });
 
-  it("renders YOU pill on selected step (non-compact)", () => {
+  it("marks the selected step in the a11y tree", () => {
     renderWithProviders(<MoodScale value={4} onChange={() => {}} />);
-    expect(screen.getByText("You", { includeHiddenElements: true })).toBeTruthy();
-  });
-
-  it("hides YOU pill in compact mode", () => {
-    renderWithProviders(<MoodScale value={4} onChange={() => {}} compact />);
-    expect(screen.queryByText("You", { includeHiddenElements: true })).toBeNull();
+    const selected = screen.getByLabelText("Good");
+    expect(selected.props.accessibilityState).toMatchObject({ selected: true });
   });
 });
