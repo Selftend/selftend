@@ -46,7 +46,7 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    // ToolHero renders title in chip + heading; use heading role for uniqueness.
+    // Hero renders title in chip + heading; use heading role for uniqueness.
     expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
     expect(screen.getByText("How are you feeling right now?")).toBeTruthy();
     expect(screen.getByLabelText("3, neutral")).toBeTruthy();
