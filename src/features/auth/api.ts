@@ -82,6 +82,20 @@ export async function signInWithPassword(email: string, password: string) {
 }
 
 export const EMAIL_ALREADY_EXISTS_ERROR = "EMAIL_ALREADY_EXISTS";
+export const LEAKED_PASSWORD_ERROR = "LEAKED_PASSWORD";
+
+type SupabaseAuthError = Error & {
+  code?: string;
+  weakPassword?: { reasons?: string[] };
+};
+
+function isLeakedPasswordError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const e = error as SupabaseAuthError;
+  if (e.code !== "weak_password") return false;
+  const reasons = e.weakPassword?.reasons ?? [];
+  return reasons.includes("pwned");
+}
 
 export async function signUpWithPassword(email: string, password: string, name?: string) {
   const client = requireSupabase();
@@ -95,6 +109,9 @@ export async function signUpWithPassword(email: string, password: string, name?:
     },
   });
   if (error) {
+    if (isLeakedPasswordError(error)) {
+      throw new Error(LEAKED_PASSWORD_ERROR);
+    }
     throw error;
   }
 
@@ -121,6 +138,9 @@ export async function updatePassword(newPassword: string) {
   const client = requireSupabase();
   const { error } = await client.auth.updateUser({ password: newPassword });
   if (error) {
+    if (isLeakedPasswordError(error)) {
+      throw new Error(LEAKED_PASSWORD_ERROR);
+    }
     throw error;
   }
 }

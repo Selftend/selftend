@@ -47,7 +47,7 @@ describe("auth: signInWithPassword (integration)", () => {
     const client = freshClient();
     const { error } = await client.auth.signInWithPassword({
       email: "noone@test.local",
-      password: "password123",
+      password: "test-pass-unknown-12",
     });
 
     expect(error).not.toBeNull();
@@ -71,7 +71,7 @@ describe("auth: signUp (integration)", () => {
     const client = freshClient();
     const { data, error } = await client.auth.signUp({
       email: newEmail,
-      password: "password123",
+      password: "test-pass-signup-123",
     });
 
     expect(error).toBeNull();
@@ -101,5 +101,41 @@ describe("auth: password reset flow via Mailpit (integration)", () => {
     const combined = `${body.HTML}\n${body.Text}`;
     expect(combined).toMatch(/token|recovery|reset/i);
     expect(combined).toMatch(/https?:\/\//);
+  });
+});
+
+describe("auth: server-side password policy", () => {
+  it("rejects sign-up with an 11-character password", async () => {
+    const client = freshClient();
+    const { data, error } = await client.auth.signUp({
+      email: `policy-short-${Date.now()}@test.local`,
+      password: "elevenchars",
+    });
+
+    expect(data.user).toBeNull();
+    expect(error).toBeTruthy();
+    // Supabase returns a generic 422 with weak_password code OR a 400 with
+    // a "Password should be" message depending on version. Accept either.
+    const message = (error?.message ?? "").toLowerCase();
+    const code = (error as { code?: string } | null)?.code ?? "";
+    expect(code === "weak_password" || message.includes("at least 12")).toBe(true);
+  });
+
+  it("accepts sign-up with a 12-character password", async () => {
+    const client = freshClient();
+    const email = `policy-ok-${Date.now()}@test.local`;
+    const { data, error } = await client.auth.signUp({
+      email,
+      password: "twelvechars1",
+    });
+
+    expect(error).toBeNull();
+    expect(data.user).not.toBeNull();
+
+    // Cleanup so re-running the test stays clean.
+    if (data.user) {
+      const admin = createServiceClient();
+      await admin.auth.admin.deleteUser(data.user.id);
+    }
   });
 });

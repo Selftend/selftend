@@ -16,7 +16,7 @@ import {
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { updatePassword } from "@/src/features/auth/api";
+import { updatePassword, LEAKED_PASSWORD_ERROR } from "@/src/features/auth/api";
 import { resetPasswordSchema, type ResetPasswordSchema } from "@/src/features/auth/schemas";
 
 export function ResetPasswordForm() {
@@ -37,7 +37,11 @@ export function ResetPasswordForm() {
       await updatePassword(password);
       router.replace("/(app)/(tabs)");
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : t("resetPassword.error"));
+      if (error instanceof Error && error.message === LEAKED_PASSWORD_ERROR) {
+        setSubmitError(t("validation.passwordBreached"));
+      } else {
+        setSubmitError(error instanceof Error ? error.message : t("resetPassword.error"));
+      }
     }
   });
 
@@ -64,7 +68,7 @@ export function ResetPasswordForm() {
                 value={value}
               />
               <Text className="text-xs text-muted-foreground">
-                {t("validation.passwordRequirementsHint")}
+                {t("validation.passwordMin12Hint")}
               </Text>
               {errors.password?.message ? (
                 <Text className="text-sm text-destructive">{errors.password.message}</Text>

@@ -6,13 +6,11 @@ const emailField = z
   .min(1, { message: "Enter your email address." })
   .email({ message: "Enter a valid email address." });
 
-const passwordField = z.string().min(8, { message: "Password must be at least 8 characters." });
+const passwordField = z.string().min(12, { message: "Password must be at least 12 characters." });
 
 const newPasswordField = z
   .string()
-  .min(8, { message: "Password must be at least 8 characters." })
-  .regex(/[a-zA-Z]/, { message: "Password must contain at least one letter." })
-  .regex(/\d/, { message: "Password must contain at least one number." });
+  .min(12, { message: "Password must be at least 12 characters." });
 
 export const signInSchema = z.object({
   email: emailField,

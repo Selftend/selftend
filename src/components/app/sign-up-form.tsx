@@ -18,6 +18,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import {
   EMAIL_ALREADY_EXISTS_ERROR,
+  LEAKED_PASSWORD_ERROR,
   signInWithGoogle,
   signUpWithPassword,
 } from "@/src/features/auth/api";
@@ -70,6 +71,8 @@ export function SignUpForm() {
       recordFailure(error);
       if (error instanceof Error && error.message === EMAIL_ALREADY_EXISTS_ERROR) {
         setSubmitError(t("signUp.emailAlreadyExists"));
+      } else if (error instanceof Error && error.message === LEAKED_PASSWORD_ERROR) {
+        setSubmitError(t("validation.passwordBreached"));
       } else {
         setSubmitError(error instanceof Error ? error.message : t("signUp.error"));
       }
@@ -150,7 +153,7 @@ export function SignUpForm() {
                 value={value}
               />
               <Text className="text-xs text-muted-foreground">
-                {t("validation.passwordRequirementsHint")}
+                {t("validation.passwordMin12Hint")}
               </Text>
               {errors.password?.message ? (
                 <Text className="text-sm text-destructive">{errors.password.message}</Text>

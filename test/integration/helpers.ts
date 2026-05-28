@@ -13,17 +13,17 @@ export const SEED_USERS = {
   alice: {
     id: "00000000-0000-0000-0000-000000000001",
     email: "alice@test.local",
-    password: "password123",
+    password: "test-pass-alice-123",
   },
   bob: {
     id: "00000000-0000-0000-0000-000000000002",
     email: "bob@test.local",
-    password: "password123",
+    password: "test-pass-bob-123",
   },
   demo: {
     id: "00000000-0000-0000-0000-000000000003",
     email: "demo@test.local",
-    password: "password123",
+    password: "test-pass-demo-123",
   },
 } as const;
 

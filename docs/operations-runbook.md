@@ -9,6 +9,31 @@ This runbook defines the minimum operational process for support, privacy reques
 - Security reports: `security@selftend.org`
 - Public security policy: [.github/SECURITY.md](../.github/SECURITY.md)
 
+## Auth Security Toggles
+
+These settings live outside the repo (Supabase Dashboard). Apply per environment.
+
+### Supabase Dashboard
+
+- **Authentication → Sign In / Providers → Email → Minimum password length:** `12` (production). Required-characters field left empty (NIST-modern stance — length over class rules). Also mirrored in `supabase/config.toml` as `minimum_password_length = 12` for local dev parity.
+- **Authentication → Settings → Email confirmations:** ON (already configured via `[auth.email]` in `config.toml` — verify the Dashboard view matches).
+- **Authentication → Multi-Factor → TOTP (App Authenticator):** Enabled. UI for end-users to enroll ships in a future phase; the factor type is enabled in advance so it's ready when that UI lands.
+
+### Not currently enabled (paid-plan gated)
+
+- **Prevent use of leaked passwords (HIBP check):** Pro plan and above only. Code path is wired (`LEAKED_PASSWORD_ERROR` surfaces an inline "this password appears in known data breaches" message at signup and password change) so the feature lights up automatically if/when the project upgrades to Pro. Until then, no action needed.
+
+### CAPTCHA
+
+Not enabled. Decision: relying on Supabase's built-in per-IP rate limits + the client-side `useAuthThrottle` UX layer for now. Re-evaluate if abuse appears in auth logs — at that point, options are (a) Cloudflare Turnstile via Supabase's CAPTCHA toggle (server-enforced, all platforms), or (b) an Edge Function proxy verifying Turnstile tokens for web only.
+
+### Verification after deploy
+
+Smoke test:
+
+- Sign up with an 11-char password — must be rejected with `weak_password / length` ("Password should be at least 12 characters").
+- Sign up with a 12-char password — must succeed.
+
 ## Support Workflow
 
 - Check `support@selftend.org` at least weekly during testing and more often during public launch windows.

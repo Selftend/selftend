@@ -9,6 +9,11 @@ verify_jwt = false
 [auth]
 site_url = "http://localhost:8081"
 additional_redirect_urls = ["http://localhost:8081/auth-callback", "selftend://**", "selftend-dev://**"]
+# Password policy — NIST SP 800-63B modern: longer minimum, no character-class
+# rules. HIBP leaked-password check is enabled separately via the Supabase
+# Dashboard (see docs/operations-runbook.md "Auth Security Toggles") because
+# it is not yet representable in config.toml at time of writing.
+minimum_password_length = 12
 
 [auth.email]
 enable_confirmations = true
@@ -19,3 +24,9 @@ client_id = "env(GOOGLE_LOCAL_CLIENT_ID)"
 secret = "env(GOOGLE_LOCAL_CLIENT_SECRET)"
 redirect_uri = "http://localhost:54321/auth/v1/callback"
 skip_nonce_check = true
+
+# TOTP factor type enabled in config now so future MFA UI (Phase 2) can call
+# the enroll/verify endpoints without another config push. No UI ships in P1.
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true

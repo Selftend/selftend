@@ -10,7 +10,7 @@ import {
 
 test.describe("sign-up + onboarding + first record", () => {
   const email = `signup-e2e-${Date.now()}@test.local`;
-  const password = "password123";
+  const password = "e2e-test-pass-1234";
 
   test.afterEach(async () => {
     await deleteUserByEmail(email);

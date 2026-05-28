@@ -1,7 +1,7 @@
 -- Local development seed: deterministic test users + sample data.
 -- Auto-applied by `supabase db reset`. Never runs against the linked cloud project.
 --
--- Accounts (all password: password123):
+-- Accounts (test-pass-{name}-123, see test/integration/helpers.ts):
 --   alice@test.local - fresh post-onboarding, no records
 --   bob@test.local   - mid-use, 5 thought records, reminders on
 --   demo@test.local  - polished demo/screenshot account, 10 records
@@ -43,7 +43,7 @@ values
     'authenticated',
     'authenticated',
     'alice@test.local',
-    crypt('password123', gen_salt('bf')),
+    crypt('test-pass-alice-123', gen_salt('bf')),
     timezone('utc', now()),
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"full_name":"Alice Tester"}'::jsonb,
@@ -58,7 +58,7 @@ values
     'authenticated',
     'authenticated',
     'bob@test.local',
-    crypt('password123', gen_salt('bf')),
+    crypt('test-pass-bob-123', gen_salt('bf')),
     timezone('utc', now()),
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"full_name":"Bob Tester"}'::jsonb,
@@ -73,7 +73,7 @@ values
     'authenticated',
     'authenticated',
     'demo@test.local',
-    crypt('password123', gen_salt('bf')),
+    crypt('test-pass-demo-123', gen_salt('bf')),
     timezone('utc', now()),
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"full_name":"Demo User"}'::jsonb,
