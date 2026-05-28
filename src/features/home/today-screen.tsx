@@ -137,15 +137,27 @@ export default function HomeScreen() {
           colors={["hsla(262, 62%, 56%, 0.10)", "transparent"]}
           start={{ x: 0.12, y: 0 }}
           end={{ x: 0.72, y: 0.9 }}
-          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: "none",
+          }}
         />
         <LinearGradient
           colors={["hsla(280, 48%, 60%, 0.10)", "transparent"]}
           start={{ x: 0.9, y: 0.2 }}
           end={{ x: 0.6, y: 0.8 }}
-          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: "none",
+          }}
         />
         <View className="relative">
           <Text variant="eyebrow">
