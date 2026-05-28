@@ -2,7 +2,7 @@
 
 exports[`Card renders spine and tint together: spine-and-tint 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--act)/0.06)] border-[hsl(var(--act)/0.30)]"
+  className="relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--act)/0.06)] border-[hsl(var(--act)/0.30)]"
 >
   <View
     accessibilityElementsHidden={true}
@@ -27,7 +27,7 @@ exports[`Card renders spine and tint together: spine-and-tint 1`] = `
 
 exports[`Card renders spine prop for act: spine-act 1`] = `
 <View
-  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+  className="bg-card border-border relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5"
 >
   <View
     accessibilityElementsHidden={true}
@@ -53,7 +53,7 @@ exports[`Card renders spine prop for act: spine-act 1`] = `
 
 exports[`Card renders spine prop for aqua: spine-aqua 1`] = `
 <View
-  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+  className="bg-card border-border relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5"
 >
   <View
     accessibilityElementsHidden={true}
@@ -79,7 +79,7 @@ exports[`Card renders spine prop for aqua: spine-aqua 1`] = `
 
 exports[`Card renders spine prop for be: spine-be 1`] = `
 <View
-  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+  className="bg-card border-border relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5"
 >
   <View
     accessibilityElementsHidden={true}
@@ -105,7 +105,7 @@ exports[`Card renders spine prop for be: spine-be 1`] = `
 
 exports[`Card renders spine prop for clay: spine-clay 1`] = `
 <View
-  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+  className="bg-card border-border relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5"
 >
   <View
     accessibilityElementsHidden={true}
@@ -131,7 +131,7 @@ exports[`Card renders spine prop for clay: spine-clay 1`] = `
 
 exports[`Card renders spine prop for ink: spine-ink 1`] = `
 <View
-  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+  className="bg-card border-border relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5"
 >
   <View
     accessibilityElementsHidden={true}
@@ -157,7 +157,7 @@ exports[`Card renders spine prop for ink: spine-ink 1`] = `
 
 exports[`Card renders spine prop for iris: spine-iris 1`] = `
 <View
-  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+  className="bg-card border-border relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5"
 >
   <View
     accessibilityElementsHidden={true}
@@ -183,7 +183,7 @@ exports[`Card renders spine prop for iris: spine-iris 1`] = `
 
 exports[`Card renders spine prop for mist: spine-mist 1`] = `
 <View
-  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+  className="bg-card border-border relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5"
 >
   <View
     accessibilityElementsHidden={true}
@@ -209,7 +209,7 @@ exports[`Card renders spine prop for mist: spine-mist 1`] = `
 
 exports[`Card renders spine prop for primary: spine-primary 1`] = `
 <View
-  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+  className="bg-card border-border relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5"
 >
   <View
     accessibilityElementsHidden={true}
@@ -235,7 +235,7 @@ exports[`Card renders spine prop for primary: spine-primary 1`] = `
 
 exports[`Card renders spine prop for think: spine-think 1`] = `
 <View
-  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+  className="bg-card border-border relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5"
 >
   <View
     accessibilityElementsHidden={true}
@@ -261,7 +261,7 @@ exports[`Card renders spine prop for think: spine-think 1`] = `
 
 exports[`Card renders tint prop for act: tint-act 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--act)/0.06)] border-[hsl(var(--act)/0.30)]"
+  className="relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--act)/0.06)] border-[hsl(var(--act)/0.30)]"
 >
   <Text
     className="text-base text-card-foreground"
@@ -282,7 +282,7 @@ exports[`Card renders tint prop for act: tint-act 1`] = `
 
 exports[`Card renders tint prop for aqua: tint-aqua 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--aqua)/0.06)] border-[hsl(var(--aqua)/0.30)]"
+  className="relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--aqua)/0.06)] border-[hsl(var(--aqua)/0.30)]"
 >
   <Text
     className="text-base text-card-foreground"
@@ -303,7 +303,7 @@ exports[`Card renders tint prop for aqua: tint-aqua 1`] = `
 
 exports[`Card renders tint prop for be: tint-be 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--be)/0.06)] border-[hsl(var(--be)/0.30)]"
+  className="relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--be)/0.06)] border-[hsl(var(--be)/0.30)]"
 >
   <Text
     className="text-base text-card-foreground"
@@ -324,7 +324,7 @@ exports[`Card renders tint prop for be: tint-be 1`] = `
 
 exports[`Card renders tint prop for clay: tint-clay 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--clay)/0.06)] border-[hsl(var(--clay)/0.30)]"
+  className="relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--clay)/0.06)] border-[hsl(var(--clay)/0.30)]"
 >
   <Text
     className="text-base text-card-foreground"
@@ -345,7 +345,7 @@ exports[`Card renders tint prop for clay: tint-clay 1`] = `
 
 exports[`Card renders tint prop for ink: tint-ink 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--ink)/0.06)] border-[hsl(var(--ink)/0.30)]"
+  className="relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--ink)/0.06)] border-[hsl(var(--ink)/0.30)]"
 >
   <Text
     className="text-base text-card-foreground"
@@ -366,7 +366,7 @@ exports[`Card renders tint prop for ink: tint-ink 1`] = `
 
 exports[`Card renders tint prop for iris: tint-iris 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--iris)/0.06)] border-[hsl(var(--iris)/0.30)]"
+  className="relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--iris)/0.06)] border-[hsl(var(--iris)/0.30)]"
 >
   <Text
     className="text-base text-card-foreground"
@@ -387,7 +387,7 @@ exports[`Card renders tint prop for iris: tint-iris 1`] = `
 
 exports[`Card renders tint prop for mist: tint-mist 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--mist)/0.06)] border-[hsl(var(--mist)/0.30)]"
+  className="relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--mist)/0.06)] border-[hsl(var(--mist)/0.30)]"
 >
   <Text
     className="text-base text-card-foreground"
@@ -408,7 +408,7 @@ exports[`Card renders tint prop for mist: tint-mist 1`] = `
 
 exports[`Card renders tint prop for primary: tint-primary 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-primary/[0.06] border-primary/30"
+  className="relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5 bg-primary/[0.06] border-primary/30"
 >
   <Text
     className="text-base text-card-foreground"
@@ -429,7 +429,7 @@ exports[`Card renders tint prop for primary: tint-primary 1`] = `
 
 exports[`Card renders tint prop for think: tint-think 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--think)/0.06)] border-[hsl(var(--think)/0.30)]"
+  className="relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--think)/0.06)] border-[hsl(var(--think)/0.30)]"
 >
   <Text
     className="text-base text-card-foreground"
@@ -450,7 +450,7 @@ exports[`Card renders tint prop for think: tint-think 1`] = `
 
 exports[`Card renders without spine or tint unchanged 1`] = `
 <View
-  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+  className="bg-card border-border relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5"
 >
   <Text
     className="text-base text-card-foreground"

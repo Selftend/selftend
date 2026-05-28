@@ -120,14 +120,18 @@ describe("MoodTrackerScreen", () => {
     expect(screen.getByText("Log another")).toBeTruthy();
   });
 
-  it("renders score labels on the home check-in tiles via MoodScale", async () => {
+  it("renders 5 MoodScale buttons on the home check-in tile (compact)", async () => {
     mockUseMoodLogs.mockReturnValue({
       data: [],
     } as unknown as ReturnType<typeof useMoodLogs>);
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect((await screen.findAllByText("OK")).length).toBeGreaterThan(0);
+    // Compact MoodScale renders emoji + accessibility label only (no visible text label).
+    // Assert on the a11y label via getByLabelText, which works regardless of visible text.
+    expect(await screen.findByLabelText("OK")).toBeTruthy();
+    expect(screen.getByLabelText("Awful")).toBeTruthy();
+    expect(screen.getByLabelText("Great")).toBeTruthy();
   });
 
   it("routes to the new mood entry page when the CTA is pressed", () => {

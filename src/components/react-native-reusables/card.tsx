@@ -38,7 +38,7 @@ function Card({ className, spine, tint, children, ...props }: CardProps) {
     <TextClassContext.Provider value="text-card-foreground">
       <View
         className={cn(
-          "bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5",
+          "bg-card border-border relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5",
           tint && TINT_BG[tint],
           className,
         )}

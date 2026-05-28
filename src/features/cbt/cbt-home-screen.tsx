@@ -725,7 +725,7 @@ export default function CbtHomeScreen() {
                     ))}
                   </PillarCard>
                   {SHARED_TOOLS_BY_PILLAR[pillar].length > 0 ? (
-                    <View className="ml-6 mr-2">
+                    <View className="ml-5 mr-2">
                       <SharedToolsRow
                         tools={SHARED_TOOLS_BY_PILLAR[pillar]}
                         tint={pillar}

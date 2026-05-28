@@ -101,14 +101,16 @@ export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) 
             <Text className={cn("leading-none", compact ? "text-xl" : "text-3xl")}>
               {step.emoji}
             </Text>
-            <Text
-              className={cn(
-                "mt-2 text-[12px] font-semibold",
-                selected ? "text-[hsl(var(--act))]" : "text-muted-foreground",
-              )}
-            >
-              {label}
-            </Text>
+            {compact ? null : (
+              <Text
+                className={cn(
+                  "mt-2 text-[12px] font-semibold",
+                  selected ? "text-[hsl(var(--act))]" : "text-muted-foreground",
+                )}
+              >
+                {label}
+              </Text>
+            )}
           </Pressable>
         );
       })}
