@@ -1,6 +1,7 @@
 import { render } from "@testing-library/react-native";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Badge } from "./badge";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { TINT_TOKENS } from "@/src/lib/design-tokens";
 
 describe("Badge", () => {
@@ -23,11 +24,15 @@ describe("Badge", () => {
   });
 
   it("renders icon when icon prop is provided", () => {
-    const { toJSON } = render(
+    const { UNSAFE_getAllByType, toJSON } = render(
       <Badge variant="tint" tint="act" icon="psychology">
         <Text>CBT</Text>
       </Badge>,
     );
+    // Behavioral assertion: Icon component must actually render
+    const icons = UNSAFE_getAllByType(Icon);
+    expect(icons).toHaveLength(1);
+    expect(icons[0].props.name).toBe("psychology");
     expect(toJSON()).toMatchSnapshot("with-icon");
   });
 });
