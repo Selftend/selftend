@@ -49,7 +49,7 @@ describe("MoodTrackerScreen", () => {
     // Hero renders title in chip + heading; use heading role for uniqueness.
     expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
     expect(screen.getByText("How are you feeling right now?")).toBeTruthy();
-    expect(screen.getByLabelText("3, neutral")).toBeTruthy();
+    expect(screen.getByLabelText("Awful")).toBeTruthy();
     expect(screen.getByText("Log a mood to start your 14-day trend.")).toBeTruthy();
     expect(
       screen.getByText('Nothing logged yet. Tap "Log mood" to add your first entry.'),
@@ -81,7 +81,7 @@ describe("MoodTrackerScreen", () => {
     expect(screen.getByText("Logged · 4/5")).toBeTruthy();
     expect(screen.getByText("Log another")).toBeTruthy();
     expect(screen.getAllByText("Avg 4")).toHaveLength(2);
-    expect(screen.getAllByText("1 log")).toHaveLength(3); // 2 summary tiles + hero meta
+    expect(screen.getAllByText("1 log")).toHaveLength(2); // 2 summary tiles (hero meta removed)
     expect(screen.getByText("Felt steadier after a walk")).toBeTruthy();
   });
 
@@ -120,14 +120,14 @@ describe("MoodTrackerScreen", () => {
     expect(screen.getByText("Log another")).toBeTruthy();
   });
 
-  it("renders score labels on the home check-in tiles", async () => {
+  it("renders score labels on the home check-in tiles via MoodScale", async () => {
     mockUseMoodLogs.mockReturnValue({
       data: [],
     } as unknown as ReturnType<typeof useMoodLogs>);
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect((await screen.findAllByText("neutral")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("OK")).length).toBeGreaterThan(0);
   });
 
   it("routes to the new mood entry page when the CTA is pressed", () => {
@@ -137,7 +137,7 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    fireEvent.press(screen.getByLabelText("3, neutral"));
+    fireEvent.press(screen.getByLabelText("OK"));
 
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/new?score=3");
   });

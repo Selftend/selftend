@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, View, type LayoutChangeEvent } from "react-native";
+import { ScrollView, View, type LayoutChangeEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -17,22 +17,19 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
-import { MOOD_EMOJI_BY_SCORE, STEPS } from "@/src/components/app/mood-scale";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { MoodScale } from "@/src/components/app/mood-scale";
 import { MoodEntryCard } from "@/src/features/mood/mood-entry-card";
 import { buildMoodChartData } from "@/src/features/mood/chart-data";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { getDayMoodSummary, getMoodSummary, type MoodSummary } from "@/src/features/mood/summaries";
 import { useSession } from "@/src/providers/session-provider";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
-import { cn } from "@/lib/utils";
 
 const RECENT_LIMIT = 10;
 const CHART_DAYS = 14;
 
 export default function MoodTrackerScreen() {
   const { t, i18n } = useTranslation("mood");
-  const { t: tc } = useTranslation("common");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -56,9 +53,6 @@ export default function MoodTrackerScreen() {
   const recent = (moodLogs ?? [])
     .filter((log) => toLocalDateKey(log.loggedAt) === selectedDate)
     .slice(0, RECENT_LIMIT);
-
-  const lastEntry = (moodLogs ?? [])[0] ?? null;
-  const lastEntryWhen = lastEntry ? formatMoodRelativeTime(lastEntry.loggedAt, t) : null;
 
   const handleChartLayout = (e: LayoutChangeEvent) => {
     setChartContainerWidth(e.nativeEvent.layout.width);
@@ -84,28 +78,6 @@ export default function MoodTrackerScreen() {
                 { type: "notifications", targetKey: "mood" },
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
-              meta={
-                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                  <Text variant="muted" className="text-xs">
-                    {t("hero.lastEntry")} ·{" "}
-                    {lastEntry ? (
-                      <Text className="text-xs">
-                        {MOOD_EMOJI_BY_SCORE[lastEntry.moodScore] ?? ""}{" "}
-                        <Text className="text-xs font-bold text-be">{lastEntry.moodScore}/5</Text>
-                        {lastEntryWhen ? ` · ${lastEntryWhen}` : ""}
-                      </Text>
-                    ) : (
-                      <Text className="text-xs font-bold text-be/60">{tc("never")}</Text>
-                    )}
-                  </Text>
-                  <Text variant="muted" className="text-xs">
-                    {t("hero.thisWeek")} ·{" "}
-                    <Text className="text-xs font-bold text-be">
-                      {t("summary.count", { count: sevenDay.count })}
-                    </Text>
-                  </Text>
-                </View>
-              }
             />
 
             <TodayCheckInCard summary={daySummary} isToday={isToday} dayLabel={dayLabel} />
@@ -182,32 +154,15 @@ function TodayCheckInCard({ summary, isToday, dayLabel }: TodayCheckInCardProps)
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <View className="flex-row gap-2">
-          {STEPS.map((step) => (
-            <Pressable
-              key={step.score}
-              accessibilityLabel={t(`scale.steps.${step.score}`)}
-              accessibilityRole="button"
-              onPress={() =>
-                router.push(
-                  `/tools/mood-tracker/new?score=${step.score}` as Parameters<
-                    typeof router.push
-                  >[0],
-                )
-              }
-              className={cn(
-                "min-w-10 flex-1 basis-10 items-center justify-center gap-1 rounded-2xl border-2 px-1 py-3",
-                `bg-card ${step.unselectedClass}`,
-              )}
-            >
-              <Text className="text-2xl">{step.emoji}</Text>
-              <Text className="text-xs font-semibold text-muted-foreground">{step.score}</Text>
-              <Text className="text-[10.5px] leading-tight text-muted-foreground" numberOfLines={1}>
-                {t(`scale.shortLabels.${step.score}`)}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <MoodScale
+          value={null}
+          onChange={(score) =>
+            router.push(
+              `/tools/mood-tracker/new?score=${score}` as Parameters<typeof router.push>[0],
+            )
+          }
+          compact
+        />
         {logged ? (
           <Button
             onPress={() => router.push("/tools/mood-tracker/new")}
