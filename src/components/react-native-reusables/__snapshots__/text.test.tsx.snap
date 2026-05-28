@@ -1,0 +1,161 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Text eyebrow variant renders eyebrow variant with act tint: eyebrow-act 1`] = `
+<Text
+  className="text-[11px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--act))]"
+  style={
+    [
+      {
+        "fontFamily": "NotoSans_700Bold",
+      },
+      undefined,
+    ]
+  }
+>
+  TINTED LABEL
+</Text>
+`;
+
+exports[`Text eyebrow variant renders eyebrow variant with aqua tint: eyebrow-aqua 1`] = `
+<Text
+  className="text-[11px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--aqua))]"
+  style={
+    [
+      {
+        "fontFamily": "NotoSans_700Bold",
+      },
+      undefined,
+    ]
+  }
+>
+  TINTED LABEL
+</Text>
+`;
+
+exports[`Text eyebrow variant renders eyebrow variant with be tint: eyebrow-be 1`] = `
+<Text
+  className="text-[11px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--be))]"
+  style={
+    [
+      {
+        "fontFamily": "NotoSans_700Bold",
+      },
+      undefined,
+    ]
+  }
+>
+  TINTED LABEL
+</Text>
+`;
+
+exports[`Text eyebrow variant renders eyebrow variant with clay tint: eyebrow-clay 1`] = `
+<Text
+  className="text-[11px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--clay))]"
+  style={
+    [
+      {
+        "fontFamily": "NotoSans_700Bold",
+      },
+      undefined,
+    ]
+  }
+>
+  TINTED LABEL
+</Text>
+`;
+
+exports[`Text eyebrow variant renders eyebrow variant with default muted color: eyebrow-default 1`] = `
+<Text
+  className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground"
+  style={
+    [
+      {
+        "fontFamily": "NotoSans_700Bold",
+      },
+      undefined,
+    ]
+  }
+>
+  SECTION LABEL
+</Text>
+`;
+
+exports[`Text eyebrow variant renders eyebrow variant with ink tint: eyebrow-ink 1`] = `
+<Text
+  className="text-[11px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--ink))]"
+  style={
+    [
+      {
+        "fontFamily": "NotoSans_700Bold",
+      },
+      undefined,
+    ]
+  }
+>
+  TINTED LABEL
+</Text>
+`;
+
+exports[`Text eyebrow variant renders eyebrow variant with iris tint: eyebrow-iris 1`] = `
+<Text
+  className="text-[11px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--iris))]"
+  style={
+    [
+      {
+        "fontFamily": "NotoSans_700Bold",
+      },
+      undefined,
+    ]
+  }
+>
+  TINTED LABEL
+</Text>
+`;
+
+exports[`Text eyebrow variant renders eyebrow variant with mist tint: eyebrow-mist 1`] = `
+<Text
+  className="text-[11px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--mist))]"
+  style={
+    [
+      {
+        "fontFamily": "NotoSans_700Bold",
+      },
+      undefined,
+    ]
+  }
+>
+  TINTED LABEL
+</Text>
+`;
+
+exports[`Text eyebrow variant renders eyebrow variant with primary tint: eyebrow-primary 1`] = `
+<Text
+  className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary"
+  style={
+    [
+      {
+        "fontFamily": "NotoSans_700Bold",
+      },
+      undefined,
+    ]
+  }
+>
+  TINTED LABEL
+</Text>
+`;
+
+exports[`Text eyebrow variant renders eyebrow variant with think tint: eyebrow-think 1`] = `
+<Text
+  className="text-[11px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--think))]"
+  style={
+    [
+      {
+        "fontFamily": "NotoSans_700Bold",
+      },
+      undefined,
+    ]
+  }
+>
+  TINTED LABEL
+</Text>
+`;

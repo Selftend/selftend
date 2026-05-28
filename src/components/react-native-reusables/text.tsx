@@ -3,6 +3,19 @@ import { Slot } from "@rn-primitives/slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 import { Platform, Text as RNText, type Role, type TextStyle } from "react-native";
+import type { TintToken } from "@/src/lib/design-tokens";
+
+const TINT_TEXT: Record<TintToken, string> = {
+  primary: "text-primary",
+  act: "text-[hsl(var(--act))]",
+  be: "text-[hsl(var(--be))]",
+  think: "text-[hsl(var(--think))]",
+  aqua: "text-[hsl(var(--aqua))]",
+  iris: "text-[hsl(var(--iris))]",
+  ink: "text-[hsl(var(--ink))]",
+  clay: "text-[hsl(var(--clay))]",
+  mist: "text-[hsl(var(--mist))]",
+};
 
 const FONT_FAMILY = {
   regular: "NotoSans_400Regular",
@@ -42,6 +55,7 @@ const textVariants = cva(
         large: "text-lg font-semibold",
         small: "text-sm font-medium leading-none",
         muted: "text-muted-foreground text-sm",
+        eyebrow: "text-[11px] font-bold uppercase tracking-[0.14em]",
       },
     },
     defaultVariants: {
@@ -118,20 +132,32 @@ function Text({
   className,
   asChild = false,
   variant = "default",
+  tint,
   style,
   ...props
 }: React.ComponentProps<typeof RNText> &
   React.RefAttributes<typeof RNText> &
   TextVariantProps & {
     asChild?: boolean;
+    tint?: TintToken;
   }) {
   const textClass = React.useContext(TextClassContext);
   const Component = asChild ? Slot : RNText;
   const resolvedVariant = variant ?? "default";
   const variantClassName = textVariants({ variant: resolvedVariant });
+  // For eyebrow: default to muted-foreground if no tint; honor tint if set.
+  // For other variants: apply tint only if explicitly set (no default color override).
+  const tintColor =
+    resolvedVariant === "eyebrow"
+      ? tint
+        ? TINT_TEXT[tint]
+        : "text-muted-foreground"
+      : tint
+        ? TINT_TEXT[tint]
+        : undefined;
   return (
     <Component
-      className={cn(variantClassName, textClass, className)}
+      className={cn(variantClassName, tintColor, textClass, className)}
       role={resolvedVariant ? ROLE[resolvedVariant] : undefined}
       aria-level={resolvedVariant ? ARIA_LEVEL[resolvedVariant] : undefined}
       style={[getTextFontStyle([variantClassName, textClass, className], resolvedVariant), style]}
