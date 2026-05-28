@@ -114,6 +114,7 @@ export default function MeditationHomeScreen() {
                 title={t("module.home.title")}
                 hue="iris"
                 icon="self-improvement"
+                moduleLabel={null}
                 description={t("module.home.subtitle", { stage: stage.number, phase: phaseLabel })}
                 actions={[
                   { type: "tune", onPress: () => setForceWizard(true) },

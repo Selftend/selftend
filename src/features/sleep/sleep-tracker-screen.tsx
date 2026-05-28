@@ -95,6 +95,7 @@ export default function SleepTrackerScreen() {
               title={t("title")}
               hue="ink"
               icon="bedtime"
+              moduleLabel={null}
               description={t("description")}
               actions={[
                 { type: "notifications", targetKey: "sleep" },

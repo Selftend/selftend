@@ -126,6 +126,8 @@ function PillarTool({ toolKey, icon, name, desc }: PillarToolProps) {
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={name}
+      accessibilityHint={desc}
       onPress={() => onToolPress?.(toolKey)}
       className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
     >

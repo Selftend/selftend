@@ -44,6 +44,7 @@ export default function GroundingHomeScreen() {
                 title={t("grounding.title")}
                 hue="clay"
                 icon="anchor"
+                moduleLabel={null}
                 description={t("grounding.description")}
                 actions={[
                   { type: "notifications", targetKey: "grounding" },

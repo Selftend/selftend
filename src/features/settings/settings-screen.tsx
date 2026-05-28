@@ -4,7 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as Linking from "expo-linking";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { ActivityIndicator, Platform, ScrollView, View } from "react-native";
+import { ActivityIndicator, Image, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import type { Area } from "react-easy-crop";
@@ -499,7 +499,15 @@ function ProfilePictureCard({ user }: { user: User | null }) {
               end={{ x: 1, y: 1 }}
               style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
             />
-            <Text className="text-2xl font-bold text-primary">{displayInitial}</Text>
+            {profile?.avatarUrl || googleAvatarUrl ? (
+              <Image
+                source={{ uri: profile?.avatarUrl ?? googleAvatarUrl ?? undefined }}
+                style={{ width: 56, height: 56 }}
+                accessibilityIgnoresInvertColors
+              />
+            ) : (
+              <Text className="text-2xl font-bold text-primary">{displayInitial}</Text>
+            )}
           </View>
           <View className="flex-1 min-w-0">
             <Text className="text-base font-semibold" numberOfLines={1}>

@@ -51,6 +51,7 @@ export default function MindfulnessHomeScreen() {
                 title={t("mindfulness.takeAMoment")}
                 hue="mist"
                 icon="self-improvement"
+                moduleLabel={null}
                 description={t("mindfulness.description")}
                 actions={[
                   { type: "notifications", targetKey: "mindfulness" },

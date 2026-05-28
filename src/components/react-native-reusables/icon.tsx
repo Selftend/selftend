@@ -61,11 +61,7 @@ function iconColorClasses(className: string | undefined) {
     .split(/\s+/)
     .filter((token) => {
       const utility = token.slice(token.lastIndexOf(":") + 1);
-      return (
-        utility.startsWith("text-") &&
-        !TEXT_SIZE_CLASSES.has(utility) &&
-        !utility.startsWith("text-[")
-      );
+      return utility.startsWith("text-") && !TEXT_SIZE_CLASSES.has(utility);
     })
     .join(" ");
 }

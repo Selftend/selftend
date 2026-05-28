@@ -108,6 +108,8 @@ exports[`PillarCard renders 4-tool grid: think-4-tools 1`] = `
     className="mt-4 flex-row flex-wrap gap-2.5"
   >
     <View
+      accessibilityHint="d1"
+      accessibilityLabel="Tool 1"
       accessibilityRole="button"
       accessibilityState={
         {
@@ -173,6 +175,8 @@ exports[`PillarCard renders 4-tool grid: think-4-tools 1`] = `
       </Text>
     </View>
     <View
+      accessibilityHint="d2"
+      accessibilityLabel="Tool 2"
       accessibilityRole="button"
       accessibilityState={
         {
@@ -238,6 +242,8 @@ exports[`PillarCard renders 4-tool grid: think-4-tools 1`] = `
       </Text>
     </View>
     <View
+      accessibilityHint="d3"
+      accessibilityLabel="Tool 3"
       accessibilityRole="button"
       accessibilityState={
         {
@@ -303,6 +309,8 @@ exports[`PillarCard renders 4-tool grid: think-4-tools 1`] = `
       </Text>
     </View>
     <View
+      accessibilityHint="d4"
+      accessibilityLabel="Tool 4"
       accessibilityRole="button"
       accessibilityState={
         {
@@ -479,6 +487,8 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
     className="mt-4 flex-row flex-wrap gap-2.5"
   >
     <View
+      accessibilityHint="d"
+      accessibilityLabel="Goals"
       accessibilityRole="button"
       accessibilityState={
         {
@@ -568,6 +578,8 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
       </Text>
     </View>
     <View
+      accessibilityHint="d"
+      accessibilityLabel="Values"
       accessibilityRole="button"
       accessibilityState={
         {
@@ -657,6 +669,8 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
       </Text>
     </View>
     <View
+      accessibilityHint="d"
+      accessibilityLabel="Activities"
       accessibilityRole="button"
       accessibilityState={
         {
@@ -746,6 +760,8 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
       </Text>
     </View>
     <View
+      accessibilityHint="d"
+      accessibilityLabel="Exposure"
       accessibilityRole="button"
       accessibilityState={
         {
@@ -835,6 +851,8 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
       </Text>
     </View>
     <View
+      accessibilityHint="d"
+      accessibilityLabel="Tasks"
       accessibilityRole="button"
       accessibilityState={
         {
@@ -924,6 +942,8 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
       </Text>
     </View>
     <View
+      accessibilityHint="d"
+      accessibilityLabel="Anger"
       accessibilityRole="button"
       accessibilityState={
         {
