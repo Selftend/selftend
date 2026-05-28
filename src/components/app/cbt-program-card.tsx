@@ -4,6 +4,7 @@ import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
+import { Card } from "@/src/components/react-native-reusables/card";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { HelpButton } from "@/src/components/app/help-button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -35,7 +36,11 @@ function TaskRow({ task }: { task: ProgramTaskView }) {
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() => router.push(task.route)}
-      className="flex-row items-center gap-3 rounded-lg border border-border bg-card p-3 active:bg-accent/40"
+      className={
+        task.done
+          ? "flex-row items-center gap-3 rounded-lg border border-[hsl(var(--act)/0.25)] bg-[hsl(var(--act)/0.10)] p-3 active:bg-accent/40"
+          : "flex-row items-center gap-3 rounded-lg border border-border bg-card p-3 active:bg-accent/40"
+      }
       role="button"
     >
       <Icon
@@ -128,20 +133,17 @@ export function CbtProgramCard({
         destructive={false}
       />
 
-      <View className="gap-3 rounded-2xl border border-act/30 bg-act/5 p-5">
+      <Card tint="act" className="gap-3 p-5">
         {/* Header */}
-        <View className="gap-1">
-          <View className="flex-row items-start gap-2">
-            <View className="flex-1 flex-row flex-wrap items-baseline gap-2">
-              <Text variant="h3" className="text-act">
-                {t("program.heroTitle")} - {t(phase.themeLabelKey)}
-              </Text>
-              {phase.themeSubKey ? (
-                <Text variant="muted" className="text-sm">
-                  · {t(phase.themeSubKey)}
-                </Text>
-              ) : null}
+        <View className="gap-2">
+          {/* Eyebrow row: route-icon glyph + uppercase label */}
+          <View className="flex-row items-center gap-3">
+            <View className="h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-[hsl(var(--act)/0.25)] bg-[hsl(var(--act)/0.12)]">
+              <Icon name="route" size={22} className="text-act" />
             </View>
+            <Text variant="eyebrow" tint="act" className="flex-1">
+              {t("program.heroTitle")}
+            </Text>
             {onAbandon ? (
               <Popover>
                 <PopoverTrigger asChild ref={triggerRef}>
@@ -149,7 +151,7 @@ export function CbtProgramCard({
                     accessibilityLabel={t("program.manageLabel")}
                     accessibilityRole="button"
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    className="-mr-1 -mt-1 size-8 items-center justify-center rounded-full active:bg-act/10"
+                    className="-mr-1 size-8 items-center justify-center rounded-full active:bg-act/10"
                     role="button"
                   >
                     <Icon name="settings" size={18} className="text-muted-foreground" />
@@ -173,6 +175,17 @@ export function CbtProgramCard({
               </Popover>
             ) : null}
             <HelpButton helpKey="program" size={18} />
+          </View>
+          {/* Title row */}
+          <View className="flex-row flex-wrap items-baseline gap-2">
+            <Text variant="h3" className="text-act">
+              {t(phase.themeLabelKey)}
+            </Text>
+            {phase.themeSubKey ? (
+              <Text variant="muted" className="text-sm">
+                · {t(phase.themeSubKey)}
+              </Text>
+            ) : null}
           </View>
           {phase.themeDescKey ? (
             <Text variant="muted" className="text-sm leading-5">
@@ -213,14 +226,10 @@ export function CbtProgramCard({
         ) : null}
 
         {/* Advance button */}
-        <Button
-          onPress={handleAdvancePress}
-          disabled={isPending}
-          variant={program.phaseReady ? "default" : "secondary"}
-        >
+        <Button onPress={handleAdvancePress} disabled={isPending} variant="tinted" tint="act">
           <Text>{advanceCta}</Text>
         </Button>
-      </View>
+      </Card>
     </>
   );
 }

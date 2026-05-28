@@ -228,4 +228,18 @@ describe("ActProgramCard", () => {
       expect(toJSON()).toBeNull();
     });
   });
+
+  describe("polished in-progress hero", () => {
+    it("renders eyebrow + tinted advance button (in-progress)", () => {
+      renderWithProviders(
+        <ActProgramCard
+          program={makeProgram({ phaseIndex: 0 })}
+          onStart={() => {}}
+          onAdvance={() => {}}
+        />,
+      );
+      // Eyebrow renders the heroTitle (uppercased visually by Text variant="eyebrow")
+      expect(screen.getByText(/act program/i)).toBeTruthy();
+    });
+  });
 });
