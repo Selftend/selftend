@@ -1,0 +1,469 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Card renders spine and tint together: spine-and-tint 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--act)/0.06)] border-[hsl(var(--act)/0.30)]"
+>
+  <View
+    accessibilityElementsHidden={true}
+    className="absolute left-0 top-0 bottom-0 w-[3px] bg-[hsl(var(--act))]"
+    importantForAccessibility="no"
+  />
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    both
+  </Text>
+</View>
+`;
+
+exports[`Card renders spine prop for act: spine-act 1`] = `
+<View
+  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+>
+  <View
+    accessibilityElementsHidden={true}
+    className="absolute left-0 top-0 bottom-0 w-[3px] bg-[hsl(var(--act))]"
+    importantForAccessibility="no"
+  />
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    act
+     spine
+  </Text>
+</View>
+`;
+
+exports[`Card renders spine prop for aqua: spine-aqua 1`] = `
+<View
+  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+>
+  <View
+    accessibilityElementsHidden={true}
+    className="absolute left-0 top-0 bottom-0 w-[3px] bg-[hsl(var(--aqua))]"
+    importantForAccessibility="no"
+  />
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    aqua
+     spine
+  </Text>
+</View>
+`;
+
+exports[`Card renders spine prop for be: spine-be 1`] = `
+<View
+  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+>
+  <View
+    accessibilityElementsHidden={true}
+    className="absolute left-0 top-0 bottom-0 w-[3px] bg-[hsl(var(--be))]"
+    importantForAccessibility="no"
+  />
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    be
+     spine
+  </Text>
+</View>
+`;
+
+exports[`Card renders spine prop for clay: spine-clay 1`] = `
+<View
+  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+>
+  <View
+    accessibilityElementsHidden={true}
+    className="absolute left-0 top-0 bottom-0 w-[3px] bg-[hsl(var(--clay))]"
+    importantForAccessibility="no"
+  />
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    clay
+     spine
+  </Text>
+</View>
+`;
+
+exports[`Card renders spine prop for ink: spine-ink 1`] = `
+<View
+  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+>
+  <View
+    accessibilityElementsHidden={true}
+    className="absolute left-0 top-0 bottom-0 w-[3px] bg-[hsl(var(--ink))]"
+    importantForAccessibility="no"
+  />
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    ink
+     spine
+  </Text>
+</View>
+`;
+
+exports[`Card renders spine prop for iris: spine-iris 1`] = `
+<View
+  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+>
+  <View
+    accessibilityElementsHidden={true}
+    className="absolute left-0 top-0 bottom-0 w-[3px] bg-[hsl(var(--iris))]"
+    importantForAccessibility="no"
+  />
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    iris
+     spine
+  </Text>
+</View>
+`;
+
+exports[`Card renders spine prop for mist: spine-mist 1`] = `
+<View
+  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+>
+  <View
+    accessibilityElementsHidden={true}
+    className="absolute left-0 top-0 bottom-0 w-[3px] bg-[hsl(var(--mist))]"
+    importantForAccessibility="no"
+  />
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    mist
+     spine
+  </Text>
+</View>
+`;
+
+exports[`Card renders spine prop for primary: spine-primary 1`] = `
+<View
+  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+>
+  <View
+    accessibilityElementsHidden={true}
+    className="absolute left-0 top-0 bottom-0 w-[3px] bg-primary"
+    importantForAccessibility="no"
+  />
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    primary
+     spine
+  </Text>
+</View>
+`;
+
+exports[`Card renders spine prop for think: spine-think 1`] = `
+<View
+  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+>
+  <View
+    accessibilityElementsHidden={true}
+    className="absolute left-0 top-0 bottom-0 w-[3px] bg-[hsl(var(--think))]"
+    importantForAccessibility="no"
+  />
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    think
+     spine
+  </Text>
+</View>
+`;
+
+exports[`Card renders tint prop for act: tint-act 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--act)/0.06)] border-[hsl(var(--act)/0.30)]"
+>
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    act
+     tint
+  </Text>
+</View>
+`;
+
+exports[`Card renders tint prop for aqua: tint-aqua 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--aqua)/0.06)] border-[hsl(var(--aqua)/0.30)]"
+>
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    aqua
+     tint
+  </Text>
+</View>
+`;
+
+exports[`Card renders tint prop for be: tint-be 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--be)/0.06)] border-[hsl(var(--be)/0.30)]"
+>
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    be
+     tint
+  </Text>
+</View>
+`;
+
+exports[`Card renders tint prop for clay: tint-clay 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--clay)/0.06)] border-[hsl(var(--clay)/0.30)]"
+>
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    clay
+     tint
+  </Text>
+</View>
+`;
+
+exports[`Card renders tint prop for ink: tint-ink 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--ink)/0.06)] border-[hsl(var(--ink)/0.30)]"
+>
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    ink
+     tint
+  </Text>
+</View>
+`;
+
+exports[`Card renders tint prop for iris: tint-iris 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--iris)/0.06)] border-[hsl(var(--iris)/0.30)]"
+>
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    iris
+     tint
+  </Text>
+</View>
+`;
+
+exports[`Card renders tint prop for mist: tint-mist 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--mist)/0.06)] border-[hsl(var(--mist)/0.30)]"
+>
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    mist
+     tint
+  </Text>
+</View>
+`;
+
+exports[`Card renders tint prop for primary: tint-primary 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-primary/[0.06] border-primary/30"
+>
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    primary
+     tint
+  </Text>
+</View>
+`;
+
+exports[`Card renders tint prop for think: tint-think 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5 bg-[hsl(var(--think)/0.06)] border-[hsl(var(--think)/0.30)]"
+>
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    think
+     tint
+  </Text>
+</View>
+`;
+
+exports[`Card renders without spine or tint unchanged 1`] = `
+<View
+  className="bg-card border-border relative flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5"
+>
+  <Text
+    className="text-base text-card-foreground"
+    style={
+      [
+        {
+          "fontFamily": "NotoSans_400Regular",
+        },
+        undefined,
+      ]
+    }
+  >
+    plain card
+  </Text>
+</View>
+`;
