@@ -37,10 +37,6 @@ jest.mock("expo-image-manipulator", () => ({
   },
 }));
 
-jest.mock("@/src/components/app/profile-avatar", () => ({
-  ProfileAvatar: () => null,
-}));
-
 jest.mock("@/src/components/react-native-reusables/alert-dialog", () => {
   const Pressable = mockPressable;
   const View = mockView;

@@ -12,6 +12,7 @@ export function PatternBoxDiagram() {
       viewBox="0 0 84 68"
       accessibilityElementsHidden
       importantForAccessibility="no"
+      {...({ "aria-hidden": true } as Record<string, unknown>)}
     >
       <Rect
         x="16"
@@ -45,6 +46,7 @@ export function Pattern478Diagram() {
       viewBox="0 0 84 68"
       accessibilityElementsHidden
       importantForAccessibility="no"
+      {...({ "aria-hidden": true } as Record<string, unknown>)}
     >
       <Path d="M6 50 Q 18 6 30 38 T 54 22 T 78 50" fill="none" stroke={AQUA_40} strokeWidth="1.5" />
       <Path
@@ -69,6 +71,7 @@ export function PatternCoherentDiagram() {
       viewBox="0 0 84 68"
       accessibilityElementsHidden
       importantForAccessibility="no"
+      {...({ "aria-hidden": true } as Record<string, unknown>)}
     >
       <Path
         d="M4 34 C 16 12, 26 12, 38 34 S 60 56, 72 34 S 84 18, 80 34"

@@ -1,6 +1,5 @@
 {
   "title": "Settings",
-  "description": "Quiet defaults, private account access, and a narrow first section.",
   "loading": "Loading settings...",
   "problem": "Settings problem",
   "saved": "Saved",
@@ -16,7 +15,6 @@
     "description": "Your display name and profile picture. You can restore your Google photo after choosing or removing a custom photo.",
     "displayNameLabel": "Display name",
     "signedIn": "Signed in",
-    "name": "Display name",
     "namePlaceholder": "Your name (optional)",
     "saveName": "Save name",
     "savingName": "Saving...",
@@ -58,9 +56,6 @@
     "subscriptionFailed": "Web reminders could not be enabled. Reminder settings were saved as off."
   },
   "onboarding": {
-    "title": "Onboarding",
-    "description": "Show the app and tool introductions again when you want a fresh walkthrough.",
-    "reset": "Reset onboarding",
     "resetting": "Resetting...",
     "resetSaved": "Onboarding will be shown again.",
     "resetError": "Unable to reset onboarding.",
