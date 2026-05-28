@@ -1,9 +1,8 @@
 import { router, type Href } from "expo-router";
-import { Pressable, ScrollView, useColorScheme, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { LinearGradient } from "expo-linear-gradient";
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
@@ -15,21 +14,11 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { PillarCard } from "@/src/components/app/pillar-card";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
-import { GratitudeOnboarding } from "@/src/components/app/gratitude-onboarding-modal";
-import { GroundingOnboarding } from "@/src/components/app/grounding-onboarding-modal";
-import { HabitsOnboarding } from "@/src/components/app/habits-onboarding-modal";
 import { CbtProgramCard } from "@/src/components/app/cbt-program-card";
 import { ProgramGraduation } from "@/src/components/app/program-graduation";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
-import { HelpButton } from "@/src/components/app/help-button";
-import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
-import { MeditationInfo } from "@/src/components/app/meditation-info-modal";
-import { MindfulnessOnboarding } from "@/src/components/app/mindfulness-onboarding-modal";
-import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
-import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
-import type { HelpKey } from "@/src/features/help/help-content";
-import { cn } from "@/lib/utils";
 import { useGoals } from "@/src/features/goals/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
@@ -46,37 +35,7 @@ interface PillarStrategy {
   icon: MaterialIconName;
   labelKey: string;
   descKey: string;
-  helpKey: HelpKey;
 }
-
-interface SharedToolBase {
-  key: string;
-  route: Href;
-  icon: MaterialIconName;
-  labelKey: string;
-}
-
-type SharedTool = SharedToolBase &
-  (
-    | {
-        helpKey: HelpKey;
-        infoKey?: never;
-      }
-    | {
-        helpKey?: never;
-        infoKey: AdvancedToolInfoKey;
-      }
-  );
-
-type AdvancedToolInfoKey =
-  | "gratitude"
-  | "grounding"
-  | "habits"
-  | "journal"
-  | "meditation"
-  | "mindfulness"
-  | "mood"
-  | "sleep";
 
 const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
   think: [
@@ -86,7 +45,6 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "article",
       labelKey: "dashboard.strategies.thoughts",
       descKey: "pillars.strategyDescriptions.thoughts",
-      helpKey: "thoughtRecords",
     },
     {
       key: "beliefs",
@@ -94,7 +52,6 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "anchor",
       labelKey: "dashboard.strategies.beliefs",
       descKey: "pillars.strategyDescriptions.beliefs",
-      helpKey: "beliefs",
     },
     {
       key: "worry",
@@ -102,7 +59,6 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "psychology",
       labelKey: "dashboard.strategies.worry",
       descKey: "pillars.strategyDescriptions.worry",
-      helpKey: "worry",
     },
     {
       key: "distortions",
@@ -110,7 +66,6 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "menu-book",
       labelKey: "home.distortionGuide",
       descKey: "pillars.strategyDescriptions.distortions",
-      helpKey: "distortions",
     },
   ],
   act: [
@@ -120,7 +75,6 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "gps-fixed",
       labelKey: "dashboard.strategies.goals",
       descKey: "pillars.strategyDescriptions.goals",
-      helpKey: "goals",
     },
     {
       key: "values",
@@ -128,7 +82,6 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "explore",
       labelKey: "dashboard.strategies.values",
       descKey: "pillars.strategyDescriptions.values",
-      helpKey: "values",
     },
     {
       key: "activities",
@@ -136,7 +89,6 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "directions-run",
       labelKey: "dashboard.strategies.activities",
       descKey: "pillars.strategyDescriptions.activities",
-      helpKey: "activities",
     },
     {
       key: "exposure",
@@ -144,7 +96,6 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "layers",
       labelKey: "dashboard.strategies.exposure",
       descKey: "pillars.strategyDescriptions.exposure",
-      helpKey: "exposure",
     },
     {
       key: "tasks",
@@ -152,7 +103,6 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "hiking",
       labelKey: "dashboard.strategies.tasks",
       descKey: "pillars.strategyDescriptions.tasks",
-      helpKey: "tasks",
     },
     {
       key: "anger",
@@ -160,7 +110,6 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "local-fire-department",
       labelKey: "dashboard.strategies.anger",
       descKey: "pillars.strategyDescriptions.anger",
-      helpKey: "anger",
     },
   ],
   be: [
@@ -170,82 +119,9 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "favorite",
       labelKey: "dashboard.strategies.selfCare",
       descKey: "pillars.strategyDescriptions.selfCare",
-      helpKey: "selfCare",
     },
   ],
 };
-
-const THINK_SHARED_TOOLS: SharedTool[] = [
-  {
-    key: "journal",
-    route: "/tools/journal",
-    icon: "edit-note",
-    labelKey: "navigation:sidebar.journal",
-    infoKey: "journal",
-  },
-  {
-    key: "gratitudeLog",
-    route: "/tools/gratitude-log",
-    icon: "favorite",
-    labelKey: "navigation:sidebar.gratitudeLog",
-    infoKey: "gratitude",
-  },
-];
-
-const ACT_SHARED_TOOLS: SharedTool[] = [
-  {
-    key: "habits",
-    route: "/tools/habits",
-    icon: "task-alt",
-    labelKey: "navigation:sidebar.habits",
-    infoKey: "habits",
-  },
-];
-
-const BE_SHARED_TOOLS: SharedTool[] = [
-  {
-    key: "breathing",
-    route: "/tools/breathing",
-    icon: "air",
-    labelKey: "navigation:sidebar.breathing",
-    helpKey: "breathing",
-  },
-  {
-    key: "mindfulness",
-    route: "/tools/mindfulness",
-    icon: "air",
-    labelKey: "navigation:sidebar.mindfulness",
-    infoKey: "mindfulness",
-  },
-  {
-    key: "meditation",
-    route: "/tools/meditation",
-    icon: "self-improvement",
-    labelKey: "navigation:sidebar.meditation",
-    infoKey: "meditation",
-  },
-  {
-    key: "grounding",
-    route: "/tools/grounding",
-    icon: "anchor",
-    labelKey: "navigation:sidebar.grounding",
-    infoKey: "grounding",
-  },
-  {
-    key: "moodTracker",
-    route: "/tools/mood-tracker",
-    icon: "mood",
-    labelKey: "navigation:sidebar.moodTracker",
-    infoKey: "mood",
-  },
-  {
-    key: "sleep",
-    route: "/tools/sleep",
-    icon: "bedtime",
-    labelKey: "navigation:sidebar.sleep",
-    infoKey: "sleep",
-  },
-];
 
 const REVIEW_LINKS = [
   {
@@ -264,274 +140,6 @@ const REVIEW_LINKS = [
   },
 ] as const;
 
-const PILLAR_CONTAINER_CLASS: Record<Pillar, string> = {
-  think: "border-think/30",
-  act: "border-act/30",
-  be: "border-be/30",
-};
-
-// Hardcoded HSL values match the --think/--act/--be tokens in global.css.
-// LinearGradient needs literal color strings (CSS vars don't resolve in RN colors props).
-const PILLAR_HSL: Record<Pillar, { light: string; dark: string }> = {
-  think: { light: "43, 74%, 52%", dark: "43, 86%, 65%" },
-  act: { light: "160, 46%, 38%", dark: "160, 56%, 55%" },
-  be: { light: "330, 56%, 60%", dark: "330, 62%, 72%" },
-};
-
-function pillarGradientColors(pillar: Pillar, isDark: boolean): [string, string] {
-  const hsl = isDark ? PILLAR_HSL[pillar].dark : PILLAR_HSL[pillar].light;
-  return [`hsla(${hsl}, ${isDark ? 0.18 : 0.14})`, `hsla(${hsl}, 0)`];
-}
-
-const PILLAR_EMBLEM_CLASS: Record<Pillar, string> = {
-  think: "bg-think/15 border-think/30",
-  act: "bg-act/15 border-act/30",
-  be: "bg-be/15 border-be/30",
-};
-
-const PILLAR_TEXT_CLASS: Record<Pillar, string> = {
-  think: "text-think",
-  act: "text-act",
-  be: "text-be",
-};
-
-const PILLAR_STRIPE_CLASS: Record<Pillar, string> = {
-  think: "bg-think",
-  act: "bg-act",
-  be: "bg-be",
-};
-
-const PILLAR_ICON_BG_CLASS: Record<Pillar, string> = {
-  think: "bg-think/15",
-  act: "bg-act/15",
-  be: "bg-be/15",
-};
-
-interface PillarPaneProps {
-  pillar: Pillar;
-  titleKey: string;
-  subKey: string;
-  descKey: string;
-  strategies: PillarStrategy[];
-  onOpenToolInfo: (infoKey: AdvancedToolInfoKey) => void;
-  sharedTools?: SharedTool[];
-}
-
-function PillarPane({
-  pillar,
-  titleKey,
-  subKey,
-  descKey,
-  strategies,
-  onOpenToolInfo,
-  sharedTools,
-}: PillarPaneProps) {
-  const { t } = useTranslation("cbt");
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const title = t(titleKey);
-  const initial = title.charAt(0);
-  const gradientColors = pillarGradientColors(pillar, isDark);
-
-  return (
-    <View
-      className={cn(
-        "relative overflow-hidden rounded-2xl border bg-card p-5",
-        PILLAR_CONTAINER_CLASS[pillar],
-      )}
-    >
-      <LinearGradient
-        colors={gradientColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        locations={[0, 0.55]}
-        style={{
-          height: 280,
-          left: 0,
-          pointerEvents: "none",
-          position: "absolute",
-          right: 0,
-          top: 0,
-        }}
-      />
-      <View className="flex-row items-start gap-4">
-        <View
-          aria-hidden
-          className={cn(
-            "size-14 items-center justify-center rounded-xl border",
-            PILLAR_EMBLEM_CLASS[pillar],
-          )}
-        >
-          <Text className={cn("text-xl font-bold", PILLAR_TEXT_CLASS[pillar])}>{initial}</Text>
-        </View>
-        <View className="flex-1 gap-1">
-          <View className="flex-row flex-wrap items-baseline gap-2">
-            <Text className={cn("text-xl font-semibold", PILLAR_TEXT_CLASS[pillar])}>{title}</Text>
-            <Text variant="muted" className="text-sm">
-              · {t(subKey)}
-            </Text>
-          </View>
-          <Text variant="muted" className="text-sm leading-5">
-            {t(descKey)}
-          </Text>
-        </View>
-      </View>
-
-      <View className="mt-4 flex-row flex-wrap gap-3">
-        {strategies.map((strategy) => (
-          <PillarStrategyCard key={strategy.key} pillar={pillar} strategy={strategy} />
-        ))}
-      </View>
-
-      {sharedTools && sharedTools.length > 0 ? (
-        <View className="mt-5 gap-2">
-          <View className="flex-row items-center gap-2">
-            <Icon name="auto-awesome" className="size-3 text-muted-foreground" size={12} />
-            <Text className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("pillars.usesSharedTools")}
-            </Text>
-          </View>
-          <View className="flex-row flex-wrap gap-2">
-            {sharedTools.map((tool) => (
-              <SharedToolPill
-                key={tool.key}
-                pillar={pillar}
-                tool={tool}
-                onOpenInfo={onOpenToolInfo}
-              />
-            ))}
-          </View>
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-interface PillarStrategyCardProps {
-  pillar: Pillar;
-  strategy: PillarStrategy;
-}
-
-function PillarStrategyCard({ pillar, strategy }: PillarStrategyCardProps) {
-  const { t } = useTranslation("cbt");
-  const label = t(strategy.labelKey);
-
-  return (
-    <View className="relative min-w-[200px] flex-1 basis-[200px]">
-      <Pressable
-        accessibilityHint={t(strategy.descKey)}
-        accessibilityLabel={label}
-        accessibilityRole="button"
-        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-        onPress={() => router.push(strategy.route)}
-        className="overflow-hidden rounded-xl border border-border bg-card active:bg-accent/40"
-        role="button"
-      >
-        <View className={cn("h-1", PILLAR_STRIPE_CLASS[pillar])} />
-        <View className="gap-2 p-4">
-          <View
-            className={cn(
-              "size-9 items-center justify-center rounded-lg",
-              PILLAR_ICON_BG_CLASS[pillar],
-            )}
-          >
-            <Icon name={strategy.icon} className={cn("size-6", PILLAR_TEXT_CLASS[pillar])} />
-          </View>
-          <Text className="text-base font-semibold leading-tight">{label}</Text>
-          <Text variant="muted" className="text-xs leading-snug">
-            {t(strategy.descKey)}
-          </Text>
-        </View>
-      </Pressable>
-      <View className="absolute right-1 top-1">
-        <HelpButton helpKey={strategy.helpKey} size={18} />
-      </View>
-    </View>
-  );
-}
-
-interface SharedToolPillProps {
-  pillar: Pillar;
-  onOpenInfo: (infoKey: AdvancedToolInfoKey) => void;
-  tool: SharedTool;
-}
-
-function SharedToolPill({ pillar, onOpenInfo, tool }: SharedToolPillProps) {
-  const { t } = useTranslation(["navigation", "cbt"]);
-  const label = t(tool.labelKey);
-  const helpLabel = `${t("help:ui.helpPrefix")}${label}`;
-
-  return (
-    <View className="min-w-[150px] flex-1 basis-[150px] flex-row items-center gap-1 rounded-xl border border-border bg-card pr-2">
-      <Pressable
-        accessibilityLabel={label}
-        accessibilityRole="button"
-        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-        onPress={() => router.push(tool.route)}
-        className="flex-1 flex-row items-center gap-3 rounded-xl p-3 active:bg-accent/40"
-        role="button"
-      >
-        <View
-          className={cn(
-            "size-9 items-center justify-center rounded-lg",
-            PILLAR_ICON_BG_CLASS[pillar],
-          )}
-        >
-          <Icon name={tool.icon} className={cn("size-6", PILLAR_TEXT_CLASS[pillar])} />
-        </View>
-        <Text className="flex-1 text-sm font-semibold" numberOfLines={1}>
-          {label}
-        </Text>
-      </Pressable>
-      {tool.infoKey ? (
-        <Pressable
-          accessibilityLabel={helpLabel}
-          accessibilityRole="button"
-          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={() => onOpenInfo(tool.infoKey!)}
-          role="button"
-        >
-          <Icon name="help-outline" size={16} className="text-muted-foreground" />
-        </Pressable>
-      ) : tool.helpKey ? (
-        <HelpButton helpKey={tool.helpKey} size={16} />
-      ) : null}
-    </View>
-  );
-}
-
-interface AdvancedToolInfoModalsProps {
-  active: AdvancedToolInfoKey | null;
-  onClose: () => void;
-}
-
-function AdvancedToolInfoModals({ active, onClose }: AdvancedToolInfoModalsProps) {
-  return (
-    <>
-      <JournalOnboarding visible={active === "journal"} onComplete={onClose} onDismiss={onClose} />
-      <GratitudeOnboarding
-        visible={active === "gratitude"}
-        onComplete={onClose}
-        onDismiss={onClose}
-      />
-      <HabitsOnboarding visible={active === "habits"} onComplete={onClose} onDismiss={onClose} />
-      <MeditationInfo visible={active === "meditation"} onComplete={onClose} onDismiss={onClose} />
-      <MindfulnessOnboarding
-        visible={active === "mindfulness"}
-        onComplete={onClose}
-        onDismiss={onClose}
-      />
-      <GroundingOnboarding
-        visible={active === "grounding"}
-        onComplete={onClose}
-        onDismiss={onClose}
-      />
-      <MoodOnboarding visible={active === "mood"} onComplete={onClose} onDismiss={onClose} />
-      <SleepOnboarding visible={active === "sleep"} onComplete={onClose} onDismiss={onClose} />
-    </>
-  );
-}
-
 export default function CbtHomeScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
@@ -547,7 +155,6 @@ export default function CbtHomeScreen() {
     isUpdating: isProgramUpdating,
   } = useCbtProgram(user?.id ?? null);
   const [forceOnboarding, setForceOnboarding] = useState(false);
-  const [activeToolInfo, setActiveToolInfo] = useState<AdvancedToolInfoKey | null>(null);
   const [graduationDismissed, setGraduationDismissed] = useState(false);
   const [abandonConfirmVisible, setAbandonConfirmVisible] = useState(false);
 
@@ -605,30 +212,30 @@ export default function CbtHomeScreen() {
         onDismiss={() => setForceOnboarding(false)}
         visible={forceOnboarding}
       />
-      <AdvancedToolInfoModals active={activeToolInfo} onClose={() => setActiveToolInfo(null)} />
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <View className="gap-2">
-              <ModuleHomeHeader
-                addWidgetCategory="cbt"
-                title={t("home.title")}
-                actions={[
-                  { type: "notifications", targetKey: "cbt" },
-                  ...(program.status === "not_started"
-                    ? [
-                        {
-                          type: "program" as const,
-                          onPress: showProgramPrompt,
-                          accessibilityLabel: t("program.showPromptLabel"),
-                        },
-                      ]
-                    : []),
-                  { type: "info", onPress: () => setForceOnboarding(true) },
-                ]}
-              />
-              <Text variant="muted">{t("home.description")}</Text>
-            </View>
+            <ModuleHomeHeader
+              addWidgetCategory="cbt"
+              hue="think"
+              icon="psychology"
+              moduleLabel={t("module.label")}
+              title={t("home.title")}
+              description={t("home.description")}
+              actions={[
+                { type: "notifications", targetKey: "cbt" },
+                ...(program.status === "not_started"
+                  ? [
+                      {
+                        type: "program" as const,
+                        onPress: showProgramPrompt,
+                        accessibilityLabel: t("program.showPromptLabel"),
+                      },
+                    ]
+                  : []),
+                { type: "info", onPress: () => setForceOnboarding(true) },
+              ]}
+            />
 
             {program.status === "graduated" ? (
               <ProgramGraduation
@@ -862,40 +469,39 @@ export default function CbtHomeScreen() {
 
             {/* Think · Act · Be pillars */}
             <View className="gap-3">
-              <Text variant="h3">{t("pillars.intro")}</Text>
-              <Text variant="muted" className="max-w-[64ch]">
-                {t("pillars.introDescription")}
-              </Text>
-
-              <View className="gap-4">
-                <PillarPane
-                  pillar="think"
-                  titleKey="pillars.think.title"
-                  subKey="pillars.think.sub"
-                  descKey="pillars.think.description"
-                  strategies={PILLAR_STRATEGIES.think}
-                  onOpenToolInfo={setActiveToolInfo}
-                  sharedTools={THINK_SHARED_TOOLS}
-                />
-                <PillarPane
-                  pillar="act"
-                  titleKey="pillars.act.title"
-                  subKey="pillars.act.sub"
-                  descKey="pillars.act.description"
-                  strategies={PILLAR_STRATEGIES.act}
-                  onOpenToolInfo={setActiveToolInfo}
-                  sharedTools={ACT_SHARED_TOOLS}
-                />
-                <PillarPane
-                  pillar="be"
-                  titleKey="pillars.be.title"
-                  subKey="pillars.be.sub"
-                  descKey="pillars.be.description"
-                  strategies={PILLAR_STRATEGIES.be}
-                  onOpenToolInfo={setActiveToolInfo}
-                  sharedTools={BE_SHARED_TOOLS}
-                />
+              <View>
+                <Text variant="h2" className="text-xl font-bold tracking-tight">
+                  {t("pillars.intro")}
+                </Text>
+                <Text variant="muted" className="mt-1.5 text-sm leading-snug max-w-[62ch]">
+                  {t("pillars.introDescription")}
+                </Text>
               </View>
+
+              {(["think", "act", "be"] as const).map((pillar) => (
+                <PillarCard
+                  key={pillar}
+                  tint={pillar}
+                  letter={t(`pillars.${pillar}.letter`)}
+                  title={t(`pillars.${pillar}.title`)}
+                  kicker={t(`pillars.${pillar}.sub`)}
+                  description={t(`pillars.${pillar}.description`)}
+                  onToolPress={(toolKey) => {
+                    const strategy = PILLAR_STRATEGIES[pillar].find((s) => s.key === toolKey);
+                    if (strategy?.route) router.push(strategy.route);
+                  }}
+                >
+                  {PILLAR_STRATEGIES[pillar].map((strategy) => (
+                    <PillarCard.Tool
+                      key={strategy.key}
+                      toolKey={strategy.key}
+                      icon={strategy.icon}
+                      name={t(strategy.labelKey)}
+                      desc={t(strategy.descKey)}
+                    />
+                  ))}
+                </PillarCard>
+              ))}
             </View>
 
             {/* Review */}

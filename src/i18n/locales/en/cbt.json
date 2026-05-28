@@ -1,4 +1,7 @@
 {
+  "module": {
+    "label": "CBT"
+  },
   "home": {
     "title": "CBT",
     "description": "A focused CBT section built around thought records, distortion awareness, and quiet review.",
@@ -182,16 +185,19 @@
     "intro": "The Think · Act · Be framework",
     "introDescription": "CBT works through three reinforcing pillars. Positive change in any one pillar makes the others easier.",
     "think": {
+      "letter": "T",
       "title": "Think",
       "sub": "Cognitive",
       "description": "Examine the thoughts and beliefs under your reactions. Identify patterns, test them, and form more accurate views."
     },
     "act": {
+      "letter": "A",
       "title": "Act",
       "sub": "Behavioral",
       "description": "Action precedes motivation. Schedule meaningful behavior, expose yourself gradually to what you avoid, and watch mood follow."
     },
     "be": {
+      "letter": "B",
       "title": "Be",
       "sub": "Mindfulness",
       "description": "Present-moment awareness without judgment. Use the shared meditation and mood tools - and the self-care log to protect baseline mood."

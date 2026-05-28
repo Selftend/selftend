@@ -209,6 +209,19 @@ describe("CbtHomeScreen onboarding", () => {
     expect(showProgramPrompt).toHaveBeenCalled();
   });
 
+  it("renders three PillarCards iterating PILLAR_STRATEGIES", () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<CbtHomeScreen />);
+
+    expect(screen.getByText("Think")).toBeTruthy();
+    expect(screen.getByText("Act")).toBeTruthy();
+    expect(screen.getByText("Be")).toBeTruthy();
+  });
+
   it("confirms before abandoning an in-progress program", () => {
     const abandonProgram = jest.fn();
     mockUseUserPreferences.mockReturnValue({
