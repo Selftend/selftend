@@ -67,7 +67,7 @@
     "greetingEvening": "Добър вечер",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "subtitle": "Една малка проверка прави разлика. Избери едно нещо - няма натиск да правиш всичко.",
+    "subtitle": "Избери едно нещо - няма натиск да правиш всичко.",
     "dashboardLabel": "Табло",
     "dashboardSub": "Инструменти, с които се проверяваш всеки ден",
     "addTool": "Добави инструмент",

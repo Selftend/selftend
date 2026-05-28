@@ -67,7 +67,7 @@
     "greetingEvening": "Good evening",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "subtitle": "A small check-in goes a long way. Pick one thing - there's no pressure to do everything.",
+    "subtitle": "Pick one thing - there's no pressure to do everything.",
     "dashboardLabel": "Dashboard",
     "dashboardSub": "Tools you check in with each day",
     "addTool": "Add tool",
