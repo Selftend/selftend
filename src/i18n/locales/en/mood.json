@@ -1,4 +1,29 @@
 {
+  "checkin": {
+    "moduleLabel": "Check-in",
+    "title": "How are you feeling?",
+    "tagline": "A simple 1–5 picker plus space for a note. No streak to protect.",
+    "noteHint": "Add a short note (optional)…",
+    "saveCta": "Save check-in",
+    "todayLabel": "Today",
+    "youPill": "You",
+    "scaleLabels": {
+      "1": "Awful",
+      "2": "Low",
+      "3": "OK",
+      "4": "Good",
+      "5": "Great"
+    },
+    "summary": {
+      "title": "Summary",
+      "past7": "Past 7 days",
+      "past30": "Past 30 days",
+      "last14": "Last 14 days",
+      "countLabel_one": "{{count}} check-in",
+      "countLabel_other": "{{count}} check-ins"
+    },
+    "entriesTitle": "Today's check-ins"
+  },
   "title": "Check-in",
   "description": "Log how you're feeling and see how it shifts over time.",
   "cta": {

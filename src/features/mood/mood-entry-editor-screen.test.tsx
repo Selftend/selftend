@@ -8,6 +8,11 @@ import { MoodEntryEditorScreen } from "@/src/features/mood/mood-entry-editor-scr
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+jest.mock("expo-linear-gradient", () => {
+  const { View } = require("react-native");
+  return { LinearGradient: View };
+});
+
 jest.mock("expo-router", () => ({
   router: {
     back: jest.fn(),
@@ -117,7 +122,7 @@ describe("MoodEntryEditorScreen", () => {
   it("creates a mood entry and routes to the saved detail page", async () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
 
-    fireEvent.press(screen.getByLabelText("3, neutral"));
+    fireEvent.press(screen.getByLabelText("OK"));
     fireEvent.press(screen.getByText("Save"));
 
     await waitFor(() => {
@@ -164,7 +169,7 @@ describe("MoodEntryEditorScreen", () => {
       <MoodEntryEditorScreen fallbackHref="/tools/mood-tracker/log-1" mode="edit" moodId="log-1" />,
     );
 
-    fireEvent.press(screen.getByLabelText("5, very good"));
+    fireEvent.press(screen.getByLabelText("Great"));
     fireEvent.press(screen.getByText("Update"));
 
     await waitFor(() => {
@@ -187,7 +192,7 @@ describe("MoodEntryEditorScreen", () => {
 
   it("captures the four-box notice when expanded", async () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
-    fireEvent.press(screen.getByLabelText("3, neutral"));
+    fireEvent.press(screen.getByLabelText("OK"));
     fireEvent.press(screen.getByText("Go deeper — notice (optional)"));
     fireEvent.changeText(screen.getByLabelText("Situation / trigger"), "Email from boss");
     fireEvent.press(screen.getByText("Save"));
@@ -202,7 +207,7 @@ describe("MoodEntryEditorScreen", () => {
 
   it("shows score labels under the mood scale", async () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
-    expect(await screen.findByText("very good")).toBeTruthy();
+    expect(await screen.findByText("Great")).toBeTruthy();
   });
 
   it("completes a linked activity after saving from the activity flow", async () => {
@@ -213,7 +218,7 @@ describe("MoodEntryEditorScreen", () => {
 
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
 
-    fireEvent.press(screen.getByLabelText("4, good"));
+    fireEvent.press(screen.getByLabelText("Good"));
     fireEvent.press(screen.getByText("Save"));
 
     await waitFor(() => {

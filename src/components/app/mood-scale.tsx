@@ -1,9 +1,9 @@
-import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
+import { Pressable, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 export const MOOD_SCALE_MIN = 1;
 export const MOOD_SCALE_MAX = 5;
@@ -11,7 +11,7 @@ export const MOOD_SCALE_MAX = 5;
 interface MoodScaleProps {
   value: number | null;
   onChange: (value: number) => void;
-  /** Emoji-only, compact buttons (no number/label) so all 5 fit one row in tight spaces. */
+  /** Compact mode: smaller emoji + padding, no YOU pill. Fits tight spaces. */
   compact?: boolean;
 }
 
@@ -70,50 +70,56 @@ export const MOOD_EMOJI_BY_SCORE: Record<number, string> = STEPS.reduce(
 );
 
 export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation("mood");
 
   return (
-    <View className="flex-row flex-wrap gap-2">
+    <View className={cn("flex-row", compact ? "gap-1.5" : "gap-2.5")}>
       {STEPS.map((step) => {
         const selected = value === step.score;
-        const label = t(step.a11yKey);
+        const label = t(`checkin.scaleLabels.${step.score}`);
         return (
           <Pressable
             key={step.score}
-            accessibilityLabel={label}
             accessibilityRole="button"
+            accessibilityLabel={label}
             accessibilityState={{ selected }}
-            hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
             onPress={() => onChange(step.score)}
             className={cn(
-              "flex-1 items-center justify-center rounded-2xl border-2",
-              compact ? "min-w-10 basis-10 px-1 py-2.5" : "min-w-14 basis-14 gap-1 px-2 py-3",
-              selected ? step.selectedClass : `bg-card ${step.unselectedClass}`,
+              "flex-1 items-center overflow-hidden rounded-2xl border",
+              compact ? "px-1 py-2" : "px-1.5 py-3.5",
+              selected ? "border-2 border-[hsl(var(--act))]" : "border-border bg-card",
             )}
-            role="button"
           >
-            <Text className="text-2xl">{step.emoji}</Text>
-            {compact ? null : (
-              <>
-                <Text
-                  className={cn(
-                    "text-xs font-semibold",
-                    selected ? "text-white" : "text-muted-foreground",
-                  )}
-                >
-                  {step.score}
+            {selected ? (
+              <LinearGradient
+                colors={["hsla(160, 46%, 38%, 0.10)", "hsla(160, 46%, 38%, 0.04)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+              />
+            ) : null}
+            <Text className={cn("leading-none", compact ? "text-xl" : "text-3xl")}>
+              {step.emoji}
+            </Text>
+            <Text
+              className={cn(
+                "mt-2 text-[12px] font-semibold",
+                selected ? "text-[hsl(var(--act))]" : "text-muted-foreground",
+              )}
+            >
+              {label}
+            </Text>
+            {selected && !compact ? (
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+                className="absolute -right-2 -top-2.5 rounded-full bg-[hsl(var(--act))] px-2 py-[3px]"
+              >
+                <Text className="text-[10px] font-bold uppercase tracking-wider text-white">
+                  {t("checkin.youPill")}
                 </Text>
-                <Text
-                  className={cn(
-                    "text-[10.5px] leading-tight",
-                    selected ? "text-white/90" : "text-muted-foreground",
-                  )}
-                  numberOfLines={1}
-                >
-                  {t(`mood:scale.shortLabels.${step.score}`)}
-                </Text>
-              </>
-            )}
+              </View>
+            ) : null}
           </Pressable>
         );
       })}

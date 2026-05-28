@@ -19,6 +19,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { LoadingState } from "@/src/components/app/screen-state";
+import { ToolHero } from "@/src/components/app/tool-hero";
 import { MoodScale } from "@/src/components/app/mood-scale";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { cn } from "@/lib/utils";
@@ -187,12 +188,20 @@ export function MoodEntryEditorScreen({
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow gap-6 p-6 pb-12">
-        <View className="gap-2">
-          <ScreenHeader title={editMode ? t("mood.editTitle") : t("mood.title")} />
-          <Text variant="muted">
-            {editMode ? t("mood.editDescription") : t("mood.description")}
-          </Text>
-        </View>
+        {editMode ? (
+          <View className="gap-2">
+            <ScreenHeader title={t("mood.editTitle")} />
+            <Text variant="muted">{t("mood.editDescription")}</Text>
+          </View>
+        ) : (
+          <ToolHero
+            hue="be"
+            icon="mood"
+            title={tMood("checkin.title")}
+            moduleLabel={tMood("checkin.moduleLabel")}
+            tagline={tMood("checkin.tagline")}
+          />
+        )}
 
         {showCrisis ? <CrisisSupportCallout /> : null}
 
