@@ -22,7 +22,6 @@ import { HabitsOnboarding } from "@/src/components/app/habits-onboarding-modal";
 import { CbtProgramCard } from "@/src/components/app/cbt-program-card";
 import { ProgramGraduation } from "@/src/components/app/program-graduation";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
-import { HelpButton } from "@/src/components/app/help-button";
 import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
 import { MeditationInfo } from "@/src/components/app/meditation-info-modal";
 import { MindfulnessOnboarding } from "@/src/components/app/mindfulness-onboarding-modal";
@@ -316,7 +315,7 @@ function SharedToolsRow({ tools, tint, onOpenInfo }: SharedToolsRowProps) {
           {tool.infoKey ? (
             <Icon name="help-outline" size={12} className="text-muted-foreground" />
           ) : tool.helpKey ? (
-            <HelpButton helpKey={tool.helpKey} size={12} />
+            <Icon name="help-outline" size={12} className="text-muted-foreground" />
           ) : null}
         </Pressable>
       ))}
