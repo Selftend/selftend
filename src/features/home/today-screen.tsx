@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
 import Sortable from "react-native-sortables";
+import { LinearGradient } from "expo-linear-gradient";
+import { Circle, Svg } from "react-native-svg";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -46,6 +48,39 @@ function getMetaName(user: { user_metadata?: Record<string, unknown> } | null) {
   const name = typeof metadata.name === "string" ? metadata.name : null;
   if (name?.trim()) return name.trim().split(/\s+/)[0];
   return null;
+}
+
+function BreathingDotEmpty() {
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+      className="h-[72px] w-[72px] items-center justify-center"
+    >
+      <Svg width="72" height="72" viewBox="0 0 72 72">
+        <Circle
+          cx="36"
+          cy="36"
+          r="35"
+          stroke="hsla(262, 62%, 56%, 0.20)"
+          strokeWidth="1"
+          fill="none"
+        />
+        <Circle
+          cx="36"
+          cy="36"
+          r="25"
+          stroke="hsla(262, 62%, 56%, 0.30)"
+          strokeWidth="1"
+          fill="none"
+        />
+        <Circle cx="36" cy="36" r="20" fill="hsla(262, 62%, 56%, 0.10)" />
+      </Svg>
+      <View className="absolute items-center justify-center">
+        <Icon name="add" size={22} className="text-primary" />
+      </View>
+    </View>
+  );
 }
 
 function computeColumns(gridWidth: number) {
@@ -96,22 +131,49 @@ export default function HomeScreen() {
 
   const header = (
     <View className="gap-6 pb-3">
-      <View className="flex-row items-start justify-between">
-        <View className="flex-1 gap-2">
-          <Text className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      {/* Hero with radial wash (approximated via two overlapping linear gradients) */}
+      <View className="relative overflow-hidden rounded-3xl pb-2 pt-6 px-1">
+        <LinearGradient
+          colors={["hsla(262, 62%, 56%, 0.10)", "transparent"]}
+          start={{ x: 0.12, y: 0 }}
+          end={{ x: 0.72, y: 0.9 }}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+          pointerEvents="none"
+        />
+        <LinearGradient
+          colors={["hsla(280, 48%, 60%, 0.10)", "transparent"]}
+          start={{ x: 0.9, y: 0.2 }}
+          end={{ x: 0.6, y: 0.8 }}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+          pointerEvents="none"
+        />
+        <View className="relative">
+          <Text variant="eyebrow">
             {t(isToday ? "today.eyebrow" : "today.eyebrowPast", { date: dateLabel })}
           </Text>
-          <Text variant="h1">{greetingLine}</Text>
-        </View>
-        <View className="flex-row items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={() => setAddVisible(true)}
-            accessibilityLabel={t("today.dashboard.addWidgetTitle")}
+          <Text
+            variant="h1"
+            className="mt-2.5 text-[44px] font-extrabold leading-[1.05] tracking-tight"
           >
-            <Icon name="add" className="size-5 text-muted-foreground" />
-          </Button>
+            {greetingLine}
+          </Text>
+          <Text className="mt-2.5 text-[15px] leading-[1.55] text-muted-foreground max-w-[52ch]">
+            {t("today.subtitle")}
+          </Text>
+        </View>
+      </View>
+
+      {/* Section heading row */}
+      <View className="flex-row items-baseline justify-between border-b border-border pb-3">
+        <View>
+          <Text variant="h2" className="text-xl font-bold tracking-tight">
+            {t("today.dashboardLabel")}
+          </Text>
+          <Text variant="muted" className="mt-0.5 text-[12.5px]">
+            {t("today.dashboardSub")}
+          </Text>
+        </View>
+        <View className="flex-row gap-1">
           <Button
             variant="ghost"
             size="sm"
@@ -119,6 +181,15 @@ export default function HomeScreen() {
             accessibilityLabel={editMode ? t("home.doneLabel") : t("home.editLabel")}
           >
             <Icon name={editMode ? "check" : "edit"} className="size-5 text-muted-foreground" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => setAddVisible(true)}
+            accessibilityLabel={t("today.dashboard.addWidgetTitle")}
+          >
+            <Icon name="add" size={16} className="text-primary" />
+            <Text className="text-primary">{t("today.addTool")}</Text>
           </Button>
         </View>
       </View>
@@ -150,6 +221,21 @@ export default function HomeScreen() {
           {isLoading ? (
             <View className="items-center py-8">
               <ActivityIndicator />
+            </View>
+          ) : widgetIds.length === 0 ? (
+            <View className="mt-2 items-center gap-3.5 rounded-2xl border border-dashed border-border px-6 py-10">
+              <BreathingDotEmpty />
+              <View className="items-center gap-1.5 px-6">
+                <Text className="text-center text-[15px] font-semibold">
+                  {t("today.emptyTitle")}
+                </Text>
+                <Text
+                  variant="muted"
+                  className="text-center text-[13px] leading-relaxed max-w-[34ch]"
+                >
+                  {t("today.emptyDescription")}
+                </Text>
+              </View>
             </View>
           ) : cellWidth > 0 ? (
             <Sortable.Flex

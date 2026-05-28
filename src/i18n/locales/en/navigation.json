@@ -68,6 +68,11 @@
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
     "subtitle": "A small check-in goes a long way. Pick one thing - there's no pressure to do everything.",
+    "dashboardLabel": "Dashboard",
+    "dashboardSub": "Tools you check in with each day",
+    "addTool": "Add tool",
+    "emptyTitle": "Add tools you want to check in with each day",
+    "emptyDescription": "Choose from any of your tools in the sidebar. They'll show up here as a quiet daily list.",
     "quickActions": {
       "logMood": "Log mood",
       "thoughtRecord": "Thought record",
