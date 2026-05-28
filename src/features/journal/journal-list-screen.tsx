@@ -4,19 +4,43 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { ToolHero } from "@/src/components/app/tool-hero";
+import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
+import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
+import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
+import { EmptyState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
+import { Card } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
-import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
-import { EmptyState } from "@/src/components/app/screen-state";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { countWords } from "@/src/features/journal/word-count";
 import { useJournalEntries } from "@/src/features/journal/queries";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+
+type SectionKey = "today" | "earlier" | "older";
+
+function groupByPeriod(entries: JournalEntry[]): { key: SectionKey; entries: JournalEntry[] }[] {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfWeek = startOfToday - 6 * 86_400_000;
+  const today: JournalEntry[] = [];
+  const earlier: JournalEntry[] = [];
+  const older: JournalEntry[] = [];
+  for (const entry of entries) {
+    const ts = new Date(entry.createdAt).getTime();
+    if (ts >= startOfToday) today.push(entry);
+    else if (ts >= startOfWeek) earlier.push(entry);
+    else older.push(entry);
+  }
+  return [
+    { key: "today" as const, entries: today },
+    { key: "earlier" as const, entries: earlier },
+    { key: "older" as const, entries: older },
+  ].filter((s) => s.entries.length > 0);
+}
 
 export default function JournalListScreen() {
   const { t } = useTranslation("journal");
@@ -25,16 +49,16 @@ export default function JournalListScreen() {
   const userId = user?.id ?? null;
 
   const { data: entries } = useJournalEntries(userId, 50);
-  const { selectedDate } = useSelectedDate();
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
-
-  const list = (entries ?? []).filter((entry) => toLocalDateKey(entry.createdAt) === selectedDate);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const allEntries = entries ?? [];
+  const sections = groupByPeriod(allEntries);
+
+  const totalWords = allEntries.reduce((sum, entry) => sum + countWords(entry.body), 0);
   const lastEntry = allEntries[0] ?? null;
   const lastWhen = lastEntry ? formatMoodRelativeTime(lastEntry.createdAt, t) : null;
-  const totalWords = allEntries.reduce((sum, entry) => sum + countWords(entry.body), 0);
 
   return (
     <>
@@ -43,69 +67,99 @@ export default function JournalListScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
+      <NotificationSettingsModal
+        targetKey="journal"
+        visible={showNotifications}
+        onDismiss={() => setShowNotifications(false)}
+      />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-        <ScrollView contentContainerClassName="grow p-6">
-          <View className="gap-6">
-            <ModuleHomeHeader
-              addWidgetCategory="journal"
-              title={t("title")}
-              hue="ink"
-              icon="edit-note"
-              description={t("description")}
-              actions={[
-                { type: "notifications", targetKey: "journal" },
-                { type: "info", onPress: () => setForceOnboarding(true) },
-              ]}
-              meta={
-                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                  <Text variant="muted" className="text-xs">
-                    <Text className="text-xs font-bold text-ink">
-                      {t("hero.entries", { count: allEntries.length })}
-                    </Text>
+        <ScrollView contentContainerClassName="grow gap-6 p-4">
+          <ToolHero
+            hue="ink"
+            icon="edit-note"
+            title={t("title")}
+            moduleLabel={t("moduleLabel")}
+            tagline={t("tagline")}
+            meta={
+              <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                <Text variant="muted" className="text-xs">
+                  <Text className="text-xs font-bold text-ink">
+                    {t("hero.entries", { count: allEntries.length })}
                   </Text>
-                  <Text variant="muted" className="text-xs">
-                    <Text className="text-xs font-bold text-ink">
-                      {t("hero.words", { count: totalWords })}
-                    </Text>
+                </Text>
+                <Text variant="muted" className="text-xs">
+                  <Text className="text-xs font-bold text-ink">
+                    {t("hero.words", { count: totalWords })}
                   </Text>
-                  <Text variant="muted" className="text-xs">
-                    {t("hero.last")} ·{" "}
-                    {lastWhen ? (
-                      <Text className="text-xs font-bold text-ink">{lastWhen}</Text>
-                    ) : (
-                      <Text className="text-xs font-bold text-ink/60">{tc("never")}</Text>
-                    )}
-                  </Text>
-                </View>
-              }
-            />
+                </Text>
+                <Text variant="muted" className="text-xs">
+                  {t("hero.last")} ·{" "}
+                  {lastWhen ? (
+                    <Text className="text-xs font-bold text-ink">{lastWhen}</Text>
+                  ) : (
+                    <Text className="text-xs font-bold text-ink/60">{tc("never")}</Text>
+                  )}
+                </Text>
+              </View>
+            }
+          />
 
+          <View className="flex-row flex-wrap gap-2">
             <Button onPress={() => router.push("/tools/journal/new")} className="self-start">
               <Icon name="add" className="size-4 text-primary-foreground" />
               <Text>{t("cta.new")}</Text>
             </Button>
-
-            {list.length === 0 ? (
-              <EmptyState
-                icon="edit-note"
-                title={t("list.empty.title")}
-                description={t("list.empty.description")}
-                action={{
-                  label: t("list.empty.cta"),
-                  onPress: () => router.push("/tools/journal/new"),
-                }}
-              />
-            ) : (
-              <View className="gap-3">
-                <Text variant="h3">{t("list.recent")}</Text>
-                <View className="gap-3">
-                  {list.map((entry) => (
-                    <JournalEntryRow key={entry.id} entry={entry} />
-                  ))}
-                </View>
-              </View>
-            )}
+            <Button
+              variant="outline"
+              size="icon"
+              accessibilityLabel="Notifications"
+              onPress={() => setShowNotifications(true)}
+            >
+              <Icon name="notifications" className="size-5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              accessibilityLabel="About journaling"
+              onPress={() => setForceOnboarding(true)}
+            >
+              <Icon name="help-outline" className="size-5" />
+            </Button>
+            <AddToHomeButton category="journal" />
           </View>
+
+          {allEntries.length === 0 ? (
+            <EmptyState
+              icon="edit-note"
+              title={t("list.empty.title")}
+              description={t("list.empty.description")}
+              action={{
+                label: t("list.empty.cta"),
+                onPress: () => router.push("/tools/journal/new"),
+              }}
+            />
+          ) : (
+            sections.map((section) => (
+              <View key={section.key} className="gap-3">
+                <View className="flex-row items-center gap-3">
+                  <Text variant="eyebrow" tint={section.key === "today" ? "ink" : undefined}>
+                    {t(`sections.${section.key}`)}
+                  </Text>
+                  <View className="h-px flex-1 bg-border" />
+                  <Text variant="muted" className="text-xs">
+                    {t("hero.entries", { count: section.entries.length })}
+                  </Text>
+                </View>
+                {section.entries.map((entry) => (
+                  <JournalCard
+                    key={entry.id}
+                    entry={entry}
+                    onPress={() => router.push(`/tools/journal/${entry.id}`)}
+                  />
+                ))}
+              </View>
+            ))
+          )}
         </ScrollView>
       </SafeAreaView>
     </>
@@ -118,36 +172,43 @@ function firstLine(body: string) {
   return idx === -1 ? trimmed : trimmed.slice(0, idx);
 }
 
-interface JournalEntryRowProps {
+interface JournalCardProps {
   entry: JournalEntry;
+  onPress: () => void;
 }
 
-function JournalEntryRow({ entry }: JournalEntryRowProps) {
+function JournalCard({ entry, onPress }: JournalCardProps) {
   const { t } = useTranslation("journal");
   const when = formatMoodRelativeTime(entry.createdAt, t);
   const title = entry.title.trim().length > 0 ? entry.title.trim() : t("list.untitled");
   const preview = firstLine(entry.body);
+  const words = countWords(entry.body);
 
   return (
     <Pressable
       accessibilityLabel={t("list.viewEntry", { when })}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(`/tools/journal/${entry.id}`)}
-      className="gap-2 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
-      role="button"
+      onPress={onPress}
     >
-      <View className="flex-row items-center justify-between gap-3">
-        <Text className="flex-1 text-base font-semibold" numberOfLines={1}>
-          {title}
+      <Card spine="ink" className="px-5 py-4 gap-0">
+        <View className="flex-row items-baseline justify-between gap-3">
+          <Text className="flex-1 text-base font-semibold tracking-tight" numberOfLines={1}>
+            {title}
+          </Text>
+          <Text variant="muted" className="text-xs">
+            {when}
+          </Text>
+        </View>
+        {preview.length > 0 ? (
+          <Text variant="muted" numberOfLines={2} className="mt-1.5 text-[13px] leading-relaxed">
+            {preview}
+          </Text>
+        ) : null}
+        <Text variant="muted" className="mt-2.5 text-[11px] tabular-nums">
+          {t("hero.words", { count: words })}
         </Text>
-        <Text variant="muted" className="text-xs">
-          {when}
-        </Text>
-      </View>
-      <Text variant="muted" numberOfLines={2} className="text-sm">
-        {preview}
-      </Text>
+      </Card>
     </Pressable>
   );
 }

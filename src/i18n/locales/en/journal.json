@@ -1,8 +1,15 @@
 {
   "title": "Journal",
+  "moduleLabel": "Journal",
+  "tagline": "A private place to write — no formatting, no audience, no streaks.",
   "description": "Private free-text reflection. Write as little or as much as you want - no streaks, no pressure.",
   "cta": {
     "new": "New entry"
+  },
+  "sections": {
+    "today": "Today",
+    "earlier": "Earlier this week",
+    "older": "Older"
   },
   "hero": {
     "entries_one": "{{count}} entry",
