@@ -2,8 +2,37 @@
 
 exports[`PillarCard renders 4-tool grid: think-4-tools 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border shadow-sm shadow-black/5 bg-[hsl(var(--think)/0.06)] border-[hsl(var(--think)/0.30)] px-5 py-4"
+  className="bg-card border-border flex flex-col gap-6 rounded-xl border shadow-sm shadow-black/5 relative overflow-hidden px-5 py-4"
 >
+  <View
+    colors={
+      [
+        "hsl(43, 74%, 52%)",
+        "hsla(43, 74%, 52%, 0.5)",
+      ]
+    }
+    end={
+      {
+        "x": 1,
+        "y": 0,
+      }
+    }
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "height": 3,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
   <View
     className="flex-row items-start gap-3.5"
   >
@@ -344,8 +373,37 @@ exports[`PillarCard renders 4-tool grid: think-4-tools 1`] = `
 
 exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border shadow-sm shadow-black/5 bg-[hsl(var(--act)/0.06)] border-[hsl(var(--act)/0.30)] px-5 py-4"
+  className="bg-card border-border flex flex-col gap-6 rounded-xl border shadow-sm shadow-black/5 relative overflow-hidden px-5 py-4"
 >
+  <View
+    colors={
+      [
+        "hsl(160, 46%, 38%)",
+        "hsla(160, 46%, 38%, 0.5)",
+      ]
+    }
+    end={
+      {
+        "x": 1,
+        "y": 0,
+      }
+    }
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "height": 3,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
   <View
     className="flex-row items-start gap-3.5"
   >
@@ -960,8 +1018,37 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
 
 exports[`PillarCard renders header with letter + title + kicker + description: think-no-tools 1`] = `
 <View
-  className="relative flex flex-col gap-6 rounded-xl border shadow-sm shadow-black/5 bg-[hsl(var(--think)/0.06)] border-[hsl(var(--think)/0.30)] px-5 py-4"
+  className="bg-card border-border flex flex-col gap-6 rounded-xl border shadow-sm shadow-black/5 relative overflow-hidden px-5 py-4"
 >
+  <View
+    colors={
+      [
+        "hsl(43, 74%, 52%)",
+        "hsla(43, 74%, 52%, 0.5)",
+      ]
+    }
+    end={
+      {
+        "x": 1,
+        "y": 0,
+      }
+    }
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "height": 3,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
   <View
     className="flex-row items-start gap-3.5"
   >
