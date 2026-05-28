@@ -8,7 +8,9 @@ exports[`PillarCard renders 4-tool grid: think-4-tools 1`] = `
     className="flex-row items-start gap-3.5"
   >
     <View
+      accessibilityElementsHidden={true}
       className="h-14 w-14 items-center justify-center rounded-2xl border bg-[hsl(var(--think)/0.12)] border-[hsl(var(--think)/0.30)]"
+      importantForAccessibility="no"
     >
       <Text
         className="text-[26px] font-extrabold tracking-tighter text-[hsl(var(--think))]"
@@ -348,7 +350,9 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
     className="flex-row items-start gap-3.5"
   >
     <View
+      accessibilityElementsHidden={true}
       className="h-14 w-14 items-center justify-center rounded-2xl border bg-[hsl(var(--act)/0.12)] border-[hsl(var(--act)/0.30)]"
+      importantForAccessibility="no"
     >
       <Text
         className="text-[26px] font-extrabold tracking-tighter text-[hsl(var(--act))]"
@@ -962,7 +966,9 @@ exports[`PillarCard renders header with letter + title + kicker + description: t
     className="flex-row items-start gap-3.5"
   >
     <View
+      accessibilityElementsHidden={true}
       className="h-14 w-14 items-center justify-center rounded-2xl border bg-[hsl(var(--think)/0.12)] border-[hsl(var(--think)/0.30)]"
+      importantForAccessibility="no"
     >
       <Text
         className="text-[26px] font-extrabold tracking-tighter text-[hsl(var(--think))]"

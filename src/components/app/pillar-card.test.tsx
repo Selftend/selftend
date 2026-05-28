@@ -13,7 +13,7 @@ describe("PillarCard", () => {
         description="Examine the thoughts and beliefs under your reactions."
       />,
     );
-    expect(getByText("T")).toBeTruthy();
+    expect(getByText("T", { includeHiddenElements: true })).toBeTruthy();
     expect(getByText("Think")).toBeTruthy();
     expect(getByText(/Cognitive/)).toBeTruthy();
     expect(getByText(/thoughts and beliefs/)).toBeTruthy();

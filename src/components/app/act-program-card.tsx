@@ -138,7 +138,11 @@ export function ActProgramCard({
         <View className="gap-2">
           {/* Eyebrow row: route-icon glyph + uppercase label */}
           <View className="flex-row items-center gap-3">
-            <View className="h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-[hsl(var(--act)/0.25)] bg-[hsl(var(--act)/0.12)]">
+            <View
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+              className="h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-[hsl(var(--act)/0.30)] bg-[hsl(var(--act)/0.12)]"
+            >
               <Icon name="route" size={22} className="text-act" />
             </View>
             <Text variant="eyebrow" tint="act" className="flex-1">

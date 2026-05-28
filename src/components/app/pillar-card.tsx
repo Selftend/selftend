@@ -67,6 +67,8 @@ function PillarCardRoot({
       <Card tint={tint} className="px-5 py-4">
         <View className="flex-row items-start gap-3.5">
           <View
+            accessibilityElementsHidden
+            importantForAccessibility="no"
             className={cn(
               "h-14 w-14 items-center justify-center rounded-2xl border",
               LETTER_BG[tint],
