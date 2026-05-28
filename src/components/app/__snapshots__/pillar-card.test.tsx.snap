@@ -1,0 +1,1031 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PillarCard renders 4-tool grid: think-4-tools 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border shadow-sm shadow-black/5 bg-[hsl(var(--think)/0.06)] border-[hsl(var(--think)/0.30)] px-5 py-4"
+>
+  <View
+    className="flex-row items-start gap-3.5"
+  >
+    <View
+      className="h-14 w-14 items-center justify-center rounded-2xl border bg-[hsl(var(--think)/0.12)] border-[hsl(var(--think)/0.30)]"
+    >
+      <Text
+        className="text-[26px] font-extrabold tracking-tighter text-[hsl(var(--think))]"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_800ExtraBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        T
+      </Text>
+    </View>
+    <View
+      className="flex-1 min-w-0"
+    >
+      <View
+        className="flex-row items-baseline gap-2 flex-wrap"
+      >
+        <Text
+          className="text-[22px] font-bold tracking-tight text-[hsl(var(--think))]"
+          style={
+            [
+              {
+                "fontFamily": "NotoSans_700Bold",
+              },
+              undefined,
+            ]
+          }
+        >
+          Think
+        </Text>
+        <Text
+          className="text-[12.5px] text-muted-foreground"
+          style={
+            [
+              {
+                "fontFamily": "NotoSans_400Regular",
+              },
+              undefined,
+            ]
+          }
+        >
+          · 
+          Cognitive
+        </Text>
+      </View>
+      <Text
+        className="mt-1.5 text-[13.5px] leading-[1.55] text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        …
+      </Text>
+    </View>
+  </View>
+  <View
+    className="mt-4 flex-row flex-wrap gap-2.5"
+  >
+    <View
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+    >
+      <View
+        className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--think)/0.10)]"
+      >
+        <Text />
+      </View>
+      <Text
+        className="text-card-foreground text-[13.5px] font-semibold leading-tight"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_600SemiBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        Tool 1
+      </Text>
+      <Text
+        className="mt-1 text-[11.5px] leading-snug text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        d1
+      </Text>
+    </View>
+    <View
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+    >
+      <View
+        className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--think)/0.10)]"
+      >
+        <Text />
+      </View>
+      <Text
+        className="text-card-foreground text-[13.5px] font-semibold leading-tight"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_600SemiBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        Tool 2
+      </Text>
+      <Text
+        className="mt-1 text-[11.5px] leading-snug text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        d2
+      </Text>
+    </View>
+    <View
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+    >
+      <View
+        className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--think)/0.10)]"
+      >
+        <Text />
+      </View>
+      <Text
+        className="text-card-foreground text-[13.5px] font-semibold leading-tight"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_600SemiBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        Tool 3
+      </Text>
+      <Text
+        className="mt-1 text-[11.5px] leading-snug text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        d3
+      </Text>
+    </View>
+    <View
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+    >
+      <View
+        className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--think)/0.10)]"
+      >
+        <Text />
+      </View>
+      <Text
+        className="text-card-foreground text-[13.5px] font-semibold leading-tight"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_600SemiBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        Tool 4
+      </Text>
+      <Text
+        className="mt-1 text-[11.5px] leading-snug text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        d4
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border shadow-sm shadow-black/5 bg-[hsl(var(--act)/0.06)] border-[hsl(var(--act)/0.30)] px-5 py-4"
+>
+  <View
+    className="flex-row items-start gap-3.5"
+  >
+    <View
+      className="h-14 w-14 items-center justify-center rounded-2xl border bg-[hsl(var(--act)/0.12)] border-[hsl(var(--act)/0.30)]"
+    >
+      <Text
+        className="text-[26px] font-extrabold tracking-tighter text-[hsl(var(--act))]"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_800ExtraBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        A
+      </Text>
+    </View>
+    <View
+      className="flex-1 min-w-0"
+    >
+      <View
+        className="flex-row items-baseline gap-2 flex-wrap"
+      >
+        <Text
+          className="text-[22px] font-bold tracking-tight text-[hsl(var(--act))]"
+          style={
+            [
+              {
+                "fontFamily": "NotoSans_700Bold",
+              },
+              undefined,
+            ]
+          }
+        >
+          Act
+        </Text>
+        <Text
+          className="text-[12.5px] text-muted-foreground"
+          style={
+            [
+              {
+                "fontFamily": "NotoSans_400Regular",
+              },
+              undefined,
+            ]
+          }
+        >
+          · 
+          Action
+        </Text>
+      </View>
+      <Text
+        className="mt-1.5 text-[13.5px] leading-[1.55] text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        …
+      </Text>
+    </View>
+  </View>
+  <View
+    className="mt-4 flex-row flex-wrap gap-2.5"
+  >
+    <View
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+    >
+      <View
+        className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--act)/0.10)]"
+      >
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": undefined,
+                "fontSize": 18,
+              },
+              {
+                "alignContent": "center",
+                "lineHeight": 18,
+                "textAlign": "center",
+              },
+              {
+                "fontFamily": "material",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+      </View>
+      <Text
+        className="text-card-foreground text-[13.5px] font-semibold leading-tight"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_600SemiBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        Goals
+      </Text>
+      <Text
+        className="mt-1 text-[11.5px] leading-snug text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        d
+      </Text>
+    </View>
+    <View
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+    >
+      <View
+        className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--act)/0.10)]"
+      >
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": undefined,
+                "fontSize": 18,
+              },
+              {
+                "alignContent": "center",
+                "lineHeight": 18,
+                "textAlign": "center",
+              },
+              {
+                "fontFamily": "material",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+      </View>
+      <Text
+        className="text-card-foreground text-[13.5px] font-semibold leading-tight"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_600SemiBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        Values
+      </Text>
+      <Text
+        className="mt-1 text-[11.5px] leading-snug text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        d
+      </Text>
+    </View>
+    <View
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+    >
+      <View
+        className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--act)/0.10)]"
+      >
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": undefined,
+                "fontSize": 18,
+              },
+              {
+                "alignContent": "center",
+                "lineHeight": 18,
+                "textAlign": "center",
+              },
+              {
+                "fontFamily": "material",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+      </View>
+      <Text
+        className="text-card-foreground text-[13.5px] font-semibold leading-tight"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_600SemiBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        Activities
+      </Text>
+      <Text
+        className="mt-1 text-[11.5px] leading-snug text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        d
+      </Text>
+    </View>
+    <View
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+    >
+      <View
+        className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--act)/0.10)]"
+      >
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": undefined,
+                "fontSize": 18,
+              },
+              {
+                "alignContent": "center",
+                "lineHeight": 18,
+                "textAlign": "center",
+              },
+              {
+                "fontFamily": "material",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+      </View>
+      <Text
+        className="text-card-foreground text-[13.5px] font-semibold leading-tight"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_600SemiBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        Exposure
+      </Text>
+      <Text
+        className="mt-1 text-[11.5px] leading-snug text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        d
+      </Text>
+    </View>
+    <View
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+    >
+      <View
+        className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--act)/0.10)]"
+      >
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": undefined,
+                "fontSize": 18,
+              },
+              {
+                "alignContent": "center",
+                "lineHeight": 18,
+                "textAlign": "center",
+              },
+              {
+                "fontFamily": "material",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+      </View>
+      <Text
+        className="text-card-foreground text-[13.5px] font-semibold leading-tight"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_600SemiBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        Tasks
+      </Text>
+      <Text
+        className="mt-1 text-[11.5px] leading-snug text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        d
+      </Text>
+    </View>
+    <View
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+    >
+      <View
+        className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--act)/0.10)]"
+      >
+        <Text
+          allowFontScaling={false}
+          selectable={false}
+          style={
+            [
+              {
+                "color": undefined,
+                "fontSize": 18,
+              },
+              {
+                "alignContent": "center",
+                "lineHeight": 18,
+                "textAlign": "center",
+              },
+              {
+                "fontFamily": "material",
+                "fontStyle": "normal",
+                "fontWeight": "normal",
+              },
+              {},
+            ]
+          }
+        >
+          
+        </Text>
+      </View>
+      <Text
+        className="text-card-foreground text-[13.5px] font-semibold leading-tight"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_600SemiBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        Anger
+      </Text>
+      <Text
+        className="mt-1 text-[11.5px] leading-snug text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        d
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`PillarCard renders header with letter + title + kicker + description: think-no-tools 1`] = `
+<View
+  className="relative flex flex-col gap-6 rounded-xl border shadow-sm shadow-black/5 bg-[hsl(var(--think)/0.06)] border-[hsl(var(--think)/0.30)] px-5 py-4"
+>
+  <View
+    className="flex-row items-start gap-3.5"
+  >
+    <View
+      className="h-14 w-14 items-center justify-center rounded-2xl border bg-[hsl(var(--think)/0.12)] border-[hsl(var(--think)/0.30)]"
+    >
+      <Text
+        className="text-[26px] font-extrabold tracking-tighter text-[hsl(var(--think))]"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_800ExtraBold",
+            },
+            undefined,
+          ]
+        }
+      >
+        T
+      </Text>
+    </View>
+    <View
+      className="flex-1 min-w-0"
+    >
+      <View
+        className="flex-row items-baseline gap-2 flex-wrap"
+      >
+        <Text
+          className="text-[22px] font-bold tracking-tight text-[hsl(var(--think))]"
+          style={
+            [
+              {
+                "fontFamily": "NotoSans_700Bold",
+              },
+              undefined,
+            ]
+          }
+        >
+          Think
+        </Text>
+        <Text
+          className="text-[12.5px] text-muted-foreground"
+          style={
+            [
+              {
+                "fontFamily": "NotoSans_400Regular",
+              },
+              undefined,
+            ]
+          }
+        >
+          · 
+          Cognitive
+        </Text>
+      </View>
+      <Text
+        className="mt-1.5 text-[13.5px] leading-[1.55] text-muted-foreground"
+        style={
+          [
+            {
+              "fontFamily": "NotoSans_400Regular",
+            },
+            undefined,
+          ]
+        }
+      >
+        Examine the thoughts and beliefs under your reactions.
+      </Text>
+    </View>
+  </View>
+</View>
+`;
