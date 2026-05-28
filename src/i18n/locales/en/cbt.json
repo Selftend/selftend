@@ -2,6 +2,8 @@
   "module": {
     "label": "CBT"
   },
+  "fullTitle": "Cognitive Behavioral Therapy",
+  "authorEyebrow": "Inspired by Seth Gillihan's CBT Toolbox · The Think CBT Workbook",
   "home": {
     "title": "CBT",
     "description": "A focused CBT section built around thought records, distortion awareness, and quiet review.",

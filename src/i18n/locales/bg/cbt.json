@@ -2,6 +2,8 @@
   "module": {
     "label": "CBT"
   },
+  "fullTitle": "Cognitive Behavioral Therapy",
+  "authorEyebrow": "Inspired by Seth Gillihan's CBT Toolbox · The Think CBT Workbook",
   "home": {
     "title": "КПТ",
     "description": "Фокусирана КПТ секция, изградена около записи на мисли, осъзнаване на изкривявания и спокоен преглед.",

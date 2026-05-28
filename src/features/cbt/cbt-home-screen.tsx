@@ -437,8 +437,8 @@ export default function CbtHomeScreen() {
               addWidgetCategory="cbt"
               hue="think"
               icon="psychology"
-              moduleLabel={t("module.label")}
-              title={t("home.title")}
+              moduleLabel={null}
+              title={t("fullTitle")}
               description={t("home.description")}
               actions={[
                 { type: "notifications", targetKey: "cbt" },
@@ -454,6 +454,12 @@ export default function CbtHomeScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
             />
+
+            <View className="mt-2.5">
+              <Text variant="eyebrow" tint="primary">
+                {t("authorEyebrow")}
+              </Text>
+            </View>
 
             {program.status === "graduated" ? (
               <ProgramGraduation
@@ -686,7 +692,7 @@ export default function CbtHomeScreen() {
             ) : null}
 
             {/* Think · Act · Be pillars */}
-            <View className="gap-3">
+            <View className="gap-6">
               <View>
                 <Text variant="h2" className="text-xl font-bold tracking-tight">
                   {t("pillars.intro")}
@@ -720,11 +726,13 @@ export default function CbtHomeScreen() {
                     ))}
                   </PillarCard>
                   {SHARED_TOOLS_BY_PILLAR[pillar].length > 0 ? (
-                    <SharedToolsRow
-                      tools={SHARED_TOOLS_BY_PILLAR[pillar]}
-                      tint={pillar}
-                      onOpenInfo={setActiveToolInfo}
-                    />
+                    <View className="ml-6 mr-2">
+                      <SharedToolsRow
+                        tools={SHARED_TOOLS_BY_PILLAR[pillar]}
+                        tint={pillar}
+                        onOpenInfo={setActiveToolInfo}
+                      />
+                    </View>
                   ) : null}
                 </View>
               ))}
