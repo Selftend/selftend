@@ -101,32 +101,37 @@ export default function HabitsHomeScreen() {
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <ModuleHomeHeader
-              addWidgetCategory="habits"
-              title={t("home.title")}
-              hue="act"
-              icon="task-alt"
-              description={t("home.subtitle")}
-              actions={[
-                { type: "notifications", targetKey: "habits" },
-                { type: "info", onPress: () => setForceOnboarding(true) },
-              ]}
-              meta={
-                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                  <Text variant="muted" className="text-xs">
-                    {t("hero.today")} ·{" "}
-                    <Text className="text-xs font-bold text-act">
-                      {todayTicked}/{todayHabits.length}
+            <View className="gap-2">
+              <ModuleHomeHeader
+                addWidgetCategory="habits"
+                title={t("home.title")}
+                hue="act"
+                icon="task-alt"
+                description={t("home.subtitle")}
+                actions={[
+                  { type: "notifications", targetKey: "habits" },
+                  { type: "info", onPress: () => setForceOnboarding(true) },
+                ]}
+                meta={
+                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                    <Text variant="muted" className="text-xs">
+                      {t("hero.today")} ·{" "}
+                      <Text className="text-xs font-bold text-act">
+                        {todayTicked}/{todayHabits.length}
+                      </Text>
                     </Text>
-                  </Text>
-                  <Text variant="muted" className="text-xs">
-                    <Text className="text-xs font-bold text-act">
-                      {t("hero.habits", { count: allHabits.length })}
+                    <Text variant="muted" className="text-xs">
+                      <Text className="text-xs font-bold text-act">
+                        {t("hero.habits", { count: allHabits.length })}
+                      </Text>
                     </Text>
-                  </Text>
-                </View>
-              }
-            />
+                  </View>
+                }
+              />
+              <Text variant="eyebrow" tint="primary">
+                {t("authorEyebrow")}
+              </Text>
+            </View>
 
             {identities.length > 0 ? (
               <View className="rounded-2xl border border-primary/30 bg-primary/5 p-4">

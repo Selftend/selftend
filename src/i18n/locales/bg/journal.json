@@ -3,6 +3,7 @@
   "moduleLabel": "Дневник",
   "tagline": "Лично място за писане — без форматиране, без публика, без серии.",
   "description": "Личен дневник за свободно писане. Пиши малко или много - без серии, без натиск.",
+  "authorEyebrow": "Inspired by expressive writing research · James Pennebaker",
   "cta": {
     "new": "Нов запис"
   },

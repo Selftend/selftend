@@ -108,41 +108,46 @@ export default function MeditationHomeScreen() {
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <ModuleHomeHeader
-              addWidgetCategory="meditation"
-              title={t("module.home.title")}
-              hue="iris"
-              icon="self-improvement"
-              description={t("module.home.subtitle", { stage: stage.number, phase: phaseLabel })}
-              actions={[
-                { type: "tune", onPress: () => setForceWizard(true) },
-                { type: "notifications", targetKey: "meditation" },
-                { type: "info", onPress: () => setForceInfo(true) },
-              ]}
-              meta={
-                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                  <Text variant="muted" className="text-xs">
-                    {t("hero.stage")} ·{" "}
-                    <Text className="text-xs font-bold text-iris">{stage.number}</Text>
-                  </Text>
-                  <Text variant="muted" className="text-xs">
-                    <Text className="text-xs font-bold text-iris">
-                      {t("hero.sessions", { count: (allSessions ?? []).length })}
+            <View className="gap-2">
+              <ModuleHomeHeader
+                addWidgetCategory="meditation"
+                title={t("module.home.title")}
+                hue="iris"
+                icon="self-improvement"
+                description={t("module.home.subtitle", { stage: stage.number, phase: phaseLabel })}
+                actions={[
+                  { type: "tune", onPress: () => setForceWizard(true) },
+                  { type: "notifications", targetKey: "meditation" },
+                  { type: "info", onPress: () => setForceInfo(true) },
+                ]}
+                meta={
+                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                    <Text variant="muted" className="text-xs">
+                      {t("hero.stage")} ·{" "}
+                      <Text className="text-xs font-bold text-iris">{stage.number}</Text>
                     </Text>
-                  </Text>
-                  <Text variant="muted" className="text-xs">
-                    {t("hero.median")} ·{" "}
-                    {medianMinutes !== null ? (
+                    <Text variant="muted" className="text-xs">
                       <Text className="text-xs font-bold text-iris">
-                        {t("hero.minutes", { count: medianMinutes })}
+                        {t("hero.sessions", { count: (allSessions ?? []).length })}
                       </Text>
-                    ) : (
-                      <Text className="text-xs font-bold text-iris/60">{tc("noData")}</Text>
-                    )}
-                  </Text>
-                </View>
-              }
-            />
+                    </Text>
+                    <Text variant="muted" className="text-xs">
+                      {t("hero.median")} ·{" "}
+                      {medianMinutes !== null ? (
+                        <Text className="text-xs font-bold text-iris">
+                          {t("hero.minutes", { count: medianMinutes })}
+                        </Text>
+                      ) : (
+                        <Text className="text-xs font-bold text-iris/60">{tc("noData")}</Text>
+                      )}
+                    </Text>
+                  </View>
+                }
+              />
+              <Text variant="eyebrow" tint="primary">
+                {t("authorEyebrow")}
+              </Text>
+            </View>
 
             <Card className="border-primary/30">
               <CardContent className="gap-3 pt-6">

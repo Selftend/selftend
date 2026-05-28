@@ -1,6 +1,7 @@
 {
   "title": "Habits",
   "description": "Build small habits, one tick at a time. Influenced by James Clear's Atomic Habits.",
+  "authorEyebrow": "Inspired by Atomic Habits · James Clear",
   "cta": {
     "newHabit": "New habit",
     "addNote": "Add note",

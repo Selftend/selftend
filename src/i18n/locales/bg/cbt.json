@@ -407,6 +407,7 @@
   "mindfulness": {
     "title": "Осъзнатост",
     "description": "Кратки направлявани практики за установяване на вниманието в настоящия момент.",
+    "authorEyebrow": "Inspired by MBSR · Jon Kabat-Zinn",
     "hero": {
       "practices_one": "{{count}} практика",
       "practices_other": "{{count}} практики",
@@ -1350,6 +1351,7 @@
   "grounding": {
     "title": "Заземяване",
     "description": "Бързи техники за закрепване в настоящия момент, когато тревожността или стресът се засили.",
+    "authorEyebrow": "Inspired by DBT distress tolerance · Marsha Linehan",
     "hero": {
       "recentSessions_one": "{{count}} скорошна сесия",
       "recentSessions_other": "{{count}} скорошни сесии",

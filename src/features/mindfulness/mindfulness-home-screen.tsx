@@ -45,31 +45,36 @@ export default function MindfulnessHomeScreen() {
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
-            <ModuleHomeHeader
-              addWidgetCategory="mindfulness"
-              title={t("mindfulness.takeAMoment")}
-              hue="mist"
-              icon="self-improvement"
-              description={t("mindfulness.description")}
-              actions={[
-                { type: "notifications", targetKey: "mindfulness" },
-                { type: "info", onPress: () => setForceOnboarding(true) },
-              ]}
-              meta={
-                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                  <Text variant="muted" className="text-xs">
-                    <Text className="text-xs font-bold text-mist">
-                      {t("mindfulness.hero.practices", { count: mindfulnessExercises.length })}
+            <View className="gap-2">
+              <ModuleHomeHeader
+                addWidgetCategory="mindfulness"
+                title={t("mindfulness.takeAMoment")}
+                hue="mist"
+                icon="self-improvement"
+                description={t("mindfulness.description")}
+                actions={[
+                  { type: "notifications", targetKey: "mindfulness" },
+                  { type: "info", onPress: () => setForceOnboarding(true) },
+                ]}
+                meta={
+                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+                    <Text variant="muted" className="text-xs">
+                      <Text className="text-xs font-bold text-mist">
+                        {t("mindfulness.hero.practices", { count: mindfulnessExercises.length })}
+                      </Text>
                     </Text>
-                  </Text>
-                  <Text variant="muted" className="text-xs">
-                    <Text className="text-xs font-bold text-mist">
-                      {t("mindfulness.hero.sessions", { count: recentSessions.length })}
+                    <Text variant="muted" className="text-xs">
+                      <Text className="text-xs font-bold text-mist">
+                        {t("mindfulness.hero.sessions", { count: recentSessions.length })}
+                      </Text>
                     </Text>
-                  </Text>
-                </View>
-              }
-            />
+                  </View>
+                }
+              />
+              <Text variant="eyebrow" tint="primary">
+                {t("mindfulness.authorEyebrow")}
+              </Text>
+            </View>
 
             {recentSessions.length > 0 ? (
               <Card>

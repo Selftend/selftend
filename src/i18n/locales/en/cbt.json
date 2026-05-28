@@ -407,6 +407,7 @@
   "mindfulness": {
     "title": "Mindfulness",
     "description": "Short guided practices to settle your attention in the present moment.",
+    "authorEyebrow": "Inspired by MBSR · Jon Kabat-Zinn",
     "hero": {
       "practices_one": "{{count}} practice",
       "practices_other": "{{count}} practices",
@@ -1332,6 +1333,7 @@
   "grounding": {
     "title": "Grounding",
     "description": "Quick techniques to anchor yourself in the present moment when anxiety or distress spikes.",
+    "authorEyebrow": "Inspired by DBT distress tolerance · Marsha Linehan",
     "hero": {
       "recentSessions_one": "{{count}} recent session",
       "recentSessions_other": "{{count}} recent sessions",

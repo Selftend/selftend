@@ -1,6 +1,7 @@
 {
   "title": "Meditation",
   "description": "A structured practice based on the ten stages from The Mind Illuminated.",
+  "authorEyebrow": "Inspired by The Mind Illuminated · Culadasa",
   "notifications": {
     "title": "Quiet meditation reminder",
     "body": "Take a few minutes to settle the attention. Even a short sit counts."

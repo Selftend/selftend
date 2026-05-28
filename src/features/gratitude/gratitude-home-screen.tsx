@@ -104,6 +104,12 @@ export default function GratitudeHomeScreen() {
             }
           />
 
+          <View className="px-4">
+            <Text variant="eyebrow" tint="primary">
+              {t("authorEyebrow")}
+            </Text>
+          </View>
+
           <View className="flex-row items-center gap-3">
             <Button onPress={() => router.push("/tools/gratitude-log/new")} className="self-start">
               <Icon name="add" className="size-4 text-primary-foreground" />

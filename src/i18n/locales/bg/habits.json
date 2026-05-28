@@ -1,6 +1,7 @@
 {
   "title": "Навици",
   "description": "Изгради малки навици, по едно отбелязване наведнъж. Повлияно от „Атомни навици“ на Джеймс Клиър.",
+  "authorEyebrow": "Inspired by Atomic Habits · James Clear",
   "cta": {
     "newHabit": "Нов навик",
     "addNote": "Добави бележка",

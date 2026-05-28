@@ -104,6 +104,12 @@ export default function JournalListScreen() {
             }
           />
 
+          <View className="px-4">
+            <Text variant="eyebrow" tint="primary">
+              {t("authorEyebrow")}
+            </Text>
+          </View>
+
           <View className="flex-row flex-wrap gap-2">
             <Button onPress={() => router.push("/tools/journal/new")} className="self-start">
               <Icon name="add" className="size-4 text-primary-foreground" />
