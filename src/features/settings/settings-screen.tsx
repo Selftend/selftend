@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import * as Linking from "expo-linking";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,18 +10,13 @@ import { useEffect, useState } from "react";
 import type { Area } from "react-easy-crop";
 import { useTranslation } from "react-i18next";
 
-import { ProfileAvatar } from "@/src/components/app/profile-avatar";
+import { Badge } from "@/src/components/react-native-reusables/badge";
 import { Button } from "@/src/components/react-native-reusables/button";
+import { Card } from "@/src/components/react-native-reusables/card";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { DeleteAccountModal } from "@/src/components/app/delete-account-modal";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { signOut } from "@/src/features/auth/api";
@@ -42,7 +38,6 @@ import { appEnv } from "@/src/lib/env";
 import { useSession } from "@/src/providers/session-provider";
 import { AvatarCropModal } from "@/src/components/app/avatar-crop-modal";
 import { useToastStore } from "@/src/stores/toast-store";
-import { ScreenHeader } from "@/src/components/app/screen-header";
 
 const AVATAR_MAX_SIZE = 512;
 
@@ -128,104 +123,187 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerClassName="grow p-6">
+      <ScrollView contentContainerClassName="grow p-4">
         <View className="gap-6">
-          <View className="gap-2">
-            <ScreenHeader title={t("title")} />
-            <Text variant="muted">{t("description")}</Text>
+          {/* Hero */}
+          <View className="mt-2">
+            <Text variant="eyebrow">{t("account.eyebrow")}</Text>
+            <Text
+              variant="h1"
+              className="mt-2 text-[36px] font-extrabold leading-[1.1] tracking-tight"
+            >
+              {t("title")}
+            </Text>
+            <Text className="mt-2.5 text-[15px] leading-[1.55] text-muted-foreground max-w-[60ch]">
+              {t("account.intro")}
+            </Text>
           </View>
 
           {isLoading ? <LoadingState title={t("loading")} /> : null}
           {errorMessage ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("problem")}</CardTitle>
-                <CardDescription>{errorMessage}</CardDescription>
-              </CardHeader>
+            <Card className="gap-4 p-5">
+              <View className="gap-1">
+                <Text className="text-base font-semibold">{t("problem")}</Text>
+                <Text className="text-xs leading-snug text-muted-foreground">{errorMessage}</Text>
+              </View>
             </Card>
           ) : null}
           {successMessage ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("saved")}</CardTitle>
-                <CardDescription>{successMessage}</CardDescription>
-              </CardHeader>
+            <Card className="gap-4 p-5">
+              <View className="gap-1">
+                <Text className="text-base font-semibold">{t("saved")}</Text>
+                <Text className="text-xs leading-snug text-muted-foreground">{successMessage}</Text>
+              </View>
             </Card>
           ) : null}
 
           <ProfilePictureCard user={user} />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("reminders.title")}</CardTitle>
-              <CardDescription>{t("reminders.description")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onPress={() => router.push("/notifications")} variant="secondary">
-                <Text>{t("reminders.openNotifications")}</Text>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("onboarding.title")}</CardTitle>
-              <CardDescription>{t("onboarding.description")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                disabled={!data || resetOnboardingMutation.isPending}
-                onPress={() => void resetOnboarding()}
-                variant="secondary"
+          {/* Reminders section */}
+          <Card className="gap-4 p-5">
+            <View className="flex-row items-start gap-3">
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+                className="h-9 w-9 items-center justify-center rounded-[10px] bg-[hsl(var(--be)/0.10)]"
               >
-                {resetOnboardingMutation.isPending ? <ActivityIndicator /> : null}
-                <Text>
-                  {resetOnboardingMutation.isPending
-                    ? t("onboarding.resetting")
-                    : t("onboarding.reset")}
+                <Icon name="notifications-active" size={20} className="text-be" />
+              </View>
+              <View className="flex-1 min-w-0">
+                <Text className="text-base font-semibold">{t("reminders.title")}</Text>
+                <Text className="mt-1 text-xs leading-snug text-muted-foreground">
+                  {t("reminders.description")}
                 </Text>
+              </View>
+            </View>
+            <Button
+              variant="outline"
+              className="justify-start"
+              onPress={() => router.push("/notifications")}
+            >
+              <Icon name="tune" size={18} />
+              <Text className="flex-1">{t("reminders.openNotifications")}</Text>
+              <Icon name="chevron-right" size={18} className="text-muted-foreground" />
+            </Button>
+          </Card>
+
+          {/* Onboarding section */}
+          <Card className="gap-4 p-5">
+            <View className="flex-row items-start gap-3">
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+                className="h-9 w-9 items-center justify-center rounded-[10px] bg-[hsl(var(--iris)/0.10)]"
+              >
+                <Icon name="auto-stories" size={20} className="text-iris" />
+              </View>
+              <View className="flex-1 min-w-0">
+                <Text className="text-base font-semibold">{t("onboardingSection.title")}</Text>
+                <Text className="mt-1 text-xs leading-snug text-muted-foreground">
+                  {t("onboardingSection.description")}
+                </Text>
+              </View>
+            </View>
+            <Button
+              variant="outline"
+              className="justify-start"
+              disabled={!data || resetOnboardingMutation.isPending}
+              onPress={() => void resetOnboarding()}
+            >
+              {resetOnboardingMutation.isPending ? <ActivityIndicator /> : null}
+              <Icon name="replay" size={18} />
+              <Text className="flex-1">
+                {resetOnboardingMutation.isPending
+                  ? t("onboarding.resetting")
+                  : t("onboardingSection.reset")}
+              </Text>
+            </Button>
+          </Card>
+
+          {/* Support section */}
+          <Card className="gap-4 p-5">
+            <View className="flex-row items-start gap-3">
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+                className="h-9 w-9 items-center justify-center rounded-[10px] bg-[hsl(var(--aqua)/0.10)]"
+              >
+                <Icon name="help-outline" size={20} className="text-aqua" />
+              </View>
+              <View className="flex-1 min-w-0">
+                <Text className="text-base font-semibold">{t("support.title")}</Text>
+              </View>
+            </View>
+            <View className="gap-3">
+              <Button
+                variant="outline"
+                className="justify-start"
+                onPress={() => router.push("/support")}
+              >
+                <Icon name="support-agent" size={18} />
+                <Text className="flex-1">{t("support.openSupport")}</Text>
+                <Icon name="chevron-right" size={18} className="text-muted-foreground" />
               </Button>
-            </CardContent>
+              <Button
+                variant="outline"
+                className="justify-start"
+                onPress={() => router.push("/legal")}
+              >
+                <Icon name="gavel" size={18} />
+                <Text className="flex-1">{t("support.openLegal")}</Text>
+                <Icon name="chevron-right" size={18} className="text-muted-foreground" />
+              </Button>
+              {Platform.OS === "web" ? (
+                <Button
+                  variant="outline"
+                  className="justify-start"
+                  onPress={() => router.push("/cookies")}
+                >
+                  <Icon name="cookie" size={18} />
+                  <Text className="flex-1">{t("support.cookiePreferences")}</Text>
+                  <Icon name="chevron-right" size={18} className="text-muted-foreground" />
+                </Button>
+              ) : null}
+              <Button
+                variant="ghost"
+                className="justify-start"
+                onPress={() => void Linking.openURL(appEnv.githubRepoUrl)}
+              >
+                <Icon name="code" size={18} />
+                <Text className="flex-1">{t("support.openGithub")}</Text>
+              </Button>
+            </View>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("support.title")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View className="gap-3">
-                <Button onPress={() => router.push("/support")} variant="secondary">
-                  <Text>{t("support.openSupport")}</Text>
-                </Button>
-                <Button onPress={() => router.push("/legal")} variant="ghost">
-                  <Text>{t("support.openLegal")}</Text>
-                </Button>
-                {Platform.OS === "web" ? (
-                  <Button onPress={() => router.push("/cookies")} variant="ghost">
-                    <Text>{t("support.cookiePreferences")}</Text>
-                  </Button>
-                ) : null}
-                <Button onPress={() => void Linking.openURL(appEnv.githubRepoUrl)} variant="ghost">
-                  <Text>{t("support.openGithub")}</Text>
-                </Button>
+          {/* Account section */}
+          <Card className="gap-4 p-5">
+            <View className="flex-row items-start gap-3">
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+                className="h-9 w-9 items-center justify-center rounded-[10px] bg-[hsl(var(--clay)/0.10)]"
+              >
+                <Icon name="manage-accounts" size={20} className="text-clay" />
               </View>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("account.title")}</CardTitle>
-              <CardDescription>{user?.email ?? t("account.signedIn")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <View className="gap-3">
-                <ExportDataButton />
-                <DeleteAccountButton />
-                <Button onPress={() => void handleSignOut()} variant="destructive">
-                  <Text>{t("account.signOut")}</Text>
-                </Button>
+              <View className="flex-1 min-w-0">
+                <Text className="text-base font-semibold">{t("account.title")}</Text>
+                <Text className="mt-1 text-xs leading-snug text-muted-foreground">
+                  {user?.email ?? t("account.signedIn")}
+                </Text>
               </View>
-            </CardContent>
+            </View>
+            <View className="gap-3">
+              <ExportDataButton />
+              <DeleteAccountButton />
+              <Button
+                variant="destructive"
+                className="justify-start"
+                onPress={() => void handleSignOut()}
+              >
+                <Icon name="logout" size={18} />
+                <Text>{t("account.signOut")}</Text>
+              </Button>
+            </View>
           </Card>
         </View>
       </ScrollView>
@@ -253,6 +331,9 @@ function ProfilePictureCard({ user }: { user: User | null }) {
 
   const googleAvatarUrl = getOAuthAvatarUrl(user);
   const isPending = uploadMutation.isPending || resetMutation.isPending || removeMutation.isPending;
+
+  const displayName = profile?.displayName ?? user?.email ?? "";
+  const displayInitial = displayName.charAt(0).toUpperCase();
 
   const processAndUpload = async (uri: string, cropArea?: Area) => {
     const context = ImageManipulator.ImageManipulator.manipulate(uri);
@@ -398,92 +479,117 @@ function ProfilePictureCard({ user }: { user: User | null }) {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("profile.title")}</CardTitle>
-          <CardDescription>{t("profile.description")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <View className="gap-4">
-            <View className="flex-row items-center gap-4">
-              <ProfileAvatar
-                avatarUrl={profile?.avatarUrl}
-                className="size-16"
-                email={user?.email}
-              />
-              <View className="flex-1 gap-1">
-                {profile?.displayName ? <Text numberOfLines={1}>{profile.displayName}</Text> : null}
-                <Text
-                  numberOfLines={1}
-                  className={profile?.displayName ? "text-sm text-muted-foreground" : undefined}
-                >
-                  {user?.email ?? t("account.signedIn")}
+      <Card className="gap-4 p-5">
+        <View className="gap-1">
+          <Text className="text-base font-semibold">{t("profile.title")}</Text>
+          <Text className="text-xs leading-snug text-muted-foreground">
+            {t("profile.description")}
+          </Text>
+        </View>
+
+        {/* Identity row: gradient avatar + name + email + Signed in badge */}
+        <View className="flex-row items-center gap-4 rounded-xl border border-border p-3">
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+            className="h-14 w-14 items-center justify-center overflow-hidden rounded-full"
+          >
+            <LinearGradient
+              colors={["hsla(262, 62%, 56%, 0.18)", "hsla(280, 48%, 60%, 0.20)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+            />
+            <Text className="text-2xl font-bold text-primary">{displayInitial}</Text>
+          </View>
+          <View className="flex-1 min-w-0">
+            <Text className="text-base font-semibold" numberOfLines={1}>
+              {profile?.displayName ?? user?.email ?? ""}
+            </Text>
+            {profile?.displayName ? (
+              <View className="mt-1 flex-row items-center gap-1.5">
+                <Icon name="mail" size={13} className="text-muted-foreground" />
+                <Text className="text-xs text-muted-foreground" numberOfLines={1}>
+                  {user?.email ?? ""}
                 </Text>
               </View>
-            </View>
-
-            <View className="gap-2">
-              <Label>{t("profile.name")}</Label>
-              <Input
-                value={nameValue}
-                onChangeText={setNameValue}
-                placeholder={t("profile.namePlaceholder")}
-                maxLength={100}
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
-              <Button
-                disabled={updateNameMutation.isPending}
-                onPress={() => void saveName()}
-                variant="secondary"
-              >
-                {updateNameMutation.isPending ? <ActivityIndicator /> : null}
-                <Text>
-                  {updateNameMutation.isPending ? t("profile.savingName") : t("profile.saveName")}
-                </Text>
-              </Button>
-              {nameMessage ? (
-                <Text className="text-sm text-muted-foreground">{nameMessage}</Text>
-              ) : null}
-              {nameError ? <Text className="text-sm text-destructive">{nameError}</Text> : null}
-            </View>
-
-            <View className="flex-row flex-wrap gap-3">
-              <Button disabled={isPending} onPress={() => void pickAvatar()} variant="secondary">
-                {uploadMutation.isPending ? <ActivityIndicator /> : null}
-                <Text>
-                  {uploadMutation.isPending ? t("profile.uploading") : t("profile.change")}
-                </Text>
-              </Button>
-              {googleAvatarUrl ? (
-                <Button
-                  disabled={isPending}
-                  onPress={() => void restoreGoogleAvatar()}
-                  variant="outline"
-                >
-                  {resetMutation.isPending ? <ActivityIndicator /> : null}
-                  <Text>{t("profile.useGoogle")}</Text>
-                </Button>
-              ) : null}
-              <Button
-                disabled={isPending || (!profile?.avatarUrl && !profile?.avatarStoragePath)}
-                onPress={() => void removeAvatar()}
-                variant="ghost"
-              >
-                {removeMutation.isPending ? <ActivityIndicator /> : null}
-                <Text>{t("profile.remove")}</Text>
-              </Button>
-            </View>
-
-            {message ? <Text className="text-sm text-muted-foreground">{message}</Text> : null}
-            {profileError ? (
-              <Text className="text-sm text-destructive">
-                {getErrorMessage(profileError, t("profile.loadError"))}
-              </Text>
             ) : null}
-            {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
           </View>
-        </CardContent>
+          <Badge variant="tint" tint="act" icon="verified">
+            <Text>{t("profile.signedIn")}</Text>
+          </Badge>
+        </View>
+
+        {/* Display name input + Save button */}
+        <View>
+          <Label className="mb-1.5 text-sm font-semibold">{t("profile.displayNameLabel")}</Label>
+          <View className="flex-row gap-2 mt-1.5">
+            <Input
+              className="flex-1"
+              value={nameValue}
+              onChangeText={setNameValue}
+              placeholder={t("profile.namePlaceholder")}
+              maxLength={100}
+              autoCapitalize="words"
+              autoCorrect={false}
+            />
+            <Button disabled={updateNameMutation.isPending} onPress={() => void saveName()}>
+              {updateNameMutation.isPending ? <ActivityIndicator /> : null}
+              <Text>
+                {updateNameMutation.isPending ? t("profile.savingName") : t("profile.saveName")}
+              </Text>
+            </Button>
+          </View>
+          {nameMessage ? (
+            <Text className="mt-1.5 text-sm text-muted-foreground">{nameMessage}</Text>
+          ) : null}
+          {nameError ? <Text className="mt-1.5 text-sm text-destructive">{nameError}</Text> : null}
+        </View>
+
+        {/* Photo controls */}
+        <View className="flex-row flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isPending}
+            onPress={() => void pickAvatar()}
+          >
+            {uploadMutation.isPending ? (
+              <ActivityIndicator />
+            ) : (
+              <Icon name="photo-camera" size={16} />
+            )}
+            <Text>{uploadMutation.isPending ? t("profile.uploading") : t("profile.change")}</Text>
+          </Button>
+          {googleAvatarUrl ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isPending}
+              onPress={() => void restoreGoogleAvatar()}
+            >
+              {resetMutation.isPending ? <ActivityIndicator /> : null}
+              <Text>{t("profile.useGoogle")}</Text>
+            </Button>
+          ) : null}
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={isPending || (!profile?.avatarUrl && !profile?.avatarStoragePath)}
+            onPress={() => void removeAvatar()}
+          >
+            {removeMutation.isPending ? <ActivityIndicator /> : null}
+            <Text className="text-muted-foreground">{t("profile.remove")}</Text>
+          </Button>
+        </View>
+
+        {message ? <Text className="text-sm text-muted-foreground">{message}</Text> : null}
+        {profileError ? (
+          <Text className="text-sm text-destructive">
+            {getErrorMessage(profileError, t("profile.loadError"))}
+          </Text>
+        ) : null}
+        {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
       </Card>
       {Platform.OS === "web" && cropUri ? (
         <AvatarCropModal
@@ -534,12 +640,15 @@ function ExportDataButton() {
   return (
     <View className="gap-2">
       <Button
+        variant="outline"
+        className="justify-start"
         disabled={exportMutation.isPending}
         onPress={() => void handleExport()}
-        variant="secondary"
       >
-        {exportMutation.isPending ? <ActivityIndicator /> : null}
-        <Text>{exportMutation.isPending ? t("account.exporting") : t("account.exportButton")}</Text>
+        {exportMutation.isPending ? <ActivityIndicator /> : <Icon name="download" size={18} />}
+        <Text className="flex-1">
+          {exportMutation.isPending ? t("account.exporting") : t("account.exportButton")}
+        </Text>
       </Button>
       {exported ? (
         <Text className="text-sm text-muted-foreground">{t("account.exported")}</Text>
@@ -568,8 +677,9 @@ function DeleteAccountButton() {
 
   return (
     <>
-      <Button onPress={() => setOpen(true)} variant="ghost">
-        <Text>{t("account.deleteButton")}</Text>
+      <Button variant="ghost" className="justify-start" onPress={() => setOpen(true)}>
+        <Icon name="delete-forever" size={18} className="text-destructive" />
+        <Text className="text-destructive">{t("account.deleteButton")}</Text>
       </Button>
 
       <DeleteAccountModal

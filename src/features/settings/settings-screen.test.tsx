@@ -83,6 +83,13 @@ jest.mock("@/src/providers/session-provider", () => ({
   }),
 }));
 
+jest.mock("expo-linear-gradient", () => {
+  const View = mockView;
+  return {
+    LinearGradient: ({ children }: { children?: ReactNode }) => <View>{children}</View>,
+  };
+});
+
 jest.mock("@/src/features/auth/api", () => ({
   signOut: jest.fn(),
 }));
@@ -110,6 +117,32 @@ const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof 
 const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jest.MockedFunction<
   typeof useUpdateOnboardingPreferences
 >;
+
+describe("SettingsScreen hero and profile badge", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseUserPreferences.mockReturnValue({
+      data: null,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+    mockUseUpdateOnboardingPreferences.mockReturnValue({
+      isPending: false,
+      mutateAsync: jest.fn(),
+    } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
+  });
+
+  it("renders hero with eyebrow + title", () => {
+    renderWithProviders(<SettingsScreen />);
+    // "Account" appears as eyebrow and as the account section card title
+    expect(screen.getAllByText("Account").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Settings")).toBeTruthy();
+  });
+
+  it("renders 'Signed in' badge in profile section", () => {
+    renderWithProviders(<SettingsScreen />);
+    expect(screen.getByText("Signed in")).toBeTruthy();
+  });
+});
 
 describe("SettingsScreen onboarding reset", () => {
   const mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences);

@@ -14,6 +14,8 @@
   "profile": {
     "title": "Profile",
     "description": "Your display name and profile picture. You can restore your Google photo after choosing or removing a custom photo.",
+    "displayNameLabel": "Display name",
+    "signedIn": "Signed in",
     "name": "Display name",
     "namePlaceholder": "Your name (optional)",
     "saveName": "Save name",
@@ -69,6 +71,11 @@
     "appContinue": "Got it",
     "appSaveError": "Unable to save app onboarding."
   },
+  "onboardingSection": {
+    "title": "Onboarding",
+    "description": "Show the app and tool introductions again when you want a fresh walkthrough.",
+    "reset": "Reset onboarding"
+  },
   "support": {
     "title": "Support and project links",
     "openSupport": "Open support page",
@@ -77,6 +84,8 @@
     "openGithub": "Open GitHub repo"
   },
   "account": {
+    "eyebrow": "Account",
+    "intro": "Quiet defaults, private account access, and a narrow first section.",
     "title": "Account",
     "signedIn": "Signed-in account",
     "export": "Export your data",
