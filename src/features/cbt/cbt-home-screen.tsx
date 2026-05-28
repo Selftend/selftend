@@ -16,9 +16,20 @@ import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { PillarCard } from "@/src/components/app/pillar-card";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
+import { GratitudeOnboarding } from "@/src/components/app/gratitude-onboarding-modal";
+import { GroundingOnboarding } from "@/src/components/app/grounding-onboarding-modal";
+import { HabitsOnboarding } from "@/src/components/app/habits-onboarding-modal";
 import { CbtProgramCard } from "@/src/components/app/cbt-program-card";
 import { ProgramGraduation } from "@/src/components/app/program-graduation";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
+import { HelpButton } from "@/src/components/app/help-button";
+import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
+import { MeditationInfo } from "@/src/components/app/meditation-info-modal";
+import { MindfulnessOnboarding } from "@/src/components/app/mindfulness-onboarding-modal";
+import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
+import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
+import type { HelpKey } from "@/src/features/help/help-content";
+import { cn } from "@/lib/utils";
 import { useGoals } from "@/src/features/goals/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
@@ -35,7 +46,37 @@ interface PillarStrategy {
   icon: MaterialIconName;
   labelKey: string;
   descKey: string;
+  helpKey: HelpKey;
 }
+
+interface SharedToolBase {
+  key: string;
+  route: Href;
+  icon: MaterialIconName;
+  labelKey: string;
+}
+
+type SharedTool = SharedToolBase &
+  (
+    | {
+        helpKey: HelpKey;
+        infoKey?: never;
+      }
+    | {
+        helpKey?: never;
+        infoKey: AdvancedToolInfoKey;
+      }
+  );
+
+type AdvancedToolInfoKey =
+  | "gratitude"
+  | "grounding"
+  | "habits"
+  | "journal"
+  | "meditation"
+  | "mindfulness"
+  | "mood"
+  | "sleep";
 
 const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
   think: [
@@ -45,6 +86,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "article",
       labelKey: "dashboard.strategies.thoughts",
       descKey: "pillars.strategyDescriptions.thoughts",
+      helpKey: "thoughtRecords",
     },
     {
       key: "beliefs",
@@ -52,6 +94,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "anchor",
       labelKey: "dashboard.strategies.beliefs",
       descKey: "pillars.strategyDescriptions.beliefs",
+      helpKey: "beliefs",
     },
     {
       key: "worry",
@@ -59,6 +102,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "psychology",
       labelKey: "dashboard.strategies.worry",
       descKey: "pillars.strategyDescriptions.worry",
+      helpKey: "worry",
     },
     {
       key: "distortions",
@@ -66,6 +110,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "menu-book",
       labelKey: "home.distortionGuide",
       descKey: "pillars.strategyDescriptions.distortions",
+      helpKey: "distortions",
     },
   ],
   act: [
@@ -75,6 +120,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "gps-fixed",
       labelKey: "dashboard.strategies.goals",
       descKey: "pillars.strategyDescriptions.goals",
+      helpKey: "goals",
     },
     {
       key: "values",
@@ -82,6 +128,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "explore",
       labelKey: "dashboard.strategies.values",
       descKey: "pillars.strategyDescriptions.values",
+      helpKey: "values",
     },
     {
       key: "activities",
@@ -89,6 +136,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "directions-run",
       labelKey: "dashboard.strategies.activities",
       descKey: "pillars.strategyDescriptions.activities",
+      helpKey: "activities",
     },
     {
       key: "exposure",
@@ -96,6 +144,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "layers",
       labelKey: "dashboard.strategies.exposure",
       descKey: "pillars.strategyDescriptions.exposure",
+      helpKey: "exposure",
     },
     {
       key: "tasks",
@@ -103,6 +152,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "hiking",
       labelKey: "dashboard.strategies.tasks",
       descKey: "pillars.strategyDescriptions.tasks",
+      helpKey: "tasks",
     },
     {
       key: "anger",
@@ -110,6 +160,7 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "local-fire-department",
       labelKey: "dashboard.strategies.anger",
       descKey: "pillars.strategyDescriptions.anger",
+      helpKey: "anger",
     },
   ],
   be: [
@@ -119,8 +170,87 @@ const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "favorite",
       labelKey: "dashboard.strategies.selfCare",
       descKey: "pillars.strategyDescriptions.selfCare",
+      helpKey: "selfCare",
     },
   ],
+};
+
+const THINK_SHARED_TOOLS: SharedTool[] = [
+  {
+    key: "journal",
+    route: "/tools/journal",
+    icon: "edit-note",
+    labelKey: "navigation:sidebar.journal",
+    infoKey: "journal",
+  },
+  {
+    key: "gratitudeLog",
+    route: "/tools/gratitude-log",
+    icon: "favorite",
+    labelKey: "navigation:sidebar.gratitudeLog",
+    infoKey: "gratitude",
+  },
+];
+
+const ACT_SHARED_TOOLS: SharedTool[] = [
+  {
+    key: "habits",
+    route: "/tools/habits",
+    icon: "task-alt",
+    labelKey: "navigation:sidebar.habits",
+    infoKey: "habits",
+  },
+];
+
+const BE_SHARED_TOOLS: SharedTool[] = [
+  {
+    key: "breathing",
+    route: "/tools/breathing",
+    icon: "air",
+    labelKey: "navigation:sidebar.breathing",
+    helpKey: "breathing",
+  },
+  {
+    key: "mindfulness",
+    route: "/tools/mindfulness",
+    icon: "air",
+    labelKey: "navigation:sidebar.mindfulness",
+    infoKey: "mindfulness",
+  },
+  {
+    key: "meditation",
+    route: "/tools/meditation",
+    icon: "self-improvement",
+    labelKey: "navigation:sidebar.meditation",
+    infoKey: "meditation",
+  },
+  {
+    key: "grounding",
+    route: "/tools/grounding",
+    icon: "anchor",
+    labelKey: "navigation:sidebar.grounding",
+    infoKey: "grounding",
+  },
+  {
+    key: "moodTracker",
+    route: "/tools/mood-tracker",
+    icon: "mood",
+    labelKey: "navigation:sidebar.moodTracker",
+    infoKey: "mood",
+  },
+  {
+    key: "sleep",
+    route: "/tools/sleep",
+    icon: "bedtime",
+    labelKey: "navigation:sidebar.sleep",
+    infoKey: "sleep",
+  },
+];
+
+const SHARED_TOOLS_BY_PILLAR: Record<Pillar, SharedTool[]> = {
+  think: THINK_SHARED_TOOLS,
+  act: ACT_SHARED_TOOLS,
+  be: BE_SHARED_TOOLS,
 };
 
 const REVIEW_LINKS = [
@@ -140,6 +270,92 @@ const REVIEW_LINKS = [
   },
 ] as const;
 
+interface SharedToolsRowProps {
+  tools: SharedTool[];
+  tint: Pillar;
+  onOpenInfo: (key: AdvancedToolInfoKey) => void;
+}
+
+function SharedToolsRow({ tools, tint, onOpenInfo }: SharedToolsRowProps) {
+  const { t } = useTranslation(["navigation", "cbt"]);
+
+  const PILL_ICON_CLASS: Record<Pillar, string> = {
+    think: "text-think",
+    act: "text-act",
+    be: "text-be",
+  };
+
+  return (
+    <View className="ml-1 flex-row flex-wrap items-center gap-2">
+      <View className="flex-row items-center gap-1">
+        <Icon name="auto-awesome" size={11} className="text-muted-foreground" />
+        <Text variant="muted" className="text-[11px] font-semibold uppercase tracking-wider">
+          {t("cbt:pillars.usesSharedTools")}
+        </Text>
+      </View>
+      {tools.map((tool) => (
+        <Pressable
+          key={tool.key}
+          accessibilityRole="button"
+          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+          onPress={() => {
+            if ("infoKey" in tool && tool.infoKey) {
+              onOpenInfo(tool.infoKey);
+            } else {
+              router.push(tool.route);
+            }
+          }}
+          className="flex-row items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 active:bg-accent/40"
+        >
+          <Icon
+            name={tool.icon}
+            size={13}
+            className={cn("text-muted-foreground", PILL_ICON_CLASS[tint])}
+          />
+          <Text className="text-xs font-medium">{t(tool.labelKey)}</Text>
+          {tool.infoKey ? (
+            <Icon name="help-outline" size={12} className="text-muted-foreground" />
+          ) : tool.helpKey ? (
+            <HelpButton helpKey={tool.helpKey} size={12} />
+          ) : null}
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+interface AdvancedToolInfoModalsProps {
+  active: AdvancedToolInfoKey | null;
+  onClose: () => void;
+}
+
+function AdvancedToolInfoModals({ active, onClose }: AdvancedToolInfoModalsProps) {
+  return (
+    <>
+      <JournalOnboarding visible={active === "journal"} onComplete={onClose} onDismiss={onClose} />
+      <GratitudeOnboarding
+        visible={active === "gratitude"}
+        onComplete={onClose}
+        onDismiss={onClose}
+      />
+      <HabitsOnboarding visible={active === "habits"} onComplete={onClose} onDismiss={onClose} />
+      <MeditationInfo visible={active === "meditation"} onComplete={onClose} onDismiss={onClose} />
+      <MindfulnessOnboarding
+        visible={active === "mindfulness"}
+        onComplete={onClose}
+        onDismiss={onClose}
+      />
+      <GroundingOnboarding
+        visible={active === "grounding"}
+        onComplete={onClose}
+        onDismiss={onClose}
+      />
+      <MoodOnboarding visible={active === "mood"} onComplete={onClose} onDismiss={onClose} />
+      <SleepOnboarding visible={active === "sleep"} onComplete={onClose} onDismiss={onClose} />
+    </>
+  );
+}
+
 export default function CbtHomeScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
@@ -155,6 +371,7 @@ export default function CbtHomeScreen() {
     isUpdating: isProgramUpdating,
   } = useCbtProgram(user?.id ?? null);
   const [forceOnboarding, setForceOnboarding] = useState(false);
+  const [activeToolInfo, setActiveToolInfo] = useState<AdvancedToolInfoKey | null>(null);
   const [graduationDismissed, setGraduationDismissed] = useState(false);
   const [abandonConfirmVisible, setAbandonConfirmVisible] = useState(false);
 
@@ -212,6 +429,7 @@ export default function CbtHomeScreen() {
         onDismiss={() => setForceOnboarding(false)}
         visible={forceOnboarding}
       />
+      <AdvancedToolInfoModals active={activeToolInfo} onClose={() => setActiveToolInfo(null)} />
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
@@ -479,28 +697,36 @@ export default function CbtHomeScreen() {
               </View>
 
               {(["think", "act", "be"] as const).map((pillar) => (
-                <PillarCard
-                  key={pillar}
-                  tint={pillar}
-                  letter={t(`pillars.${pillar}.letter`)}
-                  title={t(`pillars.${pillar}.title`)}
-                  kicker={t(`pillars.${pillar}.sub`)}
-                  description={t(`pillars.${pillar}.description`)}
-                  onToolPress={(toolKey) => {
-                    const strategy = PILLAR_STRATEGIES[pillar].find((s) => s.key === toolKey);
-                    if (strategy?.route) router.push(strategy.route);
-                  }}
-                >
-                  {PILLAR_STRATEGIES[pillar].map((strategy) => (
-                    <PillarCard.Tool
-                      key={strategy.key}
-                      toolKey={strategy.key}
-                      icon={strategy.icon}
-                      name={t(strategy.labelKey)}
-                      desc={t(strategy.descKey)}
+                <View key={pillar} className="gap-2">
+                  <PillarCard
+                    tint={pillar}
+                    letter={t(`pillars.${pillar}.letter`)}
+                    title={t(`pillars.${pillar}.title`)}
+                    kicker={t(`pillars.${pillar}.sub`)}
+                    description={t(`pillars.${pillar}.description`)}
+                    onToolPress={(toolKey) => {
+                      const strategy = PILLAR_STRATEGIES[pillar].find((s) => s.key === toolKey);
+                      if (strategy?.route) router.push(strategy.route);
+                    }}
+                  >
+                    {PILLAR_STRATEGIES[pillar].map((strategy) => (
+                      <PillarCard.Tool
+                        key={strategy.key}
+                        toolKey={strategy.key}
+                        icon={strategy.icon}
+                        name={t(strategy.labelKey)}
+                        desc={t(strategy.descKey)}
+                      />
+                    ))}
+                  </PillarCard>
+                  {SHARED_TOOLS_BY_PILLAR[pillar].length > 0 ? (
+                    <SharedToolsRow
+                      tools={SHARED_TOOLS_BY_PILLAR[pillar]}
+                      tint={pillar}
+                      onOpenInfo={setActiveToolInfo}
                     />
-                  ))}
-                </PillarCard>
+                  ) : null}
+                </View>
               ))}
             </View>
 

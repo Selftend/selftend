@@ -222,6 +222,24 @@ describe("CbtHomeScreen onboarding", () => {
     expect(screen.getByText("Be")).toBeTruthy();
   });
 
+  it("renders shared-tool pills beneath each PillarCard", () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<CbtHomeScreen />);
+
+    // Think pillar shared tools
+    expect(screen.getByText("Journal")).toBeTruthy();
+    expect(screen.getByText("Gratitude log")).toBeTruthy();
+    // Act pillar shared tools
+    expect(screen.getByText("Habit tracking")).toBeTruthy();
+    // Be pillar shared tools
+    expect(screen.getByText("Breathing")).toBeTruthy();
+    expect(screen.getByText("Meditation")).toBeTruthy();
+  });
+
   it("confirms before abandoning an in-progress program", () => {
     const abandonProgram = jest.fn();
     mockUseUserPreferences.mockReturnValue({
