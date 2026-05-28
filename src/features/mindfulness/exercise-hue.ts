@@ -100,3 +100,24 @@ export function hueGradient(hue: ExerciseHue, isDark: boolean): [string, string]
 export function hueToTint(hue: ToolHue): TintToken {
   return hue;
 }
+
+// HSL triples for every TintToken in light + dark mode. ExerciseHue values
+// mirror the HUES table above; primary is added here (not in HUES because
+// it isn't an exercise tint).
+const STRIPE_HSL: Record<TintToken, { light: string; dark: string }> = {
+  primary: { light: "262, 62%, 56%", dark: "264, 72%, 72%" },
+  act: { light: "160, 46%, 38%", dark: "160, 56%, 55%" },
+  be: { light: "330, 56%, 60%", dark: "330, 62%, 72%" },
+  think: { light: "43, 74%, 52%", dark: "43, 86%, 65%" },
+  aqua: { light: "196, 52%, 45%", dark: "196, 58%, 62%" },
+  iris: { light: "280, 48%, 60%", dark: "280, 58%, 74%" },
+  ink: { light: "232, 46%, 56%", dark: "232, 56%, 72%" },
+  clay: { light: "20, 52%, 50%", dark: "20, 60%, 66%" },
+  mist: { light: "178, 40%, 40%", dark: "178, 48%, 58%" },
+};
+
+/** Two-stop gradient pair (full opacity → half opacity) for a tint token in the given color scheme. */
+export function tintStripeColors(tint: TintToken, isDark: boolean): [string, string] {
+  const triple = isDark ? STRIPE_HSL[tint].dark : STRIPE_HSL[tint].light;
+  return [`hsl(${triple})`, `hsla(${triple}, 0.5)`];
+}

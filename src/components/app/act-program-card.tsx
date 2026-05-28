@@ -9,6 +9,8 @@ import { Card } from "@/src/components/react-native-reusables/card";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { HelpButton } from "@/src/components/app/help-button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
+import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
+import { useAppColorScheme } from "@/src/lib/color-scheme";
 import {
   Popover,
   PopoverContent,
@@ -65,6 +67,7 @@ export function ActProgramCard({
   onDismissStart,
 }: ActProgramCardProps) {
   const { t } = useTranslation("act");
+  const isDark = useAppColorScheme() === "dark";
   const [showEarlyAdvanceConfirm, setShowEarlyAdvanceConfirm] = useState(false);
   const triggerRef = useRef<TriggerRef>(null);
 
@@ -136,7 +139,7 @@ export function ActProgramCard({
 
       <Card className="relative overflow-hidden gap-3 p-5">
         <LinearGradient
-          colors={["hsl(160, 46%, 38%)", "hsla(160, 46%, 38%, 0.5)"]}
+          colors={tintStripeColors("act", isDark)}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3 }}

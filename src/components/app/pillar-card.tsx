@@ -6,6 +6,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Card } from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
+import { useAppColorScheme } from "@/src/lib/color-scheme";
 import { TINT_TEXT, type TintToken } from "@/src/lib/design-tokens";
 import { cn } from "@/lib/utils";
 
@@ -55,18 +57,6 @@ const TOOL_ICON_BG: Record<TintToken, string> = {
   mist: "bg-[hsl(var(--mist)/0.10)]",
 };
 
-const STRIPE_COLORS: Record<TintToken, [string, string]> = {
-  primary: ["hsl(262, 62%, 56%)", "hsla(262, 62%, 56%, 0.5)"],
-  act: ["hsl(160, 46%, 38%)", "hsla(160, 46%, 38%, 0.5)"],
-  be: ["hsl(330, 56%, 60%)", "hsla(330, 56%, 60%, 0.5)"],
-  think: ["hsl(43, 74%, 52%)", "hsla(43, 74%, 52%, 0.5)"],
-  aqua: ["hsl(196, 52%, 45%)", "hsla(196, 52%, 45%, 0.5)"],
-  iris: ["hsl(280, 48%, 60%)", "hsla(280, 48%, 60%, 0.5)"],
-  ink: ["hsl(232, 46%, 56%)", "hsla(232, 46%, 56%, 0.5)"],
-  clay: ["hsl(20, 52%, 50%)", "hsla(20, 52%, 50%, 0.5)"],
-  mist: ["hsl(178, 40%, 40%)", "hsla(178, 40%, 40%, 0.5)"],
-};
-
 function PillarCardRoot({
   tint,
   letter,
@@ -76,11 +66,12 @@ function PillarCardRoot({
   onToolPress,
   children,
 }: PillarCardProps) {
+  const isDark = useAppColorScheme() === "dark";
   return (
     <PillarContext.Provider value={{ tint, onToolPress }}>
       <Card className="relative overflow-hidden px-5 py-4">
         <LinearGradient
-          colors={STRIPE_COLORS[tint]}
+          colors={tintStripeColors(tint, isDark)}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3 }}
