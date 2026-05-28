@@ -104,14 +104,9 @@ export default function ActHomeScreen() {
                 addWidgetCategory="act"
                 hue="act"
                 icon="explore"
-                moduleLabel={t("module.label")}
-                title={t("home.title")}
+                moduleLabel={null}
+                title={t("home.fullTitle")}
                 description={t("home.description")}
-                meta={
-                  <Text variant="eyebrow" tint="act">
-                    {t("module.authorEyebrow")}
-                  </Text>
-                }
                 actions={[
                   { type: "notifications", targetKey: "act" },
                   ...(program.status === "not_started"
@@ -126,6 +121,9 @@ export default function ActHomeScreen() {
                   { type: "info", onPress: () => setForceInfo(true) },
                 ]}
               />
+              <Text variant="eyebrow" tint="primary">
+                {t("module.authorEyebrow")}
+              </Text>
             </View>
 
             {program.status === "graduated" ? (

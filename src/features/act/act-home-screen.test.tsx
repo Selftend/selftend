@@ -114,7 +114,7 @@ describe("ActHomeScreen", () => {
     expect(screen.getByText("Log mood")).toBeTruthy();
   });
 
-  it("renders the author eyebrow via ModuleHomeHeader meta slot", () => {
+  it("renders the author eyebrow below the header with primary tint", () => {
     renderWithProviders(<ActHomeScreen />);
 
     expect(screen.getByText("Inspired by The Happiness Trap · Russ Harris")).toBeTruthy();
