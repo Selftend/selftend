@@ -1,11 +1,15 @@
 {
   "title": "Благодарност",
   "description": "Забелязвай малки неща, които си оценил. Запазвай само когато е полезно - без серии и без натиск.",
+  "moduleLabel": "Благодарност",
+  "tagline": "Три добри неща от днес са достатъчни.",
+  "newEntry": "Нов запис",
+  "promptEyebrow": "Подсказка за днес",
   "cta": {
     "new": "Нов запис"
   },
   "home": {
-    "title": "Благодарност",
+    "title": "Дневник на благодарността",
     "subtitle": "Забелязвай доброто. Запиши го. Без натиск и без серии.",
     "viewAll": "Виж всички"
   },
@@ -18,14 +22,20 @@
   },
   "insights": {
     "title": "Прозрения",
+    "frequency": "Колко често записваш",
     "frequencyTitle": "Скорошен ритъм",
     "frequencyEmpty": "Записите ти ще се появят тук, когато имаш няколко запазени.",
+    "thisWeek": "Тази седмица",
+    "themes": "Чести теми",
     "themesTitle": "Чести теми",
     "themesEmpty": "Темите ще се появят след повече запазен текст.",
     "themeCount": "{{word}} · {{count}}",
+    "favorites": "Любими",
     "favoritesTitle": "Любими моменти",
     "favoritesCount_one": "{{count}} запазен любим момент",
     "favoritesCount_other": "{{count}} запазени любими момента",
+    "savedCount_one": "{{count}} запазени",
+    "savedCount_other": "{{count}} запазени",
     "favoritesOpen": "Любими"
   },
   "onboarding": {

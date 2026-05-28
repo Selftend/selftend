@@ -1,11 +1,15 @@
 {
   "title": "Gratitude",
   "description": "Notice small things you appreciated. Save only when it feels useful - no streaks, no pressure.",
+  "moduleLabel": "Gratitude",
+  "tagline": "Three good things from today is enough.",
+  "newEntry": "New entry",
+  "promptEyebrow": "A prompt for today",
   "cta": {
     "new": "New entry"
   },
   "home": {
-    "title": "Gratitude",
+    "title": "Gratitude log",
     "subtitle": "Notice what's good. Write it down. No pressure, no streaks.",
     "viewAll": "View all"
   },
@@ -18,14 +22,20 @@
   },
   "insights": {
     "title": "Insights",
+    "frequency": "How often you log",
     "frequencyTitle": "Recent rhythm",
     "frequencyEmpty": "Your entries will appear here when you have a few saved.",
+    "thisWeek": "This week",
+    "themes": "Common themes",
     "themesTitle": "Common themes",
     "themesEmpty": "Themes will appear after more saved text.",
     "themeCount": "{{word}} · {{count}}",
+    "favorites": "Favorites",
     "favoritesTitle": "Favorite moments",
     "favoritesCount_one": "{{count}} saved favorite",
     "favoritesCount_other": "{{count}} saved favorites",
+    "savedCount_one": "{{count}} saved",
+    "savedCount_other": "{{count}} saved",
     "favoritesOpen": "Favorites"
   },
   "onboarding": {
