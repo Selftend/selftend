@@ -185,6 +185,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
         )}
       >
         <Icon
+          key={active ? "icon-active" : "icon-inactive"}
           name={item.icon}
           className={cn("size-6", active ? accent.icon : "text-muted-foreground")}
         />
