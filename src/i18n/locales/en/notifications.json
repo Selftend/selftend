@@ -24,7 +24,7 @@
   },
   "actions": {
     "save": "Save",
-    "saving": "Saving…",
+    "saving": "Saving...",
     "open": "Open notifications",
     "openShort": "Notifications"
   },

@@ -223,7 +223,7 @@
     "sectionTools": "Tools",
     "addPanel": {
       "subtitle": "Pick a tool — its widgets appear below. There's nothing here you have to use.",
-      "searchPlaceholder": "Search widgets…",
+      "searchPlaceholder": "Search widgets...",
       "allCategories": "All categories",
       "noResults": "No widgets match your search."
     },
@@ -292,7 +292,7 @@
       "grounding54321": {
         "title": "5-4-3-2-1",
         "metaDesc": "A quick grounding exercise.",
-        "desc": "Five things you see, four you feel, three you hear…",
+        "desc": "Five things you see, four you feel, three you hear...",
         "cta": "Ground now"
       },
       "sleepLastNight": {

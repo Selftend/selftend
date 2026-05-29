@@ -3,7 +3,7 @@
     "moduleLabel": "Check-in",
     "title": "How are you feeling?",
     "tagline": "A simple 1–5 picker plus space for a note. No streak to protect.",
-    "noteHint": "Add a short note (optional)…",
+    "noteHint": "Add a short note (optional)...",
     "saveCta": "Save check-in",
     "todayLabel": "Today",
     "scaleLabels": {

@@ -214,7 +214,7 @@
     "messageLabel": "Message",
     "messagePlaceholder": "Describe the issue or idea. Do not include private self-help entries or crisis details.",
     "submit": "Send feedback",
-    "submitting": "Sending…",
+    "submitting": "Sending...",
     "submitSuccess": "Your feedback was sent. Thank you!",
     "submitError": "Failed to send feedback. Please try again.",
     "messageTooShort": "Please write at least 10 characters.",

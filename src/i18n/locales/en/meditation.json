@@ -346,7 +346,7 @@
       "reminderHint": "Off by default. You can always change this in settings.",
       "suggestedStage": "We'll start you at Stage {{stage}}.",
       "finish": "Got it",
-      "saving": "Saving…",
+      "saving": "Saving...",
       "error": "Could not save. Please try again."
     },
     "skip": "Skip for now",

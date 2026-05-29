@@ -60,7 +60,7 @@
       "level2Title": "Level 2 - Reflecting & Appreciating",
       "level2Body": "Think about what you would miss if it were gone. Notice things you usually take for granted - running water, sunlight, a friend nearby.",
       "level3Title": "Level 3 - Practicing Gratitude",
-      "level3Body": "The ongoing practice brings the earlier steps together: notice what's here, appreciate it, and write \"I'm grateful for…\" reflections.",
+      "level3Body": "The ongoing practice brings the earlier steps together: notice what's here, appreciate it, and write \"I'm grateful for...\" reflections.",
       "continue": "Continue"
     },
     "frequency": {
@@ -72,7 +72,7 @@
     },
     "finish": {
       "start": "Got it",
-      "saving": "Saving…",
+      "saving": "Saving...",
       "error": "Couldn't save your preferences. Try again.",
       "dismiss": "Close"
     }

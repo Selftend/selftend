@@ -943,7 +943,7 @@
     "description": "Rate the values that matter to you, then choose the few that will be most instrumental in reaching your goals.",
     "loading": "Loading values...",
     "save": "Save values",
-    "saving": "Saving…",
+    "saving": "Saving...",
     "saveError": "Unable to save values.",
     "tierLabel": "How important is this to you?",
     "tier1": "Highly Important",
