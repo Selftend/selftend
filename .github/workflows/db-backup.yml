@@ -50,12 +50,16 @@ jobs:
           curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
           sudo apt-get update
           sudo apt-get install -y postgresql-client-17 rclone
+          # The runner ships pg_dump 16 at /usr/bin; put the v17 binaries first so
+          # pg_dump matches the server (it refuses to dump a newer server version).
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
 
       - name: Dump database
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           set -euo pipefail
+          pg_dump --version # expect 17.x, matching the server
           STAMP="$(date -u +%Y-%m-%d-%H%M%S)"
           echo "DUMP_FILE=selftend-${STAMP}.dump" >> "$GITHUB_ENV"
           pg_dump \
