@@ -21,7 +21,7 @@ const MOOD_STEPS = [
   { score: 5, emoji: "😁" },
 ] as const;
 
-export function MoodCheckinWidgetView({ theme }: { theme: Theme }) {
+function MoodCheckinWidgetView({ theme }: { theme: Theme }) {
   const c = PALETTE[theme];
   return (
     <FlexWidget

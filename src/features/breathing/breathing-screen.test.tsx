@@ -1,4 +1,4 @@
-import { fireEvent, screen, act } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import BreathingScreen from "@/app/(app)/tools/breathing/index";

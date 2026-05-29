@@ -53,7 +53,7 @@ export interface CurrentActPhaseView {
   dailyPractice: ProgramTaskView | null;
 }
 
-export interface ActProgramSummaryStats {
+interface ActProgramSummaryStats {
   choicePoints: number;
   defusionLogs: number;
   expansionLogs: number;

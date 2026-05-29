@@ -19,7 +19,7 @@ const BREATHING_OPTIONS = [
   { slug: "coherent-breathing", label: "Coherent" },
 ] as const;
 
-export function BreathingWidgetView({ theme }: { theme: Theme }) {
+function BreathingWidgetView({ theme }: { theme: Theme }) {
   const c = PALETTE[theme];
   return (
     <FlexWidget

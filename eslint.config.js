@@ -44,5 +44,13 @@ module.exports = [
       },
     },
   },
+  {
+    files: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      // require() inside jest.mock factories is the idiomatic pattern — factories
+      // can't reference out-of-scope ES imports because jest hoists the mock call.
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
   prettierConfig,
 ];

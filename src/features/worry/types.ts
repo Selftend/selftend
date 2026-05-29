@@ -1,4 +1,4 @@
-export type WorryCategory = "hypothetical" | "real_problem";
+type WorryCategory = "hypothetical" | "real_problem";
 
 export interface WorryEntry {
   id: string;

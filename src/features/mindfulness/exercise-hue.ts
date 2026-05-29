@@ -21,7 +21,7 @@ export const EXERCISE_HUES: ExerciseHue[] = [
   "aqua",
 ];
 
-export interface HueClasses {
+interface HueClasses {
   text: string;
   chipBg: string;
   border: string;

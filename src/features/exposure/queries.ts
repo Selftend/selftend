@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   getHierarchy,
-  getItem,
   listAllItems,
   listHierarchies,
   listItems,
@@ -64,15 +63,6 @@ export function useAllExposureItems(userId: string | null) {
     queryKey: userId ? exposureKeys.allItems(userId) : ["exposure", "items", "anonymous"],
     queryFn: () => listAllItems(userId!),
     enabled: Boolean(userId),
-  });
-}
-
-export function useExposureItem(userId: string | null, itemId: string | null) {
-  return useQuery({
-    queryKey:
-      userId && itemId ? exposureKeys.item(userId, itemId) : ["exposure", "item", "anonymous"],
-    queryFn: () => getItem(userId!, itemId!),
-    enabled: Boolean(userId && itemId),
   });
 }
 

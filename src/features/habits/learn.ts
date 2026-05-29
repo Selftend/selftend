@@ -1,6 +1,6 @@
 import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 
-export type HabitsLearnSlug =
+type HabitsLearnSlug =
   | "compounding"
   | "systems-over-goals"
   | "habit-loop"

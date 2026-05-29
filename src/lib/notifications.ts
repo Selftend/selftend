@@ -17,7 +17,7 @@ const WEB_PUSH_WORKER_PATH = "/selftend-push-worker.js";
 type NotificationsModule = typeof import("expo-notifications");
 let notificationsModule: NotificationsModule | null = null;
 
-export type ReminderScheduleFailureReason =
+type ReminderScheduleFailureReason =
   | "missing-user"
   | "missing-vapid-key"
   | "permission-denied"
@@ -265,7 +265,7 @@ async function unsubscribeWebPushIfPresent(userId?: string | null) {
   }
 }
 
-export async function ensureReminderPermission() {
+async function ensureReminderPermission() {
   if (Platform.OS === "web") {
     return false;
   }

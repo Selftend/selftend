@@ -45,7 +45,7 @@ export interface ProgramTaskView {
   done: boolean;
 }
 
-export interface ProgramSummaryStats {
+interface ProgramSummaryStats {
   thoughtRecords: number;
   activitiesCompleted: number;
   goalsSet: number;

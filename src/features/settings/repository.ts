@@ -288,27 +288,6 @@ export async function updateShownButtonTours(userId: string, shownButtonTours: B
   return mapPreferences(data as UserPreferenceRow);
 }
 
-export async function updateAppOnboardingCompleted(userId: string, completed: boolean) {
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from("user_preferences")
-    .upsert(
-      {
-        user_id: userId,
-        app_onboarding_completed: completed,
-      },
-      { onConflict: "user_id" },
-    )
-    .select("*")
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return mapPreferences(data as UserPreferenceRow);
-}
-
 interface OnboardingPreferencesPatch {
   appOnboardingCompleted?: boolean;
   cbtOnboardingCompleted?: boolean;

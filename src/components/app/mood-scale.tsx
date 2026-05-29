@@ -5,9 +5,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 
-export const MOOD_SCALE_MIN = 1;
-export const MOOD_SCALE_MAX = 5;
-
 interface MoodScaleProps {
   value: number | null;
   onChange: (value: number) => void;
@@ -15,7 +12,7 @@ interface MoodScaleProps {
   compact?: boolean;
 }
 
-export interface ScaleStep {
+interface ScaleStep {
   score: number;
   emoji: string;
   selectedClass: string;

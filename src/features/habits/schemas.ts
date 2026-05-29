@@ -1,16 +1,16 @@
 import { z } from "zod";
 
 export const HABIT_NAME_MAX = 120;
-export const HABIT_IDENTITY_MAX = 200;
+const HABIT_IDENTITY_MAX = 200;
 export const HABIT_CUE_MAX = 240;
-export const HABIT_STACK_MAX = 120;
-export const HABIT_PAIRING_MAX = 240;
-export const HABIT_TWO_MINUTE_MAX = 200;
-export const HABIT_REWARD_MAX = 200;
+const HABIT_STACK_MAX = 120;
+const HABIT_PAIRING_MAX = 240;
+const HABIT_TWO_MINUTE_MAX = 200;
+const HABIT_REWARD_MAX = 200;
 export const HABIT_NOTE_MAX = 500;
 
-export const HABIT_KINDS = ["build", "break"] as const;
-export const HABIT_CADENCES = ["daily", "weekdays", "custom"] as const;
+const HABIT_KINDS = ["build", "break"] as const;
+const HABIT_CADENCES = ["daily", "weekdays", "custom"] as const;
 export const HABIT_COLORS = ["primary", "be", "act", "amber", "emerald", "violet", "rose"] as const;
 
 const trimmedRequired = z
@@ -35,6 +35,3 @@ export const habitInputSchema = z.object({
 export const habitLogNoteSchema = z.object({
   note: z.string().max(HABIT_NOTE_MAX),
 });
-
-export type HabitInputSchema = z.infer<typeof habitInputSchema>;
-export type HabitLogNoteSchema = z.infer<typeof habitLogNoteSchema>;

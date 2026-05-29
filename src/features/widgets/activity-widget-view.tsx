@@ -22,7 +22,7 @@ const ACTIVITY_DOMAINS = [
   { domain: "other", emoji: "✨", label: "Other" },
 ] as const;
 
-export function ActivityWidgetView({ theme }: { theme: Theme }) {
+function ActivityWidgetView({ theme }: { theme: Theme }) {
   const c = PALETTE[theme];
   const rows = [ACTIVITY_DOMAINS.slice(0, 3), ACTIVITY_DOMAINS.slice(3, 6)];
 

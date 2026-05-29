@@ -10,5 +10,3 @@ export const sleepLogSchema = z.object({
   quality: z.number().int().min(1).max(5),
   notes: z.string().max(SLEEP_NOTES_MAX),
 });
-
-export type SleepLogSchema = z.infer<typeof sleepLogSchema>;

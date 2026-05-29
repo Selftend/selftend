@@ -1,4 +1,3 @@
-/* global jest */
 // Manual mock for @rn-primitives/popover — provides open/close state
 // via React context so PopoverContent is conditionally rendered in tests.
 const React = require("react");

@@ -8,8 +8,6 @@ import {
   deleteDefusionLog,
   deleteExpansionLog,
   deleteObservingSelfSession,
-  deleteUrgeSurfLog,
-  getACTProgramState,
   getChoicePoint,
   getCommittedAction,
   getConnectionLog,
@@ -39,12 +37,10 @@ import {
   saveUrgeSurfLog,
   toggleActionStep,
   updateCommittedAction,
-  upsertACTProgramState,
   upsertValueEntry,
 } from "@/src/features/act/repository";
 import type {
   ACTLifeDomain,
-  ACTProgramStateInput,
   ActionStatus,
   ActionStepInput,
   BullsEyeSnapshotInput,
@@ -95,25 +91,6 @@ const actKeys = {
   choicePointDetail: (userId: string | null, id: string | null) =>
     ["act", "choicePoint", "detail", u(userId), u(id)] as const,
 };
-
-export function useACTProgramState(userId: string | null) {
-  return useQuery({
-    queryKey: actKeys.programState(userId),
-    queryFn: () => getACTProgramState(userId!),
-    enabled: Boolean(userId),
-  });
-}
-
-export function useUpsertACTProgramState(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (patch: ACTProgramStateInput) => upsertACTProgramState(userId!, patch),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: actKeys.programState(userId) });
-    },
-  });
-}
 
 export function useDefusionLogs(userId: string | null, limit = 30) {
   return useQuery({
@@ -207,17 +184,6 @@ export function useSaveUrgeSurfLog(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: UrgeSurfLogInput) => saveUrgeSurfLog(userId!, input),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: actKeys.urgeSurfList(userId) });
-    },
-  });
-}
-
-export function useDeleteUrgeSurfLog(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (logId: string) => deleteUrgeSurfLog(userId!, logId),
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.urgeSurfList(userId) });

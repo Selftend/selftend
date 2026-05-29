@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { AccessibilityInfo, Platform, type Insets } from "react-native";
 
-export const MIN_TOUCH_TARGET_SIZE = 44;
-
 export const DEFAULT_INTERACTIVE_HIT_SLOP: Insets = {
   bottom: 8,
   left: 8,

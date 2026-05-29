@@ -5,7 +5,7 @@ import { type StoreApi, type UseBoundStore } from "zustand";
 import { type WizardDraftStore } from "@/src/stores/create-wizard-draft-store";
 import { useToastStore } from "@/src/stores/toast-store";
 
-export type WizardStoreHook<TForm> = UseBoundStore<StoreApi<WizardDraftStore<TForm>>>;
+type WizardStoreHook<TForm> = UseBoundStore<StoreApi<WizardDraftStore<TForm>>>;
 
 interface UseWizardDraftArgs<TForm extends FieldValues, TSaved> {
   useDraftStore: WizardStoreHook<TForm>;

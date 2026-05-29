@@ -22,7 +22,7 @@ const TOOL_ACCENT: Record<string, ToolAccent> = {
   grounding: { chip: "bg-clay/10", icon: "text-clay" },
 };
 
-export const DEFAULT_TOOL_ACCENT: ToolAccent = {
+const DEFAULT_TOOL_ACCENT: ToolAccent = {
   chip: "bg-primary/10",
   icon: "text-primary",
 };

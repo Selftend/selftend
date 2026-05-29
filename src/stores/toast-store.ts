@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 export type ToastTone = "success" | "error" | "info";
 
-export interface ToastMessage {
+interface ToastMessage {
   id: number;
   title: string;
   description?: string;

@@ -13,5 +13,3 @@ export const journalEntrySchema = z.object({
       message: "Body cannot be empty",
     }),
 });
-
-export type JournalEntrySchema = z.infer<typeof journalEntrySchema>;

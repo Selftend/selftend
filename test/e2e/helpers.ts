@@ -99,15 +99,6 @@ export async function dismissCbtOnboarding(page: Page) {
   }
 }
 
-// Visit a path and wait until the app's main content renders (not the loading
-// shell). The session-provider shows a "Loading" placeholder while restoring.
-export async function gotoAndSettle(page: Page, path: string) {
-  await page.goto(path);
-  await expect(page.getByText("Restoring your session", { exact: false })).toBeHidden({
-    timeout: 15_000,
-  });
-}
-
 // Local mail server bundled with the Supabase CLI stack (Mailpit). Its REST API
 // lets tests read the messages the app sends.
 const MAILPIT_URL = process.env.MAILPIT_URL ?? "http://localhost:54324";

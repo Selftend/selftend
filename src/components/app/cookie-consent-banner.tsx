@@ -59,7 +59,7 @@ interface CookiePreferencesPanelProps {
   onDone?: () => void;
 }
 
-export function CookiePreferencesPanel({ onDone }: CookiePreferencesPanelProps) {
+function CookiePreferencesPanel({ onDone }: CookiePreferencesPanelProps) {
   const { t } = useTranslation("settings");
   const { analytics, acceptEssentialOnly, acceptAll } = useCookieConsentStore();
   const [analyticsToggle, setAnalyticsToggle] = useState(analytics);

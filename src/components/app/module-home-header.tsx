@@ -24,14 +24,14 @@ import type { ButtonTourKey } from "@/src/features/modules/types";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
 import { useSession } from "@/src/providers/session-provider";
 
-export type TuneAction = { type: "tune"; onPress: () => void; accessibilityLabel?: string };
+type TuneAction = { type: "tune"; onPress: () => void; accessibilityLabel?: string };
 export type NotificationsAction = {
   type: "notifications";
   targetKey: NotificationTargetKey;
   accessibilityLabel?: string;
 };
-export type InfoAction = { type: "info"; onPress: () => void; accessibilityLabel?: string };
-export type ProgramAction = { type: "program"; onPress: () => void; accessibilityLabel?: string };
+type InfoAction = { type: "info"; onPress: () => void; accessibilityLabel?: string };
+type ProgramAction = { type: "program"; onPress: () => void; accessibilityLabel?: string };
 export type HeaderAction = TuneAction | NotificationsAction | InfoAction | ProgramAction;
 
 const ICON_FOR_TYPE = {

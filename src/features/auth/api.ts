@@ -17,7 +17,7 @@ export function getWebAuthRedirectUrl(publicAppUrl = appEnv.publicAppUrl) {
   return new URL(`/${AUTH_CALLBACK_PATH}`, configuredPublicAppUrl).toString();
 }
 
-export function getOAuthRedirectUrl() {
+function getOAuthRedirectUrl() {
   if (Platform.OS === "web") {
     return getWebAuthRedirectUrl();
   }
@@ -25,7 +25,7 @@ export function getOAuthRedirectUrl() {
   return getNativeAuthRedirectUrl();
 }
 
-export function getEmailRedirectUrl() {
+function getEmailRedirectUrl() {
   if (Platform.OS === "web") {
     return getWebAuthRedirectUrl();
   }

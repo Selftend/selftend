@@ -7,7 +7,6 @@ import {
   listStagePracticeNotes,
   saveMeditationSession,
   saveStagePracticeNote,
-  updateMeditationSession,
   upsertMeditationProgramState,
 } from "@/src/features/meditation/repository";
 import type {
@@ -52,26 +51,6 @@ export function useSaveMeditationSession(userId: string | null) {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: meditationKeys.list(userId) });
       await queryClient.invalidateQueries({ queryKey: meditationKeys.programState(userId) });
-    },
-  });
-}
-
-export function useUpdateMeditationSession(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      sessionId,
-      patch,
-    }: {
-      sessionId: string;
-      patch: Partial<MeditationSessionInput>;
-    }) => updateMeditationSession(userId!, sessionId, patch),
-    onSuccess: async (_data, vars) => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: meditationKeys.list(userId) });
-      await queryClient.invalidateQueries({
-        queryKey: meditationKeys.detail(userId, vars.sessionId),
-      });
     },
   });
 }

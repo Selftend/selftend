@@ -1,4 +1,4 @@
-export type BreakCategory = "positive-psychology" | "stoicism" | "mental-subtraction";
+type BreakCategory = "positive-psychology" | "stoicism" | "mental-subtraction";
 
 export interface GratitudeBreak {
   slug: string;
@@ -15,7 +15,3 @@ export const GRATITUDE_BREAKS: GratitudeBreak[] = [
   { slug: "what-if-that-didnt-happen", category: "mental-subtraction" },
   { slug: "give-it-up", category: "mental-subtraction" },
 ];
-
-export function getBreakBySlug(slug: string): GratitudeBreak | null {
-  return GRATITUDE_BREAKS.find((b) => b.slug === slug) ?? null;
-}

@@ -343,7 +343,7 @@ export const RECOMMENDED_PRINCIPLE: Record<ACTConcern, ACTPrinciple> = {
   other: "defusion",
 };
 
-export type ProgramPillar = "foundation" | "bePresent" | "openUp" | "doWhatMatters";
+type ProgramPillar = "foundation" | "bePresent" | "openUp" | "doWhatMatters";
 
 export const ACT_PROGRAM_PILLARS: ProgramPillar[] = [
   "foundation",

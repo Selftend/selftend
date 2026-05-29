@@ -8,7 +8,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 
-export function getInitials(email: string | null | undefined): string {
+function getInitials(email: string | null | undefined): string {
   if (!email) {
     return "?";
   }

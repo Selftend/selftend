@@ -13,4 +13,3 @@ export const challengePlanFormSchema = z.object({
 });
 
 export type RecoveryPlanFormSchema = z.infer<typeof recoveryPlanFormSchema>;
-export type ChallengePlanFormSchema = z.infer<typeof challengePlanFormSchema>;

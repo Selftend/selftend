@@ -95,10 +95,3 @@ export interface StagePracticeNote {
   createdAt: string;
   updatedAt: string;
 }
-
-export const MILESTONE_AFTER_STAGE: Record<number, number> = {
-  3: 1,
-  6: 2,
-  7: 3,
-  10: 4,
-};

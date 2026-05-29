@@ -15,5 +15,3 @@ export const gratitudeEntrySchema = z.object({
   items: z.array(nonEmptyString).min(1).max(GRATITUDE_ITEM_COUNT),
   note: z.string().max(GRATITUDE_NOTE_MAX),
 });
-
-export type GratitudeEntrySchema = z.infer<typeof gratitudeEntrySchema>;

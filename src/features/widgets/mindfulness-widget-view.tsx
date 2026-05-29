@@ -22,7 +22,7 @@ const MINDFULNESS_OPTIONS = [
   { slug: "mindful-eating", emoji: "🍽️", label: "Eating" },
 ] as const;
 
-export function MindfulnessWidgetView({ theme }: { theme: Theme }) {
+function MindfulnessWidgetView({ theme }: { theme: Theme }) {
   const c = PALETTE[theme];
   const rows = [MINDFULNESS_OPTIONS.slice(0, 3), MINDFULNESS_OPTIONS.slice(3, 6)];
 

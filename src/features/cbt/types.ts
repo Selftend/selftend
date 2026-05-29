@@ -42,5 +42,3 @@ export interface ThoughtRecordInput {
   outcomeNotes: string;
   createdAt?: string;
 }
-
-export type ThoughtRecordFormValues = ThoughtRecordInput;

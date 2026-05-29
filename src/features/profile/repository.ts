@@ -5,7 +5,7 @@ import { requireSupabase } from "@/src/lib/supabase";
 const AVATAR_BUCKET = "profile-pics";
 const AVATAR_SIGNED_URL_SECONDS = 60 * 60;
 
-export type AvatarSource = "oauth" | "upload" | "none";
+type AvatarSource = "oauth" | "upload" | "none";
 
 interface ProfileRow {
   user_id: string;
@@ -19,7 +19,7 @@ interface ProfileRow {
   updated_at: string;
 }
 
-export interface UserProfile {
+interface UserProfile {
   userId: string;
   email: string | null;
   displayName: string | null;

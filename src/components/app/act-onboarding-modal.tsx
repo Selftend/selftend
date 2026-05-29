@@ -152,16 +152,13 @@ export function ActInfo({
 type WizardStep = "concerns" | "bullsEye" | "commit";
 const WIZARD_STEPS: WizardStep[] = ["concerns", "bullsEye", "commit"];
 
-export interface ActWizardResult {
+interface ActWizardResult {
   primaryConcerns: ACTConcern[];
   startingPrinciple: ACTPrinciple;
   bullsEyeRatings: Record<ACTLifeDomain, number>;
   remindersEnabled: boolean;
   preferredCheckInTime: string;
 }
-
-/** @deprecated Use ActWizardResult */
-export type ActOnboardingResult = ActWizardResult;
 
 interface WizardProps {
   visible: boolean;
@@ -462,4 +459,3 @@ export function ActWizard({
 }
 
 /** @deprecated Use ActInfo for the auto-show onboarding and ActWizard for personalisation */
-export const ActOnboarding = ActInfo;

@@ -17,7 +17,6 @@ import {
   getFavoriteGratitudeEntries,
   getGratitudeFrequencyBuckets,
   getGratitudeThemes,
-  type GratitudeFrequencyBucket,
   type GratitudeTheme,
 } from "@/src/features/gratitude/insights";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";

@@ -1,6 +1,6 @@
 import type { MeditationSession, StageNumber } from "@/src/features/meditation/types";
 
-export interface StageDistributionEntry {
+interface StageDistributionEntry {
   stage: StageNumber;
   sessionCount: number;
   totalMinutes: number;

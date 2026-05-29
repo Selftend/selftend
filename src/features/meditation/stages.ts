@@ -1,6 +1,6 @@
 import type { StageNumber, TmiTechnique } from "@/src/features/meditation/types";
 
-export type StagePhase = "novice" | "skilled" | "transition" | "adept";
+type StagePhase = "novice" | "skilled" | "transition" | "adept";
 
 export interface StageDefinition {
   number: StageNumber;

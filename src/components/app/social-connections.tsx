@@ -4,7 +4,7 @@ import { useColorScheme } from "nativewind";
 import { View } from "react-native";
 import type { ComponentProps } from "react";
 
-export type SocialConnection = {
+type SocialConnection = {
   id: string;
   icon: ComponentProps<typeof Ionicons>["name"];
   onPress?: () => void;

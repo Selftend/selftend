@@ -21,5 +21,3 @@ export const exposureSessionFormSchema = z.object({
   safetyBehaviorDescription: z.string(),
   notes: z.string(),
 });
-
-export type ExposureSessionFormSchema = z.infer<typeof exposureSessionFormSchema>;

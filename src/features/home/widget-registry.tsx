@@ -47,8 +47,8 @@ import { SleepWindDownWidget } from "@/src/features/home/widgets/sleep-wind-down
 import { HabitsQuietWidget } from "@/src/features/home/widgets/habits-quiet-widget";
 import { HabitsOneDeepWidget } from "@/src/features/home/widgets/habits-one-deep-widget";
 
-export type WidgetComponent = React.ComponentType<{ userId: string }>;
-export type WidgetStatus = "default" | "available" | "soon";
+type WidgetComponent = React.ComponentType<{ userId: string }>;
+type WidgetStatus = "default" | "available" | "soon";
 
 export interface GridSpan {
   colSpan: number;

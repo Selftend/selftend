@@ -6,7 +6,6 @@ import { useUpdateShownButtonTours, useUserPreferences } from "@/src/features/se
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("react-native", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require("react") as typeof import("react");
   const actual = jest.requireActual("react-native");
   function MockModal({ children, visible }: { children?: React.ReactNode; visible?: boolean }) {
@@ -26,7 +25,6 @@ jest.mock("react-native", () => {
 });
 
 jest.mock("expo-router", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require("react") as typeof import("react");
 
   return {
@@ -47,7 +45,6 @@ jest.mock("@/src/components/app/notification-settings-modal", () => ({
 }));
 
 jest.mock("expo-linear-gradient", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { View } = require("react-native");
   return { LinearGradient: View };
 });

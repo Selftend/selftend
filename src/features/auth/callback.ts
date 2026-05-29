@@ -11,7 +11,7 @@ const supportedEmailOtpTypes = new Set<EmailOtpType>([
   "email",
 ]);
 
-export interface ParsedAuthCallbackUrl {
+interface ParsedAuthCallbackUrl {
   accessToken: string | null;
   refreshToken: string | null;
   code: string | null;

@@ -19,7 +19,7 @@ const GROUNDING_OPTIONS = [
   { slug: "feet-floor", label: "Feet on floor" },
 ] as const;
 
-export function GroundingWidgetView({ theme }: { theme: Theme }) {
+function GroundingWidgetView({ theme }: { theme: Theme }) {
   const c = PALETTE[theme];
   return (
     <FlexWidget

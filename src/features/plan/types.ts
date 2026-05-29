@@ -1,4 +1,4 @@
-export type PlanFrequency = "daily" | "weekly" | "as_needed";
+type PlanFrequency = "daily" | "weekly" | "as_needed";
 
 export interface CarePlanItem {
   id: string;
