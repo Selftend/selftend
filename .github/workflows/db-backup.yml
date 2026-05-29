@@ -1,0 +1,102 @@
+name: DB Backup
+
+# Daily encrypted backup of the production Supabase database to Google Drive.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_URL        Session Pooler connection string from
+#                          Dashboard → Project Settings → Database → Connection string →
+#                          "Session pooler" (IPv4-compatible; the direct connection is
+#                          IPv6-only and will NOT work on GitHub-hosted runners).
+#                          Looks like:
+#                            postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+#   BACKUP_GPG_PASSPHRASE  Passphrase used to symmetrically encrypt each dump (AES256).
+#                          Store it in your password manager too — without it the
+#                          backups are unrecoverable.
+#   RCLONE_CONF            Full contents of an rclone config file containing a Google
+#                          Drive remote named "gdrive". Generate locally with
+#                          `rclone config` (type: drive), then paste the contents of
+#                          ~/.config/rclone/rclone.conf here. It contains an OAuth token.
+#
+# Restore (locally):
+#   gpg --decrypt selftend-YYYY-MM-DD-HHMMSS.dump.gpg > restore.dump
+#   pg_restore --clean --if-exists --no-owner --no-privileges \
+#     --dbname "$SUPABASE_DB_URL" restore.dump
+
+on:
+  schedule:
+    - cron: "17 3 * * *" # 03:17 UTC daily
+  workflow_dispatch: # allow manual runs from the Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+env:
+  DRIVE_REMOTE: gdrive
+  DRIVE_FOLDER: self-tend-backups
+  RETENTION: 90d
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17 rclone
+
+      - name: Dump database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          STAMP="$(date -u +%Y-%m-%d-%H%M%S)"
+          echo "DUMP_FILE=selftend-${STAMP}.dump" >> "$GITHUB_ENV"
+          pg_dump \
+            --format=custom \
+            --no-owner \
+            --no-privileges \
+            --dbname "$SUPABASE_DB_URL" \
+            --file "selftend-${STAMP}.dump"
+          ls -lh "selftend-${STAMP}.dump"
+
+      - name: Encrypt dump
+        env:
+          BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "$BACKUP_GPG_PASSPHRASE" \
+            --symmetric --cipher-algo AES256 \
+            --output "${DUMP_FILE}.gpg" \
+            "${DUMP_FILE}"
+          rm -f "${DUMP_FILE}"
+          ls -lh "${DUMP_FILE}.gpg"
+
+      - name: Configure rclone
+        env:
+          RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.config/rclone"
+          printf '%s' "$RCLONE_CONF" > "$HOME/.config/rclone/rclone.conf"
+
+      - name: Upload to Google Drive
+        run: |
+          set -euo pipefail
+          rclone copy "${DUMP_FILE}.gpg" "${DRIVE_REMOTE}:${DRIVE_FOLDER}/" --progress
+
+      - name: Prune backups older than retention window
+        run: |
+          set -euo pipefail
+          rclone delete "${DRIVE_REMOTE}:${DRIVE_FOLDER}/" --min-age "$RETENTION" --verbose
+
+      - name: Clean up local artifacts
+        if: always()
+        run: rm -f selftend-*.dump selftend-*.dump.gpg "$HOME/.config/rclone/rclone.conf"
