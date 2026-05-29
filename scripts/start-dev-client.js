@@ -2,9 +2,23 @@ const { spawn } = require("node:child_process");
 const path = require("node:path");
 
 const { applyAdbReverseOnce, startAdbDeviceWatcher } = require("./lib/adb-reverse");
+const {
+  applyProdEnvGuard,
+  ensureCacheMatchesEnv,
+  hasGuardFlag,
+  stripGuardArgs,
+} = require("./lib/prod-env-guard");
 
+const rawArgs = process.argv.slice(2);
+
+if (hasGuardFlag(rawArgs)) {
+  applyProdEnvGuard();
+}
+
+ensureCacheMatchesEnv();
+
+const expoArgs = stripGuardArgs(rawArgs);
 const expoCliPath = path.join(process.cwd(), "node_modules", "expo", "bin", "cli");
-const expoArgs = process.argv.slice(2);
 const args = [expoCliPath, "start", "--dev-client", ...expoArgs];
 
 function getPort(argsToParse) {

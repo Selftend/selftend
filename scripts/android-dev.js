@@ -11,12 +11,26 @@ const AVD_NAME = process.env.SELFTEND_ANDROID_AVD || DEFAULT_AVD_NAME;
 const BOOT_TIMEOUT_MS = Number(process.env.SELFTEND_ANDROID_BOOT_TIMEOUT_MS || 240000);
 const METRO_TIMEOUT_MS = Number(process.env.SELFTEND_METRO_TIMEOUT_MS || 120000);
 const POLL_INTERVAL_MS = 3000;
+const {
+  applyProdEnvGuard,
+  ensureCacheMatchesEnv,
+  hasGuardFlag,
+  stripGuardArgs,
+} = require("./lib/prod-env-guard");
+
 const LOCALHOST_NAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"]);
 
 const controlArgs = new Set(["--list-avds"]);
 const rawArgs = process.argv.slice(2);
+
+if (hasGuardFlag(rawArgs)) {
+  applyProdEnvGuard();
+}
+
+ensureCacheMatchesEnv();
+
 const shouldListAvds = rawArgs.includes("--list-avds");
-const expoArgs = rawArgs.filter((arg) => !controlArgs.has(arg));
+const expoArgs = stripGuardArgs(rawArgs).filter((arg) => !controlArgs.has(arg));
 const metroPort = getMetroPort(expoArgs);
 const localSupabasePort = getLocalSupabasePort();
 

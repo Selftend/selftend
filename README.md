@@ -31,15 +31,17 @@ cp .env.local.example .env.local
 npx supabase start
 ```
 
-`.env` takes precedence over `.env.local` when both exist.
+In dev mode `.env.local` overrides `.env` (Expo's metro transform merges every `.env*` file over `process.env`). The default `start` scripts load `.env.local`. The `start:prod*` scripts load `.env` and temporarily hide `.env.local` so the dev-client actually hits the hosted Supabase — see [docs/android-development.md](docs/android-development.md) for the gory details.
 
 ## Run
 
 ```bash
-npm run web              # browser at http://localhost:8081
-npm run start            # Android device, local Supabase when available
-npm run start:emulator   # Android emulator
-npm run ios              # iOS simulator
+npm run web                    # browser at http://localhost:8081
+npm run start                  # Android device, local Supabase
+npm run start:prod             # Android device, hosted Supabase (hides .env.local for the run)
+npm run start:emulator         # Android emulator, local Supabase
+npm run start:prod:emulator    # Android emulator, hosted Supabase
+npm run ios                    # iOS simulator
 ```
 
 ## Checks
