@@ -157,8 +157,8 @@ Browser-driven flows exercise the wiring between UI, repos, navigation, and auth
 ```bash
 npm run db:start && npm run db:reset    # boot stack + seed
 npm run test:e2e                        # Playwright auto-starts expo on :8081
-npm run test:e2e:headed                 # watch the browser
-npm run test:e2e:ui                     # Playwright UI mode for debugging
+npm run test:e2e -- --headed            # watch the browser
+npm run test:e2e -- --ui                # Playwright UI mode for debugging
 ```
 
 Coverage:
