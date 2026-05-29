@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
 import Sortable from "react-native-sortables";
-import { LinearGradient } from "expo-linear-gradient";
 import { Circle, Svg } from "react-native-svg";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -131,48 +130,17 @@ export default function HomeScreen() {
 
   const header = (
     <View className="gap-6 pb-3">
-      {/* Hero with radial wash (approximated via two overlapping linear gradients) */}
-      <View className="relative overflow-hidden rounded-3xl pb-2 pt-6 px-1">
-        <LinearGradient
-          colors={["hsla(262, 62%, 56%, 0.10)", "transparent"]}
-          start={{ x: 0.12, y: 0 }}
-          end={{ x: 0.72, y: 0.9 }}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            pointerEvents: "none",
-          }}
-        />
-        <LinearGradient
-          colors={["hsla(280, 48%, 60%, 0.10)", "transparent"]}
-          start={{ x: 0.9, y: 0.2 }}
-          end={{ x: 0.6, y: 0.8 }}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            pointerEvents: "none",
-          }}
-        />
-        <View className="relative">
-          <Text variant="eyebrow">
-            {t(isToday ? "today.eyebrow" : "today.eyebrowPast", { date: dateLabel })}
-          </Text>
-          <Text
-            variant="h1"
-            className="mt-2.5 text-[44px] font-extrabold leading-[1.05] tracking-tight"
-          >
-            {greetingLine}
-          </Text>
-          <Text className="mt-2.5 text-[15px] leading-[1.55] text-muted-foreground max-w-[52ch]">
-            {t("today.subtitle")}
-          </Text>
-        </View>
+      {/* Hero — card-style with subtle purple tint */}
+      <View className="rounded-2xl border border-primary/30 bg-primary/5 p-6">
+        <Text variant="eyebrow">
+          {t(isToday ? "today.eyebrow" : "today.eyebrowPast", { date: dateLabel })}
+        </Text>
+        <Text
+          variant="h1"
+          className="mt-2.5 text-[44px] font-extrabold leading-[1.05] tracking-tight"
+        >
+          {greetingLine}
+        </Text>
       </View>
 
       {/* Section heading row */}
@@ -192,7 +160,7 @@ export default function HomeScreen() {
             onPress={() => setEditMode((v) => !v)}
             accessibilityLabel={editMode ? t("home.doneLabel") : t("home.editLabel")}
           >
-            <Icon name={editMode ? "check" : "edit"} className="size-5 text-muted-foreground" />
+            <Icon name={editMode ? "check" : "edit"} className="size-5 text-primary" />
           </Button>
           <Button
             variant="ghost"
@@ -200,8 +168,7 @@ export default function HomeScreen() {
             onPress={() => setAddVisible(true)}
             accessibilityLabel={t("today.dashboard.addWidgetTitle")}
           >
-            <Icon name="add" className="size-4 text-primary" />
-            <Text className="text-primary">{t("today.addTool")}</Text>
+            <Icon name="add" className="size-5 text-primary" />
           </Button>
         </View>
       </View>
@@ -235,7 +202,13 @@ export default function HomeScreen() {
               <ActivityIndicator />
             </View>
           ) : widgetIds.length === 0 ? (
-            <View className="mt-2 items-center gap-3.5 rounded-2xl border border-dashed border-border px-6 py-10">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("today.emptyTitle")}
+              accessibilityHint={t("today.emptyDescription")}
+              onPress={() => setAddVisible(true)}
+              className="mt-2 items-center gap-3.5 rounded-2xl border border-dashed border-border px-6 py-10 active:bg-accent/40"
+            >
               <BreathingDotEmpty />
               <View className="items-center gap-1.5 px-6">
                 <Text className="text-center text-[15px] font-semibold">
@@ -248,7 +221,7 @@ export default function HomeScreen() {
                   {t("today.emptyDescription")}
                 </Text>
               </View>
-            </View>
+            </Pressable>
           ) : cellWidth > 0 ? (
             <Sortable.Flex
               width={gridWidth}
@@ -267,26 +240,31 @@ export default function HomeScreen() {
                 const meta = metaForWidget(id);
                 return (
                   <View key={id} style={{ width, height: WIDGET_HEIGHT, overflow: "hidden" }}>
+                    <View style={{ flex: 1, pointerEvents: editMode ? "none" : "auto" }}>
+                      {resolveWidget(id, userId ?? "")}
+                    </View>
                     {editMode ? (
-                      <Sortable.Handle style={{ flex: 1 }}>
-                        <View style={{ flex: 1, pointerEvents: "none" }}>
-                          {resolveWidget(id, userId ?? "")}
-                        </View>
-                      </Sortable.Handle>
-                    ) : (
-                      <View style={{ flex: 1 }}>{resolveWidget(id, userId ?? "")}</View>
-                    )}
-                    {editMode ? (
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={t("today.dashboard.removeWidget", {
-                          title: meta ? t(meta.titleKey) : id,
-                        })}
-                        onPress={() => removeMutation.mutate(id)}
-                        className="absolute right-1 top-1 size-7 items-center justify-center rounded-full border border-destructive/35 bg-card"
-                      >
-                        <Icon name="close" className="size-4 text-destructive" />
-                      </Pressable>
+                      <>
+                        <Sortable.Handle style={{ position: "absolute", left: 4, top: 4 }}>
+                          <View
+                            accessibilityElementsHidden
+                            importantForAccessibility="no"
+                            className="size-7 items-center justify-center rounded-full border border-primary/35 bg-card"
+                          >
+                            <Icon name="drag-indicator" className="size-4 text-primary" />
+                          </View>
+                        </Sortable.Handle>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={t("today.dashboard.removeWidget", {
+                            title: meta ? t(meta.titleKey) : id,
+                          })}
+                          onPress={() => removeMutation.mutate(id)}
+                          className="absolute right-1 top-1 size-7 items-center justify-center rounded-full border border-destructive/35 bg-card"
+                        >
+                          <Icon name="close" className="size-4 text-destructive" />
+                        </Pressable>
+                      </>
                     ) : null}
                   </View>
                 );

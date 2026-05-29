@@ -1,16 +1,9 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 import { View as mockView } from "react-native";
 
 import HomeScreen from "./today-screen";
 import { renderWithProviders } from "@/test/render-with-providers";
-
-jest.mock("expo-linear-gradient", () => {
-  const View = mockView;
-  return {
-    LinearGradient: ({ children }: { children?: ReactNode }) => <View>{children}</View>,
-  };
-});
 
 jest.mock("react-native-svg", () => {
   const View = mockView;
@@ -52,9 +45,13 @@ jest.mock("@/src/features/home/queries", () => ({
   useReorderWidgets: () => ({ mutate: jest.fn() }),
 }));
 
-jest.mock("@/src/features/home/add-widget-modal", () => ({
-  AddWidgetModal: () => null,
-}));
+jest.mock("@/src/features/home/add-widget-modal", () => {
+  const { View } = require("react-native");
+  return {
+    AddWidgetModal: ({ visible }: { visible: boolean }) =>
+      visible ? <View testID="add-widget-modal-visible" /> : null,
+  };
+});
 
 jest.mock("@/src/features/home/widget-registry", () => ({
   isImplemented: () => false,
@@ -75,11 +72,6 @@ describe("HomeScreen hero", () => {
     expect(screen.getByText("Dashboard")).toBeTruthy();
   });
 
-  it("renders the subtitle text", () => {
-    renderWithProviders(<HomeScreen />);
-    expect(screen.getByText(/pick one thing/i)).toBeTruthy();
-  });
-
   it("renders empty state when no widgets are present", () => {
     renderWithProviders(<HomeScreen />);
     expect(screen.getByText(/add tools you want to check in/i)).toBeTruthy();
@@ -87,6 +79,15 @@ describe("HomeScreen hero", () => {
 
   it("renders Add tool button", () => {
     renderWithProviders(<HomeScreen />);
-    expect(screen.getByText("Add tool")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /add to your plan/i })).toBeTruthy();
+  });
+
+  it("opens the add-widget modal when the empty-state card is pressed", () => {
+    renderWithProviders(<HomeScreen />);
+    const emptyCard = screen.getByRole("button", {
+      name: /add tools you want to check in/i,
+    });
+    fireEvent.press(emptyCard);
+    expect(screen.getByTestId("add-widget-modal-visible")).toBeTruthy();
   });
 });

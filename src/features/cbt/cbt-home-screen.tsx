@@ -434,7 +434,7 @@ export default function CbtHomeScreen() {
           <View className="gap-6">
             <ModuleHomeHeader
               addWidgetCategory="cbt"
-              hue="think"
+              hue="act"
               icon="psychology"
               moduleLabel={null}
               title={t("fullTitle")}

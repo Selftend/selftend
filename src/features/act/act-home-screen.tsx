@@ -245,7 +245,7 @@ function PrincipleTile({ card, icon }: { card: PrincipleCard; icon: MaterialIcon
   const tileContent = (
     <View
       className={cn(
-        "basis-[calc(50%-5px)] gap-2 rounded-xl border border-border bg-card p-4",
+        "gap-2 rounded-xl border border-border bg-card p-4",
         !available && "opacity-60",
       )}
     >
