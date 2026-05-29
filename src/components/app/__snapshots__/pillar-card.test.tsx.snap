@@ -525,7 +525,10 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
         className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--act)/0.10)]"
       >
         <Text
+          accessibilityElementsHidden={true}
           allowFontScaling={false}
+          aria-hidden={true}
+          importantForAccessibility="no-hide-descendants"
           selectable={false}
           style={
             [
@@ -616,7 +619,10 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
         className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--act)/0.10)]"
       >
         <Text
+          accessibilityElementsHidden={true}
           allowFontScaling={false}
+          aria-hidden={true}
+          importantForAccessibility="no-hide-descendants"
           selectable={false}
           style={
             [
@@ -707,7 +713,10 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
         className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--act)/0.10)]"
       >
         <Text
+          accessibilityElementsHidden={true}
           allowFontScaling={false}
+          aria-hidden={true}
+          importantForAccessibility="no-hide-descendants"
           selectable={false}
           style={
             [
@@ -798,7 +807,10 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
         className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--act)/0.10)]"
       >
         <Text
+          accessibilityElementsHidden={true}
           allowFontScaling={false}
+          aria-hidden={true}
+          importantForAccessibility="no-hide-descendants"
           selectable={false}
           style={
             [
@@ -889,7 +901,10 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
         className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--act)/0.10)]"
       >
         <Text
+          accessibilityElementsHidden={true}
           allowFontScaling={false}
+          aria-hidden={true}
+          importantForAccessibility="no-hide-descendants"
           selectable={false}
           style={
             [
@@ -980,7 +995,10 @@ exports[`PillarCard renders 6-tool grid wrapping to 2 rows: act-6-tools 1`] = `
         className="mb-1 h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--act)/0.10)]"
       >
         <Text
+          accessibilityElementsHidden={true}
           allowFontScaling={false}
+          aria-hidden={true}
+          importantForAccessibility="no-hide-descendants"
           selectable={false}
           style={
             [

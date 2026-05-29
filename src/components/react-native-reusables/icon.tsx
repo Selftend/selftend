@@ -95,6 +95,14 @@ function Icon({ name, className, size, style, ...props }: IconProps) {
   return (
     <MaterialIcons
       name={name}
+      // Icons are decorative by default — they pair with a text label or sit
+      // inside a Button/Pressable that carries the accessible name. Leaving
+      // them in the a11y tree pollutes parent accessible names with the glyph
+      // character (e.g. button reads " Sign out" instead of "Sign out").
+      // Callers that need a labelled standalone icon can override.
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      aria-hidden
       className={resolvedClassName}
       size={resolvedSize}
       style={

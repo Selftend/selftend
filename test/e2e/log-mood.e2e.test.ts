@@ -24,8 +24,9 @@ test.describe("log mood", () => {
 
     await page.goto("/tools/mood-tracker/new");
 
-    // Pick score 3 (neutral) on the mood scale.
-    await page.getByRole("button", { name: "3, neutral", exact: true }).click();
+    // Pick score 3 ("OK") on the mood scale - accessible label comes from
+    // mood:checkin.scaleLabels.3.
+    await page.getByRole("button", { name: "OK", exact: true }).click();
 
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
