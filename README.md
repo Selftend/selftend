@@ -50,9 +50,14 @@ npm run ios                    # iOS simulator
 npm run typecheck
 npm run lint
 npm run test
-npm run verify           # typecheck + lint + test
+npm run verify # lint + format:check + typecheck + test:coverage + ratchet
 npm run format
+npm run test:coverage # run tests + write coverage report to coverage/ (report only; does not enforce the floor)
+npm run coverage:ratchet # fail if lines/statements/functions/branches drop below coverage/baseline.json
+npm run coverage:ratchet:update # lock in a new coverage floor after intentionally raising coverage
 ```
+
+After running `npm run coverage:ratchet:update`, commit the updated `coverage/baseline.json` to keep the floor in sync.
 
 ## Documentation
 
