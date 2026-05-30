@@ -214,7 +214,9 @@ describe("useReduceMotionEnabled — native", () => {
     setPlatform("ios");
     jest.clearAllMocks();
     mockIsReduceMotionEnabled.mockResolvedValue(false);
-    mockAddEventListener.mockReturnValue({ remove: mockSubscriptionRemove });
+    mockAddEventListener.mockReturnValue({
+      remove: mockSubscriptionRemove,
+    } as unknown as import("react-native").EmitterSubscription);
   });
 
   afterEach(() => {
@@ -269,8 +271,10 @@ describe("useReduceMotionEnabled — native", () => {
 
     let capturedHandler: ((v: boolean) => void) | null = null;
     mockAddEventListener.mockImplementation((_event, handler) => {
-      capturedHandler = handler as (v: boolean) => void;
-      return { remove: mockSubscriptionRemove };
+      capturedHandler = handler as unknown as (v: boolean) => void;
+      return {
+        remove: mockSubscriptionRemove,
+      } as unknown as import("react-native").EmitterSubscription;
     });
 
     const { result } = renderHook(() => useReduceMotionEnabled());

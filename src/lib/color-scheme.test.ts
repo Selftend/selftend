@@ -40,7 +40,7 @@ jest.mock("@/src/stores/theme-store", () => ({
 }));
 
 const mockNwSet = nwColorScheme.set as jest.Mock;
-const mockUseThemeStore = useThemeStore as jest.Mock;
+const mockUseThemeStore = useThemeStore as unknown as jest.Mock;
 // react-native's useColorScheme is provided by jest-expo — mock it via spyOn
 const mockUseColorScheme = jest.spyOn(require("react-native"), "useColorScheme");
 

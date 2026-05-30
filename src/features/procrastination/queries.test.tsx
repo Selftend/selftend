@@ -32,7 +32,7 @@ describe("useSaveTask", () => {
   it("calls saveTask then saveSteps with the returned task id", async () => {
     const task = { id: "t1", userId: "u1", title: "Write tests" } as never;
     mockSaveTask.mockResolvedValue(task);
-    mockSaveSteps.mockResolvedValue([]);
+    mockSaveSteps.mockResolvedValue(undefined);
 
     const client = createTestQueryClient();
     const { result } = renderHook(() => useSaveTask("u1"), { wrapper: makeWrapper(client) });
@@ -55,7 +55,7 @@ describe("useSaveTask", () => {
   it("returns the saved task", async () => {
     const task = { id: "t1", userId: "u1", title: "Write tests" } as never;
     mockSaveTask.mockResolvedValue(task);
-    mockSaveSteps.mockResolvedValue([]);
+    mockSaveSteps.mockResolvedValue(undefined);
 
     const client = createTestQueryClient();
     const { result } = renderHook(() => useSaveTask("u1"), { wrapper: makeWrapper(client) });

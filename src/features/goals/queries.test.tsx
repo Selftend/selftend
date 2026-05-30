@@ -46,7 +46,7 @@ describe("useSaveGoal — invalidation", () => {
   it("invalidates list, detail, and milestones keys after creating a new goal", async () => {
     const goal = { id: "g1", userId: "u1", title: "New Goal" } as never;
     mockSaveGoal.mockResolvedValue(goal);
-    mockSaveMilestones.mockResolvedValue([]);
+    mockSaveMilestones.mockResolvedValue(undefined);
 
     const client = createTestQueryClient();
     const spy = jest.spyOn(client, "invalidateQueries");
@@ -72,7 +72,7 @@ describe("useSaveGoal — invalidation", () => {
     const goal = { id: "g1", userId: "u1", title: "Updated Goal" } as never;
     mockSaveGoal.mockResolvedValue(goal);
     mockDeleteMilestones.mockResolvedValue();
-    mockSaveMilestones.mockResolvedValue([]);
+    mockSaveMilestones.mockResolvedValue(undefined);
 
     const client = createTestQueryClient();
     const spy = jest.spyOn(client, "invalidateQueries");
@@ -102,7 +102,7 @@ describe("useSaveGoal", () => {
   it("calls saveGoal then saveMilestones without deleting when creating (no goalId)", async () => {
     const goal = { id: "g1", userId: "u1", title: "My Goal" } as never;
     mockSaveGoal.mockResolvedValue(goal);
-    mockSaveMilestones.mockResolvedValue([]);
+    mockSaveMilestones.mockResolvedValue(undefined);
 
     const client = createTestQueryClient();
     const { result } = renderHook(() => useSaveGoal("u1"), { wrapper: makeWrapper(client) });
@@ -123,7 +123,7 @@ describe("useSaveGoal", () => {
     const goal = { id: "g1", userId: "u1", title: "My Goal" } as never;
     mockSaveGoal.mockResolvedValue(goal);
     mockDeleteMilestones.mockResolvedValue();
-    mockSaveMilestones.mockResolvedValue([]);
+    mockSaveMilestones.mockResolvedValue(undefined);
 
     const client = createTestQueryClient();
     const { result } = renderHook(() => useSaveGoal("u1"), { wrapper: makeWrapper(client) });

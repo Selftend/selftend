@@ -145,7 +145,7 @@ describe("validateRequiredEnv", () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://proj.supabase.co";
     process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "pk";
     delete process.env.EXPO_PUBLIC_PUBLIC_APP_URL;
-    process.env.NODE_ENV = "development";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "development";
 
     jest.resetModules();
     const { validateRequiredEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
@@ -167,7 +167,7 @@ describe("validateRequiredEnv", () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://proj.supabase.co";
     process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "pk";
     delete process.env.EXPO_PUBLIC_PUBLIC_APP_URL;
-    process.env.NODE_ENV = "production";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
 
     jest.resetModules();
     const { validateRequiredEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
@@ -191,7 +191,7 @@ describe("validateRequiredEnv", () => {
     process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "pk";
     process.env.EXPO_PUBLIC_PUBLIC_APP_URL = "https://app.example.com";
     delete process.env.EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY;
-    process.env.NODE_ENV = "production";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
 
     jest.resetModules();
     const { validateRequiredEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
@@ -209,7 +209,7 @@ describe("validateRequiredEnv", () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://proj.supabase.co";
     process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "pk";
     process.env.EXPO_PUBLIC_PUBLIC_APP_URL = "https://app.example.com";
-    process.env.NODE_ENV = "development";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "development";
     // Platform.OS stays "ios" by default
 
     jest.resetModules();
