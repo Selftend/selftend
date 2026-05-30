@@ -53,3 +53,6 @@ Thumbs.db
 
 expo-env.d.ts
 # @end expo-cli
+
+/coverage/*
+!/coverage/baseline.json
