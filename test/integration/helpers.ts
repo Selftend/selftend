@@ -93,6 +93,49 @@ export async function deleteAllGratitudeEntriesForUser(userId: string) {
   }
 }
 
+export async function deleteAllActivityLogsForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("activity_logs").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllActivityLogsForUser cleanup failed: ${error.message}`);
+}
+
+export async function deleteAllAngerLogsForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("anger_logs").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllAngerLogsForUser cleanup failed: ${error.message}`);
+}
+
+export async function deleteAllCoreBeliefsForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("core_beliefs").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllCoreBeliefsForUser cleanup failed: ${error.message}`);
+}
+
+export async function deleteAllWorryEntriesForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("worry_entries").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllWorryEntriesForUser cleanup failed: ${error.message}`);
+}
+
+export async function deleteAllSelfCareLogsForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("self_care_logs").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllSelfCareLogsForUser cleanup failed: ${error.message}`);
+}
+
+export async function deleteAllValuesProfileForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("values_profile").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllValuesProfileForUser cleanup failed: ${error.message}`);
+}
+
+export async function deleteAllMindfulnessSessionsForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("mindfulness_sessions").delete().eq("user_id", userId);
+  if (error)
+    throw new Error(`deleteAllMindfulnessSessionsForUser cleanup failed: ${error.message}`);
+}
+
 // Mailpit (the Supabase CLI's local mail catcher) exposes a REST API on 54324.
 const MAILPIT_URL = "http://127.0.0.1:54324";
 
