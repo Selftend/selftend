@@ -236,4 +236,38 @@ describe("beliefs core_beliefs (integration)", () => {
     const list = await alice.from("core_beliefs").select("id").eq("user_id", SEED_USERS.alice.id);
     expect(list.data).toEqual([]);
   });
+
+  it("set_current_timestamp_updated_at trigger advances updated_at on UPDATE", async () => {
+    // Insert a row and capture its initial updated_at.
+    const insert = await alice
+      .from("core_beliefs")
+      .insert({ user_id: SEED_USERS.alice.id, ...baseBelief })
+      .select("id, updated_at")
+      .single();
+    expect(insert.error).toBeNull();
+
+    const originalUpdatedAt = insert.data!.updated_at as string;
+    expect(typeof originalUpdatedAt).toBe("string");
+    // Ensure it parses as a valid UTC timestamp (PostgREST returns ISO-8601 strings).
+    expect(Number.isNaN(new Date(originalUpdatedAt).getTime())).toBe(false);
+
+    // Wait 1 ms to ensure clock advances (Postgres now() is per-transaction,
+    // so a tiny sleep guarantees the second transaction has a later timestamp).
+    await new Promise((r) => setTimeout(r, 2));
+
+    // UPDATE a column — the BEFORE UPDATE trigger must bump updated_at.
+    const update = await alice
+      .from("core_beliefs")
+      .update({ reinforcement_plan: "Updated plan" })
+      .eq("id", insert.data!.id)
+      .select("updated_at")
+      .single();
+    expect(update.error).toBeNull();
+
+    const newUpdatedAt = update.data!.updated_at as string;
+    expect(typeof newUpdatedAt).toBe("string");
+
+    // The trigger must have advanced updated_at strictly beyond the insert value.
+    expect(new Date(newUpdatedAt).getTime()).toBeGreaterThan(new Date(originalUpdatedAt).getTime());
+  });
 });

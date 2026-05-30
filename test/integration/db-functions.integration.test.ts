@@ -4,6 +4,7 @@ import {
   LOCAL_ANON_KEY,
   LOCAL_SUPABASE_URL,
   SEED_USERS,
+  createAnonClient,
   createServiceClient,
   signInAs,
 } from "./helpers";
@@ -172,5 +173,112 @@ describe("delete_user_account() (integration)", () => {
     expect(records.data).toEqual([]);
     expect(recoveryPlans.data).toEqual([]);
     expect(challengePlans.data).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// invoke_send_web_reminders() + schedule_send_web_reminders_cron() (integration)
+//
+// Migration: supabase/migrations/20260508000000_web_push_notifications.sql
+//
+// Security model from that migration:
+//   revoke all on function public.invoke_send_web_reminders() from public, anon, authenticated;
+//   revoke all on function public.schedule_send_web_reminders_cron() from public, anon, authenticated;
+//
+// Meaning:
+//   - anon role  → 42501 permission denied
+//   - authenticated role → 42501 permission denied
+//   - service_role bypasses REVOKE (Postgres superuser-equivalent), so PostgREST
+//     exposes both functions when called with the service-role JWT.
+//
+// NOT assertable via supabase-js / PostgREST:
+//   - cron.job row contents (jobname, schedule): `cron` schema is not exposed via PostgREST.
+//   - vault.decrypted_secrets: `vault` schema is not exposed via PostgREST.
+//   - net.http_post side-effect: triggers an outbound HTTP call; no observable return via client.
+//
+// Cleanup note: calling schedule_send_web_reminders_cron() as service_role does register
+// (or re-register) a pg_cron job named 'selftend-send-web-reminders'. The function is
+// idempotent (it unschedules first, then reschedules), so calling it twice is safe. The cron
+// job is NOT removed here because we cannot reach cron.unschedule() via PostgREST. A full
+// `supabase db reset` clears the cron.job table. We accept this known-leftover because
+// (a) the job is idempotent, (b) it fires every 5 min calling invoke_send_web_reminders()
+// which will fail fast ("Missing Vault secrets") — no lasting damage to the local stack.
+// ---------------------------------------------------------------------------
+
+describe("invoke_send_web_reminders() — access control (integration)", () => {
+  it("is denied for anon callers (42501 permission denied)", async () => {
+    const anon = createAnonClient();
+    const { error } = await anon.rpc("invoke_send_web_reminders");
+    expect(error).not.toBeNull();
+    expect(error?.code).toBe("42501");
+    expect(error?.message).toMatch(/permission denied/i);
+  });
+
+  it("is denied for authenticated callers (42501 permission denied)", async () => {
+    const alice = await signInAs("alice");
+    try {
+      const { error } = await alice.rpc("invoke_send_web_reminders");
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe("42501");
+      expect(error?.message).toMatch(/permission denied/i);
+    } finally {
+      await alice.auth.signOut();
+    }
+  });
+
+  it("service_role can call it via PostgREST rpc; raises 'Missing Vault secrets' when secrets absent", async () => {
+    // service_role bypasses the REVOKE. Vault secrets are NOT seeded in the local
+    // test stack, so the function raises its guard exception rather than calling net.http_post.
+    // This proves the function body executes and its vault-check branch is reachable.
+    //
+    // NOT assertable: the actual net.http_post() call, because Vault secrets are not seeded
+    // and PostgREST cannot reach vault.secrets to insert them.
+    const service = createServiceClient();
+    const { error } = await service.rpc("invoke_send_web_reminders");
+    expect(error).not.toBeNull();
+    expect(error?.code).toBe("P0001");
+    expect(error?.message).toBe("Missing Vault secrets for web push cron.");
+  });
+});
+
+describe("schedule_send_web_reminders_cron() — access control + idempotency (integration)", () => {
+  it("is denied for anon callers (42501 permission denied)", async () => {
+    const anon = createAnonClient();
+    const { error } = await anon.rpc("schedule_send_web_reminders_cron");
+    expect(error).not.toBeNull();
+    expect(error?.code).toBe("42501");
+    expect(error?.message).toMatch(/permission denied/i);
+  });
+
+  it("is denied for authenticated callers (42501 permission denied)", async () => {
+    const alice = await signInAs("alice");
+    try {
+      const { error } = await alice.rpc("schedule_send_web_reminders_cron");
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe("42501");
+      expect(error?.message).toMatch(/permission denied/i);
+    } finally {
+      await alice.auth.signOut();
+    }
+  });
+
+  it("service_role can call it and it is idempotent (no error on repeated calls)", async () => {
+    // service_role bypasses the REVOKE. The function calls cron.unschedule() then
+    // cron.schedule() — the exception handler in the function swallows "job not found"
+    // on the first unschedule, making the whole function idempotent.
+    //
+    // NOT assertable: cron.job row contents (jobname 'selftend-send-web-reminders',
+    // schedule '*/5 * * * *') — the `cron` schema is not exposed via PostgREST.
+    //
+    // CLEANUP NOTE: this leaves a cron job registered in the local pg_cron table.
+    // The job is idempotent and fails fast (invoke_send_web_reminders raises
+    // "Missing Vault secrets for web push cron."). `supabase db reset` clears it.
+    const service = createServiceClient();
+
+    const first = await service.rpc("schedule_send_web_reminders_cron");
+    expect(first.error).toBeNull();
+
+    const second = await service.rpc("schedule_send_web_reminders_cron");
+    expect(second.error).toBeNull();
   });
 });
