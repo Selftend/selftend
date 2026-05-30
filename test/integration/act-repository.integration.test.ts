@@ -14,6 +14,7 @@ async function deleteAllActDataForUser(userId: string) {
   for (const table of [
     "act_action_steps",
     "act_committed_actions",
+    "act_choice_points",
     "act_defusion_logs",
     "act_expansion_logs",
     "act_urge_surf_logs",
@@ -204,5 +205,107 @@ describe("act repository (integration)", () => {
 
     expect(result.error).not.toBeNull();
     expect(result.data).toBeNull();
+  });
+
+  // ─── Cross-user RLS isolation: sibling act_* tables ─────────────────────────
+  // Table-driven: insert a minimal valid row as alice, confirm bob reads [].
+  const rlsIsolationCases: {
+    table: string;
+    row: Record<string, unknown>;
+    // act_program_state uses user_id as PK (no separate id col)
+    pkCol?: string;
+  }[] = [
+    {
+      table: "act_expansion_logs",
+      row: { user_id: SEED_USERS.alice.id },
+    },
+    {
+      table: "act_urge_surf_logs",
+      row: { user_id: SEED_USERS.alice.id },
+    },
+    {
+      table: "act_connection_logs",
+      row: {
+        user_id: SEED_USERS.alice.id,
+        technique: "noticeFiveThings",
+      },
+    },
+    {
+      table: "act_observing_self_sessions",
+      row: {
+        user_id: SEED_USERS.alice.id,
+        technique_used: "tenDeepBreaths",
+      },
+    },
+    {
+      table: "act_value_entries",
+      row: {
+        user_id: SEED_USERS.alice.id,
+        life_domain: "work",
+      },
+    },
+    {
+      table: "act_bulls_eye_snapshots",
+      row: {
+        user_id: SEED_USERS.alice.id,
+        domain: "work",
+        alignment_rating: 5,
+      },
+    },
+    {
+      table: "act_program_state",
+      row: { user_id: SEED_USERS.alice.id },
+      pkCol: "user_id",
+    },
+    {
+      table: "act_committed_actions",
+      row: {
+        user_id: SEED_USERS.alice.id,
+        life_domain: "work",
+      },
+    },
+    {
+      table: "act_choice_points",
+      row: { user_id: SEED_USERS.alice.id },
+    },
+  ];
+
+  for (const { table, row, pkCol = "id" } of rlsIsolationCases) {
+    it(`blocks bob from reading alice's rows in ${table}`, async () => {
+      const insert = await alice.from(table).insert(row).select(pkCol).single();
+      expect(insert.error).toBeNull();
+
+      const bobRead = await bob.from(table).select(pkCol).eq("user_id", SEED_USERS.alice.id);
+      expect(bobRead.error).toBeNull();
+      expect(bobRead.data).toEqual([]);
+    });
+  }
+
+  // act_action_steps needs a parent committed action first
+  it("blocks bob from reading alice's rows in act_action_steps", async () => {
+    const action = await alice
+      .from("act_committed_actions")
+      .insert({ user_id: SEED_USERS.alice.id, life_domain: "work" })
+      .select("id")
+      .single();
+    expect(action.error).toBeNull();
+
+    const step = await alice
+      .from("act_action_steps")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        action_id: action.data!.id,
+        description: "RLS test step",
+      })
+      .select("id")
+      .single();
+    expect(step.error).toBeNull();
+
+    const bobRead = await bob
+      .from("act_action_steps")
+      .select("id")
+      .eq("user_id", SEED_USERS.alice.id);
+    expect(bobRead.error).toBeNull();
+    expect(bobRead.data).toEqual([]);
   });
 });

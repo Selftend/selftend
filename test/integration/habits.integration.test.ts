@@ -14,7 +14,9 @@ describe("habits schema (integration)", () => {
 
   afterEach(async () => {
     const admin = createServiceClient();
-    await admin.from("habits").delete().eq("user_id", SEED_USERS.alice.id).eq("name", habitName);
+    // habit_logs FK-cascades from habits, but delete explicitly for clarity
+    await admin.from("habit_logs").delete().eq("user_id", SEED_USERS.alice.id);
+    await admin.from("habits").delete().eq("user_id", SEED_USERS.alice.id);
     await admin
       .from("user_preferences")
       .update({ habits_onboarding_completed: false })
@@ -87,6 +89,47 @@ describe("habits schema (integration)", () => {
 
     const bobRead = await bob.from("habits").select("id").eq("id", inserted.data?.id);
 
+    expect(bobRead.error).toBeNull();
+    expect(bobRead.data).toEqual([]);
+  });
+
+  it("blocks bob from reading alice's habit_logs", async () => {
+    const admin = createServiceClient();
+
+    // Create a habit as alice via the service client (bypasses RLS for setup)
+    const habit = await admin
+      .from("habits")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        name: habitName,
+        kind: "build",
+        identity: "I read daily.",
+        cue_plan: "After breakfast",
+        stack_after: "Breakfast",
+        craving_pairing: "Coffee",
+        two_minute_version: "Read one page",
+        reward_note: "Check it off",
+        cadence: "daily",
+        color: "primary",
+      })
+      .select("id")
+      .single();
+    expect(habit.error).toBeNull();
+
+    // Alice logs the habit
+    const log = await alice
+      .from("habit_logs")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        habit_id: habit.data!.id,
+        logged_on: "2026-05-30",
+      })
+      .select("id")
+      .single();
+    expect(log.error).toBeNull();
+
+    // Bob cannot see alice's habit_logs
+    const bobRead = await bob.from("habit_logs").select("id").eq("user_id", SEED_USERS.alice.id);
     expect(bobRead.error).toBeNull();
     expect(bobRead.data).toEqual([]);
   });

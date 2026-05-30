@@ -165,3 +165,225 @@ describe("RLS: profile-pics storage", () => {
     expect(error?.message ?? "").toMatch(/policy|denied|unauthorized/i);
   });
 });
+
+// ─── RLS: web_push_subscriptions ─────────────────────────────────────────────
+// The file header claimed coverage but no real test existed — added here.
+
+describe("RLS: web_push_subscriptions", () => {
+  let alice: SupabaseClient;
+  let bob: SupabaseClient;
+
+  afterEach(async () => {
+    const admin = createServiceClient();
+    await admin.from("web_push_subscriptions").delete().eq("user_id", SEED_USERS.alice.id);
+  });
+
+  beforeAll(async () => {
+    [alice, bob] = await Promise.all([signInAs("alice"), signInAs("bob")]);
+  });
+
+  afterAll(async () => {
+    await Promise.all([alice.auth.signOut(), bob.auth.signOut()]);
+  });
+
+  it("alice can insert her own subscription", async () => {
+    const { error } = await alice.from("web_push_subscriptions").insert({
+      user_id: SEED_USERS.alice.id,
+      endpoint: "https://push.example.com/alice-rls-test",
+      p256dh: "BNcB-test-p256dh",
+      auth: "test-auth-key",
+    });
+    expect(error).toBeNull();
+  });
+
+  it("bob cannot read alice's subscription", async () => {
+    await alice
+      .from("web_push_subscriptions")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        endpoint: "https://push.example.com/alice-rls-test-2",
+        p256dh: "BNcB-test-p256dh",
+        auth: "test-auth-key",
+      })
+      .throwOnError();
+
+    const { data, error } = await bob
+      .from("web_push_subscriptions")
+      .select("id")
+      .eq("user_id", SEED_USERS.alice.id);
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  it("bob cannot insert a subscription on behalf of alice (RLS violation)", async () => {
+    const { error } = await bob.from("web_push_subscriptions").insert({
+      user_id: SEED_USERS.alice.id,
+      endpoint: "https://push.example.com/spoofed",
+      p256dh: "BNcB-spoofed",
+      auth: "spoofed-auth",
+    });
+    expect(error).not.toBeNull();
+    expect(error?.message ?? "").toMatch(/row-level security|policy|violates/i);
+  });
+});
+
+// ─── RLS: noticing_logs ───────────────────────────────────────────────────────
+
+// SKIPPED: the `noticing_logs` table is NOT created by the migration tooling.
+// Migration 20260552_noticing_logs.sql is recorded in schema_migrations but the
+// table is absent after a fresh `supabase stop && start && db reset` (verified
+// 2026-05-30). The migration SQL is valid (it creates the table when run by
+// hand); the mixed 8-digit (20260552) / 14-digit (e.g. 20260516000000) migration
+// version formats break Supabase's apply step, so the version is marked applied
+// without running. Re-enable this block once the migration-version format is
+// fixed and the table is reliably created by `db reset`.
+describe.skip("RLS: noticing_logs", () => {
+  let alice: SupabaseClient;
+  let bob: SupabaseClient;
+
+  beforeAll(async () => {
+    [alice, bob] = await Promise.all([signInAs("alice"), signInAs("bob")]);
+  });
+
+  afterEach(async () => {
+    const admin = createServiceClient();
+    await admin.from("noticing_logs").delete().eq("user_id", SEED_USERS.alice.id);
+  });
+
+  afterAll(async () => {
+    await Promise.all([alice.auth.signOut(), bob.auth.signOut()]);
+  });
+
+  it("bob cannot read alice's noticing_logs", async () => {
+    await alice
+      .from("noticing_logs")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        situation: "RLS test situation",
+      })
+      .throwOnError();
+
+    const { data, error } = await bob
+      .from("noticing_logs")
+      .select("id")
+      .eq("user_id", SEED_USERS.alice.id);
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+});
+
+// ─── RLS: recovery_plans + challenge_plans ────────────────────────────────────
+
+describe("RLS: recovery_plans and challenge_plans", () => {
+  let alice: SupabaseClient;
+  let bob: SupabaseClient;
+
+  beforeAll(async () => {
+    [alice, bob] = await Promise.all([signInAs("alice"), signInAs("bob")]);
+  });
+
+  afterEach(async () => {
+    const admin = createServiceClient();
+    // challenge_plans FK-cascades from recovery_plans
+    await admin.from("challenge_plans").delete().eq("user_id", SEED_USERS.alice.id);
+    await admin.from("recovery_plans").delete().eq("user_id", SEED_USERS.alice.id);
+  });
+
+  afterAll(async () => {
+    await Promise.all([alice.auth.signOut(), bob.auth.signOut()]);
+  });
+
+  it("bob cannot read alice's recovery_plan", async () => {
+    await alice.from("recovery_plans").insert({ user_id: SEED_USERS.alice.id }).throwOnError();
+
+    const { data, error } = await bob
+      .from("recovery_plans")
+      .select("id")
+      .eq("user_id", SEED_USERS.alice.id);
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  it("bob cannot read alice's challenge_plans", async () => {
+    const plan = await alice
+      .from("recovery_plans")
+      .insert({ user_id: SEED_USERS.alice.id })
+      .select("id")
+      .single();
+    expect(plan.error).toBeNull();
+
+    await alice
+      .from("challenge_plans")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        recovery_plan_id: plan.data!.id,
+        challenge_description: "Private challenge",
+      })
+      .throwOnError();
+
+    const { data, error } = await bob
+      .from("challenge_plans")
+      .select("id")
+      .eq("user_id", SEED_USERS.alice.id);
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+});
+
+// ─── RLS: anon sweep ─────────────────────────────────────────────────────────
+// Anonymous (unauthenticated) clients should see nothing in any user table.
+
+describe("RLS: anon client sees nothing", () => {
+  it("anon reads [] from mood_logs", async () => {
+    const anon = createAnonClient();
+    const { data, error } = await anon.from("mood_logs").select("id");
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  it("anon reads [] from journal_entries", async () => {
+    const anon = createAnonClient();
+    const { data, error } = await anon.from("journal_entries").select("id");
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  it("anon reads [] from core_beliefs", async () => {
+    const anon = createAnonClient();
+    const { data, error } = await anon.from("core_beliefs").select("id");
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  it("anon reads [] from web_push_subscriptions", async () => {
+    const anon = createAnonClient();
+    const { data, error } = await anon.from("web_push_subscriptions").select("id");
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  // SKIPPED: noticing_logs is not created by the migration tooling (see the
+  // RLS: noticing_logs block above for the migration-version-format bug).
+  it.skip("anon reads [] from noticing_logs", async () => {
+    const anon = createAnonClient();
+    const { data, error } = await anon.from("noticing_logs").select("id");
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  it("anon reads [] from recovery_plans", async () => {
+    const anon = createAnonClient();
+    const { data, error } = await anon.from("recovery_plans").select("id");
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  it("anon cannot insert into mood_logs (expects an error)", async () => {
+    const anon = createAnonClient();
+    const { error } = await anon.from("mood_logs").insert({
+      user_id: SEED_USERS.alice.id,
+      mood_score: 5,
+    });
+    expect(error).not.toBeNull();
+  });
+});

@@ -161,4 +161,39 @@ describe("meditation_sessions (integration)", () => {
     expect(list.data).toHaveLength(1);
     expect(list.data?.[0].current_stage).toBe(3);
   });
+
+  // ─── Cross-user RLS isolation: meditation_program_state & stage_practice_notes ─
+
+  it("blocks bob from reading alice's meditation_program_state", async () => {
+    await alice
+      .from("meditation_program_state")
+      .upsert(
+        { user_id: SEED_USERS.alice.id, current_stage: 1, assessed_stage: 1 },
+        { onConflict: "user_id" },
+      )
+      .throwOnError();
+
+    const bobRead = await bob
+      .from("meditation_program_state")
+      .select("user_id")
+      .eq("user_id", SEED_USERS.alice.id);
+    expect(bobRead.error).toBeNull();
+    expect(bobRead.data).toEqual([]);
+  });
+
+  it("blocks bob from reading alice's stage_practice_notes", async () => {
+    const insert = await alice
+      .from("stage_practice_notes")
+      .insert({ user_id: SEED_USERS.alice.id, stage: 1, note: "Private note" })
+      .select("id")
+      .single();
+    expect(insert.error).toBeNull();
+
+    const bobRead = await bob
+      .from("stage_practice_notes")
+      .select("id")
+      .eq("user_id", SEED_USERS.alice.id);
+    expect(bobRead.error).toBeNull();
+    expect(bobRead.data).toEqual([]);
+  });
 });
