@@ -45,11 +45,15 @@ module.exports = [
     },
   },
   {
-    files: ["**/*.test.ts", "**/*.test.tsx"],
+    files: ["**/*.test.ts", "**/*.test.tsx", "**/*.test.js"],
     rules: {
       // require() inside jest.mock factories is the idiomatic pattern — factories
       // can't reference out-of-scope ES imports because jest hoists the mock call.
       "@typescript-eslint/no-require-imports": "off",
+      // Jest globals (describe, it, expect, …) are injected by jest at runtime;
+      // no-undef is already off for .ts test files via eslint-config-expo, match
+      // that behaviour for plain .js test files in scripts/.
+      "no-undef": "off",
     },
   },
   prettierConfig,
