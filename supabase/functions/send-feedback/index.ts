@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.103.2";
+import { buildFeedbackEmailHtml, validateFeedbackInput } from "../_shared/feedback.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,8 +52,8 @@ Deno.serve(async (request) => {
     }
 
     const { category, message } = await request.json();
-    const trimmed = typeof message === "string" ? message.trim() : "";
-    if (!category || trimmed.length < 10 || trimmed.length > 1000) {
+    const { valid, trimmed } = validateFeedbackInput(category, message);
+    if (!valid) {
       return new Response(JSON.stringify({ error: "Invalid input" }), {
         headers: { ...jsonHeaders, ...corsHeaders },
         status: 400,
@@ -74,26 +75,7 @@ Deno.serve(async (request) => {
         to: supportEmail,
         reply_to: user.email,
         subject: `Selftend feedback [${category}]`,
-        html: `<html>
-  <body style="margin:0;padding:0;background-color:#f9f8fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9f8fb;padding:40px 0;">
-      <tr>
-        <td align="center">
-          <table width="480" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:10px;border:1px solid #dad8e2;padding:40px;max-width:480px;">
-            <tr>
-              <td>
-                <p style="margin:0 0 4px;font-size:22px;font-weight:600;color:#221d2a;">Selftend feedback</p>
-                <p style="margin:0 0 24px;font-size:13px;color:#9d99a8;">Category: ${category}</p>
-                <p style="margin:0 0 24px;font-size:15px;color:#221d2a;white-space:pre-wrap;">${trimmed}</p>
-                <p style="margin:0;font-size:13px;color:#9d99a8;">From: ${user.email}</p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`,
+        html: buildFeedbackEmailHtml(category, trimmed, user.email ?? ""),
       }),
     });
 
