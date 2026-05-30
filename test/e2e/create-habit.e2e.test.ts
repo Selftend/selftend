@@ -1,14 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { SEED_USERS, createServiceClient, dismissPostSignInModals, signInAsViaUi } from "./helpers";
-
-async function deleteAllHabitsForUser(userId: string) {
-  const admin = createServiceClient();
-  // habit_logs cascade via the habits FK, but be explicit so a partial run
-  // doesn't leak between tests.
-  await admin.from("habit_logs").delete().eq("user_id", userId);
-  await admin.from("habits").delete().eq("user_id", userId);
-}
+import {
+  SEED_USERS,
+  deleteAllHabitsForUser,
+  dismissPostSignInModals,
+  signInAsViaUi,
+} from "./helpers";
 
 test.describe("create habit", () => {
   test.beforeEach(async () => {

@@ -188,6 +188,23 @@ export async function deleteAllExposureForUser(userId: string) {
     );
 }
 
+export async function deleteAllSleepLogsForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("sleep_logs").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllSleepLogsForUser cleanup failed: ${error.message}`);
+}
+
+export async function deleteAllHabitsForUser(userId: string) {
+  const admin = createServiceClient();
+  // Delete habit_logs before habits to avoid FK violations (also explicit for clarity).
+  const { error: logError } = await admin.from("habit_logs").delete().eq("user_id", userId);
+  if (logError)
+    throw new Error(`deleteAllHabitsForUser (habit_logs) cleanup failed: ${logError.message}`);
+  const { error: habitError } = await admin.from("habits").delete().eq("user_id", userId);
+  if (habitError)
+    throw new Error(`deleteAllHabitsForUser (habits) cleanup failed: ${habitError.message}`);
+}
+
 export async function deleteAllWidgetPreferencesForUser(userId: string) {
   const admin = createServiceClient();
   const { error } = await admin.from("widget_preferences").delete().eq("user_id", userId);
