@@ -3,6 +3,7 @@ import { expect, type Page } from "@playwright/test";
 import {
   SEED_USERS,
   type SeedUserName,
+  createAnonClient,
   createServiceClient,
   deleteAllThoughtRecordsForUser,
   deleteAllMoodLogsForUser,
@@ -13,10 +14,12 @@ import {
   deleteAllCoreBeliefsForUser,
   deleteAllGoalsForUser,
   deleteAllActLogsForUser,
+  deleteAllWidgetPreferencesForUser,
 } from "../integration/helpers";
 
 export {
   SEED_USERS,
+  createAnonClient,
   createServiceClient,
   deleteAllThoughtRecordsForUser,
   deleteAllMoodLogsForUser,
@@ -28,6 +31,11 @@ export {
   deleteAllGoalsForUser,
   deleteAllActLogsForUser,
 };
+
+// Alias: reset widget preferences for a user (deletes all rows so the app re-seeds defaults).
+export async function resetWidgetPreferencesForUser(userId: string): Promise<void> {
+  await deleteAllWidgetPreferencesForUser(userId);
+}
 
 // Sign in via the actual UI form using a seeded user. Asserts redirect to the
 // authenticated tabs.
@@ -149,6 +157,35 @@ export async function confirmSignupViaMailpit(page: Page, email: string) {
   const link = await fetchConfirmationLink(page, email);
   const res = await page.request.get(link, { maxRedirects: 0 });
   expect([200, 301, 302, 303]).toContain(res.status());
+}
+
+// Finds the most recent password-RECOVERY email in Mailpit for `email` and
+// returns the Supabase `/auth/v1/verify?...type=recovery...` link.
+// Mirrors fetchConfirmationLink but filters for the recovery type.
+export async function fetchRecoveryLink(page: Page, email: string): Promise<string> {
+  const target = email.toLowerCase();
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const listRes = await page.request.get(`${MAILPIT_URL}/api/v1/messages?limit=50`);
+    if (listRes.ok()) {
+      const { messages = [] } = (await listRes.json()) as { messages?: MailpitMessageSummary[] };
+      const match = messages.find((m) => m.To?.some((to) => to.Address?.toLowerCase() === target));
+      if (match) {
+        const msgRes = await page.request.get(`${MAILPIT_URL}/api/v1/message/${match.ID}`);
+        const body = (await msgRes.json()) as { HTML?: string; Text?: string };
+        const haystack = `${body.Text ?? ""}\n${body.HTML ?? ""}`.replace(/&amp;/g, "&");
+        // Match a recovery verify link specifically (type=recovery in URL)
+        const link = haystack.match(
+          /https?:\/\/[^\s"'<>]*\/auth\/v1\/verify[^\s"'<>]*type=recovery[^\s"'<>]*/,
+        );
+        if (link) return link[0];
+        // Fallback: match any verify link (recovery emails may not have type in URL depending on config)
+        const anyLink = haystack.match(/https?:\/\/[^\s"'<>]*\/auth\/v1\/verify[^\s"'<>]*/);
+        if (anyLink) return anyLink[0];
+      }
+    }
+    await page.waitForTimeout(500);
+  }
+  throw new Error(`No Mailpit recovery email found for ${email}`);
 }
 
 // Removes a user via service role admin API. Used for sign-up tests that
