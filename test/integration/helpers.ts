@@ -136,6 +136,64 @@ export async function deleteAllMindfulnessSessionsForUser(userId: string) {
     throw new Error(`deleteAllMindfulnessSessionsForUser cleanup failed: ${error.message}`);
 }
 
+export async function deleteAllGoalsForUser(userId: string) {
+  const admin = createServiceClient();
+  // Delete milestones by user_id first (safe even if cascade would handle it)
+  const { error: milError } = await admin.from("milestones").delete().eq("user_id", userId);
+  if (milError)
+    throw new Error(`deleteAllGoalsForUser (milestones) cleanup failed: ${milError.message}`);
+  const { error: goalError } = await admin.from("goals").delete().eq("user_id", userId);
+  if (goalError)
+    throw new Error(`deleteAllGoalsForUser (goals) cleanup failed: ${goalError.message}`);
+}
+
+export async function deleteAllProcrastinationTasksForUser(userId: string) {
+  const admin = createServiceClient();
+  // Delete task_steps by user_id first
+  const { error: stepError } = await admin.from("task_steps").delete().eq("user_id", userId);
+  if (stepError)
+    throw new Error(
+      `deleteAllProcrastinationTasksForUser (task_steps) cleanup failed: ${stepError.message}`,
+    );
+  const { error: taskError } = await admin
+    .from("procrastination_tasks")
+    .delete()
+    .eq("user_id", userId);
+  if (taskError)
+    throw new Error(
+      `deleteAllProcrastinationTasksForUser (procrastination_tasks) cleanup failed: ${taskError.message}`,
+    );
+}
+
+export async function deleteAllExposureForUser(userId: string) {
+  const admin = createServiceClient();
+  // Delete deepest children first
+  const { error: sessError } = await admin.from("exposure_sessions").delete().eq("user_id", userId);
+  if (sessError)
+    throw new Error(
+      `deleteAllExposureForUser (exposure_sessions) cleanup failed: ${sessError.message}`,
+    );
+  const { error: itemError } = await admin.from("exposure_items").delete().eq("user_id", userId);
+  if (itemError)
+    throw new Error(
+      `deleteAllExposureForUser (exposure_items) cleanup failed: ${itemError.message}`,
+    );
+  const { error: hierError } = await admin
+    .from("exposure_hierarchies")
+    .delete()
+    .eq("user_id", userId);
+  if (hierError)
+    throw new Error(
+      `deleteAllExposureForUser (exposure_hierarchies) cleanup failed: ${hierError.message}`,
+    );
+}
+
+export async function deleteAllWidgetPreferencesForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("widget_preferences").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllWidgetPreferencesForUser cleanup failed: ${error.message}`);
+}
+
 // Mailpit (the Supabase CLI's local mail catcher) exposes a REST API on 54324.
 const MAILPIT_URL = "http://127.0.0.1:54324";
 
