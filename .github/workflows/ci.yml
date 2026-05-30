@@ -27,6 +27,13 @@ jobs:
       - name: Verify
         run: npm run verify
 
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e "const s=require('./coverage/coverage-summary.json').total;const m=['lines','statements','functions','branches'];let o='| Metric | % | Covered/Total |\n|---|---|---|\n';for(const k of m){const t=s[k];o+='| '+k+' | '+t.pct+'% | '+t.covered+'/'+t.total+' |\n';}console.log(o);" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   integration:
     runs-on: ubuntu-latest
     needs: verify
