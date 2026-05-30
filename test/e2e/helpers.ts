@@ -10,6 +10,9 @@ import {
   deleteAllGratitudeEntriesForUser,
   deleteAllSleepLogsForUser,
   deleteAllHabitsForUser,
+  deleteAllCoreBeliefsForUser,
+  deleteAllGoalsForUser,
+  deleteAllActLogsForUser,
 } from "../integration/helpers";
 
 export {
@@ -21,6 +24,9 @@ export {
   deleteAllGratitudeEntriesForUser,
   deleteAllSleepLogsForUser,
   deleteAllHabitsForUser,
+  deleteAllCoreBeliefsForUser,
+  deleteAllGoalsForUser,
+  deleteAllActLogsForUser,
 };
 
 // Sign in via the actual UI form using a seeded user. Asserts redirect to the

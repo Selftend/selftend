@@ -211,6 +211,30 @@ export async function deleteAllWidgetPreferencesForUser(userId: string) {
   if (error) throw new Error(`deleteAllWidgetPreferencesForUser cleanup failed: ${error.message}`);
 }
 
+export async function deleteAllActLogsForUser(userId: string) {
+  const admin = createServiceClient();
+  // Delete act_action_steps first (FK → act_committed_actions ON DELETE CASCADE, but explicit is safer)
+  const { error: stepsError } = await admin.from("act_action_steps").delete().eq("user_id", userId);
+  if (stepsError)
+    throw new Error(`deleteAllActLogsForUser (act_action_steps) failed: ${stepsError.message}`);
+  const tables = [
+    "act_defusion_logs",
+    "act_expansion_logs",
+    "act_urge_surf_logs",
+    "act_connection_logs",
+    "act_observing_self_sessions",
+    "act_value_entries",
+    "act_bulls_eye_snapshots",
+    "act_committed_actions",
+    "act_choice_points",
+    "act_program_state",
+  ] as const;
+  for (const table of tables) {
+    const { error } = await admin.from(table).delete().eq("user_id", userId);
+    if (error) throw new Error(`deleteAllActLogsForUser (${table}) failed: ${error.message}`);
+  }
+}
+
 // Mailpit (the Supabase CLI's local mail catcher) exposes a REST API on 54324.
 const MAILPIT_URL = "http://127.0.0.1:54324";
 
