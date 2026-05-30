@@ -15,6 +15,8 @@ import {
   deleteAllGoalsForUser,
   deleteAllActLogsForUser,
   deleteAllWidgetPreferencesForUser,
+  deleteAllExposureForUser,
+  deleteAllActivityLogsForUser,
 } from "../integration/helpers";
 
 export {
@@ -30,6 +32,8 @@ export {
   deleteAllCoreBeliefsForUser,
   deleteAllGoalsForUser,
   deleteAllActLogsForUser,
+  deleteAllExposureForUser,
+  deleteAllActivityLogsForUser,
 };
 
 // Alias: reset widget preferences for a user (deletes all rows so the app re-seeds defaults).
