@@ -87,13 +87,15 @@ Expo loads `.env.local` with priority over `.env`, so `npm start` will now talk 
 
 ### Seeded test users
 
-All three accounts share the password `password123`. They are recreated on every `npm run db:reset`.
+Each account has its own password (defined in `supabase/seed.sql`, mirrored in `SEED_USERS` in `test/integration/helpers.ts`). They are recreated on every `npm run db:reset`.
 
-| Email              | UUID    | State                                                |
-| ------------------ | ------- | ---------------------------------------------------- |
-| `alice@test.local` | `…0001` | Empty account, post-signup, CBT onboarding not done  |
-| `bob@test.local`   | `…0002` | Mid-use, 5 thought records, reminders enabled        |
-| `demo@test.local`  | `…0003` | Polished demo/screenshot account, 10 thought records |
+| Email              | Password              | UUID    | State                                                |
+| ------------------ | --------------------- | ------- | ---------------------------------------------------- |
+| `alice@test.local` | `test-pass-alice-123` | `…0001` | Empty account, post-signup, CBT onboarding not done  |
+| `bob@test.local`   | `test-pass-bob-123`   | `…0002` | Mid-use, 5 thought records, reminders enabled        |
+| `demo@test.local`  | `test-pass-demo-123`  | `…0003` | Polished demo/screenshot account, 10 thought records |
+
+> The sign-in form rejects passwords shorter than 12 characters, so these seed passwords are intentionally ≥12 chars. If you change them in `seed.sql`, keep them long enough and update `SEED_USERS` to match.
 
 Sign in via the app's email/password form (`signInWithPassword` in `src/features/auth/api.ts`).
 
