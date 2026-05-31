@@ -8,7 +8,10 @@ import { renderWithProviders } from "@/test/render-with-providers";
 jest.mock("expo-router", () => ({
   router: {
     push: jest.fn(),
+    canGoBack: jest.fn(() => false),
   },
+  usePathname: () => "/tools/breathing",
+  useFocusEffect: jest.fn(),
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -25,6 +28,16 @@ jest.mock("@/src/components/app/help-sheet", () => ({
   HelpSheet: () => null,
 }));
 
+jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
+jest.mock("@/src/components/app/notification-settings-modal", () => ({
+  NotificationSettingsModal: () => null,
+}));
+jest.mock("@/src/components/app/add-to-home-button", () => ({ AddToHomeButton: () => null }));
+jest.mock("@/src/features/settings/queries", () => ({
+  useUserPreferences: () => ({ data: undefined }),
+  useUpdateShownButtonTours: () => ({ mutateAsync: jest.fn(), isPending: false }),
+}));
+
 const mockUseBreathingSessions = useBreathingSessions as jest.MockedFunction<
   typeof useBreathingSessions
 >;
@@ -37,18 +50,17 @@ describe("Breathing list polish", () => {
     } as unknown as ReturnType<typeof useBreathingSessions>);
   });
 
-  it("renders ToolHero with Breathing chip", () => {
+  it("renders the header title", () => {
     renderWithProviders(<BreathingScreen />);
-    expect(screen.getByText("Breathing")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Breathing exercises" })).toBeTruthy();
   });
 
-  it("renders tagline and meta from ToolHero", () => {
+  it("renders tagline and the pattern stat", () => {
     renderWithProviders(<BreathingScreen />);
     expect(
       screen.getByText("Short guided patterns to calm your nervous system right now."),
     ).toBeTruthy();
-    expect(screen.getByText("3 patterns · 1–10 min")).toBeTruthy();
+    expect(screen.getByText("3 patterns")).toBeTruthy();
   });
 
   it("renders all 3 pattern rows", () => {

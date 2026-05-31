@@ -15,6 +15,7 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ToolStats } from "@/src/components/app/tool-stats";
 import { MindfulnessOnboarding } from "@/src/components/app/mindfulness-onboarding-modal";
 import { mindfulnessExercises, mindfulnessLookup } from "@/src/constants/mindfulness";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
@@ -58,23 +59,24 @@ export default function MindfulnessHomeScreen() {
                   { type: "info", onPress: () => setForceOnboarding(true) },
                 ]}
                 meta={
-                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                    <Text variant="muted" className="text-xs">
-                      <Text className="text-xs font-bold text-mist">
-                        {t("mindfulness.hero.practices", { count: mindfulnessExercises.length })}
-                      </Text>
-                    </Text>
-                    <Text variant="muted" className="text-xs">
-                      <Text className="text-xs font-bold text-mist">
-                        {t("mindfulness.hero.sessions", { count: recentSessions.length })}
-                      </Text>
-                    </Text>
-                  </View>
+                  <ToolStats
+                    accentClassName="text-mist"
+                    credit={t("mindfulness.authorEyebrow")}
+                    items={[
+                      {
+                        value: t("mindfulness.hero.practices", {
+                          count: mindfulnessExercises.length,
+                        }),
+                        label: "",
+                      },
+                      {
+                        value: t("mindfulness.hero.sessions", { count: recentSessions.length }),
+                        label: "",
+                      },
+                    ]}
+                  />
                 }
               />
-              <Text variant="eyebrow" tint="primary">
-                {t("mindfulness.authorEyebrow")}
-              </Text>
             </View>
 
             {recentSessions.length > 0 ? (

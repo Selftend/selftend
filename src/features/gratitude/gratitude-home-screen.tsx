@@ -5,7 +5,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { ToolHero } from "@/src/components/app/tool-hero";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ToolStats } from "@/src/components/app/tool-stats";
 import { Badge } from "@/src/components/react-native-reusables/badge";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card } from "@/src/components/react-native-reusables/card";
@@ -77,52 +78,34 @@ export default function GratitudeHomeScreen() {
       />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow gap-6 p-4">
-          <ToolHero
+          <ModuleHomeHeader
+            addWidgetCategory="gratitude"
             hue="think"
             icon="favorite"
+            moduleLabel={null}
             title={t("home.title")}
-            moduleLabel={t("moduleLabel")}
-            tagline={t("tagline")}
+            description={t("tagline")}
+            actions={[
+              { type: "notifications", targetKey: "gratitude" },
+              { type: "info", onPress: () => setForceOnboarding(true) },
+            ]}
             meta={
-              <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                <Text variant="muted" className="text-xs">
-                  <Text className="text-xs font-bold text-think">
-                    {t("hero.entries", { count: allEntries.length })}
-                  </Text>
-                </Text>
-                <Text variant="muted" className="text-xs">
-                  <Text className="text-xs font-bold text-think">
-                    {t("hero.favorites", { count: favoriteCount })}
-                  </Text>
-                </Text>
-                <Text variant="muted" className="text-xs">
-                  {t("hero.thisWeek")} ·{" "}
-                  <Text className="text-xs font-bold text-think">{thisWeekCount}</Text>
-                </Text>
-              </View>
+              <ToolStats
+                accentClassName="text-think"
+                credit={t("authorEyebrow")}
+                items={[
+                  { value: t("hero.entries", { count: allEntries.length }), label: "" },
+                  { value: t("hero.favorites", { count: favoriteCount }), label: "" },
+                  { value: String(thisWeekCount), label: t("hero.thisWeek") },
+                ]}
+              />
             }
           />
 
-          <View className="px-4">
-            <Text variant="eyebrow" tint="primary">
-              {t("authorEyebrow")}
-            </Text>
-          </View>
-
-          <View className="flex-row items-center gap-3">
-            <Button onPress={() => router.push("/tools/gratitude-log/new")} className="self-start">
-              <Icon name="add" className="size-4 text-primary-foreground" />
-              <Text>{t("newEntry")}</Text>
-            </Button>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("onboarding.helpHint")}
-              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={() => setForceOnboarding(true)}
-            >
-              <Icon name="info-outline" size={20} className="text-muted-foreground" />
-            </Pressable>
-          </View>
+          <Button onPress={() => router.push("/tools/gratitude-log/new")} className="self-start">
+            <Icon name="add" className="size-4 text-primary-foreground" />
+            <Text>{t("newEntry")}</Text>
+          </Button>
 
           {/* Featured break card with gradient stripe */}
           <BreakCard breakIndex={breakIndex} onDismiss={() => setBreakIndex((prev) => prev + 1)} />

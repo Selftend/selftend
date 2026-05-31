@@ -8,13 +8,15 @@ import { Card } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HelpSheet } from "@/src/components/app/help-sheet";
-import { ToolHero } from "@/src/components/app/tool-hero";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ToolStats } from "@/src/components/app/tool-stats";
 import {
   Pattern478Diagram,
   PatternBoxDiagram,
   PatternCoherentDiagram,
 } from "@/src/features/breathing/pattern-diagrams";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
+import { breathingPatterns } from "@/src/constants/breathing";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -25,28 +27,37 @@ export default function BreathingScreen() {
   const [helpOpen, setHelpOpen] = useState(false);
 
   const lastSession = sessions && sessions.length > 0 ? sessions[0] : null;
+  const recentCount = sessions?.length ?? 0;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow gap-6 p-4">
-        <ToolHero
+        <ModuleHomeHeader
+          addWidgetCategory="breathing"
           hue="aqua"
           icon="air"
+          moduleLabel={null}
           title={t("breathing.title")}
-          moduleLabel={t("breathing.moduleLabel")}
-          tagline={t("breathing.tagline")}
+          description={t("breathing.tagline")}
+          actions={[
+            { type: "notifications", targetKey: "breathing" },
+            {
+              type: "info",
+              onPress: () => setHelpOpen(true),
+              accessibilityLabel: t("breathing.helpLabel"),
+            },
+          ]}
           meta={
-            <View className="flex-row items-center gap-2">
-              <Text className="text-xs text-muted-foreground">{t("breathing.meta")}</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("breathing.helpLabel")}
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => setHelpOpen(true)}
-              >
-                <Icon name="help-outline" size={16} className="text-muted-foreground" />
-              </Pressable>
-            </View>
+            <ToolStats
+              accentClassName="text-aqua"
+              items={[
+                {
+                  value: t("breathing.hero.patterns", { count: breathingPatterns.length }),
+                  label: "",
+                },
+                { value: t("breathing.hero.recentSessions", { count: recentCount }), label: "" },
+              ]}
+            />
           }
         />
 

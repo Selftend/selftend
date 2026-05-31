@@ -4,10 +4,9 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { ToolHero } from "@/src/components/app/tool-hero";
-import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ToolStats } from "@/src/components/app/tool-stats";
 import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
-import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { EmptyState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card } from "@/src/components/react-native-reusables/card";
@@ -52,7 +51,6 @@ export default function JournalListScreen() {
   const { data: entries } = useJournalEntries(userId, 50);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   const allEntries = entries ?? [];
   const sections = groupByPeriod(allEntries);
@@ -68,72 +66,36 @@ export default function JournalListScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <NotificationSettingsModal
-        targetKey="journal"
-        visible={showNotifications}
-        onDismiss={() => setShowNotifications(false)}
-      />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow gap-6 p-4">
-          <ToolHero
+          <ModuleHomeHeader
+            addWidgetCategory="journal"
             hue="ink"
             icon="edit-note"
+            moduleLabel={null}
             title={t("title")}
-            moduleLabel={t("moduleLabel")}
-            tagline={t("tagline")}
+            description={t("tagline")}
+            actions={[
+              { type: "notifications", targetKey: "journal" },
+              { type: "info", onPress: () => setForceOnboarding(true) },
+            ]}
             meta={
-              <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                <Text variant="muted" className="text-xs">
-                  <Text className="text-xs font-bold text-ink">
-                    {t("hero.entries", { count: allEntries.length })}
-                  </Text>
-                </Text>
-                <Text variant="muted" className="text-xs">
-                  <Text className="text-xs font-bold text-ink">
-                    {t("hero.words", { count: totalWords })}
-                  </Text>
-                </Text>
-                <Text variant="muted" className="text-xs">
-                  {t("hero.last")} ·{" "}
-                  {lastWhen ? (
-                    <Text className="text-xs font-bold text-ink">{lastWhen}</Text>
-                  ) : (
-                    <Text className="text-xs font-bold text-ink/60">{tc("never")}</Text>
-                  )}
-                </Text>
-              </View>
+              <ToolStats
+                accentClassName="text-ink"
+                credit={t("authorEyebrow")}
+                subline={`${t("hero.last")} · ${lastWhen ?? tc("never")}`}
+                items={[
+                  { value: t("hero.entries", { count: allEntries.length }), label: "" },
+                  { value: t("hero.words", { count: totalWords }), label: "" },
+                ]}
+              />
             }
           />
 
-          <View className="px-4">
-            <Text variant="eyebrow" tint="primary">
-              {t("authorEyebrow")}
-            </Text>
-          </View>
-
-          <View className="flex-row flex-wrap gap-2">
-            <Button onPress={() => router.push("/tools/journal/new")} className="self-start">
-              <Icon name="add" className="size-4 text-primary-foreground" />
-              <Text>{t("cta.new")}</Text>
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              accessibilityLabel={t("list.notificationsLabel")}
-              onPress={() => setShowNotifications(true)}
-            >
-              <Icon name="notifications" className="size-5" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              accessibilityLabel={t("list.aboutLabel")}
-              onPress={() => setForceOnboarding(true)}
-            >
-              <Icon name="help-outline" className="size-5" />
-            </Button>
-            <AddToHomeButton category="journal" />
-          </View>
+          <Button onPress={() => router.push("/tools/journal/new")} className="self-start">
+            <Icon name="add" className="size-4 text-primary-foreground" />
+            <Text>{t("cta.new")}</Text>
+          </Button>
 
           {allEntries.length === 0 ? (
             <EmptyState

@@ -8,6 +8,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ToolStats } from "@/src/components/app/tool-stats";
 import { MeditationInfo } from "@/src/components/app/meditation-info-modal";
 import { TimerWidget } from "@/src/features/timer/timer-widget";
 import {
@@ -30,7 +31,6 @@ import { useSession } from "@/src/providers/session-provider";
 
 export default function MeditationHomeScreen() {
   const { t } = useTranslation("meditation");
-  const { t: tc } = useTranslation("common");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -122,32 +122,26 @@ export default function MeditationHomeScreen() {
                   { type: "info", onPress: () => setForceInfo(true) },
                 ]}
                 meta={
-                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                    <Text variant="muted" className="text-xs">
-                      {t("hero.stage")} ·{" "}
-                      <Text className="text-xs font-bold text-iris">{stage.number}</Text>
-                    </Text>
-                    <Text variant="muted" className="text-xs">
-                      <Text className="text-xs font-bold text-iris">
-                        {t("hero.sessions", { count: (allSessions ?? []).length })}
-                      </Text>
-                    </Text>
-                    <Text variant="muted" className="text-xs">
-                      {t("hero.median")} ·{" "}
-                      {medianMinutes !== null ? (
-                        <Text className="text-xs font-bold text-iris">
-                          {t("hero.minutes", { count: medianMinutes })}
-                        </Text>
-                      ) : (
-                        <Text className="text-xs font-bold text-iris/60">{tc("noData")}</Text>
-                      )}
-                    </Text>
-                  </View>
+                  <ToolStats
+                    accentClassName="text-iris"
+                    credit={t("authorEyebrow")}
+                    items={[
+                      { value: `${t("hero.stage")} ${stage.number}`, label: "" },
+                      {
+                        value: t("hero.sessions", { count: (allSessions ?? []).length }),
+                        label: "",
+                      },
+                      {
+                        value:
+                          medianMinutes !== null
+                            ? t("hero.minutes", { count: medianMinutes })
+                            : "–",
+                        label: t("hero.median"),
+                      },
+                    ]}
+                  />
                 }
               />
-              <Text variant="eyebrow" tint="primary">
-                {t("authorEyebrow")}
-              </Text>
             </View>
 
             <Card className="border-primary/30">

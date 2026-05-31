@@ -24,6 +24,11 @@ jest.mock("@/src/components/app/add-to-home-button", () => ({
   AddToHomeButton: () => null,
 }));
 
+jest.mock("@/src/features/settings/queries", () => ({
+  useUserPreferences: () => ({ data: undefined }),
+  useUpdateShownButtonTours: () => ({ mutateAsync: jest.fn(), isPending: false }),
+}));
+
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({
     user: { id: "user-1" },
@@ -58,7 +63,7 @@ describe("JournalListScreen", () => {
 
     renderWithProviders(<JournalListScreen />);
 
-    // ToolHero renders the title as an h1 heading.
+    // ModuleHomeHeader renders the title as an h1 heading.
     expect(screen.getByRole("heading", { name: "Journal" })).toBeTruthy();
     expect(screen.getByText("Nothing here yet")).toBeTruthy();
     expect(screen.getByText("Start writing")).toBeTruthy();
@@ -119,7 +124,7 @@ describe("JournalListScreen", () => {
 
     renderWithProviders(<JournalListScreen />);
 
-    // Chip + heading from ToolHero
+    // Heading from ModuleHomeHeader
     expect(screen.getByRole("heading", { name: "Journal" })).toBeTruthy();
     // All three section headers rendered ("Today" also appears in relative-time so use getAllByText)
     expect(screen.getAllByText("Today").length).toBeGreaterThan(0);

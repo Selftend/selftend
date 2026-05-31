@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from "@/src/components/react-native-reu
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ToolStats } from "@/src/components/app/tool-stats";
 import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -59,7 +60,6 @@ function relativeLabel(
 
 export default function SleepTrackerScreen() {
   const { t } = useTranslation("sleep");
-  const { t: tc } = useTranslation("common");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -98,32 +98,21 @@ export default function SleepTrackerScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
               meta={
-                <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                  {sevenDayDuration !== null ? (
-                    <>
-                      <Text variant="muted" className="text-xs">
-                        {t("hero.avg")} ·{" "}
-                        <Text className="text-xs font-bold text-ink">
-                          {(sevenDayDuration / 60).toFixed(1)}h
-                        </Text>
-                      </Text>
-                      <Text variant="muted" className="text-xs">
-                        {t("hero.quality")} ·{" "}
-                        <Text className="text-xs font-bold text-ink">{sevenDayQuality}/5</Text>
-                      </Text>
-                    </>
-                  ) : (
-                    <Text variant="muted" className="text-xs">
-                      {t("hero.avg")} ·{" "}
-                      <Text className="text-xs font-bold text-ink/60">{tc("noData")}</Text>
-                    </Text>
-                  )}
-                  <Text variant="muted" className="text-xs">
-                    <Text className="text-xs font-bold text-ink">
-                      {t("hero.nights", { count: allLogs.length })}
-                    </Text>
-                  </Text>
-                </View>
+                <ToolStats
+                  accentClassName="text-ink"
+                  items={[
+                    {
+                      value:
+                        sevenDayDuration !== null ? `${(sevenDayDuration / 60).toFixed(1)}h` : "–",
+                      label: t("hero.avg"),
+                    },
+                    {
+                      value: sevenDayQuality !== null ? `${sevenDayQuality}/5` : "–",
+                      label: t("hero.quality"),
+                    },
+                    { value: t("hero.nights", { count: allLogs.length }), label: "" },
+                  ]}
+                />
               }
             />
 

@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ToolStats } from "@/src/components/app/tool-stats";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -114,24 +115,16 @@ export default function HabitsHomeScreen() {
                   { type: "info", onPress: () => setForceOnboarding(true) },
                 ]}
                 meta={
-                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                    <Text variant="muted" className="text-xs">
-                      {t("hero.today")} ·{" "}
-                      <Text className="text-xs font-bold text-act">
-                        {todayTicked}/{todayHabits.length}
-                      </Text>
-                    </Text>
-                    <Text variant="muted" className="text-xs">
-                      <Text className="text-xs font-bold text-act">
-                        {t("hero.habits", { count: allHabits.length })}
-                      </Text>
-                    </Text>
-                  </View>
+                  <ToolStats
+                    accentClassName="text-act"
+                    credit={t("authorEyebrow")}
+                    items={[
+                      { value: `${todayTicked}/${todayHabits.length}`, label: t("hero.today") },
+                      { value: t("hero.habits", { count: allHabits.length }), label: "" },
+                    ]}
+                  />
                 }
               />
-              <Text variant="eyebrow" tint="primary">
-                {t("authorEyebrow")}
-              </Text>
             </View>
 
             {identities.length > 0 ? (

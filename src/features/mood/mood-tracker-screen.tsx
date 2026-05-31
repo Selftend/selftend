@@ -18,7 +18,7 @@ import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
 import { SegmentedControl } from "@/src/components/app/segmented-control";
 import { MoodScale } from "@/src/components/app/mood-scale";
-import { StatRow } from "@/src/components/app/mood-stat-row";
+import { ToolStats } from "@/src/components/app/tool-stats";
 import { MoodHistoryList } from "@/src/features/mood/mood-history-list";
 import { buildMoodChartData } from "@/src/features/mood/chart-data";
 import { useMoodLogs, useMoodLogCount } from "@/src/features/mood/queries";
@@ -101,7 +101,7 @@ export default function MoodTrackerScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
               meta={
-                <StatRow
+                <ToolStats
                   accentClassName="text-be"
                   items={statItems}
                   subline={lastWhen ? t("stats.last", { when: lastWhen }) : t("stats.never")}

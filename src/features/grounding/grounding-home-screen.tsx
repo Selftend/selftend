@@ -14,6 +14,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ToolStats } from "@/src/components/app/tool-stats";
 import { GroundingOnboarding } from "@/src/components/app/grounding-onboarding-modal";
 import { groundingTechniques } from "@/src/constants/grounding";
 import { useGroundingSessions } from "@/src/features/grounding/queries";
@@ -51,24 +52,24 @@ export default function GroundingHomeScreen() {
                   { type: "info", onPress: () => setForceOnboarding(true) },
                 ]}
                 meta={
-                  <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-                    <Text variant="muted" className="text-xs">
-                      <Text className="text-xs font-bold text-clay">
-                        {t("grounding.hero.techniques", { count: groundingTechniques.length })}
-                      </Text>
-                    </Text>
-                    <Text variant="muted" className="text-xs">
-                      {t("grounding.hero.takes")}{" "}
-                      <Text className="text-xs font-bold text-clay">
-                        {t("grounding.hero.takesValue")}
-                      </Text>
-                    </Text>
-                  </View>
+                  <ToolStats
+                    accentClassName="text-clay"
+                    credit={t("grounding.authorEyebrow")}
+                    items={[
+                      {
+                        value: t("grounding.hero.techniques", {
+                          count: groundingTechniques.length,
+                        }),
+                        label: "",
+                      },
+                      {
+                        value: `${t("grounding.hero.takes")} ${t("grounding.hero.takesValue")}`,
+                        label: "",
+                      },
+                    ]}
+                  />
                 }
               />
-              <Text variant="eyebrow" tint="primary">
-                {t("grounding.authorEyebrow")}
-              </Text>
             </View>
 
             {sessions && sessions.length > 0 ? (
