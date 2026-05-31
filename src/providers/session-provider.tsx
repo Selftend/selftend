@@ -29,14 +29,20 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
     let mounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) {
-        return;
-      }
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!mounted) {
+          return;
+        }
 
-      setSession(data.session);
-      setStatus("ready");
-    });
+        setSession(data.session);
+        setStatus("ready");
+      })
+      .catch(() => {
+        // A rejected session read must not strand the app on the loading screen.
+        if (mounted) setStatus("ready");
+      });
 
     const authSubscription = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);

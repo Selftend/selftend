@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  listMindfulnessSessions,
+  listMindfulnessSessionsByNames,
   saveMindfulnessSession,
 } from "@/src/features/mindfulness/repository";
 import type { MindfulnessSessionInput } from "@/src/features/mindfulness/types";
@@ -13,11 +13,10 @@ const groundingKeys = {
 
 export function useGroundingSessions(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: userId ? groundingKeys.list(userId) : ["grounding", "list", "anonymous"],
-    queryFn: async () => {
-      const all = await listMindfulnessSessions(userId!, limit);
-      return all.filter((s) => groundingSlugs.includes(s.exerciseName));
-    },
+    queryKey: userId ? [...groundingKeys.list(userId), limit] : ["grounding", "list", "anonymous"],
+    // Filter by exercise type at the DB level so `limit` applies AFTER the type filter
+    // (see useBreathingSessions) — a pre-filter limit could hide every grounding session.
+    queryFn: () => listMindfulnessSessionsByNames(userId!, [...groundingSlugs], limit),
     enabled: Boolean(userId),
   });
 }
@@ -28,7 +27,12 @@ export function useSaveGroundingSession(userId: string | null) {
     mutationFn: (input: MindfulnessSessionInput) => saveMindfulnessSession(userId!, input),
     onSuccess: async () => {
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: groundingKeys.list(userId) });
+      // Shares the mindfulness_sessions table with breathing/mindfulness — refresh all three.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["breathing"] }),
+        queryClient.invalidateQueries({ queryKey: ["grounding"] }),
+        queryClient.invalidateQueries({ queryKey: ["mindfulness"] }),
+      ]);
     },
   });
 }

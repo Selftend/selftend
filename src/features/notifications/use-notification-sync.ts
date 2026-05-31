@@ -17,40 +17,53 @@ export function useNotificationSync(
   preferences: UserPreferences | undefined,
 ) {
   const isSyncing = useRef(false);
+  const pending = useRef(false);
+  // Always hold the latest inputs so an in-flight sync reconciles against current values
+  // instead of the stale closure captured when it started.
+  const prefsRef = useRef(preferences);
+  const uidRef = useRef(userId);
+  prefsRef.current = preferences;
+  uidRef.current = userId;
 
   useEffect(() => {
     if (Platform.OS === "web" || !preferences || !userId) return;
 
-    isSyncing.current = false;
-
-    const prefs = preferences;
-    const uid = userId;
-
     async function sync() {
-      if (isSyncing.current) return;
+      // Coalesce concurrent requests: if a sync is already running, flag that another
+      // pass is needed and let the running one repeat when it finishes — rather than
+      // resetting the guard each effect re-run and racing two schedule/cancel passes.
+      if (isSyncing.current) {
+        pending.current = true;
+        return;
+      }
       isSyncing.current = true;
-
       try {
-        const globalEnabled = prefs.notificationsEnabledGlobal;
+        do {
+          pending.current = false;
+          const prefs = prefsRef.current;
+          const uid = uidRef.current;
+          if (!prefs || !uid) break;
 
-        for (const target of NOTIFICATION_TARGETS) {
-          if (target.status !== "live" || !target.schedulesOs) continue;
-          if (!REMINDER_TARGET_KEYS.has(target.key)) continue;
+          const globalEnabled = prefs.notificationsEnabledGlobal;
+          for (const target of NOTIFICATION_TARGETS) {
+            if (target.status !== "live" || !target.schedulesOs) continue;
+            if (!REMINDER_TARGET_KEYS.has(target.key)) continue;
 
-          const osTarget = target.key as ReminderTarget;
-          const enabled = globalEnabled && readEnabled(prefs, target);
+            const osTarget = target.key as ReminderTarget;
+            const enabled = globalEnabled && readEnabled(prefs, target);
 
-          if (enabled) {
-            await scheduleReminder(
-              osTarget,
-              readHour(prefs, target),
-              readMinute(prefs, target),
-              uid,
-            );
-          } else {
-            await cancelReminder(osTarget, uid);
+            if (enabled) {
+              await scheduleReminder(
+                osTarget,
+                readHour(prefs, target),
+                readMinute(prefs, target),
+                uid,
+              );
+            } else {
+              await cancelReminder(osTarget, uid);
+            }
           }
-        }
+        } while (pending.current);
       } catch {
         // Background reconciliation — silently swallow errors.
       } finally {

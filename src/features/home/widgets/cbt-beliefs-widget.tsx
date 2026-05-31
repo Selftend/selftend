@@ -7,14 +7,17 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useCoreBeliefs } from "@/src/features/beliefs/queries";
+import { currentDateKey } from "@/src/stores/selected-date-store";
 
 export function CbtBeliefsWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
   const { data } = useCoreBeliefs(userId);
   const beliefs = data ?? [];
-  const now = new Date().toISOString();
+  // nextReviewDate is a civil date (YYYY-MM-DD); compare against today's LOCAL date key
+  // — not a full UTC ISO instant, which lexicographically mismatches the date-only value.
+  const today = currentDateKey();
   const due = beliefs
-    .filter((b) => b.nextReviewDate !== null && b.nextReviewDate <= now)
+    .filter((b) => b.nextReviewDate !== null && b.nextReviewDate <= today)
     .sort((a, b) => (a.nextReviewDate! < b.nextReviewDate! ? -1 : 1));
   const target =
     due[0] ?? [...beliefs].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))[0] ?? null;

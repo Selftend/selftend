@@ -150,6 +150,46 @@ describe("useSettingsSync", () => {
     expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ theme: "dark" }));
   });
 
+  it("re-pulls DB values on account switch instead of pushing the previous user's local values", () => {
+    // User A signs in: local matches their DB, so initial sync neither pulls nor pushes.
+    const { rerender } = renderHook(
+      ({
+        uid,
+        prefs,
+        theme,
+      }: {
+        uid: string;
+        prefs: UserPreferences;
+        theme: "system" | "light" | "dark";
+      }) => {
+        mockContexts({ theme });
+        return useSettingsSync(uid, prefs);
+      },
+      {
+        initialProps: {
+          uid: "user-a",
+          prefs: makePreferences({ language: "en", theme: "light" }),
+          theme: "light" as const,
+        },
+      },
+    );
+    expect(setThemePreference).not.toHaveBeenCalled();
+    expect(mutate).not.toHaveBeenCalled();
+
+    // User B signs in (same mounted hook): their DB theme is dark, but local still
+    // holds User A's light. Must PULL B's dark theme, not PUSH A's light onto B.
+    act(() => {
+      rerender({
+        uid: "user-b",
+        prefs: makePreferences({ language: "en", theme: "dark" }),
+        theme: "light",
+      });
+    });
+
+    expect(setThemePreference).toHaveBeenCalledWith("dark");
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
   it("does not push when the user is signed out", () => {
     const { rerender } = renderHook(
       ({ lang }: { lang: "en" | "bg" }) => {

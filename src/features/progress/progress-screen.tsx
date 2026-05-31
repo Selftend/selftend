@@ -54,7 +54,8 @@ export default function ProgressScreen() {
   const { user } = useSession();
   const { width } = useWindowDimensions();
 
-  const { data: moodLogs, isLoading: moodLoading } = useMoodLogs(user?.id ?? null, 60);
+  // 200 (not 60) so the 30-day count isn't capped for users who check in many times a day.
+  const { data: moodLogs, isLoading: moodLoading } = useMoodLogs(user?.id ?? null, 200);
   const { data: journalEntries, isLoading: journalLoading } = useJournalEntries(
     user?.id ?? null,
     200,

@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -34,11 +34,14 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | undefined>();
 
+  const initializedRef = useRef(false);
+  // Hydrate the field from the saved note exactly once, after the logs query first
+  // settles. Re-running on later refetches would overwrite the user's in-progress text.
   useEffect(() => {
-    if (existing) {
-      setNote(existing.note);
-    }
-  }, [existing]);
+    if (initializedRef.current || logs === undefined) return;
+    initializedRef.current = true;
+    if (existing) setNote(existing.note);
+  }, [logs, existing]);
 
   async function handleSave() {
     if (!user) return;

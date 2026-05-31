@@ -48,9 +48,16 @@ describe("buildMoodChartData", () => {
     expect(points[0].score).toBe(4);
   });
 
-  it("labels points with short weekday names", () => {
-    const logs = [{ loggedAt: isoAtLocal(0), moodScore: 3 }];
-    const points = buildMoodChartData(logs, 7);
-    expect(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]).toContain(points[0].day);
+  it("gives each day a distinct, non-empty label (no repeated weekday across the window)", () => {
+    // Day 0 and day 7 fall on the same weekday; weekday-name labels would collide, hiding
+    // that they are two different days. Locale-aware date labels must stay distinct.
+    const logs = [
+      { loggedAt: isoAtLocal(0), moodScore: 3 },
+      { loggedAt: isoAtLocal(7), moodScore: 4 },
+    ];
+    const labels = buildMoodChartData(logs, 14).map((p) => p.day);
+    expect(labels).toHaveLength(2);
+    expect(labels.every((l) => l.length > 0)).toBe(true);
+    expect(new Set(labels).size).toBe(labels.length);
   });
 });

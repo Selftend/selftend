@@ -147,18 +147,16 @@ describe("web_push_subscriptions (integration)", () => {
 
   afterEach(async () => {
     const admin = createServiceClient();
-    await admin
-      .from("web_push_subscriptions")
-      .delete()
-      .eq("user_id", SEED_USERS.bob.id)
-      .eq("endpoint", endpoint);
+    // Clean every row for this endpoint (across users) so the cross-user test below
+    // doesn't leak rows between runs.
+    await admin.from("web_push_subscriptions").delete().eq("endpoint", endpoint);
   });
 
   afterAll(async () => {
     await bob.auth.signOut();
   });
 
-  it("upserts a subscription on conflict by endpoint", async () => {
+  it("upserts a subscription on conflict by (user_id, endpoint)", async () => {
     const first = await bob.from("web_push_subscriptions").upsert(
       {
         user_id: SEED_USERS.bob.id,
@@ -169,7 +167,7 @@ describe("web_push_subscriptions (integration)", () => {
         time_zone: "Europe/Sofia",
         enabled: true,
       },
-      { onConflict: "endpoint" },
+      { onConflict: "user_id,endpoint" },
     );
     expect(first.error).toBeNull();
 
@@ -183,7 +181,7 @@ describe("web_push_subscriptions (integration)", () => {
         time_zone: "Europe/Sofia",
         enabled: true,
       },
-      { onConflict: "endpoint" },
+      { onConflict: "user_id,endpoint" },
     );
     expect(second.error).toBeNull();
 
@@ -202,6 +200,57 @@ describe("web_push_subscriptions (integration)", () => {
     });
   });
 
+  it("isolates subscriptions per user for a shared endpoint (no cross-user clobber)", async () => {
+    const alice = await signInAs("alice");
+    try {
+      const bobUpsert = await bob.from("web_push_subscriptions").upsert(
+        {
+          user_id: SEED_USERS.bob.id,
+          endpoint,
+          p256dh: "bob-p256dh",
+          auth: "bob-auth",
+          user_agent: "jest",
+          time_zone: "Europe/Sofia",
+          enabled: true,
+        },
+        { onConflict: "user_id,endpoint" },
+      );
+      expect(bobUpsert.error).toBeNull();
+
+      // Alice subscribes with the SAME endpoint (same browser, different account).
+      // Must succeed with her own row — not target Bob's row and fail the update_own policy.
+      const aliceUpsert = await alice.from("web_push_subscriptions").upsert(
+        {
+          user_id: SEED_USERS.alice.id,
+          endpoint,
+          p256dh: "alice-p256dh",
+          auth: "alice-auth",
+          user_agent: "jest",
+          time_zone: "Europe/Sofia",
+          enabled: true,
+        },
+        { onConflict: "user_id,endpoint" },
+      );
+      expect(aliceUpsert.error).toBeNull();
+
+      const admin = createServiceClient();
+      const rows = await admin
+        .from("web_push_subscriptions")
+        .select("user_id, p256dh")
+        .eq("endpoint", endpoint);
+      expect(rows.error).toBeNull();
+      expect(rows.data).toHaveLength(2);
+      expect(rows.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ user_id: SEED_USERS.bob.id, p256dh: "bob-p256dh" }),
+          expect.objectContaining({ user_id: SEED_USERS.alice.id, p256dh: "alice-p256dh" }),
+        ]),
+      );
+    } finally {
+      await alice.auth.signOut();
+    }
+  });
+
   it("deletes a subscription scoped to user + endpoint", async () => {
     await bob.from("web_push_subscriptions").upsert(
       {
@@ -211,7 +260,7 @@ describe("web_push_subscriptions (integration)", () => {
         auth: "a",
         enabled: true,
       },
-      { onConflict: "endpoint" },
+      { onConflict: "user_id,endpoint" },
     );
 
     const del = await bob

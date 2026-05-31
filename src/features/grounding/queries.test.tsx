@@ -3,16 +3,18 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
 import { useGroundingSessions } from "@/src/features/grounding/queries";
-import { listMindfulnessSessions } from "@/src/features/mindfulness/repository";
+import { listMindfulnessSessionsByNames } from "@/src/features/mindfulness/repository";
 import { groundingSlugs } from "@/src/constants/grounding";
 import { createTestQueryClient } from "@/test/render-with-providers";
 
 jest.mock("@/src/features/mindfulness/repository", () => ({
-  listMindfulnessSessions: jest.fn(),
+  listMindfulnessSessionsByNames: jest.fn(),
   saveMindfulnessSession: jest.fn(),
 }));
 
-const mockList = listMindfulnessSessions as jest.MockedFunction<typeof listMindfulnessSessions>;
+const mockList = listMindfulnessSessionsByNames as jest.MockedFunction<
+  typeof listMindfulnessSessionsByNames
+>;
 
 function makeWrapper(client: QueryClient) {
   return function wrapper({ children }: PropsWithChildren) {
@@ -27,46 +29,19 @@ describe("useGroundingSessions", () => {
     client = createTestQueryClient();
   });
 
-  it("returns only sessions whose exerciseName is in the grounding allowlist", async () => {
-    const groundingName = groundingSlugs[0];
-    mockList.mockResolvedValue([
-      { id: "1", exerciseName: groundingName } as never,
-      { id: "2", exerciseName: "not-a-grounding-slug" } as never,
-    ]);
+  it("filters by grounding slugs at the query level so the limit applies after the filter", async () => {
+    // Regression guard: passing the slugs to the repository means the DB filters by
+    // exercise type BEFORE applying the row limit, so grounding sessions can't be hidden
+    // behind a window full of other mindfulness types.
+    mockList.mockResolvedValue([{ id: "1", exerciseName: groundingSlugs[0] } as never]);
 
-    const { result } = renderHook(() => useGroundingSessions("user-1"), {
+    const { result } = renderHook(() => useGroundingSessions("user-1", 30), {
       wrapper: makeWrapper(client),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual([{ id: "1", exerciseName: groundingName }]);
-  });
-
-  it("filters out all sessions that are not in the grounding allowlist", async () => {
-    mockList.mockResolvedValue([
-      { id: "1", exerciseName: "box-breathing" } as never,
-      { id: "2", exerciseName: "unknown" } as never,
-    ]);
-
-    const { result } = renderHook(() => useGroundingSessions("user-1"), {
-      wrapper: makeWrapper(client),
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual([]);
-  });
-
-  it("returns all matching sessions when all are in the allowlist", async () => {
-    mockList.mockResolvedValue(
-      groundingSlugs.map((slug, i) => ({ id: String(i), exerciseName: slug }) as never),
-    );
-
-    const { result } = renderHook(() => useGroundingSessions("user-1"), {
-      wrapper: makeWrapper(client),
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toHaveLength(groundingSlugs.length);
+    expect(mockList).toHaveBeenCalledWith("user-1", [...groundingSlugs], 30);
+    expect(result.current.data).toEqual([{ id: "1", exerciseName: groundingSlugs[0] }]);
   });
 
   it("does not fetch when userId is null (query disabled)", () => {

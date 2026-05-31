@@ -49,12 +49,11 @@ describe("getZonedParts", () => {
     expect(getZonedParts(new Date("2026-05-24T09:00:00.000Z"), "Not/AZone")).toBeNull();
   });
 
-  it("returns hour 24 (not 0) at midnight — known Intl 1-24 clock quirk, documented not endorsed", () => {
+  it("normalizes midnight to hour 0 (not the Intl 1-24 clock's 24)", () => {
     // Intl.DateTimeFormat({ hour12: false }) yields the 1-24 clock, so 00:0x -> "24".
-    // Downstream effect: a reminder set for hour 0 (midnight) never matches
-    // (parts.hour 24 !== targetHour 0). This is a pre-existing bug flagged for a
-    // separate fix; NOT changed here per the Phase 2 no-product-behavior-change rule.
-    expect(getZonedParts(new Date("2026-05-24T00:03:00.000Z"), "UTC")?.hour).toBe(24);
+    // getZonedParts must normalize that to 0 so a midnight reminder (targetHour 0)
+    // actually matches; otherwise parts.hour 24 !== targetHour 0 and it never fires.
+    expect(getZonedParts(new Date("2026-05-24T00:03:00.000Z"), "UTC")?.hour).toBe(0);
   });
 });
 
@@ -80,6 +79,32 @@ describe("reminderKeyIfDue", () => {
   it("returns null when the hour does not match", () => {
     expect(
       reminderKeyIfDue("cbt", baseSub, basePrefs, new Date("2026-05-24T10:02:00.000Z")),
+    ).toBeNull();
+  });
+
+  it("fires a midnight reminder (targetHour 0) inside the window", () => {
+    // Regression guard: Intl's 1-24 clock reports midnight as hour 24, which would
+    // never equal targetHour 0, so midnight reminders silently never fired.
+    expect(
+      reminderKeyIfDue(
+        "cbt",
+        baseSub,
+        { ...basePrefs, cbt_reminder_hour: 0 },
+        new Date("2026-05-24T00:02:00.000Z"),
+      ),
+    ).toBe("2026-05-24");
+  });
+
+  it("fires a minute 56-59 reminder at the next */5 cron tick that crosses the hour", () => {
+    // Regression guard: a target of 09:58 is never hit by a */5 cron (ticks at :55, :00).
+    // The 5-minute due window must span the hour boundary so the 10:00 tick fires it.
+    const prefs = { ...basePrefs, cbt_reminder_hour: 9, cbt_reminder_minute: 58 };
+    expect(reminderKeyIfDue("cbt", baseSub, prefs, new Date("2026-05-24T10:00:00.000Z"))).toBe(
+      "2026-05-24",
+    );
+    // ...but not 3 minutes early at the 09:55 tick.
+    expect(
+      reminderKeyIfDue("cbt", baseSub, prefs, new Date("2026-05-24T09:55:00.000Z")),
     ).toBeNull();
   });
 

@@ -35,7 +35,7 @@ export function AppProviders({ children }: PropsWithChildren) {
   useEffect(() => {
     validateRequiredEnv();
     void registerWebPushServiceWorker();
-    void hydrateEmotions();
+    void hydrateEmotions().catch(() => {});
   }, [hydrateEmotions]);
 
   return (

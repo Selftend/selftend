@@ -51,12 +51,31 @@ Deno.serve(async (request) => {
       });
     }
 
-    const { category, message } = await request.json();
-    const { valid, trimmed } = validateFeedbackInput(category, message);
+    let payload: { category?: unknown; message?: unknown };
+    try {
+      payload = await request.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid input" }), {
+        headers: { ...jsonHeaders, ...corsHeaders },
+        status: 400,
+      });
+    }
+
+    const { valid, trimmed, category } = validateFeedbackInput(payload.category, payload.message);
     if (!valid) {
       return new Response(JSON.stringify({ error: "Invalid input" }), {
         headers: { ...jsonHeaders, ...corsHeaders },
         status: 400,
+      });
+    }
+
+    // Per-user rate limit (prevents authenticated email-bomb / Resend quota abuse).
+    const { data: allowed, error: rateError } = await supabase.rpc("record_feedback_submission");
+    if (rateError) throw rateError;
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: "Too many requests" }), {
+        headers: { ...jsonHeaders, ...corsHeaders },
+        status: 429,
       });
     }
 
@@ -76,6 +95,7 @@ Deno.serve(async (request) => {
         reply_to: user.email,
         subject: `Selftend feedback [${category}]`,
         html: buildFeedbackEmailHtml(category, trimmed, user.email ?? ""),
+        // `category` here is the sanitized value returned by validateFeedbackInput.
       }),
     });
 
@@ -88,8 +108,10 @@ Deno.serve(async (request) => {
       headers: { ...jsonHeaders, ...corsHeaders },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: message }), {
+    // Log detail server-side; return a generic message so upstream/internal errors and
+    // env-var names are never disclosed to the client.
+    console.error("send-feedback failed:", error);
+    return new Response(JSON.stringify({ error: "Failed to send feedback" }), {
       headers: { ...jsonHeaders, ...corsHeaders },
       status: 500,
     });

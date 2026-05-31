@@ -6,6 +6,8 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { cn } from "@/lib/utils";
+import { breathingSlugs } from "@/src/constants/breathing";
+import { groundingSlugs } from "@/src/constants/grounding";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { useGroundingSessions } from "@/src/features/grounding/queries";
 import { useHabits } from "@/src/features/habits/queries";
@@ -110,7 +112,8 @@ export default function ToolsScreen() {
   const { t } = useTranslation("navigation");
   const { user } = useSession();
   const { data: moodLogs } = useMoodLogs(user?.id ?? null, 30);
-  const { data: mindfulnessSessions } = useMindfulnessSessions(user?.id ?? null, 30);
+  // 200 (not the default 30) so the 30-day minutes aggregate isn't truncated for heavy users.
+  const { data: mindfulnessSessions } = useMindfulnessSessions(user?.id ?? null, 200);
   const { data: journalEntries } = useJournalEntries(user?.id ?? null, 50);
   const { data: gratitudeEntries } = useGratitudeEntries(user?.id ?? null, 50);
   const { data: groundingSessions } = useGroundingSessions(user?.id ?? null, 50);
@@ -119,7 +122,13 @@ export default function ToolsScreen() {
 
   const moodCount = moodLogs?.length ?? 0;
   const moodAverage = getMoodSummary(moodLogs, 7).average;
-  const mindfulnessMinutes = lastThirtyDaysMinutes(mindfulnessSessions);
+  // Exclude breathing/grounding (they share the mindfulness_sessions table and have their
+  // own tiles) so the mindfulness stat reflects true mindfulness practice, not double-counts.
+  const mindfulnessMinutes = lastThirtyDaysMinutes(
+    mindfulnessSessions?.filter(
+      (s) => !breathingSlugs.includes(s.exerciseName) && !groundingSlugs.includes(s.exerciseName),
+    ),
+  );
   const journalCount = journalEntries?.length ?? 0;
   const gratitudeCount = gratitudeEntries?.length ?? 0;
   const groundingCount = groundingSessions?.length ?? 0;

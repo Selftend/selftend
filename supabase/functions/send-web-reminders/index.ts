@@ -45,6 +45,20 @@ function requiredEnv(name: string) {
   return value;
 }
 
+// Constant-time string comparison so the cron-secret check does not leak the secret
+// via response timing. Compares full length regardless of where bytes diverge.
+function timingSafeEqual(a: string, b: string): boolean {
+  const encoder = new TextEncoder();
+  const aBytes = encoder.encode(a);
+  const bBytes = encoder.encode(b);
+  const length = Math.max(aBytes.length, bBytes.length);
+  let mismatch = aBytes.length ^ bBytes.length;
+  for (let i = 0; i < length; i++) {
+    mismatch |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0);
+  }
+  return mismatch === 0;
+}
+
 function getNotificationCopy(language: string | null, target: ReminderTarget) {
   return notificationCopyByLanguage[resolveReminderLanguage(language)][target];
 }
@@ -52,7 +66,8 @@ function getNotificationCopy(language: string | null, target: ReminderTarget) {
 Deno.serve(async (request) => {
   try {
     const cronSecret = requiredEnv("WEB_PUSH_CRON_SECRET");
-    if (request.headers.get("x-selftend-cron-secret") !== cronSecret) {
+    const providedSecret = request.headers.get("x-selftend-cron-secret") ?? "";
+    if (!timingSafeEqual(providedSecret, cronSecret)) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         headers: jsonHeaders,
         status: 401,
@@ -174,7 +189,7 @@ Deno.serve(async (request) => {
           const { expired } = classifyPushError(error);
           const nextFailureCount = subscription.failure_count + 1;
 
-          await supabase
+          const { error: failureUpdateError } = await supabase
             .from("web_push_subscriptions")
             .update({
               enabled: expired ? false : true,
@@ -182,6 +197,13 @@ Deno.serve(async (request) => {
               last_failure_at: now.toISOString(),
             })
             .eq("id", subscription.id);
+          if (failureUpdateError) {
+            console.error(
+              "send-web-reminders: failed to record push failure for subscription",
+              subscription.id,
+              failureUpdateError,
+            );
+          }
 
           if (expired) {
             disabled += 1;
@@ -193,8 +215,10 @@ Deno.serve(async (request) => {
 
     return new Response(JSON.stringify({ disabled, sent }), { headers: jsonHeaders });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: message }), {
+    // Log the detail server-side; return a generic message so internal errors and
+    // env-var names are never disclosed to callers.
+    console.error("send-web-reminders failed:", error);
+    return new Response(JSON.stringify({ error: "Internal error" }), {
       headers: jsonHeaders,
       status: 500,
     });

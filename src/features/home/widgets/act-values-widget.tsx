@@ -6,21 +6,18 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useValuesProfile } from "@/src/features/values/queries";
-
-function humanize(key: string) {
-  const spaced = key.replace(/-/g, " ");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
+import { useValueEntries } from "@/src/features/act/queries";
 
 export function ActValuesWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
-  const { data: profile } = useValuesProfile(userId);
+  const { data: entries } = useValueEntries(userId);
 
-  const keys = profile?.priorityValues?.length
-    ? profile.priorityValues
-    : (profile?.personalValues ?? []).filter((v) => v.tier === 1).map((v) => v.key);
-  const top = keys.slice(0, 5);
+  // Reflect the ACT module's own value entries (not the shared values-clarification
+  // profile). Show the user's value statements, most important first.
+  const top = (entries ?? [])
+    .filter((e) => e.valueStatement.trim().length > 0)
+    .sort((a, b) => (b.importanceRating ?? 0) - (a.importanceRating ?? 0))
+    .slice(0, 5);
 
   return (
     <Card className="flex-1">
@@ -33,9 +30,9 @@ export function ActValuesWidget({ userId }: { userId: string }) {
         </View>
         {top.length > 0 ? (
           <View className="flex-row flex-wrap gap-1.5">
-            {top.map((key) => (
-              <View key={key} className="rounded-full bg-act/10 px-2.5 py-1">
-                <Text className="text-xs font-medium text-act">{humanize(key)}</Text>
+            {top.map((entry) => (
+              <View key={entry.id} className="rounded-full bg-act/10 px-2.5 py-1">
+                <Text className="text-xs font-medium text-act">{entry.valueStatement}</Text>
               </View>
             ))}
           </View>

@@ -25,7 +25,8 @@ type SectionKey = "today" | "earlier" | "older";
 function groupByPeriod(entries: JournalEntry[]): { key: SectionKey; entries: JournalEntry[] }[] {
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const startOfWeek = startOfToday - 6 * 86_400_000;
+  // Calendar math (not fixed 86.4M-ms days) so the 7-day boundary doesn't drift across DST.
+  const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
   const today: JournalEntry[] = [];
   const earlier: JournalEntry[] = [];
   const older: JournalEntry[] = [];

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const MAX_ATTEMPTS = 5;
 const COOLDOWN_MS = 30_000;
@@ -40,6 +40,15 @@ export function useAuthThrottle() {
       timerRef.current = null;
     }
   };
+
+  // Clear any pending cooldown timer on unmount so it can't fire setIsThrottled
+  // after the component is gone.
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
+  );
 
   return { isThrottled, recordFailure, recordSuccess };
 }

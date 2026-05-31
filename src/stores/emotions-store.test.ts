@@ -132,11 +132,45 @@ describe("useEmotionsStore", () => {
     expect(useEmotionsStore.getState().emojiOverrides).toEqual({});
   });
 
-  it("hydrate handles malformed customEmotions JSON gracefully by throwing (documents actual behavior)", async () => {
-    // The store does not guard against JSON.parse errors — a malformed value will throw.
-    // This test documents the actual behavior: hydrate rejects.
+  it("hydrate falls back to empty customEmotions when stored JSON is malformed", async () => {
     await AsyncStorage.setItem(STORAGE_KEY, "not-json{{{");
 
-    await expect(useEmotionsStore.getState().hydrate()).rejects.toThrow();
+    await expect(useEmotionsStore.getState().hydrate()).resolves.toBeUndefined();
+    expect(useEmotionsStore.getState().customEmotions).toEqual([]);
+  });
+
+  it("hydrate falls back to empty emojiOverrides when stored JSON is malformed", async () => {
+    await AsyncStorage.setItem(OVERRIDES_KEY, "not-json{{{");
+
+    await useEmotionsStore.getState().hydrate();
+
+    expect(useEmotionsStore.getState().emojiOverrides).toEqual({});
+  });
+
+  it("hydrate falls back to empty customEmotions when stored JSON is valid but not an array", async () => {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ not: "an array" }));
+
+    await useEmotionsStore.getState().hydrate();
+
+    expect(useEmotionsStore.getState().customEmotions).toEqual([]);
+  });
+
+  it("hydrate falls back to empty emojiOverrides when stored JSON is valid but an array", async () => {
+    await AsyncStorage.setItem(OVERRIDES_KEY, JSON.stringify(["not", "an", "object"]));
+
+    await useEmotionsStore.getState().hydrate();
+
+    expect(useEmotionsStore.getState().emojiOverrides).toEqual({});
+  });
+
+  it("hydrate preserves a valid key when the other is malformed", async () => {
+    const emotions = [{ id: "e1", name: "Peace", emoji: "🕊️" }];
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(emotions));
+    await AsyncStorage.setItem(OVERRIDES_KEY, "not-json{{{");
+
+    await useEmotionsStore.getState().hydrate();
+
+    expect(useEmotionsStore.getState().customEmotions).toEqual(emotions);
+    expect(useEmotionsStore.getState().emojiOverrides).toEqual({});
   });
 });

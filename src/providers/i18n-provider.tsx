@@ -37,6 +37,9 @@ export function I18nProvider({ children }: PropsWithChildren) {
           void i18n.changeLanguage(lang);
         }
       })
+      .catch(() => {
+        // A failed read just keeps the default language; .finally still marks hydrated.
+      })
       .finally(() => {
         if (mounted) setHydrated(true);
       });
@@ -48,7 +51,11 @@ export function I18nProvider({ children }: PropsWithChildren) {
   const setLanguage = async (lang: SupportedLanguage) => {
     setLanguageState(lang);
     await i18n.changeLanguage(lang);
-    await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+    try {
+      await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+    } catch {
+      // Persisting the language is best-effort; the in-memory switch already applied.
+    }
   };
 
   return (

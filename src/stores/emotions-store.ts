@@ -10,6 +10,23 @@ interface CustomEmotion {
 const STORAGE_KEY = "selftend:custom-emotions";
 const OVERRIDES_KEY = "selftend:emotion-overrides";
 
+// Guards against malformed AsyncStorage values: a corrupt OR wrong-shaped entry falls
+// back to the default instead of throwing out of hydrate() (or crashing a later mutator
+// that assumes the shape). Each key is parsed independently so one bad value never
+// discards the other's valid data.
+function safeParse<T>(raw: string | null, fallback: T, isValid: (value: unknown) => boolean): T {
+  if (!raw) return fallback;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return isValid(parsed) ? (parsed as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+const isRecord = (value: unknown): boolean =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
 interface EmotionsState {
   customEmotions: CustomEmotion[];
   /** emoji overrides for built-in emotion IDs */
@@ -30,8 +47,8 @@ export const useEmotionsStore = create<EmotionsState>((set, get) => ({
       AsyncStorage.getItem(OVERRIDES_KEY),
     ]);
     set({
-      customEmotions: stored ? (JSON.parse(stored) as CustomEmotion[]) : [],
-      emojiOverrides: overrides ? (JSON.parse(overrides) as Record<string, string>) : {},
+      customEmotions: safeParse<CustomEmotion[]>(stored, [], Array.isArray),
+      emojiOverrides: safeParse<Record<string, string>>(overrides, {}, isRecord),
     });
   },
   addEmotion: (emotion) => {

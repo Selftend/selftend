@@ -7,14 +7,17 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useActivities } from "@/src/features/activities/queries";
-import { useSelectedDate } from "@/src/stores/selected-date-store";
+import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function HabitsWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
   const { data: activities } = useActivities(userId);
 
   const { selectedDate: todayKey } = useSelectedDate();
-  const scheduledToday = activities?.filter((a) => a.scheduledAt?.startsWith(todayKey)) ?? [];
+  const scheduledToday =
+    activities?.filter(
+      (a) => a.scheduledAt != null && toLocalDateKey(a.scheduledAt) === todayKey,
+    ) ?? [];
   const completedToday = scheduledToday.filter((a) => a.completedAt !== null);
   const firstIncomplete = scheduledToday.find((a) => !a.completedAt) ?? null;
 

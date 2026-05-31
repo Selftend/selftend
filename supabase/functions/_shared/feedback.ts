@@ -4,23 +4,53 @@
 export interface FeedbackValidation {
   valid: boolean;
   trimmed: string;
+  /** Sanitized category: control characters stripped, used for the email subject + body. */
+  category: string;
 }
 
-// Mirrors the inline check in index.ts: category required, message a string of
+const MAX_CATEGORY_LENGTH = 40;
+
+// Drop ASCII control characters (codes < 32, plus DEL 127) so a category can't inject
+// email headers (CR/LF) or break the subject line.
+function stripControlChars(value: string): string {
+  let out = "";
+  for (const ch of value) {
+    const code = ch.charCodeAt(0);
+    if (code >= 32 && code !== 127) out += ch;
+  }
+  return out;
+}
+
+// Category required (1..MAX chars, control chars stripped), message a string of
 // 10–1000 trimmed chars.
 export function validateFeedbackInput(category: unknown, message: unknown): FeedbackValidation {
   const trimmed = typeof message === "string" ? message.trim() : "";
-  const valid = Boolean(category) && trimmed.length >= 10 && trimmed.length <= 1000;
-  return { valid, trimmed };
+  const rawCategory = typeof category === "string" ? category.trim() : "";
+  const safeCategory = stripControlChars(rawCategory);
+  const categoryValid = safeCategory.length > 0 && safeCategory.length <= MAX_CATEGORY_LENGTH;
+  const valid = categoryValid && trimmed.length >= 10 && trimmed.length <= 1000;
+  return { valid, trimmed, category: safeCategory };
 }
 
-// NOTE: user input is interpolated WITHOUT HTML-escaping, mirroring current
-// production behavior. The test documents this; do not silently change it here.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// User input is HTML-escaped before interpolation to prevent HTML/content injection
+// into the support email.
 export function buildFeedbackEmailHtml(
-  category: string,
-  trimmed: string,
-  fromEmail: string,
+  rawCategory: string,
+  rawTrimmed: string,
+  rawFromEmail: string,
 ): string {
+  const category = escapeHtml(rawCategory);
+  const trimmed = escapeHtml(rawTrimmed);
+  const fromEmail = escapeHtml(rawFromEmail);
   return `<html>
   <body style="margin:0;padding:0;background-color:#f9f8fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9f8fb;padding:40px 0;">

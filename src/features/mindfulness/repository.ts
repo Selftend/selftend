@@ -40,6 +40,24 @@ export async function listMindfulnessSessions(userId: string, limit = 30) {
   return (data as MindfulnessSessionRow[]).map(mapSession);
 }
 
+export async function listMindfulnessSessionsByNames(
+  userId: string,
+  exerciseNames: string[],
+  limit = 30,
+) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("mindfulness_sessions")
+    .select("*")
+    .eq("user_id", userId)
+    .in("exercise_name", exerciseNames)
+    .order("completed_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data as MindfulnessSessionRow[]).map(mapSession);
+}
+
 export async function saveMindfulnessSession(userId: string, input: MindfulnessSessionInput) {
   const client = requireSupabase();
   const { data, error } = await client

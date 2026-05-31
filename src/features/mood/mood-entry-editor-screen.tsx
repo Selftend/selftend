@@ -56,7 +56,10 @@ export function MoodEntryEditorScreen({
   }>();
   const linkedStrategy = paramValue(params.linkedStrategy) ?? null;
   const completeActivityId = paramValue(params.completeActivityId) ?? null;
-  const initialScore = paramValue(params.score) ? Number(paramValue(params.score)) : null;
+  const rawScore = paramValue(params.score);
+  const parsedScore = rawScore != null ? Number(rawScore) : null;
+  // Guard against a non-numeric `score` route param (Number("abc") === NaN).
+  const initialScore = parsedScore != null && Number.isFinite(parsedScore) ? parsedScore : null;
 
   const { selectedDate } = useSelectedDate();
   const { data: cachedList } = useMoodLogs(mode === "edit" ? (user?.id ?? null) : null, 30);

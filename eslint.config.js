@@ -29,6 +29,7 @@ module.exports = [
       "ios/**",
       "supabase/.temp/**",
       "supabase/functions/**",
+      ".claude/**",
     ],
   },
   {

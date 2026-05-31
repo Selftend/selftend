@@ -207,11 +207,12 @@ export async function saveSession(userId: string, itemId: string, input: Exposur
   if (error) throw error;
 
   // Mark the item as completed
-  await client
+  const { error: completeError } = await client
     .from("exposure_items")
     .update({ completed_at: new Date().toISOString() })
     .eq("user_id", userId)
     .eq("id", itemId);
+  if (completeError) throw completeError;
 
   return mapSession(data as SessionRow);
 }

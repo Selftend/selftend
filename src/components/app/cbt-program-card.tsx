@@ -41,14 +41,14 @@ function TaskRow({ task }: { task: ProgramTaskView }) {
       onPress={() => router.push(task.route)}
       className={
         task.done
-          ? "flex-row items-center gap-3 rounded-lg border border-[hsl(var(--act)/0.25)] bg-[hsl(var(--act)/0.10)] p-3 active:bg-accent/40"
+          ? "flex-row items-center gap-3 rounded-lg border border-[hsl(var(--primary)/0.25)] bg-[hsl(var(--primary)/0.10)] p-3 active:bg-accent/40"
           : "flex-row items-center gap-3 rounded-lg border border-border bg-card p-3 active:bg-accent/40"
       }
       role="button"
     >
       <Icon
         name={task.done ? "check-circle" : "radio-button-unchecked"}
-        className={task.done ? "size-5 text-act" : "size-5 text-muted-foreground"}
+        className={task.done ? "size-5 text-primary" : "size-5 text-muted-foreground"}
       />
       <Text className="flex-1 text-sm font-medium">{label}</Text>
       <Text variant="muted" className="text-xs">
@@ -77,9 +77,9 @@ export function CbtProgramCard({
   // Not started: show the start card
   if (program.status === "not_started") {
     return (
-      <View className="gap-3 rounded-2xl border border-act/30 bg-act/5 p-5">
+      <View className="gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-5">
         <View className="flex-row items-start gap-3">
-          <Text variant="h3" className="flex-1 text-act">
+          <Text variant="h3" className="flex-1 text-primary">
             {t("program.startTitle")}
           </Text>
           <HelpButton helpKey="program" size={18} />
@@ -89,10 +89,10 @@ export function CbtProgramCard({
               accessibilityRole="button"
               hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
               onPress={onDismissStart}
-              className="-mr-2 -mt-2 size-9 items-center justify-center rounded-full active:bg-act/10"
+              className="-mr-2 -mt-2 size-9 items-center justify-center rounded-full active:bg-primary/10"
               role="button"
             >
-              <Icon name="close" className="size-5 text-act" />
+              <Icon name="close" className="size-5 text-primary" />
             </Pressable>
           ) : null}
         </View>
@@ -139,7 +139,7 @@ export function CbtProgramCard({
 
       <Card className="relative overflow-hidden gap-3 p-5">
         <LinearGradient
-          colors={tintStripeColors("act", isDark)}
+          colors={tintStripeColors("primary", isDark)}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3 }}
@@ -151,11 +151,11 @@ export function CbtProgramCard({
             <View
               accessibilityElementsHidden
               importantForAccessibility="no"
-              className="h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-[hsl(var(--act)/0.30)] bg-[hsl(var(--act)/0.12)]"
+              className="h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-[hsl(var(--primary)/0.30)] bg-[hsl(var(--primary)/0.12)]"
             >
-              <Icon name="route" size={22} className="text-act" />
+              <Icon name="route" size={22} className="text-primary" />
             </View>
-            <Text variant="eyebrow" tint="act" className="flex-1">
+            <Text variant="eyebrow" tint="primary" className="flex-1">
               {t("program.heroTitle")}
             </Text>
             {onAbandon ? (
@@ -165,7 +165,7 @@ export function CbtProgramCard({
                     accessibilityLabel={t("program.manageLabel")}
                     accessibilityRole="button"
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    className="-mr-1 size-8 items-center justify-center rounded-full active:bg-act/10"
+                    className="-mr-1 size-8 items-center justify-center rounded-full active:bg-primary/10"
                     role="button"
                   >
                     <Icon name="settings" size={18} className="text-muted-foreground" />
@@ -192,7 +192,7 @@ export function CbtProgramCard({
           </View>
           {/* Title row */}
           <View className="flex-row flex-wrap items-baseline gap-2">
-            <Text variant="h3" className="text-act">
+            <Text variant="h3" className="text-primary">
               {t(phase.themeLabelKey)}
             </Text>
             {phase.themeSubKey ? (
@@ -234,13 +234,13 @@ export function CbtProgramCard({
 
         {/* Ready banner */}
         {program.phaseReady ? (
-          <View className="rounded-lg border border-act/40 bg-act/10 px-4 py-3">
-            <Text className="text-sm font-medium text-act">{t("program.ready")}</Text>
+          <View className="rounded-lg border border-primary/40 bg-primary/10 px-4 py-3">
+            <Text className="text-sm font-medium text-primary">{t("program.ready")}</Text>
           </View>
         ) : null}
 
         {/* Advance button */}
-        <Button onPress={handleAdvancePress} disabled={isPending} variant="tinted" tint="act">
+        <Button onPress={handleAdvancePress} disabled={isPending} variant="tinted" tint="primary">
           <Text>{advanceCta}</Text>
         </Button>
       </Card>

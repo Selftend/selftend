@@ -418,7 +418,10 @@ export async function upsertWebPushSubscription(
       user_agent: subscription.userAgent,
       user_id: userId,
     },
-    { onConflict: "endpoint" },
+    // Per-user conflict target: a shared endpoint (same browser, different account) gets
+    // its own row per user rather than colliding with another user's row (which would
+    // flip user_id and fail the update_own RLS policy).
+    { onConflict: "user_id,endpoint" },
   );
 
   if (error) {

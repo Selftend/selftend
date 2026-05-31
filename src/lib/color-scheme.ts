@@ -11,7 +11,8 @@ export function useAppColorScheme(): ResolvedColorScheme {
   const hydrate = useThemeStore((s) => s.hydrate);
 
   useEffect(() => {
-    void hydrate();
+    // Swallow storage-read failures so a rejected hydrate isn't an unhandled rejection.
+    void hydrate().catch(() => {});
   }, [hydrate]);
 
   const systemColorScheme: ResolvedColorScheme = useColorScheme() === "dark" ? "dark" : "light";

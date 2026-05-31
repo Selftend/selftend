@@ -102,7 +102,9 @@ export function getZonedParts(date: Date, timeZone: string): ZonedParts | null {
     );
     return {
       day: parts.day,
-      hour: Number(parts.hour),
+      // Intl's hour12:false clock reports midnight as "24"; normalize to 0 so a
+      // reminder set for hour 0 (midnight) matches instead of silently never firing.
+      hour: Number(parts.hour) % 24,
       minute: Number(parts.minute),
       month: parts.month,
       year: parts.year,
@@ -133,8 +135,16 @@ export function reminderKeyIfDue(
   const targetHour = preferences[config.hourField] as number;
   const targetMinute = preferences[config.minuteField] as number;
 
-  if (parts.hour !== targetHour) return null;
-  if (parts.minute < targetMinute || parts.minute >= targetMinute + 5) return null;
+  // Due if "now" is within 5 minutes after the target, measured in minute-of-day so
+  // the window spans the hour/day boundary. A separate `hour === targetHour` gate plus
+  // a `[minute, minute+5)` check would never fire for target minutes 56-59, because the
+  // */5 cron ticks at :55 (below the window) and :00 (hour no longer matches).
+  const MINUTES_PER_DAY = 24 * 60;
+  const nowMinuteOfDay = parts.hour * 60 + parts.minute;
+  const targetMinuteOfDay = targetHour * 60 + targetMinute;
+  const minutesSinceTarget =
+    (((nowMinuteOfDay - targetMinuteOfDay) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+  if (minutesSinceTarget >= 5) return null;
 
   return reminderKey;
 }

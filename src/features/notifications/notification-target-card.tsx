@@ -94,8 +94,12 @@ export function NotificationTargetCard({
 
     setErrorMessage("");
 
-    const hour = clamp(Number.parseInt(hourInput || "19", 10), 0, 23);
-    const minute = clamp(Number.parseInt(minuteInput || "0", 10), 0, 59);
+    // Guard against non-numeric input: parseInt("abc") is NaN and clamp(NaN) stays NaN,
+    // which would persist a NaN hour/minute. Fall back to the defaults instead.
+    const parsedHour = Number.parseInt(hourInput, 10);
+    const parsedMinute = Number.parseInt(minuteInput, 10);
+    const hour = clamp(Number.isFinite(parsedHour) ? parsedHour : 19, 0, 23);
+    const minute = clamp(Number.isFinite(parsedMinute) ? parsedMinute : 0, 0, 59);
 
     const patch: Partial<UserPreferences> = {
       [enabledField]: enabled,

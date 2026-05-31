@@ -3,16 +3,18 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
 import { useBreathingSessions } from "@/src/features/breathing/queries";
-import { listMindfulnessSessions } from "@/src/features/mindfulness/repository";
+import { listMindfulnessSessionsByNames } from "@/src/features/mindfulness/repository";
 import { breathingSlugs } from "@/src/constants/breathing";
 import { createTestQueryClient } from "@/test/render-with-providers";
 
 jest.mock("@/src/features/mindfulness/repository", () => ({
-  listMindfulnessSessions: jest.fn(),
+  listMindfulnessSessionsByNames: jest.fn(),
   saveMindfulnessSession: jest.fn(),
 }));
 
-const mockList = listMindfulnessSessions as jest.MockedFunction<typeof listMindfulnessSessions>;
+const mockList = listMindfulnessSessionsByNames as jest.MockedFunction<
+  typeof listMindfulnessSessionsByNames
+>;
 
 function makeWrapper(client: QueryClient) {
   return function wrapper({ children }: PropsWithChildren) {
@@ -27,19 +29,19 @@ describe("useBreathingSessions", () => {
     client = createTestQueryClient();
   });
 
-  it("returns only sessions whose exerciseName is in the breathing allowlist", async () => {
-    const breathingName = breathingSlugs[0];
-    mockList.mockResolvedValue([
-      { id: "1", exerciseName: breathingName } as never,
-      { id: "2", exerciseName: "not-a-breathing-slug" } as never,
-    ]);
+  it("filters by breathing slugs at the query level so the limit applies after the filter", async () => {
+    // Regression guard: passing the slugs to the repository means the DB filters by
+    // exercise type BEFORE applying the row limit, so breathing sessions can't be hidden
+    // behind a window full of other mindfulness types.
+    mockList.mockResolvedValue([{ id: "1", exerciseName: breathingSlugs[0] } as never]);
 
-    const { result } = renderHook(() => useBreathingSessions("user-1"), {
+    const { result } = renderHook(() => useBreathingSessions("user-1", 30), {
       wrapper: makeWrapper(client),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual([{ id: "1", exerciseName: breathingName }]);
+    expect(mockList).toHaveBeenCalledWith("user-1", [...breathingSlugs], 30);
+    expect(result.current.data).toEqual([{ id: "1", exerciseName: breathingSlugs[0] }]);
   });
 
   it("does not fetch when userId is null (query disabled)", () => {

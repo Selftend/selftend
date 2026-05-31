@@ -9,6 +9,7 @@ web-build/
 android/
 ios/
 supabase/.temp/
+.claude/
 package-lock.json
 pnpm-lock.yaml
 yarn.lock

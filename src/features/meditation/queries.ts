@@ -26,7 +26,11 @@ const meditationKeys = {
 
 export function useMeditationSessions(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: userId ? meditationKeys.list(userId) : ["meditation", "list", "anonymous"],
+    // Include `limit` in the key so callers requesting 30/100/200 rows don't collide on
+    // one cache entry (invalidation by the limit-less prefix still matches every variant).
+    queryKey: userId
+      ? [...meditationKeys.list(userId), limit]
+      : ["meditation", "list", "anonymous"],
     queryFn: () => listMeditationSessions(userId!, limit),
     enabled: Boolean(userId),
   });

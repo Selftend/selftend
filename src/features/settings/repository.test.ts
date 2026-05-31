@@ -357,7 +357,7 @@ describe("settings repository", () => {
         user_agent: "jest-browser",
         user_id: "user-1",
       },
-      { onConflict: "endpoint" },
+      { onConflict: "user_id,endpoint" },
     );
   });
 

@@ -107,8 +107,11 @@ export default function BreathingExerciseScreen() {
     }
   }, [pattern, selectedDuration]);
 
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const finishingRef = useRef(false);
+
   useEffect(() => {
-    if (screenPhase !== "active" || !pattern || secondsLeft <= 0) return;
+    if (screenPhase !== "active" || !pattern || totalSecondsRef.current <= 0) return;
 
     const id = setInterval(() => {
       totalSecondsRef.current -= 1;
@@ -128,10 +131,16 @@ export default function BreathingExerciseScreen() {
         advancePhase(pattern.phases, phaseIndexRef.current);
       }
     }, 1000);
+    intervalRef.current = id;
 
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      intervalRef.current = null;
+    };
+    // The interval drives itself via refs; depending on the per-second secondsLeft would
+    // tear it down and recreate it every tick, causing countdown drift.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screenPhase, pattern, secondsLeft]);
+  }, [screenPhase, pattern]);
 
   if (!pattern) {
     return (
@@ -155,6 +164,15 @@ export default function BreathingExerciseScreen() {
 
   const handleFinish = async () => {
     if (!selectedDuration) return;
+    // Both the countdown (when it reaches 0) and the "Finish early" button call this.
+    // Stop the interval and bail if a save is already in flight, so the same session is
+    // never saved twice.
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     const plannedSeconds = selectedDuration * 60;
     const elapsedSeconds = plannedSeconds - Math.max(0, totalSecondsRef.current);
     const elapsedMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
@@ -168,6 +186,9 @@ export default function BreathingExerciseScreen() {
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.replace("/tools/breathing" as Parameters<typeof router.replace>[0]);
     } catch {
+      // Reset the guard so the Finish button can retry the save instead of leaving the
+      // screen stuck at 0:00 with a dead timer.
+      finishingRef.current = false;
       showToast({ title: t("common:feedback.problem"), tone: "error" });
     }
   };

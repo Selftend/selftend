@@ -15,13 +15,17 @@ export function useSettingsSync(userId: string | null, preferences: UserPreferen
   const themePreference = useThemeStore((s) => s.preference);
   const setThemePreference = useThemeStore((s) => s.setPreference);
   const { mutate: updatePreferences } = useUpdateUserPreferences(userId);
-  const initialSyncDone = useRef(false);
+  // Track WHICH user was synced, not just whether a sync happened: on account switch
+  // (sign out → sign in a different user without remounting this long-lived hook) the
+  // initial DB-pull must run again, otherwise the previous user's local theme/language
+  // gets pushed onto the new account.
+  const syncedUserId = useRef<string | null>(null);
 
   useEffect(() => {
     if (!preferences || !userId || !hydrated) return;
 
-    if (!initialSyncDone.current) {
-      initialSyncDone.current = true;
+    if (syncedUserId.current !== userId) {
+      syncedUserId.current = userId;
 
       const dbLang = isSupportedLanguage(preferences.language) ? preferences.language : null;
       const dbTheme = isThemePreference(preferences.theme)
