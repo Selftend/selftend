@@ -13,13 +13,7 @@ import { useUserProfile } from "@/src/features/profile/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
-import {
-  clampSpan,
-  isImplemented,
-  metaForWidget,
-  resolveWidget,
-  spanForWidget,
-} from "@/src/features/home/widget-registry";
+import { isImplemented, metaForWidget, resolveWidget } from "@/src/features/home/widget-registry";
 import {
   useAddWidget,
   useRemoveWidget,
@@ -235,11 +229,12 @@ export default function HomeScreen() {
               onDragEnd={({ order }) => reorderMutation.mutate(order(widgetIds))}
             >
               {widgetIds.map((id) => {
-                const span = clampSpan(spanForWidget(id), numColumns);
-                const width = span.colSpan * cellWidth + (span.colSpan - 1) * GAP;
                 const meta = metaForWidget(id);
                 return (
-                  <View key={id} style={{ width, height: WIDGET_HEIGHT, overflow: "hidden" }}>
+                  <View
+                    key={id}
+                    style={{ width: cellWidth, height: WIDGET_HEIGHT, overflow: "hidden" }}
+                  >
                     <View style={{ flex: 1, pointerEvents: editMode ? "none" : "auto" }}>
                       {resolveWidget(id, userId ?? "")}
                     </View>

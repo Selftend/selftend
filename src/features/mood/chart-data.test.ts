@@ -60,4 +60,22 @@ describe("buildMoodChartData", () => {
     expect(labels.every((l) => l.length > 0)).toBe(true);
     expect(new Set(labels).size).toBe(labels.length);
   });
+
+  it("assigns offsets by real position in the window, not by index", () => {
+    // window = 14 days ending today; entries 13 days ago, 1 day ago, today
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+    const logs = [
+      { loggedAt: new Date(now - 13 * day).toISOString(), moodScore: 4 },
+      { loggedAt: new Date(now - 1 * day).toISOString(), moodScore: 3 },
+      { loggedAt: new Date(now).toISOString(), moodScore: 5 },
+    ];
+    const pts = buildMoodChartData(logs, 14);
+    expect(pts).toHaveLength(3);
+    // oldest entry is window start (dayIndex 0), today is dayIndex 13; denominator = 13
+    expect(pts[0].offset).toBeCloseTo(0 / 13, 5); // 13 days ago = window start
+    expect(pts[2].offset).toBeCloseTo(1, 5); // today
+    expect(pts[2].offset - pts[1].offset).toBeCloseTo(1 / 13, 5); // 1-day gap is small
+    expect(pts[1].offset - pts[0].offset).toBeGreaterThan(0.8); // 12-day gap is large
+  });
 });

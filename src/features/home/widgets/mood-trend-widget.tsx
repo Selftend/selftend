@@ -34,21 +34,21 @@ export function MoodTrendWidget({ userId }: { userId: string }) {
           <Text className="text-sm font-semibold">{t("home.widgets.moodTrend.title")}</Text>
         </View>
         <View className="flex-row gap-3">
-          <View className="flex-1 gap-0.5 rounded-lg border border-border bg-background px-3 py-2">
+          <View className="flex-1 gap-0.5 rounded-xl bg-muted/40 px-3 py-2.5">
             <Text className="text-[11px] uppercase tracking-wider text-muted-foreground">
               {t("today.moodSnapshot.sevenDay")}
             </Text>
             <Text
-              className={cn("text-xl font-semibold", sevenDay === null && "text-muted-foreground")}
+              className={cn("text-2xl font-bold", sevenDay === null && "text-muted-foreground")}
             >
-              {sevenDay === null ? "-" : sevenDay.toFixed(1)}
+              {sevenDay === null ? "–" : sevenDay.toFixed(1)}
             </Text>
           </View>
-          <View className="flex-1 gap-0.5 rounded-lg border border-border bg-background px-3 py-2">
+          <View className="flex-1 gap-0.5 rounded-xl bg-muted/40 px-3 py-2.5">
             <Text className="text-[11px] uppercase tracking-wider text-muted-foreground">
               {t("today.moodSnapshot.entries")}
             </Text>
-            <Text className="text-xl font-semibold">{String(logs.length)}</Text>
+            <Text className="text-2xl font-bold">{String(logs.length)}</Text>
           </View>
         </View>
         <Button

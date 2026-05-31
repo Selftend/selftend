@@ -10,26 +10,10 @@ import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import type { MoodLog } from "@/src/features/mood/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
+import { scoreToneClass } from "@/src/features/mood/score-tone";
 
 interface MoodEntryCardProps {
   entry: MoodLog;
-}
-
-function scoreToneClass(score: number): string {
-  switch (score) {
-    case 1:
-      return "bg-red-500/15";
-    case 2:
-      return "bg-orange-500/15";
-    case 3:
-      return "bg-yellow-400/20";
-    case 4:
-      return "bg-lime-500/15";
-    case 5:
-      return "bg-green-500/15";
-    default:
-      return "bg-muted";
-  }
 }
 
 export function MoodEntryCard({ entry }: MoodEntryCardProps) {

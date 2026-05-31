@@ -1,6 +1,7 @@
 interface MoodChartPoint {
   day: string;
   score: number;
+  offset: number;
 }
 
 interface MoodSample {
@@ -48,14 +49,15 @@ export function buildMoodChartData(logs: MoodSample[] | undefined, days: number)
   }
 
   const points: MoodChartPoint[] = [];
-  for (let offset = 0; offset < days; offset++) {
+  for (let dayIndex = 0; dayIndex < days; dayIndex++) {
     const day = new Date(start);
-    day.setDate(start.getDate() + offset);
+    day.setDate(start.getDate() + dayIndex);
     const bucket = buckets.get(localDateKey(day));
     if (!bucket) continue;
     points.push({
       day: formatDayLabel(day),
       score: Math.round((bucket.sum / bucket.count) * 10) / 10,
+      offset: days > 1 ? dayIndex / (days - 1) : 0,
     });
   }
 

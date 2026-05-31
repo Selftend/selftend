@@ -10,12 +10,18 @@ import { useMoodLogs } from "@/src/features/mood/queries";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function MoodCheckinWidget({ userId }: { userId: string }) {
-  const { t } = useTranslation("navigation");
+  const { t, i18n } = useTranslation("navigation");
   const { selectedDate: todayKey } = useSelectedDate();
   const { data: moodLogs } = useMoodLogs(userId, 30);
 
   const todayLogs = (moodLogs ?? []).filter((l) => toLocalDateKey(l.loggedAt) === todayKey);
-  const moodToday = todayLogs.length > 0 ? todayLogs[todayLogs.length - 1].moodScore : null;
+  const moodToday = todayLogs.length > 0 ? todayLogs[0].moodScore : null;
+  const lastTime =
+    todayLogs.length > 0
+      ? new Intl.DateTimeFormat(i18n.language, { hour: "numeric", minute: "2-digit" }).format(
+          new Date(todayLogs[0].loggedAt),
+        )
+      : null;
 
   return (
     <Card className="flex-1">
@@ -31,6 +37,13 @@ export function MoodCheckinWidget({ userId }: { userId: string }) {
           value={moodToday}
           onChange={(score) => router.push(`/tools/mood-tracker/new?score=${score}`)}
         />
+        <Text variant="muted" className="text-[11px]">
+          {todayLogs.length === 0
+            ? t("home.widgets.moodCheckin.emptyPrompt")
+            : `${t("home.widgets.moodCheckin.loggedSummary", { count: todayLogs.length })}${
+                lastTime ? ` · ${t("home.widgets.moodCheckin.lastAt", { time: lastTime })}` : ""
+              }`}
+        </Text>
       </CardContent>
     </Card>
   );

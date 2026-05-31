@@ -1,4 +1,9 @@
-import { getMoodLog, listMoodLogs, saveMoodLog } from "@/src/features/mood/repository";
+import {
+  countMoodLogs,
+  getMoodLog,
+  listMoodLogs,
+  saveMoodLog,
+} from "@/src/features/mood/repository";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
@@ -222,5 +227,25 @@ describe("mood repository", () => {
     });
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
     expect(eqId).toHaveBeenCalledWith("id", "log-1");
+  });
+
+  it("counts all mood logs for a user with a head request", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: 247, error: null });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(countMoodLogs("user-1")).resolves.toBe(247);
+    expect(from).toHaveBeenCalledWith("mood_logs");
+    expect(select).toHaveBeenCalledWith("*", { count: "exact", head: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+  });
+
+  it("treats a null count as zero", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: null, error: null });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(countMoodLogs("user-1")).resolves.toBe(0);
   });
 });

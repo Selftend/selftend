@@ -9,10 +9,10 @@ jest.mock("expo-linear-gradient", () => {
 });
 
 describe("MoodScale", () => {
-  it("renders 5 emoji buttons with scale labels", () => {
+  it("renders 5 emoji buttons with a11y labels (no visible word labels)", () => {
     renderWithProviders(<MoodScale value={null} onChange={() => {}} />);
-    expect(screen.getByText("Awful")).toBeTruthy();
-    expect(screen.getByText("Great")).toBeTruthy();
+    expect(screen.getByLabelText("Awful")).toBeTruthy();
+    expect(screen.getByLabelText("Great")).toBeTruthy();
     expect(screen.getAllByRole("button")).toHaveLength(5);
   });
 

@@ -1127,7 +1127,25 @@
     "save": "Save",
     "update": "Update",
     "saveError": "Unable to save mood.",
-    "notFound": "We couldn't find that mood entry."
+    "notFound": "We couldn't find that mood entry.",
+    "goDeeperTitle": "Go deeper — notice",
+    "goDeeperIntro": "A light CBT thought-record.",
+    "situationHelp": "What was happening?",
+    "thoughtsHelp": "What went through your mind?",
+    "responseLabel": "Response",
+    "responseHelp": "What did you do, or avoid?",
+    "bodyLabel": "In your body",
+    "bodyHelp": "Where did you feel it?",
+    "bodyChips": {
+      "chestTight": "Chest tight",
+      "shoulders": "Shoulders",
+      "jaw": "Jaw",
+      "stomach": "Stomach",
+      "restless": "Restless",
+      "heavy": "Heavy",
+      "warm": "Warm",
+      "tired": "Tired"
+    }
   },
   "record": {
     "newTitle": "New thought record",

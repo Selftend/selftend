@@ -7,7 +7,6 @@ import { validateRequiredEnv } from "@/src/lib/env";
 import { registerWebPushServiceWorker } from "@/src/lib/notifications";
 import { I18nProvider } from "@/src/providers/i18n-provider";
 import { SessionProvider } from "@/src/providers/session-provider";
-import { useEmotionsStore } from "@/src/stores/emotions-store";
 
 // React Query doesn't know about AppState on native — teach it to treat
 // foreground transitions as focus events so stale queries are refetched.
@@ -30,13 +29,10 @@ const queryClient = new QueryClient({
 });
 
 export function AppProviders({ children }: PropsWithChildren) {
-  const hydrateEmotions = useEmotionsStore((s) => s.hydrate);
-
   useEffect(() => {
     validateRequiredEnv();
     void registerWebPushServiceWorker();
-    void hydrateEmotions().catch(() => {});
-  }, [hydrateEmotions]);
+  }, []);
 
   return (
     <SafeAreaProvider>

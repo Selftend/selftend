@@ -89,3 +89,14 @@ export async function saveMoodLog(userId: string, input: MoodInput, moodLogId?: 
   if (error) throw error;
   return mapMoodLog(data as MoodLogRow);
 }
+
+export async function countMoodLogs(userId: string): Promise<number> {
+  const client = requireSupabase();
+  const { count, error } = await client
+    .from("mood_logs")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (error) throw error;
+  return count ?? 0;
+}

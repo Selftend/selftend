@@ -40,6 +40,31 @@ jest.mock("@/src/features/mood/queries", () => ({
   useSaveMoodLog: jest.fn(),
 }));
 
+// The emotions list is now rows-authoritative: an empty list yields an empty
+// grid. Return seeded default rows so the emotions section populates.
+jest.mock("@/src/features/mood/emotion-preferences-queries", () => {
+  const { DEFAULT_EMOTIONS: defaults } = require("@/src/constants/emotions");
+  return {
+    useEmotionPreferences: () => ({
+      data: defaults.map((e: { id: string }, i: number) => ({
+        id: e.id,
+        userId: "user-1",
+        emotionId: e.id,
+        name: null,
+        emoji: null,
+        position: i,
+        removed: false,
+        isCustom: false,
+      })),
+      isLoading: false,
+    }),
+    useUpsertEmotionPreference: () => ({ mutate: jest.fn() }),
+    useReorderEmotions: () => ({ mutate: jest.fn() }),
+    useRemoveEmotion: () => ({ mutate: jest.fn() }),
+    useAddCustomEmotion: () => ({ mutate: jest.fn() }),
+  };
+});
+
 jest.mock("@/src/components/react-native-reusables/checkbox", () => {
   const Pressable = mockPressable;
 
@@ -193,21 +218,29 @@ describe("MoodEntryEditorScreen", () => {
   it("captures the four-box notice when expanded", async () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
     fireEvent.press(screen.getByLabelText("OK"));
-    fireEvent.press(screen.getByText("Go deeper — notice (optional)"));
+    // Accordion label changed from "Go deeper — notice (optional)" to "Go deeper — notice"
+    fireEvent.press(screen.getByLabelText("Go deeper — notice"));
+    // Situation textarea still accessible by its label
     fireEvent.changeText(screen.getByLabelText("Situation / trigger"), "Email from boss");
+    // Body sensations are now chips (accessibilityRole="checkbox"); toggle one
+    fireEvent.press(screen.getByLabelText("Jaw"));
     fireEvent.press(screen.getByText("Save"));
     await waitFor(() => {
       expect(saveMood).toHaveBeenCalledWith(
         expect.objectContaining({
-          input: expect.objectContaining({ moodScore: 3, situation: "Email from boss" }),
+          input: expect.objectContaining({
+            moodScore: 3,
+            situation: "Email from boss",
+            bodilySensations: "Jaw",
+          }),
         }),
       );
     });
   });
 
-  it("shows score labels under the mood scale", async () => {
+  it("renders the mood scale with a11y labels (no visible word labels)", async () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
-    expect(await screen.findByText("Great")).toBeTruthy();
+    expect(await screen.findByLabelText("Great")).toBeTruthy();
   });
 
   it("completes a linked activity after saving from the activity flow", async () => {

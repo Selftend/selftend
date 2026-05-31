@@ -244,7 +244,11 @@
       "moodCheckin": {
         "title": "Daily check-in",
         "desc": "A quick five-face mood check-in.",
-        "faceLabel": "Mood {{score}} of 5"
+        "faceLabel": "Mood {{score}} of 5",
+        "loggedSummary_one": "Logged {{count}}× today",
+        "loggedSummary_other": "Logged {{count}}× today",
+        "lastAt": "last {{time}}",
+        "emptyPrompt": "How are you feeling?"
       },
       "moodTrend": {
         "title": "Mood, last 7 days",

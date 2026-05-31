@@ -23,6 +23,7 @@ import { ToolHero } from "@/src/components/app/tool-hero";
 import { MoodScale } from "@/src/components/app/mood-scale";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { cn } from "@/lib/utils";
+import { parseBodyChips, toggleBodyChip } from "@/src/features/mood/body-sensations";
 import { useCompleteActivity } from "@/src/features/activities/queries";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
 import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
@@ -30,6 +31,17 @@ import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import type { MoodLog } from "@/src/features/mood/types";
 import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
+
+const BODY_CHIP_KEYS = [
+  "chestTight",
+  "shoulders",
+  "jaw",
+  "stomach",
+  "restless",
+  "heavy",
+  "warm",
+  "tired",
+] as const;
 
 interface MoodEntryEditorScreenProps {
   fallbackHref: Href;
@@ -87,7 +99,7 @@ export function MoodEntryEditorScreen({
   const [manageEmotionsOpen, setManageEmotionsOpen] = useState(false);
   const editMode = mode === "edit";
   const saving = saveMutation.isPending || completeActivityMutation.isPending;
-  const { allEmotions } = useEmotionDisplay();
+  const { allEmotions, isLoading: emotionsLoading } = useEmotionDisplay();
 
   useEffect(() => {
     if (!existingEntry) return;
@@ -244,35 +256,39 @@ export function MoodEntryEditorScreen({
               <Text className="text-xs text-primary">{tMood("emotions.manage.title")}</Text>
             </Pressable>
           </View>
-          <View className="flex-row flex-wrap gap-2">
-            {allEmotions.map((emotion) => {
-              const selected = emotions.includes(emotion.id);
-              return (
-                <Pressable
-                  key={emotion.id}
-                  accessibilityLabel={emotion.name}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: selected }}
-                  onPress={() => toggleEmotion(emotion.id)}
-                  className={cn(
-                    "min-w-[72px] items-center gap-1 rounded-2xl border-2 px-2 py-2",
-                    selected ? "border-primary bg-primary/10" : "border-border bg-card",
-                  )}
-                >
-                  <Text className="text-2xl">{emotion.emoji}</Text>
-                  <Text
+          {emotionsLoading ? (
+            <ActivityIndicator />
+          ) : (
+            <View className="flex-row flex-wrap gap-2">
+              {allEmotions.map((emotion) => {
+                const selected = emotions.includes(emotion.id);
+                return (
+                  <Pressable
+                    key={emotion.id}
+                    accessibilityLabel={emotion.name}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: selected }}
+                    onPress={() => toggleEmotion(emotion.id)}
                     className={cn(
-                      "text-center text-[11px]",
-                      selected ? "font-semibold text-primary" : "text-muted-foreground",
+                      "min-w-[72px] items-center gap-1 rounded-2xl border-2 px-2 py-2",
+                      selected ? "border-primary bg-primary/10" : "border-border bg-card",
                     )}
-                    numberOfLines={1}
                   >
-                    {emotion.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+                    <Text className="text-2xl">{emotion.emoji}</Text>
+                    <Text
+                      className={cn(
+                        "text-center text-[11px]",
+                        selected ? "font-semibold text-primary" : "text-muted-foreground",
+                      )}
+                      numberOfLines={1}
+                    >
+                      {emotion.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         <ManageEmotionsModal
@@ -302,7 +318,7 @@ export function MoodEntryEditorScreen({
         <View className="gap-3">
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={t("mood.goDeeper")}
+            accessibilityLabel={t("mood.goDeeperTitle")}
             onPress={() => setShowDeeper((v) => !v)}
             className="flex-row items-center gap-2"
           >
@@ -310,45 +326,84 @@ export function MoodEntryEditorScreen({
               name={showDeeper ? "expand-less" : "expand-more"}
               className="size-5 text-muted-foreground"
             />
-            <Text className="text-sm font-medium">{t("mood.goDeeper")}</Text>
+            <Text className="text-sm font-medium">{t("mood.goDeeperTitle")}</Text>
           </Pressable>
           {showDeeper ? (
-            <View className="gap-4">
-              <View className="gap-2">
-                <Label>{t("mood.situationLabel")}</Label>
-                <Textarea
-                  accessibilityLabel={t("mood.situationLabel")}
-                  onChangeText={setSituation}
-                  placeholder={t("mood.situationPlaceholder")}
-                  value={situation}
-                />
-              </View>
-              <View className="gap-2">
-                <Label>{t("mood.thoughtsLabel")}</Label>
-                <Textarea
-                  accessibilityLabel={t("mood.thoughtsLabel")}
-                  onChangeText={setThoughts}
-                  placeholder={t("mood.thoughtsPlaceholder")}
-                  value={thoughts}
-                />
-              </View>
-              <View className="gap-2">
-                <Label>{t("mood.behavioursLabel")}</Label>
-                <Textarea
-                  accessibilityLabel={t("mood.behavioursLabel")}
-                  onChangeText={setBehaviours}
-                  placeholder={t("mood.behavioursPlaceholder")}
-                  value={behaviours}
-                />
-              </View>
-              <View className="gap-2">
-                <Label>{t("mood.sensationsLabel")}</Label>
-                <Textarea
-                  accessibilityLabel={t("mood.sensationsLabel")}
-                  onChangeText={setBodilySensations}
-                  placeholder={t("mood.sensationsPlaceholder")}
-                  value={bodilySensations}
-                />
+            <View className="gap-4 rounded-2xl border border-be/20 bg-be/[0.06] p-4">
+              <Text variant="muted" className="text-[13px]">
+                {t("mood.goDeeperIntro")}
+              </Text>
+              <View className="gap-4">
+                <View className="gap-1.5">
+                  <Text className="text-[13px] font-bold">{t("mood.situationLabel")}</Text>
+                  <Text variant="muted" className="text-[12px]">
+                    {t("mood.situationHelp")}
+                  </Text>
+                  <Textarea
+                    accessibilityLabel={t("mood.situationLabel")}
+                    onChangeText={setSituation}
+                    placeholder={t("mood.situationPlaceholder")}
+                    value={situation}
+                  />
+                </View>
+                <View className="gap-1.5">
+                  <Text className="text-[13px] font-bold">{t("mood.thoughtsLabel")}</Text>
+                  <Text variant="muted" className="text-[12px]">
+                    {t("mood.thoughtsHelp")}
+                  </Text>
+                  <Textarea
+                    accessibilityLabel={t("mood.thoughtsLabel")}
+                    onChangeText={setThoughts}
+                    placeholder={t("mood.thoughtsPlaceholder")}
+                    value={thoughts}
+                  />
+                </View>
+                <View className="gap-1.5">
+                  <Text className="text-[13px] font-bold">{t("mood.responseLabel")}</Text>
+                  <Text variant="muted" className="text-[12px]">
+                    {t("mood.responseHelp")}
+                  </Text>
+                  <Textarea
+                    accessibilityLabel={t("mood.responseLabel")}
+                    onChangeText={setBehaviours}
+                    placeholder={t("mood.behavioursPlaceholder")}
+                    value={behaviours}
+                  />
+                </View>
+                <View className="gap-1.5">
+                  <Text className="text-[13px] font-bold">{t("mood.bodyLabel")}</Text>
+                  <Text variant="muted" className="text-[12px]">
+                    {t("mood.bodyHelp")}
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2 pt-1">
+                    {BODY_CHIP_KEYS.map((key) => {
+                      const label = t(`mood.bodyChips.${key}`);
+                      const selected = parseBodyChips(bodilySensations).includes(label);
+                      return (
+                        <Pressable
+                          key={key}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: selected }}
+                          accessibilityLabel={label}
+                          onPress={() => setBodilySensations((prev) => toggleBodyChip(prev, label))}
+                          className={cn(
+                            "rounded-full border px-3 py-1.5",
+                            selected ? "border-be bg-be/10" : "border-border bg-card",
+                          )}
+                        >
+                          <Text
+                            className={cn(
+                              "text-[13px]",
+                              selected ? "text-be font-medium" : "text-foreground",
+                            )}
+                          >
+                            {label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
               </View>
             </View>
           ) : null}

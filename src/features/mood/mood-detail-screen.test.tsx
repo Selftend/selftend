@@ -27,9 +27,28 @@ jest.mock("@/src/features/mood/queries", () => ({
   useMoodLogs: jest.fn(),
 }));
 
+jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
+  useEmotionPreferences: () => ({ data: [] }),
+}));
+
 const mockUseMoodLog = useMoodLog as jest.MockedFunction<typeof useMoodLog>;
 const mockUseMoodLogs = useMoodLogs as jest.MockedFunction<typeof useMoodLogs>;
 const mockRouter = jest.mocked(router);
+
+const MOCK_ENTRY = {
+  id: "log-1",
+  userId: "user-1",
+  moodScore: 4,
+  emotions: ["Anxious"],
+  notes: "Felt steadier after a walk",
+  linkedStrategy: null,
+  loggedAt: new Date("2026-05-10T08:00:00.000Z").toISOString(),
+  createdAt: new Date("2026-05-10T08:00:00.000Z").toISOString(),
+  situation: "",
+  thoughts: "",
+  behaviours: "",
+  bodilySensations: "",
+};
 
 describe("MoodDetailScreen", () => {
   beforeEach(() => {
@@ -38,29 +57,28 @@ describe("MoodDetailScreen", () => {
       data: null,
       isLoading: false,
     } as unknown as ReturnType<typeof useMoodLog>);
+    mockUseMoodLogs.mockReturnValue({
+      data: [MOCK_ENTRY],
+    } as unknown as ReturnType<typeof useMoodLogs>);
+  });
+
+  it("renders the hero strip with score word, score number, and relative time", () => {
+    renderWithProviders(<MoodDetailScreen />);
+
+    // Hero strip: "Good · 4" (detailWord.4 + moodScore)
+    expect(screen.getByText("Good · 4")).toBeTruthy();
+    // Relative time: 2026-05-10 is 21 days before 2026-05-31
+    expect(screen.getByText("21 days ago")).toBeTruthy();
+  });
+
+  it("renders Edit and Delete buttons in the hero strip", () => {
+    renderWithProviders(<MoodDetailScreen />);
+
+    expect(screen.getByText("Edit")).toBeTruthy();
+    expect(screen.getByText("Delete")).toBeTruthy();
   });
 
   it("routes to the edit page for the selected mood entry", () => {
-    const loggedAt = new Date("2026-05-10T08:00:00.000Z").toISOString();
-    mockUseMoodLogs.mockReturnValue({
-      data: [
-        {
-          id: "log-1",
-          userId: "user-1",
-          moodScore: 4,
-          emotions: ["Anxious"],
-          notes: "Felt steadier after a walk",
-          linkedStrategy: null,
-          loggedAt,
-          createdAt: loggedAt,
-          situation: "",
-          thoughts: "",
-          behaviours: "",
-          bodilySensations: "",
-        },
-      ],
-    } as unknown as ReturnType<typeof useMoodLogs>);
-
     renderWithProviders(<MoodDetailScreen />);
 
     fireEvent.press(screen.getByText("Edit"));

@@ -1,15 +1,123 @@
-import { Modal, Pressable, ScrollView, TextInput, View } from "react-native";
-import { useState } from "react";
+import { ActivityIndicator, Modal, Pressable, ScrollView, TextInput, View } from "react-native";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import Animated, { useAnimatedRef } from "react-native-reanimated";
+import Sortable from "react-native-sortables";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Icon } from "@/src/components/react-native-reusables/icon";
-import { cn } from "@/lib/utils";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
-import { DEFAULT_EMOTIONS } from "@/src/constants/emotions";
-import { useEmotionsStore } from "@/src/stores/emotions-store";
+import {
+  useAddCustomEmotion,
+  useRemoveEmotion,
+  useReorderEmotions,
+  useUpsertEmotionPreference,
+} from "@/src/features/mood/emotion-preferences-queries";
 import { useEmotionDisplay, type EmotionDisplay } from "@/src/features/mood/use-emotion-display";
+import { EmojiPicker } from "@/src/components/app/emoji-picker";
+import { useSession } from "@/src/providers/session-provider";
+
+// ─── Editor modal ────────────────────────────────────────────────────────────
+
+type EditorState = { mode: "add" } | { mode: "edit"; emotion: EmotionDisplay };
+
+interface EmotionEditorModalProps {
+  state: EditorState;
+  /** Position to assign to a newly added custom emotion. */
+  addPosition: number;
+  onClose: () => void;
+}
+
+function EmotionEditorModal({ state, addPosition, onClose }: EmotionEditorModalProps) {
+  const { t } = useTranslation("mood");
+  const { user } = useSession();
+  const userId = user?.id ?? null;
+  const upsertEmotion = useUpsertEmotionPreference(userId);
+  const addEmotion = useAddCustomEmotion(userId);
+
+  const [name, setName] = useState<string>(() => (state.mode === "edit" ? state.emotion.name : ""));
+  const [emoji, setEmoji] = useState<string>(() =>
+    state.mode === "edit" ? state.emotion.emoji : "",
+  );
+
+  const canSave = name.trim().length > 0 && emoji.trim().length > 0;
+
+  const handleSave = () => {
+    if (!canSave) return;
+    if (state.mode === "edit") {
+      upsertEmotion.mutate({
+        emotionId: state.emotion.id,
+        name: name.trim(),
+        emoji: emoji.trim(),
+      });
+    } else {
+      addEmotion.mutate({
+        emotionId: `custom_${Date.now()}`,
+        name: name.trim(),
+        emoji: emoji.trim(),
+        position: addPosition,
+      });
+    }
+    onClose();
+  };
+
+  const title = state.mode === "add" ? t("emotions.manage.addTitle") : t("emotions.manage.edit");
+
+  return (
+    <Modal transparent animationType="fade" visible onRequestClose={onClose}>
+      <Pressable className="flex-1 items-center justify-center bg-black/50 p-6" onPress={onClose}>
+        {/* Inner card — stops tap-through to backdrop */}
+        <Pressable className="w-full max-w-[400px] rounded-2xl bg-card p-4" onPress={() => {}}>
+          <Text variant="h3" className="mb-4">
+            {title}
+          </Text>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View className="gap-4">
+              {/* Emoji picker */}
+              <View>
+                <Text className="mb-2 text-xs text-muted-foreground">
+                  {t("emotions.manage.emoji")}
+                </Text>
+                <EmojiPicker value={emoji} onSelect={setEmoji} />
+              </View>
+
+              {/* Name input */}
+              <View>
+                <Text className="mb-1 text-xs text-muted-foreground">
+                  {t("emotions.manage.name")}
+                </Text>
+                <TextInput
+                  value={name}
+                  onChangeText={setName}
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-foreground"
+                  placeholder={t("emotions.manage.namePlaceholder")}
+                  accessibilityLabel={t("emotions.manage.name")}
+                />
+              </View>
+
+              {/* Footer buttons */}
+              <View className="flex-row gap-2">
+                <Button variant="ghost" onPress={onClose} className="flex-1">
+                  <Text>{t("emotions.manage.cancel")}</Text>
+                </Button>
+                <Button onPress={handleSave} disabled={!canSave} className="flex-1">
+                  <Text>
+                    {state.mode === "add" ? t("emotions.manage.add") : t("emotions.manage.save")}
+                  </Text>
+                </Button>
+              </View>
+            </View>
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+// ─── Main modal ──────────────────────────────────────────────────────────────
 
 interface ManageEmotionsModalProps {
   visible: boolean;
@@ -19,51 +127,56 @@ interface ManageEmotionsModalProps {
 export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalProps) {
   const { t } = useTranslation("mood");
   const reduceMotionEnabled = useReduceMotionEnabled();
-  const { allEmotions } = useEmotionDisplay();
-  const addEmotion = useEmotionsStore((s) => s.addEmotion);
-  const updateCustomEmotion = useEmotionsStore((s) => s.updateCustomEmotion);
-  const removeCustomEmotion = useEmotionsStore((s) => s.removeCustomEmotion);
-  const setEmojiOverride = useEmotionsStore((s) => s.setEmojiOverride);
+  const { allEmotions, isLoading } = useEmotionDisplay();
+  const { user } = useSession();
+  const userId = user?.id ?? null;
+  const removeEmotion = useRemoveEmotion(userId);
+  const reorderEmotions = useReorderEmotions(userId);
+  const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
-  const [editing, setEditing] = useState<EmotionDisplay | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editEmoji, setEditEmoji] = useState("");
-  const [addMode, setAddMode] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newEmoji, setNewEmoji] = useState("");
+  const [editorState, setEditorState] = useState<EditorState | null>(null);
 
-  const openEdit = (emotion: EmotionDisplay) => {
-    setEditing(emotion);
-    setEditName(emotion.name);
-    setEditEmoji(emotion.emoji);
-    setAddMode(false);
-  };
+  const openEditor = useCallback((emotion: EmotionDisplay) => {
+    setEditorState({ mode: "edit", emotion });
+  }, []);
 
-  const saveEdit = () => {
-    if (!editing) return;
-    if (editing.isCustom) {
-      updateCustomEmotion(editing.id, { name: editName.trim(), emoji: editEmoji.trim() });
-    } else {
-      if (
-        editEmoji.trim() &&
-        editEmoji.trim() !== DEFAULT_EMOTIONS.find((e) => e.id === editing.id)?.emoji
-      ) {
-        setEmojiOverride(editing.id, editEmoji.trim());
-      }
-    }
-    setEditing(null);
-  };
+  const closeEditor = useCallback(() => {
+    setEditorState(null);
+  }, []);
 
-  const saveNew = () => {
-    const name = newName.trim();
-    const emoji = newEmoji.trim();
-    if (!name || !emoji) return;
-    const id = `custom_${Date.now()}`;
-    addEmotion({ id, name, emoji });
-    setNewName("");
-    setNewEmoji("");
-    setAddMode(false);
-  };
+  const renderEmotionRow = useCallback(
+    ({ item: emotion }: { item: EmotionDisplay }) => (
+      <View className="rounded-xl border border-border bg-card p-3">
+        <View className="flex-row items-center gap-3">
+          <Sortable.Handle>
+            <Icon name="drag-indicator" className="size-5 text-muted-foreground" />
+          </Sortable.Handle>
+          <Text className="text-2xl">{emotion.emoji}</Text>
+          <Text className="flex-1">{emotion.name}</Text>
+          <View className="flex-row items-center gap-1">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("emotions.manage.edit")}
+              onPress={() => openEditor(emotion)}
+            >
+              <Icon name="edit" className="size-5 text-muted-foreground" />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("emotions.manage.delete")}
+              onPress={() =>
+                removeEmotion.mutate({ emotionId: emotion.id, isCustom: emotion.isCustom })
+              }
+              hitSlop={8}
+            >
+              <Icon name="delete-outline" className="size-5 text-destructive" />
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    ),
+    [openEditor, removeEmotion, t],
+  );
 
   return (
     <Modal
@@ -72,172 +185,58 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
       presentationStyle="pageSheet"
       visible={visible}
     >
-      <View className="flex-1 bg-background">
-        <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
-          <Text variant="h3">{t("emotions.manage.title")}</Text>
-          <Pressable
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel={t("emotions.manage.close")}
-          >
-            <Icon name="close" className="size-6 text-foreground" />
-          </Pressable>
-        </View>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View className="flex-1 bg-background">
+          <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
+            <Text variant="h3">{t("emotions.manage.title")}</Text>
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel={t("emotions.manage.close")}
+            >
+              <Icon name="close" className="size-6 text-foreground" />
+            </Pressable>
+          </View>
 
-        <ScrollView contentContainerClassName="p-4 gap-2 pb-8">
-          {allEmotions.map((emotion) => {
-            const isEditing = editing?.id === emotion.id;
-            return (
-              <View
-                key={emotion.id}
-                className={cn(
-                  "rounded-xl border border-border bg-card p-3",
-                  isEditing && "border-primary",
-                )}
-              >
-                {isEditing ? (
-                  <View className="gap-3">
-                    <View className="flex-row gap-2">
-                      <View className="w-20">
-                        <Text className="mb-1 text-xs text-muted-foreground">
-                          {t("emotions.manage.emoji")}
-                        </Text>
-                        <TextInput
-                          value={editEmoji}
-                          onChangeText={setEditEmoji}
-                          className="rounded-lg border border-border bg-background px-2 py-2 text-center text-2xl text-foreground"
-                          maxLength={2}
-                          accessibilityLabel={t("emotions.manage.emoji")}
-                        />
-                      </View>
-                      <View className="flex-1">
-                        <Text className="mb-1 text-xs text-muted-foreground">
-                          {t("emotions.manage.name")}
-                        </Text>
-                        <TextInput
-                          value={editName}
-                          onChangeText={setEditName}
-                          editable={emotion.isCustom}
-                          className={cn(
-                            "rounded-lg border border-border bg-background px-3 py-2 text-foreground",
-                            !emotion.isCustom && "opacity-50",
-                          )}
-                          placeholder={t("emotions.manage.namePlaceholder")}
-                          accessibilityLabel={t("emotions.manage.name")}
-                        />
-                      </View>
-                    </View>
-                    <View className="flex-row gap-2">
-                      <Button variant="ghost" onPress={() => setEditing(null)} className="flex-1">
-                        <Text>{t("emotions.manage.cancel")}</Text>
-                      </Button>
-                      <Button onPress={saveEdit} className="flex-1">
-                        <Text>{t("emotions.manage.save")}</Text>
-                      </Button>
-                    </View>
-                    {emotion.isCustom ? (
-                      <Button
-                        variant="ghost"
-                        onPress={() => {
-                          removeCustomEmotion(emotion.id);
-                          setEditing(null);
-                        }}
-                      >
-                        <Icon name="delete-outline" className="size-4 text-destructive" />
-                        <Text className="text-destructive">{t("emotions.manage.delete")}</Text>
-                      </Button>
-                    ) : null}
-                  </View>
-                ) : (
-                  <View className="flex-row items-center gap-3">
-                    <Text className="text-2xl">{emotion.emoji}</Text>
-                    <Text className="flex-1">{emotion.name}</Text>
-                    {emotion.isCustom ? (
-                      <View className="rounded-full border border-border px-2 py-0.5">
-                        <Text className="text-[10px] text-muted-foreground">
-                          {t("emotions.manage.custom")}
-                        </Text>
-                      </View>
-                    ) : null}
-                    <Pressable
-                      onPress={() => openEdit(emotion)}
-                      accessibilityRole="button"
-                      accessibilityLabel={t("emotions.manage.edit")}
-                    >
-                      <Icon name="edit" className="size-5 text-muted-foreground" />
-                    </Pressable>
-                  </View>
-                )}
+          <Animated.ScrollView ref={scrollableRef} contentContainerClassName="p-4 gap-2 pb-8">
+            {isLoading ? (
+              <View className="items-center py-8">
+                <ActivityIndicator />
               </View>
-            );
-          })}
+            ) : (
+              <Sortable.Grid
+                columns={1}
+                data={allEmotions}
+                keyExtractor={(e) => e.id}
+                rowGap={8}
+                scrollableRef={scrollableRef}
+                customHandle
+                dragActivationDelay={0}
+                sortEnabled={editorState === null}
+                onDragEnd={({ data }) => reorderEmotions.mutate(data.map((e) => e.id))}
+                renderItem={renderEmotionRow}
+              />
+            )}
 
-          {addMode ? (
-            <View className="mt-2 rounded-xl border border-primary bg-card p-3 gap-3">
-              <Text className="font-semibold">{t("emotions.manage.addTitle")}</Text>
-              <View className="flex-row gap-2">
-                <View className="w-20">
-                  <Text className="mb-1 text-xs text-muted-foreground">
-                    {t("emotions.manage.emoji")}
-                  </Text>
-                  <TextInput
-                    value={newEmoji}
-                    onChangeText={setNewEmoji}
-                    className="rounded-lg border border-border bg-background px-2 py-2 text-center text-2xl text-foreground"
-                    maxLength={2}
-                    placeholder="😀"
-                    accessibilityLabel={t("emotions.manage.emoji")}
-                  />
-                </View>
-                <View className="flex-1">
-                  <Text className="mb-1 text-xs text-muted-foreground">
-                    {t("emotions.manage.name")}
-                  </Text>
-                  <TextInput
-                    value={newName}
-                    onChangeText={setNewName}
-                    className="rounded-lg border border-border bg-background px-3 py-2 text-foreground"
-                    placeholder={t("emotions.manage.namePlaceholder")}
-                    accessibilityLabel={t("emotions.manage.name")}
-                  />
-                </View>
-              </View>
-              <View className="flex-row gap-2">
-                <Button
-                  variant="ghost"
-                  onPress={() => {
-                    setAddMode(false);
-                    setNewName("");
-                    setNewEmoji("");
-                  }}
-                  className="flex-1"
-                >
-                  <Text>{t("emotions.manage.cancel")}</Text>
-                </Button>
-                <Button
-                  onPress={saveNew}
-                  disabled={!newName.trim() || !newEmoji.trim()}
-                  className="flex-1"
-                >
-                  <Text>{t("emotions.manage.add")}</Text>
-                </Button>
-              </View>
-            </View>
-          ) : (
             <Button
               variant="outline"
-              onPress={() => {
-                setAddMode(true);
-                setEditing(null);
-              }}
+              onPress={() => setEditorState({ mode: "add" })}
               className="mt-2"
             >
               <Icon name="add" className="size-4" />
               <Text>{t("emotions.manage.addButton")}</Text>
             </Button>
-          )}
-        </ScrollView>
-      </View>
+          </Animated.ScrollView>
+        </View>
+
+        {editorState ? (
+          <EmotionEditorModal
+            state={editorState}
+            addPosition={allEmotions.length}
+            onClose={closeEditor}
+          />
+        ) : null}
+      </GestureHandlerRootView>
     </Modal>
   );
 }

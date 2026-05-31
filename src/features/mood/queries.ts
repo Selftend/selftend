@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  countMoodLogs,
   deleteMoodLog,
   getMoodLog,
   listMoodLogs,
@@ -12,6 +13,7 @@ const moodKeys = {
   all: ["mood"] as const,
   list: (userId: string, limit: number) => ["mood", "list", userId, limit] as const,
   detail: (userId: string, id: string) => ["mood", "detail", userId, id] as const,
+  count: (userId: string) => ["mood", "count", userId] as const,
 };
 
 export function useMoodLogs(userId: string | null, limit = 30) {
@@ -28,6 +30,14 @@ export function useMoodLog(userId: string | null, id: string | null) {
       userId && id ? moodKeys.detail(userId, id) : ["mood", "detail", "anonymous", id ?? ""],
     queryFn: () => getMoodLog(userId!, id!),
     enabled: Boolean(userId && id),
+  });
+}
+
+export function useMoodLogCount(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? moodKeys.count(userId) : ["mood", "count", "anonymous"],
+    queryFn: () => countMoodLogs(userId!),
+    enabled: Boolean(userId),
   });
 }
 

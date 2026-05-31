@@ -3,25 +3,13 @@
     "moduleLabel": "Check-in",
     "title": "How are you feeling?",
     "tagline": "A simple 1–5 picker plus space for a note. No streak to protect.",
-    "noteHint": "Add a short note (optional)...",
-    "saveCta": "Save check-in",
-    "todayLabel": "Today",
     "scaleLabels": {
       "1": "Awful",
       "2": "Low",
       "3": "OK",
       "4": "Good",
       "5": "Great"
-    },
-    "summary": {
-      "title": "Summary",
-      "past7": "Past 7 days",
-      "past30": "Past 30 days",
-      "last14": "Last 14 days",
-      "countLabel_one": "{{count}} check-in",
-      "countLabel_other": "{{count}} check-ins"
-    },
-    "entriesTitle": "Today's check-ins"
+    }
   },
   "title": "Check-in",
   "description": "Log how you're feeling and see how it shifts over time.",
@@ -46,12 +34,10 @@
   },
   "today": {
     "title": "Today",
-    "pending": "No mood logged yet today.",
     "howAreYou": "How are you feeling right now?",
     "howWasDay": "How were you feeling this day?",
     "completeOne": "Logged · {{score}}/5",
-    "completeMany": "{{count}} logs · avg {{average}}/5",
-    "logAnother": "Log another"
+    "completeMany": "{{count}} logs · avg {{average}}/5"
   },
   "emotions": {
     "manage": {
@@ -70,31 +56,15 @@
       "add": "Add"
     }
   },
-  "sections": {
-    "summary": "Summary",
-    "trend": "Mood trend",
-    "recent": "Recent entries"
-  },
-  "summary": {
-    "sevenDay": "Last 7 days",
-    "thirtyDay": "Last 30 days",
-    "average": "Avg {{average}}",
-    "count_one": "{{count}} log",
-    "count_other": "{{count}} logs",
-    "noData": "No logs in this window"
-  },
   "trend": {
-    "empty": "Log a mood to start your 14-day trend.",
-    "lastDays": "Last 14 days"
+    "empty": "Log a mood to start your trend."
   },
   "recent": {
-    "empty": "Nothing logged yet. Tap \"Log mood\" to add your first entry.",
     "viewEntry": "View mood entry from {{when}}"
   },
   "detail": {
     "title": "Mood entry",
     "loggedAt": "Logged at",
-    "score": "Score",
     "emotions": "Emotions",
     "notes": "Notes",
     "noNotes": "No notes for this entry.",
@@ -145,5 +115,48 @@
     "yesterday": "Yesterday",
     "daysAgo_one": "{{count}} day ago",
     "daysAgo_other": "{{count}} days ago"
+  },
+  "stats": {
+    "checkinsLabel": "check-ins",
+    "thisWeekLabel": "this week",
+    "avgLabel": "7-day avg",
+    "last": "Last · {{when}}",
+    "never": "No check-ins yet"
+  },
+  "week": {
+    "title": "This week",
+    "average": "7-day average",
+    "deltaUp": "▲ {{delta}} vs last week",
+    "deltaDown": "▼ {{delta}} vs last week",
+    "deltaFlat": "steady vs last week",
+    "noComparison": "first week of data",
+    "byDay": "Mood by day",
+    "feltMost": "Felt most often",
+    "noEmotions": "No emotions tagged yet",
+    "empty": "Log a few check-ins to see your week."
+  },
+  "history": {
+    "title": "History",
+    "groupAverage": "avg {{average}}",
+    "groups": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "Earlier this week",
+      "older": "Earlier"
+    },
+    "empty": "Your check-ins will appear here."
+  },
+  "trendControls": {
+    "title": "Mood trend",
+    "range7": "7d",
+    "range14": "14d",
+    "range30": "30d"
+  },
+  "detailWord": {
+    "1": "Awful",
+    "2": "Low",
+    "3": "OK",
+    "4": "Good",
+    "5": "Great"
   }
 }

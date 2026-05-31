@@ -15,6 +15,7 @@ import { Badge } from "@/src/components/react-native-reusables/badge";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
@@ -25,6 +26,8 @@ import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatLocalTimestamp } from "@/src/utils/date";
+import { cn } from "@/lib/utils";
+import { scoreToneClass } from "@/src/features/mood/score-tone";
 
 export default function MoodDetailScreen() {
   const { t } = useTranslation("mood");
@@ -93,34 +96,42 @@ export default function MoodDetailScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <ScreenHeader title={t("detail.title")} />
-            <Text variant="muted">{when}</Text>
-            <View className="flex-row gap-3">
-              <Button
-                onPress={() => router.push(`/tools/mood-tracker/${entry.id}/edit`)}
-                variant="secondary"
-              >
-                <Icon name="edit" className="size-4" />
-                <Text>{t("detail.edit")}</Text>
-              </Button>
-              <Button onPress={() => setConfirmOpen(true)} variant="ghost">
-                <Icon name="delete-outline" className="size-4 text-destructive" />
-                <Text>{t("detail.delete")}</Text>
-              </Button>
-            </View>
+            <ScreenBreadcrumb />
+            <Card>
+              <CardContent className="flex-row items-center gap-4 pt-5 pb-5">
+                <View
+                  className={cn(
+                    "size-16 items-center justify-center rounded-full",
+                    scoreToneClass(entry.moodScore),
+                  )}
+                >
+                  <Text className="text-4xl">{MOOD_EMOJI_BY_SCORE[entry.moodScore] ?? ""}</Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="text-2xl font-extrabold tracking-tight">
+                    {t(`detailWord.${entry.moodScore}`)} · {entry.moodScore}
+                  </Text>
+                  <Text variant="muted" className="text-sm">
+                    {when}
+                  </Text>
+                </View>
+                <View className="gap-2">
+                  <Button
+                    onPress={() => router.push(`/tools/mood-tracker/${entry.id}/edit`)}
+                    variant="secondary"
+                    size="sm"
+                  >
+                    <Icon name="edit" className="size-4" />
+                    <Text>{t("detail.edit")}</Text>
+                  </Button>
+                  <Button onPress={() => setConfirmOpen(true)} variant="ghost" size="sm">
+                    <Icon name="delete-outline" className="size-4 text-destructive" />
+                    <Text>{t("detail.delete")}</Text>
+                  </Button>
+                </View>
+              </CardContent>
+            </Card>
           </View>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("detail.score")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View className="flex-row items-center gap-3">
-                <Text className="text-5xl">{MOOD_EMOJI_BY_SCORE[entry.moodScore] ?? ""}</Text>
-                <Text className="text-4xl font-bold">{entry.moodScore}</Text>
-              </View>
-            </CardContent>
-          </Card>
 
           <Card>
             <CardHeader>

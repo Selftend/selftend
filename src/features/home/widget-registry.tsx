@@ -50,11 +50,6 @@ import { HabitsOneDeepWidget } from "@/src/features/home/widgets/habits-one-deep
 type WidgetComponent = React.ComponentType<{ userId: string }>;
 type WidgetStatus = "default" | "available" | "soon";
 
-interface GridSpan {
-  colSpan: number;
-  rowSpan: number;
-}
-
 export interface WidgetMeta {
   id: string;
   toolKey: string;
@@ -63,7 +58,6 @@ export interface WidgetMeta {
   descriptionKey: string;
   tint: WidgetTint;
   status: WidgetStatus;
-  span: GridSpan;
 }
 
 export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
@@ -123,7 +117,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.moodCheckin.desc",
     tint: "be",
     status: "default",
-    span: { colSpan: 2, rowSpan: 1 },
   },
   "mood-trend": {
     id: "mood-trend",
@@ -133,7 +126,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.moodTrend.desc",
     tint: "be",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "journal-latest": {
     id: "journal-latest",
@@ -143,7 +135,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.journalLatest.desc",
     tint: "ink",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "breathing-suggested": {
     id: "breathing-suggested",
@@ -153,7 +144,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.breathingSuggested.desc",
     tint: "aqua",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "gratitude-latest": {
     id: "gratitude-latest",
@@ -163,7 +153,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.gratitudeLatest.desc",
     tint: "think",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "meditation-pick": {
     id: "meditation-pick",
@@ -173,7 +162,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.meditationPick.desc",
     tint: "iris",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "habits-today": {
     id: "habits-today",
@@ -183,7 +171,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.habitsToday.desc",
     tint: "act",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "self-care": {
     id: "self-care",
@@ -193,7 +180,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.selfCare.desc",
     tint: "primary",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "cbt-open-record": {
     id: "cbt-open-record",
@@ -203,7 +189,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtOpenRecord.metaDesc",
     tint: "primary",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "act-values": {
     id: "act-values",
@@ -213,7 +198,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actValues.metaDesc",
     tint: "act",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "mindfulness-anchor": {
     id: "mindfulness-anchor",
@@ -223,7 +207,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.mindfulnessAnchor.metaDesc",
     tint: "mist",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "grounding-54321": {
     id: "grounding-54321",
@@ -233,7 +216,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.grounding54321.metaDesc",
     tint: "clay",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "sleep-last-night": {
     id: "sleep-last-night",
@@ -243,7 +225,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.sleepLastNight.metaDesc",
     tint: "ink",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "sleep-7-nights": {
     id: "sleep-7-nights",
@@ -253,7 +234,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.sleep7Nights.metaDesc",
     tint: "ink",
     status: "default",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "cbt-recent-records": {
     id: "cbt-recent-records",
@@ -263,7 +243,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtRecentRecords.metaDesc",
     tint: "primary",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "cbt-distortion-patterns": {
     id: "cbt-distortion-patterns",
@@ -273,7 +252,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtDistortionPatterns.metaDesc",
     tint: "primary",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "cbt-distortion-guide": {
     id: "cbt-distortion-guide",
@@ -283,7 +261,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtDistortionGuide.metaDesc",
     tint: "primary",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "cbt-programme": {
     id: "cbt-programme",
@@ -293,7 +270,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtProgramme.metaDesc",
     tint: "primary",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "cbt-worry": {
     id: "cbt-worry",
@@ -303,7 +279,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtWorry.metaDesc",
     tint: "primary",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "cbt-beliefs": {
     id: "cbt-beliefs",
@@ -313,7 +288,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtBeliefs.metaDesc",
     tint: "primary",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "cbt-activities": {
     id: "cbt-activities",
@@ -323,7 +297,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtActivities.metaDesc",
     tint: "primary",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "cbt-exposure": {
     id: "cbt-exposure",
@@ -333,7 +306,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtExposure.metaDesc",
     tint: "primary",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "cbt-goals": {
     id: "cbt-goals",
@@ -343,7 +315,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtGoals.metaDesc",
     tint: "primary",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "act-committed-actions": {
     id: "act-committed-actions",
@@ -353,7 +324,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actCommittedActions.metaDesc",
     tint: "act",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "act-defusion": {
     id: "act-defusion",
@@ -363,7 +333,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actDefusion.metaDesc",
     tint: "act",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "act-programme": {
     id: "act-programme",
@@ -373,7 +342,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actProgramme.metaDesc",
     tint: "act",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "act-acceptance-prompt": {
     id: "act-acceptance-prompt",
@@ -383,7 +351,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actAcceptancePrompt.metaDesc",
     tint: "act",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "journal-week": {
     id: "journal-week",
@@ -393,7 +360,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.journalWeek.metaDesc",
     tint: "ink",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "journal-prompt": {
     id: "journal-prompt",
@@ -403,7 +369,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.journalPrompt.metaDesc",
     tint: "ink",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "journal-resurface": {
     id: "journal-resurface",
@@ -413,7 +378,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.journalResurface.metaDesc",
     tint: "ink",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "breathing-library": {
     id: "breathing-library",
@@ -423,7 +387,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.breathingLibrary.metaDesc",
     tint: "aqua",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "breathing-log": {
     id: "breathing-log",
@@ -433,7 +396,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.breathingLog.metaDesc",
     tint: "aqua",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "mindfulness-library": {
     id: "mindfulness-library",
@@ -443,7 +405,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.mindfulnessLibrary.metaDesc",
     tint: "mist",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "mindfulness-log": {
     id: "mindfulness-log",
@@ -453,7 +414,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.mindfulnessLog.metaDesc",
     tint: "mist",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "grounding-library": {
     id: "grounding-library",
@@ -463,7 +423,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.groundingLibrary.metaDesc",
     tint: "clay",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "grounding-log": {
     id: "grounding-log",
@@ -473,7 +432,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.groundingLog.metaDesc",
     tint: "clay",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "gratitude-week": {
     id: "gratitude-week",
@@ -483,7 +441,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.gratitudeWeek.metaDesc",
     tint: "think",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "gratitude-resurface": {
     id: "gratitude-resurface",
@@ -493,7 +450,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.gratitudeResurface.metaDesc",
     tint: "think",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "gratitude-prompt": {
     id: "gratitude-prompt",
@@ -503,7 +459,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.gratitudePrompt.metaDesc",
     tint: "think",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "meditation-sit-time": {
     id: "meditation-sit-time",
@@ -513,7 +468,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.meditationSitTime.metaDesc",
     tint: "iris",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "meditation-continue": {
     id: "meditation-continue",
@@ -523,7 +477,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.meditationContinue.metaDesc",
     tint: "iris",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "sleep-notes": {
     id: "sleep-notes",
@@ -533,7 +486,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.sleepNotes.metaDesc",
     tint: "ink",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "sleep-wind-down": {
     id: "sleep-wind-down",
@@ -543,7 +495,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.sleepWindDown.metaDesc",
     tint: "ink",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "habits-quiet": {
     id: "habits-quiet",
@@ -553,7 +504,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.habitsQuiet.metaDesc",
     tint: "act",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
   "habits-one-deep": {
     id: "habits-one-deep",
@@ -563,7 +513,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.habitsOneDeep.metaDesc",
     tint: "act",
     status: "available",
-    span: { colSpan: 1, rowSpan: 1 },
   },
 };
 
@@ -579,15 +528,4 @@ export function resolveWidget(widgetId: string, userId: string): React.ReactElem
   const Component = WIDGET_REGISTRY[widgetId];
   if (!Component) return null;
   return <Component userId={userId} />;
-}
-
-export function spanForWidget(widgetId: string): GridSpan {
-  return WIDGET_META[widgetId]?.span ?? { colSpan: 1, rowSpan: 1 };
-}
-
-export function clampSpan(span: GridSpan, numColumns: number): GridSpan {
-  return {
-    colSpan: Math.min(span.colSpan, Math.max(1, numColumns)),
-    rowSpan: span.rowSpan,
-  };
 }

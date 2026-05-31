@@ -242,7 +242,11 @@
       "moodCheckin": {
         "title": "Ежедневно отчитане",
         "desc": "Бърза проверка на настроението с пет лица.",
-        "faceLabel": "Настроение {{score}} от 5"
+        "faceLabel": "Настроение {{score}} от 5",
+        "loggedSummary_one": "{{count}} отметка днес",
+        "loggedSummary_other": "{{count}} отметки днес",
+        "lastAt": "последно в {{time}}",
+        "emptyPrompt": "Как се чувстваш?"
       },
       "moodTrend": {
         "title": "Настроение, последни 7 дни",

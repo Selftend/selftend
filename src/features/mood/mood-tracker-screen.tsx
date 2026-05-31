@@ -4,7 +4,6 @@ import { ScrollView, View, type LayoutChangeEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
   CardContent,
@@ -17,16 +16,24 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
+import { SegmentedControl } from "@/src/components/app/segmented-control";
 import { MoodScale } from "@/src/components/app/mood-scale";
-import { MoodEntryCard } from "@/src/features/mood/mood-entry-card";
+import { StatRow } from "@/src/components/app/mood-stat-row";
+import { MoodHistoryList } from "@/src/features/mood/mood-history-list";
 import { buildMoodChartData } from "@/src/features/mood/chart-data";
-import { useMoodLogs } from "@/src/features/mood/queries";
-import { getDayMoodSummary, getMoodSummary, type MoodSummary } from "@/src/features/mood/summaries";
+import { useMoodLogs, useMoodLogCount } from "@/src/features/mood/queries";
+import {
+  getDayMoodSummary,
+  getMoodSummary,
+  getDailyAverages,
+  getTopEmotions,
+  getWeekDelta,
+  type MoodSummary,
+} from "@/src/features/mood/summaries";
+import { WeekHero } from "@/src/features/mood/mood-week-hero";
+import { formatLocalTimestamp } from "@/src/utils/date";
 import { useSession } from "@/src/providers/session-provider";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
-
-const RECENT_LIMIT = 10;
-const CHART_DAYS = 14;
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function MoodTrackerScreen() {
   const { t, i18n } = useTranslation("mood");
@@ -40,6 +47,7 @@ export default function MoodTrackerScreen() {
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [chartContainerWidth, setChartContainerWidth] = useState(300);
+  const [trendDays, setTrendDays] = useState<7 | 14 | 30>(14);
 
   const daySummary = getDayMoodSummary(moodLogs, selectedDate);
   const dayLabel = new Intl.DateTimeFormat(i18n.language, {
@@ -48,11 +56,24 @@ export default function MoodTrackerScreen() {
     day: "numeric",
   }).format(new Date(selectedDate + "T12:00:00"));
   const sevenDay = getMoodSummary(moodLogs, 7);
-  const thirtyDay = getMoodSummary(moodLogs, 30);
-  const chartData = buildMoodChartData(moodLogs, CHART_DAYS);
-  const recent = (moodLogs ?? [])
-    .filter((log) => toLocalDateKey(log.loggedAt) === selectedDate)
-    .slice(0, RECENT_LIMIT);
+  const weekDelta = getWeekDelta(moodLogs);
+  const weekByDay = getDailyAverages(moodLogs, 7);
+  const topEmotions = getTopEmotions(moodLogs, 3);
+  const { data: totalCount } = useMoodLogCount(userId);
+  const thisWeekCount = sevenDay.count;
+  const lastLog = (moodLogs ?? [])[0] ?? null; // listMoodLogs returns newest-first
+  const lastWhen = lastLog ? formatLocalTimestamp(lastLog.loggedAt) : null;
+
+  const statItems = [
+    { value: String(totalCount ?? moodLogs?.length ?? 0), label: t("stats.checkinsLabel") },
+    { value: String(thisWeekCount), label: t("stats.thisWeekLabel") },
+    {
+      value: sevenDay.average === null ? "–" : sevenDay.average.toFixed(1),
+      label: t("stats.avgLabel"),
+    },
+  ];
+  const chartData = buildMoodChartData(moodLogs, trendDays);
+  const history = moodLogs ?? [];
 
   const handleChartLayout = (e: LayoutChangeEvent) => {
     setChartContainerWidth(e.nativeEvent.layout.width);
@@ -79,25 +100,37 @@ export default function MoodTrackerScreen() {
                 { type: "notifications", targetKey: "mood" },
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
+              meta={
+                <StatRow
+                  accentClassName="text-be"
+                  items={statItems}
+                  subline={lastWhen ? t("stats.last", { when: lastWhen }) : t("stats.never")}
+                />
+              }
             />
 
             <TodayCheckInCard summary={daySummary} isToday={isToday} dayLabel={dayLabel} />
 
             <View className="gap-3">
-              <Text variant="h3">{t("sections.summary")}</Text>
-              <View className="flex-row flex-wrap gap-3">
-                <SummaryTile labelKey="summary.sevenDay" summary={sevenDay} />
-                <SummaryTile labelKey="summary.thirtyDay" summary={thirtyDay} />
-              </View>
+              <Text variant="h3">{t("week.title")}</Text>
+              <WeekHero delta={weekDelta} byDay={weekByDay} topEmotions={topEmotions} />
             </View>
 
             <View className="gap-3">
-              <Text variant="h3">{t("sections.trend")}</Text>
+              <View className="flex-row items-center justify-between">
+                <Text variant="h3">{t("trendControls.title")}</Text>
+                <SegmentedControl
+                  value={trendDays}
+                  onChange={setTrendDays}
+                  options={[
+                    { value: 7, label: t("trendControls.range7") },
+                    { value: 14, label: t("trendControls.range14") },
+                    { value: 30, label: t("trendControls.range30") },
+                  ]}
+                />
+              </View>
               <Card>
-                <CardHeader>
-                  <CardTitle>{t("trend.lastDays")}</CardTitle>
-                </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4">
                   <View onLayout={handleChartLayout}>
                     {chartData.length > 0 ? (
                       <MoodLineChart data={chartData} width={chartContainerWidth} />
@@ -110,16 +143,8 @@ export default function MoodTrackerScreen() {
             </View>
 
             <View className="gap-3">
-              <Text variant="h3">{t("sections.recent")}</Text>
-              {recent.length > 0 ? (
-                <View className="gap-3">
-                  {recent.map((entry) => (
-                    <MoodEntryCard key={entry.id} entry={entry} />
-                  ))}
-                </View>
-              ) : (
-                <Text variant="muted">{t("recent.empty")}</Text>
-              )}
+              <Text variant="h3">{t("history.title")}</Text>
+              <MoodHistoryList logs={history} />
             </View>
           </View>
         </ScrollView>
@@ -164,46 +189,7 @@ function TodayCheckInCard({ summary, isToday, dayLabel }: TodayCheckInCardProps)
           }
           compact
         />
-        {logged ? (
-          <Button
-            onPress={() => router.push("/tools/mood-tracker/new")}
-            variant="ghost"
-            size="sm"
-            className="mt-3 self-start"
-          >
-            <Icon name="add" className="size-4" />
-            <Text>{t("today.logAnother")}</Text>
-          </Button>
-        ) : null}
       </CardContent>
     </Card>
-  );
-}
-
-interface SummaryTileProps {
-  labelKey: string;
-  summary: MoodSummary;
-}
-
-function SummaryTile({ labelKey, summary }: SummaryTileProps) {
-  const { t } = useTranslation("mood");
-  return (
-    <View className="min-w-[180px] flex-1 basis-[180px] gap-1 rounded-2xl border border-border bg-card p-4">
-      <Text variant="muted" className="text-xs uppercase tracking-wide">
-        {t(labelKey)}
-      </Text>
-      {summary.average === null ? (
-        <Text className="text-sm">{t("summary.noData")}</Text>
-      ) : (
-        <>
-          <Text className="text-2xl font-semibold">
-            {t("summary.average", { average: summary.average })}
-          </Text>
-          <Text variant="muted" className="text-xs">
-            {t("summary.count", { count: summary.count })}
-          </Text>
-        </>
-      )}
-    </View>
   );
 }

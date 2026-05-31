@@ -57,8 +57,6 @@ jest.mock("@/src/features/home/widget-registry", () => ({
   isImplemented: () => false,
   metaForWidget: () => undefined,
   resolveWidget: () => null,
-  spanForWidget: () => ({ colSpan: 1, rowSpan: 1 }),
-  clampSpan: (span: { colSpan: number; rowSpan: number }) => span,
 }));
 
 describe("HomeScreen hero", () => {
