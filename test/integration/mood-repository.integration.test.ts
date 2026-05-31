@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { SEED_USERS, createServiceClient, deleteAllMoodLogsForUser, signInAs } from "./helpers";
+import { SEED_USERS, deleteAllMoodLogsForUser, signInAs } from "./helpers";
 
 describe("mood mood_logs (integration)", () => {
   let alice: SupabaseClient;

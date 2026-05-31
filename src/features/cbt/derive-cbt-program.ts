@@ -3,7 +3,6 @@ import {
   CBT_PROGRAM,
   type ProgramSignalData,
 } from "@/src/features/cbt/program-definition";
-import type { Href } from "expo-router";
 
 import type { ActivityLog } from "@/src/features/activities/types";
 import type { CoreBelief } from "@/src/features/beliefs/types";
@@ -11,12 +10,11 @@ import type { ThoughtRecord } from "@/src/features/cbt/types";
 import type { ExposureHierarchy } from "@/src/features/exposure/types";
 import type { Goal } from "@/src/features/goals/types";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
+import type { ProgramStatus, ProgramTaskView } from "@/src/features/modules/program-types";
 import type { MoodLog } from "@/src/features/mood/types";
 import type { RecoveryPlan } from "@/src/features/recovery/types";
 import type { SelfCareLog } from "@/src/features/self-care/types";
 import type { ValuesProfile } from "@/src/features/values/types";
-
-export type ProgramStatus = "not_started" | "in_progress" | "graduated";
 
 export interface DeriveProgramInput {
   startedAt: string | null;
@@ -34,15 +32,6 @@ export interface DeriveProgramInput {
   selfCareLogs: SelfCareLog[];
   moodLogs: MoodLog[];
   recoveryPlan: RecoveryPlan | null;
-}
-
-export interface ProgramTaskView {
-  key: string;
-  labelKey: string;
-  route: Href;
-  current: number;
-  target: number;
-  done: boolean;
 }
 
 interface ProgramSummaryStats {
@@ -72,7 +61,7 @@ export interface CbtProgramView {
   phaseReady: boolean;
 }
 
-function view(
+function toView(
   task: import("@/src/features/cbt/program-definition").ProgramTaskDef,
   data: ProgramSignalData,
 ): ProgramTaskView {
@@ -132,8 +121,8 @@ export function deriveCbtProgram(inputData: DeriveProgramInput): CbtProgramView 
   const phaseStart = new Date(inputData.phaseStartedAt ?? startedAt).getTime();
   const def = CBT_PROGRAM[phaseIndex];
   const milestoneData: ProgramSignalData = { ...signalData, since: phaseStart };
-  const milestones = def.milestones.map((m) => view(m, milestoneData));
-  const dailyPractice = def.dailyPractice ? view(def.dailyPractice, signalData) : null;
+  const milestones = def.milestones.map((m) => toView(m, milestoneData));
+  const dailyPractice = def.dailyPractice ? toView(def.dailyPractice, signalData) : null;
   const phaseReady = milestones.every((m) => m.done);
 
   const phase: CurrentPhaseView | null = completedAt

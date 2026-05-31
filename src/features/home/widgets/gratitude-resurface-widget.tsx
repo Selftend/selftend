@@ -7,11 +7,7 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
-
-function dayOfYear(date: Date): number {
-  const start = new Date(date.getFullYear(), 0, 0);
-  return Math.floor((date.getTime() - start.getTime()) / 86400000);
-}
+import { dayOfYear } from "@/src/utils/date";
 
 export function GratitudeResurfaceWidget({ userId }: { userId: string }) {
   const { t, i18n } = useTranslation("navigation");

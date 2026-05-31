@@ -250,7 +250,6 @@ test.describe("CBT weekly review: aggregate render", () => {
 
     // The completed count "2" should appear as a bold stat.
     // The "completed" label sits below it; we look for both text values.
-    const activitiesCard = page.locator("text=Activities").locator("../..");
     // Use locator-based approach: look for the exact stat values in the activities card region.
     // Find the "2" completed stat and "3" planned stat.
     // The screen renders: <Text>2</Text><Text>completed</Text> and <Text>3</Text><Text>planned</Text>

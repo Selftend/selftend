@@ -2,7 +2,7 @@
 // calm hue from the shared token palette (think/act/be + aqua/mist/iris/ink/clay).
 // Class strings are written out in full so NativeWind's compiler can see them.
 
-export interface ToolAccent {
+interface ToolAccent {
   chip: string;
   icon: string;
 }

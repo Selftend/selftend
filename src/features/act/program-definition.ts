@@ -40,7 +40,7 @@ export interface ProgramTaskDef {
   signal: (data: ActProgramSignalData) => SignalResult;
 }
 
-export interface ProgramPhase {
+interface ProgramPhase {
   key: string;
   themeLabelKey: string; // act:program.phases.<key>.title
   themeSubKey: string; // act:program.phases.<key>.sub

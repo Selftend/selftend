@@ -19,12 +19,7 @@ import {
   useRestoreHabit,
   useToggleHabitLog,
 } from "@/src/features/habits/queries";
-import {
-  addDays,
-  isScheduledOn,
-  isTickedOn,
-  toLocalDateString,
-} from "@/src/features/habits/scheduling";
+import { addDays, isScheduledOn, isTickedOn, localDateKey } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
@@ -41,7 +36,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
   const userId = user?.id ?? null;
 
   const { data: habit, isLoading } = useHabit(userId, habitId);
-  const sinceDate = toLocalDateString(addDays(new Date(), -CALENDAR_WEEKS * 7 + 1));
+  const sinceDate = localDateKey(addDays(new Date(), -CALENDAR_WEEKS * 7 + 1));
   const { data: logs } = useHabitLogs(userId, { habitId, sinceDate });
   const toggleLog = useToggleHabitLog(userId);
   const archive = useArchiveHabit(userId);
@@ -223,7 +218,7 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
   })();
 
   const chip = colorChipClass(habit.color);
-  const todayStr = toLocalDateString(today);
+  const todayStr = localDateKey(today);
 
   return (
     <View className="gap-2">
@@ -233,7 +228,7 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
       <View className="gap-1.5 rounded-2xl border border-border bg-card p-3">
         <View className="flex-row flex-wrap gap-1">
           {days.map((day) => {
-            const dayStr = toLocalDateString(day);
+            const dayStr = localDateKey(day);
             const ticked = isTickedOn(logs, habit.id, dayStr);
             const scheduled = isScheduledOn(habit, day);
             const isToday = dayStr === todayStr;

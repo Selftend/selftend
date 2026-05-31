@@ -18,7 +18,8 @@ import {
   type TriggerRef,
 } from "@/src/components/react-native-reusables/popover";
 import { Text } from "@/src/components/react-native-reusables/text";
-import type { ActProgramView, ProgramTaskView } from "@/src/features/act/derive-act-program";
+import type { ActProgramView } from "@/src/features/act/derive-act-program";
+import type { ProgramTaskView } from "@/src/features/modules/program-types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface ActProgramCardProps {

@@ -1,4 +1,4 @@
-export interface GroundingTechnique {
+interface GroundingTechnique {
   slug: string;
   stepCount: number;
 }

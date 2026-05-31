@@ -50,7 +50,7 @@ import { HabitsOneDeepWidget } from "@/src/features/home/widgets/habits-one-deep
 type WidgetComponent = React.ComponentType<{ userId: string }>;
 type WidgetStatus = "default" | "available" | "soon";
 
-export interface GridSpan {
+interface GridSpan {
   colSpan: number;
   rowSpan: number;
 }

@@ -26,12 +26,7 @@ import {
 import type { JournalEntry } from "@/src/features/journal/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-
-function formatTimestamp(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
-}
+import { formatLocalTimestamp } from "@/src/utils/date";
 
 export default function JournalDetailScreen() {
   const { t } = useTranslation("journal");
@@ -122,7 +117,7 @@ export default function JournalDetailScreen() {
           <Card>
             <CardHeader>
               <CardTitle>{t("detail.createdAt")}</CardTitle>
-              <CardDescription>{formatTimestamp(entry.createdAt)}</CardDescription>
+              <CardDescription>{formatLocalTimestamp(entry.createdAt)}</CardDescription>
             </CardHeader>
           </Card>
         </View>

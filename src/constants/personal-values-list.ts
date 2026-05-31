@@ -1,4 +1,4 @@
-export interface PersonalValueDefinition {
+interface PersonalValueDefinition {
   key: string;
 }
 

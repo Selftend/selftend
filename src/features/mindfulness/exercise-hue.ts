@@ -28,7 +28,7 @@ interface HueClasses {
   fill: string;
 }
 
-export interface HueDef {
+interface HueDef {
   classes: HueClasses;
   hsl: { light: string; dark: string };
 }

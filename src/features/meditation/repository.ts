@@ -149,36 +149,6 @@ export async function saveMeditationSession(userId: string, input: MeditationSes
   return mapSession(data as MeditationSessionRow);
 }
 
-export async function updateMeditationSession(
-  userId: string,
-  sessionId: string,
-  patch: Partial<MeditationSessionInput>,
-) {
-  const client = requireSupabase();
-  const payload: Record<string, unknown> = {};
-  if (patch.stageAtSession !== undefined) payload.stage_at_session = patch.stageAtSession;
-  if (patch.durationMinutes !== undefined) payload.duration_minutes = patch.durationMinutes;
-  if (patch.mindWanderingEpisodes !== undefined)
-    payload.mind_wandering_episodes = patch.mindWanderingEpisodes;
-  if (patch.dullnessLevel !== undefined) payload.dullness_level = patch.dullnessLevel;
-  if (patch.distractionLevel !== undefined) payload.distraction_level = patch.distractionLevel;
-  if (patch.obstacleTags !== undefined) payload.obstacle_tags = patch.obstacleTags;
-  if (patch.reflection !== undefined) payload.reflection = patch.reflection.trim();
-  if (patch.moodAfter !== undefined) payload.mood_after = patch.moodAfter;
-  if (patch.techniqueUsed !== undefined) payload.technique_used = patch.techniqueUsed;
-
-  const { data, error } = await client
-    .from("meditation_sessions")
-    .update(payload)
-    .eq("user_id", userId)
-    .eq("id", sessionId)
-    .select("*")
-    .single();
-
-  if (error) throw error;
-  return mapSession(data as MeditationSessionRow);
-}
-
 export async function getMeditationProgramState(userId: string) {
   const client = requireSupabase();
   const { data, error } = await client

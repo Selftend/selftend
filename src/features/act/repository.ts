@@ -367,17 +367,6 @@ export async function saveUrgeSurfLog(userId: string, input: UrgeSurfLogInput) {
   return mapUrgeSurfLog(data as UrgeSurfLogRow);
 }
 
-export async function deleteUrgeSurfLog(userId: string, logId: string) {
-  const client = requireSupabase();
-  const { error } = await client
-    .from("act_urge_surf_logs")
-    .delete()
-    .eq("user_id", userId)
-    .eq("id", logId);
-
-  if (error) throw error;
-}
-
 // ─── Connection ───────────────────────────────────────────────────────────────
 
 interface ConnectionLogRow {

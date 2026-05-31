@@ -40,7 +40,7 @@ export interface ProgramTaskDef {
   signal: (data: ProgramSignalData) => SignalResult;
 }
 
-export interface ProgramWeek {
+interface ProgramWeek {
   key: string;
   themeLabelKey: string; // i18n key under cbt:program.weeks.<key>.title
   themeSubKey: string; // i18n key under cbt:program.weeks.<key>.sub

@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
+import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
 
 export function GratitudeWeekWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
@@ -26,20 +27,12 @@ export function GratitudeWeekWidget({ userId }: { userId: string }) {
           <Text className="text-sm font-semibold">{t("home.widgets.gratitudeWeek.title")}</Text>
         </View>
         {week.length > 0 ? (
-          <View className="flex-row gap-6">
-            <View className="gap-0.5">
-              <Text className="text-base font-semibold">{week.length}</Text>
-              <Text variant="muted" className="text-[11px]">
-                {t("home.widgets.gratitudeWeek.entriesLabel")}
-              </Text>
-            </View>
-            <View className="gap-0.5">
-              <Text className="text-base font-semibold">{items}</Text>
-              <Text variant="muted" className="text-[11px]">
-                {t("home.widgets.gratitudeWeek.itemsLabel")}
-              </Text>
-            </View>
-          </View>
+          <TwoStatBody
+            stats={[
+              { value: week.length, label: t("home.widgets.gratitudeWeek.entriesLabel") },
+              { value: items, label: t("home.widgets.gratitudeWeek.itemsLabel") },
+            ]}
+          />
         ) : (
           <Text variant="muted" className="text-xs">
             {t("home.widgets.gratitudeWeek.empty")}

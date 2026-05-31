@@ -13,7 +13,7 @@
  */
 
 import { renderHook } from "@testing-library/react-native";
-import { Platform, useColorScheme } from "react-native";
+import { Platform } from "react-native";
 
 // ---------------------------------------------------------------------------
 // Imports after mock registration

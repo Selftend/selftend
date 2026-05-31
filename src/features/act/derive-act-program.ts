@@ -15,8 +15,7 @@ import type {
   UrgeSurfLog,
   ValueEntry,
 } from "@/src/features/act/types";
-
-export type ProgramStatus = "not_started" | "in_progress" | "graduated";
+import type { ProgramStatus, ProgramTaskView } from "@/src/features/modules/program-types";
 
 export interface DeriveActProgramInput {
   startedAt: string | null;
@@ -33,15 +32,6 @@ export interface DeriveActProgramInput {
   urgeSurfLogs: UrgeSurfLog[];
   committedActions: CommittedAction[];
   actionSteps: ActionStep[];
-}
-
-export interface ProgramTaskView {
-  key: string;
-  labelKey: string;
-  route: Href;
-  current: number;
-  target: number;
-  done: boolean;
 }
 
 export interface CurrentActPhaseView {

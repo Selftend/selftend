@@ -3,7 +3,6 @@ import {
   sanitizeEnabledModules,
   type ButtonTourKey,
   type CookieConsent,
-  type ModuleKey,
   type UserPreferences,
 } from "@/src/features/modules/types";
 import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
@@ -240,27 +239,6 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
       if (!fallbackError) return preferences;
     }
 
-    throw error;
-  }
-
-  return mapPreferences(data as UserPreferenceRow);
-}
-
-export async function updateEnabledModules(userId: string, enabledModules: ModuleKey[]) {
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from("user_preferences")
-    .upsert(
-      {
-        user_id: userId,
-        enabled_modules: enabledModules,
-      },
-      { onConflict: "user_id" },
-    )
-    .select("*")
-    .single();
-
-  if (error) {
     throw error;
   }
 

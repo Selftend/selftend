@@ -2,7 +2,7 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import { CbtProgramCard } from "./cbt-program-card";
-import type { CbtProgramView, CurrentPhaseView } from "@/src/features/cbt/derive-program";
+import type { CbtProgramView, CurrentPhaseView } from "@/src/features/cbt/derive-cbt-program";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({

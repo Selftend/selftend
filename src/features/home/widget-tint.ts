@@ -10,7 +10,7 @@ export type WidgetTint =
   | "think"
   | "destructive";
 
-export interface TintClasses {
+interface TintClasses {
   chip: string;
   icon: string;
 }

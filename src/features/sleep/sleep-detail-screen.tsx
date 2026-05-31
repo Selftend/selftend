@@ -20,12 +20,7 @@ import { useDeleteSleepLog, useSleepLog, useSleepLogs } from "@/src/features/sle
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatTimestamp } from "@/src/utils/date";
-
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m === 0 ? `${h}h` : `${h}h ${m}m`;
-}
+import { formatDuration } from "@/src/features/sleep/format";
 
 export default function SleepDetailScreen() {
   const { t } = useTranslation("sleep");

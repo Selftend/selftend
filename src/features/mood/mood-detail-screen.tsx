@@ -24,12 +24,7 @@ import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-
-function formatTimestamp(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
-}
+import { formatLocalTimestamp } from "@/src/utils/date";
 
 export default function MoodDetailScreen() {
   const { t } = useTranslation("mood");
@@ -132,7 +127,7 @@ export default function MoodDetailScreen() {
               <CardTitle>{t("detail.loggedAt")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Text>{formatTimestamp(entry.loggedAt)}</Text>
+              <Text>{formatLocalTimestamp(entry.loggedAt)}</Text>
             </CardContent>
           </Card>
 

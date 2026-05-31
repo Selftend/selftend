@@ -12,28 +12,28 @@ import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { toLocalDateKey } from "@/src/stores/selected-date-store";
 
-export interface TopDistortion {
+interface TopDistortion {
   key: string;
   count: number;
 }
 
-export interface ExerciseMoodLift {
+interface ExerciseMoodLift {
   withExercise: number;
   withoutExercise: number;
 }
 
-export interface ActivityMoodLift {
+interface ActivityMoodLift {
   category: ActivityCategory;
   averageLift: number;
   count: number;
 }
 
-export interface RecurringThoughtSuggestion {
+interface RecurringThoughtSuggestion {
   thought: string;
   count: number;
 }
 
-export interface SelfCareTrend {
+interface SelfCareTrend {
   totalDays: number;
   exerciseDays: number;
   socialDays: number;
@@ -41,14 +41,14 @@ export interface SelfCareTrend {
   averageSleepHours: number | null;
 }
 
-export interface AngerPattern {
+interface AngerPattern {
   averageArousal: number;
   timeOutsTaken: number;
   totalLogs: number;
   commonUrge: string | null;
 }
 
-export interface ExposureProgress {
+interface ExposureProgress {
   completed: number;
   total: number;
 }

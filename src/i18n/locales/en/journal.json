@@ -21,6 +21,8 @@
   },
   "list": {
     "recent": "Recent entries",
+    "notificationsLabel": "Notifications",
+    "aboutLabel": "About journaling",
     "empty": {
       "title": "Nothing here yet",
       "description": "Write a few words about how today felt.",

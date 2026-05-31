@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { Pressable as mockPressable, Text as mockText, View as mockView } from "react-native";
+import { Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
 import SettingsScreen from "./settings-screen";
@@ -36,31 +36,6 @@ jest.mock("expo-image-manipulator", () => ({
     JPEG: "jpeg",
   },
 }));
-
-jest.mock("@/src/components/react-native-reusables/alert-dialog", () => {
-  const Pressable = mockPressable;
-  const View = mockView;
-
-  function MockView({ children }: { children?: ReactNode }) {
-    return <View>{children}</View>;
-  }
-
-  function MockPressable({ children, onPress }: { children?: ReactNode; onPress?: () => void }) {
-    return <Pressable onPress={onPress}>{children}</Pressable>;
-  }
-
-  return {
-    AlertDialog: MockView,
-    AlertDialogAction: MockPressable,
-    AlertDialogCancel: MockView,
-    AlertDialogContent: MockView,
-    AlertDialogDescription: MockView,
-    AlertDialogFooter: MockView,
-    AlertDialogHeader: MockView,
-    AlertDialogTitle: MockView,
-    AlertDialogTrigger: MockView,
-  };
-});
 
 jest.mock("@/src/components/react-native-reusables/label", () => {
   const Text = mockText;

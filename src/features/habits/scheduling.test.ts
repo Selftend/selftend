@@ -2,7 +2,7 @@ import {
   addDays,
   isAtMissTwiceRisk,
   isScheduledOn,
-  toLocalDateString,
+  localDateKey,
 } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 
@@ -63,14 +63,14 @@ describe("scheduling helpers", () => {
 
 describe("isAtMissTwiceRisk", () => {
   const today = new Date("2026-05-17T12:00:00");
-  const yesterdayStr = toLocalDateString(addDays(today, -1));
+  const yesterdayStr = localDateKey(addDays(today, -1));
 
   it("returns true when yesterday was scheduled, missed, and today is scheduled but not ticked", () => {
     expect(isAtMissTwiceRisk(baseHabit, [], today)).toBe(true);
   });
 
   it("returns false once today's tick has been recorded", () => {
-    const logs = [buildLog(baseHabit.id, toLocalDateString(today))];
+    const logs = [buildLog(baseHabit.id, localDateKey(today))];
     expect(isAtMissTwiceRisk(baseHabit, logs, today)).toBe(false);
   });
 

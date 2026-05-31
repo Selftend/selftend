@@ -14,7 +14,7 @@ import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
-export interface UseActProgramResult {
+interface UseActProgramResult {
   program: ActProgramView;
   isLoading: boolean;
   startProgram: () => void;

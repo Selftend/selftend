@@ -1,6 +1,6 @@
 type BreakCategory = "positive-psychology" | "stoicism" | "mental-subtraction";
 
-export interface GratitudeBreak {
+interface GratitudeBreak {
   slug: string;
   category: BreakCategory;
 }

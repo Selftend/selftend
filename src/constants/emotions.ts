@@ -1,4 +1,4 @@
-export interface EmotionOption {
+interface EmotionOption {
   id: string;
   emoji: string;
 }

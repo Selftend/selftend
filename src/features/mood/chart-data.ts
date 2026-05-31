@@ -1,4 +1,4 @@
-export interface MoodChartPoint {
+interface MoodChartPoint {
   day: string;
   score: number;
 }
@@ -14,7 +14,7 @@ function formatDayLabel(value: Date) {
   return new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(value);
 }
 
-function dateKey(value: Date) {
+function localDateKey(value: Date) {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, "0");
   const day = String(value.getDate()).padStart(2, "0");
@@ -37,7 +37,7 @@ export function buildMoodChartData(logs: MoodSample[] | undefined, days: number)
     if (logged.getTime() < start.getTime()) continue;
 
     const localDay = new Date(logged.getFullYear(), logged.getMonth(), logged.getDate());
-    const key = dateKey(localDay);
+    const key = localDateKey(localDay);
     const bucket = buckets.get(key);
     if (bucket) {
       bucket.sum += log.moodScore;
@@ -51,7 +51,7 @@ export function buildMoodChartData(logs: MoodSample[] | undefined, days: number)
   for (let offset = 0; offset < days; offset++) {
     const day = new Date(start);
     day.setDate(start.getDate() + offset);
-    const bucket = buckets.get(dateKey(day));
+    const bucket = buckets.get(localDateKey(day));
     if (!bucket) continue;
     points.push({
       day: formatDayLabel(day),

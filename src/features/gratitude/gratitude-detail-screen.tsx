@@ -27,12 +27,7 @@ import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-
-function formatTimestamp(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
-}
+import { formatLocalTimestamp } from "@/src/utils/date";
 
 export default function GratitudeDetailScreen() {
   const { t } = useTranslation("gratitude");
@@ -201,7 +196,7 @@ export default function GratitudeDetailScreen() {
           <Card>
             <CardHeader>
               <CardTitle>{t("detail.loggedAt")}</CardTitle>
-              <CardDescription>{formatTimestamp(entry.loggedAt)}</CardDescription>
+              <CardDescription>{formatLocalTimestamp(entry.loggedAt)}</CardDescription>
             </CardHeader>
           </Card>
         </View>

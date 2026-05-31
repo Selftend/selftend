@@ -21,11 +21,7 @@ interface ParsedAuthCallbackUrl {
   errorDescription: string | null;
 }
 
-export type CompletedAuthRedirect =
-  | "authenticated"
-  | "confirmed"
-  | "password-recovery"
-  | "email-verified";
+type CompletedAuthRedirect = "authenticated" | "confirmed" | "password-recovery" | "email-verified";
 
 function splitAuthUrl(url: string) {
   const [pathAndQuery, hash = ""] = url.split("#", 2);

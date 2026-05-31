@@ -2,7 +2,7 @@ import type { StageNumber, TmiTechnique } from "@/src/features/meditation/types"
 
 type StagePhase = "novice" | "skilled" | "transition" | "adept";
 
-export interface StageDefinition {
+interface StageDefinition {
   number: StageNumber;
   phase: StagePhase;
   titleKey: string;

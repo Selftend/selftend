@@ -13,7 +13,7 @@ import {
   Pattern478Diagram,
   PatternBoxDiagram,
   PatternCoherentDiagram,
-} from "@/src/features/breathing/components/pattern-diagrams";
+} from "@/src/features/breathing/pattern-diagrams";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";

@@ -1,4 +1,4 @@
-import { addDays, toLocalDateString } from "@/src/features/habits/scheduling";
+import { addDays, localDateKey } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 
 export interface WeekdayRhythm {
@@ -22,7 +22,7 @@ export function getWeeklyRhythm(
   now: Date = new Date(),
 ): WeekdayRhythm[] {
   const start = addDays(now, -(weeks * 7) + 1);
-  const startStr = toLocalDateString(start);
+  const startStr = localDateKey(start);
 
   const counts = [0, 0, 0, 0, 0, 0, 0];
   for (const log of logs) {
@@ -45,7 +45,7 @@ export function getIdentityRoundUp(
   now: Date = new Date(),
 ): IdentityRoundUp[] {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthStartStr = toLocalDateString(monthStart);
+  const monthStartStr = localDateKey(monthStart);
 
   const habitIdentity = new Map<string, string>();
   for (const habit of habits) {

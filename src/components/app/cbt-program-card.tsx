@@ -18,7 +18,8 @@ import {
   type TriggerRef,
 } from "@/src/components/react-native-reusables/popover";
 import { Text } from "@/src/components/react-native-reusables/text";
-import type { CbtProgramView, ProgramTaskView } from "@/src/features/cbt/derive-program";
+import type { CbtProgramView } from "@/src/features/cbt/derive-cbt-program";
+import type { ProgramTaskView } from "@/src/features/modules/program-types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface CbtProgramCardProps {

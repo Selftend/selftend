@@ -9,7 +9,7 @@ interface WidgetPreferenceRow {
   created_at: string;
 }
 
-function mapRow(row: WidgetPreferenceRow): WidgetPreference {
+function mapWidgetPreference(row: WidgetPreferenceRow): WidgetPreference {
   return {
     id: row.id,
     userId: row.user_id,
@@ -27,7 +27,7 @@ export async function listWidgetPreferences(userId: string): Promise<WidgetPrefe
     .eq("user_id", userId)
     .order("position", { ascending: true });
   if (error) throw error;
-  return (data as WidgetPreferenceRow[]).map(mapRow);
+  return (data as WidgetPreferenceRow[]).map(mapWidgetPreference);
 }
 
 // Whether this user's Home defaults have already been seeded. Used to keep an emptied

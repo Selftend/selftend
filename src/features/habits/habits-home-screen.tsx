@@ -24,7 +24,7 @@ import {
   isScheduledOn,
   isTickedOn,
   lastSevenDays,
-  toLocalDateString,
+  localDateKey,
 } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
@@ -39,7 +39,7 @@ export default function HabitsHomeScreen() {
   const userId = user?.id ?? null;
 
   const { data: habits, isLoading: habitsLoading } = useHabits(userId);
-  const sinceDate = toLocalDateString(addDays(new Date(), -30));
+  const sinceDate = localDateKey(addDays(new Date(), -30));
   const { data: logs } = useHabitLogs(userId, { sinceDate });
   const toggleLog = useToggleHabitLog(userId);
 
@@ -326,7 +326,7 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
         </Text>
         <View className="flex-row gap-1.5">
           {days.map((day) => {
-            const dayStr = toLocalDateString(day);
+            const dayStr = localDateKey(day);
             const ticked = isTickedOn(logs, habit.id, dayStr);
             const scheduled = isScheduledOn(habit, day);
             return (

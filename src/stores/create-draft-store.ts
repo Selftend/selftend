@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export interface DraftStore<TValues> {
+interface DraftStore<TValues> {
   entityId: string | null;
   values: TValues | null;
   hydrate: (entityId?: string | null) => void;

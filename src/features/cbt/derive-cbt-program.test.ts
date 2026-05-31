@@ -1,4 +1,4 @@
-import { deriveCbtProgram, type DeriveProgramInput } from "@/src/features/cbt/derive-program";
+import { deriveCbtProgram, type DeriveProgramInput } from "@/src/features/cbt/derive-cbt-program";
 
 const START = "2026-05-01T00:00:00.000Z";
 

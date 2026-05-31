@@ -11,7 +11,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { useHabit, useHabitLogs, useUpsertHabitLogNote } from "@/src/features/habits/queries";
 import { HABIT_NOTE_MAX } from "@/src/features/habits/schemas";
-import { todayLocalDateString } from "@/src/features/habits/scheduling";
+import { currentDateKey } from "@/src/features/habits/scheduling";
 import { useSession } from "@/src/providers/session-provider";
 
 interface HabitLogNoteScreenProps {
@@ -24,7 +24,7 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  const dateStr = dateOverride ?? todayLocalDateString();
+  const dateStr = dateOverride ?? currentDateKey();
   const { data: habit } = useHabit(userId, habitId);
   const { data: logs } = useHabitLogs(userId, { habitId, sinceDate: dateStr, limit: 5 });
   const upsertNote = useUpsertHabitLogNote(userId);

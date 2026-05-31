@@ -1,7 +1,7 @@
 import { useActivities } from "@/src/features/activities/queries";
 import { useCoreBeliefs } from "@/src/features/beliefs/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
-import { deriveCbtProgram, type CbtProgramView } from "@/src/features/cbt/derive-program";
+import { deriveCbtProgram, type CbtProgramView } from "@/src/features/cbt/derive-cbt-program";
 import { useHierarchies } from "@/src/features/exposure/queries";
 import { useGoals } from "@/src/features/goals/queries";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
@@ -13,7 +13,7 @@ import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/set
 import { useValuesProfile } from "@/src/features/values/queries";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
-export interface UseCbtProgramResult {
+interface UseCbtProgramResult {
   program: CbtProgramView;
   isLoading: boolean;
   startProgram: () => void;

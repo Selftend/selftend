@@ -4,7 +4,7 @@ import { colorScheme as nwColorScheme } from "nativewind";
 
 import { useThemeStore } from "@/src/stores/theme-store";
 
-export type ResolvedColorScheme = "light" | "dark";
+type ResolvedColorScheme = "light" | "dark";
 
 export function useAppColorScheme(): ResolvedColorScheme {
   const preference = useThemeStore((s) => s.preference);

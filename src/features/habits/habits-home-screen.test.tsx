@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import HabitsHomeScreen from "./habits-home-screen";
 import { useHabitLogs, useHabits, useToggleHabitLog } from "@/src/features/habits/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import { todayLocalDateString } from "@/src/features/habits/scheduling";
+import { currentDateKey } from "@/src/features/habits/scheduling";
 import {
   useUpdateShownButtonTours,
   useUpdateUserPreferences,
@@ -72,7 +72,7 @@ describe("HabitsHomeScreen tap-to-tick", () => {
     jest.clearAllMocks();
 
     mockUseSelectedDate.mockReturnValue({
-      selectedDate: todayLocalDateString(),
+      selectedDate: currentDateKey(),
       isToday: true,
     });
 
@@ -136,7 +136,7 @@ describe("HabitsHomeScreen tap-to-tick", () => {
     await waitFor(() => {
       expect(toggleMutate).toHaveBeenCalledWith({
         habitId: "h-1",
-        loggedOn: todayLocalDateString(),
+        loggedOn: currentDateKey(),
       });
     });
   });

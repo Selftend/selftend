@@ -3,7 +3,7 @@ export interface BreathingPhase {
   durationSeconds: number;
 }
 
-export interface BreathingPattern {
+interface BreathingPattern {
   slug: string;
   phases: BreathingPhase[];
   durations: number[];

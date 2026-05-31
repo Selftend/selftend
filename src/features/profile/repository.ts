@@ -136,7 +136,7 @@ function getSupportedMimeType(mimeType?: string | null, fileName?: string | null
   return null;
 }
 
-function toUserProfile(row: ProfileRow, avatarUrl: string | null): UserProfile {
+function mapUserProfile(row: ProfileRow, avatarUrl: string | null): UserProfile {
   return {
     userId: row.user_id,
     email: row.email,
@@ -253,10 +253,10 @@ async function createSignedAvatarUrl(storagePath: string | null) {
 
 async function mapProfileRow(row: ProfileRow) {
   if (row.avatar_source === "upload") {
-    return toUserProfile(row, await createSignedAvatarUrl(row.avatar_storage_path));
+    return mapUserProfile(row, await createSignedAvatarUrl(row.avatar_storage_path));
   }
 
-  return toUserProfile(row, row.avatar_url);
+  return mapUserProfile(row, row.avatar_url);
 }
 
 export async function getOrSyncUserProfile(user: User) {

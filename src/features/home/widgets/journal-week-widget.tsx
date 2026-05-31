@@ -8,6 +8,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useJournalEntries } from "@/src/features/journal/queries";
 import { countWords } from "@/src/features/journal/word-count";
+import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
 
 export function JournalWeekWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
@@ -27,20 +28,12 @@ export function JournalWeekWidget({ userId }: { userId: string }) {
           <Text className="text-sm font-semibold">{t("home.widgets.journalWeek.title")}</Text>
         </View>
         {weekEntries.length > 0 ? (
-          <View className="flex-row gap-6">
-            <View className="gap-0.5">
-              <Text className="text-base font-semibold">{weekEntries.length}</Text>
-              <Text variant="muted" className="text-[11px]">
-                {t("home.widgets.journalWeek.entriesLabel")}
-              </Text>
-            </View>
-            <View className="gap-0.5">
-              <Text className="text-base font-semibold">{words}</Text>
-              <Text variant="muted" className="text-[11px]">
-                {t("home.widgets.journalWeek.wordsLabel")}
-              </Text>
-            </View>
-          </View>
+          <TwoStatBody
+            stats={[
+              { value: weekEntries.length, label: t("home.widgets.journalWeek.entriesLabel") },
+              { value: words, label: t("home.widgets.journalWeek.wordsLabel") },
+            ]}
+          />
         ) : (
           <Text variant="muted" className="text-xs">
             {t("home.widgets.journalWeek.empty")}

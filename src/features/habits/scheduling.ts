@@ -1,14 +1,14 @@
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 
-export function toLocalDateString(date: Date): string {
+export function localDateKey(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
-export function todayLocalDateString(): string {
-  return toLocalDateString(new Date());
+export function currentDateKey(): string {
+  return localDateKey(new Date());
 }
 
 export function addDays(date: Date, delta: number): Date {
@@ -51,12 +51,12 @@ export function isAtMissTwiceRisk(habit: Habit, logs: HabitLog[], now: Date = ne
   if (!isScheduledOn(habit, yesterday)) return false;
   if (!isScheduledOn(habit, today)) return false;
 
-  const yesterdayStr = toLocalDateString(yesterday);
-  const todayStr = toLocalDateString(today);
+  const yesterdayStr = localDateKey(yesterday);
+  const todayStr = localDateKey(today);
 
   // A habit can't have been "missed" before it existed — a habit created today
   // hasn't skipped yesterday.
-  if (toLocalDateString(new Date(habit.createdAt)) > yesterdayStr) return false;
+  if (localDateKey(new Date(habit.createdAt)) > yesterdayStr) return false;
 
   if (isTickedOn(logs, habit.id, yesterdayStr)) return false;
   if (isTickedOn(logs, habit.id, todayStr)) return false;

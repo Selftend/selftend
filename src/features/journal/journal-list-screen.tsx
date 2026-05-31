@@ -119,7 +119,7 @@ export default function JournalListScreen() {
             <Button
               variant="outline"
               size="icon"
-              accessibilityLabel="Notifications"
+              accessibilityLabel={t("list.notificationsLabel")}
               onPress={() => setShowNotifications(true)}
             >
               <Icon name="notifications" className="size-5" />
@@ -127,7 +127,7 @@ export default function JournalListScreen() {
             <Button
               variant="outline"
               size="icon"
-              accessibilityLabel="About journaling"
+              accessibilityLabel={t("list.aboutLabel")}
               onPress={() => setForceOnboarding(true)}
             >
               <Icon name="help-outline" className="size-5" />

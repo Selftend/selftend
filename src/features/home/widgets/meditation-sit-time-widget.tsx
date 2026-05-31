@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
+import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
 
 export function MeditationSitTimeWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
@@ -25,20 +26,12 @@ export function MeditationSitTimeWidget({ userId }: { userId: string }) {
           <Text className="text-sm font-semibold">{t("home.widgets.meditationSitTime.title")}</Text>
         </View>
         {list.length > 0 ? (
-          <View className="flex-row gap-6">
-            <View className="gap-0.5">
-              <Text className="text-base font-semibold">{list.length}</Text>
-              <Text variant="muted" className="text-[11px]">
-                {t("home.widgets.meditationSitTime.sessionsLabel")}
-              </Text>
-            </View>
-            <View className="gap-0.5">
-              <Text className="text-base font-semibold">{minutes}</Text>
-              <Text variant="muted" className="text-[11px]">
-                {t("home.widgets.meditationSitTime.minutesLabel")}
-              </Text>
-            </View>
-          </View>
+          <TwoStatBody
+            stats={[
+              { value: list.length, label: t("home.widgets.meditationSitTime.sessionsLabel") },
+              { value: minutes, label: t("home.widgets.meditationSitTime.minutesLabel") },
+            ]}
+          />
         ) : (
           <Text variant="muted" className="text-xs">
             {t("home.widgets.meditationSitTime.empty")}

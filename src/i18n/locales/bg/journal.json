@@ -21,6 +21,8 @@
   },
   "list": {
     "recent": "Скорошни записи",
+    "notificationsLabel": "Notifications",
+    "aboutLabel": "About journaling",
     "empty": {
       "title": "Още няма нищо",
       "description": "Напиши няколко думи как премина денят.",

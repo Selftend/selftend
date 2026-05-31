@@ -22,7 +22,7 @@ export const HELP_KEYS = [
 
 export type HelpKey = (typeof HELP_KEYS)[number];
 
-export interface HelpEntry {
+interface HelpEntry {
   titleKey: string;
   whatKey: string;
   howKey: string;
