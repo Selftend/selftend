@@ -88,11 +88,11 @@ describe("JournalListScreen", () => {
 
     expect(screen.getByText("Quiet morning")).toBeTruthy();
     expect(screen.getByText("Walked outside")).toBeTruthy();
-    // Section header for "earlier this week"
-    expect(screen.getByText("Earlier this week")).toBeTruthy();
+    // The entry is not on the selected day (today), so it appears under History.
+    expect(screen.getByText("History")).toBeTruthy();
   });
 
-  it("renders ink-spined journal cards grouped by section", () => {
+  it("lists all entries under a single History section", () => {
     mockUseJournalEntries.mockReturnValue({
       data: [
         {
@@ -126,12 +126,12 @@ describe("JournalListScreen", () => {
 
     // Heading from ModuleHomeHeader
     expect(screen.getByRole("heading", { name: "Journal" })).toBeTruthy();
-    // All three section headers rendered ("Today" also appears in relative-time so use getAllByText)
-    expect(screen.getAllByText("Today").length).toBeGreaterThan(0);
-    expect(screen.getByText("Earlier this week")).toBeTruthy();
-    expect(screen.getByText("Older")).toBeTruthy();
-    // Entry titles visible
-    expect(screen.getByText("Morning pages")).toBeTruthy();
+    // Single "History" section header (replaces the old Today/Earlier/Older grouping).
+    expect(screen.getByText("History")).toBeTruthy();
+    // History lists every entry (the day card may also surface the selected day's
+    // entry — that exact duplication is covered deterministically in the day-card
+    // unit test; here we only assert each entry is present at least once).
+    expect(screen.getAllByText("Morning pages").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Quiet afternoon")).toBeTruthy();
     expect(screen.getByText("Old entry")).toBeTruthy();
   });
@@ -152,7 +152,7 @@ describe("JournalListScreen", () => {
 
     renderWithProviders(<JournalListScreen />);
 
-    expect(screen.getByText("Untitled")).toBeTruthy();
+    expect(screen.getAllByText("Untitled").length).toBeGreaterThan(0);
   });
 
   it("routes to /tools/journal/new when the CTA is pressed", () => {

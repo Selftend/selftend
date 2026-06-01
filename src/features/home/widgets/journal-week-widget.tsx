@@ -9,29 +9,51 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { useJournalEntries } from "@/src/features/journal/queries";
 import { countWords } from "@/src/features/journal/word-count";
 import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
+import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function JournalWeekWidget({ userId }: { userId: string }) {
-  const { t } = useTranslation("navigation");
+  const { t, i18n } = useTranslation("navigation");
   const { data: entries } = useJournalEntries(userId);
+  const { selectedDate, isToday } = useSelectedDate();
 
-  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const weekEntries = (entries ?? []).filter((e) => new Date(e.createdAt).getTime() >= cutoff);
-  const words = weekEntries.reduce((sum, e) => sum + countWords(e.body), 0);
+  const all = entries ?? [];
+  const totalWords = all.reduce((sum, e) => sum + countWords(e.body), 0);
+  const dayCount = all.filter((e) => toLocalDateKey(e.createdAt) === selectedDate).length;
+
+  const dayBadge =
+    dayCount > 0
+      ? isToday
+        ? t("today.dashboard.countToday", { count: dayCount })
+        : t("home.widgets.journalWeek.countOnDay", {
+            count: dayCount,
+            date: new Intl.DateTimeFormat(i18n.language, {
+              month: "short",
+              day: "numeric",
+            }).format(new Date(selectedDate + "T12:00:00")),
+          })
+      : null;
 
   return (
     <Card className="flex-1">
       <CardContent className="gap-3 pt-4 pb-4">
-        <View className="flex-row items-center gap-2">
-          <View className="size-8 items-center justify-center rounded-lg bg-ink/10">
-            <Icon name="edit-note" className="size-5 text-ink" />
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center gap-2">
+            <View className="size-8 items-center justify-center rounded-lg bg-ink/10">
+              <Icon name="edit-note" className="size-5 text-ink" />
+            </View>
+            <Text className="text-sm font-semibold">{t("home.widgets.journalWeek.title")}</Text>
           </View>
-          <Text className="text-sm font-semibold">{t("home.widgets.journalWeek.title")}</Text>
+          {dayBadge ? (
+            <View className="rounded-full bg-primary/10 px-2 py-0.5">
+              <Text className="text-[11px] font-semibold text-primary">{dayBadge}</Text>
+            </View>
+          ) : null}
         </View>
 
         <TwoStatBody
           stats={[
-            { value: weekEntries.length, label: t("home.widgets.journalWeek.entriesLabel") },
-            { value: words, label: t("home.widgets.journalWeek.wordsLabel") },
+            { value: all.length, label: t("home.widgets.journalWeek.entriesLabel") },
+            { value: totalWords, label: t("home.widgets.journalWeek.wordsLabel") },
           ]}
         />
 

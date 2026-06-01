@@ -414,7 +414,8 @@
         "title": "Journal",
         "metaDesc": "Your journaling stats and a quick way to write",
         "entriesLabel": "Entries",
-        "wordsLabel": "Words"
+        "wordsLabel": "Words",
+        "countOnDay": "{{count}} on {{date}}"
       },
       "breathingLibrary": {
         "title": "Breathing patterns",

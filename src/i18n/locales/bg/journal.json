@@ -7,9 +7,7 @@
     "new": "Нов запис"
   },
   "sections": {
-    "today": "Днес",
-    "earlier": "По-рано тази седмица",
-    "older": "По-стари"
+    "history": "История"
   },
   "hero": {
     "entries_one": "{{count}} запис",
@@ -79,6 +77,11 @@
     "yesterday": "Вчера",
     "daysAgo_one": "Преди {{count}} ден",
     "daysAgo_other": "Преди {{count}} дни"
+  },
+  "day": {
+    "today": "Днес",
+    "empty": "Нищо записано на {{date}}",
+    "writeOne": "Напиши"
   },
   "feedback": {
     "saved": "Записът е запазен",

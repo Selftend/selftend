@@ -37,7 +37,12 @@ export function MoodHistoryList({ logs, ListHeaderComponent }: MoodHistoryListPr
       keyExtractor={(item) => item.id}
       ListHeaderComponent={ListHeaderComponent}
       ListEmptyComponent={<Text variant="muted">{t("history.empty")}</Text>}
-      contentContainerClassName="grow p-6"
+      // SectionList is NOT cssInterop-registered by NativeWind (only ScrollView,
+      // FlatList, and VirtualizedList are), so `contentContainerClassName` is
+      // silently dropped and the screen loses its padding. Style the content
+      // container directly instead — flexGrow 1 + 16px padding (`p-4`) to match
+      // the other tool landings (e.g. journal's `grow gap-6 p-4`).
+      contentContainerStyle={{ flexGrow: 1, padding: 16 }}
       stickySectionHeadersEnabled={false}
       ItemSeparatorComponent={() => <View className="h-3" />}
       renderSectionHeader={({ section }) => (

@@ -415,7 +415,8 @@
         "title": "Дневник",
         "metaDesc": "Статистика за дневника и бърз начин да пишеш",
         "entriesLabel": "Записи",
-        "wordsLabel": "Думи"
+        "wordsLabel": "Думи",
+        "countOnDay": "{{count}} на {{date}}"
       },
       "breathingLibrary": {
         "title": "Дихателни модели",

@@ -7,9 +7,7 @@
     "new": "New entry"
   },
   "sections": {
-    "today": "Today",
-    "earlier": "Earlier this week",
-    "older": "Older"
+    "history": "History"
   },
   "hero": {
     "entries_one": "{{count}} entry",
@@ -79,6 +77,11 @@
     "yesterday": "Yesterday",
     "daysAgo_one": "{{count}} day ago",
     "daysAgo_other": "{{count}} days ago"
+  },
+  "day": {
+    "today": "Today",
+    "empty": "Nothing written on {{date}}",
+    "writeOne": "Write one"
   },
   "feedback": {
     "saved": "Entry saved",
