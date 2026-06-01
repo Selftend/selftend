@@ -1,5 +1,6 @@
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import {
+  deleteUserAccount,
   deleteWebPushSubscription,
   getUserPreferences,
   updateOnboardingPreferences,
@@ -7,6 +8,7 @@ import {
   updateUserPreferences,
   upsertWebPushSubscription,
 } from "@/src/features/settings/repository";
+import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/features/profile/repository", () => ({
@@ -18,6 +20,7 @@ jest.mock("@/src/lib/supabase", () => ({
 }));
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
+const mockRemoveAvatar = jest.mocked(removeCurrentUserUploadedAvatar);
 
 function mockPreferenceSelect(data: unknown) {
   const maybeSingle = jest.fn().mockResolvedValue({ data, error: null });
@@ -60,6 +63,29 @@ function mockWebPushDelete() {
 
   return { deleteFn, eqEndpoint, eqUser, from };
 }
+
+describe("deleteUserAccount", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("still deletes the account when client-side avatar cleanup fails (GDPR erasure must not abort)", async () => {
+    mockRemoveAvatar.mockRejectedValueOnce(new Error("storage permissions not applied"));
+    const rpc = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(deleteUserAccount()).resolves.toBeUndefined();
+    expect(rpc).toHaveBeenCalledWith("delete_user_account");
+  });
+
+  it("throws when the delete_user_account RPC returns an error", async () => {
+    mockRemoveAvatar.mockResolvedValueOnce(undefined);
+    const rpc = jest.fn().mockResolvedValue({ error: new Error("rpc failed") });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(deleteUserAccount()).rejects.toThrow("rpc failed");
+  });
+});
 
 describe("cbt program preference fields", () => {
   it("defaults program timestamps to null", () => {

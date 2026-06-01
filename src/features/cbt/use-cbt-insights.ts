@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import { useActivities } from "@/src/features/activities/queries";
 import type { ActivityCategory } from "@/src/features/activities/types";
 import { useAngerLogs } from "@/src/features/anger/queries";
@@ -79,13 +81,16 @@ export function useCbtInsights(userId: string | null) {
   const { data: thoughtRecords } = useThoughtRecords(userId);
   const { data: exposureItems } = useAllExposureItems(userId);
   const { data: selfCareLogs } = useSelfCareLogs(userId);
-  const { data: moodLogs } = useMoodLogs(userId, 60);
+  // 180 (not 60) so this shares the same React Query cache entry as useCbtProgram on the CBT
+  // home screen — one mood fetch instead of two. Insights only window by date, so the larger
+  // superset doesn't change any result.
+  const { data: moodLogs } = useMoodLogs(userId, 180);
   const { data: sleepLogs } = useSleepLogs(userId, 50);
   const { data: gratitudeEntries } = useGratitudeEntries(userId, 50);
   const { data: coreBeliefs } = useCoreBeliefs(userId);
   const { data: recoveryPlan } = useRecoveryPlan(userId);
 
-  const topDistortions: TopDistortion[] = (() => {
+  const topDistortions = useMemo<TopDistortion[]>(() => {
     if (!thoughtRecords || thoughtRecords.length < 5) {
       return [];
     }
@@ -101,9 +106,9 @@ export function useCbtInsights(userId: string | null) {
       .map(([key, count]) => ({ key, count }))
       .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key))
       .slice(0, 3);
-  })();
+  }, [thoughtRecords]);
 
-  const exerciseMoodLift: ExerciseMoodLift | null = (() => {
+  const exerciseMoodLift = useMemo<ExerciseMoodLift | null>(() => {
     if (!selfCareLogs || selfCareLogs.length < 7 || !moodLogs) {
       return null;
     }
@@ -111,7 +116,11 @@ export function useCbtInsights(userId: string | null) {
     const moodScoresByDate = new Map<string, number[]>();
     for (const moodLog of moodLogs) {
       const logDate = toLocalDateKey(moodLog.loggedAt);
-      moodScoresByDate.set(logDate, [...(moodScoresByDate.get(logDate) ?? []), moodLog.moodScore]);
+      // Push into the existing bucket instead of spreading a fresh copy each iteration (O(n)
+      // total, not O(n^2)).
+      const bucket = moodScoresByDate.get(logDate);
+      if (bucket) bucket.push(moodLog.moodScore);
+      else moodScoresByDate.set(logDate, [moodLog.moodScore]);
     }
 
     const averageMoodByDate = new Map<string, number>();
@@ -143,9 +152,9 @@ export function useCbtInsights(userId: string | null) {
       withExercise: roundedTenth(average(withExercise)),
       withoutExercise: roundedTenth(average(withoutExercise)),
     };
-  })();
+  }, [selfCareLogs, moodLogs]);
 
-  const activityMoodLiftByCategory: ActivityMoodLift[] = (() => {
+  const activityMoodLiftByCategory = useMemo<ActivityMoodLift[]>(() => {
     const completedWithMood =
       activities?.filter(
         (activity) => activity.moodBefore !== null && activity.moodAfter !== null,
@@ -163,10 +172,10 @@ export function useCbtInsights(userId: string | null) {
         continue;
       }
 
-      liftsByCategory.set(activity.category, [
-        ...(liftsByCategory.get(activity.category) ?? []),
-        moodAfter - moodBefore,
-      ]);
+      // get-or-create + push: O(n) over all activities instead of O(n^2) array copies.
+      const lifts = liftsByCategory.get(activity.category);
+      if (lifts) lifts.push(moodAfter - moodBefore);
+      else liftsByCategory.set(activity.category, [moodAfter - moodBefore]);
     }
 
     return [...liftsByCategory.entries()]
@@ -176,9 +185,9 @@ export function useCbtInsights(userId: string | null) {
         count: lifts.length,
       }))
       .sort((a, b) => b.averageLift - a.averageLift || b.count - a.count);
-  })();
+  }, [activities]);
 
-  const beliefReviewSuggestions: CoreBelief[] = (() => {
+  const beliefReviewSuggestions = useMemo<CoreBelief[]>(() => {
     if (!coreBeliefs || coreBeliefs.length < 3) {
       return [];
     }
@@ -195,9 +204,9 @@ export function useCbtInsights(userId: string | null) {
       const isDueForReview = reviewDate ? reviewDate <= reviewSoonCutoff : false;
       return isDueForReview || belief.alternativeBeliefStrength <= 30;
     });
-  })();
+  }, [coreBeliefs]);
 
-  const recurringThoughtSuggestions: RecurringThoughtSuggestion[] = (() => {
+  const recurringThoughtSuggestions = useMemo<RecurringThoughtSuggestion[]>(() => {
     if (!thoughtRecords || thoughtRecords.length < 5) {
       return [];
     }
@@ -226,9 +235,9 @@ export function useCbtInsights(userId: string | null) {
       .filter((item) => item.count >= 2)
       .sort((a, b) => b.count - a.count || a.thought.localeCompare(b.thought))
       .slice(0, 2);
-  })();
+  }, [thoughtRecords, coreBeliefs]);
 
-  const selfCareTrend: SelfCareTrend | null = (() => {
+  const selfCareTrend = useMemo<SelfCareTrend | null>(() => {
     if (!selfCareLogs || selfCareLogs.length < 5) {
       return null;
     }
@@ -261,9 +270,9 @@ export function useCbtInsights(userId: string | null) {
       gratitudeDays: gratitudeDayKeys.size,
       averageSleepHours: sleepDurations.length > 0 ? roundedTenth(average(sleepDurations)) : null,
     };
-  })();
+  }, [selfCareLogs, sleepLogs, gratitudeEntries]);
 
-  const angerPattern: AngerPattern | null = (() => {
+  const angerPattern = useMemo<AngerPattern | null>(() => {
     if (!angerLogs || angerLogs.length < 3) {
       return null;
     }
@@ -294,9 +303,9 @@ export function useCbtInsights(userId: string | null) {
       totalLogs: angerLogs.length,
       commonUrge,
     };
-  })();
+  }, [angerLogs]);
 
-  const exposureProgress: ExposureProgress | null = (() => {
+  const exposureProgress = useMemo<ExposureProgress | null>(() => {
     if (!exposureItems || exposureItems.length === 0) {
       return null;
     }
@@ -305,19 +314,32 @@ export function useCbtInsights(userId: string | null) {
       completed: exposureItems.filter((item) => item.completedAt).length,
       total: exposureItems.length,
     };
-  })();
+  }, [exposureItems]);
 
   const slogan = recoveryPlan?.personalSlogan.trim() ?? "";
 
-  return {
-    topDistortions,
-    exerciseMoodLift,
-    activityMoodLiftByCategory,
-    beliefReviewSuggestions,
-    recurringThoughtSuggestions,
-    selfCareTrend,
-    angerPattern,
-    exposureProgress,
-    slogan,
-  };
+  return useMemo(
+    () => ({
+      topDistortions,
+      exerciseMoodLift,
+      activityMoodLiftByCategory,
+      beliefReviewSuggestions,
+      recurringThoughtSuggestions,
+      selfCareTrend,
+      angerPattern,
+      exposureProgress,
+      slogan,
+    }),
+    [
+      topDistortions,
+      exerciseMoodLift,
+      activityMoodLiftByCategory,
+      beliefReviewSuggestions,
+      recurringThoughtSuggestions,
+      selfCareTrend,
+      angerPattern,
+      exposureProgress,
+      slogan,
+    ],
+  );
 }

@@ -318,7 +318,13 @@ async function removeStoredAvatar(storagePath: string | null | undefined) {
   }
 
   const client = requireSupabase();
-  await client.storage.from(AVATAR_BUCKET).remove([storagePath]);
+  const { error } = await client.storage.from(AVATAR_BUCKET).remove([storagePath]);
+  if (error) {
+    // Surface rather than silently swallow: an unreported failure leaves an orphaned object
+    // in the private bucket. (Account deletion reclaims the whole folder server-side; this
+    // path covers avatar replacement, where only the previous file should be removed.)
+    console.warn("Failed to remove stored avatar object:", error.message);
+  }
 }
 
 export async function uploadUserAvatar(input: AvatarUploadInput) {
@@ -435,14 +441,19 @@ export async function removeUserAvatar(userId: string, previousStoragePath?: str
   return mapProfileRow(data as ProfileRow);
 }
 
+const MAX_DISPLAY_NAME_LENGTH = 100;
+
 export async function updateUserDisplayName(userId: string, displayName: string) {
   const client = requireSupabase();
+  const trimmed = displayName.trim();
+  // Enforce a server-agreed bound here too: the <Input maxLength> is presentational only,
+  // and this mutation is callable directly. Matches the profiles.display_name CHECK (<=100).
+  if (trimmed.length > MAX_DISPLAY_NAME_LENGTH) {
+    throw new Error(`Display name must be ${MAX_DISPLAY_NAME_LENGTH} characters or fewer.`);
+  }
   const { data, error } = await client
     .from("profiles")
-    .upsert(
-      { user_id: userId, display_name: displayName.trim() || null },
-      { onConflict: "user_id" },
-    )
+    .upsert({ user_id: userId, display_name: trimmed || null }, { onConflict: "user_id" })
     .select("*")
     .single();
 

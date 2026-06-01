@@ -1,4 +1,5 @@
 import { createContext, type PropsWithChildren, useContext, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Session, User } from "@supabase/supabase-js";
 
 import { hasSupabaseConfig } from "@/src/lib/env";
@@ -18,6 +19,7 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [status, setStatus] = useState<SessionStatus>("loading");
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!supabase) {
@@ -44,7 +46,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
         if (mounted) setStatus("ready");
       });
 
-    const authSubscription = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const authSubscription = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // Purge all cached PHI (and any still-valid signed avatar URLs) on sign-out so the
+      // previous user's data never lingers in memory — matters most on native, which has
+      // no full page reload to drop the in-memory QueryClient.
+      if (event === "SIGNED_OUT") {
+        queryClient.clear();
+      }
+
       setSession(nextSession);
       setStatus("ready");
     });
@@ -53,7 +62,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       mounted = false;
       authSubscription.data.subscription.unsubscribe();
     };
-  }, []);
+  }, [queryClient]);
 
   const value: SessionContextValue = {
     hasSupabaseConfig,

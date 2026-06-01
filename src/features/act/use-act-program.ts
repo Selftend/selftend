@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import {
   useAllActionSteps,
   useChoicePoints,
@@ -42,23 +44,41 @@ export function useActProgram(userId: string | null): UseActProgramResult {
   const committedActions = useCommittedActions(userId);
   const actionSteps = useAllActionSteps(userId);
 
-  const program = deriveActProgram({
-    startedAt: preferences?.actProgramStartedAt ?? null,
-    completedAt: preferences?.actProgramCompletedAt ?? null,
-    selectedDate,
-    phaseIndex: preferences?.actProgramPhaseIndex ?? 0,
-    phaseStartedAt:
-      preferences?.actProgramPhaseStartedAt ?? preferences?.actProgramStartedAt ?? null,
-    choicePoints: choicePoints.data ?? [],
-    valueEntries: valueEntries.data ?? [],
-    connectionLogs: connectionLogs.data ?? [],
-    observingSessions: observingSessions.data ?? [],
-    defusionLogs: defusionLogs.data ?? [],
-    expansionLogs: expansionLogs.data ?? [],
-    urgeSurfLogs: urgeSurfLogs.data ?? [],
-    committedActions: committedActions.data ?? [],
-    actionSteps: actionSteps.data ?? [],
-  });
+  // Memoize the (~149-line) derivation so frequent Today-screen re-renders don't recompute it
+  // when the underlying ACT query data is unchanged.
+  const program = useMemo(
+    () =>
+      deriveActProgram({
+        startedAt: preferences?.actProgramStartedAt ?? null,
+        completedAt: preferences?.actProgramCompletedAt ?? null,
+        selectedDate,
+        phaseIndex: preferences?.actProgramPhaseIndex ?? 0,
+        phaseStartedAt:
+          preferences?.actProgramPhaseStartedAt ?? preferences?.actProgramStartedAt ?? null,
+        choicePoints: choicePoints.data ?? [],
+        valueEntries: valueEntries.data ?? [],
+        connectionLogs: connectionLogs.data ?? [],
+        observingSessions: observingSessions.data ?? [],
+        defusionLogs: defusionLogs.data ?? [],
+        expansionLogs: expansionLogs.data ?? [],
+        urgeSurfLogs: urgeSurfLogs.data ?? [],
+        committedActions: committedActions.data ?? [],
+        actionSteps: actionSteps.data ?? [],
+      }),
+    [
+      preferences,
+      selectedDate,
+      choicePoints.data,
+      valueEntries.data,
+      connectionLogs.data,
+      observingSessions.data,
+      defusionLogs.data,
+      expansionLogs.data,
+      urgeSurfLogs.data,
+      committedActions.data,
+      actionSteps.data,
+    ],
+  );
 
   const advancePhase = () => {
     if (!preferences) return;

@@ -354,7 +354,15 @@ export async function recordPolicyConsent(userId: string, policyVersion: string)
 
 export async function deleteUserAccount() {
   const client = requireSupabase();
-  await removeCurrentUserUploadedAvatar();
+  // Best-effort client-side avatar cleanup — it must never abort the actual erasure. A
+  // transient storage/permission error here previously threw before the RPC ran, leaving
+  // the account and all PHI undeleted. delete_user_account() now does authoritative,
+  // server-side storage cleanup, so this is purely an optimistic early delete.
+  try {
+    await removeCurrentUserUploadedAvatar();
+  } catch {
+    // Swallow: deletion of the account + PHI takes priority over avatar cleanup.
+  }
   const { error } = await client.rpc("delete_user_account");
 
   if (error) {

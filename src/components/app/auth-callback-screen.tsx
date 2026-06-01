@@ -27,6 +27,17 @@ function getCurrentWebUrl() {
   return window.location.href;
 }
 
+// After the callback is handled, strip any auth material (code / token_hash, or legacy
+// access_token / refresh_token in the hash) out of the URL so it never persists in the
+// browser address bar or history on a shared machine.
+function scrubAuthUrlFromHistory() {
+  if (Platform.OS !== "web" || typeof window === "undefined") {
+    return;
+  }
+
+  window.history.replaceState(window.history.state, "", window.location.pathname);
+}
+
 async function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
@@ -84,6 +95,8 @@ export default function AuthCallbackScreen() {
         if (!active) {
           return;
         }
+
+        scrubAuthUrlFromHistory();
 
         if (outcome === "password-recovery") {
           router.replace("/(auth)/update-password");

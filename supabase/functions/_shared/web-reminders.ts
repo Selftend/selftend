@@ -153,6 +153,35 @@ export function resolveReminderLanguage(language: string | null): "bg" | "en" {
   return language?.toLowerCase().startsWith("bg") ? "bg" : "en";
 }
 
+// Allowlist of real Web Push service hosts. send-web-reminders runs with the service-role
+// key and delivers to web_push_subscriptions.endpoint, but the table's RLS only checks
+// user_id — not endpoint — so an authenticated user can upsert an arbitrary endpoint and
+// turn the worker into a blind-SSRF probe of internal URLs. Only deliver to an https URL on
+// a known push host (default port), and skip anything else.
+const PUSH_HOST_EXACT = new Set(["fcm.googleapis.com", "push.services.mozilla.com"]);
+const PUSH_HOST_SUFFIXES = [
+  ".push.apple.com",
+  ".notify.windows.com",
+  ".wns.windows.com",
+  ".push.services.mozilla.com",
+];
+
+export function isAllowedPushEndpoint(endpoint: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== "https:") return false;
+  // Push services always use the default https port; a non-default port signals an internal
+  // host:port target.
+  if (url.port !== "" && url.port !== "443") return false;
+  const host = url.hostname.toLowerCase();
+  if (PUSH_HOST_EXACT.has(host)) return true;
+  return PUSH_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix));
+}
+
 export function classifyPushError(error: unknown): { expired: boolean; statusCode: number | null } {
   const statusCode =
     error && typeof error === "object" && "statusCode" in error

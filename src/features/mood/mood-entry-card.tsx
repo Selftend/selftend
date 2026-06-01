@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { router } from "expo-router";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -9,16 +10,18 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import type { MoodLog } from "@/src/features/mood/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
-import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
+import type { EmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { scoreToneClass } from "@/src/features/mood/score-tone";
 
 interface MoodEntryCardProps {
   entry: MoodLog;
+  // Resolver is hoisted to the list so it runs ONE emotion-preferences query + builds ONE
+  // lookup map for the whole history, instead of one per row (200+ on a heavy user).
+  resolveEmotion: (id: string) => EmotionDisplay;
 }
 
-export function MoodEntryCard({ entry }: MoodEntryCardProps) {
+function MoodEntryCardComponent({ entry, resolveEmotion }: MoodEntryCardProps) {
   const { t } = useTranslation("mood");
-  const { resolveEmotion } = useEmotionDisplay();
 
   const when = formatMoodRelativeTime(entry.loggedAt, t);
   const emotionDisplays = entry.emotions.slice(0, 3).map(resolveEmotion);
@@ -75,3 +78,5 @@ export function MoodEntryCard({ entry }: MoodEntryCardProps) {
     </Pressable>
   );
 }
+
+export const MoodEntryCard = memo(MoodEntryCardComponent);

@@ -39,7 +39,8 @@ export async function listActivities(userId: string) {
     .from("activity_logs")
     .select("*")
     .eq("user_id", userId)
-    .order("scheduled_at", { ascending: true, nullsFirst: false });
+    .order("scheduled_at", { ascending: true, nullsFirst: false })
+    .limit(500);
 
   if (error) throw error;
   return (data as ActivityLogRow[]).map(mapActivity);

@@ -20,6 +20,10 @@ export const supabase = hasSupabaseConfig
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
+        // PKCE so auth callbacks carry only a single-use, short-lived `code` in the query
+        // string instead of the implicit grant's long-lived access/refresh tokens in the URL
+        // hash. completeAuthRedirect() exchanges the code for a session.
+        flowType: "pkce",
         lock: processLock,
       },
     })

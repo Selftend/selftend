@@ -52,6 +52,27 @@ const MOCK_ENTRY = {
 
 describe("MoodDetailScreen", () => {
   beforeEach(() => {
+    // Freeze only the clock (keep timer fns real so RNTL/react-query are unaffected) so the
+    // relative-time assertion below is deterministic regardless of the real run date.
+    jest.useFakeTimers({
+      now: new Date("2026-05-31T12:00:00.000Z"),
+      doNotFake: [
+        "setTimeout",
+        "clearTimeout",
+        "setInterval",
+        "clearInterval",
+        "setImmediate",
+        "clearImmediate",
+        "queueMicrotask",
+        "requestAnimationFrame",
+        "cancelAnimationFrame",
+        "requestIdleCallback",
+        "cancelIdleCallback",
+        "hrtime",
+        "nextTick",
+        "performance",
+      ],
+    });
     jest.clearAllMocks();
     mockUseMoodLog.mockReturnValue({
       data: null,
@@ -60,6 +81,10 @@ describe("MoodDetailScreen", () => {
     mockUseMoodLogs.mockReturnValue({
       data: [MOCK_ENTRY],
     } as unknown as ReturnType<typeof useMoodLogs>);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it("renders the hero strip with score word, score number, and relative time", () => {

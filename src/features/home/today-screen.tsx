@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, RefreshControl, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
 import Sortable from "react-native-sortables";
@@ -26,6 +26,13 @@ const PADDING = 24;
 const MIN_WIDGET_WIDTH = 280;
 const WIDGET_HEIGHT = 200;
 const MAX_COLUMNS = 3;
+
+// Memoized widget body. id and userId are stable, so the (data-fetching, computation-heavy)
+// widget subtree is not re-run on the frequent grid re-renders (edit-mode toggle, add-modal
+// open, container-width onLayout). Each widget's own query hooks still drive its data updates.
+const WidgetContent = memo(function WidgetContent({ id, userId }: { id: string; userId: string }) {
+  return <>{resolveWidget(id, userId)}</>;
+});
 
 function pickGreetingKey(hour: number) {
   if (hour < 12) return "today.greetingMorning";
@@ -236,7 +243,7 @@ export default function HomeScreen() {
                     style={{ width: cellWidth, height: WIDGET_HEIGHT, overflow: "hidden" }}
                   >
                     <View style={{ flex: 1, pointerEvents: editMode ? "none" : "auto" }}>
-                      {resolveWidget(id, userId ?? "")}
+                      <WidgetContent id={id} userId={userId ?? ""} />
                     </View>
                     {editMode ? (
                       <>

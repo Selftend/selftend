@@ -30,10 +30,11 @@ describe("worry repository", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("lists entries newest-first and coerces null arrays to empty arrays", async () => {
-    const order = jest.fn().mockResolvedValue({
+    const limit = jest.fn().mockResolvedValue({
       data: [{ ...sampleRow, evidence_for: null, evidence_against: null, action_steps: null }],
       error: null,
     });
+    const order = jest.fn(() => ({ limit }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     const from = jest.fn(() => ({ select }));

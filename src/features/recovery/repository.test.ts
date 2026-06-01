@@ -107,7 +107,8 @@ describe("recovery repository", () => {
         user_id: "user-1",
       },
     ];
-    const order = jest.fn().mockResolvedValue({ data: rows, error: null });
+    const limit = jest.fn().mockResolvedValue({ data: rows, error: null });
+    const order = jest.fn(() => ({ limit }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     const from = jest.fn(() => ({ select }));

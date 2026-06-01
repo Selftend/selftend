@@ -8,6 +8,7 @@ import bgMeditation from "../../../src/i18n/locales/bg/meditation.json" with { t
 import enMeditation from "../../../src/i18n/locales/en/meditation.json" with { type: "json" };
 import {
   classifyPushError,
+  isAllowedPushEndpoint,
   reminderKeyIfDue,
   resolveReminderLanguage,
   TARGET_CONFIGS,
@@ -143,6 +144,15 @@ Deno.serve(async (request) => {
       if (!preferences) continue;
       if (preferences.notifications_enabled_global === false) continue;
       if (!preferences.reminder_consent) continue;
+      // SSRF guard: never POST to an endpoint that isn't a real push service (the table's
+      // RLS does not constrain endpoint, so it can be attacker-controlled).
+      if (!isAllowedPushEndpoint(subscription.endpoint)) {
+        console.warn(
+          "send-web-reminders: skipping subscription with non-allowlisted endpoint",
+          subscription.id,
+        );
+        continue;
+      }
 
       let subscriptionDisabled = false;
       for (const target of TARGETS) {

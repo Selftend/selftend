@@ -115,7 +115,8 @@ describe("exposure repository - items", () => {
   });
 
   it("listAllItems orders by created_at desc", async () => {
-    const order = jest.fn().mockResolvedValue({ data: [itemRow], error: null });
+    const limit = jest.fn().mockResolvedValue({ data: [itemRow], error: null });
+    const order = jest.fn(() => ({ limit }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     const from = jest.fn(() => ({ select }));

@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import { useActivities } from "@/src/features/activities/queries";
 import { useCoreBeliefs } from "@/src/features/beliefs/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
@@ -42,24 +44,44 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
   const moodLogs = useMoodLogs(userId, 180);
   const recoveryPlan = useRecoveryPlan(userId);
 
-  const program = deriveCbtProgram({
-    startedAt: preferences?.cbtProgramStartedAt ?? null,
-    completedAt: preferences?.cbtProgramCompletedAt ?? null,
-    selectedDate,
-    phaseIndex: preferences?.cbtProgramPhaseIndex ?? 0,
-    phaseStartedAt:
-      preferences?.cbtProgramPhaseStartedAt ?? preferences?.cbtProgramStartedAt ?? null,
-    goals: goals.data ?? [],
-    valuesProfile: valuesProfile.data ?? null,
-    thoughtRecords: thoughtRecords.data ?? [],
-    beliefs: beliefs.data ?? [],
-    activities: activities.data ?? [],
-    exposures: exposures.data ?? [],
-    mindfulnessSessions: mindfulnessSessions.data ?? [],
-    selfCareLogs: selfCareLogs.data ?? [],
-    moodLogs: moodLogs.data ?? [],
-    recoveryPlan: recoveryPlan.data ?? null,
-  });
+  // deriveCbtProgram iterates over goals, thought records, up to 180 mood logs, beliefs,
+  // activities, etc. Memoize so the frequent Today-screen re-renders (layout, edit-mode,
+  // drag) don't recompute it when the underlying query data is unchanged.
+  const program = useMemo(
+    () =>
+      deriveCbtProgram({
+        startedAt: preferences?.cbtProgramStartedAt ?? null,
+        completedAt: preferences?.cbtProgramCompletedAt ?? null,
+        selectedDate,
+        phaseIndex: preferences?.cbtProgramPhaseIndex ?? 0,
+        phaseStartedAt:
+          preferences?.cbtProgramPhaseStartedAt ?? preferences?.cbtProgramStartedAt ?? null,
+        goals: goals.data ?? [],
+        valuesProfile: valuesProfile.data ?? null,
+        thoughtRecords: thoughtRecords.data ?? [],
+        beliefs: beliefs.data ?? [],
+        activities: activities.data ?? [],
+        exposures: exposures.data ?? [],
+        mindfulnessSessions: mindfulnessSessions.data ?? [],
+        selfCareLogs: selfCareLogs.data ?? [],
+        moodLogs: moodLogs.data ?? [],
+        recoveryPlan: recoveryPlan.data ?? null,
+      }),
+    [
+      preferences,
+      selectedDate,
+      goals.data,
+      valuesProfile.data,
+      thoughtRecords.data,
+      beliefs.data,
+      activities.data,
+      exposures.data,
+      mindfulnessSessions.data,
+      selfCareLogs.data,
+      moodLogs.data,
+      recoveryPlan.data,
+    ],
+  );
 
   const advancePhase = () => {
     if (!preferences) return;

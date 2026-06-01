@@ -1,6 +1,7 @@
 import {
   classifyPushError,
   getZonedParts,
+  isAllowedPushEndpoint,
   reminderKeyIfDue,
   resolveReminderLanguage,
   type UserPreferenceRow,
@@ -38,6 +39,37 @@ const baseSub: WebPushSubscriptionRow = {
   time_zone: "UTC",
   user_id: "u1",
 };
+
+describe("isAllowedPushEndpoint", () => {
+  it("allows real push-service endpoints over https", () => {
+    expect(isAllowedPushEndpoint("https://fcm.googleapis.com/fcm/send/abc123")).toBe(true);
+    expect(isAllowedPushEndpoint("https://web.push.apple.com/QABC")).toBe(true);
+    expect(isAllowedPushEndpoint("https://db5p.notify.windows.com/w/?token=x")).toBe(true);
+    expect(isAllowedPushEndpoint("https://updates.push.services.mozilla.com/wpush/v2/g")).toBe(
+      true,
+    );
+    expect(isAllowedPushEndpoint("https://push.services.mozilla.com/wpush/v2/g")).toBe(true);
+  });
+
+  it("rejects internal / SSRF targets and non-https schemes", () => {
+    expect(isAllowedPushEndpoint("http://fcm.googleapis.com/fcm/send/x")).toBe(false);
+    expect(isAllowedPushEndpoint("https://169.254.169.254/latest/meta-data/")).toBe(false);
+    expect(isAllowedPushEndpoint("https://localhost/internal")).toBe(false);
+    expect(isAllowedPushEndpoint("https://internal-host:8080/admin")).toBe(false);
+    expect(isAllowedPushEndpoint("http://localhost:5432")).toBe(false);
+    expect(isAllowedPushEndpoint("not a url")).toBe(false);
+    expect(isAllowedPushEndpoint("")).toBe(false);
+  });
+
+  it("rejects allowlist-suffix spoofing and userinfo tricks", () => {
+    // hostname is attacker.com here, not the push host in the userinfo segment.
+    expect(isAllowedPushEndpoint("https://fcm.googleapis.com@attacker.com/x")).toBe(false);
+    // ".push.apple.com" must be a real label boundary, not a substring of the host.
+    expect(isAllowedPushEndpoint("https://evilpush.apple.com.attacker.com/x")).toBe(false);
+    // non-default port on an otherwise-allowed host is rejected.
+    expect(isAllowedPushEndpoint("https://fcm.googleapis.com:9000/fcm/send/x")).toBe(false);
+  });
+});
 
 describe("getZonedParts", () => {
   it("formats a date into zoned parts for a valid timezone", () => {

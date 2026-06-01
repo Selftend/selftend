@@ -115,7 +115,8 @@ export async function listChallengePlans(userId: string) {
     .from("challenge_plans")
     .select("*")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   if (error) throw error;
   return (data as ChallengePlanRow[]).map(mapChallengePlan);

@@ -45,7 +45,8 @@ describe("goals repository - goals", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("lists goals newest-first", async () => {
-    const order = jest.fn().mockResolvedValue({ data: [goalRow], error: null });
+    const limit = jest.fn().mockResolvedValue({ data: [goalRow], error: null });
+    const order = jest.fn(() => ({ limit }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     const from = jest.fn(() => ({ select }));

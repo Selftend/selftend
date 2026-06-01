@@ -41,7 +41,8 @@ export async function listCoreBeliefs(userId: string) {
     .from("core_beliefs")
     .select("*")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   if (error) throw error;
   return (data as CoreBeliefRow[]).map(mapCoreBelief);

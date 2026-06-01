@@ -1,12 +1,4 @@
-import { useState } from "react";
-import { Modal, View, StyleSheet } from "react-native";
-import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
-import { useTranslation } from "react-i18next";
-
-import { Button } from "@/src/components/react-native-reusables/button";
-import { Text } from "@/src/components/react-native-reusables/text";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
 interface AvatarCropModalProps {
   imageUri: string;
@@ -15,89 +7,12 @@ interface AvatarCropModalProps {
   visible: boolean;
 }
 
-export function AvatarCropModal({ imageUri, onCancel, onCrop, visible }: AvatarCropModalProps) {
-  const { t } = useTranslation("settings");
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-  const reduceMotionEnabled = useReduceMotionEnabled();
-
-  const onCropComplete = (_: Area, croppedPixels: Area) => {
-    setCroppedAreaPixels(croppedPixels);
-  };
-
-  const handleConfirm = () => {
-    if (croppedAreaPixels) {
-      onCrop(croppedAreaPixels);
-    }
-  };
-
-  return (
-    <Modal
-      animationType={reduceMotionEnabled ? "none" : "fade"}
-      onRequestClose={onCancel}
-      transparent
-      visible={visible}
-    >
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text className="text-lg font-semibold text-foreground">{t("avatarCrop.title")}</Text>
-          </View>
-          <View style={styles.cropContainer}>
-            <Cropper
-              aspect={1}
-              crop={crop}
-              cropShape="round"
-              image={imageUri}
-              onCropChange={setCrop}
-              onCropComplete={onCropComplete}
-              onZoomChange={setZoom}
-              zoom={zoom}
-            />
-          </View>
-          <View style={styles.footer}>
-            <Button onPress={onCancel} variant="ghost">
-              <Text>{t("avatarCrop.cancel")}</Text>
-            </Button>
-            <Button onPress={handleConfirm}>
-              <Text>{t("avatarCrop.apply")}</Text>
-            </Button>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
+// Native stub. The interactive cropper (react-easy-crop) is a DOM-only library and is only
+// ever rendered on web — settings-screen gates it behind `Platform.OS === "web"`, and native
+// avatar editing uses expo-image-picker's built-in cropping (allowsEditing). Metro resolves
+// avatar-crop-modal.web.tsx on web and this file on native, keeping react-easy-crop (and its
+// transitive DOM code) out of the native JS bundle. The `Area` import is type-only (erased),
+// so it adds no runtime dependency.
+export function AvatarCropModal(_props: AvatarCropModalProps): null {
+  return null;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "hsl(var(--background))",
-    borderRadius: 12,
-    height: "80%",
-    maxHeight: 600,
-    maxWidth: 500,
-    overflow: "hidden",
-    width: "90%",
-  },
-  cropContainer: {
-    flex: 1,
-    position: "relative",
-  },
-  footer: {
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "flex-end",
-    padding: 16,
-  },
-  header: {
-    alignItems: "center",
-    padding: 16,
-  },
-  overlay: {
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    flex: 1,
-    justifyContent: "center",
-  },
-});

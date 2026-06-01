@@ -20,25 +20,6 @@ import enAct from "./locales/en/act.json";
 import enNotifications from "./locales/en/notifications.json";
 import enHelp from "./locales/en/help.json";
 
-import bgCommon from "./locales/bg/common.json";
-import bgAuth from "./locales/bg/auth.json";
-import bgCbt from "./locales/bg/cbt.json";
-import bgGratitude from "./locales/bg/gratitude.json";
-import bgJournal from "./locales/bg/journal.json";
-import bgMeditation from "./locales/bg/meditation.json";
-import bgTimer from "./locales/bg/timer.json";
-import bgMood from "./locales/bg/mood.json";
-import bgModules from "./locales/bg/modules.json";
-import bgSettings from "./locales/bg/settings.json";
-import bgNavigation from "./locales/bg/navigation.json";
-import bgPolicies from "./locales/bg/policies.json";
-import bgErrors from "./locales/bg/errors.json";
-import bgSleep from "./locales/bg/sleep.json";
-import bgHabits from "./locales/bg/habits.json";
-import bgAct from "./locales/bg/act.json";
-import bgNotifications from "./locales/bg/notifications.json";
-import bgHelp from "./locales/bg/help.json";
-
 export const supportedLanguages = ["en", "bg"] as const;
 export type SupportedLanguage = (typeof supportedLanguages)[number];
 
@@ -88,27 +69,28 @@ i18n.use(initReactI18next).init({
       notifications: enNotifications,
       help: enHelp,
     },
-    bg: {
-      common: bgCommon,
-      auth: bgAuth,
-      cbt: bgCbt,
-      gratitude: bgGratitude,
-      journal: bgJournal,
-      meditation: bgMeditation,
-      timer: bgTimer,
-      mood: bgMood,
-      modules: bgModules,
-      settings: bgSettings,
-      navigation: bgNavigation,
-      policies: bgPolicies,
-      errors: bgErrors,
-      sleep: bgSleep,
-      habits: bgHabits,
-      act: bgAct,
-      notifications: bgNotifications,
-      help: bgHelp,
-    },
+    // bg is registered lazily via ensureLanguageBundle() so its ~377 KB of JSON is not
+    // parsed/inlined on the startup path for the majority-English audience.
   },
 });
+
+const loadedBundles = new Set<SupportedLanguage>(["en"]);
+
+// Ensure a language's resource bundles are registered before switching to it. en is always
+// present; bg is fetched as a single dynamic import the first time it's needed.
+export async function ensureLanguageBundle(lang: SupportedLanguage): Promise<void> {
+  if (loadedBundles.has(lang)) return;
+
+  if (lang === "bg") {
+    const { bgResources } = await import("./locales/bg");
+    for (const ns of Object.keys(bgResources)) {
+      if (!i18n.hasResourceBundle("bg", ns)) {
+        i18n.addResourceBundle("bg", ns, bgResources[ns], true, true);
+      }
+    }
+  }
+
+  loadedBundles.add(lang);
+}
 
 export default i18n;

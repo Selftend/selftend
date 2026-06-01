@@ -1,7 +1,15 @@
-import { createContext, useContext, useEffect, useState, type PropsWithChildren } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type PropsWithChildren,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import i18n, { type SupportedLanguage, supportedLanguages } from "@/src/i18n";
+import i18n, { ensureLanguageBundle, type SupportedLanguage, supportedLanguages } from "@/src/i18n";
 
 const LANGUAGE_STORAGE_KEY = "selftend:language";
 
@@ -29,10 +37,13 @@ export function I18nProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     let mounted = true;
     AsyncStorage.getItem(LANGUAGE_STORAGE_KEY)
-      .then((stored) => {
+      .then(async (stored) => {
         if (!mounted) return;
         if (stored && supportedLanguages.includes(stored as SupportedLanguage)) {
           const lang = stored as SupportedLanguage;
+          // Ensure the (lazily-loaded) bundle is registered before switching.
+          await ensureLanguageBundle(lang);
+          if (!mounted) return;
           setLanguageState(lang);
           void i18n.changeLanguage(lang);
         }
@@ -48,7 +59,8 @@ export function I18nProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  const setLanguage = async (lang: SupportedLanguage) => {
+  const setLanguage = useCallback(async (lang: SupportedLanguage) => {
+    await ensureLanguageBundle(lang);
     setLanguageState(lang);
     await i18n.changeLanguage(lang);
     try {
@@ -56,11 +68,14 @@ export function I18nProvider({ children }: PropsWithChildren) {
     } catch {
       // Persisting the language is best-effort; the in-memory switch already applied.
     }
-  };
+  }, []);
 
-  return (
-    <I18nContext.Provider value={{ language, setLanguage, hydrated }}>
-      {children}
-    </I18nContext.Provider>
+  // Memoize the context value so consumers (useLanguage) don't re-render on every
+  // unrelated provider render from a new object/function identity.
+  const value = useMemo(
+    () => ({ language, setLanguage, hydrated }),
+    [language, setLanguage, hydrated],
   );
+
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

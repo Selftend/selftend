@@ -54,7 +54,8 @@ export async function listThoughtRecords(userId: string) {
     .select("*")
     .eq("user_id", userId)
     .is("archived_at", null)
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .limit(500);
 
   if (error) {
     throw error;

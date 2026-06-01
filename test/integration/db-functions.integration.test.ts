@@ -68,6 +68,20 @@ describe("export_user_data() (integration)", () => {
     expect(Array.isArray(data.recoveryPlans)).toBe(true);
     expect(Array.isArray(data.challengePlans)).toBe(true);
     expect(Array.isArray(data.journalEntries)).toBe(true);
+    // ACT module + plan + widget layout (added 20260568 — GDPR export completeness).
+    expect("actProgramState" in data).toBe(true);
+    expect(Array.isArray(data.actDefusionLogs)).toBe(true);
+    expect(Array.isArray(data.actExpansionLogs)).toBe(true);
+    expect(Array.isArray(data.actUrgeSurfLogs)).toBe(true);
+    expect(Array.isArray(data.actConnectionLogs)).toBe(true);
+    expect(Array.isArray(data.actObservingSelfSessions)).toBe(true);
+    expect(Array.isArray(data.actValueEntries)).toBe(true);
+    expect(Array.isArray(data.actBullsEyeSnapshots)).toBe(true);
+    expect(Array.isArray(data.actCommittedActions)).toBe(true);
+    expect(Array.isArray(data.actActionSteps)).toBe(true);
+    expect(Array.isArray(data.actChoicePoints)).toBe(true);
+    expect(Array.isArray(data.planItems)).toBe(true);
+    expect(Array.isArray(data.widgetPreferences)).toBe(true);
     expect(typeof data.exportDate).toBe("string");
   });
 
