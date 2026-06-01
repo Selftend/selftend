@@ -189,7 +189,7 @@ describe("RLS: web_push_subscriptions", () => {
   it("alice can insert her own subscription", async () => {
     const { error } = await alice.from("web_push_subscriptions").insert({
       user_id: SEED_USERS.alice.id,
-      endpoint: "https://push.example.com/alice-rls-test",
+      endpoint: "https://fcm.googleapis.com/fcm/send/alice-rls-test",
       p256dh: "BNcB-test-p256dh",
       auth: "test-auth-key",
     });
@@ -201,7 +201,7 @@ describe("RLS: web_push_subscriptions", () => {
       .from("web_push_subscriptions")
       .insert({
         user_id: SEED_USERS.alice.id,
-        endpoint: "https://push.example.com/alice-rls-test-2",
+        endpoint: "https://fcm.googleapis.com/fcm/send/alice-rls-test-2",
         p256dh: "BNcB-test-p256dh",
         auth: "test-auth-key",
       })
@@ -218,7 +218,7 @@ describe("RLS: web_push_subscriptions", () => {
   it("bob cannot insert a subscription on behalf of alice (RLS violation)", async () => {
     const { error } = await bob.from("web_push_subscriptions").insert({
       user_id: SEED_USERS.alice.id,
-      endpoint: "https://push.example.com/spoofed",
+      endpoint: "https://fcm.googleapis.com/fcm/send/spoofed",
       p256dh: "BNcB-spoofed",
       auth: "spoofed-auth",
     });

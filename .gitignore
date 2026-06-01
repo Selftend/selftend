@@ -56,3 +56,6 @@ expo-env.d.ts
 
 /coverage/*
 !/coverage/baseline.json
+
+# Superpowers brainstorm/plan working docs (not product)
+docs/superpowers/

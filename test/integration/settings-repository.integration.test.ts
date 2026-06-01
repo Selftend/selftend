@@ -139,7 +139,7 @@ describe("user_preferences (integration)", () => {
 
 describe("web_push_subscriptions (integration)", () => {
   let bob: SupabaseClient;
-  const endpoint = "https://example.test/push/integration-test";
+  const endpoint = "https://fcm.googleapis.com/fcm/send/integration-test";
 
   beforeAll(async () => {
     bob = await signInAs("bob");
