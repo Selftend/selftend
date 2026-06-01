@@ -4,21 +4,17 @@
  * Uses a throwaway user created via the admin API (email_confirm: true) so no
  * sign-up flow is required, and seeded users are never touched.
  *
- * Full happy-path (Fix A — browser recovery session on :8082):
+ * Full happy-path (PKCE recovery, e2e server on the allowlisted :8081 origin):
  *   1. Navigate to forgot-password, submit throwaway email.
  *   2. Assert success copy appears.
- *   3. Fetch the recovery link from Mailpit.
- *   4. Rewrite the verify link's redirect_to to point at :8082/auth-callback.
- *      Local Supabase does not restrict the redirect_to for the verify endpoint
- *      (additional_redirect_urls only blocks the initial resetPasswordForEmail
- *      call — once the OTP token is in the URL the verify endpoint honours the
- *      redirect_to param). Rewriting lets the browser land on :8082 with the
- *      access_token fragment so the app can establish the recovery session.
- *   5. page.goto(rewrittenLink) — browser follows the 303 → :8082/auth-callback
- *      #access_token=…&type=recovery. AuthCallbackScreen calls setSession then
- *      routes to /(auth)/update-password.
- *   6. Fill a NEW ≥12-char password and submit. Assert routing to the tabs.
- *   7. HARD proof: createAnonClient().signInWithPassword(email, NEW_PASSWORD)
+ *   3. Fetch the recovery link from Mailpit. The app sends redirect_to with a
+ *      ?type=recovery marker (see getPasswordResetRedirectUrl) and :8081 is in
+ *      additional_redirect_urls, so Supabase honours it verbatim — no rewrite.
+ *   4. page.goto(recoveryLink) — browser follows the 303 → :8081/auth-callback
+ *      ?code=…&type=recovery. AuthCallbackScreen exchanges the PKCE code and —
+ *      seeing type=recovery — routes to /(auth)/update-password.
+ *   5. Fill a NEW ≥12-char password and submit. Assert routing away.
+ *   6. HARD proof: createAnonClient().signInWithPassword(email, NEW_PASSWORD)
  *      must SUCCEED; OLD_PASSWORD must FAIL.
  *
  * No conditionals, no try/catch around the proof assertions, no tautologies.
@@ -75,26 +71,20 @@ test.describe("password reset flow", () => {
       timeout: 15_000,
     });
 
-    // 5. Fetch the recovery link from Mailpit. The link contains:
-    //    …/auth/v1/verify?token=…&type=recovery&redirect_to=http://localhost:8081
-    //    Supabase uses site_url (:8081) because :8082/auth-callback is not in
-    //    additional_redirect_urls. We rewrite redirect_to to :8082/auth-callback
-    //    before navigating; the local Supabase verify endpoint honours the
-    //    rewritten value at token-exchange time.
-    const rawRecoveryLink = await fetchRecoveryLink(page, THROWAWAY_EMAIL);
-    expect(rawRecoveryLink).toContain("/auth/v1/verify");
+    // 5. Fetch the recovery link from Mailpit. Under the PKCE flow the link is:
+    //    …/auth/v1/verify?token=…&type=recovery&redirect_to=http://localhost:8081/auth-callback?type=recovery
+    //    The app sends redirect_to with a ?type=recovery marker (see
+    //    getPasswordResetRedirectUrl) and :8081/auth-callback is allowlisted in
+    //    supabase/config.toml, so Supabase honours it instead of falling back to
+    //    site_url. No rewrite needed.
+    const recoveryLink = await fetchRecoveryLink(page, THROWAWAY_EMAIL);
+    expect(recoveryLink).toContain("/auth/v1/verify");
 
-    // Rewrite redirect_to so the browser lands on :8082.
-    const rewrittenLink = rawRecoveryLink.replace(
-      /([?&]redirect_to=)[^&]*/,
-      "$1" + encodeURIComponent("http://localhost:8082/auth-callback"),
-    );
-
-    // 6. Navigate to the rewritten verify link. Supabase returns a 303 to
-    //    http://localhost:8082/auth-callback#access_token=…&refresh_token=…&type=recovery
-    //    The app's AuthCallbackScreen reads window.location.href, calls setSession,
-    //    and — seeing type=recovery — routes to /(auth)/update-password.
-    await page.goto(rewrittenLink);
+    // 6. Navigate to the verify link. Supabase returns a 303 to
+    //    http://localhost:8081/auth-callback?code=…&type=recovery
+    //    AuthCallbackScreen exchanges the PKCE code, and — seeing type=recovery —
+    //    routes to /(auth)/update-password.
+    await page.goto(recoveryLink);
 
     // Wait for AuthCallbackScreen to process the token and route to update-password.
     await expect(page.getByText("Reset your password")).toBeVisible({ timeout: 15_000 });

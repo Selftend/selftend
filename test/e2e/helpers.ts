@@ -155,8 +155,8 @@ async function fetchConfirmationLink(page: Page, email: string): Promise<string>
 
 // Completes local email verification for a freshly signed-up user. Hitting the
 // verify endpoint confirms the address server-side; we deliberately do NOT follow
-// its redirect (it targets site_url :8081, not the e2e server :8082), so the
-// caller establishes the browser session by signing in afterward.
+// its redirect — confirmation only needs the server-side verify, so the caller
+// establishes the browser session by signing in afterward.
 export async function confirmSignupViaMailpit(page: Page, email: string) {
   const link = await fetchConfirmationLink(page, email);
   const res = await page.request.get(link, { maxRedirects: 0 });

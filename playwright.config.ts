@@ -2,8 +2,13 @@ import { defineConfig, devices } from "@playwright/test";
 
 // E2E tests run against the Expo web dev server pointed at local Supabase.
 // They live in test/e2e/ and are kept separate from unit and integration suites.
-
-const PORT = Number(process.env.E2E_PORT ?? 8082);
+//
+// Default to :8081 — the same port as `site_url` and the only web origin in
+// supabase/config.toml's additional_redirect_urls. The password-reset flow needs
+// its redirect_to (…/auth-callback?type=recovery) to be allowlisted, so the e2e
+// server must run on an allowlisted origin. (Override with E2E_PORT to run e2e
+// alongside a local dev web server already occupying :8081.)
+const PORT = Number(process.env.E2E_PORT ?? 8081);
 
 // Deterministic Supabase CLI defaults - same on every dev machine and in CI,
 // matches the keys used by integration tests (test/integration/helpers.ts).
