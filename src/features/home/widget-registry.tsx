@@ -28,8 +28,6 @@ import { ActAcceptancePromptWidget } from "@/src/features/home/widgets/act-accep
 import { MindfulnessAnchorWidget } from "@/src/features/home/widgets/mindfulness-anchor-widget";
 import { Grounding54321Widget } from "@/src/features/home/widgets/grounding-54321-widget";
 import { JournalWeekWidget } from "@/src/features/home/widgets/journal-week-widget";
-import { BreathingLibraryWidget } from "@/src/features/home/widgets/breathing-library-widget";
-import { BreathingLogWidget } from "@/src/features/home/widgets/breathing-log-widget";
 import { MindfulnessLibraryWidget } from "@/src/features/home/widgets/mindfulness-library-widget";
 import { MindfulnessLogWidget } from "@/src/features/home/widgets/mindfulness-log-widget";
 import { GroundingLibraryWidget } from "@/src/features/home/widgets/grounding-library-widget";
@@ -85,8 +83,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "act-programme": ActProgrammeWidget,
   "act-acceptance-prompt": ActAcceptancePromptWidget,
   "journal-week": JournalWeekWidget,
-  "breathing-library": BreathingLibraryWidget,
-  "breathing-log": BreathingLogWidget,
   "mindfulness-library": MindfulnessLibraryWidget,
   "mindfulness-log": MindfulnessLogWidget,
   "grounding-library": GroundingLibraryWidget,
@@ -344,24 +340,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     titleKey: "home.widgets.journalWeek.title",
     descriptionKey: "home.widgets.journalWeek.metaDesc",
     tint: "ink",
-    status: "available",
-  },
-  "breathing-library": {
-    id: "breathing-library",
-    toolKey: "breathing",
-    icon: "format-list-bulleted",
-    titleKey: "home.widgets.breathingLibrary.title",
-    descriptionKey: "home.widgets.breathingLibrary.metaDesc",
-    tint: "aqua",
-    status: "available",
-  },
-  "breathing-log": {
-    id: "breathing-log",
-    toolKey: "breathing",
-    icon: "history",
-    titleKey: "home.widgets.breathingLog.title",
-    descriptionKey: "home.widgets.breathingLog.metaDesc",
-    tint: "aqua",
     status: "available",
   },
   "mindfulness-library": {

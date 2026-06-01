@@ -229,7 +229,12 @@ export function MoodEntryEditorScreen({
         {showBreathingNudge ? (
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push("/tools/breathing/box-breathing")}
+            onPress={() =>
+              router.push({
+                pathname: "/tools/breathing/session",
+                params: { pattern: "box-breathing" },
+              })
+            }
           >
             <Card>
               <CardHeader>

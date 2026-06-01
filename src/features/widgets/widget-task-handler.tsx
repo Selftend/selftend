@@ -25,7 +25,7 @@ function buildClickPath(
   }
   if (action === "OPEN_BREATHING") {
     const slug = typeof data?.slug === "string" ? data.slug : null;
-    return slug ? `/tools/breathing/${slug}` : "/tools/breathing";
+    return slug ? `/tools/breathing/session?pattern=${slug}` : "/tools/breathing/session";
   }
   if (action === "OPEN_GROUNDING") {
     const slug = typeof data?.slug === "string" ? data.slug : null;

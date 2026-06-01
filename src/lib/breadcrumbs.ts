@@ -57,6 +57,8 @@ const STATIC_ROUTES: Record<string, string> = {
   "/tools/journal": "sidebar.journal",
   "/tools/journal/new": "breadcrumb.new",
   "/tools/breathing": "sidebar.breathing",
+  "/tools/breathing/session": "breadcrumb.session",
+  "/tools/breathing/new": "breadcrumb.new",
   "/tools/mindfulness": "sidebar.mindfulness",
   "/tools/grounding": "sidebar.grounding",
   "/tools/gratitude-log": "sidebar.gratitudeLog",

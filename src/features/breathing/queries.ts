@@ -11,13 +11,13 @@ const breathingKeys = {
   list: (userId: string) => ["breathing", "list", userId] as const,
 };
 
-export function useBreathingSessions(userId: string | null, limit = 30) {
+export function useBreathingSessions(userId: string | null, limit = 30, customIds: string[] = []) {
+  const names = [...breathingSlugs, ...customIds];
   return useQuery({
-    queryKey: userId ? [...breathingKeys.list(userId), limit] : ["breathing", "list", "anonymous"],
-    // Filter by exercise type at the DB level so `limit` applies AFTER the type filter;
-    // otherwise the most-recent `limit` mindfulness rows of ANY type could exclude every
-    // breathing session and hide them from the list.
-    queryFn: () => listMindfulnessSessionsByNames(userId!, [...breathingSlugs], limit),
+    queryKey: userId
+      ? [...breathingKeys.list(userId), limit, customIds.join(",")]
+      : ["breathing", "list", "anonymous"],
+    queryFn: () => listMindfulnessSessionsByNames(userId!, names, limit),
     enabled: Boolean(userId),
   });
 }

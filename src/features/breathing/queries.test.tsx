@@ -35,12 +35,12 @@ describe("useBreathingSessions", () => {
     // behind a window full of other mindfulness types.
     mockList.mockResolvedValue([{ id: "1", exerciseName: breathingSlugs[0] } as never]);
 
-    const { result } = renderHook(() => useBreathingSessions("user-1", 30), {
+    const { result } = renderHook(() => useBreathingSessions("user-1", 30, ["e-1"]), {
       wrapper: makeWrapper(client),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockList).toHaveBeenCalledWith("user-1", [...breathingSlugs], 30);
+    expect(mockList).toHaveBeenCalledWith("user-1", [...breathingSlugs, "e-1"], 30);
     expect(result.current.data).toEqual([{ id: "1", exerciseName: breathingSlugs[0] }]);
   });
 

@@ -24,6 +24,10 @@ jest.mock("@/src/features/breathing/queries", () => ({
   useBreathingSessions: jest.fn(),
 }));
 
+jest.mock("@/src/features/breathing/exercises-queries", () => ({
+  useBreathingExercises: () => ({ data: [] }),
+}));
+
 jest.mock("@/src/components/app/help-sheet", () => ({
   HelpSheet: () => null,
 }));
@@ -63,33 +67,27 @@ describe("Breathing list polish", () => {
     expect(screen.getByText("3 patterns")).toBeTruthy();
   });
 
-  it("renders all 3 pattern rows", () => {
+  it("renders the Start a session entry", () => {
     renderWithProviders(<BreathingScreen />);
-    expect(screen.getByText("Box breathing")).toBeTruthy();
-    expect(screen.getByText("4-7-8 breathing")).toBeTruthy();
-    expect(screen.getByText("Coherent breathing")).toBeTruthy();
+    expect(screen.getByText("Start a session")).toBeTruthy();
   });
 
-  it("renders pattern duration meta badges", () => {
+  it("shows the empty history state when no sessions exist", () => {
     renderWithProviders(<BreathingScreen />);
-    expect(screen.getByText("1–5 min")).toBeTruthy();
-    expect(screen.getByText("2–4 min")).toBeTruthy();
-    expect(screen.getByText("5–10 min")).toBeTruthy();
+    expect(screen.getByText("Session history")).toBeTruthy();
+    expect(screen.getByText("No sessions yet.")).toBeTruthy();
   });
 
-  it("does not render recent session card when no sessions exist", () => {
-    renderWithProviders(<BreathingScreen />);
-    expect(screen.queryByText("Recent sessions")).toBeNull();
-  });
-
-  it("renders recent session card with spine when sessions exist", () => {
+  it("lists sessions in the inline history with pattern, cycles, and elapsed time", () => {
     mockUseBreathingSessions.mockReturnValue({
       data: [
         {
           id: "s1",
           userId: "user-1",
           exerciseName: "box-breathing",
-          durationMinutes: 3,
+          durationMinutes: 2,
+          durationSeconds: 96,
+          cycles: 6,
           reflection: "",
           moodAfter: null,
           feelingAfter: null,
@@ -100,16 +98,15 @@ describe("Breathing list polish", () => {
     } as unknown as ReturnType<typeof useBreathingSessions>);
 
     renderWithProviders(<BreathingScreen />);
-    expect(screen.getByText("Recent sessions")).toBeTruthy();
-    // "Box breathing" appears both in the recent card and the pattern row
-    expect(screen.getAllByText("Box breathing").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("Box breathing")).toBeTruthy();
+    expect(screen.getByText("6 cycles")).toBeTruthy();
+    expect(screen.getByText("1:36")).toBeTruthy(); // formatClock(96)
   });
 
-  it("navigates to box-breathing route on press", () => {
+  it("navigates to the session route on Start a session press", () => {
     renderWithProviders(<BreathingScreen />);
-    const boxRow = screen.getByLabelText("Box breathing");
-    fireEvent.press(boxRow);
-    expect(router.push).toHaveBeenCalledWith("/tools/breathing/box-breathing");
+    fireEvent.press(screen.getByLabelText("Start a session"));
+    expect(router.push).toHaveBeenCalledWith("/tools/breathing/session");
   });
 
   it("opens help sheet when help button is pressed", () => {
@@ -118,5 +115,10 @@ describe("Breathing list polish", () => {
     fireEvent.press(helpButton);
     // HelpSheet is mocked to null; pressing the button should not throw
     expect(helpButton).toBeTruthy();
+  });
+
+  it("shows the empty state for custom exercises", () => {
+    renderWithProviders(<BreathingScreen />);
+    expect(screen.getByText("You haven't made any yet.")).toBeTruthy();
   });
 });

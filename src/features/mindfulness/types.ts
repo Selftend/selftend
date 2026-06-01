@@ -8,6 +8,9 @@ export interface MindfulnessSession {
   feelingAfter: string | null;
   completedAt: string;
   createdAt: string;
+  // Breathing-only metrics (null for other session types).
+  cycles: number | null;
+  durationSeconds: number | null;
 }
 
 export interface MindfulnessSessionInput {
@@ -15,4 +18,6 @@ export interface MindfulnessSessionInput {
   durationMinutes: number;
   reflection: string;
   feelingAfter: string | null;
+  cycles?: number | null;
+  durationSeconds?: number | null;
 }

@@ -11,6 +11,8 @@ interface MindfulnessSessionRow {
   feeling_after: string | null;
   completed_at: string;
   created_at: string;
+  cycles: number | null;
+  duration_seconds: number | null;
 }
 
 function mapSession(row: MindfulnessSessionRow): MindfulnessSession {
@@ -24,6 +26,8 @@ function mapSession(row: MindfulnessSessionRow): MindfulnessSession {
     feelingAfter: row.feeling_after,
     completedAt: row.completed_at,
     createdAt: row.created_at,
+    cycles: row.cycles ?? null,
+    durationSeconds: row.duration_seconds ?? null,
   };
 }
 
@@ -69,6 +73,8 @@ export async function saveMindfulnessSession(userId: string, input: MindfulnessS
       reflection: input.reflection.trim(),
       feeling_after: input.feelingAfter ?? null,
       mood_after: null,
+      cycles: input.cycles ?? null,
+      duration_seconds: input.durationSeconds ?? null,
     })
     .select("*")
     .single();

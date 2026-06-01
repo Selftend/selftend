@@ -59,6 +59,12 @@ export interface UserPreferences {
   selectedConcerns: string[];
   activeStrategies: string[];
   shownButtonTours: ButtonTourKey[];
+  breathSoundId: string;
+  ambientSoundId: string;
+  breathVolume: number;
+  ambientVolume: number;
+  lastBreathingPatternId: string | null;
+  breathingCycles: number | null;
 }
 
 export const defaultUserPreferences: UserPreferences = {
@@ -110,6 +116,12 @@ export const defaultUserPreferences: UserPreferences = {
   selectedConcerns: [],
   activeStrategies: [],
   shownButtonTours: [],
+  breathSoundId: "guided",
+  ambientSoundId: "none",
+  breathVolume: 0.7,
+  ambientVolume: 0.5,
+  lastBreathingPatternId: null,
+  breathingCycles: null,
 };
 
 const VALID_MODULES: ModuleKey[] = ["cbt", "meditation", "gratitude", "act"];

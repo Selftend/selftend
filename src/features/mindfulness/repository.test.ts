@@ -73,6 +73,8 @@ describe("mindfulness repository", () => {
       reflection: "felt calm",
       feeling_after: "calmer",
       mood_after: null,
+      cycles: null,
+      duration_seconds: null,
     });
   });
 

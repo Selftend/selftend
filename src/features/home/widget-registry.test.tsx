@@ -87,8 +87,6 @@ describe("widget registry", () => {
   });
 
   it.each([
-    ["breathing-library", "breathing"],
-    ["breathing-log", "breathing"],
     ["mindfulness-library", "mindfulness"],
     ["mindfulness-log", "mindfulness"],
     ["grounding-library", "grounding"],

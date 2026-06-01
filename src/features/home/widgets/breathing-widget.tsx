@@ -46,11 +46,15 @@ export function BreathingWidget({ userId }: { userId: string }) {
         </Text>
 
         <View className="flex-row items-center justify-between">
-          <Button size="sm" variant="outline" onPress={() => router.push("/tools/breathing")}>
+          <Button
+            size="sm"
+            variant="outline"
+            onPress={() => router.push("/tools/breathing/session")}
+          >
             <Icon name="air" className="size-4" />
             <Text>{t("today.dashboard.startBreathing")}</Text>
           </Button>
-          <Button size="sm" variant="ghost" onPress={() => router.push("/tools/mindfulness")}>
+          <Button size="sm" variant="ghost" onPress={() => router.push("/tools/breathing")}>
             <Text className="text-muted-foreground">{t("today.dashboard.open")}</Text>
             <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
           </Button>

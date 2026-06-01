@@ -1444,6 +1444,13 @@
     "recentEyebrow": "Recent sessions",
     "choosePatternTitle": "Choose a pattern",
     "choosePatternHint": "Tap to begin",
+    "startSession": "Start a session",
+    "startSessionHint": "Opens your last pattern — switch any time.",
+    "history": {
+      "title": "Session history",
+      "subtitle": "Your past breathing sessions.",
+      "empty": "No sessions yet."
+    },
     "description": "Short guided patterns to calm your nervous system right now.",
     "hero": {
       "patterns_one": "{{count}} pattern",
@@ -1455,8 +1462,17 @@
     "minutes": "{{value}} min",
     "recentCount_one": "{{count}} session",
     "recentCount_other": "{{count}} sessions",
-    "chooseDuration": "Choose a duration",
+    "chooseCycles": "Choose cycles",
+    "decreaseCycles": "Decrease cycles",
+    "increaseCycles": "Increase cycles",
+    "cycles_one": "{{count}} cycle",
+    "cycles_other": "{{count}} cycles",
+    "totalTimeLabel": "Total time",
+    "cycleProgress": "Cycle {{current}} of {{total}}",
+    "choosePattern": "Pattern",
     "start": "Start",
+    "getReady": "Get ready…",
+    "skipIntro": "Skip",
     "finishEarly": "Finish early",
     "notFound": "Exercise not found",
     "nudgeTitle": "Want to ground yourself?",
@@ -1467,6 +1483,38 @@
       "hold": "Hold",
       "exhale": "Exhale",
       "holdOut": "Hold"
+    },
+    "yourExercisesTitle": "Your exercises",
+    "newExercise": "New exercise",
+    "editExercise": "Edit {{name}}",
+    "noExercises": "You haven't made any yet.",
+    "deletedExercise": "Custom exercise",
+    "builder": {
+      "newTitle": "New breathing pattern",
+      "editTitle": "Edit pattern",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Evening wind-down",
+      "patternLabel": "Breathing pattern",
+      "suggestedLabel": "Suggested patterns",
+      "cyclesLabel": "Breath cycles & duration",
+      "colorLabel": "Exercise card color",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "delete": "Delete exercise",
+      "nameRequired": "Give your exercise a name.",
+      "activePhaseRequired": "Add at least an inhale or an exhale.",
+      "saveError": "Could not save. Please try again.",
+      "colors": {
+        "aqua": "Aqua",
+        "mist": "Mist",
+        "iris": "Iris",
+        "clay": "Clay",
+        "amber": "Amber",
+        "emerald": "Emerald",
+        "violet": "Violet",
+        "rose": "Rose"
+      }
     },
     "exercises": {
       "box-breathing": {
@@ -1486,6 +1534,30 @@
         "shortDescription": "Slow, equal inhale and exhale at about 5 breaths per minute.",
         "meta": "5–10 min",
         "benefit": "Maximises heart rate variability and reduces anxiety over time."
+      }
+    },
+    "sounds": {
+      "title": "Sounds",
+      "open": "Sound settings",
+      "close": "Close",
+      "breathLabel": "Breath",
+      "ambientLabel": "Ambient",
+      "breathVolume": "Breath volume",
+      "ambientVolume": "Ambient volume",
+      "pickBreath": "Choose a breath sound",
+      "pickAmbient": "Choose an ambient sound",
+      "none": "None",
+      "breath": {
+        "guided": "Guided voice",
+        "soft": "Soft breath",
+        "ocean": "Ocean swell",
+        "wind": "Wind"
+      },
+      "ambient": {
+        "rain": "Rain",
+        "forest": "Forest",
+        "night": "Night",
+        "brown": "Brown noise"
       }
     }
   }

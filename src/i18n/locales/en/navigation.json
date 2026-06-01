@@ -588,6 +588,7 @@
     }
   },
   "breadcrumb": {
+    "session": "Session",
     "history": "History",
     "progress": "Reflect",
     "legal": "Legal",

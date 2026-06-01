@@ -58,6 +58,12 @@ interface UserPreferenceRow {
   selected_concerns: string[] | null;
   active_strategies: string[] | null;
   shown_button_tours: string[] | null;
+  breath_sound_id: string | null;
+  ambient_sound_id: string | null;
+  breath_volume: number | null;
+  ambient_volume: number | null;
+  last_breathing_pattern_id: string | null;
+  breathing_cycles: number | null;
 }
 
 function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
@@ -117,6 +123,12 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     selectedConcerns: row.selected_concerns ?? [],
     activeStrategies: row.active_strategies ?? [],
     shownButtonTours: (row.shown_button_tours ?? []) as ButtonTourKey[],
+    breathSoundId: row.breath_sound_id ?? defaultUserPreferences.breathSoundId,
+    ambientSoundId: row.ambient_sound_id ?? defaultUserPreferences.ambientSoundId,
+    breathVolume: row.breath_volume ?? defaultUserPreferences.breathVolume,
+    ambientVolume: row.ambient_volume ?? defaultUserPreferences.ambientVolume,
+    lastBreathingPatternId: row.last_breathing_pattern_id ?? null,
+    breathingCycles: row.breathing_cycles ?? null,
   };
 }
 
@@ -128,7 +140,11 @@ function isMissingOptionalPreferenceColumn(error: unknown) {
     typeof maybeError.message === "string" &&
     (maybeError.message.includes("act_") ||
       maybeError.message.includes("cbt_program_") ||
-      maybeError.message.includes("shown_button_tours"))
+      maybeError.message.includes("shown_button_tours") ||
+      maybeError.message.includes("breath_") ||
+      maybeError.message.includes("ambient_") ||
+      maybeError.message.includes("last_breathing_pattern") ||
+      maybeError.message.includes("breathing_cycles"))
   );
 }
 
@@ -151,6 +167,12 @@ function omitOptionalPreferenceColumns<T extends Record<string, unknown>>(payloa
   delete fallbackPayload.act_program_phase_index;
   delete fallbackPayload.act_program_phase_started_at;
   delete fallbackPayload.shown_button_tours;
+  delete fallbackPayload.breath_sound_id;
+  delete fallbackPayload.ambient_sound_id;
+  delete fallbackPayload.breath_volume;
+  delete fallbackPayload.ambient_volume;
+  delete fallbackPayload.last_breathing_pattern_id;
+  delete fallbackPayload.breathing_cycles;
 
   return fallbackPayload;
 }
@@ -222,6 +244,12 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     selected_concerns: preferences.selectedConcerns,
     active_strategies: preferences.activeStrategies,
     shown_button_tours: preferences.shownButtonTours,
+    breath_sound_id: preferences.breathSoundId,
+    ambient_sound_id: preferences.ambientSoundId,
+    breath_volume: preferences.breathVolume,
+    ambient_volume: preferences.ambientVolume,
+    last_breathing_pattern_id: preferences.lastBreathingPatternId,
+    breathing_cycles: preferences.breathingCycles,
   };
 
   const { data, error } = await client
