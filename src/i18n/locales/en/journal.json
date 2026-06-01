@@ -3,7 +3,6 @@
   "moduleLabel": "Journal",
   "tagline": "A private place to write — no formatting, no audience, no streaks.",
   "description": "Private free-text reflection. Write as little or as much as you want - no streaks, no pressure.",
-  "authorEyebrow": "Inspired by expressive writing research · James Pennebaker",
   "cta": {
     "new": "New entry"
   },
@@ -40,6 +39,7 @@
     "titlePlaceholder": "Untitled",
     "bodyLabel": "Body",
     "bodyPlaceholder": "Write what's on your mind.",
+    "dateLabel": "Date",
     "cancel": "Cancel",
     "save": "Save",
     "update": "Update",
@@ -65,10 +65,6 @@
     "welcome": {
       "title": "Writing heals",
       "subtitle": "A few minutes on the page can do more than hours of rumination."
-    },
-    "science": {
-      "title": "Expressive writing works",
-      "body": "Decades of research by James Pennebaker show that writing about thoughts and feelings lowers stress, reduces anxiety, and improves physical health - even in short bursts."
     },
     "noPressure": {
       "title": "No pressure, no rules",

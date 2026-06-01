@@ -23,31 +23,28 @@ export function JournalWeekWidget({ userId }: { userId: string }) {
       <CardContent className="gap-3 pt-4 pb-4">
         <View className="flex-row items-center gap-2">
           <View className="size-8 items-center justify-center rounded-lg bg-ink/10">
-            <Icon name="date-range" className="size-5 text-ink" />
+            <Icon name="edit-note" className="size-5 text-ink" />
           </View>
           <Text className="text-sm font-semibold">{t("home.widgets.journalWeek.title")}</Text>
         </View>
-        {weekEntries.length > 0 ? (
-          <TwoStatBody
-            stats={[
-              { value: weekEntries.length, label: t("home.widgets.journalWeek.entriesLabel") },
-              { value: words, label: t("home.widgets.journalWeek.wordsLabel") },
-            ]}
-          />
-        ) : (
-          <Text variant="muted" className="text-xs">
-            {t("home.widgets.journalWeek.empty")}
-          </Text>
-        )}
-        <Button
-          size="sm"
-          variant="ghost"
-          className="self-end"
-          onPress={() => router.push("/tools/journal")}
-        >
-          <Text className="text-muted-foreground">{t("today.dashboard.open")}</Text>
-          <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
-        </Button>
+
+        <TwoStatBody
+          stats={[
+            { value: weekEntries.length, label: t("home.widgets.journalWeek.entriesLabel") },
+            { value: words, label: t("home.widgets.journalWeek.wordsLabel") },
+          ]}
+        />
+
+        <View className="flex-row items-center justify-between">
+          <Button size="sm" variant="outline" onPress={() => router.push("/tools/journal/new")}>
+            <Icon name="edit" className="size-4" />
+            <Text>{t("today.dashboard.write")}</Text>
+          </Button>
+          <Button size="sm" variant="ghost" onPress={() => router.push("/tools/journal")}>
+            <Text className="text-muted-foreground">{t("today.dashboard.open")}</Text>
+            <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
+          </Button>
+        </View>
       </CardContent>
     </Card>
   );

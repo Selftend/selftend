@@ -82,7 +82,6 @@ export default function JournalListScreen() {
             meta={
               <ToolStats
                 accentClassName="text-ink"
-                credit={t("authorEyebrow")}
                 subline={`${t("hero.last")} · ${lastWhen ?? tc("never")}`}
                 items={[
                   { value: t("hero.entries", { count: allEntries.length }), label: "" },

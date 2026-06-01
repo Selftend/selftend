@@ -132,4 +132,44 @@ describe("JournalEntryEditorScreen", () => {
     expect(screen.getByDisplayValue("I rested.")).toBeTruthy();
     expect(screen.getByText("Update")).toBeTruthy();
   });
+
+  it("includes the entry's createdAt in the save input on edit", async () => {
+    const mutateAsync = jest.fn().mockResolvedValue({
+      id: "j-9",
+      userId: "user-1",
+      title: "Yesterday",
+      body: "I rested.",
+      createdAt: "2026-05-10T08:00:00.000Z",
+      updatedAt: new Date().toISOString(),
+    });
+    mockUseJournalEntries.mockReturnValue({
+      data: [
+        {
+          id: "j-9",
+          userId: "user-1",
+          title: "Yesterday",
+          body: "I rested.",
+          createdAt: "2026-05-10T08:00:00.000Z",
+          updatedAt: "2026-05-10T08:00:00.000Z",
+        },
+      ],
+    } as unknown as ReturnType<typeof useJournalEntries>);
+    mockUseSaveJournalEntry.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useSaveJournalEntry>);
+
+    renderWithProviders(
+      <JournalEntryEditorScreen fallbackHref="/tools/journal" mode="edit" entryId="j-9" />,
+    );
+
+    fireEvent.press(screen.getByText("Update"));
+
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith({
+        input: { title: "Yesterday", body: "I rested.", createdAt: "2026-05-10T08:00:00.000Z" },
+        entryId: "j-9",
+      }),
+    );
+  });
 });

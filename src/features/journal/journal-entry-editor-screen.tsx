@@ -9,6 +9,7 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { DateTimeField } from "@/src/components/app/date-time-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import {
@@ -51,12 +52,16 @@ export function JournalEntryEditorScreen({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [error, setError] = useState("");
+  const [createdAt, setCreatedAt] = useState<string>(
+    mode === "create" ? loggedAtForSelectedDate(selectedDate) : new Date().toISOString(),
+  );
   const saving = saveMutation.isPending;
 
   useEffect(() => {
     if (!existingEntry) return;
     setTitle(existingEntry.title);
     setBody(existingEntry.body);
+    setCreatedAt(existingEntry.createdAt);
     setError("");
   }, [existingEntry]);
 
@@ -81,7 +86,7 @@ export function JournalEntryEditorScreen({
         input: {
           title: title.trim().slice(0, JOURNAL_TITLE_MAX),
           body: trimmedBody.slice(0, JOURNAL_BODY_MAX),
-          ...(!editMode ? { createdAt: loggedAtForSelectedDate(selectedDate) } : {}),
+          createdAt,
         },
         entryId: editMode ? (entryId ?? undefined) : undefined,
       });
@@ -145,6 +150,15 @@ export function JournalEntryEditorScreen({
             onChangeText={setBody}
             placeholder={t("editor.bodyPlaceholder")}
             value={body}
+          />
+        </View>
+
+        <View className="gap-2">
+          <Label>{t("editor.dateLabel")}</Label>
+          <DateTimeField
+            value={createdAt}
+            onChange={setCreatedAt}
+            accessibilityLabel={t("editor.dateLabel")}
           />
         </View>
 

@@ -5,7 +5,7 @@ export const DEFAULT_WIDGET_IDS = [
   "mood-trend",
   "cbt-open-record",
   "act-values",
-  "journal-latest",
+  "journal-week",
   "breathing-suggested",
   "mindfulness-anchor",
   "grounding-54321",
@@ -19,7 +19,7 @@ export const DEFAULT_WIDGET_IDS = [
 // Maps a legacy plan_items.tool_id to the equivalent widget id.
 const TOOL_TO_WIDGET_ID: Record<string, string> = {
   mood: "mood-trend",
-  journal: "journal-latest",
+  journal: "journal-week",
   breathing: "breathing-suggested",
   meditation: "meditation-pick",
   gratitude: "gratitude-latest",

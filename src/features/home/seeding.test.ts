@@ -10,7 +10,7 @@ describe("resolveInitialWidgetIds", () => {
       { toolId: "journal", order: 0 },
       { toolId: "breathing", order: 1 },
     ]);
-    expect(result).toEqual(["journal-latest", "breathing-suggested"]);
+    expect(result).toEqual(["journal-week", "breathing-suggested"]);
   });
 
   it("maps the legacy mood plan-item to mood-trend", () => {

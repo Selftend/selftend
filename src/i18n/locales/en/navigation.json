@@ -254,10 +254,6 @@
         "title": "Mood, last 7 days",
         "desc": "Your running average and recent entries."
       },
-      "journalLatest": {
-        "title": "Latest entry",
-        "desc": "Pick up your most recent journal entry."
-      },
       "breathingSuggested": {
         "title": "Suggested pattern",
         "desc": "A breathing pattern for right now."
@@ -415,26 +411,10 @@
         "practice": "Practice"
       },
       "journalWeek": {
-        "title": "This week",
-        "metaDesc": "Your journaling this week.",
+        "title": "Journal",
+        "metaDesc": "Your journaling stats and a quick way to write",
         "entriesLabel": "Entries",
-        "wordsLabel": "Words",
-        "empty": "Nothing written this week yet."
-      },
-      "journalPrompt": {
-        "title": "Writing prompt",
-        "metaDesc": "A fresh prompt to write to.",
-        "prompt1": "What's taking up the most space in your mind right now?",
-        "prompt2": "Describe a small moment from today you'd like to remember.",
-        "prompt3": "What would feel like a kind thing to do for yourself this week?",
-        "prompt4": "What's something you're avoiding, and what makes it hard?",
-        "write": "Write about this"
-      },
-      "journalResurface": {
-        "title": "Resurface",
-        "metaDesc": "Revisit a past entry.",
-        "empty": "Your past entries will resurface here.",
-        "start": "Start journaling"
+        "wordsLabel": "Words"
       },
       "breathingLibrary": {
         "title": "Breathing patterns",

@@ -38,13 +38,6 @@ export function JournalOnboarding({
         subtitle={t("onboarding.welcome.subtitle")}
       />
 
-      <Card className="border-primary/30 bg-primary/5">
-        <CardContent className="gap-2 pt-6">
-          <Text className="font-semibold">{t("onboarding.science.title")}</Text>
-          <Text variant="muted">{t("onboarding.science.body")}</Text>
-        </CardContent>
-      </Card>
-
       <Card>
         <CardContent className="gap-2 pt-6">
           <Text className="font-semibold">{t("onboarding.noPressure.title")}</Text>

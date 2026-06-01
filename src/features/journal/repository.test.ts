@@ -129,6 +129,36 @@ describe("journal repository", () => {
     expect(eqId).toHaveBeenCalledWith("id", "j-1");
   });
 
+  it("includes created_at in the update payload when provided", async () => {
+    const row = {
+      id: "j-1",
+      user_id: "user-1",
+      title: "Updated",
+      body: "Body",
+      created_at: "2026-04-01T09:00:00.000Z",
+      updated_at: "2026-05-15T08:30:00.000Z",
+    };
+    const single = jest.fn().mockResolvedValue({ data: row, error: null });
+    const select = jest.fn(() => ({ single }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ update }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await saveJournalEntry(
+      "user-1",
+      { title: "Updated", body: "Body", createdAt: "2026-04-01T09:00:00.000Z" },
+      "j-1",
+    );
+
+    expect(update).toHaveBeenCalledWith({
+      title: "Updated",
+      body: "Body",
+      created_at: "2026-04-01T09:00:00.000Z",
+    });
+  });
+
   it("deletes by id scoped to user", async () => {
     const eqId = jest.fn().mockResolvedValue({ error: null });
     const eqUser = jest.fn(() => ({ eq: eqId }));

@@ -6,7 +6,6 @@ import { MoodTrendWidget } from "@/src/features/home/widgets/mood-trend-widget";
 import { BreathingWidget } from "@/src/features/home/widgets/breathing-widget";
 import { MeditationWidget } from "@/src/features/home/widgets/meditation-widget";
 import { GratitudeWidget } from "@/src/features/home/widgets/gratitude-widget";
-import { JournalWidget } from "@/src/features/home/widgets/journal-widget";
 import { HabitsWidget } from "@/src/features/home/widgets/habits-widget";
 import { SelfCareWidget } from "@/src/features/home/widgets/self-care-widget";
 import { SleepLastNightWidget } from "@/src/features/home/widgets/sleep-last-night-widget";
@@ -29,8 +28,6 @@ import { ActAcceptancePromptWidget } from "@/src/features/home/widgets/act-accep
 import { MindfulnessAnchorWidget } from "@/src/features/home/widgets/mindfulness-anchor-widget";
 import { Grounding54321Widget } from "@/src/features/home/widgets/grounding-54321-widget";
 import { JournalWeekWidget } from "@/src/features/home/widgets/journal-week-widget";
-import { JournalPromptWidget } from "@/src/features/home/widgets/journal-prompt-widget";
-import { JournalResurfaceWidget } from "@/src/features/home/widgets/journal-resurface-widget";
 import { BreathingLibraryWidget } from "@/src/features/home/widgets/breathing-library-widget";
 import { BreathingLogWidget } from "@/src/features/home/widgets/breathing-log-widget";
 import { MindfulnessLibraryWidget } from "@/src/features/home/widgets/mindfulness-library-widget";
@@ -63,7 +60,6 @@ export interface WidgetMeta {
 export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "mood-checkin": MoodCheckinWidget,
   "mood-trend": MoodTrendWidget,
-  "journal-latest": JournalWidget,
   "breathing-suggested": BreathingWidget,
   "gratitude-latest": GratitudeWidget,
   "meditation-pick": MeditationWidget,
@@ -89,8 +85,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "act-programme": ActProgrammeWidget,
   "act-acceptance-prompt": ActAcceptancePromptWidget,
   "journal-week": JournalWeekWidget,
-  "journal-prompt": JournalPromptWidget,
-  "journal-resurface": JournalResurfaceWidget,
   "breathing-library": BreathingLibraryWidget,
   "breathing-log": BreathingLogWidget,
   "mindfulness-library": MindfulnessLibraryWidget,
@@ -125,15 +119,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     titleKey: "home.widgets.moodTrend.title",
     descriptionKey: "home.widgets.moodTrend.desc",
     tint: "be",
-    status: "default",
-  },
-  "journal-latest": {
-    id: "journal-latest",
-    toolKey: "journal",
-    icon: "edit-note",
-    titleKey: "home.widgets.journalLatest.title",
-    descriptionKey: "home.widgets.journalLatest.desc",
-    tint: "ink",
     status: "default",
   },
   "breathing-suggested": {
@@ -358,24 +343,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     icon: "date-range",
     titleKey: "home.widgets.journalWeek.title",
     descriptionKey: "home.widgets.journalWeek.metaDesc",
-    tint: "ink",
-    status: "available",
-  },
-  "journal-prompt": {
-    id: "journal-prompt",
-    toolKey: "journal",
-    icon: "lightbulb",
-    titleKey: "home.widgets.journalPrompt.title",
-    descriptionKey: "home.widgets.journalPrompt.metaDesc",
-    tint: "ink",
-    status: "available",
-  },
-  "journal-resurface": {
-    id: "journal-resurface",
-    toolKey: "journal",
-    icon: "restore",
-    titleKey: "home.widgets.journalResurface.title",
-    descriptionKey: "home.widgets.journalResurface.metaDesc",
     tint: "ink",
     status: "available",
   },

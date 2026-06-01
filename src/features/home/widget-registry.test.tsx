@@ -77,16 +77,13 @@ describe("widget registry", () => {
     expect(WIDGET_META["journal-week"].toolKey).toBe("journal");
   });
 
-  it("registers journal-prompt as an available widget", () => {
-    expect(isImplemented("journal-prompt")).toBe(true);
-    expect(WIDGET_META["journal-prompt"].status).toBe("available");
-    expect(WIDGET_META["journal-prompt"].toolKey).toBe("journal");
-  });
-
-  it("registers journal-resurface as an available widget", () => {
-    expect(isImplemented("journal-resurface")).toBe(true);
-    expect(WIDGET_META["journal-resurface"].status).toBe("available");
-    expect(WIDGET_META["journal-resurface"].toolKey).toBe("journal");
+  it("no longer registers the removed journal widgets", () => {
+    expect(isImplemented("journal-latest")).toBe(false);
+    expect(isImplemented("journal-prompt")).toBe(false);
+    expect(isImplemented("journal-resurface")).toBe(false);
+    expect(WIDGET_META["journal-latest"]).toBeUndefined();
+    expect(WIDGET_META["journal-prompt"]).toBeUndefined();
+    expect(WIDGET_META["journal-resurface"]).toBeUndefined();
   });
 
   it.each([

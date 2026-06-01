@@ -40,27 +40,9 @@ export function AddToHomeButton({
 
   if (widgets.length === 0) return null;
 
-  if (widgets.length === 1) {
-    const w = widgets[0]!;
-    const added = toggle.isAdded(w.id);
-    return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t("home.addToHome.button")}
-        accessibilityState={{ selected: added }}
-        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-        onPress={() => toggle.toggle(w.id)}
-        className={className}
-      >
-        <Icon
-          name={added ? "check" : "add"}
-          size={size}
-          className={added ? "text-primary" : "text-muted-foreground"}
-        />
-      </Pressable>
-    );
-  }
-
+  // Always present the add menu — even with a single available widget — so the
+  // "+" behaves consistently across every tool landing (a lone item still opens
+  // the popover rather than toggling silently).
   return (
     <Popover>
       <PopoverTrigger asChild>

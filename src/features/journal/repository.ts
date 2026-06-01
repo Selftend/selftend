@@ -52,6 +52,7 @@ export async function saveJournalEntry(userId: string, input: JournalInput, entr
   const payload = {
     title: input.title.trim(),
     body: input.body.trim(),
+    ...(input.createdAt ? { created_at: input.createdAt } : {}),
   };
 
   const query = entryId
@@ -59,7 +60,6 @@ export async function saveJournalEntry(userId: string, input: JournalInput, entr
     : client.from("journal_entries").insert({
         ...payload,
         user_id: userId,
-        ...(input.createdAt ? { created_at: input.createdAt } : {}),
       });
 
   const { data, error } = await query.select("*").single();

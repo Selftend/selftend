@@ -109,7 +109,7 @@ export default function JournalDetailScreen() {
           </View>
 
           <Card>
-            <CardContent className="pt-6">
+            <CardContent>
               <Text className="text-base leading-6">{entry.body}</Text>
             </CardContent>
           </Card>
