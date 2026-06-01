@@ -106,7 +106,7 @@ export default function MeditationHomeScreen() {
         onDismiss={forceWizard ? () => setForceWizard(false) : undefined}
       />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-        <ScrollView contentContainerClassName="grow p-6">
+        <ScrollView contentContainerClassName="grow p-4">
           <View className="gap-6">
             <View className="gap-2">
               <ModuleHomeHeader

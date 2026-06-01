@@ -84,7 +84,7 @@ export default function SleepTrackerScreen() {
         onDismiss={() => setForceOnboarding(false)}
       />
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-        <ScrollView contentContainerClassName="grow p-6">
+        <ScrollView contentContainerClassName="grow p-4">
           <View className="gap-6">
             <ModuleHomeHeader
               addWidgetCategory="sleep"

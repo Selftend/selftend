@@ -44,7 +44,7 @@ export default function MindfulnessHomeScreen() {
         onDismiss={() => setForceOnboarding(false)}
       />
       <SafeAreaView className="flex-1 bg-background">
-        <ScrollView contentContainerClassName="grow p-6">
+        <ScrollView contentContainerClassName="grow p-4">
           <View className="gap-6">
             <View className="gap-2">
               <ModuleHomeHeader
