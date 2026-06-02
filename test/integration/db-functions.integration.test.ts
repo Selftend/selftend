@@ -68,7 +68,7 @@ describe("export_user_data() (integration)", () => {
     expect(Array.isArray(data.recoveryPlans)).toBe(true);
     expect(Array.isArray(data.challengePlans)).toBe(true);
     expect(Array.isArray(data.journalEntries)).toBe(true);
-    // ACT module + plan + widget layout (added 20260568 — GDPR export completeness).
+    // ACT module + plan + widget layout (added 20260568 - GDPR export completeness).
     expect("actProgramState" in data).toBe(true);
     expect(Array.isArray(data.actDefusionLogs)).toBe(true);
     expect(Array.isArray(data.actExpansionLogs)).toBe(true);
@@ -216,10 +216,10 @@ describe("delete_user_account() (integration)", () => {
 // job is NOT removed here because we cannot reach cron.unschedule() via PostgREST. A full
 // `supabase db reset` clears the cron.job table. We accept this known-leftover because
 // (a) the job is idempotent, (b) it fires every 5 min calling invoke_send_web_reminders()
-// which will fail fast ("Missing Vault secrets") — no lasting damage to the local stack.
+// which will fail fast ("Missing Vault secrets") - no lasting damage to the local stack.
 // ---------------------------------------------------------------------------
 
-describe("invoke_send_web_reminders() — access control (integration)", () => {
+describe("invoke_send_web_reminders() - access control (integration)", () => {
   it("is denied for anon callers (42501 permission denied)", async () => {
     const anon = createAnonClient();
     const { error } = await anon.rpc("invoke_send_web_reminders");
@@ -255,7 +255,7 @@ describe("invoke_send_web_reminders() — access control (integration)", () => {
   });
 });
 
-describe("schedule_send_web_reminders_cron() — access control + idempotency (integration)", () => {
+describe("schedule_send_web_reminders_cron() - access control + idempotency (integration)", () => {
   it("is denied for anon callers (42501 permission denied)", async () => {
     const anon = createAnonClient();
     const { error } = await anon.rpc("schedule_send_web_reminders_cron");
@@ -278,11 +278,11 @@ describe("schedule_send_web_reminders_cron() — access control + idempotency (i
 
   it("service_role can call it and it is idempotent (no error on repeated calls)", async () => {
     // service_role bypasses the REVOKE. The function calls cron.unschedule() then
-    // cron.schedule() — the exception handler in the function swallows "job not found"
+    // cron.schedule() - the exception handler in the function swallows "job not found"
     // on the first unschedule, making the whole function idempotent.
     //
     // NOT assertable: cron.job row contents (jobname 'selftend-send-web-reminders',
-    // schedule '*/5 * * * *') — the `cron` schema is not exposed via PostgREST.
+    // schedule '*/5 * * * *') - the `cron` schema is not exposed via PostgREST.
     //
     // CLEANUP NOTE: this leaves a cron job registered in the local pg_cron table.
     // The job is idempotent and fails fast (invoke_send_web_reminders raises

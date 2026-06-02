@@ -10,15 +10,15 @@ import {
 
 /**
  * Routes:
- *   /modules/cbt/beliefs/new            — NewBeliefScreen (create)
- *   /modules/cbt/beliefs/new?beliefId=X — NewBeliefScreen (edit)
- *   /modules/cbt/beliefs/[id]           — BeliefDetailScreen
- *   /modules/cbt/beliefs                — BeliefsScreen
+ *   /modules/cbt/beliefs/new            - NewBeliefScreen (create)
+ *   /modules/cbt/beliefs/new?beliefId=X - NewBeliefScreen (edit)
+ *   /modules/cbt/beliefs/[id]           - BeliefDetailScreen
+ *   /modules/cbt/beliefs                - BeliefsScreen
  *
  * Wizard steps (cbt.json > beliefs):
- *   step1 "1. Belief & triggers"  — beliefStatement + triggeringSituations
- *   step2 "2. Evidence"           — evidenceFor + evidenceAgainst
- *   step3 "3. Alternative & strength" — alternativeBelief + originalBeliefStrength + alternativeBeliefStrength + reinforcementPlan
+ *   step1 "1. Belief & triggers"  - beliefStatement + triggeringSituations
+ *   step2 "2. Evidence"           - evidenceFor + evidenceAgainst
+ *   step3 "3. Alternative & strength" - alternativeBelief + originalBeliefStrength + alternativeBeliefStrength + reinforcementPlan
  *
  * Key labels (cbt.json > beliefs):
  *   beliefStatement   "Belief statement"
@@ -86,7 +86,7 @@ test.describe("CBT belief: create, edit strength, and edit via wizard", () => {
       .fill(alternativeBelief);
 
     // Leave originalBeliefStrength at default 70, set alternativeBeliefStrength to 40
-    // (NumberRating min=0 max=100 step=10 — buttons are "0","10",...,"100")
+    // (NumberRating min=0 max=100 step=10 - buttons are "0","10",...,"100")
     // There are two NumberRatings on step 3: original (default 70) and alternative (default 30).
     // Button "40" appears twice (once per NumberRating). Use .nth(1) to click the second one
     // (alternative strength).

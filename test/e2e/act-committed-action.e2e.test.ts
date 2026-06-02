@@ -9,14 +9,14 @@ import {
 
 /**
  * Routes:
- *   /modules/act/committed-action/new   — ActCommittedActionNewScreen (3-step wizard)
- *   /modules/act/committed-action/[id]  — ActCommittedActionDetailScreen
- *   /modules/act/committed-action       — ActCommittedActionListScreen
+ *   /modules/act/committed-action/new   - ActCommittedActionNewScreen (3-step wizard)
+ *   /modules/act/committed-action/[id]  - ActCommittedActionDetailScreen
+ *   /modules/act/committed-action       - ActCommittedActionListScreen
  *
  * Wizard steps (act.json > committedAction.steps):
- *   1. domain    — "Domain" — select a life domain (pressable chips)
- *   2. action    — "Action" — title (required), description, targetDate
- *   3. obstacles — "Obstacles" — obstacles textarea
+ *   1. domain    - "Domain" - select a life domain (pressable chips)
+ *   2. action    - "Action" - title (required), description, targetDate
+ *   3. obstacles - "Obstacles" - obstacles textarea
  *
  * Detail affordances:
  *   - Status change buttons: "Mark complete" | "Mark active" | "Mark abandoned"

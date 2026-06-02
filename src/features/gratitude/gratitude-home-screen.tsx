@@ -282,7 +282,7 @@ function ThemeChips({ themes }: ThemeChipsProps) {
 }
 
 // ---------------------------------------------------------------------------
-// BreakCard — featured prompt card with top-edge gradient stripe
+// BreakCard - featured prompt card with top-edge gradient stripe
 // ---------------------------------------------------------------------------
 
 const CATEGORY_CLASSES = {

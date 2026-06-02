@@ -3,9 +3,9 @@ import { PanResponder, View } from "react-native";
 
 interface VolumeSliderProps {
   value: number; // 0..1
-  /** Fires continuously while dragging — use for instant (frontend) updates. */
+  /** Fires continuously while dragging - use for instant (frontend) updates. */
   onChange: (value: number) => void;
-  /** Fires once when the drag ends — use to persist the final value. */
+  /** Fires once when the drag ends - use to persist the final value. */
   onCommit?: (value: number) => void;
   accessibilityLabel: string;
   orientation?: "horizontal" | "vertical";

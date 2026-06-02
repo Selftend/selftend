@@ -31,7 +31,7 @@ cp .env.local.example .env.local
 npx supabase start
 ```
 
-In dev mode `.env.local` overrides `.env` (Expo's metro transform merges every `.env*` file over `process.env`). The default `start` scripts load `.env.local`. The `start:prod*` scripts load `.env` and temporarily hide `.env.local` so the dev-client actually hits the hosted Supabase — see [docs/android-development.md](docs/android-development.md) for the gory details.
+In dev mode `.env.local` overrides `.env` (Expo's metro transform merges every `.env*` file over `process.env`). The default `start` scripts load `.env.local`. The `start:prod*` scripts load `.env` and temporarily hide `.env.local` so the dev-client actually hits the hosted Supabase - see [docs/android-development.md](docs/android-development.md) for the gory details.
 
 ## Run
 

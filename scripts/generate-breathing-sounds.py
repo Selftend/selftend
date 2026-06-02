@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Synthesize the breathing-tool audio catalog (royalty-free, generated from scratch).
 
-Honest *synthesized* textures — calm, soothing, seamlessly loopable. The runner loops each
+Honest *synthesized* textures - calm, soothing, seamlessly loopable. The runner loops each
 clip for the whole phase, so these are STEADY seamless loops (not one-shot breaths): they
 tile to any phase length. Breath sounds are a soft tonal pad + resonant (vowel-like) airy
-breath — warm and continuous, not hissy. Swap in field recordings later with the same
+breath - warm and continuous, not hissy. Swap in field recordings later with the same
 filenames; src/constants/breathing-sounds.ts needs no change.
 
-Pure stdlib (wave/struct/math/random) — no numpy/ffmpeg. Deterministic (seeded).
+Pure stdlib (wave/struct/math/random) - no numpy/ffmpeg. Deterministic (seeded).
 Run:  python3 scripts/generate-breathing-sounds.py
 Output: assets/sounds/breathing/*.wav  (mono, 22050 Hz, 16-bit)
 """
@@ -58,7 +58,7 @@ def a_for(fc):
 
 
 def biquad_bandpass(x, f0, q):
-    """Resonant band-pass — gives noise a tonal 'vowel'/formant colour (not hiss)."""
+    """Resonant band-pass - gives noise a tonal 'vowel'/formant colour (not hiss)."""
     w0 = 2.0 * math.pi * f0 / SR
     alpha = math.sin(w0) / (2.0 * q)
     cw = math.cos(w0)
@@ -89,7 +89,7 @@ def raised_cos_up(t):
 
 
 # ---------------------------------------------------------------------------
-# Breath sounds — STEADY seamless 3s loops: soft tonal pad + resonant airy breath.
+# Breath sounds - STEADY seamless 3s loops: soft tonal pad + resonant airy breath.
 # Loop length is exactly 3.0s, so integer partial frequencies complete whole cycles and
 # the tonal layer is seam-clean; the noise layer is crossfaded.
 # ---------------------------------------------------------------------------

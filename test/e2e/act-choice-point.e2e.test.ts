@@ -9,14 +9,14 @@ import {
 
 /**
  * Routes:
- *   /modules/act/choice-point/new  — ActChoicePointNewScreen (SINGLE-STEP form)
- *   /modules/act/choice-point      — ActChoicePointListScreen (filters to selectedDate = today)
- *   /modules/act/choice-point/[id] — ActChoicePointDetailScreen
+ *   /modules/act/choice-point/new  - ActChoicePointNewScreen (SINGLE-STEP form)
+ *   /modules/act/choice-point      - ActChoicePointListScreen (filters to selectedDate = today)
+ *   /modules/act/choice-point/[id] - ActChoicePointDetailScreen
  *
  * Single-step form (no wizard steps):
- *   - "What hooks you?"  — TextInput + icon button (accessibilityLabel="Add")
- *   - "Away moves"       — TextInput + icon button (accessibilityLabel="Add")
- *   - "Toward moves"     — TextInput + icon button (accessibilityLabel="Add")
+ *   - "What hooks you?"  - TextInput + icon button (accessibilityLabel="Add")
+ *   - "Away moves"       - TextInput + icon button (accessibilityLabel="Add")
+ *   - "Toward moves"     - TextInput + icon button (accessibilityLabel="Add")
  *   - "Notes" (Textarea, accessibilityLabel="Notes")
  *   - Save button labelled "Save"
  *
@@ -31,7 +31,7 @@ import {
  * Detail heading = t("act:choicePoint.title") = "Choice point".
  * Delete button uses t("common:delete") = "Delete".
  *
- * DELETE only — no edit affordance.
+ * DELETE only - no edit affordance.
  */
 
 test.describe("ACT choice-point: create, view, delete", () => {

@@ -1,7 +1,7 @@
 -- Bug-hunt fix: export_user_data() silently dropped gratitude, habits, and meditation.
 -- Migrations 20260553 and 20260555 replaced the function with a fresh full body that no
 -- longer called the prior export_user_data_before_* wrapper, breaking the rename-then-wrap
--- chain — so those previously-included modules vanished from the GDPR export with no error.
+-- chain - so those previously-included modules vanished from the GDPR export with no error.
 -- Restore them by wrapping the current function and re-appending the dropped module blocks
 -- (copied verbatim from 20260527_meditation_export_coverage / 20260530_gratitude_phase4_5 /
 -- 20260532_habits).

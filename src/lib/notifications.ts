@@ -63,7 +63,7 @@ async function getStoredReminderId(target: ReminderTarget) {
   if (id) return id;
 
   // Migrate from the old colon-format key. The colon is valid on web (localStorage)
-  // but rejected by the native OS keystore — wrap in try/catch so native doesn't throw.
+  // but rejected by the native OS keystore - wrap in try/catch so native doesn't throw.
   try {
     const oldColonKey = `${LEGACY_COLON_KEY_PREFIX}${target}`;
     const fromOld = await SecureStore.getItemAsync(oldColonKey);
@@ -80,7 +80,7 @@ async function getStoredReminderId(target: ReminderTarget) {
     // Key format rejected on native; treat as not found.
   }
 
-  // Migrate from the legacy CBT-only key (also contains a colon — same guard needed).
+  // Migrate from the legacy CBT-only key (also contains a colon - same guard needed).
   if (target === "cbt") {
     try {
       const legacy = await SecureStore.getItemAsync(LEGACY_CBT_REMINDER_KEY);

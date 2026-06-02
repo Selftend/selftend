@@ -161,7 +161,7 @@ export async function deleteEmotionPreference(userId: string, emotionId: string)
  * Uses a single array upsert with `onConflict: "user_id,emotion_id"`.
  * PostgREST translates this to:
  *   INSERT … ON CONFLICT (user_id, emotion_id) DO UPDATE SET position = EXCLUDED.position
- * meaning **only the `position` column is updated** on conflict — name, emoji,
+ * meaning **only the `position` column is updated** on conflict - name, emoji,
  * removed, and is_custom are left intact. New rows get default values for
  * those columns (null / false), so this function should only be called with
  * ids that already have rows or for which the defaults are acceptable.

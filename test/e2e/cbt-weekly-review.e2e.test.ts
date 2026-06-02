@@ -1,16 +1,16 @@
 /**
- * CBT Weekly Review — read-only aggregate render test.
+ * CBT Weekly Review - read-only aggregate render test.
  *
  * Screen: app/(app)/modules/cbt/weekly-review.tsx
  * Route:  /modules/cbt/weekly-review
  *
  * What the screen aggregates (window = last 7 days: today-6 through today):
- *   1. Mood trend chart — average mood_score per day over 7 days (from mood_logs.logged_at).
+ *   1. Mood trend chart - average mood_score per day over 7 days (from mood_logs.logged_at).
  *      Shows "Mood trend" card; if no data, shows "noMoodData" text.
- *   2. Activities — planned count (all activity_logs in window by scheduled_at or created_at)
+ *   2. Activities - planned count (all activity_logs in window by scheduled_at or created_at)
  *      and completed count (those with completed_at != null). Also shows completion rate %.
- *   3. Goal progress — active goals only; milestone completion progress (done / total).
- *   4. Thought records — count of non-archived records with created_at >= weekStart.
+ *   3. Goal progress - active goals only; milestone completion progress (done / total).
+ *   4. Thought records - count of non-archived records with created_at >= weekStart.
  *
  * Seed strategy:
  *   - 3 mood_logs: logged_at = yesterday (score 3), today (score 5), 3 days ago (score 4).
@@ -32,7 +32,7 @@
  * TIMEZONE NOTE: getWeekDates() uses local civil-date comparison via toLocalDateKey()
  * (new Date(iso).getFullYear/Month/Date). All timestamps are inserted as ISO strings with
  * explicit UTC offsets so they land on the correct local day in CI/local environments.
- * We seed "yesterday", "today", and "3 days ago" — comfortably within any 7-day window.
+ * We seed "yesterday", "today", and "3 days ago" - comfortably within any 7-day window.
  */
 
 import { expect, test } from "@playwright/test";
@@ -81,7 +81,7 @@ test.describe("CBT weekly review: aggregate render", () => {
     const admin = createServiceClient();
 
     // ── Seed mood logs (3 within window) ────────────────────────────────────────
-    // Scores: 3, 5, 4 — all within the 7-day window (yesterday, today, 3 days ago)
+    // Scores: 3, 5, 4 - all within the 7-day window (yesterday, today, 3 days ago)
     const { error: moodError } = await admin.from("mood_logs").insert([
       {
         user_id: ALICE_ID,
@@ -108,7 +108,7 @@ test.describe("CBT weekly review: aggregate render", () => {
     if (moodError) throw new Error(`Seed mood_logs failed: ${moodError.message}`);
 
     // ── Seed activity_logs (3 planned, 2 completed) ──────────────────────────────
-    // scheduled_at = yesterday — safely within the window.
+    // scheduled_at = yesterday - safely within the window.
     // completedAt set on first two rows.
     const { error: actError } = await admin.from("activity_logs").insert([
       {
@@ -132,7 +132,7 @@ test.describe("CBT weekly review: aggregate render", () => {
         activity_name: "Yoga session",
         category: "mastery",
         scheduled_at: daysAgo(1),
-        completed_at: null, // planned only — not completed
+        completed_at: null, // planned only - not completed
         notes: "",
       },
     ]);
@@ -224,7 +224,7 @@ test.describe("CBT weekly review: aggregate render", () => {
 
     await page.goto("/modules/cbt/weekly-review");
 
-    // Wait for loading to finish — the loading text should disappear.
+    // Wait for loading to finish - the loading text should disappear.
     await expect(page.getByText("Loading your week...")).toBeHidden({ timeout: 15_000 });
 
     // Wait for the page title to be visible (h1 heading).
@@ -242,7 +242,7 @@ test.describe("CBT weekly review: aggregate render", () => {
       ),
     ).toBeHidden({ timeout: 5_000 });
 
-    // ── Assert: Activities — 2 completed, 3 planned, 67% rate ───────────────────
+    // ── Assert: Activities - 2 completed, 3 planned, 67% rate ───────────────────
     await expect(page.getByText("Activities")).toBeVisible({ timeout: 10_000 });
 
     // The completed count "2" should appear as a bold stat.
@@ -255,30 +255,30 @@ test.describe("CBT weekly review: aggregate render", () => {
     await expect(page.getByText("planned")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText("rate")).toBeVisible({ timeout: 10_000 });
 
-    // Assert the exact counts — there should be exactly a "2" and "3" in the activities section.
+    // Assert the exact counts - there should be exactly a "2" and "3" in the activities section.
     // The screen renders these as large bold numbers. We assert by finding the stat text elements.
     // To keep this deterministic, we look for "67%" (2/3 = 66.666...% → Math.round = 67%).
     await expect(page.getByText("67%")).toBeVisible({ timeout: 10_000 });
 
-    // ── Assert: Goal progress — "Run a 5K" with 2/3 milestones ─────────────────
+    // ── Assert: Goal progress - "Run a 5K" with 2/3 milestones ─────────────────
     await expect(page.getByText("Goal progress")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText("Run a 5K")).toBeVisible({ timeout: 10_000 });
 
     // Milestone progress text: t("weeklyReview.milestonesProgress", { done: 2, total: 3 }) = "2 / 3"
     await expect(page.getByText("2 / 3")).toBeVisible({ timeout: 10_000 });
 
-    // ── Assert: Thought records — 3 this week ───────────────────────────────────
+    // ── Assert: Thought records - 3 this week ───────────────────────────────────
     await expect(page.getByText("Thought records")).toBeVisible({ timeout: 10_000 });
 
     // The screen renders: <Text className="text-3xl font-bold">{weekRecords.length}</Text>
     // followed by <Text>this week</Text>.
     // weekRecords filters by created_at >= weekStart (today - 6 days).
-    // We seeded 3 records at daysAgo(0), daysAgo(1), daysAgo(2) — all >= weekStart.
+    // We seeded 3 records at daysAgo(0), daysAgo(1), daysAgo(2) - all >= weekStart.
     await expect(page.getByText("this week")).toBeVisible({ timeout: 10_000 });
 
     // Scope the "3" count assertion to the Thought records card to avoid ambiguity with
     // the mood chart's SVG y-axis label "3" which also appears as bare text in the DOM.
-    // Filter to the div that contains BOTH the "Thought records" heading AND "this week" —
+    // Filter to the div that contains BOTH the "Thought records" heading AND "this week" -
     // that uniquely identifies the records Card (not the chart, not any other card).
     const recordsCard = page
       .locator("div")

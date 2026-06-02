@@ -30,7 +30,7 @@ export function useNotificationSync(
 
     async function sync() {
       // Coalesce concurrent requests: if a sync is already running, flag that another
-      // pass is needed and let the running one repeat when it finishes — rather than
+      // pass is needed and let the running one repeat when it finishes - rather than
       // resetting the guard each effect re-run and racing two schedule/cancel passes.
       if (isSyncing.current) {
         pending.current = true;
@@ -65,7 +65,7 @@ export function useNotificationSync(
           }
         } while (pending.current);
       } catch {
-        // Background reconciliation — silently swallow errors.
+        // Background reconciliation - silently swallow errors.
       } finally {
         isSyncing.current = false;
       }

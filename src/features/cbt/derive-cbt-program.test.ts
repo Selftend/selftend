@@ -125,7 +125,7 @@ describe("deriveCbtProgram", () => {
       input({
         phaseIndex: 0,
         phaseStartedAt: PHASE_START,
-        // Goal created BEFORE phase entry — must not count toward the phase milestone
+        // Goal created BEFORE phase entry - must not count toward the phase milestone
         goals: [{ id: "g0", createdAt: "2026-05-03T00:00:00Z" }] as never,
         valuesProfile: {
           id: "v1",
@@ -166,7 +166,7 @@ describe("deriveCbtProgram", () => {
       input({
         phaseIndex: 0,
         selectedDate: selected,
-        // Mood log on a different day — should not count
+        // Mood log on a different day - should not count
         moodLogs: [
           {
             id: "m2",

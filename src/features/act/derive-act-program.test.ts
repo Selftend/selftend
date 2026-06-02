@@ -102,7 +102,7 @@ describe("deriveActProgram", () => {
       input({
         phaseIndex: 0,
         phaseStartedAt: PHASE_START,
-        // choice point created BEFORE phase entry — must not count
+        // choice point created BEFORE phase entry - must not count
         choicePoints: [
           {
             id: "cp0",

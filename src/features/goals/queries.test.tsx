@@ -40,7 +40,7 @@ function makeWrapper(client: QueryClient) {
   };
 }
 
-describe("useSaveGoal — invalidation", () => {
+describe("useSaveGoal - invalidation", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("invalidates list, detail, and milestones keys after creating a new goal", async () => {

@@ -255,7 +255,7 @@ describe("beliefs core_beliefs (integration)", () => {
     // so a tiny sleep guarantees the second transaction has a later timestamp).
     await new Promise((r) => setTimeout(r, 2));
 
-    // UPDATE a column — the BEFORE UPDATE trigger must bump updated_at.
+    // UPDATE a column - the BEFORE UPDATE trigger must bump updated_at.
     const update = await alice
       .from("core_beliefs")
       .update({ reinforcement_plan: "Updated plan" })

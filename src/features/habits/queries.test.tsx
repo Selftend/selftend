@@ -27,7 +27,7 @@ function makeWrapper(client: QueryClient) {
   };
 }
 
-describe("useHabitLogs — queryKey scope derivation", () => {
+describe("useHabitLogs - queryKey scope derivation", () => {
   let client: QueryClient;
   beforeEach(() => {
     jest.clearAllMocks();
@@ -94,7 +94,7 @@ describe("useHabitLogs — queryKey scope derivation", () => {
   });
 });
 
-describe("useHabits — includeArchived key folding", () => {
+describe("useHabits - includeArchived key folding", () => {
   let client: QueryClient;
   beforeEach(() => {
     jest.clearAllMocks();

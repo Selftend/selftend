@@ -13,7 +13,7 @@ describe("formatTimestamp", () => {
   });
 
   it("includes the day of the month of the ISO input", () => {
-    // May 24 — look for '24' somewhere in the output
+    // May 24 - look for '24' somewhere in the output
     expect(formatTimestamp(ISO)).toMatch(/24/);
   });
 

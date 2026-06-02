@@ -131,7 +131,7 @@ export default function HomeScreen() {
 
   const header = (
     <View className="gap-6 pb-3">
-      {/* Hero — card-style with subtle purple tint */}
+      {/* Hero - card-style with subtle purple tint */}
       <View className="rounded-2xl border border-primary/30 bg-primary/5 p-6">
         <Text variant="eyebrow">
           {t(isToday ? "today.eyebrow" : "today.eyebrowPast", { date: dateLabel })}

@@ -15,8 +15,8 @@ These settings live outside the repo (Supabase Dashboard). Apply per environment
 
 ### Supabase Dashboard
 
-- **Authentication → Sign In / Providers → Email → Minimum password length:** `12` (production). Required-characters field left empty (NIST-modern stance — length over class rules). Also mirrored in `supabase/config.toml` as `minimum_password_length = 12` for local dev parity.
-- **Authentication → Settings → Email confirmations:** ON (already configured via `[auth.email]` in `config.toml` — verify the Dashboard view matches).
+- **Authentication → Sign In / Providers → Email → Minimum password length:** `12` (production). Required-characters field left empty (NIST-modern stance - length over class rules). Also mirrored in `supabase/config.toml` as `minimum_password_length = 12` for local dev parity.
+- **Authentication → Settings → Email confirmations:** ON (already configured via `[auth.email]` in `config.toml` - verify the Dashboard view matches).
 - **Authentication → Multi-Factor → TOTP (App Authenticator):** Enabled. UI for end-users to enroll ships in a future phase; the factor type is enabled in advance so it's ready when that UI lands.
 
 ### Not currently enabled (paid-plan gated)
@@ -25,14 +25,14 @@ These settings live outside the repo (Supabase Dashboard). Apply per environment
 
 ### CAPTCHA
 
-Not enabled. Decision: relying on Supabase's built-in per-IP rate limits + the client-side `useAuthThrottle` UX layer for now. Re-evaluate if abuse appears in auth logs — at that point, options are (a) Cloudflare Turnstile via Supabase's CAPTCHA toggle (server-enforced, all platforms), or (b) an Edge Function proxy verifying Turnstile tokens for web only.
+Not enabled. Decision: relying on Supabase's built-in per-IP rate limits + the client-side `useAuthThrottle` UX layer for now. Re-evaluate if abuse appears in auth logs - at that point, options are (a) Cloudflare Turnstile via Supabase's CAPTCHA toggle (server-enforced, all platforms), or (b) an Edge Function proxy verifying Turnstile tokens for web only.
 
 ### Verification after deploy
 
 Smoke test:
 
-- Sign up with an 11-char password — must be rejected with `weak_password / length` ("Password should be at least 12 characters").
-- Sign up with a 12-char password — must succeed.
+- Sign up with an 11-char password - must be rejected with `weak_password / length` ("Password should be at least 12 characters").
+- Sign up with a 12-char password - must succeed.
 
 ## Support Workflow
 

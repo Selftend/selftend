@@ -68,7 +68,7 @@ function EmotionEditorModal({ state, addPosition, onClose }: EmotionEditorModalP
   return (
     <Modal transparent animationType="fade" visible onRequestClose={onClose}>
       <Pressable className="flex-1 items-center justify-center bg-black/50 p-6" onPress={onClose}>
-        {/* Inner card — stops tap-through to backdrop */}
+        {/* Inner card - stops tap-through to backdrop */}
         <Pressable className="w-full max-w-[400px] rounded-2xl bg-card p-4" onPress={() => {}}>
           <Text variant="h3" className="mb-4">
             {title}

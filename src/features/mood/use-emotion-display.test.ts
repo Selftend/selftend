@@ -10,15 +10,15 @@ jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
   useEmotionPreferences: jest.fn(),
 }));
 
-// Mock the session — userId is needed to enable the query (mocked anyway)
+// Mock the session - userId is needed to enable the query (mocked anyway)
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));
 
-// Mock i18n — make t() return the key unchanged so we can assert on i18n key
+// Mock i18n - make t() return the key unchanged so we can assert on i18n key
 // fallback. `t` is a stable reference (as real react-i18next is per-language) so
 // the memoized allEmotions can be asserted as referentially stable.
-const stableT = (key: string) => key; // returns key unchanged — fallback case
+const stableT = (key: string) => key; // returns key unchanged - fallback case
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({ t: stableT }),
 }));
@@ -62,7 +62,7 @@ function seededDefaults(): EmotionPreference[] {
   return DEFAULT_EMOTIONS.map((e, i) => pref({ emotionId: e.id, position: i }));
 }
 
-describe("useEmotionDisplay — resolveEmotion", () => {
+describe("useEmotionDisplay - resolveEmotion", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("a custom preference wins over the builtin for the same id", () => {
@@ -131,7 +131,7 @@ describe("useEmotionDisplay — resolveEmotion", () => {
   });
 });
 
-describe("useEmotionDisplay — allEmotions (rows-authoritative)", () => {
+describe("useEmotionDisplay - allEmotions (rows-authoritative)", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("derives the list ONLY from the DB rows, not from DEFAULT_EMOTIONS", () => {
@@ -254,7 +254,7 @@ describe("useEmotionDisplay — allEmotions (rows-authoritative)", () => {
     setPrefs([pref({ emotionId: "happy", position: 0 })]);
     const { result } = renderHook(() => useEmotionDisplay());
 
-    // "anxious" has no row, but is a built-in default — resolve via the fallback.
+    // "anxious" has no row, but is a built-in default - resolve via the fallback.
     const resolved = result.current.resolveEmotion("anxious");
     expect(resolved.emoji).toBe("😰");
     expect(resolved.isCustom).toBe(false);
@@ -269,7 +269,7 @@ describe("useEmotionDisplay — allEmotions (rows-authoritative)", () => {
   });
 });
 
-describe("useEmotionDisplay — name overrides", () => {
+describe("useEmotionDisplay - name overrides", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("a built-in with a name preference shows the overridden name", () => {

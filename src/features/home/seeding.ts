@@ -1,5 +1,5 @@
 // Widgets seeded for a brand-new user. The daily check-in (mood-checkin) is a
-// normal, movable, removable widget seeded at the top — no longer pinned.
+// normal, movable, removable widget seeded at the top - no longer pinned.
 export const DEFAULT_WIDGET_IDS = [
   "mood-checkin",
   "mood-trend",

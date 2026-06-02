@@ -91,7 +91,7 @@ export function DateBar() {
   });
 
   // Scroll so the given day sits in the centre. Days too close to either end
-  // can't centre — scrollToIndex clamps to the edge, which is what we want.
+  // can't centre - scrollToIndex clamps to the edge, which is what we want.
   const centerOn = (key: string, animated = true) => {
     const index = daysBeforeToday(key); // newest-first: today = 0
     if (index < 0) return;
@@ -166,7 +166,7 @@ export function DateBar() {
   return (
     <View className="flex-row items-center gap-2 border-b border-border bg-background px-3 py-2">
       {/* Calendar jump: opens an in-app month picker (all platforms). Month
-          navigation only browses — the date changes only when a day is tapped. */}
+          navigation only browses - the date changes only when a day is tapped. */}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t("dateBar.openCalendar")}

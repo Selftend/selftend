@@ -66,7 +66,7 @@ host name. This keeps `http://localhost:54321` working from a physical phone.
 `.env.local.start-prod-hidden` for the run and wipe `/tmp/metro-cache`,
 `node_modules/.cache`, and `.expo/web` before launching. This is required
 because in dev mode `@expo/metro-config` builds the virtual env module via
-`require.context` over every `.env*` file and merges them over `process.env` —
+`require.context` over every `.env*` file and merges them over `process.env` -
 so `.env.local` would otherwise silently override the hosted URL from `.env`.
 The original `.env.local` is restored on exit, signals, or uncaught exceptions;
 if a `SIGKILL` ever leaves the hidden file behind, the next `start:prod` run

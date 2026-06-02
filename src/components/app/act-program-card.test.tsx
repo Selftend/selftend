@@ -75,7 +75,7 @@ describe("ActProgramCard", () => {
       );
 
       // Ready banner is visible
-      expect(screen.getByText("You've finished this phase — ready for the next?")).toBeTruthy();
+      expect(screen.getByText("You've finished this phase - ready for the next?")).toBeTruthy();
 
       // Advance button is visible
       const advanceBtn = screen.getByText("Advance to next phase");

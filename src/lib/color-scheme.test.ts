@@ -24,7 +24,7 @@ import { useThemeStore } from "@/src/stores/theme-store";
 import { useAppColorScheme } from "@/src/lib/color-scheme";
 
 // ---------------------------------------------------------------------------
-// Mock nativewind — only colorScheme.set is used by the source
+// Mock nativewind - only colorScheme.set is used by the source
 // ---------------------------------------------------------------------------
 
 jest.mock("nativewind", () => ({
@@ -41,7 +41,7 @@ jest.mock("@/src/stores/theme-store", () => ({
 
 const mockNwSet = nwColorScheme.set as jest.Mock;
 const mockUseThemeStore = useThemeStore as unknown as jest.Mock;
-// react-native's useColorScheme is provided by jest-expo — mock it via spyOn
+// react-native's useColorScheme is provided by jest-expo - mock it via spyOn
 const mockUseColorScheme = jest.spyOn(require("react-native"), "useColorScheme");
 
 const mockHydrate = jest.fn().mockResolvedValue(undefined);
@@ -55,7 +55,7 @@ function setupStore(preference: "light" | "dark" | "system") {
 
 // ---------------------------------------------------------------------------
 
-describe("useAppColorScheme — web (Platform.OS = web)", () => {
+describe("useAppColorScheme - web (Platform.OS = web)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockHydrate.mockResolvedValue(undefined);
@@ -112,14 +112,14 @@ describe("useAppColorScheme — web (Platform.OS = web)", () => {
   });
 });
 
-describe("useAppColorScheme — native (Platform.OS = ios)", () => {
+describe("useAppColorScheme - native (Platform.OS = ios)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockHydrate.mockResolvedValue(undefined);
     Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
   });
 
-  it("passes PREFERENCE (not resolved) to nativewind.set on native — system", () => {
+  it("passes PREFERENCE (not resolved) to nativewind.set on native - system", () => {
     setupStore("system");
     mockUseColorScheme.mockReturnValue("dark");
 
@@ -129,7 +129,7 @@ describe("useAppColorScheme — native (Platform.OS = ios)", () => {
     expect(mockNwSet).toHaveBeenCalledWith("system");
   });
 
-  it("passes PREFERENCE to nativewind.set on native — explicit dark", () => {
+  it("passes PREFERENCE to nativewind.set on native - explicit dark", () => {
     setupStore("dark");
     mockUseColorScheme.mockReturnValue("light");
 
@@ -138,7 +138,7 @@ describe("useAppColorScheme — native (Platform.OS = ios)", () => {
     expect(mockNwSet).toHaveBeenCalledWith("dark");
   });
 
-  it("passes PREFERENCE to nativewind.set on native — explicit light", () => {
+  it("passes PREFERENCE to nativewind.set on native - explicit light", () => {
     setupStore("light");
     mockUseColorScheme.mockReturnValue("dark");
 
@@ -171,7 +171,7 @@ describe("useAppColorScheme — native (Platform.OS = ios)", () => {
 
     const { result } = renderHook(() => useAppColorScheme());
 
-    // Source: `useColorScheme() === "dark" ? "dark" : "light"` — null → "light"
+    // Source: `useColorScheme() === "dark" ? "dark" : "light"` - null → "light"
     expect(result.current).toBe("light");
   });
 });

@@ -32,7 +32,7 @@ test.describe("edit and delete a journal entry", () => {
     // editor.save = "Save"
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
-    // After save the app redirects to /tools/journal/[id] — detail screen.
+    // After save the app redirects to /tools/journal/[id] - detail screen.
     await expect(page).toHaveURL(/\/tools\/journal\/[^/]+$/, { timeout: 15_000 });
 
     // EDIT: detail.edit = "Edit"

@@ -38,7 +38,7 @@ test.describe("create journal entry", () => {
 
     // The entry also appears in the journal list. A today entry renders both in
     // the "Today" day card and the full History list, so the title matches twice
-    // (see JournalListScreen + journal-list-screen.test.tsx) — assert the first.
+    // (see JournalListScreen + journal-list-screen.test.tsx) - assert the first.
     await page.goto("/tools/journal");
     await expect(page.getByText(title).first()).toBeVisible({ timeout: 10_000 });
   });

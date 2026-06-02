@@ -115,7 +115,7 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
         widgets: [
           {
             name: "MoodCheckin",
-            label: "Selftend — Mood check-in",
+            label: "Selftend - Mood check-in",
             description: "Tap a face to log how you feel right now",
             minWidth: "250dp",
             minHeight: "70dp",
@@ -129,7 +129,7 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
           },
           {
             name: "Breathing",
-            label: "Selftend — Breathing",
+            label: "Selftend - Breathing",
             description: "Quick-launch a breathing exercise",
             minWidth: "250dp",
             minHeight: "70dp",
@@ -143,7 +143,7 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
           },
           {
             name: "Grounding",
-            label: "Selftend — Grounding",
+            label: "Selftend - Grounding",
             description: "Quick-launch a grounding technique",
             minWidth: "250dp",
             minHeight: "70dp",
@@ -157,7 +157,7 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
           },
           {
             name: "Mindfulness",
-            label: "Selftend — Mindfulness",
+            label: "Selftend - Mindfulness",
             description: "Quick-launch a mindfulness exercise",
             minWidth: "250dp",
             minHeight: "150dp",
@@ -171,7 +171,7 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
           },
           {
             name: "Activity",
-            label: "Selftend — Schedule activity",
+            label: "Selftend - Schedule activity",
             description: "Pick a life domain and start a new activity",
             minWidth: "250dp",
             minHeight: "150dp",

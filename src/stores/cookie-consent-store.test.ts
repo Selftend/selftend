@@ -9,9 +9,9 @@ const INITIAL_STATE = {
   acceptedAt: null,
 };
 
-describe("useCookieConsentStore — in-memory (Platform.OS = ios)", () => {
+describe("useCookieConsentStore - in-memory (Platform.OS = ios)", () => {
   beforeEach(() => {
-    // Reset to initial state; there is no reset() action — patch directly.
+    // Reset to initial state; there is no reset() action - patch directly.
     useCookieConsentStore.setState(INITIAL_STATE);
   });
 
@@ -60,7 +60,7 @@ describe("useCookieConsentStore — in-memory (Platform.OS = ios)", () => {
   });
 });
 
-describe("useCookieConsentStore — web persistence path", () => {
+describe("useCookieConsentStore - web persistence path", () => {
   const STORAGE_KEY = "selftend_cookie_consent";
   let storage: Record<string, string>;
 

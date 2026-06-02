@@ -39,7 +39,7 @@ export function useSaveMindfulnessSession(userId: string | null) {
     mutationFn: (input: MindfulnessSessionInput) => saveMindfulnessSession(userId!, input),
     onSuccess: async () => {
       if (!userId) return;
-      // Shares the mindfulness_sessions table with breathing/grounding — refresh all three.
+      // Shares the mindfulness_sessions table with breathing/grounding - refresh all three.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["breathing"] }),
         queryClient.invalidateQueries({ queryKey: ["grounding"] }),

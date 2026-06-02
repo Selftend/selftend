@@ -101,7 +101,7 @@ function setupHook({
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("useWizardDraft — stepIndex and goToStep", () => {
+describe("useWizardDraft - stepIndex and goToStep", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("starts at step 0", () => {
@@ -141,7 +141,7 @@ describe("useWizardDraft — stepIndex and goToStep", () => {
   });
 });
 
-describe("useWizardDraft — handleNext", () => {
+describe("useWizardDraft - handleNext", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("advances to next step when validation passes", async () => {
@@ -164,7 +164,7 @@ describe("useWizardDraft — handleNext", () => {
   });
 });
 
-describe("useWizardDraft — handleSave", () => {
+describe("useWizardDraft - handleSave", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("calls onSave with form values, then reset, then shows success toast", async () => {
@@ -210,7 +210,7 @@ describe("useWizardDraft — handleSave", () => {
   });
 });
 
-describe("useWizardDraft — isLastStep", () => {
+describe("useWizardDraft - isLastStep", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("isLastStep is false on the first step", () => {

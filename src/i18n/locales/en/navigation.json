@@ -222,7 +222,7 @@
     "sectionModules": "Modules",
     "sectionTools": "Tools",
     "addPanel": {
-      "subtitle": "Pick a tool — its widgets appear below. There's nothing here you have to use.",
+      "subtitle": "Pick a tool - its widgets appear below. There's nothing here you have to use.",
       "searchPlaceholder": "Search widgets...",
       "allCategories": "All categories",
       "noResults": "No widgets match your search."
@@ -331,7 +331,7 @@
         "title": "CBT programme",
         "metaDesc": "Your guided programme progress.",
         "notStarted": "Start the guided CBT programme.",
-        "complete": "Programme complete — nicely done.",
+        "complete": "Programme complete - nicely done.",
         "open": "Open programme"
       },
       "cbtWorry": {
@@ -367,7 +367,7 @@
         "title": "Exposure ladder",
         "metaDesc": "Face avoided situations step by step.",
         "progress": "{{done}} / {{total}} steps done",
-        "allDone": "Every step complete — nicely done.",
+        "allDone": "Every step complete - nicely done.",
         "empty": "Build a fear ladder to start.",
         "continue": "Continue",
         "build": "Build a ladder"
@@ -401,7 +401,7 @@
         "metaDesc": "Your ACT programme progress.",
         "notStarted": "Start the ACT programme.",
         "phaseProgress": "Phase {{current}} of {{total}}",
-        "complete": "Programme complete — well done.",
+        "complete": "Programme complete - well done.",
         "open": "Open programme"
       },
       "actAcceptancePrompt": {

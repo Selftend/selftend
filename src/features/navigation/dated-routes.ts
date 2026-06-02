@@ -1,13 +1,13 @@
-// The date bar appears only on day-scoped screens — ones that show or capture
+// The date bar appears only on day-scoped screens - ones that show or capture
 // entries *for the selected day*. Every screen listed here MUST read
 // `useSelectedDate()` and filter its content by it, or the bar would be inert.
 //
 // Intentionally excluded (no date bar): persistent "structure" screens that are
-// not single-day views — Goals, Values, Core beliefs, Behavioural activation
+// not single-day views - Goals, Values, Core beliefs, Behavioural activation
 // (activities), Exposure hierarchies, and Procrastination tasks. These manage
 // long-lived records, so a per-day filter would not make sense.
 //
-// Per-entry detail/edit routes are also excluded — they show one entry with its
+// Per-entry detail/edit routes are also excluded - they show one entry with its
 // own date.
 const DATED_EXACT = new Set<string>([
   "/",

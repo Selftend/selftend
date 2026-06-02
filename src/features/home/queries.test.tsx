@@ -45,7 +45,7 @@ function makeWrapper(client: QueryClient) {
   };
 }
 
-describe("useWidgetPreferences — listOrSeed", () => {
+describe("useWidgetPreferences - listOrSeed", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("returns existing widgets when present without seeding", async () => {
@@ -110,7 +110,7 @@ describe("useWidgetPreferences — listOrSeed", () => {
   });
 });
 
-describe("useAddWidget — nextPosition", () => {
+describe("useAddWidget - nextPosition", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("computes nextPosition as max(position) + 1 when widgets exist", async () => {

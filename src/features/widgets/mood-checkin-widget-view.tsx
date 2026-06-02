@@ -1,6 +1,6 @@
 // The React Compiler (experiments.reactCompiler: true) transforms components in ways that
 // react-native-android-widget's JSX-to-RemoteViews pipeline mistakes for "Invalid Hook Call".
-// Opt the entire widget view file out of the compiler — these are not real React components.
+// Opt the entire widget view file out of the compiler - these are not real React components.
 "use no memo";
 
 import { FlexWidget, TextWidget } from "react-native-android-widget";

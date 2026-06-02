@@ -48,7 +48,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
     const authSubscription = supabase.auth.onAuthStateChange((event, nextSession) => {
       // Purge all cached PHI (and any still-valid signed avatar URLs) on sign-out so the
-      // previous user's data never lingers in memory — matters most on native, which has
+      // previous user's data never lingers in memory - matters most on native, which has
       // no full page reload to drop the in-memory QueryClient.
       if (event === "SIGNED_OUT") {
         queryClient.clear();

@@ -218,7 +218,7 @@ describe("web_push_subscriptions (integration)", () => {
       expect(bobUpsert.error).toBeNull();
 
       // Alice subscribes with the SAME endpoint (same browser, different account).
-      // Must succeed with her own row — not target Bob's row and fail the update_own policy.
+      // Must succeed with her own row - not target Bob's row and fail the update_own policy.
       const aliceUpsert = await alice.from("web_push_subscriptions").upsert(
         {
           user_id: SEED_USERS.alice.id,

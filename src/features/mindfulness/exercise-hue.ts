@@ -93,7 +93,7 @@ export function hueGradient(hue: ExerciseHue, isDark: boolean): [string, string]
 }
 
 /**
- * ToolHue is a strict subset of TintToken — all 8 hue values exist as tint tokens
+ * ToolHue is a strict subset of TintToken - all 8 hue values exist as tint tokens
  * with the same name. This identity function makes the relationship explicit
  * and type-checks the subset constraint at compile time.
  */

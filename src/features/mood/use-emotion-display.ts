@@ -76,7 +76,7 @@ export function useEmotionDisplay() {
 
   // The list is now derived ONLY from the persisted rows (DB is authoritative),
   // not from DEFAULT_EMOTIONS. While the query is loading, `prefs` is undefined
-  // and this is empty — consumers show a spinner instead of flashing the
+  // and this is empty - consumers show a spinner instead of flashing the
   // constants list (defaults are seeded as real rows on first use).
   const allEmotions = useMemo<EmotionDisplay[]>(() => {
     const visible = (prefs ?? []).filter((p) => !p.removed);

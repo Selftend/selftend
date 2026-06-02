@@ -32,7 +32,7 @@ export function DateTimeField({ value, onChange, accessibilityLabel }: DateTimeF
   );
 
   // Guard against an empty/malformed ISO reaching the picker (the `value: string`
-  // contract doesn't guarantee validity) — fall back to "now".
+  // contract doesn't guarantee validity) - fall back to "now".
   const parsedDate = useMemo(() => {
     const d = dayjs(value);
     return d.isValid() ? d : dayjs();
@@ -62,12 +62,12 @@ export function DateTimeField({ value, onChange, accessibilityLabel }: DateTimeF
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        {/* Dimmed backdrop — tap anywhere outside the card to close */}
+        {/* Dimmed backdrop - tap anywhere outside the card to close */}
         <Pressable
           className="flex-1 items-center justify-center bg-black/50 p-6"
           onPress={() => setOpen(false)}
         >
-          {/* Card — stop propagation so tapping inside doesn't dismiss */}
+          {/* Card - stop propagation so tapping inside doesn't dismiss */}
           <Pressable className="w-full max-w-[340px] rounded-2xl bg-card p-3" onPress={() => {}}>
             <DateTimePicker
               mode="single"

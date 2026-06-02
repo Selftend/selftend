@@ -9,9 +9,9 @@ import {
 
 /**
  * Routes:
- *   /modules/act/values           — ActValuesScreen
- *   /modules/act/values/[domain]  — ActValueDomainScreen (upsert a single domain)
- *   /modules/act/values/bulls-eye — ActBullsEyeScreen
+ *   /modules/act/values           - ActValuesScreen
+ *   /modules/act/values/[domain]  - ActValueDomainScreen (upsert a single domain)
+ *   /modules/act/values/bulls-eye - ActBullsEyeScreen
  *
  * Valid domain params: "work" | "leisure" | "relationships" | "personalGrowth"
  * Domain screen labels (act.json > values):
@@ -21,14 +21,14 @@ import {
  *   - "Health & personal growth" (personalGrowth)
  *
  * Domain screen wizard steps (5 steps):
- *   1. value     — Textarea "What do you value here?" (valueStatementLabel)
- *   2. current   — Textarea "What are you already doing that reflects this value?"
- *   3. desired   — Textarea "What would you like to do more of?"
- *   4. barriers  — Textarea "What gets in the way?"
- *   5. ratings   — NumberRating 1–10 for importance + NumberRating 1–10 for alignment
+ *   1. value     - Textarea "What do you value here?" (valueStatementLabel)
+ *   2. current   - Textarea "What are you already doing that reflects this value?"
+ *   3. desired   - Textarea "What would you like to do more of?"
+ *   4. barriers  - Textarea "What gets in the way?"
+ *   5. ratings   - NumberRating 1–10 for importance + NumberRating 1–10 for alignment
  *
  * After save: router.back() → returns to /modules/act/values
- * Values are UPSERTED (profile-like) — no delete affordance on values screen.
+ * Values are UPSERTED (profile-like) - no delete affordance on values screen.
  *
  * Bulls-eye screen (act.json > values.bullsEye):
  *   - NumberRating 1–10 per domain (work, leisure, relationships, personalGrowth)
@@ -36,7 +36,7 @@ import {
  *   - After save: toast "Ratings saved" → router.back()
  *
  * Cleanup: deleteAllActLogsForUser covers act_value_entries + act_bulls_eye_snapshots.
- * NOTE: No delete affordance on values — it's an upsert flow, not log/delete.
+ * NOTE: No delete affordance on values - it's an upsert flow, not log/delete.
  */
 
 test.describe("ACT values: edit a domain value and save a bulls-eye check-in", () => {
@@ -92,7 +92,7 @@ test.describe("ACT values: edit a domain value and save a bulls-eye check-in", (
     // Both use NumberRating min=1 max=10 step=1. We click "8" for importance.
     // There are two sets of buttons 1–10, so we need .first() / .last() or
     // targeting by aria-label group. Use .nth(0) set and .nth(1) set approach:
-    // We get all buttons named "8" — first is importance, second is alignment.
+    // We get all buttons named "8" - first is importance, second is alignment.
     await page.getByRole("button", { name: "8", exact: true }).first().click();
     // Alignment rating: click second "6" button
     await page.getByRole("button", { name: "6", exact: true }).last().click();
@@ -132,13 +132,13 @@ test.describe("ACT values: edit a domain value and save a bulls-eye check-in", (
     // Use nth() to select the correct domain's instance of a given number.
     // nth(0)=work, nth(1)=leisure, nth(2)=relationships, nth(3)=personalGrowth.
 
-    // Work: 7 — first occurrence of "7"
+    // Work: 7 - first occurrence of "7"
     await page.getByRole("button", { name: "7", exact: true }).nth(0).click();
-    // Leisure: 5 — first occurrence of "5"
+    // Leisure: 5 - first occurrence of "5"
     await page.getByRole("button", { name: "5", exact: true }).nth(1).click();
-    // Relationships: 8 — first occurrence of "8" is in work range; leisure=nth(1), relationships=nth(2)
+    // Relationships: 8 - first occurrence of "8" is in work range; leisure=nth(1), relationships=nth(2)
     await page.getByRole("button", { name: "8", exact: true }).nth(2).click();
-    // Health: 6 — nth(3)
+    // Health: 6 - nth(3)
     await page.getByRole("button", { name: "6", exact: true }).nth(3).click();
 
     // ── Save the ratings ──────────────────────────────────────────────────────

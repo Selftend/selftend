@@ -142,7 +142,7 @@ export default function ValuesScreen() {
                       <Pressable
                         accessibilityRole="button"
                         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                        accessibilityLabel={`${t(`personalValues.${key}.label`)} — ${t("values.priorityMoveUp")}`}
+                        accessibilityLabel={`${t(`personalValues.${key}.label`)} - ${t("values.priorityMoveUp")}`}
                         accessibilityState={{ disabled: index === 0 }}
                         disabled={index === 0}
                         onPress={() => movePriority(index, -1)}
@@ -153,7 +153,7 @@ export default function ValuesScreen() {
                       <Pressable
                         accessibilityRole="button"
                         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                        accessibilityLabel={`${t(`personalValues.${key}.label`)} — ${t("values.priorityMoveDown")}`}
+                        accessibilityLabel={`${t(`personalValues.${key}.label`)} - ${t("values.priorityMoveDown")}`}
                         accessibilityState={{ disabled: index === priorities.length - 1 }}
                         disabled={index === priorities.length - 1}
                         onPress={() => movePriority(index, 1)}
@@ -164,7 +164,7 @@ export default function ValuesScreen() {
                       <Pressable
                         accessibilityRole="button"
                         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                        accessibilityLabel={`${t(`personalValues.${key}.label`)} — ${t("values.priorityRemove")}`}
+                        accessibilityLabel={`${t(`personalValues.${key}.label`)} - ${t("values.priorityRemove")}`}
                         onPress={() => removePriority(key)}
                       >
                         <Text variant="muted">{t("values.priorityRemove")}</Text>
@@ -184,7 +184,7 @@ export default function ValuesScreen() {
                       key={key}
                       accessibilityRole="button"
                       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                      accessibilityLabel={`${t(`personalValues.${key}.label`)} — ${t("values.priorityAdd")}`}
+                      accessibilityLabel={`${t(`personalValues.${key}.label`)} - ${t("values.priorityAdd")}`}
                       onPress={() => addPriority(key)}
                       className="rounded-full border border-primary px-3 py-1"
                     >
@@ -215,7 +215,7 @@ export default function ValuesScreen() {
                       <Pressable
                         key={tier}
                         accessibilityRole="button"
-                        accessibilityLabel={`${label} — ${t(`values.tier${tier}`)}`}
+                        accessibilityLabel={`${label} - ${t(`values.tier${tier}`)}`}
                         accessibilityState={{ selected: currentTier === tier }}
                         onPress={() => setTier(def.key, currentTier === tier ? null : tier)}
                         className="flex-1"

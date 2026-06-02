@@ -43,7 +43,7 @@ function ensureCacheMatchesEnv(projectRoot = process.cwd()) {
   try {
     previous = fs.readFileSync(markerPath, "utf8").trim();
   } catch {
-    // marker missing — treat as mismatch
+    // marker missing - treat as mismatch
   }
 
   if (previous === fingerprint) {
@@ -59,7 +59,7 @@ function ensureCacheMatchesEnv(projectRoot = process.cwd()) {
   fs.mkdirSync(metroCacheDir, { recursive: true });
   fs.writeFileSync(markerPath, fingerprint);
   console.log(
-    `[env-cache] EXPO_PUBLIC_* fingerprint changed (${previous?.slice(0, 8) ?? "none"} → ${fingerprint.slice(0, 8)}) — wiped metro/babel/expo caches.`,
+    `[env-cache] EXPO_PUBLIC_* fingerprint changed (${previous?.slice(0, 8) ?? "none"} → ${fingerprint.slice(0, 8)}) - wiped metro/babel/expo caches.`,
   );
   return true;
 }
@@ -67,7 +67,7 @@ function ensureCacheMatchesEnv(projectRoot = process.cwd()) {
 /**
  * In dev mode @expo/metro-config builds the virtual env module via
  * require.context over `.env`, `.env.development`, `.env.local`,
- * `.env.development.local` and merges them over process.env — so `.env.local`
+ * `.env.development.local` and merges them over process.env - so `.env.local`
  * always wins, regardless of `EXPO_NO_DOTENV` or `--env-file`. The only
  * reliable way to run dev-client against the prod URL is to hide `.env.local`
  * for the duration of the run.

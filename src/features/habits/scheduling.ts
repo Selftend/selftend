@@ -54,7 +54,7 @@ export function isAtMissTwiceRisk(habit: Habit, logs: HabitLog[], now: Date = ne
   const yesterdayStr = localDateKey(yesterday);
   const todayStr = localDateKey(today);
 
-  // A habit can't have been "missed" before it existed — a habit created today
+  // A habit can't have been "missed" before it existed - a habit created today
   // hasn't skipped yesterday.
   if (localDateKey(new Date(habit.createdAt)) > yesterdayStr) return false;
 

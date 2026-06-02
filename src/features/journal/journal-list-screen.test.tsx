@@ -129,7 +129,7 @@ describe("JournalListScreen", () => {
     // Single "History" section header (replaces the old Today/Earlier/Older grouping).
     expect(screen.getByText("History")).toBeTruthy();
     // History lists every entry (the day card may also surface the selected day's
-    // entry — that exact duplication is covered deterministically in the day-card
+    // entry - that exact duplication is covered deterministically in the day-card
     // unit test; here we only assert each entry is present at least once).
     expect(screen.getAllByText("Morning pages").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Quiet afternoon")).toBeTruthy();

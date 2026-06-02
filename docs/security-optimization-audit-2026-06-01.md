@@ -10,16 +10,16 @@
 
 Fixed, by area:
 
-- **DB migrations** — `20260567` perf indexes (mood_logs + early CBT family + FK children); `20260568` `export_user_data()` now includes the 11 ACT tables + `plan_items` + `widget_preferences` (append-wrap + integration-test guard); `20260569` server-side avatar storage cleanup in `delete_user_account()` + `REVOKE EXECUTE … FROM public, anon` on both RPCs; `20260570` free-text length CHECKs (+ `profiles.display_name`); `20260571` `web_push_subscriptions.endpoint` allowlist CHECK + per-user row-cap trigger.
-- **Edge / security** — SSRF allowlist (`isAllowedPushEndpoint`, unit-tested) gates `send-web-reminders`; PKCE flow + post-callback URL scrub; `queryClient.clear()` on `SIGNED_OUT`; erasure can no longer be aborted by avatar cleanup (try/catch + regression test); `removeStoredAvatar` surfaces errors; `updateUserDisplayName` length guard; worry/beliefs zod `.max()`; CSP `script-src 'self'` + `object-src 'none'`.
-- **Performance** — mood history virtualized (`SectionList`, emotion resolver hoisted, `MoodEntryCard` memoized); O(n²) → O(n) in `useCbtInsights`; memoized aggregations in `useCbtInsights`/`MoodTrackerScreen`/`useCbtProgram`/`useActProgram`; bounded top-level list queries (`.limit(500)`); home-grid widget body memoized; `I18nProvider` value/`setLanguage` memoized; `bg` locale lazy-loaded; `react-easy-crop` web-gated out of the native bundle; shared mood cache limit.
+- **DB migrations** - `20260567` perf indexes (mood_logs + early CBT family + FK children); `20260568` `export_user_data()` now includes the 11 ACT tables + `plan_items` + `widget_preferences` (append-wrap + integration-test guard); `20260569` server-side avatar storage cleanup in `delete_user_account()` + `REVOKE EXECUTE … FROM public, anon` on both RPCs; `20260570` free-text length CHECKs (+ `profiles.display_name`); `20260571` `web_push_subscriptions.endpoint` allowlist CHECK + per-user row-cap trigger.
+- **Edge / security** - SSRF allowlist (`isAllowedPushEndpoint`, unit-tested) gates `send-web-reminders`; PKCE flow + post-callback URL scrub; `queryClient.clear()` on `SIGNED_OUT`; erasure can no longer be aborted by avatar cleanup (try/catch + regression test); `removeStoredAvatar` surfaces errors; `updateUserDisplayName` length guard; worry/beliefs zod `.max()`; CSP `script-src 'self'` + `object-src 'none'`.
+- **Performance** - mood history virtualized (`SectionList`, emotion resolver hoisted, `MoodEntryCard` memoized); O(n²) → O(n) in `useCbtInsights`; memoized aggregations in `useCbtInsights`/`MoodTrackerScreen`/`useCbtProgram`/`useActProgram`; bounded top-level list queries (`.limit(500)`); home-grid widget body memoized; `I18nProvider` value/`setLanguage` memoized; `bg` locale lazy-loaded; `react-easy-crop` web-gated out of the native bundle; shared mood cache limit.
 
-**Deferred (4) — need image tooling or a native build that can't run in this environment:**
+**Deferred (4) - need image tooling or a native build that can't run in this environment:**
 
-1. **Help/onboarding PNGs → WebP** (~11 MB) — needs `cwebp`/`pngquant` and re-pathing assets.
-2. **Widget-preview art** — the 5 byte-identical previews need purpose-specific images (design work); the perf gain is real but the artwork is not auto-generatable here.
-3. **Remove `expo-system-ui`** — Expo may autolink it natively; removal must be validated against a preview/dev EAS build.
-4. **`useCbtInsights` → Postgres RPC** — the heavy 10-query Home fan-out; the _mitigations_ (indexes + memoization + bounded queries + shared mood cache) are applied, but moving aggregation server-side is a larger refactor left for a dedicated change.
+1. **Help/onboarding PNGs → WebP** (~11 MB) - needs `cwebp`/`pngquant` and re-pathing assets.
+2. **Widget-preview art** - the 5 byte-identical previews need purpose-specific images (design work); the perf gain is real but the artwork is not auto-generatable here.
+3. **Remove `expo-system-ui`** - Expo may autolink it natively; removal must be validated against a preview/dev EAS build.
+4. **`useCbtInsights` → Postgres RPC** - the heavy 10-query Home fan-out; the _mitigations_ (indexes + memoization + bounded queries + shared mood cache) are applied, but moving aggregation server-side is a larger refactor left for a dedicated change.
 
 ## Executive summary
 

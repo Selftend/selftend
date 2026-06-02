@@ -167,7 +167,7 @@ describe("RLS: profile-pics storage", () => {
 });
 
 // ─── RLS: web_push_subscriptions ─────────────────────────────────────────────
-// The file header claimed coverage but no real test existed — added here.
+// The file header claimed coverage but no real test existed - added here.
 
 describe("RLS: web_push_subscriptions", () => {
   let alice: SupabaseClient;

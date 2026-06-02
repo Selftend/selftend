@@ -32,7 +32,7 @@ const cronSecret = process.env.WEB_PUSH_CRON_SECRET ?? "";
       );
     }
     // Readiness probe: a correctly-authenticated call must not 500. A 500 means the
-    // function is unreachable or missing WEB_PUSH_* env — fail fast with guidance
+    // function is unreachable or missing WEB_PUSH_* env - fail fast with guidance
     // instead of emitting confusing per-test failures.
     let probe: Response;
     try {
@@ -51,7 +51,7 @@ const cronSecret = process.env.WEB_PUSH_CRON_SECRET ?? "";
     if (probe.status === 500) {
       const body = await probe.text();
       throw new Error(
-        `send-web-reminders returned 500 — it is not provisioned (likely missing WEB_PUSH_* env).\n` +
+        `send-web-reminders returned 500 - it is not provisioned (likely missing WEB_PUSH_* env).\n` +
           `Configure WEB_PUSH_CRON_SECRET + VAPID keys for the served function, then retry.\n` +
           `Body: ${body}`,
       );

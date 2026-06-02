@@ -7,7 +7,7 @@
 --
 -- All idempotent (IF NOT EXISTS); additive only; no data change.
 
--- mood_logs: .eq(user_id).order(logged_at desc).limit(n) — Progress, mood widgets, insights.
+-- mood_logs: .eq(user_id).order(logged_at desc).limit(n) - Progress, mood widgets, insights.
 create index if not exists mood_logs_user_logged_idx
   on public.mood_logs (user_id, logged_at desc);
 

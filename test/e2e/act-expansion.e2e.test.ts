@@ -9,19 +9,19 @@ import {
 
 /**
  * Routes:
- *   /modules/act/expansion/new  — ActExpansionNewScreen (multi-step wizard)
- *   /modules/act/expansion      — ActExpansionListScreen (filters to selectedDate = today)
- *   /modules/act/expansion/[id] — ActExpansionDetailScreen
+ *   /modules/act/expansion/new  - ActExpansionNewScreen (multi-step wizard)
+ *   /modules/act/expansion      - ActExpansionListScreen (filters to selectedDate = today)
+ *   /modules/act/expansion/[id] - ActExpansionDetailScreen
  *
  * Wizard steps (5):
- *   1. emotion — Textarea "What emotion is present?" + NumberRating 0–100 intensity before
- *   2. body    — Textarea "Where do you feel it in your body?"
- *   3. struggle — Pressable "Yes - I'm resisting..." or "No - I'm just noticing it"
+ *   1. emotion - Textarea "What emotion is present?" + NumberRating 0–100 intensity before
+ *   2. body    - Textarea "Where do you feel it in your body?"
+ *   3. struggle - Pressable "Yes - I'm resisting..." or "No - I'm just noticing it"
  *                + optional discomfort type ("The original feeling..." | "Extra suffering...")
- *   4. technique — Pressable cards (default "TAME It with Kindness")
- *   5. after   — NumberRating 0–100 intensity after + optional notes textarea
+ *   4. technique - Pressable cards (default "TAME It with Kindness")
+ *   5. after   - NumberRating 0–100 intensity after + optional notes textarea
  *
- * DELETE only — no edit affordance.
+ * DELETE only - no edit affordance.
  */
 
 test.describe("ACT expansion: create, view, delete", () => {
@@ -67,7 +67,7 @@ test.describe("ACT expansion: create, view, delete", () => {
 
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // ── Step 4: Technique — default is "fourStepExpansion" (TAME It with Kindness) ─
+    // ── Step 4: Technique - default is "fourStepExpansion" (TAME It with Kindness) ─
     // Just continue with the default
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 

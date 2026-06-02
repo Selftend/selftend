@@ -46,12 +46,12 @@ test.describe("create thought record", () => {
       .fill(situation);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Step 2: NATs — type thought, add it, then continue
+    // Step 2: NATs - type thought, add it, then continue
     await page.getByPlaceholder("What did your mind say?").fill(automaticThought);
     await page.getByRole("button", { name: "Add thought", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Step 3: Hot thought — one is auto-selected; just continue
+    // Step 3: Hot thought - one is auto-selected; just continue
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // Step 4: Emotions - toggle a checkbox by clicking its label

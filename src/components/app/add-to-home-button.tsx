@@ -40,7 +40,7 @@ export function AddToHomeButton({
 
   if (widgets.length === 0) return null;
 
-  // Always present the add menu — even with a single available widget — so the
+  // Always present the add menu - even with a single available widget - so the
   // "+" behaves consistently across every tool landing (a lone item still opens
   // the popover rather than toggling silently).
   return (

@@ -70,7 +70,7 @@ const mockUseSleepLogs = useSleepLogs as jest.MockedFunction<typeof useSleepLogs
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-// Minimal empty mocks — return undefined data for everything
+// Minimal empty mocks - return undefined data for everything
 function setupEmptyMocks() {
   mockUseActivities.mockReturnValue({ data: undefined } as unknown as ReturnType<
     typeof useActivities
@@ -148,7 +148,7 @@ function makeSelfCareLog(logDate: string, exerciseDone: boolean, socialConnectio
 // ---------------------------------------------------------------------------
 // Tests: topDistortions
 // ---------------------------------------------------------------------------
-describe("useCbtInsights — topDistortions", () => {
+describe("useCbtInsights - topDistortions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setupEmptyMocks();
@@ -174,7 +174,7 @@ describe("useCbtInsights — topDistortions", () => {
   });
 
   it("returns top 3 distortions ranked by count desc, tie-breaking by key asc", () => {
-    // d1: 4, d2: 3, d3: 2, d4: 1 — top 3 should be d1, d2, d3
+    // d1: 4, d2: 3, d3: 2, d4: 1 - top 3 should be d1, d2, d3
     const records = [
       makeThoughtRecord("t1", ["d1", "d2", "d3"], "thought 1"),
       makeThoughtRecord("t2", ["d1", "d2", "d3"], "thought 2"),
@@ -212,7 +212,7 @@ describe("useCbtInsights — topDistortions", () => {
 // ---------------------------------------------------------------------------
 // Tests: exerciseMoodLift
 // ---------------------------------------------------------------------------
-describe("useCbtInsights — exerciseMoodLift", () => {
+describe("useCbtInsights - exerciseMoodLift", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setupEmptyMocks();
@@ -283,7 +283,7 @@ describe("useCbtInsights — exerciseMoodLift", () => {
 // ---------------------------------------------------------------------------
 // Tests: activityMoodLiftByCategory
 // ---------------------------------------------------------------------------
-describe("useCbtInsights — activityMoodLiftByCategory", () => {
+describe("useCbtInsights - activityMoodLiftByCategory", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setupEmptyMocks();
@@ -387,7 +387,7 @@ describe("useCbtInsights — activityMoodLiftByCategory", () => {
 // ---------------------------------------------------------------------------
 // Tests: recurringThoughtSuggestions
 // ---------------------------------------------------------------------------
-describe("useCbtInsights — recurringThoughtSuggestions", () => {
+describe("useCbtInsights - recurringThoughtSuggestions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setupEmptyMocks();
@@ -439,7 +439,7 @@ describe("useCbtInsights — recurringThoughtSuggestions", () => {
   });
 
   it("returns at most 2 suggestions", () => {
-    // 3 recurring thoughts — only top 2 should surface
+    // 3 recurring thoughts - only top 2 should surface
     const records = [
       makeThoughtRecord("t1", [], "I am not good enough"),
       makeThoughtRecord("t2", [], "I am not good enough"),
@@ -462,7 +462,7 @@ describe("useCbtInsights — recurringThoughtSuggestions", () => {
 // ---------------------------------------------------------------------------
 // Tests: beliefReviewSuggestions
 // ---------------------------------------------------------------------------
-describe("useCbtInsights — beliefReviewSuggestions", () => {
+describe("useCbtInsights - beliefReviewSuggestions", () => {
   beforeAll(() => jest.useFakeTimers({ now: new Date("2026-05-30T12:00:00.000Z") }));
   afterAll(() => jest.useRealTimers());
 
@@ -517,9 +517,9 @@ describe("useCbtInsights — beliefReviewSuggestions", () => {
 
   it("includes beliefs with nextReviewDate within 7 days from today", () => {
     // Clock is pinned to 2026-05-30T12:00:00.000Z via beforeAll
-    // "soon": 2026-06-02 is 3 days ahead — within the 7-day window
-    // "past": 2026-05-29 is already past — also within window (overdue)
-    // "far":  2026-06-20 is 21 days ahead — outside the 7-day window
+    // "soon": 2026-06-02 is 3 days ahead - within the 7-day window
+    // "past": 2026-05-29 is already past - also within window (overdue)
+    // "far":  2026-06-20 is 21 days ahead - outside the 7-day window
     const soon = "2026-06-02";
     const past = "2026-05-29";
     const far = "2026-06-20";
@@ -545,7 +545,7 @@ describe("useCbtInsights — beliefReviewSuggestions", () => {
 // ---------------------------------------------------------------------------
 // Tests: selfCareTrend
 // ---------------------------------------------------------------------------
-describe("useCbtInsights — selfCareTrend", () => {
+describe("useCbtInsights - selfCareTrend", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setupEmptyMocks();
@@ -569,7 +569,7 @@ describe("useCbtInsights — selfCareTrend", () => {
       makeSelfCareLog("2026-05-03", true, false),
       makeSelfCareLog("2026-05-02", false, false),
       makeSelfCareLog("2026-05-01", false, false),
-      // 8th log — should not be counted (only top 7)
+      // 8th log - should not be counted (only top 7)
       makeSelfCareLog("2026-04-30", true, true),
     ];
     mockUseSelfCareLogs.mockReturnValue({ data: logs } as unknown as ReturnType<
@@ -668,7 +668,7 @@ describe("useCbtInsights — selfCareTrend", () => {
 // ---------------------------------------------------------------------------
 // Tests: angerPattern
 // ---------------------------------------------------------------------------
-describe("useCbtInsights — angerPattern", () => {
+describe("useCbtInsights - angerPattern", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setupEmptyMocks();
@@ -735,7 +735,7 @@ describe("useCbtInsights — angerPattern", () => {
 // ---------------------------------------------------------------------------
 // Tests: exposureProgress
 // ---------------------------------------------------------------------------
-describe("useCbtInsights — exposureProgress", () => {
+describe("useCbtInsights - exposureProgress", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setupEmptyMocks();
@@ -800,7 +800,7 @@ describe("useCbtInsights — exposureProgress", () => {
 // ---------------------------------------------------------------------------
 // Tests: slogan
 // ---------------------------------------------------------------------------
-describe("useCbtInsights — slogan", () => {
+describe("useCbtInsights - slogan", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setupEmptyMocks();

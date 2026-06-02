@@ -10,13 +10,13 @@ import {
 
 /**
  * Routes:
- *   /modules/cbt/exposure/new    — NewExposureHierarchyScreen (wizard)
- *   /modules/cbt/exposure/[id]   — ExposureHierarchyDetailScreen
- *   /modules/cbt/exposure        — ExposureScreen (list)
+ *   /modules/cbt/exposure/new    - NewExposureHierarchyScreen (wizard)
+ *   /modules/cbt/exposure/[id]   - ExposureHierarchyDetailScreen
+ *   /modules/cbt/exposure        - ExposureScreen (list)
  *
  * Wizard steps (cbt.json > exposure):
- *   step1 "1. About"  — title ("Title") + anxietyType ("Type of anxiety")
- *   step2 "2. Steps"  — items field array (description + SUDS NumberRating)
+ *   step1 "1. About"  - title ("Title") + anxietyType ("Type of anxiety")
+ *   step2 "2. Steps"  - items field array (description + SUDS NumberRating)
  *
  * Key labels (cbt.json > exposure):
  *   hierarchyTitle "Title"
@@ -91,7 +91,7 @@ test.describe("CBT exposure: create hierarchy and log a session", () => {
     await expect(page.getByText("Exposure session")).toBeVisible({ timeout: 10_000 });
 
     // Rate pre-SUDS at 50
-    // There are two NumberRating groups (pre / post) — get the "50" buttons
+    // There are two NumberRating groups (pre / post) - get the "50" buttons
     // and click the first one (pre-SUDS) then the second one (post-SUDS).
     const fiftyButtons = page.getByRole("button", { name: "50", exact: true });
     await fiftyButtons.first().click();
@@ -99,7 +99,7 @@ test.describe("CBT exposure: create hierarchy and log a session", () => {
     // Rate post-SUDS at 20
     const twentyButtons = page.getByRole("button", { name: "20", exact: true });
     // There may be multiple "20" buttons across pre/post. The post-SUDS row
-    // comes second — click the last matching one.
+    // comes second - click the last matching one.
     await twentyButtons.last().click();
 
     // Enter duration

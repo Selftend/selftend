@@ -10,7 +10,7 @@ import { SEED_USERS, deleteAllWidgetPreferencesForUser, signInAs } from "./helpe
 // CAUTION: seed users may already have widget_preferences rows from seed.sql.
 // We use a made-up widget_id prefix ("test-widget-") to avoid collisions with
 // real seeded data. afterEach deletes by user_id (clearing all rows), which is
-// acceptable in the test DB — the app re-seeds on next launch.
+// acceptable in the test DB - the app re-seeds on next launch.
 
 const TEST_WIDGET_A = "test-widget-alpha";
 const TEST_WIDGET_B = "test-widget-beta";

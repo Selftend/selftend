@@ -91,7 +91,7 @@ function main(argv) {
 
   console.log(`Coverage: ${formatLine(current, baseline)}`);
   if (!ok) {
-    console.error("Coverage ratchet FAILED — these metrics dropped below the baseline floor:");
+    console.error("Coverage ratchet FAILED - these metrics dropped below the baseline floor:");
     for (const r of regressions) {
       console.error(`  ${r.metric}: ${r.current}% < ${r.baseline}% (${r.delta}%)`);
     }

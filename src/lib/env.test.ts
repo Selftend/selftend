@@ -3,7 +3,7 @@
  * must re-require it inside each isolated block AFTER setting process.env.
  *
  * `validateRequiredEnv` reads `Platform.OS` at call-time (not load-time), so we
- * can set Platform.OS BEFORE calling it — without resetting modules — as long as
+ * can set Platform.OS BEFORE calling it - without resetting modules - as long as
  * we re-load env.ts with the env vars we want first.
  */
 
@@ -97,11 +97,11 @@ describe("hasSupabaseConfig", () => {
 });
 
 // ---------------------------------------------------------------------------
-// validateRequiredEnv — warn / error branches
+// validateRequiredEnv - warn / error branches
 //
 // Strategy: set env vars, resetModules, require env.ts (so appEnv is baked in
 // with the right values), then set Platform.OS BEFORE calling validateRequiredEnv
-// (Platform.OS is a live read inside the function body — not captured at load time).
+// (Platform.OS is a live read inside the function body - not captured at load time).
 // ---------------------------------------------------------------------------
 
 describe("validateRequiredEnv", () => {
@@ -179,7 +179,7 @@ describe("validateRequiredEnv", () => {
     expect(console.error).toHaveBeenCalledWith(
       expect.stringContaining("EXPO_PUBLIC_PUBLIC_APP_URL"),
     );
-    // The production branch returns early after error — the warn message for
+    // The production branch returns early after error - the warn message for
     // EXPO_PUBLIC_PUBLIC_APP_URL should NOT be called.
     const warnCalls = (console.warn as jest.Mock).mock.calls.map((c) => c[0] as string);
     const appUrlWarn = warnCalls.find((m) => m.includes("EXPO_PUBLIC_PUBLIC_APP_URL"));

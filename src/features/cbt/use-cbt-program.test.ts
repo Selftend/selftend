@@ -174,7 +174,7 @@ function setupBaseMocks(mutateAsync: jest.Mock, isPending = false) {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
-describe("useCbtProgram — advancePhase", () => {
+describe("useCbtProgram - advancePhase", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -299,7 +299,7 @@ describe("useCbtProgram — advancePhase", () => {
   });
 });
 
-describe("useCbtProgram — dismiss / show / abandon", () => {
+describe("useCbtProgram - dismiss / show / abandon", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

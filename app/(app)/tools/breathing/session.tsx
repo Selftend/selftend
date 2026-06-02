@@ -112,7 +112,7 @@ export default function BreathingSessionScreen() {
     if (id === patternId) return;
     patternTouchedRef.current = true;
     setPatternId(id);
-    patchPrefs({ lastBreathingPatternId: id }); // cycles are global — keep them across patterns
+    patchPrefs({ lastBreathingPatternId: id }); // cycles are global - keep them across patterns
   };
 
   // Cycle count is global: change it locally and persist for next session.

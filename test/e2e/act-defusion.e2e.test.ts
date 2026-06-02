@@ -9,9 +9,9 @@ import {
 
 /**
  * Routes:
- *   /modules/act/defusion/new   — ActDefusionNewScreen
- *   /modules/act/defusion       — ActDefusionListScreen  (filters to selectedDate = today)
- *   /modules/act/defusion/[id]  — ActDefusionDetailScreen
+ *   /modules/act/defusion/new   - ActDefusionNewScreen
+ *   /modules/act/defusion       - ActDefusionListScreen  (filters to selectedDate = today)
+ *   /modules/act/defusion/[id]  - ActDefusionDetailScreen
  *
  * i18n (act.json > defusion):
  *   thoughtLabel   "What is the thought?"
@@ -31,7 +31,7 @@ import {
  *
  * Fusion rating (NumberRating min=0 max=100 step=10): buttons "0","10","20",...,"100"
  *
- * DELETE only — no edit affordance on this screen.
+ * DELETE only - no edit affordance on this screen.
  */
 
 test.describe("ACT defusion: create, view, delete", () => {
@@ -67,7 +67,7 @@ test.describe("ACT defusion: create, view, delete", () => {
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // ── Step 4: Technique ─────────────────────────────────────────────────────
-    // The first technique is "I'm having the thought that..." — it should already be selected
+    // The first technique is "I'm having the thought that..." - it should already be selected
     // (default is 'havingTheThoughtThat'). Just continue.
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 

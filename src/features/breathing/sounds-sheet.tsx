@@ -17,7 +17,7 @@ interface SoundsSheetProps {
   onDismiss: () => void;
 }
 
-// Sound *selection* only — volume is handled by the always-visible sliders on the session screen.
+// Sound *selection* only - volume is handled by the always-visible sliders on the session screen.
 export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
   const { t } = useTranslation("cbt");
   const { user } = useSession();

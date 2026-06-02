@@ -10,7 +10,7 @@ name: DB Backup
 #                          Looks like:
 #                            postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
 #   BACKUP_GPG_PASSPHRASE  Passphrase used to symmetrically encrypt each dump (AES256).
-#                          Store it in your password manager too — without it the
+#                          Store it in your password manager too - without it the
 #                          backups are unrecoverable.
 #   RCLONE_CONF            Full contents of an rclone config file containing a Google
 #                          Drive remote named "gdrive". Generate locally with

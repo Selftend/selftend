@@ -1,7 +1,7 @@
 -- Defense-in-depth: these FOR ALL policies were created without a TO clause, so they
 -- apply to PUBLIC (incl. the anon role) rather than only authenticated users. They are
--- not currently exploitable — `auth.uid() = user_id` is NULL for anon, so the USING check
--- fails — but scoping them to `authenticated` matches intent and the rest of the schema.
+-- not currently exploitable - `auth.uid() = user_id` is NULL for anon, so the USING check
+-- fails - but scoping them to `authenticated` matches intent and the rest of the schema.
 -- ALTER POLICY ... TO changes only the role; the USING/WITH CHECK predicates are untouched.
 
 alter policy "Users can manage their own meditation sessions" on public.meditation_sessions to authenticated;

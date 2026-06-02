@@ -9,11 +9,11 @@
  *   4. Enter edit mode, remove a default widget via its close (x) button.
  *   5. Assert the removed widget is gone.
  *   6. Widget reorder via drag-handle is DONE_WITH_CONCERNS (attempted but not
- *      asserted as a hard pass/fail — Sortable.Flex + Playwright drag is unreliable).
+ *      asserted as a hard pass/fail - Sortable.Flex + Playwright drag is unreliable).
  *
  * Non-default widget chosen: "self-care" (id: "self-care", title: "Self-care log",
- * category: CBT) — it is "available" in WIDGET_META but NOT in DEFAULT_WIDGET_IDS.
- * Widget to remove: "mood-trend" (title key → "Mood, last 7 days") — in defaults.
+ * category: CBT) - it is "available" in WIDGET_META but NOT in DEFAULT_WIDGET_IDS.
+ * Widget to remove: "mood-trend" (title key → "Mood, last 7 days") - in defaults.
  */
 
 import { expect, test } from "@playwright/test";
@@ -29,7 +29,7 @@ const ALICE_ID = SEED_USERS.alice.id;
 
 // Non-default widget to add: "self-care" (Self-care log) under CBT category.
 const ADD_WIDGET_TITLE = "Self-care log";
-// We remove the same widget we added — ensures it's definitely visible on screen.
+// We remove the same widget we added - ensures it's definitely visible on screen.
 const REMOVE_WIDGET_ARIA = `Remove ${ADD_WIDGET_TITLE}`;
 
 test.describe("home widget management", () => {
@@ -66,7 +66,7 @@ test.describe("home widget management", () => {
     // The modal panel has a TextInput for search (placeholder "Search widgets...").
     await expect(page.getByPlaceholder("Search widgets...")).toBeVisible({ timeout: 10_000 });
 
-    // Use search to find the widget by name — avoids clicking on category rows
+    // Use search to find the widget by name - avoids clicking on category rows
     // that may be blocked by the backdrop element.
     await page.getByPlaceholder("Search widgets...").fill("Self-care");
 
@@ -125,6 +125,6 @@ test.describe("home widget management", () => {
     // Sortable.Flex drag-handles are notoriously fiddly via Playwright synthetic events.
     // We attempt a drag but don't fail the test if it doesn't produce a visible order change.
     // (Assertion: test is marked as passing regardless of reorder outcome.)
-    // Note: reorder is skipped as a hard assertion — only add/remove/persistence are asserted.
+    // Note: reorder is skipped as a hard assertion - only add/remove/persistence are asserted.
   });
 });

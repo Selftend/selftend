@@ -1,5 +1,5 @@
 /**
- * Settings preferences e2e — language switch + theme switch.
+ * Settings preferences e2e - language switch + theme switch.
  *
  * Language: driven by AsyncStorage ("selftend:language") which is seeded from
  * user_preferences.language via useSettingsSync on first load. Changing it in
@@ -11,7 +11,7 @@
  *
  * Restore strategy: snapshot the full user_preferences row in beforeAll, upsert
  * it back in afterEach. Since each Playwright test gets a fresh browser context,
- * localStorage is isolated per test — DB restore is sufficient to prevent
+ * localStorage is isolated per test - DB restore is sufficient to prevent
  * cross-test contamination via the sync hook.
  */
 import { expect, test } from "@playwright/test";
@@ -44,7 +44,7 @@ async function restorePreferences() {
   if (error) throw new Error(`Could not restore user_preferences: ${error.message}`);
 }
 
-test.describe("settings — language switch", () => {
+test.describe("settings - language switch", () => {
   test.beforeAll(async () => {
     originalPreferences = await getPreferenceRow();
   });
@@ -91,7 +91,7 @@ test.describe("settings — language switch", () => {
   });
 });
 
-test.describe("settings — theme switch", () => {
+test.describe("settings - theme switch", () => {
   test.beforeAll(async () => {
     // May already be captured from the language describe block but snapshot
     // defensively in case suites run independently.

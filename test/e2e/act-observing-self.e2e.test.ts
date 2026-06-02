@@ -9,20 +9,20 @@ import {
 
 /**
  * Routes:
- *   /modules/act/observing-self/new  — ActObservingSelfNewScreen (multi-step wizard)
- *   /modules/act/observing-self      — ActObservingSelfListScreen (filters to selectedDate = today)
- *   /modules/act/observing-self/[id] — ActObservingSelfDetailScreen
+ *   /modules/act/observing-self/new  - ActObservingSelfNewScreen (multi-step wizard)
+ *   /modules/act/observing-self      - ActObservingSelfListScreen (filters to selectedDate = today)
+ *   /modules/act/observing-self/[id] - ActObservingSelfDetailScreen
  *
  * Wizard steps (4):
- *   1. technique  — Pressable cards (default "tenDeepBreaths" = "Ten deep breaths")
- *   2. exercise   — Guidance card shown (read-only); continue
- *   3. observed   — Textarea "What did you observe from this vantage point?"
- *   4. after      — NumberRating 1–10 mood after + optional notes textarea
+ *   1. technique  - Pressable cards (default "tenDeepBreaths" = "Ten deep breaths")
+ *   2. exercise   - Guidance card shown (read-only); continue
+ *   3. observed   - Textarea "What did you observe from this vantage point?"
+ *   4. after      - NumberRating 1–10 mood after + optional notes textarea
  *
  * List card shows: session.whatWasObserved || technique name.
  * Detail heading:  session.whatWasObserved || technique name.
  *
- * DELETE only — no edit affordance.
+ * DELETE only - no edit affordance.
  * i18n key: observingSelf.deleteConfirm = "Delete this session?"
  *           observingSelf.delete = "Delete"
  */
@@ -45,7 +45,7 @@ test.describe("ACT observing-self: create, view, delete", () => {
     // ── Navigate to new ────────────────────────────────────────────────────────
     await page.goto("/modules/act/observing-self/new");
 
-    // ── Step 1: Technique — default is "tenDeepBreaths"; just continue ────────
+    // ── Step 1: Technique - default is "tenDeepBreaths"; just continue ────────
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // ── Step 2: Exercise guidance (read-only card for tenDeepBreaths) ──────────
@@ -58,7 +58,7 @@ test.describe("ACT observing-self: create, view, delete", () => {
 
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // ── Step 4: After — mood rating 1–10 ──────────────────────────────────────
+    // ── Step 4: After - mood rating 1–10 ──────────────────────────────────────
     await page.getByRole("button", { name: "6", exact: true }).click();
 
     // Save

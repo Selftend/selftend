@@ -73,12 +73,12 @@ test.describe("sign-up + onboarding + first record", () => {
       .fill(situation);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // NATs — type thought, add it, then continue
+    // NATs - type thought, add it, then continue
     await page.getByPlaceholder("What did your mind say?").fill(automaticThought);
     await page.getByRole("button", { name: "Add thought", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Hot thought — one is auto-selected; just continue
+    // Hot thought - one is auto-selected; just continue
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     await page.getByText("Anxious", { exact: true }).first().click();

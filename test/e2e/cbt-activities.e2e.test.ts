@@ -11,9 +11,9 @@ import {
 
 /**
  * Routes:
- *   /modules/cbt/activities/new    — NewActivityScreen (single form)
- *   /modules/cbt/activities/[id]   — ActivityDetailScreen
- *   /modules/cbt/activities        — ActivitiesScreen (list)
+ *   /modules/cbt/activities/new    - NewActivityScreen (single form)
+ *   /modules/cbt/activities/[id]   - ActivityDetailScreen
+ *   /modules/cbt/activities        - ActivitiesScreen (list)
  *
  * The new-activity form (cbt.json > activities):
  *   nameLabel "Activity name"
@@ -96,7 +96,7 @@ test.describe("CBT activities: schedule and complete a behavioral-activation act
     // Select mood score: "Good" (score 4, emoji 😊)
     await page.getByRole("button", { name: "Good", exact: true }).click();
 
-    // Save the mood log — this also completes the activity and redirects back.
+    // Save the mood log - this also completes the activity and redirects back.
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
     // After completion, redirected to /modules/cbt/activities/[id]

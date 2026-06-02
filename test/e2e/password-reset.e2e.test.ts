@@ -9,10 +9,10 @@
  *   2. Assert success copy appears.
  *   3. Fetch the recovery link from Mailpit. The app sends redirect_to with a
  *      ?type=recovery marker (see getPasswordResetRedirectUrl) and :8081 is in
- *      additional_redirect_urls, so Supabase honours it verbatim — no rewrite.
- *   4. page.goto(recoveryLink) — browser follows the 303 → :8081/auth-callback
- *      ?code=…&type=recovery. AuthCallbackScreen exchanges the PKCE code and —
- *      seeing type=recovery — routes to /(auth)/update-password.
+ *      additional_redirect_urls, so Supabase honours it verbatim - no rewrite.
+ *   4. page.goto(recoveryLink) - browser follows the 303 → :8081/auth-callback
+ *      ?code=…&type=recovery. AuthCallbackScreen exchanges the PKCE code and -
+ *      seeing type=recovery - routes to /(auth)/update-password.
  *   5. Fill a NEW ≥12-char password and submit. Assert routing away.
  *   6. HARD proof: createAnonClient().signInWithPassword(email, NEW_PASSWORD)
  *      must SUCCEED; OLD_PASSWORD must FAIL.
@@ -82,7 +82,7 @@ test.describe("password reset flow", () => {
 
     // 6. Navigate to the verify link. Supabase returns a 303 to
     //    http://localhost:8081/auth-callback?code=…&type=recovery
-    //    AuthCallbackScreen exchanges the PKCE code, and — seeing type=recovery —
+    //    AuthCallbackScreen exchanges the PKCE code, and - seeing type=recovery -
     //    routes to /(auth)/update-password.
     await page.goto(recoveryLink);
 

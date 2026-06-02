@@ -90,7 +90,7 @@ describe("useSettingsSync", () => {
   it("does not overwrite local theme when DB has no theme saved yet", () => {
     mockContexts({ language: "en", theme: "dark" });
     renderHook(() => useSettingsSync("user-1", makePreferences({ language: "en", theme: null })));
-    // Local theme is preserved — DB null does not reset it to system.
+    // Local theme is preserved - DB null does not reset it to system.
     expect(setThemePreference).not.toHaveBeenCalled();
     // Local theme is pushed to DB to save it for the first time.
     expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ theme: "dark" }));

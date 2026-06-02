@@ -6,7 +6,7 @@ import { SEED_USERS, deleteAllSelfCareLogsForUser, signInAs } from "./helpers";
 // Verifies the DB contract: schema columns, the UNIQUE(user_id, log_date) dedup
 // constraint (added in 20260516000000_cbt_phase4.sql), upsert behavior, RLS.
 // Note: sleep_hours, sleep_quality, gratitude columns were dropped in
-// 20260553_checkin_and_selfcare_dedup.sql — those columns are NOT tested.
+// 20260553_checkin_and_selfcare_dedup.sql - those columns are NOT tested.
 
 describe("self-care self_care_logs (integration)", () => {
   let alice: SupabaseClient;

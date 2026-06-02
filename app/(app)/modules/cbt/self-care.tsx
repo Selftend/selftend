@@ -71,7 +71,7 @@ export default function SelfCareScreen() {
         meaningfulActivity: existing.meaningfulActivity,
       });
     } else {
-      // No log for the selected day — clear the form so a previous day's
+      // No log for the selected day - clear the form so a previous day's
       // answers can't be carried over (and accidentally saved) onto this date.
       setForm(emptyForm);
     }

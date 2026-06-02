@@ -8,7 +8,7 @@ import { registerWebPushServiceWorker } from "@/src/lib/notifications";
 import { I18nProvider } from "@/src/providers/i18n-provider";
 import { SessionProvider } from "@/src/providers/session-provider";
 
-// React Query doesn't know about AppState on native — teach it to treat
+// React Query doesn't know about AppState on native - teach it to treat
 // foreground transitions as focus events so stale queries are refetched.
 if (Platform.OS !== "web") {
   focusManager.setEventListener((handleFocus) => {

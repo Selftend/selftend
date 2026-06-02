@@ -14,7 +14,7 @@ export function CbtBeliefsWidget({ userId }: { userId: string }) {
   const { data } = useCoreBeliefs(userId);
   const beliefs = data ?? [];
   // nextReviewDate is a civil date (YYYY-MM-DD); compare against today's LOCAL date key
-  // — not a full UTC ISO instant, which lexicographically mismatches the date-only value.
+  // - not a full UTC ISO instant, which lexicographically mismatches the date-only value.
   const today = currentDateKey();
   const due = beliefs
     .filter((b) => b.nextReviewDate !== null && b.nextReviewDate <= today)

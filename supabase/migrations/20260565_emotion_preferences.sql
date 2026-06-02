@@ -32,7 +32,7 @@ CREATE TRIGGER set_emotion_preferences_updated_at
   BEFORE UPDATE ON emotion_preferences
   FOR EACH ROW EXECUTE FUNCTION public.set_current_timestamp_updated_at();
 
--- === GDPR export — wrap the current function and append emotionPreferences ===
+-- === GDPR export - wrap the current function and append emotionPreferences ===
 
 ALTER FUNCTION public.export_user_data() RENAME TO export_user_data_before_emotion_prefs;
 REVOKE EXECUTE ON FUNCTION public.export_user_data_before_emotion_prefs() FROM public;
@@ -82,7 +82,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.export_user_data() TO authenticated;
 
--- === GDPR delete — re-declare with explicit emotion_preferences deletion ===
+-- === GDPR delete - re-declare with explicit emotion_preferences deletion ===
 -- (Mirrors the explicit delete pattern used for web_push_subscriptions; the FK ON DELETE
 -- CASCADE would also handle this, but explicit deletes make the function self-documenting.)
 

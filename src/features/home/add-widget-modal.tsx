@@ -223,7 +223,7 @@ export function AddWidgetModal({
       transparent
       visible={visible}
     >
-      {/* Backdrop and panel are siblings — nesting them caused the panel Pressable to absorb */}
+      {/* Backdrop and panel are siblings - nesting them caused the panel Pressable to absorb */}
       {/* touches on Android before the ScrollView could claim them. */}
       <View className="flex-1">
         <Pressable className="absolute inset-0 bg-black/40" onPress={handleClose} />

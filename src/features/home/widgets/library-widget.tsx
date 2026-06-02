@@ -9,7 +9,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 
 // Shared presentational body for the breathing/grounding/mindfulness "library" home
 // widgets. Accent classes are passed as complete literal strings (e.g. "bg-aqua/10") so
-// NativeWind's compiler keeps them — never build them via template interpolation.
+// NativeWind's compiler keeps them - never build them via template interpolation.
 export function LibraryWidget({
   accentBgClass,
   accentTextClass,

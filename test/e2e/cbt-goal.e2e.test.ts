@@ -10,15 +10,15 @@ import {
 
 /**
  * Routes:
- *   /modules/cbt/goals/new          — NewGoalScreen (create)
- *   /modules/cbt/goals/new?goalId=X — NewGoalScreen (edit)
- *   /modules/cbt/goals/[id]         — GoalDetailScreen
- *   /modules/cbt/goals              — GoalsScreen
+ *   /modules/cbt/goals/new          - NewGoalScreen (create)
+ *   /modules/cbt/goals/new?goalId=X - NewGoalScreen (edit)
+ *   /modules/cbt/goals/[id]         - GoalDetailScreen
+ *   /modules/cbt/goals              - GoalsScreen
  *
  * Wizard steps (cbt.json > goals):
- *   step1 "1. Domain & type"  — lifeDomain + goalType (buttons/chips)
- *   step2 "2. Details"        — title + description + targetDate
- *   step3 "3. Milestones"     — milestones field array
+ *   step1 "1. Domain & type"  - lifeDomain + goalType (buttons/chips)
+ *   step2 "2. Details"        - title + description + targetDate
+ *   step3 "3. Milestones"     - milestones field array
  *
  * Key labels (cbt.json > goals):
  *   titleLabel "Goal title"
@@ -35,7 +35,7 @@ import {
  *
  * NOTE: The goal detail screen has NO delete button.
  * Goals can be marked "Completed" or "Paused" (status change) from the detail screen.
- * "Abandoned" status is not exposed in the detail UI — only Completed and Paused.
+ * "Abandoned" status is not exposed in the detail UI - only Completed and Paused.
  * Cleanup is handled via deleteAllGoalsForUser.
  */
 

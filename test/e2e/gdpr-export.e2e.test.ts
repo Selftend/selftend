@@ -6,7 +6,7 @@
  * (via a synthetic <a> click). Asserts the success copy "Data exported successfully."
  * appears, and optionally captures the download event.
  *
- * Read-only — no cleanup required.
+ * Read-only - no cleanup required.
  */
 
 import { expect, test } from "@playwright/test";
@@ -30,7 +30,7 @@ test.describe("GDPR data export", () => {
 
     // Listen for the download event (web triggers a synthetic <a download> click).
     // We wrap the click in a Promise.race so test continues even if no download event fires
-    // (e.g. browser blocks it in headless mode) — success copy is the primary assertion.
+    // (e.g. browser blocks it in headless mode) - success copy is the primary assertion.
     const downloadPromise = page.waitForEvent("download", { timeout: 10_000 }).catch(() => null);
     await exportButton.click();
 

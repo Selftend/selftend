@@ -6,7 +6,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
 
 // The breadcrumb trail rendered as a screen eyebrow (above the title). Hidden when
-// there is no parent to show — a lone current-page crumb just repeats the title.
+// there is no parent to show - a lone current-page crumb just repeats the title.
 export function ScreenBreadcrumb() {
   const crumbs = useBreadcrumbs();
 

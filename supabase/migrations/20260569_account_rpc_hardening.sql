@@ -10,7 +10,7 @@
 -- 2. Both functions retained PostgreSQL's default PUBLIC EXECUTE grant (only TO authenticated
 --    was ever added), leaving them reachable by anon via PostgREST /rpc. Not exploitable today
 --    (they raise on auth.uid() IS NULL), but every other SECURITY DEFINER RPC in the schema is
---    explicitly revoked from public — bring these two in line (least privilege).
+--    explicitly revoked from public - bring these two in line (least privilege).
 
 create or replace function public.delete_user_account()
 returns void

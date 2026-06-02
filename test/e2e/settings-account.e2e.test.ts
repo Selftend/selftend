@@ -1,5 +1,5 @@
 /**
- * Settings account e2e — display-name, notification toggles, reset onboarding.
+ * Settings account e2e - display-name, notification toggles, reset onboarding.
  *
  * Restore strategy: snapshot the full user_preferences row and profiles row for
  * alice in beforeAll; restore both in afterEach so reruns are deterministic and
@@ -67,7 +67,7 @@ async function restoreProfile() {
 // Display-name tests
 // ---------------------------------------------------------------------------
 
-test.describe("settings — profile display name", () => {
+test.describe("settings - profile display name", () => {
   test.beforeAll(async () => {
     originalPreferences = await getPreferenceRow();
     originalProfile = await getProfileRow();
@@ -117,7 +117,7 @@ test.describe("settings — profile display name", () => {
 // Notifications toggle tests
 // ---------------------------------------------------------------------------
 
-test.describe("settings — notification toggles", () => {
+test.describe("settings - notification toggles", () => {
   test.beforeAll(async () => {
     if (!originalPreferences) originalPreferences = await getPreferenceRow();
     if (!originalProfile) originalProfile = await getProfileRow();
@@ -214,7 +214,7 @@ test.describe("settings — notification toggles", () => {
 // Reset onboarding test
 // ---------------------------------------------------------------------------
 
-test.describe("settings — reset onboarding", () => {
+test.describe("settings - reset onboarding", () => {
   test.beforeAll(async () => {
     if (!originalPreferences) originalPreferences = await getPreferenceRow();
     if (!originalProfile) originalProfile = await getProfileRow();
@@ -240,7 +240,7 @@ test.describe("settings — reset onboarding", () => {
     await page.getByRole("button", { name: "Reset onboarding", exact: true }).click();
 
     // The success message "Onboarding will be shown again." appears inline.
-    // It appears in two places (card text + toast description) — use .first().
+    // It appears in two places (card text + toast description) - use .first().
     await expect(
       page.getByText("Onboarding will be shown again.", { exact: true }).first(),
     ).toBeVisible({ timeout: 8_000 });

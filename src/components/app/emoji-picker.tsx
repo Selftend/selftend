@@ -3,7 +3,7 @@ import { Pressable, View } from "react-native";
 import { cn } from "@/lib/utils";
 import { Text } from "@/src/components/react-native-reusables/text";
 
-// Curated set aimed at naming feelings — positive/neutral/negative faces plus a few symbols.
+// Curated set aimed at naming feelings - positive/neutral/negative faces plus a few symbols.
 const EMOJIS = [
   "😊",
   "😀",

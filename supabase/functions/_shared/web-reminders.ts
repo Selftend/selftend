@@ -155,7 +155,7 @@ export function resolveReminderLanguage(language: string | null): "bg" | "en" {
 
 // Allowlist of real Web Push service hosts. send-web-reminders runs with the service-role
 // key and delivers to web_push_subscriptions.endpoint, but the table's RLS only checks
-// user_id — not endpoint — so an authenticated user can upsert an arbitrary endpoint and
+// user_id - not endpoint - so an authenticated user can upsert an arbitrary endpoint and
 // turn the worker into a blind-SSRF probe of internal URLs. Only deliver to an https URL on
 // a known push host (default port), and skip anything else.
 const PUSH_HOST_EXACT = new Set(["fcm.googleapis.com", "push.services.mozilla.com"]);

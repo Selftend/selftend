@@ -377,7 +377,7 @@ export function useSaveActionStep(userId: string | null) {
       await queryClient.invalidateQueries({
         queryKey: actKeys.actionStepList(userId, data.actionId),
       });
-      // The ACT program screen reads useAllActionSteps (actionStepAll) — refresh it too.
+      // The ACT program screen reads useAllActionSteps (actionStepAll) - refresh it too.
       await queryClient.invalidateQueries({ queryKey: actKeys.actionStepAll(userId) });
     },
   });
@@ -393,7 +393,7 @@ export function useToggleActionStep(userId: string | null) {
       await queryClient.invalidateQueries({
         queryKey: actKeys.actionStepList(userId, data.actionId),
       });
-      // The ACT program screen reads useAllActionSteps (actionStepAll) — refresh it too.
+      // The ACT program screen reads useAllActionSteps (actionStepAll) - refresh it too.
       await queryClient.invalidateQueries({ queryKey: actKeys.actionStepAll(userId) });
     },
   });
@@ -409,7 +409,7 @@ export function useDeleteActionStep(userId: string | null) {
       await queryClient.invalidateQueries({
         queryKey: actKeys.actionStepList(userId, variables.actionId),
       });
-      // The ACT program screen reads useAllActionSteps (actionStepAll) — refresh it too.
+      // The ACT program screen reads useAllActionSteps (actionStepAll) - refresh it too.
       await queryClient.invalidateQueries({ queryKey: actKeys.actionStepAll(userId) });
     },
   });

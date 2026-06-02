@@ -9,7 +9,7 @@ const AQUA_40 = "hsla(196, 52%, 45%, 0.40)";
 // Decorative wrapper: View carries the RN a11y hide props so they don't leak
 // to the SVG DOM element on web (react-native-svg renders a real <svg>, and
 // accessibilityElementsHidden/importantForAccessibility are not valid SVG
-// attributes — they would print React warnings). The SVG itself only needs
+// attributes - they would print React warnings). The SVG itself only needs
 // aria-hidden for screen-reader hiding on web.
 function DecorativeSvg({ children }: { children: ReactNode }) {
   return (

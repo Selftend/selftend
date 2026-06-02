@@ -11,7 +11,7 @@ import {
 // Verifies the DB contract after 20260555_workbook_alignment.sql restructured
 // values_profile to a single row per user with personal_values jsonb +
 // priority_values jsonb, and UNIQUE(user_id).
-// Note: values_profile has no DELETE RLS policy for authenticated users —
+// Note: values_profile has no DELETE RLS policy for authenticated users -
 // cleanup is done via service role (deleteAllValuesProfileForUser bypasses RLS).
 
 describe("values values_profile (integration)", () => {

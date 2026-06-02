@@ -1,7 +1,7 @@
 // Bundled breathing audio catalog. Breath sounds come in two flavours:
-//   - "guided" voice cues — short clips (inhale/hold/exhale) cut from one recording, fired
+//   - "guided" voice cues - short clips (inhale/hold/exhale) cut from one recording, fired
 //     ONCE at the start of each phase (loop: false).
-//   - looped textures (soft-breath/ocean/wind) — seamless clips the runner loops to fill the
+//   - looped textures (soft-breath/ocean/wind) - seamless clips the runner loops to fill the
 //     whole inhale/exhale; their holds are silent (no holdAsset).
 // Ambient is a single seamless looping clip. `none` keeps a lane silent. The picker shows
 // these; only the selected id is persisted in user_preferences.
@@ -19,7 +19,7 @@ const rain = require("@/assets/sounds/breathing/rain.wav") as number;
 const forest = require("@/assets/sounds/breathing/forest.wav") as number;
 const night = require("@/assets/sounds/breathing/night.wav") as number;
 const brownNoise = require("@/assets/sounds/breathing/brown-noise.wav") as number;
-// Guided voice cues (cut from a single recording) — one-shot per phase, not looped.
+// Guided voice cues (cut from a single recording) - one-shot per phase, not looped.
 const guideInhale = require("@/assets/sounds/breathing/guide_inhale.wav") as number;
 const guideHold = require("@/assets/sounds/breathing/guide_hold.wav") as number;
 const guideExhale = require("@/assets/sounds/breathing/guide_exhale.wav") as number;

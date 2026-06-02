@@ -34,7 +34,7 @@ function setPlatform(os: string) {
 // WEB PATH
 // ---------------------------------------------------------------------------
 
-describe("useReduceMotionEnabled — web", () => {
+describe("useReduceMotionEnabled - web", () => {
   // Capture the original window so we can restore it.
   const originalWindow = globalThis.window;
 
@@ -205,7 +205,7 @@ describe("useReduceMotionEnabled — web", () => {
 // NATIVE PATH
 // ---------------------------------------------------------------------------
 
-describe("useReduceMotionEnabled — native", () => {
+describe("useReduceMotionEnabled - native", () => {
   const mockIsReduceMotionEnabled = jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled");
   const mockAddEventListener = jest.spyOn(AccessibilityInfo, "addEventListener");
   const mockSubscriptionRemove = jest.fn();
@@ -224,7 +224,7 @@ describe("useReduceMotionEnabled — native", () => {
   });
 
   it("returns false initially before the promise resolves", () => {
-    // isReduceMotionEnabled resolves async — initial render sees false
+    // isReduceMotionEnabled resolves async - initial render sees false
     mockIsReduceMotionEnabled.mockReturnValue(new Promise(() => {})); // never resolves
 
     const { result } = renderHook(() => useReduceMotionEnabled());

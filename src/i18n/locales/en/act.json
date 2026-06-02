@@ -254,7 +254,7 @@
       "acceptanceImagery": "Acceptance imagery"
     },
     "techniqueDescriptions": {
-      "fourStepExpansion": "Take note → Allow → Make room → Expand awareness — with kindness. The core acceptance practice from the book.",
+      "fourStepExpansion": "Take note → Allow → Make room → Expand awareness - with kindness. The core acceptance practice from the book.",
       "acceptanceSelfTalk": "Speak to the feeling with compassion: \"It's okay to feel this.\" Let the words soften the resistance.",
       "acceptanceImagery": "Imagine the feeling as an object - its shape, color, texture. Watch it shift when you stop fighting."
     },
@@ -267,7 +267,7 @@
       "step3Title": "3. Make room",
       "step3Body": "Breathe into it and open up around it. Place a hand where you feel it most, as if breathing warmth and kindness into the feeling.",
       "step4Title": "4. Expand awareness",
-      "step4Body": "Keep the feeling in your awareness and, at the same time, broaden your focus to the world around you — what you can see, hear, and do."
+      "step4Body": "Keep the feeling in your awareness and, at the same time, broaden your focus to the world around you - what you can see, hear, and do."
     },
     "intensityDrop": "Intensity dropped from {{before}} to {{after}}.",
     "noIntensityDrop": "Intensity stayed at {{after}}. Making room is the goal - not eliminating the feeling.",
@@ -487,20 +487,20 @@
   },
   "program": {
     "startTitle": "Start the ACT program",
-    "startDescription": "A guided path through four phases — notice your choice points, be present, open up, and do what matters. Go at your own pace.",
+    "startDescription": "A guided path through four phases - notice your choice points, be present, open up, and do what matters. Go at your own pace.",
     "startCta": "Start the program",
     "dismissStartLabel": "Dismiss program invitation",
     "heroTitle": "ACT program",
     "milestonesLabel": "This phase",
     "practiceLabel": "Today's practice",
-    "noDailyPractice": "No daily task this phase — take your time with the step above.",
+    "noDailyPractice": "No daily task this phase - take your time with the step above.",
     "advance": "Advance to next phase",
     "advanceEarlyConfirmTitle": "Advance anyway?",
     "advanceEarlyConfirmBody": "You haven't finished this phase's steps yet. Move on anyway?",
     "advanceConfirm": "Advance",
     "advanceCancel": "Not yet",
     "graduateCta": "Finish the program",
-    "ready": "You've finished this phase — ready for the next?",
+    "ready": "You've finished this phase - ready for the next?",
     "manageLabel": "Manage program",
     "abandon": "Leave the program",
     "abandonTitle": "Leave the ACT program?",
@@ -529,7 +529,7 @@
       "bePresent": {
         "title": "Be present",
         "sub": "Contact the present moment",
-        "description": "Come back to the here and now — through your senses, your body, and the part of you that simply notices."
+        "description": "Come back to the here and now - through your senses, your body, and the part of you that simply notices."
       },
       "openUp": {
         "title": "Open up",
@@ -539,7 +539,7 @@
       "doWhatMatters": {
         "title": "Do what matters",
         "sub": "Values & committed action",
-        "description": "Clarify what you care about and take small, values-guided steps — even when it's uncomfortable."
+        "description": "Clarify what you care about and take small, values-guided steps - even when it's uncomfortable."
       }
     },
     "tasks": {

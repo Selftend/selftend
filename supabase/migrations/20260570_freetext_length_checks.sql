@@ -1,6 +1,6 @@
 -- Defense-in-depth: bound the unbounded free-text columns on the older sensitive-data
 -- tables. supabase-js talks straight to PostgREST, so the UI maxLength is not a real
--- guard — an authenticated user can POST a multi-megabyte value into their own row,
+-- guard - an authenticated user can POST a multi-megabyte value into their own row,
 -- bloating the table and stressing export_user_data() (which json_aggs every row). Newer
 -- modules already cap their text (gratitude.note <= 2000, habits.name <= 120); this brings
 -- the earlier CBT/worry/anger/journal/mood/exposure tables and profiles.display_name in line.

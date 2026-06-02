@@ -137,7 +137,7 @@ export async function signUpWithPassword(email: string, password: string, name?:
   }
 
   // When email enumeration protection is on, Supabase silently succeeds for
-  // existing accounts — identities will be empty instead of throwing an error.
+  // existing accounts - identities will be empty instead of throwing an error.
   if (data.user && data.user.identities?.length === 0) {
     throw new Error(EMAIL_ALREADY_EXISTS_ERROR);
   }

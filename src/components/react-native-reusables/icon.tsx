@@ -95,7 +95,7 @@ function Icon({ name, className, size, style, ...props }: IconProps) {
   return (
     <MaterialIcons
       name={name}
-      // Icons are decorative by default — they pair with a text label or sit
+      // Icons are decorative by default - they pair with a text label or sit
       // inside a Button/Pressable that carries the accessible name. Leaving
       // them in the a11y tree pollutes parent accessible names with the glyph
       // character (e.g. button reads " Sign out" instead of "Sign out").

@@ -1,5 +1,5 @@
 -- GDPR fix: export_user_data() silently omitted the entire ACT module (11 tables),
--- plan_items, and widget_preferences — all user-owned (user_id REFERENCES auth.users) —
+-- plan_items, and widget_preferences - all user-owned (user_id REFERENCES auth.users) -
 -- so a Subject Access / portability export was materially incomplete.
 --
 -- We APPEND (rename current fn -> shadow, wrap it, add the missing blocks) rather than

@@ -82,7 +82,7 @@ export function useCbtInsights(userId: string | null) {
   const { data: exposureItems } = useAllExposureItems(userId);
   const { data: selfCareLogs } = useSelfCareLogs(userId);
   // 180 (not 60) so this shares the same React Query cache entry as useCbtProgram on the CBT
-  // home screen — one mood fetch instead of two. Insights only window by date, so the larger
+  // home screen - one mood fetch instead of two. Insights only window by date, so the larger
   // superset doesn't change any result.
   const { data: moodLogs } = useMoodLogs(userId, 180);
   const { data: sleepLogs } = useSleepLogs(userId, 50);
