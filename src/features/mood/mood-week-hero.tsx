@@ -7,6 +7,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import type { DayAverage, EmotionCount, WeekDelta } from "@/src/features/mood/summaries";
+import { parseLocalNoon } from "@/src/utils/date";
 
 interface WeekHeroProps {
   delta: WeekDelta;
@@ -56,7 +57,7 @@ export function WeekHero({ delta, byDay, topEmotions }: WeekHeroProps) {
               const heightPct = day.average === null ? 0 : (day.average / 5) * 100;
               const isToday = day.dateKey === todayKey;
               const letter = new Intl.DateTimeFormat(i18n.language, { weekday: "narrow" }).format(
-                new Date(`${day.dateKey}T12:00:00`),
+                parseLocalNoon(day.dateKey),
               );
               return (
                 <View key={day.dateKey} className="flex-1 items-center gap-1.5">

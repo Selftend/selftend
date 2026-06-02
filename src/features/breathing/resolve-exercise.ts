@@ -1,5 +1,5 @@
 import { breathingLookup } from "@/src/constants/breathing";
-import type { BreathingPhase } from "@/src/constants/breathing";
+import type { BreathingPhase, PhaseLabel } from "@/src/constants/breathing";
 import type {
   BreathingExercise,
   BreathingExerciseColor,
@@ -37,7 +37,7 @@ export function resolveBuiltin(slug: string): ResolvedExercise | null {
   };
 }
 
-const PHASE_ORDER: { label: BreathingPhase["label"]; pick: (e: BreathingExercise) => number }[] = [
+const PHASE_ORDER: { label: PhaseLabel; pick: (e: BreathingExercise) => number }[] = [
   { label: "inhale", pick: (e) => e.inhaleSeconds },
   { label: "hold", pick: (e) => e.holdInSeconds },
   { label: "exhale", pick: (e) => e.exhaleSeconds },

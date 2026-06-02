@@ -46,6 +46,7 @@ import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { useValuesProfile } from "@/src/features/values/queries";
 import { useWorryEntries } from "@/src/features/worry/queries";
+import { useStringListField } from "@/src/lib/use-string-list-field";
 import { useSession } from "@/src/providers/session-provider";
 import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -276,6 +277,10 @@ export default function RecoveryScreen() {
   const [challengeDraft, setChallengeDraft] = useState<ChallengeDraft | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
+  const form = useForm<RecoveryPlanFormSchema>({
+    defaultValues,
+    resolver: zodResolver(recoveryPlanFormSchema),
+  });
   const {
     control,
     formState: { isSubmitting },
@@ -284,14 +289,18 @@ export default function RecoveryScreen() {
     reset,
     setValue,
     watch,
-  } = useForm<RecoveryPlanFormSchema>({
-    defaultValues,
-    resolver: zodResolver(recoveryPlanFormSchema),
-  });
+  } = form;
 
-  const recoveryKeys = watch("recoveryKeys");
-  const maintenanceCommitments = watch("maintenanceCommitments");
   const strategyIntegrationNotes = watch("strategyIntegrationNotes");
+
+  const recoveryKeysField = useStringListField(form, "recoveryKeys", {
+    shouldDirty: true,
+    keepAtLeastOne: true,
+  });
+  const maintenanceCommitmentsField = useStringListField(form, "maintenanceCommitments", {
+    shouldDirty: true,
+    keepAtLeastOne: true,
+  });
 
   useEffect(() => {
     if (!recoveryPlan) return;
@@ -372,21 +381,6 @@ export default function RecoveryScreen() {
       .filter((item): item is TimelineItem => Boolean(item))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   })();
-
-  const updateListItem = (fieldName: ListFieldName, index: number, value: string) => {
-    const next = [...watch(fieldName)];
-    next[index] = value;
-    setValue(fieldName, next, { shouldDirty: true });
-  };
-
-  const appendListItem = (fieldName: ListFieldName) => {
-    setValue(fieldName, [...watch(fieldName), ""], { shouldDirty: true });
-  };
-
-  const removeListItem = (fieldName: ListFieldName, index: number) => {
-    const next = watch(fieldName).filter((_, itemIndex) => itemIndex !== index);
-    setValue(fieldName, next.length > 0 ? next : [""], { shouldDirty: true });
-  };
 
   const updateStrategyNote = (strategyKey: StrategyKey, value: string) => {
     setValue(
@@ -531,8 +525,8 @@ export default function RecoveryScreen() {
   const renderList = (
     label: string,
     hint: string,
-    items: string[],
     fieldName: ListFieldName,
+    field: ReturnType<typeof useStringListField<RecoveryPlanFormSchema>>,
     addLabel: string,
     removeLabel: string,
     placeholder: string,
@@ -540,24 +534,24 @@ export default function RecoveryScreen() {
     <View className="gap-3">
       <Label>{label}</Label>
       <Text variant="muted">{hint}</Text>
-      {items.map((value, index) => (
+      {field.items.map((value, index) => (
         <View key={`${fieldName}-${index}`} className="flex-row items-start gap-2">
           <View className="flex-1">
             <Input
               accessibilityLabel={`${label} ${index + 1}`}
-              onChangeText={(text) => updateListItem(fieldName, index, text)}
+              onChangeText={(text) => field.update(index, text)}
               placeholder={placeholder}
               value={value}
             />
           </View>
-          {items.length > 1 ? (
-            <Button onPress={() => removeListItem(fieldName, index)} size="sm" variant="ghost">
+          {field.items.length > 1 ? (
+            <Button onPress={() => field.remove(index)} size="sm" variant="ghost">
               <Text>{removeLabel}</Text>
             </Button>
           ) : null}
         </View>
       ))}
-      <Button onPress={() => appendListItem(fieldName)} size="sm" variant="outline">
+      <Button onPress={() => field.append()} size="sm" variant="outline">
         <Text>{addLabel}</Text>
       </Button>
     </View>
@@ -667,8 +661,8 @@ export default function RecoveryScreen() {
             {renderList(
               t("recovery.recoveryKeys"),
               t("recovery.recoveryKeysHint"),
-              recoveryKeys,
               "recoveryKeys",
+              recoveryKeysField,
               t("recovery.addKey"),
               t("recovery.removeKey"),
               t("recovery.keyPlaceholder"),
@@ -828,8 +822,8 @@ export default function RecoveryScreen() {
             {renderList(
               t("recovery.maintenanceCommitments"),
               t("recovery.maintenanceCommitmentsHint"),
-              maintenanceCommitments,
               "maintenanceCommitments",
+              maintenanceCommitmentsField,
               t("recovery.addCommitment"),
               t("recovery.removeCommitment"),
               t("recovery.commitmentPlaceholder"),

@@ -17,6 +17,7 @@ import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-stor
 import { formatDuration } from "@/src/features/sleep/format";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { startOfDayDaysAgo } from "@/src/utils/date";
+import { roundTo1 } from "@/src/utils/number";
 
 function recentWindow<T extends { loggedAt: string }>(logs: T[], days: number): T[] | null {
   const cutoff = startOfDayDaysAgo(days);
@@ -39,7 +40,7 @@ function averageQuality(
 ): number | null {
   const window = recentWindow(logs, days);
   if (!window) return null;
-  return Math.round((window.reduce((sum, l) => sum + l.quality, 0) / window.length) * 10) / 10;
+  return roundTo1(window.reduce((sum, l) => sum + l.quality, 0) / window.length);
 }
 
 export default function SleepTrackerScreen() {

@@ -1,4 +1,4 @@
-import { type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { SEED_USERS, createAnonClient, createServiceClient, signInAs } from "./helpers";
 

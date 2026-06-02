@@ -22,6 +22,7 @@ import {
   localDateKey,
   useSelectedDateStore,
 } from "@/src/stores/selected-date-store";
+import { parseLocalNoon } from "@/src/utils/date";
 
 const INITIAL_DAYS = 60;
 const LOAD_CHUNK = 120;
@@ -30,7 +31,7 @@ const ITEM_WIDTH = 52; // fixed cell width keeps getItemLayout/scrollToIndex rel
 /** Local `YYYY-MM-DD` keys, newest first (today at index 0) for the last `count` days. */
 function dayKeys(count: number, todayKey: string): string[] {
   const keys: string[] = [];
-  const base = new Date(`${todayKey}T12:00:00`); // local noon avoids DST/midnight edge cases
+  const base = parseLocalNoon(todayKey);
   for (let i = 0; i < count; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() - i);
@@ -40,7 +41,7 @@ function dayKeys(count: number, todayKey: string): string[] {
 }
 
 function chipLabels(key: string): { weekday: string; month: string; day: string } {
-  const d = new Date(`${key}T12:00:00`); // parsed as local
+  const d = parseLocalNoon(key);
   return {
     weekday: d.toLocaleDateString(undefined, { weekday: "short" }),
     month: d.toLocaleDateString(undefined, { month: "short" }),
@@ -50,7 +51,7 @@ function chipLabels(key: string): { weekday: string; month: string; day: string 
 
 /** Whole days between `key` and today (0 = today, 1 = yesterday, …) = its index in the list. */
 function daysBeforeToday(key: string): number {
-  const a = new Date(`${key}T12:00:00`);
+  const a = parseLocalNoon(key);
   const b = new Date();
   b.setHours(12, 0, 0, 0);
   return Math.round((b.getTime() - a.getTime()) / 86_400_000);

@@ -9,12 +9,13 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { startOfDayDaysAgo } from "@/src/utils/date";
+import { roundTo1 } from "@/src/utils/number";
 
 function computeAverage(logs: { loggedAt: string; moodScore: number }[], days: number) {
   const cutoff = startOfDayDaysAgo(days);
   const scores = logs.filter((l) => new Date(l.loggedAt) >= cutoff).map((l) => l.moodScore);
   if (scores.length === 0) return null;
-  return Math.round((scores.reduce((s, v) => s + v, 0) / scores.length) * 10) / 10;
+  return roundTo1(scores.reduce((s, v) => s + v, 0) / scores.length);
 }
 
 export function MoodTrendWidget({ userId }: { userId: string }) {

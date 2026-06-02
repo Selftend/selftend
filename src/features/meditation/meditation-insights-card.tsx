@@ -8,6 +8,7 @@ import {
   type MeditationInsights,
 } from "@/src/features/meditation/insights";
 import type { MeditationSession } from "@/src/features/meditation/types";
+import { roundTo1 } from "@/src/utils/number";
 
 interface Props {
   sessions: MeditationSession[];
@@ -73,7 +74,7 @@ export function MeditationInsightsCard({ sessions }: Props) {
           <View className="pt-2">
             <Text variant="muted" className="text-xs">
               {t(mindWanderingMessageKey(insights), {
-                count: Math.abs(Math.round(insights.mindWanderingTrend * 10) / 10),
+                count: Math.abs(roundTo1(insights.mindWanderingTrend)),
               })}
             </Text>
           </View>

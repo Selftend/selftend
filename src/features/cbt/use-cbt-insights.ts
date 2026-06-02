@@ -13,6 +13,7 @@ import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { toLocalDateKey } from "@/src/stores/selected-date-store";
+import { roundTo1 as roundedTenth } from "@/src/utils/number";
 
 interface TopDistortion {
   key: string;
@@ -57,10 +58,6 @@ interface ExposureProgress {
 
 function average(values: number[]) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
-function roundedTenth(value: number) {
-  return Math.round(value * 10) / 10;
 }
 
 function normalizeThought(value: string) {

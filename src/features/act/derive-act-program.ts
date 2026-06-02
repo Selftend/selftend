@@ -80,12 +80,13 @@ function buildSignalData(input: DeriveActProgramInput, since: number): ActProgra
 export function deriveActProgram(input: DeriveActProgramInput): ActProgramView {
   const totalPhases = ACT_PROGRAM.length;
   const startedSince = input.startedAt ? new Date(input.startedAt).getTime() : 0;
+  const countSince = (items: { createdAt: string }[]) =>
+    items.filter((i) => atOrAfter(i.createdAt, startedSince)).length;
   const summaryStats: ActProgramSummaryStats = {
-    choicePoints: input.choicePoints.filter((c) => atOrAfter(c.createdAt, startedSince)).length,
-    defusionLogs: input.defusionLogs.filter((d) => atOrAfter(d.createdAt, startedSince)).length,
-    expansionLogs: input.expansionLogs.filter((e) => atOrAfter(e.createdAt, startedSince)).length,
-    committedActions: input.committedActions.filter((a) => atOrAfter(a.createdAt, startedSince))
-      .length,
+    choicePoints: countSince(input.choicePoints),
+    defusionLogs: countSince(input.defusionLogs),
+    expansionLogs: countSince(input.expansionLogs),
+    committedActions: countSince(input.committedActions),
   };
 
   if (!input.startedAt) {

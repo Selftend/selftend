@@ -12,6 +12,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
+import { parseLocalNoon } from "@/src/utils/date";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
 import { isImplemented, metaForWidget, resolveWidget } from "@/src/features/home/widget-registry";
 import {
@@ -40,13 +41,17 @@ function pickGreetingKey(hour: number) {
   return "today.greetingEvening";
 }
 
+function firstWord(value: string) {
+  return value.trim().split(/\s+/)[0];
+}
+
 function getMetaName(user: { user_metadata?: Record<string, unknown> } | null) {
   if (!user) return null;
   const metadata = user.user_metadata ?? {};
   const fullName = typeof metadata.full_name === "string" ? metadata.full_name : null;
-  if (fullName?.trim()) return fullName.trim().split(/\s+/)[0];
+  if (fullName?.trim()) return firstWord(fullName);
   const name = typeof metadata.name === "string" ? metadata.name : null;
-  if (name?.trim()) return name.trim().split(/\s+/)[0];
+  if (name?.trim()) return firstWord(name);
   return null;
 }
 
@@ -107,7 +112,7 @@ export default function HomeScreen() {
     weekday: "long",
     day: "numeric",
     month: "long",
-  }).format(new Date(selectedDate + "T12:00:00"));
+  }).format(parseLocalNoon(selectedDate));
 
   const greeting = t(pickGreetingKey(hour));
   const displayName = profile?.displayName?.trim().split(/\s+/)[0] ?? getMetaName(user);

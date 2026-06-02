@@ -47,7 +47,7 @@ export default function MeditationSessionLogScreen() {
 
   function toggleObstacleTag(tag: MeditationObstacleTag) {
     setObstacleTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+      prev.includes(tag) ? prev.filter((existing) => existing !== tag) : [...prev, tag],
     );
   }
 

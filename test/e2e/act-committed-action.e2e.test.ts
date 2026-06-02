@@ -54,7 +54,7 @@ test.describe("ACT committed action: create, add step, toggle step, change statu
     await page.goto("/modules/act/committed-action/new");
 
     // ── Step 1: Domain ─────────────────────────────────────────────────────────
-    // "Work & education" maps to domain key "work"
+    // "Health & personal growth" maps to domain key "personalGrowth"
     await page.getByRole("button", { name: "Health & personal growth", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 

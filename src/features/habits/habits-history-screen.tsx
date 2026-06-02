@@ -7,6 +7,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useHabits, useHabitLogs } from "@/src/features/habits/queries";
+import type { Habit } from "@/src/features/habits/types";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
@@ -19,7 +20,7 @@ export default function HabitsHistoryScreen() {
   const { data: logs } = useHabitLogs(userId, { limit: 365 });
 
   const habitsById = (() => {
-    const map = new Map<string, typeof habits extends (infer T)[] | undefined ? T : never>();
+    const map = new Map<string, Habit>();
     (habits ?? []).forEach((habit) => map.set(habit.id, habit));
     return map;
   })();

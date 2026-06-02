@@ -16,6 +16,7 @@ import {
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { SubmitButtonContent } from "@/src/components/app/submit-button-content";
 import {
   EMAIL_ALREADY_EXISTS_ERROR,
   LEAKED_PASSWORD_ERROR,
@@ -193,8 +194,11 @@ export function SignUpForm() {
           disabled={!hasSupabaseConfig || isSubmitting || isThrottled}
           onPress={() => void onSubmit()}
         >
-          {isSubmitting ? <ActivityIndicator color="#ffffff" /> : null}
-          <Text>{isSubmitting ? t("signUp.submitting") : t("signUp.submit")}</Text>
+          <SubmitButtonContent
+            pending={isSubmitting}
+            idleLabel={t("signUp.submit")}
+            pendingLabel={t("signUp.submitting")}
+          />
         </Button>
 
         <View className="items-center gap-1 pt-1">

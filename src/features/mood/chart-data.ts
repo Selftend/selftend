@@ -1,5 +1,6 @@
 import { localDateKey, toLocalDateKey } from "@/src/stores/selected-date-store";
 import { startOfDayDaysAgo } from "@/src/utils/date";
+import { roundTo1 } from "@/src/utils/number";
 
 interface MoodChartPoint {
   day: string;
@@ -50,7 +51,7 @@ export function buildMoodChartData(logs: MoodSample[] | undefined, days: number)
     if (!bucket) continue;
     points.push({
       day: formatDayLabel(day),
-      score: Math.round((bucket.sum / bucket.count) * 10) / 10,
+      score: roundTo1(bucket.sum / bucket.count),
       offset: days > 1 ? dayIndex / (days - 1) : 0,
     });
   }

@@ -26,16 +26,17 @@ export function scheduleStateAt(
   const cycleLength = phases.reduce((sum, p) => sum + p.durationSeconds, 0);
   const planned = cycleLength * cycles;
   const totalPhases = phases.length * cycles;
+  const doneState: ScheduleState = {
+    done: true,
+    phaseIndex: totalPhases,
+    phase: null,
+    cycleNumber: cycles,
+    phaseRemainingSeconds: 0,
+    totalRemainingSeconds: 0,
+  };
 
   if (phases.length === 0 || cycleLength <= 0 || elapsedSeconds >= planned) {
-    return {
-      done: true,
-      phaseIndex: totalPhases,
-      phase: null,
-      cycleNumber: cycles,
-      phaseRemainingSeconds: 0,
-      totalRemainingSeconds: 0,
-    };
+    return doneState;
   }
 
   let acc = 0;
@@ -54,12 +55,5 @@ export function scheduleStateAt(
     acc += phase.durationSeconds;
   }
 
-  return {
-    done: true,
-    phaseIndex: totalPhases,
-    phase: null,
-    cycleNumber: cycles,
-    phaseRemainingSeconds: 0,
-    totalRemainingSeconds: 0,
-  };
+  return doneState;
 }

@@ -20,14 +20,22 @@ export function currentDateKey(): string {
   return localDateKey(new Date());
 }
 
-export function formatTimestamp(value: string) {
+/**
+ * Parse a `YYYY-MM-DD` key into a Date at LOCAL noon. The `T12:00:00` (no `Z`)
+ * suffix avoids DST/midnight rollovers that can shift the civil date by a day.
+ */
+export function parseLocalNoon(dateKey: string): Date {
+  return new Date(`${dateKey}T12:00:00`);
+}
+
+export function formatTimestamp(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
 }
 
-export function formatLocalTimestamp(value: string) {
+export function formatLocalTimestamp(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString();

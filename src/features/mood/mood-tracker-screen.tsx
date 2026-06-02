@@ -31,7 +31,7 @@ import {
   type MoodSummary,
 } from "@/src/features/mood/summaries";
 import { WeekHero } from "@/src/features/mood/mood-week-hero";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import { formatLocalTimestamp, parseLocalNoon } from "@/src/utils/date";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -61,7 +61,7 @@ export default function MoodTrackerScreen() {
         weekday: "short",
         month: "short",
         day: "numeric",
-      }).format(new Date(selectedDate + "T12:00:00")),
+      }).format(parseLocalNoon(selectedDate)),
     [i18n.language, selectedDate],
   );
   const sevenDay = useMemo(() => getMoodSummary(moodLogs, 7), [moodLogs]);

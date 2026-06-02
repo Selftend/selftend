@@ -46,6 +46,7 @@ export default function MeditationStagesScreen() {
           <View className="gap-3">
             {STAGES.map((s) => {
               const phaseHeader = PHASE_HEADERS.find((p) => p.startStage === s.number);
+              const milestoneKey = MILESTONE_AFTER[s.number];
               return (
                 <View key={s.number} className="gap-3">
                   {phaseHeader ? (
@@ -101,11 +102,9 @@ export default function MeditationStagesScreen() {
                       </CardContent>
                     </Card>
                   </Pressable>
-                  {MILESTONE_AFTER[s.number] ? (
+                  {milestoneKey ? (
                     <View className="rounded-md border border-dashed border-be/40 bg-be/5 p-3">
-                      <Text className="text-xs font-semibold text-be">
-                        {t(MILESTONE_AFTER[s.number])}
-                      </Text>
+                      <Text className="text-xs font-semibold text-be">{t(milestoneKey)}</Text>
                     </View>
                   ) : null}
                 </View>

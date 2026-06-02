@@ -1,4 +1,4 @@
-import { calendarDayDiff, formatTimestamp } from "@/src/utils/date";
+import { calendarDayDiff, formatTimestamp, parseLocalNoon } from "@/src/utils/date";
 
 describe("formatTimestamp", () => {
   const ISO = "2026-05-24T10:00:00.000Z";
@@ -50,5 +50,20 @@ describe("calendarDayDiff", () => {
     const from = new Date(2026, 4, 25, 0, 0, 0);
     const to = new Date(2026, 4, 24, 0, 0, 0);
     expect(calendarDayDiff(from, to)).toBe(-1);
+  });
+});
+
+describe("parseLocalNoon", () => {
+  // Local-time getters make this deterministic across timezones: the input is
+  // anchored at local noon, so the civil date never rolls over to a neighbour.
+  it("anchors the parsed Date at local noon", () => {
+    expect(parseLocalNoon("2026-05-24").getHours()).toBe(12);
+  });
+
+  it("preserves the calendar date from the key", () => {
+    const d = parseLocalNoon("2026-05-24");
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth() + 1).toBe(5);
+    expect(d.getDate()).toBe(24);
   });
 });

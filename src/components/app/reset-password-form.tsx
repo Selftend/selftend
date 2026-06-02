@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -16,6 +16,7 @@ import {
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { SubmitButtonContent } from "@/src/components/app/submit-button-content";
 import { updatePassword, LEAKED_PASSWORD_ERROR } from "@/src/features/auth/api";
 import { resetPasswordSchema, type ResetPasswordSchema } from "@/src/features/auth/schemas";
 
@@ -102,8 +103,11 @@ export function ResetPasswordForm() {
         {submitError ? <Text className="text-sm text-destructive">{submitError}</Text> : null}
 
         <Button disabled={isSubmitting} onPress={() => void onSubmit()}>
-          {isSubmitting ? <ActivityIndicator color="#ffffff" /> : null}
-          <Text>{isSubmitting ? t("resetPassword.submitting") : t("resetPassword.submit")}</Text>
+          <SubmitButtonContent
+            pending={isSubmitting}
+            idleLabel={t("resetPassword.submit")}
+            pendingLabel={t("resetPassword.submitting")}
+          />
         </Button>
       </CardContent>
     </Card>

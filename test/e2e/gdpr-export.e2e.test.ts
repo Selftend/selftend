@@ -29,7 +29,7 @@ test.describe("GDPR data export", () => {
     await expect(exportButton).toBeVisible({ timeout: 10_000 });
 
     // Listen for the download event (web triggers a synthetic <a download> click).
-    // We wrap the click in a Promise.race so test continues even if no download event fires
+    // Start listening for the download before the click; tolerate no download event firing
     // (e.g. browser blocks it in headless mode) - success copy is the primary assertion.
     const downloadPromise = page.waitForEvent("download", { timeout: 10_000 }).catch(() => null);
     await exportButton.click();

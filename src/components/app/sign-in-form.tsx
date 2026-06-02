@@ -16,6 +16,7 @@ import {
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { SubmitButtonContent } from "@/src/components/app/submit-button-content";
 import { resendVerificationEmail, signInWithPassword } from "@/src/features/auth/api";
 import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
 import { signInSchema, type SignInSchema } from "@/src/features/auth/schemas";
@@ -180,8 +181,11 @@ export function SignInForm() {
           disabled={!hasSupabaseConfig || isSubmitting || isThrottled}
           onPress={() => void onSubmit()}
         >
-          {isSubmitting ? <ActivityIndicator color="#ffffff" /> : null}
-          <Text>{isSubmitting ? t("signIn.submitting") : t("signIn.submit")}</Text>
+          <SubmitButtonContent
+            pending={isSubmitting}
+            idleLabel={t("signIn.submit")}
+            pendingLabel={t("signIn.submitting")}
+          />
         </Button>
 
         <View className="items-center gap-1 pt-1">

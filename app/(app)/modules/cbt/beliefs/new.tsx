@@ -18,6 +18,7 @@ import { WizardScreen } from "@/src/components/app/wizard-screen";
 import { useCoreBelief, useSaveCoreBelief } from "@/src/features/beliefs/queries";
 import { coreBeliefFormSchema, type CoreBeliefFormSchema } from "@/src/features/beliefs/schemas";
 import { useWizardDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
+import { useStringListField } from "@/src/lib/use-string-list-field";
 import { useSession } from "@/src/providers/session-provider";
 import { useBeliefDraftStore } from "@/src/stores/belief-draft-store";
 
@@ -59,40 +60,12 @@ export default function NewBeliefScreen() {
     watch,
   } = form;
 
-  const triggeringSituations = watch("triggeringSituations");
-  const evidenceFor = watch("evidenceFor");
-  const evidenceAgainst = watch("evidenceAgainst");
   const originalStrength = watch("originalBeliefStrength");
   const alternativeStrength = watch("alternativeBeliefStrength");
 
-  const updateListItem = (
-    fieldName: "triggeringSituations" | "evidenceFor" | "evidenceAgainst",
-    index: number,
-    value: string,
-  ) => {
-    const current = watch(fieldName);
-    const next = [...current];
-    next[index] = value;
-    setValue(fieldName, next);
-  };
-
-  const appendListItem = (
-    fieldName: "triggeringSituations" | "evidenceFor" | "evidenceAgainst",
-  ) => {
-    const current = watch(fieldName);
-    setValue(fieldName, [...current, ""]);
-  };
-
-  const removeListItem = (
-    fieldName: "triggeringSituations" | "evidenceFor" | "evidenceAgainst",
-    index: number,
-  ) => {
-    const current = watch(fieldName);
-    setValue(
-      fieldName,
-      current.filter((_, i) => i !== index),
-    );
-  };
+  const triggeringSituationsField = useStringListField(form, "triggeringSituations");
+  const evidenceForField = useStringListField(form, "evidenceFor");
+  const evidenceAgainstField = useStringListField(form, "evidenceAgainst");
 
   useEffect(() => {
     if (!existing || storedDraftValues) return;
@@ -164,30 +137,30 @@ export default function NewBeliefScreen() {
   const renderList = (
     label: string,
     hint: string,
-    items: string[],
     fieldName: "triggeringSituations" | "evidenceFor" | "evidenceAgainst",
+    field: ReturnType<typeof useStringListField<CoreBeliefFormSchema>>,
   ) => (
     <View className="gap-3">
       <Label>{label}</Label>
       <Text variant="muted">{hint}</Text>
-      {items.map((value, index) => (
+      {field.items.map((value, index) => (
         <View key={`${fieldName}-${index}`} className="flex-row gap-2 items-start">
           <View className="flex-1">
             <Input
               accessibilityLabel={`${label} ${index + 1}`}
-              onChangeText={(text) => updateListItem(fieldName, index, text)}
+              onChangeText={(text) => field.update(index, text)}
               placeholder={t("beliefs.listItemPlaceholder")}
               value={value}
             />
           </View>
-          {items.length > 1 ? (
-            <Button onPress={() => removeListItem(fieldName, index)} size="sm" variant="ghost">
+          {field.items.length > 1 ? (
+            <Button onPress={() => field.remove(index)} size="sm" variant="ghost">
               <Text>{t("beliefs.removeItem")}</Text>
             </Button>
           ) : null}
         </View>
       ))}
-      <Button onPress={() => appendListItem(fieldName)} size="sm" variant="outline">
+      <Button onPress={() => field.append()} size="sm" variant="outline">
         <Text>{t("beliefs.addItem")}</Text>
       </Button>
     </View>
@@ -233,8 +206,8 @@ export default function NewBeliefScreen() {
           {renderList(
             t("beliefs.triggeringSituations"),
             t("beliefs.triggeringSituationsHint"),
-            triggeringSituations,
             "triggeringSituations",
+            triggeringSituationsField,
           )}
         </View>
       ) : null}
@@ -244,14 +217,14 @@ export default function NewBeliefScreen() {
           {renderList(
             t("beliefs.evidenceFor"),
             t("beliefs.evidenceForHint"),
-            evidenceFor,
             "evidenceFor",
+            evidenceForField,
           )}
           {renderList(
             t("beliefs.evidenceAgainst"),
             t("beliefs.evidenceAgainstHint"),
-            evidenceAgainst,
             "evidenceAgainst",
+            evidenceAgainstField,
           )}
         </View>
       ) : null}

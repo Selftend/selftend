@@ -1,6 +1,7 @@
 import { toLocalDateKey, localDateKey } from "@/src/stores/selected-date-store";
 import type { MoodLog } from "@/src/features/mood/types";
 import { calendarDayDiff, startOfDayDaysAgo } from "@/src/utils/date";
+import { roundTo1 as round1 } from "@/src/utils/number";
 
 export interface MoodSummary {
   average: number | null;
@@ -40,10 +41,6 @@ export function getDayMoodSummary(logs: MoodSample[] | undefined, dateKey: strin
 }
 
 // ── New aggregation helpers ────────────────────────────────────────────────
-
-function round1(n: number): number {
-  return Math.round(n * 10) / 10;
-}
 
 function summarizeScores(scores: number[]): MoodSummary {
   if (scores.length === 0) {

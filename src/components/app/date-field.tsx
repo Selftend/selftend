@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { parseLocalNoon } from "@/src/utils/date";
 
 interface DateFieldProps {
   value: string | null;
@@ -54,7 +55,7 @@ export function DateField({
         month: "short",
         day: "numeric",
         year: "numeric",
-      }).format(new Date(value + "T12:00:00"))
+      }).format(parseLocalNoon(value))
     : (placeholder ?? t("dateBar.selectDate"));
 
   return (

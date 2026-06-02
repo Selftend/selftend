@@ -17,6 +17,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useStringListField } from "@/src/lib/use-string-list-field";
 
 const defaultValues: WorryEntryFormSchema = {
   worryStatement: "",
@@ -35,45 +36,24 @@ export default function NewWorryScreen() {
   const { selectedDate } = useSelectedDate();
   const saveMutation = useSaveWorryEntry(user?.id ?? null);
 
+  const form = useForm<WorryEntryFormSchema>({
+    defaultValues,
+    resolver: zodResolver(worryEntryFormSchema),
+  });
   const {
     control,
     formState: { errors, isSubmitting },
     handleSubmit,
     setValue,
     watch,
-  } = useForm<WorryEntryFormSchema>({
-    defaultValues,
-    resolver: zodResolver(worryEntryFormSchema),
-  });
+  } = form;
 
   const category = watch("worryCategory");
   const probability = watch("probabilityEstimate");
-  const evidenceFor = watch("evidenceFor");
-  const evidenceAgainst = watch("evidenceAgainst");
-  const actionSteps = watch("actionSteps");
 
-  const updateItem = (
-    fieldName: "evidenceFor" | "evidenceAgainst" | "actionSteps",
-    index: number,
-    value: string,
-  ) => {
-    const current = watch(fieldName);
-    const next = [...current];
-    next[index] = value;
-    setValue(fieldName, next);
-  };
-  const appendItem = (fieldName: "evidenceFor" | "evidenceAgainst" | "actionSteps") => {
-    setValue(fieldName, [...watch(fieldName), ""]);
-  };
-  const removeItem = (
-    fieldName: "evidenceFor" | "evidenceAgainst" | "actionSteps",
-    index: number,
-  ) => {
-    setValue(
-      fieldName,
-      watch(fieldName).filter((_, i) => i !== index),
-    );
-  };
+  const evidenceForField = useStringListField(form, "evidenceFor");
+  const evidenceAgainstField = useStringListField(form, "evidenceAgainst");
+  const actionStepsField = useStringListField(form, "actionSteps");
 
   const handleSave = handleSubmit(async (values) => {
     try {
@@ -101,28 +81,28 @@ export default function NewWorryScreen() {
   const renderArrayInput = (
     label: string,
     hint: string,
-    items: string[],
     fieldName: "evidenceFor" | "evidenceAgainst" | "actionSteps",
+    field: ReturnType<typeof useStringListField<WorryEntryFormSchema>>,
   ) => (
     <View className="gap-3">
       <Label>{label}</Label>
       <Text variant="muted">{hint}</Text>
-      {items.map((value, index) => (
+      {field.items.map((value, index) => (
         <View key={`${fieldName}-${index}`} className="flex-row gap-2 items-start">
           <View className="flex-1">
             <Input
               accessibilityLabel={`${label} ${index + 1}`}
-              onChangeText={(text) => updateItem(fieldName, index, text)}
+              onChangeText={(text) => field.update(index, text)}
               placeholder={t("worry.itemPlaceholder")}
               value={value}
             />
           </View>
-          <Button onPress={() => removeItem(fieldName, index)} size="sm" variant="ghost">
+          <Button onPress={() => field.remove(index)} size="sm" variant="ghost">
             <Text>{t("worry.removeItem")}</Text>
           </Button>
         </View>
       ))}
-      <Button onPress={() => appendItem(fieldName)} size="sm" variant="outline">
+      <Button onPress={() => field.append()} size="sm" variant="outline">
         <Text>{t("worry.addItem")}</Text>
       </Button>
     </View>
@@ -205,14 +185,14 @@ export default function NewWorryScreen() {
             {renderArrayInput(
               t("worry.evidenceFor"),
               t("worry.evidenceForHint"),
-              evidenceFor,
               "evidenceFor",
+              evidenceForField,
             )}
             {renderArrayInput(
               t("worry.evidenceAgainst"),
               t("worry.evidenceAgainstHint"),
-              evidenceAgainst,
               "evidenceAgainst",
+              evidenceAgainstField,
             )}
 
             <Controller
@@ -243,8 +223,8 @@ export default function NewWorryScreen() {
             {renderArrayInput(
               t("worry.actionSteps"),
               t("worry.actionStepsHint"),
-              actionSteps,
               "actionSteps",
+              actionStepsField,
             )}
             {errors.actionSteps?.message ? (
               <Text className="text-sm text-destructive">{errors.actionSteps.message}</Text>

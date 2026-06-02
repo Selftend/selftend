@@ -11,6 +11,7 @@ import { JournalCard } from "@/src/features/journal/journal-card";
 import { countWords } from "@/src/features/journal/word-count";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { toLocalDateKey } from "@/src/stores/selected-date-store";
+import { parseLocalNoon } from "@/src/utils/date";
 
 interface JournalDayCardProps {
   entries: JournalEntry[];
@@ -31,7 +32,7 @@ export function JournalDayCard({ entries, selectedDate, isToday }: JournalDayCar
         weekday: "short",
         month: "short",
         day: "numeric",
-      }).format(new Date(selectedDate + "T12:00:00")),
+      }).format(parseLocalNoon(selectedDate)),
     [i18n.language, selectedDate],
   );
   const words = dayEntries.reduce((sum, e) => sum + countWords(e.body), 0);

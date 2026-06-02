@@ -8,6 +8,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { startOfDayDaysAgo } from "@/src/utils/date";
 
 export function MeditationWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
@@ -16,9 +17,7 @@ export function MeditationWidget({ userId }: { userId: string }) {
   const { selectedDate: todayKey } = useSelectedDate();
   const doneToday = sessions?.some((s) => toLocalDateKey(s.completedAt) === todayKey) ?? false;
 
-  const weekStart = new Date();
-  weekStart.setHours(0, 0, 0, 0);
-  weekStart.setDate(weekStart.getDate() - 6);
+  const weekStart = startOfDayDaysAgo(7);
   const weekSessions = sessions?.filter((s) => new Date(s.completedAt) >= weekStart) ?? [];
   const totalMinutes = weekSessions.reduce((sum, s) => sum + s.durationMinutes, 0);
 

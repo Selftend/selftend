@@ -100,18 +100,11 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
     });
   }
 
-  const phasesForPreview = PHASE_FIELDS.map((f) => ({ durationSeconds: input[f.key] })).filter(
-    (p) => p.durationSeconds > 0,
-  );
-  const cycleTime = formatClock(
-    totalSeconds(
-      phasesForPreview.map((p) => ({
-        label: "inhale" as const,
-        durationSeconds: p.durationSeconds,
-      })),
-      input.cycles,
-    ),
-  );
+  const phasesForPreview = PHASE_FIELDS.map((f) => ({
+    label: "inhale" as const,
+    durationSeconds: input[f.key],
+  })).filter((p) => p.durationSeconds > 0);
+  const cycleTime = formatClock(totalSeconds(phasesForPreview, input.cycles));
 
   const goBack = () => {
     if (router.canGoBack()) router.back();

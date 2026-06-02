@@ -10,6 +10,7 @@ import { useJournalEntries } from "@/src/features/journal/queries";
 import { countWords } from "@/src/features/journal/word-count";
 import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { parseLocalNoon } from "@/src/utils/date";
 
 export function JournalWeekWidget({ userId }: { userId: string }) {
   const { t, i18n } = useTranslation("navigation");
@@ -29,7 +30,7 @@ export function JournalWeekWidget({ userId }: { userId: string }) {
             date: new Intl.DateTimeFormat(i18n.language, {
               month: "short",
               day: "numeric",
-            }).format(new Date(selectedDate + "T12:00:00")),
+            }).format(parseLocalNoon(selectedDate)),
           })
       : null;
 

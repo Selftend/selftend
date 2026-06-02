@@ -29,6 +29,7 @@ import {
 } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { parseLocalNoon } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
@@ -52,7 +53,7 @@ export default function HabitsHomeScreen() {
   const allHabits = habits ?? [];
   const allLogs = logs ?? [];
   const todayStr = selectedDate;
-  const today = new Date(selectedDate + "T12:00:00");
+  const today = parseLocalNoon(selectedDate);
   const dayLabel = new Intl.DateTimeFormat(i18n.language, {
     weekday: "short",
     month: "short",

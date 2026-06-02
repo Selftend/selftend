@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -16,6 +16,7 @@ import {
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { SubmitButtonContent } from "@/src/components/app/submit-button-content";
 import { sendPasswordResetEmail } from "@/src/features/auth/api";
 import { forgotPasswordSchema, type ForgotPasswordSchema } from "@/src/features/auth/schemas";
 import { useSession } from "@/src/providers/session-provider";
@@ -87,8 +88,11 @@ export function ForgotPasswordForm() {
         ) : null}
 
         <Button disabled={!hasSupabaseConfig || isSubmitting} onPress={() => void onSubmit()}>
-          {isSubmitting ? <ActivityIndicator color="#ffffff" /> : null}
-          <Text>{isSubmitting ? t("forgotPassword.submitting") : t("forgotPassword.submit")}</Text>
+          <SubmitButtonContent
+            pending={isSubmitting}
+            idleLabel={t("forgotPassword.submit")}
+            pendingLabel={t("forgotPassword.submitting")}
+          />
         </Button>
 
         <View className="items-center pt-2">
