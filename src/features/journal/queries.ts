@@ -7,6 +7,7 @@ import {
   saveJournalEntry,
 } from "@/src/features/journal/repository";
 import type { JournalInput } from "@/src/features/journal/types";
+import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 
 const journalKeys = {
   all: ["journal"] as const,
@@ -44,12 +45,5 @@ export function useSaveJournalEntry(userId: string | null) {
 }
 
 export function useDeleteJournalEntry(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteJournalEntry(userId!, id),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: journalKeys.all });
-    },
-  });
+  return useDeleteMutation(userId, deleteJournalEntry, journalKeys.all);
 }

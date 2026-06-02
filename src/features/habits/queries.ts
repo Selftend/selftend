@@ -12,6 +12,7 @@ import {
   upsertHabitLogNote,
 } from "@/src/features/habits/repository";
 import type { HabitInput } from "@/src/features/habits/types";
+import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 
 const habitKeys = {
   all: ["habits"] as const,
@@ -90,14 +91,7 @@ export function useRestoreHabit(userId: string | null) {
 }
 
 export function useDeleteHabit(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteHabit(userId!, id),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: habitKeys.all });
-    },
-  });
+  return useDeleteMutation(userId, deleteHabit, habitKeys.all);
 }
 
 export function useToggleHabitLog(userId: string | null) {

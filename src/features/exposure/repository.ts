@@ -207,7 +207,6 @@ export async function saveSession(userId: string, itemId: string, input: Exposur
 
   if (error) throw error;
 
-  // Mark the item as completed
   const { error: completeError } = await client
     .from("exposure_items")
     .update({ completed_at: new Date().toISOString() })

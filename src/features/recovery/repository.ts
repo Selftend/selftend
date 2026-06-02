@@ -4,6 +4,7 @@ import type {
   RecoveryPlan,
   RecoveryPlanInput,
 } from "@/src/features/recovery/types";
+import { trimAndFilterEmpty } from "@/src/lib/strings";
 import { requireSupabase } from "@/src/lib/supabase";
 
 interface RecoveryPlanRow {
@@ -64,10 +65,6 @@ function mapChallengePlan(row: ChallengePlanRow): ChallengePlan {
   };
 }
 
-function sanitizeList(values: string[]) {
-  return values.map((value) => value.trim()).filter((value) => value.length > 0);
-}
-
 function sanitizeNotes(values: Record<string, string>) {
   return Object.fromEntries(
     Object.entries(values)
@@ -95,10 +92,10 @@ export async function upsertRecoveryPlan(userId: string, input: RecoveryPlanInpu
     .upsert(
       {
         user_id: userId,
-        recovery_keys: sanitizeList(input.recoveryKeys),
+        recovery_keys: trimAndFilterEmpty(input.recoveryKeys),
         personal_slogan: input.personalSlogan.trim(),
         strategy_integration_notes: sanitizeNotes(input.strategyIntegrationNotes),
-        maintenance_commitments: sanitizeList(input.maintenanceCommitments),
+        maintenance_commitments: trimAndFilterEmpty(input.maintenanceCommitments),
       },
       { onConflict: "user_id" },
     )
@@ -133,7 +130,7 @@ export async function saveChallengePlan(
     recovery_plan_id: recoveryPlanId,
     user_id: userId,
     challenge_description: input.challengeDescription.trim(),
-    coping_steps: sanitizeList(input.copingSteps),
+    coping_steps: trimAndFilterEmpty(input.copingSteps),
   };
 
   const query = challengePlanId

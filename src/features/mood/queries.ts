@@ -8,6 +8,7 @@ import {
   saveMoodLog,
 } from "@/src/features/mood/repository";
 import type { MoodInput } from "@/src/features/mood/types";
+import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 
 const moodKeys = {
   all: ["mood"] as const,
@@ -42,14 +43,7 @@ export function useMoodLogCount(userId: string | null) {
 }
 
 export function useDeleteMoodLog(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteMoodLog(userId!, id),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: moodKeys.all });
-    },
-  });
+  return useDeleteMutation(userId, deleteMoodLog, moodKeys.all);
 }
 
 export function useSaveMoodLog(userId: string | null) {

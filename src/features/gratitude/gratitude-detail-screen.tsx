@@ -74,7 +74,6 @@ export default function GratitudeDetailScreen() {
   }
 
   const when = formatMoodRelativeTime(entry.loggedAt, t);
-  const heading = t("detail.title");
 
   const confirmDelete = async () => {
     setDeleteError("");
@@ -109,7 +108,7 @@ export default function GratitudeDetailScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <ScreenHeader title={heading} />
+            <ScreenHeader title={t("detail.title")} />
             <View className="flex-row items-center gap-2">
               <Text variant="muted">{when}</Text>
             </View>

@@ -79,7 +79,7 @@ export default function ProgressScreen() {
           : null;
       // Only show day label every other point to avoid crowding
       const label = i % 2 === 0 ? getDayLabel(date) : "";
-      return { day: label, date, score: avgScore };
+      return { day: label, score: avgScore };
     });
   })();
 

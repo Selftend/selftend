@@ -6,7 +6,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 
-export interface WizardStep {
+interface WizardStep {
   title: string;
 }
 

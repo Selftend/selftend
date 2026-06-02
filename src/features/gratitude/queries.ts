@@ -9,6 +9,7 @@ import {
   setGratitudeEntryStarred,
 } from "@/src/features/gratitude/repository";
 import type { GratitudeInput } from "@/src/features/gratitude/types";
+import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 
 const gratitudeKeys = {
   all: ["gratitude"] as const,
@@ -61,14 +62,7 @@ export function useSaveGratitudeEntry(userId: string | null) {
 }
 
 export function useDeleteGratitudeEntry(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteGratitudeEntry(userId!, id),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: gratitudeKeys.all });
-    },
-  });
+  return useDeleteMutation(userId, deleteGratitudeEntry, gratitudeKeys.all);
 }
 
 export function useSetGratitudeEntryStarred(userId: string | null) {

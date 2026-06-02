@@ -15,14 +15,7 @@ import { useSleepLogs } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 import { formatDuration } from "@/src/features/sleep/format";
-
-function getDaysAgo(loggedAt: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const entryDay = new Date(loggedAt);
-  entryDay.setHours(0, 0, 0, 0);
-  return Math.round((today.getTime() - entryDay.getTime()) / (1000 * 60 * 60 * 24));
-}
+import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 
 function averageDurationMinutes(
   logs: { durationMinutes: number; loggedAt: string }[],
@@ -46,16 +39,6 @@ function averageQuality(
   const window = logs.filter((l) => new Date(l.loggedAt).getTime() >= cutoff.getTime());
   if (window.length === 0) return null;
   return Math.round((window.reduce((sum, l) => sum + l.quality, 0) / window.length) * 10) / 10;
-}
-
-function relativeLabel(
-  loggedAt: string,
-  t: ReturnType<typeof useTranslation<"sleep">>["t"],
-): string {
-  const daysAgo = getDaysAgo(loggedAt);
-  if (daysAgo === 0) return t("relativeTime.today");
-  if (daysAgo === 1) return t("relativeTime.yesterday");
-  return t("relativeTime.daysAgo", { count: daysAgo });
 }
 
 export default function SleepTrackerScreen() {
@@ -148,7 +131,7 @@ export default function SleepTrackerScreen() {
                       key={log.id}
                       accessibilityRole="button"
                       accessibilityLabel={t("recent.viewEntry", {
-                        when: relativeLabel(log.loggedAt, t),
+                        when: formatMoodRelativeTime(log.loggedAt, t),
                       })}
                       onPress={() =>
                         router.push({
@@ -165,7 +148,7 @@ export default function SleepTrackerScreen() {
                             {formatDuration(log.durationMinutes)}
                           </Text>
                           <Text variant="muted" className="text-xs">
-                            {relativeLabel(log.loggedAt, t)}
+                            {formatMoodRelativeTime(log.loggedAt, t)}
                           </Text>
                         </View>
                         <Text variant="muted" className="text-sm">

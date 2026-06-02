@@ -1,3 +1,5 @@
+import { localDateKey } from "@/src/stores/selected-date-store";
+
 interface MoodChartPoint {
   day: string;
   score: number;
@@ -13,13 +15,6 @@ interface MoodSample {
 // locale and a multi-week window never reuses the same weekday name for two different days.
 function formatDayLabel(value: Date) {
   return new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(value);
-}
-
-function localDateKey(value: Date) {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, "0");
-  const day = String(value.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 export function buildMoodChartData(logs: MoodSample[] | undefined, days: number): MoodChartPoint[] {

@@ -34,7 +34,7 @@ export function MoodLineChart({ data, height = 160, width = 300 }: MoodLineChart
   const yScale = (score: number) =>
     chartHeight - ((score - MIN_SCORE) / (MAX_SCORE - MIN_SCORE)) * chartHeight;
 
-  const usesOffset = data.length > 0 && typeof data[0].offset === "number";
+  const usesOffset = typeof data[0].offset === "number";
 
   const points = data.map((d, i) => ({
     x: usesOffset ? PADDING.left + (d.offset ?? 0) * chartWidth : PADDING.left + i * xStep,

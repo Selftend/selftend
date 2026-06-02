@@ -148,7 +148,6 @@ export default function WeeklyReviewScreen() {
             <Text variant="muted">{t("weeklyReview.description")}</Text>
           </View>
 
-          {/* Mood trend */}
           <Card>
             <CardHeader>
               <CardTitle>{t("weeklyReview.moodTrend")}</CardTitle>
@@ -163,7 +162,6 @@ export default function WeeklyReviewScreen() {
             </CardContent>
           </Card>
 
-          {/* Activities */}
           <Card>
             <CardHeader>
               <CardTitle>{t("weeklyReview.activities")}</CardTitle>
@@ -196,7 +194,6 @@ export default function WeeklyReviewScreen() {
             </CardContent>
           </Card>
 
-          {/* Goal milestones */}
           {activeGoals.length > 0 ? (
             <Card>
               <CardHeader>
@@ -213,7 +210,6 @@ export default function WeeklyReviewScreen() {
             </Card>
           ) : null}
 
-          {/* Thought records this week */}
           <Card>
             <CardHeader>
               <CardTitle>{t("weeklyReview.thoughtRecords")}</CardTitle>
@@ -226,7 +222,6 @@ export default function WeeklyReviewScreen() {
             </CardContent>
           </Card>
 
-          {/* Reflection prompt */}
           <Card>
             <CardHeader>
               <CardTitle>{t("weeklyReview.reflection.title")}</CardTitle>

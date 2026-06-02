@@ -1,4 +1,3 @@
-// src/lib/design-tokens.ts
 export const TINT_TOKENS = [
   "primary",
   "act",

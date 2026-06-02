@@ -1,5 +1,4 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { router } from "expo-router";
 
 import HabitsHomeScreen from "./habits-home-screen";
 import { useHabitLogs, useHabits, useToggleHabitLog } from "@/src/features/habits/queries";
@@ -62,8 +61,6 @@ const mockUseHabits = useHabits as jest.MockedFunction<typeof useHabits>;
 const mockUseHabitLogs = useHabitLogs as jest.MockedFunction<typeof useHabitLogs>;
 const mockUseToggleHabitLog = useToggleHabitLog as jest.MockedFunction<typeof useToggleHabitLog>;
 const mockUseSelectedDate = useSelectedDate as jest.MockedFunction<typeof useSelectedDate>;
-
-void router;
 
 describe("HabitsHomeScreen tap-to-tick", () => {
   const toggleMutate = jest.fn();

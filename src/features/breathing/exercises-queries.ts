@@ -7,6 +7,7 @@ import {
   saveBreathingExercise,
 } from "@/src/features/breathing/exercises-repository";
 import type { BreathingExerciseInput } from "@/src/features/breathing/exercise-types";
+import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 
 const exerciseKeys = {
   all: ["breathing-exercises"] as const,
@@ -46,12 +47,5 @@ export function useSaveBreathingExercise(userId: string | null) {
 }
 
 export function useDeleteBreathingExercise(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteBreathingExercise(userId!, id),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: exerciseKeys.all });
-    },
-  });
+  return useDeleteMutation(userId, deleteBreathingExercise, exerciseKeys.all);
 }

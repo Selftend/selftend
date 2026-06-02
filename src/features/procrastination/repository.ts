@@ -97,7 +97,7 @@ export async function saveTask(userId: string, input: ProcrastinationTaskInput) 
       avoidance_reason: input.avoidanceReason.trim(),
       fear_thought: input.fearThought.trim(),
       challenged_thought: input.challengedThought.trim(),
-      deadline: input.deadline ?? null,
+      deadline: input.deadline,
       reward: input.reward.trim(),
     })
     .select("*")

@@ -2,7 +2,7 @@ import { View } from "react-native";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 
-export interface ToolStatItem {
+interface ToolStatItem {
   /** Bold, accent-colored value, e.g. "12", "7.5h", "Stage 3". */
   value: string;
   /** Muted trailing label, e.g. "entries". Pass "" to render the value alone. */

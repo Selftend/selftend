@@ -153,7 +153,6 @@ export default function ActCommittedActionDetailScreen() {
             </View>
           </View>
 
-          {/* Status controls */}
           <Card>
             <CardHeader>
               <CardTitle>{t("committedAction.statusLabel")}</CardTitle>
@@ -207,7 +206,6 @@ export default function ActCommittedActionDetailScreen() {
             </Card>
           ) : null}
 
-          {/* Steps */}
           <View className="gap-3">
             <View className="flex-row items-baseline justify-between">
               <Text variant="h3">{t("committedAction.stepsTitle")}</Text>

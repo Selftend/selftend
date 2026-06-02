@@ -62,7 +62,6 @@ function daysAgo(n: number): string {
 
 test.describe("CBT weekly review: aggregate render", () => {
   test.beforeEach(async () => {
-    // Clean slate before each test.
     await deleteAllMoodLogsForUser(ALICE_ID);
     await deleteAllActivityLogsForUser(ALICE_ID);
     await deleteAllGoalsForUser(ALICE_ID);
@@ -70,7 +69,6 @@ test.describe("CBT weekly review: aggregate render", () => {
   });
 
   test.afterEach(async () => {
-    // Restore clean state after each test.
     await deleteAllMoodLogsForUser(ALICE_ID);
     await deleteAllActivityLogsForUser(ALICE_ID);
     await deleteAllGoalsForUser(ALICE_ID);
@@ -235,7 +233,6 @@ test.describe("CBT weekly review: aggregate render", () => {
     });
 
     // ── Assert: Mood trend card renders ─────────────────────────────────────────
-    // The "Mood trend" card title should be visible.
     await expect(page.getByText("Mood trend")).toBeVisible({ timeout: 10_000 });
 
     // We seeded 3 mood logs, so the chart should render (not the "no data" fallback).

@@ -187,7 +187,7 @@ export default function ActHomeScreen() {
               </View>
               <View className="flex-row flex-wrap gap-2.5">
                 {PRINCIPLE_CARDS.map((card) => (
-                  <PrincipleTile key={card.key} card={card} icon={card.icon} />
+                  <PrincipleTile key={card.key} card={card} />
                 ))}
               </View>
             </View>
@@ -238,7 +238,7 @@ export default function ActHomeScreen() {
   );
 }
 
-function PrincipleTile({ card, icon }: { card: PrincipleCard; icon: MaterialIconName }) {
+function PrincipleTile({ card }: { card: PrincipleCard }) {
   const { t } = useTranslation("act");
   const available = card.route !== null;
 
@@ -258,7 +258,7 @@ function PrincipleTile({ card, icon }: { card: PrincipleCard; icon: MaterialIcon
         )}
       >
         <Icon
-          name={icon}
+          name={card.icon}
           size={18}
           className={cn(available ? "text-act" : "text-muted-foreground")}
         />

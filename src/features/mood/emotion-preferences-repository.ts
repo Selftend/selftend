@@ -5,7 +5,7 @@ import { requireSupabase } from "@/src/lib/supabase";
 // Row type (DB shape, snake_case)
 // ---------------------------------------------------------------------------
 
-export interface EmotionPreferenceRow {
+interface EmotionPreferenceRow {
   id: string;
   user_id: string;
   emotion_id: string;

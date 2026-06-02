@@ -315,9 +315,7 @@ export default function ThoughtRecordDetailScreen() {
               variant="destructive"
             >
               {archiveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>
-                {archiveMutation.isPending ? t("detail.archiveButton") : t("detail.archiveButton")}
-              </Text>
+              <Text>{t("detail.archiveButton")}</Text>
             </Button>
           </View>
         </View>

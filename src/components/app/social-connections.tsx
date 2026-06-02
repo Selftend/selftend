@@ -10,7 +10,7 @@ type SocialConnection = {
   onPress?: () => void;
 };
 
-export type SocialConnectionsProps = {
+type SocialConnectionsProps = {
   connections: SocialConnection[];
 };
 

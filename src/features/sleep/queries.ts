@@ -7,6 +7,7 @@ import {
   saveSleepLog,
 } from "@/src/features/sleep/repository";
 import type { SleepInput } from "@/src/features/sleep/types";
+import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 
 const sleepKeys = {
   all: ["sleep"] as const,
@@ -44,12 +45,5 @@ export function useSaveSleepLog(userId: string | null) {
 }
 
 export function useDeleteSleepLog(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteSleepLog(userId!, id),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: sleepKeys.all });
-    },
-  });
+  return useDeleteMutation(userId, deleteSleepLog, sleepKeys.all);
 }

@@ -7,7 +7,6 @@ import { saveHierarchy, saveItems, saveSession } from "@/src/features/exposure/r
 import { createTestQueryClient } from "@/test/render-with-providers";
 
 jest.mock("@/src/features/exposure/repository", () => ({
-  deleteChoicePoint: jest.fn(),
   getHierarchy: jest.fn(),
   listAllItems: jest.fn(),
   listHierarchies: jest.fn(),

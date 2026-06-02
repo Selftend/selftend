@@ -113,7 +113,6 @@ export default function ActBullsEyeScreen() {
             </Text>
           </Button>
 
-          {/* History */}
           <View className="gap-3">
             <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               {t("act:values.bullsEye.historyTitle")}

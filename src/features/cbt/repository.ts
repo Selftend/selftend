@@ -3,6 +3,7 @@ import type {
   ThoughtRecord,
   ThoughtRecordInput,
 } from "@/src/features/cbt/types";
+import { trimAndFilterEmpty } from "@/src/lib/strings";
 import { requireSupabase } from "@/src/lib/supabase";
 
 interface ThoughtRecordRow {
@@ -41,10 +42,6 @@ function mapThoughtRecord(row: ThoughtRecordRow): ThoughtRecord {
     updatedAt: row.updated_at,
     archivedAt: row.archived_at,
   };
-}
-
-function cleanList(values: string[]) {
-  return values.map((value) => value.trim()).filter((value) => value.length > 0);
 }
 
 export async function listThoughtRecords(userId: string) {
@@ -93,8 +90,8 @@ export async function saveThoughtRecord(
     emotions: input.emotions,
     emotion_intensity_before: input.emotionIntensityBefore,
     distortions: input.distortions,
-    evidence_for: cleanList(input.evidenceFor),
-    evidence_against: cleanList(input.evidenceAgainst),
+    evidence_for: trimAndFilterEmpty(input.evidenceFor),
+    evidence_against: trimAndFilterEmpty(input.evidenceAgainst),
     balanced_thought: input.balancedThought.trim(),
     emotion_intensity_after: input.emotionIntensityAfter,
     outcome_notes: input.outcomeNotes.trim(),

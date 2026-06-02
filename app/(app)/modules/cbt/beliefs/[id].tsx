@@ -97,7 +97,6 @@ export default function BeliefDetailScreen() {
             <Text variant="h3">{belief.beliefStatement}</Text>
           </View>
 
-          {/* Alternative belief */}
           <Card>
             <CardHeader>
               <CardTitle>{t("beliefs.alternativeBelief")}</CardTitle>
@@ -105,7 +104,6 @@ export default function BeliefDetailScreen() {
             </CardHeader>
           </Card>
 
-          {/* Triggering situations */}
           {belief.triggeringSituations.length > 0 ? (
             <Card>
               <CardHeader>
@@ -121,7 +119,6 @@ export default function BeliefDetailScreen() {
             </Card>
           ) : null}
 
-          {/* Evidence */}
           <Card>
             <CardHeader>
               <CardTitle>{t("beliefs.evidence")}</CardTitle>
@@ -134,7 +131,6 @@ export default function BeliefDetailScreen() {
             </CardContent>
           </Card>
 
-          {/* Strength tracker */}
           <Card>
             <CardHeader>
               <CardTitle>{t("beliefs.strengthTracker")}</CardTitle>
@@ -176,7 +172,6 @@ export default function BeliefDetailScreen() {
             </CardContent>
           </Card>
 
-          {/* Reinforcement plan */}
           {belief.reinforcementPlan ? (
             <Card>
               <CardHeader>

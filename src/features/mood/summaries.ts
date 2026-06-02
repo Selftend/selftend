@@ -1,5 +1,6 @@
-import { toLocalDateKey } from "@/src/stores/selected-date-store";
+import { toLocalDateKey, localDateKey } from "@/src/stores/selected-date-store";
 import type { MoodLog } from "@/src/features/mood/types";
+import { calendarDayDiff } from "@/src/utils/date";
 
 export interface MoodSummary {
   average: number | null;
@@ -29,7 +30,7 @@ export function getMoodSummary(logs: MoodSample[] | undefined, days: number): Mo
   }
 
   const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-  return { average: Math.round(average * 10) / 10, count: scores.length };
+  return { average: round1(average), count: scores.length };
 }
 
 /** Summary for a single `YYYY-MM-DD` day, used to scope the screen to the date bar. */
@@ -47,17 +48,10 @@ export function getDayMoodSummary(logs: MoodSample[] | undefined, dateKey: strin
   }
 
   const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-  return { average: Math.round(average * 10) / 10, count: scores.length };
+  return { average: round1(average), count: scores.length };
 }
 
 // ── New aggregation helpers ────────────────────────────────────────────────
-
-function dayKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10;
@@ -82,7 +76,7 @@ export function getDailyAverages(
   for (const log of logs ?? []) {
     const logged = new Date(log.loggedAt);
     if (logged.getTime() < start.getTime()) continue;
-    const key = dayKey(logged);
+    const key = localDateKey(logged);
     const b = buckets.get(key);
     if (b) {
       b.sum += log.moodScore;
@@ -96,8 +90,8 @@ export function getDailyAverages(
   for (let i = 0; i < days; i++) {
     const day = new Date(start);
     day.setDate(start.getDate() + i);
-    const b = buckets.get(dayKey(day));
-    out.push({ dateKey: dayKey(day), average: b ? round1(b.sum / b.count) : null });
+    const b = buckets.get(localDateKey(day));
+    out.push({ dateKey: localDateKey(day), average: b ? round1(b.sum / b.count) : null });
   }
   return out;
 }
@@ -174,10 +168,7 @@ export interface HistoryGroup {
 const GROUP_ORDER: HistoryGroupKey[] = ["today", "yesterday", "thisWeek", "older"];
 
 function groupKeyFor(loggedAt: string, now: Date): HistoryGroupKey {
-  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const logged = new Date(loggedAt);
-  const startLogged = new Date(logged.getFullYear(), logged.getMonth(), logged.getDate()).getTime();
-  const dayDiff = Math.round((startToday - startLogged) / (24 * 60 * 60 * 1000));
+  const dayDiff = calendarDayDiff(new Date(loggedAt), now);
   if (dayDiff <= 0) return "today";
   if (dayDiff === 1) return "yesterday";
   if (dayDiff <= 6) return "thisWeek";

@@ -312,11 +312,7 @@ function SharedToolsRow({ tools, tint, onOpenInfo }: SharedToolsRowProps) {
             className={cn("text-muted-foreground", PILL_ICON_CLASS[tint])}
           />
           <Text className="text-xs font-medium">{t(tool.labelKey)}</Text>
-          {tool.infoKey ? (
-            <Icon name="help-outline" size={12} className="text-muted-foreground" />
-          ) : tool.helpKey ? (
-            <Icon name="help-outline" size={12} className="text-muted-foreground" />
-          ) : null}
+          <Icon name="help-outline" size={12} className="text-muted-foreground" />
         </Pressable>
       ))}
     </View>

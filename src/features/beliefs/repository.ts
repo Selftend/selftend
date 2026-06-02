@@ -73,7 +73,7 @@ export async function saveCoreBelief(userId: string, input: CoreBeliefInput, bel
     original_belief_strength: input.originalBeliefStrength,
     alternative_belief_strength: input.alternativeBeliefStrength,
     reinforcement_plan: input.reinforcementPlan.trim(),
-    next_review_date: input.nextReviewDate ?? null,
+    next_review_date: input.nextReviewDate,
   };
 
   const query = beliefId

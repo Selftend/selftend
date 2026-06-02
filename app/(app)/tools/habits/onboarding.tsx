@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -37,9 +37,7 @@ export default function HabitsOnboardingRoute() {
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator />
-        </View>
+        <ActivityIndicator />
       </SafeAreaView>
     );
   }

@@ -146,8 +146,8 @@ function Text({
   return (
     <Component
       className={cn(variantClassName, tintColor, textClass, className)}
-      role={resolvedVariant ? ROLE[resolvedVariant] : undefined}
-      aria-level={resolvedVariant ? ARIA_LEVEL[resolvedVariant] : undefined}
+      role={ROLE[resolvedVariant]}
+      aria-level={ARIA_LEVEL[resolvedVariant]}
       style={[getTextFontStyle([variantClassName, textClass, className], resolvedVariant), style]}
       {...props}
     />

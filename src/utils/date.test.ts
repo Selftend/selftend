@@ -1,4 +1,4 @@
-import { formatTimestamp } from "@/src/utils/date";
+import { calendarDayDiff, formatTimestamp } from "@/src/utils/date";
 
 describe("formatTimestamp", () => {
   const ISO = "2026-05-24T10:00:00.000Z";
@@ -29,5 +29,26 @@ describe("formatTimestamp", () => {
     const result = formatTimestamp("2026-05-24T09:05:00.000Z");
     expect(result).toMatch(/2026/);
     expect(result).toMatch(/:/); // time portion always has a colon
+  });
+});
+
+describe("calendarDayDiff", () => {
+  // Returns whole calendar days as `to_day - from_day`, ignoring wall-clock time.
+  it("is 0 for two times on the same calendar day", () => {
+    const from = new Date(2026, 4, 24, 1, 0, 0);
+    const to = new Date(2026, 4, 24, 23, 0, 0);
+    expect(calendarDayDiff(from, to)).toBe(0);
+  });
+
+  it("is 1 when `from` is the day before `to`", () => {
+    const from = new Date(2026, 4, 23, 23, 0, 0);
+    const to = new Date(2026, 4, 24, 0, 5, 0);
+    expect(calendarDayDiff(from, to)).toBe(1);
+  });
+
+  it("is negative when `from` is after `to` (future log)", () => {
+    const from = new Date(2026, 4, 25, 0, 0, 0);
+    const to = new Date(2026, 4, 24, 0, 0, 0);
+    expect(calendarDayDiff(from, to)).toBe(-1);
   });
 });

@@ -51,10 +51,6 @@ export default function MeditationHomeScreen() {
   const phaseLabel = t(`module.home.phase${capitalize(stage.phase)}`);
   const medianMinutes = median((allSessions ?? []).map((s) => s.durationMinutes));
 
-  function handleInfoComplete() {
-    setForceInfo(false);
-  }
-
   async function handleOnboardingComplete(result: MeditationOnboardingResult) {
     if (!preferences || !userId) return;
     setOnboardingError(undefined);
@@ -95,7 +91,7 @@ export default function MeditationHomeScreen() {
     <>
       <MeditationInfo
         visible={forceInfo}
-        onComplete={handleInfoComplete}
+        onComplete={() => setForceInfo(false)}
         onDismiss={() => setForceInfo(false)}
       />
       <MeditationOnboarding

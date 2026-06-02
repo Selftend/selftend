@@ -116,7 +116,6 @@ export default function SelfCareScreen() {
             <Text variant="muted">{t("selfCare.description", { date: selectedDate })}</Text>
           </View>
 
-          {/* Sleep link */}
           <Pressable
             accessibilityRole="link"
             accessibilityLabel={t("selfCare.sleepLinkTitle")}
@@ -134,7 +133,6 @@ export default function SelfCareScreen() {
             <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
           </Pressable>
 
-          {/* Gratitude link */}
           <Pressable
             accessibilityRole="link"
             accessibilityLabel={t("selfCare.gratitudeLinkTitle")}
@@ -152,7 +150,6 @@ export default function SelfCareScreen() {
             <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
           </Pressable>
 
-          {/* Exercise */}
           <Card>
             <CardHeader>
               <CardTitle>{t("selfCare.exercise")}</CardTitle>
@@ -195,7 +192,6 @@ export default function SelfCareScreen() {
             </CardContent>
           </Card>
 
-          {/* Meals */}
           <Card>
             <CardHeader>
               <CardTitle>{t("selfCare.meals")}</CardTitle>
@@ -225,7 +221,6 @@ export default function SelfCareScreen() {
             </CardContent>
           </Card>
 
-          {/* Social */}
           <Card>
             <CardHeader>
               <CardTitle>{t("selfCare.social")}</CardTitle>

@@ -54,6 +54,7 @@ import type {
   UrgeSurfLogInput,
   ValueEntryInput,
 } from "@/src/features/act/types";
+import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 
 const u = (userId: string | null) => userId ?? "anonymous";
 
@@ -120,14 +121,7 @@ export function useSaveDefusionLog(userId: string | null) {
 }
 
 export function useDeleteDefusionLog(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (logId: string) => deleteDefusionLog(userId!, logId),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: actKeys.defusionList(userId) });
-    },
-  });
+  return useDeleteMutation(userId, deleteDefusionLog, actKeys.defusionList(userId));
 }
 
 // ─── Expansion ────────────────────────────────────────────────────────────────
@@ -160,14 +154,7 @@ export function useSaveExpansionLog(userId: string | null) {
 }
 
 export function useDeleteExpansionLog(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (logId: string) => deleteExpansionLog(userId!, logId),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: actKeys.expansionList(userId) });
-    },
-  });
+  return useDeleteMutation(userId, deleteExpansionLog, actKeys.expansionList(userId));
 }
 
 // ─── Urge Surfing ─────────────────────────────────────────────────────────────
@@ -221,14 +208,7 @@ export function useSaveConnectionLog(userId: string | null) {
 }
 
 export function useDeleteConnectionLog(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (logId: string) => deleteConnectionLog(userId!, logId),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: actKeys.connectionList(userId) });
-    },
-  });
+  return useDeleteMutation(userId, deleteConnectionLog, actKeys.connectionList(userId));
 }
 
 // ─── Observing Self ───────────────────────────────────────────────────────────
@@ -261,14 +241,7 @@ export function useSaveObservingSelfSession(userId: string | null) {
 }
 
 export function useDeleteObservingSelfSession(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (sessionId: string) => deleteObservingSelfSession(userId!, sessionId),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: actKeys.observingList(userId) });
-    },
-  });
+  return useDeleteMutation(userId, deleteObservingSelfSession, actKeys.observingList(userId));
 }
 
 // ─── Values ───────────────────────────────────────────────────────────────────
@@ -472,12 +445,5 @@ export function useSaveChoicePoint(userId: string | null) {
 }
 
 export function useDeleteChoicePoint(userId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteChoicePoint(userId!, id),
-    onSuccess: async () => {
-      if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: actKeys.choicePointList(userId) });
-    },
-  });
+  return useDeleteMutation(userId, deleteChoicePoint, actKeys.choicePointList(userId));
 }

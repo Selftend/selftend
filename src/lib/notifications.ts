@@ -270,7 +270,7 @@ async function ensureReminderPermission() {
     return false;
   }
 
-  const Notifications = await getNativeNotifications();
+  const Notifications = getNativeNotifications();
   if (!Notifications) {
     return false;
   }
@@ -291,7 +291,7 @@ export async function cancelReminder(target: ReminderTarget, userId?: string | n
     return;
   }
 
-  const Notifications = await getNativeNotifications();
+  const Notifications = getNativeNotifications();
   if (!Notifications) {
     return;
   }
@@ -313,7 +313,7 @@ export async function scheduleReminder(
     return ensureWebPushSubscription(userId);
   }
 
-  const Notifications = await getNativeNotifications();
+  const Notifications = getNativeNotifications();
   if (!Notifications) {
     return { enabled: false, reason: "unsupported" };
   }

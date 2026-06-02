@@ -24,8 +24,6 @@ function assertSectionsShape(name: string, sections: PolicySection[]) {
         expect(typeof line).toBe("string");
         expect(line.length).toBeGreaterThan(0);
       });
-      // Confirm no orphan section is missing both fields together
-      expect({ section, idx }).toBeDefined();
     });
   });
 }

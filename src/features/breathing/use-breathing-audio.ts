@@ -177,7 +177,6 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
     void ambientLane.current?.setVolume(ambientVolume);
   }, [ambientVolume]);
 
-  // Stop everything on unmount.
   useEffect(() => {
     return () => {
       void breathLane.current?.stop();

@@ -9,7 +9,6 @@ import {
 import type { ActivityInput } from "@/src/features/activities/types";
 
 const activityKeys = {
-  all: ["activities"] as const,
   list: (userId: string) => ["activities", "list", userId] as const,
   detail: (userId: string, activityId: string) =>
     ["activities", "detail", userId, activityId] as const,

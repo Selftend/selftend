@@ -103,7 +103,7 @@ export default function WorryScreen() {
                       <Checkbox
                         accessibilityLabel={t("worry.resolved")}
                         checked={entry.resolved}
-                        onCheckedChange={(checked) => void handleToggle(entry.id, Boolean(checked))}
+                        onCheckedChange={(checked) => void handleToggle(entry.id, checked)}
                       />
                       <Label onPress={() => void handleToggle(entry.id, !entry.resolved)}>
                         {t("worry.resolved")}

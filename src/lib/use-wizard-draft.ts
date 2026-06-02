@@ -85,9 +85,7 @@ export function useWizardDraft<TForm extends FieldValues, TSaved>({
     stepIndex,
     isLastStep,
     isPending,
-    handleNext: async () => {
-      await handleNext();
-    },
+    handleNext,
     handleSave: async () => {
       await handleSave();
     },
