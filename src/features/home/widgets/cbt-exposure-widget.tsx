@@ -14,9 +14,8 @@ export function CbtExposureWidget({ userId }: { userId: string }) {
   const items = data ?? [];
   const done = items.filter((i) => i.completedAt !== null).length;
   const next =
-    [...items.filter((i) => i.completedAt === null)].sort(
-      (a, b) => a.sudsRating - b.sudsRating,
-    )[0] ?? null;
+    items.filter((i) => i.completedAt === null).sort((a, b) => a.sudsRating - b.sudsRating)[0] ??
+    null;
   const hasItems = items.length > 0;
 
   return (

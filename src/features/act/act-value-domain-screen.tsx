@@ -19,7 +19,7 @@ import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useUpsertValueEntry, useValueEntryByDomain } from "@/src/features/act/queries";
-import { type ACTLifeDomain } from "@/src/features/act/types";
+import { ACT_LIFE_DOMAINS, type ACTLifeDomain } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
@@ -27,13 +27,11 @@ import { cn } from "@/lib/utils";
 type Step = "value" | "current" | "desired" | "barriers" | "ratings";
 const STEP_ORDER: Step[] = ["value", "current", "desired", "barriers", "ratings"];
 
-const VALID_DOMAINS = ["work", "leisure", "relationships", "personalGrowth"] as const;
-
 export default function ActValueDomainScreen() {
   const { t } = useTranslation(["act", "common"]);
   const { user } = useSession();
   const { domain: rawDomain } = useLocalSearchParams<{ domain: string }>();
-  const domain = VALID_DOMAINS.includes(rawDomain as ACTLifeDomain)
+  const domain = ACT_LIFE_DOMAINS.includes(rawDomain as ACTLifeDomain)
     ? (rawDomain as ACTLifeDomain)
     : null;
 

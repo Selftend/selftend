@@ -10,14 +10,15 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { localDateKey, toLocalDateKey } from "@/src/stores/selected-date-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
 import { LoadingState } from "@/src/components/app/screen-state";
+import { dailyIntegerAverages, lastNLocalDateKeys } from "@/src/features/mood/chart-data";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { useJournalEntries } from "@/src/features/journal/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { startOfDayDaysAgo } from "@/src/utils/date";
 
 const REFLECTION_PROMPTS = [
   "progress.prompt1",
@@ -26,27 +27,9 @@ const REFLECTION_PROMPTS = [
   "progress.prompt4",
 ] as const;
 
-function getLast14Dates(): string[] {
-  const dates: string[] = [];
-  const now = new Date();
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    dates.push(localDateKey(d));
-  }
-  return dates;
-}
-
 function getDayLabel(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString(undefined, { day: "numeric", month: "numeric" });
-}
-
-function getCutoff(days: number): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - (days - 1));
-  return d;
 }
 
 export default function ProgressScreen() {
@@ -67,20 +50,15 @@ export default function ProgressScreen() {
 
   const isLoading = moodLoading || journalLoading || gratitudeLoading;
 
-  const last14Dates = getLast14Dates();
+  const last14Dates = lastNLocalDateKeys(14);
 
   const chartData = (() => {
     if (!moodLogs) return [];
-    return last14Dates.map((date, i) => {
-      const logsOnDay = moodLogs.filter((l) => toLocalDateKey(l.loggedAt) === date);
-      const avgScore =
-        logsOnDay.length > 0
-          ? Math.round(logsOnDay.reduce((sum, l) => sum + l.moodScore, 0) / logsOnDay.length)
-          : null;
-      // Only show day label every other point to avoid crowding
-      const label = i % 2 === 0 ? getDayLabel(date) : "";
-      return { day: label, score: avgScore };
-    });
+    const averages = dailyIntegerAverages(moodLogs, last14Dates);
+    return last14Dates.map((date, i) => ({
+      day: i % 2 === 0 ? getDayLabel(date) : "",
+      score: averages[i],
+    }));
   })();
 
   const chartPoints = chartData.filter((d) => d.score !== null) as {
@@ -88,7 +66,7 @@ export default function ProgressScreen() {
     score: number;
   }[];
 
-  const thirtyDayCutoff = getCutoff(30);
+  const thirtyDayCutoff = startOfDayDaysAgo(30);
 
   const thirtyDayMoodCount = moodLogs
     ? moodLogs.filter((l) => new Date(l.loggedAt) >= thirtyDayCutoff).length

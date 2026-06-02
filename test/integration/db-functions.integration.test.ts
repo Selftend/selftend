@@ -1,13 +1,6 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { type SupabaseClient } from "@supabase/supabase-js";
 
-import {
-  LOCAL_ANON_KEY,
-  LOCAL_SUPABASE_URL,
-  SEED_USERS,
-  createAnonClient,
-  createServiceClient,
-  signInAs,
-} from "./helpers";
+import { SEED_USERS, createAnonClient, createServiceClient, signInAs } from "./helpers";
 
 // Verifies the security-definer functions defined in supabase/migrations.
 // export_user_data() returns the caller's data scoped by auth.uid().
@@ -97,9 +90,7 @@ describe("export_user_data() (integration)", () => {
   });
 
   it("rejects unauthenticated callers", async () => {
-    const anon = createClient(LOCAL_SUPABASE_URL, LOCAL_ANON_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-    });
+    const anon = createAnonClient();
     const { error } = await anon.rpc("export_user_data");
     expect(error).not.toBeNull();
     expect(error?.message ?? "").toMatch(/Not authenticated|permission|denied/i);
@@ -159,9 +150,7 @@ describe("delete_user_account() (integration)", () => {
   });
 
   it("removes the auth user and all owned rows in one call", async () => {
-    const client = createClient(LOCAL_SUPABASE_URL, LOCAL_ANON_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-    });
+    const client = createAnonClient();
     const signIn = await client.auth.signInWithPassword({
       email: testEmail,
       password: testPassword,

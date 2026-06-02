@@ -44,7 +44,7 @@ export function useActProgram(userId: string | null): UseActProgramResult {
   const committedActions = useCommittedActions(userId);
   const actionSteps = useAllActionSteps(userId);
 
-  // Memoize the (~149-line) derivation so frequent Today-screen re-renders don't recompute it
+  // Memoize the derivation so frequent Today-screen re-renders don't recompute it
   // when the underlying ACT query data is unchanged.
   const program = useMemo(
     () =>

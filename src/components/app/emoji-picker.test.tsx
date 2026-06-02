@@ -5,7 +5,7 @@ import { EmojiPicker } from "./emoji-picker";
 describe("EmojiPicker", () => {
   it("renders all emoji tiles as buttons", () => {
     render(<EmojiPicker value="" onSelect={() => {}} />);
-    // 70 emojis in the curated list
+    // 68 emojis in the curated list
     expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(60);
   });
 

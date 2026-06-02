@@ -1,25 +1,11 @@
 import { create } from "zustand";
 
+import { localDateKey, currentDateKey, toLocalDateKey } from "@/src/utils/date";
+
+export { localDateKey, currentDateKey, toLocalDateKey };
+
 function pad(n: number): string {
   return String(n).padStart(2, "0");
-}
-
-/** `YYYY-MM-DD` for a Date in the viewer's LOCAL timezone. */
-export function localDateKey(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-/**
- * The LOCAL civil date an ISO timestamp falls on, as `YYYY-MM-DD`. Use this to
- * decide which day an entry belongs to, so it matches the date the user sees.
- */
-export function toLocalDateKey(iso: string): string {
-  return localDateKey(new Date(iso));
-}
-
-/** Today's date key in `YYYY-MM-DD`, in the viewer's local timezone. */
-export function currentDateKey(): string {
-  return localDateKey(new Date());
 }
 
 /**

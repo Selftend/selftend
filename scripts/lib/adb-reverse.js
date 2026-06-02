@@ -112,6 +112,5 @@ function startAdbDeviceWatcher(metroPort, { intervalMs = 2500 } = {}) {
 module.exports = {
   applyAdbReverseOnce,
   startAdbDeviceWatcher,
-  getConnectedAndroidDevices,
   getLocalSupabasePort,
 };

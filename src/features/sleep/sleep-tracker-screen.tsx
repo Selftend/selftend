@@ -16,16 +16,20 @@ import { useSession } from "@/src/providers/session-provider";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 import { formatDuration } from "@/src/features/sleep/format";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { startOfDayDaysAgo } from "@/src/utils/date";
+
+function recentWindow<T extends { loggedAt: string }>(logs: T[], days: number): T[] | null {
+  const cutoff = startOfDayDaysAgo(days);
+  const window = logs.filter((l) => new Date(l.loggedAt).getTime() >= cutoff.getTime());
+  return window.length === 0 ? null : window;
+}
 
 function averageDurationMinutes(
   logs: { durationMinutes: number; loggedAt: string }[],
   days: number,
 ): number | null {
-  const cutoff = new Date();
-  cutoff.setHours(0, 0, 0, 0);
-  cutoff.setDate(cutoff.getDate() - days + 1);
-  const window = logs.filter((l) => new Date(l.loggedAt).getTime() >= cutoff.getTime());
-  if (window.length === 0) return null;
+  const window = recentWindow(logs, days);
+  if (!window) return null;
   return Math.round(window.reduce((sum, l) => sum + l.durationMinutes, 0) / window.length);
 }
 
@@ -33,11 +37,8 @@ function averageQuality(
   logs: { quality: number; loggedAt: string }[],
   days: number,
 ): number | null {
-  const cutoff = new Date();
-  cutoff.setHours(0, 0, 0, 0);
-  cutoff.setDate(cutoff.getDate() - days + 1);
-  const window = logs.filter((l) => new Date(l.loggedAt).getTime() >= cutoff.getTime());
-  if (window.length === 0) return null;
+  const window = recentWindow(logs, days);
+  if (!window) return null;
   return Math.round((window.reduce((sum, l) => sum + l.quality, 0) / window.length) * 10) / 10;
 }
 

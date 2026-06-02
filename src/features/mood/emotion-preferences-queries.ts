@@ -19,7 +19,6 @@ import type {
 // ---------------------------------------------------------------------------
 
 export const emotionPrefKeys = {
-  all: ["emotion-prefs"] as const,
   list: (userId: string) => ["emotion-prefs", userId] as const,
 };
 
@@ -142,7 +141,7 @@ export function useReorderEmotions(userId: string | null) {
           if (existing) return { ...existing, position: index };
           return {
             id: `optimistic-${emotionId}`,
-            userId: userId,
+            userId,
             emotionId,
             name: null,
             emoji: null,

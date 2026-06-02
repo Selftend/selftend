@@ -4,7 +4,7 @@ import { mergeUserPreferences, type UserPreferences } from "@/src/features/modul
 import { useUpdateUserPreferences } from "@/src/features/settings/queries";
 import { supportedLanguages, type SupportedLanguage } from "@/src/i18n";
 import { useLanguage } from "@/src/providers/i18n-provider";
-import { isThemePreference, useThemeStore, type ThemePreference } from "@/src/stores/theme-store";
+import { isThemePreference, useThemeStore } from "@/src/stores/theme-store";
 
 function isSupportedLanguage(value: string | null | undefined): value is SupportedLanguage {
   return Boolean(value) && (supportedLanguages as readonly string[]).includes(value as string);
@@ -28,9 +28,7 @@ export function useSettingsSync(userId: string | null, preferences: UserPreferen
       syncedUserId.current = userId;
 
       const dbLang = isSupportedLanguage(preferences.language) ? preferences.language : null;
-      const dbTheme = isThemePreference(preferences.theme)
-        ? (preferences.theme as ThemePreference)
-        : null;
+      const dbTheme = isThemePreference(preferences.theme) ? preferences.theme : null;
 
       const needsLangUpdate = dbLang !== null && dbLang !== language;
       const needsThemeUpdate = dbTheme !== null && dbTheme !== themePreference;

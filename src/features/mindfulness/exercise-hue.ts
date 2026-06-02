@@ -30,33 +30,45 @@ interface HueClasses {
 
 interface HueDef {
   classes: HueClasses;
-  hsl: { light: string; dark: string };
+  hsl: HslPair;
 }
+
+type HslPair = { light: string; dark: string };
+const HUE_HSL: Record<ExerciseHue, HslPair> = {
+  mist: { light: "178, 40%, 40%", dark: "178, 48%, 58%" },
+  iris: { light: "280, 48%, 60%", dark: "280, 58%, 74%" },
+  be: { light: "330, 56%, 60%", dark: "330, 62%, 72%" },
+  ink: { light: "232, 46%, 56%", dark: "232, 56%, 72%" },
+  act: { light: "160, 46%, 38%", dark: "160, 56%, 55%" },
+  clay: { light: "20, 52%, 50%", dark: "20, 60%, 66%" },
+  think: { light: "43, 74%, 52%", dark: "43, 86%, 65%" },
+  aqua: { light: "196, 52%, 45%", dark: "196, 58%, 62%" },
+};
 
 const HUES: Record<ExerciseHue, HueDef> = {
   mist: {
     classes: { text: "text-mist", chipBg: "bg-mist/15", border: "border-mist/30", fill: "bg-mist" },
-    hsl: { light: "178, 40%, 40%", dark: "178, 48%, 58%" },
+    hsl: HUE_HSL.mist,
   },
   iris: {
     classes: { text: "text-iris", chipBg: "bg-iris/15", border: "border-iris/30", fill: "bg-iris" },
-    hsl: { light: "280, 48%, 60%", dark: "280, 58%, 74%" },
+    hsl: HUE_HSL.iris,
   },
   be: {
     classes: { text: "text-be", chipBg: "bg-be/15", border: "border-be/30", fill: "bg-be" },
-    hsl: { light: "330, 56%, 60%", dark: "330, 62%, 72%" },
+    hsl: HUE_HSL.be,
   },
   ink: {
     classes: { text: "text-ink", chipBg: "bg-ink/15", border: "border-ink/30", fill: "bg-ink" },
-    hsl: { light: "232, 46%, 56%", dark: "232, 56%, 72%" },
+    hsl: HUE_HSL.ink,
   },
   act: {
     classes: { text: "text-act", chipBg: "bg-act/15", border: "border-act/30", fill: "bg-act" },
-    hsl: { light: "160, 46%, 38%", dark: "160, 56%, 55%" },
+    hsl: HUE_HSL.act,
   },
   clay: {
     classes: { text: "text-clay", chipBg: "bg-clay/15", border: "border-clay/30", fill: "bg-clay" },
-    hsl: { light: "20, 52%, 50%", dark: "20, 60%, 66%" },
+    hsl: HUE_HSL.clay,
   },
   think: {
     classes: {
@@ -65,7 +77,7 @@ const HUES: Record<ExerciseHue, HueDef> = {
       border: "border-think/30",
       fill: "bg-think",
     },
-    hsl: { light: "43, 74%, 52%", dark: "43, 86%, 65%" },
+    hsl: HUE_HSL.think,
   },
   aqua: {
     classes: {
@@ -74,7 +86,7 @@ const HUES: Record<ExerciseHue, HueDef> = {
       border: "border-aqua/30",
       fill: "bg-aqua",
     },
-    hsl: { light: "196, 52%, 45%", dark: "196, 58%, 62%" },
+    hsl: HUE_HSL.aqua,
   },
 };
 
@@ -104,16 +116,9 @@ export function hueToTint(hue: ToolHue): TintToken {
 // HSL triples for every TintToken in light + dark mode. ExerciseHue values
 // mirror the HUES table above; primary is added here (not in HUES because
 // it isn't an exercise tint).
-const STRIPE_HSL: Record<TintToken, { light: string; dark: string }> = {
+const STRIPE_HSL: Record<TintToken, HslPair> = {
   primary: { light: "262, 62%, 56%", dark: "264, 72%, 72%" },
-  act: { light: "160, 46%, 38%", dark: "160, 56%, 55%" },
-  be: { light: "330, 56%, 60%", dark: "330, 62%, 72%" },
-  think: { light: "43, 74%, 52%", dark: "43, 86%, 65%" },
-  aqua: { light: "196, 52%, 45%", dark: "196, 58%, 62%" },
-  iris: { light: "280, 48%, 60%", dark: "280, 58%, 74%" },
-  ink: { light: "232, 46%, 56%", dark: "232, 56%, 72%" },
-  clay: { light: "20, 52%, 50%", dark: "20, 60%, 66%" },
-  mist: { light: "178, 40%, 40%", dark: "178, 48%, 58%" },
+  ...HUE_HSL,
 };
 
 /** Two-stop gradient pair (full opacity → half opacity) for a tint token in the given color scheme. */

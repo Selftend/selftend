@@ -1,15 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { SEED_USERS, createServiceClient, signInAs } from "./helpers";
+import { SEED_USERS, deleteAllSleepLogsForUser, signInAs } from "./helpers";
 
 // Mirrors the queries in src/features/sleep/repository.ts. Verifies the DB
 // contract the repo depends on (schema columns, RLS allowing self-writes,
 // ordering, scoping).
-
-async function deleteAllSleepLogsForUser(userId: string) {
-  const admin = createServiceClient();
-  await admin.from("sleep_logs").delete().eq("user_id", userId);
-}
 
 describe("sleep sleep_logs (integration)", () => {
   let alice: SupabaseClient;

@@ -70,7 +70,7 @@ export default function ActCommittedActionNewScreen() {
     }
   }
 
-  const canGoNext = step === "domain" ? true : step === "action" ? title.trim().length > 0 : true;
+  const canGoNext = step !== "action" || title.trim().length > 0;
 
   return (
     <MobileFormScreen

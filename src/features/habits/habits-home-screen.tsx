@@ -132,7 +132,7 @@ export default function HabitsHomeScreen() {
                 <Text className="text-sm">
                   {t("home.identityBannerPrefix")}{" "}
                   <Text className="font-semibold">
-                    {identities[Math.floor(today.getDate()) % identities.length]}
+                    {identities[today.getDate() % identities.length]}
                   </Text>
                 </Text>
               </View>

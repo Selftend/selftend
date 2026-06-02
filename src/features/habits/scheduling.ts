@@ -1,15 +1,7 @@
 import type { Habit, HabitLog } from "@/src/features/habits/types";
+import { localDateKey, currentDateKey } from "@/src/utils/date";
 
-export function localDateKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-export function currentDateKey(): string {
-  return localDateKey(new Date());
-}
+export { localDateKey, currentDateKey };
 
 export function addDays(date: Date, delta: number): Date {
   const next = new Date(date);

@@ -1,4 +1,5 @@
-import { localDateKey } from "@/src/stores/selected-date-store";
+import { localDateKey, toLocalDateKey } from "@/src/stores/selected-date-store";
+import { startOfDayDaysAgo } from "@/src/utils/date";
 
 interface MoodChartPoint {
   day: string;
@@ -22,9 +23,7 @@ export function buildMoodChartData(logs: MoodSample[] | undefined, days: number)
     return [];
   }
 
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (days - 1));
+  const start = startOfDayDaysAgo(days);
 
   const buckets = new Map<string, { sum: number; count: number }>();
 
@@ -57,4 +56,26 @@ export function buildMoodChartData(logs: MoodSample[] | undefined, days: number)
   }
 
   return points;
+}
+
+export function lastNLocalDateKeys(days: number, now = new Date()): string[] {
+  const dates: string[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    dates.push(localDateKey(d));
+  }
+  return dates;
+}
+
+export function dailyIntegerAverages(
+  logs: { loggedAt: string; moodScore: number }[],
+  dateKeys: string[],
+): (number | null)[] {
+  return dateKeys.map((date) => {
+    const logsOnDay = logs.filter((l) => toLocalDateKey(l.loggedAt) === date);
+    return logsOnDay.length > 0
+      ? Math.round(logsOnDay.reduce((sum, l) => sum + l.moodScore, 0) / logsOnDay.length)
+      : null;
+  });
 }

@@ -15,6 +15,7 @@ import {
 import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ProgressBar } from "@/src/components/app/progress-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import {
   useGoal,
@@ -117,12 +118,7 @@ export default function GoalDetailScreen() {
                   {done}/{total}
                 </Text>
               </View>
-              <View className="h-2 overflow-hidden rounded-full bg-muted">
-                <View
-                  className="h-full rounded-full bg-primary"
-                  style={{ width: `${Math.round(progress * 100)}%` }}
-                />
-              </View>
+              <ProgressBar progress={progress} className="h-2" />
             </View>
           ) : null}
 

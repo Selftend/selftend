@@ -44,70 +44,73 @@ export default function MeditationStagesScreen() {
           </View>
 
           <View className="gap-3">
-            {STAGES.map((s) => (
-              <View key={s.number} className="gap-3">
-                {PHASE_HEADERS.some((p) => p.startStage === s.number) ? (
-                  <Text className="mt-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t(PHASE_HEADERS.find((p) => p.startStage === s.number)!.titleKey)}
-                  </Text>
-                ) : null}
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/tools/meditation/stages/[n]",
-                      params: { n: String(s.number) },
-                    })
-                  }
-                >
-                  <Card
-                    className={cn(s.number === currentStage ? "border-primary" : "border-border")}
+            {STAGES.map((s) => {
+              const phaseHeader = PHASE_HEADERS.find((p) => p.startStage === s.number);
+              return (
+                <View key={s.number} className="gap-3">
+                  {phaseHeader ? (
+                    <Text className="mt-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t(phaseHeader.titleKey)}
+                    </Text>
+                  ) : null}
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() =>
+                      router.push({
+                        pathname: "/tools/meditation/stages/[n]",
+                        params: { n: String(s.number) },
+                      })
+                    }
                   >
-                    <CardContent className="flex-row items-center gap-4 pt-5">
-                      <View
-                        className={cn(
-                          "size-10 items-center justify-center rounded-full border",
-                          s.number === currentStage
-                            ? "border-primary bg-primary"
-                            : "border-border bg-card",
-                        )}
-                      >
-                        <Text
+                    <Card
+                      className={cn(s.number === currentStage ? "border-primary" : "border-border")}
+                    >
+                      <CardContent className="flex-row items-center gap-4 pt-5">
+                        <View
                           className={cn(
-                            "text-sm font-bold",
+                            "size-10 items-center justify-center rounded-full border",
                             s.number === currentStage
-                              ? "text-primary-foreground"
-                              : "text-foreground",
+                              ? "border-primary bg-primary"
+                              : "border-border bg-card",
                           )}
                         >
-                          {s.number}
-                        </Text>
-                      </View>
-                      <View className="flex-1 gap-0.5">
-                        <Text className="font-semibold">{t(s.titleKey)}</Text>
-                        <Text variant="muted" className="text-xs">
-                          {t(s.goalKey)}
-                        </Text>
-                      </View>
-                      {s.number === currentStage ? (
-                        <View className="rounded-full bg-primary/15 px-2 py-0.5">
-                          <Text className="text-[10px] font-semibold uppercase tracking-wider text-primary">
-                            {t("module.stages.currentStageBadge")}
+                          <Text
+                            className={cn(
+                              "text-sm font-bold",
+                              s.number === currentStage
+                                ? "text-primary-foreground"
+                                : "text-foreground",
+                            )}
+                          >
+                            {s.number}
                           </Text>
                         </View>
-                      ) : null}
-                    </CardContent>
-                  </Card>
-                </Pressable>
-                {MILESTONE_AFTER[s.number] ? (
-                  <View className="rounded-md border border-dashed border-be/40 bg-be/5 p-3">
-                    <Text className="text-xs font-semibold text-be">
-                      {t(MILESTONE_AFTER[s.number])}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            ))}
+                        <View className="flex-1 gap-0.5">
+                          <Text className="font-semibold">{t(s.titleKey)}</Text>
+                          <Text variant="muted" className="text-xs">
+                            {t(s.goalKey)}
+                          </Text>
+                        </View>
+                        {s.number === currentStage ? (
+                          <View className="rounded-full bg-primary/15 px-2 py-0.5">
+                            <Text className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                              {t("module.stages.currentStageBadge")}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </CardContent>
+                    </Card>
+                  </Pressable>
+                  {MILESTONE_AFTER[s.number] ? (
+                    <View className="rounded-md border border-dashed border-be/40 bg-be/5 p-3">
+                      <Text className="text-xs font-semibold text-be">
+                        {t(MILESTONE_AFTER[s.number])}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
           </View>
         </View>
       </ScrollView>

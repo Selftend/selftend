@@ -24,7 +24,6 @@ const exposureKeys = {
   allItems: (userId: string) => ["exposure", "items", userId] as const,
   items: (userId: string, hierarchyId: string) =>
     ["exposure", "items", userId, hierarchyId] as const,
-  item: (userId: string, itemId: string) => ["exposure", "item", userId, itemId] as const,
   sessions: (userId: string, itemId: string) => ["exposure", "sessions", userId, itemId] as const,
 };
 

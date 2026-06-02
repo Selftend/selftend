@@ -381,21 +381,18 @@ interface ChipProps {
   active: boolean;
   label: string;
   onPress: () => void;
-  disabled?: boolean;
 }
 
-function KindChip({ active, disabled, label, onPress }: ChipProps) {
+function KindChip({ active, label, onPress }: ChipProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ selected: active, disabled }}
-      disabled={disabled}
+      accessibilityState={{ selected: active }}
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={onPress}
       className={cn(
         "rounded-full border px-4 py-2",
         active ? "border-primary bg-primary/15" : "border-border bg-background",
-        disabled && "opacity-50",
       )}
       role="button"
     >

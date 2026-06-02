@@ -31,7 +31,7 @@ const MAX_COLUMNS = 3;
 // widget subtree is not re-run on the frequent grid re-renders (edit-mode toggle, add-modal
 // open, container-width onLayout). Each widget's own query hooks still drive its data updates.
 const WidgetContent = memo(function WidgetContent({ id, userId }: { id: string; userId: string }) {
-  return <>{resolveWidget(id, userId)}</>;
+  return resolveWidget(id, userId);
 });
 
 function pickGreetingKey(hour: number) {
@@ -127,7 +127,7 @@ export default function HomeScreen() {
 
   const gridWidth = Math.max(0, containerWidth - PADDING * 2);
   const numColumns = computeColumns(gridWidth);
-  const cellWidth = numColumns > 0 ? (gridWidth - (numColumns - 1) * GAP) / numColumns : 0;
+  const cellWidth = (gridWidth - (numColumns - 1) * GAP) / numColumns;
 
   const header = (
     <View className="gap-6 pb-3">

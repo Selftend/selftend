@@ -11,13 +11,15 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
+import { ProgressBar } from "@/src/components/app/progress-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useActivities } from "@/src/features/activities/queries";
 import { useGoals, useMilestones } from "@/src/features/goals/queries";
+import { dailyIntegerAverages, lastNLocalDateKeys } from "@/src/features/mood/chart-data";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { localDateKey, toLocalDateKey } from "@/src/stores/selected-date-store";
+import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 
 const REFLECTION_PROMPTS = [
@@ -26,17 +28,6 @@ const REFLECTION_PROMPTS = [
   "weeklyReview.reflection.prompt3",
   "weeklyReview.reflection.prompt4",
 ] as const;
-
-function getWeekDates(): string[] {
-  const dates: string[] = [];
-  const now = new Date();
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    dates.push(localDateKey(d));
-  }
-  return dates;
-}
 
 function getDayLabel(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
@@ -59,12 +50,7 @@ function ActiveGoalMilestones({ goalId, userId }: { goalId: string; userId: stri
     <View className="gap-2">
       <Text className="font-medium">{goal.title}</Text>
       <View className="flex-row items-center gap-3">
-        <View className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-          <View
-            className="h-full rounded-full bg-primary"
-            style={{ width: `${Math.round(progress * 100)}%` }}
-          />
-        </View>
+        <ProgressBar progress={progress} className="h-1.5 flex-1" />
         <Text className="text-xs text-muted-foreground">
           {t("weeklyReview.milestonesProgress", { done, total })}
         </Text>
@@ -83,18 +69,16 @@ export default function WeeklyReviewScreen() {
   const { data: goals, isLoading: goalsLoading } = useGoals(user?.id ?? null);
   const { data: thoughtRecords, isLoading: recordsLoading } = useThoughtRecords(user?.id ?? null);
 
-  const weekDates = getWeekDates();
+  const weekDates = lastNLocalDateKeys(7);
 
   const chartData = (() => {
     if (!moodLogs) return [];
-    return weekDates.map((date) => {
-      const logsOnDay = moodLogs.filter((l) => toLocalDateKey(l.loggedAt) === date);
-      const avgScore =
-        logsOnDay.length > 0
-          ? Math.round(logsOnDay.reduce((sum, l) => sum + l.moodScore, 0) / logsOnDay.length)
-          : null;
-      return { day: getDayLabel(date), date, score: avgScore };
-    });
+    const averages = dailyIntegerAverages(moodLogs, weekDates);
+    return weekDates.map((date, i) => ({
+      day: getDayLabel(date),
+      date,
+      score: averages[i],
+    }));
   })();
 
   const chartPoints = chartData.filter((d) => d.score !== null) as {

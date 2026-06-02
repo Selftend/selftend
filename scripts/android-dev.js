@@ -386,9 +386,7 @@ async function main() {
     return;
   }
 
-  const connectedEmulator = getReadyEmulator();
-
-  let activeEmulator = connectedEmulator;
+  let activeEmulator = getReadyEmulator();
 
   if (activeEmulator && isBootComplete(activeEmulator.id)) {
     console.log(`Using connected Android emulator: ${activeEmulator.id}`);

@@ -120,5 +120,4 @@ module.exports = {
   ensureCacheMatchesEnv,
   hasGuardFlag,
   stripGuardArgs,
-  HIDE_FLAG,
 };

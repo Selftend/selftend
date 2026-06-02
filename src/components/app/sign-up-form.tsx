@@ -19,9 +19,9 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import {
   EMAIL_ALREADY_EXISTS_ERROR,
   LEAKED_PASSWORD_ERROR,
-  signInWithGoogle,
   signUpWithPassword,
 } from "@/src/features/auth/api";
+import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
 import { signUpSchema, type SignUpSchema } from "@/src/features/auth/schemas";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { useSession } from "@/src/providers/session-provider";
@@ -44,22 +44,14 @@ export function SignUpForm() {
     resolver: zodResolver(signUpSchema),
   });
 
-  const onGoogleSubmit = async () => {
-    try {
-      setSubmitError("");
-      setIsGoogleSubmitting(true);
-      const didCompleteInApp = await signInWithGoogle();
-      if (didCompleteInApp) {
-        recordSuccess();
-        router.replace("/(app)/(tabs)");
-      }
-    } catch (error) {
-      recordFailure(error);
-      setSubmitError(error instanceof Error ? error.message : t("signUp.googleError"));
-    } finally {
-      setIsGoogleSubmitting(false);
-    }
-  };
+  const onGoogleSubmit = () =>
+    runGoogleSignIn({
+      setSubmitError,
+      setIsGoogleSubmitting,
+      recordSuccess,
+      recordFailure,
+      errorFallback: t("signUp.googleError"),
+    });
 
   const onSubmit = handleSubmit(async ({ name, email, password }) => {
     try {

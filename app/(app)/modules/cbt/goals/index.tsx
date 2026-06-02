@@ -12,6 +12,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
+import { ProgressBar } from "@/src/components/app/progress-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useGoals, useMilestones } from "@/src/features/goals/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -44,14 +45,7 @@ function GoalCard({ goal, userId }: { goal: Goal; userId: string }) {
             <CardDescription>{t("goals.milestoneProgress", { done, total })}</CardDescription>
           ) : null}
         </CardHeader>
-        {total > 0 ? (
-          <View className="mx-6 mb-4 h-1.5 overflow-hidden rounded-full bg-muted">
-            <View
-              className="h-full rounded-full bg-primary"
-              style={{ width: `${Math.round(progress * 100)}%` }}
-            />
-          </View>
-        ) : null}
+        {total > 0 ? <ProgressBar progress={progress} className="mx-6 mb-4 h-1.5" /> : null}
       </Card>
     </Pressable>
   );

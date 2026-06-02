@@ -35,6 +35,10 @@ describe("cycle-math", () => {
 
   it("formats hour+ durations as HH:MM:SS", () => {
     expect(formatClock(3808)).toBe("01:03:28");
+    // Regression: the breathing session countdown feeds secondsLeft through formatClock,
+    // so a session over an hour must show the hours field, not a >59 minutes value.
+    expect(formatClock(3600)).toBe("01:00:00");
+    expect(formatClock(4000)).toBe("01:06:40");
   });
 
   it("rounds elapsed time to whole minutes, floored at 1", () => {

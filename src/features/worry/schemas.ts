@@ -1,14 +1,16 @@
 import { z } from "zod";
 
+import { trimmedStringList } from "@/src/lib/zod-fields";
+
 export const worryEntryFormSchema = z
   .object({
     worryStatement: z.string().trim().min(3, "Describe the worry.").max(4000),
     worryCategory: z.enum(["hypothetical", "real_problem"]),
     probabilityEstimate: z.number().min(0).max(100).nullable(),
-    evidenceFor: z.array(z.string().trim().min(1).max(2000)),
-    evidenceAgainst: z.array(z.string().trim().min(1).max(2000)),
+    evidenceFor: trimmedStringList(),
+    evidenceAgainst: trimmedStringList(),
     copingStatement: z.string().max(4000),
-    actionSteps: z.array(z.string().trim().min(1).max(2000)),
+    actionSteps: trimmedStringList(),
   })
   .superRefine((data, ctx) => {
     if (data.worryCategory === "hypothetical") {

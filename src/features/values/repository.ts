@@ -14,7 +14,7 @@ function mapValuesProfile(row: ValuesProfileRow): ValuesProfile {
     id: row.id,
     userId: row.user_id,
     personalValues: row.personal_values as ValuesProfile["personalValues"],
-    priorityValues: (row.priority_values ?? []) as string[],
+    priorityValues: row.priority_values ?? [],
     updatedAt: row.updated_at,
   };
 }

@@ -27,7 +27,6 @@ interface ToolTile {
   subKey: string;
   iconBg: string;
   iconColor: string;
-  badgeKey?: "soon";
 }
 
 const TOOLS: ToolTile[] = [
@@ -211,13 +210,6 @@ function ToolCard({ tool, stat }: ToolCardProps) {
       <View className="flex-1 gap-0.5">
         <View className="flex-row items-center gap-2">
           <Text className="text-base font-semibold">{name}</Text>
-          {tool.badgeKey ? (
-            <View className="rounded-full bg-muted px-2 py-0.5">
-              <Text className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {t("sidebar.badgeSoon")}
-              </Text>
-            </View>
-          ) : null}
         </View>
         <Text variant="muted" className="text-xs">
           {subtitle}

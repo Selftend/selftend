@@ -23,6 +23,18 @@ interface ParsedAuthCallbackUrl {
 
 type CompletedAuthRedirect = "authenticated" | "confirmed" | "password-recovery" | "email-verified";
 
+function classifyAuthOutcome(type: string | null, hasSession: boolean): CompletedAuthRedirect {
+  if (type === "recovery") {
+    return "password-recovery";
+  }
+
+  if (type === "signup") {
+    return "email-verified";
+  }
+
+  return hasSession ? "authenticated" : "confirmed";
+}
+
 function splitAuthUrl(url: string) {
   const [pathAndQuery, hash = ""] = url.split("#", 2);
   const queryIndex = pathAndQuery.indexOf("?");
@@ -78,15 +90,7 @@ export async function completeAuthRedirect(url: string): Promise<CompletedAuthRe
       throw error;
     }
 
-    if (params.type === "recovery") {
-      return "password-recovery";
-    }
-
-    if (params.type === "signup") {
-      return "email-verified";
-    }
-
-    return data.session ? "authenticated" : "confirmed";
+    return classifyAuthOutcome(params.type, Boolean(data.session));
   }
 
   const otpType = toEmailOtpType(params.type);
@@ -99,15 +103,7 @@ export async function completeAuthRedirect(url: string): Promise<CompletedAuthRe
       throw error;
     }
 
-    if (otpType === "recovery") {
-      return "password-recovery";
-    }
-
-    if (otpType === "signup") {
-      return "email-verified";
-    }
-
-    return data.session ? "authenticated" : "confirmed";
+    return classifyAuthOutcome(otpType, Boolean(data.session));
   }
 
   if (params.accessToken && params.refreshToken) {
@@ -119,15 +115,7 @@ export async function completeAuthRedirect(url: string): Promise<CompletedAuthRe
       throw error;
     }
 
-    if (params.type === "recovery") {
-      return "password-recovery";
-    }
-
-    if (params.type === "signup") {
-      return "email-verified";
-    }
-
-    return data.session ? "authenticated" : "confirmed";
+    return classifyAuthOutcome(params.type, Boolean(data.session));
   }
 
   throw new Error("The authentication link is missing the required parameters.");

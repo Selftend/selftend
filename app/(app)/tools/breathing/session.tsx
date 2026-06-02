@@ -341,9 +341,9 @@ export default function BreathingSessionScreen() {
     }
   };
 
-  const minutes = Math.floor(secondsLeft / 60);
-  const seconds = secondsLeft % 60;
-  const timeDisplay = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  // Shared HH:MM:SS-aware formatter: a long session (> 1h) must render "01:06:40",
+  // not the hand-rolled "66:40" a bare M:SS would produce.
+  const timeDisplay = formatClock(secondsLeft);
   const phaseLabelKey = currentPhase ? (`breathing.phases.${currentPhase.label}` as const) : null;
 
   return (

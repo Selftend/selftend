@@ -38,15 +38,7 @@ export function getPasswordResetRedirectUrl() {
   });
 }
 
-function getOAuthRedirectUrl() {
-  if (Platform.OS === "web") {
-    return getWebAuthRedirectUrl();
-  }
-
-  return getNativeAuthRedirectUrl();
-}
-
-function getEmailRedirectUrl() {
+function getDefaultAuthRedirectUrl() {
   if (Platform.OS === "web") {
     return getWebAuthRedirectUrl();
   }
@@ -60,7 +52,7 @@ export function getNativeAuthRedirectUrl() {
 
 export async function signInWithGoogle() {
   const client = requireSupabase();
-  const redirectTo = getOAuthRedirectUrl();
+  const redirectTo = getDefaultAuthRedirectUrl();
   const { data, error } = await client.auth.signInWithOAuth({
     provider: "google",
     options: {
@@ -125,7 +117,7 @@ export async function signUpWithPassword(email: string, password: string, name?:
     email,
     password,
     options: {
-      emailRedirectTo: getEmailRedirectUrl(),
+      emailRedirectTo: getDefaultAuthRedirectUrl(),
       ...(trimmedName ? { data: { full_name: trimmedName } } : {}),
     },
   });
@@ -172,7 +164,7 @@ export async function resendVerificationEmail(email: string) {
     type: "signup",
     email,
     options: {
-      emailRedirectTo: getEmailRedirectUrl(),
+      emailRedirectTo: getDefaultAuthRedirectUrl(),
     },
   });
   if (error) {

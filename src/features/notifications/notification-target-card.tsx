@@ -15,11 +15,7 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
-import {
-  defaultUserPreferences,
-  mergeUserPreferences,
-  type UserPreferences,
-} from "@/src/features/modules/types";
+import { mergeUserPreferences, type UserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences } from "@/src/features/settings/queries";
 import {
   type NotificationTarget,
@@ -108,7 +104,7 @@ export function NotificationTargetCard({
     if (target.minuteField) patch[target.minuteField] = minute;
     if (target.timezoneField) patch[target.timezoneField] = getReminderTimeZone();
 
-    let reminderConsent = preferences.reminderConsent ?? defaultUserPreferences.reminderConsent;
+    let reminderConsent = preferences.reminderConsent;
 
     try {
       if (target.schedulesOs && globalEnabled) {

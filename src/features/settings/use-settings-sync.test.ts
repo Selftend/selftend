@@ -4,7 +4,7 @@ import { defaultUserPreferences, type UserPreferences } from "@/src/features/mod
 import { useUpdateUserPreferences } from "@/src/features/settings/queries";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useLanguage } from "@/src/providers/i18n-provider";
-import { isThemePreference, useThemeStore } from "@/src/stores/theme-store";
+import { useThemeStore } from "@/src/stores/theme-store";
 
 jest.mock("@/src/providers/i18n-provider", () => ({
   useLanguage: jest.fn(),
@@ -21,12 +21,9 @@ jest.mock("@/src/stores/theme-store", () => ({
 
 const mockUseLanguage = useLanguage as jest.MockedFunction<typeof useLanguage>;
 const mockUseThemeStore = useThemeStore as jest.MockedFunction<typeof useThemeStore>;
-const mockIsThemePreference = isThemePreference as jest.MockedFunction<typeof isThemePreference>;
 const mockUseUpdatePreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
 >;
-
-void mockIsThemePreference;
 
 function makePreferences(overrides: Partial<UserPreferences> = {}): UserPreferences {
   return { ...defaultUserPreferences, ...overrides };

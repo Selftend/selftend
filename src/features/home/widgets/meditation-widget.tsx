@@ -51,7 +51,7 @@ export function MeditationWidget({ userId }: { userId: string }) {
             <Text className="text-lg font-semibold">
               {weekSessions.length > 0
                 ? t("today.dashboard.meditationWeekCount", { count: weekSessions.length })
-                : "-"}
+                : "–"}
             </Text>
           </View>
           <View className="flex-1 gap-0.5 rounded-lg border border-border bg-background px-3 py-2">
@@ -59,7 +59,7 @@ export function MeditationWidget({ userId }: { userId: string }) {
               {t("today.dashboard.minutesThisWeek")}
             </Text>
             <Text className="text-lg font-semibold">
-              {totalMinutes > 0 ? String(totalMinutes) : "-"}
+              {totalMinutes > 0 ? String(totalMinutes) : "–"}
             </Text>
           </View>
         </View>

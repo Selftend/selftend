@@ -16,11 +16,8 @@ import {
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
-import {
-  resendVerificationEmail,
-  signInWithGoogle,
-  signInWithPassword,
-} from "@/src/features/auth/api";
+import { resendVerificationEmail, signInWithPassword } from "@/src/features/auth/api";
+import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
 import { signInSchema, type SignInSchema } from "@/src/features/auth/schemas";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { useSession } from "@/src/providers/session-provider";
@@ -44,22 +41,14 @@ export function SignInForm() {
     resolver: zodResolver(signInSchema),
   });
 
-  const onGoogleSubmit = async () => {
-    try {
-      setSubmitError("");
-      setIsGoogleSubmitting(true);
-      const didCompleteInApp = await signInWithGoogle();
-      if (didCompleteInApp) {
-        recordSuccess();
-        router.replace("/(app)/(tabs)");
-      }
-    } catch (error) {
-      recordFailure(error);
-      setSubmitError(error instanceof Error ? error.message : t("signIn.googleError"));
-    } finally {
-      setIsGoogleSubmitting(false);
-    }
-  };
+  const onGoogleSubmit = () =>
+    runGoogleSignIn({
+      setSubmitError,
+      setIsGoogleSubmitting,
+      recordSuccess,
+      recordFailure,
+      errorFallback: t("signIn.googleError"),
+    });
 
   const onSubmit = handleSubmit(async ({ email, password }) => {
     try {

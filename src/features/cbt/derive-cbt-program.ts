@@ -2,6 +2,7 @@ import {
   atOrAfter,
   CBT_PROGRAM,
   type ProgramSignalData,
+  type ProgramTaskDef,
 } from "@/src/features/cbt/program-definition";
 
 import type { ActivityLog } from "@/src/features/activities/types";
@@ -61,10 +62,7 @@ export interface CbtProgramView {
   phaseReady: boolean;
 }
 
-function toView(
-  task: import("@/src/features/cbt/program-definition").ProgramTaskDef,
-  data: ProgramSignalData,
-): ProgramTaskView {
+function toView(task: ProgramTaskDef, data: ProgramSignalData): ProgramTaskView {
   const { current, target } = task.signal(data);
   return {
     key: task.key,

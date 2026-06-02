@@ -6,6 +6,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
 
 // Shared presentational body for the breathing/grounding/mindfulness "session log" home
 // widgets. Each wrapper owns its own session hook and passes the resolved list. Accent
@@ -38,20 +39,12 @@ export function SessionLogWidget({
           <Text className="text-sm font-semibold">{t(`${i18nPrefix}.title`)}</Text>
         </View>
         {list.length > 0 ? (
-          <View className="flex-row gap-6">
-            <View className="gap-0.5">
-              <Text className="text-base font-semibold">{list.length}</Text>
-              <Text variant="muted" className="text-[11px]">
-                {t(`${i18nPrefix}.sessionsLabel`)}
-              </Text>
-            </View>
-            <View className="gap-0.5">
-              <Text className="text-base font-semibold">{minutes}</Text>
-              <Text variant="muted" className="text-[11px]">
-                {t(`${i18nPrefix}.minutesLabel`)}
-              </Text>
-            </View>
-          </View>
+          <TwoStatBody
+            stats={[
+              { value: list.length, label: t(`${i18nPrefix}.sessionsLabel`) },
+              { value: minutes, label: t(`${i18nPrefix}.minutesLabel`) },
+            ]}
+          />
         ) : (
           <Text variant="muted" className="text-xs">
             {t(`${i18nPrefix}.empty`)}

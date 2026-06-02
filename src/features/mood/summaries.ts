@@ -1,6 +1,6 @@
 import { toLocalDateKey, localDateKey } from "@/src/stores/selected-date-store";
 import type { MoodLog } from "@/src/features/mood/types";
-import { calendarDayDiff } from "@/src/utils/date";
+import { calendarDayDiff, startOfDayDaysAgo } from "@/src/utils/date";
 
 export interface MoodSummary {
   average: number | null;
@@ -17,20 +17,13 @@ export function getMoodSummary(logs: MoodSample[] | undefined, days: number): Mo
     return { average: null, count: 0 };
   }
 
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (days - 1));
+  const start = startOfDayDaysAgo(days);
 
   const scores = logs
     .filter((log) => new Date(log.loggedAt).getTime() >= start.getTime())
     .map((log) => log.moodScore);
 
-  if (scores.length === 0) {
-    return { average: null, count: 0 };
-  }
-
-  const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-  return { average: round1(average), count: scores.length };
+  return summarizeScores(scores);
 }
 
 /** Summary for a single `YYYY-MM-DD` day, used to scope the screen to the date bar. */
@@ -43,18 +36,21 @@ export function getDayMoodSummary(logs: MoodSample[] | undefined, dateKey: strin
     .filter((log) => toLocalDateKey(log.loggedAt) === dateKey)
     .map((log) => log.moodScore);
 
-  if (scores.length === 0) {
-    return { average: null, count: 0 };
-  }
-
-  const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-  return { average: round1(average), count: scores.length };
+  return summarizeScores(scores);
 }
 
 // ── New aggregation helpers ────────────────────────────────────────────────
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10;
+}
+
+function summarizeScores(scores: number[]): MoodSummary {
+  if (scores.length === 0) {
+    return { average: null, count: 0 };
+  }
+  const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+  return { average: round1(average), count: scores.length };
 }
 
 export interface DayAverage {
@@ -68,9 +64,7 @@ export function getDailyAverages(
   days = 7,
   now: Date = new Date(),
 ): DayAverage[] {
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (days - 1));
+  const start = startOfDayDaysAgo(days, now);
 
   const buckets = new Map<string, { sum: number; count: number }>();
   for (const log of logs ?? []) {

@@ -51,7 +51,7 @@ export default function ActUrgeSurfScreen() {
   const [urgeDescription, setUrgeDescription] = useState("");
   const [trigger, setTrigger] = useState("");
   const [peakIntensity, setPeakIntensity] = useState<number | null>(null);
-  const [urgeActedOn, setUrgeActedOn] = useState<boolean>(false);
+  const [urgeActedOn, setUrgeActedOn] = useState(false);
   const [surfingNotes, setSurfingNotes] = useState("");
   const [submitError, setSubmitError] = useState("");
 
