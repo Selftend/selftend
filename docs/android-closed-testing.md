@@ -217,8 +217,6 @@ Use a real Android device, not only an emulator.
 
 ## Draft store listing copy
 
-Draft copy for Selftend.
-
 Short description:
 
 ```text

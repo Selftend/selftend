@@ -226,7 +226,7 @@ The `script-src` and `style-src` directives include `'unsafe-inline'`. This is r
 - Expo web injects inline scripts during the bundle bootstrap.
 - NativeWind generates inline `style` attributes for Tailwind classes at runtime.
 
-Removing `'unsafe-inline'` breaks the web build. If Expo adds nonce-based CSP support in a future SDK version, revisit and tighten these directives. Until then, this is an accepted trade-off documented here for auditor visibility.
+Removing `'unsafe-inline'` breaks the web build. If Expo adds nonce-based CSP support in a future SDK version, revisit and tighten these directives.
 
 ### HSTS preload
 

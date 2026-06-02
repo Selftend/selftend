@@ -83,8 +83,6 @@ Expected monthly core infra:
 
 ## Shared inbox and email operations
 
-Start simple.
-
 Recommended early setup:
 
 - use domain-based forwarding or aliases for `hello@`, `support@`, `privacy@`, `security@`, and `contributors@`

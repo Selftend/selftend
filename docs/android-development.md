@@ -134,11 +134,7 @@ Wireless debugging setup on Android:
    `adb connect PHONE_IP:ADB_PORT`, then confirm the phone appears in
    `adb devices`.
 
-Once the development build is installed, keep using it as the default Android
-development client. The day-to-day workflow should be `npm run start` for a real
-device, `npm run start:emulator` for the emulator, and the `:prod` variants when
-you want the hosted backend. Use `npm run build:android:development` only when
-you need a refreshed binary.
+Use `npm run build:android:development` only when you need a refreshed binary.
 
 Use Expo Go only for temporary checks. Expo Go uses `exp://.../--/auth-callback` redirects and can still fall back to the Supabase production Site URL if the exact current Metro redirect is not allow-listed.
 

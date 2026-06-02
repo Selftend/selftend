@@ -61,7 +61,7 @@ Run a full local Supabase stack (Postgres, Auth, Storage, Studio, Inbucket) via 
 
 ### Prerequisites
 
-- Docker (Docker Desktop or `docker` + `docker compose`). The CLI shells out to Docker; nothing else to install - the Supabase CLI is already a dev dependency invoked through `npm exec supabase`.
+- Docker (Docker Desktop or `docker` + `docker compose`). The CLI shells out to Docker; the Supabase CLI is already a dev dependency invoked through `npm exec supabase`.
 
 ### Commands
 

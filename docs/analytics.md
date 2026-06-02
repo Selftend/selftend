@@ -12,7 +12,7 @@ The consent infrastructure is already built and waiting:
 
 - `src/stores/cookie-consent-store.ts` has an `analytics` toggle (default `false`).
 - `src/components/app/cookie-consent-banner.tsx` offers "Accept all" / "Essential only" / "Manage preferences."
-- The Supabase `cookie_consent` column stores `{essential, analytics, acceptedAt}` per user.
+- Cookie consent is currently stored only in browser `localStorage` (key `selftend_cookie_consent`) on web; the store does not persist consent server-side. The Supabase `user_preferences.cookie_consent` column exists (and is included in `export_user_data()`) but is **not** populated by the current consent flow — it is always written as `null` (see `cookieConsent: null` default in `src/features/modules/types.ts`). Treat the column as reserved for future server-side consent recording.
 
 Contributors must not add ad-hoc tracking without explicit review through the roadmap and PR template.
 
