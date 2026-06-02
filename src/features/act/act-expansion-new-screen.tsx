@@ -17,6 +17,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { useSaveExpansionLog } from "@/src/features/act/queries";
+import { StepPills } from "@/src/features/act/step-pills";
 import {
   EXPANSION_TECHNIQUES,
   type DiscomfortType,
@@ -119,40 +120,12 @@ export default function ActExpansionNewScreen() {
         </View>
 
         {/* Step pills */}
-        <View className="flex-row flex-wrap gap-2">
-          {STEP_ORDER.map((s, index) => {
-            const isActive = step === s;
-            const isPast = index < stepIndex;
-            return (
-              <Pressable
-                key={s}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isActive, disabled: index > stepIndex }}
-                disabled={index > stepIndex}
-                onPress={() => {
-                  if (index <= stepIndex) setStep(s);
-                }}
-                className={cn(
-                  "rounded-full border px-3 py-1",
-                  isActive
-                    ? "border-act bg-act"
-                    : isPast
-                      ? "border-act/40 bg-act/10"
-                      : "border-border bg-card opacity-40",
-                )}
-              >
-                <Text
-                  className={cn(
-                    "text-xs font-semibold",
-                    isActive ? "text-white" : isPast ? "text-act" : "text-muted-foreground",
-                  )}
-                >
-                  {index + 1}. {t(`act:expansion.steps.${s}`)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <StepPills
+          steps={STEP_ORDER}
+          current={step}
+          onSelect={setStep}
+          getLabel={(s) => t(`act:expansion.steps.${s}`)}
+        />
 
         {submitError ? (
           <Card>

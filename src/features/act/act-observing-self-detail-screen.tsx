@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
-import { LoadingState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
@@ -17,6 +16,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ActDetailLoading, ActDetailNotFound } from "@/src/features/act/act-detail-scaffold";
 import {
   useDeleteObservingSelfSession,
   useObservingSelfSession,
@@ -45,25 +45,12 @@ export default function ActObservingSelfDetailScreen() {
   const [deleteError, setDeleteError] = useState("");
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("observingSelf.listTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ActDetailLoading title={t("observingSelf.listTitle")} />;
   }
 
   if (!session) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-        <ScrollView contentContainerClassName="grow p-6">
-          <View className="gap-6">
-            <ScreenHeader title={t("observingSelf.listTitle")} />
-            <Text variant="muted">{t("observingSelf.noLogs")}</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <ActDetailNotFound title={t("observingSelf.listTitle")} message={t("observingSelf.noLogs")} />
     );
   }
 

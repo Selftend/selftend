@@ -17,8 +17,7 @@ const {
   hasGuardFlag,
   stripGuardArgs,
 } = require("./lib/prod-env-guard");
-
-const LOCALHOST_NAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"]);
+const { getLocalSupabasePort, getMetroPort } = require("./lib/ports");
 
 const controlArgs = new Set(["--list-avds"]);
 const rawArgs = process.argv.slice(2);
@@ -69,57 +68,6 @@ function resolveAndroidTool(directory, name) {
 
 const adb = resolveAndroidTool("platform-tools", "adb");
 const emulator = resolveAndroidTool("emulator", "emulator");
-
-function getMetroPort(args) {
-  const configuredPort =
-    process.env.SELFTEND_METRO_PORT || process.env.RCT_METRO_PORT || process.env.EXPO_PACKAGER_PORT;
-
-  if (configuredPort) {
-    return Number(configuredPort);
-  }
-
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
-
-    if (arg === "--port" && args[index + 1]) {
-      return Number(args[index + 1]);
-    }
-
-    if (arg.startsWith("--port=")) {
-      return Number(arg.slice("--port=".length));
-    }
-  }
-
-  return 8081;
-}
-
-function getLocalSupabasePort() {
-  if (process.env.SELFTEND_LOCAL_SUPABASE_PORT) {
-    return Number(process.env.SELFTEND_LOCAL_SUPABASE_PORT);
-  }
-
-  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-
-  if (!supabaseUrl) {
-    return null;
-  }
-
-  try {
-    const parsedUrl = new URL(supabaseUrl);
-
-    if (!LOCALHOST_NAMES.has(parsedUrl.hostname)) {
-      return null;
-    }
-
-    if (parsedUrl.port) {
-      return Number(parsedUrl.port);
-    }
-
-    return parsedUrl.protocol === "https:" ? 443 : 80;
-  } catch {
-    return null;
-  }
-}
 
 function runCapture(command, args) {
   return spawnSync(command, args, {

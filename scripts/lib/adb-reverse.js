@@ -1,24 +1,6 @@
 const { spawnSync } = require("node:child_process");
 
-const LOCALHOST_NAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"]);
-
-function getLocalSupabasePort() {
-  if (process.env.SELFTEND_LOCAL_SUPABASE_PORT) {
-    return Number(process.env.SELFTEND_LOCAL_SUPABASE_PORT);
-  }
-
-  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) return null;
-
-  try {
-    const parsedUrl = new URL(supabaseUrl);
-    if (!LOCALHOST_NAMES.has(parsedUrl.hostname)) return null;
-    if (parsedUrl.port) return Number(parsedUrl.port);
-    return parsedUrl.protocol === "https:" ? 443 : 80;
-  } catch {
-    return null;
-  }
-}
+const { getLocalSupabasePort } = require("./ports");
 
 function getConnectedAndroidDevices() {
   const result = spawnSync("adb", ["devices"], { encoding: "utf8", windowsHide: true });

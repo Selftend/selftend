@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
-import { LoadingState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
@@ -16,6 +15,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ActDetailLoading, ActDetailNotFound } from "@/src/features/act/act-detail-scaffold";
 import { useChoicePoint, useChoicePoints, useDeleteChoicePoint } from "@/src/features/act/queries";
 import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
@@ -40,25 +40,15 @@ export default function ActChoicePointDetailScreen() {
   const [deleteError, setDeleteError] = useState("");
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("act:choicePoint.listTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ActDetailLoading title={t("act:choicePoint.listTitle")} />;
   }
 
   if (!cp) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-        <ScrollView contentContainerClassName="grow p-6">
-          <View className="gap-6">
-            <ScreenHeader title={t("act:choicePoint.listTitle")} />
-            <Text variant="muted">{t("act:choicePoint.empty")}</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <ActDetailNotFound
+        title={t("act:choicePoint.listTitle")}
+        message={t("act:choicePoint.empty")}
+      />
     );
   }
 
