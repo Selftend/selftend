@@ -61,6 +61,7 @@ const STATIC_ROUTES: Record<string, string> = {
   "/tools/breathing/new": "breadcrumb.new",
   "/tools/grounding": "sidebar.grounding",
   "/tools/gratitude-log": "sidebar.gratitudeLog",
+  "/tools/gratitude-log/entries": "breadcrumb.history",
   "/tools/gratitude-log/new": "breadcrumb.new",
   "/tools/meditation": "sidebar.meditation",
   "/tools/meditation/learn": "breadcrumb.learn",

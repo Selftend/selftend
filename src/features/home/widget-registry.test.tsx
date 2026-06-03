@@ -86,19 +86,29 @@ describe("widget registry", () => {
     expect(WIDGET_META["journal-resurface"]).toBeUndefined();
   });
 
-  it.each([
-    ["grounding-library", "grounding"],
-    ["grounding-log", "grounding"],
-  ])("registers %s as an available practice-tool widget", (id, toolKey) => {
-    expect(isImplemented(id)).toBe(true);
-    expect(WIDGET_META[id].status).toBe("available");
-    expect(WIDGET_META[id].toolKey).toBe(toolKey);
+  it("no longer registers the removed gratitude/grounding widgets", () => {
+    for (const id of [
+      "gratitude-resurface",
+      "gratitude-prompt",
+      "gratitude-week",
+      "grounding-54321",
+      "grounding-library",
+    ]) {
+      expect(isImplemented(id)).toBe(false);
+      expect(WIDGET_META[id]).toBeUndefined();
+    }
   });
 
+  it.each([["grounding-log", "grounding"]])(
+    "registers %s as an available practice-tool widget",
+    (id, toolKey) => {
+      expect(isImplemented(id)).toBe(true);
+      expect(WIDGET_META[id].status).toBe("available");
+      expect(WIDGET_META[id].toolKey).toBe(toolKey);
+    },
+  );
+
   it.each([
-    ["gratitude-week", "gratitude"],
-    ["gratitude-resurface", "gratitude"],
-    ["gratitude-prompt", "gratitude"],
     ["meditation-sit-time", "meditation"],
     ["meditation-continue", "meditation"],
     ["sleep-notes", "sleep"],

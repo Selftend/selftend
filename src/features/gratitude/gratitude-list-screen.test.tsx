@@ -26,6 +26,7 @@ jest.mock("@/src/stores/selected-date-store", () => ({
 }));
 
 jest.mock("@/src/features/gratitude/queries", () => ({
+  ...jest.requireActual("@/src/features/gratitude/queries"),
   useGratitudeEntries: jest.fn(),
 }));
 
@@ -51,7 +52,7 @@ describe("GratitudeListScreen", () => {
     expect(screen.getByText("Notice something")).toBeTruthy();
   });
 
-  it("renders entries with first item, count, and note", () => {
+  it("renders entries as expandable question/answer cards", () => {
     mockUseGratitudeEntries.mockReturnValue({
       data: [
         {
@@ -75,10 +76,13 @@ describe("GratitudeListScreen", () => {
 
     renderWithProviders(<GratitudeListScreen />);
 
+    expect(screen.getByText("What made you laugh?")).toBeTruthy();
     expect(screen.getByText("Warm coffee")).toBeTruthy();
-    expect(screen.getByText("2 things")).toBeTruthy();
+    expect(screen.getByText("Who was kind to you?")).toBeTruthy();
+    expect(screen.getByText("Sunlight")).toBeTruthy();
     expect(screen.getByText("The morning felt steady.")).toBeTruthy();
     expect(screen.getByText("Recent entries")).toBeTruthy();
+    expect(screen.getByText("Open")).toBeTruthy();
   });
 
   it("routes to /tools/gratitude-log/new when the CTA is pressed", () => {

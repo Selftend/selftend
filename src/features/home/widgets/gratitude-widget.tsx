@@ -7,16 +7,18 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
+import { answeredCount } from "@/src/features/gratitude/questions";
+import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function GratitudeWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
-  const { data: entries } = useGratitudeEntries(userId);
+  const { data: entries } = useGratitudeEntries(userId, 500);
 
   const { selectedDate: todayKey } = useSelectedDate();
-  const todayEntries = entries?.filter((e) => toLocalDateKey(e.loggedAt) === todayKey) ?? [];
-  const latestToday = todayEntries.at(-1);
-  const preview = latestToday?.items.at(0) ?? latestToday?.note ?? null;
+  const all = entries ?? [];
+  const todayEntries = all.filter((e) => toLocalDateKey(e.loggedAt) === todayKey);
+  const totalItems = all.reduce((sum, e) => sum + answeredCount(e.items), 0);
 
   return (
     <Card className="flex-1">
@@ -37,15 +39,12 @@ export function GratitudeWidget({ userId }: { userId: string }) {
           ) : null}
         </View>
 
-        {preview ? (
-          <Text variant="muted" className="text-xs italic" numberOfLines={2}>
-            {preview}
-          </Text>
-        ) : (
-          <Text variant="muted" className="text-xs">
-            {t("today.dashboard.gratitudeHint")}
-          </Text>
-        )}
+        <TwoStatBody
+          stats={[
+            { value: all.length, label: t("home.widgets.gratitudeLatest.entriesLabel") },
+            { value: totalItems, label: t("home.widgets.gratitudeLatest.itemsLabel") },
+          ]}
+        />
 
         <View className="flex-row items-center justify-between">
           <Button

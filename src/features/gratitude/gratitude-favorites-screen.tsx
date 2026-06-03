@@ -7,6 +7,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { EmptyState } from "@/src/components/app/screen-state";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { firstAnswer } from "@/src/features/gratitude/questions";
 import { useFavoriteGratitudeEntries } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
@@ -50,7 +51,7 @@ export default function GratitudeFavoritesScreen() {
 function FavoriteEntryRow({ entry }: { entry: GratitudeEntry }) {
   const { t } = useTranslation("gratitude");
   const when = formatMoodRelativeTime(entry.loggedAt, t);
-  const firstItem = entry.items[0] ?? t("list.fallbackItem");
+  const firstItem = firstAnswer(entry.items) ?? t("list.fallbackItem");
 
   return (
     <Pressable

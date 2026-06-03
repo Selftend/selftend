@@ -25,13 +25,8 @@ import { ActCommittedActionsWidget } from "@/src/features/home/widgets/act-commi
 import { ActDefusionWidget } from "@/src/features/home/widgets/act-defusion-widget";
 import { ActProgrammeWidget } from "@/src/features/home/widgets/act-programme-widget";
 import { ActAcceptancePromptWidget } from "@/src/features/home/widgets/act-acceptance-prompt-widget";
-import { Grounding54321Widget } from "@/src/features/home/widgets/grounding-54321-widget";
 import { JournalWeekWidget } from "@/src/features/home/widgets/journal-week-widget";
-import { GroundingLibraryWidget } from "@/src/features/home/widgets/grounding-library-widget";
 import { GroundingLogWidget } from "@/src/features/home/widgets/grounding-log-widget";
-import { GratitudeWeekWidget } from "@/src/features/home/widgets/gratitude-week-widget";
-import { GratitudeResurfaceWidget } from "@/src/features/home/widgets/gratitude-resurface-widget";
-import { GratitudePromptWidget } from "@/src/features/home/widgets/gratitude-prompt-widget";
 import { MeditationSitTimeWidget } from "@/src/features/home/widgets/meditation-sit-time-widget";
 import { MeditationContinueWidget } from "@/src/features/home/widgets/meditation-continue-widget";
 import { SleepNotesWidget } from "@/src/features/home/widgets/sleep-notes-widget";
@@ -62,7 +57,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "self-care": SelfCareWidget,
   "cbt-open-record": CbtOpenRecordWidget,
   "act-values": ActValuesWidget,
-  "grounding-54321": Grounding54321Widget,
   "sleep-last-night": SleepLastNightWidget,
   "sleep-7-nights": Sleep7NightsWidget,
   "cbt-recent-records": CbtRecentRecordsWidget,
@@ -79,11 +73,7 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "act-programme": ActProgrammeWidget,
   "act-acceptance-prompt": ActAcceptancePromptWidget,
   "journal-week": JournalWeekWidget,
-  "grounding-library": GroundingLibraryWidget,
   "grounding-log": GroundingLogWidget,
-  "gratitude-week": GratitudeWeekWidget,
-  "gratitude-resurface": GratitudeResurfaceWidget,
-  "gratitude-prompt": GratitudePromptWidget,
   "meditation-sit-time": MeditationSitTimeWidget,
   "meditation-continue": MeditationContinueWidget,
   "sleep-notes": SleepNotesWidget,
@@ -172,15 +162,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     titleKey: "home.widgets.actValues.title",
     descriptionKey: "home.widgets.actValues.metaDesc",
     tint: "act",
-    status: "default",
-  },
-  "grounding-54321": {
-    id: "grounding-54321",
-    toolKey: "grounding",
-    icon: "anchor",
-    titleKey: "home.widgets.grounding54321.title",
-    descriptionKey: "home.widgets.grounding54321.metaDesc",
-    tint: "clay",
     status: "default",
   },
   "sleep-last-night": {
@@ -327,15 +308,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     tint: "ink",
     status: "available",
   },
-  "grounding-library": {
-    id: "grounding-library",
-    toolKey: "grounding",
-    icon: "format-list-bulleted",
-    titleKey: "home.widgets.groundingLibrary.title",
-    descriptionKey: "home.widgets.groundingLibrary.metaDesc",
-    tint: "clay",
-    status: "available",
-  },
   "grounding-log": {
     id: "grounding-log",
     toolKey: "grounding",
@@ -343,33 +315,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     titleKey: "home.widgets.groundingLog.title",
     descriptionKey: "home.widgets.groundingLog.metaDesc",
     tint: "clay",
-    status: "available",
-  },
-  "gratitude-week": {
-    id: "gratitude-week",
-    toolKey: "gratitude",
-    icon: "date-range",
-    titleKey: "home.widgets.gratitudeWeek.title",
-    descriptionKey: "home.widgets.gratitudeWeek.metaDesc",
-    tint: "think",
-    status: "available",
-  },
-  "gratitude-resurface": {
-    id: "gratitude-resurface",
-    toolKey: "gratitude",
-    icon: "restore",
-    titleKey: "home.widgets.gratitudeResurface.title",
-    descriptionKey: "home.widgets.gratitudeResurface.metaDesc",
-    tint: "think",
-    status: "available",
-  },
-  "gratitude-prompt": {
-    id: "gratitude-prompt",
-    toolKey: "gratitude",
-    icon: "favorite-border",
-    titleKey: "home.widgets.gratitudePrompt.title",
-    descriptionKey: "home.widgets.gratitudePrompt.metaDesc",
-    tint: "think",
     status: "available",
   },
   "meditation-sit-time": {

@@ -255,8 +255,10 @@
         "desc": "A breathing pattern for right now."
       },
       "gratitudeLatest": {
-        "title": "Latest gratitude",
-        "desc": "Your most recent gratitude note."
+        "title": "Gratitude log",
+        "desc": "Your gratitude totals and a quick add.",
+        "entriesLabel": "Entries",
+        "itemsLabel": "Items"
       },
       "meditationPick": {
         "title": "Today's pick",
@@ -278,12 +280,6 @@
         "metaDesc": "Your top named values.",
         "empty": "Choose your values",
         "cta": "Choose your values"
-      },
-      "grounding54321": {
-        "title": "5-4-3-2-1",
-        "metaDesc": "A quick grounding exercise.",
-        "desc": "Five things you see, four you feel, three you hear...",
-        "cta": "Ground now"
       },
       "sleepLastNight": {
         "title": "Last night",
@@ -419,39 +415,12 @@
         "minutesLabel": "Minutes",
         "empty": "No sessions yet."
       },
-      "groundingLibrary": {
-        "title": "Grounding techniques",
-        "metaDesc": "Browse all grounding techniques.",
-        "count": "{{count}} techniques"
-      },
       "groundingLog": {
         "title": "Grounding sessions",
         "metaDesc": "Your recent grounding practice.",
         "sessionsLabel": "Sessions",
         "minutesLabel": "Minutes",
         "empty": "No sessions yet."
-      },
-      "gratitudeWeek": {
-        "title": "This week",
-        "metaDesc": "Your gratitude this week.",
-        "entriesLabel": "Entries",
-        "itemsLabel": "Items",
-        "empty": "Nothing noted this week yet."
-      },
-      "gratitudeResurface": {
-        "title": "Resurface",
-        "metaDesc": "Revisit a gratitude entry.",
-        "empty": "Your gratitude will resurface here.",
-        "add": "Add entry"
-      },
-      "gratitudePrompt": {
-        "title": "Gratitude prompt",
-        "metaDesc": "A nudge for what to notice.",
-        "prompt1": "What's something small that went right today?",
-        "prompt2": "Who are you grateful to have in your life, and why?",
-        "prompt3": "What's something your body let you do today?",
-        "prompt4": "What's a comfort you'd miss if it were gone?",
-        "add": "Add entry"
       },
       "meditationSitTime": {
         "title": "Sit time",

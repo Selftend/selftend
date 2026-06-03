@@ -7,7 +7,6 @@ export const DEFAULT_WIDGET_IDS = [
   "act-values",
   "journal-week",
   "breathing-suggested",
-  "grounding-54321",
   "gratitude-latest",
   "meditation-pick",
   "sleep-last-night",

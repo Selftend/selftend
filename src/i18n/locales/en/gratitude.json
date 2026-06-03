@@ -87,7 +87,11 @@
     "viewEntry": "View gratitude entry from {{when}}",
     "fallbackItem": "Gratitude entry",
     "itemsCount_one": "{{count}} thing",
-    "itemsCount_other": "{{count}} things"
+    "itemsCount_other": "{{count}} things",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "expandEntry": "Expand gratitude entry from {{when}}",
+    "collapseEntry": "Collapse gratitude entry from {{when}}"
   },
   "editor": {
     "createTitle": "New gratitude entry",
@@ -97,7 +101,7 @@
     "itemLabel": "Gratitude {{number}}",
     "itemPlaceholder": "A small thing that mattered.",
     "todayItemsLabel": "Grateful for today",
-    "todaySuggestionPlaceholders": [
+    "todayQuestions": [
       "What made you laugh?",
       "Who was kind to you?",
       "What simple pleasure did you enjoy?",
@@ -105,6 +109,11 @@
       "What did your body help you do?"
     ],
     "lifeItemsLabel": "Grateful in your life",
+    "lifeQuestions": [
+      "Who in your life are you grateful for?",
+      "What part of everyday life do you take for granted?",
+      "What about yourself are you grateful for?"
+    ],
     "lifeItemLabel": "Life item {{number}}",
     "lifeItemPlaceholder": "Something in your life to appreciate.",
     "noteLabel": "Note (optional)",
@@ -117,6 +126,7 @@
   },
   "detail": {
     "title": "Gratitude entry",
+    "open": "Open",
     "favorite": "Favorite",
     "unfavorite": "Favorited",
     "edit": "Edit",

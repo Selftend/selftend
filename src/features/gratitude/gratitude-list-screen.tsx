@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { Pressable, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -8,10 +8,8 @@ import { EmptyState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-card";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
-import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -54,7 +52,7 @@ export default function GratitudeListScreen() {
               <Text variant="h3">{t("list.recent")}</Text>
               <View className="gap-3">
                 {list.map((entry) => (
-                  <GratitudeEntryRow key={entry.id} entry={entry} />
+                  <GratitudeEntryCard key={entry.id} entry={entry} />
                 ))}
               </View>
             </View>
@@ -62,48 +60,5 @@ export default function GratitudeListScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-interface GratitudeEntryRowProps {
-  entry: GratitudeEntry;
-}
-
-function GratitudeEntryRow({ entry }: GratitudeEntryRowProps) {
-  const { t } = useTranslation("gratitude");
-  const when = formatMoodRelativeTime(entry.loggedAt, t);
-  const firstItem = entry.items[0] ?? t("list.fallbackItem");
-
-  return (
-    <Pressable
-      accessibilityLabel={t("list.viewEntry", { when })}
-      accessibilityRole="button"
-      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() =>
-        router.push({
-          pathname: "/tools/gratitude-log/[id]",
-          params: { id: entry.id },
-        })
-      }
-      className="gap-2 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
-      role="button"
-    >
-      <View className="flex-row items-center justify-between gap-3">
-        <Text className="flex-1 text-base font-semibold" numberOfLines={1}>
-          {firstItem}
-        </Text>
-        <Text variant="muted" className="text-xs">
-          {when}
-        </Text>
-      </View>
-      <Text variant="muted" className="text-sm">
-        {t("list.itemsCount", { count: entry.items.length })}
-      </Text>
-      {entry.note.trim().length > 0 ? (
-        <Text variant="muted" numberOfLines={2} className="text-sm">
-          {entry.note.trim()}
-        </Text>
-      ) : null}
-    </Pressable>
   );
 }

@@ -56,12 +56,12 @@ describe("gratitude repository", () => {
         id: "g-1",
         userId: "user-1",
         level: 3,
-        items: ["Warm coffee", "Sunlight"],
+        items: ["Warm coffee", "Sunlight", "", "", ""],
         events: [],
         goodMoment: "",
         missIfGone: "",
         hiddenGood: "",
-        lifeItems: [],
+        lifeItems: ["", "", ""],
         starred: true,
         note: "A steady morning.",
         loggedAt: "2026-05-15T08:00:00.000Z",
@@ -131,7 +131,7 @@ describe("gratitude repository", () => {
     expect(limit).toHaveBeenCalledWith(10);
   });
 
-  it("trims, filters blanks, and inserts a new entry", async () => {
+  it("trims and inserts a new entry, preserving empty slots positionally", async () => {
     const row = {
       id: "g-1",
       user_id: "user-1",
@@ -171,8 +171,8 @@ describe("gratitude repository", () => {
         user_id: "user-1",
         level: 3,
         item_1: "Warm coffee",
-        item_2: "Sunlight",
-        item_3: "",
+        item_2: "",
+        item_3: "Sunlight",
         item_4: "",
         item_5: "",
         note: "A steady morning.",
@@ -224,12 +224,12 @@ describe("gratitude repository", () => {
       id: "g-1",
       userId: "user-1",
       level: 3,
-      items: ["Updated"],
+      items: ["Updated", "", "", "", ""],
       events: [],
       goodMoment: "",
       missIfGone: "",
       hiddenGood: "",
-      lifeItems: [],
+      lifeItems: ["", "", ""],
       starred: false,
       note: "",
       loggedAt: "2026-05-15T08:00:00.000Z",
@@ -295,7 +295,7 @@ describe("gratitude repository", () => {
       }),
     ).resolves.toMatchObject({
       items: ["Coffee", "Sunlight", "Music", "Warm socks", "A call"],
-      lifeItems: ["Home"],
+      lifeItems: ["Home", "", ""],
     });
 
     expect(insert).toHaveBeenCalledWith(

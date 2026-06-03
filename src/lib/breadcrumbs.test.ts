@@ -9,6 +9,8 @@ const LABELS: Record<string, string> = {
   "sidebar.cbt": "CBT",
   "breadcrumb.goals": "Goals",
   "breadcrumb.entry": "Entry",
+  "sidebar.gratitudeLog": "Gratitude log",
+  "breadcrumb.history": "History",
 };
 const t = (key: string) => LABELS[key] ?? key;
 
@@ -27,5 +29,11 @@ describe("computeBreadcrumbs", () => {
 
   it("returns nothing for the root", () => {
     expect(computeBreadcrumbs("/", t)).toEqual([]);
+  });
+
+  it("labels the gratitude entries list as History, not a generic entry", () => {
+    const crumbs = computeBreadcrumbs("/tools/gratitude-log/entries", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "History"]);
+    expect(crumbs[2].href).toBeUndefined();
   });
 });

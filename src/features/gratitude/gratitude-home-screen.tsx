@@ -20,8 +20,8 @@ import {
   getGratitudeThemes,
   type GratitudeTheme,
 } from "@/src/features/gratitude/insights";
+import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-card";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import type { TintToken } from "@/src/lib/design-tokens";
 import { cn } from "@/lib/utils";
@@ -182,33 +182,7 @@ export default function GratitudeHomeScreen() {
             ) : (
               <View className="gap-3">
                 {recentList.map((entry) => (
-                  <Pressable
-                    key={entry.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={t("list.viewEntry", {
-                      when: formatMoodRelativeTime(entry.loggedAt, t),
-                    })}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/tools/gratitude-log/[id]",
-                        params: { id: entry.id },
-                      })
-                    }
-                    className="gap-2 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
-                    role="button"
-                  >
-                    <View className="flex-row items-center justify-between gap-3">
-                      <Text className="flex-1 text-base font-semibold" numberOfLines={1}>
-                        {entry.items[0] ?? t("list.fallbackItem")}
-                      </Text>
-                      <Text variant="muted" className="text-xs">
-                        {formatMoodRelativeTime(entry.loggedAt, t)}
-                      </Text>
-                    </View>
-                    <Text variant="muted" className="text-sm">
-                      {t("list.itemsCount", { count: entry.items.length })}
-                    </Text>
-                  </Pressable>
+                  <GratitudeEntryCard key={entry.id} entry={entry} />
                 ))}
               </View>
             )}

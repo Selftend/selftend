@@ -23,6 +23,12 @@ import {
   useGratitudeEntry,
   useSetGratitudeEntryStarred,
 } from "@/src/features/gratitude/queries";
+import {
+  GRATITUDE_LIFE_QUESTIONS_KEY,
+  GRATITUDE_TODAY_QUESTIONS_KEY,
+  asQuestionList,
+  gratitudeAnswers,
+} from "@/src/features/gratitude/questions";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useSession } from "@/src/providers/session-provider";
@@ -74,6 +80,11 @@ export default function GratitudeDetailScreen() {
   }
 
   const when = formatMoodRelativeTime(entry.loggedAt, t);
+
+  const todayQuestions = asQuestionList(t(GRATITUDE_TODAY_QUESTIONS_KEY, { returnObjects: true }));
+  const lifeQuestions = asQuestionList(t(GRATITUDE_LIFE_QUESTIONS_KEY, { returnObjects: true }));
+  const todayAnswers = gratitudeAnswers(entry.items, todayQuestions);
+  const lifeAnswers = gratitudeAnswers(entry.lifeItems, lifeQuestions);
 
   const confirmDelete = async () => {
     setDeleteError("");
@@ -152,28 +163,28 @@ export default function GratitudeDetailScreen() {
               <CardDescription>{t("detail.itemsDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <View className="gap-3">
-                {entry.items.map((item, index) => (
-                  <View key={`${index}-${item}`} className="flex-row gap-3">
-                    <Text className="w-6 text-base font-semibold text-primary">{index + 1}</Text>
-                    <Text className="flex-1 text-base leading-6">{item}</Text>
+              <View className="gap-4">
+                {todayAnswers.map((answer, index) => (
+                  <View key={`${index}-${answer.text}`} className="gap-1">
+                    <Text className="text-sm font-semibold text-primary">{answer.question}</Text>
+                    <Text className="text-base leading-6">{answer.text}</Text>
                   </View>
                 ))}
               </View>
             </CardContent>
           </Card>
 
-          {entry.lifeItems.length > 0 ? (
+          {lifeAnswers.length > 0 ? (
             <Card>
               <CardHeader>
                 <CardTitle>{t("detail.lifeItemsTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <View className="gap-3">
-                  {entry.lifeItems.map((item, index) => (
-                    <View key={`${index}-${item}`} className="flex-row gap-3">
-                      <Text className="w-6 text-base font-semibold text-primary">{index + 1}</Text>
-                      <Text className="flex-1 text-base leading-6">{item}</Text>
+                <View className="gap-4">
+                  {lifeAnswers.map((answer, index) => (
+                    <View key={`${index}-${answer.text}`} className="gap-1">
+                      <Text className="text-sm font-semibold text-primary">{answer.question}</Text>
+                      <Text className="text-base leading-6">{answer.text}</Text>
                     </View>
                   ))}
                 </View>

@@ -22,6 +22,12 @@ import {
   GRATITUDE_LIFE_ITEM_COUNT,
   GRATITUDE_NOTE_MAX,
 } from "@/src/features/gratitude/schemas";
+import {
+  GRATITUDE_LIFE_QUESTIONS_KEY,
+  GRATITUDE_TODAY_QUESTIONS_KEY,
+  answeredCount,
+  asQuestionList,
+} from "@/src/features/gratitude/questions";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -35,17 +41,6 @@ interface GratitudeEntryEditorScreenProps {
 
 const EMPTY_ITEMS = Array.from({ length: GRATITUDE_ITEM_COUNT }, () => "");
 const EMPTY_LIFE_ITEMS = Array.from({ length: GRATITUDE_LIFE_ITEM_COUNT }, () => "");
-
-function asStringArray(value: unknown) {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
-    : [];
-}
-
-function rotatingPlaceholder(options: string[], offset: number, index: number, fallback: string) {
-  if (options.length === 0) return fallback;
-  return options[(offset + index) % options.length] ?? fallback;
-}
 
 export function GratitudeEntryEditorScreen({
   fallbackHref,
@@ -93,14 +88,9 @@ export function GratitudeEntryEditorScreen({
     setError("");
   }, [existingEntry]);
 
-  const trimmedItems = items.map((s) => s.trim()).filter((s) => s.length > 0);
-  const canSave = trimmedItems.length > 0 && !saving && Boolean(user);
-  const itemPlaceholderFallback = t("editor.itemPlaceholder");
-  const todaySuggestionPlaceholders = asStringArray(
-    t("editor.todaySuggestionPlaceholders", { returnObjects: true }),
-  );
-  const placeholderOffset =
-    (cachedList?.length ?? 0) % Math.max(todaySuggestionPlaceholders.length, 1);
+  const todayQuestions = asQuestionList(t(GRATITUDE_TODAY_QUESTIONS_KEY, { returnObjects: true }));
+  const lifeQuestions = asQuestionList(t(GRATITUDE_LIFE_QUESTIONS_KEY, { returnObjects: true }));
+  const canSave = answeredCount(items) > 0 && !saving && Boolean(user);
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -118,7 +108,7 @@ export function GratitudeEntryEditorScreen({
   const handleSave = async () => {
     if (!user) return;
     setError("");
-    if (trimmedItems.length === 0) {
+    if (answeredCount(items) === 0) {
       setError(t("editor.saveError"));
       return;
     }
@@ -126,14 +116,14 @@ export function GratitudeEntryEditorScreen({
       const saved = await saveMutation.mutateAsync({
         input: {
           level: 3,
-          items: trimmedItems.map((item) => item.slice(0, GRATITUDE_ITEM_MAX)),
+          items,
           note: note.trim().slice(0, GRATITUDE_NOTE_MAX),
           ...(!editMode ? { loggedAt: loggedAtForSelectedDate(selectedDate) } : {}),
           events: [],
           goodMoment: "",
           missIfGone: "",
           hiddenGood: "",
-          lifeItems: lifeItems.map((s) => s.trim()).filter((s) => s.length > 0),
+          lifeItems,
         },
         entryId: editMode ? (entryId ?? undefined) : undefined,
       });
@@ -181,16 +171,14 @@ export function GratitudeEntryEditorScreen({
           <Label>{t("editor.todayItemsLabel")}</Label>
           {items.map((item, index) => (
             <View className="gap-2" key={index}>
+              <Label>{todayQuestions[index] ?? ""}</Label>
               <Input
-                accessibilityLabel={t("editor.itemLabel", { number: index + 1 })}
+                accessibilityLabel={
+                  todayQuestions[index] ?? t("editor.itemLabel", { number: index + 1 })
+                }
                 maxLength={GRATITUDE_ITEM_MAX}
                 onChangeText={(value) => updateItem(index, value)}
-                placeholder={rotatingPlaceholder(
-                  todaySuggestionPlaceholders,
-                  placeholderOffset,
-                  index,
-                  itemPlaceholderFallback,
-                )}
+                placeholder={t("editor.itemPlaceholder")}
                 value={item}
               />
             </View>
@@ -201,8 +189,11 @@ export function GratitudeEntryEditorScreen({
           <Label>{t("editor.lifeItemsLabel")}</Label>
           {lifeItems.map((item, index) => (
             <View className="gap-2" key={index}>
+              <Label>{lifeQuestions[index] ?? ""}</Label>
               <Input
-                accessibilityLabel={t("editor.lifeItemLabel", { number: index + 1 })}
+                accessibilityLabel={
+                  lifeQuestions[index] ?? t("editor.lifeItemLabel", { number: index + 1 })
+                }
                 maxLength={GRATITUDE_ITEM_MAX}
                 onChangeText={(value) => updateLifeItem(index, value)}
                 placeholder={t("editor.lifeItemPlaceholder")}

@@ -2,6 +2,7 @@ import type { GratitudeEntry, GratitudeInput } from "@/src/features/gratitude/ty
 import {
   GRATITUDE_EVENT_COUNT,
   GRATITUDE_ITEM_COUNT,
+  GRATITUDE_ITEM_MAX,
   GRATITUDE_LIFE_ITEM_COUNT,
 } from "@/src/features/gratitude/schemas";
 import type { GratitudeLevel } from "@/src/features/modules/types";
@@ -30,11 +31,14 @@ interface GratitudeEntryRow {
   starred?: boolean | null;
 }
 
-function normalizeItems(items: string[], max = GRATITUDE_ITEM_COUNT) {
-  return items
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0)
-    .slice(0, max);
+// Trim and clamp each slot, keep positions, pad/truncate to a fixed length.
+// Blanks are preserved — slot index ↔ question index.
+function positionalItems(items: string[], count: number): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) {
+    out.push((items[i] ?? "").trim().slice(0, GRATITUDE_ITEM_MAX));
+  }
+  return out;
 }
 
 function sanitizeLevel(value: number | null): GratitudeLevel {
@@ -47,7 +51,10 @@ function mapGratitudeEntry(row: GratitudeEntryRow): GratitudeEntry {
     id: row.id,
     userId: row.user_id,
     level: sanitizeLevel(row.level),
-    items: normalizeItems([row.item_1, row.item_2, row.item_3, row.item_4 ?? "", row.item_5 ?? ""]),
+    items: positionalItems(
+      [row.item_1, row.item_2, row.item_3, row.item_4 ?? "", row.item_5 ?? ""],
+      GRATITUDE_ITEM_COUNT,
+    ),
     note: row.note,
     loggedAt: row.logged_at,
     createdAt: row.created_at,
@@ -56,7 +63,7 @@ function mapGratitudeEntry(row: GratitudeEntryRow): GratitudeEntry {
     goodMoment: row.good_moment ?? "",
     missIfGone: row.miss_if_gone ?? "",
     hiddenGood: row.hidden_good ?? "",
-    lifeItems: normalizeItems(
+    lifeItems: positionalItems(
       [row.life_item_1 ?? "", row.life_item_2 ?? "", row.life_item_3 ?? ""],
       GRATITUDE_LIFE_ITEM_COUNT,
     ),
@@ -105,12 +112,12 @@ export async function getGratitudeEntry(userId: string, id: string) {
 }
 
 export async function saveGratitudeEntry(userId: string, input: GratitudeInput, entryId?: string) {
-  const items = normalizeItems(input.items);
-  if (items.length === 0) {
+  const items = positionalItems(input.items, GRATITUDE_ITEM_COUNT);
+  if (items.every((item) => item.length === 0)) {
     throw new Error("At least one gratitude item is required.");
   }
 
-  const lifeItems = normalizeItems(input.lifeItems ?? [], GRATITUDE_LIFE_ITEM_COUNT);
+  const lifeItems = positionalItems(input.lifeItems ?? [], GRATITUDE_LIFE_ITEM_COUNT);
   const events = (input.events ?? [])
     .map((e) => e.trim())
     .filter((e) => e.length > 0)

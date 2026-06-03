@@ -77,9 +77,9 @@ describe("GratitudeEntryEditorScreen", () => {
     );
 
     expect(screen.getByText("New gratitude entry")).toBeTruthy();
-    expect(screen.getByLabelText("Gratitude 1")).toBeTruthy();
-    expect(screen.getByLabelText("Gratitude 2")).toBeTruthy();
-    expect(screen.getByLabelText("Gratitude 5")).toBeTruthy();
+    expect(screen.getByLabelText("What made you laugh?")).toBeTruthy();
+    expect(screen.getByLabelText("Who was kind to you?")).toBeTruthy();
+    expect(screen.getByLabelText("What did your body help you do?")).toBeTruthy();
     expect(screen.getByLabelText("Note (optional)")).toBeTruthy();
     expect(screen.getByText("Save")).toBeTruthy();
   });
@@ -110,38 +110,38 @@ describe("GratitudeEntryEditorScreen", () => {
       <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
-    fireEvent.changeText(screen.getByLabelText("Gratitude 1"), "Warm coffee");
+    fireEvent.changeText(screen.getByLabelText("What made you laugh?"), "Warm coffee");
     fireEvent.press(screen.getByText("Save"));
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({
         input: {
           level: 3,
-          items: ["Warm coffee"],
+          items: ["Warm coffee", "", "", "", ""],
           note: "",
           loggedAt: "2026-05-24T12:00:00.000Z",
           events: [],
           goodMoment: "",
           missIfGone: "",
           hiddenGood: "",
-          lifeItems: [],
+          lifeItems: ["", "", ""],
         },
         entryId: undefined,
       }),
     );
   });
 
-  it("filters blank items before saving", async () => {
+  it("preserves the answered slot positionally when saving", async () => {
     const mutateAsync = jest.fn().mockResolvedValue({
       id: "g-2",
       userId: "user-1",
       level: 3,
-      items: ["Sunlight"],
+      items: ["", "Sunlight", "", "", ""],
       events: [],
       goodMoment: "",
       missIfGone: "",
       hiddenGood: "",
-      lifeItems: [],
+      lifeItems: ["", "", ""],
       starred: false,
       note: "Small thing.",
       loggedAt: new Date().toISOString(),
@@ -157,7 +157,7 @@ describe("GratitudeEntryEditorScreen", () => {
       <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
-    fireEvent.changeText(screen.getByLabelText("Gratitude 2"), "Sunlight");
+    fireEvent.changeText(screen.getByLabelText("Who was kind to you?"), "Sunlight");
     fireEvent.changeText(screen.getByLabelText("Note (optional)"), "Small thing.");
     fireEvent.press(screen.getByText("Save"));
 
@@ -165,14 +165,14 @@ describe("GratitudeEntryEditorScreen", () => {
       expect(mutateAsync).toHaveBeenCalledWith({
         input: {
           level: 3,
-          items: ["Sunlight"],
+          items: ["", "Sunlight", "", "", ""],
           note: "Small thing.",
           loggedAt: "2026-05-24T12:00:00.000Z",
           events: [],
           goodMoment: "",
           missIfGone: "",
           hiddenGood: "",
-          lifeItems: [],
+          lifeItems: ["", "", ""],
         },
         entryId: undefined,
       }),
