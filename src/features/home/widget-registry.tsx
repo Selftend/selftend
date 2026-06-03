@@ -26,8 +26,6 @@ import { ActProgrammeWidget } from "@/src/features/home/widgets/act-programme-wi
 import { ActAcceptancePromptWidget } from "@/src/features/home/widgets/act-acceptance-prompt-widget";
 import { JournalWeekWidget } from "@/src/features/home/widgets/journal-week-widget";
 import { GroundingLogWidget } from "@/src/features/home/widgets/grounding-log-widget";
-import { HabitsQuietWidget } from "@/src/features/home/widgets/habits-quiet-widget";
-import { HabitsOneDeepWidget } from "@/src/features/home/widgets/habits-one-deep-widget";
 
 type WidgetComponent = React.ComponentType<{ userId: string }>;
 type WidgetStatus = "default" | "available" | "soon";
@@ -68,8 +66,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "act-acceptance-prompt": ActAcceptancePromptWidget,
   "journal-week": JournalWeekWidget,
   "grounding-log": GroundingLogWidget,
-  "habits-quiet": HabitsQuietWidget,
-  "habits-one-deep": HabitsOneDeepWidget,
 };
 
 export const WIDGET_META: Record<string, WidgetMeta> = {
@@ -296,24 +292,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     titleKey: "home.widgets.groundingLog.title",
     descriptionKey: "home.widgets.groundingLog.metaDesc",
     tint: "clay",
-    status: "available",
-  },
-  "habits-quiet": {
-    id: "habits-quiet",
-    toolKey: "habits",
-    icon: "schedule",
-    titleKey: "home.widgets.habitsQuiet.title",
-    descriptionKey: "home.widgets.habitsQuiet.metaDesc",
-    tint: "act",
-    status: "available",
-  },
-  "habits-one-deep": {
-    id: "habits-one-deep",
-    toolKey: "habits",
-    icon: "center-focus-strong",
-    titleKey: "home.widgets.habitsOneDeep.title",
-    descriptionKey: "home.widgets.habitsOneDeep.metaDesc",
-    tint: "act",
     status: "available",
   },
 };

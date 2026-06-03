@@ -419,19 +419,6 @@
         "sessionsLabel": "Sessions",
         "minutesLabel": "Minutes",
         "empty": "No sessions yet."
-      },
-      "habitsQuiet": {
-        "title": "Gone quiet",
-        "metaDesc": "A habit you haven't logged lately.",
-        "nudge": "Haven't logged this in a while.",
-        "empty": "Add a habit to begin.",
-        "add": "New habit"
-      },
-      "habitsOneDeep": {
-        "title": "One habit, deep",
-        "metaDesc": "Focus on a single habit.",
-        "empty": "Add a habit to begin.",
-        "add": "New habit"
       }
     }
   },
