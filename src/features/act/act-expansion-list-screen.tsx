@@ -55,7 +55,7 @@ export default function ActExpansionListScreen() {
 
           <RelatedTools
             tools={[
-              { icon: "air", nameKey: "mindfulness", href: "/tools/mindfulness" },
+              { icon: "self-improvement", nameKey: "meditation", href: "/tools/meditation" },
               { icon: "anchor", nameKey: "grounding", href: "/tools/grounding" },
             ]}
           />

@@ -38,13 +38,12 @@ describe("resolveInitialWidgetIds", () => {
     for (const id of [
       "cbt-open-record",
       "act-values",
-      "mindfulness-anchor",
       "grounding-54321",
       "sleep-last-night",
       "sleep-7-nights",
     ]) {
       expect(DEFAULT_WIDGET_IDS).toContain(id);
     }
-    expect(DEFAULT_WIDGET_IDS).toHaveLength(13);
+    expect(DEFAULT_WIDGET_IDS).toHaveLength(12);
   });
 });

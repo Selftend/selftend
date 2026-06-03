@@ -6,7 +6,7 @@ import type { CoreBelief } from "@/src/features/beliefs/types";
 import type { ThoughtRecord } from "@/src/features/cbt/types";
 import type { ExposureHierarchy } from "@/src/features/exposure/types";
 import type { Goal } from "@/src/features/goals/types";
-import type { MindfulnessSession } from "@/src/features/mindfulness/types";
+import type { MeditationSession } from "@/src/features/meditation/types";
 import type { MoodLog } from "@/src/features/mood/types";
 import type { RecoveryPlan } from "@/src/features/recovery/types";
 import type { SelfCareLog } from "@/src/features/self-care/types";
@@ -22,7 +22,7 @@ export interface ProgramSignalData {
   beliefs: CoreBelief[];
   activities: ActivityLog[];
   exposures: ExposureHierarchy[];
-  mindfulnessSessions: MindfulnessSession[];
+  meditationSessions: MeditationSession[];
   selfCareLogs: SelfCareLog[];
   moodLogs: MoodLog[];
   recoveryPlan: RecoveryPlan | null;
@@ -188,13 +188,9 @@ const RESILIENCE_PLAN: ProgramTaskDef = {
 const CALMING_ONCE: ProgramTaskDef = {
   key: "calmingOnce",
   labelKey: "program.tasks.calmingOnce",
-  route: "/tools/mindfulness",
-  signal: ({ mindfulnessSessions, since }) => ({
-    current:
-      mindfulnessSessions.filter((s) => s.completedAt && atOrAfter(s.completedAt, since)).length >=
-      1
-        ? 1
-        : 0,
+  route: "/tools/meditation",
+  signal: ({ meditationSessions, since }) => ({
+    current: meditationSessions.filter((s) => atOrAfter(s.completedAt, since)).length >= 1 ? 1 : 0,
     target: 1,
   }),
 };
@@ -202,10 +198,10 @@ const CALMING_ONCE: ProgramTaskDef = {
 const CALMING_DAILY: ProgramTaskDef = {
   key: "calmingDaily",
   labelKey: "program.tasks.calmingDaily",
-  route: "/tools/mindfulness",
-  signal: ({ mindfulnessSessions, selectedDate }) => ({
+  route: "/tools/meditation",
+  signal: ({ meditationSessions, selectedDate }) => ({
     current: didOnDate(
-      mindfulnessSessions.map((s) => s.completedAt),
+      meditationSessions.map((s) => s.completedAt),
       selectedDate,
     ),
     target: 1,

@@ -10,21 +10,19 @@ const PALETTE = {
   dark: { bg: "#27222F", chip: "#3A3344", chipFg: "#F4F2F8" },
 } as const;
 
-// Mirrors src/constants/mindfulness.ts mindfulnessExercises slugs.
+// Mirrors src/features/meditation/practices.ts MEDITATION_PRACTICES slugs (seated only).
 // English labels for now (headless task has no i18n context); the in-app screen renders its
-// own localized title once opened via /tools/mindfulness/[slug].
+// own localized title once opened via /tools/meditation?practice=[slug].
 const MINDFULNESS_OPTIONS = [
   { slug: "breath-awareness", emoji: "🌬️", label: "Breath" },
   { slug: "body-scan", emoji: "🧘", label: "Body scan" },
   { slug: "loving-kindness", emoji: "❤️", label: "Loving" },
   { slug: "observing-thoughts", emoji: "💭", label: "Thoughts" },
-  { slug: "mindful-walking", emoji: "🚶", label: "Walking" },
-  { slug: "mindful-eating", emoji: "🍽️", label: "Eating" },
 ] as const;
 
 function MindfulnessWidgetView({ theme }: { theme: Theme }) {
   const c = PALETTE[theme];
-  const rows = [MINDFULNESS_OPTIONS.slice(0, 3), MINDFULNESS_OPTIONS.slice(3, 6)];
+  const rows = [MINDFULNESS_OPTIONS.slice(0, 2), MINDFULNESS_OPTIONS.slice(2, 4)];
 
   return (
     <FlexWidget

@@ -10,7 +10,7 @@ import type { CoreBelief } from "@/src/features/beliefs/types";
 import type { ThoughtRecord } from "@/src/features/cbt/types";
 import type { ExposureHierarchy } from "@/src/features/exposure/types";
 import type { Goal } from "@/src/features/goals/types";
-import type { MindfulnessSession } from "@/src/features/mindfulness/types";
+import type { MeditationSession } from "@/src/features/meditation/types";
 import type { ProgramStatus, ProgramTaskView } from "@/src/features/modules/program-types";
 import type { MoodLog } from "@/src/features/mood/types";
 import type { RecoveryPlan } from "@/src/features/recovery/types";
@@ -29,7 +29,7 @@ export interface DeriveProgramInput {
   beliefs: CoreBelief[];
   activities: ActivityLog[];
   exposures: ExposureHierarchy[];
-  mindfulnessSessions: MindfulnessSession[];
+  meditationSessions: MeditationSession[];
   selfCareLogs: SelfCareLog[];
   moodLogs: MoodLog[];
   recoveryPlan: RecoveryPlan | null;
@@ -101,7 +101,7 @@ export function deriveCbtProgram(inputData: DeriveProgramInput): CbtProgramView 
     beliefs: inputData.beliefs,
     activities: inputData.activities,
     exposures: inputData.exposures,
-    mindfulnessSessions: inputData.mindfulnessSessions,
+    meditationSessions: inputData.meditationSessions,
     selfCareLogs: inputData.selfCareLogs,
     moodLogs: inputData.moodLogs,
     recoveryPlan: inputData.recoveryPlan,

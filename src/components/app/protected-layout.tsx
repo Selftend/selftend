@@ -133,8 +133,6 @@ export default function ProtectedLayout() {
             <Stack.Screen name="modules/cbt/exposure/[id]" />
             <Stack.Screen name="modules/cbt/worry/index" />
             <Stack.Screen name="modules/cbt/worry/new" />
-            <Stack.Screen name="tools/mindfulness/index" />
-            <Stack.Screen name="tools/mindfulness/[slug]" />
             <Stack.Screen name="modules/cbt/tasks/index" />
             <Stack.Screen name="modules/cbt/tasks/new" />
             <Stack.Screen name="modules/cbt/tasks/[id]" />

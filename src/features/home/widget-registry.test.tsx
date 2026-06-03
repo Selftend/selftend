@@ -87,8 +87,6 @@ describe("widget registry", () => {
   });
 
   it.each([
-    ["mindfulness-library", "mindfulness"],
-    ["mindfulness-log", "mindfulness"],
     ["grounding-library", "grounding"],
     ["grounding-log", "grounding"],
   ])("registers %s as an available practice-tool widget", (id, toolKey) => {

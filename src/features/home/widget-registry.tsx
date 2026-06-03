@@ -25,11 +25,8 @@ import { ActCommittedActionsWidget } from "@/src/features/home/widgets/act-commi
 import { ActDefusionWidget } from "@/src/features/home/widgets/act-defusion-widget";
 import { ActProgrammeWidget } from "@/src/features/home/widgets/act-programme-widget";
 import { ActAcceptancePromptWidget } from "@/src/features/home/widgets/act-acceptance-prompt-widget";
-import { MindfulnessAnchorWidget } from "@/src/features/home/widgets/mindfulness-anchor-widget";
 import { Grounding54321Widget } from "@/src/features/home/widgets/grounding-54321-widget";
 import { JournalWeekWidget } from "@/src/features/home/widgets/journal-week-widget";
-import { MindfulnessLibraryWidget } from "@/src/features/home/widgets/mindfulness-library-widget";
-import { MindfulnessLogWidget } from "@/src/features/home/widgets/mindfulness-log-widget";
 import { GroundingLibraryWidget } from "@/src/features/home/widgets/grounding-library-widget";
 import { GroundingLogWidget } from "@/src/features/home/widgets/grounding-log-widget";
 import { GratitudeWeekWidget } from "@/src/features/home/widgets/gratitude-week-widget";
@@ -65,7 +62,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "self-care": SelfCareWidget,
   "cbt-open-record": CbtOpenRecordWidget,
   "act-values": ActValuesWidget,
-  "mindfulness-anchor": MindfulnessAnchorWidget,
   "grounding-54321": Grounding54321Widget,
   "sleep-last-night": SleepLastNightWidget,
   "sleep-7-nights": Sleep7NightsWidget,
@@ -83,8 +79,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "act-programme": ActProgrammeWidget,
   "act-acceptance-prompt": ActAcceptancePromptWidget,
   "journal-week": JournalWeekWidget,
-  "mindfulness-library": MindfulnessLibraryWidget,
-  "mindfulness-log": MindfulnessLogWidget,
   "grounding-library": GroundingLibraryWidget,
   "grounding-log": GroundingLogWidget,
   "gratitude-week": GratitudeWeekWidget,
@@ -178,15 +172,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     titleKey: "home.widgets.actValues.title",
     descriptionKey: "home.widgets.actValues.metaDesc",
     tint: "act",
-    status: "default",
-  },
-  "mindfulness-anchor": {
-    id: "mindfulness-anchor",
-    toolKey: "mindfulness",
-    icon: "self-improvement",
-    titleKey: "home.widgets.mindfulnessAnchor.title",
-    descriptionKey: "home.widgets.mindfulnessAnchor.metaDesc",
-    tint: "mist",
     status: "default",
   },
   "grounding-54321": {
@@ -340,24 +325,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     titleKey: "home.widgets.journalWeek.title",
     descriptionKey: "home.widgets.journalWeek.metaDesc",
     tint: "ink",
-    status: "available",
-  },
-  "mindfulness-library": {
-    id: "mindfulness-library",
-    toolKey: "mindfulness",
-    icon: "format-list-bulleted",
-    titleKey: "home.widgets.mindfulnessLibrary.title",
-    descriptionKey: "home.widgets.mindfulnessLibrary.metaDesc",
-    tint: "mist",
-    status: "available",
-  },
-  "mindfulness-log": {
-    id: "mindfulness-log",
-    toolKey: "mindfulness",
-    icon: "history",
-    titleKey: "home.widgets.mindfulnessLog.title",
-    descriptionKey: "home.widgets.mindfulnessLog.metaDesc",
-    tint: "mist",
     status: "available",
   },
   "grounding-library": {

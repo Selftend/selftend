@@ -42,7 +42,7 @@ export default function ActConnectionListScreen() {
 
           <RelatedTools
             tools={[
-              { icon: "air", nameKey: "mindfulness", href: "/tools/mindfulness" },
+              { icon: "self-improvement", nameKey: "meditation", href: "/tools/meditation" },
               { icon: "anchor", nameKey: "grounding", href: "/tools/grounding" },
             ]}
           />

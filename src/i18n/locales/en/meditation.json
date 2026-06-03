@@ -34,7 +34,7 @@
   "module": {
     "home": {
       "title": "Meditation",
-      "subtitle": "Stage {{stage}} · {{phase}}",
+      "subtitle": "Train steady attention and clear awareness, one sit at a time.",
       "phaseNovice": "Novice",
       "phaseSkilled": "Skilled",
       "phaseTransition": "Transition",
@@ -259,6 +259,49 @@
       "obstacles": "Obstacles noted",
       "notFound": "Session not found.",
       "back": "Back"
+    }
+  },
+  "practices": {
+    "sectionLabel": "Practices",
+    "breath-awareness": {
+      "title": "Breath awareness",
+      "shortDescription": "Anchor your attention to the breath, returning gently when the mind wanders.",
+      "instructions": [
+        "Sit comfortably and close your eyes if it feels right.",
+        "Notice the breath where it feels strongest - nose, chest, or belly.",
+        "When you notice your mind has wandered, gently bring it back to the breath.",
+        "Continue at a relaxed pace until the timer ends."
+      ]
+    },
+    "body-scan": {
+      "title": "Body scan",
+      "shortDescription": "Move attention slowly from head to toe, noticing without trying to change.",
+      "instructions": [
+        "Lie down or sit comfortably.",
+        "Bring attention to the crown of your head.",
+        "Slowly move your awareness down through the face, neck, shoulders, arms, torso, legs, and feet.",
+        "Pause at each area for a few breaths, noticing sensation without judgement."
+      ]
+    },
+    "loving-kindness": {
+      "title": "Loving-kindness",
+      "shortDescription": "Direct warm wishes towards yourself and gradually outward.",
+      "instructions": [
+        "Bring to mind someone you care about easily.",
+        "Silently wish them: may you be safe, may you be well, may you be at ease.",
+        "Direct the same wishes to yourself.",
+        "Extend the wishes to others - a neutral person, then someone difficult, then all beings."
+      ]
+    },
+    "observing-thoughts": {
+      "title": "Observing thoughts",
+      "shortDescription": "Watch thoughts come and go without grabbing on to any.",
+      "instructions": [
+        "Sit comfortably and breathe naturally.",
+        "Imagine thoughts as clouds drifting across the sky, or leaves floating down a stream.",
+        "Notice each thought, then let it pass without following it.",
+        "Return to noticing whenever you find yourself caught in a thought."
+      ]
     }
   },
   "info": {

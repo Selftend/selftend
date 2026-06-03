@@ -44,7 +44,7 @@ export default function ActObservingSelfListScreen() {
 
           <RelatedTools
             tools={[
-              { icon: "air", nameKey: "mindfulness", href: "/tools/mindfulness" },
+              { icon: "self-improvement", nameKey: "meditation", href: "/tools/meditation" },
               { icon: "edit-note", nameKey: "journal", href: "/tools/journal" },
             ]}
           />

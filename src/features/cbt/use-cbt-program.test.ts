@@ -5,7 +5,7 @@ import { useCoreBeliefs } from "@/src/features/beliefs/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useHierarchies } from "@/src/features/exposure/queries";
 import { useGoals } from "@/src/features/goals/queries";
-import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
+import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
@@ -47,8 +47,8 @@ jest.mock("@/src/features/exposure/queries", () => ({
   useHierarchies: jest.fn(),
 }));
 
-jest.mock("@/src/features/mindfulness/queries", () => ({
-  useMindfulnessSessions: jest.fn(),
+jest.mock("@/src/features/meditation/queries", () => ({
+  useMeditationSessions: jest.fn(),
 }));
 
 jest.mock("@/src/features/self-care/queries", () => ({
@@ -79,8 +79,8 @@ const mockUseThoughtRecords = useThoughtRecords as jest.MockedFunction<typeof us
 const mockUseCoreBeliefs = useCoreBeliefs as jest.MockedFunction<typeof useCoreBeliefs>;
 const mockUseActivities = useActivities as jest.MockedFunction<typeof useActivities>;
 const mockUseHierarchies = useHierarchies as jest.MockedFunction<typeof useHierarchies>;
-const mockUseMindfulnessSessions = useMindfulnessSessions as jest.MockedFunction<
-  typeof useMindfulnessSessions
+const mockUseMeditationSessions = useMeditationSessions as jest.MockedFunction<
+  typeof useMeditationSessions
 >;
 const mockUseSelfCareLogs = useSelfCareLogs as jest.MockedFunction<typeof useSelfCareLogs>;
 const mockUseMoodLogs = useMoodLogs as jest.MockedFunction<typeof useMoodLogs>;
@@ -127,7 +127,21 @@ const allCompleteData = {
   })),
   exposures: [{ id: "e", createdAt: AFTER }],
   selfCareLogs: [{ id: "sc", createdAt: AFTER }],
-  mindfulnessSessions: DAYS.map((d, i) => ({ id: `s${i}`, completedAt: `${d}T19:00:00Z` })),
+  meditationSessions: DAYS.map((d, i) => ({
+    id: `s${i}`,
+    userId: "user-1",
+    stageAtSession: 1 as const,
+    durationMinutes: 10,
+    completedAt: `${d}T19:00:00Z`,
+    createdAt: `${d}T19:00:00Z`,
+    mindWanderingEpisodes: null,
+    dullnessLevel: null,
+    distractionLevel: null,
+    obstacleTags: [],
+    reflection: "",
+    moodAfter: null,
+    techniqueUsed: null,
+  })),
   recoveryPlan: { updatedAt: AFTER, personalSlogan: "Onward" },
 };
 
@@ -157,9 +171,9 @@ function setupBaseMocks(mutateAsync: jest.Mock, isPending = false) {
   mockUseHierarchies.mockReturnValue({
     data: allCompleteData.exposures,
   } as unknown as ReturnType<typeof useHierarchies>);
-  mockUseMindfulnessSessions.mockReturnValue({
-    data: allCompleteData.mindfulnessSessions,
-  } as unknown as ReturnType<typeof useMindfulnessSessions>);
+  mockUseMeditationSessions.mockReturnValue({
+    data: allCompleteData.meditationSessions,
+  } as unknown as ReturnType<typeof useMeditationSessions>);
   mockUseSelfCareLogs.mockReturnValue({
     data: allCompleteData.selfCareLogs,
   } as unknown as ReturnType<typeof useSelfCareLogs>);

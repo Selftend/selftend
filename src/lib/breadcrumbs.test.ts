@@ -4,23 +4,20 @@ import { computeBreadcrumbs } from "@/src/lib/breadcrumbs";
 // through to the key itself, which would surface as a bug in an assertion.
 const LABELS: Record<string, string> = {
   "sidebar.tools": "Tools",
-  "sidebar.mindfulness": "Mindfulness",
+  "sidebar.meditation": "Meditation",
   "sidebar.modules": "Modules",
   "sidebar.cbt": "CBT",
   "breadcrumb.goals": "Goals",
   "breadcrumb.entry": "Entry",
-  "cbt:mindfulness.exercises.loving-kindness.title": "Loving-kindness",
 };
 const t = (key: string) => LABELS[key] ?? key;
 
 describe("computeBreadcrumbs", () => {
-  it("resolves a mindfulness exercise slug to its real title", () => {
-    const crumbs = computeBreadcrumbs("/tools/mindfulness/loving-kindness", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Mindfulness", "Loving-kindness"]);
-    // Parent crumbs are links; the current page is not.
+  it("resolves the meditation route to its static label", () => {
+    const crumbs = computeBreadcrumbs("/tools/meditation", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Meditation"]);
     expect(crumbs[0].href).toBe("/tools");
-    expect(crumbs[1].href).toBe("/tools/mindfulness");
-    expect(crumbs[2].href).toBeUndefined();
+    expect(crumbs[1].href).toBeUndefined();
   });
 
   it("falls back to a generic label for an opaque-id detail route", () => {

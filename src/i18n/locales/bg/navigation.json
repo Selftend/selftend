@@ -17,7 +17,6 @@
     "journal": "Дневник",
     "breathing": "Дишане",
     "meditation": "Медитация",
-    "mindfulness": "Осъзнатост",
     "timer": "Таймер",
     "grounding": "Заземяване",
     "back": "Назад",
@@ -127,8 +126,6 @@
       "subtitle": "Самостоятелни тракери, които всеки модул може да ползва. Работят и сами по себе си.",
       "moodTracker": "Проследяване на настроението",
       "moodTrackerSub": "Шаблони във времето",
-      "mindfulness": "Осъзнатост",
-      "mindfulnessSub": "Водено дишане",
       "meditation": "Медитация",
       "meditationSub": "Спокойни, структурирани сесии",
       "gratitudeLog": "Дневник на благодарността",
@@ -231,7 +228,6 @@
       "act": "ACT",
       "journal": "Дневник",
       "breathing": "Дишане",
-      "mindfulness": "Осъзнатост",
       "grounding": "Заземяване",
       "gratitude": "Благодарност",
       "meditation": "Медитация",
@@ -283,12 +279,6 @@
         "metaDesc": "Твоите основни назовани ценности.",
         "empty": "Избери своите ценности",
         "cta": "Избери своите ценности"
-      },
-      "mindfulnessAnchor": {
-        "title": "Котвата за днес",
-        "metaDesc": "Кратка практика за осъзнатост.",
-        "desc": "5-минутна практика, за да закотвиш вниманието си.",
-        "cta": "Започни"
       },
       "grounding54321": {
         "title": "5-4-3-2-1",
@@ -430,18 +420,6 @@
         "minutesLabel": "Минути",
         "empty": "Все още няма сесии."
       },
-      "mindfulnessLibrary": {
-        "title": "Практики за осъзнатост",
-        "metaDesc": "Разгледай всички практики за осъзнатост.",
-        "count": "{{count}} практики"
-      },
-      "mindfulnessLog": {
-        "title": "Сесии за осъзнатост",
-        "metaDesc": "Скорошната ти практика за осъзнатост.",
-        "sessionsLabel": "Сесии",
-        "minutesLabel": "Минути",
-        "empty": "Все още няма сесии."
-      },
       "groundingLibrary": {
         "title": "Техники за заземяване",
         "metaDesc": "Разгледай всички техники за заземяване.",
@@ -541,8 +519,6 @@
       "moodLogs_other": "{{count}} записа",
       "moodLast7": "{{average}} средно тази седмица",
       "moodNoData": "Още няма записи",
-      "mindfulnessMinutes": "{{minutes}} мин този месец",
-      "mindfulnessNoData": "Още няма сесии",
       "journalEntries_one": "{{count}} запис",
       "journalEntries_other": "{{count}} записа",
       "journalNoData": "Още няма записи",

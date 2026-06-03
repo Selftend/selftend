@@ -15,7 +15,6 @@ const TOOL_ACCENT: Record<string, ToolAccent> = {
   gratitude: { chip: "bg-think/10", icon: "text-think" },
   habits: { chip: "bg-act/10", icon: "text-act" },
   breathing: { chip: "bg-aqua/10", icon: "text-aqua" },
-  mindfulness: { chip: "bg-mist/10", icon: "text-mist" },
   meditation: { chip: "bg-iris/10", icon: "text-iris" },
   journal: { chip: "bg-ink/10", icon: "text-ink" },
   sleep: { chip: "bg-ink/10", icon: "text-ink" },

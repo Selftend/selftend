@@ -59,7 +59,6 @@ const STATIC_ROUTES: Record<string, string> = {
   "/tools/breathing": "sidebar.breathing",
   "/tools/breathing/session": "breadcrumb.session",
   "/tools/breathing/new": "breadcrumb.new",
-  "/tools/mindfulness": "sidebar.mindfulness",
   "/tools/grounding": "sidebar.grounding",
   "/tools/gratitude-log": "sidebar.gratitudeLog",
   "/tools/gratitude-log/new": "breadcrumb.new",
@@ -91,7 +90,6 @@ const KNOWN_SUB_SEGMENTS: Record<string, string> = {
 // slug to its real title key (resolved cross-namespace from `cbt`). Opaque-id
 // routes (e.g. UUID records) aren't here and fall back to the generic label.
 const SLUG_LABEL_KEYS: Record<string, (slug: string) => string> = {
-  "/tools/mindfulness": (slug) => `cbt:mindfulness.exercises.${slug}.title`,
   "/tools/breathing": (slug) => `cbt:breathing.exercises.${slug}.title`,
   "/tools/grounding": (slug) => `cbt:grounding.techniques.${slug}.title`,
 };

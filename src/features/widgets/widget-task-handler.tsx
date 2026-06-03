@@ -33,7 +33,7 @@ function buildClickPath(
   }
   if (action === "OPEN_MINDFULNESS") {
     const slug = typeof data?.slug === "string" ? data.slug : null;
-    return slug ? `/tools/mindfulness/${slug}` : "/tools/mindfulness";
+    return slug ? `/tools/meditation?practice=${slug}` : "/tools/meditation";
   }
   if (action === "OPEN_ACTIVITY") {
     const domain = typeof data?.domain === "string" ? data.domain : null;

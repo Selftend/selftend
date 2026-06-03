@@ -24,7 +24,6 @@ import { ProgramGraduation } from "@/src/components/app/program-graduation";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
 import { MeditationInfo } from "@/src/components/app/meditation-info-modal";
-import { MindfulnessOnboarding } from "@/src/components/app/mindfulness-onboarding-modal";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
 import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
 import type { HelpKey } from "@/src/features/help/help-content";
@@ -73,7 +72,6 @@ type AdvancedToolInfoKey =
   | "habits"
   | "journal"
   | "meditation"
-  | "mindfulness"
   | "mood"
   | "sleep";
 
@@ -210,13 +208,6 @@ const BE_SHARED_TOOLS: SharedTool[] = [
     helpKey: "breathing",
   },
   {
-    key: "mindfulness",
-    route: "/tools/mindfulness",
-    icon: "air",
-    labelKey: "navigation:sidebar.mindfulness",
-    infoKey: "mindfulness",
-  },
-  {
     key: "meditation",
     route: "/tools/meditation",
     icon: "self-improvement",
@@ -335,11 +326,6 @@ function AdvancedToolInfoModals({ active, onClose }: AdvancedToolInfoModalsProps
       />
       <HabitsOnboarding visible={active === "habits"} onComplete={onClose} onDismiss={onClose} />
       <MeditationInfo visible={active === "meditation"} onComplete={onClose} onDismiss={onClose} />
-      <MindfulnessOnboarding
-        visible={active === "mindfulness"}
-        onComplete={onClose}
-        onDismiss={onClose}
-      />
       <GroundingOnboarding
         visible={active === "grounding"}
         onComplete={onClose}

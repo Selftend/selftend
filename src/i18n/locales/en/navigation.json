@@ -17,7 +17,6 @@
     "journal": "Journal",
     "breathing": "Breathing",
     "meditation": "Meditation",
-    "mindfulness": "Mindfulness",
     "timer": "Timer",
     "grounding": "Grounding",
     "back": "Back",
@@ -127,8 +126,6 @@
       "subtitle": "Standalone trackers any module can call into. Use them on their own, too.",
       "moodTracker": "Mood tracker",
       "moodTrackerSub": "Patterns over time",
-      "mindfulness": "Mindfulness",
-      "mindfulnessSub": "Guided breathing",
       "meditation": "Meditation",
       "meditationSub": "Quiet, structured sits",
       "timer": "Timer",
@@ -233,7 +230,6 @@
       "act": "ACT",
       "journal": "Journal",
       "breathing": "Breathing",
-      "mindfulness": "Mindfulness",
       "grounding": "Grounding",
       "gratitude": "Gratitude",
       "meditation": "Meditation",
@@ -282,12 +278,6 @@
         "metaDesc": "Your top named values.",
         "empty": "Choose your values",
         "cta": "Choose your values"
-      },
-      "mindfulnessAnchor": {
-        "title": "Today's anchor",
-        "metaDesc": "A short mindfulness practice.",
-        "desc": "A 5-minute practice to anchor your attention.",
-        "cta": "Start"
       },
       "grounding54321": {
         "title": "5-4-3-2-1",
@@ -429,18 +419,6 @@
         "minutesLabel": "Minutes",
         "empty": "No sessions yet."
       },
-      "mindfulnessLibrary": {
-        "title": "Mindfulness practices",
-        "metaDesc": "Browse all mindfulness practices.",
-        "count": "{{count}} practices"
-      },
-      "mindfulnessLog": {
-        "title": "Mindfulness sessions",
-        "metaDesc": "Your recent mindfulness practice.",
-        "sessionsLabel": "Sessions",
-        "minutesLabel": "Minutes",
-        "empty": "No sessions yet."
-      },
       "groundingLibrary": {
         "title": "Grounding techniques",
         "metaDesc": "Browse all grounding techniques.",
@@ -540,8 +518,6 @@
       "moodLogs_other": "{{count}} logs",
       "moodLast7": "{{average}} avg this week",
       "moodNoData": "No logs yet",
-      "mindfulnessMinutes": "{{minutes}} min this month",
-      "mindfulnessNoData": "No sessions yet",
       "timerMinutes": "{{minutes}} min this month",
       "timerNoData": "No sits yet",
       "journalEntries_one": "{{count}} entry",

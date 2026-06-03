@@ -6,13 +6,10 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { cn } from "@/lib/utils";
-import { breathingSlugs } from "@/src/constants/breathing";
-import { groundingSlugs } from "@/src/constants/grounding";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { useGroundingSessions } from "@/src/features/grounding/queries";
 import { useHabits } from "@/src/features/habits/queries";
 import { useJournalEntries } from "@/src/features/journal/queries";
-import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { getMoodSummary } from "@/src/features/mood/summaries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
@@ -20,7 +17,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface ToolTile {
-  key: "mood" | "mindfulness" | "gratitude" | "journal" | "grounding" | "sleep" | "habits";
+  key: "mood" | "gratitude" | "journal" | "grounding" | "sleep" | "habits";
   href: Href;
   icon: MaterialIconName;
   nameKey: string;
@@ -36,15 +33,6 @@ const TOOLS: ToolTile[] = [
     icon: "mood",
     nameKey: "today.tools.moodTracker",
     subKey: "today.tools.moodTrackerSub",
-    iconBg: "bg-be/15",
-    iconColor: "text-be",
-  },
-  {
-    key: "mindfulness",
-    href: "/tools/mindfulness",
-    icon: "air",
-    nameKey: "today.tools.mindfulness",
-    subKey: "today.tools.mindfulnessSub",
     iconBg: "bg-be/15",
     iconColor: "text-be",
   },
@@ -95,24 +83,10 @@ const TOOLS: ToolTile[] = [
   },
 ];
 
-function lastThirtyDaysMinutes(
-  sessions: { durationMinutes: number; createdAt: string }[] | undefined,
-) {
-  if (!sessions || sessions.length === 0) return 0;
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - 29);
-  return sessions
-    .filter((s) => new Date(s.createdAt).getTime() >= start.getTime())
-    .reduce((sum, s) => sum + s.durationMinutes, 0);
-}
-
 export default function ToolsScreen() {
   const { t } = useTranslation("navigation");
   const { user } = useSession();
   const { data: moodLogs } = useMoodLogs(user?.id ?? null, 30);
-  // 200 (not the default 30) so the 30-day minutes aggregate isn't truncated for heavy users.
-  const { data: mindfulnessSessions } = useMindfulnessSessions(user?.id ?? null, 200);
   const { data: journalEntries } = useJournalEntries(user?.id ?? null, 50);
   const { data: gratitudeEntries } = useGratitudeEntries(user?.id ?? null, 50);
   const { data: groundingSessions } = useGroundingSessions(user?.id ?? null, 50);
@@ -121,13 +95,6 @@ export default function ToolsScreen() {
 
   const moodCount = moodLogs?.length ?? 0;
   const moodAverage = getMoodSummary(moodLogs, 7).average;
-  // Exclude breathing/grounding (they share the mindfulness_sessions table and have their
-  // own tiles) so the mindfulness stat reflects true mindfulness practice, not double-counts.
-  const mindfulnessMinutes = lastThirtyDaysMinutes(
-    mindfulnessSessions?.filter(
-      (s) => !breathingSlugs.includes(s.exerciseName) && !groundingSlugs.includes(s.exerciseName),
-    ),
-  );
   const journalCount = journalEntries?.length ?? 0;
   const gratitudeCount = gratitudeEntries?.length ?? 0;
   const groundingCount = groundingSessions?.length ?? 0;
@@ -142,9 +109,6 @@ export default function ToolsScreen() {
         return `${t("tools.stats.moodLogs", { count: moodCount })} · ${t("tools.stats.moodLast7", {
           average: moodAverage,
         })}`;
-      case "mindfulness":
-        if (mindfulnessMinutes === 0) return t("tools.stats.mindfulnessNoData");
-        return t("tools.stats.mindfulnessMinutes", { minutes: mindfulnessMinutes });
       case "journal":
         if (journalCount === 0) return t("tools.stats.journalNoData");
         return t("tools.stats.journalEntries", { count: journalCount });

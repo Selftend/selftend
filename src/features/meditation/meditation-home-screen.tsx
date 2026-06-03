@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +17,7 @@ import {
 } from "@/src/components/app/meditation-onboarding-modal";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
 import { MeditationInsightsCard } from "@/src/features/meditation/meditation-insights-card";
+import { MeditationPracticesSection } from "@/src/features/meditation/meditation-practices-section";
 import {
   useMeditationProgramState,
   useMeditationSessions,
@@ -33,6 +34,7 @@ export default function MeditationHomeScreen() {
   const { t } = useTranslation("meditation");
   const { user } = useSession();
   const userId = user?.id ?? null;
+  const { practice } = useLocalSearchParams<{ practice?: string }>();
 
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
   const { data: programState } = useMeditationProgramState(userId);
@@ -48,7 +50,6 @@ export default function MeditationHomeScreen() {
   const currentStage = (programState?.currentStage ?? 1) as StageNumber;
   const stage = getStage(currentStage);
   const suggestedDuration = programState?.preferredDurationMinutes ?? 15;
-  const phaseLabel = t(`module.home.phase${capitalize(stage.phase)}`);
   const medianMinutes = median((allSessions ?? []).map((s) => s.durationMinutes));
 
   async function handleOnboardingComplete(result: MeditationOnboardingResult) {
@@ -111,7 +112,7 @@ export default function MeditationHomeScreen() {
                 hue="iris"
                 icon="self-improvement"
                 moduleLabel={null}
-                description={t("module.home.subtitle", { stage: stage.number, phase: phaseLabel })}
+                description={t("module.home.subtitle")}
                 actions={[
                   { type: "tune", onPress: () => setForceWizard(true) },
                   { type: "notifications", targetKey: "meditation" },
@@ -169,6 +170,8 @@ export default function MeditationHomeScreen() {
                 <Text>{t("module.home.openLearn")}</Text>
               </Button>
             </View>
+
+            <MeditationPracticesSection initialPractice={practice} />
 
             {currentStage === 10 ? <MeditationDailyLifeCard /> : null}
 
@@ -229,10 +232,6 @@ export default function MeditationHomeScreen() {
       </SafeAreaView>
     </>
   );
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function parseHour(time: string): number {

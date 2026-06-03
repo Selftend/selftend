@@ -6,7 +6,7 @@ import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { deriveCbtProgram, type CbtProgramView } from "@/src/features/cbt/derive-cbt-program";
 import { useHierarchies } from "@/src/features/exposure/queries";
 import { useGoals } from "@/src/features/goals/queries";
-import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
+import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
@@ -39,7 +39,7 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
   const beliefs = useCoreBeliefs(userId);
   const activities = useActivities(userId);
   const exposures = useHierarchies(userId);
-  const mindfulnessSessions = useMindfulnessSessions(userId);
+  const meditationSessions = useMeditationSessions(userId);
   const selfCareLogs = useSelfCareLogs(userId);
   const moodLogs = useMoodLogs(userId, 180);
   const recoveryPlan = useRecoveryPlan(userId);
@@ -62,7 +62,7 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
         beliefs: beliefs.data ?? [],
         activities: activities.data ?? [],
         exposures: exposures.data ?? [],
-        mindfulnessSessions: mindfulnessSessions.data ?? [],
+        meditationSessions: meditationSessions.data ?? [],
         selfCareLogs: selfCareLogs.data ?? [],
         moodLogs: moodLogs.data ?? [],
         recoveryPlan: recoveryPlan.data ?? null,
@@ -76,7 +76,7 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
       beliefs.data,
       activities.data,
       exposures.data,
-      mindfulnessSessions.data,
+      meditationSessions.data,
       selfCareLogs.data,
       moodLogs.data,
       recoveryPlan.data,

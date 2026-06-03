@@ -74,13 +74,6 @@ const TOOL_ITEMS: NavItemDef[] = [
     accentKey: "breathing",
   },
   {
-    labelKey: "sidebar.mindfulness",
-    href: "/tools/mindfulness",
-    icon: "self-improvement",
-    matchPrefix: "/tools/mindfulness",
-    accentKey: "mindfulness",
-  },
-  {
     labelKey: "sidebar.grounding",
     href: "/tools/grounding",
     icon: "anchor",
