@@ -6,6 +6,10 @@
     "minutes": "{{count}} мин",
     "minutesUnit": "мин"
   },
+  "interval": {
+    "label": "Междинен звън",
+    "off": "Изкл."
+  },
   "timer": {
     "start": "Започни",
     "pause": "Пауза",

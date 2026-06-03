@@ -1,13 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import {
+  loadIntervalMinutes,
   loadLastSessionDuration,
+  normalizeIntervalMinutes,
   normalizeTimerDuration,
   parseStoredTimerDuration,
+  saveIntervalMinutes,
   saveLastSessionDuration,
 } from "@/src/features/timer/storage";
 
 const STORAGE_KEY = "selftend:timer:lastSessionDurationMinutes";
+const INTERVAL_KEY = "selftend:timer:intervalMinutes";
 
 describe("timer storage", () => {
   beforeEach(async () => {
@@ -41,5 +45,25 @@ describe("timer storage", () => {
     await saveLastSessionDuration(999);
 
     expect(await AsyncStorage.getItem(STORAGE_KEY)).toBe("120");
+  });
+
+  it("normalizes interval minutes (0 = off, clamped to the max)", () => {
+    expect(normalizeIntervalMinutes(5)).toBe(5);
+    expect(normalizeIntervalMinutes(5.6)).toBe(6);
+    expect(normalizeIntervalMinutes(0)).toBe(0);
+    expect(normalizeIntervalMinutes(-3)).toBe(0);
+    expect(normalizeIntervalMinutes(999)).toBe(60);
+    expect(normalizeIntervalMinutes(Number.NaN)).toBe(0);
+  });
+
+  it("loads and persists the interval, returning null when unset", async () => {
+    await expect(loadIntervalMinutes()).resolves.toBeNull();
+
+    await saveIntervalMinutes(10);
+    expect(await AsyncStorage.getItem(INTERVAL_KEY)).toBe("10");
+    await expect(loadIntervalMinutes()).resolves.toBe(10);
+
+    await saveIntervalMinutes(0);
+    await expect(loadIntervalMinutes()).resolves.toBe(0);
   });
 });

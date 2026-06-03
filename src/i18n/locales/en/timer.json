@@ -6,6 +6,10 @@
     "minutes": "{{count}} min",
     "minutesUnit": "min"
   },
+  "interval": {
+    "label": "Interval bell",
+    "off": "Off"
+  },
   "timer": {
     "start": "Start",
     "pause": "Pause",

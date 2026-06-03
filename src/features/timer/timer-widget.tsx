@@ -6,13 +6,22 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import {
+  DEFAULT_INTERVAL_MINUTES,
+  INTERVAL_OPTIONS_MINUTES,
+  isIntervalTick,
+} from "@/src/features/timer/interval";
+import {
   DEFAULT_TIMER_DURATION_MINUTES,
+  loadIntervalMinutes,
   loadLastSessionDuration,
   MAX_TIMER_DURATION_MINUTES,
   MIN_TIMER_DURATION_MINUTES,
+  normalizeIntervalMinutes,
   normalizeTimerDuration,
+  saveIntervalMinutes,
   saveLastSessionDuration,
 } from "@/src/features/timer/storage";
+import { cn } from "@/lib/utils";
 
 type TimerState = "idle" | "running" | "paused" | "completed";
 
@@ -23,7 +32,8 @@ const BAR_MAX_H = 72;
 const BAR_MIN_H = 3;
 // Sigma in bar-units: how quickly bars shrink away from center
 const SIGMA = 4.5;
-const bellSound = require("@/assets/sounds/bell.wav");
+const bellSound = require("@/assets/sounds/meditation-bell.wav") as number;
+const intervalSound = require("@/assets/sounds/interval-temple-block.wav") as number;
 let nativeAudioModeConfigured = false;
 type ExpoAvModule = typeof import("expo-av");
 
@@ -42,10 +52,10 @@ function formatTime(seconds: number) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-async function playBell() {
+async function playSound(asset: number) {
   try {
     if (Platform.OS === "web") {
-      const audio = new window.Audio(bellSound as string);
+      const audio = new window.Audio(asset as unknown as string);
       await audio.play();
       return;
     }
@@ -58,13 +68,13 @@ async function playBell() {
       nativeAudioModeConfigured = true;
     }
 
-    const { sound } = await Audio.Sound.createAsync(bellSound);
+    const { sound } = await Audio.Sound.createAsync(asset);
     await sound.playAsync();
     sound.setOnPlaybackStatusUpdate((status) => {
       if (status.isLoaded && status.didJustFinish) sound.unloadAsync();
     });
   } catch (e) {
-    console.error("[bell] error", e);
+    console.error("[timer] sound error", e);
   }
 }
 
@@ -225,6 +235,41 @@ function DurationPicker({ value, onChange }: { value: number; onChange: (n: numb
   );
 }
 
+function IntervalPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const { t } = useTranslation("timer");
+  return (
+    <View className="items-center gap-2">
+      <Text className="text-xs text-muted-foreground">{t("interval.label")}</Text>
+      <View className="flex-row flex-wrap justify-center gap-2">
+        {INTERVAL_OPTIONS_MINUTES.map((minutes) => {
+          const selected = minutes === value;
+          return (
+            <Pressable
+              key={minutes}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              onPress={() => onChange(minutes)}
+              className={cn(
+                "rounded-full border px-4 py-1.5",
+                selected ? "border-transparent bg-primary" : "border-border bg-card",
+              )}
+            >
+              <Text
+                className={cn(
+                  "text-xs font-semibold",
+                  selected ? "text-primary-foreground" : "text-foreground",
+                )}
+              >
+                {minutes === 0 ? t("interval.off") : t("duration.minutes", { count: minutes })}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 interface TimerWidgetProps {
   initialDuration?: number;
 }
@@ -236,10 +281,15 @@ export function TimerWidget({
   const suggestedDuration = normalizeTimerDuration(initialDuration);
 
   const [durationMinutes, setDurationMinutesState] = useState(suggestedDuration);
+  const [intervalMinutes, setIntervalMinutesState] = useState(DEFAULT_INTERVAL_MINUTES);
   const [timerState, setTimerState] = useState<TimerState>("idle");
   const [secondsLeft, setSecondsLeft] = useState(durationMinutes * 60);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasUserSelectedDurationRef = useRef(false);
+  const hasUserSelectedIntervalRef = useRef(false);
+  // Captured at start() so the per-second tick reads stable values.
+  const sessionTotalSecondsRef = useRef(0);
+  const intervalSecondsRef = useRef(0);
 
   useEffect(() => {
     if (hasUserSelectedDurationRef.current) return;
@@ -265,6 +315,23 @@ export function TimerWidget({
   }, []);
 
   useEffect(() => {
+    let mounted = true;
+
+    loadIntervalMinutes()
+      .then((stored) => {
+        if (!mounted || stored === null || hasUserSelectedIntervalRef.current) return;
+        setIntervalMinutesState(stored);
+      })
+      .catch((error) => {
+        console.error("[timer] failed to load interval", error);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (timerState === "idle") setSecondsLeft(durationMinutes * 60);
   }, [durationMinutes, timerState]);
 
@@ -275,10 +342,15 @@ export function TimerWidget({
           if (prev <= 1) {
             if (intervalRef.current) clearInterval(intervalRef.current);
             setTimerState("completed");
-            void playBell();
+            void playSound(bellSound);
             return 0;
           }
-          return prev - 1;
+          const next = prev - 1;
+          const elapsed = sessionTotalSecondsRef.current - next;
+          if (isIntervalTick(elapsed, intervalSecondsRef.current)) {
+            void playSound(intervalSound);
+          }
+          return next;
         });
       }, 1000);
     } else if (intervalRef.current) {
@@ -297,12 +369,23 @@ export function TimerWidget({
     setDurationMinutesState(normalizeTimerDuration(minutes));
   }
 
+  function setIntervalMinutes(minutes: number) {
+    hasUserSelectedIntervalRef.current = true;
+    setIntervalMinutesState(normalizeIntervalMinutes(minutes));
+  }
+
   function start() {
     const sessionDuration = normalizeTimerDuration(durationMinutes);
+    const sessionInterval = normalizeIntervalMinutes(intervalMinutes);
+    sessionTotalSecondsRef.current = sessionDuration * 60;
+    intervalSecondsRef.current = sessionInterval * 60;
     void saveLastSessionDuration(sessionDuration).catch((error) => {
       console.error("[timer] failed to save last session duration", error);
     });
-    void playBell();
+    void saveIntervalMinutes(sessionInterval).catch((error) => {
+      console.error("[timer] failed to save interval", error);
+    });
+    void playSound(bellSound);
     setTimerState("running");
   }
 
@@ -325,7 +408,10 @@ export function TimerWidget({
   return (
     <View className="gap-4">
       {!isActive && timerState !== "completed" ? (
-        <DurationPicker value={durationMinutes} onChange={setDurationMinutes} />
+        <View className="gap-4">
+          <DurationPicker value={durationMinutes} onChange={setDurationMinutes} />
+          <IntervalPicker value={intervalMinutes} onChange={setIntervalMinutes} />
+        </View>
       ) : null}
 
       {timerState === "completed" ? (
