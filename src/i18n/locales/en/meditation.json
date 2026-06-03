@@ -40,7 +40,6 @@
       "phaseTransition": "Transition",
       "phaseAdept": "Adept",
       "todayCard": "Today's sit",
-      "todaySuggestion": "{{minutes}} minutes at Stage {{stage}}",
       "startSit": "Start a sit",
       "openStages": "Explore the ten stages",
       "openLearn": "Learn the framework",

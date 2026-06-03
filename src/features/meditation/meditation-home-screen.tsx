@@ -144,12 +144,6 @@ export default function MeditationHomeScreen() {
             <Card className="border-primary/30">
               <CardContent className="gap-3 pt-6">
                 <CardTitle>{t("module.home.todayCard")}</CardTitle>
-                <Text variant="muted">
-                  {t("module.home.todaySuggestion", {
-                    minutes: suggestedDuration,
-                    stage: stage.number,
-                  })}
-                </Text>
                 <TimerWidget initialDuration={suggestedDuration} />
               </CardContent>
             </Card>
