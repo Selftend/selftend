@@ -1,8 +1,9 @@
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
   CardContent,
@@ -12,15 +13,25 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { useAngerLog } from "@/src/features/anger/queries";
+import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
+import { useAngerLog, useDeleteAngerLog } from "@/src/features/anger/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 
 export default function AngerDetailScreen() {
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
+  const showToast = useToastStore((state) => state.showToast);
   const { data: log, isLoading } = useAngerLog(user?.id ?? null, id ?? null);
+  const deleteMutation = useDeleteAngerLog(user?.id ?? null);
+  const handleDelete = async () => {
+    if (!log) return;
+    await deleteMutation.mutateAsync(log.id);
+    showToast({ title: t("common:feedback.deleted"), tone: "success" });
+    router.replace("/modules/cbt/anger");
+  };
 
   if (isLoading) {
     return (
@@ -92,6 +103,21 @@ export default function AngerDetailScreen() {
           ) : null}
 
           {renderField(t("anger.notes"), log.notes)}
+
+          <View className="gap-3">
+            <Button
+              onPress={() => router.push(`/modules/cbt/anger/new?logId=${log.id}`)}
+              variant="secondary"
+            >
+              <Text>{t("common:edit")}</Text>
+            </Button>
+            <DeleteEntryButton
+              label={t("common:delete")}
+              title={t("anger.deleteTitle")}
+              message={t("anger.deleteMessage")}
+              onConfirm={handleDelete}
+            />
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

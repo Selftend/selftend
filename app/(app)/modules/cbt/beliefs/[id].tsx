@@ -16,7 +16,12 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { useCoreBelief, useUpdateBeliefStrength } from "@/src/features/beliefs/queries";
+import {
+  useCoreBelief,
+  useDeleteCoreBelief,
+  useUpdateBeliefStrength,
+} from "@/src/features/beliefs/queries";
+import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
@@ -28,6 +33,13 @@ export default function BeliefDetailScreen() {
   const showToast = useToastStore((state) => state.showToast);
   const { data: belief, isLoading } = useCoreBelief(user?.id ?? null, id ?? null);
   const strengthMutation = useUpdateBeliefStrength(user?.id ?? null);
+  const deleteMutation = useDeleteCoreBelief(user?.id ?? null);
+  const handleDelete = async () => {
+    if (!belief) return;
+    await deleteMutation.mutateAsync(belief.id);
+    showToast({ title: t("common:feedback.deleted"), tone: "success" });
+    router.replace("/modules/cbt/beliefs" as Parameters<typeof router.replace>[0]);
+  };
 
   const [original, setOriginal] = useState<number | null>(null);
   const [alternative, setAlternative] = useState<number | null>(null);
@@ -190,12 +202,20 @@ export default function BeliefDetailScreen() {
             </Card>
           ) : null}
 
-          <Button
-            onPress={() => router.push(`/modules/cbt/beliefs/new?beliefId=${belief.id}`)}
-            variant="secondary"
-          >
-            <Text>{t("beliefs.edit")}</Text>
-          </Button>
+          <View className="gap-3">
+            <Button
+              onPress={() => router.push(`/modules/cbt/beliefs/new?beliefId=${belief.id}`)}
+              variant="secondary"
+            >
+              <Text>{t("common:edit")}</Text>
+            </Button>
+            <DeleteEntryButton
+              label={t("common:delete")}
+              title={t("beliefs.deleteTitle")}
+              message={t("beliefs.deleteMessage")}
+              onConfirm={handleDelete}
+            />
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

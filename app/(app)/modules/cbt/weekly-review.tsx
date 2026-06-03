@@ -108,7 +108,11 @@ export default function WeeklyReviewScreen() {
     return thoughtRecords.filter((r) => toLocalDateKey(r.createdAt) >= weekStart);
   })();
 
-  const promptKey = REFLECTION_PROMPTS[new Date().getDay() % REFLECTION_PROMPTS.length];
+  // Derive the prompt from the week-start key already in scope rather than a second
+  // wall-clock read, so it is deterministic for a given week and unit-testable.
+  const weekStartKey = weekDates[0];
+  const promptKey =
+    REFLECTION_PROMPTS[(Number(weekStartKey.slice(8, 10)) || 0) % REFLECTION_PROMPTS.length];
   const isLoading = moodLoading || activitiesLoading || goalsLoading || recordsLoading;
 
   const chartWidth = Math.min(width - 48, 400);

@@ -1,4 +1,5 @@
 import {
+  deleteHierarchy,
   getHierarchy,
   getItem,
   listAllItems,
@@ -92,6 +93,19 @@ describe("exposure repository - hierarchies", () => {
       title: "Driving",
       anxiety_type: "phobia",
     });
+  });
+
+  it("deletes a hierarchy scoped to user and id", async () => {
+    const eqId = jest.fn().mockResolvedValue({ error: null });
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const del = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ delete: del }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(deleteHierarchy("user-1", "hier-1")).resolves.toBeUndefined();
+    expect(from).toHaveBeenCalledWith("exposure_hierarchies");
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(eqId).toHaveBeenCalledWith("id", "hier-1");
   });
 });
 

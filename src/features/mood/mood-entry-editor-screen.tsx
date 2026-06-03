@@ -197,7 +197,7 @@ export function MoodEntryEditorScreen({
     );
   }
 
-  const showCrisis = moodScore !== null && moodScore <= 1;
+  const showCrisis = moodScore !== null && moodScore <= 2;
   const showBreathingNudge = moodScore !== null && moodScore <= 2;
 
   return (

@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,6 +15,8 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
+import { CONCERN_BELIEF_EXAMPLE_KEYS } from "@/src/features/cbt/concerns";
+import { useCbtConcerns } from "@/src/features/cbt/use-cbt-concerns";
 import { useCoreBelief, useSaveCoreBelief } from "@/src/features/beliefs/queries";
 import { coreBeliefFormSchema, type CoreBeliefFormSchema } from "@/src/features/beliefs/schemas";
 import { useWizardDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
@@ -40,6 +42,10 @@ export default function NewBeliefScreen() {
   const beliefId = typeof rawBeliefId === "string" && rawBeliefId.length > 0 ? rawBeliefId : null;
   const draftMode = beliefId ? "edit" : "create";
   const { user } = useSession();
+  const { concerns } = useCbtConcerns(user?.id ?? null);
+  const beliefExampleKeys = beliefId
+    ? []
+    : Array.from(new Set(concerns.flatMap((c) => CONCERN_BELIEF_EXAMPLE_KEYS[c])));
 
   const storedDraftValues = useBeliefDraftStore(
     selectWizardDraftValues<CoreBeliefFormSchema>(draftMode, beliefId),
@@ -182,6 +188,23 @@ export default function NewBeliefScreen() {
     >
       {wizard.stepIndex === 0 ? (
         <View className="gap-6">
+          {beliefExampleKeys.length > 0 ? (
+            <View className="gap-2">
+              <Text variant="muted">{t("beliefs.examplesHint")}</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {beliefExampleKeys.map((key) => (
+                  <Pressable
+                    key={key}
+                    accessibilityRole="button"
+                    onPress={() => setValue("beliefStatement", t(key))}
+                    className="rounded-full border border-border bg-card px-3 py-1.5 active:bg-accent/40"
+                  >
+                    <Text className="text-sm">{t(key)}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : null}
           <Controller
             control={control}
             name="beliefStatement"

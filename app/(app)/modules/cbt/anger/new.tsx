@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -18,7 +19,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
-import { useAngerLogs, useSaveAngerLog } from "@/src/features/anger/queries";
+import { useAngerLog, useAngerLogs, useSaveAngerLog } from "@/src/features/anger/queries";
 import { angerLogFormSchema, type AngerLogFormSchema } from "@/src/features/anger/schemas";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -47,10 +48,15 @@ export default function NewAngerLogScreen() {
   const isFirstTime = (existingLogs?.length ?? 0) === 0;
   const saveMutation = useSaveAngerLog(user?.id ?? null);
 
+  const { logId: rawLogId } = useLocalSearchParams<{ logId?: string }>();
+  const logId = typeof rawLogId === "string" && rawLogId.length > 0 ? rawLogId : null;
+  const { data: existingLog } = useAngerLog(user?.id ?? null, logId);
+
   const {
     control,
     formState: { errors, isSubmitting },
     handleSubmit,
+    reset,
     setValue,
     watch,
   } = useForm<AngerLogFormSchema>({
@@ -58,16 +64,33 @@ export default function NewAngerLogScreen() {
     resolver: zodResolver(angerLogFormSchema),
   });
 
+  useEffect(() => {
+    if (!existingLog) return;
+    reset({
+      triggerText: existingLog.triggerText,
+      interpretation: existingLog.interpretation,
+      arousalLevel: existingLog.arousalLevel,
+      urge: existingLog.urge,
+      behaviorChosen: existingLog.behaviorChosen,
+      consequence: existingLog.consequence,
+      timeOutTaken: existingLog.timeOutTaken,
+      alternativeInterpretation: existingLog.alternativeInterpretation,
+      outcomeRating: existingLog.outcomeRating,
+      notes: existingLog.notes,
+    });
+  }, [existingLog, reset]);
+
   const arousal = watch("arousalLevel");
   const outcome = watch("outcomeRating");
   const timeOut = watch("timeOutTaken");
 
   const handleSave = handleSubmit(async (values) => {
     try {
-      await saveMutation.mutateAsync({
-        ...values,
-        createdAt: loggedAtForSelectedDate(selectedDate),
-      });
+      await saveMutation.mutateAsync(
+        logId
+          ? { input: values, logId }
+          : { input: { ...values, createdAt: loggedAtForSelectedDate(selectedDate) } },
+      );
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.replace("/modules/cbt/anger" as Parameters<typeof router.replace>[0]);
     } catch (e) {
@@ -89,8 +112,8 @@ export default function NewAngerLogScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <ScreenHeader title={t("anger.newTitle")} />
-          <Text variant="muted">{t("anger.newDescription")}</Text>
+          <ScreenHeader title={t(logId ? "anger.editTitle" : "anger.newTitle")} />
+          <Text variant="muted">{t(logId ? "anger.editDescription" : "anger.newDescription")}</Text>
         </View>
 
         {isFirstTime ? (

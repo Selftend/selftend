@@ -30,6 +30,7 @@
     "tools": "Tools",
     "badgeLive": "Live",
     "badgeSoon": "Soon",
+    "badgeBeta": "Beta",
     "collapse": "Collapse {{label}}",
     "expand": "Expand {{label}}"
   },
@@ -275,7 +276,8 @@
         "continue": "Continue",
         "reread": "Reread",
         "start": "Start a thought record",
-        "empty": "No thought records yet."
+        "empty": "No thought records yet.",
+        "shortcutCta": "New thought record"
       },
       "actValues": {
         "title": "Your values",
@@ -309,14 +311,16 @@
         "title": "Distortion guide",
         "metaDesc": "A reference for common thinking patterns.",
         "count": "Spot {{count}} thinking patterns",
-        "explore": "Explore"
+        "explore": "Explore",
+        "shortcutCta": "Open guide"
       },
       "cbtProgramme": {
         "title": "CBT programme",
         "metaDesc": "Your guided programme progress.",
         "notStarted": "Start the guided CBT programme.",
         "complete": "Programme complete - nicely done.",
-        "open": "Open programme"
+        "open": "Open programme",
+        "shortcutCta": "Open programme"
       },
       "cbtWorry": {
         "title": "Worry journal",
@@ -325,7 +329,8 @@
         "stat_other": "{{count}} to revisit",
         "empty": "Sort a worry when one comes up.",
         "revisit": "Revisit",
-        "start": "Start"
+        "start": "Start",
+        "shortcutCta": "New worry"
       },
       "cbtBeliefs": {
         "title": "Core beliefs",
@@ -336,7 +341,8 @@
         "due_other": "{{count}} due for review",
         "empty": "Start with one belief.",
         "review": "Review",
-        "start": "Start"
+        "start": "Start",
+        "shortcutCta": "New belief"
       },
       "cbtActivities": {
         "title": "Behavioral activation",
@@ -345,7 +351,8 @@
         "stat_other": "{{count}} upcoming",
         "empty": "Plan a small, mood-lifting activity.",
         "view": "View plan",
-        "plan": "Plan one"
+        "plan": "Plan one",
+        "shortcutCta": "Plan activity"
       },
       "cbtExposure": {
         "title": "Exposure ladder",
@@ -354,7 +361,8 @@
         "allDone": "Every step complete - nicely done.",
         "empty": "Build a fear ladder to start.",
         "continue": "Continue",
-        "build": "Build a ladder"
+        "build": "Build a ladder",
+        "shortcutCta": "New ladder"
       },
       "cbtGoals": {
         "title": "Goals",
@@ -363,7 +371,8 @@
         "stat_other": "{{count}} active",
         "empty": "Set a goal to work toward.",
         "open": "Open",
-        "set": "Set a goal"
+        "set": "Set a goal",
+        "shortcutCta": "New goal"
       },
       "actCommittedActions": {
         "title": "Committed actions",
@@ -515,6 +524,7 @@
     "values": "Values",
     "weeklyReview": "Weekly review",
     "selfCare": "Self-care",
+    "focusAreas": "Focus areas",
     "recovery": "Recovery",
     "committedAction": "Committed action",
     "connection": "Connection",

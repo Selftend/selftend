@@ -46,10 +46,10 @@ describe("CbtHistoryScreen", () => {
 
     renderWithProviders(<CbtHistoryScreen />);
 
-    expect(screen.getByText("No thought records yet")).toBeTruthy();
+    expect(screen.getByText("No records on this day")).toBeTruthy();
     expect(
       screen.getByText(
-        "Create your first record from the CBT section. It will appear here once saved.",
+        "Try another date, or add a record from the CBT section - it appears here once saved.",
       ),
     ).toBeTruthy();
   });

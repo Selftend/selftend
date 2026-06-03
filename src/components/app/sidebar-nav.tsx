@@ -15,7 +15,7 @@ interface NavItemDef {
   icon: MaterialIconName;
   matchPrefix: string | null;
   activeWhen?: (pathname: string) => boolean;
-  badgeKey?: "badgeLive" | "badgeSoon";
+  badgeKey?: "badgeLive" | "badgeSoon" | "badgeBeta";
   accentKey?: string;
 }
 
@@ -34,6 +34,7 @@ const MODULE_ITEMS: NavItemDef[] = [
     matchPrefix: "/modules/cbt",
     activeWhen: (pathname) => pathname === "/modules/cbt" || pathname.startsWith("/modules/cbt/"),
     accentKey: "module-cbt",
+    badgeKey: "badgeBeta",
   },
   {
     labelKey: "sidebar.act",
@@ -41,6 +42,7 @@ const MODULE_ITEMS: NavItemDef[] = [
     icon: "explore",
     matchPrefix: "/modules/act",
     accentKey: "module-act",
+    badgeKey: "badgeBeta",
   },
   {
     labelKey: "sidebar.dbt",
@@ -158,6 +160,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     const label = t(item.labelKey);
     const badgeLabel = item.badgeKey ? t(`sidebar.${item.badgeKey}`) : null;
     const isLive = item.badgeKey === "badgeLive";
+    const isBeta = item.badgeKey === "badgeBeta";
     const accent = toolAccent(item.accentKey ?? "");
 
     return (
@@ -188,11 +191,16 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
           {label}
         </Text>
         {badgeLabel ? (
-          <View className={cn("rounded-full px-2 py-0.5", isLive ? "bg-act/15" : "bg-muted")}>
+          <View
+            className={cn(
+              "rounded-full px-2 py-0.5",
+              isLive ? "bg-act/15" : isBeta ? "bg-primary/15" : "bg-muted",
+            )}
+          >
             <Text
               className={cn(
                 "text-[10px] font-semibold uppercase tracking-wider",
-                isLive ? "text-act" : "text-muted-foreground",
+                isLive ? "text-act" : isBeta ? "text-primary" : "text-muted-foreground",
               )}
             >
               {badgeLabel}

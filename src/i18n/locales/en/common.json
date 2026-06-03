@@ -1,4 +1,5 @@
 {
+  "beta": "Beta",
   "loading": "Loading",
   "preparingWorkspace": "Preparing your workspace...",
   "saving": "Saving...",
@@ -19,7 +20,8 @@
   "feedback": {
     "saved": "Saved",
     "problem": "Something did not save",
-    "archived": "Archived"
+    "archived": "Archived",
+    "deleted": "Deleted"
   },
   "toast": {
     "dismissHint": "Dismiss this message"

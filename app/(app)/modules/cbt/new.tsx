@@ -25,8 +25,10 @@ import { NumberRating } from "@/src/components/app/number-rating";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
 import { distortionDefinitions } from "@/src/constants/distortions";
 import { emotionOptions } from "@/src/constants/emotions";
+import { distortionsForConcerns } from "@/src/features/cbt/concerns";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
 import { thoughtRecordFormSchema, type ThoughtRecordFormSchema } from "@/src/features/cbt/schemas";
+import { useCbtConcerns } from "@/src/features/cbt/use-cbt-concerns";
 import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
 import { useWizardDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
 import { useSession } from "@/src/providers/session-provider";
@@ -123,6 +125,7 @@ export default function ThoughtRecordEditorScreen() {
   const recordId = typeof rawRecordId === "string" && rawRecordId.length > 0 ? rawRecordId : null;
   const draftMode = recordId ? "edit" : "create";
   const { user } = useSession();
+  const { concerns } = useCbtConcerns(user?.id ?? null);
   const { selectedDate } = useSelectedDate();
   const [submitError, setSubmitError] = useState("");
 
@@ -133,8 +136,13 @@ export default function ThoughtRecordEditorScreen() {
   const { data: existingRecord, isLoading } = useThoughtRecord(user?.id ?? null, recordId);
   const saveMutation = useSaveThoughtRecord(user?.id ?? null);
 
+  const createDefaults: ThoughtRecordFormSchema =
+    !recordId && concerns.length > 0
+      ? { ...defaultValues, distortions: distortionsForConcerns(concerns) }
+      : defaultValues;
+
   const form = useForm<ThoughtRecordFormSchema>({
-    defaultValues: storedDraftValues ?? defaultValues,
+    defaultValues: storedDraftValues ?? createDefaults,
     resolver: zodResolver(thoughtRecordFormSchema),
   });
   const {

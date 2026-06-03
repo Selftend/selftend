@@ -188,6 +188,17 @@ export async function listSessions(userId: string, itemId: string) {
   return (data as SessionRow[]).map(mapSession);
 }
 
+export async function deleteHierarchy(userId: string, hierarchyId: string) {
+  const client = requireSupabase();
+  const { error } = await client
+    .from("exposure_hierarchies")
+    .delete()
+    .eq("user_id", userId)
+    .eq("id", hierarchyId);
+
+  if (error) throw error;
+}
+
 export async function saveSession(userId: string, itemId: string, input: ExposureSessionInput) {
   const client = requireSupabase();
   const { data, error } = await client

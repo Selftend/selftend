@@ -9,8 +9,6 @@ import { GratitudeWidget } from "@/src/features/home/widgets/gratitude-widget";
 import { HabitsWidget } from "@/src/features/home/widgets/habits-widget";
 import { SelfCareWidget } from "@/src/features/home/widgets/self-care-widget";
 import { SleepWidget } from "@/src/features/home/widgets/sleep-widget";
-import { CbtRecentRecordsWidget } from "@/src/features/home/widgets/cbt-recent-records-widget";
-import { CbtDistortionPatternsWidget } from "@/src/features/home/widgets/cbt-distortion-patterns-widget";
 import { CbtDistortionGuideWidget } from "@/src/features/home/widgets/cbt-distortion-guide-widget";
 import { CbtProgrammeWidget } from "@/src/features/home/widgets/cbt-programme-widget";
 import { CbtOpenRecordWidget } from "@/src/features/home/widgets/cbt-open-record-widget";
@@ -51,8 +49,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "cbt-open-record": CbtOpenRecordWidget,
   "act-values": ActValuesWidget,
   "sleep-latest": SleepWidget,
-  "cbt-recent-records": CbtRecentRecordsWidget,
-  "cbt-distortion-patterns": CbtDistortionPatternsWidget,
   "cbt-distortion-guide": CbtDistortionGuideWidget,
   "cbt-programme": CbtProgrammeWidget,
   "cbt-worry": CbtWorryWidget,
@@ -158,24 +154,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.sleepLatest.desc",
     tint: "ink",
     status: "default",
-  },
-  "cbt-recent-records": {
-    id: "cbt-recent-records",
-    toolKey: "cbt",
-    icon: "history",
-    titleKey: "home.widgets.cbtRecentRecords.title",
-    descriptionKey: "home.widgets.cbtRecentRecords.metaDesc",
-    tint: "primary",
-    status: "available",
-  },
-  "cbt-distortion-patterns": {
-    id: "cbt-distortion-patterns",
-    toolKey: "cbt",
-    icon: "insights",
-    titleKey: "home.widgets.cbtDistortionPatterns.title",
-    descriptionKey: "home.widgets.cbtDistortionPatterns.metaDesc",
-    tint: "primary",
-    status: "available",
   },
   "cbt-distortion-guide": {
     id: "cbt-distortion-guide",

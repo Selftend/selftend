@@ -104,7 +104,7 @@ export default function ActHomeScreen() {
                 addWidgetCategory="act"
                 hue="act"
                 icon="explore"
-                moduleLabel={null}
+                moduleLabel={t("common:beta")}
                 title={t("home.fullTitle")}
                 description={t("home.description")}
                 actions={[

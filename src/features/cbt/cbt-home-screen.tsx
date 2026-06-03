@@ -35,6 +35,9 @@ import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
+import { useCbtConcerns } from "@/src/features/cbt/use-cbt-concerns";
+import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
+import { mergeUserPreferences } from "@/src/features/modules/types";
 
 type Pillar = "think" | "act" | "be";
 
@@ -258,6 +261,13 @@ const REVIEW_LINKS = [
     labelKey: "dashboard.strategies.recovery",
     descKey: "pillars.strategyDescriptions.recovery",
   },
+  {
+    key: "focusAreas",
+    route: "/modules/cbt/focus-areas",
+    icon: "interests" as MaterialIconName,
+    labelKey: "focusAreas.reviewLink",
+    descKey: "focusAreas.reviewLinkDesc",
+  },
 ] as const;
 
 interface SharedToolsRowProps {
@@ -303,7 +313,11 @@ function SharedToolsRow({ tools, tint, onOpenInfo }: SharedToolsRowProps) {
             className={cn("text-muted-foreground", PILL_ICON_CLASS[tint])}
           />
           <Text className="text-xs font-medium">{t(tool.labelKey)}</Text>
-          <Icon name="help-outline" size={12} className="text-muted-foreground" />
+          <Icon
+            name={"infoKey" in tool && tool.infoKey ? "help-outline" : "open-in-new"}
+            size={12}
+            className="text-muted-foreground"
+          />
         </Pressable>
       ))}
     </View>
@@ -370,6 +384,11 @@ export default function CbtHomeScreen() {
     slogan,
     topDistortions,
   } = useCbtInsights(user?.id ?? null);
+  const { hasCompletedWizard } = useCbtConcerns(user?.id ?? null);
+  const { data: preferences } = useUserPreferences(user?.id ?? null);
+  const updatePreferences = useUpdateUserPreferences(user?.id ?? null);
+  const dismissWizardPrompt = () =>
+    updatePreferences.mutate(mergeUserPreferences(preferences, { cbtWizardCompleted: true }));
 
   const activeGoals = goals?.filter((g) => g.status === "active").slice(0, 2) ?? [];
   const latestRecord = thoughtRecords?.[0] ?? null;
@@ -418,7 +437,7 @@ export default function CbtHomeScreen() {
               addWidgetCategory="cbt"
               hue="act"
               icon="psychology"
-              moduleLabel={null}
+              moduleLabel={t("common:beta")}
               title={t("fullTitle")}
               description={t("home.description")}
               actions={[
@@ -470,6 +489,27 @@ export default function CbtHomeScreen() {
                 }
                 onDismissStart={program.status === "not_started" ? dismissProgramPrompt : undefined}
               />
+            ) : null}
+
+            {!hasCompletedWizard ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("focusAreas.promptTitle")}</CardTitle>
+                  <CardDescription>{t("focusAreas.promptBody")}</CardDescription>
+                </CardHeader>
+                <View className="flex-row gap-3 px-6 pb-6">
+                  <Button
+                    onPress={() =>
+                      router.push("/modules/cbt/focus-areas" as Parameters<typeof router.push>[0])
+                    }
+                  >
+                    <Text>{t("focusAreas.promptCta")}</Text>
+                  </Button>
+                  <Button variant="ghost" onPress={dismissWizardPrompt}>
+                    <Text>{t("focusAreas.promptDismiss")}</Text>
+                  </Button>
+                </View>
+              </Card>
             ) : null}
 
             {personalSlogan ? (

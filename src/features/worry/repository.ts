@@ -46,26 +46,53 @@ export async function listWorryEntries(userId: string) {
   return (data as WorryEntryRow[]).map(mapWorryEntry);
 }
 
-export async function saveWorryEntry(userId: string, input: WorryEntryInput) {
+export async function getWorryEntry(userId: string, entryId: string) {
   const client = requireSupabase();
   const { data, error } = await client
     .from("worry_entries")
-    .insert({
-      user_id: userId,
-      worry_statement: input.worryStatement.trim(),
-      worry_category: input.worryCategory,
-      probability_estimate: input.probabilityEstimate ?? null,
-      evidence_for: input.evidenceFor,
-      evidence_against: input.evidenceAgainst,
-      coping_statement: input.copingStatement.trim(),
-      action_steps: input.actionSteps,
-      ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
-    })
     .select("*")
-    .single();
+    .eq("user_id", userId)
+    .eq("id", entryId)
+    .maybeSingle();
 
   if (error) throw error;
+  return data ? mapWorryEntry(data as WorryEntryRow) : null;
+}
+
+export async function saveWorryEntry(userId: string, input: WorryEntryInput, entryId?: string) {
+  const client = requireSupabase();
+  const payload = {
+    user_id: userId,
+    worry_statement: input.worryStatement.trim(),
+    worry_category: input.worryCategory,
+    probability_estimate: input.probabilityEstimate ?? null,
+    evidence_for: input.evidenceFor,
+    evidence_against: input.evidenceAgainst,
+    coping_statement: input.copingStatement.trim(),
+    action_steps: input.actionSteps,
+  };
+
+  const query = entryId
+    ? client.from("worry_entries").update(payload).eq("user_id", userId).eq("id", entryId)
+    : client.from("worry_entries").insert({
+        ...payload,
+        ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
+      });
+
+  const { data, error } = await query.select("*").single();
+  if (error) throw error;
   return mapWorryEntry(data as WorryEntryRow);
+}
+
+export async function deleteWorryEntry(userId: string, entryId: string) {
+  const client = requireSupabase();
+  const { error } = await client
+    .from("worry_entries")
+    .delete()
+    .eq("user_id", userId)
+    .eq("id", entryId);
+
+  if (error) throw error;
 }
 
 export async function toggleWorryResolved(userId: string, entryId: string, resolved: boolean) {

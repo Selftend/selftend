@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -11,7 +12,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
-import { useSaveWorryEntry } from "@/src/features/worry/queries";
+import { useSaveWorryEntry, useWorryEntry } from "@/src/features/worry/queries";
 import { worryEntryFormSchema, type WorryEntryFormSchema } from "@/src/features/worry/schemas";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -36,6 +37,10 @@ export default function NewWorryScreen() {
   const { selectedDate } = useSelectedDate();
   const saveMutation = useSaveWorryEntry(user?.id ?? null);
 
+  const { entryId: rawEntryId } = useLocalSearchParams<{ entryId?: string }>();
+  const entryId = typeof rawEntryId === "string" && rawEntryId.length > 0 ? rawEntryId : null;
+  const { data: existingEntry } = useWorryEntry(user?.id ?? null, entryId);
+
   const form = useForm<WorryEntryFormSchema>({
     defaultValues,
     resolver: zodResolver(worryEntryFormSchema),
@@ -50,6 +55,19 @@ export default function NewWorryScreen() {
 
   const category = watch("worryCategory");
   const probability = watch("probabilityEstimate");
+
+  useEffect(() => {
+    if (!existingEntry) return;
+    form.reset({
+      worryStatement: existingEntry.worryStatement,
+      worryCategory: existingEntry.worryCategory,
+      probabilityEstimate: existingEntry.probabilityEstimate ?? 50,
+      evidenceFor: existingEntry.evidenceFor,
+      evidenceAgainst: existingEntry.evidenceAgainst,
+      copingStatement: existingEntry.copingStatement,
+      actionSteps: existingEntry.actionSteps,
+    });
+  }, [existingEntry, form]);
 
   const evidenceForField = useStringListField(form, "evidenceFor");
   const evidenceAgainstField = useStringListField(form, "evidenceAgainst");
@@ -66,10 +84,11 @@ export default function NewWorryScreen() {
           values.worryCategory === "hypothetical" ? values.probabilityEstimate : null,
         copingStatement: values.worryCategory === "hypothetical" ? values.copingStatement : "",
       };
-      await saveMutation.mutateAsync({
-        ...sanitized,
-        createdAt: loggedAtForSelectedDate(selectedDate),
-      });
+      await saveMutation.mutateAsync(
+        entryId
+          ? { input: sanitized, entryId }
+          : { input: { ...sanitized, createdAt: loggedAtForSelectedDate(selectedDate) } },
+      );
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.replace("/modules/cbt/worry" as Parameters<typeof router.replace>[0]);
     } catch (e) {
@@ -121,8 +140,10 @@ export default function NewWorryScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <ScreenHeader title={t("worry.newTitle")} />
-          <Text variant="muted">{t("worry.newDescription")}</Text>
+          <ScreenHeader title={t(entryId ? "worry.editTitle" : "worry.newTitle")} />
+          <Text variant="muted">
+            {t(entryId ? "worry.editDescription" : "worry.newDescription")}
+          </Text>
         </View>
 
         <Controller

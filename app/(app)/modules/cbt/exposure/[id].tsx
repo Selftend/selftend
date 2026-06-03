@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, Modal, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -19,7 +19,9 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { LoadingState } from "@/src/components/app/screen-state";
+import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
 import {
+  useDeleteHierarchy,
   useExposureItems,
   useExposureSessions,
   useHierarchy,
@@ -248,6 +250,7 @@ export default function ExposureHierarchyDetailScreen() {
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
+  const showToast = useToastStore((state) => state.showToast);
   const [activeItem, setActiveItem] = useState<ExposureItem | null>(null);
 
   const { data: hierarchy, isLoading: hierarchyLoading } = useHierarchy(
@@ -255,6 +258,14 @@ export default function ExposureHierarchyDetailScreen() {
     id ?? null,
   );
   const { data: items, isLoading: itemsLoading } = useExposureItems(user?.id ?? null, id ?? null);
+  const deleteMutation = useDeleteHierarchy(user?.id ?? null);
+
+  const handleDelete = async () => {
+    if (!hierarchy) return;
+    await deleteMutation.mutateAsync(hierarchy.id);
+    showToast({ title: t("common:feedback.deleted"), tone: "success" });
+    router.replace("/modules/cbt/exposure" as Parameters<typeof router.replace>[0]);
+  };
 
   if (hierarchyLoading || itemsLoading) {
     return (
@@ -306,6 +317,13 @@ export default function ExposureHierarchyDetailScreen() {
                 </CardHeader>
               </Card>
             )}
+
+            <DeleteEntryButton
+              label={t("exposure.deleteHierarchy")}
+              title={t("exposure.deleteTitle")}
+              message={t("exposure.deleteMessage")}
+              onConfirm={handleDelete}
+            />
           </View>
         </ScrollView>
       </SafeAreaView>

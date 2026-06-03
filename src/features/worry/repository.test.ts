@@ -1,4 +1,6 @@
 import {
+  deleteWorryEntry,
+  getWorryEntry,
   listWorryEntries,
   saveWorryEntry,
   toggleWorryResolved,
@@ -120,6 +122,56 @@ describe("worry repository", () => {
     });
     const calls = insert.mock.calls as unknown as [{ probability_estimate: number | null }][];
     expect(calls[0][0].probability_estimate).toBeNull();
+  });
+
+  it("getWorryEntry returns null when no row", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+    const eqId = jest.fn(() => ({ maybeSingle }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(getWorryEntry("user-1", "missing")).resolves.toBeNull();
+  });
+
+  it("updates an existing worry when entryId is provided", async () => {
+    const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
+    const select = jest.fn(() => ({ single }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ update }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await saveWorryEntry(
+      "user-1",
+      {
+        worryStatement: "w",
+        worryCategory: "hypothetical",
+        probabilityEstimate: 40,
+        evidenceFor: [],
+        evidenceAgainst: [],
+        copingStatement: "",
+        actionSteps: [],
+      },
+      "wor-1",
+    );
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(eqId).toHaveBeenCalledWith("id", "wor-1");
+    const payload = (update as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty("created_at");
+  });
+
+  it("deletes a worry scoped to user and id", async () => {
+    const eqId = jest.fn().mockResolvedValue({ error: null });
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const del = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ delete: del }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(deleteWorryEntry("user-1", "wor-1")).resolves.toBeUndefined();
+    expect(from).toHaveBeenCalledWith("worry_entries");
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(eqId).toHaveBeenCalledWith("id", "wor-1");
   });
 
   it("toggleWorryResolved updates just the resolved flag", async () => {

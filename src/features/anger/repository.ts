@@ -63,27 +63,37 @@ export async function getAngerLog(userId: string, logId: string) {
   return data ? mapAngerLog(data as AngerLogRow) : null;
 }
 
-export async function saveAngerLog(userId: string, input: AngerLogInput) {
+export async function saveAngerLog(userId: string, input: AngerLogInput, logId?: string) {
   const client = requireSupabase();
-  const { data, error } = await client
-    .from("anger_logs")
-    .insert({
-      user_id: userId,
-      trigger_text: input.triggerText.trim(),
-      interpretation: input.interpretation.trim(),
-      arousal_level: input.arousalLevel,
-      urge: input.urge.trim(),
-      behavior_chosen: input.behaviorChosen.trim(),
-      consequence: input.consequence.trim(),
-      time_out_taken: input.timeOutTaken,
-      alternative_interpretation: input.alternativeInterpretation.trim(),
-      outcome_rating: input.outcomeRating,
-      notes: input.notes.trim(),
-      ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
-    })
-    .select("*")
-    .single();
+  const payload = {
+    user_id: userId,
+    trigger_text: input.triggerText.trim(),
+    interpretation: input.interpretation.trim(),
+    arousal_level: input.arousalLevel,
+    urge: input.urge.trim(),
+    behavior_chosen: input.behaviorChosen.trim(),
+    consequence: input.consequence.trim(),
+    time_out_taken: input.timeOutTaken,
+    alternative_interpretation: input.alternativeInterpretation.trim(),
+    outcome_rating: input.outcomeRating,
+    notes: input.notes.trim(),
+  };
 
+  const query = logId
+    ? client.from("anger_logs").update(payload).eq("user_id", userId).eq("id", logId)
+    : client.from("anger_logs").insert({
+        ...payload,
+        ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
+      });
+
+  const { data, error } = await query.select("*").single();
   if (error) throw error;
   return mapAngerLog(data as AngerLogRow);
+}
+
+export async function deleteAngerLog(userId: string, logId: string) {
+  const client = requireSupabase();
+  const { error } = await client.from("anger_logs").delete().eq("user_id", userId).eq("id", logId);
+
+  if (error) throw error;
 }

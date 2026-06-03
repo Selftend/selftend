@@ -23,18 +23,6 @@ describe("widget registry", () => {
     expect(isImplemented("not-a-widget")).toBe(false);
   });
 
-  it("registers cbt-recent-records as an available widget", () => {
-    expect(isImplemented("cbt-recent-records")).toBe(true);
-    expect(WIDGET_META["cbt-recent-records"].status).toBe("available");
-    expect(WIDGET_META["cbt-recent-records"].toolKey).toBe("cbt");
-  });
-
-  it("registers cbt-distortion-patterns as an available widget", () => {
-    expect(isImplemented("cbt-distortion-patterns")).toBe(true);
-    expect(WIDGET_META["cbt-distortion-patterns"].status).toBe("available");
-    expect(WIDGET_META["cbt-distortion-patterns"].toolKey).toBe("cbt");
-  });
-
   it("registers cbt-distortion-guide as an available widget", () => {
     expect(isImplemented("cbt-distortion-guide")).toBe(true);
     expect(WIDGET_META["cbt-distortion-guide"].status).toBe("available");

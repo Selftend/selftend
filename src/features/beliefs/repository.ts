@@ -85,6 +85,17 @@ export async function saveCoreBelief(userId: string, input: CoreBeliefInput, bel
   return mapCoreBelief(data as CoreBeliefRow);
 }
 
+export async function deleteCoreBelief(userId: string, beliefId: string) {
+  const client = requireSupabase();
+  const { error } = await client
+    .from("core_beliefs")
+    .delete()
+    .eq("user_id", userId)
+    .eq("id", beliefId);
+
+  if (error) throw error;
+}
+
 export async function updateBeliefStrength(
   userId: string,
   beliefId: string,

@@ -51,22 +51,8 @@ import { useSession } from "@/src/providers/session-provider";
 import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { isStrategyKey, strategyKeys, type StrategyKey } from "@/src/features/cbt/strategies";
 
-const strategyKeys = [
-  "goals",
-  "activities",
-  "thoughts",
-  "values",
-  "beliefs",
-  "exposure",
-  "worry",
-  "mindfulness",
-  "tasks",
-  "anger",
-  "selfCare",
-] as const;
-
-type StrategyKey = (typeof strategyKeys)[number];
 type TimelineKey = StrategyKey | "mood" | "recovery";
 type ListFieldName = "recoveryKeys" | "maintenanceCommitments";
 
@@ -98,10 +84,6 @@ const defaultValues: RecoveryPlanFormSchema = {
   strategyIntegrationNotes: {},
   maintenanceCommitments: [""],
 };
-
-function isStrategyKey(key: string): key is StrategyKey {
-  return (strategyKeys as readonly string[]).includes(key);
-}
 
 function toEditableList(values: string[]) {
   return values.length > 0 ? values : [""];

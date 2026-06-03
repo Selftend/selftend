@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  deleteCoreBelief,
   getCoreBelief,
   listCoreBeliefs,
   saveCoreBelief,
@@ -42,6 +43,17 @@ export function useSaveCoreBelief(userId: string | null) {
         queryClient.invalidateQueries({ queryKey: beliefKeys.list(userId) }),
         queryClient.invalidateQueries({ queryKey: beliefKeys.detail(userId, belief.id) }),
       ]);
+    },
+  });
+}
+
+export function useDeleteCoreBelief(userId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (beliefId: string) => deleteCoreBelief(userId!, beliefId),
+    onSuccess: async () => {
+      if (!userId) return;
+      await queryClient.invalidateQueries({ queryKey: beliefKeys.all });
     },
   });
 }

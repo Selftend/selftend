@@ -1,4 +1,9 @@
-import { getAngerLog, listAngerLogs, saveAngerLog } from "@/src/features/anger/repository";
+import {
+  deleteAngerLog,
+  getAngerLog,
+  listAngerLogs,
+  saveAngerLog,
+} from "@/src/features/anger/repository";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
@@ -132,6 +137,52 @@ describe("anger repository", () => {
     expect(insert).toHaveBeenCalledWith(
       expect.objectContaining({ created_at: "2026-05-20T10:00:00.000Z" }),
     );
+  });
+
+  it("updates an existing log when logId is provided (no created_at moved)", async () => {
+    const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
+    const select = jest.fn(() => ({ single }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ update }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await saveAngerLog(
+      "user-1",
+      {
+        triggerText: "t",
+        interpretation: "",
+        arousalLevel: 3,
+        urge: "",
+        behaviorChosen: "",
+        consequence: "",
+        timeOutTaken: false,
+        alternativeInterpretation: "",
+        outcomeRating: null,
+        notes: "",
+      },
+      "ang-1",
+    );
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(eqId).toHaveBeenCalledWith("id", "ang-1");
+    const payload = (update as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty("created_at");
+  });
+
+  it("deletes a log scoped to user and id", async () => {
+    const eqId = jest.fn().mockResolvedValue({ error: null });
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const del = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ delete: del }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(deleteAngerLog("user-1", "ang-1")).resolves.toBeUndefined();
+    expect(from).toHaveBeenCalledWith("anger_logs");
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(eqId).toHaveBeenCalledWith("id", "ang-1");
   });
 
   it("coerces null outcomeRating", async () => {

@@ -1,4 +1,5 @@
 import {
+  deleteCoreBelief,
   getCoreBelief,
   listCoreBeliefs,
   saveCoreBelief,
@@ -128,6 +129,19 @@ describe("beliefs repository", () => {
     expect(eqId).toHaveBeenCalledWith("id", "b-1");
     const calls = update.mock.calls as unknown as [{ next_review_date: string | null }][];
     expect(calls[0][0].next_review_date).toBeNull();
+  });
+
+  it("deletes a belief scoped to the user and id", async () => {
+    const eqId = jest.fn().mockResolvedValue({ error: null });
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const del = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ delete: del }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(deleteCoreBelief("user-1", "belief-1")).resolves.toBeUndefined();
+    expect(from).toHaveBeenCalledWith("core_beliefs");
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(eqId).toHaveBeenCalledWith("id", "belief-1");
   });
 
   it("updateBeliefStrength updates only strength fields", async () => {

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  deleteHierarchy,
   getHierarchy,
   listAllItems,
   listHierarchies,
@@ -112,6 +113,17 @@ export function useSaveExposureSession(userId: string | null, hierarchyId: strin
             })
           : Promise.resolve(),
       ]);
+    },
+  });
+}
+
+export function useDeleteHierarchy(userId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (hierarchyId: string) => deleteHierarchy(userId!, hierarchyId),
+    onSuccess: async () => {
+      if (!userId) return;
+      await queryClient.invalidateQueries({ queryKey: exposureKeys.all });
     },
   });
 }

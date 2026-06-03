@@ -29,7 +29,7 @@ The module should be:
 - weekly review
 - core beliefs
 - exposure hierarchy and worry journal
-- mindfulness exercises
+- guided meditation with mindfulness practices (shared meditation tool)
 - procrastination tasks
 - anger logs
 - self-care logs
@@ -38,21 +38,21 @@ The module should be:
 
 ## Thought record flow
 
-The guided record uses five steps:
+The guided record uses eight steps:
 
 1. situation
-2. automatic thought
-3. emotions
-4. likely distortions
-5. balanced thought
+2. automatic thoughts (each with an optional belief rating)
+3. hot thought (mark the most distressing automatic thought)
+4. emotions and intensity before (0–100)
+5. evidence for and against
+6. likely distortions
+7. balanced thought (shown with a running summary of the record)
+8. outcome — intensity after (0–100) and outcome notes
 
-Validation defaults:
+Validation:
 
-- situation is required
-- automatic thought is required
-- at least one emotion is required
-- at least one distortion is required
-- balanced thought is required
+- All prompts are optional at save time, so a partial record can be saved and completed later.
+- The only in-flow requirement is at least one automatic thought (with text) before leaving the automatic-thoughts step.
 
 ## Data shape
 
@@ -102,7 +102,7 @@ Additional CBT strategy records are stored in private user-owned tables:
 - `core_beliefs`
 - `exposure_hierarchies`, `exposure_items`, `exposure_sessions`
 - `worry_entries`
-- `mindfulness_sessions`
+- `mindfulness_sessions`, `meditation_sessions`
 - `procrastination_tasks`, `task_steps`
 - `anger_logs`
 - `self_care_logs`
@@ -117,27 +117,27 @@ Current route groups:
 - CBT routes
 - settings / support / legal
 
-Key CBT screens:
+Key CBT screens (under the protected app shell at `/modules/cbt`):
 
-- `/cbt`
-- `/cbt/learn`
-- `/cbt/new`
-- `/cbt/history`
-- `/cbt/history/[id]`
-- `/cbt/goals`, `/cbt/goals/new`, `/cbt/goals/[id]`
-- `/cbt/activities`, `/cbt/activities/new`, `/cbt/activities/[id]`
-- `/cbt/values`
-- `/cbt/weekly-review`
-- `/cbt/beliefs`, `/cbt/beliefs/new`, `/cbt/beliefs/[id]`
-- `/cbt/exposure`, `/cbt/exposure/new`, `/cbt/exposure/[id]`
-- `/cbt/worry`, `/cbt/worry/new`
-- `/tools/mindfulness`, `/tools/mindfulness/[slug]`
-- `/cbt/tasks`, `/cbt/tasks/new`, `/cbt/tasks/[id]`
-- `/cbt/anger`, `/cbt/anger/new`, `/cbt/anger/[id]`
-- `/cbt/self-care`
-- `/cbt/recovery`
+- `/modules/cbt`
+- `/modules/cbt/learn`
+- `/modules/cbt/new`
+- `/modules/cbt/history`, `/modules/cbt/history/[id]`
+- `/modules/cbt/goals`, `/modules/cbt/goals/new`, `/modules/cbt/goals/[id]`
+- `/modules/cbt/activities`, `/modules/cbt/activities/new`, `/modules/cbt/activities/[id]`
+- `/modules/cbt/values`
+- `/modules/cbt/weekly-review`
+- `/modules/cbt/beliefs`, `/modules/cbt/beliefs/new`, `/modules/cbt/beliefs/[id]`
+- `/modules/cbt/exposure`, `/modules/cbt/exposure/new`, `/modules/cbt/exposure/[id]`
+- `/modules/cbt/worry`, `/modules/cbt/worry/new`
+- `/modules/cbt/tasks`, `/modules/cbt/tasks/new`, `/modules/cbt/tasks/[id]`
+- `/modules/cbt/anger`, `/modules/cbt/anger/new`, `/modules/cbt/anger/[id]`
+- `/modules/cbt/self-care`
+- `/modules/cbt/recovery`
 
-`/history` is kept only as a compatibility redirect to `/cbt/history`. `/cbt/[id]` redirects to `/cbt/history/[id]` for older thought-record links.
+Mindfulness practice moved to the shared meditation tool at `/tools/meditation`; the former `/tools/mindfulness` route was removed. Other shared tools (mood, journal, gratitude, breathing, grounding, sleep, habits) live under `/tools/*`.
+
+`/modules/cbt/[id]` redirects to `/modules/cbt/history/[id]` for older thought-record links.
 
 ## Non-goals for this slice
 

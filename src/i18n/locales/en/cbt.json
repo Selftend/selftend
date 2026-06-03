@@ -221,11 +221,7 @@
       "anger": "Trigger → interpretation → choice.",
       "selfCare": "Daily check on sleep, body, connection.",
       "weeklyReview": "Sunday. Five minutes.",
-      "recovery": "The keys you keep coming back to.",
-      "mindfulness": "Shared tool",
-      "moodTracker": "Shared tool",
-      "gratitudeLog": "Shared tool",
-      "meditation": "Shared tool"
+      "recovery": "The keys you keep coming back to."
     }
   },
   "weeklyReview": {
@@ -307,7 +303,10 @@
     "strengthTracker": "Strength tracker",
     "strengthTrackerDescription": "Update these ratings whenever you revisit the belief.",
     "saveStrength": "Save strength",
-    "strengthSummary": "Original {{original}} · Alternative {{alternative}}"
+    "strengthSummary": "Original {{original}} · Alternative {{alternative}}",
+    "deleteTitle": "Delete this belief?",
+    "deleteMessage": "This permanently removes the belief and its strength history. This can't be undone.",
+    "examplesHint": "Common beliefs for your focus areas — tap to use one as a starting point:"
   },
   "exposure": {
     "title": "Anxiety & exposure",
@@ -365,14 +364,17 @@
       "notesPlaceholder": "Anything worth remembering for next time.",
       "cancel": "Cancel",
       "save": "Save session"
-    }
+    },
+    "deleteHierarchy": "Delete hierarchy",
+    "deleteTitle": "Delete this hierarchy?",
+    "deleteMessage": "This permanently removes the hierarchy and all of its items and session history. This can't be undone."
   },
   "worry": {
     "title": "Worry journal",
     "description": "Sort worries into hypothetical or real problems. Each gets its own response.",
     "loading": "Loading...",
-    "empty": "No worries logged yet",
-    "emptyDescription": "Add an entry when a worry starts circling - getting it on paper often helps.",
+    "empty": "No worries logged on this day",
+    "emptyDescription": "Try another date, or add an entry when a worry starts circling - getting it on paper often helps.",
     "new": "New entry",
     "newTitle": "New worry entry",
     "newDescription": "Capture the worry, then choose how to respond to it.",
@@ -402,7 +404,14 @@
     "itemPlaceholder": "Describe briefly.",
     "addItem": "Add",
     "removeItem": "Remove",
-    "resolved": "Resolved"
+    "resolved": "Resolved",
+    "editTitle": "Edit worry",
+    "editDescription": "Update this worry entry.",
+    "detailTitle": "Worry",
+    "notFound": "Worry not found",
+    "loadingDetail": "Loading worry...",
+    "deleteTitle": "Delete this worry?",
+    "deleteMessage": "This permanently removes the entry. This can't be undone."
   },
   "tasks": {
     "title": "Procrastination",
@@ -468,8 +477,8 @@
     "title": "Anger management",
     "description": "Log anger episodes to spot patterns and try out different responses.",
     "loading": "Loading...",
-    "empty": "No anger logs yet",
-    "emptyDescription": "Log an episode to start spotting patterns.",
+    "empty": "No anger logs on this day",
+    "emptyDescription": "Try another date, or log an episode to start spotting patterns.",
     "new": "New entry",
     "newTitle": "New anger log",
     "newDescription": "Walk through the cycle: trigger, interpretation, urge, behavior, consequence.",
@@ -509,7 +518,11 @@
     "outcomeRatingHint": "1 = poor outcome, 10 = the response I wanted.",
     "outcomeLabel": "Outcome {{value}}/10",
     "notes": "Notes (optional)",
-    "notesPlaceholder": "Anything you want to remember."
+    "notesPlaceholder": "Anything you want to remember.",
+    "editTitle": "Edit anger log",
+    "editDescription": "Update the details of this episode.",
+    "deleteTitle": "Delete this anger log?",
+    "deleteMessage": "This permanently removes the log. This can't be undone."
   },
   "selfCare": {
     "title": "Self-care today",
@@ -612,8 +625,8 @@
     "title": "Thought history",
     "description": "Saved CBT records stay private, editable, and easy to revisit.",
     "loading": "Loading thought records...",
-    "empty": "No thought records yet",
-    "emptyDescription": "Create your first record from the CBT section. It will appear here once saved.",
+    "empty": "No records on this day",
+    "emptyDescription": "Try another date, or add a record from the CBT section - it appears here once saved.",
     "untitledRecord": "Untitled thought record",
     "recordSummaryEmpty": "No balanced thought yet.",
     "recordSummary": "Updated {{timestamp}}. {{balancedThought}}"
@@ -1050,12 +1063,6 @@
     "summaryNotFilled": "Not filled yet.",
     "back": "Back",
     "continue": "Continue",
-    "step1": "1. Situation",
-    "step2": "2. Your thoughts",
-    "step3": "3. Hot thought",
-    "step4": "4. Emotions",
-    "step5": "5. Patterns",
-    "step6": "6. Balanced thought",
     "saveRecord": "Save record",
     "saving": "Saving record"
   },
@@ -1278,6 +1285,61 @@
         "start": "Got it"
       }
     }
+  },
+  "concerns": {
+    "depression": {
+      "label": "Depression",
+      "description": "Low mood, loss of interest, self-critical thoughts.",
+      "belief1": "I am a failure",
+      "belief2": "I am unlovable",
+      "belief3": "I am inadequate"
+    },
+    "gad": {
+      "label": "Generalised Anxiety",
+      "description": "Persistent worry across many areas of life.",
+      "belief1": "The world is a dangerous place",
+      "belief2": "I am powerless to cope with threat"
+    },
+    "panic": {
+      "label": "Panic",
+      "description": "Sudden intense anxiety with strong physical symptoms.",
+      "belief1": "I am vulnerable",
+      "belief2": "Physical sensations are dangerous"
+    },
+    "socialAnxiety": {
+      "label": "Social Anxiety",
+      "description": "Fear of judgement or embarrassment around others.",
+      "belief1": "I am unlikable",
+      "belief2": "Others will judge me harshly"
+    },
+    "anger": {
+      "label": "Excessive Anger",
+      "description": "Frequent or intense anger that gets in the way.",
+      "belief1": "Others are inconsiderate",
+      "belief2": "I must be respected"
+    },
+    "procrastination": {
+      "label": "Procrastination",
+      "description": "Putting off tasks despite the costs.",
+      "belief1": "I must be perfect",
+      "belief2": "I am incapable of the task",
+      "belief3": "Discomfort is intolerable"
+    }
+  },
+  "focusAreas": {
+    "title": "Your focus areas",
+    "description": "Pick what you'd like to work on. We'll suggest where to start. You can change this anytime.",
+    "save": "Save focus areas",
+    "saving": "Saving...",
+    "skip": "Skip for now",
+    "recommendedTitle": "Recommended starting points",
+    "recommendedEmpty": "Pick one or more areas to see suggestions.",
+    "promptTitle": "Set up your focus areas",
+    "promptBody": "Tell us what you'd like to work on and we'll suggest where to start.",
+    "promptCta": "Set up",
+    "promptDismiss": "Not now",
+    "reviewLink": "Focus areas",
+    "reviewLinkDesc": "Update what you're working on and your suggested tools."
   },
   "breathing": {
     "moduleLabel": "Breathing",

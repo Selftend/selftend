@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -19,6 +19,7 @@ import { useToggleWorryResolved, useWorryEntries } from "@/src/features/worry/qu
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
@@ -77,18 +78,49 @@ export default function WorryScreen() {
             <View className="gap-3">
               {filteredEntries.map((entry) => (
                 <Card key={entry.id}>
-                  <CardHeader>
-                    <CardTitle>{entry.worryStatement}</CardTitle>
-                    <CardDescription>
-                      {t(`worry.category.${entry.worryCategory}`)}
-                      {entry.probabilityEstimate !== null
-                        ? ` · ${t("worry.probabilityLabel", { value: entry.probabilityEstimate })}`
-                        : ""}
-                    </CardDescription>
-                  </CardHeader>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={entry.worryStatement}
+                    hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                    onPress={() =>
+                      router.push(
+                        `/modules/cbt/worry/${entry.id}` as Parameters<typeof router.push>[0],
+                      )
+                    }
+                  >
+                    <CardHeader>
+                      <CardTitle>{entry.worryStatement}</CardTitle>
+                      <CardDescription>
+                        {t(`worry.category.${entry.worryCategory}`)}
+                        {entry.probabilityEstimate !== null
+                          ? ` · ${t("worry.probabilityLabel", { value: entry.probabilityEstimate })}`
+                          : ""}
+                      </CardDescription>
+                    </CardHeader>
+                  </Pressable>
                   <CardContent>
                     {entry.copingStatement ? (
                       <Text variant="muted">{entry.copingStatement}</Text>
+                    ) : null}
+                    {entry.evidenceFor.length > 0 ? (
+                      <View className="gap-1 mt-2">
+                        <Text className="text-sm font-medium">{t("worry.evidenceFor")}</Text>
+                        {entry.evidenceFor.map((item, i) => (
+                          <Text key={i} variant="muted" className="text-sm">
+                            • {item}
+                          </Text>
+                        ))}
+                      </View>
+                    ) : null}
+                    {entry.evidenceAgainst.length > 0 ? (
+                      <View className="gap-1 mt-2">
+                        <Text className="text-sm font-medium">{t("worry.evidenceAgainst")}</Text>
+                        {entry.evidenceAgainst.map((item, i) => (
+                          <Text key={i} variant="muted" className="text-sm">
+                            • {item}
+                          </Text>
+                        ))}
+                      </View>
                     ) : null}
                     {entry.actionSteps.length > 0 ? (
                       <View className="gap-1 mt-2">

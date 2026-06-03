@@ -77,21 +77,6 @@ export function CbtOnboarding({
       </View>
 
       <View className="gap-4">
-        <Card className="border-act/30 bg-act/5">
-          <CardContent className="items-center gap-3 pt-6">
-            <Image
-              source={pillarAct}
-              style={{ width: 180, height: 180 }}
-              resizeMode="contain"
-              accessibilityLabel={t("onboarding.intro.actTitle")}
-            />
-            <CardTitle className="text-center text-act">{t("onboarding.intro.actTitle")}</CardTitle>
-            <Text variant="muted" className="text-center">
-              {t("onboarding.intro.actBody")}
-            </Text>
-          </CardContent>
-        </Card>
-
         <Card className="border-think/30 bg-think/5">
           <CardContent className="items-center gap-3 pt-6">
             <Image
@@ -105,6 +90,21 @@ export function CbtOnboarding({
             </CardTitle>
             <Text variant="muted" className="text-center">
               {t("onboarding.intro.thinkBody")}
+            </Text>
+          </CardContent>
+        </Card>
+
+        <Card className="border-act/30 bg-act/5">
+          <CardContent className="items-center gap-3 pt-6">
+            <Image
+              source={pillarAct}
+              style={{ width: 180, height: 180 }}
+              resizeMode="contain"
+              accessibilityLabel={t("onboarding.intro.actTitle")}
+            />
+            <CardTitle className="text-center text-act">{t("onboarding.intro.actTitle")}</CardTitle>
+            <Text variant="muted" className="text-center">
+              {t("onboarding.intro.actBody")}
             </Text>
           </CardContent>
         </Card>

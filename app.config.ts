@@ -157,8 +157,8 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
           },
           {
             name: "Mindfulness",
-            label: "Selftend - Mindfulness",
-            description: "Quick-launch a mindfulness exercise",
+            label: "Selftend - Meditation",
+            description: "Quick-launch a meditation practice",
             minWidth: "250dp",
             minHeight: "150dp",
             targetCellWidth: 4,
