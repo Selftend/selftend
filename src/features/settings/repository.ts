@@ -30,6 +30,7 @@ interface UserPreferenceRow {
   cbt_program_prompt_dismissed_at: string | null;
   cbt_program_phase_index: number | null;
   cbt_program_phase_started_at: string | null;
+  cbt_graduation_dismissed_at: string | null;
   meditation_onboarding_completed: boolean | null;
   meditation_info_completed: boolean | null;
   gratitude_onboarding_completed: boolean | null;
@@ -95,6 +96,7 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     cbtProgramPromptDismissedAt: row.cbt_program_prompt_dismissed_at ?? null,
     cbtProgramPhaseIndex: row.cbt_program_phase_index ?? 0,
     cbtProgramPhaseStartedAt: row.cbt_program_phase_started_at ?? null,
+    cbtGraduationDismissedAt: row.cbt_graduation_dismissed_at ?? null,
     meditationOnboardingCompleted: Boolean(row.meditation_onboarding_completed),
     meditationInfoCompleted: Boolean(row.meditation_info_completed),
     gratitudeOnboardingCompleted: Boolean(row.gratitude_onboarding_completed),
@@ -140,6 +142,7 @@ function isMissingOptionalPreferenceColumn(error: unknown) {
     typeof maybeError.message === "string" &&
     (maybeError.message.includes("act_") ||
       maybeError.message.includes("cbt_program_") ||
+      maybeError.message.includes("cbt_graduation_dismissed_at") ||
       maybeError.message.includes("shown_button_tours") ||
       maybeError.message.includes("breath_") ||
       maybeError.message.includes("ambient_") ||
@@ -161,6 +164,7 @@ function omitOptionalPreferenceColumns<T extends Record<string, unknown>>(payloa
   delete fallbackPayload.cbt_program_prompt_dismissed_at;
   delete fallbackPayload.cbt_program_phase_index;
   delete fallbackPayload.cbt_program_phase_started_at;
+  delete fallbackPayload.cbt_graduation_dismissed_at;
   delete fallbackPayload.act_program_started_at;
   delete fallbackPayload.act_program_completed_at;
   delete fallbackPayload.act_program_prompt_dismissed_at;
@@ -216,6 +220,7 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     cbt_program_prompt_dismissed_at: preferences.cbtProgramPromptDismissedAt,
     cbt_program_phase_index: preferences.cbtProgramPhaseIndex,
     cbt_program_phase_started_at: preferences.cbtProgramPhaseStartedAt,
+    cbt_graduation_dismissed_at: preferences.cbtGraduationDismissedAt,
     meditation_onboarding_completed: preferences.meditationOnboardingCompleted,
     meditation_info_completed: preferences.meditationInfoCompleted,
     gratitude_onboarding_completed: preferences.gratitudeOnboardingCompleted,

@@ -35,9 +35,6 @@ import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
-import { useCbtConcerns } from "@/src/features/cbt/use-cbt-concerns";
-import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
-import { mergeUserPreferences } from "@/src/features/modules/types";
 
 type Pillar = "think" | "act" | "be";
 
@@ -261,13 +258,6 @@ const REVIEW_LINKS = [
     labelKey: "dashboard.strategies.recovery",
     descKey: "pillars.strategyDescriptions.recovery",
   },
-  {
-    key: "focusAreas",
-    route: "/modules/cbt/focus-areas",
-    icon: "interests" as MaterialIconName,
-    labelKey: "focusAreas.reviewLink",
-    descKey: "focusAreas.reviewLinkDesc",
-  },
 ] as const;
 
 interface SharedToolsRowProps {
@@ -362,12 +352,13 @@ export default function CbtHomeScreen() {
     abandonProgram,
     replayProgram,
     advancePhase,
+    dismissGraduation,
     promptDismissedAt,
+    graduationDismissedAt,
     isUpdating: isProgramUpdating,
   } = useCbtProgram(user?.id ?? null);
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [activeToolInfo, setActiveToolInfo] = useState<AdvancedToolInfoKey | null>(null);
-  const [graduationDismissed, setGraduationDismissed] = useState(false);
   const [abandonConfirmVisible, setAbandonConfirmVisible] = useState(false);
 
   const { data: goals } = useGoals(user?.id ?? null);
@@ -384,12 +375,6 @@ export default function CbtHomeScreen() {
     slogan,
     topDistortions,
   } = useCbtInsights(user?.id ?? null);
-  const { hasCompletedWizard } = useCbtConcerns(user?.id ?? null);
-  const { data: preferences } = useUserPreferences(user?.id ?? null);
-  const updatePreferences = useUpdateUserPreferences(user?.id ?? null);
-  const dismissWizardPrompt = () =>
-    updatePreferences.mutate(mergeUserPreferences(preferences, { cbtWizardCompleted: true }));
-
   const activeGoals = goals?.filter((g) => g.status === "active").slice(0, 2) ?? [];
   const latestRecord = thoughtRecords?.[0] ?? null;
   const personalSlogan = recoveryPlan?.personalSlogan.trim() || slogan;
@@ -472,8 +457,8 @@ export default function CbtHomeScreen() {
                 ]
                   .filter((stat) => stat.n > 0)
                   .map((stat) => t(stat.key, { count: stat.n }))}
-                dismissed={graduationDismissed}
-                onDismiss={() => setGraduationDismissed(true)}
+                dismissed={graduationDismissedAt != null}
+                onDismiss={dismissGraduation}
                 onReplay={replayProgram}
               />
             ) : showProgramCard ? (
@@ -489,27 +474,6 @@ export default function CbtHomeScreen() {
                 }
                 onDismissStart={program.status === "not_started" ? dismissProgramPrompt : undefined}
               />
-            ) : null}
-
-            {!hasCompletedWizard ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("focusAreas.promptTitle")}</CardTitle>
-                  <CardDescription>{t("focusAreas.promptBody")}</CardDescription>
-                </CardHeader>
-                <View className="flex-row gap-3 px-6 pb-6">
-                  <Button
-                    onPress={() =>
-                      router.push("/modules/cbt/focus-areas" as Parameters<typeof router.push>[0])
-                    }
-                  >
-                    <Text>{t("focusAreas.promptCta")}</Text>
-                  </Button>
-                  <Button variant="ghost" onPress={dismissWizardPrompt}>
-                    <Text>{t("focusAreas.promptDismiss")}</Text>
-                  </Button>
-                </View>
-              </Card>
             ) : null}
 
             {personalSlogan ? (

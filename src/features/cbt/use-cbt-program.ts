@@ -10,7 +10,6 @@ import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
-import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useValuesProfile } from "@/src/features/values/queries";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
@@ -24,7 +23,9 @@ interface UseCbtProgramResult {
   abandonProgram: () => void;
   replayProgram: () => void;
   advancePhase: () => void;
+  dismissGraduation: () => void;
   promptDismissedAt: string | null;
+  graduationDismissedAt: string | null;
   isUpdating: boolean;
 }
 
@@ -40,7 +41,6 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
   const activities = useActivities(userId);
   const exposures = useHierarchies(userId);
   const meditationSessions = useMeditationSessions(userId);
-  const selfCareLogs = useSelfCareLogs(userId);
   const moodLogs = useMoodLogs(userId, 180);
   const recoveryPlan = useRecoveryPlan(userId);
 
@@ -63,7 +63,6 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
         activities: activities.data ?? [],
         exposures: exposures.data ?? [],
         meditationSessions: meditationSessions.data ?? [],
-        selfCareLogs: selfCareLogs.data ?? [],
         moodLogs: moodLogs.data ?? [],
         recoveryPlan: recoveryPlan.data ?? null,
       }),
@@ -77,7 +76,6 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
       activities.data,
       exposures.data,
       meditationSessions.data,
-      selfCareLogs.data,
       moodLogs.data,
       recoveryPlan.data,
     ],
@@ -107,6 +105,7 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
           cbtProgramStartedAt: new Date().toISOString(),
           cbtProgramCompletedAt: null,
           cbtProgramPromptDismissedAt: null,
+          cbtGraduationDismissedAt: null,
           cbtOnboardingCompleted: true,
           cbtProgramPhaseIndex: 0,
           cbtProgramPhaseStartedAt: new Date().toISOString(),
@@ -158,8 +157,20 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
           cbtProgramStartedAt: new Date().toISOString(),
           cbtProgramCompletedAt: null,
           cbtProgramPromptDismissedAt: null,
+          cbtGraduationDismissedAt: null,
           cbtProgramPhaseIndex: 0,
           cbtProgramPhaseStartedAt: new Date().toISOString(),
+        }),
+      )
+      .catch(() => undefined);
+  };
+
+  const dismissGraduation = () => {
+    if (!preferences) return;
+    void updatePreferences
+      .mutateAsync(
+        mergeUserPreferences(preferences, {
+          cbtGraduationDismissedAt: new Date().toISOString(),
         }),
       )
       .catch(() => undefined);
@@ -174,7 +185,9 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
     abandonProgram,
     replayProgram,
     advancePhase,
+    dismissGraduation,
     promptDismissedAt: preferences?.cbtProgramPromptDismissedAt ?? null,
+    graduationDismissedAt: preferences?.cbtGraduationDismissedAt ?? null,
     isUpdating: updatePreferences.isPending,
   };
 }

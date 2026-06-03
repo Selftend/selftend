@@ -9,7 +9,6 @@ import type { Goal } from "@/src/features/goals/types";
 import type { MeditationSession } from "@/src/features/meditation/types";
 import type { MoodLog } from "@/src/features/mood/types";
 import type { RecoveryPlan } from "@/src/features/recovery/types";
-import type { SelfCareLog } from "@/src/features/self-care/types";
 import type { ValuesProfile } from "@/src/features/values/types";
 
 /** All data the signal functions may read. Arrays are the user's full history. */
@@ -23,7 +22,6 @@ export interface ProgramSignalData {
   activities: ActivityLog[];
   exposures: ExposureHierarchy[];
   meditationSessions: MeditationSession[];
-  selfCareLogs: SelfCareLog[];
   moodLogs: MoodLog[];
   recoveryPlan: RecoveryPlan | null;
 }

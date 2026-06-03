@@ -25,10 +25,8 @@ import { NumberRating } from "@/src/components/app/number-rating";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
 import { distortionDefinitions } from "@/src/constants/distortions";
 import { emotionOptions } from "@/src/constants/emotions";
-import { distortionsForConcerns } from "@/src/features/cbt/concerns";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
 import { thoughtRecordFormSchema, type ThoughtRecordFormSchema } from "@/src/features/cbt/schemas";
-import { useCbtConcerns } from "@/src/features/cbt/use-cbt-concerns";
 import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
 import { useWizardDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
 import { useSession } from "@/src/providers/session-provider";
@@ -125,7 +123,6 @@ export default function ThoughtRecordEditorScreen() {
   const recordId = typeof rawRecordId === "string" && rawRecordId.length > 0 ? rawRecordId : null;
   const draftMode = recordId ? "edit" : "create";
   const { user } = useSession();
-  const { concerns } = useCbtConcerns(user?.id ?? null);
   const { selectedDate } = useSelectedDate();
   const [submitError, setSubmitError] = useState("");
 
@@ -136,13 +133,8 @@ export default function ThoughtRecordEditorScreen() {
   const { data: existingRecord, isLoading } = useThoughtRecord(user?.id ?? null, recordId);
   const saveMutation = useSaveThoughtRecord(user?.id ?? null);
 
-  const createDefaults: ThoughtRecordFormSchema =
-    !recordId && concerns.length > 0
-      ? { ...defaultValues, distortions: distortionsForConcerns(concerns) }
-      : defaultValues;
-
   const form = useForm<ThoughtRecordFormSchema>({
-    defaultValues: storedDraftValues ?? createDefaults,
+    defaultValues: storedDraftValues ?? defaultValues,
     resolver: zodResolver(thoughtRecordFormSchema),
   });
   const {
@@ -476,6 +468,29 @@ export default function ThoughtRecordEditorScreen() {
 
       {currentStep.key === "evidence" ? (
         <View className="gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("record.disputeTitle")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <View className="gap-1.5">
+                {(
+                  [
+                    "disputePrompt1",
+                    "disputePrompt2",
+                    "disputePrompt3",
+                    "disputePrompt4",
+                    "disputePrompt5",
+                  ] as const
+                ).map((key) => (
+                  <Text key={key} variant="muted" className="text-sm">
+                    {`• ${t(`record.${key}`)}`}
+                  </Text>
+                ))}
+              </View>
+            </CardContent>
+          </Card>
+
           <Controller
             control={control}
             name="evidenceFor"

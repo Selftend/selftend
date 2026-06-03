@@ -48,7 +48,6 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/cbt/worry": "breadcrumb.worry",
   "/modules/cbt/worry/new": "breadcrumb.new",
   "/modules/cbt/self-care": "breadcrumb.selfCare",
-  "/modules/cbt/focus-areas": "breadcrumb.focusAreas",
   "/modules/cbt/recovery": "breadcrumb.recovery",
   "/modules/dbt": "sidebar.dbt",
 

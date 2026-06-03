@@ -11,21 +11,9 @@ const LOCALES_DIR = path.join(__dirname, "locales");
 
 // Each entry is a key-path prefix: it matches that exact path or any child beneath it.
 const KNOWN_GAPS: Record<string, { enOnly: string[]; bgOnly: string[] }> = {
-  // Breathing builder/sounds/history shipped in en; bg translation pending.
-  "cbt.json": { enOnly: ["breathing"], bgOnly: [] },
-  // Meditation onboarding flow is en-only so far; bg keeps a history block en lacks.
-  "meditation.json": { enOnly: ["onboarding"], bgOnly: ["history"] },
-  // Timer surfaces added to navigation in en; bg translation pending.
-  "navigation.json": {
-    enOnly: [
-      "breadcrumb.session",
-      "today.tools.timer",
-      "today.tools.timerSub",
-      "tools.stats.timerMinutes",
-      "tools.stats.timerNoData",
-    ],
-    bgOnly: [],
-  },
+  // bg keeps a legacy top-level history block that duplicates module.history; no en equivalent.
+  // Dead code — no meditation file uses t("history.xxx") directly. Leave allowlisted.
+  "meditation.json": { enOnly: [], bgOnly: ["history"] },
 };
 
 function leafPaths(value: unknown, prefix = ""): string[] {

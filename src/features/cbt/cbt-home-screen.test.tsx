@@ -4,7 +4,6 @@ import CbtHomeScreen from "./cbt-home-screen";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
 import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
-import { useCbtConcerns } from "@/src/features/cbt/use-cbt-concerns";
 import { useGoals } from "@/src/features/goals/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
@@ -66,11 +65,6 @@ jest.mock("@/src/features/cbt/use-cbt-program", () => ({
   useCbtProgram: jest.fn(),
 }));
 
-jest.mock("@/src/features/cbt/use-cbt-concerns", () => ({
-  useCbtConcerns: jest.fn(),
-}));
-
-const mockUseCbtConcerns = useCbtConcerns as jest.MockedFunction<typeof useCbtConcerns>;
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseUpdateShownButtonTours = useUpdateShownButtonTours as jest.MockedFunction<
   typeof useUpdateShownButtonTours
@@ -96,13 +90,6 @@ describe("CbtHomeScreen onboarding", () => {
       mutate: jest.fn(),
       mutateAsync,
     } as unknown as ReturnType<typeof useUpdateUserPreferences>);
-    mockUseCbtConcerns.mockReturnValue({
-      concerns: [],
-      recommendedStrategies: [],
-      hasCompletedWizard: true,
-      saveConcerns: jest.fn(),
-      isPending: false,
-    });
     mockUseUpdateShownButtonTours.mockReturnValue({
       isPending: false,
       mutateAsync: jest.fn(),

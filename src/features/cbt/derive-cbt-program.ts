@@ -14,7 +14,6 @@ import type { MeditationSession } from "@/src/features/meditation/types";
 import type { ProgramStatus, ProgramTaskView } from "@/src/features/modules/program-types";
 import type { MoodLog } from "@/src/features/mood/types";
 import type { RecoveryPlan } from "@/src/features/recovery/types";
-import type { SelfCareLog } from "@/src/features/self-care/types";
 import type { ValuesProfile } from "@/src/features/values/types";
 
 export interface DeriveProgramInput {
@@ -30,7 +29,6 @@ export interface DeriveProgramInput {
   activities: ActivityLog[];
   exposures: ExposureHierarchy[];
   meditationSessions: MeditationSession[];
-  selfCareLogs: SelfCareLog[];
   moodLogs: MoodLog[];
   recoveryPlan: RecoveryPlan | null;
 }
@@ -102,7 +100,6 @@ export function deriveCbtProgram(inputData: DeriveProgramInput): CbtProgramView 
     activities: inputData.activities,
     exposures: inputData.exposures,
     meditationSessions: inputData.meditationSessions,
-    selfCareLogs: inputData.selfCareLogs,
     moodLogs: inputData.moodLogs,
     recoveryPlan: inputData.recoveryPlan,
   };

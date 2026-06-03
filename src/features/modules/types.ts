@@ -36,6 +36,7 @@ export interface UserPreferences {
   cbtProgramPromptDismissedAt: string | null;
   cbtProgramPhaseIndex: number;
   cbtProgramPhaseStartedAt: string | null;
+  cbtGraduationDismissedAt: string | null;
   actProgramStartedAt: string | null;
   actProgramCompletedAt: string | null;
   actProgramPromptDismissedAt: string | null;
@@ -93,6 +94,7 @@ export const defaultUserPreferences: UserPreferences = {
   cbtProgramPromptDismissedAt: null,
   cbtProgramPhaseIndex: 0,
   cbtProgramPhaseStartedAt: null,
+  cbtGraduationDismissedAt: null,
   actProgramStartedAt: null,
   actProgramCompletedAt: null,
   actProgramPromptDismissedAt: null,

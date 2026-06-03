@@ -9,7 +9,6 @@ import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
-import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useValuesProfile } from "@/src/features/values/queries";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
@@ -51,10 +50,6 @@ jest.mock("@/src/features/meditation/queries", () => ({
   useMeditationSessions: jest.fn(),
 }));
 
-jest.mock("@/src/features/self-care/queries", () => ({
-  useSelfCareLogs: jest.fn(),
-}));
-
 jest.mock("@/src/features/mood/queries", () => ({ useMoodLogs: jest.fn() }));
 
 jest.mock("@/src/features/recovery/queries", () => ({
@@ -82,7 +77,6 @@ const mockUseHierarchies = useHierarchies as jest.MockedFunction<typeof useHiera
 const mockUseMeditationSessions = useMeditationSessions as jest.MockedFunction<
   typeof useMeditationSessions
 >;
-const mockUseSelfCareLogs = useSelfCareLogs as jest.MockedFunction<typeof useSelfCareLogs>;
 const mockUseMoodLogs = useMoodLogs as jest.MockedFunction<typeof useMoodLogs>;
 const mockUseRecoveryPlan = useRecoveryPlan as jest.MockedFunction<typeof useRecoveryPlan>;
 const mockUseSelectedDate = useSelectedDate as jest.MockedFunction<typeof useSelectedDate>;
@@ -126,7 +120,6 @@ const allCompleteData = {
     completedAt: `${d}T18:00:00Z`,
   })),
   exposures: [{ id: "e", createdAt: AFTER }],
-  selfCareLogs: [{ id: "sc", createdAt: AFTER }],
   meditationSessions: DAYS.map((d, i) => ({
     id: `s${i}`,
     userId: "user-1",
@@ -174,9 +167,6 @@ function setupBaseMocks(mutateAsync: jest.Mock, isPending = false) {
   mockUseMeditationSessions.mockReturnValue({
     data: allCompleteData.meditationSessions,
   } as unknown as ReturnType<typeof useMeditationSessions>);
-  mockUseSelfCareLogs.mockReturnValue({
-    data: allCompleteData.selfCareLogs,
-  } as unknown as ReturnType<typeof useSelfCareLogs>);
   mockUseMoodLogs.mockReturnValue({ data: allCompleteData.moodLogs } as unknown as ReturnType<
     typeof useMoodLogs
   >);

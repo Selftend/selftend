@@ -10,7 +10,6 @@ const emptyData = {
   activities: [],
   exposures: [],
   meditationSessions: [],
-  selfCareLogs: [],
   moodLogs: [],
   recoveryPlan: null,
 };

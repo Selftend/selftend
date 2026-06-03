@@ -129,6 +129,8 @@
       "moodTrackerSub": "Шаблони във времето",
       "meditation": "Медитация",
       "meditationSub": "Спокойни, структурирани сесии",
+      "timer": "Таймер",
+      "timerSub": "Без проследяване, просто седи",
       "gratitudeLog": "Дневник на благодарността",
       "gratitudeLogSub": "Забележи малките победи",
       "journal": "Дневник",
@@ -159,8 +161,6 @@
       "startBreathing": "Започни дишане",
       "write": "Пиши",
       "habitsProgress": "{{done}} / {{total}}",
-      "selfCareTitle": "Дневник за самогрижа",
-      "selfCareDesc": "Вечерна проверка",
       "logSelfCare": "Запиши самогрижа",
       "meditationWeekCount": "{{count}} сесия тази седмица",
       "meditationWeekCount_other": "{{count}} сесии тази седмица",
@@ -182,8 +182,6 @@
       "habitsHint": "Няма планирани дейности за днес.",
       "habitsAllDone": "Всичко е свършено за днес!",
       "newHabit": "Нов навик",
-      "selfCareDoneHint": "Вечерната проверка е завършена.",
-      "viewLog": "Виж записа",
       "done": "Готово",
       "openCbt": "Отвори CBT",
       "openAct": "Отвори ACT",
@@ -273,11 +271,6 @@
       "cbtOpenRecord": {
         "title": "Отвори запис на мисли",
         "metaDesc": "Продължи последния си запис на мисли.",
-        "untitled": "Неозаглавен запис",
-        "continue": "Продължи",
-        "reread": "Препрочети",
-        "start": "Нов запис на мисли",
-        "empty": "Все още няма записи на мисли.",
         "shortcutCta": "Нов запис на мисъл"
       },
       "actValues": {
@@ -294,85 +287,39 @@
         "loggedBadge": "Записано",
         "logCta": "Запиши съня"
       },
-      "cbtRecentRecords": {
-        "title": "Скорошни записи",
-        "metaDesc": "Последните ти записи на мисли.",
-        "untitled": "Неозаглавен запис",
-        "empty": "Все още няма записи на мисли.",
-        "newRecord": "Нов запис"
-      },
-      "cbtDistortionPatterns": {
-        "title": "Модели на изкривяване",
-        "metaDesc": "Мисловните модели, които забелязваш най-често.",
-        "empty": "Запиши още няколко записа на мисли, за да се откроят моделите.",
-        "count": "{{count}}×",
-        "learnMore": "Научи повече"
-      },
       "cbtDistortionGuide": {
         "title": "Наръчник за изкривявания",
         "metaDesc": "Справка за честите мисловни модели.",
-        "count": "Разпознай {{count}} мисловни модела",
-        "explore": "Разгледай",
         "shortcutCta": "Отвори ръководството"
       },
       "cbtProgramme": {
         "title": "CBT програма",
         "metaDesc": "Напредъкът ти по водената програма.",
-        "notStarted": "Започни водената CBT програма.",
-        "complete": "Програмата е завършена - браво.",
-        "open": "Отвори програмата",
         "shortcutCta": "Отвори програмата"
       },
       "cbtWorry": {
         "title": "Дневник на тревогите",
         "metaDesc": "Раздели „ами ако” тревогите от реалните, решими проблеми.",
-        "stat": "{{count}} за преглед",
-        "stat_other": "{{count}} за преглед",
-        "empty": "Подреди тревога, когато се появи.",
-        "revisit": "Прегледай",
-        "start": "Започни",
         "shortcutCta": "Нова тревога"
       },
       "cbtBeliefs": {
         "title": "Дълбоки убеждения",
         "metaDesc": "Открий повтарящите се убеждения под реакциите ти.",
-        "stat": "{{count}} убеждение",
-        "stat_other": "{{count}} убеждения",
-        "due": "{{count}} за преглед",
-        "due_other": "{{count}} за преглед",
-        "empty": "Започни с едно убеждение.",
-        "review": "Прегледай",
-        "start": "Започни",
         "shortcutCta": "Ново убеждение"
       },
       "cbtActivities": {
         "title": "Поведенческо активиране",
         "metaDesc": "Планирай малки дейности, които повдигат настроението.",
-        "stat": "{{count}} предстоящи",
-        "stat_other": "{{count}} предстоящи",
-        "empty": "Планирай малка ободряваща дейност.",
-        "view": "Виж плана",
-        "plan": "Планирай",
         "shortcutCta": "Планирай дейност"
       },
       "cbtExposure": {
         "title": "Стълба на излагане",
         "metaDesc": "Изправяй се пред избягваните ситуации стъпка по стъпка.",
-        "progress": "{{done}} / {{total}} стъпки",
-        "allDone": "Всички стъпки са завършени - браво.",
-        "empty": "Изгради стълба на страха, за да започнеш.",
-        "continue": "Продължи",
-        "build": "Изгради стълба",
         "shortcutCta": "Нова стълбица"
       },
       "cbtGoals": {
         "title": "Цели",
         "metaDesc": "Проследявай целите, към които работиш.",
-        "stat": "{{count}} активни",
-        "stat_other": "{{count}} активни",
-        "empty": "Постави цел, към която да работиш.",
-        "open": "Отвори",
-        "set": "Постави цел",
         "shortcutCta": "Нова цел"
       },
       "actCommittedActions": {
@@ -458,6 +405,8 @@
       "moodLogs_other": "{{count}} записа",
       "moodLast7": "{{average}} средно тази седмица",
       "moodNoData": "Още няма записи",
+      "timerMinutes": "{{minutes}} мин този месец",
+      "timerNoData": "Все още няма сесии",
       "journalEntries_one": "{{count}} запис",
       "journalEntries_other": "{{count}} записа",
       "journalNoData": "Още няма записи",
@@ -502,6 +451,7 @@
     }
   },
   "breadcrumb": {
+    "session": "Сесия",
     "history": "История",
     "progress": "Размисъл",
     "legal": "Правна информация",
@@ -522,7 +472,6 @@
     "values": "Ценности",
     "weeklyReview": "Седмичен преглед",
     "selfCare": "Грижа за себе си",
-    "focusAreas": "Фокус области",
     "recovery": "Възстановяване",
     "committedAction": "Ангажирано действие",
     "connection": "Свързаност",

@@ -305,8 +305,7 @@
     "saveStrength": "Save strength",
     "strengthSummary": "Original {{original}} · Alternative {{alternative}}",
     "deleteTitle": "Delete this belief?",
-    "deleteMessage": "This permanently removes the belief and its strength history. This can't be undone.",
-    "examplesHint": "Common beliefs for your focus areas — tap to use one as a starting point:"
+    "deleteMessage": "This permanently removes the belief and its strength history. This can't be undone."
   },
   "exposure": {
     "title": "Anxiety & exposure",
@@ -1064,7 +1063,13 @@
     "back": "Back",
     "continue": "Continue",
     "saveRecord": "Save record",
-    "saving": "Saving record"
+    "saving": "Saving record",
+    "disputeTitle": "Put the thought on trial",
+    "disputePrompt1": "Is this a fact or an opinion?",
+    "disputePrompt2": "What would you tell a close friend who had this thought?",
+    "disputePrompt3": "Have you faced this before? What actually happened?",
+    "disputePrompt4": "Are you holding yourself to a harsher standard than anyone else?",
+    "disputePrompt5": "What evidence argues against this thought?"
   },
   "detail": {
     "loading": "Loading record",
@@ -1285,61 +1290,6 @@
         "start": "Got it"
       }
     }
-  },
-  "concerns": {
-    "depression": {
-      "label": "Depression",
-      "description": "Low mood, loss of interest, self-critical thoughts.",
-      "belief1": "I am a failure",
-      "belief2": "I am unlovable",
-      "belief3": "I am inadequate"
-    },
-    "gad": {
-      "label": "Generalised Anxiety",
-      "description": "Persistent worry across many areas of life.",
-      "belief1": "The world is a dangerous place",
-      "belief2": "I am powerless to cope with threat"
-    },
-    "panic": {
-      "label": "Panic",
-      "description": "Sudden intense anxiety with strong physical symptoms.",
-      "belief1": "I am vulnerable",
-      "belief2": "Physical sensations are dangerous"
-    },
-    "socialAnxiety": {
-      "label": "Social Anxiety",
-      "description": "Fear of judgement or embarrassment around others.",
-      "belief1": "I am unlikable",
-      "belief2": "Others will judge me harshly"
-    },
-    "anger": {
-      "label": "Excessive Anger",
-      "description": "Frequent or intense anger that gets in the way.",
-      "belief1": "Others are inconsiderate",
-      "belief2": "I must be respected"
-    },
-    "procrastination": {
-      "label": "Procrastination",
-      "description": "Putting off tasks despite the costs.",
-      "belief1": "I must be perfect",
-      "belief2": "I am incapable of the task",
-      "belief3": "Discomfort is intolerable"
-    }
-  },
-  "focusAreas": {
-    "title": "Your focus areas",
-    "description": "Pick what you'd like to work on. We'll suggest where to start. You can change this anytime.",
-    "save": "Save focus areas",
-    "saving": "Saving...",
-    "skip": "Skip for now",
-    "recommendedTitle": "Recommended starting points",
-    "recommendedEmpty": "Pick one or more areas to see suggestions.",
-    "promptTitle": "Set up your focus areas",
-    "promptBody": "Tell us what you'd like to work on and we'll suggest where to start.",
-    "promptCta": "Set up",
-    "promptDismiss": "Not now",
-    "reviewLink": "Focus areas",
-    "reviewLinkDesc": "Update what you're working on and your suggested tools."
   },
   "breathing": {
     "moduleLabel": "Breathing",
