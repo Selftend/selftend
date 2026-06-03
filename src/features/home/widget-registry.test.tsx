@@ -109,8 +109,6 @@ describe("widget registry", () => {
   );
 
   it.each([
-    ["meditation-sit-time", "meditation"],
-    ["meditation-continue", "meditation"],
     ["sleep-notes", "sleep"],
     ["sleep-wind-down", "sleep"],
     ["habits-quiet", "habits"],
@@ -119,6 +117,13 @@ describe("widget registry", () => {
     expect(isImplemented(id)).toBe(true);
     expect(WIDGET_META[id].status).toBe("available");
     expect(WIDGET_META[id].toolKey).toBe(toolKey);
+  });
+
+  it("no longer registers the merged-away meditation widgets", () => {
+    for (const id of ["meditation-sit-time", "meditation-continue"]) {
+      expect(isImplemented(id)).toBe(false);
+      expect(WIDGET_META[id]).toBeUndefined();
+    }
   });
 
   it("metaForWidget returns undefined for unknown ids", () => {

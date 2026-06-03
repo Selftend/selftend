@@ -6,22 +6,18 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
-import { startOfDayDaysAgo } from "@/src/utils/date";
 
 export function MeditationWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
   const { data: sessions } = useMeditationSessions(userId);
 
   const { selectedDate: todayKey } = useSelectedDate();
-  const doneToday = sessions?.some((s) => toLocalDateKey(s.completedAt) === todayKey) ?? false;
-
-  const weekStart = startOfDayDaysAgo(7);
-  const weekSessions = sessions?.filter((s) => new Date(s.completedAt) >= weekStart) ?? [];
-  const totalMinutes = weekSessions.reduce((sum, s) => sum + s.durationMinutes, 0);
-
-  const lastSession = sessions?.at(0);
+  const all = sessions ?? [];
+  const doneToday = all.some((s) => toLocalDateKey(s.completedAt) === todayKey);
+  const totalMinutes = all.reduce((sum, s) => sum + s.durationMinutes, 0);
 
   return (
     <Card className="flex-1">
@@ -42,32 +38,12 @@ export function MeditationWidget({ userId }: { userId: string }) {
           ) : null}
         </View>
 
-        <View className="flex-row gap-3">
-          <View className="flex-1 gap-0.5 rounded-lg border border-border bg-background px-3 py-2">
-            <Text className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              {t("today.dashboard.thisWeek")}
-            </Text>
-            <Text className="text-lg font-semibold">
-              {weekSessions.length > 0
-                ? t("today.dashboard.meditationWeekCount", { count: weekSessions.length })
-                : "–"}
-            </Text>
-          </View>
-          <View className="flex-1 gap-0.5 rounded-lg border border-border bg-background px-3 py-2">
-            <Text className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              {t("today.dashboard.minutesThisWeek")}
-            </Text>
-            <Text className="text-lg font-semibold">
-              {totalMinutes > 0 ? String(totalMinutes) : "–"}
-            </Text>
-          </View>
-        </View>
-
-        {lastSession ? (
-          <Text variant="muted" className="text-xs">
-            {t("today.dashboard.meditationStage", { stage: lastSession.stageAtSession })}
-          </Text>
-        ) : null}
+        <TwoStatBody
+          stats={[
+            { value: all.length, label: t("home.widgets.meditationPick.sessionsLabel") },
+            { value: totalMinutes, label: t("home.widgets.meditationPick.minutesLabel") },
+          ]}
+        />
 
         <View className="flex-row items-center justify-between">
           <Button size="sm" variant="outline" onPress={() => router.push("/tools/meditation")}>

@@ -260,7 +260,9 @@
       },
       "meditationPick": {
         "title": "Изборът за днес",
-        "desc": "Кратка сесия, избрана за часа на деня."
+        "desc": "Кратка сесия, избрана за часа на деня.",
+        "sessionsLabel": "Сесии",
+        "minutesLabel": "Минути"
       },
       "habitsToday": {
         "title": "Навици, днес",
@@ -422,19 +424,6 @@
         "sessionsLabel": "Сесии",
         "minutesLabel": "Минути",
         "empty": "Все още няма сесии."
-      },
-      "meditationSitTime": {
-        "title": "Време в медитация",
-        "metaDesc": "Скорошната ти медитация.",
-        "sessionsLabel": "Сесии",
-        "minutesLabel": "Минути",
-        "empty": "Все още няма сесии."
-      },
-      "meditationContinue": {
-        "title": "Продължи програмата",
-        "metaDesc": "Върни се към своя етап.",
-        "stage": "Етап {{stage}} от {{total}}",
-        "continue": "Продължи"
       },
       "sleepNotes": {
         "title": "Бележки за съня",

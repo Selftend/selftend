@@ -262,7 +262,9 @@
       },
       "meditationPick": {
         "title": "Today's pick",
-        "desc": "A short sit chosen for the time of day."
+        "desc": "A short sit chosen for the time of day.",
+        "sessionsLabel": "Sessions",
+        "minutesLabel": "Minutes"
       },
       "habitsToday": { "title": "Habits, today", "desc": "Your habits with this week's progress." },
       "selfCare": { "title": "Self-care log", "desc": "Today's self-care check-in." },
@@ -421,19 +423,6 @@
         "sessionsLabel": "Sessions",
         "minutesLabel": "Minutes",
         "empty": "No sessions yet."
-      },
-      "meditationSitTime": {
-        "title": "Sit time",
-        "metaDesc": "Your recent meditation.",
-        "sessionsLabel": "Sessions",
-        "minutesLabel": "Minutes",
-        "empty": "No sits yet."
-      },
-      "meditationContinue": {
-        "title": "Continue program",
-        "metaDesc": "Pick up your meditation stage.",
-        "stage": "Stage {{stage}} of {{total}}",
-        "continue": "Continue"
       },
       "sleepNotes": {
         "title": "Sleep notes",

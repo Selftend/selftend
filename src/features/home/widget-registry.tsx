@@ -27,8 +27,6 @@ import { ActProgrammeWidget } from "@/src/features/home/widgets/act-programme-wi
 import { ActAcceptancePromptWidget } from "@/src/features/home/widgets/act-acceptance-prompt-widget";
 import { JournalWeekWidget } from "@/src/features/home/widgets/journal-week-widget";
 import { GroundingLogWidget } from "@/src/features/home/widgets/grounding-log-widget";
-import { MeditationSitTimeWidget } from "@/src/features/home/widgets/meditation-sit-time-widget";
-import { MeditationContinueWidget } from "@/src/features/home/widgets/meditation-continue-widget";
 import { SleepNotesWidget } from "@/src/features/home/widgets/sleep-notes-widget";
 import { SleepWindDownWidget } from "@/src/features/home/widgets/sleep-wind-down-widget";
 import { HabitsQuietWidget } from "@/src/features/home/widgets/habits-quiet-widget";
@@ -74,8 +72,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "act-acceptance-prompt": ActAcceptancePromptWidget,
   "journal-week": JournalWeekWidget,
   "grounding-log": GroundingLogWidget,
-  "meditation-sit-time": MeditationSitTimeWidget,
-  "meditation-continue": MeditationContinueWidget,
   "sleep-notes": SleepNotesWidget,
   "sleep-wind-down": SleepWindDownWidget,
   "habits-quiet": HabitsQuietWidget,
@@ -315,24 +311,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     titleKey: "home.widgets.groundingLog.title",
     descriptionKey: "home.widgets.groundingLog.metaDesc",
     tint: "clay",
-    status: "available",
-  },
-  "meditation-sit-time": {
-    id: "meditation-sit-time",
-    toolKey: "meditation",
-    icon: "timer",
-    titleKey: "home.widgets.meditationSitTime.title",
-    descriptionKey: "home.widgets.meditationSitTime.metaDesc",
-    tint: "iris",
-    status: "available",
-  },
-  "meditation-continue": {
-    id: "meditation-continue",
-    toolKey: "meditation",
-    icon: "play-arrow",
-    titleKey: "home.widgets.meditationContinue.title",
-    descriptionKey: "home.widgets.meditationContinue.metaDesc",
-    tint: "iris",
     status: "available",
   },
   "sleep-notes": {
