@@ -8,8 +8,7 @@ import { MeditationWidget } from "@/src/features/home/widgets/meditation-widget"
 import { GratitudeWidget } from "@/src/features/home/widgets/gratitude-widget";
 import { HabitsWidget } from "@/src/features/home/widgets/habits-widget";
 import { SelfCareWidget } from "@/src/features/home/widgets/self-care-widget";
-import { SleepLastNightWidget } from "@/src/features/home/widgets/sleep-last-night-widget";
-import { Sleep7NightsWidget } from "@/src/features/home/widgets/sleep-7-nights-widget";
+import { SleepWidget } from "@/src/features/home/widgets/sleep-widget";
 import { CbtRecentRecordsWidget } from "@/src/features/home/widgets/cbt-recent-records-widget";
 import { CbtDistortionPatternsWidget } from "@/src/features/home/widgets/cbt-distortion-patterns-widget";
 import { CbtDistortionGuideWidget } from "@/src/features/home/widgets/cbt-distortion-guide-widget";
@@ -27,8 +26,6 @@ import { ActProgrammeWidget } from "@/src/features/home/widgets/act-programme-wi
 import { ActAcceptancePromptWidget } from "@/src/features/home/widgets/act-acceptance-prompt-widget";
 import { JournalWeekWidget } from "@/src/features/home/widgets/journal-week-widget";
 import { GroundingLogWidget } from "@/src/features/home/widgets/grounding-log-widget";
-import { SleepNotesWidget } from "@/src/features/home/widgets/sleep-notes-widget";
-import { SleepWindDownWidget } from "@/src/features/home/widgets/sleep-wind-down-widget";
 import { HabitsQuietWidget } from "@/src/features/home/widgets/habits-quiet-widget";
 import { HabitsOneDeepWidget } from "@/src/features/home/widgets/habits-one-deep-widget";
 
@@ -55,8 +52,7 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "self-care": SelfCareWidget,
   "cbt-open-record": CbtOpenRecordWidget,
   "act-values": ActValuesWidget,
-  "sleep-last-night": SleepLastNightWidget,
-  "sleep-7-nights": Sleep7NightsWidget,
+  "sleep-latest": SleepWidget,
   "cbt-recent-records": CbtRecentRecordsWidget,
   "cbt-distortion-patterns": CbtDistortionPatternsWidget,
   "cbt-distortion-guide": CbtDistortionGuideWidget,
@@ -72,8 +68,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "act-acceptance-prompt": ActAcceptancePromptWidget,
   "journal-week": JournalWeekWidget,
   "grounding-log": GroundingLogWidget,
-  "sleep-notes": SleepNotesWidget,
-  "sleep-wind-down": SleepWindDownWidget,
   "habits-quiet": HabitsQuietWidget,
   "habits-one-deep": HabitsOneDeepWidget,
 };
@@ -160,21 +154,12 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     tint: "act",
     status: "default",
   },
-  "sleep-last-night": {
-    id: "sleep-last-night",
+  "sleep-latest": {
+    id: "sleep-latest",
     toolKey: "sleep",
     icon: "bedtime",
-    titleKey: "home.widgets.sleepLastNight.title",
-    descriptionKey: "home.widgets.sleepLastNight.metaDesc",
-    tint: "ink",
-    status: "default",
-  },
-  "sleep-7-nights": {
-    id: "sleep-7-nights",
-    toolKey: "sleep",
-    icon: "bar-chart",
-    titleKey: "home.widgets.sleep7Nights.title",
-    descriptionKey: "home.widgets.sleep7Nights.metaDesc",
+    titleKey: "home.widgets.sleepLatest.title",
+    descriptionKey: "home.widgets.sleepLatest.desc",
     tint: "ink",
     status: "default",
   },
@@ -311,24 +296,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     titleKey: "home.widgets.groundingLog.title",
     descriptionKey: "home.widgets.groundingLog.metaDesc",
     tint: "clay",
-    status: "available",
-  },
-  "sleep-notes": {
-    id: "sleep-notes",
-    toolKey: "sleep",
-    icon: "edit-note",
-    titleKey: "home.widgets.sleepNotes.title",
-    descriptionKey: "home.widgets.sleepNotes.metaDesc",
-    tint: "ink",
-    status: "available",
-  },
-  "sleep-wind-down": {
-    id: "sleep-wind-down",
-    toolKey: "sleep",
-    icon: "dark-mode",
-    titleKey: "home.widgets.sleepWindDown.title",
-    descriptionKey: "home.widgets.sleepWindDown.metaDesc",
-    tint: "ink",
     status: "available",
   },
   "habits-quiet": {

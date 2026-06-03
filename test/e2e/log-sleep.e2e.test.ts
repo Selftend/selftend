@@ -25,9 +25,10 @@ test.describe("log sleep", () => {
     // Go directly to the log form - bypasses the sleep tracker's onboarding gate.
     await page.goto("/tools/sleep/new");
 
-    // Pick 8 hours (480 min) duration and quality 4.
-    await page.getByRole("button", { name: "8h", exact: true }).click();
-    await page.getByRole("button", { name: "4", exact: true }).click();
+    // Duration starts at the 7h 30m default; one +30 step makes it 8h (480 min).
+    await page.getByRole("button", { name: "Add 30 minutes", exact: true }).click();
+    // Quality is a 5-star control; tap the 4th star.
+    await page.getByRole("button", { name: "Rate 4 of 5", exact: true }).click();
     await page.getByPlaceholder("Anything that affected your sleep?").fill(notes);
 
     await page.getByRole("button", { name: "Save", exact: true }).click();

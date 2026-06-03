@@ -13,6 +13,10 @@
     "durationLabel": "Часове сън",
     "qualityLabel": "Качество на съня",
     "qualityHint": "1 = много лошо · 5 = отлично",
+    "decreaseDuration": "Извади 30 минути",
+    "increaseDuration": "Добави 30 минути",
+    "qualityStarLabel": "Оцени {{value}} от {{max}}",
+    "qualityValue": "{{value}}/{{max}}",
     "notesLabel": "Бележки (по избор)",
     "notesPlaceholder": "Нещо, което повлия на съня ти?",
     "save": "Запази",
@@ -29,20 +33,26 @@
     "nights_other": "{{count}} нощи"
   },
   "sections": {
-    "summary": "Обобщение",
+    "trend": "Продължителност на съня",
+    "stats": "Обобщение",
+    "quality": "Разбивка по качество",
+    "weekday": "Най-добри нощи",
     "recent": "Последни записи"
   },
   "summary": {
     "sevenDay": "Последни 7 дни",
     "thirtyDay": "Последни 30 дни",
-    "avgDuration": "{{hours}}ч средно",
-    "avgQuality": "{{quality}}/5 качество",
-    "noData": "Няма записи в този период",
-    "count_one": "{{count}} запис",
-    "count_other": "{{count}} записа"
+    "avgQuality": "{{quality}}/5 качество"
   },
-  "duration": {
-    "label": "{{hours}}ч"
+  "stats": {
+    "longest": "Най-дълъг",
+    "shortest": "Най-кратък"
+  },
+  "chart": {
+    "duration14": "Часове сън · последните 14 нощи",
+    "qualityMix": "Качество · последните 30 дни",
+    "weekdayAvg": "Средно по ден от седмицата",
+    "empty": "Запиши няколко нощи, за да видиш това."
   },
   "quality": {
     "1": "Много лошо",
@@ -53,7 +63,9 @@
   },
   "recent": {
     "empty": "Все още няма записи за сън. Натисни бутона за записване, за да започнеш.",
-    "viewEntry": "Виж запис на съня от {{when}}"
+    "viewEntry": "Виж запис на съня от {{when}}",
+    "showAll": "Покажи всички ({{count}})",
+    "showLess": "Покажи по-малко"
   },
   "detail": {
     "title": "Запис за сън",

@@ -10,8 +10,8 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { NumberRating } from "@/src/components/app/number-rating";
-import { SLEEP_DURATION_OPTIONS } from "@/src/features/sleep/schemas";
+import { DurationStepper } from "@/src/features/sleep/duration-stepper";
+import { StarRating } from "@/src/features/sleep/star-rating";
 import { useSleepLog, useSleepLogs, useSaveSleepLog } from "@/src/features/sleep/queries";
 import type { SleepLog } from "@/src/features/sleep/types";
 import { useSession } from "@/src/providers/session-provider";
@@ -23,33 +23,8 @@ interface SleepLogScreenProps {
   logId?: string | null;
 }
 
-function DurationPicker({
-  value,
-  onChange,
-}: {
-  value: number | null;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <View className="flex-row flex-wrap gap-2">
-      {SLEEP_DURATION_OPTIONS.map((minutes) => {
-        const h = minutes / 60;
-        const label = Number.isInteger(h) ? `${h}h` : `${h.toFixed(1)}h`;
-        return (
-          <Button
-            key={minutes}
-            size="sm"
-            variant={value === minutes ? "default" : "outline"}
-            onPress={() => onChange(minutes)}
-            className="min-w-14"
-          >
-            <Text>{label}</Text>
-          </Button>
-        );
-      })}
-    </View>
-  );
-}
+// Sensible starting point for a new entry so the stepper always shows a value.
+const DEFAULT_DURATION_MINUTES = 450; // 7h 30m
 
 export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScreenProps) {
   const { t } = useTranslation("sleep");
@@ -66,7 +41,9 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
   const { selectedDate } = useSelectedDate();
 
   const saveMutation = useSaveSleepLog(user?.id ?? null);
-  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
+  const [durationMinutes, setDurationMinutes] = useState<number | null>(
+    mode === "create" ? DEFAULT_DURATION_MINUTES : null,
+  );
   const [quality, setQuality] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
@@ -150,7 +127,10 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
 
         <View className="gap-3">
           <Label>{t("log.durationLabel")}</Label>
-          <DurationPicker value={durationMinutes} onChange={setDurationMinutes} />
+          <DurationStepper
+            value={durationMinutes ?? DEFAULT_DURATION_MINUTES}
+            onChange={setDurationMinutes}
+          />
         </View>
 
         <View className="gap-3">
@@ -158,7 +138,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
           <Text variant="muted" className="text-sm">
             {t("log.qualityHint")}
           </Text>
-          <NumberRating min={1} max={5} value={quality} onChange={setQuality} />
+          <StarRating value={quality} onChange={setQuality} />
         </View>
 
         <View className="gap-2">

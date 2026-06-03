@@ -283,17 +283,13 @@
         "empty": "Choose your values",
         "cta": "Choose your values"
       },
-      "sleepLastNight": {
-        "title": "Last night",
-        "metaDesc": "Hours slept last night.",
-        "hoursValue": "{{hours}}h {{mins}}m",
-        "empty": "Log last night's sleep",
-        "cta": "Log sleep"
-      },
-      "sleep7Nights": {
-        "title": "Last 7 nights",
-        "metaDesc": "Your recent sleep, at a glance.",
-        "empty": "Log a few nights to see your sleep."
+      "sleepLatest": {
+        "title": "Sleep tracker",
+        "desc": "Your sleep at a glance.",
+        "sevenNightAvgLabel": "7-night avg",
+        "qualityLabel": "7-night quality",
+        "loggedBadge": "Logged",
+        "logCta": "Log sleep"
       },
       "cbtRecentRecords": {
         "title": "Recent records",
@@ -423,17 +419,6 @@
         "sessionsLabel": "Sessions",
         "minutesLabel": "Minutes",
         "empty": "No sessions yet."
-      },
-      "sleepNotes": {
-        "title": "Sleep notes",
-        "metaDesc": "Your latest sleep note.",
-        "empty": "No sleep notes yet."
-      },
-      "sleepWindDown": {
-        "title": "Wind down",
-        "metaDesc": "A gentle pre-sleep nudge.",
-        "tip": "Dim the lights and step away from screens about 30 minutes before bed.",
-        "open": "Open"
       },
       "habitsQuiet": {
         "title": "Gone quiet",

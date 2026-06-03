@@ -109,14 +109,25 @@ describe("widget registry", () => {
   );
 
   it.each([
-    ["sleep-notes", "sleep"],
-    ["sleep-wind-down", "sleep"],
     ["habits-quiet", "habits"],
     ["habits-one-deep", "habits"],
   ])("registers %s as an available tracker/reflection widget", (id, toolKey) => {
     expect(isImplemented(id)).toBe(true);
     expect(WIDGET_META[id].status).toBe("available");
     expect(WIDGET_META[id].toolKey).toBe(toolKey);
+  });
+
+  it("no longer registers the merged-away sleep widgets", () => {
+    for (const id of ["sleep-last-night", "sleep-7-nights", "sleep-notes", "sleep-wind-down"]) {
+      expect(isImplemented(id)).toBe(false);
+      expect(WIDGET_META[id]).toBeUndefined();
+    }
+  });
+
+  it("registers sleep-latest as a default sleep widget", () => {
+    expect(isImplemented("sleep-latest")).toBe(true);
+    expect(WIDGET_META["sleep-latest"].status).toBe("default");
+    expect(WIDGET_META["sleep-latest"].toolKey).toBe("sleep");
   });
 
   it("no longer registers the merged-away meditation widgets", () => {

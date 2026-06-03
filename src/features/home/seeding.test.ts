@@ -35,10 +35,12 @@ describe("resolveInitialWidgetIds", () => {
   });
 
   it("default set includes the phase-1 default widgets", () => {
-    for (const id of ["cbt-open-record", "act-values", "sleep-last-night", "sleep-7-nights"]) {
+    for (const id of ["cbt-open-record", "act-values", "sleep-latest"]) {
       expect(DEFAULT_WIDGET_IDS).toContain(id);
     }
-    expect(DEFAULT_WIDGET_IDS).toHaveLength(11);
+    expect(DEFAULT_WIDGET_IDS).not.toContain("sleep-last-night");
+    expect(DEFAULT_WIDGET_IDS).not.toContain("sleep-7-nights");
+    expect(DEFAULT_WIDGET_IDS).toHaveLength(10);
   });
 
   it("no longer seeds the 5-4-3-2-1 grounding widget by default", () => {

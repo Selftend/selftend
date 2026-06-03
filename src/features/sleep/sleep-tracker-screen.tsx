@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -13,35 +13,19 @@ import { ToolStats } from "@/src/components/app/tool-stats";
 import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
-import { formatDuration } from "@/src/features/sleep/format";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
-import { startOfDayDaysAgo } from "@/src/utils/date";
-import { roundTo1 } from "@/src/utils/number";
-
-function recentWindow<T extends { loggedAt: string }>(logs: T[], days: number): T[] | null {
-  const cutoff = startOfDayDaysAgo(days);
-  const window = logs.filter((l) => new Date(l.loggedAt).getTime() >= cutoff.getTime());
-  return window.length === 0 ? null : window;
-}
-
-function averageDurationMinutes(
-  logs: { durationMinutes: number; loggedAt: string }[],
-  days: number,
-): number | null {
-  const window = recentWindow(logs, days);
-  if (!window) return null;
-  return Math.round(window.reduce((sum, l) => sum + l.durationMinutes, 0) / window.length);
-}
-
-function averageQuality(
-  logs: { quality: number; loggedAt: string }[],
-  days: number,
-): number | null {
-  const window = recentWindow(logs, days);
-  if (!window) return null;
-  return roundTo1(window.reduce((sum, l) => sum + l.quality, 0) / window.length);
-}
+import { formatDuration, formatHours } from "@/src/features/sleep/format";
+import {
+  averageDurationMinutes,
+  averageQuality,
+  extremes,
+  qualityDistribution,
+  recentNights,
+  weekdayAverages,
+} from "@/src/features/sleep/summaries";
+import { SleepDurationChart } from "@/src/features/sleep/sleep-duration-chart";
+import { SleepQualityMix } from "@/src/features/sleep/sleep-quality-mix";
+import { SleepWeekdayChart } from "@/src/features/sleep/sleep-weekday-chart";
+import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
 
 export default function SleepTrackerScreen() {
   const { t } = useTranslation("sleep");
@@ -49,17 +33,17 @@ export default function SleepTrackerScreen() {
   const userId = user?.id ?? null;
 
   const { data: logs } = useSleepLogs(userId, 50);
-  const { selectedDate } = useSelectedDate();
-
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
   const allLogs = logs ?? [];
-  const dayLogs = allLogs.filter((log) => toLocalDateKey(log.loggedAt) === selectedDate);
-  const recent = dayLogs.slice(0, 10);
   const sevenDayDuration = averageDurationMinutes(allLogs, 7);
   const thirtyDayDuration = averageDurationMinutes(allLogs, 30);
   const sevenDayQuality = averageQuality(allLogs, 7);
   const thirtyDayQuality = averageQuality(allLogs, 30);
+  const { longest, shortest } = extremes(allLogs);
+  const nights14 = recentNights(allLogs, 14);
+  const distribution = qualityDistribution(allLogs, 30);
+  const weekly = weekdayAverages(allLogs);
 
   return (
     <>
@@ -86,11 +70,7 @@ export default function SleepTrackerScreen() {
                 <ToolStats
                   accentClassName="text-ink"
                   items={[
-                    {
-                      value:
-                        sevenDayDuration !== null ? `${(sevenDayDuration / 60).toFixed(1)}h` : "–",
-                      label: t("hero.avg"),
-                    },
+                    { value: formatHours(sevenDayDuration), label: t("hero.avg") },
                     {
                       value: sevenDayQuality !== null ? `${sevenDayQuality}/5` : "–",
                       label: t("hero.quality"),
@@ -109,61 +89,55 @@ export default function SleepTrackerScreen() {
             </View>
 
             <View className="gap-3">
-              <Text variant="h3">{t("sections.summary")}</Text>
+              <Text variant="h3">{t("sections.trend")}</Text>
+              <SleepDurationChart nights={nights14} />
+            </View>
+
+            <View className="gap-3">
+              <Text variant="h3">{t("sections.stats")}</Text>
               <View className="flex-row flex-wrap gap-3">
-                <SummaryTile
+                <StatTile
                   label={t("summary.sevenDay")}
-                  durationMinutes={sevenDayDuration}
-                  quality={sevenDayQuality}
+                  value={formatHours(sevenDayDuration)}
+                  sub={
+                    sevenDayQuality !== null
+                      ? t("summary.avgQuality", { quality: sevenDayQuality })
+                      : undefined
+                  }
                 />
-                <SummaryTile
+                <StatTile
                   label={t("summary.thirtyDay")}
-                  durationMinutes={thirtyDayDuration}
-                  quality={thirtyDayQuality}
+                  value={formatHours(thirtyDayDuration)}
+                  sub={
+                    thirtyDayQuality !== null
+                      ? t("summary.avgQuality", { quality: thirtyDayQuality })
+                      : undefined
+                  }
+                />
+                <StatTile
+                  label={t("stats.longest")}
+                  value={longest !== null ? formatDuration(longest) : "–"}
+                />
+                <StatTile
+                  label={t("stats.shortest")}
+                  value={shortest !== null ? formatDuration(shortest) : "–"}
                 />
               </View>
             </View>
 
             <View className="gap-3">
+              <Text variant="h3">{t("sections.quality")}</Text>
+              <SleepQualityMix distribution={distribution} />
+            </View>
+
+            <View className="gap-3">
+              <Text variant="h3">{t("sections.weekday")}</Text>
+              <SleepWeekdayChart averages={weekly} />
+            </View>
+
+            <View className="gap-3">
               <Text variant="h3">{t("sections.recent")}</Text>
-              {recent.length > 0 ? (
-                <View className="gap-3">
-                  {recent.map((log) => (
-                    <Pressable
-                      key={log.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={t("recent.viewEntry", {
-                        when: formatMoodRelativeTime(log.loggedAt, t),
-                      })}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/tools/sleep/[id]",
-                          params: { id: log.id },
-                        })
-                      }
-                      className="flex-row items-center gap-4 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
-                      role="button"
-                    >
-                      <View className="flex-1 gap-1">
-                        <View className="flex-row items-center justify-between gap-2">
-                          <Text className="text-base font-semibold">
-                            {formatDuration(log.durationMinutes)}
-                          </Text>
-                          <Text variant="muted" className="text-xs">
-                            {formatMoodRelativeTime(log.loggedAt, t)}
-                          </Text>
-                        </View>
-                        <Text variant="muted" className="text-sm">
-                          {t(`quality.${log.quality}` as Parameters<typeof t>[0])}
-                        </Text>
-                      </View>
-                      <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
-                    </Pressable>
-                  ))}
-                </View>
-              ) : (
-                <Text variant="muted">{t("recent.empty")}</Text>
-              )}
+              <SleepRecentList logs={allLogs} />
             </View>
           </View>
         </ScrollView>
@@ -172,36 +146,29 @@ export default function SleepTrackerScreen() {
   );
 }
 
-interface SummaryTileProps {
+interface StatTileProps {
   label: string;
-  durationMinutes: number | null;
-  quality: number | null;
+  value: string;
+  sub?: string;
 }
 
-function SummaryTile({ label, durationMinutes, quality }: SummaryTileProps) {
-  const { t } = useTranslation("sleep");
-  const hours = durationMinutes !== null ? (durationMinutes / 60).toFixed(1) : null;
-
+function StatTile({ label, value, sub }: StatTileProps) {
   return (
-    <Card className="min-w-[180px] flex-1 basis-[180px]">
+    <Card className="min-w-[150px] flex-1 basis-[150px]">
       <CardHeader>
         <Text variant="muted" className="text-xs uppercase tracking-wide">
           {label}
         </Text>
       </CardHeader>
       <CardContent>
-        {hours === null ? (
-          <Text className="text-sm">{t("summary.noData")}</Text>
-        ) : (
-          <View className="gap-1">
-            <Text className="text-2xl font-semibold">{t("summary.avgDuration", { hours })}</Text>
-            {quality !== null ? (
-              <Text variant="muted" className="text-xs">
-                {t("summary.avgQuality", { quality })}
-              </Text>
-            ) : null}
-          </View>
-        )}
+        <View className="gap-1">
+          <Text className="text-2xl font-semibold">{value}</Text>
+          {sub ? (
+            <Text variant="muted" className="text-xs">
+              {sub}
+            </Text>
+          ) : null}
+        </View>
       </CardContent>
     </Card>
   );

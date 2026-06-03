@@ -24,10 +24,10 @@ test.describe("edit and delete a sleep log", () => {
 
     // Create: 8h duration, quality 3, with notes.
     await page.goto("/tools/sleep/new");
-    // Duration button labels are like "8h" (computed from SLEEP_DURATION_OPTIONS).
-    await page.getByRole("button", { name: "8h", exact: true }).click();
-    // Quality buttons are 1–5 via NumberRating component.
-    await page.getByRole("button", { name: "3", exact: true }).click();
+    // Duration starts at the 7h 30m default; one +30 step makes it 8h.
+    await page.getByRole("button", { name: "Add 30 minutes", exact: true }).click();
+    // Quality is a 5-star control; tap the 3rd star.
+    await page.getByRole("button", { name: "Rate 3 of 5", exact: true }).click();
     // log.notesPlaceholder = "Anything that affected your sleep?"
     await page.getByPlaceholder("Anything that affected your sleep?").fill(originalNotes);
     // log.save = "Save"
@@ -38,9 +38,10 @@ test.describe("edit and delete a sleep log", () => {
 
     // EDIT: detail.edit = "Edit"
     await page.getByRole("button", { name: "Edit", exact: true }).click();
-    // Change duration to 7h, quality to 4, update notes.
-    await page.getByRole("button", { name: "7h", exact: true }).click();
-    await page.getByRole("button", { name: "4", exact: true }).click();
+    // Change duration from 8h down to 7h (two -30 steps), quality to 4, update notes.
+    await page.getByRole("button", { name: "Subtract 30 minutes", exact: true }).click();
+    await page.getByRole("button", { name: "Subtract 30 minutes", exact: true }).click();
+    await page.getByRole("button", { name: "Rate 4 of 5", exact: true }).click();
     await page.getByPlaceholder("Anything that affected your sleep?").fill(updatedNotes);
     // log.update = "Update"
     await page.getByRole("button", { name: "Update", exact: true }).click();

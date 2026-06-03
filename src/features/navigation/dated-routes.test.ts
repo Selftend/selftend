@@ -7,7 +7,6 @@ describe("isDatedRoute", () => {
     "/modules/cbt",
     "/tools/mood-tracker",
     "/tools/mood-tracker/new",
-    "/tools/sleep",
     "/tools/sleep/new",
     "/tools/gratitude-log",
     "/tools/gratitude-log/new",
@@ -40,6 +39,7 @@ describe("isDatedRoute", () => {
     "/modules/act/values", // long-lived values structure
     "/tools/breathing",
     "/tools/meditation",
+    "/tools/sleep", // date-agnostic landing - shows all entries, not a single-day view
     "/tools/habits/history", // full chronological log, not a single-day view
     "/tools/mood-tracker/abc-123", // per-entry detail
     "/tools/mood-tracker/abc-123/edit", // per-entry edit

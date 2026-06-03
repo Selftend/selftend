@@ -13,6 +13,10 @@
     "durationLabel": "Hours slept",
     "qualityLabel": "Sleep quality",
     "qualityHint": "1 = very poor · 5 = excellent",
+    "decreaseDuration": "Subtract 30 minutes",
+    "increaseDuration": "Add 30 minutes",
+    "qualityStarLabel": "Rate {{value}} of {{max}}",
+    "qualityValue": "{{value}}/{{max}}",
     "notesLabel": "Notes (optional)",
     "notesPlaceholder": "Anything that affected your sleep?",
     "save": "Save",
@@ -29,20 +33,26 @@
     "nights_other": "{{count}} nights"
   },
   "sections": {
-    "summary": "Summary",
+    "trend": "Sleep duration",
+    "stats": "Summary",
+    "quality": "Quality breakdown",
+    "weekday": "Best weeknights",
     "recent": "Recent entries"
   },
   "summary": {
     "sevenDay": "Last 7 days",
     "thirtyDay": "Last 30 days",
-    "avgDuration": "{{hours}}h avg",
-    "avgQuality": "{{quality}}/5 quality",
-    "noData": "No logs in this window",
-    "count_one": "{{count}} log",
-    "count_other": "{{count}} logs"
+    "avgQuality": "{{quality}}/5 quality"
   },
-  "duration": {
-    "label": "{{hours}}h"
+  "stats": {
+    "longest": "Longest",
+    "shortest": "Shortest"
+  },
+  "chart": {
+    "duration14": "Hours slept · last 14 nights",
+    "qualityMix": "Quality mix · last 30 days",
+    "weekdayAvg": "Average by weekday",
+    "empty": "Log a few nights to see this."
   },
   "quality": {
     "1": "Very poor",
@@ -53,7 +63,9 @@
   },
   "recent": {
     "empty": "No sleep logged yet. Tap \"Log last night's sleep\" to start.",
-    "viewEntry": "View sleep entry from {{when}}"
+    "viewEntry": "View sleep entry from {{when}}",
+    "showAll": "Show all ({{count}})",
+    "showLess": "Show less"
   },
   "detail": {
     "title": "Sleep entry",

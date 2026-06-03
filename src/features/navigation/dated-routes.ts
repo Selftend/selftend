@@ -20,7 +20,8 @@ const DATED_EXACT = new Set<string>([
   "/modules/cbt",
   "/tools/mood-tracker",
   "/tools/mood-tracker/new",
-  "/tools/sleep",
+  // Sleep landing is date-agnostic (shows all entries), so it has no date bar.
+  // Only the log form is day-scoped - it records sleep for the selected night.
   "/tools/sleep/new",
   "/tools/gratitude-log",
   "/tools/gratitude-log/new",

@@ -9,8 +9,7 @@ export const DEFAULT_WIDGET_IDS = [
   "breathing-suggested",
   "gratitude-latest",
   "meditation-pick",
-  "sleep-last-night",
-  "sleep-7-nights",
+  "sleep-latest",
   "habits-today",
 ] as const;
 
