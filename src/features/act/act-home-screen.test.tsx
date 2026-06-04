@@ -130,13 +130,6 @@ describe("ActHomeScreen", () => {
     expect(router.push as jest.Mock).toHaveBeenCalledWith("/modules/act/choice-point");
   });
 
-  it("renders quick actions for defuse and log mood", () => {
-    renderWithProviders(<ActHomeScreen />);
-
-    expect(screen.getByText("Defuse a thought")).toBeTruthy();
-    expect(screen.getByText("Log mood")).toBeTruthy();
-  });
-
   it("renders the author eyebrow below the header with primary tint", () => {
     renderWithProviders(<ActHomeScreen />);
 

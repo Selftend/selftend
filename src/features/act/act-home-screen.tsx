@@ -4,8 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/src/components/react-native-reusables/button";
-import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import { type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { PillarCard } from "@/src/components/app/pillar-card";
@@ -215,27 +214,6 @@ export default function ActHomeScreen() {
                 }
               />
             )}
-
-            {/* Quick actions */}
-            <View className="gap-3">
-              <Text variant="h3">{t("home.quickActionsTitle")}</Text>
-              <View className="flex-row flex-wrap gap-2">
-                <View className="min-w-[160px] flex-1 basis-[160px]">
-                  <Button onPress={() => router.push("/modules/act/defusion/new")}>
-                    <Icon name="filter-drama" className="size-4 text-primary-foreground" />
-                    <Text>{t("home.defuseThought")}</Text>
-                  </Button>
-                </View>
-                <View className="min-w-[160px] flex-1 basis-[160px]">
-                  <Button
-                    variant="secondary"
-                    onPress={() => router.push("/tools/mood-tracker/new")}
-                  >
-                    <Text>{t("home.logMood")}</Text>
-                  </Button>
-                </View>
-              </View>
-            </View>
 
             {/* Framework */}
             <View className="gap-6">
