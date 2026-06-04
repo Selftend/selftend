@@ -251,7 +251,10 @@ export async function listExpansionLogs(userId: string, limit = 30) {
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return [];
+    throw error;
+  }
   return (data as ExpansionLogRow[]).map(mapExpansionLog);
 }
 
@@ -264,7 +267,10 @@ export async function getExpansionLog(userId: string, logId: string) {
     .eq("id", logId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return null;
+    throw error;
+  }
   if (!data) return null;
   return mapExpansionLog(data as ExpansionLogRow);
 }
@@ -342,7 +348,10 @@ export async function listUrgeSurfLogs(userId: string, limit = 30) {
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return [];
+    throw error;
+  }
   return (data as UrgeSurfLogRow[]).map(mapUrgeSurfLog);
 }
 
@@ -406,7 +415,10 @@ export async function listConnectionLogs(userId: string, limit = 30) {
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return [];
+    throw error;
+  }
   return (data as ConnectionLogRow[]).map(mapConnectionLog);
 }
 
@@ -419,7 +431,10 @@ export async function getConnectionLog(userId: string, logId: string) {
     .eq("id", logId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return null;
+    throw error;
+  }
   if (!data) return null;
   return mapConnectionLog(data as ConnectionLogRow);
 }
@@ -493,7 +508,10 @@ export async function listObservingSelfSessions(userId: string, limit = 30) {
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return [];
+    throw error;
+  }
   return (data as ObservingSelfSessionRow[]).map(mapObservingSelfSession);
 }
 
@@ -506,7 +524,10 @@ export async function getObservingSelfSession(userId: string, sessionId: string)
     .eq("id", sessionId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return null;
+    throw error;
+  }
   if (!data) return null;
   return mapObservingSelfSession(data as ObservingSelfSessionRow);
 }
@@ -582,7 +603,10 @@ export async function listValueEntries(userId: string) {
     .eq("user_id", userId)
     .order("life_domain");
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return [];
+    throw error;
+  }
   return (data as ValueEntryRow[]).map(mapValueEntry);
 }
 
@@ -595,7 +619,10 @@ export async function getValueEntryByDomain(userId: string, domain: ACTLifeDomai
     .eq("life_domain", domain)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return null;
+    throw error;
+  }
   if (!data) return null;
   return mapValueEntry(data as ValueEntryRow);
 }
@@ -658,7 +685,10 @@ export async function listBullsEyeSnapshots(userId: string, limit = 50) {
     .order("reviewed_at", { ascending: false })
     .limit(limit);
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return [];
+    throw error;
+  }
   return (data as BullsEyeSnapshotRow[]).map(mapBullsEyeSnapshot);
 }
 
@@ -720,7 +750,10 @@ export async function listCommittedActions(userId: string, status?: ActionStatus
   if (status) query = query.eq("status", status);
 
   const { data, error } = await query;
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return [];
+    throw error;
+  }
   return (data as CommittedActionRow[]).map(mapCommittedAction);
 }
 
@@ -733,7 +766,10 @@ export async function getCommittedAction(userId: string, actionId: string) {
     .eq("id", actionId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return null;
+    throw error;
+  }
   if (!data) return null;
   return mapCommittedAction(data as CommittedActionRow);
 }
@@ -829,7 +865,10 @@ export async function listActionSteps(userId: string, actionId: string) {
     .eq("action_id", actionId)
     .order("created_at", { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingACTSchemaError(error)) return [];
+    throw error;
+  }
   return (data as ActionStepRow[]).map(mapActionStep);
 }
 
@@ -866,13 +905,18 @@ export async function saveActionStep(userId: string, input: ActionStepInput) {
   return mapActionStep(data as ActionStepRow);
 }
 
-export async function toggleActionStep(userId: string, stepId: string, completed: boolean) {
+export async function toggleActionStep(
+  userId: string,
+  stepId: string,
+  completed: boolean,
+  completedAt: string = new Date().toISOString(),
+) {
   const client = requireSupabase();
   const { data, error } = await client
     .from("act_action_steps")
     .update({
       is_completed: completed,
-      completed_at: completed ? new Date().toISOString() : null,
+      completed_at: completed ? completedAt : null,
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", userId)

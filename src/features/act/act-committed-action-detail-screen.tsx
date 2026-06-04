@@ -30,6 +30,7 @@ import {
 import { type ActionStatus } from "@/src/features/act/types";
 import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
+import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +47,7 @@ export default function ActCommittedActionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const actionId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
+  const { selectedDate } = useSelectedDate();
 
   const { item: action, isLoading } = useCachedItem(
     useCommittedActions,
@@ -106,7 +108,12 @@ export default function ActCommittedActionDetailScreen() {
   async function handleToggleStep(stepId: string, current: boolean) {
     if (!actionId) return;
     const completed = !current;
-    await toggleStepMutation.mutateAsync({ stepId, completed, actionId });
+    await toggleStepMutation.mutateAsync({
+      stepId,
+      completed,
+      actionId,
+      completedAt: loggedAtForSelectedDate(selectedDate),
+    });
     showToast({
       title: completed
         ? t("committedAction.stepCompletedToast")

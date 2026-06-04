@@ -4,7 +4,7 @@ export const DEFAULT_WIDGET_IDS = [
   "mood-checkin",
   "mood-trend",
   "cbt-open-record",
-  "act-values",
+  "act-drop-anchor",
   "journal-week",
   "breathing-suggested",
   "gratitude-latest",
@@ -24,7 +24,7 @@ const TOOL_TO_WIDGET_ID: Record<string, string> = {
   "self-care": "self-care",
   cbt: "cbt-open-record",
   "module-cbt": "cbt-open-record",
-  "module-act": "act-values",
+  "module-act": "act-drop-anchor",
 };
 
 export function resolveInitialWidgetIds(planItems: { toolId: string; order: number }[]): string[] {

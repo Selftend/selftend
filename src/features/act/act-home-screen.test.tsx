@@ -1,4 +1,6 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
+
+import { router } from "expo-router";
 
 import ActHomeScreen from "./act-home-screen";
 import { useDefusionLogs } from "@/src/features/act/queries";
@@ -89,22 +91,43 @@ describe("ActHomeScreen", () => {
       abandonProgram: jest.fn(),
       advancePhase: jest.fn(),
       dismissProgramPrompt: jest.fn(),
+      dismissGraduation: jest.fn(),
       promptDismissedAt: null,
+      graduationDismissedAt: null,
       startProgram: jest.fn(),
       showProgramPrompt: jest.fn(),
       replayProgram: jest.fn(),
     } as unknown as ReturnType<typeof useActProgram>);
   });
 
-  it("renders 6 ACT principles in the tile grid", () => {
+  it("renders the four ACT pillars with their tools", () => {
     renderWithProviders(<ActHomeScreen />);
 
+    // Pillar headings (reused from program.phases copy)
+    expect(screen.getByText("Build a foundation")).toBeTruthy();
+    expect(screen.getByText("Be present")).toBeTruthy();
+    expect(screen.getByText("Open up")).toBeTruthy();
+    expect(screen.getByText("Do what matters")).toBeTruthy();
+
+    // Foundation tools, surfaced on the home screen for the first time
+    expect(screen.getByText("Choice point")).toBeTruthy();
+    expect(screen.getByText("Drop anchor")).toBeTruthy();
+
+    // The six principle tools, now grouped under their pillars
     expect(screen.getByText("Defusion")).toBeTruthy();
     expect(screen.getByText("Acceptance")).toBeTruthy();
     expect(screen.getByText("Connection")).toBeTruthy();
     expect(screen.getByText("Observing Self")).toBeTruthy();
     expect(screen.getByText("Values")).toBeTruthy();
     expect(screen.getByText("Committed Action")).toBeTruthy();
+  });
+
+  it("navigates to the Choice Point tool from the Foundation pillar", () => {
+    renderWithProviders(<ActHomeScreen />);
+
+    fireEvent.press(screen.getByText("Choice point"));
+
+    expect(router.push as jest.Mock).toHaveBeenCalledWith("/modules/act/choice-point");
   });
 
   it("renders quick actions for defuse and log mood", () => {
@@ -124,5 +147,28 @@ describe("ActHomeScreen", () => {
     renderWithProviders(<ActHomeScreen />);
 
     expect(screen.getByText(/No defusion logs yet/)).toBeTruthy();
+  });
+
+  it("collapses the graduation hero when graduationDismissedAt is set", () => {
+    mockUseActProgram.mockReturnValue({
+      program: { ...defaultActProgram, status: "graduated" },
+      isLoading: false,
+      isUpdating: false,
+      abandonProgram: jest.fn(),
+      advancePhase: jest.fn(),
+      dismissProgramPrompt: jest.fn(),
+      dismissGraduation: jest.fn(),
+      promptDismissedAt: null,
+      graduationDismissedAt: "2026-05-20T00:00:00.000Z",
+      startProgram: jest.fn(),
+      showProgramPrompt: jest.fn(),
+      replayProgram: jest.fn(),
+    } as unknown as ReturnType<typeof useActProgram>);
+
+    renderWithProviders(<ActHomeScreen />);
+
+    // Collapsed: the full graduation hero title is hidden; the replay row shows.
+    expect(screen.queryByText("You finished the ACT program")).toBeNull();
+    expect(screen.getByText("Replay the ACT program")).toBeTruthy();
   });
 });

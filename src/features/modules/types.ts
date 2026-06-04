@@ -42,6 +42,7 @@ export interface UserPreferences {
   actProgramPromptDismissedAt: string | null;
   actProgramPhaseIndex: number;
   actProgramPhaseStartedAt: string | null;
+  actGraduationDismissedAt: string | null;
   meditationOnboardingCompleted: boolean;
   meditationInfoCompleted: boolean;
   gratitudeOnboardingCompleted: boolean;
@@ -100,6 +101,7 @@ export const defaultUserPreferences: UserPreferences = {
   actProgramPromptDismissedAt: null,
   actProgramPhaseIndex: 0,
   actProgramPhaseStartedAt: null,
+  actGraduationDismissedAt: null,
   meditationOnboardingCompleted: false,
   meditationInfoCompleted: false,
   gratitudeOnboardingCompleted: false,

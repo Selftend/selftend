@@ -85,7 +85,7 @@ export function deriveActProgram(input: DeriveActProgramInput): ActProgramView {
   const summaryStats: ActProgramSummaryStats = {
     choicePoints: countSince(input.choicePoints),
     defusionLogs: countSince(input.defusionLogs),
-    expansionLogs: countSince(input.expansionLogs),
+    expansionLogs: countSince(input.expansionLogs) + countSince(input.urgeSurfLogs),
     committedActions: countSince(input.committedActions),
   };
 

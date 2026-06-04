@@ -386,8 +386,16 @@ export function useSaveActionStep(userId: string | null) {
 export function useToggleActionStep(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ stepId, completed }: { stepId: string; completed: boolean; actionId: string }) =>
-      toggleActionStep(userId!, stepId, completed),
+    mutationFn: ({
+      stepId,
+      completed,
+      completedAt,
+    }: {
+      stepId: string;
+      completed: boolean;
+      actionId: string;
+      completedAt?: string;
+    }) => toggleActionStep(userId!, stepId, completed, completedAt),
     onSuccess: async (data) => {
       if (!userId) return;
       await queryClient.invalidateQueries({

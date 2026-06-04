@@ -25,7 +25,9 @@ interface UseActProgramResult {
   abandonProgram: () => void;
   replayProgram: () => void;
   advancePhase: () => void;
+  dismissGraduation: () => void;
   promptDismissedAt: string | null;
+  graduationDismissedAt: string | null;
   isUpdating: boolean;
 }
 
@@ -107,6 +109,7 @@ export function useActProgram(userId: string | null): UseActProgramResult {
           actOnboardingCompleted: true,
           actProgramPhaseIndex: 0,
           actProgramPhaseStartedAt: new Date().toISOString(),
+          actGraduationDismissedAt: null,
         }),
       )
       .catch(() => undefined);
@@ -153,7 +156,17 @@ export function useActProgram(userId: string | null): UseActProgramResult {
           actProgramPromptDismissedAt: null,
           actProgramPhaseIndex: 0,
           actProgramPhaseStartedAt: new Date().toISOString(),
+          actGraduationDismissedAt: null,
         }),
+      )
+      .catch(() => undefined);
+  };
+
+  const dismissGraduation = () => {
+    if (!preferences) return;
+    void updatePreferences
+      .mutateAsync(
+        mergeUserPreferences(preferences, { actGraduationDismissedAt: new Date().toISOString() }),
       )
       .catch(() => undefined);
   };
@@ -167,7 +180,9 @@ export function useActProgram(userId: string | null): UseActProgramResult {
     abandonProgram,
     replayProgram,
     advancePhase,
+    dismissGraduation,
     promptDismissedAt: preferences?.actProgramPromptDismissedAt ?? null,
+    graduationDismissedAt: preferences?.actGraduationDismissedAt ?? null,
     isUpdating: updatePreferences.isPending,
   };
 }

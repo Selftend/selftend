@@ -12,20 +12,18 @@
     "title": "ACT",
     "fullTitle": "Acceptance & Commitment Therapy",
     "subtitle": "Inspired by The Happiness Trap by Russ Harris",
-    "description": "Six skills that build psychological flexibility - the ability to act on your values even when difficult thoughts and feelings are present.",
+    "description": "Skills that build psychological flexibility - the ability to act on your values even when difficult thoughts and feelings are present.",
     "onboardingHint": "Learn about ACT",
     "wizardHint": "Personalise ACT",
     "settingsHint": "Adjust settings",
-    "principlesTitle": "The six principles",
-    "principlesDescription": "Mindfulness skills, values, and committed action - working together.",
+    "frameworkTitle": "The framework",
+    "frameworkDescription": "Four pillars that build psychological flexibility.",
     "quickActionsTitle": "Quick actions",
     "defuseThought": "Defuse a thought",
     "logMood": "Log mood",
     "recentDefusionTitle": "Recent defusion logs",
     "noDefusionLogs": "No defusion logs yet. Tap \"Defuse a thought\" whenever a sticky thought shows up.",
-    "viewAllDefusion": "All logs",
-    "comingSoon": "Coming in a later phase",
-    "availableNow": "Available now"
+    "viewAllDefusion": "All logs"
   },
   "principles": {
     "defusion": {
@@ -86,18 +84,10 @@
       "toward": "Toward moves: what you'd do as the person you want to be."
     },
     "model": {
-      "title": "The ACT Model",
-      "subtitle": "Three moves. One formula.",
-      "accept": "A - Accept thoughts and feelings, and be present",
-      "connect": "C - Connect with your values",
-      "take": "T - Take effective action",
+      "title": "The three pillars",
+      "subtitle": "Three skills for psychological flexibility.",
       "formula": "Mindfulness + Values + Action = Psychological Flexibility",
-      "formulaBody": "Psychological flexibility is the ability to act on what matters even when difficult thoughts and feelings are present. That is the goal.",
-      "mindfulnessGroup": "Mindfulness skills",
-      "mindfulnessDesc": "Defusion and Acceptance unhook you from thoughts and make room for feelings.",
-      "valuesGroup": "Values and action",
-      "valuesDesc": "Connecting with what matters most provides direction. Committed action puts it into practice.",
-      "continue": "Got it"
+      "formulaBody": "Psychological flexibility is the ability to act on what matters even when difficult thoughts and feelings are present. That is the goal."
     },
     "concerns": {
       "title": "What brings you here?",
@@ -485,6 +475,28 @@
       "savedToast": "Ratings saved"
     }
   },
+  "pillars": {
+    "foundation": {
+      "letter": "1",
+      "choicePoint": {
+        "name": "Choice point",
+        "desc": "Map what hooks you and your toward and away moves."
+      },
+      "dropAnchor": {
+        "name": "Drop anchor",
+        "desc": "Steady yourself with ACE when you're pulled off course."
+      }
+    },
+    "bePresent": {
+      "letter": "2"
+    },
+    "openUp": {
+      "letter": "3"
+    },
+    "doWhatMatters": {
+      "letter": "4"
+    }
+  },
   "program": {
     "startTitle": "Start the ACT program",
     "startDescription": "A guided path through four phases - notice your choice points, be present, open up, and do what matters. Go at your own pace.",
@@ -511,6 +523,7 @@
     "replay": "Replay the ACT program",
     "graduationTitle": "You finished the ACT program",
     "graduationBody": "You built skills to be present, open up, and do what matters. Keep using them.",
+    "graduationBodyEmpty": "You reached the end at your own pace. Your tools are here whenever you need them.",
     "graduationDismiss": "Done",
     "statChoicePoints": "{{count}} choice point mapped",
     "statChoicePoints_other": "{{count}} choice points mapped",

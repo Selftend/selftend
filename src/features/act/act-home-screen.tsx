@@ -8,7 +8,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
-import { HelpButton } from "@/src/components/app/help-button";
+import { PillarCard } from "@/src/components/app/pillar-card";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { ActInfo } from "@/src/components/app/act-onboarding-modal";
@@ -16,40 +16,102 @@ import { ActProgramCard } from "@/src/components/app/act-program-card";
 import { ProgramGraduation } from "@/src/components/app/program-graduation";
 import { useDefusionLogs } from "@/src/features/act/queries";
 import { useActProgram } from "@/src/features/act/use-act-program";
-import type { ACTPrinciple } from "@/src/features/act/types";
-import type { HelpKey } from "@/src/features/help/help-content";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { cn } from "@/lib/utils";
 
-interface PrincipleCard {
-  key: ACTPrinciple;
+interface PillarTool {
+  key: string;
+  route: Href;
   icon: MaterialIconName;
-  route: Href | null;
-  helpKey: HelpKey;
+  nameKey: string;
+  descKey: string;
 }
 
-const PRINCIPLE_CARDS: PrincipleCard[] = [
-  { key: "defusion", icon: "filter-drama", route: "/modules/act/defusion", helpKey: "defusion" },
-  { key: "expansion", icon: "open-in-full", route: "/modules/act/expansion", helpKey: "expansion" },
+interface PillarDef {
+  key: "foundation" | "bePresent" | "openUp" | "doWhatMatters";
+  tools: PillarTool[];
+}
+
+// Pillar cards read their copy (title/sub/description) from the canonical
+// `program.phases` i18n block — the four pillars are the four program phases, so
+// there is a single source. `pillars` holds only the badge letter plus the
+// Foundation tool labels (choicePoint/dropAnchor).
+const PILLARS: PillarDef[] = [
   {
-    key: "connection",
-    icon: "radio-button-checked",
-    route: "/modules/act/connection",
-    helpKey: "connection",
+    key: "foundation",
+    tools: [
+      {
+        key: "choicePoint",
+        route: "/modules/act/choice-point",
+        icon: "alt-route",
+        nameKey: "pillars.foundation.choicePoint.name",
+        descKey: "pillars.foundation.choicePoint.desc",
+      },
+      {
+        key: "dropAnchor",
+        route: "/modules/act/connection/drop-anchor",
+        icon: "anchor",
+        nameKey: "pillars.foundation.dropAnchor.name",
+        descKey: "pillars.foundation.dropAnchor.desc",
+      },
+    ],
   },
   {
-    key: "observingSelf",
-    icon: "visibility",
-    route: "/modules/act/observing-self",
-    helpKey: "observingSelf",
+    key: "bePresent",
+    tools: [
+      {
+        key: "connection",
+        route: "/modules/act/connection",
+        icon: "radio-button-checked",
+        nameKey: "principles.connection.name",
+        descKey: "principles.connection.desc",
+      },
+      {
+        key: "observingSelf",
+        route: "/modules/act/observing-self",
+        icon: "visibility",
+        nameKey: "principles.observingSelf.name",
+        descKey: "principles.observingSelf.desc",
+      },
+    ],
   },
-  { key: "values", icon: "explore", route: "/modules/act/values", helpKey: "values" },
   {
-    key: "committedAction",
-    icon: "directions-run",
-    route: "/modules/act/committed-action",
-    helpKey: "committedAction",
+    key: "openUp",
+    tools: [
+      {
+        key: "defusion",
+        route: "/modules/act/defusion",
+        icon: "filter-drama",
+        nameKey: "principles.defusion.name",
+        descKey: "principles.defusion.desc",
+      },
+      {
+        key: "expansion",
+        route: "/modules/act/expansion",
+        icon: "open-in-full",
+        nameKey: "principles.expansion.name",
+        descKey: "principles.expansion.desc",
+      },
+    ],
+  },
+  {
+    key: "doWhatMatters",
+    tools: [
+      {
+        key: "values",
+        route: "/modules/act/values",
+        icon: "explore",
+        nameKey: "principles.values.name",
+        descKey: "principles.values.desc",
+      },
+      {
+        key: "committedAction",
+        route: "/modules/act/committed-action",
+        icon: "directions-run",
+        nameKey: "principles.committedAction.name",
+        descKey: "principles.committedAction.desc",
+      },
+    ],
   },
 ];
 
@@ -68,12 +130,13 @@ export default function ActHomeScreen() {
     abandonProgram,
     replayProgram,
     advancePhase,
+    dismissGraduation,
     promptDismissedAt,
+    graduationDismissedAt,
     isUpdating,
   } = useActProgram(user?.id ?? null);
 
   const [forceInfo, setForceInfo] = useState(false);
-  const [graduationDismissed, setGraduationDismissed] = useState(false);
   const [abandonConfirmVisible, setAbandonConfirmVisible] = useState(false);
 
   return (
@@ -135,8 +198,8 @@ export default function ActHomeScreen() {
                   t("program.statExpansion", { count: program.summaryStats.expansionLogs }),
                   t("program.statActions", { count: program.summaryStats.committedActions }),
                 ]}
-                dismissed={graduationDismissed}
-                onDismiss={() => setGraduationDismissed(true)}
+                dismissed={graduationDismissedAt != null}
+                onDismiss={dismissGraduation}
                 onReplay={replayProgram}
               />
             ) : program.status === "not_started" && promptDismissedAt ? null : (
@@ -175,21 +238,40 @@ export default function ActHomeScreen() {
               </View>
             </View>
 
-            {/* Six principles */}
-            <View className="gap-3">
+            {/* Framework */}
+            <View className="gap-6">
               <View>
                 <Text variant="h2" className="text-xl font-bold tracking-tight">
-                  {t("home.principlesTitle")}
+                  {t("home.frameworkTitle")}
                 </Text>
                 <Text variant="muted" className="mt-1 text-sm leading-snug max-w-[60ch]">
-                  {t("home.principlesDescription")}
+                  {t("home.frameworkDescription")}
                 </Text>
               </View>
-              <View className="flex-row flex-wrap gap-2.5">
-                {PRINCIPLE_CARDS.map((card) => (
-                  <PrincipleTile key={card.key} card={card} />
-                ))}
-              </View>
+              {PILLARS.map((pillar) => (
+                <PillarCard
+                  key={pillar.key}
+                  tint="act"
+                  letter={t(`pillars.${pillar.key}.letter`)}
+                  title={t(`program.phases.${pillar.key}.title`)}
+                  kicker={t(`program.phases.${pillar.key}.sub`)}
+                  description={t(`program.phases.${pillar.key}.description`)}
+                  onToolPress={(toolKey) => {
+                    const tool = pillar.tools.find((x) => x.key === toolKey);
+                    if (tool?.route) router.push(tool.route);
+                  }}
+                >
+                  {pillar.tools.map((tool) => (
+                    <PillarCard.Tool
+                      key={tool.key}
+                      toolKey={tool.key}
+                      icon={tool.icon}
+                      name={t(tool.nameKey)}
+                      desc={t(tool.descKey)}
+                    />
+                  ))}
+                </PillarCard>
+              ))}
             </View>
 
             {/* Recent defusion logs */}
@@ -235,63 +317,5 @@ export default function ActHomeScreen() {
         </ScrollView>
       </SafeAreaView>
     </>
-  );
-}
-
-function PrincipleTile({ card }: { card: PrincipleCard }) {
-  const { t } = useTranslation("act");
-  const available = card.route !== null;
-
-  const tileContent = (
-    <View
-      className={cn(
-        "gap-2 rounded-xl border border-border bg-card p-4",
-        !available && "opacity-60",
-      )}
-    >
-      <View
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-        className={cn(
-          "h-8 w-8 items-center justify-center rounded-lg",
-          available ? "bg-act/10" : "bg-muted",
-        )}
-      >
-        <Icon
-          name={card.icon}
-          size={18}
-          className={cn(available ? "text-act" : "text-muted-foreground")}
-        />
-      </View>
-      <Text className="text-sm font-semibold">{t(`principles.${card.key}.name`)}</Text>
-      <Text variant="muted" className="text-xs leading-snug">
-        {t(`principles.${card.key}.desc`)}
-      </Text>
-      {!available ? (
-        <Text className="text-xs text-muted-foreground">{t("home.comingSoon")}</Text>
-      ) : null}
-    </View>
-  );
-
-  return (
-    <View className="relative basis-[calc(50%-5px)]">
-      {available ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(`principles.${card.key}.name`)}
-          accessibilityHint={t(`principles.${card.key}.desc`)}
-          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={() => router.push(card.route!)}
-          className="active:opacity-80"
-        >
-          {tileContent}
-        </Pressable>
-      ) : (
-        tileContent
-      )}
-      <View className="absolute right-1 top-1">
-        <HelpButton helpKey={card.helpKey} size={18} />
-      </View>
-    </View>
   );
 }

@@ -47,10 +47,25 @@ describe("widget registry", () => {
     expect(WIDGET_META["act-defusion"].toolKey).toBe("act");
   });
 
-  it("registers act-programme as an available widget", () => {
-    expect(isImplemented("act-programme")).toBe(true);
-    expect(WIDGET_META["act-programme"].status).toBe("available");
-    expect(WIDGET_META["act-programme"].toolKey).toBe("act");
+  it("no longer registers the removed act-values / act-programme widgets", () => {
+    for (const id of ["act-values", "act-programme"]) {
+      expect(isImplemented(id)).toBe(false);
+      expect(WIDGET_META[id]).toBeUndefined();
+    }
+  });
+
+  it("registers act-drop-anchor as a default ACT widget", () => {
+    expect(isImplemented("act-drop-anchor")).toBe(true);
+    expect(WIDGET_META["act-drop-anchor"].status).toBe("default");
+    expect(WIDGET_META["act-drop-anchor"].toolKey).toBe("act");
+  });
+
+  it("registers act-observing-self and act-choice-point as available ACT widgets", () => {
+    for (const id of ["act-observing-self", "act-choice-point"]) {
+      expect(isImplemented(id)).toBe(true);
+      expect(WIDGET_META[id].status).toBe("available");
+      expect(WIDGET_META[id].toolKey).toBe("act");
+    }
   });
 
   it("registers act-acceptance-prompt as an available widget", () => {

@@ -67,6 +67,7 @@ function StringArrayEditor({
       <View className="flex-row items-center gap-2 rounded-xl border border-border bg-card px-3">
         <TextInput
           className="flex-1 py-3 text-sm text-foreground"
+          accessibilityLabel={label}
           placeholderTextColor="gray"
           value={inputValue}
           onChangeText={setInputValue}

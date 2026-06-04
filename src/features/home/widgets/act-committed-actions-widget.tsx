@@ -5,11 +5,13 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
+import { WidgetCardHeader } from "@/src/features/home/widgets/widget-card-header";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useAllActionSteps, useCommittedActions } from "@/src/features/act/queries";
 
 export function ActCommittedActionsWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
+  const { t: ta } = useTranslation("act");
   const { data: actions } = useCommittedActions(userId, "active");
   const { data: steps } = useAllActionSteps(userId);
 
@@ -22,14 +24,12 @@ export function ActCommittedActionsWidget({ userId }: { userId: string }) {
   return (
     <Card className="flex-1">
       <CardContent className="gap-3 pt-4 pb-4">
-        <View className="flex-row items-center gap-2">
-          <View className="size-8 items-center justify-center rounded-lg bg-act/10">
-            <Icon name="checklist" className="size-5 text-act" />
-          </View>
-          <Text className="text-sm font-semibold">
-            {t("home.widgets.actCommittedActions.title")}
-          </Text>
-        </View>
+        <WidgetCardHeader
+          icon="checklist"
+          title={t("home.widgets.actCommittedActions.title")}
+          moduleLabel={ta("module.label")}
+          tint="act"
+        />
         {hasActions ? (
           <View className="gap-2">
             {active.map((a) => {

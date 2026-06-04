@@ -212,52 +212,71 @@ describe("settings repository", () => {
     );
   });
 
-  it("falls back without newer optional columns when PostgREST has stale schema cache", async () => {
-    const staleSchemaError = {
+  it("throws when the error is not a missing-column error (no silent retry)", async () => {
+    const otherError = { code: "23505", message: "duplicate key value violates unique constraint" };
+    const single = jest.fn().mockResolvedValue({ data: null, error: otherError });
+    const upsert = jest.fn(() => ({ select: jest.fn(() => ({ single })) }));
+    const from = jest.fn(() => ({ upsert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(updateUserPreferences("user-1", { ...defaultUserPreferences })).rejects.toBe(
+      otherError,
+    );
+    // A non-missing-column error must NOT trigger a column-strip retry.
+    expect(upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("strips multiple missing columns across retries until the write succeeds", async () => {
+    const missing = (col: string) => ({
       code: "PGRST204",
-      message: "Could not find the 'shown_button_tours' column of 'user_preferences'",
-    };
-    const single = jest.fn().mockResolvedValue({ data: null, error: staleSchemaError });
-    const select = jest.fn(() => ({ single }));
-    const upsert = jest.fn().mockImplementation((payload: unknown) => {
-      if ((payload as Record<string, unknown>).shown_button_tours) {
-        return { select };
-      }
-      return Promise.resolve({ error: null });
+      message: `Could not find the '${col}' column of 'user_preferences' in the schema cache`,
+    });
+    const upsert = jest.fn().mockImplementation((payload: Record<string, unknown>) => {
+      let error: unknown = null;
+      if ("act_graduation_dismissed_at" in payload) error = missing("act_graduation_dismissed_at");
+      else if ("breathing_cycles" in payload) error = missing("breathing_cycles");
+      const single = jest
+        .fn()
+        .mockResolvedValue(
+          error ? { data: null, error } : { data: { user_id: "user-1", ...payload }, error: null },
+        );
+      return { select: jest.fn(() => ({ single })) };
     });
     const from = jest.fn(() => ({ upsert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
     await expect(
-      updateUserPreferences("user-1", {
-        ...defaultUserPreferences,
-        shownButtonTours: ["tune"],
-      }),
-    ).resolves.toMatchObject({ shownButtonTours: ["tune"] });
+      updateUserPreferences("user-1", { ...defaultUserPreferences, cbtProgramStartedAt: null }),
+    ).resolves.toBeDefined();
 
-    const fallbackPayload = upsert.mock.calls.at(-1)?.[0] as Record<string, unknown>;
-    expect(fallbackPayload).not.toHaveProperty("act_onboarding_completed");
-    expect(fallbackPayload).not.toHaveProperty("cbt_program_completed_at");
-    expect(fallbackPayload).not.toHaveProperty("cbt_program_phase_index");
-    expect(fallbackPayload).not.toHaveProperty("cbt_program_phase_started_at");
-    expect(fallbackPayload).not.toHaveProperty("cbt_program_prompt_dismissed_at");
-    expect(fallbackPayload).not.toHaveProperty("cbt_program_started_at");
-    expect(fallbackPayload).not.toHaveProperty("shown_button_tours");
+    // full → strip act_graduation_dismissed_at → strip breathing_cycles → success
+    expect(upsert).toHaveBeenCalledTimes(3);
+    const retryPayload = upsert.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(retryPayload).not.toHaveProperty("act_graduation_dismissed_at");
+    expect(retryPayload).not.toHaveProperty("breathing_cycles");
+    // The program-state columns the caller is changing are PRESERVED.
+    expect(retryPayload).toHaveProperty("cbt_program_started_at");
     expect(upsert.mock.calls.at(-1)?.[1]).toEqual({ onConflict: "user_id" });
   });
 
-  it("treats CBT program columns as optional while schema caches catch up", async () => {
-    const staleSchemaError = {
+  it("strips ONLY the missing column and preserves the program-state write (abandon regression)", async () => {
+    // Reproduces the abandon bug: a DB missing the newly-added act_graduation_dismissed_at
+    // must not cause the abandon's act_program_* changes to be silently dropped.
+    const missingError = {
       code: "PGRST204",
-      message: "Could not find the 'cbt_program_completed_at' column of 'user_preferences'",
+      message:
+        "Could not find the 'act_graduation_dismissed_at' column of 'user_preferences' in the schema cache",
     };
-    const single = jest.fn().mockResolvedValue({ data: null, error: staleSchemaError });
-    const select = jest.fn(() => ({ single }));
-    const upsert = jest.fn().mockImplementation((payload: unknown) => {
-      if ("cbt_program_completed_at" in (payload as Record<string, unknown>)) {
-        return { select };
-      }
-      return Promise.resolve({ error: null });
+    const upsert = jest.fn().mockImplementation((payload: Record<string, unknown>) => {
+      const hasMissing = "act_graduation_dismissed_at" in payload;
+      const single = jest
+        .fn()
+        .mockResolvedValue(
+          hasMissing
+            ? { data: null, error: missingError }
+            : { data: { user_id: "user-1", ...payload }, error: null },
+        );
+      return { select: jest.fn(() => ({ single })) };
     });
     const from = jest.fn(() => ({ upsert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -265,46 +284,19 @@ describe("settings repository", () => {
     await expect(
       updateUserPreferences("user-1", {
         ...defaultUserPreferences,
-        cbtProgramStartedAt: "2026-05-22T10:00:00.000Z",
+        actProgramStartedAt: null,
+        actProgramCompletedAt: null,
+        actProgramPromptDismissedAt: "2026-06-04T00:00:00.000Z",
       }),
-    ).resolves.toMatchObject({ cbtProgramStartedAt: "2026-05-22T10:00:00.000Z" });
+    ).resolves.toBeDefined();
 
-    const fallbackPayload = upsert.mock.calls.at(-1)?.[0] as Record<string, unknown>;
-    expect(fallbackPayload).not.toHaveProperty("cbt_program_completed_at");
-    expect(fallbackPayload).not.toHaveProperty("cbt_program_phase_index");
-    expect(fallbackPayload).not.toHaveProperty("cbt_program_phase_started_at");
-    expect(fallbackPayload).not.toHaveProperty("cbt_program_prompt_dismissed_at");
-    expect(fallbackPayload).not.toHaveProperty("cbt_program_started_at");
-    expect(upsert.mock.calls.at(-1)?.[1]).toEqual({ onConflict: "user_id" });
-  });
-
-  it("treats ACT program columns as optional while schema caches catch up", async () => {
-    const staleSchemaError = {
-      code: "PGRST204",
-      message: "Could not find the 'act_program_completed_at' column of 'user_preferences'",
-    };
-    const single = jest.fn().mockResolvedValue({ data: null, error: staleSchemaError });
-    const select = jest.fn(() => ({ single }));
-    const upsert = jest.fn().mockImplementation((payload: unknown) => {
-      if ("act_program_completed_at" in (payload as Record<string, unknown>)) {
-        return { select };
-      }
-      return Promise.resolve({ error: null });
-    });
-    const from = jest.fn(() => ({ upsert }));
-    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
-
-    await expect(
-      updateUserPreferences("user-1", {
-        ...defaultUserPreferences,
-        actProgramStartedAt: "2026-05-23T10:00:00.000Z",
-      }),
-    ).resolves.toMatchObject({ actProgramStartedAt: "2026-05-23T10:00:00.000Z" });
-
-    const fallbackPayload = upsert.mock.calls.at(-1)?.[0] as Record<string, unknown>;
-    expect(fallbackPayload).not.toHaveProperty("act_program_completed_at");
-    expect(fallbackPayload).not.toHaveProperty("act_program_prompt_dismissed_at");
-    expect(fallbackPayload).not.toHaveProperty("act_program_started_at");
+    const retryPayload = upsert.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    // Only the genuinely-missing column is dropped...
+    expect(retryPayload).not.toHaveProperty("act_graduation_dismissed_at");
+    // ...the abandon's program-state columns survive (the bug was that they didn't).
+    expect(retryPayload).toHaveProperty("act_program_started_at");
+    expect(retryPayload).toHaveProperty("act_program_completed_at");
+    expect(retryPayload.act_program_prompt_dismissed_at).toBe("2026-06-04T00:00:00.000Z");
     expect(upsert.mock.calls.at(-1)?.[1]).toEqual({ onConflict: "user_id" });
   });
 

@@ -112,9 +112,16 @@ export function ActInfo({
           <Text variant="muted" className="text-center">
             {t("onboarding.model.subtitle")}
           </Text>
-          <Text className="mt-1 font-semibold">{t("onboarding.model.accept")}</Text>
-          <Text className="font-semibold">{t("onboarding.model.connect")}</Text>
-          <Text className="font-semibold">{t("onboarding.model.take")}</Text>
+          <View className="mt-1 gap-2 self-stretch">
+            {(["bePresent", "openUp", "doWhatMatters"] as const).map((pillar) => (
+              <View key={pillar} className="gap-0.5">
+                <Text className="font-semibold">{t(`program.phases.${pillar}.title`)}</Text>
+                <Text variant="muted" className="text-sm">
+                  {t(`program.phases.${pillar}.sub`)}
+                </Text>
+              </View>
+            ))}
+          </View>
         </CardContent>
       </Card>
 

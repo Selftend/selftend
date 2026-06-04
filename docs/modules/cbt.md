@@ -15,7 +15,7 @@ The module should be:
 ## Current CBT implementation
 
 - CBT dashboard with quick actions, strategy links, recovery slogan, and read-only insights
-- one-page CBT onboarding, tracked in account preferences
+- one-page CBT onboarding, tracked in account preferences (the concern→strategy personalization scaffolding — `cbtWizardCompleted`, `selected_concerns`, `active_strategies` — is intentionally retained for a deferred personalization step, not yet surfaced in a wizard; mirrors the deferred ACT wizard)
 - short distortion learn surface
 - guided thought record flow
 - full thought record prompts for evidence, before/after intensity, and outcome notes

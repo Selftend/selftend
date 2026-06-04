@@ -17,10 +17,11 @@ import { CbtBeliefsWidget } from "@/src/features/home/widgets/cbt-beliefs-widget
 import { CbtActivitiesWidget } from "@/src/features/home/widgets/cbt-activities-widget";
 import { CbtExposureWidget } from "@/src/features/home/widgets/cbt-exposure-widget";
 import { CbtGoalsWidget } from "@/src/features/home/widgets/cbt-goals-widget";
-import { ActValuesWidget } from "@/src/features/home/widgets/act-values-widget";
+import { ActDropAnchorWidget } from "@/src/features/home/widgets/act-drop-anchor-widget";
+import { ActObservingSelfWidget } from "@/src/features/home/widgets/act-observing-self-widget";
+import { ActChoicePointWidget } from "@/src/features/home/widgets/act-choice-point-widget";
 import { ActCommittedActionsWidget } from "@/src/features/home/widgets/act-committed-actions-widget";
 import { ActDefusionWidget } from "@/src/features/home/widgets/act-defusion-widget";
-import { ActProgrammeWidget } from "@/src/features/home/widgets/act-programme-widget";
 import { ActAcceptancePromptWidget } from "@/src/features/home/widgets/act-acceptance-prompt-widget";
 import { JournalWeekWidget } from "@/src/features/home/widgets/journal-week-widget";
 import { GroundingLogWidget } from "@/src/features/home/widgets/grounding-log-widget";
@@ -47,7 +48,9 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "habits-today": HabitsWidget,
   "self-care": SelfCareWidget,
   "cbt-open-record": CbtOpenRecordWidget,
-  "act-values": ActValuesWidget,
+  "act-drop-anchor": ActDropAnchorWidget,
+  "act-observing-self": ActObservingSelfWidget,
+  "act-choice-point": ActChoicePointWidget,
   "sleep-latest": SleepWidget,
   "cbt-distortion-guide": CbtDistortionGuideWidget,
   "cbt-programme": CbtProgrammeWidget,
@@ -58,7 +61,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "cbt-goals": CbtGoalsWidget,
   "act-committed-actions": ActCommittedActionsWidget,
   "act-defusion": ActDefusionWidget,
-  "act-programme": ActProgrammeWidget,
   "act-acceptance-prompt": ActAcceptancePromptWidget,
   "journal-week": JournalWeekWidget,
   "grounding-log": GroundingLogWidget,
@@ -137,14 +139,32 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     tint: "primary",
     status: "default",
   },
-  "act-values": {
-    id: "act-values",
+  "act-drop-anchor": {
+    id: "act-drop-anchor",
     toolKey: "act",
-    icon: "explore",
-    titleKey: "home.widgets.actValues.title",
-    descriptionKey: "home.widgets.actValues.metaDesc",
+    icon: "anchor",
+    titleKey: "home.widgets.actDropAnchor.title",
+    descriptionKey: "home.widgets.actDropAnchor.metaDesc",
     tint: "act",
     status: "default",
+  },
+  "act-observing-self": {
+    id: "act-observing-self",
+    toolKey: "act",
+    icon: "visibility",
+    titleKey: "home.widgets.actObservingSelf.title",
+    descriptionKey: "home.widgets.actObservingSelf.metaDesc",
+    tint: "act",
+    status: "available",
+  },
+  "act-choice-point": {
+    id: "act-choice-point",
+    toolKey: "act",
+    icon: "alt-route",
+    titleKey: "home.widgets.actChoicePoint.title",
+    descriptionKey: "home.widgets.actChoicePoint.metaDesc",
+    tint: "act",
+    status: "available",
   },
   "sleep-latest": {
     id: "sleep-latest",
@@ -233,15 +253,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     icon: "filter-drama",
     titleKey: "home.widgets.actDefusion.title",
     descriptionKey: "home.widgets.actDefusion.metaDesc",
-    tint: "act",
-    status: "available",
-  },
-  "act-programme": {
-    id: "act-programme",
-    toolKey: "act",
-    icon: "route",
-    titleKey: "home.widgets.actProgramme.title",
-    descriptionKey: "home.widgets.actProgramme.metaDesc",
     tint: "act",
     status: "available",
   },

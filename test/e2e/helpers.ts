@@ -52,7 +52,14 @@ export async function signInAsViaUi(page: Page, name: SeedUserName) {
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   // After sign-in, the app routes to /(app)/(tabs). The most stable post-auth
   // signal is that the sign-in form (CardTitle "Sign in to your account") is gone.
-  await expect(page.getByText("Sign in to your account")).toBeHidden({ timeout: 15_000 });
+  // The custom message turns the otherwise-cryptic "form stayed visible" timeout
+  // into a pointer at the usual root cause: a web server under test that is not
+  // talking to local Supabase (e.g. a reused foreign :8081 dev server with a
+  // stale EXPO_PUBLIC_SUPABASE_URL), which makes every sign-in silently fail.
+  await expect(
+    page.getByText("Sign in to your account"),
+    "Sign-in did not complete (the sign-in form stayed visible). Most likely the web server under test is not pointed at local Supabase :54321 with seed users — e.g. a reused foreign :8081 dev server (E2E_REUSE_EXISTING_SERVER=1) carrying a stale EXPO_PUBLIC_SUPABASE_URL. Re-run e2e with a fresh Playwright-managed server.",
+  ).toBeHidden({ timeout: 15_000 });
 }
 
 // The cookie consent banner overlays the bottom of the screen on first load.

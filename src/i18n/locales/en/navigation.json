@@ -270,11 +270,23 @@
         "metaDesc": "Pick up your latest thought record.",
         "shortcutCta": "New thought record"
       },
-      "actValues": {
-        "title": "Your values",
-        "metaDesc": "Your top named values.",
-        "empty": "Choose your values",
-        "cta": "Choose your values"
+      "actDropAnchor": {
+        "title": "Drop anchor",
+        "metaDesc": "Steady yourself when you're hooked.",
+        "prompt": "Feeling hooked or swept up? Drop anchor - notice, breathe, and engage with the world around you.",
+        "cta": "Steady me"
+      },
+      "actObservingSelf": {
+        "title": "Observing self",
+        "metaDesc": "Step back and notice.",
+        "prompt": "Step back and watch your thoughts and feelings pass - you are the sky, not the weather.",
+        "cta": "Notice"
+      },
+      "actChoicePoint": {
+        "title": "Choice point",
+        "metaDesc": "Map what's pulling you.",
+        "prompt": "Hooked right now? Map what's pulling you and the toward move you'd rather make.",
+        "cta": "Map it"
       },
       "sleepLatest": {
         "title": "Sleep tracker",
@@ -333,14 +345,6 @@
         "tryIt": "Unhook from a sticky thought.",
         "start": "Try it",
         "again": "Practice again"
-      },
-      "actProgramme": {
-        "title": "ACT programme",
-        "metaDesc": "Your ACT programme progress.",
-        "notStarted": "Start the ACT programme.",
-        "phaseProgress": "Phase {{current}} of {{total}}",
-        "complete": "Programme complete - well done.",
-        "open": "Open programme"
       },
       "actAcceptancePrompt": {
         "title": "Make room",

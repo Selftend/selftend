@@ -431,6 +431,34 @@ describe("act repository - action steps", () => {
       completed_at: null,
     });
   });
+
+  it("toggleActionStep stamps the provided completedAt when marking done", async () => {
+    const single = jest.fn().mockResolvedValue({
+      data: {
+        id: "s1",
+        user_id: "u1",
+        action_id: "a1",
+        description: "x",
+        is_completed: true,
+        completed_at: "2026-05-10T09:00:00.000Z",
+        created_at: "2026-05-10T09:00:00.000Z",
+        updated_at: "2026-05-10T09:00:00.000Z",
+      },
+      error: null,
+    });
+    const select = jest.fn(() => ({ single }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+
+    mockRequireSupabase.mockReturnValue(buildClient({ act_action_steps: { update } }));
+    await toggleActionStep("u1", "s1", true, "2026-05-10T09:00:00.000Z");
+    const calls = update.mock.calls as unknown as [Record<string, unknown>][];
+    expect(calls[0][0]).toMatchObject({
+      is_completed: true,
+      completed_at: "2026-05-10T09:00:00.000Z",
+    });
+  });
 });
 
 describe("act repository - choice points", () => {

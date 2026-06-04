@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
+import { WidgetCardHeader } from "@/src/features/home/widgets/widget-card-header";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useDefusionLogs } from "@/src/features/act/queries";
 
@@ -18,12 +19,12 @@ export function ActDefusionWidget({ userId }: { userId: string }) {
   return (
     <Card className="flex-1">
       <CardContent className="gap-3 pt-4 pb-4">
-        <View className="flex-row items-center gap-2">
-          <View className="size-8 items-center justify-center rounded-lg bg-act/10">
-            <Icon name="filter-drama" className="size-5 text-act" />
-          </View>
-          <Text className="text-sm font-semibold">{t("home.widgets.actDefusion.title")}</Text>
-        </View>
+        <WidgetCardHeader
+          icon="filter-drama"
+          title={t("home.widgets.actDefusion.title")}
+          moduleLabel={ta("module.label")}
+          tint="act"
+        />
         {last ? (
           <View className="gap-0.5">
             <Text variant="muted" className="text-[11px]">

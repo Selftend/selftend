@@ -50,6 +50,7 @@ interface UserPreferenceRow {
   act_program_prompt_dismissed_at: string | null;
   act_program_phase_index: number | null;
   act_program_phase_started_at: string | null;
+  act_graduation_dismissed_at: string | null;
   privacy_policy_accepted_at: string | null;
   terms_accepted_at: string | null;
   policy_version_accepted: string | null;
@@ -116,6 +117,7 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     actProgramPromptDismissedAt: row.act_program_prompt_dismissed_at ?? null,
     actProgramPhaseIndex: row.act_program_phase_index ?? 0,
     actProgramPhaseStartedAt: row.act_program_phase_started_at ?? null,
+    actGraduationDismissedAt: row.act_graduation_dismissed_at ?? null,
     privacyPolicyAcceptedAt: row.privacy_policy_accepted_at ?? null,
     termsAcceptedAt: row.terms_accepted_at ?? null,
     policyVersionAccepted: row.policy_version_accepted ?? null,
@@ -134,51 +136,18 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
   };
 }
 
-function isMissingOptionalPreferenceColumn(error: unknown) {
-  if (!error || typeof error !== "object") return false;
+// PostgREST returns PGRST204 — "Could not find the 'X' column of 'user_preferences'
+// in the schema cache" — when the request body references a column the target DB does
+// not have yet (e.g. a migration that hasn't reached this environment). Parse the
+// offending column name so the write can retry without ONLY that column, instead of
+// blindly stripping a hardcoded list and silently dropping the columns the caller is
+// actually trying to change (which made "abandon program" no-op).
+function missingPreferenceColumn(error: unknown): string | null {
+  if (!error || typeof error !== "object") return null;
   const maybeError = error as { code?: unknown; message?: unknown };
-  return (
-    maybeError.code === "PGRST204" &&
-    typeof maybeError.message === "string" &&
-    (maybeError.message.includes("act_") ||
-      maybeError.message.includes("cbt_program_") ||
-      maybeError.message.includes("cbt_graduation_dismissed_at") ||
-      maybeError.message.includes("shown_button_tours") ||
-      maybeError.message.includes("breath_") ||
-      maybeError.message.includes("ambient_") ||
-      maybeError.message.includes("last_breathing_pattern") ||
-      maybeError.message.includes("breathing_cycles"))
-  );
-}
-
-function omitOptionalPreferenceColumns<T extends Record<string, unknown>>(payload: T) {
-  const fallbackPayload: Partial<T> = { ...payload };
-
-  delete fallbackPayload.act_onboarding_completed;
-  delete fallbackPayload.act_reminders_enabled;
-  delete fallbackPayload.act_reminder_hour;
-  delete fallbackPayload.act_reminder_minute;
-  delete fallbackPayload.act_reminder_timezone;
-  delete fallbackPayload.cbt_program_started_at;
-  delete fallbackPayload.cbt_program_completed_at;
-  delete fallbackPayload.cbt_program_prompt_dismissed_at;
-  delete fallbackPayload.cbt_program_phase_index;
-  delete fallbackPayload.cbt_program_phase_started_at;
-  delete fallbackPayload.cbt_graduation_dismissed_at;
-  delete fallbackPayload.act_program_started_at;
-  delete fallbackPayload.act_program_completed_at;
-  delete fallbackPayload.act_program_prompt_dismissed_at;
-  delete fallbackPayload.act_program_phase_index;
-  delete fallbackPayload.act_program_phase_started_at;
-  delete fallbackPayload.shown_button_tours;
-  delete fallbackPayload.breath_sound_id;
-  delete fallbackPayload.ambient_sound_id;
-  delete fallbackPayload.breath_volume;
-  delete fallbackPayload.ambient_volume;
-  delete fallbackPayload.last_breathing_pattern_id;
-  delete fallbackPayload.breathing_cycles;
-
-  return fallbackPayload;
+  if (maybeError.code !== "PGRST204" || typeof maybeError.message !== "string") return null;
+  const match = maybeError.message.match(/'([a-z0-9_]+)' column/i);
+  return match ? match[1] : null;
 }
 
 export async function getUserPreferences(userId: string) {
@@ -240,6 +209,7 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     act_program_prompt_dismissed_at: preferences.actProgramPromptDismissedAt,
     act_program_phase_index: preferences.actProgramPhaseIndex,
     act_program_phase_started_at: preferences.actProgramPhaseStartedAt,
+    act_graduation_dismissed_at: preferences.actGraduationDismissedAt,
     privacy_policy_accepted_at: preferences.privacyPolicyAcceptedAt,
     terms_accepted_at: preferences.termsAcceptedAt,
     policy_version_accepted: preferences.policyVersionAccepted,
@@ -257,25 +227,29 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     breathing_cycles: preferences.breathingCycles,
   };
 
-  const { data, error } = await client
-    .from("user_preferences")
-    .upsert(payload, { onConflict: "user_id" })
-    .select("*")
-    .single();
+  // Retry while PostgREST reports a missing column, dropping ONLY the named column each
+  // pass. Degrades gracefully on an environment whose schema is behind the code (a
+  // not-yet-applied migration) without discarding the columns the caller is changing —
+  // the previous broad-strip fallback silently dropped program-state writes, so
+  // "abandon program" appeared to do nothing. Bounded: each pass removes at most one column.
+  let attempt: Record<string, unknown> = payload;
+  for (let i = 0; i <= Object.keys(payload).length; i++) {
+    const { data, error } = await client
+      .from("user_preferences")
+      .upsert(attempt, { onConflict: "user_id" })
+      .select("*")
+      .single();
 
-  if (error) {
-    if (isMissingOptionalPreferenceColumn(error)) {
-      const { error: fallbackError } = await client
-        .from("user_preferences")
-        .upsert(omitOptionalPreferenceColumns(payload), { onConflict: "user_id" });
+    if (!error) return mapPreferences(data as UserPreferenceRow);
 
-      if (!fallbackError) return preferences;
-    }
+    const missing = missingPreferenceColumn(error);
+    if (!missing || missing === "user_id" || !(missing in attempt)) throw error;
 
-    throw error;
+    const { [missing]: _omitted, ...rest } = attempt;
+    attempt = rest;
   }
 
-  return mapPreferences(data as UserPreferenceRow);
+  throw new Error("updateUserPreferences: exhausted missing-column retries");
 }
 
 export async function updateShownButtonTours(userId: string, shownButtonTours: ButtonTourKey[]) {
