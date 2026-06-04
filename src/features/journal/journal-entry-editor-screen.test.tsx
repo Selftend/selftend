@@ -8,6 +8,7 @@ import {
   useJournalEntry,
   useSaveJournalEntry,
 } from "@/src/features/journal/queries";
+import { useSelectedDate, loggedAtForSelectedDate } from "@/src/stores/selected-date-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -52,10 +53,16 @@ const mockUseJournalEntry = useJournalEntry as jest.MockedFunction<typeof useJou
 const mockUseSaveJournalEntry = useSaveJournalEntry as jest.MockedFunction<
   typeof useSaveJournalEntry
 >;
+const mockUseSelectedDate = useSelectedDate as jest.MockedFunction<typeof useSelectedDate>;
+const mockLoggedAtForSelectedDate = loggedAtForSelectedDate as jest.MockedFunction<
+  typeof loggedAtForSelectedDate
+>;
 
 describe("JournalEntryEditorScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-24", isToday: true });
+    mockLoggedAtForSelectedDate.mockReturnValue("2026-05-24T10:00:00.000Z");
     mockUseJournalEntries.mockReturnValue({ data: [] } as unknown as ReturnType<
       typeof useJournalEntries
     >);
@@ -171,5 +178,53 @@ describe("JournalEntryEditorScreen", () => {
         entryId: "j-9",
       }),
     );
+  });
+
+  it("re-derives the create-mode date when the selected day changes", async () => {
+    mockLoggedAtForSelectedDate.mockImplementation((date) => `${date}T10:00:00.000Z`);
+    mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-24", isToday: true });
+    const mutateAsync = jest.fn().mockResolvedValue({ id: "j-1" });
+    mockUseSaveJournalEntry.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useSaveJournalEntry>);
+
+    const { rerender } = renderWithProviders(
+      <JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />,
+    );
+
+    // Selected day rolls over while the (untouched) editor stays mounted.
+    mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-25", isToday: true });
+    rerender(<JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />);
+
+    fireEvent.changeText(screen.getByLabelText("Body"), "Hello world");
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith({
+        input: { title: "", body: "Hello world", createdAt: "2026-05-25T10:00:00.000Z" },
+        entryId: undefined,
+      }),
+    );
+  });
+
+  it("shows the generic save error and not the raw backend message on failure", async () => {
+    const mutateAsync = jest
+      .fn()
+      .mockRejectedValue(new Error("violates check constraint journal_entries_body_not_blank"));
+    mockUseSaveJournalEntry.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useSaveJournalEntry>);
+
+    renderWithProviders(<JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />);
+
+    fireEvent.changeText(screen.getByLabelText("Body"), "Hello world");
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() =>
+      expect(screen.getByText("Couldn't save your entry. Try again.")).toBeTruthy(),
+    );
+    expect(screen.queryByText(/journal_entries_body_not_blank/)).toBeNull();
   });
 });

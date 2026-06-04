@@ -29,7 +29,7 @@ import { useToastStore } from "@/src/stores/toast-store";
 import { formatLocalTimestamp } from "@/src/utils/date";
 
 export default function JournalDetailScreen() {
-  const { t } = useTranslation("journal");
+  const { t, i18n } = useTranslation("journal");
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const entryId = typeof id === "string" ? id : null;
@@ -74,6 +74,16 @@ export default function JournalDetailScreen() {
   const trimmedTitle = entry.title.trim();
   const heading = trimmedTitle.length > 0 ? trimmedTitle : t("detail.title");
 
+  let createdAtLabel: string;
+  try {
+    createdAtLabel = new Intl.DateTimeFormat(i18n.language, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(entry.createdAt));
+  } catch {
+    createdAtLabel = formatLocalTimestamp(entry.createdAt);
+  }
+
   const confirmDelete = async () => {
     setDeleteError("");
     try {
@@ -117,7 +127,7 @@ export default function JournalDetailScreen() {
           <Card>
             <CardHeader>
               <CardTitle>{t("detail.createdAt")}</CardTitle>
-              <CardDescription>{formatLocalTimestamp(entry.createdAt)}</CardDescription>
+              <CardDescription>{createdAtLabel}</CardDescription>
             </CardHeader>
           </Card>
         </View>

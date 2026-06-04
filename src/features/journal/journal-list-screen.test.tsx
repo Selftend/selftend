@@ -155,6 +155,38 @@ describe("JournalListScreen", () => {
     expect(screen.getAllByText("Untitled").length).toBeGreaterThan(0);
   });
 
+  it("derives the 'Last' hero stat from the most recent updatedAt, not the newest-by-date entry", () => {
+    // The list is ordered by created_at desc, but created_at is user-backdatable.
+    // The index-0 entry has the newest civil date yet an old updatedAt; a different
+    // entry was genuinely authored most recently. "Last" must reflect that activity.
+    mockUseJournalEntries.mockReturnValue({
+      data: [
+        {
+          id: "j-backdated",
+          userId: "user-1",
+          title: "Backdated forward",
+          body: "Dated yesterday.",
+          createdAt: "2026-05-27T08:00:00.000Z",
+          updatedAt: "2026-05-22T08:00:00.000Z",
+        },
+        {
+          id: "j-recent",
+          userId: "user-1",
+          title: "Just written",
+          body: "Authored moments ago.",
+          createdAt: "2026-05-10T08:00:00.000Z",
+          updatedAt: "2026-05-28T11:00:00.000Z",
+        },
+      ],
+    } as unknown as ReturnType<typeof useJournalEntries>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    // updatedAt max is today (2026-05-28); the index-0 created_at is yesterday.
+    expect(screen.getByText("Last · Today")).toBeTruthy();
+    expect(screen.queryByText("Last · Yesterday")).toBeNull();
+  });
+
   it("routes to /tools/journal/new when the CTA is pressed", () => {
     mockUseJournalEntries.mockReturnValue({
       data: [],

@@ -47,22 +47,49 @@ export async function getJournalEntry(userId: string, id: string) {
   return data ? mapJournalEntry(data as JournalEntryRow) : null;
 }
 
+function normalizeCreatedAt(createdAt: string): string {
+  const parsed = new Date(createdAt);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error("Invalid entry date");
+  }
+  // Reject implausible future timestamps (allow a day of clock skew); the entry
+  // date is user-chosen, but a future date should never pin an entry at the top.
+  if (parsed.getTime() > Date.now() + 24 * 60 * 60 * 1000) {
+    throw new Error("Entry date cannot be in the future");
+  }
+  return parsed.toISOString();
+}
+
 export async function saveJournalEntry(userId: string, input: JournalInput, entryId?: string) {
   const client = requireSupabase();
   const payload = {
     title: input.title.trim(),
     body: input.body.trim(),
-    ...(input.createdAt ? { created_at: input.createdAt } : {}),
+    ...(input.createdAt ? { created_at: normalizeCreatedAt(input.createdAt) } : {}),
   };
 
-  const query = entryId
-    ? client.from("journal_entries").update(payload).eq("user_id", userId).eq("id", entryId)
-    : client.from("journal_entries").insert({
-        ...payload,
-        user_id: userId,
-      });
+  if (entryId) {
+    const { data, error } = await client
+      .from("journal_entries")
+      .update(payload)
+      .eq("user_id", userId)
+      .eq("id", entryId)
+      .select("*")
+      .maybeSingle();
 
-  const { data, error } = await query.select("*").single();
+    if (error) throw error;
+    if (!data) throw new Error("Entry not found");
+    return mapJournalEntry(data as JournalEntryRow);
+  }
+
+  const { data, error } = await client
+    .from("journal_entries")
+    .insert({
+      ...payload,
+      user_id: userId,
+    })
+    .select("*")
+    .single();
 
   if (error) throw error;
   return mapJournalEntry(data as JournalEntryRow);

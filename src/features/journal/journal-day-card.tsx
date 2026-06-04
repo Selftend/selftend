@@ -65,7 +65,7 @@ export function JournalDayCard({ entries, selectedDate, isToday }: JournalDayCar
         ) : (
           <View className="gap-3">
             <Text variant="muted" className="text-sm">
-              {t("day.empty", { date: dayLabel })}
+              {t("day.empty", { date: isToday ? t("day.today").toLowerCase() : dayLabel })}
             </Text>
             <Button
               size="sm"

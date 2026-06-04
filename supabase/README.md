@@ -1,29 +1,56 @@
 # Supabase Notes
 
-The initial schema lives in [supabase/migrations/20260415_initial.sql](migrations/20260415_initial.sql). Later migrations add consent/deletion support, profile avatar storage, language preference sync, onboarding flags, reminder consent timestamps, browser push subscription infrastructure, and CBT strategy tables.
+The initial schema lives in [supabase/migrations/20260415_initial.sql](migrations/20260415_initial.sql). Later migrations add consent/deletion support, profile avatar storage, language preference sync, onboarding flags, reminder consent timestamps, browser push subscription infrastructure, and the per-module strategy tables (CBT, ACT, mood, journal, sleep, meditation, gratitude, habits, breathing, and the rest). Migrations apply in version order; the newest checked-in migration is the highest-numbered file in [supabase/migrations](migrations).
 
 ## Tables
 
-- `profiles`
-- `user_preferences`
-- `thought_records`
+Account + cross-cutting:
+
+- `profiles`, `user_preferences`
 - `web_push_subscriptions`
-- `goals`, `milestones`
-- `values_profile`, `activity_logs`
-- `mood_logs`
+- `feedback_submissions`
+- `widget_preferences`
+- `emotion_preferences`
+
+CBT:
+
+- `thought_records`
 - `core_beliefs`
 - `exposure_hierarchies`, `exposure_items`, `exposure_sessions`
 - `worry_entries`
-- `mindfulness_sessions`
-- `procrastination_tasks`, `task_steps`
 - `anger_logs`
-- `self_care_logs`
+- `goals`, `milestones`
+- `activity_logs`
+- `procrastination_tasks`, `task_steps`
 - `recovery_plans`, `challenge_plans`
+- `plan_items`
+
+ACT:
+
+- `act_program_state`, `act_choice_points`
+- `act_value_entries`, `act_bulls_eye_snapshots`
+- `act_defusion_logs`, `act_expansion_logs`, `act_urge_surf_logs`
+- `act_connection_logs`, `act_observing_self_sessions`
+- `act_committed_actions`, `act_action_steps`
+- `values_profile`
+
+Other tools (shared across modules):
+
+- `mood_logs`
+- `journal_entries`
+- `sleep_logs`
+- `gratitude_entries`
+- `meditation_sessions`, `meditation_program_state`, `stage_practice_notes`
+- `mindfulness_sessions`, `noticing_logs`
+- `breathing_exercises`
 - `habits`, `habit_logs`
+- `self_care_logs`
+
+The mindfulness _tool_ has been absorbed into meditation, but the `mindfulness_sessions` data layer is still shared and live; do not treat the table as dead.
 
 `profiles` stores account-level metadata only: email plus optional avatar fields. Google OAuth avatars are stored as URLs with `avatar_source = 'oauth'`; manually chosen images store a private Storage object path with `avatar_source = 'upload'`; removed photos keep `avatar_source = null` and set `avatar_updated_at` so the app does not immediately re-import the Google photo.
 
-`export_user_data()` includes account metadata, preferences, web push subscriptions, thought records, and all private CBT strategy records. `delete_user_account()` deletes owned private rows directly or through `auth.users` cascade.
+`export_user_data()` is the GDPR data export: it includes account metadata, preferences, web push subscriptions, and every private per-module record (CBT, ACT, mood, journal, sleep, meditation, gratitude, habits, breathing, plan items, widget preferences, and the rest). `delete_user_account()` deletes owned private rows directly or through `auth.users` cascade, including private avatar objects in Storage.
 
 ## Storage
 
@@ -51,13 +78,13 @@ For launch builds, also set:
 - `EXPO_PUBLIC_PRIVACY_EMAIL`
 - `EXPO_PUBLIC_SECURITY_EMAIL`
 
-`EXPO_PUBLIC_PUBLIC_APP_URL` must be set before exporting the public web build because OAuth and magic-link redirects use it as the web callback base. Missing production values can cause the app or Supabase to fall back to localhost during auth testing.
+`EXPO_PUBLIC_PUBLIC_APP_URL` must be set before exporting the public web build because OAuth and email-link (confirmation / password reset) redirects use it as the web callback base. Missing production values can cause the app or Supabase to fall back to localhost during auth testing.
 
 Never put service-role keys, database passwords, SMTP secrets, OAuth secrets, JWT secrets, or other private backend secrets in Expo public env vars.
 
 ## Local development
 
-Run a full local Supabase stack (Postgres, Auth, Storage, Studio, Inbucket) via the CLI. Migrations and `seed.sql` are applied on every reset, so test users come back deterministically.
+Run a full local Supabase stack (Postgres, Auth, Storage, Studio, Mailpit) via the CLI. Migrations and `seed.sql` are applied on every reset, so test users come back deterministically.
 
 ### Prerequisites
 
@@ -112,7 +139,7 @@ Pick the path that matches how long you need the user:
 
 ### Inspecting auth emails
 
-Local Supabase routes all auth emails (password reset, signup confirmation) to **Inbucket** at `http://localhost:54324`. Use it to grab links during password-reset testing without configuring real SMTP.
+Local Supabase routes all auth emails (password reset, signup confirmation) to **Mailpit** at `http://localhost:54324`. Use it to grab links during password-reset testing without configuring real SMTP.
 
 ### Optional: Google OAuth against the local stack
 
@@ -139,14 +166,13 @@ npm run db:start && npm run db:reset   # boot stack + seed
 npm run test:integration               # run real-DB tests
 ```
 
-Coverage:
+Coverage lives in `test/integration/*.integration.test.ts`. Highlights:
 
-- `cbt-repository.integration.test.ts` - thought_records CRUD + ordering + archived_at filter
-- `settings-repository.integration.test.ts` - user_preferences upserts, web_push_subscriptions, check constraints
-- `profile-repository.integration.test.ts` - profiles upserts + profile-pics storage round-trip
+- one `*-repository.integration.test.ts` per module (CBT, ACT, mood, journal, sleep, meditation, gratitude, habits, goals, beliefs, exposure, worry, anger, procrastination, self-care, mindfulness, plan, values, home widgets, activities, profile, settings) - CRUD, ordering, and constraint behavior against the real schema
 - `rls.integration.test.ts` - cross-user isolation across all owner-scoped tables and the storage bucket
-- `db-functions.integration.test.ts` - `export_user_data()` coverage for private app data and `delete_user_account()`
+- `db-functions.integration.test.ts` - `export_user_data()` and `delete_user_account()` coverage plus access control on the `send-web-reminders` cron RPCs
 - `auth.integration.test.ts` - sign-in success/failure, sign-up, password-reset email landing in Mailpit (`http://localhost:54324`)
+- `edge-web-reminders.integration.test.ts` - the `send-web-reminders` edge function against the local stack
 
 Tests clean up after themselves (per-test teardown) so the suite is rerunnable without `db:reset` between runs. Local anon and service-role keys are deterministic Supabase CLI defaults and are hardcoded in `test/integration/helpers.ts`.
 
@@ -163,12 +189,13 @@ npm run test:e2e -- --headed            # watch the browser
 npm run test:e2e -- --ui                # Playwright UI mode for debugging
 ```
 
-Coverage:
+Coverage lives in `test/e2e/*.e2e.test.ts` and spans:
 
-- `sign-in.e2e.test.ts` - seeded user signs in via the UI and reaches the authenticated app; wrong password shows an inline error.
-- `create-thought-record.e2e.test.ts` - alice signs in, walks the 5-step CBT wizard, and the saved record renders on detail + history.
-- `sign-out.e2e.test.ts` - bob signs out from settings and lands back on the landing screen.
-- `sign-up-onboarding.e2e.test.ts` - brand-new user signs up, completes consent + app + CBT onboarding, and saves their first record.
+- auth - `sign-in`, `sign-out`, `sign-up-onboarding`, `password-reset`
+- CBT - `create-thought-record` / `edit-delete-thought-record`, plus `cbt-activities`, `cbt-belief`, `cbt-exposure`, `cbt-goal`, `cbt-weekly-review`
+- ACT - one spec per pillar: `act-choice-point`, `act-values`, `act-defusion`, `act-expansion`, `act-connection`, `act-observing-self`, `act-committed-action`
+- tools - `log-mood` / `edit-delete-mood`, `create-journal-entry` / `edit-delete-journal`, `log-sleep` / `edit-delete-sleep`, `create-gratitude-entry` / `edit-delete-gratitude`, `create-habit` / `edit-delete-habit`, `log-meditation-session`
+- account + home - `settings-account`, `settings-preferences`, `account-deletion`, `gdpr-export`, `home-widgets`, `button-tours`
 
 Each test cleans up its own data via the service-role admin API (`test/e2e/helpers.ts` re-exports the integration helpers). Running E2E does not need `db:reset` between runs as long as the seed users still exist.
 
@@ -195,7 +222,7 @@ npm exec supabase -- link --project-ref <your-project-ref>
 npm exec supabase -- db push
 ```
 
-This creates the database tables, consent/deletion functions, profile avatar columns, onboarding preference flags, reminder consent timestamp field, browser push subscription table, and the private `profile-pics` storage bucket with RLS policies.
+This creates the database tables (account, CBT, ACT, and the shared tools), consent/deletion functions, profile avatar columns, onboarding preference flags, reminder consent timestamp field, browser push subscription table, and the private `profile-pics` storage bucket with RLS policies.
 
 If profile-picture testing shows `avatar_source` missing from the schema cache or a `profile-pics` row-level security error, the active Supabase project is missing the avatar repair migration. The normal fix is:
 
@@ -211,22 +238,13 @@ npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_pro
 
 ## Linked project status
 
-As of 2026-05-17, the active linked project is aligned with the checked-in migration history through `20260540_act_committed_action.sql`. The migration history was repaired on 2026-05-05, the onboarding flags migration was applied on 2026-05-06, the reminder consent timestamp migration was applied on 2026-05-06, the browser push subscription migration was applied on 2026-05-06, the CBT strategy migrations were applied on 2026-05-15, the tool-onboarding migrations were applied on 2026-05-17, and the ACT migrations were applied on 2026-05-17:
+The active linked project is kept aligned with the checked-in migration history by running `npm run db:push:prod` (`supabase db push --linked`) after new migrations land. Migration versions are 8-digit sequence numbers (`202605NN`), not dates; keep them uniform so `db push` matching does not break (a 14-digit version sharing a prefix with an 8-digit one trips the CLI matcher).
 
-- the old remote `20260503` history row was reverted
-- the local consent/deletion migration was renamed to `20260503000000_consent_and_deletion.sql`
-- `20260503000000`, `20260503120000`, and `20260503121000` were marked applied in remote history
-- `20260504_add_language_preference.sql` was applied with `supabase db push`
-- `20260507000000_reminder_consent_timestamp.sql` was applied with `supabase db push --yes`
-- `20260508000000_web_push_notifications.sql` was applied with `supabase db push --yes`
-- `20260514_cbt_phase1.sql`, `20260515_cbt_phase3.sql`, `20260516000000_cbt_phase4.sql`, `20260517_cbt_phase5.sql`, `20260518_cbt_export_coverage.sql`, and `20260519_expanded_thought_records.sql` were applied with `supabase db push --yes`
-- the legacy remote `20260516` history row was reverted and replaced with `20260516000000` on 2026-05-17 because it conflicted with the later `20260516172952_meditation_info_onboarding.sql` version in Supabase CLI migration matching
-- `20260533_cbt_wizard.sql` and `20260534_tool_onboardings.sql` were applied with `supabase db push --yes --include-all`
-- `20260535_act_module.sql`, `20260536_act_expansion.sql`, `20260537_act_presence.sql`, `20260538_act_values.sql`, and `20260540_act_committed_action.sql` were applied with `supabase db push --include-all --yes`
+The following invariants should hold on a fully-migrated project:
 
 - `profiles` includes the avatar columns from `20260503120000_profile_avatars.sql`
 - `profile-pics` exists as a private bucket with a 5 MB limit and JPEG/PNG/WebP MIME types
-- named public RLS policies exist for `profiles`, `user_preferences`, and `thought_records`
+- named RLS policies exist for the owner-scoped tables (`profiles`, `user_preferences`, `thought_records`, and the rest), scoped to the `authenticated` role
 - named Storage policies exist for authenticated user-owned objects in `profile-pics`
 - `user_preferences.language` exists with the `user_preferences_language_check` constraint
 - `user_preferences.app_onboarding_completed` and `user_preferences.cbt_onboarding_completed` exist for account-backed onboarding
@@ -234,7 +252,7 @@ As of 2026-05-17, the active linked project is aligned with the checked-in migra
 - `user_preferences.act_onboarding_completed`, `act_program_state`, and the ACT exercise tables exist with owner-scoped RLS policies
 - `user_preferences.reminder_consent_updated_at` exists for timestamped reminder opt-in and withdrawal state
 - `user_preferences.cbt_reminder_timezone` and `web_push_subscriptions` exist for opted-in browser reminders
-- `activity_logs`, `mood_logs`, `self_care_logs`, and the rest of the CBT strategy tables exist with owner-scoped RLS policies
+- `activity_logs`, `mood_logs`, `self_care_logs`, and the rest of the per-module strategy tables exist with owner-scoped RLS policies
 
 The local and remote migration histories include `20260507000000_reminder_consent_timestamp.sql`, which adds `user_preferences.reminder_consent_updated_at` and export coverage for timestamped reminder consent. The 2026-05-07 version is used so the file sorts after the legacy 8-digit `20260506_onboarding_flags.sql` migration.
 
@@ -245,7 +263,7 @@ Avoid parallel linked CLI queries against the production project; parallel reads
 5. in Supabase dashboard:
 
 - enable the Google provider and paste the Google OAuth client ID and secret
-- keep email auth enabled for passwordless magic-link sign-in
+- keep email auth enabled for email/password sign-in, sign-up confirmation, and password reset
 
 6. in Google Auth Platform, create a `Web application` OAuth client and configure:
 
@@ -291,12 +309,11 @@ Runtime backend switching is intentionally deferred and should not block the fir
 
 ## Auth callback flow
 
-The app now uses Google OAuth and passwordless email magic links for MVP authentication.
+The app uses Google OAuth and email/password for authentication (`signInWithGoogle`, `signInWithPassword`, and `signUpWithPassword` in `src/features/auth/api.ts`). Email confirmation and password-reset links flow back through the same callback route, which exchanges the code or verifies the OTP token (`src/features/auth/callback.ts`).
 
 - web OAuth returns through `/auth-callback`
 - native OAuth returns through the app scheme and completes in the Google sign-in flow
-- web magic links return through `/auth-callback`
-- native magic links return through the app scheme and open the callback route directly
+- email confirmation and password-reset links return through `/auth-callback` on web, or through the app scheme on native, and the callback route exchanges the code / verifies the token
 - Google profile pictures are imported from Supabase auth user metadata for new profiles
 - manual profile-picture uploads take priority until the user resets to the Google photo or removes the photo
 - removing a profile picture stores `avatar_source = null` with a removal timestamp; users can still choose Use Google photo later

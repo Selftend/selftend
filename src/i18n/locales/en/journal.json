@@ -1,8 +1,6 @@
 {
   "title": "Journal",
-  "moduleLabel": "Journal",
   "tagline": "A private place to write - no formatting, no audience, no streaks.",
-  "description": "Private free-text reflection. Write as little or as much as you want - no streaks, no pressure.",
   "cta": {
     "new": "New entry"
   },
@@ -17,9 +15,6 @@
     "last": "Last"
   },
   "list": {
-    "recent": "Recent entries",
-    "notificationsLabel": "Notifications",
-    "aboutLabel": "About journaling",
     "empty": {
       "title": "Nothing here yet",
       "description": "Write a few words about how today felt.",
@@ -48,7 +43,6 @@
     "title": "Journal entry",
     "edit": "Edit",
     "delete": "Delete",
-    "savedAt": "Last updated {{when}}",
     "createdAt": "Written",
     "notFound": "We couldn't find that journal entry.",
     "deleteError": "Couldn't delete this entry. Try again.",

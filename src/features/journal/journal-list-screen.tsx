@@ -33,8 +33,13 @@ export default function JournalListScreen() {
   const allEntries = entries ?? [];
 
   const totalWords = allEntries.reduce((sum, entry) => sum + countWords(entry.body), 0);
-  const lastEntry = allEntries[0] ?? null;
-  const lastWhen = lastEntry ? formatMoodRelativeTime(lastEntry.createdAt, t) : null;
+  // "Last journaled" reflects genuine activity, so derive it from the most recent
+  // server-set updatedAt — entries are ordered by created_at, which users can backdate.
+  const lastActivityAt = allEntries.reduce<string | null>(
+    (latest, entry) => (latest === null || entry.updatedAt > latest ? entry.updatedAt : latest),
+    null,
+  );
+  const lastWhen = lastActivityAt ? formatMoodRelativeTime(lastActivityAt, t) : null;
 
   return (
     <>

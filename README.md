@@ -6,7 +6,7 @@
 
 **Free, open-source guided self-help for web, iOS, and Android.**
 
-Selftend is being built around private guided self-help tools. The current working slice is a Gillihan-based CBT toolkit with goals, thought records, mood and self-care logs, exposure, mindfulness, and recovery planning. It has no ads, subscriptions, or paywalls.
+Selftend is being built around private guided self-help. The current working slice pairs two evidence-based modules — a Gillihan-based CBT toolkit (thought records, exposure, worry, anger, beliefs, recovery planning) and an ACT module — with a set of shared tools: mood tracker, journal, gratitude log, grounding, meditation and breathing, sleep, and habits. A DBT module is on the roadmap. It has no ads, subscriptions, or paywalls.
 
 ## Quick Start
 
@@ -64,7 +64,6 @@ After running `npm run coverage:ratchet:update`, commit the updated `coverage/ba
 | Topic              | Guide                                                      |
 | ------------------ | ---------------------------------------------------------- |
 | Contributing       | [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)         |
-| Roadmap            | [.github/ROADMAP.md](.github/ROADMAP.md)                   |
 | Security           | [.github/SECURITY.md](.github/SECURITY.md)                 |
 | Code of Conduct    | [.github/CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md)   |
 | Docs index         | [docs/README.md](docs/README.md)                           |

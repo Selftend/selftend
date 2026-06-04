@@ -1,13 +1,12 @@
 # Documentation
 
-Use this as the map for project docs. The README covers setup; the roadmap holds product direction and the live task list.
+Use this as the map for project docs. Each entry below links to the doc that owns that area.
 
 ## Start Here
 
 - [product-principles.md](product-principles.md) - product guardrails
 - [contributor-roles.md](contributor-roles.md) - contribution paths by role
 - [.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md) - branch, PR, and local workflow
-- [.github/ROADMAP.md](../.github/ROADMAP.md) - product direction and tracked work
 - [.github/SECURITY.md](../.github/SECURITY.md) - private security reporting
 
 ## Product And Technical
@@ -31,8 +30,7 @@ Use this as the map for project docs. The README covers setup; the roadmap holds
 
 ## Policy And Planning
 
-- [policies.md](policies.md) - public policy surfaces and launch-review status
-- [crisis-strategy.md](crisis-strategy.md) - crisis guidance posture and per-jurisdiction review
+- [policies.md](policies.md) - public policy surfaces, crisis guidance posture, and launch-review status
 - [gdpr-compliance.md](gdpr-compliance.md) - GDPR/CCPA posture
 - [analytics.md](analytics.md) - analytics and observability posture
 - [licensing.md](licensing.md) - AGPL and third-party content rules

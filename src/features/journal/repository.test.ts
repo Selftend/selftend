@@ -102,8 +102,8 @@ describe("journal repository", () => {
       created_at: "2026-05-15T08:00:00.000Z",
       updated_at: "2026-05-15T08:30:00.000Z",
     };
-    const single = jest.fn().mockResolvedValue({ data: row, error: null });
-    const select = jest.fn(() => ({ single }));
+    const maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
+    const select = jest.fn(() => ({ maybeSingle }));
     const eqId = jest.fn(() => ({ select }));
     const eqUser = jest.fn(() => ({ eq: eqId }));
     const update = jest.fn(() => ({ eq: eqUser }));
@@ -138,8 +138,8 @@ describe("journal repository", () => {
       created_at: "2026-04-01T09:00:00.000Z",
       updated_at: "2026-05-15T08:30:00.000Z",
     };
-    const single = jest.fn().mockResolvedValue({ data: row, error: null });
-    const select = jest.fn(() => ({ single }));
+    const maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
+    const select = jest.fn(() => ({ maybeSingle }));
     const eqId = jest.fn(() => ({ select }));
     const eqUser = jest.fn(() => ({ eq: eqId }));
     const update = jest.fn(() => ({ eq: eqUser }));
@@ -157,6 +157,31 @@ describe("journal repository", () => {
       body: "Body",
       created_at: "2026-04-01T09:00:00.000Z",
     });
+  });
+
+  it("throws a not-found error when the edited entry no longer exists", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+    const select = jest.fn(() => ({ maybeSingle }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ update }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      saveJournalEntry("user-1", { title: "Gone", body: "Body" }, "missing"),
+    ).rejects.toThrow("Entry not found");
+  });
+
+  it("rejects a future created_at timestamp", async () => {
+    const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      saveJournalEntry("user-1", { title: "Future", body: "Body", createdAt: future }),
+    ).rejects.toThrow("Entry date cannot be in the future");
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("deletes by id scoped to user", async () => {

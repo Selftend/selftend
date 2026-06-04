@@ -55,7 +55,16 @@ export function JournalEntryEditorScreen({
   const [createdAt, setCreatedAt] = useState<string>(
     mode === "create" ? loggedAtForSelectedDate(selectedDate) : new Date().toISOString(),
   );
+  const [dateDirty, setDateDirty] = useState(false);
   const saving = saveMutation.isPending;
+
+  // Create mode: keep the pre-filled date in sync with the app's selected day
+  // (e.g. midnight rollover or another consumer changing the store) until the
+  // user edits the field themselves.
+  useEffect(() => {
+    if (editMode || dateDirty) return;
+    setCreatedAt(loggedAtForSelectedDate(selectedDate));
+  }, [editMode, dateDirty, selectedDate]);
 
   useEffect(() => {
     if (!existingEntry) return;
@@ -92,8 +101,8 @@ export function JournalEntryEditorScreen({
       });
       showToast({ title: t("feedback.saved"), tone: "success" });
       router.replace(`/tools/journal/${saved.id}` as Parameters<typeof router.replace>[0]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("editor.saveError"));
+    } catch {
+      setError(t("editor.saveError"));
     }
   };
 
@@ -157,7 +166,10 @@ export function JournalEntryEditorScreen({
           <Label>{t("editor.dateLabel")}</Label>
           <DateTimeField
             value={createdAt}
-            onChange={setCreatedAt}
+            onChange={(value) => {
+              setDateDirty(true);
+              setCreatedAt(value);
+            }}
             accessibilityLabel={t("editor.dateLabel")}
           />
         </View>
