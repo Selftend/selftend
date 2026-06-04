@@ -42,9 +42,9 @@ export interface ProgramTaskDef {
 
 interface ProgramPhase {
   key: string;
-  themeLabelKey: string; // act:program.phases.<key>.title
-  themeSubKey: string; // act:program.phases.<key>.sub
-  themeDescKey: string; // act:program.phases.<key>.description
+  themeLabelKey: string; // act:pillars.<key>.title
+  themeSubKey: string; // act:pillars.<key>.sub
+  themeDescKey: string; // act:pillars.<key>.description
   milestones: ProgramTaskDef[];
   dailyPractice?: ProgramTaskDef;
 }
@@ -62,9 +62,9 @@ const didOnDate = (timestamps: (string | null | undefined)[], date: string) =>
 export const ACT_PROGRAM: ProgramPhase[] = [
   {
     key: "foundation",
-    themeLabelKey: "program.phases.foundation.title",
-    themeSubKey: "program.phases.foundation.sub",
-    themeDescKey: "program.phases.foundation.description",
+    themeLabelKey: "pillars.foundation.title",
+    themeSubKey: "pillars.foundation.sub",
+    themeDescKey: "pillars.foundation.description",
     milestones: [
       {
         key: "mapChoicePoint",
@@ -91,9 +91,9 @@ export const ACT_PROGRAM: ProgramPhase[] = [
   },
   {
     key: "bePresent",
-    themeLabelKey: "program.phases.bePresent.title",
-    themeSubKey: "program.phases.bePresent.sub",
-    themeDescKey: "program.phases.bePresent.description",
+    themeLabelKey: "pillars.bePresent.title",
+    themeSubKey: "pillars.bePresent.sub",
+    themeDescKey: "pillars.bePresent.description",
     milestones: [
       {
         key: "observeSelfOnce",
@@ -120,9 +120,9 @@ export const ACT_PROGRAM: ProgramPhase[] = [
   },
   {
     key: "openUp",
-    themeLabelKey: "program.phases.openUp.title",
-    themeSubKey: "program.phases.openUp.sub",
-    themeDescKey: "program.phases.openUp.description",
+    themeLabelKey: "pillars.openUp.title",
+    themeSubKey: "pillars.openUp.sub",
+    themeDescKey: "pillars.openUp.description",
     milestones: [
       {
         key: "unhookOnce",
@@ -162,9 +162,9 @@ export const ACT_PROGRAM: ProgramPhase[] = [
   },
   {
     key: "doWhatMatters",
-    themeLabelKey: "program.phases.doWhatMatters.title",
-    themeSubKey: "program.phases.doWhatMatters.sub",
-    themeDescKey: "program.phases.doWhatMatters.description",
+    themeLabelKey: "pillars.doWhatMatters.title",
+    themeSubKey: "pillars.doWhatMatters.sub",
+    themeDescKey: "pillars.doWhatMatters.description",
     milestones: [
       {
         key: "clarifyValue",

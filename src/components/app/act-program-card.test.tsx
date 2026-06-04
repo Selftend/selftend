@@ -18,9 +18,9 @@ jest.mock("@rn-primitives/popover");
 
 const foundationPhase: CurrentActPhaseView = {
   key: "foundation",
-  themeLabelKey: "program.phases.foundation.title",
-  themeSubKey: "program.phases.foundation.sub",
-  themeDescKey: "program.phases.foundation.description",
+  themeLabelKey: "pillars.foundation.title",
+  themeSubKey: "pillars.foundation.sub",
+  themeDescKey: "pillars.foundation.description",
   milestones: [
     {
       key: "mapChoicePoint",

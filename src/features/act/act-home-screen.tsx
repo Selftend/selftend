@@ -33,9 +33,8 @@ interface PillarDef {
 }
 
 // Pillar cards read their copy (title/sub/description) from the canonical
-// `program.phases` i18n block — the four pillars are the four program phases, so
-// there is a single source. `pillars` holds only the badge letter plus the
-// Foundation tool labels (choicePoint/dropAnchor).
+// `pillars` i18n block. The program also reads from `pillars`, not vice-versa.
+// `pillars` also holds the badge letter plus the Foundation tool labels (choicePoint/dropAnchor).
 const PILLARS: PillarDef[] = [
   {
     key: "foundation",
@@ -253,9 +252,9 @@ export default function ActHomeScreen() {
                   key={pillar.key}
                   tint="act"
                   letter={t(`pillars.${pillar.key}.letter`)}
-                  title={t(`program.phases.${pillar.key}.title`)}
-                  kicker={t(`program.phases.${pillar.key}.sub`)}
-                  description={t(`program.phases.${pillar.key}.description`)}
+                  title={t(`pillars.${pillar.key}.title`)}
+                  kicker={t(`pillars.${pillar.key}.sub`)}
+                  description={t(`pillars.${pillar.key}.description`)}
                   onToolPress={(toolKey) => {
                     const tool = pillar.tools.find((x) => x.key === toolKey);
                     if (tool?.route) router.push(tool.route);

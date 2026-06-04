@@ -115,9 +115,9 @@ export function ActInfo({
           <View className="mt-1 gap-2 self-stretch">
             {(["bePresent", "openUp", "doWhatMatters"] as const).map((pillar) => (
               <View key={pillar} className="gap-0.5">
-                <Text className="font-semibold">{t(`program.phases.${pillar}.title`)}</Text>
+                <Text className="font-semibold">{t(`pillars.${pillar}.title`)}</Text>
                 <Text variant="muted" className="text-sm">
-                  {t(`program.phases.${pillar}.sub`)}
+                  {t(`pillars.${pillar}.sub`)}
                 </Text>
               </View>
             ))}

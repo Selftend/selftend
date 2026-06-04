@@ -103,7 +103,7 @@ describe("ActHomeScreen", () => {
   it("renders the four ACT pillars with their tools", () => {
     renderWithProviders(<ActHomeScreen />);
 
-    // Pillar headings (reused from program.phases copy)
+    // Pillar headings (sourced from pillars copy)
     expect(screen.getByText("Build a foundation")).toBeTruthy();
     expect(screen.getByText("Be present")).toBeTruthy();
     expect(screen.getByText("Open up")).toBeTruthy();

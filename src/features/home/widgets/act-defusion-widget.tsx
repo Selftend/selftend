@@ -43,14 +43,14 @@ export function ActDefusionWidget({ userId }: { userId: string }) {
         )}
         <Button
           size="sm"
-          variant={last ? "ghost" : "outline"}
-          className={last ? "self-end" : "self-start"}
+          variant="ghost"
+          className="self-end"
           onPress={() => router.push("/modules/act/defusion")}
         >
-          <Text className={last ? "text-muted-foreground" : undefined}>
+          <Text className="text-muted-foreground">
             {last ? t("home.widgets.actDefusion.again") : t("home.widgets.actDefusion.start")}
           </Text>
-          {last ? <Icon name="arrow-forward" className="size-4 text-muted-foreground" /> : null}
+          <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
         </Button>
       </CardContent>
     </Card>

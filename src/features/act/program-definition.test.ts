@@ -69,9 +69,9 @@ describe("ACT_PROGRAM", () => {
 
   it("gives every phase a title, sub, and description i18n key", () => {
     for (const phase of ACT_PROGRAM) {
-      expect(phase.themeLabelKey).toBe(`program.phases.${phase.key}.title`);
-      expect(phase.themeSubKey).toBe(`program.phases.${phase.key}.sub`);
-      expect(phase.themeDescKey).toBe(`program.phases.${phase.key}.description`);
+      expect(phase.themeLabelKey).toBe(`pillars.${phase.key}.title`);
+      expect(phase.themeSubKey).toBe(`pillars.${phase.key}.sub`);
+      expect(phase.themeDescKey).toBe(`pillars.${phase.key}.description`);
     }
   });
 

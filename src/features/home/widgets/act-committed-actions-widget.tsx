@@ -72,11 +72,14 @@ export function ActCommittedActionsWidget({ userId }: { userId: string }) {
         ) : (
           <Button
             size="sm"
-            variant="outline"
-            className="self-start"
+            variant="ghost"
+            className="self-end"
             onPress={() => router.push("/modules/act/committed-action/new")}
           >
-            <Text>{t("home.widgets.actCommittedActions.setAction")}</Text>
+            <Text className="text-muted-foreground">
+              {t("home.widgets.actCommittedActions.setAction")}
+            </Text>
+            <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
           </Button>
         )}
       </CardContent>

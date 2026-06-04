@@ -478,6 +478,9 @@
   "pillars": {
     "foundation": {
       "letter": "1",
+      "title": "Build a foundation",
+      "sub": "Choice Point & Drop Anchor",
+      "description": "Notice what hooks you, map your toward and away moves, and learn to drop anchor when you're pulled off course.",
       "choicePoint": {
         "name": "Choice point",
         "desc": "Map what hooks you and your toward and away moves."
@@ -488,13 +491,22 @@
       }
     },
     "bePresent": {
-      "letter": "2"
+      "letter": "2",
+      "title": "Be present",
+      "sub": "Contact the present moment",
+      "description": "Come back to the here and now - through your senses, your body, and the part of you that simply notices."
     },
     "openUp": {
-      "letter": "3"
+      "letter": "3",
+      "title": "Open up",
+      "sub": "Defusion & acceptance",
+      "description": "Unhook from sticky thoughts and make room for difficult feelings instead of fighting them."
     },
     "doWhatMatters": {
-      "letter": "4"
+      "letter": "4",
+      "title": "Do what matters",
+      "sub": "Values & committed action",
+      "description": "Clarify what you care about and take small, values-guided steps - even when it's uncomfortable."
     }
   },
   "program": {
@@ -533,28 +545,6 @@
     "statExpansion_other": "{{count}} feelings made room for",
     "statActions": "{{count}} committed action",
     "statActions_other": "{{count}} committed actions",
-    "phases": {
-      "foundation": {
-        "title": "Build a foundation",
-        "sub": "Choice Point & Drop Anchor",
-        "description": "Notice what hooks you, map your toward and away moves, and learn to drop anchor when you're pulled off course."
-      },
-      "bePresent": {
-        "title": "Be present",
-        "sub": "Contact the present moment",
-        "description": "Come back to the here and now - through your senses, your body, and the part of you that simply notices."
-      },
-      "openUp": {
-        "title": "Open up",
-        "sub": "Defusion & acceptance",
-        "description": "Unhook from sticky thoughts and make room for difficult feelings instead of fighting them."
-      },
-      "doWhatMatters": {
-        "title": "Do what matters",
-        "sub": "Values & committed action",
-        "description": "Clarify what you care about and take small, values-guided steps - even when it's uncomfortable."
-      }
-    },
     "tasks": {
       "mapChoicePoint": "Map your first choice point",
       "dropAnchorDaily": "Drop anchor today",
