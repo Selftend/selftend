@@ -1,6 +1,20 @@
 import type { ExpoConfig } from "expo/config";
 import { withAndroidManifest, type ConfigPlugin } from "@expo/config-plugins";
 
+const widgetCatalog = require("./src/features/widgets/widget-catalog.json") as {
+  name: string;
+  widgetFeatures?: string;
+  size: {
+    minWidth: string;
+    minHeight: string;
+    maxWidth: string;
+    maxHeight: string;
+    targetCellWidth: number;
+    targetCellHeight: number;
+    resizeMode: string;
+  };
+}[];
+
 const easBuildProfile = process.env.EAS_BUILD_PROFILE;
 const isDevelopmentBuild =
   easBuildProfile === "development" || process.env.SELFTEND_APP_VARIANT === "development";
@@ -112,78 +126,21 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
     [
       "react-native-android-widget",
       {
-        widgets: [
-          {
-            name: "MoodCheckin",
-            label: "Selftend - Mood check-in",
-            description: "Tap a face to log how you feel right now",
-            minWidth: "250dp",
-            minHeight: "70dp",
-            targetCellWidth: 4,
-            targetCellHeight: 1,
-            maxResizeWidth: "320dp",
-            maxResizeHeight: "120dp",
-            resizeMode: "horizontal",
-            previewImage: "./assets/widget-preview/moodcheckin.png",
-            updatePeriodMillis: 0,
-          },
-          {
-            name: "Breathing",
-            label: "Selftend - Breathing",
-            description: "Quick-launch a breathing exercise",
-            minWidth: "250dp",
-            minHeight: "70dp",
-            targetCellWidth: 4,
-            targetCellHeight: 1,
-            maxResizeWidth: "320dp",
-            maxResizeHeight: "120dp",
-            resizeMode: "horizontal",
-            previewImage: "./assets/widget-preview/breathing.png",
-            updatePeriodMillis: 0,
-          },
-          {
-            name: "Grounding",
-            label: "Selftend - Grounding",
-            description: "Quick-launch a grounding technique",
-            minWidth: "250dp",
-            minHeight: "70dp",
-            targetCellWidth: 4,
-            targetCellHeight: 1,
-            maxResizeWidth: "320dp",
-            maxResizeHeight: "120dp",
-            resizeMode: "horizontal",
-            previewImage: "./assets/widget-preview/grounding.png",
-            updatePeriodMillis: 0,
-          },
-          {
-            name: "Mindfulness",
-            label: "Selftend - Meditation",
-            description: "Quick-launch a meditation practice",
-            minWidth: "250dp",
-            minHeight: "150dp",
-            targetCellWidth: 4,
-            targetCellHeight: 2,
-            maxResizeWidth: "320dp",
-            maxResizeHeight: "220dp",
-            resizeMode: "horizontal|vertical",
-            previewImage: "./assets/widget-preview/mindfulness.png",
-            updatePeriodMillis: 0,
-          },
-          {
-            name: "Activity",
-            label: "Selftend - Schedule activity",
-            description: "Pick a life domain and start a new activity",
-            minWidth: "250dp",
-            minHeight: "150dp",
-            targetCellWidth: 4,
-            targetCellHeight: 2,
-            maxResizeWidth: "320dp",
-            maxResizeHeight: "220dp",
-            resizeMode: "horizontal|vertical",
-            previewImage: "./assets/widget-preview/activity.png",
-            updatePeriodMillis: 0,
-          },
-        ],
+        widgets: widgetCatalog.map((w) => ({
+          name: w.name,
+          label: `Selftend - ${w.name}`,
+          description: "Selftend widget",
+          minWidth: w.size.minWidth,
+          minHeight: w.size.minHeight,
+          maxResizeWidth: w.size.maxWidth,
+          maxResizeHeight: w.size.maxHeight,
+          targetCellWidth: w.size.targetCellWidth,
+          targetCellHeight: w.size.targetCellHeight,
+          resizeMode: w.size.resizeMode,
+          previewImage: "./assets/widget-preview/stat.png",
+          updatePeriodMillis: 0,
+          ...(w.widgetFeatures ? { widgetFeatures: w.widgetFeatures } : {}),
+        })),
       },
     ],
   ],

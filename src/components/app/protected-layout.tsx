@@ -20,6 +20,7 @@ import {
 import { useNotificationSync } from "@/src/features/notifications/use-notification-sync";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useSession } from "@/src/providers/session-provider";
+import { WidgetSnapshotSync } from "@/src/features/widgets/widget-snapshot-sync";
 
 const appOnboardingImage = require("../../../assets/images/onboarding/app-journey-growth-badge.png");
 
@@ -87,6 +88,7 @@ export default function ProtectedLayout() {
 
   return (
     <>
+      <WidgetSnapshotSync userId={user?.id ?? null} />
       <OnboardingModal
         actionLabel={t("onboarding.appContinue")}
         body={[t("onboarding.appBody1"), t("onboarding.appBody2"), t("onboarding.appBody3")]}

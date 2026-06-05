@@ -1,0 +1,50 @@
+[
+  {
+    "id": "mood",
+    "name": "Mood",
+    "kind": "mood",
+    "emoji": "🙂",
+    "widgetFeatures": "reconfigurable",
+    "size": {
+      "minWidth": "180dp",
+      "minHeight": "70dp",
+      "maxWidth": "320dp",
+      "maxHeight": "160dp",
+      "targetCellWidth": 4,
+      "targetCellHeight": 1,
+      "resizeMode": "horizontal|vertical"
+    }
+  },
+  {
+    "id": "today",
+    "name": "Today",
+    "kind": "today",
+    "emoji": "📅",
+    "widgetFeatures": "reconfigurable",
+    "size": {
+      "minWidth": "150dp",
+      "minHeight": "110dp",
+      "maxWidth": "320dp",
+      "maxHeight": "250dp",
+      "targetCellWidth": 4,
+      "targetCellHeight": 2,
+      "resizeMode": "horizontal|vertical"
+    }
+  },
+  {
+    "id": "shortcuts",
+    "name": "Shortcuts",
+    "kind": "shortcuts",
+    "emoji": "▦",
+    "widgetFeatures": "reconfigurable",
+    "size": {
+      "minWidth": "40dp",
+      "minHeight": "40dp",
+      "maxWidth": "400dp",
+      "maxHeight": "400dp",
+      "targetCellWidth": 2,
+      "targetCellHeight": 2,
+      "resizeMode": "horizontal|vertical"
+    }
+  }
+]

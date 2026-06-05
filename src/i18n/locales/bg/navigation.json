@@ -380,6 +380,47 @@
         "sessionsLabel": "Сесии",
         "minutesLabel": "Минути",
         "empty": "Все още няма сесии."
+      },
+      "mood": { "noLogs": "Все още няма записи", "glance": "7 дни {{avg}} · {{count}} записа" },
+      "today": {
+        "moodLabel": "Настроение",
+        "habitsLabel": "Навици",
+        "sleepLabel": "Сън",
+        "meditationLabel": "Медитация",
+        "gratitudeLabel": "Благодарност",
+        "journalLabel": "Дневник",
+        "breathingLabel": "Дишане",
+        "groundingLabel": "Заземяване"
+      },
+      "config": {
+        "title": "Настройки на уиджета",
+        "shortcutsSection": "Преки пътища",
+        "statsSection": "Статистики",
+        "themeLabel": "Тема",
+        "themeApp": "Като приложението",
+        "themeLight": "Светла",
+        "themeDark": "Тъмна",
+        "transparencyLabel": "Прозрачност",
+        "save": "Запазване"
+      },
+      "shortcutConfig": {
+        "title": "Изберете преки пътища",
+        "subtitle": "Изберете действията за този уиджет.",
+        "save": "Запазване"
+      },
+      "shortcutCatalog": {
+        "mood": "Запис на настроение",
+        "breathing": "Дишане",
+        "grounding": "Заземяване",
+        "journal": "Дневник",
+        "gratitude": "Благодарност",
+        "meditation": "Медитация",
+        "sleep": "Сън",
+        "habits": "Навици",
+        "thoughtRecord": "Запис на мисли",
+        "defusion": "Дефузия",
+        "dropAnchor": "Пускане на котва",
+        "choicePoint": "Точка на избор"
       }
     }
   },

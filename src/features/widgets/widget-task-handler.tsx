@@ -1,63 +1,29 @@
 import * as Linking from "expo-linking";
 import { type WidgetTaskHandlerProps } from "react-native-android-widget";
 
-import { renderActivityWidget } from "@/src/features/widgets/activity-widget-view";
-import { renderBreathingWidget } from "@/src/features/widgets/breathing-widget-view";
-import { renderGroundingWidget } from "@/src/features/widgets/grounding-widget-view";
-import { renderMindfulnessWidget } from "@/src/features/widgets/mindfulness-widget-view";
-import { renderMoodCheckinWidget } from "@/src/features/widgets/mood-checkin-widget-view";
-
-const RENDERERS: Record<string, () => unknown> = {
-  MoodCheckin: renderMoodCheckinWidget,
-  Breathing: renderBreathingWidget,
-  Grounding: renderGroundingWidget,
-  Mindfulness: renderMindfulnessWidget,
-  Activity: renderActivityWidget,
-};
-
-function buildClickPath(
-  action: string | undefined,
-  data: Record<string, unknown> | undefined,
-): string | null {
-  if (action === "OPEN_MOOD") {
-    const score = typeof data?.score === "number" ? data.score : null;
-    return score ? `/tools/mood-tracker/new?score=${score}` : "/tools/mood-tracker/new";
-  }
-  if (action === "OPEN_BREATHING") {
-    const slug = typeof data?.slug === "string" ? data.slug : null;
-    return slug ? `/tools/breathing/session?pattern=${slug}` : "/tools/breathing/session";
-  }
-  if (action === "OPEN_GROUNDING") {
-    const slug = typeof data?.slug === "string" ? data.slug : null;
-    return slug ? `/tools/grounding/${slug}` : "/tools/grounding";
-  }
-  if (action === "OPEN_MINDFULNESS") {
-    const slug = typeof data?.slug === "string" ? data.slug : null;
-    return slug ? `/tools/meditation?practice=${slug}` : "/tools/meditation";
-  }
-  if (action === "OPEN_ACTIVITY") {
-    const domain = typeof data?.domain === "string" ? data.domain : null;
-    return domain ? `/modules/cbt/activities/new?domain=${domain}` : "/modules/cbt/activities/new";
-  }
-  return null;
-}
+import { readSnapshot } from "@/src/features/widgets/snapshot-store";
+import { renderWidget } from "@/src/features/widgets/render-widget";
+import { readConfig } from "@/src/features/widgets/widget-config-store";
+import { OPEN_PATH } from "@/src/features/widgets/click-actions";
 
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<void> {
+  const { widgetName, widgetId, width, height } = props.widgetInfo;
   switch (props.widgetAction) {
     case "WIDGET_ADDED":
     case "WIDGET_UPDATE":
     case "WIDGET_RESIZED": {
-      const renderer = RENDERERS[props.widgetInfo.widgetName];
-      if (renderer) {
-        // The renderer returns a `WidgetRepresentation`, but the public type uses an internal
-        // alias; cast through unknown to satisfy renderWidget without a deep-import.
-        props.renderWidget(renderer() as Parameters<typeof props.renderWidget>[0]);
-      }
+      const snapshot = await readSnapshot();
+      const config = await readConfig(widgetId);
+      const rendered = renderWidget({ widgetName, width, height, snapshot, config });
+      props.renderWidget(rendered as Parameters<typeof props.renderWidget>[0]);
       break;
     }
     case "WIDGET_CLICK": {
-      const path = buildClickPath(props.clickAction, props.clickActionData);
-      if (path) await Linking.openURL(Linking.createURL(path));
+      if (props.clickAction === OPEN_PATH) {
+        const path =
+          typeof props.clickActionData?.path === "string" ? props.clickActionData.path : null;
+        if (path) await Linking.openURL(Linking.createURL(path));
+      }
       break;
     }
     default:
