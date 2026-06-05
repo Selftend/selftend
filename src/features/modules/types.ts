@@ -28,6 +28,34 @@ export interface UserPreferences {
   actReminderHour: number;
   actReminderMinute: number;
   actReminderTimezone: string | null;
+  moodRemindersEnabled: boolean;
+  moodReminderHour: number;
+  moodReminderMinute: number;
+  moodReminderTimezone: string | null;
+  journalRemindersEnabled: boolean;
+  journalReminderHour: number;
+  journalReminderMinute: number;
+  journalReminderTimezone: string | null;
+  gratitudeRemindersEnabled: boolean;
+  gratitudeReminderHour: number;
+  gratitudeReminderMinute: number;
+  gratitudeReminderTimezone: string | null;
+  groundingRemindersEnabled: boolean;
+  groundingReminderHour: number;
+  groundingReminderMinute: number;
+  groundingReminderTimezone: string | null;
+  breathingRemindersEnabled: boolean;
+  breathingReminderHour: number;
+  breathingReminderMinute: number;
+  breathingReminderTimezone: string | null;
+  sleepRemindersEnabled: boolean;
+  sleepReminderHour: number;
+  sleepReminderMinute: number;
+  sleepReminderTimezone: string | null;
+  habitsRemindersEnabled: boolean;
+  habitsReminderHour: number;
+  habitsReminderMinute: number;
+  habitsReminderTimezone: string | null;
   appOnboardingCompleted: boolean;
   cbtOnboardingCompleted: boolean;
   cbtWizardCompleted: boolean;
@@ -87,6 +115,34 @@ export const defaultUserPreferences: UserPreferences = {
   actReminderHour: 19,
   actReminderMinute: 0,
   actReminderTimezone: null,
+  moodRemindersEnabled: false,
+  moodReminderHour: 12,
+  moodReminderMinute: 0,
+  moodReminderTimezone: null,
+  journalRemindersEnabled: false,
+  journalReminderHour: 21,
+  journalReminderMinute: 0,
+  journalReminderTimezone: null,
+  gratitudeRemindersEnabled: false,
+  gratitudeReminderHour: 20,
+  gratitudeReminderMinute: 0,
+  gratitudeReminderTimezone: null,
+  groundingRemindersEnabled: false,
+  groundingReminderHour: 15,
+  groundingReminderMinute: 0,
+  groundingReminderTimezone: null,
+  breathingRemindersEnabled: false,
+  breathingReminderHour: 16,
+  breathingReminderMinute: 0,
+  breathingReminderTimezone: null,
+  sleepRemindersEnabled: false,
+  sleepReminderHour: 22,
+  sleepReminderMinute: 0,
+  sleepReminderTimezone: null,
+  habitsRemindersEnabled: false,
+  habitsReminderHour: 9,
+  habitsReminderMinute: 0,
+  habitsReminderTimezone: null,
   appOnboardingCompleted: false,
   cbtOnboardingCompleted: false,
   cbtWizardCompleted: false,

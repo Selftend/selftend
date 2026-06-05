@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1022818568445",
+    "project_id": "selftend-c07ac",
+    "storage_bucket": "selftend-c07ac.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1022818568445:android:31221962afe65f45159694",
+        "android_client_info": {
+          "package_name": "org.vasilyoshev.selftend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhWO5Zhr5ZW1dED6EHUy1BKUuMpHlQ75k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1022818568445:android:8492efdd4c6ac491159694",
+        "android_client_info": {
+          "package_name": "org.vasilyoshev.selftend.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhWO5Zhr5ZW1dED6EHUy1BKUuMpHlQ75k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

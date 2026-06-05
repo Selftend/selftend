@@ -2,7 +2,17 @@
 // Imported by both the Deno function (index.ts) and jest unit tests. Contains NO
 // Deno globals and NO i18n JSON imports so Node/jest can load it directly.
 
-export type ReminderTarget = "cbt" | "meditation" | "act";
+export type ReminderTarget =
+  | "cbt"
+  | "meditation"
+  | "act"
+  | "mood"
+  | "journal"
+  | "gratitude"
+  | "grounding"
+  | "breathing"
+  | "sleep"
+  | "habits";
 
 export interface WebPushSubscriptionRow {
   auth: string;
@@ -12,6 +22,13 @@ export interface WebPushSubscriptionRow {
   last_cbt_reminder_key: string | null;
   last_meditation_reminder_key: string | null;
   last_act_reminder_key: string | null;
+  last_mood_reminder_key: string | null;
+  last_journal_reminder_key: string | null;
+  last_gratitude_reminder_key: string | null;
+  last_grounding_reminder_key: string | null;
+  last_breathing_reminder_key: string | null;
+  last_sleep_reminder_key: string | null;
+  last_habits_reminder_key: string | null;
   p256dh: string;
   time_zone: string | null;
   user_id: string;
@@ -34,6 +51,42 @@ export interface UserPreferenceRow {
   act_reminder_hour: number;
   act_reminder_minute: number;
   act_reminder_timezone: string | null;
+  mood_reminders_enabled: boolean;
+  mood_reminder_hour: number;
+  mood_reminder_minute: number;
+  mood_reminder_timezone: string | null;
+  journal_reminders_enabled: boolean;
+  journal_reminder_hour: number;
+  journal_reminder_minute: number;
+  journal_reminder_timezone: string | null;
+  gratitude_reminders_enabled: boolean;
+  gratitude_reminder_hour: number;
+  gratitude_reminder_minute: number;
+  gratitude_reminder_timezone: string | null;
+  grounding_reminders_enabled: boolean;
+  grounding_reminder_hour: number;
+  grounding_reminder_minute: number;
+  grounding_reminder_timezone: string | null;
+  breathing_reminders_enabled: boolean;
+  breathing_reminder_hour: number;
+  breathing_reminder_minute: number;
+  breathing_reminder_timezone: string | null;
+  sleep_reminders_enabled: boolean;
+  sleep_reminder_hour: number;
+  sleep_reminder_minute: number;
+  sleep_reminder_timezone: string | null;
+  habits_reminders_enabled: boolean;
+  habits_reminder_hour: number;
+  habits_reminder_minute: number;
+  habits_reminder_timezone: string | null;
+}
+
+export interface ActivitySource {
+  table: string;
+  // timestamptz column compared with `>= start-of-today-in-tz`...
+  timestampColumn?: string;
+  // ...or a `date` column compared with `= today's zoned date string`.
+  dateColumn?: string;
 }
 
 export interface TargetConfig {
@@ -44,6 +97,8 @@ export interface TargetConfig {
   lastKeyField: keyof WebPushSubscriptionRow;
   url: string;
   tag: string;
+  // Omitted for targets with no per-day activity log (breathing, act) — those never suppress.
+  activitySource?: ActivitySource;
 }
 
 export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
@@ -55,6 +110,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_cbt_reminder_key",
     url: "/modules/cbt",
     tag: "selftend-cbt-reminder",
+    activitySource: { table: "thought_records", timestampColumn: "created_at" },
   },
   meditation: {
     enabledField: "meditation_reminders_enabled",
@@ -64,6 +120,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_meditation_reminder_key",
     url: "/tools/meditation",
     tag: "selftend-meditation-reminder",
+    activitySource: { table: "meditation_sessions", timestampColumn: "completed_at" },
   },
   act: {
     enabledField: "act_reminders_enabled",
@@ -73,10 +130,93 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_act_reminder_key",
     url: "/modules/act",
     tag: "selftend-act-reminder",
+    // No single ACT activity table; act_program_state.updated_at changes for non-activity
+    // reasons, so ACT degrades (never suppressed) rather than mis-suppress.
+  },
+  mood: {
+    enabledField: "mood_reminders_enabled",
+    hourField: "mood_reminder_hour",
+    minuteField: "mood_reminder_minute",
+    timezoneField: "mood_reminder_timezone",
+    lastKeyField: "last_mood_reminder_key",
+    url: "/tools/mood-tracker",
+    tag: "selftend-mood-reminder",
+    activitySource: { table: "mood_logs", timestampColumn: "logged_at" },
+  },
+  journal: {
+    enabledField: "journal_reminders_enabled",
+    hourField: "journal_reminder_hour",
+    minuteField: "journal_reminder_minute",
+    timezoneField: "journal_reminder_timezone",
+    lastKeyField: "last_journal_reminder_key",
+    url: "/tools/journal",
+    tag: "selftend-journal-reminder",
+    activitySource: { table: "journal_entries", timestampColumn: "created_at" },
+  },
+  gratitude: {
+    enabledField: "gratitude_reminders_enabled",
+    hourField: "gratitude_reminder_hour",
+    minuteField: "gratitude_reminder_minute",
+    timezoneField: "gratitude_reminder_timezone",
+    lastKeyField: "last_gratitude_reminder_key",
+    url: "/tools/gratitude-log",
+    tag: "selftend-gratitude-reminder",
+    activitySource: { table: "gratitude_entries", timestampColumn: "logged_at" },
+  },
+  grounding: {
+    enabledField: "grounding_reminders_enabled",
+    hourField: "grounding_reminder_hour",
+    minuteField: "grounding_reminder_minute",
+    timezoneField: "grounding_reminder_timezone",
+    lastKeyField: "last_grounding_reminder_key",
+    url: "/tools/grounding",
+    tag: "selftend-grounding-reminder",
+    activitySource: { table: "noticing_logs", timestampColumn: "logged_at" },
+  },
+  breathing: {
+    enabledField: "breathing_reminders_enabled",
+    hourField: "breathing_reminder_hour",
+    minuteField: "breathing_reminder_minute",
+    timezoneField: "breathing_reminder_timezone",
+    lastKeyField: "last_breathing_reminder_key",
+    url: "/tools/breathing",
+    tag: "selftend-breathing-reminder",
+    // No per-session breathing log → never suppressed.
+  },
+  sleep: {
+    enabledField: "sleep_reminders_enabled",
+    hourField: "sleep_reminder_hour",
+    minuteField: "sleep_reminder_minute",
+    timezoneField: "sleep_reminder_timezone",
+    lastKeyField: "last_sleep_reminder_key",
+    url: "/tools/sleep",
+    tag: "selftend-sleep-reminder",
+    activitySource: { table: "sleep_logs", timestampColumn: "logged_at" },
+  },
+  habits: {
+    enabledField: "habits_reminders_enabled",
+    hourField: "habits_reminder_hour",
+    minuteField: "habits_reminder_minute",
+    timezoneField: "habits_reminder_timezone",
+    lastKeyField: "last_habits_reminder_key",
+    url: "/tools/habits",
+    tag: "selftend-habits-reminder",
+    activitySource: { table: "habit_logs", dateColumn: "logged_on" },
   },
 };
 
-export const TARGETS: ReminderTarget[] = ["cbt", "meditation", "act"];
+export const TARGETS: ReminderTarget[] = [
+  "cbt",
+  "meditation",
+  "act",
+  "mood",
+  "journal",
+  "gratitude",
+  "grounding",
+  "breathing",
+  "sleep",
+  "habits",
+];
 
 export interface ZonedParts {
   day: string;
@@ -147,6 +287,88 @@ export function reminderKeyIfDue(
   if (minutesSinceTarget >= 5) return null;
 
   return reminderKey;
+}
+
+export interface ActivityWindow {
+  table: string;
+  column: string;
+  op: "gte" | "eq";
+  value: string;
+}
+
+// Describes the "did the user use this tool today, in their timezone?" query for a target,
+// or null when the target has no activity source (breathing, act) and so never suppresses.
+// Pure + Deno-free so it is unit-tested; index.ts turns it into a supabase query.
+export function activityWindowForTarget(
+  target: ReminderTarget,
+  timeZone: string,
+  now: Date,
+): ActivityWindow | null {
+  const source = TARGET_CONFIGS[target].activitySource;
+  if (!source) return null;
+
+  const parts = getZonedParts(now, timeZone);
+  if (!parts) return null;
+
+  if (source.dateColumn) {
+    return {
+      table: source.table,
+      column: source.dateColumn,
+      op: "eq",
+      value: `${parts.year}-${parts.month}-${parts.day}`,
+    };
+  }
+
+  // The UTC instant of midnight today in `timeZone`: subtract the elapsed zone-local
+  // time-of-day from `now`. Seconds/ms are tz-invariant, so getUTC* is correct here.
+  const elapsedMs =
+    (parts.hour * 60 + parts.minute) * 60000 +
+    now.getUTCSeconds() * 1000 +
+    now.getUTCMilliseconds();
+  const startOfDay = new Date(now.getTime() - elapsedMs);
+
+  return {
+    table: source.table,
+    column: source.timestampColumn as string,
+    op: "gte",
+    value: startOfDay.toISOString(),
+  };
+}
+
+export interface ExpoPushMessage {
+  to: string;
+  title: string;
+  body: string;
+  sound: "default";
+  data: { url: string };
+}
+
+export function buildExpoPushMessage(
+  token: string,
+  target: ReminderTarget,
+  copy: { title: string; body: string },
+): ExpoPushMessage {
+  return {
+    to: token,
+    title: copy.title,
+    body: copy.body,
+    sound: "default",
+    data: { url: TARGET_CONFIGS[target].url },
+  };
+}
+
+export interface ExpoTicket {
+  status: "ok" | "error";
+  id?: string;
+  message?: string;
+  details?: { error?: string };
+}
+
+// Acts on the synchronous Expo push *ticket* (not the deferred receipt): DeviceNotRegistered
+// means the token is dead and should be deleted; other errors are transient (retry next tick).
+export function classifyExpoTicket(ticket: ExpoTicket): { ok: boolean; removeToken: boolean } {
+  if (ticket.status === "ok") return { ok: true, removeToken: false };
+  return { ok: false, removeToken: ticket.details?.error === "DeviceNotRegistered" };
 }
 
 export function resolveReminderLanguage(language: string | null): "bg" | "en" {

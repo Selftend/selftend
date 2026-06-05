@@ -9,15 +9,54 @@ export type NotificationTargetKey =
   | "mood"
   | "journal"
   | "breathing"
-  | "mindfulness"
   | "grounding"
   | "sleep"
   | "habits";
 
-type EnabledField = "cbtRemindersEnabled" | "meditationRemindersEnabled" | "actRemindersEnabled";
-type HourField = "cbtReminderHour" | "meditationReminderHour" | "actReminderHour";
-type MinuteField = "cbtReminderMinute" | "meditationReminderMinute" | "actReminderMinute";
-type TimezoneField = "cbtReminderTimezone" | "meditationReminderTimezone" | "actReminderTimezone";
+type EnabledField =
+  | "cbtRemindersEnabled"
+  | "meditationRemindersEnabled"
+  | "actRemindersEnabled"
+  | "moodRemindersEnabled"
+  | "journalRemindersEnabled"
+  | "gratitudeRemindersEnabled"
+  | "groundingRemindersEnabled"
+  | "breathingRemindersEnabled"
+  | "sleepRemindersEnabled"
+  | "habitsRemindersEnabled";
+type HourField =
+  | "cbtReminderHour"
+  | "meditationReminderHour"
+  | "actReminderHour"
+  | "moodReminderHour"
+  | "journalReminderHour"
+  | "gratitudeReminderHour"
+  | "groundingReminderHour"
+  | "breathingReminderHour"
+  | "sleepReminderHour"
+  | "habitsReminderHour";
+type MinuteField =
+  | "cbtReminderMinute"
+  | "meditationReminderMinute"
+  | "actReminderMinute"
+  | "moodReminderMinute"
+  | "journalReminderMinute"
+  | "gratitudeReminderMinute"
+  | "groundingReminderMinute"
+  | "breathingReminderMinute"
+  | "sleepReminderMinute"
+  | "habitsReminderMinute";
+type TimezoneField =
+  | "cbtReminderTimezone"
+  | "meditationReminderTimezone"
+  | "actReminderTimezone"
+  | "moodReminderTimezone"
+  | "journalReminderTimezone"
+  | "gratitudeReminderTimezone"
+  | "groundingReminderTimezone"
+  | "breathingReminderTimezone"
+  | "sleepReminderTimezone"
+  | "habitsReminderTimezone";
 
 export interface NotificationTarget {
   key: NotificationTargetKey;
@@ -84,66 +123,93 @@ export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   {
     key: "mood",
     kind: "tool",
-    status: "placeholder",
+    status: "live",
     labelKey: "targets.mood.label",
     descriptionKey: "targets.mood.description",
     icon: "mood",
+    enabledField: "moodRemindersEnabled",
+    hourField: "moodReminderHour",
+    minuteField: "moodReminderMinute",
+    timezoneField: "moodReminderTimezone",
+    schedulesOs: true,
   },
   {
     key: "journal",
     kind: "tool",
-    status: "placeholder",
+    status: "live",
     labelKey: "targets.journal.label",
     descriptionKey: "targets.journal.description",
     icon: "edit-note",
+    enabledField: "journalRemindersEnabled",
+    hourField: "journalReminderHour",
+    minuteField: "journalReminderMinute",
+    timezoneField: "journalReminderTimezone",
+    schedulesOs: true,
   },
   {
     key: "gratitude",
     kind: "tool",
-    status: "placeholder",
+    status: "live",
     labelKey: "targets.gratitude.label",
     descriptionKey: "targets.gratitude.description",
     icon: "favorite",
-  },
-  {
-    key: "mindfulness",
-    kind: "tool",
-    status: "placeholder",
-    labelKey: "targets.mindfulness.label",
-    descriptionKey: "targets.mindfulness.description",
-    icon: "air",
+    enabledField: "gratitudeRemindersEnabled",
+    hourField: "gratitudeReminderHour",
+    minuteField: "gratitudeReminderMinute",
+    timezoneField: "gratitudeReminderTimezone",
+    schedulesOs: true,
   },
   {
     key: "grounding",
     kind: "tool",
-    status: "placeholder",
+    status: "live",
     labelKey: "targets.grounding.label",
     descriptionKey: "targets.grounding.description",
     icon: "anchor",
+    enabledField: "groundingRemindersEnabled",
+    hourField: "groundingReminderHour",
+    minuteField: "groundingReminderMinute",
+    timezoneField: "groundingReminderTimezone",
+    schedulesOs: true,
   },
   {
     key: "breathing",
     kind: "tool",
-    status: "placeholder",
+    status: "live",
     labelKey: "targets.breathing.label",
     descriptionKey: "targets.breathing.description",
     icon: "air",
+    enabledField: "breathingRemindersEnabled",
+    hourField: "breathingReminderHour",
+    minuteField: "breathingReminderMinute",
+    timezoneField: "breathingReminderTimezone",
+    schedulesOs: true,
   },
   {
     key: "sleep",
     kind: "tool",
-    status: "placeholder",
+    status: "live",
     labelKey: "targets.sleep.label",
     descriptionKey: "targets.sleep.description",
     icon: "bedtime",
+    enabledField: "sleepRemindersEnabled",
+    hourField: "sleepReminderHour",
+    minuteField: "sleepReminderMinute",
+    timezoneField: "sleepReminderTimezone",
+    schedulesOs: true,
   },
   {
     key: "habits",
     kind: "tool",
-    status: "placeholder",
+    status: "live",
     labelKey: "targets.habits.label",
     descriptionKey: "targets.habits.description",
     icon: "task-alt",
+    enabledField: "habitsRemindersEnabled",
+    hourField: "habitsReminderHour",
+    minuteField: "habitsReminderMinute",
+    timezoneField: "habitsReminderTimezone",
+    schedulesOs: true,
   },
 ];
 

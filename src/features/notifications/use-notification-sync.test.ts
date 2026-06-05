@@ -3,17 +3,22 @@ import { AppState, Platform } from "react-native";
 
 import { defaultUserPreferences, type UserPreferences } from "@/src/features/modules/types";
 import { useNotificationSync } from "@/src/features/notifications/use-notification-sync";
-import { cancelReminder, scheduleReminder } from "@/src/lib/notifications";
+import {
+  cancelAllReminders,
+  clearLegacyLocalReminders,
+  scheduleReminder,
+} from "@/src/lib/notifications";
 
 jest.mock("@/src/lib/notifications", () => ({
-  cancelReminder: jest.fn().mockResolvedValue(undefined),
+  cancelAllReminders: jest.fn().mockResolvedValue(undefined),
   scheduleReminder: jest.fn().mockResolvedValue({ enabled: true }),
+  clearLegacyLocalReminders: jest.fn().mockResolvedValue(undefined),
 }));
 
 const mockScheduleReminder = jest.mocked(scheduleReminder);
-const mockCancelReminder = jest.mocked(cancelReminder);
+const mockCancelAllReminders = jest.mocked(cancelAllReminders);
+const mockClearLegacyLocalReminders = jest.mocked(clearLegacyLocalReminders);
 
-const mockListeners: ((state: string) => void)[] = [];
 const mockRemove = jest.fn();
 
 function setPlatformOS(os: string) {
@@ -27,65 +32,67 @@ function makePreferences(overrides: Partial<UserPreferences> = {}): UserPreferen
 describe("useNotificationSync", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockListeners.length = 0;
     mockRemove.mockClear();
     setPlatformOS("android");
-    jest.spyOn(AppState, "addEventListener").mockImplementation((_event, handler) => {
-      mockListeners.push(handler as (state: string) => void);
-      return { remove: mockRemove };
-    });
+    jest
+      .spyOn(AppState, "addEventListener")
+      .mockImplementation(() => ({ remove: mockRemove }) as never);
   });
 
   afterAll(() => {
     setPlatformOS("ios");
   });
 
-  it("schedules an enabled target on initial load", async () => {
+  it("ensures a push token when global is on and at least one reminder is enabled", async () => {
     const prefs = makePreferences({
-      cbtRemindersEnabled: true,
-      cbtReminderHour: 19,
-      cbtReminderMinute: 30,
+      notificationsEnabledGlobal: true,
+      sleepRemindersEnabled: true,
     });
 
     renderHook(() => useNotificationSync("user-1", prefs));
 
     await waitFor(() => {
-      expect(mockScheduleReminder).toHaveBeenCalledWith("cbt", 19, 30, "user-1");
+      expect(mockScheduleReminder).toHaveBeenCalled();
     });
+    expect(mockScheduleReminder.mock.calls[0]?.[3]).toBe("user-1");
   });
 
-  it("cancels a disabled target on initial load", async () => {
-    const prefs = makePreferences({ cbtRemindersEnabled: false });
-
-    renderHook(() => useNotificationSync("user-1", prefs));
-
-    await waitFor(() => {
-      expect(mockCancelReminder).toHaveBeenCalledWith("cbt", "user-1");
-    });
-    expect(mockScheduleReminder).not.toHaveBeenCalledWith(
-      "cbt",
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
-    );
-  });
-
-  it("cancels all targets when global is disabled regardless of per-target toggle", async () => {
+  it("disables the token when global notifications are off", async () => {
     const prefs = makePreferences({
       notificationsEnabledGlobal: false,
-      cbtRemindersEnabled: true,
-      actRemindersEnabled: true,
-      meditationRemindersEnabled: true,
+      sleepRemindersEnabled: true,
     });
 
     renderHook(() => useNotificationSync("user-1", prefs));
 
     await waitFor(() => {
-      expect(mockCancelReminder).toHaveBeenCalledWith("cbt", "user-1");
-      expect(mockCancelReminder).toHaveBeenCalledWith("act", "user-1");
-      expect(mockCancelReminder).toHaveBeenCalledWith("meditation", "user-1");
+      expect(mockCancelAllReminders).toHaveBeenCalledWith("user-1");
     });
     expect(mockScheduleReminder).not.toHaveBeenCalled();
+  });
+
+  it("does nothing (no token churn) when no reminders are enabled", async () => {
+    const prefs = makePreferences({ notificationsEnabledGlobal: true });
+
+    renderHook(() => useNotificationSync("user-1", prefs));
+
+    await act(async () => {});
+
+    expect(mockScheduleReminder).not.toHaveBeenCalled();
+    expect(mockCancelAllReminders).not.toHaveBeenCalled();
+  });
+
+  it("runs the one-time legacy local cleanup once", async () => {
+    const prefs = makePreferences({
+      notificationsEnabledGlobal: true,
+      sleepRemindersEnabled: true,
+    });
+
+    renderHook(() => useNotificationSync("user-1", prefs));
+
+    await waitFor(() => {
+      expect(mockClearLegacyLocalReminders).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("does nothing when preferences is undefined", async () => {
@@ -94,78 +101,20 @@ describe("useNotificationSync", () => {
     await act(async () => {});
 
     expect(mockScheduleReminder).not.toHaveBeenCalled();
-    expect(mockCancelReminder).not.toHaveBeenCalled();
-  });
-
-  it("does nothing when userId is null", async () => {
-    const prefs = makePreferences({ cbtRemindersEnabled: true });
-
-    renderHook(() => useNotificationSync(null, prefs));
-
-    await act(async () => {});
-
-    expect(mockScheduleReminder).not.toHaveBeenCalled();
-    expect(mockCancelReminder).not.toHaveBeenCalled();
-  });
-
-  it("re-syncs when app comes to foreground", async () => {
-    const prefs = makePreferences({
-      cbtRemindersEnabled: true,
-      cbtReminderHour: 8,
-      cbtReminderMinute: 0,
-    });
-
-    renderHook(() => useNotificationSync("user-1", prefs));
-
-    await waitFor(() => {
-      expect(mockScheduleReminder).toHaveBeenCalledWith("cbt", 8, 0, "user-1");
-    });
-
-    mockScheduleReminder.mockClear();
-    mockCancelReminder.mockClear();
-
-    await act(async () => {
-      for (const listener of mockListeners) listener("active");
-    });
-
-    await waitFor(() => {
-      expect(mockScheduleReminder).toHaveBeenCalledWith("cbt", 8, 0, "user-1");
-    });
-  });
-
-  it("skips a second concurrent sync if one is already in progress", async () => {
-    let resolveFirst!: () => void;
-    mockScheduleReminder.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolveFirst = () => resolve({ enabled: true });
-        }),
-    );
-
-    const prefs = makePreferences({ cbtRemindersEnabled: true });
-    renderHook(() => useNotificationSync("user-1", prefs));
-
-    act(() => {
-      for (const listener of mockListeners) listener("active");
-    });
-
-    expect(mockScheduleReminder).toHaveBeenCalledTimes(1);
-
-    await act(async () => {
-      resolveFirst();
-    });
+    expect(mockCancelAllReminders).not.toHaveBeenCalled();
+    expect(mockClearLegacyLocalReminders).not.toHaveBeenCalled();
   });
 
   it("is a no-op on web", async () => {
     setPlatformOS("web");
-    const prefs = makePreferences({ cbtRemindersEnabled: true });
+    const prefs = makePreferences({ sleepRemindersEnabled: true });
 
     renderHook(() => useNotificationSync("user-1", prefs));
 
     await act(async () => {});
 
     expect(mockScheduleReminder).not.toHaveBeenCalled();
-    expect(mockCancelReminder).not.toHaveBeenCalled();
+    expect(mockClearLegacyLocalReminders).not.toHaveBeenCalled();
     expect(AppState.addEventListener).not.toHaveBeenCalled();
   });
 });

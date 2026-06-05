@@ -45,6 +45,34 @@ interface UserPreferenceRow {
   act_reminder_hour: number | null;
   act_reminder_minute: number | null;
   act_reminder_timezone: string | null;
+  mood_reminders_enabled: boolean | null;
+  mood_reminder_hour: number | null;
+  mood_reminder_minute: number | null;
+  mood_reminder_timezone: string | null;
+  journal_reminders_enabled: boolean | null;
+  journal_reminder_hour: number | null;
+  journal_reminder_minute: number | null;
+  journal_reminder_timezone: string | null;
+  gratitude_reminders_enabled: boolean | null;
+  gratitude_reminder_hour: number | null;
+  gratitude_reminder_minute: number | null;
+  gratitude_reminder_timezone: string | null;
+  grounding_reminders_enabled: boolean | null;
+  grounding_reminder_hour: number | null;
+  grounding_reminder_minute: number | null;
+  grounding_reminder_timezone: string | null;
+  breathing_reminders_enabled: boolean | null;
+  breathing_reminder_hour: number | null;
+  breathing_reminder_minute: number | null;
+  breathing_reminder_timezone: string | null;
+  sleep_reminders_enabled: boolean | null;
+  sleep_reminder_hour: number | null;
+  sleep_reminder_minute: number | null;
+  sleep_reminder_timezone: string | null;
+  habits_reminders_enabled: boolean | null;
+  habits_reminder_hour: number | null;
+  habits_reminder_minute: number | null;
+  habits_reminder_timezone: string | null;
   act_program_started_at: string | null;
   act_program_completed_at: string | null;
   act_program_prompt_dismissed_at: string | null;
@@ -112,6 +140,41 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     actReminderHour: row.act_reminder_hour ?? defaultUserPreferences.actReminderHour,
     actReminderMinute: row.act_reminder_minute ?? defaultUserPreferences.actReminderMinute,
     actReminderTimezone: row.act_reminder_timezone ?? null,
+    moodRemindersEnabled: Boolean(row.mood_reminders_enabled),
+    moodReminderHour: row.mood_reminder_hour ?? defaultUserPreferences.moodReminderHour,
+    moodReminderMinute: row.mood_reminder_minute ?? defaultUserPreferences.moodReminderMinute,
+    moodReminderTimezone: row.mood_reminder_timezone ?? null,
+    journalRemindersEnabled: Boolean(row.journal_reminders_enabled),
+    journalReminderHour: row.journal_reminder_hour ?? defaultUserPreferences.journalReminderHour,
+    journalReminderMinute:
+      row.journal_reminder_minute ?? defaultUserPreferences.journalReminderMinute,
+    journalReminderTimezone: row.journal_reminder_timezone ?? null,
+    gratitudeRemindersEnabled: Boolean(row.gratitude_reminders_enabled),
+    gratitudeReminderHour:
+      row.gratitude_reminder_hour ?? defaultUserPreferences.gratitudeReminderHour,
+    gratitudeReminderMinute:
+      row.gratitude_reminder_minute ?? defaultUserPreferences.gratitudeReminderMinute,
+    gratitudeReminderTimezone: row.gratitude_reminder_timezone ?? null,
+    groundingRemindersEnabled: Boolean(row.grounding_reminders_enabled),
+    groundingReminderHour:
+      row.grounding_reminder_hour ?? defaultUserPreferences.groundingReminderHour,
+    groundingReminderMinute:
+      row.grounding_reminder_minute ?? defaultUserPreferences.groundingReminderMinute,
+    groundingReminderTimezone: row.grounding_reminder_timezone ?? null,
+    breathingRemindersEnabled: Boolean(row.breathing_reminders_enabled),
+    breathingReminderHour:
+      row.breathing_reminder_hour ?? defaultUserPreferences.breathingReminderHour,
+    breathingReminderMinute:
+      row.breathing_reminder_minute ?? defaultUserPreferences.breathingReminderMinute,
+    breathingReminderTimezone: row.breathing_reminder_timezone ?? null,
+    sleepRemindersEnabled: Boolean(row.sleep_reminders_enabled),
+    sleepReminderHour: row.sleep_reminder_hour ?? defaultUserPreferences.sleepReminderHour,
+    sleepReminderMinute: row.sleep_reminder_minute ?? defaultUserPreferences.sleepReminderMinute,
+    sleepReminderTimezone: row.sleep_reminder_timezone ?? null,
+    habitsRemindersEnabled: Boolean(row.habits_reminders_enabled),
+    habitsReminderHour: row.habits_reminder_hour ?? defaultUserPreferences.habitsReminderHour,
+    habitsReminderMinute: row.habits_reminder_minute ?? defaultUserPreferences.habitsReminderMinute,
+    habitsReminderTimezone: row.habits_reminder_timezone ?? null,
     actProgramStartedAt: row.act_program_started_at ?? null,
     actProgramCompletedAt: row.act_program_completed_at ?? null,
     actProgramPromptDismissedAt: row.act_program_prompt_dismissed_at ?? null,
@@ -204,6 +267,34 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     act_reminder_hour: preferences.actReminderHour,
     act_reminder_minute: preferences.actReminderMinute,
     act_reminder_timezone: preferences.actReminderTimezone,
+    mood_reminders_enabled: preferences.moodRemindersEnabled,
+    mood_reminder_hour: preferences.moodReminderHour,
+    mood_reminder_minute: preferences.moodReminderMinute,
+    mood_reminder_timezone: preferences.moodReminderTimezone,
+    journal_reminders_enabled: preferences.journalRemindersEnabled,
+    journal_reminder_hour: preferences.journalReminderHour,
+    journal_reminder_minute: preferences.journalReminderMinute,
+    journal_reminder_timezone: preferences.journalReminderTimezone,
+    gratitude_reminders_enabled: preferences.gratitudeRemindersEnabled,
+    gratitude_reminder_hour: preferences.gratitudeReminderHour,
+    gratitude_reminder_minute: preferences.gratitudeReminderMinute,
+    gratitude_reminder_timezone: preferences.gratitudeReminderTimezone,
+    grounding_reminders_enabled: preferences.groundingRemindersEnabled,
+    grounding_reminder_hour: preferences.groundingReminderHour,
+    grounding_reminder_minute: preferences.groundingReminderMinute,
+    grounding_reminder_timezone: preferences.groundingReminderTimezone,
+    breathing_reminders_enabled: preferences.breathingRemindersEnabled,
+    breathing_reminder_hour: preferences.breathingReminderHour,
+    breathing_reminder_minute: preferences.breathingReminderMinute,
+    breathing_reminder_timezone: preferences.breathingReminderTimezone,
+    sleep_reminders_enabled: preferences.sleepRemindersEnabled,
+    sleep_reminder_hour: preferences.sleepReminderHour,
+    sleep_reminder_minute: preferences.sleepReminderMinute,
+    sleep_reminder_timezone: preferences.sleepReminderTimezone,
+    habits_reminders_enabled: preferences.habitsRemindersEnabled,
+    habits_reminder_hour: preferences.habitsReminderHour,
+    habits_reminder_minute: preferences.habitsReminderMinute,
+    habits_reminder_timezone: preferences.habitsReminderTimezone,
     act_program_started_at: preferences.actProgramStartedAt,
     act_program_completed_at: preferences.actProgramCompletedAt,
     act_program_prompt_dismissed_at: preferences.actProgramPromptDismissedAt,
@@ -429,6 +520,43 @@ export async function deleteWebPushSubscription(userId: string, endpoint: string
     .delete()
     .eq("user_id", userId)
     .eq("endpoint", endpoint);
+
+  if (error) {
+    throw error;
+  }
+}
+
+interface DevicePushTokenPayload {
+  token: string;
+  platform: "ios" | "android";
+  timeZone: string | null;
+}
+
+export async function upsertDevicePushToken(userId: string, token: DevicePushTokenPayload) {
+  const client = requireSupabase();
+  const { error } = await client.from("device_push_tokens").upsert(
+    {
+      user_id: userId,
+      expo_push_token: token.token,
+      platform: token.platform,
+      time_zone: token.timeZone,
+      enabled: true,
+    },
+    { onConflict: "expo_push_token" },
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function deleteDevicePushToken(userId: string, token: string) {
+  const client = requireSupabase();
+  const { error } = await client
+    .from("device_push_tokens")
+    .delete()
+    .eq("user_id", userId)
+    .eq("expo_push_token", token);
 
   if (error) {
     throw error;

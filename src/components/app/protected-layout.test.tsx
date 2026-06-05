@@ -91,6 +91,12 @@ jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: jest.fn(),
 }));
 
+// Notification deep-linking touches the native expo-notifications module; it has its own
+// unit test (use-notification-deep-link.test.tsx), so stub it out of the layout render.
+jest.mock("@/src/features/notifications/use-notification-deep-link", () => ({
+  useNotificationDeepLink: jest.fn(),
+}));
+
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jest.MockedFunction<
   typeof useUpdateOnboardingPreferences

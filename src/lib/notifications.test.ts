@@ -1,10 +1,10 @@
 import * as Notifications from "expo-notifications";
-import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
 import {
   cancelAllReminders,
   cancelReminder,
+  clearLegacyLocalReminders,
   registerWebPushServiceWorker,
   scheduleReminder,
 } from "@/src/lib/notifications";
@@ -12,22 +12,13 @@ import {
   deleteWebPushSubscription,
   upsertWebPushSubscription,
 } from "@/src/features/settings/repository";
+import { disableDevicePushToken, ensureDevicePushToken } from "@/src/lib/push-token";
 
 jest.mock("expo-notifications", () => ({
-  SchedulableTriggerInputTypes: {
-    DAILY: "daily",
-  },
-  cancelScheduledNotificationAsync: jest.fn(),
-  getPermissionsAsync: jest.fn(),
-  requestPermissionsAsync: jest.fn(),
-  scheduleNotificationAsync: jest.fn(),
+  cancelAllScheduledNotificationsAsync: jest.fn(),
+  getLastNotificationResponseAsync: jest.fn(),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
   setNotificationHandler: jest.fn(),
-}));
-
-jest.mock("expo-secure-store", () => ({
-  deleteItemAsync: jest.fn(),
-  getItemAsync: jest.fn(),
-  setItemAsync: jest.fn(),
 }));
 
 jest.mock("@/src/lib/env", () => ({
@@ -42,23 +33,16 @@ jest.mock("@/src/features/settings/repository", () => ({
   upsertWebPushSubscription: jest.fn(),
 }));
 
-const CBT_STORAGE_KEY = "selftend-reminder-id-cbt";
-const MEDITATION_STORAGE_KEY = "selftend-reminder-id-meditation";
-const ACT_STORAGE_KEY = "selftend-reminder-id-act";
-const LEGACY_COLON_CBT_KEY = "selftend:reminder-id:cbt";
-const LEGACY_CBT_KEY = "selftend:cbt-reminder-id";
+jest.mock("@/src/lib/push-token", () => ({
+  ensureDevicePushToken: jest.fn().mockResolvedValue({ enabled: true }),
+  disableDevicePushToken: jest.fn().mockResolvedValue(undefined),
+}));
 
-const mockCancelScheduledNotificationAsync = jest.mocked(
-  Notifications.cancelScheduledNotificationAsync,
-);
-const mockGetPermissionsAsync = jest.mocked(Notifications.getPermissionsAsync);
-const mockRequestPermissionsAsync = jest.mocked(Notifications.requestPermissionsAsync);
-const mockScheduleNotificationAsync = jest.mocked(Notifications.scheduleNotificationAsync);
-const mockDeleteItemAsync = jest.mocked(SecureStore.deleteItemAsync);
-const mockGetItemAsync = jest.mocked(SecureStore.getItemAsync);
-const mockSetItemAsync = jest.mocked(SecureStore.setItemAsync);
+const mockCancelAllScheduled = jest.mocked(Notifications.cancelAllScheduledNotificationsAsync);
 const mockDeleteWebPushSubscription = jest.mocked(deleteWebPushSubscription);
 const mockUpsertWebPushSubscription = jest.mocked(upsertWebPushSubscription);
+const mockEnsureDevicePushToken = jest.mocked(ensureDevicePushToken);
+const mockDisableDevicePushToken = jest.mocked(disableDevicePushToken);
 
 function setPlatformOS(os: string) {
   Object.defineProperty(Platform, "OS", {
@@ -148,93 +132,60 @@ describe("Reminder notifications", () => {
     setPlatformOS("ios");
     mockDeleteWebPushSubscription.mockResolvedValue(undefined);
     mockUpsertWebPushSubscription.mockResolvedValue(undefined);
+    mockEnsureDevicePushToken.mockResolvedValue({ enabled: true });
+    mockDisableDevicePushToken.mockResolvedValue(undefined);
   });
 
   afterAll(() => {
     setPlatformOS("ios");
   });
 
-  it("does not schedule when native notification permission is denied", async () => {
-    mockGetPermissionsAsync.mockResolvedValue({
-      granted: false,
-    } as Awaited<ReturnType<typeof Notifications.getPermissionsAsync>>);
-    mockRequestPermissionsAsync.mockResolvedValue({
-      granted: false,
-    } as Awaited<ReturnType<typeof Notifications.requestPermissionsAsync>>);
+  // ---- Native: server-driven push (token registration only) ----
 
-    await expect(scheduleReminder("cbt", 19, 0)).resolves.toEqual({
+  it("registers a device push token on native scheduleReminder", async () => {
+    setPlatformOS("android");
+
+    await expect(scheduleReminder("mood", 12, 0, "user-1")).resolves.toEqual({ enabled: true });
+
+    expect(mockEnsureDevicePushToken).toHaveBeenCalledWith("user-1");
+  });
+
+  it("surfaces permission-denied from native token registration", async () => {
+    setPlatformOS("android");
+    mockEnsureDevicePushToken.mockResolvedValue({ enabled: false, reason: "permission-denied" });
+
+    await expect(scheduleReminder("mood", 12, 0, "user-1")).resolves.toEqual({
       enabled: false,
       reason: "permission-denied",
     });
-
-    expect(mockRequestPermissionsAsync).toHaveBeenCalled();
-    expect(mockScheduleNotificationAsync).not.toHaveBeenCalled();
-    expect(mockSetItemAsync).not.toHaveBeenCalled();
   });
 
-  it("cancels any existing native reminder before scheduling a new one for the same target", async () => {
-    mockGetPermissionsAsync.mockResolvedValue({
-      granted: true,
-    } as Awaited<ReturnType<typeof Notifications.getPermissionsAsync>>);
-    mockGetItemAsync.mockResolvedValue("existing-reminder-id");
-    mockScheduleNotificationAsync.mockResolvedValue("new-reminder-id");
+  it("disables the device token when cancelAllReminders runs on native", async () => {
+    setPlatformOS("android");
 
-    await expect(scheduleReminder("cbt", 8, 30)).resolves.toEqual({ enabled: true });
+    await cancelAllReminders("user-1");
 
-    expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("existing-reminder-id");
-    expect(mockDeleteItemAsync).toHaveBeenCalledWith(CBT_STORAGE_KEY);
-    expect(mockScheduleNotificationAsync).toHaveBeenCalledWith({
-      content: {
-        body: expect.any(String),
-        title: expect.any(String),
-      },
-      trigger: {
-        hour: 8,
-        minute: 30,
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      },
-    });
-    expect(mockSetItemAsync).toHaveBeenCalledWith(CBT_STORAGE_KEY, "new-reminder-id");
+    expect(mockDisableDevicePushToken).toHaveBeenCalledWith("user-1");
   });
 
-  it("uses a target-specific storage key when scheduling meditation", async () => {
-    mockGetPermissionsAsync.mockResolvedValue({
-      granted: true,
-    } as Awaited<ReturnType<typeof Notifications.getPermissionsAsync>>);
-    mockGetItemAsync.mockResolvedValue(null);
-    mockScheduleNotificationAsync.mockResolvedValue("meditation-reminder-id");
+  it("cancelReminder is a no-op (per-target enablement lives in preferences)", async () => {
+    setPlatformOS("android");
 
-    await expect(scheduleReminder("meditation", 7, 0)).resolves.toEqual({ enabled: true });
+    await cancelReminder("cbt", "user-1");
 
-    expect(mockSetItemAsync).toHaveBeenCalledWith(MEDITATION_STORAGE_KEY, "meditation-reminder-id");
+    expect(mockCancelAllScheduled).not.toHaveBeenCalled();
+    expect(mockDisableDevicePushToken).not.toHaveBeenCalled();
   });
 
-  it("cancels the stored native reminder for that target only", async () => {
-    mockGetItemAsync.mockResolvedValue("existing-reminder-id");
+  it("clearLegacyLocalReminders cancels every previously-scheduled local notification", async () => {
+    setPlatformOS("android");
 
-    await cancelReminder("act");
+    await clearLegacyLocalReminders();
 
-    expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("existing-reminder-id");
-    expect(mockDeleteItemAsync).toHaveBeenCalledWith(ACT_STORAGE_KEY);
+    expect(mockCancelAllScheduled).toHaveBeenCalled();
   });
 
-  it("cancels every target when cancelAllReminders is called", async () => {
-    mockGetItemAsync.mockImplementation(async (key: string) => {
-      if (key === CBT_STORAGE_KEY) return "cbt-id";
-      if (key === MEDITATION_STORAGE_KEY) return "meditation-id";
-      if (key === ACT_STORAGE_KEY) return "act-id";
-      return null;
-    });
-
-    await cancelAllReminders();
-
-    expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("cbt-id");
-    expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("meditation-id");
-    expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("act-id");
-    expect(mockDeleteItemAsync).toHaveBeenCalledWith(CBT_STORAGE_KEY);
-    expect(mockDeleteItemAsync).toHaveBeenCalledWith(MEDITATION_STORAGE_KEY);
-    expect(mockDeleteItemAsync).toHaveBeenCalledWith(ACT_STORAGE_KEY);
-  });
+  // ---- Web: unchanged server push via the service worker ----
 
   it("returns unsupported on web when browser push APIs are unavailable", async () => {
     setPlatformOS("web");
@@ -277,8 +228,7 @@ describe("Reminder notifications", () => {
   it("subscribes only once per browser even when multiple targets schedule", async () => {
     setPlatformOS("web");
     const { pushManager, subscription } = createWebPushMocks();
-    pushManager.subscribe.mockImplementation(async (...args: unknown[]) => {
-      // After the first subscribe call, getSubscription should return it.
+    pushManager.subscribe.mockImplementation(async () => {
       pushManager.getSubscription.mockResolvedValue(subscription);
       return subscription;
     });
@@ -327,59 +277,5 @@ describe("Reminder notifications", () => {
       "user-1",
       "https://push.example/subscription",
     );
-  });
-
-  it("migrates a reminder ID from the old colon-format key to the new hyphen key on first read", async () => {
-    mockGetItemAsync.mockImplementation(async (key: string) => {
-      if (key === CBT_STORAGE_KEY) return null;
-      if (key === LEGACY_COLON_CBT_KEY) return "old-cbt-id";
-      return null;
-    });
-
-    await cancelReminder("cbt");
-
-    expect(mockSetItemAsync).toHaveBeenCalledWith(CBT_STORAGE_KEY, "old-cbt-id");
-    expect(mockDeleteItemAsync).toHaveBeenCalledWith(LEGACY_COLON_CBT_KEY);
-    expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("old-cbt-id");
-  });
-
-  it("silently ignores a thrown error from the old colon-format key (native behaviour)", async () => {
-    mockGetItemAsync.mockImplementation(async (key: string) => {
-      if (key === CBT_STORAGE_KEY) return null;
-      if (key === LEGACY_COLON_CBT_KEY) throw new Error("Invalid key provided to SecureStore");
-      return null;
-    });
-
-    await cancelReminder("cbt");
-
-    expect(mockCancelScheduledNotificationAsync).not.toHaveBeenCalled();
-  });
-
-  it("silently ignores a thrown error from the legacy CBT key (native behaviour)", async () => {
-    mockGetItemAsync.mockImplementation(async (key: string) => {
-      if (key === CBT_STORAGE_KEY) return null;
-      if (key === LEGACY_COLON_CBT_KEY) throw new Error("Invalid key provided to SecureStore");
-      if (key === LEGACY_CBT_KEY) throw new Error("Invalid key provided to SecureStore");
-      return null;
-    });
-
-    await cancelReminder("cbt");
-
-    expect(mockCancelScheduledNotificationAsync).not.toHaveBeenCalled();
-  });
-
-  it("migrates a reminder ID from the legacy CBT key to the new hyphen key on first read", async () => {
-    mockGetItemAsync.mockImplementation(async (key: string) => {
-      if (key === CBT_STORAGE_KEY) return null;
-      if (key === LEGACY_COLON_CBT_KEY) return null;
-      if (key === LEGACY_CBT_KEY) return "legacy-cbt-id";
-      return null;
-    });
-
-    await cancelReminder("cbt");
-
-    expect(mockSetItemAsync).toHaveBeenCalledWith(CBT_STORAGE_KEY, "legacy-cbt-id");
-    expect(mockDeleteItemAsync).toHaveBeenCalledWith(LEGACY_CBT_KEY);
-    expect(mockCancelScheduledNotificationAsync).toHaveBeenCalledWith("legacy-cbt-id");
   });
 });

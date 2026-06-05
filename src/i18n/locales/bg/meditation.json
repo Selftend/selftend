@@ -2,10 +2,6 @@
   "title": "Медитация",
   "description": "Спокойна, тимирана сесия с начален и краен звук.",
   "authorEyebrow": "Inspired by The Mind Illuminated · Culadasa",
-  "notifications": {
-    "title": "Тихо напомняне за медитация",
-    "body": "Отдели няколко минути да успокоиш вниманието. Дори кратка сесия има значение."
-  },
   "duration": {
     "label": "Продължителност",
     "minutes": "{{count}} мин"

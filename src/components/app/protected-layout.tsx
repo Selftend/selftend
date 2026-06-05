@@ -17,6 +17,7 @@ import {
   useUpdateOnboardingPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
+import { useNotificationDeepLink } from "@/src/features/notifications/use-notification-deep-link";
 import { useNotificationSync } from "@/src/features/notifications/use-notification-sync";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useSession } from "@/src/providers/session-provider";
@@ -36,6 +37,7 @@ export default function ProtectedLayout() {
 
   useSettingsSync(user?.id ?? null, preferences);
   useNotificationSync(user?.id ?? null, preferences);
+  useNotificationDeepLink();
 
   if (status === "loading") {
     return (

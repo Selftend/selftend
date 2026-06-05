@@ -14,3 +14,7 @@ package-lock.json
 pnpm-lock.yaml
 yarn.lock
 expo-env.d.ts
+
+# Firebase config files are downloaded from the Firebase console; keep them verbatim.
+google-services.json
+google-services.dev.json

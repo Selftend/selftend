@@ -19,7 +19,10 @@ const easBuildProfile = process.env.EAS_BUILD_PROFILE;
 const isDevelopmentBuild =
   easBuildProfile === "development" || process.env.SELFTEND_APP_VARIANT === "development";
 const appName = isDevelopmentBuild ? "Selftend Dev" : "Selftend";
-const appSlug = isDevelopmentBuild ? "selftend-dev" : "selftend";
+// Both variants share one EAS project (extra.eas.projectId), whose registered slug is
+// "selftend". The slug must match that project, so it does NOT change per variant — the dev
+// build differentiates via name/package/scheme instead.
+const appSlug = "selftend";
 const appScheme = isDevelopmentBuild ? "selftend-dev" : "selftend";
 const androidPackage = isDevelopmentBuild
   ? "org.vasilyoshev.selftend.dev"
@@ -97,6 +100,11 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
     edgeToEdgeEnabled: true,
     package: androidPackage,
     versionCode: 1,
+    // Firebase config for FCM (Android push). One file per build variant, since the dev and
+    // prod variants use different package names. Safe to commit (public identifiers only).
+    googleServicesFile: isDevelopmentBuild
+      ? "./google-services.dev.json"
+      : "./google-services.json",
   },
   web: {
     bundler: "metro",

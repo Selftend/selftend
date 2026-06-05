@@ -1200,10 +1200,6 @@
       "reflectionPrompt": "Was I doing this for the outcome, or for the value of the action itself?"
     }
   },
-  "notifications": {
-    "title": "Quiet CBT check-in",
-    "body": "Take a minute to notice a thought and respond to it with more balance."
-  },
   "grounding": {
     "title": "Grounding",
     "description": "Quick techniques to anchor yourself in the present moment when anxiety or distress spikes.",

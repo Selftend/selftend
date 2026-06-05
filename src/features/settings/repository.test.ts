@@ -1,11 +1,13 @@
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import {
+  deleteDevicePushToken,
   deleteUserAccount,
   deleteWebPushSubscription,
   getUserPreferences,
   updateOnboardingPreferences,
   updateShownButtonTours,
   updateUserPreferences,
+  upsertDevicePushToken,
   upsertWebPushSubscription,
 } from "@/src/features/settings/repository";
 import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
@@ -212,6 +214,54 @@ describe("settings repository", () => {
     );
   });
 
+  it("maps the new per-tool reminder fields from the row", async () => {
+    mockPreferenceSelect({
+      user_id: "user-1",
+      enabled_modules: ["cbt"],
+      mood_reminders_enabled: true,
+      mood_reminder_hour: 8,
+      mood_reminder_minute: 30,
+      mood_reminder_timezone: "Europe/Sofia",
+      habits_reminders_enabled: true,
+      habits_reminder_hour: 9,
+      habits_reminder_minute: 15,
+      habits_reminder_timezone: "UTC",
+    });
+
+    await expect(getUserPreferences("user-1")).resolves.toMatchObject({
+      moodRemindersEnabled: true,
+      moodReminderHour: 8,
+      moodReminderMinute: 30,
+      moodReminderTimezone: "Europe/Sofia",
+      habitsRemindersEnabled: true,
+      habitsReminderHour: 9,
+      habitsReminderMinute: 15,
+      habitsReminderTimezone: "UTC",
+    });
+  });
+
+  it("includes the new per-tool reminder fields when updating preferences", async () => {
+    const { upsert } = mockPreferenceUpdate({ user_id: "user-1", enabled_modules: ["cbt"] });
+
+    await updateUserPreferences("user-1", {
+      ...defaultUserPreferences,
+      sleepRemindersEnabled: true,
+      sleepReminderHour: 22,
+      journalReminderMinute: 45,
+    });
+
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sleep_reminders_enabled: true,
+        sleep_reminder_hour: 22,
+        journal_reminder_minute: 45,
+        grounding_reminders_enabled: false,
+        breathing_reminder_hour: 16,
+      }),
+      { onConflict: "user_id" },
+    );
+  });
+
   it("throws when the error is not a missing-column error (no silent retry)", async () => {
     const otherError = { code: "23505", message: "duplicate key value violates unique constraint" };
     const single = jest.fn().mockResolvedValue({ data: null, error: otherError });
@@ -386,5 +436,35 @@ describe("settings repository", () => {
 
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
     expect(eqEndpoint).toHaveBeenCalledWith("endpoint", "https://push.example/subscription");
+  });
+
+  it("upserts a device push token on conflict by expo_push_token", async () => {
+    const { upsert } = mockWebPushUpsert();
+
+    await upsertDevicePushToken("user-1", {
+      token: "ExponentPushToken[abc]",
+      platform: "android",
+      timeZone: "Europe/Sofia",
+    });
+
+    expect(upsert).toHaveBeenCalledWith(
+      {
+        user_id: "user-1",
+        expo_push_token: "ExponentPushToken[abc]",
+        platform: "android",
+        time_zone: "Europe/Sofia",
+        enabled: true,
+      },
+      { onConflict: "expo_push_token" },
+    );
+  });
+
+  it("deletes a device push token by token", async () => {
+    const { eqEndpoint, eqUser } = mockWebPushDelete();
+
+    await deleteDevicePushToken("user-1", "ExponentPushToken[abc]");
+
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(eqEndpoint).toHaveBeenCalledWith("expo_push_token", "ExponentPushToken[abc]");
   });
 });

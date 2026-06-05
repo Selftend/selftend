@@ -75,6 +75,26 @@ describe("export_user_data() (integration)", () => {
     expect(Array.isArray(data.actChoicePoints)).toBe(true);
     expect(Array.isArray(data.planItems)).toBe(true);
     expect(Array.isArray(data.widgetPreferences)).toBe(true);
+    expect(Array.isArray(data.devicePushTokens)).toBe(true);
+    // Reminder preferences for every notification target (20260582 - GDPR completeness:
+    // the base 'preferences' block only carried CBT reminders before this).
+    for (const target of [
+      "cbt",
+      "meditation",
+      "act",
+      "mood",
+      "journal",
+      "gratitude",
+      "grounding",
+      "breathing",
+      "sleep",
+      "habits",
+    ]) {
+      expect(data.preferences).toHaveProperty(`${target}_reminders_enabled`);
+      expect(data.preferences).toHaveProperty(`${target}_reminder_hour`);
+      expect(data.preferences).toHaveProperty(`${target}_reminder_minute`);
+      expect(data.preferences).toHaveProperty(`${target}_reminder_timezone`);
+    }
     expect(typeof data.exportDate).toBe("string");
   });
 
@@ -141,6 +161,11 @@ describe("delete_user_account() (integration)", () => {
       challenge_description: "Hard week",
       coping_steps: ["Text a trusted person"],
     });
+    await admin.from("device_push_tokens").insert({
+      user_id: testUserId,
+      expo_push_token: "ExponentPushToken[delete-flow]",
+      platform: "android",
+    });
   });
 
   afterEach(async () => {
@@ -161,14 +186,16 @@ describe("delete_user_account() (integration)", () => {
     expect(error).toBeNull();
 
     const admin = createServiceClient();
-    const [auth, profile, prefs, records, recoveryPlans, challengePlans] = await Promise.all([
-      admin.auth.admin.getUserById(testUserId),
-      admin.from("profiles").select("user_id").eq("user_id", testUserId),
-      admin.from("user_preferences").select("user_id").eq("user_id", testUserId),
-      admin.from("thought_records").select("id").eq("user_id", testUserId),
-      admin.from("recovery_plans").select("id").eq("user_id", testUserId),
-      admin.from("challenge_plans").select("id").eq("user_id", testUserId),
-    ]);
+    const [auth, profile, prefs, records, recoveryPlans, challengePlans, pushTokens] =
+      await Promise.all([
+        admin.auth.admin.getUserById(testUserId),
+        admin.from("profiles").select("user_id").eq("user_id", testUserId),
+        admin.from("user_preferences").select("user_id").eq("user_id", testUserId),
+        admin.from("thought_records").select("id").eq("user_id", testUserId),
+        admin.from("recovery_plans").select("id").eq("user_id", testUserId),
+        admin.from("challenge_plans").select("id").eq("user_id", testUserId),
+        admin.from("device_push_tokens").select("id").eq("user_id", testUserId),
+      ]);
 
     expect(auth.data?.user).toBeNull();
     expect(profile.data).toEqual([]);
@@ -176,6 +203,7 @@ describe("delete_user_account() (integration)", () => {
     expect(records.data).toEqual([]);
     expect(recoveryPlans.data).toEqual([]);
     expect(challengePlans.data).toEqual([]);
+    expect(pushTokens.data).toEqual([]);
   });
 });
 

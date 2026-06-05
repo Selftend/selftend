@@ -1,11 +1,22 @@
 import {
   getNotificationTarget,
   NOTIFICATION_TARGETS,
+  type NotificationTargetKey,
   readEnabled,
   readHour,
   readMinute,
 } from "@/src/features/notifications/registry";
 import { defaultUserPreferences } from "@/src/features/modules/types";
+
+const NEW_LIVE: NotificationTargetKey[] = [
+  "mood",
+  "journal",
+  "gratitude",
+  "grounding",
+  "breathing",
+  "sleep",
+  "habits",
+];
 
 describe("NOTIFICATION_TARGETS", () => {
   it("contains all expected keys exactly once", () => {
@@ -19,13 +30,16 @@ describe("NOTIFICATION_TARGETS", () => {
       "mood",
       "journal",
       "breathing",
-      "mindfulness",
       "grounding",
       "sleep",
       "habits",
     ]) {
       expect(keys).toContain(k);
     }
+  });
+
+  it("no longer contains the stale mindfulness target", () => {
+    expect(NOTIFICATION_TARGETS.map((t) => String(t.key))).not.toContain("mindfulness");
   });
 
   it("live targets have schedule fields, placeholder targets do not", () => {
@@ -40,6 +54,16 @@ describe("NOTIFICATION_TARGETS", () => {
         expect(target.hourField).toBeUndefined();
       }
     }
+  });
+
+  it.each(NEW_LIVE)("%s is live, schedules OS notifications, and names all four fields", (key) => {
+    const target = getNotificationTarget(key);
+    expect(target.status).toBe("live");
+    expect(target.schedulesOs).toBe(true);
+    expect(target.enabledField).toBe(`${key}RemindersEnabled`);
+    expect(target.hourField).toBe(`${key}ReminderHour`);
+    expect(target.minuteField).toBe(`${key}ReminderMinute`);
+    expect(target.timezoneField).toBe(`${key}ReminderTimezone`);
   });
 });
 
@@ -56,9 +80,9 @@ describe("getNotificationTarget", () => {
 });
 
 describe("readEnabled / readHour / readMinute", () => {
-  it("readEnabled returns false when target has no enabledField", () => {
-    const placeholder = getNotificationTarget("mood");
-    expect(readEnabled(defaultUserPreferences, placeholder)).toBe(false);
+  it("readEnabled returns false for a disabled live target", () => {
+    const mood = getNotificationTarget("mood");
+    expect(readEnabled(defaultUserPreferences, mood)).toBe(false);
   });
 
   it("readEnabled reflects the preferences value for live targets", () => {
@@ -67,14 +91,15 @@ describe("readEnabled / readHour / readMinute", () => {
     expect(readEnabled({ ...defaultUserPreferences, cbtRemindersEnabled: false }, cbt)).toBe(false);
   });
 
-  it("readHour defaults to 19 for placeholders and to the stored value for live", () => {
-    expect(readHour(defaultUserPreferences, getNotificationTarget("mood"))).toBe(19);
+  it("readHour returns each live target's stored value", () => {
     expect(
       readHour({ ...defaultUserPreferences, cbtReminderHour: 8 }, getNotificationTarget("cbt")),
     ).toBe(8);
+    // mood's staggered default lands at 12:00.
+    expect(readHour(defaultUserPreferences, getNotificationTarget("mood"))).toBe(12);
   });
 
-  it("readMinute defaults to 0 for placeholders and to the stored value for live", () => {
+  it("readMinute returns each live target's stored value", () => {
     expect(readMinute(defaultUserPreferences, getNotificationTarget("mood"))).toBe(0);
     expect(
       readMinute(

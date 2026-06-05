@@ -1,18 +1,23 @@
 import { Platform } from "react-native";
-import * as SecureStore from "expo-secure-store";
 import {
   deleteWebPushSubscription,
   upsertWebPushSubscription,
 } from "@/src/features/settings/repository";
-import i18n from "@/src/i18n";
 import { appEnv } from "@/src/lib/env";
+import { disableDevicePushToken, ensureDevicePushToken } from "@/src/lib/push-token";
 
-export type ReminderTarget = "cbt" | "meditation" | "act";
+export type ReminderTarget =
+  | "cbt"
+  | "meditation"
+  | "act"
+  | "mood"
+  | "journal"
+  | "gratitude"
+  | "grounding"
+  | "breathing"
+  | "sleep"
+  | "habits";
 
-const REMINDER_TARGETS: ReminderTarget[] = ["cbt", "meditation", "act"];
-const REMINDER_KEY_PREFIX = "selftend-reminder-id-";
-const LEGACY_COLON_KEY_PREFIX = "selftend:reminder-id:";
-const LEGACY_CBT_REMINDER_KEY = "selftend:cbt-reminder-id";
 const WEB_PUSH_WORKER_PATH = "/selftend-push-worker.js";
 type NotificationsModule = typeof import("expo-notifications");
 let notificationsModule: NotificationsModule | null = null;
@@ -54,68 +59,40 @@ function getNativeNotifications() {
   return notificationsModule;
 }
 
-function reminderStorageKey(target: ReminderTarget) {
-  return `${REMINDER_KEY_PREFIX}${target}`;
+// ----- Deep-link routing (server push carries the route in data.url) -----
+
+/** Pulls the deep-link route out of a tapped notification's response, or null. */
+function reminderUrlFromResponse(response: unknown): string | null {
+  const url = (
+    response as { notification?: { request?: { content?: { data?: { url?: unknown } } } } } | null
+  )?.notification?.request?.content?.data?.url;
+  return typeof url === "string" && url.length > 0 ? url : null;
 }
 
-async function getStoredReminderId(target: ReminderTarget) {
-  const id = await SecureStore.getItemAsync(reminderStorageKey(target));
-  if (id) return id;
-
-  // Migrate from the old colon-format key. The colon is valid on web (localStorage)
-  // but rejected by the native OS keystore - wrap in try/catch so native doesn't throw.
-  try {
-    const oldColonKey = `${LEGACY_COLON_KEY_PREFIX}${target}`;
-    const fromOld = await SecureStore.getItemAsync(oldColonKey);
-    if (fromOld) {
-      await SecureStore.setItemAsync(reminderStorageKey(target), fromOld);
-      try {
-        await SecureStore.deleteItemAsync(oldColonKey);
-      } catch {
-        // best effort
-      }
-      return fromOld;
-    }
-  } catch {
-    // Key format rejected on native; treat as not found.
-  }
-
-  // Migrate from the legacy CBT-only key (also contains a colon - same guard needed).
-  if (target === "cbt") {
-    try {
-      const legacy = await SecureStore.getItemAsync(LEGACY_CBT_REMINDER_KEY);
-      if (legacy) {
-        await SecureStore.setItemAsync(reminderStorageKey(target), legacy);
-        try {
-          await SecureStore.deleteItemAsync(LEGACY_CBT_REMINDER_KEY);
-        } catch {
-          // best effort
-        }
-        return legacy;
-      }
-    } catch {
-      // Key format rejected on native; treat as not found.
-    }
-  }
-  return null;
+/** The route the app was cold-launched into by tapping a reminder, or null. */
+export async function getInitialReminderUrl(): Promise<string | null> {
+  if (Platform.OS === "web") return null;
+  const Notifications = getNativeNotifications();
+  if (!Notifications) return null;
+  const response = await Notifications.getLastNotificationResponseAsync();
+  return reminderUrlFromResponse(response);
 }
 
-async function setStoredReminderId(target: ReminderTarget, notificationId: string | null) {
-  const key = reminderStorageKey(target);
-  if (!notificationId) {
-    await SecureStore.deleteItemAsync(key);
-    return;
-  }
-
-  await SecureStore.setItemAsync(key, notificationId);
+/** Subscribes to reminder taps while the app runs; calls back with the deep-link route. */
+export function addReminderResponseListener(onUrl: (url: string) => void): {
+  remove: () => void;
+} {
+  if (Platform.OS === "web") return { remove: () => {} };
+  const Notifications = getNativeNotifications();
+  if (!Notifications) return { remove: () => {} };
+  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    const url = reminderUrlFromResponse(response);
+    if (url) onUrl(url);
+  });
+  return { remove: () => subscription.remove() };
 }
 
-function getNotificationCopy(target: ReminderTarget) {
-  return {
-    title: i18n.t(`${target}:notifications.title`),
-    body: i18n.t(`${target}:notifications.body`),
-  };
-}
+// ----- Web push (browser service worker + VAPID) -----
 
 function getWebPushGlobals() {
   if (Platform.OS !== "web" || typeof window === "undefined" || typeof navigator === "undefined") {
@@ -265,92 +242,57 @@ async function unsubscribeWebPushIfPresent(userId?: string | null) {
   }
 }
 
-async function ensureReminderPermission() {
-  if (Platform.OS === "web") {
-    return false;
-  }
+// ----- Public API (server-driven on every platform) -----
 
-  const Notifications = getNativeNotifications();
-  if (!Notifications) {
-    return false;
-  }
-
-  const permissions = await Notifications.getPermissionsAsync();
-  if (permissions.granted) {
-    return true;
-  }
-
-  const next = await Notifications.requestPermissionsAsync();
-  return next.granted;
-}
-
-export async function cancelReminder(target: ReminderTarget, userId?: string | null) {
-  if (Platform.OS === "web") {
-    // Web subscription is shared across targets and gated server-side by
-    // each target's *_reminders_enabled flag. Nothing to do here.
-    return;
-  }
-
-  const Notifications = getNativeNotifications();
-  if (!Notifications) {
-    return;
-  }
-
-  const existingId = await getStoredReminderId(target);
-  if (existingId) {
-    await Notifications.cancelScheduledNotificationAsync(existingId);
-  }
-  await setStoredReminderId(target, null);
-}
-
+/**
+ * "Enables" a reminder for the current channel. Reminder content + timing are server-driven
+ * (read from user_preferences by the send-web-reminders edge function); this only ensures the
+ * channel is registered: a web push subscription on web, a device push token on native. The
+ * hour/minute params are unused on native and kept for the web/signature compatibility.
+ */
 export async function scheduleReminder(
   target: ReminderTarget,
-  hour: number,
-  minute: number,
+  _hour: number,
+  _minute: number,
   userId?: string | null,
 ): Promise<ReminderScheduleResult> {
   if (Platform.OS === "web") {
     return ensureWebPushSubscription(userId);
   }
 
-  const Notifications = getNativeNotifications();
-  if (!Notifications) {
-    return { enabled: false, reason: "unsupported" };
-  }
-
-  const granted = await ensureReminderPermission();
-  if (!granted) {
-    return { enabled: false, reason: "permission-denied" };
-  }
-
-  await cancelReminder(target);
-
-  const copy = getNotificationCopy(target);
-  const notificationId = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: copy.title,
-      body: copy.body,
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour,
-      minute,
-    },
-  });
-
-  await setStoredReminderId(target, notificationId);
-  return { enabled: true };
+  const result = await ensureDevicePushToken(userId ?? null);
+  if (result.enabled) return { enabled: true };
+  return {
+    enabled: false,
+    reason: result.reason === "permission-denied" ? "permission-denied" : "unsupported",
+  };
 }
 
 /**
- * Cancels every target's scheduled reminder and (on web) unsubscribes the
- * shared push subscription. Used when the user turns the global master off.
+ * Disabling a single target is reflected in user_preferences and honored server-side, so there
+ * is nothing to cancel per-target on either channel (web's subscription is shared; native's
+ * token serves all targets). No-op by design.
+ */
+export async function cancelReminder(_target: ReminderTarget, _userId?: string | null) {}
+
+/**
+ * Turns the channel off entirely when the user disables the global master: unsubscribe the web
+ * push subscription, or delete this device's push token on native.
  */
 export async function cancelAllReminders(userId?: string | null) {
-  for (const target of REMINDER_TARGETS) {
-    await cancelReminder(target, userId);
-  }
   if (Platform.OS === "web") {
     await unsubscribeWebPushIfPresent(userId);
+    return;
   }
+  await disableDevicePushToken(userId ?? null);
+}
+
+/**
+ * One-time migration off local notifications: clear any OS-scheduled reminders left by the
+ * pre-push build so nothing fires twice now that delivery is server-driven.
+ */
+export async function clearLegacyLocalReminders() {
+  const Notifications = getNativeNotifications();
+  if (!Notifications) return;
+  await Notifications.cancelAllScheduledNotificationsAsync();
 }

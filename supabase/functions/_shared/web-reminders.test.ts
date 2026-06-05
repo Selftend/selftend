@@ -1,4 +1,7 @@
 import {
+  activityWindowForTarget,
+  buildExpoPushMessage,
+  classifyExpoTicket,
   classifyPushError,
   getZonedParts,
   isAllowedPushEndpoint,
@@ -163,6 +166,81 @@ describe("reminderKeyIfDue", () => {
     const sub = { ...baseSub, time_zone: null };
     const prefs = { ...basePrefs, cbt_reminder_timezone: null };
     expect(reminderKeyIfDue("cbt", sub, prefs, now)).toBe("2026-05-24");
+  });
+});
+
+describe("activityWindowForTarget", () => {
+  const FIXED = new Date("2026-06-05T13:30:45.000Z"); // 13:30:45 UTC
+
+  it("builds a start-of-day timestamp window for a ts-column target (UTC)", () => {
+    expect(activityWindowForTarget("mood", "UTC", FIXED)).toEqual({
+      table: "mood_logs",
+      column: "logged_at",
+      op: "gte",
+      value: "2026-06-05T00:00:00.000Z",
+    });
+  });
+
+  it("builds an equality date window for a date-column target (habits)", () => {
+    expect(activityWindowForTarget("habits", "UTC", FIXED)).toEqual({
+      table: "habit_logs",
+      column: "logged_on",
+      op: "eq",
+      value: "2026-06-05",
+    });
+  });
+
+  it("returns null for targets with no activity source (breathing, act)", () => {
+    expect(activityWindowForTarget("breathing", "UTC", FIXED)).toBeNull();
+    expect(activityWindowForTarget("act", "UTC", FIXED)).toBeNull();
+  });
+
+  it("anchors start-of-day to the user's timezone, not UTC", () => {
+    // 2026-06-05T01:00Z is 04:00 in Europe/Sofia (UTC+3, summer);
+    // start-of-day-in-Sofia is 2026-06-04T21:00Z.
+    const window = activityWindowForTarget(
+      "mood",
+      "Europe/Sofia",
+      new Date("2026-06-05T01:00:00.000Z"),
+    );
+    expect(window?.value).toBe("2026-06-04T21:00:00.000Z");
+  });
+
+  it("returns null for an invalid timezone", () => {
+    expect(activityWindowForTarget("mood", "Not/AZone", FIXED)).toBeNull();
+  });
+});
+
+describe("buildExpoPushMessage", () => {
+  it("builds an Expo push message with the target's url in data", () => {
+    expect(buildExpoPushMessage("ExponentPushToken[x]", "mood", { title: "T", body: "B" })).toEqual(
+      {
+        to: "ExponentPushToken[x]",
+        title: "T",
+        body: "B",
+        sound: "default",
+        data: { url: "/tools/mood-tracker" },
+      },
+    );
+  });
+});
+
+describe("classifyExpoTicket", () => {
+  it("flags DeviceNotRegistered tickets for removal", () => {
+    expect(
+      classifyExpoTicket({ status: "error", details: { error: "DeviceNotRegistered" } }),
+    ).toEqual({ ok: false, removeToken: true });
+  });
+  it("treats other errors as transient (no removal)", () => {
+    expect(
+      classifyExpoTicket({ status: "error", details: { error: "MessageRateExceeded" } }),
+    ).toEqual({ ok: false, removeToken: false });
+  });
+  it("treats ok tickets as success", () => {
+    expect(classifyExpoTicket({ status: "ok", id: "r1" })).toEqual({
+      ok: true,
+      removeToken: false,
+    });
   });
 });
 
