@@ -53,10 +53,26 @@ describe("gratitude gratitude_entries (integration)", () => {
     expect(insert.data?.logged_at).toEqual(expect.any(String));
   });
 
-  it("rejects a blank item_1 via the check constraint", async () => {
+  it("allows a blank item_1 when a later item is filled (positional items)", async () => {
     const result = await alice
       .from("gratitude_entries")
       .insert({ user_id: SEED_USERS.alice.id, ...baseEntry, item_1: "   " })
+      .select("id");
+    expect(result.error).toBeNull();
+  });
+
+  it("rejects an entry with every item blank via the at-least-one-item check constraint", async () => {
+    const result = await alice
+      .from("gratitude_entries")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        ...baseEntry,
+        item_1: "   ",
+        item_2: "",
+        item_3: "",
+        item_4: "",
+        item_5: "",
+      })
       .select("id");
     expect(result.error).not.toBeNull();
   });

@@ -24,7 +24,7 @@ test.describe("edit and delete a gratitude entry", () => {
 
     // --- CREATE ---
     await page.goto("/tools/gratitude-log/new");
-    await page.getByRole("textbox", { name: "Gratitude 1" }).fill(originalItem);
+    await page.getByRole("textbox", { name: "What made you laugh?" }).fill(originalItem);
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
     // After save, detail screen shows the original item.
@@ -53,7 +53,7 @@ test.describe("edit and delete a gratitude entry", () => {
     await expect(page).toHaveURL(/\/tools\/gratitude-log\/[^/]+\/edit$/, { timeout: 10_000 });
 
     // Clear the first gratitude field and type the new value.
-    const firstInput = page.getByRole("textbox", { name: "Gratitude 1" });
+    const firstInput = page.getByRole("textbox", { name: "What made you laugh?" });
     await firstInput.clear();
     await firstInput.fill(editedItem);
 

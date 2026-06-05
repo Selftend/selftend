@@ -129,6 +129,6 @@ test.describe("edit and archive a thought record", () => {
     // The history screen's empty-state text confirms no records are listed.
     // (router.replace may leave hidden stale instances in the DOM stack; asserting the
     //  empty-state text appears is more reliable than asserting the edited thought is hidden.)
-    await expect(page.getByText("No thought records yet")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("No records on this day")).toBeVisible({ timeout: 10_000 });
   });
 });

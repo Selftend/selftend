@@ -29,10 +29,9 @@ import {
  *   continue "Continue"
  *   strengthTracker "Strength tracker"
  *   saveStrength "Save strength"
- *   edit "Edit belief"
+ *   edit "Edit"  (the shared common:edit label on the detail screen)
  *
- * NOTE: The belief detail screen has NO delete button.
- * Edit is via "Edit belief" → opens /modules/cbt/beliefs/new?beliefId=X.
+ * NOTE: Edit is via the shared "Edit" button → opens /modules/cbt/beliefs/new?beliefId=X.
  * The strength tracker on the detail screen allows inline updates via "Save strength".
  */
 
@@ -47,6 +46,7 @@ test.describe("CBT belief: create, edit strength, and edit via wizard", () => {
   test("alice creates a core belief, edits it, and verifies the change persists", async ({
     page,
   }) => {
+    test.slow(); // long create + strength + reload + wizard-edit flow; resilient to slow CI/CPU
     const beliefStatement = "I am not capable of handling difficult situations.";
     const triggerSituation = "When I get negative feedback at work.";
     const evidenceFor = "I have made mistakes before.";
@@ -118,7 +118,7 @@ test.describe("CBT belief: create, edit strength, and edit via wizard", () => {
     );
 
     // ── Full edit via wizard ────────────────────────────────────────────────────
-    await page.getByRole("button", { name: "Edit belief", exact: true }).click();
+    await page.getByRole("button", { name: "Edit", exact: true }).click();
     await expect(page).toHaveURL(/\/modules\/cbt\/beliefs\/new\?beliefId=/, { timeout: 15_000 });
 
     // Navigate to step 3 (Alternative & strength) directly

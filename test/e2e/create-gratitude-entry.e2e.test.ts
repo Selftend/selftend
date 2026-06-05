@@ -26,7 +26,7 @@ test.describe("create gratitude entry", () => {
 
     await page.goto("/tools/gratitude-log/new");
 
-    await page.getByRole("textbox", { name: "Gratitude 1" }).fill(item);
+    await page.getByRole("textbox", { name: "What made you laugh?" }).fill(item);
 
     await page.getByRole("button", { name: "Save", exact: true }).click();
 

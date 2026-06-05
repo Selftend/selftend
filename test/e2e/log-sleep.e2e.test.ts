@@ -39,6 +39,6 @@ test.describe("log sleep", () => {
 
     // The entry also appears on the sleep list.
     await page.goto("/tools/sleep");
-    await expect(page.getByText("8h")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("8h").first()).toBeVisible({ timeout: 10_000 });
   });
 });
