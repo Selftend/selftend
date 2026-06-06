@@ -18,9 +18,8 @@ describe("NotificationTargetCard", () => {
 
     // The placeholder badge must be gone now that the target is live.
     expect(screen.queryByText("Coming soon")).toBeNull();
-    // The daily-reminder time inputs only render for live targets.
-    expect(screen.getByText("Hour")).toBeTruthy();
-    expect(screen.getByText("Minute")).toBeTruthy();
+    // The daily-reminder TimeField only renders for live targets.
+    expect(screen.getByLabelText("Reminder time")).toBeTruthy();
   });
 
   it("renders the promoted target's label", () => {

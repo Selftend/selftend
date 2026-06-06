@@ -16,7 +16,7 @@
     "build:android:preview": "npm exec eas-cli -- build --platform android --profile preview",
     "build:android:production": "npm exec eas-cli -- build --platform android --profile production",
     "submit:android:production": "npm exec eas-cli -- submit --platform android --profile production",
-    "ios": "expo start --ios",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "export:web": "npm exec expo -- export --platform web --clear",
     "serve:web:production": "npm exec expo -- serve",
@@ -38,13 +38,15 @@
     "db:reset": "node scripts/db-reset.js",
     "db:status": "npm exec supabase -- status",
     "db:push:prod": "npm exec supabase -- db push --linked",
-    "prepare": "husky"
+    "prepare": "husky",
+    "android": "expo run:android"
   },
   "dependencies": {
     "@expo-google-fonts/noto-sans": "^0.4.2",
     "@expo/vector-icons": "^15.0.3",
     "@hookform/resolvers": "^5.2.2",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/datetimepicker": "8.4.4",
     "@react-navigation/native": "^7.1.8",
     "@rn-primitives/alert-dialog": "^1.4.0",
     "@rn-primitives/avatar": "^1.4.0",

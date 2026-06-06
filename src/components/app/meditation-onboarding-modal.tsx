@@ -5,8 +5,9 @@ import { useTranslation } from "react-i18next";
 import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
-import { Input } from "@/src/components/react-native-reusables/input";
 import { Switch } from "@/src/components/react-native-reusables/switch";
+import { TimeField } from "@/src/components/app/time-field";
+import { formatHHmm, parseHHmm } from "@/src/utils/time";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { suggestStageFromAssessment } from "@/src/features/meditation/stages";
@@ -292,10 +293,9 @@ export function MeditationOnboarding({
                     <Text className="text-sm font-semibold">
                       {t("onboarding.commit.timeLabel")}
                     </Text>
-                    <Input
-                      value={timeOfDay}
-                      onChangeText={setTimeOfDay}
-                      placeholder={t("onboarding.commit.timePlaceholder")}
+                    <TimeField
+                      value={parseHHmm(timeOfDay) ?? { hour: 7, minute: 0 }}
+                      onChange={(next) => setTimeOfDay(formatHHmm(next))}
                       accessibilityLabel={t("onboarding.commit.timeLabel")}
                     />
                   </View>

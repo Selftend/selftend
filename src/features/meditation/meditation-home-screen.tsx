@@ -29,6 +29,7 @@ import type { StageNumber } from "@/src/features/meditation/types";
 import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useSession } from "@/src/providers/session-provider";
+import { parseHHmm } from "@/src/utils/time";
 
 export default function MeditationHomeScreen() {
   const { t } = useTranslation("meditation");
@@ -55,6 +56,7 @@ export default function MeditationHomeScreen() {
   async function handleOnboardingComplete(result: MeditationOnboardingResult) {
     if (!preferences || !userId) return;
     setOnboardingError(undefined);
+    const preferredTime = parseHHmm(result.preferredTimeOfDay) ?? { hour: 7, minute: 0 };
     try {
       await upsertProgramState.mutateAsync({
         currentStage: result.assessedStage,
@@ -67,8 +69,8 @@ export default function MeditationHomeScreen() {
         mergeUserPreferences(preferences, {
           meditationOnboardingCompleted: true,
           meditationRemindersEnabled: result.remindersEnabled,
-          meditationReminderHour: parseHour(result.preferredTimeOfDay),
-          meditationReminderMinute: parseMinute(result.preferredTimeOfDay),
+          meditationReminderHour: preferredTime.hour,
+          meditationReminderMinute: preferredTime.minute,
           enabledModules: addModule(preferences.enabledModules, "meditation"),
         }),
       );
@@ -226,18 +228,6 @@ export default function MeditationHomeScreen() {
       </SafeAreaView>
     </>
   );
-}
-
-function parseHour(time: string): number {
-  const [h] = time.split(":");
-  const n = Number(h);
-  return Number.isFinite(n) && n >= 0 && n <= 23 ? n : 7;
-}
-
-function parseMinute(time: string): number {
-  const [, m] = time.split(":");
-  const n = Number(m);
-  return Number.isFinite(n) && n >= 0 && n <= 59 ? n : 0;
 }
 
 function addModule<T extends string>(modules: T[], key: T): T[] {

@@ -2,6 +2,7 @@ import { ActivityIndicator, View } from "react-native";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { TimeField } from "@/src/components/app/time-field";
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
@@ -11,8 +12,6 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
-import { Input } from "@/src/components/react-native-reusables/input";
-import { Label } from "@/src/components/react-native-reusables/label";
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { mergeUserPreferences, type UserPreferences } from "@/src/features/modules/types";
@@ -30,6 +29,7 @@ import {
   type ReminderTarget,
 } from "@/src/lib/notifications";
 import { useToastStore } from "@/src/stores/toast-store";
+import { clampTime, type TimeOfDay } from "@/src/utils/time";
 import { cn } from "@/lib/utils";
 
 interface NotificationTargetCardProps {
@@ -38,10 +38,6 @@ interface NotificationTargetCardProps {
   userId: string | null;
   globalEnabled: boolean;
   className?: string;
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
 }
 
 function getReminderConsentUpdatedAt(
@@ -71,14 +67,12 @@ export function NotificationTargetCard({
   const initialMinute = readMinute(preferences, target);
 
   const [enabled, setEnabled] = useState(initialEnabled);
-  const [hourInput, setHourInput] = useState(String(initialHour));
-  const [minuteInput, setMinuteInput] = useState(String(initialMinute));
+  const [time, setTime] = useState<TimeOfDay>({ hour: initialHour, minute: initialMinute });
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     setEnabled(initialEnabled);
-    setHourInput(String(initialHour));
-    setMinuteInput(String(initialMinute));
+    setTime({ hour: initialHour, minute: initialMinute });
   }, [initialEnabled, initialHour, initialMinute]);
 
   const masterDisabled = !globalEnabled || isPlaceholder;
@@ -90,12 +84,7 @@ export function NotificationTargetCard({
 
     setErrorMessage("");
 
-    // Guard against non-numeric input: parseInt("abc") is NaN and clamp(NaN) stays NaN,
-    // which would persist a NaN hour/minute. Fall back to the defaults instead.
-    const parsedHour = Number.parseInt(hourInput, 10);
-    const parsedMinute = Number.parseInt(minuteInput, 10);
-    const hour = clamp(Number.isFinite(parsedHour) ? parsedHour : 19, 0, 23);
-    const minute = clamp(Number.isFinite(parsedMinute) ? parsedMinute : 0, 0, 59);
+    const { hour, minute } = clampTime(time);
 
     const patch: Partial<UserPreferences> = {
       [enabledField]: enabled,
@@ -194,36 +183,12 @@ export function NotificationTargetCard({
                     {t("subToggles.dailyReminder")}
                   </Text>
                 </View>
-                <View className="flex-row gap-3">
-                  <View className="flex-1 gap-2">
-                    <Label>{t("time.hour")}</Label>
-                    <Input
-                      accessibilityLabel={t("time.hour")}
-                      accessibilityHint={t("time.hourPlaceholder")}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      editable={!controlsDisabled}
-                      keyboardType="number-pad"
-                      onChangeText={setHourInput}
-                      placeholder={t("time.hourPlaceholder")}
-                      value={hourInput}
-                    />
-                  </View>
-                  <View className="flex-1 gap-2">
-                    <Label>{t("time.minute")}</Label>
-                    <Input
-                      accessibilityLabel={t("time.minute")}
-                      accessibilityHint={t("time.minutePlaceholder")}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      editable={!controlsDisabled}
-                      keyboardType="number-pad"
-                      onChangeText={setMinuteInput}
-                      placeholder={t("time.minutePlaceholder")}
-                      value={minuteInput}
-                    />
-                  </View>
-                </View>
+                <TimeField
+                  value={time}
+                  onChange={setTime}
+                  disabled={controlsDisabled}
+                  accessibilityLabel={t("time.label")}
+                />
               </View>
               <Button
                 disabled={masterDisabled || updatePreferences.isPending}

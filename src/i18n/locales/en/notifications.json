@@ -13,10 +13,7 @@
     "dailyReminder": "Daily reminder"
   },
   "time": {
-    "hour": "Hour",
-    "hourPlaceholder": "0-23",
-    "minute": "Minute",
-    "minutePlaceholder": "0-59"
+    "label": "Reminder time"
   },
   "comingSoon": {
     "badge": "Coming soon",

@@ -13,10 +13,7 @@
     "dailyReminder": "Дневно напомняне"
   },
   "time": {
-    "hour": "Час",
-    "hourPlaceholder": "0-23",
-    "minute": "Минута",
-    "minutePlaceholder": "0-59"
+    "label": "Час за напомняне"
   },
   "comingSoon": {
     "badge": "Очаквайте скоро",
