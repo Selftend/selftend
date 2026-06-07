@@ -53,6 +53,10 @@
       "subtitle": "ACT means accept what shows up, connect with values, and take effective action",
       "body": "These four myths set a trap: the harder we try to avoid pain, the more we suffer. The mind evolved for survival, not happiness. Negative thoughts and feelings are a built-in feature, not a malfunction.",
       "mythsTitle": "The four myths",
+      "myth1": "Happiness is the natural state for humans",
+      "myth2": "If you're not happy, something is wrong with you",
+      "myth3": "To have a good life you must eliminate negative feelings",
+      "myth4": "You should be able to control your thoughts and feelings",
       "controlParadox": "The Control Paradox",
       "controlParadoxBody": "Fighting unwanted thoughts and feelings intensifies them. Trying to fix feelings from the inside creates a vicious cycle.",
       "continue": "That makes sense"

@@ -1035,7 +1035,28 @@
     "intensityShift": "Intensity {{before}} -> {{after}} (shift {{shift}})."
   },
   "emotions": {
-    "happy": "Happy"
+    "happy": "Happy",
+    "excited": "Excited",
+    "loved": "Loved",
+    "inspired": "Inspired",
+    "proud": "Proud",
+    "playful": "Playful",
+    "grateful": "Grateful",
+    "hopeful": "Hopeful",
+    "relaxed": "Relaxed",
+    "content": "Content",
+    "anxious": "Anxious",
+    "sad": "Sad",
+    "angry": "Angry",
+    "ashamed": "Ashamed",
+    "guilty": "Guilty",
+    "overwhelmed": "Overwhelmed",
+    "frustrated": "Frustrated",
+    "lonely": "Lonely",
+    "fearful": "Fearful",
+    "hopeless": "Hopeless",
+    "numb": "Numb",
+    "irritated": "Irritated"
   },
   "distortions": {
     "all-or-nothing": {

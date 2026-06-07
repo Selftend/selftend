@@ -1035,7 +1035,28 @@
     "intensityShift": "Интензивност {{before}} -> {{after}} (промяна {{shift}})."
   },
   "emotions": {
-    "happy": "Щастлив"
+    "happy": "Щастлив",
+    "excited": "Развълнуван",
+    "loved": "Обичан",
+    "inspired": "Вдъхновен",
+    "proud": "Горд",
+    "playful": "Игривост",
+    "grateful": "Благодарен",
+    "hopeful": "Надежден",
+    "relaxed": "Спокоен",
+    "content": "Доволен",
+    "anxious": "Тревожен",
+    "sad": "Тъжен",
+    "angry": "Ядосан",
+    "ashamed": "Засрамен",
+    "guilty": "Виновен",
+    "overwhelmed": "Претоварен",
+    "frustrated": "Фрустриран",
+    "lonely": "Самотен",
+    "fearful": "Уплашен",
+    "hopeless": "Безнадежден",
+    "numb": "Вцепенен",
+    "irritated": "Раздразнен"
   },
   "distortions": {
     "all-or-nothing": {

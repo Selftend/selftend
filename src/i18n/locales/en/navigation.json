@@ -41,10 +41,15 @@
     "signOut": "Sign Out"
   },
   "languageToggle": {
-    "toggle": "Switch language"
+    "toggle": "Switch language",
+    "en": "English",
+    "bg": "Bulgarian"
   },
   "themeToggle": {
-    "toggle": "Switch theme"
+    "toggle": "Switch theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
   },
   "tabs": {
     "home": "Home",

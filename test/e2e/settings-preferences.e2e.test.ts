@@ -85,8 +85,8 @@ test.describe("settings - language switch", () => {
     await dismissPostSignInModals(page);
 
     // After reload open the menu to confirm the language is still Bulgarian.
-    // Button label is now "Отвори меню на профила" (translated).
-    await page.getByRole("button", { name: "Отвори меню на профила", exact: true }).click();
+    // Button label is now "Отвори меню на акаунта" (translated).
+    await page.getByRole("button", { name: "Отвори меню на акаунта", exact: true }).click();
     await expect(page.getByText("Смени езика", { exact: true })).toBeVisible({ timeout: 8_000 });
   });
 });
