@@ -17,7 +17,7 @@ interface ScaleStep {
   emoji: string;
 }
 
-export const STEPS: ScaleStep[] = [
+const STEPS: ScaleStep[] = [
   {
     score: 1,
     emoji: "😭",

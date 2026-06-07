@@ -35,9 +35,7 @@ type PushTokenFailureReason =
   | "missing-project-id"
   | "registration-failed";
 
-export type PushTokenResult =
-  | { enabled: true }
-  | { enabled: false; reason: PushTokenFailureReason };
+type PushTokenResult = { enabled: true } | { enabled: false; reason: PushTokenFailureReason };
 
 async function ensurePermission(Notifications: NotificationsModule): Promise<boolean> {
   const current = await Notifications.getPermissionsAsync();

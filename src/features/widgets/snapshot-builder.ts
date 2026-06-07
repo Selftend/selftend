@@ -15,7 +15,7 @@ type Builder = (data: WidgetData, ctx: BuildContext) => WidgetPayload;
 
 const MOOD_FACES = ["😭", "🙁", "😐", "😊", "😁"]; // score 1..5
 
-export const WIDGET_BUILDERS: Partial<Record<string, Builder>> = {
+const WIDGET_BUILDERS: Partial<Record<string, Builder>> = {
   mood: (data, { t, dateKey }) => {
     const todayLog = data.moodLogs.find((m) => toLocalDateKey(m.loggedAt) === dateKey);
     const last7 = sinceDays(data.moodLogs, (m) => m.loggedAt, 7, dateKey);

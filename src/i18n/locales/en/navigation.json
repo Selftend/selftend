@@ -280,16 +280,6 @@
         "wordsLabel": "Words",
         "countOnDay": "{{count}} on {{date}}"
       },
-      "breathingLibrary": {
-        "title": "Breathing patterns",
-        "count": "{{count}} patterns"
-      },
-      "breathingLog": {
-        "title": "Breathing sessions",
-        "sessionsLabel": "Sessions",
-        "minutesLabel": "Minutes",
-        "empty": "No sessions yet."
-      },
       "groundingLog": {
         "title": "Grounding sessions",
         "metaDesc": "Your recent grounding practice.",
@@ -321,9 +311,6 @@
         "themeDark": "Dark",
         "transparencyLabel": "Transparency",
         "save": "Save"
-      },
-      "shortcutConfig": {
-        "title": "Choose shortcuts"
       },
       "shortcutCatalog": {
         "mood": "Log mood",

@@ -25,14 +25,14 @@ import type { NotificationTargetKey } from "@/src/features/notifications/registr
 import { useSession } from "@/src/providers/session-provider";
 
 type TuneAction = { type: "tune"; onPress: () => void; accessibilityLabel?: string };
-export type NotificationsAction = {
+type NotificationsAction = {
   type: "notifications";
   targetKey: NotificationTargetKey;
   accessibilityLabel?: string;
 };
 type InfoAction = { type: "info"; onPress: () => void; accessibilityLabel?: string };
 type ProgramAction = { type: "program"; onPress: () => void; accessibilityLabel?: string };
-export type HeaderAction = TuneAction | NotificationsAction | InfoAction | ProgramAction;
+type HeaderAction = TuneAction | NotificationsAction | InfoAction | ProgramAction;
 
 const ICON_FOR_TYPE = {
   tune: "tune",

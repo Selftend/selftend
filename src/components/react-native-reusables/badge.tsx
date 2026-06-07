@@ -116,5 +116,4 @@ function Badge({ className, variant, tint, icon, asChild, children, ...props }: 
   );
 }
 
-export { Badge, badgeTextVariants, badgeVariants };
-export type { BadgeProps };
+export { Badge };

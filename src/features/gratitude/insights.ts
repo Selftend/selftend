@@ -1,7 +1,7 @@
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { localDateKey } from "@/src/stores/selected-date-store";
 
-export interface GratitudeFrequencyBucket {
+interface GratitudeFrequencyBucket {
   id: string;
   label: string;
   count: number;

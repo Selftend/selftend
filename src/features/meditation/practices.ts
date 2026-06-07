@@ -1,7 +1,7 @@
 import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import type { ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 
-export interface MeditationPractice {
+interface MeditationPractice {
   slug: string;
   durations: number[];
   icon: MaterialIconName;

@@ -82,17 +82,3 @@ export async function saveMindfulnessSession(userId: string, input: MindfulnessS
   if (error) throw error;
   return mapSession(data as MindfulnessSessionRow);
 }
-
-export async function getMindfulnessSession(userId: string, sessionId: string) {
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from("mindfulness_sessions")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("id", sessionId)
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data) return null;
-  return mapSession(data as MindfulnessSessionRow);
-}

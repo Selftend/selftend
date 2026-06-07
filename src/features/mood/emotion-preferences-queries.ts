@@ -18,7 +18,7 @@ import type {
 // Query keys
 // ---------------------------------------------------------------------------
 
-export const emotionPrefKeys = {
+const emotionPrefKeys = {
   list: (userId: string) => ["emotion-prefs", userId] as const,
 };
 

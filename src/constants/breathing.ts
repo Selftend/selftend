@@ -6,16 +6,12 @@ export interface BreathingPhase {
   durationSeconds: number;
 }
 
-export interface BreathingPattern {
+export const breathingPatterns: {
   slug: string;
   phases: BreathingPhase[];
-  /** Pre-selected cycle count when the runner opens. */
   defaultCycles: number;
-  /** Quick-pick chips in the cycles selector; must include defaultCycles. */
   cycleOptions: number[];
-}
-
-export const breathingPatterns: BreathingPattern[] = [
+}[] = [
   {
     slug: "box-breathing",
     phases: [

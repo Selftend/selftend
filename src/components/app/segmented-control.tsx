@@ -3,7 +3,7 @@ import { Pressable, View } from "react-native";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 
-export interface SegmentOption<T extends string | number> {
+interface SegmentOption<T extends string | number> {
   value: T;
   label: string;
 }

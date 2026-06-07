@@ -28,12 +28,12 @@ export interface ActProgramSignalData {
   actionSteps: ActionStep[];
 }
 
-export interface SignalResult {
+interface SignalResult {
   current: number;
   target: number;
 }
 
-export interface ProgramTaskDef {
+interface ProgramTaskDef {
   key: string;
   labelKey: string; // i18n key under act:program.tasks
   route: Href;

@@ -1,6 +1,6 @@
 import type { BreathingPhase } from "@/src/constants/breathing";
 
-export interface ScheduleState {
+interface ScheduleState {
   done: boolean;
   /** Absolute phase index across all cycles (0-based), or total count when done. */
   phaseIndex: number;

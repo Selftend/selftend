@@ -1,8 +1,8 @@
 import catalogJson from "./widget-catalog.json";
 
-export type WidgetKind = "mood" | "today" | "shortcuts";
+type WidgetKind = "mood" | "today" | "shortcuts";
 
-export interface CatalogEntrySize {
+interface CatalogEntrySize {
   minWidth: string;
   minHeight: string;
   maxWidth: string;
@@ -12,7 +12,7 @@ export interface CatalogEntrySize {
   resizeMode: string;
 }
 
-export interface CatalogEntry {
+interface CatalogEntry {
   id: string;
   name: string;
   kind: WidgetKind;

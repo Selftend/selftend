@@ -1,4 +1,4 @@
-export interface TodayStatCatalogEntry {
+interface TodayStatCatalogEntry {
   key: string;
   emoji: string;
   labelKey: string;

@@ -11,7 +11,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { dateToTime, formatHHmm, timeToDate, type TimeOfDay } from "@/src/utils/time";
 
-export interface TimeFieldProps {
+interface TimeFieldProps {
   value: TimeOfDay;
   onChange: (next: TimeOfDay) => void;
   accessibilityLabel?: string;

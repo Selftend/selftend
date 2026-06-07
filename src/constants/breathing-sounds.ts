@@ -41,7 +41,7 @@ export interface BreathSound {
   introMs?: number;
 }
 
-export interface AmbientSound {
+interface AmbientSound {
   id: string;
   labelKey: string;
   asset: number | null;

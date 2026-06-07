@@ -30,7 +30,7 @@ type ReminderScheduleFailureReason =
   | "subscription-failed"
   | "unsupported";
 
-export type ReminderScheduleResult =
+type ReminderScheduleResult =
   | { enabled: true }
   | { enabled: false; reason: ReminderScheduleFailureReason };
 

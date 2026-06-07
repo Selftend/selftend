@@ -7,7 +7,7 @@ import type {
 import { useBreathingExercise } from "@/src/features/breathing/exercises-queries";
 import { useSession } from "@/src/providers/session-provider";
 
-export interface ResolvedExercise {
+interface ResolvedExercise {
   routeId: string;
   /** Stored in mindfulness_sessions.exercise_name: slug for built-ins, row id for custom. */
   exerciseName: string;

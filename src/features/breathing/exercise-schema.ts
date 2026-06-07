@@ -45,7 +45,7 @@ export const EMPTY_EXERCISE_INPUT: BreathingExerciseInput = {
   color: "aqua",
 };
 
-export interface SuggestedPattern {
+interface SuggestedPattern {
   key: string;
   inhaleSeconds: number;
   holdInSeconds: number;

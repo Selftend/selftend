@@ -148,9 +148,9 @@ export function getTopEmotions(logs: EmotionSample[] | undefined, limit = 3): Em
     .slice(0, limit);
 }
 
-export type HistoryGroupKey = "today" | "yesterday" | "thisWeek" | "older";
+type HistoryGroupKey = "today" | "yesterday" | "thisWeek" | "older";
 
-export interface HistoryGroup {
+interface HistoryGroup {
   key: HistoryGroupKey;
   average: number;
   entries: MoodLog[];

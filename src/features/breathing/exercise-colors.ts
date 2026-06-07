@@ -1,12 +1,6 @@
 import type { BreathingExerciseColor } from "@/src/features/breathing/exercise-types";
 
-export interface BreathingColorClass {
-  bg: string;
-  border: string;
-  text: string;
-}
-
-export function breathingColorClass(color: BreathingExerciseColor): BreathingColorClass {
+export function breathingColorClass(color: BreathingExerciseColor) {
   switch (color) {
     case "aqua":
       return { bg: "bg-aqua/10", border: "border-aqua", text: "text-aqua" };

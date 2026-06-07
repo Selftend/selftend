@@ -94,11 +94,4 @@ function CardContent({
   return <View className={cn("px-6", className)} {...props} />;
 }
 
-function CardFooter({
-  className,
-  ...props
-}: React.ComponentProps<typeof View> & React.RefAttributes<View>) {
-  return <View className={cn("flex flex-row items-center px-6", className)} {...props} />;
-}
-
-export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle };
+export { Card, CardContent, CardDescription, CardHeader, CardTitle };

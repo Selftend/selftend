@@ -1,4 +1,4 @@
-export interface ShortcutCatalogEntry {
+interface ShortcutCatalogEntry {
   id: string;
   emoji: string;
   labelKey: string;

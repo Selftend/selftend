@@ -280,16 +280,6 @@
         "wordsLabel": "Думи",
         "countOnDay": "{{count}} на {{date}}"
       },
-      "breathingLibrary": {
-        "title": "Дихателни модели",
-        "count": "{{count}} модела"
-      },
-      "breathingLog": {
-        "title": "Дихателни сесии",
-        "sessionsLabel": "Сесии",
-        "minutesLabel": "Минути",
-        "empty": "Все още няма сесии."
-      },
       "groundingLog": {
         "title": "Сесии за заземяване",
         "metaDesc": "Скорошната ти практика за заземяване.",
@@ -321,9 +311,6 @@
         "themeDark": "Тъмна",
         "transparencyLabel": "Прозрачност",
         "save": "Запазване"
-      },
-      "shortcutConfig": {
-        "title": "Изберете преки пътища"
       },
       "shortcutCatalog": {
         "mood": "Запис на настроение",

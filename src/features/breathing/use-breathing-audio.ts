@@ -15,7 +15,7 @@ type LoadedSound = {
 
 let nativeAudioModeConfigured = false;
 
-export interface BreathingAudioOptions {
+interface BreathingAudioOptions {
   active: boolean;
   phaseLabel: PhaseLabel | null;
   breathSoundId: string;

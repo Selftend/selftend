@@ -46,7 +46,7 @@ export async function saveLastSessionDuration(minutes: number): Promise<void> {
   );
 }
 
-export const MAX_INTERVAL_MINUTES = 60;
+const MAX_INTERVAL_MINUTES = 60;
 
 const INTERVAL_MINUTES_STORAGE_KEY = "selftend:timer:intervalMinutes";
 
