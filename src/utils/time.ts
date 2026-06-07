@@ -37,25 +37,3 @@ export function timeToDate(time: TimeOfDay): Date {
 export function dateToTime(date: Date): TimeOfDay {
   return { hour: date.getHours(), minute: date.getMinutes() };
 }
-
-/** True when the locale formats time on a 24-hour clock (no AM/PM). */
-export function is24HourLocale(locale: string): boolean {
-  try {
-    const formatted = new Intl.DateTimeFormat(locale, { hour: "numeric" }).format(
-      timeToDate({ hour: 13, minute: 0 }),
-    );
-    // 24h locales render "13"; 12h locales render "1 PM" (no "13").
-    return formatted.includes("13");
-  } catch {
-    return false;
-  }
-}
-
-/** Localized short time, e.g. `"7:05 AM"` (en) or `"7:05"` (bg). */
-export function formatTimeLabel(time: TimeOfDay, locale: string): string {
-  try {
-    return new Intl.DateTimeFormat(locale, { timeStyle: "short" }).format(timeToDate(time));
-  } catch {
-    return formatHHmm(time);
-  }
-}

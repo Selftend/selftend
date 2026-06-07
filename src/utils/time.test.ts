@@ -1,12 +1,4 @@
-import {
-  clampTime,
-  dateToTime,
-  formatHHmm,
-  formatTimeLabel,
-  is24HourLocale,
-  parseHHmm,
-  timeToDate,
-} from "@/src/utils/time";
+import { clampTime, dateToTime, formatHHmm, parseHHmm, timeToDate } from "@/src/utils/time";
 
 describe("clampTime", () => {
   it("keeps valid times", () => {
@@ -47,28 +39,5 @@ describe("parseHHmm", () => {
 describe("timeToDate / dateToTime", () => {
   it("round-trips", () => {
     expect(dateToTime(timeToDate({ hour: 9, minute: 30 }))).toEqual({ hour: 9, minute: 30 });
-  });
-});
-
-describe("is24HourLocale", () => {
-  it("detects 24h vs 12h locales", () => {
-    expect(is24HourLocale("en-US")).toBe(false);
-    expect(is24HourLocale("bg")).toBe(true);
-  });
-  it("is safe for unknown locales", () => {
-    expect(typeof is24HourLocale("xx-unknown")).toBe("boolean");
-  });
-});
-
-describe("formatTimeLabel", () => {
-  it("uses AM/PM for en-US", () => {
-    const label = formatTimeLabel({ hour: 7, minute: 5 }, "en-US");
-    expect(label).toMatch(/7:05/);
-    expect(label).toMatch(/AM/i);
-  });
-  it("uses 24h (no AM/PM) for bg", () => {
-    const label = formatTimeLabel({ hour: 7, minute: 5 }, "bg");
-    expect(label).not.toMatch(/AM|PM/i);
-    expect(label).toMatch(/05/);
   });
 });

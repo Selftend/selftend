@@ -9,13 +9,7 @@ import DateTimePicker, {
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
-import {
-  dateToTime,
-  formatTimeLabel,
-  is24HourLocale,
-  timeToDate,
-  type TimeOfDay,
-} from "@/src/utils/time";
+import { dateToTime, formatHHmm, timeToDate, type TimeOfDay } from "@/src/utils/time";
 
 export interface TimeFieldProps {
   value: TimeOfDay;
@@ -25,9 +19,8 @@ export interface TimeFieldProps {
 }
 
 export function TimeField({ value, onChange, accessibilityLabel, disabled }: TimeFieldProps) {
-  const { t, i18n } = useTranslation("common");
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
-  const is24Hour = is24HourLocale(i18n.language);
 
   // Android fires `dismissed` on cancel; ignore it and any missing date.
   const commit = (event: DateTimePickerEvent, date?: Date) => {
@@ -41,7 +34,7 @@ export function TimeField({ value, onChange, accessibilityLabel, disabled }: Tim
       DateTimePickerAndroid.open({
         value: timeToDate(value),
         mode: "time",
-        is24Hour,
+        is24Hour: true,
         onChange: commit,
       });
       return;
@@ -62,7 +55,7 @@ export function TimeField({ value, onChange, accessibilityLabel, disabled }: Tim
           disabled && "opacity-40",
         )}
       >
-        <Text className="text-foreground">{formatTimeLabel(value, i18n.language)}</Text>
+        <Text className="text-foreground">{formatHHmm(value)}</Text>
       </Pressable>
 
       {/* iOS only: Android uses the OS dialog opened above. */}
@@ -76,7 +69,7 @@ export function TimeField({ value, onChange, accessibilityLabel, disabled }: Tim
               value={timeToDate(value)}
               mode="time"
               display="spinner"
-              is24Hour={is24Hour}
+              is24Hour
               onChange={commit}
             />
             <View className="mt-3">
