@@ -1,5 +1,5 @@
 {
-  "authorEyebrow": "Inspired by The Mind Illuminated · Culadasa",
+  "authorEyebrow": "Вдъхновено от The Mind Illuminated · Куладаса",
   "duration": {
     "minutes": "{{count}} мин"
   },
@@ -111,7 +111,7 @@
   "module": {
     "home": {
       "title": "Медитация",
-      "subtitle": "Тренирай устойчиво внимание и ясно осъзнаване — сесия по сесия.",
+      "subtitle": "Тренирай устойчиво внимание и ясно осъзнаване, сесия по сесия.",
       "todayCard": "Днешното седене",
       "startSit": "Започни седене",
       "openStages": "Разгледай десетте етапа",
