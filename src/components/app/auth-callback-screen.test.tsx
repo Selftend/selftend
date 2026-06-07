@@ -38,6 +38,6 @@ describe("AuthCallbackScreen (email verified)", () => {
     renderWithProviders(<AuthCallbackScreen />);
 
     fireEvent.press(await screen.findByText("Continue to the app"));
-    expect(mockReplace).toHaveBeenCalledWith("/(app)/(tabs)");
+    expect(mockReplace).toHaveBeenCalledWith("/(app)");
   });
 });

@@ -22,7 +22,7 @@ export default function IndexScreen() {
   }
 
   if (session) {
-    return <Redirect href="/(app)/(tabs)" />;
+    return <Redirect href="/(app)" />;
   }
 
   return <AuthLandingScreen />;

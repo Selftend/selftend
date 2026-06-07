@@ -19,7 +19,7 @@ test.describe("GDPR data export", () => {
     await dismissPostSignInModals(page);
 
     // Navigate to Settings.
-    await page.goto("/(app)/(tabs)/settings");
+    await page.goto("/(app)/settings");
     await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible({
       timeout: 10_000,
     });

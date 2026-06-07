@@ -113,7 +113,7 @@ export default function AuthCallbackScreen() {
           return;
         }
 
-        router.replace("/(app)/(tabs)");
+        router.replace("/(app)");
       } catch (error) {
         if (!active) {
           return;
@@ -202,7 +202,7 @@ export default function AuthCallbackScreen() {
               <CardDescription>{t("callback.verifiedBody")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onPress={() => router.replace("/(app)/(tabs)")}>
+              <Button onPress={() => router.replace("/(app)")}>
                 <Text>{t("callback.continueButton")}</Text>
               </Button>
             </CardContent>

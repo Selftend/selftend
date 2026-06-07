@@ -51,10 +51,6 @@
     "light": "Light",
     "dark": "Dark"
   },
-  "tabs": {
-    "home": "Home",
-    "settings": "Settings"
-  },
   "notFound": {
     "title": "Page not found",
     "home": "Home"

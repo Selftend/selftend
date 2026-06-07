@@ -82,7 +82,7 @@ test.describe("settings - profile display name", () => {
     await signInAsViaUi(page, "alice");
     await dismissPostSignInModals(page);
 
-    await page.goto("/(app)/(tabs)/settings");
+    await page.goto("/(app)/settings");
 
     // Wait for the profile card to load (the display-name label is the stable marker).
     await expect(page.getByText("Display name", { exact: true }).first()).toBeVisible({
@@ -104,7 +104,7 @@ test.describe("settings - profile display name", () => {
     // Persist check: reload and verify the input shows the saved name.
     await page.reload();
     await dismissPostSignInModals(page);
-    await page.goto("/(app)/(tabs)/settings");
+    await page.goto("/(app)/settings");
 
     await expect(page.getByPlaceholder("Your name (optional)", { exact: true })).toHaveValue(
       "E2E Test Name",
@@ -135,7 +135,7 @@ test.describe("settings - notification toggles", () => {
     await signInAsViaUi(page, "alice");
     await dismissPostSignInModals(page);
 
-    await page.goto("/(app)/(tabs)/settings");
+    await page.goto("/(app)/settings");
     await expect(page.getByText("Reminders & notifications", { exact: true })).toBeVisible({
       timeout: 10_000,
     });
@@ -229,7 +229,7 @@ test.describe("settings - reset onboarding", () => {
     await signInAsViaUi(page, "alice");
     await dismissPostSignInModals(page);
 
-    await page.goto("/(app)/(tabs)/settings");
+    await page.goto("/(app)/settings");
 
     // Wait for the onboarding section.
     await expect(page.getByText("Onboarding", { exact: true }).first()).toBeVisible({

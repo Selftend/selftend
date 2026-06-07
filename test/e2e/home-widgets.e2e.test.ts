@@ -51,7 +51,7 @@ test.describe("home widget management", () => {
     await dismissPostSignInModals(page);
 
     // Navigate to the home/today tab.
-    await page.goto("/(app)/(tabs)");
+    await page.goto("/(app)");
 
     // Wait for the dashboard to load (at least one default widget should be visible).
     await expect(page.getByText("Dashboard")).toBeVisible({ timeout: 15_000 });

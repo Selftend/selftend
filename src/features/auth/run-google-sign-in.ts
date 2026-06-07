@@ -23,7 +23,7 @@ export async function runGoogleSignIn({
     const didCompleteInApp = await signInWithGoogle();
     if (didCompleteInApp) {
       recordSuccess();
-      router.replace("/(app)/(tabs)");
+      router.replace("/(app)");
     }
   } catch (error) {
     recordFailure(error);

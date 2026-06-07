@@ -36,7 +36,7 @@ export function ResetPasswordForm() {
     try {
       setSubmitError("");
       await updatePassword(password);
-      router.replace("/(app)/(tabs)");
+      router.replace("/(app)");
     } catch (error) {
       if (error instanceof Error && error.message === LEAKED_PASSWORD_ERROR) {
         setSubmitError(t("validation.passwordBreached"));

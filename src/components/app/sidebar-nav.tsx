@@ -21,7 +21,7 @@ interface NavItemDef {
 
 const TODAY_ITEM: NavItemDef = {
   labelKey: "sidebar.home",
-  href: "/(app)/(tabs)",
+  href: "/(app)",
   icon: "home",
   matchPrefix: null,
 };
@@ -121,7 +121,7 @@ const ACCOUNT_ITEMS: NavItemDef[] = [
   },
   {
     labelKey: "sidebar.settings",
-    href: "/(app)/(tabs)/settings",
+    href: "/(app)/settings",
     icon: "settings",
     matchPrefix: "/settings",
   },
@@ -152,7 +152,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     if (matchPrefix) {
       return pathname.startsWith(matchPrefix);
     }
-    return pathname === "/" || pathname === "/(app)/(tabs)/";
+    return pathname === "/";
   }
 
   function renderNavItem(item: NavItemDef) {

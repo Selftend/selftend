@@ -35,7 +35,7 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
         ) : null}
         <Pressable
           className="min-w-0 flex-1 flex-row items-center gap-2 px-2"
-          onPress={() => router.push(isSignedIn ? "/(app)/(tabs)" : "/")}
+          onPress={() => router.push(isSignedIn ? "/(app)" : "/")}
           accessibilityRole="button"
           accessibilityLabel={t("header.goHome")}
         >

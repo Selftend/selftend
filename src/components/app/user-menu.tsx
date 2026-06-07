@@ -162,7 +162,7 @@ export function UserMenu() {
                 size="sm"
                 onPress={() => {
                   popoverTriggerRef.current?.close();
-                  router.push("/(app)/(tabs)/settings");
+                  router.push("/(app)/settings");
                 }}
               >
                 <Icon name="settings" className="size-4" />

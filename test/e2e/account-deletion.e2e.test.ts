@@ -52,7 +52,7 @@ test.describe("account deletion", () => {
     await dismissPostSignInModals(page);
 
     // 4. Navigate to Settings.
-    await page.goto("/(app)/(tabs)/settings");
+    await page.goto("/(app)/settings");
     await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible({
       timeout: 10_000,
     });

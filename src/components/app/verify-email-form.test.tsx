@@ -92,7 +92,7 @@ describe("VerifyEmailForm", () => {
     };
     renderWithProviders(<VerifyEmailForm />);
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith("/(app)/(tabs)");
+      expect(mockReplace).toHaveBeenCalledWith("/(app)");
     });
   });
 });

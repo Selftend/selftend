@@ -58,7 +58,7 @@ export function SignInForm() {
       setResendStatus("idle");
       await signInWithPassword(email, password);
       recordSuccess();
-      router.replace("/(app)/(tabs)");
+      router.replace("/(app)");
     } catch (error) {
       recordFailure(error);
       const rawMessage = error instanceof Error ? error.message : "";

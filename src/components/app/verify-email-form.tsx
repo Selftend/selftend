@@ -30,7 +30,7 @@ export function VerifyEmailForm() {
 
   useEffect(() => {
     if (session && user?.email_confirmed_at) {
-      router.replace("/(app)/(tabs)");
+      router.replace("/(app)");
     }
   }, [session, user?.email_confirmed_at]);
 
@@ -50,7 +50,7 @@ export function VerifyEmailForm() {
           confirmed = Boolean(refreshed.session?.user?.email_confirmed_at);
         }
         if (active && confirmed) {
-          router.replace("/(app)/(tabs)");
+          router.replace("/(app)");
         }
       })();
     }, CONFIRMATION_POLL_MS);

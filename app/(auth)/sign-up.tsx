@@ -9,7 +9,7 @@ export default function SignUpScreen() {
   const { session } = useSession();
 
   if (session) {
-    return <Redirect href="/(app)/(tabs)" />;
+    return <Redirect href="/(app)" />;
   }
 
   return (

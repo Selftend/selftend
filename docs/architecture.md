@@ -51,7 +51,8 @@ app/
 ├── account-deletion.tsx   public
 ├── (auth)/                sign-up, verify-email, reset-password, update-password, auth-callback
 └── (app)/                 protected app shell
-    ├── (tabs)/            index (home), settings
+    ├── index.tsx          home (Today)
+    ├── settings.tsx       settings
     ├── cbt/               index, learn, new, [id], history
     ├── tools/             mood-tracker, journal, mindfulness, gratitude-log (working); act, meditation (placeholders)
     ├── history.tsx        compatibility redirect to cbt/history

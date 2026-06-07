@@ -9,7 +9,7 @@ test.describe("sign out", () => {
     await signInAsViaUi(page, "bob");
     await dismissPostSignInModals(page);
 
-    await page.goto("/(app)/(tabs)/settings");
+    await page.goto("/(app)/settings");
     // Settings has multiple sections; the account section's "Sign out" button.
     const signOut = page.getByRole("button", { name: "Sign out", exact: true }).first();
     await expect(signOut).toBeVisible({ timeout: 10_000 });

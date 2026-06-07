@@ -50,7 +50,7 @@ export async function signInAsViaUi(page: Page, name: SeedUserName) {
   await page.getByPlaceholder("m@example.com").fill(user.email);
   await page.locator('input[type="password"]').fill(user.password);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  // After sign-in, the app routes to /(app)/(tabs). The most stable post-auth
+  // After sign-in, the app routes to /(app). The most stable post-auth
   // signal is that the sign-in form (CardTitle "Sign in to your account") is gone.
   // The custom message turns the otherwise-cryptic "form stayed visible" timeout
   // into a pointer at the usual root cause: a web server under test that is not
@@ -106,7 +106,7 @@ export async function dismissPostSignInModals(page: Page) {
   if (welcomeVisible) {
     // The app onboarding modal's only button is labelled by settings.json
     // `onboarding.appContinue` ("Got it"). The modal is the only "Got it"
-    // button visible on (app)/(tabs) once consent has been accepted.
+    // button visible on (app) once consent has been accepted.
     const startButton = page.getByRole("button", { name: "Got it", exact: true });
     await expect(startButton).toBeEnabled({ timeout: 5_000 });
     await startButton.click();

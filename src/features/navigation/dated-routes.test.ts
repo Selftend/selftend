@@ -30,7 +30,7 @@ describe("isDatedRoute", () => {
   ])("is dated: %s", (p) => expect(isDatedRoute(p)).toBe(true));
 
   it.each([
-    "/(tabs)/settings",
+    "/settings",
     "/modules/cbt/goals",
     "/modules/cbt/values",
     "/modules/cbt/beliefs",
