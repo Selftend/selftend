@@ -1,19 +1,13 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllThoughtRecordsForUser,
-  dismissCbtOnboarding,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllThoughtRecordsForUser } from "./helpers";
 
 test.describe("edit and archive a thought record", () => {
-  test.beforeEach(async () => {
-    await deleteAllThoughtRecordsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllThoughtRecordsForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllThoughtRecordsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllThoughtRecordsForUser(user.id);
   });
 
   test("alice creates a thought record, edits the balanced thought, then archives it", async ({
@@ -27,12 +21,8 @@ test.describe("edit and archive a thought record", () => {
     const editedBalancedThought =
       "I can ask for clarification if needed; one meeting is not proof of failure.";
 
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     // --- CREATE via wizard ---
     await page.goto("/modules/cbt/new");
-    await dismissCbtOnboarding(page);
     // Dismiss cookie banner if it reappears.
     await page
       .getByRole("button", { name: "Essential only", exact: true })

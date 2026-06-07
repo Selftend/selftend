@@ -1,26 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllSleepLogsForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllSleepLogsForUser } from "./helpers";
 
 test.describe("log sleep", () => {
-  test.beforeEach(async () => {
-    await deleteAllSleepLogsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllSleepLogsForUser(user.id);
   });
 
-  test.afterEach(async () => {
-    await deleteAllSleepLogsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllSleepLogsForUser(user.id);
   });
 
   test("alice logs sleep and sees it on the detail screen and in the list", async ({ page }) => {
     const notes = "Sleep e2e notes";
-
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     // Go directly to the log form - bypasses the sleep tracker's onboarding gate.
     await page.goto("/tools/sleep/new");

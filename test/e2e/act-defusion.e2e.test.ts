@@ -1,11 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllActLogsForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllActLogsForUser } from "./helpers";
 
 /**
  * Routes:
@@ -35,19 +30,16 @@ import {
  */
 
 test.describe("ACT defusion: create, view, delete", () => {
-  test.beforeEach(async () => {
-    await deleteAllActLogsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllActLogsForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllActLogsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllActLogsForUser(user.id);
   });
 
   test("alice creates a defusion log, views it, and deletes it", async ({ page }) => {
     const fusedThought = "I will definitely fail this presentation.";
     const defusedVersion = "I'm having the thought that I will fail this presentation.";
-
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     // ── Step 1: Thought ────────────────────────────────────────────────────────
     await page.goto("/modules/act/defusion/new");

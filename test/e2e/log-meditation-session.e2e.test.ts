@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import { SEED_USERS, createServiceClient, dismissPostSignInModals, signInAsViaUi } from "./helpers";
+import { createServiceClient } from "./helpers";
 
 async function deleteAllMeditationSessionsForUser(userId: string) {
   const admin = createServiceClient();
@@ -8,18 +8,15 @@ async function deleteAllMeditationSessionsForUser(userId: string) {
 }
 
 test.describe("log meditation session", () => {
-  test.beforeEach(async () => {
-    await deleteAllMeditationSessionsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllMeditationSessionsForUser(user.id);
   });
 
-  test.afterEach(async () => {
-    await deleteAllMeditationSessionsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllMeditationSessionsForUser(user.id);
   });
 
-  test("alice logs a meditation session with the skip-reflection flow", async ({ page }) => {
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
+  test("alice logs a meditation session with the skip-reflection flow", async ({ page, user }) => {
     // The log route accepts a ?duration= query param. Going to it directly
     // bypasses the timer/pre-sit screens and lets us drive the form straight.
     await page.goto("/tools/meditation/session/log?duration=10");
@@ -36,7 +33,7 @@ test.describe("log meditation session", () => {
     const result = await admin
       .from("meditation_sessions")
       .select("duration_minutes, stage_at_session")
-      .eq("user_id", SEED_USERS.alice.id);
+      .eq("user_id", user.id);
     expect(result.error).toBeNull();
     expect(result.data).toHaveLength(1);
     expect(result.data?.[0].duration_minutes).toBe(10);

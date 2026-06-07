@@ -1,28 +1,20 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllHabitsForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllHabitsForUser } from "./helpers";
 
 test.describe("create habit", () => {
-  test.beforeEach(async () => {
-    await deleteAllHabitsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllHabitsForUser(user.id);
   });
 
-  test.afterEach(async () => {
-    await deleteAllHabitsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllHabitsForUser(user.id);
   });
 
   test("alice creates a daily habit and sees it on the detail screen and in the list", async ({
     page,
   }) => {
     const habitName = "E2E read one page";
-
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     // Navigate directly to the editor - bypasses the home-screen onboarding gate.
     await page.goto("/tools/habits/new");

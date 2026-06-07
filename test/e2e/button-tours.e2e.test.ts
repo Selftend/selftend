@@ -1,14 +1,16 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import { SEED_USERS, createServiceClient, dismissPostSignInModals, signInAsViaUi } from "./helpers";
+import { createServiceClient } from "./helpers";
 import { policyVersion } from "../../src/features/policies/policy-content";
 
 const TOUR_KEYS = ["tune", "notifications", "program", "info"] as const;
 const ACT_TOUR_KEYS = ["notifications", "program", "info"] as const;
-const USER_ID = SEED_USERS.alice.id;
+
+// Set from the worker's pool user in beforeAll (worker-scoped fixtures are
+// available to beforeAll). Module scope is per-worker-process, so this is safe.
+let USER_ID: string;
 
 type PreferenceRow = Record<string, unknown>;
-
 let originalPreferences: PreferenceRow | null = null;
 
 async function getPreferenceRow() {
@@ -63,7 +65,8 @@ async function restoreOriginalPreferences() {
 }
 
 test.describe("button tours", () => {
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ user }) => {
+    USER_ID = user.id;
     originalPreferences = await getPreferenceRow();
   });
 
@@ -73,8 +76,6 @@ test.describe("button tours", () => {
 
   test("Got it dismisses only the current header tip", async ({ page }) => {
     await setTourState([]);
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     await page.goto("/modules/act");
     await expect(
@@ -88,8 +89,6 @@ test.describe("button tours", () => {
 
   test("Skip all tips dismisses every header tip", async ({ page }) => {
     await setTourState([]);
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     await page.goto("/modules/act");
     await expect(
@@ -103,8 +102,6 @@ test.describe("button tours", () => {
 
   test("settings reset makes header tips eligible again", async ({ page }) => {
     await setTourState(TOUR_KEYS);
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     await page.goto("/settings");
     await page.getByRole("button", { name: "Reset onboarding", exact: true }).click();

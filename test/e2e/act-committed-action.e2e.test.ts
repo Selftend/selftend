@@ -1,11 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllActLogsForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllActLogsForUser } from "./helpers";
 
 /**
  * Routes:
@@ -32,11 +27,11 @@ import {
  */
 
 test.describe("ACT committed action: create, add step, toggle step, change status, delete", () => {
-  test.beforeEach(async () => {
-    await deleteAllActLogsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllActLogsForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllActLogsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllActLogsForUser(user.id);
   });
 
   test("alice creates a committed action, adds a step, toggles it complete, changes status, and deletes", async ({
@@ -46,9 +41,6 @@ test.describe("ACT committed action: create, add step, toggle step, change statu
     const actionDescription = "Start with Monday, Wednesday, Friday mornings.";
     const obstaclesText = "Hooked by 'I don't have time' - unhook with defusion.";
     const stepText = "Put running shoes by the door tonight";
-
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     // ── Navigate to new ────────────────────────────────────────────────────────
     await page.goto("/modules/act/committed-action/new");

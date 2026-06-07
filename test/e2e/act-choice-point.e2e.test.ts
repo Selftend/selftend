@@ -1,11 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllActLogsForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllActLogsForUser } from "./helpers";
 
 /**
  * Routes:
@@ -35,20 +30,17 @@ import {
  */
 
 test.describe("ACT choice-point: create, view, delete", () => {
-  test.beforeEach(async () => {
-    await deleteAllActLogsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllActLogsForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllActLogsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllActLogsForUser(user.id);
   });
 
   test("alice creates a choice point, views it, and deletes it", async ({ page }) => {
     const hookText = "Fear of embarrassing myself at work";
     const awayMoveText = "Avoiding meetings";
     const towardMoveText = "Prepare beforehand and speak up once";
-
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     // ── Navigate to new ────────────────────────────────────────────────────────
     await page.goto("/modules/act/choice-point/new");

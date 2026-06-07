@@ -1,12 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllExposureForUser,
-  dismissCbtOnboarding,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllExposureForUser } from "./helpers";
 
 /**
  * Routes:
@@ -43,11 +37,11 @@ import {
  */
 
 test.describe("CBT exposure: create hierarchy and log a session", () => {
-  test.beforeEach(async () => {
-    await deleteAllExposureForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllExposureForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllExposureForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllExposureForUser(user.id);
   });
 
   test("alice creates an exposure hierarchy with one step, logs a session, and the session appears in recent sessions", async ({
@@ -57,11 +51,7 @@ test.describe("CBT exposure: create hierarchy and log a session", () => {
     const anxietyType = "Driving anxiety";
     const stepDescription = "Drive to the nearest on-ramp and sit in the car";
 
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     await page.goto("/modules/cbt/exposure/new");
-    await dismissCbtOnboarding(page);
 
     // ── Step 1: About ──────────────────────────────────────────────────────────
     await page.getByRole("textbox", { name: "Title" }).fill(hierarchyTitle);

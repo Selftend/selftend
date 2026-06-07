@@ -1,13 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllActivityLogsForUser,
-  deleteAllMoodLogsForUser,
-  dismissCbtOnboarding,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllActivityLogsForUser, deleteAllMoodLogsForUser } from "./helpers";
 
 /**
  * Routes:
@@ -43,13 +36,13 @@ import {
  */
 
 test.describe("CBT activities: schedule and complete a behavioral-activation activity", () => {
-  test.beforeEach(async () => {
-    await deleteAllActivityLogsForUser(SEED_USERS.alice.id);
-    await deleteAllMoodLogsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllActivityLogsForUser(user.id);
+    await deleteAllMoodLogsForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllActivityLogsForUser(SEED_USERS.alice.id);
-    await deleteAllMoodLogsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllActivityLogsForUser(user.id);
+    await deleteAllMoodLogsForUser(user.id);
   });
 
   test("alice schedules a pleasure activity, marks it complete via mood log, and sees the Completed badge", async ({
@@ -57,11 +50,7 @@ test.describe("CBT activities: schedule and complete a behavioral-activation act
   }) => {
     const activityName = "Evening walk in the park";
 
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     await page.goto("/modules/cbt/activities/new");
-    await dismissCbtOnboarding(page);
 
     // ── Fill the activity form ─────────────────────────────────────────────────
     await page.getByRole("textbox", { name: "Activity name" }).fill(activityName);

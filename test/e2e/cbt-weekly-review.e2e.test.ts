@@ -35,20 +35,15 @@
  * We seed "yesterday", "today", and "3 days ago" - comfortably within any 7-day window.
  */
 
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 import {
-  SEED_USERS,
   createServiceClient,
   deleteAllActivityLogsForUser,
   deleteAllGoalsForUser,
   deleteAllMoodLogsForUser,
   deleteAllThoughtRecordsForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
 } from "./helpers";
-
-const ALICE_ID = SEED_USERS.alice.id;
 
 /** Returns an ISO timestamp string for N days before now (UTC midnight + offset). */
 function daysAgo(n: number): string {
@@ -61,23 +56,25 @@ function daysAgo(n: number): string {
 }
 
 test.describe("CBT weekly review: aggregate render", () => {
-  test.beforeEach(async () => {
-    await deleteAllMoodLogsForUser(ALICE_ID);
-    await deleteAllActivityLogsForUser(ALICE_ID);
-    await deleteAllGoalsForUser(ALICE_ID);
-    await deleteAllThoughtRecordsForUser(ALICE_ID);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllMoodLogsForUser(user.id);
+    await deleteAllActivityLogsForUser(user.id);
+    await deleteAllGoalsForUser(user.id);
+    await deleteAllThoughtRecordsForUser(user.id);
   });
 
-  test.afterEach(async () => {
-    await deleteAllMoodLogsForUser(ALICE_ID);
-    await deleteAllActivityLogsForUser(ALICE_ID);
-    await deleteAllGoalsForUser(ALICE_ID);
-    await deleteAllThoughtRecordsForUser(ALICE_ID);
+  test.afterEach(async ({ user }) => {
+    await deleteAllMoodLogsForUser(user.id);
+    await deleteAllActivityLogsForUser(user.id);
+    await deleteAllGoalsForUser(user.id);
+    await deleteAllThoughtRecordsForUser(user.id);
   });
 
   test("weekly review renders correct aggregates for seeded mood, activities, goal milestones, and thought records", async ({
     page,
+    user,
   }) => {
+    const ALICE_ID = user.id;
     const admin = createServiceClient();
 
     // ── Seed mood logs (3 within window) ────────────────────────────────────────
@@ -219,8 +216,6 @@ test.describe("CBT weekly review: aggregate render", () => {
     if (trError) throw new Error(`Seed thought_records failed: ${trError.message}`);
 
     // ── Sign in and navigate to weekly review ────────────────────────────────────
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     await page.goto("/modules/cbt/weekly-review");
 

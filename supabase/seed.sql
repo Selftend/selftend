@@ -241,6 +241,99 @@ values (
   timezone('utc', now())
 );
 
+-- ──────────────────────────────────────────────────────────────────────────
+-- e2e worker-pool users (w0..w7)
+-- One dedicated user per Playwright parallel worker so e2e runs fully parallel
+-- without cross-worker data collisions. Seeded fresh like alice. The e2e fixture
+-- (test/e2e/fixtures.ts) normalizes onboarding/policy prefs per test, so the
+-- values below are just sane defaults.
+-- ──────────────────────────────────────────────────────────────────────────
+insert into auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, is_super_admin, is_sso_user, is_anonymous,
+  confirmation_token, recovery_token, email_change_token_new, email_change_token_current,
+  email_change, email_change_confirm_status, phone_change, phone_change_token,
+  reauthentication_token, created_at, updated_at
+)
+select
+  u.id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', u.email,
+  crypt('e2e-worker-pass-123', gen_salt('bf')), timezone('utc', now()),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"full_name":"E2E Worker"}'::jsonb,
+  false, false, false,
+  '', '', '', '', '', 0, '', '', '',
+  timezone('utc', now()), timezone('utc', now())
+from (values
+  ('00000000-0000-0000-0000-000000000010'::uuid, 'e2e-w0@test.local'),
+  ('00000000-0000-0000-0000-000000000011'::uuid, 'e2e-w1@test.local'),
+  ('00000000-0000-0000-0000-000000000012'::uuid, 'e2e-w2@test.local'),
+  ('00000000-0000-0000-0000-000000000013'::uuid, 'e2e-w3@test.local'),
+  ('00000000-0000-0000-0000-000000000014'::uuid, 'e2e-w4@test.local'),
+  ('00000000-0000-0000-0000-000000000015'::uuid, 'e2e-w5@test.local'),
+  ('00000000-0000-0000-0000-000000000016'::uuid, 'e2e-w6@test.local'),
+  ('00000000-0000-0000-0000-000000000017'::uuid, 'e2e-w7@test.local')
+) as u(id, email)
+on conflict (id) do nothing;
+
+insert into auth.identities (
+  id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
+)
+select
+  gen_random_uuid(), u.id, u.email, 'email',
+  jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
+  timezone('utc', now()), timezone('utc', now()), timezone('utc', now())
+from (values
+  ('00000000-0000-0000-0000-000000000010'::uuid, 'e2e-w0@test.local'),
+  ('00000000-0000-0000-0000-000000000011'::uuid, 'e2e-w1@test.local'),
+  ('00000000-0000-0000-0000-000000000012'::uuid, 'e2e-w2@test.local'),
+  ('00000000-0000-0000-0000-000000000013'::uuid, 'e2e-w3@test.local'),
+  ('00000000-0000-0000-0000-000000000014'::uuid, 'e2e-w4@test.local'),
+  ('00000000-0000-0000-0000-000000000015'::uuid, 'e2e-w5@test.local'),
+  ('00000000-0000-0000-0000-000000000016'::uuid, 'e2e-w6@test.local'),
+  ('00000000-0000-0000-0000-000000000017'::uuid, 'e2e-w7@test.local')
+) as u(id, email)
+where not exists (
+  select 1 from auth.identities i where i.user_id = u.id and i.provider = 'email'
+);
+
+insert into public.profiles (user_id, email, created_at, updated_at)
+select u.id, u.email, timezone('utc', now()), timezone('utc', now())
+from (values
+  ('00000000-0000-0000-0000-000000000010'::uuid, 'e2e-w0@test.local'),
+  ('00000000-0000-0000-0000-000000000011'::uuid, 'e2e-w1@test.local'),
+  ('00000000-0000-0000-0000-000000000012'::uuid, 'e2e-w2@test.local'),
+  ('00000000-0000-0000-0000-000000000013'::uuid, 'e2e-w3@test.local'),
+  ('00000000-0000-0000-0000-000000000014'::uuid, 'e2e-w4@test.local'),
+  ('00000000-0000-0000-0000-000000000015'::uuid, 'e2e-w5@test.local'),
+  ('00000000-0000-0000-0000-000000000016'::uuid, 'e2e-w6@test.local'),
+  ('00000000-0000-0000-0000-000000000017'::uuid, 'e2e-w7@test.local')
+) as u(id, email)
+on conflict (user_id) do nothing;
+
+insert into public.user_preferences (
+  user_id, enabled_modules, reminder_consent, cbt_reminders_enabled,
+  cbt_reminder_hour, cbt_reminder_minute, language,
+  app_onboarding_completed, cbt_onboarding_completed,
+  privacy_policy_accepted_at, terms_accepted_at, policy_version_accepted,
+  created_at, updated_at
+)
+select
+  u.id, array['cbt']::text[], false, false, 19, 0, 'en',
+  true, true,
+  timezone('utc', now()), timezone('utc', now()), '1.0.0',
+  timezone('utc', now()), timezone('utc', now())
+from (values
+  ('00000000-0000-0000-0000-000000000010'::uuid),
+  ('00000000-0000-0000-0000-000000000011'::uuid),
+  ('00000000-0000-0000-0000-000000000012'::uuid),
+  ('00000000-0000-0000-0000-000000000013'::uuid),
+  ('00000000-0000-0000-0000-000000000014'::uuid),
+  ('00000000-0000-0000-0000-000000000015'::uuid),
+  ('00000000-0000-0000-0000-000000000016'::uuid),
+  ('00000000-0000-0000-0000-000000000017'::uuid)
+) as u(id)
+on conflict (user_id) do nothing;
+
 -- public.thought_records - bob (5)
 insert into public.thought_records (
   user_id, situation, nats, emotions, distortions, balanced_thought, created_at, updated_at

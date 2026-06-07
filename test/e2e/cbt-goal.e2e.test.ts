@@ -1,12 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllGoalsForUser,
-  dismissCbtOnboarding,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllGoalsForUser } from "./helpers";
 
 /**
  * Routes:
@@ -40,11 +34,11 @@ import {
  */
 
 test.describe("CBT goal: create, toggle milestone, edit, and change status", () => {
-  test.beforeEach(async () => {
-    await deleteAllGoalsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllGoalsForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllGoalsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllGoalsForUser(user.id);
   });
 
   test("alice creates a goal with a milestone, marks the milestone complete, edits the title, and marks the goal completed", async ({
@@ -54,11 +48,7 @@ test.describe("CBT goal: create, toggle milestone, edit, and change status", () 
     const editedTitle = "Run 3 times per week consistently";
     const milestoneDescription = "Complete first week of running";
 
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     await page.goto("/modules/cbt/goals/new");
-    await dismissCbtOnboarding(page);
 
     // ── Step 1: Domain & type ──────────────────────────────────────────────────
     // Select "Health" domain and "Do more of" type

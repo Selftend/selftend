@@ -1,21 +1,15 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllThoughtRecordsForUser,
-  dismissCbtOnboarding,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllThoughtRecordsForUser } from "./helpers";
 
 test.describe("create thought record", () => {
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ user }) => {
     // Alice starts with zero records by seed; clean to be doubly sure across reruns.
-    await deleteAllThoughtRecordsForUser(SEED_USERS.alice.id);
+    await deleteAllThoughtRecordsForUser(user.id);
   });
 
-  test.afterEach(async () => {
-    await deleteAllThoughtRecordsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllThoughtRecordsForUser(user.id);
   });
 
   test("alice signs in, completes the thought record wizard, and the record is saved", async ({
@@ -27,11 +21,7 @@ test.describe("create thought record", () => {
     const balancedThought =
       "Most meetings are routine status updates; I have no specific evidence of a problem yet.";
 
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     await page.goto("/modules/cbt/new");
-    await dismissCbtOnboarding(page);
     // Cookie banner can re-show after navigation.
     await page
       .getByRole("button", { name: "Essential only", exact: true })

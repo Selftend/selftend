@@ -1,11 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllActLogsForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllActLogsForUser } from "./helpers";
 
 /**
  * Routes:
@@ -29,19 +24,16 @@ import {
  */
 
 test.describe("ACT connection: create, view, delete", () => {
-  test.beforeEach(async () => {
-    await deleteAllActLogsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllActLogsForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllActLogsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllActLogsForUser(user.id);
   });
 
   test("alice creates a connection log, views it, and deletes it", async ({ page }) => {
     const noticesText =
       "I noticed the hum of the fan, the coolness of the desk, the blue sky outside.";
-
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     // ── Navigate to new ────────────────────────────────────────────────────────
     await page.goto("/modules/act/connection/new");

@@ -9,15 +9,10 @@
  * Read-only - no cleanup required.
  */
 
-import { expect, test } from "@playwright/test";
-
-import { dismissPostSignInModals, signInAsViaUi } from "./helpers";
+import { expect, test } from "./fixtures";
 
 test.describe("GDPR data export", () => {
   test("alice can export her data and sees the success message", async ({ page }) => {
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     // Navigate to Settings.
     await page.goto("/(app)/settings");
     await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible({

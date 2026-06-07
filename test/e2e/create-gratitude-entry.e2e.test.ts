@@ -1,28 +1,20 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllGratitudeEntriesForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllGratitudeEntriesForUser } from "./helpers";
 
 test.describe("create gratitude entry", () => {
-  test.beforeEach(async () => {
-    await deleteAllGratitudeEntriesForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllGratitudeEntriesForUser(user.id);
   });
 
-  test.afterEach(async () => {
-    await deleteAllGratitudeEntriesForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllGratitudeEntriesForUser(user.id);
   });
 
   test("alice logs a gratitude item and sees it on the detail screen and in the list", async ({
     page,
   }) => {
     const item = "Morning coffee";
-
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     await page.goto("/tools/gratitude-log/new");
 

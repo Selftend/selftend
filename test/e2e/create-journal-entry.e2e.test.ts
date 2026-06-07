@@ -1,19 +1,14 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllJournalEntriesForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllJournalEntriesForUser } from "./helpers";
 
 test.describe("create journal entry", () => {
-  test.beforeEach(async () => {
-    await deleteAllJournalEntriesForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllJournalEntriesForUser(user.id);
   });
 
-  test.afterEach(async () => {
-    await deleteAllJournalEntriesForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllJournalEntriesForUser(user.id);
   });
 
   test("alice writes a journal entry and sees it on the detail screen and in the list", async ({
@@ -21,9 +16,6 @@ test.describe("create journal entry", () => {
   }) => {
     const title = "Test journal title";
     const body = "This is the journal body.";
-
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     await page.goto("/tools/journal/new");
 

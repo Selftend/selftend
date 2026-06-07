@@ -1,27 +1,19 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllMoodLogsForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllMoodLogsForUser } from "./helpers";
 
 test.describe("log mood", () => {
-  test.beforeEach(async () => {
-    await deleteAllMoodLogsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllMoodLogsForUser(user.id);
   });
 
-  test.afterEach(async () => {
-    await deleteAllMoodLogsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllMoodLogsForUser(user.id);
   });
 
   test("alice logs a neutral mood and sees it on the detail screen and in the list", async ({
     page,
   }) => {
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     await page.goto("/tools/mood-tracker/new");
 
     // Pick score 3 ("OK") on the mood scale - accessible label comes from

@@ -1,24 +1,16 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllMoodLogsForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllMoodLogsForUser } from "./helpers";
 
 test.describe("edit and delete a mood log", () => {
-  test.beforeEach(async () => {
-    await deleteAllMoodLogsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllMoodLogsForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllMoodLogsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllMoodLogsForUser(user.id);
   });
 
   test("alice edits then deletes a mood log", async ({ page }) => {
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     // Create: score 3 ("OK") → emoji 😐
     await page.goto("/tools/mood-tracker/new");
     await page.getByRole("button", { name: "OK", exact: true }).click();

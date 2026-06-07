@@ -13,14 +13,14 @@
  *   user_preferences.notifications_enabled_global = true (default)
  *   user_preferences.cbt_reminders_enabled = false
  */
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import { SEED_USERS, createServiceClient, dismissPostSignInModals, signInAsViaUi } from "./helpers";
+import { createServiceClient } from "./helpers";
 
 type PreferenceRow = Record<string, unknown>;
 type ProfileRow = Record<string, unknown>;
 
-const USER_ID = SEED_USERS.alice.id;
+let USER_ID: string;
 
 let originalPreferences: PreferenceRow | null = null;
 let originalProfile: ProfileRow | null = null;
@@ -68,7 +68,8 @@ async function restoreProfile() {
 // ---------------------------------------------------------------------------
 
 test.describe("settings - profile display name", () => {
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ user }) => {
+    USER_ID = user.id;
     originalPreferences = await getPreferenceRow();
     originalProfile = await getProfileRow();
   });
@@ -79,9 +80,6 @@ test.describe("settings - profile display name", () => {
   });
 
   test("saves display name and shows confirmation; persists across reload", async ({ page }) => {
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     await page.goto("/(app)/settings");
 
     // Wait for the profile card to load (the display-name label is the stable marker).
@@ -103,7 +101,6 @@ test.describe("settings - profile display name", () => {
 
     // Persist check: reload and verify the input shows the saved name.
     await page.reload();
-    await dismissPostSignInModals(page);
     await page.goto("/(app)/settings");
 
     await expect(page.getByPlaceholder("Your name (optional)", { exact: true })).toHaveValue(
@@ -118,7 +115,8 @@ test.describe("settings - profile display name", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("settings - notification toggles", () => {
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ user }) => {
+    USER_ID = user.id;
     if (!originalPreferences) originalPreferences = await getPreferenceRow();
     if (!originalProfile) originalProfile = await getProfileRow();
   });
@@ -132,9 +130,6 @@ test.describe("settings - notification toggles", () => {
   test("global master switch off then on persists; per-target flag DB write reflects in UI", async ({
     page,
   }) => {
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     await page.goto("/(app)/settings");
     await expect(page.getByText("Reminders & notifications", { exact: true })).toBeVisible({
       timeout: 10_000,
@@ -160,7 +155,6 @@ test.describe("settings - notification toggles", () => {
 
     // DB persist check: reload and confirm global switch is still OFF.
     await page.reload();
-    await dismissPostSignInModals(page);
     await page.goto("/notifications");
     const reloadedGlobalSwitch = page.getByRole("switch", {
       name: "Notifications enabled",
@@ -201,7 +195,6 @@ test.describe("settings - notification toggles", () => {
       .eq("user_id", USER_ID);
 
     await page.reload();
-    await dismissPostSignInModals(page);
     await page.goto("/notifications");
 
     // The CBT switch is the first "Enable reminders" switch (CBT is first in MODULES section).
@@ -215,7 +208,8 @@ test.describe("settings - notification toggles", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("settings - reset onboarding", () => {
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ user }) => {
+    USER_ID = user.id;
     if (!originalPreferences) originalPreferences = await getPreferenceRow();
     if (!originalProfile) originalProfile = await getProfileRow();
   });
@@ -226,9 +220,6 @@ test.describe("settings - reset onboarding", () => {
   });
 
   test("reset onboarding clears onboarding flags and shows confirmation", async ({ page }) => {
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     await page.goto("/(app)/settings");
 
     // Wait for the onboarding section.

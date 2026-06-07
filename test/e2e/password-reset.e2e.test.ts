@@ -4,13 +4,15 @@
  * Uses a throwaway user created via the admin API (email_confirm: true) so no
  * sign-up flow is required, and seeded users are never touched.
  *
- * Full happy-path (PKCE recovery, e2e server on the allowlisted :8081 origin):
+ * Full happy-path (PKCE recovery; e2e server runs on its own allowlisted origin —
+ * the e2e baseURL, default :8099, set via E2E_PORT):
  *   1. Navigate to forgot-password, submit throwaway email.
  *   2. Assert success copy appears.
  *   3. Fetch the recovery link from Mailpit. The app sends redirect_to with a
- *      ?type=recovery marker (see getPasswordResetRedirectUrl) and :8081 is in
- *      additional_redirect_urls, so Supabase honours it verbatim - no rewrite.
- *   4. page.goto(recoveryLink) - browser follows the 303 → :8081/auth-callback
+ *      ?type=recovery marker (see getPasswordResetRedirectUrl) built from the e2e
+ *      server's origin, which is in additional_redirect_urls (both :8081 and
+ *      :8099/auth-callback are allowlisted), so Supabase honours it verbatim.
+ *   4. page.goto(recoveryLink) - browser follows the 303 → <baseURL>/auth-callback
  *      ?code=…&type=recovery. AuthCallbackScreen exchanges the PKCE code and -
  *      seeing type=recovery - routes to /(auth)/update-password.
  *   5. Fill a NEW ≥12-char password and submit. Assert routing away.
@@ -72,19 +74,34 @@ test.describe("password reset flow", () => {
     });
 
     // 5. Fetch the recovery link from Mailpit. Under the PKCE flow the link is:
-    //    …/auth/v1/verify?token=…&type=recovery&redirect_to=http://localhost:8081/auth-callback?type=recovery
-    //    The app sends redirect_to with a ?type=recovery marker (see
-    //    getPasswordResetRedirectUrl) and :8081/auth-callback is allowlisted in
-    //    supabase/config.toml, so Supabase honours it instead of falling back to
-    //    site_url. No rewrite needed.
+    //    …/auth/v1/verify?token=…&type=recovery&redirect_to=<e2e baseURL>/auth-callback?type=recovery
+    //    The app builds redirect_to (with a ?type=recovery marker, see
+    //    getPasswordResetRedirectUrl) from EXPO_PUBLIC_PUBLIC_APP_URL = the e2e
+    //    server's origin, which is allowlisted in supabase/config.toml's
+    //    additional_redirect_urls (both :8081 and :8099/auth-callback), so Supabase
+    //    honours it instead of falling back to site_url. No rewrite needed.
     const recoveryLink = await fetchRecoveryLink(page, THROWAWAY_EMAIL);
     expect(recoveryLink).toContain("/auth/v1/verify");
 
+    // The app bakes redirect_to from its inlined EXPO_PUBLIC_PUBLIC_APP_URL, which on
+    // this setup is the dev web origin (:8081), not necessarily the port the e2e
+    // server is running on. Rewrite redirect_to to THIS e2e server's origin (the
+    // Playwright baseURL) so the recovery 303 lands back on the server under test —
+    // where the PKCE code_verifier was stored when the reset was requested. The target
+    // origin is allowlisted in supabase/config.toml, so GoTrue still honours it.
+    const e2eOrigin = new URL(test.info().project.use.baseURL!).origin;
+    const verifyUrl = new URL(recoveryLink);
+    const appRedirect = new URL(verifyUrl.searchParams.get("redirect_to")!);
+    verifyUrl.searchParams.set(
+      "redirect_to",
+      `${e2eOrigin}${appRedirect.pathname}${appRedirect.search}`,
+    );
+
     // 6. Navigate to the verify link. Supabase returns a 303 to
-    //    http://localhost:8081/auth-callback?code=…&type=recovery
+    //    <e2e baseURL>/auth-callback?code=…&type=recovery
     //    AuthCallbackScreen exchanges the PKCE code, and - seeing type=recovery -
     //    routes to /(auth)/update-password.
-    await page.goto(recoveryLink);
+    await page.goto(verifyUrl.toString());
 
     // Wait for AuthCallbackScreen to process the token and route to update-password.
     await expect(page.getByText("Reset your password")).toBeVisible({ timeout: 15_000 });

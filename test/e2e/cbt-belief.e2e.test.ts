@@ -1,12 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllCoreBeliefsForUser,
-  dismissCbtOnboarding,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllCoreBeliefsForUser } from "./helpers";
 
 /**
  * Routes:
@@ -36,11 +30,11 @@ import {
  */
 
 test.describe("CBT belief: create, edit strength, and edit via wizard", () => {
-  test.beforeEach(async () => {
-    await deleteAllCoreBeliefsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllCoreBeliefsForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllCoreBeliefsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllCoreBeliefsForUser(user.id);
   });
 
   test("alice creates a core belief, edits it, and verifies the change persists", async ({
@@ -55,11 +49,7 @@ test.describe("CBT belief: create, edit strength, and edit via wizard", () => {
     const editedAlternativeBelief =
       "I am capable and continue to develop my skills with each challenge.";
 
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     await page.goto("/modules/cbt/beliefs/new");
-    await dismissCbtOnboarding(page);
 
     // ── Step 1: Belief & triggers ──────────────────────────────────────────────
     await page.getByPlaceholder("Example: I'm not good enough.").fill(beliefStatement);

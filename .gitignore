@@ -5,6 +5,7 @@ node_modules/
 
 # Web / builds
 dist/
+dist-e2e/
 build/
 build-artifacts/
 local-builds/

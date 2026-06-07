@@ -1,26 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllHabitsForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllHabitsForUser } from "./helpers";
 
 test.describe("edit and delete a habit", () => {
-  test.beforeEach(async () => {
-    await deleteAllHabitsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllHabitsForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllHabitsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllHabitsForUser(user.id);
   });
 
   test("alice creates, edits, archives, then deletes a daily habit", async ({ page }) => {
     const originalName = "E2E read one page daily";
     const editedName = "E2E meditate for two minutes";
-
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     // --- CREATE ---
     await page.goto("/tools/habits/new");
@@ -69,8 +61,13 @@ test.describe("edit and delete a habit", () => {
       .getByTestId("confirm-dialog-confirm")
       .filter({ hasText: /Archive/ })
       .click();
-    // After archiving, the "Archived" badge appears in the header.
-    await expect(page.getByText("Archived")).toBeVisible({ timeout: 10_000 });
+    // After archiving, the "Archived" badge appears in the header. Match it exactly
+    // (so the archive dialog's body "Archived habits leave today's list…" is excluded)
+    // and take .last() (so a hidden stale detail instance Expo Router keeps mounted
+    // doesn't make the locator ambiguous) — same pattern as editedName above.
+    await expect(page.getByText("Archived", { exact: true }).last()).toBeVisible({
+      timeout: 10_000,
+    });
 
     // --- DELETE ---
     await page.getByRole("button", { name: "Delete", exact: true }).click();

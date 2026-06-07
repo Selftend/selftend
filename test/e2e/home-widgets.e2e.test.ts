@@ -16,16 +16,9 @@
  * Widget to remove: "mood-trend" (title key → "Mood, last 7 days") - in defaults.
  */
 
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  dismissPostSignInModals,
-  resetWidgetPreferencesForUser,
-  signInAsViaUi,
-} from "./helpers";
-
-const ALICE_ID = SEED_USERS.alice.id;
+import { resetWidgetPreferencesForUser } from "./helpers";
 
 // Non-default widget to add: "self-care" (Self-care log) under CBT category.
 const ADD_WIDGET_TITLE = "Self-care log";
@@ -33,23 +26,19 @@ const ADD_WIDGET_TITLE = "Self-care log";
 const REMOVE_WIDGET_ARIA = `Remove ${ADD_WIDGET_TITLE}`;
 
 test.describe("home widget management", () => {
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ user }) => {
     // Reset preferences so the app re-seeds defaults on next load.
-    await resetWidgetPreferencesForUser(ALICE_ID);
+    await resetWidgetPreferencesForUser(user.id);
   });
 
-  test.afterEach(async () => {
+  test.afterEach(async ({ user }) => {
     // Clean up regardless of test outcome.
-    await resetWidgetPreferencesForUser(ALICE_ID);
+    await resetWidgetPreferencesForUser(user.id);
   });
 
   test("add a non-default widget, assert it renders, persists on reload, and can be removed in edit mode", async ({
     page,
   }) => {
-    // --- Sign in and dismiss modals ---
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     // Navigate to the home/today tab.
     await page.goto("/(app)");
 

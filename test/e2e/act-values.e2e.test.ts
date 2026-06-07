@@ -1,11 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllActLogsForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllActLogsForUser } from "./helpers";
 
 /**
  * Routes:
@@ -40,11 +35,11 @@ import {
  */
 
 test.describe("ACT values: edit a domain value and save a bulls-eye check-in", () => {
-  test.beforeEach(async () => {
-    await deleteAllActLogsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllActLogsForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllActLogsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllActLogsForUser(user.id);
   });
 
   test("alice edits the Work domain value, saves it, and verifies it persists", async ({
@@ -54,9 +49,6 @@ test.describe("ACT values: edit a domain value and save a bulls-eye check-in", (
     const currentActions = "Showing up consistently and learning from each task.";
     const desiredActions = "Take on one stretch project per quarter.";
     const barriers = "Hooked by perfectionism - unhook with defusion.";
-
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     // ── Navigate to the work domain screen ────────────────────────────────────
     await page.goto("/modules/act/values/work");
@@ -117,9 +109,6 @@ test.describe("ACT values: edit a domain value and save a bulls-eye check-in", (
   });
 
   test("alice saves a bulls-eye check-in and sees it in the history", async ({ page }) => {
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
-
     // ── Navigate to the bulls-eye screen ──────────────────────────────────────
     await page.goto("/modules/act/values/bulls-eye");
 

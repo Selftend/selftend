@@ -1,26 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import {
-  SEED_USERS,
-  deleteAllSleepLogsForUser,
-  dismissPostSignInModals,
-  signInAsViaUi,
-} from "./helpers";
+import { deleteAllSleepLogsForUser } from "./helpers";
 
 test.describe("edit and delete a sleep log", () => {
-  test.beforeEach(async () => {
-    await deleteAllSleepLogsForUser(SEED_USERS.alice.id);
+  test.beforeEach(async ({ user }) => {
+    await deleteAllSleepLogsForUser(user.id);
   });
-  test.afterEach(async () => {
-    await deleteAllSleepLogsForUser(SEED_USERS.alice.id);
+  test.afterEach(async ({ user }) => {
+    await deleteAllSleepLogsForUser(user.id);
   });
 
   test("alice edits then deletes a sleep log", async ({ page }) => {
     const originalNotes = "Sleep e2e original notes";
     const updatedNotes = "Sleep e2e updated notes";
-
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
 
     // Create: 8h duration, quality 3, with notes.
     await page.goto("/tools/sleep/new");

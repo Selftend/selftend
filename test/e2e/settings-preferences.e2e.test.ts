@@ -14,13 +14,13 @@
  * localStorage is isolated per test - DB restore is sufficient to prevent
  * cross-test contamination via the sync hook.
  */
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import { SEED_USERS, createServiceClient, dismissPostSignInModals, signInAsViaUi } from "./helpers";
+import { createServiceClient } from "./helpers";
 
 type PreferenceRow = Record<string, unknown>;
 
-const USER_ID = SEED_USERS.alice.id;
+let USER_ID: string;
 
 let originalPreferences: PreferenceRow | null = null;
 
@@ -45,7 +45,8 @@ async function restorePreferences() {
 }
 
 test.describe("settings - language switch", () => {
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ user }) => {
+    USER_ID = user.id;
     originalPreferences = await getPreferenceRow();
   });
 
@@ -54,8 +55,7 @@ test.describe("settings - language switch", () => {
   });
 
   test("switching to Bulgarian updates the UI and persists across reload", async ({ page }) => {
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
+    await page.goto("/");
 
     // Open the user-menu popover (header avatar button).
     await page.getByRole("button", { name: "Open account menu", exact: true }).click();
@@ -82,7 +82,6 @@ test.describe("settings - language switch", () => {
     // writes language → AsyncStorage and user_preferences.language. On reload the
     // i18n provider reads AsyncStorage and the UI comes up in Bulgarian.
     await page.reload();
-    await dismissPostSignInModals(page);
 
     // After reload open the menu to confirm the language is still Bulgarian.
     // Button label is now "Отвори меню на акаунта" (translated).
@@ -92,7 +91,8 @@ test.describe("settings - language switch", () => {
 });
 
 test.describe("settings - theme switch", () => {
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ user }) => {
+    USER_ID = user.id;
     // May already be captured from the language describe block but snapshot
     // defensively in case suites run independently.
     if (!originalPreferences) {
@@ -107,8 +107,7 @@ test.describe("settings - theme switch", () => {
   test("switching to dark theme updates the color scheme and persists across reload", async ({
     page,
   }) => {
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
+    await page.goto("/");
 
     // Open user-menu popover.
     await page.getByRole("button", { name: "Open account menu", exact: true }).click();
@@ -124,7 +123,6 @@ test.describe("settings - theme switch", () => {
 
     // Persist check: reload.
     await page.reload();
-    await dismissPostSignInModals(page);
 
     // After reload, theme is re-hydrated from AsyncStorage (set during first visit)
     // and the dark class should still be applied.
@@ -140,8 +138,7 @@ test.describe("settings - theme switch", () => {
   test("switching to light theme updates the color scheme and persists across reload", async ({
     page,
   }) => {
-    await signInAsViaUi(page, "alice");
-    await dismissPostSignInModals(page);
+    await page.goto("/");
 
     await page.getByRole("button", { name: "Open account menu", exact: true }).click();
     await expect(page.getByText("Switch theme", { exact: true })).toBeVisible();
@@ -155,7 +152,6 @@ test.describe("settings - theme switch", () => {
 
     // Persist check: reload.
     await page.reload();
-    await dismissPostSignInModals(page);
     await expect(page.locator("html")).not.toHaveClass(/dark/, { timeout: 8_000 });
 
     // Restore to System.

@@ -8,7 +8,7 @@ verify_jwt = false
 # CLI invocation.
 [auth]
 site_url = "http://localhost:8081"
-additional_redirect_urls = ["http://localhost:8081/auth-callback", "selftend://**", "selftend-dev://**"]
+additional_redirect_urls = ["http://localhost:8081/auth-callback", "http://localhost:8099/auth-callback", "selftend://**", "selftend-dev://**"]
 # Password policy - NIST SP 800-63B modern: longer minimum, no character-class
 # rules. HIBP leaked-password check is enabled separately via the Supabase
 # Dashboard (see docs/operations-runbook.md "Auth Security Toggles") because
