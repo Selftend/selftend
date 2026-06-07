@@ -13,25 +13,6 @@
   },
   "title": "Check-in",
   "description": "Log how you're feeling and see how it shifts over time.",
-  "cta": {
-    "logMood": "Log mood"
-  },
-  "scale": {
-    "steps": {
-      "1": "1, very low",
-      "2": "2, low",
-      "3": "3, neutral",
-      "4": "4, good",
-      "5": "5, very good"
-    },
-    "shortLabels": {
-      "1": "very low",
-      "2": "low",
-      "3": "neutral",
-      "4": "good",
-      "5": "very good"
-    }
-  },
   "today": {
     "title": "Today",
     "howAreYou": "How are you feeling right now?",
@@ -50,7 +31,6 @@
       "save": "Save",
       "cancel": "Cancel",
       "delete": "Delete",
-      "custom": "Custom",
       "addTitle": "New emotion",
       "addButton": "Add emotion",
       "add": "Add"
@@ -132,8 +112,7 @@
     "noComparison": "first week of data",
     "byDay": "Mood by day",
     "feltMost": "Felt most often",
-    "noEmotions": "No emotions tagged yet",
-    "empty": "Log a few check-ins to see your week."
+    "noEmotions": "No emotions tagged yet"
   },
   "history": {
     "title": "History",

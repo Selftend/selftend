@@ -1,12 +1,9 @@
 {
-  "title": "Habits",
-  "description": "Build small habits, one tick at a time. Influenced by James Clear's Atomic Habits.",
   "authorEyebrow": "Inspired by Atomic Habits · James Clear",
   "cta": {
     "newHabit": "New habit",
     "addNote": "Add note",
     "viewHistory": "View history",
-    "viewAll": "View all",
     "save": "Save",
     "saving": "Saving...",
     "cancel": "Cancel",
@@ -33,15 +30,12 @@
     "recentEmpty": "Ticks you make will appear here.",
     "weekStripLabel": "Last 7 days",
     "neverMissTwiceTitle": "Never miss twice",
-    "neverMissTwiceBody": "You skipped yesterday. Today is a great day to tick this once - one missed day is data, not failure.",
-    "learnHeading": "From the book"
+    "neverMissTwiceBody": "You skipped yesterday. Today is a great day to tick this once - one missed day is data, not failure."
   },
   "list": {
     "tickedToday": "Ticked today",
     "tapToTick": "Tap to tick today",
     "tapToAvoid": "Tap to mark you avoided this today",
-    "lastTicked": "Last ticked {{when}}",
-    "noTicksYet": "No ticks yet",
     "openDetail": "Open habit details"
   },
   "form": {
@@ -104,10 +98,7 @@
       "5": "Fri",
       "6": "Sat"
     },
-    "saveError": "Couldn't save the habit. Try again.",
-    "draftRestored": "Draft restored from your previous edit.",
-    "discardDraft": "Discard draft",
-    "saved": "Saved"
+    "saveError": "Couldn't save the habit. Try again."
   },
   "detail": {
     "calendarTitle": "Recent ticks",
@@ -129,7 +120,6 @@
     "strategyDifficult": "Friction",
     "strategyUnattractive": "Reframed craving",
     "strategyUnsatisfying": "Added cost",
-    "identityTitle": "Identity",
     "notesTitle": "Recent notes",
     "notesEmpty": "Notes you save with a tick will appear here.",
     "archivedBadge": "Archived",
@@ -141,18 +131,15 @@
     "title": "Add a note",
     "subtitle": "Optional reflection for the day's tick. Stay private - only you see this.",
     "placeholder": "What was this like today?",
-    "saveError": "Couldn't save the note. Try again.",
-    "missingTick": "Tick the day first to attach a note."
+    "saveError": "Couldn't save the note. Try again."
   },
   "history": {
     "title": "History",
     "subtitle": "Every tick you've made, newest first.",
     "empty": "Once you tick a habit, that day will appear here.",
-    "groupedByDate": "{{date}}",
-    "habitFor": "for {{habit}}"
+    "groupedByDate": "{{date}}"
   },
   "onboarding": {
-    "helpHint": "Learn about Atomic Habits",
     "skip": "Skip",
     "back": "Back",
     "welcome": {
@@ -175,33 +162,25 @@
       "easyBody": "Scale it under two minutes. Friction is the enemy of consistency.",
       "satisfyingTitle": "4. Make it satisfying",
       "satisfyingBody": "Mark the win. Visible progress reinforces the loop.",
-      "breakNote": "To break a habit, invert each law - make it invisible, unattractive, difficult, and unsatisfying.",
-      "continue": "Continue"
+      "breakNote": "To break a habit, invert each law - make it invisible, unattractive, difficult, and unsatisfying."
     },
     "identity": {
       "title": "Identity-based habits",
-      "subtitle": "Durable change is identity change.",
-      "body": "Instead of \"I want to run a marathon,\" frame it as \"I'm a runner.\" Every tick is a vote for that identity. The habit form has an optional identity field - leave it blank if you'd rather not name one.",
-      "continue": "Continue"
+      "body": "Instead of \"I want to run a marathon,\" frame it as \"I'm a runner.\" Every tick is a vote for that identity. The habit form has an optional identity field - leave it blank if you'd rather not name one."
     },
     "neverMiss": {
       "title": "Never miss twice & the two-minute rule",
-      "subtitle": "Two ideas that keep practice non-punitive.",
       "twoMinuteTitle": "The two-minute rule",
       "twoMinuteBody": "Scale every habit down so the starter version takes under two minutes. \"Read one page,\" not \"Read for an hour.\"",
       "neverMissTitle": "Never miss twice",
-      "neverMissBody": "Missing once is data. Missing twice starts a new habit. Selftend will never punish a missed day - we'll just quietly note when you're at risk of missing twice.",
-      "finish": "Start"
+      "neverMissBody": "Missing once is data. Missing twice starts a new habit. Selftend will never punish a missed day - we'll just quietly note when you're at risk of missing twice."
     },
     "finish": {
       "start": "Got it",
-      "saving": "Saving...",
       "error": "Couldn't save your preferences. Try again."
     }
   },
   "errors": {
-    "load": "Couldn't load your habits.",
-    "toggle": "Couldn't update the tick. Try again.",
     "delete": "Couldn't delete the habit. Try again."
   },
   "insights": {

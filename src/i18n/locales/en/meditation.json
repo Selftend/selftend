@@ -1,23 +1,17 @@
 {
-  "title": "Meditation",
-  "description": "A structured practice based on the ten stages from The Mind Illuminated.",
   "authorEyebrow": "Inspired by The Mind Illuminated · Culadasa",
   "duration": {
-    "label": "Duration",
     "minutes": "{{count}} min"
   },
   "timer": {
     "start": "Start",
     "pause": "Pause",
     "resume": "Resume",
-    "reset": "Reset",
-    "remaining": "{{time}} remaining"
+    "reset": "Reset"
   },
   "complete": {
     "title": "Sit complete",
-    "subtitle": "{{count}} min · well done",
-    "save": "Save",
-    "discard": "Discard"
+    "subtitle": "{{count}} min · well done"
   },
   "hero": {
     "stage": "Stage",
@@ -31,20 +25,12 @@
     "home": {
       "title": "Meditation",
       "subtitle": "Train steady attention and clear awareness, one sit at a time.",
-      "phaseNovice": "Novice",
-      "phaseSkilled": "Skilled",
-      "phaseTransition": "Transition",
-      "phaseAdept": "Adept",
       "todayCard": "Today's sit",
       "startSit": "Start a sit",
       "openStages": "Explore the ten stages",
       "openLearn": "Learn the framework",
       "recentTitle": "Recent sessions",
       "noSessions": "No sessions yet. Start whenever you're ready.",
-      "stageStripTitle": "Where you are",
-      "stageStripHint": "Tap any stage to read its overview.",
-      "reassessLink": "Want to reassess where you are?",
-      "milestoneReached": "Milestone {{milestone}} reached.",
       "viewHistory": "All sessions"
     },
     "learn": {
@@ -62,7 +48,6 @@
       "subtitle": "Ten stages divided by four milestones.",
       "currentStageBadge": "Where you are",
       "switchTo": "Set this as my current stage",
-      "switchedTo": "You're now working at Stage {{stage}}.",
       "phaseNovice": "Novice - Stages 1 to 3",
       "phaseSkilled": "Skilled - Stages 4 to 6",
       "phaseTransition": "Transition - Stage 7",
@@ -79,22 +64,6 @@
     },
     "session": {
       "title": "Start a sit",
-      "preSitTitle": "Before you sit",
-      "preSitSubtitle": "Stage {{stage}} · a short primer",
-      "preSitFamiliar": "I've got it - start the timer",
-      "sixPointTitle": "Six-point preparation",
-      "sixPointMotivation": "Motivation - why am I sitting today?",
-      "sixPointGoals": "Goals for this sit",
-      "sixPointExpectations": "Expectations - realistic for today",
-      "sixPointDiligence": "Diligence - engage wholeheartedly",
-      "sixPointDistractions": "Distractions - what's likely to pull at me",
-      "sixPointPosture": "Posture - comfortable and alert",
-      "fourStepTitle": "Four-step transition",
-      "fourStep1": "Rest in open awareness",
-      "fourStep2": "Notice the body",
-      "fourStep3": "Notice the breath anywhere",
-      "fourStep4": "Settle attention on the breath at the nose",
-      "techniqueLabel": "Technique for today",
       "technique": {
         "breathAtNose": "Breath at the nose",
         "followingTheBreath": "Following the breath",
@@ -103,18 +72,6 @@
         "wholeBodyWithBreath": "Whole body with the breath",
         "metacognitiveAwareness": "Metacognitive awareness",
         "effortlessness": "Test for effortlessness"
-      },
-      "stageNote": {
-        "s1": "Stage 1 is about showing up. The Six-Point Preparation helps if you'd like a checklist; otherwise, just begin.",
-        "s2": "Catching mind-wandering is success, not failure. Each time you notice, gently come back to the breath.",
-        "s3": "Following the full arc of each breath - including the pauses - keeps attention sharp. A silent half-time chime can help.",
-        "s4": "Continuous introspective awareness lets you catch subtle distractions before they take over the breath. Pain, when it arises, can itself be a meditation object.",
-        "s5": "Subtle dullness is pleasant and easy to miss. The body scan refreshes mindfulness without breaking stability.",
-        "s6": "Refine the scope of attention. 'Whole body with the breath' keeps the breath central while opening peripheral awareness.",
-        "s7": "Practice patiently. Periodically test for effortlessness - relax effort and see what happens. Bizarre sensations can arise; let them be.",
-        "s8": "Unusual sensations, energy currents, and intense joy may arise. Let them be - they're part of the process, not problems.",
-        "s9": "The intensity of joy itself softens with familiarity. Allow tranquility and equanimity to emerge.",
-        "s10": "Carry the qualities of the sit into the rest of the day. Mindfulness in daily life is what makes the practice stick."
       },
       "postSitTitle": "After the sit",
       "postSitSubtitle": "All fields are optional.",
@@ -134,43 +91,8 @@
         "gross": "Gross"
       },
       "obstaclesLabel": "Anything that pulled at you today",
-      "wholeBodyCue": "Breath at the anchor. Body breathing around it.",
-      "effortlessness": {
-        "indicator": "Test for effortlessness",
-        "body": "Try relaxing all effort now. See what stays."
-      },
-      "purification": {
-        "title": "If something heavy comes up",
-        "body": "Stage 4 can surface old emotional material. If anything feels overwhelming, you don't have to push through.",
-        "crisisLink": "See crisis support"
-      },
       "save": "Save & close",
-      "skip": "Skip reflection",
-      "discard": "Discard sit"
-    },
-    "bodyScan": {
-      "indicator": "Body scan - where to rest attention",
-      "segmentLabel": "Body-scan segments",
-      "segmentCount": "{{count}} segments",
-      "segments": {
-        "headNeck": "Head and neck",
-        "torso": "Torso",
-        "arms": "Arms",
-        "legs": "Legs",
-        "head": "Head",
-        "shoulders": "Shoulders",
-        "hips": "Hips",
-        "crown": "Crown of the head",
-        "face": "Face",
-        "neck": "Neck",
-        "upperArms": "Upper arms",
-        "forearmsHands": "Forearms and hands",
-        "chest": "Chest",
-        "abdomen": "Abdomen",
-        "back": "Back",
-        "thighs": "Thighs",
-        "calvesFeet": "Calves and feet"
-      }
+      "skip": "Skip reflection"
     },
     "insights": {
       "title": "Reflect",
@@ -225,20 +147,12 @@
       "energyCurrents": "Energy currents",
       "meditativeJoyIntensity": "Intensity of joy"
     },
-    "history": {
-      "title": "Recent sessions",
-      "session": "{{count}} min",
-      "noSessions": "No sessions yet"
-    },
     "sessions": {
       "title": "Session history",
       "subtitle": "Private record of every sit.",
       "empty": "No sessions yet.",
       "stageBadge": "Stage {{stage}}",
-      "durationLabel": "{{count}} min",
-      "moodAfter": "Mood after: {{score}}/10",
-      "reflectionEmpty": "(no reflection)",
-      "openDetail": "Open"
+      "durationLabel": "{{count}} min"
     },
     "sessionDetail": {
       "title": "Session detail",
@@ -252,8 +166,7 @@
       "technique": "Technique: {{name}}",
       "reflection": "Reflection",
       "obstacles": "Obstacles noted",
-      "notFound": "Session not found.",
-      "back": "Back"
+      "notFound": "Session not found."
     }
   },
   "practices": {
@@ -315,14 +228,7 @@
     "intention": "Intention, not willpower - clear intentions, repeated daily, do the work.",
     "everySit": "Every sit counts - even a restless sit is practice.",
     "attribution": "Based on The Mind Illuminated by Culadasa (John Yates, Ph.D.)",
-    "begin": "Start setup",
-    "dismiss": "Got it",
-    "resetWizard": "Reassess or change preferences",
-    "helpHint": "What is this module?",
-    "wizardHint": "Set up your meditation preferences",
-    "setupTitle": "Set up your meditation",
-    "setupDescription": "Take a short assessment to find your starting stage and set your preferred session time.",
-    "setupButton": "Set up"
+    "dismiss": "Got it"
   },
   "onboarding": {
     "welcome": {
@@ -374,7 +280,6 @@
       "title": "Commit to a slot",
       "subtitle": "Pick a daily time and a length. You can change both at any time.",
       "timeLabel": "Time of day",
-      "timePlaceholder": "07:00",
       "durationLabel": "Length",
       "stageLabel": "Starting stage",
       "stageHint": "Based on your answers, Stage {{stage}} is suggested - you can override it.",
@@ -382,7 +287,6 @@
       "startingAt": "We'll start you at Stage {{stage}}.",
       "reminderLabel": "Quiet daily reminder",
       "reminderHint": "Off by default. You can always change this in settings.",
-      "suggestedStage": "We'll start you at Stage {{stage}}.",
       "finish": "Got it",
       "saving": "Saving...",
       "error": "Could not save. Please try again."

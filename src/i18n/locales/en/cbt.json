@@ -7,18 +7,8 @@
   "home": {
     "title": "CBT",
     "description": "A focused CBT section built around thought records, distortion awareness, and quiet review.",
-    "whyNarrow": "Why the scope is narrow",
-    "whyNarrowDescription": "The first build stays narrow on purpose: one practical tool, a small learn surface, and a private history.",
-    "newRecord": "New record",
-    "learn": "Learn",
     "distortionGuide": "Distortion guide",
-    "distortionGuideDescription": "See the core thinking patterns this section currently focuses on.",
-    "recordHistory": "Record history",
-    "recordHistoryDescription": "Review the records you have already saved without mixing CBT with unrelated modules.",
-    "currentFlow": "The current flow",
-    "currentFlowDescription": "Capture the situation, name the first thought, choose emotions, notice distortions, and respond with a more balanced thought.",
-    "onboardingHint": "Replay the CBT introduction",
-    "wizardHint": "Set up your focus areas"
+    "recordHistory": "Record history"
   },
   "program": {
     "startTitle": "Your CBT program",
@@ -73,11 +63,8 @@
       "setGoals": "Set 1-2 goals",
       "clarifyValues": "Clarify your values",
       "dailyNoticing": "Notice your thoughts, feelings & behaviours today",
-      "thoughtRecordDays": "Complete a thought record on 3 days",
       "examineBelief": "Examine one core belief",
-      "activityDays": "Do a meaningful activity on 4 days",
       "exposureLadder": "Build a graded exposure ladder",
-      "calmingDays": "Do a calming exercise on 4 days",
       "resiliencePlan": "Write your resilience plan and personal slogan",
       "thoughtRecordOnce": "Do your first thought record",
       "thoughtRecordDaily": "Do a thought record today",
@@ -95,48 +82,13 @@
     "milestonesLabel": "This phase",
     "practiceLabel": "Today's practice",
     "noDailyPractice": "No daily task this phase - take your time with the step above.",
-    "phaseProgress": "Phase {{current}} of {{total}}",
-    "phaseTasksDone": "{{done}}/{{total}} done this phase",
     "graduateCta": "Finish the program"
   },
   "dashboard": {
-    "quickActions": "Quick actions",
-    "logMood": "Log mood",
-    "scheduleActivity": "Schedule activity",
-    "newGoal": "New goal",
     "activeGoals": "Active goals",
     "seeAll": "See all",
     "recentThought": "Recent thought record",
     "sloganTitle": "Your slogan",
-    "checkIn": {
-      "title": "Today check-in",
-      "morningTitle": "Morning check-in",
-      "morningPending": "Start with a mood log and a quick look at what is scheduled.",
-      "morningComplete": "Mood is logged for today. Review your plan when you need a next step.",
-      "logMoodCompleteLabel": "Log mood, completed today",
-      "eveningTitle": "Evening check-in",
-      "eveningPending": "Close the day with self-care, gratitude, and any activity completion.",
-      "eveningComplete": "Self-care is logged for today. Add another mood note if the evening shifted.",
-      "reviewActivities": "Review activities",
-      "openSelfCare": "Open self-care"
-    },
-    "todayPlan": {
-      "title": "Today",
-      "scheduledActivities": "Scheduled activities",
-      "openTasks": "Open tasks",
-      "activityScheduled": "Scheduled {{value}}",
-      "taskDue": "Due {{value}}",
-      "emptyTitle": "No scheduled CBT items today",
-      "emptyDescription": "You can still log mood, schedule an activity, or choose one small task."
-    },
-    "moodSummary": {
-      "title": "Mood summaries",
-      "sevenDay": "7 days",
-      "thirtyDay": "30 days",
-      "average": "{{average}} avg",
-      "count": "{{count}} log(s)",
-      "noData": "No data"
-    },
     "insights": {
       "title": "Insights",
       "topDistortion": "Top distortion: {{name}} ({{count}}×)",
@@ -176,11 +128,6 @@
       "selfCare": "Self-Care",
       "recovery": "Recovery Plan",
       "weeklyReview": "Weekly Review"
-    },
-    "setup": {
-      "title": "Personalise your plan",
-      "description": "Tell us what brings you here so we can highlight the most relevant strategies for you.",
-      "button": "Set up"
     }
   },
   "pillars": {
@@ -667,9 +614,7 @@
       "tableRow3Focus": "Behavioural activation and cognitive restructuring",
       "attribution": "This section is inspired by Cognitive Behavioral Therapy Made Simple by Seth J. Gillihan PhD.",
       "continue": "Got it"
-    },
-    "error": "Unable to save CBT onboarding.",
-    "dismiss": "Close"
+    }
   },
   "goals": {
     "title": "Goals",
@@ -838,7 +783,10 @@
       "label": "Authentic",
       "description": "Being genuine, honest and true to myself."
     },
-    "caring": { "label": "Caring", "description": "Helpful and considerate to myself and others." },
+    "caring": {
+      "label": "Caring",
+      "description": "Helpful and considerate to myself and others."
+    },
     "challenging": {
       "label": "Challenging",
       "description": "Willing to examine and challenge unhelpful or unworkable patterns of behaviour."
@@ -859,7 +807,10 @@
       "label": "Courageous",
       "description": "Brave and persistent in the face of fear, threat or difficulty."
     },
-    "creative": { "label": "Creative", "description": "Imaginative, resourceful and innovative." },
+    "creative": {
+      "label": "Creative",
+      "description": "Imaginative, resourceful and innovative."
+    },
     "curious": {
       "label": "Curious",
       "description": "Open-minded, exploratory and interested in new and alternative approaches."
@@ -876,7 +827,10 @@
       "label": "Equality",
       "description": "Treating others fairly, consistently and equally."
     },
-    "fairness": { "label": "Fairness", "description": "Just, rational and reasonable." },
+    "fairness": {
+      "label": "Fairness",
+      "description": "Just, rational and reasonable."
+    },
     "fitness": {
       "label": "Fitness",
       "description": "Maintaining or improving my physical, psychological and emotional wellbeing."
@@ -937,7 +891,10 @@
       "label": "Respectful",
       "description": "Polite, considerate and showing positive regard to others."
     },
-    "safe": { "label": "Safe", "description": "Acting in a secure, protective and stable manner." },
+    "safe": {
+      "label": "Safe",
+      "description": "Acting in a secure, protective and stable manner."
+    },
     "self-aware": {
       "label": "Self-aware",
       "description": "Aware of my own thoughts, feelings and actions, considering how I come across to others."
@@ -960,7 +917,6 @@
     }
   },
   "mood": {
-    "title": "Check-in",
     "description": "A quick check on how you are feeling right now.",
     "editTitle": "Edit check-in",
     "editDescription": "Adjust the score, emotions, date, or notes.",
@@ -972,7 +928,6 @@
     "behavioursLabel": "Behaviours",
     "behavioursPlaceholder": "What did you do (or avoid doing)?",
     "sensationsLabel": "Bodily sensations",
-    "sensationsPlaceholder": "What did you notice in your body?",
     "scoreLabel": "Mood score (1–5)",
     "scoreHint": "1 is very low, 5 is very good.",
     "emotionsLabel": "Emotions (optional)",
@@ -1025,15 +980,11 @@
     "hotThoughtBadge": "Hot thought",
     "natsRequired": "Add at least one thought to continue.",
     "emotions": "Emotions",
-    "emotionsHint": "Choose the emotions that feel closest to the moment.",
     "patterns": "Patterns",
-    "patternsHint": "Notice which thinking patterns might be shaping the moment.",
     "balancedThought": "Balanced thought",
     "balancedThoughtHint": "Write the calmer, more balanced response you want to keep.",
     "evidence": "Evidence",
-    "evidenceHint": "Optional: test the thought by separating what supports it from what does not.",
     "outcome": "Afterward",
-    "outcomeHint": "Optional: note how the feeling shifted and anything worth remembering.",
     "emotionsLabel": "Emotions",
     "emotionsLabelHint": "Pick the feelings that fit best.",
     "intensityBefore": "Emotion intensity before (0-100)",
@@ -1064,12 +1015,7 @@
     "continue": "Continue",
     "saveRecord": "Save record",
     "saving": "Saving record",
-    "disputeTitle": "Put the thought on trial",
-    "disputePrompt1": "Is this a fact or an opinion?",
-    "disputePrompt2": "What would you tell a close friend who had this thought?",
-    "disputePrompt3": "Have you faced this before? What actually happened?",
-    "disputePrompt4": "Are you holding yourself to a harsher standard than anyone else?",
-    "disputePrompt5": "What evidence argues against this thought?"
+    "disputeTitle": "Put the thought on trial"
   },
   "detail": {
     "loading": "Loading record",
@@ -1081,7 +1027,6 @@
     "updated": "Updated {{timestamp}}",
     "archiveProblem": "Archive problem",
     "archiveConfirmTitle": "Archive this record",
-    "archiveConfirmDescription": "This action cannot be undone.",
     "archiveButton": "Archive",
     "editButton": "Edit record",
     "archiveError": "Unable to archive the record.",
@@ -1090,28 +1035,7 @@
     "intensityShift": "Intensity {{before}} -> {{after}} (shift {{shift}})."
   },
   "emotions": {
-    "happy": "Happy",
-    "excited": "Excited",
-    "loved": "Loved",
-    "inspired": "Inspired",
-    "proud": "Proud",
-    "playful": "Playful",
-    "grateful": "Grateful",
-    "hopeful": "Hopeful",
-    "relaxed": "Relaxed",
-    "content": "Content",
-    "anxious": "Anxious",
-    "sad": "Sad",
-    "angry": "Angry",
-    "ashamed": "Ashamed",
-    "guilty": "Guilty",
-    "overwhelmed": "Overwhelmed",
-    "frustrated": "Frustrated",
-    "lonely": "Lonely",
-    "fearful": "Fearful",
-    "hopeless": "Hopeless",
-    "numb": "Numb",
-    "irritated": "Irritated"
+    "happy": "Happy"
   },
   "distortions": {
     "all-or-nothing": {
@@ -1205,8 +1129,6 @@
     "description": "Quick techniques to anchor yourself in the present moment when anxiety or distress spikes.",
     "authorEyebrow": "Inspired by DBT distress tolerance · Marsha Linehan",
     "hero": {
-      "recentSessions_one": "{{count}} recent session",
-      "recentSessions_other": "{{count}} recent sessions",
       "techniques_one": "{{count}} technique",
       "techniques_other": "{{count}} techniques",
       "takes": "Takes",
@@ -1288,19 +1210,13 @@
     }
   },
   "breathing": {
-    "moduleLabel": "Breathing",
     "title": "Breathing exercises",
     "tagline": "Short guided patterns to calm your nervous system right now.",
-    "meta": "3 patterns · 1–10 min",
     "helpLabel": "About breathing",
-    "recentEyebrow": "Recent sessions",
-    "choosePatternTitle": "Choose a pattern",
-    "choosePatternHint": "Tap to begin",
     "startSession": "Start a session",
     "startSessionHint": "Opens your last pattern - switch any time.",
     "history": {
       "title": "Session history",
-      "subtitle": "Your past breathing sessions.",
       "empty": "No sessions yet."
     },
     "description": "Short guided patterns to calm your nervous system right now.",
@@ -1312,8 +1228,6 @@
     },
     "choose": "Choose a pattern",
     "minutes": "{{value}} min",
-    "recentCount_one": "{{count}} session",
-    "recentCount_other": "{{count}} sessions",
     "chooseCycles": "Choose cycles",
     "decreaseCycles": "Decrease cycles",
     "increaseCycles": "Increase cycles",
@@ -1324,7 +1238,6 @@
     "choosePattern": "Pattern",
     "start": "Start",
     "getReady": "Get ready…",
-    "skipIntro": "Skip",
     "finishEarly": "Finish early",
     "notFound": "Exercise not found",
     "nudgeTitle": "Want to ground yourself?",
@@ -1372,19 +1285,16 @@
       "box-breathing": {
         "title": "Box breathing",
         "shortDescription": "Equal counts of inhale, hold, exhale, hold - used to quickly reduce acute stress.",
-        "meta": "1–5 min",
         "benefit": "Activates the parasympathetic nervous system within a few cycles."
       },
       "4-7-8": {
         "title": "4-7-8 breathing",
         "shortDescription": "A longer exhale that down-regulates the nervous system quickly.",
-        "meta": "2–4 min",
         "benefit": "The extended hold and slow exhale trigger the relaxation response."
       },
       "coherent-breathing": {
         "title": "Coherent breathing",
         "shortDescription": "Slow, equal inhale and exhale at about 5 breaths per minute.",
-        "meta": "5–10 min",
         "benefit": "Maximises heart rate variability and reduces anxiety over time."
       }
     },

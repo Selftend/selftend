@@ -1,7 +1,6 @@
 {
   "title": "Gratitude",
   "description": "Notice small things you appreciated. Save only when it feels useful - no streaks, no pressure.",
-  "moduleLabel": "Gratitude",
   "tagline": "Three good things from today is enough.",
   "authorEyebrow": "Inspired by positive psychology · Sonja Lyubomirsky & Robert Emmons",
   "newEntry": "New entry",
@@ -24,23 +23,13 @@
   "insights": {
     "title": "Insights",
     "frequency": "How often you log",
-    "frequencyTitle": "Recent rhythm",
-    "frequencyEmpty": "Your entries will appear here when you have a few saved.",
     "thisWeek": "This week",
     "themes": "Common themes",
-    "themesTitle": "Common themes",
-    "themesEmpty": "Themes will appear after more saved text.",
-    "themeCount": "{{word}} · {{count}}",
     "favorites": "Favorites",
-    "favoritesTitle": "Favorite moments",
-    "favoritesCount_one": "{{count}} saved favorite",
-    "favoritesCount_other": "{{count}} saved favorites",
     "savedCount_one": "{{count}} saved",
-    "savedCount_other": "{{count}} saved",
-    "favoritesOpen": "Favorites"
+    "savedCount_other": "{{count}} saved"
   },
   "onboarding": {
-    "helpHint": "Learn about gratitude practice",
     "skip": "Skip",
     "back": "Back",
     "welcome": {
@@ -60,21 +49,17 @@
       "level2Title": "Level 2 - Reflecting & Appreciating",
       "level2Body": "Think about what you would miss if it were gone. Notice things you usually take for granted - running water, sunlight, a friend nearby.",
       "level3Title": "Level 3 - Practicing Gratitude",
-      "level3Body": "The ongoing practice brings the earlier steps together: notice what's here, appreciate it, and write \"I'm grateful for...\" reflections.",
-      "continue": "Continue"
+      "level3Body": "The ongoing practice brings the earlier steps together: notice what's here, appreciate it, and write \"I'm grateful for...\" reflections."
     },
     "frequency": {
       "title": "How Often?",
       "subtitle": "Research points to a sweet spot.",
       "body": "Researchers suggest writing one to three times a week rather than daily. Daily writing can lead to hedonic adaptation - the positive feeling fades as gratitude becomes routine.",
-      "note": "There is no minimum. If you skip a few days, just pick it up again. You can't fail at this.",
-      "continue": "Continue"
+      "note": "There is no minimum. If you skip a few days, just pick it up again. You can't fail at this."
     },
     "finish": {
       "start": "Got it",
-      "saving": "Saving...",
-      "error": "Couldn't save your preferences. Try again.",
-      "dismiss": "Close"
+      "error": "Couldn't save your preferences. Try again."
     }
   },
   "list": {
@@ -86,8 +71,6 @@
     },
     "viewEntry": "View gratitude entry from {{when}}",
     "fallbackItem": "Gratitude entry",
-    "itemsCount_one": "{{count}} thing",
-    "itemsCount_other": "{{count}} things",
     "showMore": "Show more",
     "showLess": "Show less",
     "expandEntry": "Expand gratitude entry from {{when}}",
@@ -162,9 +145,7 @@
     "daysAgo_other": "{{count}} days ago"
   },
   "breaks": {
-    "sectionLabel": "Take a break",
     "dismiss": "Next card",
-    "open": "Open",
     "categories": {
       "positive-psychology": "Positive Psychology",
       "stoicism": "Stoicism",

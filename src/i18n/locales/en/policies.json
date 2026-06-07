@@ -303,12 +303,6 @@
   "accountDeletion": {
     "pageTitle": "Account deletion",
     "pageDescription": "How to permanently delete your Selftend account and all associated data.",
-    "emailFallback": "Email fallback",
-    "emailFallbackDescription": "If you cannot access the self-service deletion in Settings, you can request deletion by email.",
-    "emailNotConfigured": "Deletion contact email not yet configured. Use the self-service option in Settings.",
-    "emailLink": "Email deletion request",
-    "emailSubject": "Account and data deletion request",
-    "emailBody": "Please delete my Selftend account and associated app data. My account email is: ",
     "sections": [
       {
         "title": "What deletion does",

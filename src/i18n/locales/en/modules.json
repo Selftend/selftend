@@ -1,40 +1,6 @@
 {
   "act": {
-    "eyebrow": "Module · ACT",
-    "title": "Acceptance & commitment therapy",
-    "description": "Building psychological flexibility through six interconnected processes. We're designing this module carefully - it'll arrive in the next major release.",
-    "statusTitle": "In design · Coming after the CBT program ships",
-    "statusBody": "ACT teaches that psychological pain is unavoidable, but suffering can be reduced by changing your relationship with thoughts and feelings rather than their content.",
-    "processesTitle": "The six processes",
-    "processesDescription": "The 'hexaflex' - six skills that reinforce each other. Each will get its own structured program inside the module.",
-    "processes": {
-      "defusion": {
-        "name": "Cognitive defusion",
-        "desc": "Stepping back from thoughts instead of being fused with them. Treating thoughts as events, not commands."
-      },
-      "acceptance": {
-        "name": "Acceptance",
-        "desc": "Opening to difficult feelings rather than fighting or avoiding them - willingness as a skill."
-      },
-      "present": {
-        "name": "Present-moment",
-        "desc": "Conscious contact with what is happening here and now."
-      },
-      "selfAsContext": {
-        "name": "Self-as-context",
-        "desc": "The noticing self - bigger than any single thought or feeling."
-      },
-      "values": {
-        "name": "Values",
-        "desc": "Chosen directions that give life meaning. Not goals to achieve, ways to live."
-      },
-      "committedAction": {
-        "name": "Committed action",
-        "desc": "Behavior anchored to values, even when difficult. The how of living the values."
-      }
-    },
-    "toolsTitle": "Shared tools you can already use",
-    "toolsDescription": "ACT will lean on these - they're available now from the sidebar."
+    "description": "Building psychological flexibility through six interconnected processes. We're designing this module carefully - it'll arrive in the next major release."
   },
   "dbt": {
     "eyebrow": "Module · DBT",

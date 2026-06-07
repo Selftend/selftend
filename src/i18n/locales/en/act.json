@@ -9,9 +9,6 @@
     "fullTitle": "Acceptance & Commitment Therapy",
     "subtitle": "Inspired by The Happiness Trap by Russ Harris",
     "description": "Skills that build psychological flexibility - the ability to act on your values even when difficult thoughts and feelings are present.",
-    "onboardingHint": "Learn about ACT",
-    "wizardHint": "Personalise ACT",
-    "settingsHint": "Adjust settings",
     "frameworkTitle": "The framework",
     "frameworkDescription": "Four pillars that build psychological flexibility.",
     "recentDefusionTitle": "Recent defusion logs",
@@ -21,32 +18,26 @@
   "principles": {
     "defusion": {
       "name": "Defusion",
-      "short": "Unhook from thoughts",
       "desc": "Step back from unhelpful thoughts. See them as mental events, not facts."
     },
     "expansion": {
       "name": "Acceptance",
-      "short": "Make room for feelings",
       "desc": "Stop fighting difficult emotions. Turn off the Struggle Switch and let them be."
     },
     "connection": {
       "name": "Connection",
-      "short": "Present-moment awareness",
       "desc": "Notice what is happening right now - not the past, not the future."
     },
     "observingSelf": {
       "name": "Observing Self",
-      "short": "The stable witness",
       "desc": "The part of you that notices thoughts and feelings without being defined by them."
     },
     "values": {
       "name": "Values",
-      "short": "What matters most",
       "desc": "Your chosen directions in life. Not goals to achieve - ways to be."
     },
     "committedAction": {
       "name": "Committed Action",
-      "short": "Act on what matters",
       "desc": "Take values-guided steps even when discomfort is present."
     }
   },
@@ -60,10 +51,6 @@
     "welcome": {
       "title": "Acceptance and Commitment Therapy",
       "subtitle": "ACT means accept what shows up, connect with values, and take effective action",
-      "myth1": "Happiness is the natural state for humans",
-      "myth2": "If you're not happy, something is wrong with you",
-      "myth3": "To have a good life you must eliminate negative feelings",
-      "myth4": "You should be able to control your thoughts and feelings",
       "body": "These four myths set a trap: the harder we try to avoid pain, the more we suffer. The mind evolved for survival, not happiness. Negative thoughts and feelings are a built-in feature, not a malfunction.",
       "mythsTitle": "The four myths",
       "controlParadox": "The Control Paradox",
@@ -82,38 +69,12 @@
       "formula": "Mindfulness + Values + Action = Psychological Flexibility",
       "formulaBody": "Psychological flexibility is the ability to act on what matters even when difficult thoughts and feelings are present. That is the goal."
     },
-    "concerns": {
-      "title": "What brings you here?",
-      "subtitle": "Select everything that applies. This helps us suggest where to start.",
-      "anxiety": "Anxiety or worry",
-      "depression": "Low mood or depression",
-      "selfCriticism": "Harsh self-criticism",
-      "urgesAddiction": "Urges or addictive patterns",
-      "procrastination": "Procrastination",
-      "anger": "Anger",
-      "grief": "Grief or loss",
-      "other": "Something else",
-      "continue": "Continue"
-    },
-    "bullsEye": {
-      "title": "A quick look at your values",
-      "subtitle": "How close are you to living your values right now? 1 = far off, 10 = living it fully.",
-      "work": "Work & education",
-      "leisure": "Leisure & play",
-      "relationships": "Relationships",
-      "personalGrowth": "Health & personal growth",
-      "ratingLabel": "{{domain}} - {{rating}}/10",
-      "continue": "That's my starting point"
-    },
     "commit": {
       "title": "Your first step",
       "subtitle": "Based on what you shared, we suggest starting here.",
-      "startingWith": "Starting with: {{principle}}",
-      "switchHint": "You can start with any principle - tap to change.",
       "reminderLabel": "Daily reminder",
       "reminderHint": "Off by default. You can change this any time in settings.",
       "timeLabel": "Reminder time",
-      "timePlaceholder": "HH:MM",
       "finish": "Start the program",
       "saving": "Saving...",
       "error": "Something went wrong. Please try again."
@@ -125,7 +86,6 @@
     "noLogs": "No entries yet. Use defusion when a sticky thought shows up.",
     "newTitle": "Defuse a thought",
     "newSubtitle": "Step back from the story your mind is telling.",
-    "editTitle": "Edit log",
     "thoughtLabel": "What is the thought?",
     "thoughtPlaceholder": "Write the thought as it appeared",
     "thoughtHint": "Don't soften it - write it exactly as your mind said it.",
@@ -297,7 +257,6 @@
     "noLogs": "No entries yet. Try \"Notice Five Things\" the next time your mind drifts.",
     "newTitle": "Connect to now",
     "newSubtitle": "Bring your full attention to what is happening right now.",
-    "editTitle": "Edit session",
     "techniqueLabel": "Which practice?",
     "techniqueHint": "New here? \"Notice Five Things\" is the quickest way to land in the present.",
     "activityLabel": "What are you doing? (optional)",
@@ -308,8 +267,6 @@
     "noticesHint": "No need to evaluate - just describe what was there.",
     "moodLabel": "Mood after (1–10)",
     "moodHint": "1 = very low, 10 = very good",
-    "durationLabel": "How long? (minutes, optional)",
-    "durationPlaceholder": "e.g. 5",
     "notesLabel": "Anything else to note? (optional)",
     "notesPlaceholder": "What shifted? Any surprises?",
     "saveLog": "Save",
@@ -358,7 +315,6 @@
     "noLogs": "No sessions yet. Try \"Ten Deep Breaths\" to step into the Observing Self.",
     "newTitle": "Step into the witness",
     "newSubtitle": "Access the part of you that notices - steady, unjudging, always here.",
-    "editTitle": "Edit session",
     "techniqueLabel": "Which practice?",
     "techniqueHint": "\"Ten Deep Breaths\" is the entry point. Try Sky & Weather once you're familiar.",
     "observedLabel": "What did you observe from this vantage point?",
@@ -366,8 +322,6 @@
     "observedHint": "You are not reporting what was bad or good - just what was there.",
     "moodLabel": "Mood after (1–10)",
     "moodHint": "1 = very low, 10 = very good",
-    "durationLabel": "How long? (minutes, optional)",
-    "durationPlaceholder": "e.g. 5",
     "notesLabel": "Anything else? (optional)",
     "notesPlaceholder": "Any shift in perspective?",
     "saveLog": "Save",

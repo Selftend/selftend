@@ -2,8 +2,7 @@
   "title": "Sleep tracker",
   "description": "Log your sleep and spot patterns over time.",
   "cta": {
-    "log": "Log last night's sleep",
-    "logAnother": "Log another"
+    "log": "Log last night's sleep"
   },
   "log": {
     "title": "Log sleep",

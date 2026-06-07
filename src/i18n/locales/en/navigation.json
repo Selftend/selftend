@@ -41,15 +41,10 @@
     "signOut": "Sign Out"
   },
   "languageToggle": {
-    "toggle": "Switch language",
-    "en": "English",
-    "bg": "Bulgarian"
+    "toggle": "Switch language"
   },
   "themeToggle": {
-    "toggle": "Switch theme",
-    "system": "System",
-    "light": "Light",
-    "dark": "Dark"
+    "toggle": "Switch theme"
   },
   "tabs": {
     "home": "Home",
@@ -67,70 +62,28 @@
     "greetingEvening": "Good evening",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "subtitle": "Pick one thing - there's no pressure to do everything.",
     "dashboardLabel": "Dashboard",
     "dashboardSub": "Tools you check in with each day",
-    "addTool": "Add tool",
     "emptyTitle": "Add tools you want to check in with each day",
     "emptyDescription": "Choose from any of your tools in the sidebar. They'll show up here as a quiet daily list.",
-    "quickActions": {
-      "logMood": "Log mood",
-      "thoughtRecord": "Thought record",
-      "meditate": "Meditate",
-      "selfCare": "Self-care log",
-      "journal": "New journal entry"
-    },
     "moodSnapshot": {
-      "title": "Mood snapshot",
       "sevenDay": "Last 7 days",
-      "thirtyDay": "Last 30 days",
-      "today": "Today",
-      "logsCount": "{{count}} log",
-      "logsCount_other": "{{count}} logs",
-      "notLogged": "Not logged yet",
-      "noData": "-",
-      "logMood": "Log mood",
       "entries": "Entries"
     },
     "plan": {
-      "title": "On your plate today",
-      "empty": "Nothing scheduled. Pick one small thing.",
-      "activityLabel": "CBT · Behavioral activation",
-      "taskLabel": "CBT · Procrastination",
-      "selfCareLabel": "CBT · Self-care",
-      "thoughtRecordLabel": "CBT · Thought record",
-      "open": "Open",
-      "resume": "Resume",
-      "evening": "Evening self-care log",
-      "eveningSub": "Two minutes. Sleep, body, connection, gratitude."
+      "open": "Open"
     },
     "modules": {
-      "title": "Therapeutic modules",
-      "subtitle": "Bigger structured programs. Pick one to work through over time - the shared tools feed into all of them.",
       "cbtName": "Cognitive behavioral therapy",
       "cbtDescription": "The Think · Act · Be framework. Evidence-based strategies for anxiety, depression, anger, panic and worry.",
-      "meditationName": "Meditation - The Mind Illuminated",
-      "meditationDescription": "A ten-stage structured practice for developing stable attention and powerful mindfulness. Patient, non-pushy, self-paced.",
-      "gratitudeName": "Gratitude - Kurzgesagt Journal",
-      "gratitudeDescription": "Three levels of practice backed by research: noticing small things, mental subtraction, and building the journaling habit.",
       "actName": "Acceptance & commitment",
       "actDescription": "Six processes for psychological flexibility - values, defusion, acceptance, present-moment, self-as-context, committed action.",
       "dbtName": "Dialectical behavior therapy",
-      "dbtDescription": "Four skill groups - mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness.",
-      "live": "Live",
-      "soon": "Soon",
-      "inDesign": "In design",
-      "onRoadmap": "On the roadmap"
+      "dbtDescription": "Four skill groups - mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness."
     },
     "tools": {
-      "title": "Shared tools",
-      "subtitle": "Standalone trackers any module can call into. Use them on their own, too.",
       "moodTracker": "Mood tracker",
       "moodTrackerSub": "Patterns over time",
-      "meditation": "Meditation",
-      "meditationSub": "Quiet, structured sits",
-      "timer": "Timer",
-      "timerSub": "No tracking, just sit",
       "gratitudeLog": "Gratitude log",
       "gratitudeLogSub": "Notice the small wins",
       "journal": "Journal",
@@ -140,67 +93,30 @@
       "sleep": "Sleep tracker",
       "sleepSub": "Log and review your sleep",
       "habits": "Habit tracking",
-      "habitsSub": "Build consistent daily habits",
-      "progress": "Reflect",
-      "progressSub": "See your 30-day picture"
+      "habitsSub": "Build consistent daily habits"
     },
     "dashboard": {
-      "sectionTitle": "Dashboard",
-      "editLabel": "Edit",
-      "doneLabel": "Done",
       "addWidgetTitle": "Add to your plan",
-      "addWidgetSubtitle": "Pick tools to add to your dashboard",
       "addToolButton": "Add",
-      "emptySubtitle": "Add tools you want to check in with each day.",
       "removeWidget": "Remove {{title}}",
-      "moveWidgetUp": "Move {{title}} up",
-      "moveWidgetDown": "Move {{title}} down",
-      "dragWidget": "Drag {{title}} to reorder",
-      "allAdded": "All available tools are already on your plan.",
       "doneToday": "Done today",
       "startBreathing": "Start breathing",
       "write": "Write",
       "habitsProgress": "{{done}} / {{total}}",
       "logSelfCare": "Log self-care",
-      "meditationWeekCount": "{{count}} session this week",
-      "meditationWeekCount_other": "{{count}} sessions this week",
       "open": "Open",
-      "todayScore": "Today: {{score}}",
       "countToday": "{{count}} today",
-      "cbtHint": "Record automatic thoughts and reframe them.",
-      "cbtToolDesc": "Thought records & reframing",
-      "newRecord": "New record",
       "breathingHint": "Guided breathing exercises.",
       "lastSession": "Last session: {{date}}",
-      "thisWeek": "This week",
-      "minutesThisWeek": "Minutes",
-      "meditationStage": "Current stage: {{stage}}",
       "startSession": "Start session",
-      "gratitudeHint": "Notice what went well today.",
       "addEntry": "Add entry",
-      "journalHint": "Write freely - no prompts, no judgment.",
       "habitsHint": "No activities scheduled for today.",
       "habitsAllDone": "All done for today!",
       "newHabit": "New habit",
-      "done": "Done",
-      "openCbt": "Open CBT",
-      "openAct": "Open ACT",
-      "actExercise": "Do exercise",
-      "cbtModuleSubtitle": "Think · Act · Be",
-      "actModuleSubtitle": "Psychological flexibility",
-      "cbtModuleProgramReady": "CBT program",
-      "cbtModuleProgramReadyDesc": "Guided structure is ready when you want it.",
-      "cbtModuleProgramCompleteDesc": "Complete. Keep using the CBT tools as needed.",
-      "cbtModuleRecords": "Records",
-      "cbtModuleActivities": "Activities",
-      "cbtModuleSelfCare": "Self-care",
-      "actActions": "Actions",
-      "actDefusion": "Defusion",
-      "actConnection": "Connection"
+      "done": "Done"
     }
   },
   "home": {
-    "sectionTitle": "Home",
     "editLabel": "Edit widgets",
     "doneLabel": "Done",
     "editingHint": "Drag to rearrange",
@@ -237,7 +153,6 @@
       "moodCheckin": {
         "title": "Daily check-in",
         "desc": "A quick five-face mood check-in.",
-        "faceLabel": "Mood {{score}} of 5",
         "loggedSummary_one": "Logged {{count}}× today",
         "loggedSummary_other": "Logged {{count}}× today",
         "lastAt": "last {{time}}",
@@ -263,8 +178,14 @@
         "sessionsLabel": "Sessions",
         "minutesLabel": "Minutes"
       },
-      "habitsToday": { "title": "Habits, today", "desc": "Your habits with this week's progress." },
-      "selfCare": { "title": "Self-care log", "desc": "Today's self-care check-in." },
+      "habitsToday": {
+        "title": "Habits, today",
+        "desc": "Your habits with this week's progress."
+      },
+      "selfCare": {
+        "title": "Self-care log",
+        "desc": "Today's self-care check-in."
+      },
       "cbtOpenRecord": {
         "title": "Open thought record",
         "metaDesc": "Pick up your latest thought record.",
@@ -361,12 +282,10 @@
       },
       "breathingLibrary": {
         "title": "Breathing patterns",
-        "metaDesc": "Browse all breathing patterns.",
         "count": "{{count}} patterns"
       },
       "breathingLog": {
         "title": "Breathing sessions",
-        "metaDesc": "Your recent breathing practice.",
         "sessionsLabel": "Sessions",
         "minutesLabel": "Minutes",
         "empty": "No sessions yet."
@@ -378,7 +297,10 @@
         "minutesLabel": "Minutes",
         "empty": "No sessions yet."
       },
-      "mood": { "noLogs": "No logs yet", "glance": "7-day {{avg}} · {{count}} logs" },
+      "mood": {
+        "noLogs": "No logs yet",
+        "glance": "7-day {{avg}} · {{count}} logs"
+      },
       "today": {
         "moodLabel": "Mood",
         "habitsLabel": "Habits",
@@ -401,9 +323,7 @@
         "save": "Save"
       },
       "shortcutConfig": {
-        "title": "Choose shortcuts",
-        "subtitle": "Pick the actions this widget should show.",
-        "save": "Save shortcuts"
+        "title": "Choose shortcuts"
       },
       "shortcutCatalog": {
         "mood": "Log mood",
@@ -447,8 +367,6 @@
       "moodLogs_other": "{{count}} logs",
       "moodLast7": "{{average}} avg this week",
       "moodNoData": "No logs yet",
-      "timerMinutes": "{{minutes}} min this month",
-      "timerNoData": "No sits yet",
       "journalEntries_one": "{{count}} entry",
       "journalEntries_other": "{{count}} entries",
       "journalNoData": "No entries yet",
@@ -463,8 +381,7 @@
       "sleepNoData": "No logs yet",
       "habits_one": "{{count}} habit",
       "habits_other": "{{count}} habits",
-      "habitsNoData": "No habits yet",
-      "comingSoon": "Coming soon"
+      "habitsNoData": "No habits yet"
     }
   },
   "headerButton": {
@@ -500,7 +417,6 @@
     "entry": "Entry",
     "new": "New",
     "newRecord": "New record",
-    "newSession": "New session",
     "logSession": "Log session",
     "sessions": "Sessions",
     "stages": "Stages",
@@ -547,83 +463,11 @@
     "clear": "Clear date"
   },
   "plan": {
-    "empty": "No plan set up yet.",
-    "emptyHint": "Build a routine with the wizard, or add items one by one.",
-    "emptyWizard": "Start wizard",
-    "emptyManual": "Add manually",
-    "checklist": {
-      "title": "My plan",
-      "empty": "You haven't set up a plan yet. A short routine makes it easier to show up.",
-      "setup": "Set up my plan",
-      "manage": "Manage"
-    },
-    "frequency": {
-      "daily": "Daily",
-      "weekly": "Weekly",
-      "as_needed": "As needed"
-    },
-    "manage": {
-      "title": "My plan",
-      "subtitle": "Toggle items on or off, reorder, or add new ones.",
-      "addItem": "Add item",
-      "runWizard": "Re-run wizard",
-      "deleted": "Item removed.",
-      "errorToggle": "Could not update item.",
-      "errorDelete": "Could not delete item."
-    },
     "wizard": {
-      "concernsTitle": "What do you want support with?",
-      "concernsSubtitle": "Pick everything that feels relevant - you can change this later.",
-      "toolsTitle": "What tools feel useful?",
-      "toolsSubtitle": "Select the practices you'd like in your routine.",
-      "routineTitle": "How much do you want to take on?",
-      "routineSubtitle": "You can always adjust later.",
-      "reviewTitle": "Your starter plan",
-      "reviewSubtitle": "Uncheck anything you don't want. You can always edit later.",
-      "next": "Next",
-      "back": "Back",
-      "save": "Save plan",
-      "saved": "Plan saved.",
-      "skipWizard": "Build manually instead",
-      "errorNoItems": "Please keep at least one item.",
-      "errorSave": "Could not save plan. Please try again.",
-      "concernAnxiety": "Anxiety",
-      "concernStress": "Stress",
-      "concernLowMood": "Low mood",
-      "concernSleep": "Sleep",
-      "concernNegativeThoughts": "Negative thoughts",
-      "concernSelfCompassion": "Self-compassion",
-      "concernEmotionalRegulation": "Emotional regulation",
-      "toolMood": "Mood check-in",
-      "toolCbt": "CBT",
       "toolBreathing": "Breathing exercise",
       "toolMeditation": "Meditation",
       "toolGratitude": "Gratitude log",
-      "toolJournal": "Journal",
-      "toolHabits": "Habit tracking",
-      "routineLight": "Light",
-      "routineLightDesc": "2–3 items - a gentle daily check-in",
-      "routineStandard": "Standard",
-      "routineStandardDesc": "4–5 items - a balanced routine",
-      "routineCustom": "Custom",
-      "routineCustomDesc": "All selected tools, no cap"
-    },
-    "form": {
-      "titleCreate": "New plan item",
-      "titleEdit": "Edit plan item",
-      "nameLabel": "Name",
-      "namePlaceholder": "e.g. Morning mood check-in",
-      "descriptionLabel": "Description (optional)",
-      "descriptionPlaceholder": "A short note about this item",
-      "toolLabel": "Tool",
-      "frequencyLabel": "Frequency",
-      "save": "Add to plan",
-      "update": "Save changes",
-      "cancel": "Cancel",
-      "created": "Item added to plan.",
-      "updated": "Item updated.",
-      "errorTitle": "Please enter a name.",
-      "errorSave": "Could not save. Please try again."
+      "toolHabits": "Habit tracking"
     }
   }
 }

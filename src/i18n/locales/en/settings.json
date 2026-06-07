@@ -3,13 +3,6 @@
   "loading": "Loading settings...",
   "problem": "Settings problem",
   "saved": "Saved",
-  "saveError": "Unable to save settings.",
-  "savingSettings": "Saving settings",
-  "language": {
-    "title": "Language",
-    "english": "English",
-    "bulgarian": "Български"
-  },
   "profile": {
     "title": "Profile",
     "description": "Your display name and profile picture. You can restore your Google photo after choosing or removing a custom photo.",
@@ -19,10 +12,8 @@
     "savingName": "Saving...",
     "nameSaved": "Display name saved.",
     "nameError": "Unable to save display name.",
-    "add": "Add picture",
     "change": "Change photo",
     "uploading": "Uploading...",
-    "hint": "Choose a photo from your library. Web only. Max 5 MB.",
     "permissionNeeded": "Photo library access is needed to choose a profile picture.",
     "tooLarge": "Choose an image smaller than 5 MB.",
     "updated": "Profile picture updated.",
@@ -30,7 +21,6 @@
     "googleRestored": "Google photo restored.",
     "reset": "Profile picture reset.",
     "remove": "Remove photo",
-    "removeHint": "Delete this picture. You can upload a new one or use your Google account photo.",
     "removed": "Profile picture removed.",
     "error": "Unable to update profile picture.",
     "resetError": "Unable to reset profile picture.",
@@ -40,19 +30,7 @@
   "reminders": {
     "title": "Reminders & notifications",
     "description": "Reminders stay explicit and off by default. They should support use, not create pressure.",
-    "openNotifications": "Open notifications",
-    "daily": "Daily reminder",
-    "dailyHint": "Enable one quiet daily reminder.",
-    "hour": "Hour",
-    "minute": "Minute",
-    "hourPlaceholder": "19",
-    "minutePlaceholder": "00",
-    "save": "Save reminder settings",
-    "permissionDenied": "Notification permission was not granted. Reminder settings were saved as off.",
-    "webUnsupported": "Web reminders are not supported in this browser. On iPhone or iPad, add Selftend to the Home Screen before enabling reminders.",
-    "webNotConfigured": "Web reminders are not configured for this deployment. Reminder settings were saved as off.",
-    "serviceWorkerUnavailable": "Web reminders could not be prepared in this browser. Reminder settings were saved as off.",
-    "subscriptionFailed": "Web reminders could not be enabled. Reminder settings were saved as off."
+    "openNotifications": "Open notifications"
   },
   "onboarding": {
     "resetting": "Resetting...",
@@ -83,13 +61,11 @@
     "title": "Account",
     "signedIn": "Signed-in account",
     "export": "Export your data",
-    "exportHint": "Get a copy of your saved data as JSON.",
     "exporting": "Exporting...",
     "exportButton": "Export my data",
     "exported": "Data exported successfully.",
     "exportError": "Export failed. Please try again.",
     "delete": "Delete account",
-    "deleteHint": "Permanently delete your account and all saved records.",
     "deleteTitle": "Delete account permanently?",
     "deleteDescription": "This will permanently delete your account and all data including thought records, preferences, and profile. This cannot be undone.",
     "deleteConfirmLabel": "Type DELETE to confirm",
@@ -97,9 +73,7 @@
     "deleteFailed": "Deletion failed. Please try again or contact support.",
     "deleting": "Deleting...",
     "deleteButton": "Delete my account",
-    "deletePermanently": "Delete permanently",
     "cancel": "Cancel",
-    "deleteError": "Unable to delete account.",
     "signOut": "Sign out",
     "signOutError": "Unable to sign out.",
     "deleteWarning": "This action is permanent. Your account, profile, preferences, and app data will be deleted unless we are required to keep limited data for legal, security, or abuse-prevention reasons.",
@@ -108,18 +82,7 @@
   "home": {
     "title": "A calm starting point",
     "description": "The app starts with a single complete CBT section. Other modules stay out of the way until they are justified.",
-    "scopeBoundary": "Scope boundary",
-    "scopeBoundaryDescription": "This product is for guided self-help and reflection. It is not diagnosis, therapy, or emergency support.",
-    "cbtSection": "CBT section",
-    "cbtSectionDescription": "Start a guided thought record, review distortions, and keep one private history.",
-    "thoughtHistory": "Thought history",
-    "thoughtHistoryDescription": "Review saved records, keep context, and revisit balanced thoughts without pressure.",
-    "settingsAndSupport": "Settings and support",
-    "settingsAndSupportDescription": "Quiet reminders, support links, and legal boundaries live here.",
-    "recentActivity": "Recent activity",
-    "lastUpdated": "Last updated {{timestamp}}",
-    "noRecords": "No records yet",
-    "noRecordsDescription": "Once you save a record, the latest one will surface here."
+    "recentActivity": "Recent activity"
   },
   "avatarCrop": {
     "title": "Crop profile picture",
@@ -192,11 +155,7 @@
   },
   "tools": {
     "moodTracker": "Mood tracker",
-    "moodTrackerDescription": "Track emotional patterns over time.",
-    "meditation": "Meditation",
-    "meditationDescription": "Guided breathing and meditation exercises.",
-    "gratitudeLog": "Gratitude log",
-    "gratitudeLogDescription": "Notice and record positive moments."
+    "gratitudeLog": "Gratitude log"
   },
   "feedback": {
     "title": "Send feedback",
