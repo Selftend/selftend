@@ -1,13 +1,13 @@
 {
   "title": "Notifications",
-  "description": "Manage reminders and notifications across every tool and module.",
+  "description": "Manage reminders for every tool and module.",
   "globalMaster": {
     "label": "Notifications enabled",
-    "hint": "When off, all preferences below are paused. Your saved schedules are kept and will resume when you turn this back on."
+    "hint": "Turns off every reminder. Your schedules are saved and resume when you switch this back on."
   },
   "perTargetMaster": {
     "label": "Enable reminders",
-    "hint": "Turns every reminder for this section on or off."
+    "hint": "Turns all reminders here on or off."
   },
   "subToggles": {
     "dailyReminder": "Daily reminder"
@@ -31,44 +31,44 @@
   },
   "copy": {
     "cbt": {
-      "title": "Quiet CBT check-in",
-      "body": "Take a minute to notice a thought and respond to it with more balance."
+      "title": "CBT check-in",
+      "body": "Notice a thought and meet it with more balance."
     },
     "act": {
-      "title": "Quiet ACT check-in",
-      "body": "Notice an unhelpful thought and unhook from it. A small practice goes a long way."
+      "title": "ACT check-in",
+      "body": "Notice an unhelpful thought and gently unhook from it."
     },
     "meditation": {
-      "title": "Quiet meditation reminder",
-      "body": "Take a few minutes to settle the attention. Even a short sit counts."
+      "title": "Time to meditate",
+      "body": "Take a few minutes to settle your attention."
     },
     "mood": {
-      "title": "Quiet mood check-in",
-      "body": "Take a few seconds to note how you're feeling right now."
+      "title": "Mood check-in",
+      "body": "Take a few seconds — how are you feeling?"
     },
     "journal": {
       "title": "Time to journal",
-      "body": "A few lines about your day can help you make sense of it."
+      "body": "A few lines about your day can help it make sense."
     },
     "gratitude": {
       "title": "A moment of gratitude",
-      "body": "What's one small thing you're grateful for today?"
+      "body": "What's one small thing you're grateful for?"
     },
     "grounding": {
-      "title": "Take a grounding moment",
+      "title": "A grounding moment",
       "body": "Pause and reconnect with your senses for a minute."
     },
     "breathing": {
       "title": "Time to breathe",
-      "body": "A short breathing break can settle your body and mind."
+      "body": "A short break to settle your body and mind."
     },
     "sleep": {
       "title": "Wind down for sleep",
       "body": "Log how you slept and ease into a restful night."
     },
     "habits": {
-      "title": "Habit check-in",
-      "body": "A quick look at your habits keeps your momentum going."
+      "title": "Time for your habits",
+      "body": "Take a quick look at today's habits."
     }
   },
   "targets": {
