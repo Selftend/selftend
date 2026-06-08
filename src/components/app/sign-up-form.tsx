@@ -208,6 +208,15 @@ export function SignUpForm() {
           </Button>
         </View>
 
+        <View className="items-center gap-1">
+          <Text className="text-center text-xs text-muted-foreground">
+            {t("signUp.privacyReassurance")}
+          </Text>
+          <Button onPress={() => router.push("/security")} variant="link" size="sm">
+            <Text className="text-xs">{t("signUp.privacyLink")}</Text>
+          </Button>
+        </View>
+
         <View className="items-center">
           <Text className="text-sm text-muted-foreground">{t("common:or")}</Text>
         </View>
