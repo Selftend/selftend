@@ -8,7 +8,7 @@ do $$
 begin
   if not exists (select 1 from vault.secrets where name = 'app_field_encryption_key') then
     perform vault.create_secret(
-      encode(gen_random_bytes(32), 'base64'),
+      encode(extensions.gen_random_bytes(32), 'base64'),
       'app_field_encryption_key',
       'Symmetric key for provider-recoverable field encryption'
     );
