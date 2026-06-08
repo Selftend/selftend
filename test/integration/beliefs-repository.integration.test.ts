@@ -251,20 +251,32 @@ describe("beliefs core_beliefs (integration)", () => {
     // Ensure it parses as a valid UTC timestamp (PostgREST returns ISO-8601 strings).
     expect(Number.isNaN(new Date(originalUpdatedAt).getTime())).toBe(false);
 
-    // Wait 1 ms to ensure clock advances (Postgres now() is per-transaction,
-    // so a tiny sleep guarantees the second transaction has a later timestamp).
-    await new Promise((r) => setTimeout(r, 2));
+    // Wait briefly so the persisted updated_at is strictly later than the insert
+    // value (Postgres now() is per-transaction; 2 ms could land in the same
+    // millisecond on localhost). The assertion below stays `>`, so a broken
+    // (non-bumping) trigger still fails.
+    await new Promise((r) => setTimeout(r, 15));
 
-    // UPDATE a column - the BEFORE UPDATE trigger must bump updated_at.
+    // UPDATE a column - the data table's BEFORE UPDATE trigger bumps updated_at.
     const update = await alice
       .from("core_beliefs")
       .update({ reinforcement_plan: "Updated plan" })
-      .eq("id", insert.data!.id)
-      .select("updated_at")
-      .single();
+      .eq("id", insert.data!.id);
     expect(update.error).toBeNull();
 
-    const newUpdatedAt = update.data!.updated_at as string;
+    // Read updated_at back with a fresh SELECT rather than from the UPDATE's
+    // RETURNING. The view's INSTEAD OF UPDATE trigger returns its NEW record,
+    // which still carries the pre-update updated_at, so RETURNING reports the
+    // stale value even though the data table genuinely advanced. A follow-up
+    // SELECT through the view surfaces the truly-persisted (advanced) timestamp.
+    const refetch = await alice
+      .from("core_beliefs")
+      .select("updated_at")
+      .eq("id", insert.data!.id)
+      .single();
+    expect(refetch.error).toBeNull();
+
+    const newUpdatedAt = refetch.data!.updated_at as string;
     expect(typeof newUpdatedAt).toBe("string");
 
     // The trigger must have advanced updated_at strictly beyond the insert value.

@@ -63,23 +63,23 @@ export async function listSelfCareLogs(userId: string, limit = 14) {
 
 export async function upsertSelfCareLog(userId: string, input: SelfCareLogInput) {
   const client = requireSupabase();
+  // self_care_logs is a transparent encrypted view; a view cannot be the target of
+  // INSERT ... ON CONFLICT, so we insert plainly and the view's INSTEAD OF trigger resolves the
+  // (user_id, log_date) merge against the base table's real unique constraint.
   const { data, error } = await client
     .from("self_care_logs")
-    .upsert(
-      {
-        user_id: userId,
-        log_date: input.logDate,
-        exercise_done: input.exerciseDone,
-        exercise_minutes: input.exerciseMinutes,
-        exercise_type: input.exerciseType.trim(),
-        meals_structured: input.mealsStructured,
-        emotional_eating: input.emotionalEating,
-        social_connection_made: input.socialConnectionMade,
-        social_notes: input.socialNotes.trim(),
-        meaningful_activity: input.meaningfulActivity.trim(),
-      },
-      { onConflict: "user_id,log_date" },
-    )
+    .insert({
+      user_id: userId,
+      log_date: input.logDate,
+      exercise_done: input.exerciseDone,
+      exercise_minutes: input.exerciseMinutes,
+      exercise_type: input.exerciseType.trim(),
+      meals_structured: input.mealsStructured,
+      emotional_eating: input.emotionalEating,
+      social_connection_made: input.socialConnectionMade,
+      social_notes: input.socialNotes.trim(),
+      meaningful_activity: input.meaningfulActivity.trim(),
+    })
     .select("*")
     .single();
 

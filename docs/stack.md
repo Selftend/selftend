@@ -9,7 +9,7 @@
 - Server state: TanStack Query
 - Local state: Zustand
 - Forms and validation: React Hook Form + Zod
-- Backend: Supabase
+- Backend: Supabase (Postgres, Auth, RLS, Storage, Edge Functions, Vault, pgcrypto)
 - Notifications: Expo Notifications on native; browser Push API + Supabase Edge Function on web
 - i18n: i18next + react-i18next + expo-localization
 - Media: Expo ImagePicker for profile pictures
@@ -91,7 +91,7 @@ Avoid by default:
 
 ## Backend And Hosting
 
-Supabase is the MVP backend for auth, Postgres, RLS, storage, and edge functions. Netlify is the frontend host for the Expo web app at `https://selftend.org`. Native apps use Supabase directly and may open Netlify-hosted public policy pages.
+Supabase is the MVP backend for auth, Postgres, RLS, storage, and edge functions. **Supabase Vault** holds the field encryption key outside the database; **pgcrypto** (`pgp_sym_encrypt` / `pgp_sym_decrypt`) is the crypto primitive for field-level encryption at rest. Netlify is the frontend host for the Expo web app at `https://selftend.org`. Native apps use Supabase directly and may open Netlify-hosted public policy pages.
 
 The hosted path uses public `EXPO_PUBLIC_*` values. Never put service-role keys, database passwords, SMTP secrets, OAuth secrets, JWT secrets, or private backend credentials in Expo public env vars.
 

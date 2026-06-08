@@ -4,6 +4,10 @@
 > (11 blind lenses → dedup → 3-skeptic adversarial verify → completeness critic → gap pass → synthesis).
 > 145 agents, 35 confirmed findings. Each finding survived ≥2 of 3 independent verifiers.
 
+## Post-audit update — 2026-06-08
+
+Field-level encryption at rest was implemented subsequent to this audit. All user-entered text fields across ~36 tables are now stored as encrypted `bytea` ciphertext in `*_data` base tables behind same-named decrypting views. The encryption key is held in Supabase Vault (outside the database), using pgcrypto as the crypto primitive. This adds defense-in-depth against database dump/backup leaks beyond the Supabase infrastructure-level at-rest encryption noted in this report. The audit findings below remain accurate as a point-in-time record of the state on 2026-06-01.
+
 ## Remediation status (applied 2026-06-01)
 
 **31 of 35 findings fixed.** `npm run verify` (lint · format · typecheck · 953 tests · coverage ratchet) is green. DB migrations (`supabase/migrations/20260567`–`20260571`) and Deno edge changes are excluded from local verify and must be exercised against a database/preview deploy.

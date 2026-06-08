@@ -6,6 +6,7 @@
     "pageTitle": "Privacy policy",
     "pageDescription": "How Selftend handles your account, preference, and private CBT record data.",
     "reviewBanner": "This policy requires final legal review before public launch.",
+    "openSecurity": "How we protect your data",
     "sections": [
       {
         "title": "1. Who we are",
@@ -125,6 +126,7 @@
         "title": "13. Security measures",
         "body": [
           "All data in transit is encrypted via HTTPS/TLS.",
+          "Your entries are encrypted at rest at the field level. The encryption key is held outside the database (in Supabase Vault), so a leaked database dump or backup exposes only ciphertext, not your content.",
           "Database access is protected by Row-Level Security (RLS) - each user can only access their own data.",
           "Mobile session credentials are stored in the device's secure enclave via Expo SecureStore.",
           "No service-role keys or database passwords are exposed in the client application.",
@@ -410,7 +412,7 @@
       {
         "title": "Who can see my records?",
         "body": [
-          "Only you. Records are scoped to your account through Supabase Row-Level Security and HTTPS in transit. We do not read your records except to fulfill a verified privacy request, investigate a security incident, or satisfy a legal obligation."
+          "Your records are private to your account. Records are scoped to your account through Supabase Row-Level Security and HTTPS in transit. We do not read your records except to fulfill a verified privacy request, investigate a security incident, or satisfy a legal obligation."
         ]
       },
       {

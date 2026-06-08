@@ -21,6 +21,7 @@ module.exports = [
       "node_modules/**",
       ".expo/**",
       "dist/**",
+      "dist-e2e/**",
       "build/**",
       "build-artifacts/**",
       "web-build/**",

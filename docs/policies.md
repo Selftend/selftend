@@ -96,7 +96,7 @@ The policy text maintains these boundaries:
 - Account-required with data minimization
 - Reminders optional, explicit, and off by default
 - Web push subscriptions are stored only after opt-in and browser permission
-- User-entered self-help records are treated as highly private because they may include wellness or mental-health reflections
+- User-entered self-help records are treated as highly private because they may include wellness or mental-health reflections; they are encrypted at rest at the field level (see [gdpr-compliance.md](gdpr-compliance.md))
 - Android app permissions minimized for the current feature set; no camera-capture or microphone/audio recording permission
 - No ads, subscriptions, manipulative retention, social feeds, or user-facing AI coach
 - Age 18+ required

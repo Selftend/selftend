@@ -307,8 +307,10 @@ from (values
   ('00000000-0000-0000-0000-000000000015'::uuid, 'e2e-w5@test.local'),
   ('00000000-0000-0000-0000-000000000016'::uuid, 'e2e-w6@test.local'),
   ('00000000-0000-0000-0000-000000000017'::uuid, 'e2e-w7@test.local')
-) as u(id, email)
-on conflict (user_id) do nothing;
+) as u(id, email);
+-- NOTE: public.profiles is now a decrypting VIEW; its INSTEAD OF INSERT trigger
+-- already does `on conflict (user_id) do update` against profiles_data, so the
+-- outer ON CONFLICT (which a view can't accept → 42P10) is removed here.
 
 insert into public.user_preferences (
   user_id, enabled_modules, reminder_consent, cbt_reminders_enabled,

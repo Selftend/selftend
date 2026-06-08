@@ -28,7 +28,7 @@ Processing activities are documented in [policies.md](policies.md). Data subject
 
 ## Security (Article 32)
 
-Encryption in transit (HTTPS/TLS) and at rest (Supabase infrastructure). Database access is constrained by Row-Level Security. Mobile credentials are stored in SecureStore. The web bundle ships with a Content-Security-Policy and HSTS. No service-role keys are present in the client bundle. The incident response process is documented in [operations-runbook.md](operations-runbook.md). A regular security testing and audit cadence is open work.
+Encryption in transit (HTTPS/TLS) and at rest at multiple layers. User-entered records (including sensitive self-help content that may engage Article 9) are encrypted at rest at the field level using pgcrypto symmetric encryption; the encryption key is held outside the database in Supabase Vault, so a leaked backup exposes only ciphertext. Supabase infrastructure additionally provides disk-level encryption at rest. Database access is constrained by Row-Level Security, scoping each row to the owning user. Mobile credentials are stored in SecureStore. The web bundle ships with a Content-Security-Policy and HSTS. No service-role keys are present in the client bundle. The GDPR data export (`export_user_data()`) decrypts field content server-side for the authenticated owner. The incident response process is documented in [operations-runbook.md](operations-runbook.md). A regular security testing and audit cadence is open work.
 
 ## Data Breach Notification (Articles 33–34)
 

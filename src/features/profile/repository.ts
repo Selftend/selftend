@@ -136,6 +136,90 @@ function getSupportedMimeType(mimeType?: string | null, fileName?: string | null
   return null;
 }
 
+// The mutable column set every write must send IN FULL. Reads are merged onto the
+// current row so a mutation NEVER omits a column: "clear" sends null explicitly,
+// "preserve" re-sends the current value explicitly. This removes the omitted-vs-null
+// ambiguity that blocked encrypting display_name behind an INSTEAD OF view trigger.
+interface ProfileMutableFields {
+  email: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  avatar_storage_path: string | null;
+  avatar_source: AvatarSource | null;
+  avatar_updated_at: string | null;
+}
+
+function pickMutableFields(row: ProfileRow): ProfileMutableFields {
+  return {
+    email: row.email,
+    display_name: row.display_name,
+    avatar_url: row.avatar_url,
+    avatar_storage_path: row.avatar_storage_path,
+    avatar_source: row.avatar_source,
+    avatar_updated_at: row.avatar_updated_at,
+  };
+}
+
+// A new row's defaults when no profile exists yet (every column explicit, all null).
+function emptyMutableFields(): ProfileMutableFields {
+  return {
+    email: null,
+    display_name: null,
+    avatar_url: null,
+    avatar_storage_path: null,
+    avatar_source: null,
+    avatar_updated_at: null,
+  };
+}
+
+async function getCurrentProfileRow(userId: string): Promise<ProfileRow | null> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("profiles")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw getAvatarSetupError(error);
+  }
+
+  return (data as ProfileRow | null) ?? null;
+}
+
+// Read-modify-write a COMPLETE row: merge `changes` onto the current row (or onto an
+// all-null baseline when none exists) and write every mutable column explicitly.
+// `includeDisplayName=false` is the pre-migration fallback for a DB whose `display_name`
+// column doesn't exist yet (PGRST204); it writes every OTHER mutable column.
+async function writeCompleteProfile(
+  userId: string,
+  current: ProfileRow | null,
+  changes: Partial<ProfileMutableFields>,
+  includeDisplayName = true,
+): Promise<ProfileRow> {
+  const client = requireSupabase();
+  const base = current ? pickMutableFields(current) : emptyMutableFields();
+  const merged: ProfileMutableFields = { ...base, ...changes };
+  const { display_name, ...withoutName } = merged;
+  const payload = includeDisplayName ? merged : withoutName;
+
+  // A complete-row write keyed on user_id. After display_name encryption, `profiles` is a
+  // view whose INSTEAD OF INSERT trigger resolves the per-user merge via ON CONFLICT
+  // (user_id) against the base table; PostgREST cannot issue INSERT ... ON CONFLICT against
+  // a view, so the merge is owned by the trigger and this becomes a plain `.insert()`.
+  const { data, error } = await client
+    .from("profiles")
+    .insert({ user_id: userId, ...payload })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as ProfileRow;
+}
+
 function mapUserProfile(row: ProfileRow, avatarUrl: string | null): UserProfile {
   return {
     userId: row.user_id,
@@ -260,53 +344,33 @@ async function mapProfileRow(row: ProfileRow) {
 }
 
 export async function getOrSyncUserProfile(user: User) {
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from("profiles")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    throw getAvatarSetupError(error);
-  }
+  const row = await getCurrentProfileRow(user.id);
 
   const now = new Date().toISOString();
-  const row = data as ProfileRow | null;
   const next = buildSyncedProfileFields(row, user.email ?? null, getOAuthAvatarUrl(user), now);
 
   const metaName = getStringMetadataValue(user.user_metadata, "full_name");
   const shouldSyncName = Boolean(metaName && !row?.display_name);
 
   if (!row || hasProfileFieldChanges(row, next) || shouldSyncName) {
-    const { data: updatedRow, error: updateError } = await client
-      .from("profiles")
-      .upsert(
-        {
-          user_id: user.id,
-          ...next,
-          ...(shouldSyncName ? { display_name: metaName } : {}),
-        },
-        { onConflict: "user_id" },
-      )
-      .select("*")
-      .single();
+    // Complete-row write: the synced avatar/email fields plus either the freshly imported
+    // OAuth name (shouldSyncName) or the existing display_name preserved explicitly.
+    const changes: Partial<ProfileMutableFields> = {
+      ...next,
+      display_name: shouldSyncName ? metaName : (row?.display_name ?? null),
+    };
 
-    if (updateError) {
+    try {
+      const updatedRow = await writeCompleteProfile(user.id, row, changes);
+      return mapProfileRow(updatedRow);
+    } catch (updateError) {
       if (isMissingDisplayNameColumn(updateError)) {
-        const { data: fallbackRow, error: fallbackError } = await client
-          .from("profiles")
-          .upsert({ user_id: user.id, ...next }, { onConflict: "user_id" })
-          .select("*")
-          .single();
-
-        if (fallbackError) throw getAvatarSetupError(fallbackError);
-        return mapProfileRow(fallbackRow as ProfileRow);
+        // Pre-migration fallback: write every mutable column except display_name.
+        const fallbackRow = await writeCompleteProfile(user.id, row, changes, false);
+        return mapProfileRow(fallbackRow);
       }
       throw getAvatarSetupError(updateError);
     }
-
-    return mapProfileRow(updatedRow as ProfileRow);
   }
 
   return mapProfileRow(row);
@@ -362,22 +426,18 @@ export async function uploadUserAvatar(input: AvatarUploadInput) {
     throw getAvatarSetupError(uploadError);
   }
 
-  const { data, error } = await client
-    .from("profiles")
-    .upsert(
-      {
-        user_id: input.userId,
-        avatar_url: null,
-        avatar_storage_path: storagePath,
-        avatar_source: "upload",
-        avatar_updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" },
-    )
-    .select("*")
-    .single();
-
-  if (error) {
+  let data: ProfileRow;
+  try {
+    const current = await getCurrentProfileRow(input.userId);
+    // Only the avatar columns change; email + display_name are preserved (re-sent from the
+    // current row by writeCompleteProfile, no longer omitted).
+    data = await writeCompleteProfile(input.userId, current, {
+      avatar_url: null,
+      avatar_storage_path: storagePath,
+      avatar_source: "upload",
+      avatar_updated_at: new Date().toISOString(),
+    });
+  } catch (error) {
     await removeStoredAvatar(storagePath);
     throw getAvatarSetupError(error);
   }
@@ -386,78 +446,67 @@ export async function uploadUserAvatar(input: AvatarUploadInput) {
     await removeStoredAvatar(input.previousStoragePath);
   }
 
-  return mapProfileRow(data as ProfileRow);
+  return mapProfileRow(data);
 }
 
 export async function resetUserAvatarToOAuth(user: User, previousStoragePath?: string | null) {
   const oauthAvatarUrl = getOAuthAvatarUrl(user);
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from("profiles")
-    .upsert(
-      {
-        user_id: user.id,
-        email: user.email ?? null,
-        avatar_url: oauthAvatarUrl,
-        avatar_storage_path: null,
-        avatar_source: oauthAvatarUrl ? "oauth" : null,
-        avatar_updated_at: oauthAvatarUrl ? new Date().toISOString() : null,
-      },
-      { onConflict: "user_id" },
-    )
-    .select("*")
-    .single();
-
-  if (error) {
+  let data: ProfileRow;
+  try {
+    const current = await getCurrentProfileRow(user.id);
+    // Sets email + avatar columns; display_name is preserved explicitly from the current row.
+    data = await writeCompleteProfile(user.id, current, {
+      email: user.email ?? null,
+      avatar_url: oauthAvatarUrl,
+      avatar_storage_path: null,
+      avatar_source: oauthAvatarUrl ? "oauth" : null,
+      avatar_updated_at: oauthAvatarUrl ? new Date().toISOString() : null,
+    });
+  } catch (error) {
     throw getAvatarSetupError(error);
   }
 
   await removeStoredAvatar(previousStoragePath);
-  return mapProfileRow(data as ProfileRow);
+  return mapProfileRow(data);
 }
 
 export async function removeUserAvatar(userId: string, previousStoragePath?: string | null) {
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from("profiles")
-    .upsert(
-      {
-        user_id: userId,
-        avatar_url: null,
-        avatar_storage_path: null,
-        avatar_source: null,
-        avatar_updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" },
-    )
-    .select("*")
-    .single();
-
-  if (error) {
+  let data: ProfileRow;
+  try {
+    const current = await getCurrentProfileRow(userId);
+    // Clears the avatar columns; email + display_name preserved explicitly from the row.
+    data = await writeCompleteProfile(userId, current, {
+      avatar_url: null,
+      avatar_storage_path: null,
+      avatar_source: null,
+      avatar_updated_at: new Date().toISOString(),
+    });
+  } catch (error) {
     throw getAvatarSetupError(error);
   }
 
   await removeStoredAvatar(previousStoragePath);
-  return mapProfileRow(data as ProfileRow);
+  return mapProfileRow(data);
 }
 
 const MAX_DISPLAY_NAME_LENGTH = 100;
 
 export async function updateUserDisplayName(userId: string, displayName: string) {
-  const client = requireSupabase();
   const trimmed = displayName.trim();
   // Enforce a server-agreed bound here too: the <Input maxLength> is presentational only,
   // and this mutation is callable directly. Matches the profiles.display_name CHECK (<=100).
   if (trimmed.length > MAX_DISPLAY_NAME_LENGTH) {
     throw new Error(`Display name must be ${MAX_DISPLAY_NAME_LENGTH} characters or fewer.`);
   }
-  const { data, error } = await client
-    .from("profiles")
-    .upsert({ user_id: userId, display_name: trimmed || null }, { onConflict: "user_id" })
-    .select("*")
-    .single();
 
-  if (error) {
+  try {
+    // Sets display_name (null clears it); email + avatar columns preserved explicitly.
+    const current = await getCurrentProfileRow(userId);
+    const data = await writeCompleteProfile(userId, current, {
+      display_name: trimmed || null,
+    });
+    return mapProfileRow(data);
+  } catch (error) {
     if (isMissingDisplayNameColumn(error)) {
       throw new Error(
         "Display name is not available yet. Run the latest database migration to enable this feature.",
@@ -465,8 +514,6 @@ export async function updateUserDisplayName(userId: string, displayName: string)
     }
     throw error;
   }
-
-  return mapProfileRow(data as ProfileRow);
 }
 
 export async function removeCurrentUserUploadedAvatar() {

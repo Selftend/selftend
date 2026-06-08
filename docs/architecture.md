@@ -115,6 +115,20 @@ Flow:
 
 For new modules, see the module contract in [docs/modules/tools.md](modules/tools.md).
 
+## Field-level encryption layer
+
+All user-entered text fields are encrypted at rest. The pattern is **encrypt-on-write / decrypt-on-read in the database**:
+
+- **Storage:** Each table that holds user content is backed by a `*_data` base table whose text columns store `bytea` ciphertext. A same-named decrypting **view** (with `security_invoker = true` so RLS still applies) presents plaintext to the client via `INSTEAD OF INSERT/UPDATE` triggers that encrypt on write.
+- **Key management:** The app encryption key lives as a secret in **Supabase Vault**. Its root key is held outside the database, so a full database dump or backup yields only ciphertext. The key is read exclusively inside `SECURITY DEFINER` helper functions (`app.encrypt_text` / `app.decrypt_text`) pinned to `set search_path = pg_catalog, public`, and is never inlined in client-issued SQL or exposed to query logs / `pg_stat_statements`.
+- **Crypto primitive:** `pgcrypto` (`pgp_sym_encrypt` / `pgp_sym_decrypt`) — standard, not deprecated.
+- **EXECUTE grants:** `REVOKE EXECUTE … FROM public, anon; GRANT EXECUTE … TO authenticated` on the helper functions, mirroring the existing hardening conventions.
+- **Client transparency:** Repository code (`src/features/*/repository.ts`) reads and writes through the named view; the encryption boundary is invisible to the application layer.
+- **GDPR export:** `export_user_data()` reads through the decrypting views so the export is plaintext for the owner.
+- **`profiles.email` is intentionally plaintext** (synced from `auth.users`; encrypting it is a documented Supabase footgun). `profiles.display_name` is encrypted.
+
+The system is **provider-recoverable** (not zero-knowledge): the operator can decrypt, and forgot-password recovery works normally. The protection is breach-resilience — a leaked database backup cannot expose user content.
+
 ## Reminders: native vs. web
 
 Native (Android, iOS):

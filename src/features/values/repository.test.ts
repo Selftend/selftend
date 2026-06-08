@@ -48,11 +48,11 @@ describe("values repository", () => {
     await expect(getValuesProfile("user-1")).resolves.toEqual(sampleMapped);
   });
 
-  it("upserts on user_id and returns mapped profile", async () => {
+  it("inserts the profile and returns it mapped (the view trigger merges on user_id)", async () => {
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
     const select = jest.fn(() => ({ single }));
-    const upsert = jest.fn(() => ({ select }));
-    const from = jest.fn(() => ({ upsert }));
+    const insert = jest.fn(() => ({ select }));
+    const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
     const result = await saveValuesProfile("user-1", {
@@ -60,14 +60,11 @@ describe("values repository", () => {
       priorityValues: ["honesty"],
     });
 
-    expect(upsert).toHaveBeenCalledWith(
-      {
-        user_id: "user-1",
-        personal_values: [{ key: "honesty", tier: 1 }],
-        priority_values: ["honesty"],
-      },
-      { onConflict: "user_id" },
-    );
+    expect(insert).toHaveBeenCalledWith({
+      user_id: "user-1",
+      personal_values: [{ key: "honesty", tier: 1 }],
+      priority_values: ["honesty"],
+    });
     expect(result).toEqual(sampleMapped);
   });
 });

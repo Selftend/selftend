@@ -117,14 +117,13 @@ describe("RLS: user_preferences and profiles", () => {
     expect(data).toEqual([]);
   });
 
-  it("alice cannot upsert a profile row owned by bob", async () => {
-    const { error } = await alice.from("profiles").upsert(
-      {
-        user_id: SEED_USERS.bob.id,
-        email: "spoofed@test.local",
-      },
-      { onConflict: "user_id" },
-    );
+  it("alice cannot insert a profile row owned by bob", async () => {
+    // profiles is a decrypting view; its INSTEAD OF INSERT trigger writes profiles_data under
+    // the caller's RLS (security_invoker), so a cross-user insert is blocked by profiles_insert_own.
+    const { error } = await alice.from("profiles").insert({
+      user_id: SEED_USERS.bob.id,
+      email: "spoofed@test.local",
+    });
 
     expect(error).not.toBeNull();
     expect(error?.message ?? "").toMatch(/row-level security|policy|violates/i);

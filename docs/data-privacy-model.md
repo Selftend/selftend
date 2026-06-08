@@ -20,6 +20,18 @@ Selftend stores only what is needed for account-based guided self-help across de
 | Export data             | `export_user_data()`                                  | Include profile metadata, preferences, and persisted private tool records.                                                        |
 | Deletion data           | `delete_user_account()` and cascades                  | New private tables need `user_id` ownership and deletion coverage.                                                                |
 
+## Field-Level Encryption
+
+All user-entered text fields across ~36 tables (journal, mood, CBT/ACT records, gratitude, habits, sleep, goals, `profiles.display_name`, and the rest) are encrypted at rest at the field level using **pgcrypto** symmetric encryption. The encryption key is held outside the database in **Supabase Vault**, so a leaked database dump or backup yields only ciphertext and cannot be read without the key.
+
+The pattern is encrypt-on-write / decrypt-on-read: each table stores ciphertext in a `*_data` base table; a same-named decrypting view with `INSTEAD OF` triggers presents plaintext to the client. `SECURITY DEFINER` helper functions (`app.encrypt_text` / `app.decrypt_text`) read the Vault key — the key never appears in client-issued SQL or query logs.
+
+RLS still scopes every row to the owner (`auth.uid() = user_id`). The GDPR data export (`export_user_data()`) decrypts server-side for the owner through the same helpers.
+
+`profiles.email` is intentionally plaintext (synced from `auth.users`; encrypting it is a documented Supabase footgun).
+
+The system is **provider-recoverable**: the operator can decrypt, and forgot-password recovery works as normal. The protection is breach-resilience, not secrecy-from-operator.
+
 ## Implementation Rules
 
 - Private records need user ownership, RLS, and authenticated Supabase queries.

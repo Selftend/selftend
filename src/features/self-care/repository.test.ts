@@ -56,11 +56,14 @@ describe("self-care repository", () => {
     expect(limit).toHaveBeenCalledWith(14);
   });
 
-  it("upserts on (user_id, log_date) and trims text fields", async () => {
+  it("inserts on (user_id, log_date) and trims text fields", async () => {
+    // self_care_logs is an encrypted view; the (user_id, log_date) merge is resolved by the
+    // view's INSTEAD OF trigger, so the client inserts plainly (a view cannot be the target of
+    // INSERT ... ON CONFLICT).
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
     const select = jest.fn(() => ({ single }));
-    const upsert = jest.fn(() => ({ select }));
-    const from = jest.fn(() => ({ upsert }));
+    const insert = jest.fn(() => ({ select }));
+    const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
     await upsertSelfCareLog("user-1", {
@@ -75,7 +78,7 @@ describe("self-care repository", () => {
       meaningfulActivity: "  read  ",
     });
 
-    expect(upsert).toHaveBeenCalledWith(
+    expect(insert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: "user-1",
         log_date: "2026-05-15",
@@ -83,7 +86,6 @@ describe("self-care repository", () => {
         social_notes: "hi",
         meaningful_activity: "read",
       }),
-      { onConflict: "user_id,log_date" },
     );
   });
 });

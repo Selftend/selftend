@@ -129,6 +129,12 @@ export async function deleteAllValuesProfileForUser(userId: string) {
   if (error) throw new Error(`deleteAllValuesProfileForUser cleanup failed: ${error.message}`);
 }
 
+export async function deleteAllStagePracticeNotesForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("stage_practice_notes").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllStagePracticeNotesForUser cleanup failed: ${error.message}`);
+}
+
 export async function deleteAllMindfulnessSessionsForUser(userId: string) {
   const admin = createServiceClient();
   const { error } = await admin.from("mindfulness_sessions").delete().eq("user_id", userId);
@@ -209,6 +215,18 @@ export async function deleteAllWidgetPreferencesForUser(userId: string) {
   const admin = createServiceClient();
   const { error } = await admin.from("widget_preferences").delete().eq("user_id", userId);
   if (error) throw new Error(`deleteAllWidgetPreferencesForUser cleanup failed: ${error.message}`);
+}
+
+export async function deleteAllBreathingExercisesForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("breathing_exercises").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllBreathingExercisesForUser cleanup failed: ${error.message}`);
+}
+
+export async function deleteAllEmotionPreferencesForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("emotion_preferences").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllEmotionPreferencesForUser cleanup failed: ${error.message}`);
 }
 
 export async function deleteAllActLogsForUser(userId: string) {

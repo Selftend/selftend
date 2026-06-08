@@ -103,18 +103,15 @@ describe("act repository - upsertACTProgramState", () => {
       error: null,
     });
     const select = jest.fn(() => ({ single }));
-    const upsert = jest.fn(() => ({ select }));
+    const insert = jest.fn(() => ({ select }));
 
-    mockRequireSupabase.mockReturnValue(buildClient({ act_program_state: { upsert } }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_program_state: { insert } }));
 
     await upsertACTProgramState("u1", { activePrinciples: ["defusion"] });
 
-    expect(upsert).toHaveBeenCalledTimes(1);
-    const calls = upsert.mock.calls as unknown as [
-      Record<string, unknown>,
-      { onConflict: string },
-    ][];
-    const [payload, options] = calls[0];
+    expect(insert).toHaveBeenCalledTimes(1);
+    const calls = insert.mock.calls as unknown as [Record<string, unknown>][];
+    const [payload] = calls[0];
     expect(payload).toMatchObject({
       user_id: "u1",
       active_principles: ["defusion"],
@@ -122,7 +119,6 @@ describe("act repository - upsertACTProgramState", () => {
     expect(payload).not.toHaveProperty("primary_concerns");
     expect(payload).not.toHaveProperty("myths_acknowledged");
     expect(payload.updated_at).toEqual(expect.any(String));
-    expect(options).toEqual({ onConflict: "user_id" });
   });
 });
 
@@ -216,7 +212,7 @@ describe("act repository - listDefusionLogs", () => {
 });
 
 describe("act repository - value entries and committed actions", () => {
-  it("upsertValueEntry trims text fields and uses (user_id, life_domain) as the conflict key", async () => {
+  it("upsertValueEntry trims text fields and inserts plainly (the view's INSTEAD OF trigger merges on user_id,life_domain)", async () => {
     const row = {
       id: "v1",
       user_id: "u1",
@@ -232,9 +228,9 @@ describe("act repository - value entries and committed actions", () => {
     };
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
     const select = jest.fn(() => ({ single }));
-    const upsert = jest.fn(() => ({ select }));
+    const insert = jest.fn(() => ({ select }));
 
-    mockRequireSupabase.mockReturnValue(buildClient({ act_value_entries: { upsert } }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_value_entries: { insert } }));
 
     const result = await upsertValueEntry("u1", {
       lifeDomain: "work",
@@ -246,12 +242,9 @@ describe("act repository - value entries and committed actions", () => {
       barriers: " calendar overload ",
     });
 
-    expect(upsert).toHaveBeenCalledTimes(1);
-    const calls = upsert.mock.calls as unknown as [
-      Record<string, unknown>,
-      { onConflict: string },
-    ][];
-    const [payload, options] = calls[0];
+    expect(insert).toHaveBeenCalledTimes(1);
+    const calls = insert.mock.calls as unknown as [Record<string, unknown>][];
+    const [payload] = calls[0];
     expect(payload).toMatchObject({
       user_id: "u1",
       life_domain: "work",
@@ -262,7 +255,6 @@ describe("act repository - value entries and committed actions", () => {
       importance_rating: 9,
       current_alignment_rating: 6,
     });
-    expect(options).toEqual({ onConflict: "user_id,life_domain" });
     expect(result.valueStatement).toBe("Being a present, patient leader");
   });
 

@@ -1,0 +1,63 @@
+{
+  "lock": {
+    "title": "Selftend is locked",
+    "description": "Unlock with your fingerprint, face, or device passcode to continue.",
+    "unlock": "Unlock",
+    "prompt": "Unlock Selftend"
+  },
+  "page": {
+    "pageTitle": "How we protect your data",
+    "pageDescription": "Plain-language summary of the technical and procedural safeguards we use to keep your entries private.",
+    "sections": [
+      {
+        "title": "Encrypted in transit",
+        "body": [
+          "All traffic between the app and our servers travels over HTTPS/TLS. Your data is never sent over an unencrypted connection."
+        ]
+      },
+      {
+        "title": "Encrypted at rest",
+        "body": [
+          "Your journal entries, mood logs, and other records are encrypted in our database. The encryption is applied at the field level before the data is stored, so raw entry text is not visible to the database layer."
+        ]
+      },
+      {
+        "title": "Private to your account",
+        "body": [
+          "Database access is enforced by Row-Level Security (RLS). Every query is automatically scoped to your account — no other user can read your records, and neither can an accidental misconfiguration.",
+          "No service-role keys or database passwords are included in the app."
+        ]
+      },
+      {
+        "title": "On your device",
+        "body": [
+          "On mobile, your session credentials are stored in the device's secure keychain via Expo SecureStore, not in plain app storage.",
+          "On web, your session token lives in browser localStorage — the same mechanism used by most web apps.",
+          "You can add an extra layer on mobile by enabling the optional app lock in Settings. When on, opening the app requires your fingerprint, face, or device passcode."
+        ]
+      },
+      {
+        "title": "You're in control",
+        "body": [
+          "You can export all your data as a JSON file at any time from Settings → Account.",
+          "You can permanently delete your account and all associated data from Settings → Account. Deletion is irreversible and completes within 30 days."
+        ]
+      },
+      {
+        "title": "Can anyone at Self-tend read my entries?",
+        "body": [
+          "No — not in ordinary operation. We do not read your records except to fulfil a verified privacy request, investigate a security incident, or satisfy a legal obligation.",
+          "See the full Privacy Policy for the complete picture."
+        ]
+      },
+      {
+        "title": "Security contact",
+        "body": [
+          "Found a vulnerability or have a security concern? Please reach out to our security team directly. We take every report seriously and aim to respond promptly."
+        ]
+      }
+    ],
+    "privacyPolicyLink": "Read the full Privacy Policy",
+    "securityContactLabel": "Contact security team"
+  }
+}

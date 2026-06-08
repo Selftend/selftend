@@ -5,6 +5,21 @@ import "react-native-url-polyfill/auto";
 import { appEnv, hasSupabaseConfig } from "@/src/lib/env";
 import { secureStoreStorage } from "@/src/lib/secure-store-storage";
 
+// WEB SESSION-TOKEN DECISION (accepted with rationale)
+// supabase-js on web stores the session token (access + refresh JWT pair) in localStorage.
+// This is the standard, unavoidable behaviour of supabase-js for browser-based SPAs; there is no
+// httpOnly-cookie mode in the supabase-js client (that would require a server-side proxy/SSR
+// middleware such as @supabase/ssr, which this React Native / Expo web app does not use).
+// Accepted rationale:
+//   - This is standard practice for web SPAs; every major auth SDK (Firebase, Auth0, Clerk, etc.)
+//     does the same for purely client-side deployments.
+//   - The session token grants access only to the authenticated user's own data via RLS policies.
+//   - On native (iOS/Android) the token is stored in Expo SecureStore (OS keychain), which IS
+//     encrypted. The web-only localStorage path is separated by the Platform.OS guard below.
+//   - No other sensitive user data (journal text, gratitude items, etc.) is stored in localStorage;
+//     only the auth token and a small cookie-consent preference record (boolean flags).
+//   - Mitigation for XSS is handled at the application layer (no dangerouslySetInnerHTML, no
+//     eval-based dynamic content, strict CSP headers should be set on the hosting origin).
 const webStorage: SupportedStorage = {
   getItem: (key) => Promise.resolve(globalThis.localStorage?.getItem(key) ?? null),
   setItem: (key, value) => Promise.resolve(globalThis.localStorage?.setItem(key, value)),

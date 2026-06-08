@@ -7,10 +7,44 @@ import { SEED_USERS, createAnonClient, createServiceClient, signInAs } from "./h
 // delete_user_account() destroys everything for the caller and is tested with
 // a throwaway user so the seeded users stay intact for the rest of the suite.
 
+// Mirrors supabase/seed.sql's bob thought_records (situations chosen so they
+// never collide with demo's "presentation"/"rest day" - see the leak test).
+const BOB_SEED_THOUGHT_RECORDS = [
+  "My manager scheduled a 1:1 without an agenda.",
+  "A friend did not reply to my message for two days.",
+  "I missed a small detail in a code review.",
+  "I felt anxious before a casual social event.",
+  "I skipped one workout this week.",
+].map((situation) => ({
+  user_id: SEED_USERS.bob.id,
+  situation,
+  nats: [{ text: "Worst-case prediction.", beliefRating: null, isHotThought: true }],
+  emotions: ["Anxious"],
+  distortions: ["fortune-telling"],
+  balanced_thought: "A more balanced read of the situation.",
+}));
+
+// The seeded bob thought_records are shared, non-reset fixture data that other
+// suites delete in their cleanup (e.g. thought-records-encryption's afterEach).
+// export_user_data asserts bob has >=5, so re-seed defensively here to keep this
+// suite independent of run order rather than relying on seed.sql still being intact.
+async function ensureBobHasSeedThoughtRecords() {
+  const admin = createServiceClient();
+  const { count, error: countError } = await admin
+    .from("thought_records")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", SEED_USERS.bob.id);
+  if (countError) throw countError;
+  if ((count ?? 0) >= BOB_SEED_THOUGHT_RECORDS.length) return;
+  const { error } = await admin.from("thought_records").insert(BOB_SEED_THOUGHT_RECORDS);
+  if (error) throw error;
+}
+
 describe("export_user_data() (integration)", () => {
   let bob: SupabaseClient;
 
   beforeAll(async () => {
+    await ensureBobHasSeedThoughtRecords();
     bob = await signInAs("bob");
   });
 
@@ -134,9 +168,12 @@ describe("delete_user_account() (integration)", () => {
     } as Parameters<typeof admin.auth.admin.createUser>[0]);
     if (error) throw error;
 
-    await admin
-      .from("profiles")
-      .upsert({ user_id: testUserId, email: testEmail }, { onConflict: "user_id" });
+    // `profiles` is now a decrypting view; the per-user merge lives in its INSTEAD OF INSERT
+    // trigger (PostgREST upsert's ON CONFLICT can't target a view), so insert rather than upsert.
+    // Best-effort: the local GoTrue ignores the requested user_id, so this fixed-id insert may hit
+    // the auth.users FK; the delete assertion below still holds (no profile row to delete). The
+    // genuine delete-through-view path is covered in profiles-encryption.integration.test.ts.
+    await admin.from("profiles").insert({ user_id: testUserId, email: testEmail });
     await admin.from("user_preferences").upsert({ user_id: testUserId }, { onConflict: "user_id" });
     await admin.from("thought_records").insert({
       user_id: testUserId,

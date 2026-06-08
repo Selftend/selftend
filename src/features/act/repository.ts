@@ -129,9 +129,12 @@ export async function upsertACTProgramState(userId: string, patch: ACTProgramSta
   if (patch.preferredCheckInTime !== undefined)
     payload.preferred_check_in_time = patch.preferredCheckInTime;
 
+  // act_program_state is a transparent encrypted view; a view cannot be the target of
+  // INSERT ... ON CONFLICT, so we insert plainly and the view's INSTEAD OF trigger resolves the
+  // (user_id) merge against the base table's real primary key.
   const { data, error } = await client
     .from("act_program_state")
-    .upsert(payload, { onConflict: "user_id" })
+    .insert(payload)
     .select("*")
     .single();
 
@@ -644,9 +647,12 @@ export async function upsertValueEntry(userId: string, input: ValueEntryInput) {
     payload.desired_actions_note = input.desiredActionsNote.trim();
   if (input.barriers !== undefined) payload.barriers = input.barriers.trim();
 
+  // act_value_entries is a transparent encrypted view; a view cannot be the target of
+  // INSERT ... ON CONFLICT, so we insert plainly and the view's INSTEAD OF trigger resolves the
+  // (user_id, life_domain) merge against the base table's real unique key.
   const { data, error } = await client
     .from("act_value_entries")
-    .upsert(payload, { onConflict: "user_id,life_domain" })
+    .insert(payload)
     .select("*")
     .single();
 

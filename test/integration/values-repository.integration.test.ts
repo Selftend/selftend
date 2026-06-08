@@ -13,6 +13,10 @@ import {
 // priority_values jsonb, and UNIQUE(user_id).
 // Note: values_profile has no DELETE RLS policy for authenticated users -
 // cleanup is done via service role (deleteAllValuesProfileForUser bypasses RLS).
+// As of 20260629 values_profile is a transparent encrypted view: a view cannot be the target of
+// INSERT ... ON CONFLICT, so the repository inserts plainly and the INSTEAD OF INSERT trigger
+// resolves the (user_id) merge against the base table's UNIQUE constraint (saveValuesProfile).
+// A second insert for the same user therefore MERGES rather than erroring.
 
 describe("values values_profile (integration)", () => {
   let alice: SupabaseClient;
@@ -59,7 +63,7 @@ describe("values values_profile (integration)", () => {
     expect(insert.data?.updated_at).toEqual(expect.any(String));
   });
 
-  it("rejects a second insert for the same user (UNIQUE(user_id) constraint)", async () => {
+  it("merges a second insert for the same user (INSTEAD OF trigger ON CONFLICT user_id)", async () => {
     const first = await alice
       .from("values_profile")
       .insert({
@@ -71,18 +75,29 @@ describe("values values_profile (integration)", () => {
       .single();
     expect(first.error).toBeNull();
 
-    const duplicate = await alice
+    const newValues = [{ key: "work", tier: 1 }];
+    const newPriority = ["work"];
+    // A second plain insert merges on the base table's UNIQUE(user_id) inside the trigger,
+    // returning the same row updated (not a duplicate-key error).
+    const second = await alice
       .from("values_profile")
       .insert({
         user_id: SEED_USERS.alice.id,
-        personal_values: [{ key: "work", tier: 1 }],
-        priority_values: ["work"],
+        personal_values: newValues,
+        priority_values: newPriority,
       })
-      .select("id");
-    expect(duplicate.error).not.toBeNull();
+      .select("id, personal_values, priority_values")
+      .single();
+    expect(second.error).toBeNull();
+    expect(second.data?.id).toBe(first.data!.id);
+    expect(second.data?.personal_values).toEqual(newValues);
+    expect(second.data?.priority_values).toEqual(newPriority);
+
+    const list = await alice.from("values_profile").select("id").eq("user_id", SEED_USERS.alice.id);
+    expect(list.data?.length).toBe(1);
   });
 
-  it("upsert on conflict user_id replaces personal_values and priority_values", async () => {
+  it("saveValuesProfile's plain insert replaces personal_values and priority_values", async () => {
     const first = await alice
       .from("values_profile")
       .insert({
@@ -97,22 +112,20 @@ describe("values values_profile (integration)", () => {
     const newValues = [{ key: "adventure", tier: 1 }];
     const newPriority = ["adventure"];
 
-    const upsert = await alice
+    // The repository now inserts plainly (no PostgREST upsert); the view trigger merges on user_id.
+    const replaced = await alice
       .from("values_profile")
-      .upsert(
-        {
-          user_id: SEED_USERS.alice.id,
-          personal_values: newValues,
-          priority_values: newPriority,
-        },
-        { onConflict: "user_id" },
-      )
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        personal_values: newValues,
+        priority_values: newPriority,
+      })
       .select("personal_values, priority_values")
       .single();
 
-    expect(upsert.error).toBeNull();
-    expect(upsert.data?.personal_values).toEqual(newValues);
-    expect(upsert.data?.priority_values).toEqual(newPriority);
+    expect(replaced.error).toBeNull();
+    expect(replaced.data?.personal_values).toEqual(newValues);
+    expect(replaced.data?.priority_values).toEqual(newPriority);
 
     // Confirm there is still only one row for alice
     const list = await alice.from("values_profile").select("id").eq("user_id", SEED_USERS.alice.id);

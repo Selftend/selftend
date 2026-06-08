@@ -36,16 +36,16 @@ export async function saveValuesProfile(
   input: ValuesProfileInput,
 ): Promise<ValuesProfile> {
   const client = requireSupabase();
+  // values_profile is a transparent encrypted view; a view cannot be the target of
+  // INSERT ... ON CONFLICT, so we insert plainly and the view's INSTEAD OF trigger resolves the
+  // (user_id) merge against the base table's real unique constraint.
   const { data, error } = await client
     .from("values_profile")
-    .upsert(
-      {
-        user_id: userId,
-        personal_values: input.personalValues,
-        priority_values: input.priorityValues,
-      },
-      { onConflict: "user_id" },
-    )
+    .insert({
+      user_id: userId,
+      personal_values: input.personalValues,
+      priority_values: input.priorityValues,
+    })
     .select("*")
     .single();
 

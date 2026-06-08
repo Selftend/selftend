@@ -19,6 +19,7 @@ import enHabits from "./locales/en/habits.json";
 import enAct from "./locales/en/act.json";
 import enNotifications from "./locales/en/notifications.json";
 import enHelp from "./locales/en/help.json";
+import enSecurity from "./locales/en/security.json";
 
 export const supportedLanguages = ["en", "bg"] as const;
 export type SupportedLanguage = (typeof supportedLanguages)[number];
@@ -46,6 +47,7 @@ i18n.use(initReactI18next).init({
     "act",
     "notifications",
     "help",
+    "security",
   ],
   interpolation: { escapeValue: false },
   resources: {
@@ -68,6 +70,7 @@ i18n.use(initReactI18next).init({
       act: enAct,
       notifications: enNotifications,
       help: enHelp,
+      security: enSecurity,
     },
     // bg is registered lazily via ensureLanguageBundle() so its ~377 KB of JSON is not
     // parsed/inlined on the startup path for the majority-English audience.

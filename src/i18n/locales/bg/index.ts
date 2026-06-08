@@ -18,6 +18,7 @@ import bgHabits from "./habits.json";
 import bgAct from "./act.json";
 import bgNotifications from "./notifications.json";
 import bgHelp from "./help.json";
+import bgSecurity from "./security.json";
 
 export const bgResources: Record<string, object> = {
   common: bgCommon,
@@ -38,4 +39,5 @@ export const bgResources: Record<string, object> = {
   act: bgAct,
   notifications: bgNotifications,
   help: bgHelp,
+  security: bgSecurity,
 };

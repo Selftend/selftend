@@ -22,10 +22,11 @@ describe("profiles (integration)", () => {
   });
 
   afterEach(async () => {
+    // `profiles` is a decrypting view (display_name encrypted at rest). PostgREST upsert sends
+    // INSERT ... ON CONFLICT, which a view cannot be the target of; the per-user merge lives in
+    // the INSTEAD OF INSERT trigger, so restore via .insert() (the trigger resolves the conflict).
     const admin = createServiceClient();
-    const { error } = await admin
-      .from("profiles")
-      .upsert(originalProfile, { onConflict: "user_id" });
+    const { error } = await admin.from("profiles").insert(originalProfile);
     if (error) throw error;
   });
 
@@ -48,19 +49,26 @@ describe("profiles (integration)", () => {
     });
   });
 
-  it("upserts an avatar transitioning oauth -> upload -> none", async () => {
+  it("merges an avatar transitioning oauth -> upload -> none via complete-row inserts", async () => {
+    // The repository now writes COMPLETE rows (read-modify-write), so the per-user merge lives in
+    // the INSTEAD OF INSERT trigger (ON CONFLICT (user_id)). Each write below sends every mutable
+    // column; email/display_name are re-sent to preserve them (the trigger DO UPDATE has no
+    // coalesce, so an omitted column would NULL it — the very ambiguity the refactor removed).
+    const baseRow = {
+      user_id: SEED_USERS.alice.id,
+      email: SEED_USERS.alice.email,
+      display_name: originalProfile.display_name as string | null,
+    };
+
     const oauth = await alice
       .from("profiles")
-      .upsert(
-        {
-          user_id: SEED_USERS.alice.id,
-          avatar_url: "https://example.test/oauth-avatar.png",
-          avatar_storage_path: null,
-          avatar_source: "oauth",
-          avatar_updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" },
-      )
+      .insert({
+        ...baseRow,
+        avatar_url: "https://example.test/oauth-avatar.png",
+        avatar_storage_path: null,
+        avatar_source: "oauth",
+        avatar_updated_at: new Date().toISOString(),
+      })
       .select("avatar_source, avatar_url, avatar_storage_path")
       .single();
     expect(oauth.error).toBeNull();
@@ -71,16 +79,13 @@ describe("profiles (integration)", () => {
 
     const upload = await alice
       .from("profiles")
-      .upsert(
-        {
-          user_id: SEED_USERS.alice.id,
-          avatar_url: null,
-          avatar_storage_path: `${SEED_USERS.alice.id}/avatar-test.png`,
-          avatar_source: "upload",
-          avatar_updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" },
-      )
+      .insert({
+        ...baseRow,
+        avatar_url: null,
+        avatar_storage_path: `${SEED_USERS.alice.id}/avatar-test.png`,
+        avatar_source: "upload",
+        avatar_updated_at: new Date().toISOString(),
+      })
       .select("avatar_source, avatar_url, avatar_storage_path")
       .single();
     expect(upload.error).toBeNull();
@@ -92,42 +97,38 @@ describe("profiles (integration)", () => {
 
     const cleared = await alice
       .from("profiles")
-      .upsert(
-        {
-          user_id: SEED_USERS.alice.id,
-          avatar_url: null,
-          avatar_storage_path: null,
-          avatar_source: null,
-          avatar_updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" },
-      )
-      .select("avatar_source, avatar_url, avatar_storage_path, avatar_updated_at")
+      .insert({
+        ...baseRow,
+        avatar_url: null,
+        avatar_storage_path: null,
+        avatar_source: null,
+        avatar_updated_at: new Date().toISOString(),
+      })
+      .select("avatar_source, avatar_url, avatar_storage_path, avatar_updated_at, display_name")
       .single();
     expect(cleared.error).toBeNull();
     expect(cleared.data).toMatchObject({
       avatar_source: null,
       avatar_url: null,
       avatar_storage_path: null,
+      display_name: originalProfile.display_name as string | null,
     });
     expect(cleared.data?.avatar_updated_at).not.toBeNull();
   });
 
   it("rejects an avatar_source value outside the allowed set", async () => {
-    const upsert = await alice
+    const insert = await alice
       .from("profiles")
-      .upsert(
-        {
-          user_id: SEED_USERS.alice.id,
-          avatar_source: "imaginary",
-        },
-        { onConflict: "user_id" },
-      )
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        email: SEED_USERS.alice.email,
+        avatar_source: "imaginary",
+      })
       .select("*")
       .single();
 
-    expect(upsert.error).not.toBeNull();
-    expect(upsert.error?.message).toMatch(/profiles_avatar_source_check/);
+    expect(insert.error).not.toBeNull();
+    expect(insert.error?.message).toMatch(/profiles_avatar_source_check/);
   });
 });
 

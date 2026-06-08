@@ -100,12 +100,15 @@ describe("emotion-preferences-repository", () => {
   // upsertEmotionPreference
   // -------------------------------------------------------------------------
 
+  // emotion_preferences is a transparent encrypted view; a view cannot be the target of
+  // INSERT … ON CONFLICT, so the repo .insert()s and the view's trigger resolves the
+  // (user_id, emotion_id) merge against the base table's real unique constraint.
   describe("upsertEmotionPreference", () => {
-    it("calls upsert with onConflict 'user_id,emotion_id' and maps the returned row", async () => {
+    it("inserts the payload and maps the returned row", async () => {
       const single = jest.fn().mockResolvedValue({ data: ROW, error: null });
       const select = jest.fn(() => ({ single }));
-      const upsert = jest.fn(() => ({ select }));
-      const from = jest.fn(() => ({ upsert }));
+      const insert = jest.fn(() => ({ select }));
+      const from = jest.fn(() => ({ insert }));
       mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<
         typeof requireSupabase
       >);
@@ -122,7 +125,7 @@ describe("emotion-preferences-repository", () => {
       ).resolves.toEqual(MAPPED);
 
       expect(from).toHaveBeenCalledWith("emotion_preferences");
-      expect(upsert).toHaveBeenCalledWith(
+      expect(insert).toHaveBeenCalledWith(
         expect.objectContaining({
           user_id: "user-1",
           emotion_id: "emotion-joy",
@@ -132,22 +135,21 @@ describe("emotion-preferences-repository", () => {
           removed: false,
           is_custom: false,
         }),
-        { onConflict: "user_id,emotion_id" },
       );
     });
 
-    it("omits undefined optional fields from the upsert payload", async () => {
+    it("omits undefined optional fields from the insert payload", async () => {
       const single = jest.fn().mockResolvedValue({ data: ROW, error: null });
       const select = jest.fn(() => ({ single }));
-      const upsert = jest.fn(() => ({ select }));
-      const from = jest.fn(() => ({ upsert }));
+      const insert = jest.fn(() => ({ select }));
+      const from = jest.fn(() => ({ insert }));
       mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<
         typeof requireSupabase
       >);
 
       await upsertEmotionPreference("user-1", { emotionId: "emotion-joy", removed: true });
 
-      const payload = (upsert as jest.Mock).mock.calls[0][0];
+      const payload = (insert as jest.Mock).mock.calls[0][0];
       expect(payload).toEqual({ user_id: "user-1", emotion_id: "emotion-joy", removed: true });
       // name, emoji, position, is_custom must NOT be present
       expect(payload).not.toHaveProperty("name");
@@ -157,16 +159,16 @@ describe("emotion-preferences-repository", () => {
     });
 
     it("throws when Supabase returns an error", async () => {
-      const single = jest.fn().mockResolvedValue({ data: null, error: new Error("upsert failed") });
+      const single = jest.fn().mockResolvedValue({ data: null, error: new Error("insert failed") });
       const select = jest.fn(() => ({ single }));
-      const upsert = jest.fn(() => ({ select }));
-      const from = jest.fn(() => ({ upsert }));
+      const insert = jest.fn(() => ({ select }));
+      const from = jest.fn(() => ({ insert }));
       mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<
         typeof requireSupabase
       >);
 
       await expect(upsertEmotionPreference("user-1", { emotionId: "emotion-joy" })).rejects.toThrow(
-        "upsert failed",
+        "insert failed",
       );
     });
   });
@@ -212,9 +214,9 @@ describe("emotion-preferences-repository", () => {
   // -------------------------------------------------------------------------
 
   describe("setEmotionOrder", () => {
-    it("upserts an array payload with position = index for each id", async () => {
-      const upsert = jest.fn().mockResolvedValue({ error: null });
-      const from = jest.fn(() => ({ upsert }));
+    it("inserts an array payload with position = index for each id", async () => {
+      const insert = jest.fn().mockResolvedValue({ error: null });
+      const from = jest.fn(() => ({ insert }));
       mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<
         typeof requireSupabase
       >);
@@ -224,14 +226,11 @@ describe("emotion-preferences-repository", () => {
       ).resolves.toBeUndefined();
 
       expect(from).toHaveBeenCalledWith("emotion_preferences");
-      expect(upsert).toHaveBeenCalledWith(
-        [
-          { user_id: "user-1", emotion_id: "emotion-joy", position: 0 },
-          { user_id: "user-1", emotion_id: "emotion-sad", position: 1 },
-          { user_id: "user-1", emotion_id: "emotion-anger", position: 2 },
-        ],
-        { onConflict: "user_id,emotion_id" },
-      );
+      expect(insert).toHaveBeenCalledWith([
+        { user_id: "user-1", emotion_id: "emotion-joy", position: 0 },
+        { user_id: "user-1", emotion_id: "emotion-sad", position: 1 },
+        { user_id: "user-1", emotion_id: "emotion-anger", position: 2 },
+      ]);
     });
 
     it("is a no-op when orderedIds is empty", async () => {
@@ -245,8 +244,8 @@ describe("emotion-preferences-repository", () => {
     });
 
     it("throws when Supabase returns an error", async () => {
-      const upsert = jest.fn().mockResolvedValue({ error: new Error("order failed") });
-      const from = jest.fn(() => ({ upsert }));
+      const insert = jest.fn().mockResolvedValue({ error: new Error("order failed") });
+      const from = jest.fn(() => ({ insert }));
       mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<
         typeof requireSupabase
       >);

@@ -9,6 +9,33 @@ This runbook defines the minimum operational process for support, privacy reques
 - Security reports: `security@selftend.org`
 - Public security policy: [.github/SECURITY.md](../.github/SECURITY.md)
 
+## Field Encryption Key Management
+
+User-entered records are encrypted at rest using a symmetric key stored as a **Supabase Vault secret** named `app_field_encryption_key`. The Vault root key is held outside the database, so a leaked DB dump cannot be read without this secret.
+
+### First deploy
+
+1. In the Supabase Dashboard (or via the CLI `supabase secrets set`), create the Vault secret `app_field_encryption_key` with a strong random value (e.g. 32+ bytes of random hex).
+2. **Back the production key up offline immediately** (e.g. a password manager or encrypted offline store). Losing the key means losing all encrypted data — there is no recovery path without it.
+3. Use a **different key per environment** (local dev, staging, production). The local stack's key from `supabase/seed.sql` must never be used in production.
+
+### Rotation
+
+Key rotation requires a re-encrypt pass:
+
+1. Write the new key to Vault under a temporary name.
+2. Run a batched migration that reads ciphertext via the old key, re-encrypts with the new key, and writes back.
+3. Update the Vault secret `app_field_encryption_key` to the new value once the re-encrypt is confirmed complete.
+4. Back up the new key offline.
+
+### `seed.sql` / local dev
+
+`seed.sql` upserts a deterministic local key via an insert into the Vault secret. On `db:reset` the local stack reinitializes with this key. Seeded test users' data is encrypted with the local key; the local and remote keys are intentionally different.
+
+### Key in SQL / migrations
+
+The `app_field_encryption_key` secret is read **only** inside `SECURITY DEFINER` functions (`app.encrypt_text` / `app.decrypt_text`). It must never appear in plain SQL migrations, client code, or `pg_stat_statements`.
+
 ## Auth Security Toggles
 
 These settings live outside the repo (Supabase Dashboard). Apply per environment.

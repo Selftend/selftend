@@ -1,7 +1,7 @@
 import { Redirect, Stack, usePathname } from "expo-router";
 import { ActivityIndicator, Platform, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { DateBar } from "@/src/components/app/date-bar";
@@ -22,6 +22,8 @@ import { useNotificationSync } from "@/src/features/notifications/use-notificati
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useSession } from "@/src/providers/session-provider";
 import { WidgetSnapshotSync } from "@/src/features/widgets/widget-snapshot-sync";
+import { AppLockGate } from "@/src/features/security/app-lock-gate";
+import { useAppLockStore } from "@/src/features/security/app-lock-store";
 
 const appOnboardingImage = require("../../../assets/images/onboarding/app-journey-growth-badge.png");
 
@@ -35,9 +37,17 @@ export default function ProtectedLayout() {
   const [consentDismissed, setConsentDismissed] = useState(false);
   const pathname = usePathname();
 
+  const hydrateAppLock = useAppLockStore((s) => s.hydrate);
+
   useSettingsSync(user?.id ?? null, preferences);
   useNotificationSync(user?.id ?? null, preferences);
   useNotificationDeepLink();
+
+  useEffect(() => {
+    // Read the device-local app-lock preference. Swallow storage-read failures so a
+    // rejected hydrate isn't an unhandled rejection (mirrors useAppColorScheme).
+    void hydrateAppLock().catch(() => {});
+  }, [hydrateAppLock]);
 
   if (status === "loading") {
     return (
@@ -89,7 +99,7 @@ export default function ProtectedLayout() {
   }
 
   return (
-    <>
+    <AppLockGate>
       <WidgetSnapshotSync userId={user?.id ?? null} />
       <OnboardingModal
         actionLabel={t("onboarding.appContinue")}
@@ -160,6 +170,6 @@ export default function ProtectedLayout() {
           </Stack>
         </View>
       </View>
-    </>
+    </AppLockGate>
   );
 }

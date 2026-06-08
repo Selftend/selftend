@@ -59,7 +59,9 @@ async function restorePreferences() {
 async function restoreProfile() {
   if (!originalProfile) return;
   const admin = createServiceClient();
-  const { error } = await admin.from("profiles").upsert(originalProfile, { onConflict: "user_id" });
+  // profiles is a decrypting view (display_name encrypted at rest); its INSTEAD OF INSERT trigger
+  // resolves the per-user merge (PostgREST upsert's ON CONFLICT cannot target a view).
+  const { error } = await admin.from("profiles").insert(originalProfile);
   if (error) throw new Error(`Could not restore profiles: ${error.message}`);
 }
 

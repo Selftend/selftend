@@ -59,22 +59,11 @@ describe("self-care self_care_logs (integration)", () => {
     expect(insert.data?.created_at).toEqual(expect.any(String));
   });
 
-  it("rejects a duplicate insert for the same user+log_date (UNIQUE constraint)", async () => {
-    const first = await alice
-      .from("self_care_logs")
-      .insert({ user_id: SEED_USERS.alice.id, ...baseLog })
-      .select("id")
-      .single();
-    expect(first.error).toBeNull();
-
-    const duplicate = await alice
-      .from("self_care_logs")
-      .insert({ user_id: SEED_USERS.alice.id, ...baseLog })
-      .select("id");
-    expect(duplicate.error).not.toBeNull();
-  });
-
-  it("upsert on conflict user_id+log_date updates the existing row", async () => {
+  it("a second insert for the same user+log_date merges via the view's INSTEAD OF trigger", async () => {
+    // self_care_logs is now a transparent encrypted view. A view cannot be the target of
+    // INSERT ... ON CONFLICT (PostgREST upsert), so the base table's UNIQUE (user_id, log_date)
+    // merge is resolved inside the view's INSTEAD OF INSERT trigger: a plain insert for an
+    // existing date updates that row instead of raising a unique violation.
     const first = await alice
       .from("self_care_logs")
       .insert({ user_id: SEED_USERS.alice.id, ...baseLog, exercise_type: "Walk" })
@@ -82,18 +71,15 @@ describe("self-care self_care_logs (integration)", () => {
       .single();
     expect(first.error).toBeNull();
 
-    const upsert = await alice
+    const second = await alice
       .from("self_care_logs")
-      .upsert(
-        { user_id: SEED_USERS.alice.id, ...baseLog, exercise_type: "Yoga" },
-        { onConflict: "user_id,log_date" },
-      )
+      .insert({ user_id: SEED_USERS.alice.id, ...baseLog, exercise_type: "Yoga" })
       .select("exercise_type")
       .single();
-    expect(upsert.error).toBeNull();
-    expect(upsert.data?.exercise_type).toBe("Yoga");
+    expect(second.error).toBeNull();
+    expect(second.data?.exercise_type).toBe("Yoga");
 
-    // Only one row for this date
+    // Still only one row for this date (merged, not duplicated).
     const list = await alice
       .from("self_care_logs")
       .select("id")

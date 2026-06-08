@@ -233,17 +233,17 @@ export async function upsertHabitLogNote(
   note: string,
 ): Promise<HabitLog> {
   const client = requireSupabase();
+  // habit_logs is a transparent encrypted view; a view cannot be the target of
+  // INSERT ... ON CONFLICT, so we insert plainly and the view's INSTEAD OF trigger resolves the
+  // (habit_id, logged_on) merge against the base table's real unique index.
   const { data, error } = await client
     .from("habit_logs")
-    .upsert(
-      {
-        user_id: userId,
-        habit_id: habitId,
-        logged_on: loggedOn,
-        note: note.trim(),
-      },
-      { onConflict: "habit_id,logged_on" },
-    )
+    .insert({
+      user_id: userId,
+      habit_id: habitId,
+      logged_on: loggedOn,
+      note: note.trim(),
+    })
     .select("*")
     .single();
 

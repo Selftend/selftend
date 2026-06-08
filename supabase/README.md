@@ -50,7 +50,19 @@ The mindfulness _tool_ has been absorbed into meditation, but the `mindfulness_s
 
 `profiles` stores account-level metadata only: email plus optional avatar fields. Google OAuth avatars are stored as URLs with `avatar_source = 'oauth'`; manually chosen images store a private Storage object path with `avatar_source = 'upload'`; removed photos keep `avatar_source = null` and set `avatar_updated_at` so the app does not immediately re-import the Google photo.
 
-`export_user_data()` is the GDPR data export: it includes account metadata, preferences, web push subscriptions, and every private per-module record (CBT, ACT, mood, journal, sleep, meditation, gratitude, habits, breathing, plan items, widget preferences, and the rest). `delete_user_account()` deletes owned private rows directly or through `auth.users` cascade, including private avatar objects in Storage.
+`export_user_data()` is the GDPR data export: it includes account metadata, preferences, web push subscriptions, and every private per-module record (CBT, ACT, mood, journal, sleep, meditation, gratitude, habits, breathing, plan items, widget preferences, and the rest). Because user-entered fields are encrypted at rest, `export_user_data()` reads through the decrypting views so the exported JSON is plaintext for the owner. `delete_user_account()` deletes owned private rows directly or through `auth.users` cascade, including private avatar objects in Storage.
+
+## Field-level encryption
+
+User-entered text columns are encrypted at rest. The schema uses a two-layer model:
+
+- **`*_data` base tables** hold `bytea` ciphertext columns for all user-entered text.
+- **Same-named decrypting views** present plaintext to the client via `INSTEAD OF INSERT/UPDATE` triggers that encrypt on write and decrypt on read.
+- **`app.encrypt_text` / `app.decrypt_text`** are `SECURITY DEFINER` helpers (pinned `search_path`, `REVOKE … FROM public, anon; GRANT … TO authenticated`) that read the Vault secret `app_field_encryption_key` — the key never appears in client SQL.
+- **Supabase Vault** holds the encryption key outside the database. A leaked database dump yields only ciphertext.
+- **`profiles.email` is intentionally plaintext** (synced from `auth.users`). All other user-entered fields in `profiles` and across ~36 content tables are encrypted.
+
+Client code (`src/features/*/repository.ts`) reads and writes through the named view; the encryption layer is transparent to the application.
 
 ## Storage
 
@@ -242,6 +254,9 @@ The active linked project is kept aligned with the checked-in migration history 
 
 The following invariants should hold on a fully-migrated project:
 
+- a Vault secret named `app_field_encryption_key` exists and is non-empty
+- `app.encrypt_text` and `app.decrypt_text` exist as `SECURITY DEFINER` functions with `EXECUTE` granted only to `authenticated` (not `public`/`anon`)
+- each content table has a corresponding `*_data` base table with `bytea` ciphertext columns and a same-named decrypting view with `INSTEAD OF` triggers
 - `profiles` includes the avatar columns from `20260503120000_profile_avatars.sql`
 - `profile-pics` exists as a private bucket with a 5 MB limit and JPEG/PNG/WebP MIME types
 - named RLS policies exist for the owner-scoped tables (`profiles`, `user_preferences`, `thought_records`, and the rest), scoped to the `authenticated` role

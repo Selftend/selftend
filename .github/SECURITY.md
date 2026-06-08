@@ -2,6 +2,10 @@
 
 Selftend stores private reflection data. Please report vulnerabilities privately.
 
+## Data Protection Posture
+
+User-entered records (journal entries, mood logs, CBT/ACT records, gratitude entries, habits, sleep logs, and all other self-help content) are encrypted at rest at the field level using pgcrypto symmetric encryption. The encryption key is held outside the database in Supabase Vault, so a leaked database dump or backup exposes only ciphertext. Data is also encrypted in transit (HTTPS/TLS) and access is scoped to the record owner via Row-Level Security. The system is provider-recoverable: the operator can decrypt, and standard account recovery works normally. We do not read user records except to fulfill a verified privacy request, investigate a security incident, or satisfy a legal obligation.
+
 ## Report A Vulnerability
 
 - Email: `security@selftend.org`

@@ -93,68 +93,71 @@ describe("act repository (integration)", () => {
     expect(result.data).toEqual([]);
   });
 
-  it("upserts program state with (user_id) as the conflict key", async () => {
+  it("merges program state on (user_id) via the transparent view's INSTEAD OF trigger", async () => {
+    // act_program_state is now a transparent encrypted view; a view cannot be the target of
+    // INSERT ... ON CONFLICT, so the client inserts plainly and the trigger resolves the (user_id)
+    // merge (matching upsertACTProgramState's switch from .upsert() to .insert()).
     const first = await alice
       .from("act_program_state")
-      .upsert(
-        {
-          user_id: SEED_USERS.alice.id,
-          active_principles: ["defusion"],
-          primary_concerns: ["anxiety"],
-        },
-        { onConflict: "user_id" },
-      )
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        active_principles: ["defusion"],
+        primary_concerns: ["anxiety"],
+      })
       .select("*")
       .single();
     expect(first.error).toBeNull();
 
     const second = await alice
       .from("act_program_state")
-      .upsert(
-        {
-          user_id: SEED_USERS.alice.id,
-          active_principles: ["values", "committedAction"],
-        },
-        { onConflict: "user_id" },
-      )
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        active_principles: ["values", "committedAction"],
+        primary_concerns: ["anxiety"],
+      })
       .select("*")
       .single();
     expect(second.error).toBeNull();
     expect(second.data?.active_principles).toEqual(["values", "committedAction"]);
-    // Supabase/PostgREST upsert only updates columns present in the payload;
-    // omitted columns are preserved on conflict, so primary_concerns stays ["anxiety"].
+    // The INSTEAD OF INSERT trigger writes every supplied column on conflict; the repository's
+    // upsertACTProgramState always carries the full patch it intends to persist.
     expect(second.data?.primary_concerns).toEqual(["anxiety"]);
+
+    // Exactly one row remains for the user (the per-user singleton merged).
+    const rows = await alice
+      .from("act_program_state")
+      .select("user_id")
+      .eq("user_id", SEED_USERS.alice.id);
+    expect(rows.error).toBeNull();
+    expect(rows.data).toHaveLength(1);
   });
 
-  it("upserts a value entry keyed on (user_id, life_domain)", async () => {
+  it("upserts a value entry keyed on (user_id, life_domain) via the view's INSTEAD OF trigger", async () => {
+    // act_value_entries is now a transparent encrypted view; a view cannot be an ON CONFLICT
+    // target, so the repository inserts plainly and the INSTEAD OF INSERT trigger resolves the
+    // (user_id, life_domain) merge against the base table's real unique key.
     const first = await alice
       .from("act_value_entries")
-      .upsert(
-        {
-          user_id: SEED_USERS.alice.id,
-          life_domain: "relationships",
-          value_statement: "Be patient",
-          importance_rating: 8,
-          current_alignment_rating: 5,
-        },
-        { onConflict: "user_id,life_domain" },
-      )
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        life_domain: "relationships",
+        value_statement: "Be patient",
+        importance_rating: 8,
+        current_alignment_rating: 5,
+      })
       .select("*")
       .single();
     expect(first.error).toBeNull();
 
     const second = await alice
       .from("act_value_entries")
-      .upsert(
-        {
-          user_id: SEED_USERS.alice.id,
-          life_domain: "relationships",
-          value_statement: "Be present",
-          importance_rating: 9,
-          current_alignment_rating: 6,
-        },
-        { onConflict: "user_id,life_domain" },
-      )
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        life_domain: "relationships",
+        value_statement: "Be present",
+        importance_rating: 9,
+        current_alignment_rating: 6,
+      })
       .select("*")
       .single();
     expect(second.error).toBeNull();

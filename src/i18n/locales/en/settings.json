@@ -48,6 +48,15 @@
     "description": "Show the app and tool introductions again when you want a fresh walkthrough.",
     "reset": "Reset onboarding"
   },
+  "security": {
+    "title": "Security",
+    "description": "Protect this device and learn how your data is kept safe.",
+    "appLock": "App lock",
+    "appLockDescription": "Require your fingerprint, face, or device passcode to open the app.",
+    "appLockUnavailable": "Set up device biometrics or a passcode to enable the app lock.",
+    "appLockConfirm": "Confirm to turn on the app lock",
+    "openSecurity": "How we protect your data"
+  },
   "support": {
     "title": "Support and project links",
     "openSupport": "Open support page",
