@@ -162,7 +162,7 @@ values (
   false,
   timezone('utc', now()),
   timezone('utc', now()),
-  '1.0.0',
+  '2026-05-20-local-preferences',
   timezone('utc', now()),
   timezone('utc', now())
 );
@@ -199,7 +199,7 @@ values (
   true,
   timezone('utc', now()) - interval '30 days',
   timezone('utc', now()) - interval '30 days',
-  '1.0.0',
+  '2026-05-20-local-preferences',
   timezone('utc', now()) - interval '30 days',
   timezone('utc', now())
 );
@@ -236,7 +236,7 @@ values (
   true,
   timezone('utc', now()) - interval '60 days',
   timezone('utc', now()) - interval '60 days',
-  '1.0.0',
+  '2026-05-20-local-preferences',
   timezone('utc', now()) - interval '60 days',
   timezone('utc', now())
 );
@@ -322,7 +322,7 @@ insert into public.user_preferences (
 select
   u.id, array['cbt']::text[], false, false, 19, 0, 'en',
   true, true,
-  timezone('utc', now()), timezone('utc', now()), '1.0.0',
+  timezone('utc', now()), timezone('utc', now()), '2026-05-20-local-preferences',
   timezone('utc', now()), timezone('utc', now())
 from (values
   ('00000000-0000-0000-0000-000000000010'::uuid),
