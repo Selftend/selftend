@@ -51,9 +51,29 @@ Deno.serve(async (request) => {
       });
     }
 
+    // Reject oversized bodies BEFORE buffering/parsing them (#88). A valid payload is at most
+    // ~1.1 KB (category <= 40 + message <= 1000 chars), so a generous 16 KB cap rejects nothing
+    // legitimate. Check the declared Content-Length first, then re-check the actual body length
+    // (defends against a missing/forged Content-Length header).
+    const MAX_BODY_BYTES = 16384;
+    const contentLength = Number(request.headers.get("content-length") ?? "0");
+    if (!Number.isFinite(contentLength) || contentLength > MAX_BODY_BYTES) {
+      return new Response(JSON.stringify({ error: "Invalid input" }), {
+        headers: { ...jsonHeaders, ...corsHeaders },
+        status: 413,
+      });
+    }
+
     let payload: { category?: unknown; message?: unknown };
     try {
-      payload = await request.json();
+      const rawBody = await request.text();
+      if (rawBody.length > MAX_BODY_BYTES) {
+        return new Response(JSON.stringify({ error: "Invalid input" }), {
+          headers: { ...jsonHeaders, ...corsHeaders },
+          status: 413,
+        });
+      }
+      payload = JSON.parse(rawBody);
     } catch {
       return new Response(JSON.stringify({ error: "Invalid input" }), {
         headers: { ...jsonHeaders, ...corsHeaders },
