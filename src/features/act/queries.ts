@@ -95,7 +95,9 @@ const actKeys = {
 
 export function useDefusionLogs(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: actKeys.defusionList(userId),
+    // Include limit so 30/N callers don't collide on one cache entry; the limit-less
+    // prefix in actKeys.defusionList still matches every variant on invalidation.
+    queryKey: [...actKeys.defusionList(userId), limit],
     queryFn: () => listDefusionLogs(userId!, limit),
     enabled: Boolean(userId),
   });
@@ -128,7 +130,7 @@ export function useDeleteDefusionLog(userId: string | null) {
 
 export function useExpansionLogs(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: actKeys.expansionList(userId),
+    queryKey: [...actKeys.expansionList(userId), limit],
     queryFn: () => listExpansionLogs(userId!, limit),
     enabled: Boolean(userId),
   });
@@ -161,7 +163,7 @@ export function useDeleteExpansionLog(userId: string | null) {
 
 export function useUrgeSurfLogs(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: actKeys.urgeSurfList(userId),
+    queryKey: [...actKeys.urgeSurfList(userId), limit],
     queryFn: () => listUrgeSurfLogs(userId!, limit),
     enabled: Boolean(userId),
   });

@@ -64,8 +64,11 @@ interface DefusionLogRow {
 function isMissingACTSchemaError(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const { code, message, hint } = error as { code?: unknown; message?: unknown; hint?: unknown };
-  if (code === "PGRST205") return true;
-  return [message, hint].some((v) => typeof v === "string" && v.includes("act_"));
+  if (code === "PGRST205" || code === "PGRST204") return true;
+  // Only a genuine schema-cache miss means "ACT isn't migrated yet" → degrade to empty.
+  // The previous bare "act_" substring also swallowed real errors (e.g. a constraint
+  // violation mentioning an act_ table), which must surface instead of showing empty.
+  return [message, hint].some((v) => typeof v === "string" && v.includes("schema cache"));
 }
 
 function mapProgramState(row: ACTProgramStateRow): ACTProgramState {

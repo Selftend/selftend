@@ -197,10 +197,11 @@ describe("act repository - saveDefusionLog", () => {
 });
 
 describe("act repository - listDefusionLogs", () => {
-  it("returns an empty list when the table is missing", async () => {
-    const limit = jest
-      .fn()
-      .mockResolvedValue({ data: null, error: { message: "relation act_defusion_logs missing" } });
+  it("returns an empty list when the table is not in the schema cache (pre-migration)", async () => {
+    const limit = jest.fn().mockResolvedValue({
+      data: null,
+      error: { code: "PGRST205", message: "Could not find the table in the schema cache" },
+    });
     const order = jest.fn(() => ({ limit }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
@@ -208,6 +209,20 @@ describe("act repository - listDefusionLogs", () => {
     mockRequireSupabase.mockReturnValue(buildClient({ act_defusion_logs: { select } }));
 
     expect(await listDefusionLogs("u1")).toEqual([]);
+  });
+
+  it("rethrows a real error that merely mentions an act_ table (e.g. a constraint violation)", async () => {
+    const limit = jest.fn().mockResolvedValue({
+      data: null,
+      error: { code: "23503", message: "act_defusion_logs_user_id_fkey violated" },
+    });
+    const order = jest.fn(() => ({ limit }));
+    const eq = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq }));
+
+    mockRequireSupabase.mockReturnValue(buildClient({ act_defusion_logs: { select } }));
+
+    await expect(listDefusionLogs("u1")).rejects.toMatchObject({ code: "23503" });
   });
 });
 
@@ -489,10 +504,11 @@ describe("act repository - choice points", () => {
     expect(result.notes).toBe("first map");
   });
 
-  it("listChoicePoints returns an empty list when the table is missing", async () => {
-    const limit = jest
-      .fn()
-      .mockResolvedValue({ data: null, error: { message: "relation act_choice_points missing" } });
+  it("listChoicePoints returns an empty list when the table is not in the schema cache", async () => {
+    const limit = jest.fn().mockResolvedValue({
+      data: null,
+      error: { code: "PGRST205", message: "Could not find the table in the schema cache" },
+    });
     const order = jest.fn(() => ({ limit }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));

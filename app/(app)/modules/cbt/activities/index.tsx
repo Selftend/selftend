@@ -33,10 +33,13 @@ function groupActivities(activities: ActivityLog[]) {
       completed.push(a);
     } else if (a.scheduledAt) {
       const dateStr = toLocalDateKey(a.scheduledAt);
-      if (dateStr === todayStr) {
-        today.push(a);
-      } else {
+      // YYYY-MM-DD compares lexicographically = chronologically. Only FUTURE days are
+      // "upcoming"; today AND overdue (past, still uncompleted) surface under Today so a
+      // missed activity isn't mislabeled as upcoming and hidden from the user.
+      if (dateStr > todayStr) {
         upcoming.push(a);
+      } else {
+        today.push(a);
       }
     } else {
       upcoming.push(a);
