@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -27,7 +27,7 @@ import { parseBodyChips, toggleBodyChip } from "@/src/features/mood/body-sensati
 import { useCompleteActivity } from "@/src/features/activities/queries";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
 import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
-import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
+import { type EmotionDisplay, useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import type { MoodLog } from "@/src/features/mood/types";
 import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
@@ -52,6 +52,50 @@ interface MoodEntryEditorScreenProps {
 function paramValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
+
+// Memoized so it re-renders only when the emotion list or the selection changes — not on
+// every keystroke in the notes / four-box text fields, which re-render the parent screen.
+const EmotionGrid = memo(function EmotionGrid({
+  emotions,
+  selectedIds,
+  onToggle,
+}: {
+  emotions: EmotionDisplay[];
+  selectedIds: string[];
+  onToggle: (id: string) => void;
+}) {
+  return (
+    <View className="flex-row flex-wrap gap-2">
+      {emotions.map((emotion) => {
+        const selected = selectedIds.includes(emotion.id);
+        return (
+          <Pressable
+            key={emotion.id}
+            accessibilityLabel={emotion.name}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: selected }}
+            onPress={() => onToggle(emotion.id)}
+            className={cn(
+              "min-w-[72px] items-center gap-1 rounded-2xl border-2 px-2 py-2",
+              selected ? "border-primary bg-primary/10" : "border-border bg-card",
+            )}
+          >
+            <Text className="text-2xl">{emotion.emoji}</Text>
+            <Text
+              className={cn(
+                "text-center text-[11px]",
+                selected ? "font-semibold text-primary" : "text-muted-foreground",
+              )}
+              numberOfLines={1}
+            >
+              {emotion.name}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+});
 
 export function MoodEntryEditorScreen({
   fallbackHref,
@@ -174,11 +218,16 @@ export function MoodEntryEditorScreen({
     }
   };
 
-  const toggleEmotion = (emotion: string) => {
+  // Stable so the memoized EmotionGrid isn't re-rendered while the user types in the
+  // notes / four-box fields (those keystrokes re-render the screen, not the grid).
+  const toggleEmotion = useCallback((emotion: string) => {
     setEmotions((prev) =>
       prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion],
     );
-  };
+  }, []);
+
+  // Parse the body-chip CSV once per render instead of inside the chip map (N times).
+  const selectedBodyChips = parseBodyChips(bodilySensations);
 
   if (editMode && !fromCache && isLoading) {
     return (
@@ -270,35 +319,7 @@ export function MoodEntryEditorScreen({
           {emotionsLoading ? (
             <ActivityIndicator />
           ) : (
-            <View className="flex-row flex-wrap gap-2">
-              {allEmotions.map((emotion) => {
-                const selected = emotions.includes(emotion.id);
-                return (
-                  <Pressable
-                    key={emotion.id}
-                    accessibilityLabel={emotion.name}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: selected }}
-                    onPress={() => toggleEmotion(emotion.id)}
-                    className={cn(
-                      "min-w-[72px] items-center gap-1 rounded-2xl border-2 px-2 py-2",
-                      selected ? "border-primary bg-primary/10" : "border-border bg-card",
-                    )}
-                  >
-                    <Text className="text-2xl">{emotion.emoji}</Text>
-                    <Text
-                      className={cn(
-                        "text-center text-[11px]",
-                        selected ? "font-semibold text-primary" : "text-muted-foreground",
-                      )}
-                      numberOfLines={1}
-                    >
-                      {emotion.name}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+            <EmotionGrid emotions={allEmotions} selectedIds={emotions} onToggle={toggleEmotion} />
           )}
         </View>
 
@@ -389,7 +410,7 @@ export function MoodEntryEditorScreen({
                   <View className="flex-row flex-wrap gap-2 pt-1">
                     {BODY_CHIP_KEYS.map((key) => {
                       const label = t(`mood.bodyChips.${key}`);
-                      const selected = parseBodyChips(bodilySensations).includes(label);
+                      const selected = selectedBodyChips.includes(label);
                       return (
                         <Pressable
                           key={key}

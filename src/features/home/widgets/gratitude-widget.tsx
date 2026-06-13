@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { useMemo } from "react";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -6,19 +7,33 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useGratitudeEntries } from "@/src/features/gratitude/queries";
+import { useGratitudeEntries, useGratitudeEntryCount } from "@/src/features/gratitude/queries";
 import { answeredCount } from "@/src/features/gratitude/questions";
 import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function GratitudeWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
-  const { data: entries } = useGratitudeEntries(userId, 500);
+  // A small recent page covers the day badge + the "items" glance; the entries total comes
+  // from an exact head-count. The widget previously fetched 500 full (field-encrypted)
+  // entries on every Home load just to render two numbers.
+  const { data: entries } = useGratitudeEntries(userId, 30);
+  const { data: totalEntries } = useGratitudeEntryCount(userId);
 
   const { selectedDate: todayKey } = useSelectedDate();
   const all = entries ?? [];
-  const todayEntries = all.filter((e) => toLocalDateKey(e.loggedAt) === todayKey);
-  const totalItems = all.reduce((sum, e) => sum + answeredCount(e.items), 0);
+  const todayEntries = useMemo(
+    () => all.filter((e) => toLocalDateKey(e.loggedAt) === todayKey),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries, todayKey],
+  );
+  // Items across the recent page (an at-a-glance figure; the entries stat below is the
+  // exact lifetime total). The prior full-history sum was itself capped at the fetch limit.
+  const recentItems = useMemo(
+    () => all.reduce((sum, e) => sum + answeredCount(e.items), 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries],
+  );
 
   return (
     <Card className="flex-1">
@@ -41,8 +56,11 @@ export function GratitudeWidget({ userId }: { userId: string }) {
 
         <TwoStatBody
           stats={[
-            { value: all.length, label: t("home.widgets.gratitudeLatest.entriesLabel") },
-            { value: totalItems, label: t("home.widgets.gratitudeLatest.itemsLabel") },
+            {
+              value: totalEntries ?? all.length,
+              label: t("home.widgets.gratitudeLatest.entriesLabel"),
+            },
+            { value: recentItems, label: t("home.widgets.gratitudeLatest.itemsLabel") },
           ]}
         />
 
