@@ -34,6 +34,19 @@ export async function listJournalEntries(userId: string, limit = 50) {
   return (data as JournalEntryRow[]).map(mapJournalEntry);
 }
 
+// Exact lifetime count for tile/hero stats — avoids fetching (and decrypting) full
+// journal bodies just to display a number.
+export async function countJournalEntries(userId: string): Promise<number> {
+  const client = requireSupabase();
+  const { count, error } = await client
+    .from("journal_entries")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function getJournalEntry(userId: string, id: string) {
   const client = requireSupabase();
   const { data, error } = await client

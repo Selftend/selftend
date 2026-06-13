@@ -9,7 +9,7 @@ import {
   saveGratitudeEntry,
   setGratitudeEntryStarred,
 } from "@/src/features/gratitude/repository";
-import type { GratitudeInput } from "@/src/features/gratitude/types";
+import type { GratitudeEntry, GratitudeInput } from "@/src/features/gratitude/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 
 const gratitudeKeys = {
@@ -80,9 +80,18 @@ export function useSetGratitudeEntryStarred(userId: string | null) {
   return useMutation({
     mutationFn: ({ id, starred }: { id: string; starred: boolean }) =>
       setGratitudeEntryStarred(userId!, id, starred),
-    onSuccess: async () => {
+    // Patch the updated row into the cached lists/detail instead of invalidating the whole
+    // ["gratitude"] prefix — a one-tap star otherwise refired every mounted gratitude query,
+    // including the 500-row Home widget fetch. Only favorites (whose membership actually
+    // changed) is invalidated.
+    onSuccess: (updated) => {
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: gratitudeKeys.all });
+      queryClient.setQueriesData<GratitudeEntry[]>(
+        { queryKey: ["gratitude", "list", userId] },
+        (old) => old?.map((entry) => (entry.id === updated.id ? updated : entry)),
+      );
+      queryClient.setQueryData(gratitudeKeys.detail(userId, updated.id), updated);
+      void queryClient.invalidateQueries({ queryKey: ["gratitude", "favorites", userId] });
     },
   });
 }

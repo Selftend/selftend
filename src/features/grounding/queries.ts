@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  countMindfulnessSessionsByNames,
   listMindfulnessSessionsByNames,
   saveMindfulnessSession,
 } from "@/src/features/mindfulness/repository";
@@ -9,6 +10,7 @@ import { groundingSlugs } from "@/src/constants/grounding";
 
 const groundingKeys = {
   list: (userId: string) => ["grounding", "list", userId] as const,
+  count: (userId: string) => ["grounding", "count", userId] as const,
 };
 
 export function useGroundingSessions(userId: string | null, limit = 30) {
@@ -17,6 +19,14 @@ export function useGroundingSessions(userId: string | null, limit = 30) {
     // Filter by exercise type at the DB level so `limit` applies AFTER the type filter
     // (see useBreathingSessions) - a pre-filter limit could hide every grounding session.
     queryFn: () => listMindfulnessSessionsByNames(userId!, [...groundingSlugs], limit),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useGroundingSessionCount(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? groundingKeys.count(userId) : ["grounding", "count", "anonymous"],
+    queryFn: () => countMindfulnessSessionsByNames(userId!, [...groundingSlugs]),
     enabled: Boolean(userId),
   });
 }

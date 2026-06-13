@@ -62,6 +62,23 @@ export async function listMindfulnessSessionsByNames(
   return (data as MindfulnessSessionRow[]).map(mapSession);
 }
 
+// Exact count of sessions of the given exercise types (e.g. grounding) for tile stats —
+// avoids fetching full rows just to display a number.
+export async function countMindfulnessSessionsByNames(
+  userId: string,
+  exerciseNames: string[],
+): Promise<number> {
+  const client = requireSupabase();
+  const { count, error } = await client
+    .from("mindfulness_sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .in("exercise_name", exerciseNames);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function saveMindfulnessSession(userId: string, input: MindfulnessSessionInput) {
   const client = requireSupabase();
   const { data, error } = await client

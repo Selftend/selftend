@@ -1,4 +1,5 @@
 import {
+  countMindfulnessSessionsByNames,
   listMindfulnessSessions,
   saveMindfulnessSession,
 } from "@/src/features/mindfulness/repository";
@@ -93,5 +94,28 @@ describe("mindfulness repository", () => {
     });
     const calls = insert.mock.calls as unknown as [{ feeling_after: string | null }][];
     expect(calls[0][0].feeling_after).toBeNull();
+  });
+
+  it("counts sessions of the given exercise names with a head request", async () => {
+    const inFn = jest.fn().mockResolvedValue({ count: 9, error: null });
+    const eqUser = jest.fn(() => ({ in: inFn }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(countMindfulnessSessionsByNames("user-1", ["grounding-54321"])).resolves.toBe(9);
+    expect(from).toHaveBeenCalledWith("mindfulness_sessions");
+    expect(select).toHaveBeenCalledWith("id", { count: "exact", head: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(inFn).toHaveBeenCalledWith("exercise_name", ["grounding-54321"]);
+  });
+
+  it("treats a null grounding count as zero", async () => {
+    const inFn = jest.fn().mockResolvedValue({ count: null, error: null });
+    const eqUser = jest.fn(() => ({ in: inFn }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(countMindfulnessSessionsByNames("user-1", ["x"])).resolves.toBe(0);
   });
 });

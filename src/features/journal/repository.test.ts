@@ -1,4 +1,5 @@
 import {
+  countJournalEntries,
   deleteJournalEntry,
   getJournalEntry,
   listJournalEntries,
@@ -196,5 +197,25 @@ describe("journal repository", () => {
     expect(from).toHaveBeenCalledWith("journal_entries");
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
     expect(eqId).toHaveBeenCalledWith("id", "j-1");
+  });
+
+  it("counts journal entries for a user with a head request", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: 73, error: null });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(countJournalEntries("user-1")).resolves.toBe(73);
+    expect(from).toHaveBeenCalledWith("journal_entries");
+    expect(select).toHaveBeenCalledWith("id", { count: "exact", head: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+  });
+
+  it("treats a null journal count as zero", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: null, error: null });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(countJournalEntries("user-1")).resolves.toBe(0);
   });
 });

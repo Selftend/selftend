@@ -6,13 +6,13 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { cn } from "@/lib/utils";
-import { useGratitudeEntries } from "@/src/features/gratitude/queries";
-import { useGroundingSessions } from "@/src/features/grounding/queries";
+import { useGratitudeEntryCount } from "@/src/features/gratitude/queries";
+import { useGroundingSessionCount } from "@/src/features/grounding/queries";
 import { useHabits } from "@/src/features/habits/queries";
-import { useJournalEntries } from "@/src/features/journal/queries";
-import { useMoodLogs } from "@/src/features/mood/queries";
+import { useJournalEntryCount } from "@/src/features/journal/queries";
+import { useMoodLogs, useMoodLogCount } from "@/src/features/mood/queries";
 import { getMoodSummary } from "@/src/features/mood/summaries";
-import { useSleepLogs } from "@/src/features/sleep/queries";
+import { useSleepLogCount } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
@@ -86,19 +86,17 @@ const TOOLS: ToolTile[] = [
 export default function ToolsScreen() {
   const { t } = useTranslation("navigation");
   const { user } = useSession();
+  // The count tiles use exact head-count queries instead of fetching (and decrypting)
+  // full row sets just to read `.length`. Mood still fetches 30 rows for the 7-day average.
   const { data: moodLogs } = useMoodLogs(user?.id ?? null, 30);
-  const { data: journalEntries } = useJournalEntries(user?.id ?? null, 50);
-  const { data: gratitudeEntries } = useGratitudeEntries(user?.id ?? null, 50);
-  const { data: groundingSessions } = useGroundingSessions(user?.id ?? null, 50);
-  const { data: sleepLogs } = useSleepLogs(user?.id ?? null, 30);
   const { data: habits } = useHabits(user?.id ?? null);
 
-  const moodCount = moodLogs?.length ?? 0;
+  const moodCount = useMoodLogCount(user?.id ?? null).data ?? 0;
   const moodAverage = getMoodSummary(moodLogs, 7).average;
-  const journalCount = journalEntries?.length ?? 0;
-  const gratitudeCount = gratitudeEntries?.length ?? 0;
-  const groundingCount = groundingSessions?.length ?? 0;
-  const sleepCount = sleepLogs?.length ?? 0;
+  const journalCount = useJournalEntryCount(user?.id ?? null).data ?? 0;
+  const gratitudeCount = useGratitudeEntryCount(user?.id ?? null).data ?? 0;
+  const groundingCount = useGroundingSessionCount(user?.id ?? null).data ?? 0;
+  const sleepCount = useSleepLogCount(user?.id ?? null).data ?? 0;
   const habitCount = habits?.length ?? 0;
 
   function statFor(key: ToolTile["key"]): string {
