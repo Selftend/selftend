@@ -25,8 +25,6 @@ import { WidgetSnapshotSync } from "@/src/features/widgets/widget-snapshot-sync"
 import { AppLockGate } from "@/src/features/security/app-lock-gate";
 import { useAppLockStore } from "@/src/features/security/app-lock-store";
 
-const appOnboardingImage = require("../../../assets/images/onboarding/app-journey-growth-badge.png");
-
 export default function ProtectedLayout() {
   const { t } = useTranslation("settings");
   const { width } = useWindowDimensions();
@@ -105,8 +103,6 @@ export default function ProtectedLayout() {
         actionLabel={t("onboarding.appContinue")}
         body={[t("onboarding.appBody1"), t("onboarding.appBody2"), t("onboarding.appBody3")]}
         errorMessage={appOnboardingMutation.isError ? t("onboarding.appSaveError") : undefined}
-        imageAccessibilityLabel={t("onboarding.appTitle")}
-        imageSource={appOnboardingImage}
         isPending={appOnboardingMutation.isPending}
         onComplete={() => void completeAppOnboarding()}
         title={t("onboarding.appTitle")}
