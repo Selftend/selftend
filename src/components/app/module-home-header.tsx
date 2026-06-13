@@ -136,11 +136,10 @@ export function ModuleHomeHeader({
   const currentTourActionType = currentTour?.actionType ?? null;
   const currentTourStorageKey = currentTour?.storageKey ?? null;
 
-  useEffect(() => {
-    if (!currentTourActionType || !isFocused) {
-      setButtonRect(null);
-      return;
-    }
+  // Measure the active tour button in window coords so the spotlight lands on it. The equality
+  // guard makes redundant re-measures (from onLayout below) cheap and loop-free.
+  const measureCurrentTourButton = useCallback(() => {
+    if (!currentTourActionType || !isFocused) return;
     if (process.env.NODE_ENV === "test") {
       setButtonRect({ x: 0, y: 0, width: CIRCLE_DIAMETER, height: CIRCLE_DIAMETER });
       return;
@@ -148,36 +147,55 @@ export function ModuleHomeHeader({
     const viewRef = buttonViewRefs.current.get(currentTourActionType);
     if (!viewRef) return;
 
-    function measure() {
-      if (!viewRef) return;
-      if (Platform.OS === "web") {
-        const el = viewRef as unknown as HTMLElement;
-        const rect = el.getBoundingClientRect();
-        setButtonRect({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
-      } else {
-        if (typeof viewRef.measureInWindow !== "function") {
-          setButtonRect({ x: 0, y: 0, width: CIRCLE_DIAMETER, height: CIRCLE_DIAMETER });
-          return;
-        }
-
-        viewRef.measureInWindow((x, y, width, height) => {
-          setButtonRect({ x, y, width, height });
-        });
-      }
-    }
-
-    const timeout = setTimeout(measure, 150);
+    const apply = (rect: ButtonRect) =>
+      setButtonRect((prev) =>
+        prev &&
+        prev.x === rect.x &&
+        prev.y === rect.y &&
+        prev.width === rect.width &&
+        prev.height === rect.height
+          ? prev
+          : rect,
+      );
 
     if (Platform.OS === "web") {
-      window.addEventListener("resize", measure, { passive: true });
+      const el = viewRef as unknown as HTMLElement;
+      const rect = el.getBoundingClientRect?.();
+      if (rect) apply({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
+    } else if (typeof viewRef.measureInWindow === "function") {
+      viewRef.measureInWindow((x, y, width, height) => apply({ x, y, width, height }));
+    } else {
+      apply({ x: 0, y: 0, width: CIRCLE_DIAMETER, height: CIRCLE_DIAMETER });
+    }
+  }, [currentTourActionType, isFocused]);
+
+  useEffect(() => {
+    if (!currentTourActionType || !isFocused) {
+      setButtonRect(null);
+      return;
+    }
+    if (process.env.NODE_ENV === "test") {
+      measureCurrentTourButton();
+      return;
+    }
+    // A single early measure caught a STALE position on Android: the flex breadcrumb sizes
+    // after first paint and pushes the actions row right, so the one-shot rect placed the
+    // spotlight left of (and below) the real button. Re-measure across a few settle points
+    // (and on every actions-row onLayout / web resize) until the layout stabilises.
+    const timers = [
+      setTimeout(measureCurrentTourButton, 150),
+      setTimeout(measureCurrentTourButton, 450),
+      setTimeout(measureCurrentTourButton, 900),
+    ];
+    if (Platform.OS === "web") {
+      window.addEventListener("resize", measureCurrentTourButton, { passive: true });
       return () => {
-        clearTimeout(timeout);
-        window.removeEventListener("resize", measure);
+        timers.forEach(clearTimeout);
+        window.removeEventListener("resize", measureCurrentTourButton);
       };
     }
-
-    return () => clearTimeout(timeout);
-  }, [currentTourActionType, isFocused]);
+    return () => timers.forEach(clearTimeout);
+  }, [currentTourActionType, isFocused, measureCurrentTourButton]);
 
   // Persisting "tour seen" is best-effort; a failed write must not become an unhandled
   // rejection (the tour simply shows again next time).
@@ -229,7 +247,9 @@ export function ModuleHomeHeader({
 
   const actionsRow =
     actions.length > 0 || addWidgetCategory ? (
-      <View className="flex-row items-center gap-3">
+      // Re-measure the tour spotlight whenever this row's frame changes (e.g. the breadcrumb
+      // sizing on Android pushes it right after first paint) so the highlight tracks the button.
+      <View className="flex-row items-center gap-3" onLayout={measureCurrentTourButton}>
         {actions.map((action) => (
           <TourButton
             key={action.type}
