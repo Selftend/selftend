@@ -20,6 +20,7 @@ import { DeleteAccountModal } from "@/src/components/app/delete-account-modal";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { signOut } from "@/src/features/auth/api";
+import { cancelAllReminders } from "@/src/lib/notifications";
 import {
   useRemoveUserAvatar,
   useResetUserAvatarToOAuth,
@@ -71,6 +72,9 @@ export default function SettingsScreen() {
 
   const handleSignOut = async () => {
     try {
+      // Deregister this device's push channel BEFORE sign-out (RLS context still valid)
+      // so server-driven reminders stop firing for a device the user has left.
+      await cancelAllReminders(user?.id ?? null);
       await signOut();
     } catch (error) {
       const message = error instanceof Error ? error.message : t("account.signOutError");
@@ -350,22 +354,19 @@ function SecuritySection() {
   const canToggle = available === true && !busy;
 
   const handleToggle = async (next: boolean) => {
-    // Turning the lock ON requires a successful auth so the user can't lock themselves out.
-    // Turning it OFF is allowed without a prompt.
-    if (next) {
-      setBusy(true);
-      try {
-        const confirmed = await authenticate(t("security.appLockConfirm"));
-        if (confirmed) {
-          await setEnabled(true);
-        }
-      } finally {
-        setBusy(false);
+    // Both directions require a successful auth: turning ON so the user can't lock
+    // themselves out, and turning OFF so a non-owner who picks up an unlocked-looking
+    // session can't disable the protection. authenticate() keeps the passcode fallback
+    // on (disableDeviceFallback:false), so requiring it to disable can't lock anyone out.
+    setBusy(true);
+    try {
+      const confirmed = await authenticate(t("security.appLockConfirm"));
+      if (confirmed) {
+        await setEnabled(next);
       }
-      return;
+    } finally {
+      setBusy(false);
     }
-
-    await setEnabled(false);
   };
 
   return (

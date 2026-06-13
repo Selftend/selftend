@@ -15,6 +15,7 @@ import {
 } from "@/src/components/react-native-reusables/popover";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { signOut } from "@/src/features/auth/api";
+import { cancelAllReminders } from "@/src/lib/notifications";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { supportedLanguages } from "@/src/i18n";
 import { appEnv } from "@/src/lib/env";
@@ -55,6 +56,9 @@ export function UserMenu() {
 
   async function onSignOut() {
     popoverTriggerRef.current?.close();
+    // Deregister this device's push channel BEFORE sign-out (while RLS context is still
+    // valid), so server-driven reminders stop firing for a device the user has left.
+    await cancelAllReminders(user?.id ?? null);
     await signOut();
   }
 

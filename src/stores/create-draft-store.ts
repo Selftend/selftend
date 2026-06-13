@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import { registerDraftStore } from "@/src/stores/draft-store-registry";
+
 interface DraftStore<TValues> {
   entityId: string | null;
   values: TValues | null;
@@ -9,7 +11,7 @@ interface DraftStore<TValues> {
 }
 
 export function createDraftStore<TValues>() {
-  return create<DraftStore<TValues>>((set) => ({
+  const store = create<DraftStore<TValues>>((set) => ({
     entityId: null,
     values: null,
     hydrate: (entityId = null) =>
@@ -20,4 +22,7 @@ export function createDraftStore<TValues>() {
     reset: () => set({ entityId: null, values: null }),
     setValues: (values) => set({ values }),
   }));
+  // Reset on sign-out clears any resident PHI (see draft-store-registry).
+  registerDraftStore(store);
+  return store;
 }

@@ -4,6 +4,7 @@ import type { Session, User } from "@supabase/supabase-js";
 
 import { hasSupabaseConfig } from "@/src/lib/env";
 import { initializeSupabaseAutoRefresh, supabase } from "@/src/lib/supabase";
+import { resetAllDraftStores } from "@/src/stores/draft-store-registry";
 
 type SessionStatus = "loading" | "ready";
 
@@ -49,9 +50,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
     const authSubscription = supabase.auth.onAuthStateChange((event, nextSession) => {
       // Purge all cached PHI (and any still-valid signed avatar URLs) on sign-out so the
       // previous user's data never lingers in memory - matters most on native, which has
-      // no full page reload to drop the in-memory QueryClient.
+      // no full page reload to drop the in-memory QueryClient. The draft stores are
+      // module-level singletons that also hold PHI (e.g. an in-flight CBT thought record
+      // whose save failed) and survive sign-out, so reset them too.
       if (event === "SIGNED_OUT") {
         queryClient.clear();
+        resetAllDraftStores();
       }
 
       setSession(nextSession);

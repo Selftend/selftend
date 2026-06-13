@@ -47,6 +47,10 @@ function LockedGate({ children }: AppLockGateProps) {
   const { t } = useTranslation("security");
   const [locked, setLocked] = useState(true);
   const [authInProgress, setAuthInProgress] = useState(false);
+  // Track foreground/background so we can cover protected content the moment the app
+  // leaves the foreground — the OS task-switcher snapshot is captured then, and would
+  // otherwise show the user's data despite the lock.
+  const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const authInProgressRef = useRef(false);
   const backgroundedAtRef = useRef<number | null>(null);
 
@@ -80,6 +84,7 @@ function LockedGate({ children }: AppLockGateProps) {
   // Mirrors the AppState-listener pattern in initializeSupabaseAutoRefresh.
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (state: AppStateStatus) => {
+      setAppState(state);
       if (state === "active") {
         const backgroundedAt = backgroundedAtRef.current;
         backgroundedAtRef.current = null;
@@ -99,7 +104,27 @@ function LockedGate({ children }: AppLockGateProps) {
   }, []);
 
   if (!locked) {
-    return <>{children}</>;
+    // Keep children mounted (preserves nav/form state) but drop an opaque cover over
+    // them whenever the app isn't active, so a backgrounding snapshot shows the cover,
+    // not the data. NOTE: complete protection also needs Android FLAG_SECURE /
+    // expo-screen-capture (a native config change, tracked separately).
+    return (
+      <View className="flex-1">
+        {children}
+        {appState !== "active" ? (
+          <View
+            testID="app-lock-privacy-cover"
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+            className="absolute inset-0 items-center justify-center bg-background"
+          >
+            <View className="h-20 w-20 items-center justify-center rounded-3xl bg-[hsl(var(--iris)/0.12)]">
+              <Icon name="lock" size={36} className="text-iris" />
+            </View>
+          </View>
+        ) : null}
+      </View>
+    );
   }
 
   return (

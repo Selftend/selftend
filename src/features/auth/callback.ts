@@ -12,8 +12,6 @@ const supportedEmailOtpTypes = new Set<EmailOtpType>([
 ]);
 
 interface ParsedAuthCallbackUrl {
-  accessToken: string | null;
-  refreshToken: string | null;
   code: string | null;
   tokenHash: string | null;
   type: string | null;
@@ -66,8 +64,6 @@ export function parseAuthCallbackUrl(url: string): ParsedAuthCallbackUrl {
   const { hashParams, queryParams } = splitAuthUrl(url);
 
   return {
-    accessToken: getParamFromAuthUrl(queryParams, hashParams, "access_token"),
-    refreshToken: getParamFromAuthUrl(queryParams, hashParams, "refresh_token"),
     code: getParamFromAuthUrl(queryParams, hashParams, "code"),
     tokenHash: getParamFromAuthUrl(queryParams, hashParams, "token_hash"),
     type: getParamFromAuthUrl(queryParams, hashParams, "type"),
@@ -106,17 +102,12 @@ export async function completeAuthRedirect(url: string): Promise<CompletedAuthRe
     return classifyAuthOutcome(otpType, Boolean(data.session));
   }
 
-  if (params.accessToken && params.refreshToken) {
-    const { data, error } = await client.auth.setSession({
-      access_token: params.accessToken,
-      refresh_token: params.refreshToken,
-    });
-    if (error) {
-      throw error;
-    }
-
-    return classifyAuthOutcome(params.type, Boolean(data.session));
-  }
-
+  // Only the PKCE `code` exchange and the `token_hash` OTP verification can establish
+  // a session — both are single-use, server-minted values. The previous implicit-grant
+  // branch accepted access_token/refresh_token straight from the callback URL, which an
+  // attacker controls: a crafted link carrying the attacker's own tokens would silently
+  // sign the victim into the ATTACKER's account (session fixation). The client is
+  // configured flowType:'pkce' with detectSessionInUrl:false, so real email links arrive
+  // as `code`/`token_hash` and never as `#access_token`.
   throw new Error("The authentication link is missing the required parameters.");
 }

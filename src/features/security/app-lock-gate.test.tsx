@@ -89,6 +89,45 @@ describe("AppLockGate", () => {
     });
   });
 
+  it("covers unlocked content while backgrounded (privacy snapshot), keeping it mounted", async () => {
+    useAppLockStore.setState({ enabled: true, hydrated: true });
+
+    let appStateHandler: ((state: string) => void) | undefined;
+    const addEventListenerSpy = jest
+      .spyOn(AppState, "addEventListener")
+      .mockImplementation((_event, handler) => {
+        appStateHandler = handler as (state: string) => void;
+        return { remove: jest.fn() } as ReturnType<typeof AppState.addEventListener>;
+      });
+
+    renderWithProviders(
+      <AppLockGate>
+        <Protected />
+      </AppLockGate>,
+    );
+
+    // Unlock first.
+    await waitFor(() => expect(mockAuthenticate).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByText("Protected content")).toBeTruthy());
+    expect(screen.queryByTestId("app-lock-privacy-cover")).toBeNull();
+
+    // Leaving the foreground drops the cover over (still-mounted) content. The cover is
+    // hidden from accessibility, so include hidden elements when querying for it.
+    act(() => appStateHandler?.("background"));
+    expect(
+      screen.getByTestId("app-lock-privacy-cover", { includeHiddenElements: true }),
+    ).toBeTruthy();
+    expect(screen.getByText("Protected content")).toBeTruthy(); // mounted -> state preserved
+
+    // Returning to the foreground (within the timeout) removes the cover.
+    act(() => appStateHandler?.("active"));
+    expect(
+      screen.queryByTestId("app-lock-privacy-cover", { includeHiddenElements: true }),
+    ).toBeNull();
+
+    addEventListenerSpy.mockRestore();
+  });
+
   it("re-locks when returning to the foreground after the timeout", async () => {
     jest.useFakeTimers();
     try {

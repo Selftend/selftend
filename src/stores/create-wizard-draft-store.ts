@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import { registerDraftStore } from "@/src/stores/draft-store-registry";
+
 type DraftMode = "create" | "edit";
 
 export interface WizardDraftStore<TValues> {
@@ -16,7 +18,7 @@ export interface WizardDraftStore<TValues> {
 }
 
 export function createWizardDraftStore<TValues>() {
-  return create<WizardDraftStore<TValues>>((set) => ({
+  const store = create<WizardDraftStore<TValues>>((set) => ({
     mode: "create",
     entityId: null,
     stepIndex: 0,
@@ -38,4 +40,7 @@ export function createWizardDraftStore<TValues>() {
     setValues: (values) => set({ values }),
     setStepIndex: (stepIndex) => set({ stepIndex }),
   }));
+  // Reset on sign-out clears any resident PHI (see draft-store-registry).
+  registerDraftStore(store);
+  return store;
 }
