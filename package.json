@@ -15,6 +15,7 @@
     "build:android:development:local": "node scripts/build-android-dev-local.js",
     "build:android:preview": "npm exec eas-cli -- build --platform android --profile preview",
     "build:android:production": "npm exec eas-cli -- build --platform android --profile production",
+    "build:android:production:local": "node --env-file=.env scripts/build-android-prod-local.js",
     "submit:android:production": "npm exec eas-cli -- submit --platform android --profile production",
     "ios": "expo run:ios",
     "web": "expo start --web",
