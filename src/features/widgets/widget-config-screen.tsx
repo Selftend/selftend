@@ -16,6 +16,7 @@ import {
   type WidgetThemePref,
 } from "@/src/features/widgets/widget-config-store";
 import { renderWidget } from "@/src/features/widgets/render-widget";
+import { readSnapshot } from "@/src/features/widgets/snapshot-store";
 
 const THEME_OPTIONS: { value: WidgetThemePref; labelKey: string }[] = [
   { value: "app", labelKey: "home.widgets.config.themeApp" },
@@ -91,12 +92,15 @@ export function WidgetConfigurationScreen({
     const config = { shortcuts, statKeys: isToday ? selectedStats : [], theme, opacity };
     try {
       await writeConfig(widgetInfo.widgetId, config);
+      // Render with the latest data snapshot (like the OS task-handler) — passing null
+      // here rendered a blank/data-less widget after a config save until the next sync.
+      const snapshot = await readSnapshot();
       render(
         renderWidget({
           widgetName,
           width: widgetInfo.width,
           height: widgetInfo.height,
-          snapshot: null,
+          snapshot,
           config,
         }),
       );

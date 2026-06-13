@@ -64,7 +64,9 @@ export default function WeeklyReviewScreen() {
   const { user } = useSession();
   const { width } = useWindowDimensions();
 
-  const { data: moodLogs, isLoading: moodLoading } = useMoodLogs(user?.id ?? null, 14);
+  // 100 (not 14): the 7-day trend needs every log in the window, and a heavy day can
+  // hold many logs — a 14-row cap silently dropped early-week days for active users.
+  const { data: moodLogs, isLoading: moodLoading } = useMoodLogs(user?.id ?? null, 100);
   const { data: activities, isLoading: activitiesLoading } = useActivities(user?.id ?? null);
   const { data: goals, isLoading: goalsLoading } = useGoals(user?.id ?? null);
   const { data: thoughtRecords, isLoading: recordsLoading } = useThoughtRecords(user?.id ?? null);

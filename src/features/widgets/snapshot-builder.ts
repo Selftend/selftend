@@ -28,7 +28,9 @@ const WIDGET_BUILDERS: Partial<Record<string, Builder>> = {
       glanceLabel:
         avg === null
           ? t("home.widgets.mood.noLogs")
-          : t("home.widgets.mood.glance", { avg, count: data.moodLogs.length }),
+          : // "7-day {{avg}} · {{count}} logs" — count the 7-day window, not the whole
+            // fetched list (which would overstate the logs behind the 7-day average).
+            t("home.widgets.mood.glance", { avg, count: last7.length }),
     };
   },
   today: (data, { t, dateKey }) => {

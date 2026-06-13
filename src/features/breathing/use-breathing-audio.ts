@@ -53,8 +53,12 @@ function createLanePlayer(): LanePlayer {
   }
 
   let sound: LoadedSound | null = null;
+  // Bumped by every play()/stop(); a play() whose async createAsync resolves after it was
+  // superseded unloads its orphan sound instead of leaking a looping track.
+  let playGen = 0;
   return {
     async play(asset, volume, loop) {
+      const gen = ++playGen;
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { Audio } = require("expo-av") as ExpoAvModule;
@@ -62,12 +66,18 @@ function createLanePlayer(): LanePlayer {
           await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
           nativeAudioModeConfigured = true;
         }
+        if (gen !== playGen) return;
         if (sound) {
           await sound.stopAsync().catch(() => {});
           await sound.unloadAsync().catch(() => {});
           sound = null;
         }
         const created = await Audio.Sound.createAsync(asset, { isLooping: loop, volume });
+        if (gen !== playGen) {
+          // A newer play()/stop() ran while we were loading — unload the orphan, don't play.
+          await (created.sound as unknown as LoadedSound).unloadAsync().catch(() => {});
+          return;
+        }
         sound = created.sound as unknown as LoadedSound;
         await sound.playAsync();
       } catch {
@@ -78,6 +88,7 @@ function createLanePlayer(): LanePlayer {
       await sound?.setVolumeAsync(volume).catch(() => {});
     },
     async stop() {
+      playGen++;
       try {
         await sound?.stopAsync();
         await sound?.unloadAsync();

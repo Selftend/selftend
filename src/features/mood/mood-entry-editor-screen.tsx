@@ -138,6 +138,7 @@ export function MoodEntryEditorScreen({
   const [loggedAt, setLoggedAt] = useState<string>(
     mode === "create" ? loggedAtForSelectedDate(selectedDate) : new Date().toISOString(),
   );
+  const [dateDirty, setDateDirty] = useState(false);
   const [error, setError] = useState("");
   const [situation, setSituation] = useState("");
   const [thoughts, setThoughts] = useState("");
@@ -148,6 +149,14 @@ export function MoodEntryEditorScreen({
   const editMode = mode === "edit";
   const saving = saveMutation.isPending || completeActivityMutation.isPending;
   const { allEmotions, isLoading: emotionsLoading } = useEmotionDisplay();
+
+  // Create mode: keep the timestamp in sync with the app's selected day (e.g. midnight
+  // rollover or a DateBar change) until the user edits the field themselves. Mirrors the
+  // journal editor — without it, a create-editor opened earlier stamps the stale day.
+  useEffect(() => {
+    if (editMode || dateDirty) return;
+    setLoggedAt(loggedAtForSelectedDate(selectedDate));
+  }, [editMode, dateDirty, selectedDate]);
 
   // Hydrate local field state from the saved entry ONCE per entry id. Keying on the id
   // (not the object) stops a later list/detail refetch — which produces a new object
@@ -336,7 +345,10 @@ export function MoodEntryEditorScreen({
           <Label>{t("mood.loggedAtLabel")}</Label>
           <DateTimeField
             value={loggedAt}
-            onChange={setLoggedAt}
+            onChange={(v) => {
+              setDateDirty(true);
+              setLoggedAt(v);
+            }}
             accessibilityLabel={t("mood.loggedAtLabel")}
           />
         </View>
