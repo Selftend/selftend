@@ -1,7 +1,7 @@
 import { router, type Href } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -51,8 +51,13 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
   const editMode = mode === "edit";
   const saving = saveMutation.isPending;
 
+  // Hydrate field state ONCE per log id; keying on the id (not the object) stops a later
+  // refetch's new object identity from clobbering the user's in-progress edits.
+  const hydratedIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!existingLog) return;
+    if (hydratedIdRef.current === existingLog.id) return;
+    hydratedIdRef.current = existingLog.id;
     setDurationMinutes(existingLog.durationMinutes);
     setQuality(existingLog.quality);
     setNotes(existingLog.notes);

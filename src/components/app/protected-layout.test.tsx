@@ -3,6 +3,7 @@ import { Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
 import ProtectedLayout from "./protected-layout";
+import { useAppLockStore } from "@/src/features/security/app-lock-store";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import {
@@ -110,6 +111,10 @@ describe("ProtectedLayout app onboarding", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // AppLockGate (native) waits for the app-lock store to hydrate before rendering
+    // protected children. These tests aren't about app-lock, so put the store in its
+    // hydrated, disabled steady state for synchronous assertions on the content.
+    useAppLockStore.setState({ hydrated: true, enabled: false });
     mockSessionState = {
       session: {
         user: {

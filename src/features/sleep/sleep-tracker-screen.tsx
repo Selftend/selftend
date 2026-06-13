@@ -11,7 +11,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ToolStats } from "@/src/components/app/tool-stats";
 import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
-import { useSleepLogs } from "@/src/features/sleep/queries";
+import { useSleepLogs, useSleepLogCount } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { formatDuration, formatHours } from "@/src/features/sleep/format";
 import {
@@ -33,6 +33,9 @@ export default function SleepTrackerScreen() {
   const userId = user?.id ?? null;
 
   const { data: logs } = useSleepLogs(userId, 50);
+  // Exact lifetime total for the hero — the list above is capped at 50, so its length
+  // would freeze the displayed "nights" count once a user passes that many logs.
+  const { data: totalNights } = useSleepLogCount(userId);
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
   const allLogs = logs ?? [];
@@ -75,7 +78,10 @@ export default function SleepTrackerScreen() {
                       value: sevenDayQuality !== null ? `${sevenDayQuality}/5` : "–",
                       label: t("hero.quality"),
                     },
-                    { value: t("hero.nights", { count: allLogs.length }), label: "" },
+                    {
+                      value: t("hero.nights", { count: totalNights ?? allLogs.length }),
+                      label: "",
+                    },
                   ]}
                 />
               }

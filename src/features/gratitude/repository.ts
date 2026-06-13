@@ -84,6 +84,19 @@ export async function listGratitudeEntries(userId: string, limit = 50) {
   return (data as GratitudeEntryRow[]).map(mapGratitudeEntry);
 }
 
+// Exact lifetime count for hero stats — independent of the capped list query, which
+// would otherwise freeze the displayed total at `limit`.
+export async function countGratitudeEntries(userId: string): Promise<number> {
+  const client = requireSupabase();
+  const { count, error } = await client
+    .from("gratitude_entries")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function listFavoriteGratitudeEntries(userId: string, limit = 100) {
   const client = requireSupabase();
   const { data, error } = await client

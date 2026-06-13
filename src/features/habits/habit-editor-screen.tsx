@@ -1,7 +1,7 @@
 import { router, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -84,8 +84,13 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
   const editMode = mode === "edit";
   const saving = saveMutation.isPending;
 
+  // Hydrate field state ONCE per habit id; keying on the id (not the object) stops a later
+  // refetch's new object identity from clobbering the user's in-progress edits.
+  const hydratedIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!existing) return;
+    if (hydratedIdRef.current === existing.id) return;
+    hydratedIdRef.current = existing.id;
     setInput(habitToInput(existing));
     setError("");
   }, [existing]);

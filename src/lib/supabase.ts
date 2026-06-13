@@ -72,3 +72,15 @@ export function requireSupabase() {
 
   return supabase;
 }
+
+/**
+ * True for the "this column does not exist yet" error PostgREST raises before a
+ * migration adds an optional column: Postgres SQLSTATE 42703 (undefined_column)
+ * or the PGRST204 schema-cache miss. Lets a caller degrade a not-yet-migrated
+ * column to a default WITHOUT also swallowing genuine failures (network, auth,
+ * RLS) as if the column were absent.
+ */
+export function isMissingColumnError(error: unknown): boolean {
+  const code = (error as { code?: string } | null)?.code;
+  return code === "42703" || code === "PGRST204";
+}

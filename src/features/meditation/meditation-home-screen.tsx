@@ -21,6 +21,7 @@ import { MeditationPracticesSection } from "@/src/features/meditation/meditation
 import {
   useMeditationProgramState,
   useMeditationSessions,
+  useMeditationSessionCount,
   useUpsertMeditationProgramState,
 } from "@/src/features/meditation/queries";
 import { median } from "@/src/features/meditation/median";
@@ -40,6 +41,9 @@ export default function MeditationHomeScreen() {
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
   const { data: programState } = useMeditationProgramState(userId);
   const { data: allSessions } = useMeditationSessions(userId, 200);
+  // Exact lifetime total for the hero — the list above is capped at 200, so its length
+  // would freeze the displayed "sessions" count once a user passes that many.
+  const { data: totalSessions } = useMeditationSessionCount(userId);
   const sessions = allSessions?.slice(0, 5);
 
   const upsertProgramState = useUpsertMeditationProgramState(userId);
@@ -127,7 +131,9 @@ export default function MeditationHomeScreen() {
                     items={[
                       { value: `${t("hero.stage")} ${stage.number}`, label: "" },
                       {
-                        value: t("hero.sessions", { count: (allSessions ?? []).length }),
+                        value: t("hero.sessions", {
+                          count: totalSessions ?? (allSessions ?? []).length,
+                        }),
                         label: "",
                       },
                       {

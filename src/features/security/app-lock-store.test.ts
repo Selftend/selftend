@@ -45,4 +45,17 @@ describe("app-lock store", () => {
     expect(useAppLockStore.getState().enabled).toBe(false);
     expect(await AsyncStorage.getItem(APP_LOCK_STORAGE_KEY)).toBe("0");
   });
+
+  it("still flips `hydrated` (safe passthrough) when the storage read fails", async () => {
+    const spy = jest
+      .spyOn(AsyncStorage, "getItem")
+      .mockRejectedValueOnce(new Error("storage unavailable"));
+
+    // Must not reject — a read failure should degrade, not brick the gate.
+    await expect(useAppLockStore.getState().hydrate()).resolves.toBeUndefined();
+    expect(useAppLockStore.getState().hydrated).toBe(true);
+    expect(useAppLockStore.getState().enabled).toBe(false);
+
+    spy.mockRestore();
+  });
 });

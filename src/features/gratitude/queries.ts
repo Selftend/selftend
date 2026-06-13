@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  countGratitudeEntries,
   deleteGratitudeEntry,
   getGratitudeEntry,
   listFavoriteGratitudeEntries,
@@ -16,6 +17,7 @@ const gratitudeKeys = {
   list: (userId: string, limit: number) => ["gratitude", "list", userId, limit] as const,
   favorites: (userId: string, limit: number) => ["gratitude", "favorites", userId, limit] as const,
   detail: (userId: string, id: string) => ["gratitude", "detail", userId, id] as const,
+  count: (userId: string) => ["gratitude", "count", userId] as const,
 };
 
 export function useGratitudeEntries(userId: string | null, limit = 50) {
@@ -36,6 +38,14 @@ export function useGratitudeEntry(userId: string | null, id: string | null) {
         : ["gratitude", "detail", "anonymous", id ?? ""],
     queryFn: () => getGratitudeEntry(userId!, id!),
     enabled: Boolean(userId && id),
+  });
+}
+
+export function useGratitudeEntryCount(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? gratitudeKeys.count(userId) : ["gratitude", "count", "anonymous"],
+    queryFn: () => countGratitudeEntries(userId!),
+    enabled: Boolean(userId),
   });
 }
 

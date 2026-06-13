@@ -34,6 +34,24 @@ describe("AppLockGate", () => {
     expect(mockAuthenticate).not.toHaveBeenCalled();
   });
 
+  it("renders nothing until the store has hydrated, then reveals children", () => {
+    // Pre-hydration the persisted `enabled` flag is unknown; rendering children here
+    // would briefly leak content before LockedGate could mount. The gate must wait.
+    useAppLockStore.setState({ enabled: false, hydrated: false });
+
+    renderWithProviders(
+      <AppLockGate>
+        <Protected />
+      </AppLockGate>,
+    );
+
+    expect(screen.queryByText("Protected content")).toBeNull();
+
+    // Once hydration completes with the lock disabled, children appear.
+    act(() => useAppLockStore.setState({ enabled: false, hydrated: true }));
+    expect(screen.getByText("Protected content")).toBeTruthy();
+  });
+
   it("shows the lock screen and auto-prompts when enabled, then reveals children on success", async () => {
     useAppLockStore.setState({ enabled: true, hydrated: true });
 

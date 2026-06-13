@@ -12,6 +12,8 @@ import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
   requireSupabase: jest.fn(),
+  isMissingColumnError: (e: { code?: string } | null) =>
+    e?.code === "42703" || e?.code === "PGRST204",
 }));
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
@@ -303,10 +305,10 @@ describe("emotion-preferences-repository", () => {
       await expect(getEmotionsSeeded("user-1")).resolves.toBe(false);
     });
 
-    it("returns false (degrades gracefully) when Supabase returns an error", async () => {
+    it("returns false (degrades) ONLY for a missing-column error (pre-migration)", async () => {
       const maybeSingle = jest
         .fn()
-        .mockResolvedValue({ data: null, error: new Error("column missing") });
+        .mockResolvedValue({ data: null, error: { code: "42703", message: "column missing" } });
       const eq = jest.fn(() => ({ maybeSingle }));
       const select = jest.fn(() => ({ eq }));
       const from = jest.fn(() => ({ select }));
@@ -315,6 +317,20 @@ describe("emotion-preferences-repository", () => {
       >);
 
       await expect(getEmotionsSeeded("user-1")).resolves.toBe(false);
+    });
+
+    it("rethrows a non-missing-column error (so a transient failure does not re-seed)", async () => {
+      const maybeSingle = jest
+        .fn()
+        .mockResolvedValue({ data: null, error: { code: "08006", message: "connection failure" } });
+      const eq = jest.fn(() => ({ maybeSingle }));
+      const select = jest.fn(() => ({ eq }));
+      const from = jest.fn(() => ({ select }));
+      mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<
+        typeof requireSupabase
+      >);
+
+      await expect(getEmotionsSeeded("user-1")).rejects.toMatchObject({ code: "08006" });
     });
   });
 

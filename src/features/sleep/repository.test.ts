@@ -1,4 +1,5 @@
 import {
+  countSleepLogs,
   deleteSleepLog,
   getSleepLog,
   listSleepLogs,
@@ -101,5 +102,25 @@ describe("sleep repository", () => {
     expect(from).toHaveBeenCalledWith("sleep_logs");
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
     expect(eqId).toHaveBeenCalledWith("id", "sl-1");
+  });
+
+  it("counts all sleep logs for a user with a head request", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: 123, error: null });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(countSleepLogs("user-1")).resolves.toBe(123);
+    expect(from).toHaveBeenCalledWith("sleep_logs");
+    expect(select).toHaveBeenCalledWith("*", { count: "exact", head: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+  });
+
+  it("treats a null sleep-log count as zero", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: null, error: null });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(countSleepLogs("user-1")).resolves.toBe(0);
   });
 });

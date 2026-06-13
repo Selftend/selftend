@@ -20,7 +20,14 @@ export const useAppLockStore = create<AppLockState>((set) => ({
     await AsyncStorage.setItem(APP_LOCK_STORAGE_KEY, value ? "1" : "0");
   },
   hydrate: async () => {
-    const stored = await AsyncStorage.getItem(APP_LOCK_STORAGE_KEY);
-    set({ enabled: stored === "1", hydrated: true });
+    try {
+      const stored = await AsyncStorage.getItem(APP_LOCK_STORAGE_KEY);
+      set({ enabled: stored === "1", hydrated: true });
+    } catch {
+      // A failed read must still flip `hydrated` so AppLockGate stops blocking render
+      // (it waits for hydration before deciding); default enabled:false is a safe
+      // passthrough. Never brick the app on a storage hiccup.
+      set({ hydrated: true });
+    }
   },
 }));

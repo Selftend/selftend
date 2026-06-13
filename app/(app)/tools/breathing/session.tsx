@@ -162,6 +162,22 @@ export default function BreathingSessionScreen() {
     if (last && last !== patternId) setPatternId(last);
   }, [prefs, patternParam, patternId]);
 
+  // If the adopted (non-param) pattern no longer resolves — e.g. its custom exercise was
+  // deleted but `lastBreathingPatternId` still points at it — fall back to the default
+  // instead of dead-ending on the notFound screen, and clear the stale remembered id so
+  // every param-less entry point (home button, widget, suggestions) keeps working.
+  // Marking patternTouchedRef stops the adoption effect from re-adopting the dead id
+  // before the cleared pref propagates. A notFound from an explicit ?pattern param is
+  // left to show notFound (the user deep-linked to a specific, missing exercise).
+  useEffect(() => {
+    if (!notFound || patternParam || patternId === DEFAULT_PATTERN) return;
+    patternTouchedRef.current = true;
+    setPatternId(DEFAULT_PATTERN);
+    patchPrefs({ lastBreathingPatternId: DEFAULT_PATTERN });
+    // patchPrefs reads latest prefs/user via closure; deps kept to the resolution signals.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notFound, patternParam, patternId]);
+
   // Hydrate frontend-owned values (volumes + global cycles) from prefs once they load.
   useEffect(() => {
     if (hydratedRef.current || !prefs) return;

@@ -1,4 +1,5 @@
 import {
+  countMeditationSessions,
   getMeditationProgramState,
   saveMeditationSession,
   upsertMeditationProgramState,
@@ -137,5 +138,24 @@ describe("meditation repository - upsertMeditationProgramState", () => {
     expect(payload).toMatchObject({ user_id: "u1", current_stage: 5 });
     expect(payload).not.toHaveProperty("preferred_duration_minutes");
     expect(payload).not.toHaveProperty("assessed_stage");
+  });
+});
+
+describe("meditation repository - countMeditationSessions", () => {
+  it("counts all sessions for a user with a head request", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: 88, error: null });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
+
+    await expect(countMeditationSessions("u1")).resolves.toBe(88);
+    expect(select).toHaveBeenCalledWith("*", { count: "exact", head: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "u1");
+  });
+
+  it("treats a null count as zero", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: null, error: null });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
+    await expect(countMeditationSessions("u1")).resolves.toBe(0);
   });
 });

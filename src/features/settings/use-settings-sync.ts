@@ -20,6 +20,12 @@ export function useSettingsSync(userId: string | null, preferences: UserPreferen
   // initial DB-pull must run again, otherwise the previous user's local theme/language
   // gets pushed onto the new account.
   const syncedUserId = useRef<string | null>(null);
+  // True while the initial DB→local language pull is still applying. setLanguage is
+  // async (it awaits a dynamic bundle import), but setThemePreference is synchronous —
+  // so a combined pull re-fires this effect (theme is a dep) before `language` has
+  // updated. Without this guard that re-run would hit the push branch and write the
+  // STALE local language back onto the account, undoing the pull.
+  const pullInFlightRef = useRef(false);
 
   useEffect(() => {
     if (!preferences || !userId || !hydrated) return;
@@ -33,12 +39,20 @@ export function useSettingsSync(userId: string | null, preferences: UserPreferen
       const needsLangUpdate = dbLang !== null && dbLang !== language;
       const needsThemeUpdate = dbTheme !== null && dbTheme !== themePreference;
 
-      if (needsLangUpdate) void setLanguage(dbLang);
+      if (needsLangUpdate) {
+        pullInFlightRef.current = true;
+        void setLanguage(dbLang).finally(() => {
+          pullInFlightRef.current = false;
+        });
+      }
       if (needsThemeUpdate) setThemePreference(dbTheme);
 
       // Return early to let state updates settle before considering a push.
       if (needsLangUpdate || needsThemeUpdate) return;
     }
+
+    // Don't push while the initial language pull is still resolving (see pullInFlightRef).
+    if (pullInFlightRef.current) return;
 
     if (language !== preferences.language || themePreference !== preferences.theme) {
       updatePreferences(mergeUserPreferences(preferences, { language, theme: themePreference }));

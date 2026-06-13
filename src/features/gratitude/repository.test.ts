@@ -1,4 +1,5 @@
 import {
+  countGratitudeEntries,
   deleteGratitudeEntry,
   getGratitudeEntry,
   listFavoriteGratitudeEntries,
@@ -370,5 +371,25 @@ describe("gratitude repository", () => {
     expect(from).toHaveBeenCalledWith("gratitude_entries");
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
     expect(eqId).toHaveBeenCalledWith("id", "g-1");
+  });
+
+  it("counts all gratitude entries for a user with a head request", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: 312, error: null });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(countGratitudeEntries("user-1")).resolves.toBe(312);
+    expect(from).toHaveBeenCalledWith("gratitude_entries");
+    expect(select).toHaveBeenCalledWith("*", { count: "exact", head: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+  });
+
+  it("treats a null gratitude count as zero", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: null, error: null });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(countGratitudeEntries("user-1")).resolves.toBe(0);
   });
 });

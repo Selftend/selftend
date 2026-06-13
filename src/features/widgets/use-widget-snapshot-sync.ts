@@ -79,10 +79,17 @@ export function useWidgetSnapshotSync(userId: string | null) {
     let cancelled = false;
 
     async function sync() {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { requestWidgetUpdate } = require("react-native-android-widget");
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { renderWidget } = require("@/src/features/widgets/render-widget");
+      const { requestWidgetUpdate } =
+        require("react-native-android-widget") as typeof import("react-native-android-widget");
+      // Cast the dynamic requires to their real module types so tsc type-checks the
+      // renderWidget(...) call shape — this is what catches a wrong/stale arg (the
+      // original bug passed a nonexistent `shortcuts` and omitted the required `config`).
+
+      const { renderWidget } =
+        require("@/src/features/widgets/render-widget") as typeof import("@/src/features/widgets/render-widget");
+
+      const { readConfig } =
+        require("@/src/features/widgets/widget-config-store") as typeof import("@/src/features/widgets/widget-config-store");
 
       const next = userId
         ? buildSnapshot(data, {
@@ -105,13 +112,17 @@ export function useWidgetSnapshotSync(userId: string | null) {
         namesToUpdate.map((widgetName: string) =>
           requestWidgetUpdate({
             widgetName,
-            renderWidget: (info: { widgetName: string; width: number; height: number }) =>
+            // Read each instance's saved config (theme/opacity/shortcuts/statKeys) and pass
+            // it through, exactly like the OS task-handler path. Passing the wrong key here
+            // left `config` undefined, so render-widget fell back to DEFAULT_CONFIG and wiped
+            // the user's per-widget customization on every in-app data sync.
+            renderWidget: async (info) =>
               renderWidget({
                 widgetName: info.widgetName,
                 width: info.width,
                 height: info.height,
                 snapshot: next,
-                shortcuts: null,
+                config: await readConfig(info.widgetId),
               }),
             widgetNotFound: () => {},
           }).catch(() => {}),

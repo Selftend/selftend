@@ -19,10 +19,24 @@ interface AppLockGateProps {
 
 export function AppLockGate({ children }: AppLockGateProps) {
   const enabled = useAppLockStore((s) => s.enabled);
+  const hydrated = useAppLockStore((s) => s.hydrated);
 
-  // Web never locks, and when the preference is off this is a clean passthrough —
-  // the default path renders children with zero added behavior.
-  if (Platform.OS === "web" || !enabled) {
+  // Web never locks — pass through without waiting on the native-only store hydration.
+  if (Platform.OS === "web") {
+    return <>{children}</>;
+  }
+
+  // Until the persisted preference has been read from AsyncStorage, render nothing.
+  // `enabled` defaults to false, so passing children through here would briefly expose
+  // the user's content on a launch where hydration resolves after the first paint —
+  // exactly the leak this gate exists to prevent. (hydrate() always flips `hydrated`,
+  // even on a read failure, so this never blocks render indefinitely.)
+  if (!hydrated) {
+    return null;
+  }
+
+  // Preference off → clean passthrough with zero added behavior.
+  if (!enabled) {
     return <>{children}</>;
   }
 

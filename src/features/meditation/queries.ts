@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  countMeditationSessions,
   getMeditationProgramState,
   getMeditationSession,
   listMeditationSessions,
@@ -19,6 +20,7 @@ const meditationKeys = {
   list: (userId: string) => ["meditation", "list", userId] as const,
   detail: (userId: string, sessionId: string) =>
     ["meditation", "detail", userId, sessionId] as const,
+  count: (userId: string) => ["meditation", "count", userId] as const,
   programState: (userId: string) => ["meditation", "programState", userId] as const,
   notes: (userId: string, stage?: number) =>
     ["meditation", "notes", userId, stage ?? "all"] as const,
@@ -32,6 +34,14 @@ export function useMeditationSessions(userId: string | null, limit = 30) {
       ? [...meditationKeys.list(userId), limit]
       : ["meditation", "list", "anonymous"],
     queryFn: () => listMeditationSessions(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useMeditationSessionCount(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? meditationKeys.count(userId) : ["meditation", "count", "anonymous"],
+    queryFn: () => countMeditationSessions(userId!),
     enabled: Boolean(userId),
   });
 }

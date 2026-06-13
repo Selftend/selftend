@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  countSleepLogs,
   deleteSleepLog,
   getSleepLog,
   listSleepLogs,
@@ -13,6 +14,7 @@ const sleepKeys = {
   all: ["sleep"] as const,
   list: (userId: string, limit: number) => ["sleep", "list", userId, limit] as const,
   detail: (userId: string, id: string) => ["sleep", "detail", userId, id] as const,
+  count: (userId: string) => ["sleep", "count", userId] as const,
 };
 
 export function useSleepLogs(userId: string | null, limit = 50) {
@@ -29,6 +31,14 @@ export function useSleepLog(userId: string | null, id: string | null) {
       userId && id ? sleepKeys.detail(userId, id) : ["sleep", "detail", "anonymous", id ?? ""],
     queryFn: () => getSleepLog(userId!, id!),
     enabled: Boolean(userId && id),
+  });
+}
+
+export function useSleepLogCount(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? sleepKeys.count(userId) : ["sleep", "count", "anonymous"],
+    queryFn: () => countSleepLogs(userId!),
+    enabled: Boolean(userId),
   });
 }
 

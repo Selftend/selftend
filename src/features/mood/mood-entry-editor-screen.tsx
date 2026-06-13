@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -101,8 +101,14 @@ export function MoodEntryEditorScreen({
   const saving = saveMutation.isPending || completeActivityMutation.isPending;
   const { allEmotions, isLoading: emotionsLoading } = useEmotionDisplay();
 
+  // Hydrate local field state from the saved entry ONCE per entry id. Keying on the id
+  // (not the object) stops a later list/detail refetch — which produces a new object
+  // identity — from clobbering the user's in-progress edits mid-session.
+  const hydratedIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!existingEntry) return;
+    if (hydratedIdRef.current === existingEntry.id) return;
+    hydratedIdRef.current = existingEntry.id;
 
     setMoodScore(existingEntry.moodScore);
     setEmotions(existingEntry.emotions);

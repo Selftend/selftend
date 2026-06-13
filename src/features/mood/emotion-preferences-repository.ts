@@ -1,5 +1,5 @@
 import { DEFAULT_EMOTIONS } from "@/src/constants/emotions";
-import { requireSupabase } from "@/src/lib/supabase";
+import { isMissingColumnError, requireSupabase } from "@/src/lib/supabase";
 
 // ---------------------------------------------------------------------------
 // Row type (DB shape, snake_case)
@@ -70,8 +70,9 @@ export async function listEmotionPreferences(userId: string): Promise<EmotionPre
 // ---------------------------------------------------------------------------
 
 // Whether this user's default emotions have already been seeded. Used to keep an
-// emptied list empty instead of re-seeding. Degrades to false if the column is
-// missing (pre-migration).
+// emptied list empty instead of re-seeding. Degrades to false ONLY if the column is
+// missing (pre-migration); any other error (network, auth, RLS) rethrows so the caller
+// retries instead of mis-reading it as "never seeded" and resurrecting removed emotions.
 export async function getEmotionsSeeded(userId: string): Promise<boolean> {
   const client = requireSupabase();
   const { data, error } = await client
@@ -79,7 +80,10 @@ export async function getEmotionsSeeded(userId: string): Promise<boolean> {
     .select("emotions_seeded")
     .eq("user_id", userId)
     .maybeSingle();
-  if (error) return false;
+  if (error) {
+    if (isMissingColumnError(error)) return false;
+    throw error;
+  }
   return Boolean((data as { emotions_seeded?: boolean } | null)?.emotions_seeded);
 }
 

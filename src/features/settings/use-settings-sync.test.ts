@@ -202,4 +202,48 @@ describe("useSettingsSync", () => {
 
     expect(mutate).not.toHaveBeenCalled();
   });
+
+  it("does not push the stale local language while the initial pull is still resolving", async () => {
+    // First sync where BOTH language and theme differ. setLanguage stays pending, so
+    // the language pull is still in flight when the SYNCHRONOUS theme update re-fires
+    // the effect. The push branch must not run yet (it would write stale local "en"
+    // back over the DB's "bg"). Regression guard for the self-race.
+    let resolveLang: (() => void) | undefined;
+    const pendingSetLanguage = jest.fn(
+      () => new Promise<void>((resolve) => (resolveLang = resolve)),
+    );
+    const prefs = makePreferences({ language: "bg", theme: "dark" });
+
+    const { rerender } = renderHook(
+      ({ theme, lang }: { theme: "system" | "light" | "dark"; lang: "en" | "bg" }) => {
+        mockUseLanguage.mockReturnValue({
+          language: lang,
+          setLanguage: pendingSetLanguage,
+          hydrated: true,
+        });
+        mockUseThemeStore.mockImplementation((selector: (s: any) => unknown) =>
+          selector({ preference: theme, setPreference: setThemePreference, hydrate: jest.fn() }),
+        );
+        return useSettingsSync("user-1", prefs);
+      },
+      { initialProps: { theme: "system" as const, lang: "en" as const } },
+    );
+
+    expect(pendingSetLanguage).toHaveBeenCalledWith("bg");
+    expect(setThemePreference).toHaveBeenCalledWith("dark");
+    expect(mutate).not.toHaveBeenCalled();
+
+    // Theme update applied (system -> dark) re-fires the effect while language is still
+    // the stale local "en" (the pull promise hasn't resolved).
+    act(() => rerender({ theme: "dark", lang: "en" }));
+    expect(mutate).not.toHaveBeenCalled(); // <-- fails without the pullInFlightRef guard
+
+    // After the pull resolves and language catches up to "bg", still no spurious push.
+    await act(async () => {
+      resolveLang?.();
+      await Promise.resolve();
+    });
+    act(() => rerender({ theme: "dark", lang: "bg" }));
+    expect(mutate).not.toHaveBeenCalled();
+  });
 });

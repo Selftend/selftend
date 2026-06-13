@@ -215,6 +215,46 @@ describe("MoodEntryEditorScreen", () => {
     });
   });
 
+  it("preserves in-progress edits when the entry refetches (no hydration clobber)", () => {
+    const loggedAt = "2026-05-10T08:00:00.000Z";
+    const makeEntry = () => ({
+      id: "log-1",
+      userId: "user-1",
+      moodScore: 4,
+      emotions: [],
+      notes: "", // server value stays empty
+      linkedStrategy: null,
+      loggedAt,
+      createdAt: loggedAt,
+      situation: "",
+      thoughts: "",
+      behaviours: "",
+      bodilySensations: "",
+    });
+    mockUseMoodLogs.mockReturnValue({
+      data: [makeEntry()],
+    } as unknown as ReturnType<typeof useMoodLogs>);
+
+    const { rerender } = renderWithProviders(
+      <MoodEntryEditorScreen fallbackHref="/tools/mood-tracker/log-1" mode="edit" moodId="log-1" />,
+    );
+
+    // The user edits the Notes field.
+    fireEvent.changeText(screen.getByLabelText("Notes (optional)"), "draft in progress");
+    expect(screen.getByLabelText("Notes (optional)").props.value).toBe("draft in progress");
+
+    // A list/detail refetch produces a NEW object identity (same id, same server value).
+    // The hydration effect must NOT re-run and clobber the in-progress edit back to "".
+    mockUseMoodLogs.mockReturnValue({
+      data: [makeEntry()],
+    } as unknown as ReturnType<typeof useMoodLogs>);
+    rerender(
+      <MoodEntryEditorScreen fallbackHref="/tools/mood-tracker/log-1" mode="edit" moodId="log-1" />,
+    );
+
+    expect(screen.getByLabelText("Notes (optional)").props.value).toBe("draft in progress");
+  });
+
   it("captures the four-box notice when expanded", async () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
     fireEvent.press(screen.getByLabelText("OK"));

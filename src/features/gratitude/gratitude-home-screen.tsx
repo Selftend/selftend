@@ -21,7 +21,7 @@ import {
   type GratitudeTheme,
 } from "@/src/features/gratitude/insights";
 import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-card";
-import { useGratitudeEntries } from "@/src/features/gratitude/queries";
+import { useGratitudeEntries, useGratitudeEntryCount } from "@/src/features/gratitude/queries";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import type { TintToken } from "@/src/lib/design-tokens";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,9 @@ export default function GratitudeHomeScreen() {
   const { selectedDate } = useSelectedDate();
 
   const { data: entries } = useGratitudeEntries(userId, 90);
+  // Exact lifetime total for the hero — the list above is capped at 90, so its length
+  // would freeze the displayed "entries" count once a user passes that many.
+  const { data: totalEntries } = useGratitudeEntryCount(userId);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [breakIndex, setBreakIndex] = useState(0);
@@ -94,7 +97,10 @@ export default function GratitudeHomeScreen() {
                 accentClassName="text-think"
                 credit={t("authorEyebrow")}
                 items={[
-                  { value: t("hero.entries", { count: allEntries.length }), label: "" },
+                  {
+                    value: t("hero.entries", { count: totalEntries ?? allEntries.length }),
+                    label: "",
+                  },
                   { value: t("hero.favorites", { count: favoriteCount }), label: "" },
                   { value: String(thisWeekCount), label: t("hero.thisWeek") },
                 ]}
