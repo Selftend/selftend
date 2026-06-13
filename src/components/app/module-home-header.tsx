@@ -4,10 +4,12 @@ import {
   Modal,
   Platform,
   Pressable,
+  StyleSheet,
   View,
   useWindowDimensions,
   type ViewStyle,
 } from "react-native";
+import { Portal } from "@rn-primitives/portal";
 import { useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useColorScheme } from "nativewind";
@@ -162,8 +164,13 @@ export function ModuleHomeHeader({
       const el = viewRef as unknown as HTMLElement;
       const rect = el.getBoundingClientRect?.();
       if (rect) apply({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
-    } else if (typeof viewRef.measureInWindow === "function") {
-      viewRef.measureInWindow((x, y, width, height) => apply({ x, y, width, height }));
+    } else if (typeof viewRef.measure === "function") {
+      // measure() yields pageX/pageY in the app-window coordinate space — the SAME space the
+      // Portal overlay renders into. (measureInWindow + a separate Modal window displaced the
+      // spotlight on Android.)
+      viewRef.measure((_x, _y, width, height, pageX, pageY) =>
+        apply({ x: pageX, y: pageY, width, height }),
+      );
     } else {
       apply({ x: 0, y: 0, width: CIRCLE_DIAMETER, height: CIRCLE_DIAMETER });
     }
@@ -390,70 +397,81 @@ function TourOverlay({
   const tooltipTop = circleTop + CIRCLE_DIAMETER + 14;
   const arrowLeft = Math.max(12, Math.min(centerX - tooltipLeft - 7, tooltipWidth - 26));
 
-  return (
-    <Modal transparent animationType="fade" visible statusBarTranslucent>
-      <View style={{ flex: 1 }}>
-        {Platform.OS === "web" ? (
-          <View style={getWebHighlightStyle(circleTop, circleLeft)} />
-        ) : (
-          <NativeHighlight circleTop={circleTop} circleLeft={circleLeft} />
-        )}
+  const overlayContent = (
+    <>
+      {Platform.OS === "web" ? (
+        <View style={getWebHighlightStyle(circleTop, circleLeft)} />
+      ) : (
+        <NativeHighlight circleTop={circleTop} circleLeft={circleLeft} />
+      )}
 
+      <View
+        style={{
+          position: "absolute",
+          top: tooltipTop,
+          left: tooltipLeft,
+          width: tooltipWidth,
+          backgroundColor: cardColor,
+          borderRadius: 12,
+          padding: 16,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.35,
+          shadowRadius: 10,
+          elevation: 10,
+        }}
+      >
         <View
           style={{
             position: "absolute",
-            top: tooltipTop,
-            left: tooltipLeft,
-            width: tooltipWidth,
+            top: -7,
+            left: arrowLeft,
+            width: 14,
+            height: 14,
             backgroundColor: cardColor,
-            borderRadius: 12,
-            padding: 16,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.35,
-            shadowRadius: 10,
-            elevation: 10,
+            transform: [{ rotate: "45deg" }],
           }}
-        >
-          <View
-            style={{
-              position: "absolute",
-              top: -7,
-              left: arrowLeft,
-              width: 14,
-              height: 14,
-              backgroundColor: cardColor,
-              transform: [{ rotate: "45deg" }],
-            }}
-          />
-          <Text variant="muted" className="text-xs leading-5 mb-3">
-            {t(`headerTour.${tourKey}.description`)}
-          </Text>
-          <View style={tooltipActionsStyle}>
-            <Pressable
-              accessibilityLabel={t("headerTour.skipAll")}
-              accessibilityRole="button"
-              disabled={isPending}
-              hitSlop={8}
-              onPress={onDismissAll}
-            >
-              <Text className="text-muted-foreground text-xs">{t("headerTour.skipAll")}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityLabel={t(`headerTour.${tourKey}.dismiss`)}
-              accessibilityRole="button"
-              disabled={isPending}
-              hitSlop={8}
-              onPress={onDismiss}
-            >
-              <Text className="text-primary text-xs font-semibold">
-                {t(`headerTour.${tourKey}.dismiss`)}
-              </Text>
-            </Pressable>
-          </View>
+        />
+        <Text variant="muted" className="text-xs leading-5 mb-3">
+          {t(`headerTour.${tourKey}.description`)}
+        </Text>
+        <View style={tooltipActionsStyle}>
+          <Pressable
+            accessibilityLabel={t("headerTour.skipAll")}
+            accessibilityRole="button"
+            disabled={isPending}
+            hitSlop={8}
+            onPress={onDismissAll}
+          >
+            <Text className="text-muted-foreground text-xs">{t("headerTour.skipAll")}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityLabel={t(`headerTour.${tourKey}.dismiss`)}
+            accessibilityRole="button"
+            disabled={isPending}
+            hitSlop={8}
+            onPress={onDismiss}
+          >
+            <Text className="text-primary text-xs font-semibold">
+              {t(`headerTour.${tourKey}.dismiss`)}
+            </Text>
+          </Pressable>
         </View>
       </View>
-    </Modal>
+    </>
+  );
+
+  if (Platform.OS === "web") {
+    return (
+      <Modal transparent animationType="fade" visible statusBarTranslucent>
+        <View style={{ flex: 1 }}>{overlayContent}</View>
+      </Modal>
+    );
+  }
+  return (
+    <Portal name="button-tour">
+      <View style={StyleSheet.absoluteFill}>{overlayContent}</View>
+    </Portal>
   );
 }
 

@@ -1,3 +1,4 @@
+import { PortalHost } from "@rn-primitives/portal";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, type RenderOptions } from "@testing-library/react-native";
 import type { PropsWithChildren, ReactElement } from "react";
@@ -17,7 +18,10 @@ export function renderWithProviders(
     return (
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <QueryClientProvider client={queryClient}>
+          {/* Mirror the app root so Portal-rendered content (popovers, the button-tour spotlight)
+              mounts in tests just like it does under the real <PortalHost /> in app/_layout. */}
           <I18nProvider>{children}</I18nProvider>
+          <PortalHost />
         </QueryClientProvider>
       </SafeAreaProvider>
     );
