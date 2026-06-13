@@ -58,6 +58,25 @@ function getNotificationCopy(language: string | null, target: ReminderTarget) {
   return notificationCopyByLanguage[resolveReminderLanguage(language)][target];
 }
 
+type TokenRow = WebPushSubscriptionRow & { expo_push_token: string };
+
+// PostgREST caps a single response at ~1000 rows, so an unbounded .select() silently drops
+// everyone past the first page (#25). Page through with .range() until a short page returns.
+const PAGE_SIZE = 1000;
+async function fetchAllPaged(
+  buildQuery: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>,
+): Promise<unknown[]> {
+  const rows: unknown[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await buildQuery(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) break;
+  }
+  return rows;
+}
+
 Deno.serve(async (request) => {
   try {
     const cronSecret = requiredEnv("WEB_PUSH_CRON_SECRET");
@@ -80,88 +99,109 @@ Deno.serve(async (request) => {
       requiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
     );
     const now = new Date();
-    const { data: subscriptions, error: subscriptionError } = await supabase
-      .from("web_push_subscriptions")
-      .select(
-        "id,user_id,endpoint,p256dh,auth,time_zone,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,failure_count",
-      )
-      .eq("enabled", true);
 
-    if (subscriptionError) {
-      throw subscriptionError;
-    }
+    const subscriptions = (await fetchAllPaged((from, to) =>
+      supabase
+        .from("web_push_subscriptions")
+        .select(
+          "id,user_id,endpoint,p256dh,auth,time_zone,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,failure_count",
+        )
+        .eq("enabled", true)
+        .range(from, to),
+    )) as WebPushSubscriptionRow[];
 
-    const userIds = [...new Set((subscriptions ?? []).map((subscription) => subscription.user_id))];
+    // Native (Expo) device tokens, fetched HERE — before the user-set is built and unfiltered
+    // by user_id — so a native-only user (no web push subscription) still receives reminders
+    // (#1). A failed fetch now throws via fetchAllPaged instead of being silently ignored (#19).
+    const tokenRows = (await fetchAllPaged((from, to) =>
+      supabase
+        .from("device_push_tokens")
+        .select(
+          "id,user_id,expo_push_token,time_zone,failure_count,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key",
+        )
+        .eq("enabled", true)
+        .range(from, to),
+    )) as TokenRow[];
+
+    const userIds = [
+      ...new Set([
+        ...subscriptions.map((subscription) => subscription.user_id),
+        ...tokenRows.map((token) => token.user_id),
+      ]),
+    ];
     if (userIds.length === 0) {
       return new Response(JSON.stringify({ sent: 0 }), { headers: jsonHeaders });
     }
 
-    const { data: preferencesRows, error: preferencesError } = await supabase
-      .from("user_preferences")
-      .select(
-        [
-          "user_id",
-          "notifications_enabled_global",
-          "reminder_consent",
-          "language",
-          "cbt_reminders_enabled",
-          "cbt_reminder_hour",
-          "cbt_reminder_minute",
-          "cbt_reminder_timezone",
-          "meditation_reminders_enabled",
-          "meditation_reminder_hour",
-          "meditation_reminder_minute",
-          "meditation_reminder_timezone",
-          "act_reminders_enabled",
-          "act_reminder_hour",
-          "act_reminder_minute",
-          "act_reminder_timezone",
-          "mood_reminders_enabled",
-          "mood_reminder_hour",
-          "mood_reminder_minute",
-          "mood_reminder_timezone",
-          "journal_reminders_enabled",
-          "journal_reminder_hour",
-          "journal_reminder_minute",
-          "journal_reminder_timezone",
-          "gratitude_reminders_enabled",
-          "gratitude_reminder_hour",
-          "gratitude_reminder_minute",
-          "gratitude_reminder_timezone",
-          "grounding_reminders_enabled",
-          "grounding_reminder_hour",
-          "grounding_reminder_minute",
-          "grounding_reminder_timezone",
-          "breathing_reminders_enabled",
-          "breathing_reminder_hour",
-          "breathing_reminder_minute",
-          "breathing_reminder_timezone",
-          "sleep_reminders_enabled",
-          "sleep_reminder_hour",
-          "sleep_reminder_minute",
-          "sleep_reminder_timezone",
-          "habits_reminders_enabled",
-          "habits_reminder_hour",
-          "habits_reminder_minute",
-          "habits_reminder_timezone",
-        ].join(","),
-      )
-      .in("user_id", userIds);
+    const PREFERENCE_COLUMNS = [
+      "user_id",
+      "notifications_enabled_global",
+      "reminder_consent",
+      "language",
+      "cbt_reminders_enabled",
+      "cbt_reminder_hour",
+      "cbt_reminder_minute",
+      "cbt_reminder_timezone",
+      "meditation_reminders_enabled",
+      "meditation_reminder_hour",
+      "meditation_reminder_minute",
+      "meditation_reminder_timezone",
+      "act_reminders_enabled",
+      "act_reminder_hour",
+      "act_reminder_minute",
+      "act_reminder_timezone",
+      "mood_reminders_enabled",
+      "mood_reminder_hour",
+      "mood_reminder_minute",
+      "mood_reminder_timezone",
+      "journal_reminders_enabled",
+      "journal_reminder_hour",
+      "journal_reminder_minute",
+      "journal_reminder_timezone",
+      "gratitude_reminders_enabled",
+      "gratitude_reminder_hour",
+      "gratitude_reminder_minute",
+      "gratitude_reminder_timezone",
+      "grounding_reminders_enabled",
+      "grounding_reminder_hour",
+      "grounding_reminder_minute",
+      "grounding_reminder_timezone",
+      "breathing_reminders_enabled",
+      "breathing_reminder_hour",
+      "breathing_reminder_minute",
+      "breathing_reminder_timezone",
+      "sleep_reminders_enabled",
+      "sleep_reminder_hour",
+      "sleep_reminder_minute",
+      "sleep_reminder_timezone",
+      "habits_reminders_enabled",
+      "habits_reminder_hour",
+      "habits_reminder_minute",
+      "habits_reminder_timezone",
+    ].join(",");
 
-    if (preferencesError) {
-      throw preferencesError;
+    // Preferences for the full union, chunked so neither the IN-list nor the response exceeds
+    // PostgREST limits (#25).
+    const preferencesRows: UserPreferenceRow[] = [];
+    for (let i = 0; i < userIds.length; i += PAGE_SIZE) {
+      const chunk = userIds.slice(i, i + PAGE_SIZE);
+      const chunkRows = (await fetchAllPaged((from, to) =>
+        supabase
+          .from("user_preferences")
+          .select(PREFERENCE_COLUMNS)
+          .in("user_id", chunk)
+          .range(from, to),
+      )) as UserPreferenceRow[];
+      preferencesRows.push(...chunkRows);
     }
 
     const preferencesByUser = new Map(
-      ((preferencesRows ?? []) as UserPreferenceRow[]).map((preferences) => [
-        preferences.user_id,
-        preferences,
-      ]),
+      preferencesRows.map((preferences) => [preferences.user_id, preferences]),
     );
     let sent = 0;
     let disabled = 0;
 
-    for (const subscription of (subscriptions ?? []) as WebPushSubscriptionRow[]) {
+    for (const subscription of subscriptions) {
       const preferences = preferencesByUser.get(subscription.user_id);
       if (!preferences) continue;
       if (preferences.notifications_enabled_global === false) continue;
@@ -200,8 +240,20 @@ Deno.serve(async (request) => {
             activityWindow.op === "eq"
               ? activityQuery.eq(activityWindow.column, activityWindow.value)
               : activityQuery.gte(activityWindow.column, activityWindow.value);
+          // Secondary IN-filter for tables shared across tools (grounding in mindfulness_sessions).
+          if (activityWindow.inColumn && activityWindow.inValues) {
+            activityQuery = activityQuery.in(activityWindow.inColumn, [...activityWindow.inValues]);
+          }
           const { data: activityRows, error: activityError } = await activityQuery;
-          if (!activityError && (activityRows?.length ?? 0) > 0) {
+          // #24: surface the activity-lookup error instead of silently discarding it (a swallowed
+          // error here means suppression silently never runs and the user is over-notified).
+          if (activityError) {
+            console.error(
+              "send-web-reminders: activity lookup failed",
+              { target, table: activityWindow.table },
+              activityError,
+            );
+          } else if ((activityRows?.length ?? 0) > 0) {
             await supabase
               .from("web_push_subscriptions")
               .update({ [config.lastKeyField]: reminderKey })
@@ -274,15 +326,7 @@ Deno.serve(async (request) => {
 
     // ----- Native (Expo) push tokens -----
     // Same due/suppression logic as web, delivered to every registered device via Expo Push.
-    const { data: tokenRows } = await supabase
-      .from("device_push_tokens")
-      .select(
-        "id,user_id,expo_push_token,time_zone,failure_count,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key",
-      )
-      .eq("enabled", true)
-      .in("user_id", userIds);
-
-    type TokenRow = WebPushSubscriptionRow & { expo_push_token: string };
+    // tokenRows was fetched up front (unfiltered by user) so native-only users are covered (#1).
     const pushMessages: {
       msg: ExpoPushMessage;
       row: TokenRow;
@@ -290,7 +334,7 @@ Deno.serve(async (request) => {
       key: string;
     }[] = [];
 
-    for (const row of (tokenRows ?? []) as unknown as TokenRow[]) {
+    for (const row of tokenRows) {
       const preferences = preferencesByUser.get(row.user_id);
       if (!preferences) continue;
       if (preferences.notifications_enabled_global === false) continue;
@@ -314,8 +358,18 @@ Deno.serve(async (request) => {
             activityWindow.op === "eq"
               ? activityQuery.eq(activityWindow.column, activityWindow.value)
               : activityQuery.gte(activityWindow.column, activityWindow.value);
+          if (activityWindow.inColumn && activityWindow.inValues) {
+            activityQuery = activityQuery.in(activityWindow.inColumn, [...activityWindow.inValues]);
+          }
           const { data: usedRows, error: usedError } = await activityQuery;
-          if (!usedError && (usedRows?.length ?? 0) > 0) {
+          // #24: surface the lookup error rather than silently treating it as "no activity".
+          if (usedError) {
+            console.error(
+              "send-web-reminders: activity lookup failed (native)",
+              { target, table: activityWindow.table },
+              usedError,
+            );
+          } else if ((usedRows?.length ?? 0) > 0) {
             await supabase
               .from("device_push_tokens")
               .update({ [config.lastKeyField]: reminderKey })

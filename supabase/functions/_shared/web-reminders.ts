@@ -87,7 +87,17 @@ export interface ActivitySource {
   timestampColumn?: string;
   // ...or a `date` column compared with `= today's zoned date string`.
   dateColumn?: string;
+  // Optional secondary `nameColumn IN (nameValues)` filter, for tables shared across
+  // tools (grounding lives in mindfulness_sessions alongside breathing/meditation,
+  // distinguished by exercise_name). Omitted for single-purpose tables.
+  nameColumn?: string;
+  nameValues?: readonly string[];
 }
+
+// Grounding sessions are stored in mindfulness_sessions keyed by exercise_name. Kept in sync
+// with src/constants/grounding.ts groundingSlugs (asserted by a parity unit test) so this
+// module stays dependency-free for the Deno bundle and Node/jest alike.
+export const GROUNDING_EXERCISE_NAMES = ["54321", "cold-water", "feet-floor"] as const;
 
 export interface TargetConfig {
   enabledField: keyof UserPreferenceRow;
@@ -171,7 +181,15 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_grounding_reminder_key",
     url: "/tools/grounding",
     tag: "selftend-grounding-reminder",
-    activitySource: { table: "noticing_logs", timestampColumn: "logged_at" },
+    // Grounding logs to mindfulness_sessions (exercise_name in the grounding slugs), not the
+    // dropped noticing_logs table. Suppress a grounding reminder when the user completed a
+    // grounding exercise today, in their timezone.
+    activitySource: {
+      table: "mindfulness_sessions",
+      timestampColumn: "completed_at",
+      nameColumn: "exercise_name",
+      nameValues: GROUNDING_EXERCISE_NAMES,
+    },
   },
   breathing: {
     enabledField: "breathing_reminders_enabled",
@@ -294,6 +312,38 @@ export interface ActivityWindow {
   column: string;
   op: "gte" | "eq";
   value: string;
+  // Optional secondary `inColumn IN (inValues)` filter (see ActivitySource.nameColumn).
+  inColumn?: string;
+  inValues?: readonly string[];
+}
+
+// The UTC instant of local midnight (00:00) on `now`'s civil date in `timeZone`, or null for
+// an invalid timezone. A constant-offset estimate (now - elapsed-local-time-of-day) is WRONG
+// on DST-transition days because the zone offset changed during the day; re-read the zoned
+// clock at the estimate and subtract the residual minute-of-day. One or two corrections
+// converge for whole-/half-hour DST shifts (residuals near a full day map to a small signed
+// delta so a fall-back estimate that lands at 23:xx the prior day is nudged forward to 00:00).
+export function startOfZonedDay(now: Date, timeZone: string): Date | null {
+  const initial = getZonedParts(now, timeZone);
+  if (!initial) return null;
+
+  let candidate = new Date(
+    now.getTime() -
+      ((initial.hour * 60 + initial.minute) * 60000 +
+        now.getUTCSeconds() * 1000 +
+        now.getUTCMilliseconds()),
+  );
+
+  for (let i = 0; i < 3; i++) {
+    const parts = getZonedParts(candidate, timeZone);
+    if (!parts) return null;
+    let residualMin = parts.hour * 60 + parts.minute;
+    if (residualMin === 0) break;
+    if (residualMin > 720) residualMin -= 1440; // closer to midnight from below (prior-day 23:xx)
+    candidate = new Date(candidate.getTime() - residualMin * 60000);
+  }
+
+  return candidate;
 }
 
 // Describes the "did the user use this tool today, in their timezone?" query for a target,
@@ -310,28 +360,30 @@ export function activityWindowForTarget(
   const parts = getZonedParts(now, timeZone);
   if (!parts) return null;
 
+  const nameFilter =
+    source.nameColumn && source.nameValues
+      ? { inColumn: source.nameColumn, inValues: source.nameValues }
+      : {};
+
   if (source.dateColumn) {
     return {
       table: source.table,
       column: source.dateColumn,
       op: "eq",
       value: `${parts.year}-${parts.month}-${parts.day}`,
+      ...nameFilter,
     };
   }
 
-  // The UTC instant of midnight today in `timeZone`: subtract the elapsed zone-local
-  // time-of-day from `now`. Seconds/ms are tz-invariant, so getUTC* is correct here.
-  const elapsedMs =
-    (parts.hour * 60 + parts.minute) * 60000 +
-    now.getUTCSeconds() * 1000 +
-    now.getUTCMilliseconds();
-  const startOfDay = new Date(now.getTime() - elapsedMs);
+  const startOfDay = startOfZonedDay(now, timeZone);
+  if (!startOfDay) return null;
 
   return {
     table: source.table,
     column: source.timestampColumn as string,
     op: "gte",
     value: startOfDay.toISOString(),
+    ...nameFilter,
   };
 }
 

@@ -1,12 +1,16 @@
+import { groundingSlugs } from "@/src/constants/grounding";
+
 import {
   activityWindowForTarget,
   buildExpoPushMessage,
   classifyExpoTicket,
   classifyPushError,
   getZonedParts,
+  GROUNDING_EXERCISE_NAMES,
   isAllowedPushEndpoint,
   reminderKeyIfDue,
   resolveReminderLanguage,
+  startOfZonedDay,
   type UserPreferenceRow,
   type WebPushSubscriptionRow,
 } from "./web-reminders";
@@ -208,6 +212,60 @@ describe("activityWindowForTarget", () => {
 
   it("returns null for an invalid timezone", () => {
     expect(activityWindowForTarget("mood", "Not/AZone", FIXED)).toBeNull();
+  });
+
+  it("filters grounding by exercise_name against mindfulness_sessions (#24)", () => {
+    // Grounding used to query the dropped noticing_logs table (suppression silently broken);
+    // it now suppresses on a same-day grounding session in mindfulness_sessions.
+    expect(activityWindowForTarget("grounding", "UTC", FIXED)).toEqual({
+      table: "mindfulness_sessions",
+      column: "completed_at",
+      op: "gte",
+      value: "2026-06-05T00:00:00.000Z",
+      inColumn: "exercise_name",
+      inValues: GROUNDING_EXERCISE_NAMES,
+    });
+  });
+});
+
+describe("startOfZonedDay (#70 — DST-correct local midnight)", () => {
+  it("returns UTC midnight for the UTC zone", () => {
+    expect(startOfZonedDay(new Date("2026-06-05T13:30:45.000Z"), "UTC")?.toISOString()).toBe(
+      "2026-06-05T00:00:00.000Z",
+    );
+  });
+
+  it("anchors to the zone offset on a non-transition day", () => {
+    // 2026-06-05T01:00Z is 04:00 in Europe/Sofia (UTC+3 summer); local midnight is 2026-06-04T21:00Z.
+    expect(
+      startOfZonedDay(new Date("2026-06-05T01:00:00.000Z"), "Europe/Sofia")?.toISOString(),
+    ).toBe("2026-06-04T21:00:00.000Z");
+  });
+
+  it("is correct on a fall-back day (offset changes from -4 to -5 mid-day)", () => {
+    // America/New_York falls back 2026-11-01 02:00 EDT -> 01:00 EST. Local midnight is still
+    // EDT (00:00 EST-4 = 04:00Z). The naive constant-offset estimate would land at 05:00Z.
+    expect(
+      startOfZonedDay(new Date("2026-11-01T12:00:00.000Z"), "America/New_York")?.toISOString(),
+    ).toBe("2026-11-01T04:00:00.000Z");
+  });
+
+  it("is correct on a spring-forward day (offset changes from -5 to -4 mid-day)", () => {
+    // America/New_York springs forward 2026-03-08 02:00 EST -> 03:00 EDT. Local midnight is
+    // still EST (00:00 EST-5 = 05:00Z). The naive constant-offset estimate would land at 04:00Z.
+    expect(
+      startOfZonedDay(new Date("2026-03-08T12:00:00.000Z"), "America/New_York")?.toISOString(),
+    ).toBe("2026-03-08T05:00:00.000Z");
+  });
+
+  it("returns null for an invalid timezone", () => {
+    expect(startOfZonedDay(new Date("2026-06-05T00:00:00.000Z"), "Not/AZone")).toBeNull();
+  });
+});
+
+describe("GROUNDING_EXERCISE_NAMES parity", () => {
+  it("matches the canonical grounding slugs (drift guard for #24)", () => {
+    expect([...GROUNDING_EXERCISE_NAMES].sort()).toEqual([...groundingSlugs].sort());
   });
 });
 
