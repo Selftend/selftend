@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -32,14 +32,29 @@ export default function JournalListScreen() {
 
   const allEntries = entries ?? [];
 
-  const totalWords = allEntries.reduce((sum, entry) => sum + countWords(entry.body), 0);
+  // Memoize the body word-count (up to ~1 MB of text across 50 entries) and the
+  // last-activity scan so they don't recompute on every render — notably every
+  // DateBar tap. Pure functions of `entries`.
+  const totalWords = useMemo(
+    () => allEntries.reduce((sum, entry) => sum + countWords(entry.body), 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries],
+  );
   // "Last journaled" reflects genuine activity, so derive it from the most recent
   // server-set updatedAt — entries are ordered by created_at, which users can backdate.
-  const lastActivityAt = allEntries.reduce<string | null>(
-    (latest, entry) => (latest === null || entry.updatedAt > latest ? entry.updatedAt : latest),
-    null,
+  const lastActivityAt = useMemo(
+    () =>
+      allEntries.reduce<string | null>(
+        (latest, entry) => (latest === null || entry.updatedAt > latest ? entry.updatedAt : latest),
+        null,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries],
   );
   const lastWhen = lastActivityAt ? formatMoodRelativeTime(lastActivityAt, t) : null;
+
+  // Stable across renders so memoized JournalCards aren't invalidated by a parent re-render.
+  const openEntry = useCallback((id: string) => router.push(`/tools/journal/${id}`), []);
 
   return (
     <>
@@ -100,11 +115,7 @@ export default function JournalListScreen() {
                   </Text>
                 </View>
                 {allEntries.map((entry) => (
-                  <JournalCard
-                    key={entry.id}
-                    entry={entry}
-                    onPress={() => router.push(`/tools/journal/${entry.id}`)}
-                  />
+                  <JournalCard key={entry.id} entry={entry} onOpen={openEntry} />
                 ))}
               </View>
             </>

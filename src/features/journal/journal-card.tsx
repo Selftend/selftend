@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -16,10 +17,12 @@ function firstLine(body: string) {
 
 interface JournalCardProps {
   entry: JournalEntry;
-  onPress: () => void;
+  // Takes the id (not a per-row closure) so callers can pass ONE stable callback,
+  // letting the memo skip re-rendering all cards on an unrelated parent re-render.
+  onOpen: (id: string) => void;
 }
 
-export function JournalCard({ entry, onPress }: JournalCardProps) {
+export const JournalCard = memo(function JournalCard({ entry, onOpen }: JournalCardProps) {
   const { t } = useTranslation("journal");
   const when = formatMoodRelativeTime(entry.createdAt, t);
   const title = entry.title.trim().length > 0 ? entry.title.trim() : t("list.untitled");
@@ -31,7 +34,7 @@ export function JournalCard({ entry, onPress }: JournalCardProps) {
       accessibilityLabel={t("list.viewEntry", { when })}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={onPress}
+      onPress={() => onOpen(entry.id)}
     >
       <Card spine="ink" className="px-5 py-4 gap-0">
         <View className="flex-row items-baseline justify-between gap-3">
@@ -53,4 +56,4 @@ export function JournalCard({ entry, onPress }: JournalCardProps) {
       </Card>
     </Pressable>
   );
-}
+});

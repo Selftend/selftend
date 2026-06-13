@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -26,7 +26,7 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import type { TintToken } from "@/src/lib/design-tokens";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/src/providers/session-provider";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { currentDateKey, toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 const THEME_TINTS: TintToken[] = ["be", "act", "think", "iris", "ink", "clay"];
 
@@ -45,12 +45,30 @@ export default function GratitudeHomeScreen() {
   const [breakIndex, setBreakIndex] = useState(0);
 
   const allEntries = entries ?? [];
-  const recentList = allEntries
-    .filter((entry) => toLocalDateKey(entry.loggedAt) === selectedDate)
-    .slice(0, 7);
-  const frequencyBuckets = getGratitudeFrequencyBuckets(allEntries);
-  const rawThemes = getGratitudeThemes(allEntries, 6);
-  const favoriteCount = getFavoriteGratitudeEntries(allEntries).length;
+  // Memoize the expensive aggregations (regex theme-mining, frequency buckets, favorite
+  // scan) so they don't recompute on every render — notably every DateBar tap. The bucket
+  // window depends on the current day, so key on todayKey to keep midnight rollover exact.
+  const todayKey = currentDateKey();
+  const recentList = useMemo(
+    () => allEntries.filter((entry) => toLocalDateKey(entry.loggedAt) === selectedDate).slice(0, 7),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries, selectedDate],
+  );
+  const frequencyBuckets = useMemo(
+    () => getGratitudeFrequencyBuckets(allEntries),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries, todayKey],
+  );
+  const rawThemes = useMemo(
+    () => getGratitudeThemes(allEntries, 6),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries],
+  );
+  const favoriteCount = useMemo(
+    () => getFavoriteGratitudeEntries(allEntries).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries],
+  );
   const thisWeekCount = frequencyBuckets.slice(-7).reduce((sum, bucket) => sum + bucket.count, 0);
 
   const hasFrequency = frequencyBuckets.some((b) => b.count > 0);

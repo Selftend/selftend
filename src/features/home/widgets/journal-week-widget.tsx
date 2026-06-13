@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { useMemo } from "react";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -18,8 +19,18 @@ export function JournalWeekWidget({ userId }: { userId: string }) {
   const { selectedDate, isToday } = useSelectedDate();
 
   const all = entries ?? [];
-  const totalWords = all.reduce((sum, e) => sum + countWords(e.body), 0);
-  const dayCount = all.filter((e) => toLocalDateKey(e.createdAt) === selectedDate).length;
+  // Memoize the per-body word count (up to ~50 full journal bodies) so it isn't recomputed
+  // on every Home re-render / DateBar tap; pure function of `entries`.
+  const totalWords = useMemo(
+    () => all.reduce((sum, e) => sum + countWords(e.body), 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries],
+  );
+  const dayCount = useMemo(
+    () => all.filter((e) => toLocalDateKey(e.createdAt) === selectedDate).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries, selectedDate],
+  );
 
   const dayBadge =
     dayCount > 0

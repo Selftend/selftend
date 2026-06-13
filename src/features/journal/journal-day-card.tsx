@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -37,6 +37,8 @@ export function JournalDayCard({ entries, selectedDate, isToday }: JournalDayCar
   );
   const words = dayEntries.reduce((sum, e) => sum + countWords(e.body), 0);
   const title = isToday ? t("day.today") : dayLabel;
+  // Stable callback so memoized JournalCards aren't re-rendered by a parent re-render.
+  const openEntry = useCallback((id: string) => router.push(`/tools/journal/${id}`), []);
 
   return (
     <Card>
@@ -55,11 +57,7 @@ export function JournalDayCard({ entries, selectedDate, isToday }: JournalDayCar
         {dayEntries.length > 0 ? (
           <View className="gap-3">
             {dayEntries.map((entry) => (
-              <JournalCard
-                key={entry.id}
-                entry={entry}
-                onPress={() => router.push(`/tools/journal/${entry.id}`)}
-              />
+              <JournalCard key={entry.id} entry={entry} onOpen={openEntry} />
             ))}
           </View>
         ) : (
