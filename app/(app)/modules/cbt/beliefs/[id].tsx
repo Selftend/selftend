@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -44,11 +44,16 @@ export default function BeliefDetailScreen() {
   const [original, setOriginal] = useState<number | null>(null);
   const [alternative, setAlternative] = useState<number | null>(null);
 
+  // Hydrate the strength sliders ONCE per belief id; keying on the id (not the query
+  // object) stops a content-identical refetch (focus refresh, post-save invalidation)
+  // from resetting the user's in-progress slider input.
+  const hydratedIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (belief) {
-      setOriginal(belief.originalBeliefStrength);
-      setAlternative(belief.alternativeBeliefStrength);
-    }
+    if (!belief) return;
+    if (hydratedIdRef.current === belief.id) return;
+    hydratedIdRef.current = belief.id;
+    setOriginal(belief.originalBeliefStrength);
+    setAlternative(belief.alternativeBeliefStrength);
   }, [belief]);
 
   const handleSaveStrength = async () => {

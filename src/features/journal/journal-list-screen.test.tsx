@@ -37,6 +37,7 @@ jest.mock("@/src/providers/session-provider", () => ({
 
 jest.mock("@/src/features/journal/queries", () => ({
   useJournalEntries: jest.fn(),
+  useJournalEntryCount: jest.fn(() => ({ data: undefined })),
 }));
 
 // Pin "now" so groupByPeriod buckets are deterministic.

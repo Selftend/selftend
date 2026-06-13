@@ -1,7 +1,7 @@
 import { router, type Href } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -66,8 +66,14 @@ export function JournalEntryEditorScreen({
     setCreatedAt(loggedAtForSelectedDate(selectedDate));
   }, [editMode, dateDirty, selectedDate]);
 
+  // Hydrate field state ONCE per entry id; keying on the id (not the object) stops a
+  // later list/detail refetch — which yields a new object identity — from clobbering
+  // the user's in-progress edits. (Mirrors the editor fix in mood/gratitude/etc.)
+  const hydratedIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!existingEntry) return;
+    if (hydratedIdRef.current === existingEntry.id) return;
+    hydratedIdRef.current = existingEntry.id;
     setTitle(existingEntry.title);
     setBody(existingEntry.body);
     setCreatedAt(existingEntry.createdAt);

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
-import { useMoodLogs } from "@/src/features/mood/queries";
+import { useMoodLogs, useMoodLogCount } from "@/src/features/mood/queries";
 import { startOfDayDaysAgo } from "@/src/utils/date";
 import { roundTo1 } from "@/src/utils/number";
 
@@ -21,6 +21,9 @@ function computeAverage(logs: { loggedAt: string; moodScore: number }[], days: n
 export function MoodTrendWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
   const { data: moodLogs } = useMoodLogs(userId, 30);
+  // Exact lifetime total for the "Entries" tile; the 30-row list is kept only for the
+  // 7-day average. logs.length would otherwise freeze the displayed count at 30.
+  const { data: totalCount } = useMoodLogCount(userId);
   const logs = moodLogs ?? [];
   const sevenDay = computeAverage(logs, 7);
 
@@ -48,7 +51,7 @@ export function MoodTrendWidget({ userId }: { userId: string }) {
             <Text className="text-[11px] uppercase tracking-wider text-muted-foreground">
               {t("today.moodSnapshot.entries")}
             </Text>
-            <Text className="text-2xl font-bold">{String(logs.length)}</Text>
+            <Text className="text-2xl font-bold">{String(totalCount ?? logs.length)}</Text>
           </View>
         </View>
         <Button

@@ -15,7 +15,7 @@ import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { countWords } from "@/src/features/journal/word-count";
 import { JournalCard } from "@/src/features/journal/journal-card";
 import { JournalDayCard } from "@/src/features/journal/journal-day-card";
-import { useJournalEntries } from "@/src/features/journal/queries";
+import { useJournalEntries, useJournalEntryCount } from "@/src/features/journal/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -27,6 +27,9 @@ export default function JournalListScreen() {
   const { selectedDate, isToday } = useSelectedDate();
 
   const { data: entries } = useJournalEntries(userId, 50);
+  // Exact lifetime total for the hero — the list is capped at 50, so its length would
+  // freeze the displayed entry count. (Word count stays a recent-entries figure.)
+  const { data: totalEntries } = useJournalEntryCount(userId);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
@@ -81,7 +84,10 @@ export default function JournalListScreen() {
                 accentClassName="text-ink"
                 subline={`${t("hero.last")} · ${lastWhen ?? tc("never")}`}
                 items={[
-                  { value: t("hero.entries", { count: allEntries.length }), label: "" },
+                  {
+                    value: t("hero.entries", { count: totalEntries ?? allEntries.length }),
+                    label: "",
+                  },
                   { value: t("hero.words", { count: totalWords }), label: "" },
                 ]}
               />
