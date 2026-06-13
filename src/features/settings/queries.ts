@@ -28,11 +28,25 @@ export function useUpdateUserPreferences(userId: string | null) {
 
   return useMutation({
     mutationFn: (preferences: UserPreferences) => updateUserPreferences(userId!, preferences),
-    onSuccess: async () => {
-      if (!userId) {
-        return;
+    // updateUserPreferences writes the WHOLE ~80-column row, and callers build it with
+    // mergeUserPreferences(cachedPrefs, patch). Optimistically write the new row into the
+    // cache so a rapid follow-up save reads THIS value instead of the stale pre-save
+    // snapshot (which would silently drop the first save's columns). Roll back on error;
+    // reconcile with the server on settle.
+    onMutate: async (preferences: UserPreferences) => {
+      if (!userId) return {};
+      await queryClient.cancelQueries({ queryKey: preferenceKeys.detail(userId) });
+      const previous = queryClient.getQueryData<UserPreferences>(preferenceKeys.detail(userId));
+      queryClient.setQueryData(preferenceKeys.detail(userId), preferences);
+      return { previous };
+    },
+    onError: (_error, _preferences, context) => {
+      if (userId && context && "previous" in context && context.previous !== undefined) {
+        queryClient.setQueryData(preferenceKeys.detail(userId), context.previous);
       }
-
+    },
+    onSettled: async () => {
+      if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: preferenceKeys.detail(userId) });
     },
   });
