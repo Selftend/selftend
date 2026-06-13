@@ -7,7 +7,7 @@ import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
 import { useAllExposureItems } from "@/src/features/exposure/queries";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
-import { useMoodLogs } from "@/src/features/mood/queries";
+import { useMoodHistory } from "@/src/features/mood/queries";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
@@ -34,7 +34,7 @@ jest.mock("@/src/features/gratitude/queries", () => ({
   useGratitudeEntries: jest.fn(),
 }));
 jest.mock("@/src/features/mood/queries", () => ({
-  useMoodLogs: jest.fn(),
+  useMoodHistory: jest.fn(),
 }));
 jest.mock("@/src/features/recovery/queries", () => ({
   useRecoveryPlan: jest.fn(),
@@ -62,7 +62,7 @@ const mockUseAllExposureItems = useAllExposureItems as jest.MockedFunction<
 const mockUseGratitudeEntries = useGratitudeEntries as jest.MockedFunction<
   typeof useGratitudeEntries
 >;
-const mockUseMoodLogs = useMoodLogs as jest.MockedFunction<typeof useMoodLogs>;
+const mockUseMoodLogs = useMoodHistory as jest.MockedFunction<typeof useMoodHistory>;
 const mockUseRecoveryPlan = useRecoveryPlan as jest.MockedFunction<typeof useRecoveryPlan>;
 const mockUseSelfCareLogs = useSelfCareLogs as jest.MockedFunction<typeof useSelfCareLogs>;
 const mockUseSleepLogs = useSleepLogs as jest.MockedFunction<typeof useSleepLogs>;
@@ -90,7 +90,9 @@ function setupEmptyMocks() {
   mockUseGratitudeEntries.mockReturnValue({ data: undefined } as unknown as ReturnType<
     typeof useGratitudeEntries
   >);
-  mockUseMoodLogs.mockReturnValue({ data: undefined } as unknown as ReturnType<typeof useMoodLogs>);
+  mockUseMoodLogs.mockReturnValue({ data: undefined } as unknown as ReturnType<
+    typeof useMoodHistory
+  >);
   mockUseRecoveryPlan.mockReturnValue({ data: undefined } as unknown as ReturnType<
     typeof useRecoveryPlan
   >);
@@ -240,7 +242,7 @@ describe("useCbtInsights - exerciseMoodLift", () => {
       typeof useSelfCareLogs
     >);
     // No mood logs
-    mockUseMoodLogs.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useMoodLogs>);
+    mockUseMoodLogs.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useMoodHistory>);
 
     const { result } = renderHook(() => useCbtInsights("user-1"));
     expect(result.current.exerciseMoodLift).toBeNull();
@@ -272,7 +274,7 @@ describe("useCbtInsights - exerciseMoodLift", () => {
       typeof useSelfCareLogs
     >);
     mockUseMoodLogs.mockReturnValue({ data: moodLogs } as unknown as ReturnType<
-      typeof useMoodLogs
+      typeof useMoodHistory
     >);
 
     const { result } = renderHook(() => useCbtInsights("user-1"));

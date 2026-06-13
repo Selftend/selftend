@@ -21,7 +21,7 @@ import { MoodScale } from "@/src/components/app/mood-scale";
 import { ToolStats } from "@/src/components/app/tool-stats";
 import { MoodHistoryList } from "@/src/features/mood/mood-history-list";
 import { buildMoodChartData } from "@/src/features/mood/chart-data";
-import { useMoodLogs, useMoodLogCount } from "@/src/features/mood/queries";
+import { useMoodHistory, useMoodLogCount } from "@/src/features/mood/queries";
 import {
   getDayMoodSummary,
   getMoodSummary,
@@ -42,7 +42,7 @@ export default function MoodTrackerScreen() {
 
   // Fetch enough history to cover the 60-day DateBar window even for users who
   // log several times a day, so day-scoped views aren't empty for older dates.
-  const { data: moodLogs } = useMoodLogs(userId, 200);
+  const { data: moodLogs } = useMoodHistory(userId, 200);
   const { selectedDate, isToday } = useSelectedDate();
 
   const [forceOnboarding, setForceOnboarding] = useState(false);

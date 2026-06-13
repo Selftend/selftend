@@ -2,7 +2,7 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import MoodTrackerScreen from "@/src/features/mood/mood-tracker-screen";
-import { useMoodLogs, useMoodLogCount } from "@/src/features/mood/queries";
+import { useMoodHistory, useMoodLogCount } from "@/src/features/mood/queries";
 import { currentDateKey } from "@/src/stores/selected-date-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -28,7 +28,7 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/mood/queries", () => ({
-  useMoodLogs: jest.fn(),
+  useMoodHistory: jest.fn(),
   useMoodLogCount: jest.fn(),
 }));
 
@@ -36,7 +36,7 @@ jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
   useEmotionPreferences: () => ({ data: [] }),
 }));
 
-const mockUseMoodLogs = useMoodLogs as jest.MockedFunction<typeof useMoodLogs>;
+const mockUseMoodLogs = useMoodHistory as jest.MockedFunction<typeof useMoodHistory>;
 const mockUseMoodLogCount = useMoodLogCount as jest.MockedFunction<typeof useMoodLogCount>;
 const mockRouter = jest.mocked(router);
 
@@ -51,7 +51,7 @@ describe("MoodTrackerScreen", () => {
   it("renders the empty states and a pending Today card when there are no mood logs", () => {
     mockUseMoodLogs.mockReturnValue({
       data: [],
-    } as unknown as ReturnType<typeof useMoodLogs>);
+    } as unknown as ReturnType<typeof useMoodHistory>);
 
     renderWithProviders(<MoodTrackerScreen />);
 
@@ -87,7 +87,7 @@ describe("MoodTrackerScreen", () => {
           createdAt: loggedAt,
         },
       ],
-    } as unknown as ReturnType<typeof useMoodLogs>);
+    } as unknown as ReturnType<typeof useMoodHistory>);
 
     renderWithProviders(<MoodTrackerScreen />);
 
@@ -132,7 +132,7 @@ describe("MoodTrackerScreen", () => {
           createdAt: morning,
         },
       ],
-    } as unknown as ReturnType<typeof useMoodLogs>);
+    } as unknown as ReturnType<typeof useMoodHistory>);
 
     renderWithProviders(<MoodTrackerScreen />);
 
@@ -147,7 +147,7 @@ describe("MoodTrackerScreen", () => {
   it("renders 5 MoodScale buttons on the home check-in tile (compact)", async () => {
     mockUseMoodLogs.mockReturnValue({
       data: [],
-    } as unknown as ReturnType<typeof useMoodLogs>);
+    } as unknown as ReturnType<typeof useMoodHistory>);
 
     renderWithProviders(<MoodTrackerScreen />);
 
@@ -161,7 +161,7 @@ describe("MoodTrackerScreen", () => {
   it("routes to the new mood entry page when the CTA is pressed", () => {
     mockUseMoodLogs.mockReturnValue({
       data: [],
-    } as unknown as ReturnType<typeof useMoodLogs>);
+    } as unknown as ReturnType<typeof useMoodHistory>);
 
     renderWithProviders(<MoodTrackerScreen />);
 

@@ -6,7 +6,7 @@ import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useHierarchies } from "@/src/features/exposure/queries";
 import { useGoals } from "@/src/features/goals/queries";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
-import { useMoodLogs } from "@/src/features/mood/queries";
+import { useMoodHistory } from "@/src/features/mood/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
@@ -50,7 +50,7 @@ jest.mock("@/src/features/meditation/queries", () => ({
   useMeditationSessions: jest.fn(),
 }));
 
-jest.mock("@/src/features/mood/queries", () => ({ useMoodLogs: jest.fn() }));
+jest.mock("@/src/features/mood/queries", () => ({ useMoodHistory: jest.fn() }));
 
 jest.mock("@/src/features/recovery/queries", () => ({
   useRecoveryPlan: jest.fn(),
@@ -77,7 +77,7 @@ const mockUseHierarchies = useHierarchies as jest.MockedFunction<typeof useHiera
 const mockUseMeditationSessions = useMeditationSessions as jest.MockedFunction<
   typeof useMeditationSessions
 >;
-const mockUseMoodLogs = useMoodLogs as jest.MockedFunction<typeof useMoodLogs>;
+const mockUseMoodLogs = useMoodHistory as jest.MockedFunction<typeof useMoodHistory>;
 const mockUseRecoveryPlan = useRecoveryPlan as jest.MockedFunction<typeof useRecoveryPlan>;
 const mockUseSelectedDate = useSelectedDate as jest.MockedFunction<typeof useSelectedDate>;
 
@@ -168,7 +168,7 @@ function setupBaseMocks(mutateAsync: jest.Mock, isPending = false) {
     data: allCompleteData.meditationSessions,
   } as unknown as ReturnType<typeof useMeditationSessions>);
   mockUseMoodLogs.mockReturnValue({ data: allCompleteData.moodLogs } as unknown as ReturnType<
-    typeof useMoodLogs
+    typeof useMoodHistory
   >);
   mockUseRecoveryPlan.mockReturnValue({
     data: allCompleteData.recoveryPlan,

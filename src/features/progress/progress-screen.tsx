@@ -16,7 +16,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { dailyIntegerAverages, lastNLocalDateKeys } from "@/src/features/mood/chart-data";
 import { useGratitudeEntryCountSince } from "@/src/features/gratitude/queries";
 import { useJournalEntryCountSince } from "@/src/features/journal/queries";
-import { useMoodLogs } from "@/src/features/mood/queries";
+import { useMoodHistory } from "@/src/features/mood/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { startOfDayDaysAgo } from "@/src/utils/date";
 
@@ -39,7 +39,7 @@ export default function ProgressScreen() {
 
   // 200 (not 60) so the 30-day mood count isn't capped for users who check in many times a
   // day. Mood rows are needed for the chart; journal/gratitude are only counted (below).
-  const { data: moodLogs, isLoading: moodLoading } = useMoodLogs(user?.id ?? null, 200);
+  const { data: moodLogs, isLoading: moodLoading } = useMoodHistory(user?.id ?? null, 200);
 
   // start-of-day 30 days ago — stable within a day, so it's a safe query key.
   const thirtyDayCutoff = startOfDayDaysAgo(30);

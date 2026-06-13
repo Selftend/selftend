@@ -8,7 +8,7 @@ import type { CoreBelief } from "@/src/features/beliefs/types";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useAllExposureItems } from "@/src/features/exposure/queries";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
-import { useMoodLogs } from "@/src/features/mood/queries";
+import { useMoodHistory } from "@/src/features/mood/queries";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
@@ -81,7 +81,7 @@ export function useCbtInsights(userId: string | null) {
   // 180 (not 60) so this shares the same React Query cache entry as useCbtProgram on the CBT
   // home screen - one mood fetch instead of two. Insights only window by date, so the larger
   // superset doesn't change any result.
-  const { data: moodLogs } = useMoodLogs(userId, 180);
+  const { data: moodLogs } = useMoodHistory(userId, 180);
   const { data: sleepLogs } = useSleepLogs(userId, 50);
   const { data: gratitudeEntries } = useGratitudeEntries(userId, 50);
   const { data: coreBeliefs } = useCoreBeliefs(userId);

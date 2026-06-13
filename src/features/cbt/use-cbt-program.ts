@@ -7,7 +7,7 @@ import { deriveCbtProgram, type CbtProgramView } from "@/src/features/cbt/derive
 import { useHierarchies } from "@/src/features/exposure/queries";
 import { useGoals } from "@/src/features/goals/queries";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
-import { useMoodLogs } from "@/src/features/mood/queries";
+import { useMoodHistory } from "@/src/features/mood/queries";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
@@ -41,7 +41,7 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
   const activities = useActivities(userId);
   const exposures = useHierarchies(userId);
   const meditationSessions = useMeditationSessions(userId);
-  const moodLogs = useMoodLogs(userId, 180);
+  const moodLogs = useMoodHistory(userId, 180);
   const recoveryPlan = useRecoveryPlan(userId);
 
   // deriveCbtProgram iterates over goals, thought records, up to 180 mood logs, beliefs,
