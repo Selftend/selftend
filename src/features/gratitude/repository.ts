@@ -97,6 +97,22 @@ export async function countGratitudeEntries(userId: string): Promise<number> {
   return count ?? 0;
 }
 
+// Exact count of entries logged since `sinceIso` — for the Progress 30-day stat.
+export async function countGratitudeEntriesSince(
+  userId: string,
+  sinceIso: string,
+): Promise<number> {
+  const client = requireSupabase();
+  const { count, error } = await client
+    .from("gratitude_entries")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("logged_at", sinceIso);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function listFavoriteGratitudeEntries(userId: string, limit = 100) {
   const client = requireSupabase();
   const { data, error } = await client

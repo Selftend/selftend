@@ -1,5 +1,6 @@
 import {
   countGratitudeEntries,
+  countGratitudeEntriesSince,
   deleteGratitudeEntry,
   getGratitudeEntry,
   listFavoriteGratitudeEntries,
@@ -391,5 +392,18 @@ describe("gratitude repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
     await expect(countGratitudeEntries("user-1")).resolves.toBe(0);
+  });
+
+  it("counts gratitude entries logged since a cutoff (head request + gte filter)", async () => {
+    const gte = jest.fn().mockResolvedValue({ count: 6, error: null });
+    const eqUser = jest.fn(() => ({ gte }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(countGratitudeEntriesSince("user-1", "2026-05-13T00:00:00.000Z")).resolves.toBe(6);
+    expect(select).toHaveBeenCalledWith("id", { count: "exact", head: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(gte).toHaveBeenCalledWith("logged_at", "2026-05-13T00:00:00.000Z");
   });
 });

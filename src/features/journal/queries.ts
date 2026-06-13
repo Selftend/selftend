@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   countJournalEntries,
+  countJournalEntriesSince,
   deleteJournalEntry,
   getJournalEntry,
   listJournalEntries,
@@ -15,6 +16,8 @@ const journalKeys = {
   list: (userId: string, limit: number) => ["journal", "list", userId, limit] as const,
   detail: (userId: string, id: string) => ["journal", "detail", userId, id] as const,
   count: (userId: string) => ["journal", "count", userId] as const,
+  countSince: (userId: string, sinceIso: string) =>
+    ["journal", "count-since", userId, sinceIso] as const,
 };
 
 export function useJournalEntries(userId: string | null, limit = 50) {
@@ -38,6 +41,16 @@ export function useJournalEntryCount(userId: string | null) {
   return useQuery({
     queryKey: userId ? journalKeys.count(userId) : ["journal", "count", "anonymous"],
     queryFn: () => countJournalEntries(userId!),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useJournalEntryCountSince(userId: string | null, sinceIso: string) {
+  return useQuery({
+    queryKey: userId
+      ? journalKeys.countSince(userId, sinceIso)
+      : ["journal", "count-since", "anonymous", sinceIso],
+    queryFn: () => countJournalEntriesSince(userId!, sinceIso),
     enabled: Boolean(userId),
   });
 }

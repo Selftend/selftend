@@ -14,8 +14,8 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { dailyIntegerAverages, lastNLocalDateKeys } from "@/src/features/mood/chart-data";
-import { useGratitudeEntries } from "@/src/features/gratitude/queries";
-import { useJournalEntries } from "@/src/features/journal/queries";
+import { useGratitudeEntryCountSince } from "@/src/features/gratitude/queries";
+import { useJournalEntryCountSince } from "@/src/features/journal/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { startOfDayDaysAgo } from "@/src/utils/date";
@@ -37,16 +37,22 @@ export default function ProgressScreen() {
   const { user } = useSession();
   const { width } = useWindowDimensions();
 
-  // 200 (not 60) so the 30-day count isn't capped for users who check in many times a day.
+  // 200 (not 60) so the 30-day mood count isn't capped for users who check in many times a
+  // day. Mood rows are needed for the chart; journal/gratitude are only counted (below).
   const { data: moodLogs, isLoading: moodLoading } = useMoodLogs(user?.id ?? null, 200);
-  const { data: journalEntries, isLoading: journalLoading } = useJournalEntries(
+
+  // start-of-day 30 days ago — stable within a day, so it's a safe query key.
+  const thirtyDayCutoff = startOfDayDaysAgo(30);
+  const thirtyDayCutoffIso = thirtyDayCutoff.toISOString();
+
+  // Journal/gratitude 30-day stats use exact head-counts instead of fetching (and
+  // decrypting) up to 200 full journal bodies + gratitude entries just to count recent ones.
+  const { data: thirtyDayJournalCount = 0, isLoading: journalLoading } = useJournalEntryCountSince(
     user?.id ?? null,
-    200,
+    thirtyDayCutoffIso,
   );
-  const { data: gratitudeEntries, isLoading: gratitudeLoading } = useGratitudeEntries(
-    user?.id ?? null,
-    200,
-  );
+  const { data: thirtyDayGratitudeCount = 0, isLoading: gratitudeLoading } =
+    useGratitudeEntryCountSince(user?.id ?? null, thirtyDayCutoffIso);
 
   const isLoading = moodLoading || journalLoading || gratitudeLoading;
 
@@ -66,16 +72,8 @@ export default function ProgressScreen() {
     score: number;
   }[];
 
-  const thirtyDayCutoff = startOfDayDaysAgo(30);
-
   const thirtyDayMoodCount = moodLogs
     ? moodLogs.filter((l) => new Date(l.loggedAt) >= thirtyDayCutoff).length
-    : 0;
-  const thirtyDayJournalCount = journalEntries
-    ? journalEntries.filter((e) => new Date(e.createdAt) >= thirtyDayCutoff).length
-    : 0;
-  const thirtyDayGratitudeCount = gratitudeEntries
-    ? gratitudeEntries.filter((e) => new Date(e.loggedAt) >= thirtyDayCutoff).length
     : 0;
 
   const promptKey = REFLECTION_PROMPTS[new Date().getDay() % REFLECTION_PROMPTS.length];

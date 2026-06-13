@@ -1,5 +1,6 @@
 import {
   countJournalEntries,
+  countJournalEntriesSince,
   deleteJournalEntry,
   getJournalEntry,
   listJournalEntries,
@@ -217,5 +218,18 @@ describe("journal repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
     await expect(countJournalEntries("user-1")).resolves.toBe(0);
+  });
+
+  it("counts journal entries created since a cutoff (head request + gte filter)", async () => {
+    const gte = jest.fn().mockResolvedValue({ count: 4, error: null });
+    const eqUser = jest.fn(() => ({ gte }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(countJournalEntriesSince("user-1", "2026-05-13T00:00:00.000Z")).resolves.toBe(4);
+    expect(select).toHaveBeenCalledWith("id", { count: "exact", head: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(gte).toHaveBeenCalledWith("created_at", "2026-05-13T00:00:00.000Z");
   });
 });
