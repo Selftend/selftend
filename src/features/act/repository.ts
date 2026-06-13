@@ -886,7 +886,10 @@ export async function listAllActionSteps(userId: string) {
     .from("act_action_steps")
     .select("*")
     .eq("user_id", userId)
-    .order("completed_at", { ascending: false });
+    .order("completed_at", { ascending: false })
+    // Cap the fetch (consistent with the module's other lists) — act_action_steps grows
+    // unbounded and this query stays active app-wide (Home + Android widget sync).
+    .limit(500);
 
   if (error) {
     if (isMissingACTSchemaError(error)) return [];

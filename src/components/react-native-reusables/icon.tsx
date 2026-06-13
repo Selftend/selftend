@@ -1,4 +1,7 @@
-import { MaterialIcons } from "@expo/vector-icons";
+// Per-family subpath, not the "@expo/vector-icons" barrel: the barrel top-level-requires
+// all 15 icon families, pulling every family's glyphmap JSON (~1.6 MB) and .ttf (~4 MB)
+// into the graph. We only use MaterialIcons (here) and Ionicons (social-connections).
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { ComponentProps } from "react";
 import { cssInterop } from "nativewind";
 import * as React from "react";

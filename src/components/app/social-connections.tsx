@@ -1,4 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
+// Per-family subpath, not the "@expo/vector-icons" barrel (which bundles all 15 families).
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { useColorScheme } from "nativewind";
 import { View } from "react-native";
