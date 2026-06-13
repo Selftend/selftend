@@ -7,6 +7,7 @@ import {
   DEFAULT_CONFIG,
 } from "@/src/features/widgets/widget-config-store";
 import { effectiveThemes } from "@/src/features/widgets/palette";
+import { currentDateKey } from "@/src/utils/date";
 import { MoodWidgetView } from "@/src/features/widgets/mood-widget-view";
 import { TodayWidgetView } from "@/src/features/widgets/today-widget-view";
 import { ShortcutsWidgetView } from "@/src/features/widgets/shortcuts-widget-view";
@@ -25,12 +26,17 @@ export function renderWidget({ widgetName, width, height, snapshot, config }: Re
   const cfg = config ?? DEFAULT_CONFIG;
   const themes = effectiveThemes(cfg.theme, snapshot?.appThemePref ?? "system");
   const opacity = cfg.opacity;
+  // The OS re-renders persisted snapshots on its own schedule, so a snapshot built on a
+  // previous day would otherwise show that day's data as "today's". Blank the date-scoped
+  // fields when the snapshot's build-day no longer matches the render-day.
+  const stale = snapshot?.dateKey != null && snapshot.dateKey !== currentDateKey();
 
   const viewFor = (theme: "light" | "dark") => {
     switch (entry?.kind) {
       case "mood": {
         const p = signedIn ? snapshot!.widgets["mood"] : undefined;
-        const payload = p?.kind === "mood" ? p : null;
+        let payload = p?.kind === "mood" ? p : null;
+        if (payload && stale) payload = { ...payload, todayFace: null };
         return (
           <MoodWidgetView
             payload={payload}
@@ -43,7 +49,8 @@ export function renderWidget({ widgetName, width, height, snapshot, config }: Re
       }
       case "today": {
         const p = signedIn ? snapshot!.widgets["today"] : undefined;
-        const payload = p?.kind === "today" ? p : null;
+        let payload = p?.kind === "today" ? p : null;
+        if (payload && stale) payload = { ...payload, items: [] };
         return (
           <TodayWidgetView
             payload={payload}

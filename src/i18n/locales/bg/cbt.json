@@ -729,6 +729,7 @@
     },
     "scheduledAt": "Планирана дата и час",
     "scheduledAtHint": "Въведи в YYYY-MM-DD HH:MM формат.",
+    "scheduledAtInvalid": "Използвай формата ГГГГ-ММ-ДД ЧЧ:ММ, напр. 2026-06-15 09:30.",
     "moodBefore": "Настроение преди (1–5)",
     "moodBeforeHint": "Как се чувстваш преди да започнеш?",
     "moodAfter": "Настроение след",

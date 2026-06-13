@@ -17,6 +17,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { lifeDomains, type LifeDomain } from "@/src/constants/life-domains";
 import { useActivity, useSaveActivity } from "@/src/features/activities/queries";
 import { activityFormSchema, type ActivityFormSchema } from "@/src/features/activities/schemas";
+import { isoToScheduleInput, scheduleInputToIso } from "@/src/features/activities/schedule-format";
 import type { PACECategory } from "@/src/features/activities/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useActivityDraftStore } from "@/src/stores/activity-draft-store";
@@ -92,7 +93,8 @@ export default function NewActivityScreen() {
       activityName: existing.activityName,
       category: existing.category,
       paceCategory: existing.paceCategory,
-      scheduledAt: existing.scheduledAt,
+      // Stored as an ISO instant; show it as local "YYYY-MM-DD HH:MM" in the field.
+      scheduledAt: existing.scheduledAt ? isoToScheduleInput(existing.scheduledAt) : null,
       moodBefore: existing.moodBefore,
       notes: existing.notes,
     });
@@ -105,9 +107,19 @@ export default function NewActivityScreen() {
 
   const handleSave = handleSubmit(async (values) => {
     setDraftValues(values);
+    // Normalize the free-text "YYYY-MM-DD HH:MM" (local) to an ISO instant before saving.
+    const scheduledIso = scheduleInputToIso(values.scheduledAt);
+    if (values.scheduledAt && scheduledIso === null) {
+      showToast({
+        title: t("common:feedback.problem"),
+        description: t("activities.scheduledAtInvalid"),
+        tone: "error",
+      });
+      return;
+    }
     try {
       const saved = await saveMutation.mutateAsync({
-        input: values,
+        input: { ...values, scheduledAt: scheduledIso },
         activityId: activityId ?? undefined,
       });
       resetDraft();

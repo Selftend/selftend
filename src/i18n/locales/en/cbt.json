@@ -729,6 +729,7 @@
     },
     "scheduledAt": "Scheduled date & time",
     "scheduledAtHint": "Enter in YYYY-MM-DD HH:MM format.",
+    "scheduledAtInvalid": "Use the format YYYY-MM-DD HH:MM, e.g. 2026-06-15 09:30.",
     "moodBefore": "Mood before (1–5)",
     "moodBeforeHint": "How are you feeling before you start?",
     "moodAfter": "Mood after",

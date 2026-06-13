@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import { breathingLookup } from "@/src/constants/breathing";
 import type { BreathingPhase, PhaseLabel } from "@/src/constants/breathing";
 import type {
@@ -80,7 +82,14 @@ export function useResolvedExercise(routeId: string | undefined): {
     builtin || !routeId ? null : (user?.id ?? null),
     builtin || !routeId ? null : routeId,
   );
-  const resolved = builtin ?? (data ? resolveCustom(data) : null);
+  // Stabilize identity: resolveBuiltin builds a fresh object each render, which would make
+  // `resolved` a new reference every tick and re-subscribe the session's countdown effect.
+  // builtin is a pure function of routeId, so key the memo on the scalar routeId + data.
+  const resolved = useMemo(
+    () => builtin ?? (data ? resolveCustom(data) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [builtin?.routeId, data],
+  );
   return {
     resolved,
     isLoading: !builtin && isLoading,
