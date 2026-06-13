@@ -20,6 +20,7 @@ import {
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useSession } from "@/src/providers/session-provider";
+import { useToastStore } from "@/src/stores/toast-store";
 import { cancelAllReminders } from "@/src/lib/notifications";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
@@ -41,18 +42,25 @@ export function NotificationSettingsModal({
 
   const { data: preferences } = useUserPreferences(userId);
   const updatePreferences = useUpdateUserPreferences(userId);
+  const showToast = useToastStore((s) => s.showToast);
   const target = getNotificationTarget(targetKey);
 
   const globalEnabled = preferences?.notificationsEnabledGlobal ?? true;
 
   async function handleGlobalToggle(next: boolean) {
     if (!preferences || !userId) return;
-    if (!next) {
-      await cancelAllReminders(userId);
+    try {
+      // Write the preference first (it drives server-side delivery), then tear the channel
+      // down — so a teardown failure can't leave the pref enabled with the channel gone.
+      await updatePreferences.mutateAsync(
+        mergeUserPreferences(preferences, { notificationsEnabledGlobal: next }),
+      );
+      if (!next) {
+        await cancelAllReminders(userId);
+      }
+    } catch {
+      showToast({ title: t("common:feedback.problem"), tone: "error" });
     }
-    await updatePreferences.mutateAsync(
-      mergeUserPreferences(preferences, { notificationsEnabledGlobal: next }),
-    );
   }
 
   return (

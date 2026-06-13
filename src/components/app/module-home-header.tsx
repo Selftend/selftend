@@ -179,21 +179,31 @@ export function ModuleHomeHeader({
     return () => clearTimeout(timeout);
   }, [currentTourActionType, isFocused]);
 
+  // Persisting "tour seen" is best-effort; a failed write must not become an unhandled
+  // rejection (the tour simply shows again next time).
   async function dismissTour() {
     if (!preferences || !currentTourStorageKey || updateShownButtonTours.isPending) return;
-    await updateShownButtonTours.mutateAsync([
-      ...new Set([...preferences.shownButtonTours, currentTourStorageKey]),
-    ]);
+    try {
+      await updateShownButtonTours.mutateAsync([
+        ...new Set([...preferences.shownButtonTours, currentTourStorageKey]),
+      ]);
+    } catch {
+      /* best-effort */
+    }
   }
 
   async function dismissAllTours() {
     if (!preferences || updateShownButtonTours.isPending) return;
-    await updateShownButtonTours.mutateAsync([
-      ...new Set([
-        ...preferences.shownButtonTours,
-        ...tourableActions.map(({ storageKey }) => storageKey),
-      ]),
-    ]);
+    try {
+      await updateShownButtonTours.mutateAsync([
+        ...new Set([
+          ...preferences.shownButtonTours,
+          ...tourableActions.map(({ storageKey }) => storageKey),
+        ]),
+      ]);
+    } catch {
+      /* best-effort */
+    }
   }
 
   function handleActionPress(action: HeaderAction) {

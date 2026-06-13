@@ -89,17 +89,23 @@ export function WidgetConfigurationScreen({
       path: s.path,
     }));
     const config = { shortcuts, statKeys: isToday ? selectedStats : [], theme, opacity };
-    await writeConfig(widgetInfo.widgetId, config);
-    render(
-      renderWidget({
-        widgetName,
-        width: widgetInfo.width,
-        height: widgetInfo.height,
-        snapshot: null,
-        config,
-      }),
-    );
-    setResult("ok");
+    try {
+      await writeConfig(widgetInfo.widgetId, config);
+      render(
+        renderWidget({
+          widgetName,
+          width: widgetInfo.width,
+          height: widgetInfo.height,
+          snapshot: null,
+          config,
+        }),
+      );
+      setResult("ok");
+    } catch {
+      // The config write or render failed — cancel rather than finalize a half-written
+      // config (the library's result is "ok" | "cancel"; there is no error state).
+      setResult("cancel");
+    }
   };
 
   if (!loaded) return <View />;

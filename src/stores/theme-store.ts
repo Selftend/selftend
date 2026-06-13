@@ -19,7 +19,8 @@ export const useThemeStore = create<ThemeState>((set) => ({
   preference: "system",
   setPreference: (preference) => {
     set({ preference });
-    void AsyncStorage.setItem(STORAGE_KEY, preference);
+    // Best-effort persistence; a failed write must not become an unhandled rejection.
+    void AsyncStorage.setItem(STORAGE_KEY, preference).catch(() => {});
   },
   hydrate: async () => {
     const stored = await AsyncStorage.getItem(STORAGE_KEY);

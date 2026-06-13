@@ -130,7 +130,9 @@ export function useWidgetSnapshotSync(userId: string | null) {
       );
     }
 
-    void sync();
+    // Snapshot build / writeSnapshot can throw; swallow so a sync failure never becomes
+    // an unhandled rejection (the per-widget requestWidgetUpdate calls are already guarded).
+    void sync().catch(() => {});
     return () => {
       cancelled = true;
     };

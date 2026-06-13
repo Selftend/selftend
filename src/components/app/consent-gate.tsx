@@ -33,8 +33,12 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
       return;
     }
 
-    await consentMutation.mutateAsync(policyVersion);
-    onAccepted();
+    try {
+      await consentMutation.mutateAsync(policyVersion);
+      onAccepted();
+    } catch {
+      // Failure surfaces via consentMutation.isError in the UI; only advance on success.
+    }
   };
 
   return (

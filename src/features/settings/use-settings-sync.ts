@@ -41,9 +41,13 @@ export function useSettingsSync(userId: string | null, preferences: UserPreferen
 
       if (needsLangUpdate) {
         pullInFlightRef.current = true;
-        void setLanguage(dbLang).finally(() => {
-          pullInFlightRef.current = false;
-        });
+        // Swallow a failed language-bundle load (network chunk fetch on web); the effect
+        // re-runs on the next preferences tick, so a transient failure self-heals.
+        void setLanguage(dbLang)
+          .catch(() => undefined)
+          .finally(() => {
+            pullInFlightRef.current = false;
+          });
       }
       if (needsThemeUpdate) setThemePreference(dbTheme);
 

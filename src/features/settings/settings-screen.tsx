@@ -321,6 +321,7 @@ export default function SettingsScreen() {
 
 function SecuritySection() {
   const { t } = useTranslation("settings");
+  const showToast = useToastStore((s) => s.showToast);
   const enabled = useAppLockStore((s) => s.enabled);
   const setEnabled = useAppLockStore((s) => s.setEnabled);
   const hydrate = useAppLockStore((s) => s.hydrate);
@@ -364,6 +365,10 @@ function SecuritySection() {
       if (confirmed) {
         await setEnabled(next);
       }
+    } catch {
+      // setEnabled persists before flipping state, so the toggle stays consistent on a
+      // failed write; just surface the error.
+      showToast({ title: t("common:feedback.problem"), tone: "error" });
     } finally {
       setBusy(false);
     }

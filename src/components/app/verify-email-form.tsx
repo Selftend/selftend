@@ -43,14 +43,18 @@ export function VerifyEmailForm() {
     let active = true;
     const interval = setInterval(() => {
       void (async () => {
-        const { data } = await client.auth.getSession();
-        let confirmed = Boolean(data.session?.user?.email_confirmed_at);
-        if (data.session && !confirmed) {
-          const { data: refreshed } = await client.auth.refreshSession();
-          confirmed = Boolean(refreshed.session?.user?.email_confirmed_at);
-        }
-        if (active && confirmed) {
-          router.replace("/(app)");
+        try {
+          const { data } = await client.auth.getSession();
+          let confirmed = Boolean(data.session?.user?.email_confirmed_at);
+          if (data.session && !confirmed) {
+            const { data: refreshed } = await client.auth.refreshSession();
+            confirmed = Boolean(refreshed.session?.user?.email_confirmed_at);
+          }
+          if (active && confirmed) {
+            router.replace("/(app)");
+          }
+        } catch {
+          // Transient poll failure (offline / token refresh); the next tick retries.
         }
       })();
     }, CONFIRMATION_POLL_MS);

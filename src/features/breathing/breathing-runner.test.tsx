@@ -30,7 +30,10 @@ jest.mock("@/src/lib/color-scheme", () => ({ useAppColorScheme: () => "light" })
 jest.mock("@/src/features/settings/queries", () => ({
   // breathSoundId "none" => no spoken intro, so Start goes straight to the active screen.
   useUserPreferences: () => ({ data: { breathSoundId: "none", ambientSoundId: "none" } }),
-  useUpdateUserPreferences: () => ({ mutateAsync: jest.fn(), isPending: false }),
+  useUpdateUserPreferences: () => ({
+    mutateAsync: jest.fn().mockResolvedValue(undefined),
+    isPending: false,
+  }),
 }));
 jest.mock("@/src/features/breathing/use-breathing-audio", () => ({
   useBreathingAudio: () => {},

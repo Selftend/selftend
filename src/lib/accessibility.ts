@@ -53,11 +53,16 @@ export function useReduceMotionEnabled() {
       };
     }
 
-    AccessibilityInfo.isReduceMotionEnabled().then((isEnabled) => {
-      if (mounted) {
-        setEnabled(isEnabled);
-      }
-    });
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((isEnabled) => {
+        if (mounted) {
+          setEnabled(isEnabled);
+        }
+      })
+      .catch(() => {
+        // Probe can reject on some platforms; default to motion enabled.
+        if (mounted) setEnabled(false);
+      });
 
     const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setEnabled);
 

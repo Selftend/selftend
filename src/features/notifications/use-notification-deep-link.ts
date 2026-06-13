@@ -15,9 +15,11 @@ export function useNotificationDeepLink() {
 
     let active = true;
 
-    void getInitialReminderUrl().then((url) => {
-      if (active && url) router.navigate(url as Href);
-    });
+    void getInitialReminderUrl()
+      .then((url) => {
+        if (active && url) router.navigate(url as Href);
+      })
+      .catch(() => {});
 
     const subscription = addReminderResponseListener((url) => {
       router.navigate(url as Href);
