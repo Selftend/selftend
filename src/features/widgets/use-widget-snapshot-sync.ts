@@ -31,17 +31,27 @@ export function useWidgetSnapshotSync(userId: string | null) {
   const { t: ta } = useTranslation("act");
   const themePref = useThemeStore((s) => s.preference);
 
-  const moodLogs = useMoodLogs(userId, 30).data;
-  const sleepLogs = useSleepLogs(userId, 30).data;
-  const meditationSessions = useMeditationSessions(userId).data;
-  const activities = useActivities(userId).data;
-  const gratitudeEntries = useGratitudeEntries(userId, 500).data;
-  const journalEntries = useJournalEntries(userId).data;
-  const groundingSessions = useGroundingSessions(userId).data;
-  const breathingSessions = useBreathingSessions(userId).data;
-  const committedActions = useCommittedActions(userId, "active").data;
-  const actionSteps = useAllActionSteps(userId).data;
-  const defusionLogs = useDefusionLogs(userId, 30).data;
+  // The widget snapshot sync only does anything on Android (the effect below early-returns
+  // elsewhere), yet this hook is mounted unconditionally in the protected layout — so on
+  // iOS and web these 11 list queries were subscribed, fetched, and re-fetched on every
+  // foreground for data that is never used (#61). Disable them off-Android by passing a null
+  // userId (each hook is `enabled: Boolean(userId)`). NOTE: the remaining Android-only win —
+  // also disabling these when the user has placed NO launcher widget — needs a persisted
+  // has-launcher-widgets flag driven by the widget-task-handler's add/delete events and must
+  // be validated on-device; left as a follow-up rather than guessed at blind.
+  const widgetUserId = Platform.OS === "android" ? userId : null;
+
+  const moodLogs = useMoodLogs(widgetUserId, 30).data;
+  const sleepLogs = useSleepLogs(widgetUserId, 30).data;
+  const meditationSessions = useMeditationSessions(widgetUserId).data;
+  const activities = useActivities(widgetUserId).data;
+  const gratitudeEntries = useGratitudeEntries(widgetUserId, 500).data;
+  const journalEntries = useJournalEntries(widgetUserId).data;
+  const groundingSessions = useGroundingSessions(widgetUserId).data;
+  const breathingSessions = useBreathingSessions(widgetUserId).data;
+  const committedActions = useCommittedActions(widgetUserId, "active").data;
+  const actionSteps = useAllActionSteps(widgetUserId).data;
+  const defusionLogs = useDefusionLogs(widgetUserId, 30).data;
 
   const data: WidgetData = useMemo(
     () => ({
