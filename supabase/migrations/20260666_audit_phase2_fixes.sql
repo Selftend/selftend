@@ -54,12 +54,13 @@ revoke execute on function app.decrypt_text(bytea) from public;
 grant execute on function app.decrypt_text(bytea) to authenticated;
 
 -- ----------------------------------------------------------------------------
--- #17 — mindfulness_sessions had no composite index for its hot read path
--- (user_id + newest-first by completed_at), so every breathing/grounding/Tools
--- read sequentially scanned the whole table.
+-- #17 — the hot read path (user_id + newest-first by completed_at) had no composite
+-- index, so every breathing/grounding/Tools read sequentially scanned. The index goes on
+-- the BASE table mindfulness_sessions_data — `mindfulness_sessions` is now a decrypt-on-read
+-- VIEW (post-encryption) and cannot be indexed; user_id/completed_at are unencrypted there.
 -- ----------------------------------------------------------------------------
-create index if not exists mindfulness_sessions_user_completed_idx
-  on public.mindfulness_sessions (user_id, completed_at desc);
+create index if not exists mindfulness_sessions_data_user_completed_idx
+  on public.mindfulness_sessions_data (user_id, completed_at desc);
 
 -- ----------------------------------------------------------------------------
 -- #86 — plan_items RLS applied to PUBLIC (incl. the anon role); the 20260564
