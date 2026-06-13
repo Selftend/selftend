@@ -25,7 +25,6 @@ jobs:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SUBMIT_TO_PLAY: ${{ inputs.submit_to_play }}
       EAS_LOCAL_BUILD_ARTIFACTS_DIR: build-artifacts
-      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
       EXPO_PUBLIC_GITHUB_REPO_URL: ${{ vars.EXPO_PUBLIC_GITHUB_REPO_URL }}
       EXPO_PUBLIC_PRIVACY_EMAIL: ${{ vars.EXPO_PUBLIC_PRIVACY_EMAIL }}
@@ -120,9 +119,13 @@ jobs:
           fi
 
       - name: Verify EAS authentication
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: npm exec --yes eas-cli -- whoami
 
       - name: Build signed Android App Bundle locally
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           mkdir -p "$EAS_LOCAL_BUILD_ARTIFACTS_DIR"
           npm exec --yes eas-cli -- build --platform android --profile production --local --non-interactive
@@ -137,6 +140,8 @@ jobs:
 
       - name: Write Google Play service account key
         if: ${{ inputs.submit_to_play }}
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
           if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]; then
             echo "::error::GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is required when ANDROID_SUBMIT_TO_PLAY is true."
@@ -148,6 +153,8 @@ jobs:
 
       - name: Upload draft to Google Play internal testing
         if: ${{ inputs.submit_to_play }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           aab_path="$(find build-artifacts -maxdepth 1 -type f -name '*.aab' -print -quit)"
           if [ -z "$aab_path" ]; then

@@ -75,8 +75,10 @@ jobs:
           BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
-          gpg --batch --yes --pinentry-mode loopback \
-            --passphrase "$BACKUP_GPG_PASSPHRASE" \
+          # Feed the passphrase on stdin (--passphrase-fd 0), not argv: a CLI arg is
+          # visible in the process table / any `ps` snapshot on the runner.
+          printf '%s' "$BACKUP_GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-fd 0 \
             --symmetric --cipher-algo AES256 \
             --output "${DUMP_FILE}.gpg" \
             "${DUMP_FILE}"

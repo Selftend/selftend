@@ -25,8 +25,6 @@ jobs:
       EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
       EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
       EXPO_PUBLIC_SUPPORT_EMAIL: ${{ vars.EXPO_PUBLIC_SUPPORT_EMAIL }}
-      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
     steps:
       - name: Check out repository
@@ -44,6 +42,9 @@ jobs:
         run: npm ci
 
       - name: Check deploy environment
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
           missing=0
           for name in \
@@ -70,4 +71,7 @@ jobs:
         run: npm run export:web
 
       - name: Deploy to Netlify production
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: npm exec --yes netlify-cli -- deploy --prod --dir=dist --site "$NETLIFY_SITE_ID" --auth "$NETLIFY_AUTH_TOKEN"
