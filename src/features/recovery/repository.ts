@@ -87,18 +87,19 @@ export async function getRecoveryPlan(userId: string) {
 
 export async function upsertRecoveryPlan(userId: string, input: RecoveryPlanInput) {
   const client = requireSupabase();
+  // recovery_plans is a decrypting VIEW, so it cannot be the target of
+  // INSERT ... ON CONFLICT. Plain .insert(); the INSTEAD OF INSERT trigger
+  // (recovery_plans_ins) resolves the per-user merge against the base table's
+  // UNIQUE(user_id). See migration 20260666.
   const { data, error } = await client
     .from("recovery_plans")
-    .upsert(
-      {
-        user_id: userId,
-        recovery_keys: trimAndFilterEmpty(input.recoveryKeys),
-        personal_slogan: input.personalSlogan.trim(),
-        strategy_integration_notes: sanitizeNotes(input.strategyIntegrationNotes),
-        maintenance_commitments: trimAndFilterEmpty(input.maintenanceCommitments),
-      },
-      { onConflict: "user_id" },
-    )
+    .insert({
+      user_id: userId,
+      recovery_keys: trimAndFilterEmpty(input.recoveryKeys),
+      personal_slogan: input.personalSlogan.trim(),
+      strategy_integration_notes: sanitizeNotes(input.strategyIntegrationNotes),
+      maintenance_commitments: trimAndFilterEmpty(input.maintenanceCommitments),
+    })
     .select("*")
     .single();
 

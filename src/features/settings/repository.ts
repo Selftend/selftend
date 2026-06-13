@@ -532,18 +532,18 @@ interface DevicePushTokenPayload {
   timeZone: string | null;
 }
 
-export async function upsertDevicePushToken(userId: string, token: DevicePushTokenPayload) {
+export async function upsertDevicePushToken(_userId: string, token: DevicePushTokenPayload) {
   const client = requireSupabase();
-  const { error } = await client.from("device_push_tokens").upsert(
-    {
-      user_id: userId,
-      expo_push_token: token.token,
-      platform: token.platform,
-      time_zone: token.timeZone,
-      enabled: true,
-    },
-    { onConflict: "expo_push_token" },
-  );
+  // expo_push_token is globally unique (per device, not per account). A direct
+  // upsert onConflict:"expo_push_token" hits a prior owner's row, which RLS hides
+  // from the new user (42501). Claim the token via a SECURITY DEFINER RPC that
+  // reassigns it to the caller atomically. The caller is auth.uid() inside the
+  // function, so userId is no longer passed. See migration 20260666.
+  const { error } = await client.rpc("claim_device_push_token", {
+    p_token: token.token,
+    p_platform: token.platform,
+    p_time_zone: token.timeZone,
+  });
 
   if (error) {
     throw error;

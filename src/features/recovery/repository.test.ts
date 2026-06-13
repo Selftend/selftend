@@ -54,7 +54,7 @@ describe("recovery repository", () => {
     expect(eq).toHaveBeenCalledWith("user_id", "user-1");
   });
 
-  it("sanitizes recovery plan lists and notes before upsert", async () => {
+  it("sanitizes recovery plan lists and notes before insert", async () => {
     const row = {
       created_at: "2026-05-01T10:00:00.000Z",
       id: "plan-1",
@@ -67,8 +67,10 @@ describe("recovery repository", () => {
     };
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
     const select = jest.fn(() => ({ single }));
-    const upsert = jest.fn(() => ({ select }));
-    const from = jest.fn(() => ({ upsert }));
+    // recovery_plans is a decrypting VIEW: the client .insert()s and the INSTEAD OF
+    // trigger resolves the per-user merge (a view can't be an ON CONFLICT target).
+    const insert = jest.fn(() => ({ select }));
+    const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
     await upsertRecoveryPlan("user-1", {
@@ -81,18 +83,15 @@ describe("recovery repository", () => {
       },
     });
 
-    expect(upsert).toHaveBeenCalledWith(
-      {
-        maintenance_commitments: ["Weekly review"],
-        personal_slogan: "Keep going",
-        recovery_keys: ["Walk first"],
-        strategy_integration_notes: {
-          thoughts: "Use the record",
-        },
-        user_id: "user-1",
+    expect(insert).toHaveBeenCalledWith({
+      maintenance_commitments: ["Weekly review"],
+      personal_slogan: "Keep going",
+      recovery_keys: ["Walk first"],
+      strategy_integration_notes: {
+        thoughts: "Use the record",
       },
-      { onConflict: "user_id" },
-    );
+      user_id: "user-1",
+    });
   });
 
   it("maps challenge plans in newest-first order", async () => {

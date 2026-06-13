@@ -438,8 +438,9 @@ describe("settings repository", () => {
     expect(eqEndpoint).toHaveBeenCalledWith("endpoint", "https://push.example/subscription");
   });
 
-  it("upserts a device push token on conflict by expo_push_token", async () => {
-    const { upsert } = mockWebPushUpsert();
+  it("claims a device push token via the takeover RPC (reassigns it to the caller)", async () => {
+    const rpc = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
 
     await upsertDevicePushToken("user-1", {
       token: "ExponentPushToken[abc]",
@@ -447,16 +448,13 @@ describe("settings repository", () => {
       timeZone: "Europe/Sofia",
     });
 
-    expect(upsert).toHaveBeenCalledWith(
-      {
-        user_id: "user-1",
-        expo_push_token: "ExponentPushToken[abc]",
-        platform: "android",
-        time_zone: "Europe/Sofia",
-        enabled: true,
-      },
-      { onConflict: "expo_push_token" },
-    );
+    // A direct upsert collided across accounts on the globally-unique token; the
+    // SECURITY DEFINER RPC takes it over for auth.uid() instead (no user_id passed).
+    expect(rpc).toHaveBeenCalledWith("claim_device_push_token", {
+      p_token: "ExponentPushToken[abc]",
+      p_platform: "android",
+      p_time_zone: "Europe/Sofia",
+    });
   });
 
   it("deletes a device push token by token", async () => {
