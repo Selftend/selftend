@@ -18,7 +18,7 @@
       {
         "title": "Encrypted at rest",
         "body": [
-          "Your journal entries, mood logs, and other records are encrypted in our database. The encryption is applied at the field level before the data is stored, so raw entry text is not visible to the database layer."
+          "Your journal entries, mood logs, and other records are encrypted at rest at the field level, so what is written to disk is ciphertext rather than readable text. The decryption key is held separately in a secure vault and is never included in a database backup, so a leaked database copy exposes only ciphertext for your entries."
         ]
       },
       {
@@ -40,7 +40,7 @@
         "title": "You're in control",
         "body": [
           "You can export all your data as a JSON file at any time from Settings → Account.",
-          "You can permanently delete your account and all associated data from Settings → Account. Deletion is irreversible and completes within 30 days."
+          "You can permanently delete your account and all associated data from Settings → Account. Deletion takes effect immediately on our live systems and is irreversible."
         ]
       },
       {

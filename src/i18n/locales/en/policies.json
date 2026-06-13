@@ -19,16 +19,16 @@
       {
         "title": "2. Data we collect",
         "body": [
-          "Account data: your email address and authentication identifiers provided during sign-in via passwordless email link or Google OAuth.",
+          "Account data: your email address and authentication identifiers, provided when you sign in with an email and password or with Google OAuth.",
           "App data: user preferences (enabled modules, onboarding status, reminder settings) and private CBT thought records or other self-help entries you create. These entries may include wellness or mental-health reflection content if you choose to enter it.",
-          "Device data: a local notification identifier on native apps, or a browser push subscription endpoint and keys on web, only when you explicitly enable reminders. No device fingerprinting or hardware identifiers are collected.",
+          "Device data: only when you explicitly enable reminders, we store the technical address needed to deliver them - a push token on native apps, or a browser push subscription (endpoint and keys) on web - along with your time zone and, on web, your browser's user-agent string. We do not perform device fingerprinting and do not collect hardware identifiers, advertising IDs, or your location.",
           "Session and local preference data: an authentication token stored in browser localStorage (web) or Expo SecureStore (mobile) to maintain your signed-in session, plus small local app preferences such as language, theme, and last timer session duration stored on your device."
         ]
       },
       {
         "title": "3. Data we do not collect",
         "body": [
-          "We do not collect IP addresses for profiling, device fingerprints, location data, contacts, photos, or health data from device APIs.",
+          "We do not collect IP addresses for profiling, device fingerprints, location data, contacts, or health data from device APIs. The only photo we store is a profile picture, and only if you choose to upload one; we do not otherwise scan or access your photo library.",
           "We do not use advertising SDKs, analytics tracking services, behavioral profiling tools, or social media pixels.",
           "We do not sell, rent, or trade your personal data to any third party for any purpose."
         ]
@@ -58,7 +58,7 @@
           "Supabase (Supabase Inc., USA): provides authentication, database hosting, and backend infrastructure. Supabase processes your email and app data on our behalf under their Data Processing Agreement. See supabase.com/privacy.",
           "Google (Google LLC, USA): processes your email and account identifiers only if you choose Google OAuth sign-in. See policies.google.com/privacy.",
           "Netlify (Netlify Inc., USA): serves the static web application. Netlify does not receive or process your personal data beyond standard web server logs (IP address in access logs, subject to Netlify's privacy policy).",
-          "Expo / EAS (Expo Inc., USA): used for mobile app builds and submission. Does not receive user personal data at runtime.",
+          "Expo (Expo Inc., USA): used for mobile app builds and submission, and for delivering reminder notifications on mobile. When mobile reminders are on, Expo's push service relays your device push token and the generic reminder text; it does not receive your notes, entries, or other content you write in the app.",
           "Browser push services (for example Apple, Google, Mozilla, or Microsoft depending on your browser): deliver web push reminders only after you opt in through your browser.",
           "We do not share your data with any other third parties, advertisers, or data brokers."
         ]
@@ -74,7 +74,7 @@
         "title": "8. Data retention",
         "body": [
           "Account and app data: retained for as long as your account is active.",
-          "After account deletion: all personal data (profile, preferences, thought records) is permanently deleted within 30 days. No backups containing your data are retained beyond this period.",
+          "After account deletion: your personal data (profile, preferences, records) is removed from our live systems immediately. Backups created before deletion are retained for up to 90 days under our backup schedule and then automatically deleted.",
           "Authentication logs: managed and retained by Supabase according to their retention policy.",
           "Local device data (reminder IDs, browser push subscriptions, session tokens): removed when you disable reminders, sign out, delete your account, or delete the app/browser data where applicable."
         ]
@@ -128,7 +128,7 @@
           "All data in transit is encrypted via HTTPS/TLS.",
           "Your entries are encrypted at rest at the field level. The encryption key is held outside the database (in Supabase Vault), so a leaked database dump or backup exposes only ciphertext, not your content.",
           "Database access is protected by Row-Level Security (RLS) - each user can only access their own data.",
-          "Mobile session credentials are stored in the device's secure enclave via Expo SecureStore.",
+          "Mobile session credentials are stored in the device's secure keystore (the iOS Keychain or Android Keystore) via Expo SecureStore.",
           "No service-role keys or database passwords are exposed in the client application.",
           "Supabase infrastructure provides encryption at rest for stored data."
         ]
@@ -183,7 +183,7 @@
         "title": "4. User accounts",
         "body": [
           "An account is required to use the app so your records and preferences can sync across devices.",
-          "You may sign in with a passwordless email link or Google OAuth. Passwords are not used.",
+          "You sign in with your email address and a password, or with Google. Choose a strong, unique password and keep it confidential.",
           "You are responsible for maintaining access to the email address associated with your account.",
           "One account per person. Do not share account access or create multiple accounts."
         ]
@@ -311,7 +311,7 @@
         "body": [
           "Deleting your account permanently removes all data associated with it: your profile, preferences, all thought records (including archived ones), and authentication credentials.",
           "Deletion is irreversible. Once completed, your data cannot be recovered.",
-          "All data is permanently removed within 30 days of your deletion request."
+          "Your data is removed from our live systems immediately. Backups created before deletion are automatically deleted within 90 days."
         ]
       },
       {
@@ -406,7 +406,7 @@
       {
         "title": "What data does Selftend collect?",
         "body": [
-          "Email, preferences, and the records you choose to create. No date of birth, no device identifiers, no advertising or analytics SDKs. Full details in the privacy policy."
+          "Email, preferences, and the records you choose to create - plus a push token only if you turn on reminders. No date of birth, no device fingerprints or hardware identifiers, no advertising or analytics SDKs. Full details in the privacy policy."
         ]
       },
       {
@@ -418,7 +418,7 @@
       {
         "title": "Can I export or delete my data?",
         "body": [
-          "Yes. Settings has a one-tap JSON export and a self-service account deletion. Deleted accounts are removed within 30 days; no backup copies are retained beyond that window."
+          "Yes. Settings has a one-tap JSON export and a self-service account deletion. Deleted accounts are removed from our live systems immediately; backups created beforehand are automatically deleted within 90 days."
         ]
       },
       {

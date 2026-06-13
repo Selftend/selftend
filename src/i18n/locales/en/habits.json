@@ -129,7 +129,7 @@
   },
   "log": {
     "title": "Add a note",
-    "subtitle": "Optional reflection for the day's tick. Stay private - only you see this.",
+    "subtitle": "Optional reflection for the day's tick. Private to your account - shown only to you in the app.",
     "placeholder": "What was this like today?",
     "saveError": "Couldn't save the note. Try again."
   },
