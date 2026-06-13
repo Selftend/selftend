@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   Modal,
@@ -40,13 +40,23 @@ function dayKeys(count: number, todayKey: string): string[] {
   return keys;
 }
 
+// Build the formatters once (constructing Intl.DateTimeFormat is expensive) and cache the
+// per-day labels — chipLabels is called for every visible chip on every render.
+const WEEKDAY_FMT = new Intl.DateTimeFormat(undefined, { weekday: "short" });
+const MONTH_FMT = new Intl.DateTimeFormat(undefined, { month: "short" });
+const labelCache = new Map<string, { weekday: string; month: string; day: string }>();
+
 function chipLabels(key: string): { weekday: string; month: string; day: string } {
+  const cached = labelCache.get(key);
+  if (cached) return cached;
   const d = parseLocalNoon(key);
-  return {
-    weekday: d.toLocaleDateString(undefined, { weekday: "short" }),
-    month: d.toLocaleDateString(undefined, { month: "short" }),
+  const labels = {
+    weekday: WEEKDAY_FMT.format(d),
+    month: MONTH_FMT.format(d),
     day: String(d.getDate()),
   };
+  labelCache.set(key, labels);
+  return labels;
 }
 
 /** Whole days between `key` and today (0 = today, 1 = yesterday, …) = its index in the list. */
@@ -56,6 +66,62 @@ function daysBeforeToday(key: string): number {
   b.setHours(12, 0, 0, 0);
   return Math.round((b.getTime() - a.getTime()) / 86_400_000);
 }
+
+// Memoized so a selection change re-renders only the previously- and newly-selected chips
+// (their `selected` prop flips) instead of every visible cell. `onSelect` and `todayLabel`
+// are stable, so the other props decide re-render.
+const DayChip = memo(function DayChip({
+  keyDate,
+  selected,
+  isToday,
+  sameMonth,
+  todayLabel,
+  onSelect,
+}: {
+  keyDate: string;
+  selected: boolean;
+  isToday: boolean;
+  sameMonth: boolean;
+  todayLabel: string;
+  onSelect: (key: string) => void;
+}) {
+  const { weekday, month, day } = chipLabels(keyDate);
+  // Dates outside the current month show the month instead of the weekday, so you always
+  // know which month you're scrolled into.
+  const topLabel = isToday ? todayLabel : sameMonth ? weekday : month;
+  const a11y = isToday ? `${todayLabel} ${keyDate}` : keyDate;
+  return (
+    <View style={{ width: ITEM_WIDTH }} className="items-center">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={a11y}
+        accessibilityState={{ selected }}
+        onPress={() => onSelect(keyDate)}
+        className={cn(
+          "min-w-[44px] items-center rounded-full px-2 py-1.5",
+          selected ? "bg-primary/10" : "active:bg-muted/50",
+        )}
+      >
+        <Text
+          className={cn(
+            "text-[10px]",
+            selected || isToday ? "text-primary" : "text-muted-foreground",
+          )}
+        >
+          {topLabel}
+        </Text>
+        <Text
+          className={cn(
+            "text-sm font-semibold",
+            selected || isToday ? "text-primary" : "text-foreground",
+          )}
+        >
+          {day}
+        </Text>
+      </Pressable>
+    </View>
+  );
+});
 
 export function DateBar() {
   const { t } = useTranslation("navigation");
@@ -102,10 +168,16 @@ export function DateBar() {
     });
   };
 
-  const handleSelect = (key: string) => {
-    setSelectedDate(key);
-    centerOn(key);
-  };
+  // Stable identity so the memoized DayChip's onSelect prop doesn't change every render.
+  // centerOn reads count via closure (count only grows; a stale read at worst skips an
+  // auto-expand that onEndReached covers anyway).
+  const handleSelect = useCallback(
+    (key: string) => {
+      setSelectedDate(key);
+      centerOn(key);
+    },
+    [setSelectedDate],
+  );
 
   const goToday = () => {
     resetToToday();
@@ -122,47 +194,17 @@ export function DateBar() {
     offsetRef.current = e.nativeEvent.contentOffset.x;
   };
 
-  const renderItem = ({ item: key }: { item: string }) => {
-    const selected = key === selectedDate;
-    const isToday = key === today;
-    const { weekday, month, day } = chipLabels(key);
-    // Dates outside the current month show the month instead of the weekday,
-    // so you always know which month you're scrolled into.
-    const sameMonth = key.slice(0, 7) === today.slice(0, 7);
-    const topLabel = isToday ? t("dateBar.today") : sameMonth ? weekday : month;
-    const a11y = isToday ? `${t("dateBar.today")} ${key}` : key;
-    return (
-      <View style={{ width: ITEM_WIDTH }} className="items-center">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={a11y}
-          accessibilityState={{ selected }}
-          onPress={() => handleSelect(key)}
-          className={cn(
-            "min-w-[44px] items-center rounded-full px-2 py-1.5",
-            selected ? "bg-primary/10" : "active:bg-muted/50",
-          )}
-        >
-          <Text
-            className={cn(
-              "text-[10px]",
-              selected || isToday ? "text-primary" : "text-muted-foreground",
-            )}
-          >
-            {topLabel}
-          </Text>
-          <Text
-            className={cn(
-              "text-sm font-semibold",
-              selected || isToday ? "text-primary" : "text-foreground",
-            )}
-          >
-            {day}
-          </Text>
-        </Pressable>
-      </View>
-    );
-  };
+  const todayLabel = t("dateBar.today");
+  const renderItem = ({ item: key }: { item: string }) => (
+    <DayChip
+      keyDate={key}
+      selected={key === selectedDate}
+      isToday={key === today}
+      sameMonth={key.slice(0, 7) === today.slice(0, 7)}
+      todayLabel={todayLabel}
+      onSelect={handleSelect}
+    />
+  );
 
   return (
     <View className="flex-row items-center gap-2 border-b border-border bg-background px-3 py-2">
@@ -191,6 +233,7 @@ export function DateBar() {
       <FlatList
         ref={listRef}
         data={days}
+        extraData={selectedDate}
         keyExtractor={(key) => key}
         renderItem={renderItem}
         horizontal
