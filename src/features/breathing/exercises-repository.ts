@@ -83,8 +83,11 @@ export async function saveBreathingExercise(
   const query = id
     ? client.from("breathing_exercises").update(payload).eq("user_id", userId).eq("id", id)
     : client.from("breathing_exercises").insert({ ...payload, user_id: userId });
-  const { data, error } = await query.select("*").single();
+  const { data, error } = await query.select("*").maybeSingle();
   if (error) throw error;
+  // #85: maybeSingle() turns a missing/RLS-hidden update target into a clean not-found
+  // instead of single()'s PGRST116; inserts always return their row.
+  if (!data) throw new Error("Breathing exercise not found");
   return mapExercise(data as BreathingExerciseRow);
 }
 

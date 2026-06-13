@@ -70,7 +70,7 @@ describe("goals repository - goals", () => {
 
   it("trims title and description on insert", async () => {
     const single = jest.fn().mockResolvedValue({ data: goalRow, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const insert = jest.fn(() => ({ select }));
     const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -94,7 +94,7 @@ describe("goals repository - goals", () => {
 
   it("updates an existing goal scoped to user and id", async () => {
     const single = jest.fn().mockResolvedValue({ data: goalRow, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const eqId = jest.fn(() => ({ select }));
     const eqUser = jest.fn(() => ({ eq: eqId }));
     const update = jest.fn(() => ({ eq: eqUser }));

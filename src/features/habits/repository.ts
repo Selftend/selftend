@@ -126,8 +126,11 @@ export async function saveHabit(
   const query = habitId
     ? client.from("habits").update(payload).eq("user_id", userId).eq("id", habitId)
     : client.from("habits").insert({ ...payload, user_id: userId });
-  const { data, error } = await query.select("*").single();
+  const { data, error } = await query.select("*").maybeSingle();
   if (error) throw error;
+  // #85: maybeSingle() turns a missing/RLS-hidden update target into a clean not-found
+  // instead of single()'s PGRST116; inserts always return their row.
+  if (!data) throw new Error("Habit not found");
   return mapHabit(data as HabitRow);
 }
 

@@ -86,8 +86,11 @@ export async function saveAngerLog(userId: string, input: AngerLogInput, logId?:
         ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
       });
 
-  const { data, error } = await query.select("*").single();
+  const { data, error } = await query.select("*").maybeSingle();
   if (error) throw error;
+  // #85: maybeSingle() turns a missing/RLS-hidden update target into a clean not-found
+  // instead of single()'s PGRST116; inserts always return their row.
+  if (!data) throw new Error("Anger log not found");
   return mapAngerLog(data as AngerLogRow);
 }
 

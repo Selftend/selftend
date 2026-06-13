@@ -47,7 +47,7 @@ describe("habits repository", () => {
 
   it("inserts a new habit, trims strings, and maps the row back to camelCase", async () => {
     const single = jest.fn().mockResolvedValue({ data: insertedHabitRow, error: null });
-    const selectAfter = jest.fn(() => ({ single }));
+    const selectAfter = jest.fn(() => ({ single, maybeSingle: single }));
     const insert = jest.fn(() => ({ select: selectAfter }));
     const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -79,7 +79,7 @@ describe("habits repository", () => {
 
   it("normalises custom_days when cadence is custom and keeps them empty otherwise", async () => {
     const single = jest.fn().mockResolvedValue({ data: insertedHabitRow, error: null });
-    const selectAfter = jest.fn(() => ({ single }));
+    const selectAfter = jest.fn(() => ({ single, maybeSingle: single }));
     const insert = jest.fn(() => ({ select: selectAfter }));
     const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -143,7 +143,7 @@ describe("habits repository", () => {
       updated_at: "2026-05-17T08:00:00.000Z",
     };
     const single = jest.fn().mockResolvedValue({ data: inserted, error: null });
-    const selectAfterInsert = jest.fn(() => ({ single }));
+    const selectAfterInsert = jest.fn(() => ({ single, maybeSingle: single }));
     const insert = jest.fn(() => ({ select: selectAfterInsert }));
 
     const from = jest.fn(() => ({ select, insert }));

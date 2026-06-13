@@ -100,8 +100,11 @@ export async function saveGoal(userId: string, input: GoalInput, goalId?: string
     ? client.from("goals").update(payload).eq("user_id", userId).eq("id", goalId)
     : client.from("goals").insert(payload);
 
-  const { data, error } = await query.select("*").single();
+  const { data, error } = await query.select("*").maybeSingle();
   if (error) throw error;
+  // #85: maybeSingle() turns a missing/RLS-hidden update target into a clean not-found
+  // instead of single()'s PGRST116; inserts always return their row.
+  if (!data) throw new Error("Goal not found");
   return mapGoal(data as GoalRow);
 }
 

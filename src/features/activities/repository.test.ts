@@ -76,7 +76,7 @@ describe("activities repository", () => {
 
   it("trims input and inserts a new activity", async () => {
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const insert = jest.fn(() => ({ select }));
     const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -103,7 +103,7 @@ describe("activities repository", () => {
 
   it("updates an existing activity scoped to user and id", async () => {
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const eqId = jest.fn(() => ({ select }));
     const eqUser = jest.fn(() => ({ eq: eqId }));
     const update = jest.fn(() => ({ eq: eqUser }));
@@ -141,7 +141,7 @@ describe("activities repository", () => {
       data: { ...sampleRow, completed_at: "now", mood_after: 4 },
       error: null,
     });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const eqId = jest.fn(() => ({ select }));
     const eqUser = jest.fn(() => ({ eq: eqId }));
     const update = jest.fn(() => ({ eq: eqUser }));

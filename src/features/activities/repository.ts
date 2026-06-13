@@ -75,8 +75,11 @@ export async function saveActivity(userId: string, input: ActivityInput, activit
     ? client.from("activity_logs").update(payload).eq("user_id", userId).eq("id", activityId)
     : client.from("activity_logs").insert(payload);
 
-  const { data, error } = await query.select("*").single();
+  const { data, error } = await query.select("*").maybeSingle();
   if (error) throw error;
+  // #85: maybeSingle() turns a missing/RLS-hidden update target into a clean not-found
+  // instead of single()'s PGRST116; inserts always return their row.
+  if (!data) throw new Error("Activity not found");
   return mapActivity(data as ActivityLogRow);
 }
 

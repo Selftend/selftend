@@ -52,7 +52,7 @@ describe("worry repository", () => {
 
   it("trims statements and inserts a worry entry", async () => {
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const insert = jest.fn(() => ({ select }));
     const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -83,7 +83,7 @@ describe("worry repository", () => {
 
   it("includes created_at when createdAt is provided", async () => {
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const insert = jest.fn(() => ({ select }));
     const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -106,7 +106,7 @@ describe("worry repository", () => {
 
   it("coerces missing probability to null", async () => {
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const insert = jest.fn(() => ({ select }));
     const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -136,7 +136,7 @@ describe("worry repository", () => {
 
   it("updates an existing worry when entryId is provided", async () => {
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const eqId = jest.fn(() => ({ select }));
     const eqUser = jest.fn(() => ({ eq: eqId }));
     const update = jest.fn(() => ({ eq: eqUser }));

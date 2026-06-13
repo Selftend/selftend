@@ -84,9 +84,13 @@ export async function saveMoodLog(userId: string, input: MoodInput, moodLogId?: 
     ? client.from("mood_logs").update(payload).eq("user_id", userId).eq("id", moodLogId)
     : client.from("mood_logs").insert({ ...payload, user_id: userId });
 
-  const { data, error } = await query.select("*").single();
+  const { data, error } = await query.select("*").maybeSingle();
 
   if (error) throw error;
+  // #85: an update against a missing/RLS-hidden row returns 0 rows; maybeSingle() gives a
+  // clean not-found here instead of single()'s opaque PGRST116. Inserts always return their
+  // row, so this never false-positives on create.
+  if (!data) throw new Error("Mood log not found");
   return mapMoodLog(data as MoodLogRow);
 }
 

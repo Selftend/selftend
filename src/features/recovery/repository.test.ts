@@ -66,7 +66,7 @@ describe("recovery repository", () => {
       user_id: "user-1",
     };
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     // recovery_plans is a decrypting VIEW: the client .insert()s and the INSTEAD OF
     // trigger resolves the per-user merge (a view can't be an ON CONFLICT target).
     const insert = jest.fn(() => ({ select }));
@@ -138,7 +138,7 @@ describe("recovery repository", () => {
       user_id: "user-1",
     };
     const updateSingle = jest.fn().mockResolvedValue({ data: updatedRow, error: null });
-    const updateSelect = jest.fn(() => ({ single: updateSingle }));
+    const updateSelect = jest.fn(() => ({ single: updateSingle, maybeSingle: updateSingle }));
     const updateEqId = jest.fn(() => ({ select: updateSelect }));
     const updateEqUser = jest.fn(() => ({ eq: updateEqId }));
     const update = jest.fn(() => ({ eq: updateEqUser }));

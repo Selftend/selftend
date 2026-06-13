@@ -180,9 +180,12 @@ export async function saveGratitudeEntry(userId: string, input: GratitudeInput, 
         logged_at: loggedAt,
       });
 
-  const { data, error } = await query.select("*").single();
+  const { data, error } = await query.select("*").maybeSingle();
 
   if (error) throw error;
+  // #85: maybeSingle() turns a missing/RLS-hidden update target into a clean not-found
+  // instead of single()'s PGRST116; inserts always return their row.
+  if (!data) throw new Error("Gratitude entry not found");
   return mapGratitudeEntry(data as GratitudeEntryRow);
 }
 

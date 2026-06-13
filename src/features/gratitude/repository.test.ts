@@ -157,7 +157,7 @@ describe("gratitude repository", () => {
       updated_at: "2026-05-15T08:00:00.000Z",
     };
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const insert = jest.fn(() => ({ select }));
     const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -213,7 +213,7 @@ describe("gratitude repository", () => {
       updated_at: "2026-05-15T08:30:00.000Z",
     };
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const eqId = jest.fn(() => ({ select }));
     const eqUser = jest.fn(() => ({ eq: eqId }));
     const update = jest.fn(() => ({ eq: eqUser }));
@@ -283,7 +283,7 @@ describe("gratitude repository", () => {
       updated_at: "2026-05-15T08:30:00.000Z",
     };
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const insert = jest.fn(() => ({ select }));
     const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -343,7 +343,7 @@ describe("gratitude repository", () => {
       updated_at: "2026-05-15T08:30:00.000Z",
     };
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const eqId = jest.fn(() => ({ select }));
     const eqUser = jest.fn(() => ({ eq: eqId }));
     const update = jest.fn(() => ({ eq: eqUser }));

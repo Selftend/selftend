@@ -130,7 +130,7 @@ describe("mood repository", () => {
       bodily_sensations: "",
     };
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const insert = jest.fn(() => ({ select }));
     const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -161,6 +161,35 @@ describe("mood repository", () => {
     );
   });
 
+  it("throws a clean not-found when updating a missing or RLS-hidden mood log (#85)", async () => {
+    // An update whose id no longer matches a visible row returns 0 rows; the repo must
+    // surface a clean not-found instead of PostgREST's opaque PGRST116 from .single().
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+    const select = jest.fn(() => ({ single: maybeSingle, maybeSingle }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ update }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      saveMoodLog(
+        "user-1",
+        {
+          moodScore: 3,
+          emotions: [],
+          notes: "",
+          linkedStrategy: null,
+          situation: "",
+          thoughts: "",
+          behaviours: "",
+          bodilySensations: "",
+        },
+        "missing-id",
+      ),
+    ).rejects.toThrow("Mood log not found");
+  });
+
   it("trims notes and updates an existing mood log", async () => {
     const row = {
       id: "log-1",
@@ -177,7 +206,7 @@ describe("mood repository", () => {
       bodily_sensations: "",
     };
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
-    const select = jest.fn(() => ({ single }));
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
     const eqId = jest.fn(() => ({ select }));
     const eqUser = jest.fn(() => ({ eq: eqId }));
     const update = jest.fn(() => ({ eq: eqUser }));

@@ -37,7 +37,7 @@ describe("breathing exercises repository", () => {
 
   it("inserts a new exercise, trims the name, maps the row to camelCase", async () => {
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
-    const selectAfter = jest.fn(() => ({ single }));
+    const selectAfter = jest.fn(() => ({ single, maybeSingle: single }));
     const insert = jest.fn(() => ({ select: selectAfter }));
     const from = jest.fn(() => ({ insert }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -60,7 +60,7 @@ describe("breathing exercises repository", () => {
 
   it("updates when an id is supplied (scoped to user_id + id)", async () => {
     const single = jest.fn().mockResolvedValue({ data: row, error: null });
-    const selectAfter = jest.fn(() => ({ single }));
+    const selectAfter = jest.fn(() => ({ single, maybeSingle: single }));
     const eqId = jest.fn(() => ({ select: selectAfter }));
     const eqUser = jest.fn(() => ({ eq: eqId }));
     const update = jest.fn(() => ({ eq: eqUser }));

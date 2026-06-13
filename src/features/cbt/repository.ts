@@ -103,11 +103,14 @@ export async function saveThoughtRecord(
         .from("thought_records")
         .insert(input.createdAt ? { ...payload, created_at: input.createdAt } : payload);
 
-  const { data, error } = await query.select("*").single();
+  const { data, error } = await query.select("*").maybeSingle();
 
   if (error) {
     throw error;
   }
+  // #85: maybeSingle() turns a missing/RLS-hidden update target into a clean not-found
+  // instead of single()'s PGRST116; inserts always return their row.
+  if (!data) throw new Error("Thought record not found");
 
   return mapThoughtRecord(data as ThoughtRecordRow);
 }
