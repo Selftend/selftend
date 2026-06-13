@@ -617,6 +617,13 @@
     }
   },
   "goals": {
+    "validation": {
+      "milestoneDescription": "Describe the milestone.",
+      "lifeDomain": "Choose a life domain.",
+      "goalType": "Choose a goal type.",
+      "title": "Give the goal a short title.",
+      "milestones": "Add at least one milestone."
+    },
     "title": "Goals",
     "description": "Set meaningful goals and track them with milestones.",
     "loading": "Loading goals...",

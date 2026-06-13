@@ -13,6 +13,7 @@ import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { formatLocalTimestamp } from "@/src/utils/date";
 
 export default function ActDefusionListScreen() {
   const { t } = useTranslation("act");
@@ -37,7 +38,7 @@ export default function ActDefusionListScreen() {
 
           <Button onPress={() => router.push("/modules/act/defusion/new")}>
             <Icon name="add" className="size-4 text-primary-foreground" />
-            <Text>{t("home.defuseThought")}</Text>
+            <Text>{t("defusion.newTitle")}</Text>
           </Button>
 
           <RelatedTools
@@ -72,7 +73,7 @@ export default function ActDefusionListScreen() {
                         {t(`defusion.techniques.${log.techniqueUsed}`)}
                       </Text>
                       <Text variant="muted" className="text-xs">
-                        {new Date(log.createdAt).toLocaleString()}
+                        {formatLocalTimestamp(log.createdAt)}
                       </Text>
                     </View>
                     {log.fusionLevelBefore !== null && log.fusionLevelAfter !== null ? (

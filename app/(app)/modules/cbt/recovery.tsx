@@ -52,6 +52,7 @@ import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { isStrategyKey, strategyKeys, type StrategyKey } from "@/src/features/cbt/strategies";
+import { currentDateKey } from "@/src/utils/date";
 
 type TimelineKey = StrategyKey | "mood" | "recovery";
 type ListFieldName = "recoveryKeys" | "maintenanceCommitments";
@@ -455,7 +456,7 @@ export default function RecoveryScreen() {
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement("a");
         anchor.href = url;
-        anchor.download = `selftend-recovery-plan-${new Date().toISOString().split("T")[0]}.md`;
+        anchor.download = `selftend-recovery-plan-${currentDateKey()}.md`;
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);

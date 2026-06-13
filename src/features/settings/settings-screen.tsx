@@ -21,6 +21,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { signOut } from "@/src/features/auth/api";
 import { cancelAllReminders } from "@/src/lib/notifications";
+import { currentDateKey } from "@/src/utils/date";
 import {
   useRemoveUserAvatar,
   useResetUserAvatarToOAuth,
@@ -736,7 +737,7 @@ function ExportDataButton() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `selftend-export-${new Date().toISOString().split("T")[0]}.json`;
+        a.download = `selftend-export-${currentDateKey()}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

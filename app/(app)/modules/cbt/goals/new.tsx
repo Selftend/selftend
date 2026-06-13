@@ -159,7 +159,7 @@ export default function NewGoalScreen() {
               ))}
             </View>
             {errors.lifeDomain?.message ? (
-              <Text className="text-sm text-destructive">{errors.lifeDomain.message}</Text>
+              <Text className="text-sm text-destructive">{t(errors.lifeDomain.message)}</Text>
             ) : null}
           </View>
 
@@ -179,7 +179,7 @@ export default function NewGoalScreen() {
               ))}
             </View>
             {errors.goalType?.message ? (
-              <Text className="text-sm text-destructive">{errors.goalType.message}</Text>
+              <Text className="text-sm text-destructive">{t(errors.goalType.message)}</Text>
             ) : null}
           </View>
         </View>
@@ -201,7 +201,7 @@ export default function NewGoalScreen() {
                   value={value}
                 />
                 {errors.title?.message ? (
-                  <Text className="text-sm text-destructive">{errors.title.message}</Text>
+                  <Text className="text-sm text-destructive">{t(errors.title.message)}</Text>
                 ) : null}
               </View>
             )}
@@ -270,7 +270,7 @@ export default function NewGoalScreen() {
                       />
                       {errors.milestones?.[index]?.description?.message ? (
                         <Text className="text-sm text-destructive">
-                          {errors.milestones[index]!.description!.message}
+                          {t(errors.milestones[index]!.description!.message)}
                         </Text>
                       ) : null}
                     </View>
@@ -291,7 +291,7 @@ export default function NewGoalScreen() {
           </Button>
 
           {errors.milestones?.message ? (
-            <Text className="text-sm text-destructive">{errors.milestones.message}</Text>
+            <Text className="text-sm text-destructive">{t(errors.milestones.message)}</Text>
           ) : null}
         </View>
       ) : null}
