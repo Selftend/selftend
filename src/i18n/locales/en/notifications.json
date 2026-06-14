@@ -22,7 +22,6 @@
   "actions": {
     "save": "Save",
     "saving": "Saving...",
-    "open": "Open notifications",
     "openShort": "Notifications"
   },
   "feedback": {

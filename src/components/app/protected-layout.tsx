@@ -51,9 +51,9 @@ export default function ProtectedLayout() {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 items-center justify-center gap-3 p-6">
-          <Text variant="h1">Loading</Text>
+          <Text variant="h1">{t("common:loading")}</Text>
           <ActivityIndicator />
-          <Text variant="muted">Restoring your session...</Text>
+          <Text variant="muted">{t("common:restoringSession")}</Text>
         </View>
       </SafeAreaView>
     );

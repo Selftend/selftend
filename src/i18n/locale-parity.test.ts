@@ -10,11 +10,7 @@ import path from "path";
 const LOCALES_DIR = path.join(__dirname, "locales");
 
 // Each entry is a key-path prefix: it matches that exact path or any child beneath it.
-const KNOWN_GAPS: Record<string, { enOnly: string[]; bgOnly: string[] }> = {
-  // bg keeps a legacy top-level history block that duplicates module.history; no en equivalent.
-  // Dead code — no meditation file uses t("history.xxx") directly. Leave allowlisted.
-  "meditation.json": { enOnly: [], bgOnly: ["history"] },
-};
+const KNOWN_GAPS: Record<string, { enOnly: string[]; bgOnly: string[] }> = {};
 
 function leafPaths(value: unknown, prefix = ""): string[] {
   if (value !== null && typeof value === "object") {
