@@ -8,7 +8,7 @@
 
 ## 1. Framework Overview
 
-### The Think–Act–Be Model
+### The Think-Act-Be Model
 
 The book organizes CBT around three mutually reinforcing pillars:
 
@@ -118,8 +118,8 @@ Examples:
 | Field                | Type        | Notes                        |
 | -------------------- | ----------- | ---------------------------- |
 | `lifeDomain`         | enum        | Same domains as Goal         |
-| `importanceRating`   | integer 1–5 | How much this domain matters |
-| `satisfactionRating` | integer 1–5 | Current level of fulfillment |
+| `importanceRating`   | integer 1-5 | How much this domain matters |
+| `satisfactionRating` | integer 1-5 | Current level of fulfillment |
 | `domainNote`         | string      | What matters in this domain  |
 
 **User inputs (activity log):**
@@ -130,8 +130,8 @@ Examples:
 | `category`     | enum         | `pleasure`, `mastery` |
 | `scheduledAt`  | timestamp    | When planned          |
 | `completedAt`  | timestamp    | When done             |
-| `moodBefore`   | integer 1–10 |                       |
-| `moodAfter`    | integer 1–10 |                       |
+| `moodBefore`   | integer 1-10 |                       |
+| `moodAfter`    | integer 1-10 |                       |
 | `notes`        | string       | Optional              |
 
 **Key prompts:**
@@ -158,7 +158,7 @@ Examples:
 
 1. **Situation** - what happened? (facts only, no interpretation)
 2. **Automatic Thought** - what thought arose?
-3. **Emotions** - what feelings came up, and how intense (0–100)?
+3. **Emotions** - what feelings came up, and how intense (0-100)?
 4. **Likely Distortions** - which cognitive distortions apply?
 5. **Balanced Thought** - given the evidence, what's a more accurate view?
 
@@ -186,12 +186,12 @@ Examples:
 | `situation`              | string        | Optional at save time                                |
 | `automaticThought`       | string        | Optional at save time                                |
 | `emotions`               | string[]      | Free text or tag selection; optional at save time    |
-| `emotionIntensityBefore` | integer 0–100 |                                                      |
+| `emotionIntensityBefore` | integer 0-100 |                                                      |
 | `distortions`            | string[]      | Tag selection from list above; optional at save time |
 | `evidenceFor`            | string        | Facts supporting the thought                         |
 | `evidenceAgainst`        | string        | Facts against the thought                            |
 | `balancedThought`        | string        | Optional at save time                                |
-| `emotionIntensityAfter`  | integer 0–100 |                                                      |
+| `emotionIntensityAfter`  | integer 0-100 |                                                      |
 | `outcomeNotes`           | string        | Optional reflection                                  |
 
 **Prompts shown during evidence examination:**
@@ -235,8 +235,8 @@ Examples:
 | `evidenceFor`               | string        | What supports this belief?                       |
 | `evidenceAgainst`           | string        | What contradicts it?                             |
 | `alternativeBelief`         | string        | A more balanced belief statement                 |
-| `originalBeliefStrength`    | integer 0–100 | How strongly believed (tracked over time)        |
-| `alternativeBeliefStrength` | integer 0–100 | Tracked over time                                |
+| `originalBeliefStrength`    | integer 0-100 | How strongly believed (tracked over time)        |
+| `alternativeBeliefStrength` | integer 0-100 | Tracked over time                                |
 | `reinforcementPlan`         | string        | What experiences will help build the new belief? |
 | `nextReviewDate`            | date          | Scheduled check-in                               |
 
@@ -288,7 +288,7 @@ Examples:
 | `durationMinutes` | integer      | Selected at session start  |
 | `completedAt`     | timestamp    |                            |
 | `reflection`      | string       | Optional post-session note |
-| `moodAfter`       | integer 1–10 |                            |
+| `moodAfter`       | integer 1-10 |                            |
 
 **Key prompts:**
 
@@ -312,7 +312,7 @@ Examples:
 **Tool features:**
 
 - Task entry with avoidance reason and fear-thought capture
-- Lightweight thought challenge (2–3 prompts, not the full thought record)
+- Lightweight thought challenge (2-3 prompts, not the full thought record)
 - Step breakdown with time estimates
 - Step-by-step completion with celebration on each step
 - Completed task archive (positive reinforcement)
@@ -349,7 +349,7 @@ Examples:
 **Key concepts from the book:**
 
 - **Yerkes-Dodson Law:** Optimal performance occurs at moderate anxiety. Too little or too much impairs it.
-- **SUDS:** Subjective Units of Distress Scale (0–100) measures anxiety intensity
+- **SUDS:** Subjective Units of Distress Scale (0-100) measures anxiety intensity
 - **Safety behaviors** (reassurance-seeking, escape, checking) provide short-term relief but prevent long-term habituation - they must be reduced during exposure
 - **Habituation:** anxiety peaks and then drops naturally during exposure; the user's job is to stay with it
 - **ERP (Exposure and Response Prevention):** for OCD-type patterns, expose to the feared thought while preventing the compulsive response
@@ -373,15 +373,15 @@ Examples:
 | `anxietyType` | enum           | From types above       |
 | `items[]`     | ExposureItem[] | Sorted by SUDS rating  |
 
-**ExposureItem fields:** `description` (string), `sudsRating` (integer 0–100), `completedAt` (timestamp, null until done)
+**ExposureItem fields:** `description` (string), `sudsRating` (integer 0-100), `completedAt` (timestamp, null until done)
 
 **Sub-module B: Exposure Session Tracker**
 
 | Field                       | Type          | Notes                                       |
 | --------------------------- | ------------- | ------------------------------------------- |
 | `exposureItemId`            | string        | Which item is being practiced               |
-| `preSuds`                   | integer 0–100 |                                             |
-| `postSuds`                  | integer 0–100 |                                             |
+| `preSuds`                   | integer 0-100 |                                             |
+| `postSuds`                  | integer 0-100 |                                             |
 | `durationMinutes`           | integer       |                                             |
 | `safetyBehaviorsUsed`       | boolean       | Flag; if true, note what and work to reduce |
 | `safetyBehaviorDescription` | string        | Optional                                    |
@@ -394,7 +394,7 @@ Examples:
 | --------------------- | ------------- | ----------------------------------------- |
 | `worryStatement`      | string        |                                           |
 | `worryCategory`       | enum          | `hypothetical` ("what if"), `realProblem` |
-| `probabilityEstimate` | integer 0–100 | For hypothetical worries                  |
+| `probabilityEstimate` | integer 0-100 | For hypothetical worries                  |
 | `evidenceFor`         | string        |                                           |
 | `evidenceAgainst`     | string        |                                           |
 | `copingStatement`     | string        | For hypothetical worries                  |
@@ -446,13 +446,13 @@ Trigger → Interpretation → Physical Arousal → Urge → Behavior → Conseq
 | --------------------------- | ------------ | ------------------------------------- |
 | `trigger`                   | string       | What happened                         |
 | `interpretation`            | string       | What story did you tell yourself      |
-| `arousalLevel`              | integer 1–10 | Peak arousal                          |
+| `arousalLevel`              | integer 1-10 | Peak arousal                          |
 | `urge`                      | string       | What you felt like doing              |
 | `behaviorChosen`            | string       | What you actually did                 |
 | `consequence`               | string       | What happened as a result             |
 | `timeOutTaken`              | boolean      | Did you take a cooling-off period     |
 | `alternativeInterpretation` | string       | Another way to see the trigger        |
-| `outcomeRating`             | integer 1–10 | How satisfied with how you handled it |
+| `outcomeRating`             | integer 1-10 | How satisfied with how you handled it |
 | `notes`                     | string       | Optional                              |
 
 **Key prompts:**
@@ -470,7 +470,7 @@ Trigger → Interpretation → Physical Arousal → Urge → Behavior → Conseq
 
 **Key concepts from the book:**
 
-- Sleep: 7–9 hours per night; consistent schedule; dark, cool room; limit screens before bed
+- Sleep: 7-9 hours per night; consistent schedule; dark, cool room; limit screens before bed
 - Exercise: proven antidepressant effects; 30+ minutes most days; walking counts
 - Nutrition: structured meals; avoid relying on caffeine, sugar, or alcohol for emotional regulation
 - Social connection: quality over quantity; regular contact with people who care about you
@@ -491,7 +491,7 @@ Trigger → Interpretation → Physical Arousal → Urge → Behavior → Conseq
 | ---------------------- | ------------ | ----------------------- |
 | `date`                 | date         |                         |
 | `sleepHours`           | float        |                         |
-| `sleepQuality`         | integer 1–10 |                         |
+| `sleepQuality`         | integer 1-10 |                         |
 | `exerciseDone`         | boolean      |                         |
 | `exerciseMinutes`      | integer      | If done                 |
 | `exerciseType`         | string       | Optional                |
@@ -577,8 +577,8 @@ Milestone {
 // Strategy 2
 ValuesProfile {
   lifeDomain: LifeDomain
-  importanceRating: integer    // 1–5
-  satisfactionRating: integer  // 1–5
+  importanceRating: integer    // 1-5
+  satisfactionRating: integer  // 1-5
   domainNote: string
 }
 
@@ -587,8 +587,8 @@ ActivityLog {
   category: 'pleasure' | 'mastery'
   scheduledAt: timestamp | null
   completedAt: timestamp | null
-  moodBefore: integer | null   // 1–10
-  moodAfter: integer | null    // 1–10
+  moodBefore: integer | null   // 1-10
+  moodAfter: integer | null    // 1-10
   notes: string
 }
 
@@ -597,12 +597,12 @@ ThoughtRecord {
   situation: string
   automaticThought: string
   emotions: string[]
-  emotionIntensityBefore: integer  // 0–100
+  emotionIntensityBefore: integer  // 0-100
   distortions: string[]
   evidenceFor: string
   evidenceAgainst: string
   balancedThought: string
-  emotionIntensityAfter: integer   // 0–100
+  emotionIntensityAfter: integer   // 0-100
   outcomeNotes: string
 }
 
@@ -613,7 +613,7 @@ CoreBelief {
   evidenceFor: string
   evidenceAgainst: string
   alternativeBelief: string
-  originalBeliefStrength: integer  // 0–100, tracked over time
+  originalBeliefStrength: integer  // 0-100, tracked over time
   alternativeBeliefStrength: integer
   reinforcementPlan: string
   nextReviewDate: date | null
@@ -625,7 +625,7 @@ MindfulnessSession {
   durationMinutes: integer
   completedAt: timestamp
   reflection: string
-  moodAfter: integer  // 1–10
+  moodAfter: integer  // 1-10
 }
 
 // Strategy 6
@@ -657,7 +657,7 @@ ExposureHierarchy {
 ExposureItem {
   hierarchyId: string
   description: string
-  sudsRating: integer         // 0–100
+  sudsRating: integer         // 0-100
   completedAt: timestamp | null
 }
 
@@ -675,7 +675,7 @@ ExposureSession {
 WorryEntry {
   worryStatement: string
   worryCategory: 'hypothetical' | 'realProblem'
-  probabilityEstimate: integer | null  // 0–100, for hypothetical
+  probabilityEstimate: integer | null  // 0-100, for hypothetical
   evidenceFor: string
   evidenceAgainst: string
   copingStatement: string
@@ -687,13 +687,13 @@ WorryEntry {
 AngerLog {
   trigger: string
   interpretation: string
-  arousalLevel: integer    // 1–10
+  arousalLevel: integer    // 1-10
   urge: string
   behaviorChosen: string
   consequence: string
   timeOutTaken: boolean
   alternativeInterpretation: string
-  outcomeRating: integer   // 1–10
+  outcomeRating: integer   // 1-10
   notes: string
 }
 
@@ -701,7 +701,7 @@ AngerLog {
 SelfCareLog {
   date: date                  // one entry per day
   sleepHours: float
-  sleepQuality: integer       // 1–10
+  sleepQuality: integer       // 1-10
   exerciseDone: boolean
   exerciseMinutes: integer | null
   exerciseType: string
@@ -730,7 +730,7 @@ ChallengePlan {
 
 // Global
 MoodLog {
-  moodScore: integer        // 1–10
+  moodScore: integer        // 1-10
   emotions: string[]
   notes: string
   linkedStrategy: string | null
@@ -763,7 +763,7 @@ type AnxietyType =
 
 ### Onboarding
 
-1. Welcome: explain the Think–Act–Be model; set expectation that this is a practice, not a quick fix
+1. Welcome: explain the Think-Act-Be model; set expectation that this is a practice, not a quick fix
 2. Brief self-report: which concerns apply? (anxiety, depression, anger, procrastination - multi-select)
 3. Goal setting: create at least one goal before proceeding (enforces Strategy 1)
 4. Values clarification: rate importance and satisfaction across life domains (feeds Strategy 2)
@@ -790,9 +790,9 @@ type AnxietyType =
 | Milestone  | Conditions                                                               |
 | ---------- | ------------------------------------------------------------------------ |
 | Week 1     | Goal created, first activity scheduled, first thought record completed   |
-| Weeks 2–4  | Exposure hierarchy started (if anxiety-focused), core beliefs identified |
-| Weeks 4–8  | Regular daily check-ins; patterns visible in data                        |
-| Weeks 8–12 | Recovery plan drafted; maintenance mode begins                           |
+| Weeks 2-4  | Exposure hierarchy started (if anxiety-focused), core beliefs identified |
+| Weeks 4-8  | Regular daily check-ins; patterns visible in data                        |
+| Weeks 8-12 | Recovery plan drafted; maintenance mode begins                           |
 
 ---
 
@@ -812,7 +812,7 @@ type AnxietyType =
 
 ### Mood Tracking (Global)
 
-Mood is logged at multiple points: morning check-in, after activities, after mindfulness sessions, evening check-in. Dashboard shows 7-day and 30-day charts. A mood of 1–2 triggers a crisis support prompt with local helpline information.
+Mood is logged at multiple points: morning check-in, after activities, after mindfulness sessions, evening check-in. Dashboard shows 7-day and 30-day charts. A mood of 1-2 triggers a crisis support prompt with local helpline information.
 
 ### Dashboard
 
@@ -842,7 +842,7 @@ Deferred or out of scope for MVP notifications:
 
 ### Safety
 
-- Mood of 1–2 → display crisis support message and local crisis line information
+- Mood of 1-2 → display crisis support message and local crisis line information
 - Tool is not a substitute for professional help - disclaimer shown during onboarding and accessible from settings at any time
 - No clinical diagnoses or clinical language in UI copy
 
@@ -883,7 +883,7 @@ Deferred or out of scope for MVP notifications:
 | ThoughtRecord        | Structured form: situation → automatic thought → emotions → evidence → distortions → balanced thought → outcome |
 | AutomaticThought     | An immediate, unexamined thought arising in response to a situation                                             |
 | CoreBelief           | A deep-seated global assumption about self, others, or the world                                                |
-| SUDS                 | Subjective Units of Distress Scale, 0–100                                                                       |
+| SUDS                 | Subjective Units of Distress Scale, 0-100                                                                       |
 | Exposure             | Planned, deliberate contact with a feared situation without using safety behaviors                              |
 | SafetyBehavior       | An action taken during anxiety to reduce it short-term that prevents long-term habituation                      |
 | BehavioralActivation | Scheduling meaningful activities to break the depression-inactivity cycle                                       |

@@ -22,7 +22,7 @@ function stripControlChars(value: string): string {
 }
 
 // Category required (1..MAX chars, control chars stripped), message a string of
-// 10–1000 trimmed chars.
+// 10-1000 trimmed chars.
 export function validateFeedbackInput(category: unknown, message: unknown): FeedbackValidation {
   const trimmed = typeof message === "string" ? message.trim() : "";
   const rawCategory = typeof category === "string" ? category.trim() : "";

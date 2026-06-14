@@ -15,7 +15,7 @@ export interface MeditationInsights {
   /**
    * Average mind-wandering count in the last 14 days minus the prior 14 days
    * (so a negative number means catches are happening less often, which is
-   * the direction practice tends in at Stages 2–3). Null if either window has
+   * the direction practice tends in at Stages 2-3). Null if either window has
    * fewer than three sits with a logged count.
    */
   mindWanderingTrend: number | null;

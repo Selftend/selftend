@@ -65,7 +65,7 @@ Workspace settings in `.vscode/settings.json` make Prettier the default VS Code/
 | `EXPO_PUBLIC_GITHUB_REPO_URL`           | consumed             | consumed             | consumed            | Defaulted in `src/lib/env.ts` to `https://github.com/Selftend/selftend`.                                             |
 | `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` | deferred             | n/a                  | n/a                 | Set when web push reminders are deployed; missing value disables web reminders only.                                 |
 
-"required (validated)" means the workflow's `Check release environment` / `Check deploy environment` step (`android-release.yml` lines 101–120, `web-deploy.yml` lines 47–67) fails the run if the value is unset.
+"required (validated)" means the workflow's `Check release environment` / `Check deploy environment` step (`android-release.yml` lines 101-120, `web-deploy.yml` lines 47-67) fails the run if the value is unset.
 
 ### Release secrets
 

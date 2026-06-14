@@ -44,7 +44,7 @@ export function MoodTrendWidget({ userId }: { userId: string }) {
             <Text
               className={cn("text-2xl font-bold", sevenDay === null && "text-muted-foreground")}
             >
-              {sevenDay === null ? "–" : sevenDay.toFixed(1)}
+              {sevenDay === null ? "-" : sevenDay.toFixed(1)}
             </Text>
           </View>
           <View className="flex-1 gap-0.5 rounded-xl bg-muted/40 px-3 py-2.5">

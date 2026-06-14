@@ -53,7 +53,7 @@ test.describe("ACT defusion: create, view, delete", () => {
     await page.getByRole("button", { name: "Worry", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // ── Step 3: Fusion before (NumberRating 0–100 step 10) ────────────────────
+    // ── Step 3: Fusion before (NumberRating 0-100 step 10) ────────────────────
     // Click button "60"
     await page.getByRole("button", { name: "60", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();

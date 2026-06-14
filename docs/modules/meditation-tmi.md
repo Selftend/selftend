@@ -14,10 +14,10 @@ The book organizes meditative training as a sequence of **ten distinct, easy-to-
 
 | Phase              | Stages | Milestone reached at end                                         |
 | ------------------ | ------ | ---------------------------------------------------------------- |
-| **The Novice**     | 1–3    | Milestone One - Continuous Attention to the Object               |
-| **The Skilled**    | 4–6    | Milestone Two - Sustained Exclusive Focus                        |
+| **The Novice**     | 1-3    | Milestone One - Continuous Attention to the Object               |
+| **The Skilled**    | 4-6    | Milestone Two - Sustained Exclusive Focus                        |
 | **The Transition** | 7      | Milestone Three - Effortless Stability of Attention              |
-| **The Adept**      | 8–10   | Milestone Four - Persistence of the Mental Qualities of an Adept |
+| **The Adept**      | 8-10   | Milestone Four - Persistence of the Mental Qualities of an Adept |
 
 Progression is **not linear**. A beginner may pass through Stages One and Two in a single sit; an adept may slip back to earlier Stages under stress. The product must therefore avoid streak language, "level up" framing, or any UI that treats a slip as failure. The book explicitly compares this to filling a leaky bucket: practice that does not infuse daily life never accumulates.
 
@@ -65,7 +65,7 @@ Progress comes from clear intentions, not from force. The practitioner is a gard
 
 - Stage 1 home card: today's sit slot, current streak shown _only as continuity-of-practice context_ (no fire emojis, no warnings), one-tap start.
 - Six-Point Preparation as an opt-in pre-sit checklist; collapses to a single tap once the user marks it familiar.
-- Four-Step Transition as an opt-in 30–60 s guided opener at the start of the timer.
+- Four-Step Transition as an opt-in 30-60 s guided opener at the start of the timer.
 - Routine builder: preferred time of day, preferred duration, optional quiet reminder.
 
 **Key prompts (post-sit):**
@@ -212,7 +212,7 @@ The tool marks this milestone with a quiet, non-celebratory acknowledgement - no
 
 ### Milestone Two - Sustained Exclusive Focus of Attention
 
-With mastery of Stages 4–6, attention no longer alternates back and forth between the breath and distractions in the background. The practitioner can focus on the breath to the exclusion of everything else, and the scope of attention itself is stable. Dullness has completely disappeared, and mindfulness takes the form of a powerful metacognitive introspective awareness. The two major objectives of meditative training - stable attention and powerful mindfulness - have been achieved.
+With mastery of Stages 4-6, attention no longer alternates back and forth between the breath and distractions in the background. The practitioner can focus on the breath to the exclusion of everything else, and the scope of attention itself is stable. Dullness has completely disappeared, and mindfulness takes the form of a powerful metacognitive introspective awareness. The two major objectives of meditative training - stable attention and powerful mindfulness - have been achieved.
 
 The tool marks this milestone the same way as Milestone One: a quiet acknowledgement, no fanfare.
 
@@ -333,8 +333,8 @@ All entities use camelCase field names and are stored in Supabase. Every entity 
 ```typescript
 // One row per user - the user's place in the program.
 MeditationProgramState {
-  currentStage: integer           // 1–10
-  assessedStage: integer          // 1–10, set during onboarding, kept for context
+  currentStage: integer           // 1-10
+  assessedStage: integer          // 1-10, set during onboarding, kept for context
   milestonesReached: integer[]    // subset of [1, 2, 3, 4]
   onboardingCompletedAt: timestamp | null
   lastSessionAt: timestamp | null
@@ -344,7 +344,7 @@ MeditationProgramState {
 
 // Extends the existing meditation_sessions row.
 MeditationSession {
-  stageAtSession: integer         // 1–10, captured at the time of the sit
+  stageAtSession: integer         // 1-10, captured at the time of the sit
   durationMinutes: integer
   completedAt: timestamp
   // All fields below optional at save - partial records permitted.
@@ -353,13 +353,13 @@ MeditationSession {
   distractionLevel: DistractionLevel | null  // 'none' | 'subtle' | 'gross'
   obstacleTags: MeditationObstacleTag[]
   reflection: string              // optional free-text, private
-  moodAfter: integer | null       // 1–10, optional
+  moodAfter: integer | null       // 1-10, optional
   techniqueUsed: TmiTechnique | null
 }
 
 // A long-form practice note tied to a Stage, optional.
 StagePracticeNote {
-  stage: integer                  // 1–10
+  stage: integer                  // 1-10
   note: string                    // free-text, private
 }
 ```
@@ -423,8 +423,8 @@ This module follows the contract documented in `tools.md`:
 - New `user_preferences` fields, mirroring the CBT reminder fields:
   - `meditation_onboarding_completed: boolean`
   - `meditation_reminders_enabled: boolean`
-  - `meditation_reminder_hour: integer` (0–23)
-  - `meditation_reminder_minute: integer` (0–59)
+  - `meditation_reminder_hour: integer` (0-23)
+  - `meditation_reminder_minute: integer` (0-59)
   - `meditation_reminder_timezone: string | null`
 - Reminders default off, single daily reminder at the chosen practice time, non-punitive copy. Same web-push / Expo Notifications path as CBT.
 - Settings can reset the onboarding flag (same pattern as the app and CBT onboarding flags).
@@ -456,7 +456,7 @@ Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 i
 2. **Attention vs. Peripheral Awareness** - paired bullseye/landscape illustration. One short paragraph each. The product's central concept; readers see it once during onboarding and revisit it via the Learn route.
 3. **Where are you starting?** - five to seven self-assessment questions whose answers map to a starting Stage. The mapping is deliberately conservative - when in doubt, land the user one Stage earlier. Questions include:
    - "Do you have a daily sit habit?" → no = Stage 1; yes = Stage 2+
-   - "How long can you usually stay with the breath before noticing you've drifted?" → seconds / about a minute / several minutes / continuously → Stages 2 / 3 / 3–4 / 4+
+   - "How long can you usually stay with the breath before noticing you've drifted?" → seconds / about a minute / several minutes / continuously → Stages 2 / 3 / 3-4 / 4+
    - "Do you fall asleep when you meditate?" → yes = Stage 3 work
    - "Can you notice you've been distracted before you've fully forgotten the breath?" → no = Stage 2; yes = Stage 3+
    - "Have you ever experienced extended periods (minutes) of breath sensation with no thoughts at all?" → yes = Stage 4+ candidate
@@ -471,7 +471,7 @@ Onboarding can be skipped after Step 1; doing so lands the user on Stage 1 by de
 
 - **Pre-sit:** Stage-aware primer card. Stage 1 shows the Six-Point Preparation; later Stages show one or two relevant reminders ("test for effortlessness today" at Stage 7, "body scan at the midpoint?" at Stage 5). The pre-sit collapses to a single tap once the user marks it familiar.
 - **Sit:** The existing timer UI (`src/features/meditation/meditation-screen.tsx`) is reused. Optional silent half-time bell (single soft chime) for the "check-in" practice introduced at Stage 3.
-- **Post-sit reflection:** Two to four prompts pulled from the current Stage's prompt list. All optional. Mood-after (1–10) and free-text reflection always available.
+- **Post-sit reflection:** Two to four prompts pulled from the current Stage's prompt list. All optional. Mood-after (1-10) and free-text reflection always available.
 - **Stage check-in:** After seven days at the current Stage, surface a non-pushy "Want to reassess where you are?" link. The tool **never auto-advances**.
 
 ---
@@ -488,7 +488,7 @@ Onboarding can be skipped after Step 1; doing so lands the user on Stage 1 by de
 
 ### Stage Progress Display
 
-A single horizontal strip on `/modules/meditation` showing Stages 1–10 with the current Stage highlighted. The strip is informational only - no "X% complete" framing, no time estimates, no comparison to other users. Milestones appear as small dividers between Stages.
+A single horizontal strip on `/modules/meditation` showing Stages 1-10 with the current Stage highlighted. The strip is informational only - no "X% complete" framing, no time estimates, no comparison to other users. Milestones appear as small dividers between Stages.
 
 ### Insights (deferred to Phase 5)
 
@@ -556,7 +556,7 @@ Deferred or out of scope:
 | Mind-wandering                        | Extended, unrecognized thinking that has replaced attention on the meditation object.                                           |
 | Mental pliancy                        | Effortlessly sustained exclusive attention with powerful mindfulness; the state of Milestone Three.                             |
 | Physical pliancy                      | The state in which the body becomes quiet and comfortable enough to sit for extended periods without pain or distraction.       |
-| Meditative joy                        | A unique mental state of pleasure and happiness that arises with deep unification of mind - characteristic of Stages 8–9.       |
+| Meditative joy                        | A unique mental state of pleasure and happiness that arises with deep unification of mind - characteristic of Stages 8-9.       |
 | Pacification of the senses            | A temporary quieting of the five physical senses and the mind sense during deep meditation.                                     |
 | Unification of mind                   | A state in which different mental processes coalesce around a single purpose rather than working at cross-purposes.             |
 | Six-Point Preparation                 | A short pre-sit routine: motivation, goals, expectations, diligence, distractions, posture.                                     |
@@ -584,7 +584,7 @@ The module itself is ready to ship its first phase when:
 - Auth works across platforms (already true).
 - `meditation_program_state` and the extended `meditation_sessions` rows persist safely under RLS.
 - Onboarding lands a user at a Stage and records the slot they committed to.
-- The Stage-aware pre-sit and post-sit flows work for at least Stages 1–3 (Foundation phase).
+- The Stage-aware pre-sit and post-sit flows work for at least Stages 1-3 (Foundation phase).
 - Reminder defaults stay quiet.
 - Accessibility baseline matches the CBT module's.
 - Tests cover the program-state repository, the onboarding state machine, and one user-facing flow (e.g., post-sit reflection save).
@@ -595,10 +595,10 @@ The module itself is ready to ship its first phase when:
 
 | Phase                  | Modules                                                                                                                     | Notes                                                                                                       |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **1 - Foundation**     | `meditation_program_state`, extended `meditation_sessions`, onboarding modal, `/modules/meditation` home, Stages 1–3 flows. | Mirrors CBT Phase 1. Lands the daily-practice loop and the basic Stage-aware pre-sit / post-sit primitives. |
-| **2 - Skilled stages** | Stage 4–6 flows (body scan helper, whole-body-with-breath variant, dullness logging).                                       | Depends on Phase 1 being stable.                                                                            |
+| **1 - Foundation**     | `meditation_program_state`, extended `meditation_sessions`, onboarding modal, `/modules/meditation` home, Stages 1-3 flows. | Mirrors CBT Phase 1. Lands the daily-practice loop and the basic Stage-aware pre-sit / post-sit primitives. |
+| **2 - Skilled stages** | Stage 4-6 flows (body scan helper, whole-body-with-breath variant, dullness logging).                                       | Depends on Phase 1 being stable.                                                                            |
 | **3 - Transition**     | Stage 7 flow (effortlessness test, bizarre-sensation private note).                                                         | Smallest phase - single Stage but conceptually distinct.                                                    |
-| **4 - Adept stages**   | Stage 8–10 flows; extended-duration timer presets; daily-life mindfulness log.                                              | Most users won't reach this; ship behind the same module gate.                                              |
+| **4 - Adept stages**   | Stage 8-10 flows; extended-duration timer presets; daily-life mindfulness log.                                              | Most users won't reach this; ship behind the same module gate.                                              |
 | **5 - Synthesis**      | Stage-time insights, cross-Stage history, export.                                                                           | Capstone - quiet, no badges.                                                                                |
 
 ---

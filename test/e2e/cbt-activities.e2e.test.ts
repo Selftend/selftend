@@ -13,7 +13,7 @@ import { deleteAllActivityLogsForUser, deleteAllMoodLogsForUser } from "./helper
  *   categoryLabel "Category"  → buttons "Pleasure" | "Mastery"
  *   paceCategory "PACE category" → optional buttons
  *   scheduledAt "Scheduled date & time"
- *   moodBefore "Mood before (1–5)"
+ *   moodBefore "Mood before (1-5)"
  *   notes "Notes"
  *   save "Save activity"
  *
@@ -23,7 +23,7 @@ import { deleteAllActivityLogsForUser, deleteAllMoodLogsForUser } from "./helper
  *     and "Edit activity" button (activities.edit)
  *   - "Mark as complete" navigates to:
  *       /tools/mood-tracker/new?linkedStrategy=behavioral-activation&completeActivityId={id}
- *     The user rates mood (MoodScale 1–5: Awful/Low/OK/Good/Great) then
+ *     The user rates mood (MoodScale 1-5: Awful/Low/OK/Good/Great) then
  *     clicks "Save" (mood.save). This completes the activity (sets completedAt +
  *     moodAfter) and redirects back to /modules/cbt/activities/{id}.
  *   - After completion: "Completed" badge is visible; "Mark as complete" button is gone.

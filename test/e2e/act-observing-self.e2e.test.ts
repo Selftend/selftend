@@ -12,7 +12,7 @@ import { deleteAllActLogsForUser } from "./helpers";
  *   1. technique  - Pressable cards (default "tenDeepBreaths" = "Ten deep breaths")
  *   2. exercise   - Guidance card shown (read-only); continue
  *   3. observed   - Textarea "What did you observe from this vantage point?"
- *   4. after      - NumberRating 1–10 mood after + optional notes textarea
+ *   4. after      - NumberRating 1-10 mood after + optional notes textarea
  *
  * List card shows: session.whatWasObserved || technique name.
  * Detail heading:  session.whatWasObserved || technique name.
@@ -50,7 +50,7 @@ test.describe("ACT observing-self: create, view, delete", () => {
 
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // ── Step 4: After - mood rating 1–10 ──────────────────────────────────────
+    // ── Step 4: After - mood rating 1-10 ──────────────────────────────────────
     await page.getByRole("button", { name: "6", exact: true }).click();
 
     // Save

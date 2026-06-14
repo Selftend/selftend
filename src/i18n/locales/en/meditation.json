@@ -77,7 +77,7 @@
       "postSitSubtitle": "All fields are optional.",
       "reflectionLabel": "Anything to note",
       "reflectionPlaceholder": "Private notes about this sit",
-      "moodLabel": "How do you feel right now? (1–10)",
+      "moodLabel": "How do you feel right now? (1-10)",
       "dullnessLabel": "How vivid were breath sensations?",
       "dullness": {
         "none": "Vivid",

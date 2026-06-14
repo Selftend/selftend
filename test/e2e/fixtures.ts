@@ -17,7 +17,7 @@ export interface PoolUser {
 
 const POOL_PASSWORD = "e2e-worker-pass-123";
 
-// Must match supabase/seed.sql (e2e-w0..e2e-w7, ids ...010–...017).
+// Must match supabase/seed.sql (e2e-w0..e2e-w7, ids ...010-...017).
 export const POOL_USERS: PoolUser[] = [
   {
     id: "00000000-0000-0000-0000-000000000010",

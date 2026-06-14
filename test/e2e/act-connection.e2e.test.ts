@@ -12,7 +12,7 @@ import { deleteAllActLogsForUser } from "./helpers";
  *   1. technique  - Pressable cards (default "noticeFiveThings" = "Notice Five Things")
  *   2. exercise   - Guidance card shown; for "noticeFiveThings" no input needed
  *   3. notices    - Textarea "What did you notice?"
- *   4. after      - NumberRating 1–10 mood after + optional notes textarea
+ *   4. after      - NumberRating 1-10 mood after + optional notes textarea
  *
  * List card shows: log.noticesFromSenses || technique name as primary text.
  * Detail heading: log.noticesFromSenses || technique name.
@@ -49,7 +49,7 @@ test.describe("ACT connection: create, view, delete", () => {
 
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // ── Step 4: After - mood rating 1–10 ──────────────────────────────────────
+    // ── Step 4: After - mood rating 1-10 ──────────────────────────────────────
     await page.getByRole("button", { name: "7", exact: true }).click();
 
     // Save

@@ -1,4 +1,4 @@
-/** Tailwind background-tone class for a 1–5 mood score. Shared by the entry card and the detail hero. */
+/** Tailwind background-tone class for a 1-5 mood score. Shared by the entry card and the detail hero. */
 export function scoreToneClass(score: number): string {
   switch (score) {
     case 1:

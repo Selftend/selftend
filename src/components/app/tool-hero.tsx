@@ -14,7 +14,7 @@ interface ToolHeroProps {
   moduleLabel?: string;
   /** Muted body line beneath the title. */
   tagline?: string;
-  /** Optional trailing meta line (e.g. "3 patterns · 1–10 min" or a custom node). */
+  /** Optional trailing meta line (e.g. "3 patterns · 1-10 min" or a custom node). */
   meta?: ReactNode;
 }
 

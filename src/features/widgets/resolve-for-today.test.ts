@@ -22,7 +22,7 @@ describe("resolveForToday", () => {
   it("drops the badge and neutralizes date-scoped stats when the day is stale", () => {
     const r = resolveForToday(base, "2026-06-06") as StatPayload;
     expect(r.badge).toBeNull();
-    expect(r.stats[0].value).toBe("–");
+    expect(r.stats[0].value).toBe("-");
     expect(r.stats[1].value).toBe("12");
   });
 

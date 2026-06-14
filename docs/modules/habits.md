@@ -76,7 +76,7 @@ The module persists two related private tables: one for the habit definition, on
 | two_minute_version | text        | NOT NULL, default `''`, ≤ 200 chars - the < 2 min starter form                         |
 | reward_note        | text        | NOT NULL, default `''`, ≤ 200 chars - immediate satisfaction the user gives themselves |
 | cadence            | text        | NOT NULL, default `'daily'`, one of `'daily' \| 'weekdays' \| 'custom'`                |
-| custom_days        | smallint[]  | NOT NULL, default `'{}'`, values 0–6 (Sun–Sat); used only when `cadence = 'custom'`    |
+| custom_days        | smallint[]  | NOT NULL, default `'{}'`, values 0-6 (Sun-Sat); used only when `cadence = 'custom'`    |
 | color              | text        | NOT NULL, default `'primary'`, palette token name (no free-form hex)                   |
 | archived_at        | timestamptz | nullable; archived habits stay in history but disappear from today's list              |
 | created_at         | timestamptz | default now() UTC                                                                      |
@@ -180,7 +180,7 @@ There is no goal-target picker, streak commitment, or reminder-time prompt in th
   - inserts a `habit_logs` row for today (or deletes it if already ticked),
   - shows a quiet "Done" microcopy state - no celebration animation by default, but a tiny check transition for reduce-motion-off users.
   - Long-press / "more" opens the optional note sheet (`/tools/habits/[id]/log`).
-- **Week strip** - seven small cells per habit (Mon–Sun), each cell filled or empty. No streak number. No flame. No red.
+- **Week strip** - seven small cells per habit (Mon-Sun), each cell filled or empty. No streak number. No flame. No red.
 - **Never Miss Twice note** - _"You skipped yesterday. Today is a great day to tick this once."_ Surfaces only when the user has missed exactly the previous day. Disappears the moment the user ticks today or two-or-more days have passed.
 - **Recent activity** - last 5 ticks across all habits with relative time.
 - **Learn cards** - one rotating learn card (Compounding, Four Laws, Two-Minute Rule, Never Miss Twice, Identity-Based Habits). Tapping opens `/tools/habits/learn/[slug]`. Cards cycle in a fixed order; the user can dismiss the current card to advance (mirrors the gratitude break-card cycling pattern in `src/features/gratitude/gratitude-home-screen.tsx`).

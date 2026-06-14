@@ -7,7 +7,7 @@ export interface DistortionDefinition {
 
 export interface NegativeAutomaticThought {
   text: string;
-  beliefRating: number | null; // 0–100; how strongly the user believes this thought
+  beliefRating: number | null; // 0-100; how strongly the user believes this thought
   isHotThought: boolean;
 }
 

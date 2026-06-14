@@ -68,7 +68,7 @@ describe("computeMeditationInsights", () => {
       makeSession({ id: "r1", completedAt: at(1), mindWanderingEpisodes: 3 }),
       makeSession({ id: "r2", completedAt: at(5), mindWanderingEpisodes: 2 }),
       makeSession({ id: "r3", completedAt: at(10), mindWanderingEpisodes: 4 }),
-      // Prior window (14–28 days): catches were ~7 on average.
+      // Prior window (14-28 days): catches were ~7 on average.
       makeSession({ id: "p1", completedAt: at(16), mindWanderingEpisodes: 8 }),
       makeSession({ id: "p2", completedAt: at(20), mindWanderingEpisodes: 6 }),
       makeSession({ id: "p3", completedAt: at(25), mindWanderingEpisodes: 7 }),

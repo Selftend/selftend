@@ -159,7 +159,7 @@
       "postSitSubtitle": "Всички полета са по избор.",
       "reflectionLabel": "Нещо за отбелязване",
       "reflectionPlaceholder": "Лични бележки за това седене",
-      "moodLabel": "Как се чувстваш в момента? (1–10)",
+      "moodLabel": "Как се чувстваш в момента? (1-10)",
       "dullnessLabel": "Колко ярки бяха усещанията от дъха?",
       "dullness": {
         "none": "Ярки",

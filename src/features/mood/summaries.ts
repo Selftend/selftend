@@ -116,7 +116,7 @@ export interface WeekDelta {
   delta: number | null;
 }
 
-/** This week's average (days 0–6) vs the prior week (days 7–13). */
+/** This week's average (days 0-6) vs the prior week (days 7-13). */
 export function getWeekDelta(logs: MoodSample[] | undefined, now: Date = new Date()): WeekDelta {
   const list = logs ?? [];
   const current = averageInDayWindow(list, 6, 0, now);

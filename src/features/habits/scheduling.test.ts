@@ -48,7 +48,7 @@ describe("scheduling helpers", () => {
     expect(isScheduledOn(archived, new Date("2026-05-17T12:00:00"))).toBe(false);
   });
 
-  it("treats weekday habits as scheduled Mon–Fri only", () => {
+  it("treats weekday habits as scheduled Mon-Fri only", () => {
     const habit: Habit = { ...baseHabit, cadence: "weekdays" };
     expect(isScheduledOn(habit, new Date("2026-05-18T12:00:00"))).toBe(true);
     expect(isScheduledOn(habit, new Date("2026-05-16T12:00:00"))).toBe(false);

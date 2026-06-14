@@ -114,7 +114,7 @@ export function MoodEntryEditorScreen({
   const completeActivityId = paramValue(params.completeActivityId) ?? null;
   const rawScore = paramValue(params.score);
   const parsedScore = rawScore != null ? Number(rawScore) : null;
-  // The only valid scores are the integers 1–5 (MoodScale steps; DB CHECK 1..5). Reject
+  // The only valid scores are the integers 1-5 (MoodScale steps; DB CHECK 1..5). Reject
   // non-numeric, non-integer, and out-of-range `score` route params, not just NaN.
   const initialScore =
     parsedScore != null && Number.isInteger(parsedScore) && parsedScore >= 1 && parsedScore <= 5

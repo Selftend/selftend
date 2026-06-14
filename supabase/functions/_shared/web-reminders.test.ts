@@ -97,7 +97,7 @@ describe("getZonedParts", () => {
 });
 
 describe("reminderKeyIfDue", () => {
-  const now = new Date("2026-05-24T09:02:00.000Z"); // 09:02 UTC, inside the 09:00–09:05 window
+  const now = new Date("2026-05-24T09:02:00.000Z"); // 09:02 UTC, inside the 09:00-09:05 window
 
   it("returns the reminder key when due inside the 5-minute window", () => {
     expect(reminderKeyIfDue("cbt", baseSub, basePrefs, now)).toBe("2026-05-24");

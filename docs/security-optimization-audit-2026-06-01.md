@@ -10,7 +10,7 @@ Field-level encryption at rest was implemented subsequent to this audit. All use
 
 ## Remediation status (applied 2026-06-01)
 
-**31 of 35 findings fixed.** `npm run verify` (lint · format · typecheck · 953 tests · coverage ratchet) is green. DB migrations (`supabase/migrations/20260567`–`20260571`) and Deno edge changes are excluded from local verify and must be exercised against a database/preview deploy.
+**31 of 35 findings fixed.** `npm run verify` (lint · format · typecheck · 953 tests · coverage ratchet) is green. DB migrations (`supabase/migrations/20260567`-`20260571`) and Deno edge changes are excluded from local verify and must be exercised against a database/preview deploy.
 
 Fixed, by area:
 

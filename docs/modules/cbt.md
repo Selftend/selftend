@@ -43,11 +43,11 @@ The guided record uses eight steps:
 1. situation
 2. automatic thoughts (each with an optional belief rating)
 3. hot thought (mark the most distressing automatic thought)
-4. emotions and intensity before (0–100)
+4. emotions and intensity before (0-100)
 5. evidence for and against
 6. likely distortions
 7. balanced thought (shown with a running summary of the record)
-8. outcome - intensity after (0–100) and outcome notes
+8. outcome - intensity after (0-100) and outcome notes
 
 Validation:
 

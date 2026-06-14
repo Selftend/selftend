@@ -20,13 +20,13 @@ import { deleteAllActLogsForUser } from "./helpers";
  *   2. current   - Textarea "What are you already doing that reflects this value?"
  *   3. desired   - Textarea "What would you like to do more of?"
  *   4. barriers  - Textarea "What gets in the way?"
- *   5. ratings   - NumberRating 1–10 for importance + NumberRating 1–10 for alignment
+ *   5. ratings   - NumberRating 1-10 for importance + NumberRating 1-10 for alignment
  *
  * After save: router.back() → returns to /modules/act/values
  * Values are UPSERTED (profile-like) - no delete affordance on values screen.
  *
  * Bulls-eye screen (act.json > values.bullsEye):
- *   - NumberRating 1–10 per domain (work, leisure, relationships, personalGrowth)
+ *   - NumberRating 1-10 per domain (work, leisure, relationships, personalGrowth)
  *   - Save button: "Save ratings"
  *   - After save: toast "Ratings saved" → router.back()
  *
@@ -78,11 +78,11 @@ test.describe("ACT values: edit a domain value and save a bulls-eye check-in", (
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // ── Step 5: Ratings ───────────────────────────────────────────────────────
-    // Importance rating (1–10): select 8
-    // The labels are "How important is this domain to you? (1–10)" and
-    // "How aligned is your daily life with this value? (1–10)"
+    // Importance rating (1-10): select 8
+    // The labels are "How important is this domain to you? (1-10)" and
+    // "How aligned is your daily life with this value? (1-10)"
     // Both use NumberRating min=1 max=10 step=1. We click "8" for importance.
-    // There are two sets of buttons 1–10, so we need .first() / .last() or
+    // There are two sets of buttons 1-10, so we need .first() / .last() or
     // targeting by aria-label group. Use .nth(0) set and .nth(1) set approach:
     // We get all buttons named "8" - first is importance, second is alignment.
     await page.getByRole("button", { name: "8", exact: true }).first().click();
@@ -117,7 +117,7 @@ test.describe("ACT values: edit a domain value and save a bulls-eye check-in", (
     //   "Work & education" | "Leisure & play" | "Relationships" | "Health & personal growth"
     // Each NumberRating uses min=1, max=10, step=1 → 10 buttons per domain.
     // Domains appear in fixed order: work(0), leisure(1), relationships(2), personalGrowth(3).
-    // Total 40 numbered buttons on page; buttons 1–10 per domain share the same labels.
+    // Total 40 numbered buttons on page; buttons 1-10 per domain share the same labels.
     // Use nth() to select the correct domain's instance of a given number.
     // nth(0)=work, nth(1)=leisure, nth(2)=relationships, nth(3)=personalGrowth.
 

@@ -2,7 +2,7 @@
   "checkin": {
     "moduleLabel": "Check-in",
     "title": "How are you feeling?",
-    "tagline": "A simple 1–5 picker plus space for a note. No streak to protect.",
+    "tagline": "A simple 1-5 picker plus space for a note. No streak to protect.",
     "scaleLabels": {
       "1": "Awful",
       "2": "Low",
@@ -76,7 +76,7 @@
     },
     "howToUse": {
       "title": "How to log",
-      "scaleLabel": "1–5 scale",
+      "scaleLabel": "1-5 scale",
       "scaleBody": "1 is very low, 5 is very good - pick the number that fits how you feel right now.",
       "emotionsLabel": "Emotion tags",
       "emotionsBody": "Optional tags that add texture to the number.",

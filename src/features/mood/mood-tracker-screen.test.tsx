@@ -64,7 +64,7 @@ describe("MoodTrackerScreen", () => {
     // WeekHero: section heading, null average placeholder (appears in both stats row and hero),
     // delta copy when there is no prior-week data, sub-section labels, empty emotion state
     expect(screen.getByRole("heading", { name: "This week" })).toBeTruthy();
-    expect(screen.getAllByText("–")).toHaveLength(2); // stats row 7-day avg + WeekHero big number
+    expect(screen.getAllByText("-")).toHaveLength(2); // stats row 7-day avg + WeekHero big number
     expect(screen.getByText("first week of data")).toBeTruthy();
     expect(screen.getByText("Mood by day")).toBeTruthy();
     expect(screen.getByText("No emotions tagged yet")).toBeTruthy();

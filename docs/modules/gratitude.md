@@ -16,12 +16,12 @@ The book structures gratitude practice as three progressive levels, each buildin
 | ----- | ------------------------- | ------------------------------------------------- |
 | **1** | Noticing                  | Observe daily events without judgment             |
 | **2** | Reflecting & Appreciating | Mentally subtract positives to feel their value   |
-| **3** | Practicing Gratitude      | Write "I'm grateful for..." sentences 1–3× weekly |
+| **3** | Practicing Gratitude      | Write "I'm grateful for..." sentences 1-3× weekly |
 
 ### Core Principles
 
 - **Non-competitive** - nobody is watching; there is no failure mode.
-- **Frequency** - 1–3 times per week outperforms daily in several studies (hedonic adaptation). The tool must never pressure daily entries.
+- **Frequency** - 1-3 times per week outperforms daily in several studies (hedonic adaptation). The tool must never pressure daily entries.
 - **Small things count** - a croissant, sunshine, sleeping in. Copy must never imply that only big events qualify.
 - **Non-clinical** - gratitude practice is a private reflection tool, not therapy or treatment.
 
@@ -97,8 +97,8 @@ The book introduces gratitude as three progressive training levels. The app expl
 
 | Prompt                                    | Field                                                    |
 | ----------------------------------------- | -------------------------------------------------------- |
-| I'm grateful for... (today, up to 5)      | `items[]` (text[], 1–5 × 240 chars, at least 1 required) |
-| I'm grateful for... (in my life, up to 3) | `life_items[]` (text[], 0–3 × 240 chars)                 |
+| I'm grateful for... (today, up to 5)      | `items[]` (text[], 1-5 × 240 chars, at least 1 required) |
+| I'm grateful for... (in my life, up to 3) | `life_items[]` (text[], 0-3 × 240 chars)                 |
 | Optional note                             | `note` (text, 2000 chars)                                |
 
 New entries are saved with `level = 3`. Level 1 and Level 2 columns remain in the table as compatibility fields and are exported if present, but the user-facing editor does not expose separate Level 1/2 modes.
@@ -130,7 +130,7 @@ New entries are saved with `level = 3`. Level 1 and Level 2 columns remain in th
 
 Indexes: `(user_id, logged_at desc)` and `(user_id, starred, logged_at desc)` for the Favorite Moments collection.
 
-**Migration note:** existing `gratitude_entries` rows (written under the old lightweight spec) have `level = 3` and their `item_1`–`item_3` values backfilled. All new Level-1/2 columns, Level-3 `item_4`/`item_5`, and `starred` default to empty or false values, so existing rows remain valid.
+**Migration note:** existing `gratitude_entries` rows (written under the old lightweight spec) have `level = 3` and their `item_1`-`item_3` values backfilled. All new Level-1/2 columns, Level-3 `item_4`/`item_5`, and `starred` default to empty or false values, so existing rows remain valid.
 
 ---
 
@@ -186,7 +186,7 @@ Mirrors `src/components/app/meditation-onboarding-modal.tsx`. Three steps; only 
 
 **Step 3 - How Often**
 
-- Science says 1–3× per week works better than daily (hedonic adaptation).
+- Science says 1-3× per week works better than daily (hedonic adaptation).
 - No frequency commitment required - this is information only, not a goal the app will track.
 
 Confirm writes `gratitudeOnboardingCompleted: true` to `user_preferences`. There is no level picker in the shipped product flow.
@@ -196,7 +196,7 @@ Confirm writes `gratitudeOnboardingCompleted: true` to `user_preferences`. There
 ## 7. Home Screen
 
 - **New Entry button** - always visible, opens the ongoing gratitude journal form.
-- **Recent entries** - last 5–7 entries, each showing date, first item, and item count.
+- **Recent entries** - last 5-7 entries, each showing date, first item, and item count.
 - **Insights** - quiet local frequency, common themes, and Favorite Moments entry points. No streak language.
 - **Break Card** - one rotating exercise card (from the 9 named exercises above). Tapping opens the full break screen at `/modules/gratitude/breaks/[slug]`. Cards cycle in a fixed order; the user can dismiss the current card to advance.
 - **`?` icon** in the title row - re-opens the onboarding modal.

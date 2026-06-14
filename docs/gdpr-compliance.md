@@ -10,11 +10,11 @@ Selftend processes data in line with all seven Article 5 principles. Lawful basi
 
 Lawful bases are documented in the [policies.md "Lawful basis" table](policies.md): contract for core service delivery, consent for native and web push reminders, explicit consent for any user-entered self-help content that may engage Article 9, and legitimate interest for security and auth-event logging. Selftend is not a medical or diagnostic product, but user-entered records may include wellness or mental-health reflections, so they are treated operationally as highly private.
 
-## Transparency (Articles 12–14)
+## Transparency (Articles 12-14)
 
 The privacy policy at `/privacy` is accessible without sign-in and states: the controller identity (Selftend, operated by Vasil Yoshev), contact (privacy@selftend.org), processing purposes, lawful bases, processors and recipients, international transfer information, retention periods, data subject rights, the right to withdraw consent, the right to lodge a complaint, and whether data provision is statutory or contractual.
 
-## Data Subject Rights (Articles 15–22)
+## Data Subject Rights (Articles 15-22)
 
 Right of access and portability are served by JSON data export in Settings. Right to rectification is served by in-app editing. Right to erasure is served by self-service account deletion in Settings (DB RPC + UI). Right to restriction and right to object are handled via email request to privacy@selftend.org. The one-month response deadline and request logging are documented in [operations-runbook.md](operations-runbook.md). Selftend makes no automated decisions about users (Article 22 does not apply).
 
@@ -30,7 +30,7 @@ Processing activities are documented in [policies.md](policies.md). Data subject
 
 Encryption in transit (HTTPS/TLS) and at rest at multiple layers. User-entered records (including sensitive self-help content that may engage Article 9) are encrypted at rest at the field level using pgcrypto symmetric encryption; the encryption key is held outside the database in Supabase Vault, so a leaked backup exposes only ciphertext. Supabase infrastructure additionally provides disk-level encryption at rest. Database access is constrained by Row-Level Security, scoping each row to the owning user. Mobile credentials are stored in SecureStore. The web bundle ships with a Content-Security-Policy and HSTS. No service-role keys are present in the client bundle. The GDPR data export (`export_user_data()`) decrypts field content server-side for the authenticated owner. The incident response process is documented in [operations-runbook.md](operations-runbook.md). A regular security testing and audit cadence is open work.
 
-## Data Breach Notification (Articles 33–34)
+## Data Breach Notification (Articles 33-34)
 
 Detection, supervisory-authority notification within 72 hours, and notification of affected users when risk is high are all documented in [operations-runbook.md](operations-runbook.md). The published security contact is security@selftend.org.
 

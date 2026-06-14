@@ -75,7 +75,7 @@ export default function SleepTrackerScreen() {
                   items={[
                     { value: formatHours(sevenDayDuration), label: t("hero.avg") },
                     {
-                      value: sevenDayQuality !== null ? `${sevenDayQuality}/5` : "–",
+                      value: sevenDayQuality !== null ? `${sevenDayQuality}/5` : "-",
                       label: t("hero.quality"),
                     },
                     {
@@ -122,11 +122,11 @@ export default function SleepTrackerScreen() {
                 />
                 <StatTile
                   label={t("stats.longest")}
-                  value={longest !== null ? formatDuration(longest) : "–"}
+                  value={longest !== null ? formatDuration(longest) : "-"}
                 />
                 <StatTile
                   label={t("stats.shortest")}
-                  value={shortest !== null ? formatDuration(shortest) : "–"}
+                  value={shortest !== null ? formatDuration(shortest) : "-"}
                 />
               </View>
             </View>

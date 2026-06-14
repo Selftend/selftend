@@ -6,6 +6,6 @@ export function resolveForToday(payload: WidgetPayload, currentDateKey: string):
   return {
     ...payload,
     badge: null,
-    stats: payload.stats.map((s) => (s.dateScoped ? { ...s, value: "–" } : s)),
+    stats: payload.stats.map((s) => (s.dateScoped ? { ...s, value: "-" } : s)),
   };
 }

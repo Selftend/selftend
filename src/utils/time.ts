@@ -3,7 +3,7 @@ export interface TimeOfDay {
   minute: number;
 }
 
-/** Clamp to a valid wall-clock time (hour 0–23, minute 0–59); coerces non-finite to 0. */
+/** Clamp to a valid wall-clock time (hour 0-23, minute 0-59); coerces non-finite to 0. */
 export function clampTime({ hour, minute }: TimeOfDay): TimeOfDay {
   const h = Number.isFinite(hour) ? Math.min(Math.max(Math.trunc(hour), 0), 23) : 0;
   const m = Number.isFinite(minute) ? Math.min(Math.max(Math.trunc(minute), 0), 59) : 0;

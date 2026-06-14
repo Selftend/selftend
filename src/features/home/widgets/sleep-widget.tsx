@@ -52,7 +52,7 @@ export function SleepWidget({ userId }: { userId: string }) {
               label: t("home.widgets.sleepLatest.sevenNightAvgLabel"),
             },
             {
-              value: avgQuality !== null ? avgQuality.toFixed(1) : "–",
+              value: avgQuality !== null ? avgQuality.toFixed(1) : "-",
               label: t("home.widgets.sleepLatest.qualityLabel"),
             },
           ]}

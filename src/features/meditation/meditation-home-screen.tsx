@@ -140,7 +140,7 @@ export default function MeditationHomeScreen() {
                         value:
                           medianMinutes !== null
                             ? t("hero.minutes", { count: medianMinutes })
-                            : "–",
+                            : "-",
                         label: t("hero.median"),
                       },
                     ]}

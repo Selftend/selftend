@@ -1,7 +1,7 @@
 import { buildFeedbackEmailHtml, validateFeedbackInput } from "./feedback";
 
 describe("validateFeedbackInput", () => {
-  it("accepts a category with a 10–1000 char message and returns trimmed text + category", () => {
+  it("accepts a category with a 10-1000 char message and returns trimmed text + category", () => {
     expect(validateFeedbackInput("bug", "  this is long enough  ")).toEqual({
       valid: true,
       trimmed: "this is long enough",

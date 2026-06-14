@@ -12,7 +12,7 @@ export interface Clickable {
 export interface StatItem {
   value: string;
   label: string;
-  /** When true, this value is reset to "–" if the snapshot's day != the device's current day. */
+  /** When true, this value is reset to "-" if the snapshot's day != the device's current day. */
   dateScoped?: boolean;
 }
 

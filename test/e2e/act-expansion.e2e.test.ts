@@ -9,12 +9,12 @@ import { deleteAllActLogsForUser } from "./helpers";
  *   /modules/act/expansion/[id] - ActExpansionDetailScreen
  *
  * Wizard steps (5):
- *   1. emotion - Textarea "What emotion is present?" + NumberRating 0–100 intensity before
+ *   1. emotion - Textarea "What emotion is present?" + NumberRating 0-100 intensity before
  *   2. body    - Textarea "Where do you feel it in your body?"
  *   3. struggle - Pressable "Yes - I'm resisting..." or "No - I'm just noticing it"
  *                + optional discomfort type ("The original feeling..." | "Extra suffering...")
  *   4. technique - Pressable cards (default "TAME It with Kindness")
- *   5. after   - NumberRating 0–100 intensity after + optional notes textarea
+ *   5. after   - NumberRating 0-100 intensity after + optional notes textarea
  *
  * DELETE only - no edit affordance.
  */

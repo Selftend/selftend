@@ -77,7 +77,7 @@ export default function MoodTrackerScreen() {
     { value: String(totalCount ?? moodLogs?.length ?? 0), label: t("stats.checkinsLabel") },
     { value: String(thisWeekCount), label: t("stats.thisWeekLabel") },
     {
-      value: sevenDay.average === null ? "–" : sevenDay.average.toFixed(1),
+      value: sevenDay.average === null ? "-" : sevenDay.average.toFixed(1),
       label: t("stats.avgLabel"),
     },
   ];
