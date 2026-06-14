@@ -228,7 +228,7 @@ describe("activityWindowForTarget", () => {
   });
 });
 
-describe("startOfZonedDay (#70 — DST-correct local midnight)", () => {
+describe("startOfZonedDay (#70 - DST-correct local midnight)", () => {
   it("returns UTC midnight for the UTC zone", () => {
     expect(startOfZonedDay(new Date("2026-06-05T13:30:45.000Z"), "UTC")?.toISOString()).toBe(
       "2026-06-05T00:00:00.000Z",

@@ -32,7 +32,7 @@ interface GratitudeEntryRow {
 }
 
 // Trim and clamp each slot, keep positions, pad/truncate to a fixed length.
-// Blanks are preserved — slot index ↔ question index.
+// Blanks are preserved - slot index ↔ question index.
 function positionalItems(items: string[], count: number): string[] {
   const out: string[] = [];
   for (let i = 0; i < count; i++) {
@@ -84,7 +84,7 @@ export async function listGratitudeEntries(userId: string, limit = 50) {
   return (data as GratitudeEntryRow[]).map(mapGratitudeEntry);
 }
 
-// Exact lifetime count for hero stats — independent of the capped list query, which
+// Exact lifetime count for hero stats - independent of the capped list query, which
 // would otherwise freeze the displayed total at `limit`.
 export async function countGratitudeEntries(userId: string): Promise<number> {
   const client = requireSupabase();
@@ -97,7 +97,7 @@ export async function countGratitudeEntries(userId: string): Promise<number> {
   return count ?? 0;
 }
 
-// Exact count of entries logged since `sinceIso` — for the Progress 30-day stat.
+// Exact count of entries logged since `sinceIso` - for the Progress 30-day stat.
 export async function countGratitudeEntriesSince(
   userId: string,
   sinceIso: string,

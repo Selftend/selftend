@@ -16,7 +16,7 @@ export const useAppLockStore = create<AppLockState>((set) => ({
   enabled: false,
   hydrated: false,
   setEnabled: async (value) => {
-    // Persist FIRST, then flip state — so a failed write leaves `enabled` (and the toggle
+    // Persist FIRST, then flip state - so a failed write leaves `enabled` (and the toggle
     // UI bound to it) unchanged rather than out of sync with storage. The caller's catch
     // surfaces the error.
     await AsyncStorage.setItem(APP_LOCK_STORAGE_KEY, value ? "1" : "0");

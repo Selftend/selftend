@@ -103,7 +103,7 @@ export async function completeAuthRedirect(url: string): Promise<CompletedAuthRe
   }
 
   // Only the PKCE `code` exchange and the `token_hash` OTP verification can establish
-  // a session — both are single-use, server-minted values. The previous implicit-grant
+  // a session - both are single-use, server-minted values. The previous implicit-grant
   // branch accepted access_token/refresh_token straight from the callback URL, which an
   // attacker controls: a crafted link carrying the attacker's own tokens would silently
   // sign the victim into the ATTACKER's account (session fixation). The client is

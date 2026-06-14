@@ -1,6 +1,6 @@
 // Central registry of every draft store created via createDraftStore /
 // createWizardDraftStore. Those stores are module-level singletons that hold
-// in-progress form values — including PHI (CBT thought records: situation,
+// in-progress form values - including PHI (CBT thought records: situation,
 // automatic thoughts, emotions, evidence). They survive sign-out, so the session
 // provider must reset them on SIGNED_OUT alongside clearing the QueryClient.
 //

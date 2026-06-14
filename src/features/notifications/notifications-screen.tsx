@@ -36,7 +36,7 @@ export default function NotificationsScreen() {
     if (!preferences || !userId) return;
     try {
       // Write the preference first (it drives server-side delivery), then tear the channel
-      // down — so a teardown failure can't leave the pref enabled with the channel gone.
+      // down - so a teardown failure can't leave the pref enabled with the channel gone.
       await updatePreferences.mutateAsync(
         mergeUserPreferences(preferences, { notificationsEnabledGlobal: next }),
       );

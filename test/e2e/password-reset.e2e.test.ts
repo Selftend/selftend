@@ -4,7 +4,7 @@
  * Uses a throwaway user created via the admin API (email_confirm: true) so no
  * sign-up flow is required, and seeded users are never touched.
  *
- * Full happy-path (PKCE recovery; e2e server runs on its own allowlisted origin —
+ * Full happy-path (PKCE recovery; e2e server runs on its own allowlisted origin -
  * the e2e baseURL, default :8099, set via E2E_PORT):
  *   1. Navigate to forgot-password, submit throwaway email.
  *   2. Assert success copy appears.
@@ -13,7 +13,7 @@
  *      server's origin, which is in additional_redirect_urls (both :8081 and
  *      :8099/auth-callback are allowlisted), so Supabase honours it verbatim.
  *   4. page.goto(recoveryLink) - browser follows the 303 → <baseURL>/auth-callback
- *      ?code=…&type=recovery. AuthCallbackScreen exchanges the PKCE code and -
+ *      ?code=...&type=recovery. AuthCallbackScreen exchanges the PKCE code and -
  *      seeing type=recovery - routes to /(auth)/update-password.
  *   5. Fill a NEW ≥12-char password and submit. Assert routing away.
  *   6. HARD proof: createAnonClient().signInWithPassword(email, NEW_PASSWORD)
@@ -74,7 +74,7 @@ test.describe("password reset flow", () => {
     });
 
     // 5. Fetch the recovery link from Mailpit. Under the PKCE flow the link is:
-    //    …/auth/v1/verify?token=…&type=recovery&redirect_to=<e2e baseURL>/auth-callback?type=recovery
+    //    .../auth/v1/verify?token=...&type=recovery&redirect_to=<e2e baseURL>/auth-callback?type=recovery
     //    The app builds redirect_to (with a ?type=recovery marker, see
     //    getPasswordResetRedirectUrl) from EXPO_PUBLIC_PUBLIC_APP_URL = the e2e
     //    server's origin, which is allowlisted in supabase/config.toml's
@@ -86,7 +86,7 @@ test.describe("password reset flow", () => {
     // The app bakes redirect_to from its inlined EXPO_PUBLIC_PUBLIC_APP_URL, which on
     // this setup is the dev web origin (:8081), not necessarily the port the e2e
     // server is running on. Rewrite redirect_to to THIS e2e server's origin (the
-    // Playwright baseURL) so the recovery 303 lands back on the server under test —
+    // Playwright baseURL) so the recovery 303 lands back on the server under test -
     // where the PKCE code_verifier was stored when the reset was requested. The target
     // origin is allowlisted in supabase/config.toml, so GoTrue still honours it.
     const e2eOrigin = new URL(test.info().project.use.baseURL!).origin;
@@ -98,7 +98,7 @@ test.describe("password reset flow", () => {
     );
 
     // 6. Navigate to the verify link. Supabase returns a 303 to
-    //    <e2e baseURL>/auth-callback?code=…&type=recovery
+    //    <e2e baseURL>/auth-callback?code=...&type=recovery
     //    AuthCallbackScreen exchanges the PKCE code, and - seeing type=recovery -
     //    routes to /(auth)/update-password.
     await page.goto(verifyUrl.toString());

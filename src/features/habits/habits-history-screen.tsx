@@ -12,7 +12,7 @@ import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
-// Memoized row so the SectionList only re-renders changed entries (#54 — was nested
+// Memoized row so the SectionList only re-renders changed entries (#54 - was nested
 // .map()s in a ScrollView, all 365 capped rows mounting at once on navigation).
 const HabitLogRow = memo(function HabitLogRow({ log, habit }: { log: HabitLog; habit: Habit }) {
   const onPress = useCallback(

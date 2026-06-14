@@ -53,7 +53,7 @@ function paramValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-// Memoized so it re-renders only when the emotion list or the selection changes — not on
+// Memoized so it re-renders only when the emotion list or the selection changes - not on
 // every keystroke in the notes / four-box text fields, which re-render the parent screen.
 const EmotionGrid = memo(function EmotionGrid({
   emotions,
@@ -152,15 +152,15 @@ export function MoodEntryEditorScreen({
 
   // Create mode: keep the timestamp in sync with the app's selected day (e.g. midnight
   // rollover or a DateBar change) until the user edits the field themselves. Mirrors the
-  // journal editor — without it, a create-editor opened earlier stamps the stale day.
+  // journal editor - without it, a create-editor opened earlier stamps the stale day.
   useEffect(() => {
     if (editMode || dateDirty) return;
     setLoggedAt(loggedAtForSelectedDate(selectedDate));
   }, [editMode, dateDirty, selectedDate]);
 
   // Hydrate local field state from the saved entry ONCE per entry id. Keying on the id
-  // (not the object) stops a later list/detail refetch — which produces a new object
-  // identity — from clobbering the user's in-progress edits mid-session.
+  // (not the object) stops a later list/detail refetch - which produces a new object
+  // identity - from clobbering the user's in-progress edits mid-session.
   const hydratedIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!existingEntry) return;

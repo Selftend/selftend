@@ -1,5 +1,5 @@
 /**
- * env.ts is evaluated at module-load time (top-level `const appEnv = …`), so we
+ * env.ts is evaluated at module-load time (top-level `const appEnv = ...`), so we
  * must re-require it inside each isolated block AFTER setting process.env.
  *
  * `validateRequiredEnv` reads `Platform.OS` at call-time (not load-time), so we

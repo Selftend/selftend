@@ -62,9 +62,9 @@ test.describe("edit and delete a habit", () => {
       .filter({ hasText: /Archive/ })
       .click();
     // After archiving, the "Archived" badge appears in the header. Match it exactly
-    // (so the archive dialog's body "Archived habits leave today's list…" is excluded)
+    // (so the archive dialog's body "Archived habits leave today's list..." is excluded)
     // and take .last() (so a hidden stale detail instance Expo Router keeps mounted
-    // doesn't make the locator ambiguous) — same pattern as editedName above.
+    // doesn't make the locator ambiguous) - same pattern as editedName above.
     await expect(page.getByText("Archived", { exact: true }).last()).toBeVisible({
       timeout: 10_000,
     });

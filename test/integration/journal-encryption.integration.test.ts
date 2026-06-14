@@ -88,7 +88,7 @@ describe("journal_entries encrypted view (integration)", () => {
       .single();
     const beforeCipher = bodyEncToText(before.data?.body_enc);
 
-    const NEW_BODY = "Edited reflection — calmer now (secret-marker-XYZ789)";
+    const NEW_BODY = "Edited reflection - calmer now (secret-marker-XYZ789)";
     const updated = await alice
       .from("journal_entries")
       .update({ title: PLAINTEXT_TITLE, body: NEW_BODY })
@@ -152,7 +152,7 @@ describe("journal_entries encrypted view (integration)", () => {
 
   it("export_user_data() returns journal entries as PLAINTEXT, not ciphertext", async () => {
     // Insert a journal entry with a distinctive plaintext body.
-    const EXPORT_BODY = "Export test reflection — plaintext sentinel (export-marker-EXP001)";
+    const EXPORT_BODY = "Export test reflection - plaintext sentinel (export-marker-EXP001)";
     const EXPORT_TITLE = "Export Encryption Check";
 
     const inserted = await alice
@@ -173,7 +173,7 @@ describe("journal_entries encrypted view (integration)", () => {
     const entries = data.journalEntries as { title: string; body: string }[];
     const match = entries.find((e) => e.body === EXPORT_BODY);
 
-    // The entry must be present with full plaintext — not a bytea hex/base64 blob, not absent.
+    // The entry must be present with full plaintext - not a bytea hex/base64 blob, not absent.
     expect(match).toBeDefined();
     expect(match?.title).toBe(EXPORT_TITLE);
     expect(match?.body).toBe(EXPORT_BODY);

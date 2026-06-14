@@ -112,7 +112,7 @@ export async function listMeditationSessions(userId: string, limit = 30) {
   return (data as MeditationSessionRow[]).map(mapSession);
 }
 
-// Exact lifetime count for hero stats — independent of the capped list query, which
+// Exact lifetime count for hero stats - independent of the capped list query, which
 // would otherwise freeze the displayed total at `limit`.
 export async function countMeditationSessions(userId: string): Promise<number> {
   const client = requireSupabase();

@@ -1,5 +1,5 @@
-// Builds a release Android App Bundle (.aab) locally with the EAS `production` profile —
-// the same artifact the android-release.yml CI produces — for manual upload to Google Play
+// Builds a release Android App Bundle (.aab) locally with the EAS `production` profile -
+// the same artifact the android-release.yml CI produces - for manual upload to Google Play
 // (closed/internal/production tracks). Run via `npm run build:android:production:local`, which
 // loads .env (production) with `node --env-file=.env` so EXPO_PUBLIC_* are baked into the build.
 //

@@ -33,7 +33,7 @@ export default function SleepTrackerScreen() {
   const userId = user?.id ?? null;
 
   const { data: logs } = useSleepLogs(userId, 50);
-  // Exact lifetime total for the hero — the list above is capped at 50, so its length
+  // Exact lifetime total for the hero - the list above is capped at 50, so its length
   // would freeze the displayed "nights" count once a user passes that many logs.
   const { data: totalNights } = useSleepLogCount(userId);
   const [forceOnboarding, setForceOnboarding] = useState(false);

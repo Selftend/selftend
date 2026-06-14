@@ -41,7 +41,7 @@ export default function MeditationHomeScreen() {
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
   const { data: programState } = useMeditationProgramState(userId);
   const { data: allSessions } = useMeditationSessions(userId, 200);
-  // Exact lifetime total for the hero — the list above is capped at 200, so its length
+  // Exact lifetime total for the hero - the list above is capped at 200, so its length
   // would freeze the displayed "sessions" count once a user passes that many.
   const { data: totalSessions } = useMeditationSessionCount(userId);
   const sessions = allSessions?.slice(0, 5);

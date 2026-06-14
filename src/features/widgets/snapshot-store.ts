@@ -7,7 +7,7 @@ import type { Snapshot } from "@/src/features/widgets/snapshot-types";
 //   - today: per-tool counts/flags (e.g. habits done/total, sleep 7-night average hours, ✓/–)
 // Raw user-entered text (journal body, gratitude item text, sleep notes, etc.) is present in the
 // intermediate WidgetData object used by the builder, but the builder functions in snapshot-builder.ts
-// only extract counts and numeric aggregates — no raw text ever reaches a WidgetPayload field.
+// only extract counts and numeric aggregates - no raw text ever reaches a WidgetPayload field.
 // AsyncStorage is OS-sandboxed (other apps cannot read it) but is not encrypted at rest.
 // Storing only derived/aggregate display data is intentional so no sensitive user content is
 // exposed at the OS storage layer or in Android widget rendering.

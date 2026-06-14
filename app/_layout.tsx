@@ -39,7 +39,7 @@ export default function RootLayout() {
     NotoSans_800ExtraBold,
   });
 
-  // Web: paint immediately — expo-font has already injected the @font-face rules, so the
+  // Web: paint immediately - expo-font has already injected the @font-face rules, so the
   // browser swaps Noto Sans in when the files arrive (brief FOUT) instead of blocking the
   // entire first paint on a runtime download of 5 × ~620 KB TTFs. Native: keep the splash
   // until the fonts are registered. The error escape hatch avoids a permanent blank screen

@@ -107,7 +107,7 @@ export interface TargetConfig {
   lastKeyField: keyof WebPushSubscriptionRow;
   url: string;
   tag: string;
-  // Omitted for targets with no per-day activity log (breathing, act) — those never suppress.
+  // Omitted for targets with no per-day activity log (breathing, act) - those never suppress.
   activitySource?: ActivitySource;
 }
 

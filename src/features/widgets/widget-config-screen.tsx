@@ -92,7 +92,7 @@ export function WidgetConfigurationScreen({
     const config = { shortcuts, statKeys: isToday ? selectedStats : [], theme, opacity };
     try {
       await writeConfig(widgetInfo.widgetId, config);
-      // Render with the latest data snapshot (like the OS task-handler) — passing null
+      // Render with the latest data snapshot (like the OS task-handler) - passing null
       // here rendered a blank/data-less widget after a config save until the next sync.
       const snapshot = await readSnapshot();
       render(
@@ -106,7 +106,7 @@ export function WidgetConfigurationScreen({
       );
       setResult("ok");
     } catch {
-      // The config write or render failed — cancel rather than finalize a half-written
+      // The config write or render failed - cancel rather than finalize a half-written
       // config (the library's result is "ok" | "cancel"; there is no error state).
       setResult("cancel");
     }

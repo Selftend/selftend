@@ -5,7 +5,7 @@ import { router, type Href } from "expo-router";
 import { addReminderResponseListener, getInitialReminderUrl } from "@/src/lib/notifications";
 
 /**
- * Routes the app to a reminder's target screen when its notification is tapped — for a cold
+ * Routes the app to a reminder's target screen when its notification is tapped - for a cold
  * launch (app opened by the tap) and for warm taps while the app runs. Native-only; web
  * reminder taps are handled by the push service worker (`public/selftend-push-worker.js`).
  */

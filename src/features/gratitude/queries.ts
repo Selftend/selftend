@@ -94,7 +94,7 @@ export function useSetGratitudeEntryStarred(userId: string | null) {
     mutationFn: ({ id, starred }: { id: string; starred: boolean }) =>
       setGratitudeEntryStarred(userId!, id, starred),
     // Patch the updated row into the cached lists/detail instead of invalidating the whole
-    // ["gratitude"] prefix — a one-tap star otherwise refired every mounted gratitude query,
+    // ["gratitude"] prefix - a one-tap star otherwise refired every mounted gratitude query,
     // including the 500-row Home widget fetch. Only favorites (whose membership actually
     // changed) is invalidated.
     onSuccess: (updated) => {

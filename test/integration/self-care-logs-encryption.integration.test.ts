@@ -9,7 +9,7 @@ import { SEED_USERS, createServiceClient, deleteAllSelfCareLogsForUser, signInAs
 //   survive a round-trip.
 // - the social_notes 2000-char cap is enforced in the trigger.
 // - RLS isolates a second user.
-// NOTE: self_care_logs has NO DELETE RLS policy (only INSERT/SELECT/UPDATE) — the client never
+// NOTE: self_care_logs has NO DELETE RLS policy (only INSERT/SELECT/UPDATE) - the client never
 // deletes these rows. So a user DELETE through the view is an RLS no-op (pre-existing behavior).
 // The DELETE-trigger path is exercised via the service-role admin client (the cleanup path).
 

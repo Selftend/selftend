@@ -199,8 +199,8 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
   };
 }
 
-// PostgREST returns PGRST204 — "Could not find the 'X' column of 'user_preferences'
-// in the schema cache" — when the request body references a column the target DB does
+// PostgREST returns PGRST204 - "Could not find the 'X' column of 'user_preferences'
+// in the schema cache" - when the request body references a column the target DB does
 // not have yet (e.g. a migration that hasn't reached this environment). Parse the
 // offending column name so the write can retry without ONLY that column, instead of
 // blindly stripping a hardcoded list and silently dropping the columns the caller is
@@ -320,7 +320,7 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
 
   // Retry while PostgREST reports a missing column, dropping ONLY the named column each
   // pass. Degrades gracefully on an environment whose schema is behind the code (a
-  // not-yet-applied migration) without discarding the columns the caller is changing —
+  // not-yet-applied migration) without discarding the columns the caller is changing -
   // the previous broad-strip fallback silently dropped program-state writes, so
   // "abandon program" appeared to do nothing. Bounded: each pass removes at most one column.
   let attempt: Record<string, unknown> = payload;

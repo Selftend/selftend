@@ -110,8 +110,8 @@ Deno.serve(async (request) => {
         .range(from, to),
     )) as WebPushSubscriptionRow[];
 
-    // Native (Expo) device tokens, fetched HERE — before the user-set is built and unfiltered
-    // by user_id — so a native-only user (no web push subscription) still receives reminders
+    // Native (Expo) device tokens, fetched HERE - before the user-set is built and unfiltered
+    // by user_id - so a native-only user (no web push subscription) still receives reminders
     // (#1). A failed fetch now throws via fetchAllPaged instead of being silently ignored (#19).
     const tokenRows = (await fetchAllPaged((from, to) =>
       supabase

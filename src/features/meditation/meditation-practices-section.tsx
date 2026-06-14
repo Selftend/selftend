@@ -16,7 +16,7 @@ interface MeditationPracticesSectionProps {
 
 /**
  * Collapsible, info-only reference for the seated practices. Tapping the section header
- * reveals nested cards; tapping a card reveals its instructions. It launches nothing —
+ * reveals nested cards; tapping a card reveals its instructions. It launches nothing -
  * the actual sit happens via the meditation timer on the module home.
  */
 export function MeditationPracticesSection({ initialPractice }: MeditationPracticesSectionProps) {

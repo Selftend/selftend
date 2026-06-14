@@ -7,7 +7,7 @@ import { SEED_USERS, createServiceClient, signInAs } from "./helpers";
 //   columns (maintenance_commitments, recovery_keys) all round-trip plaintext through the same
 //   `recovery_plans` name, while `recovery_plans_data` holds only ciphertext (*_enc).
 // - the personal_slogan length cap (500) is enforced by the INSTEAD OF trigger.
-// NOTE: recovery_plans has UNIQUE(user_id) — at most one plan per user.
+// NOTE: recovery_plans has UNIQUE(user_id) - at most one plan per user.
 
 function cipherToText(value: unknown): string {
   if (value == null) return "";

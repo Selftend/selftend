@@ -9,12 +9,12 @@ import { requireSupabase } from "@/src/lib/supabase";
 const AUTH_CALLBACK_PATH = "auth-callback";
 
 // Under the PKCE flow the recovery email redirects to the callback as
-// `…/auth-callback?code=<uuid>` with NO `type` param, and supabase-js emits a
+// `.../auth-callback?code=<uuid>` with NO `type` param, and supabase-js emits a
 // plain SIGNED_IN event (not PASSWORD_RECOVERY). Without a marker the callback
 // can't tell a reset link from a normal sign-in and would drop the user into the
 // app instead of the update-password screen. We carry the intent in redirect_to;
-// Supabase preserves the query param and appends `&code=…`, so the callback sees
-// `?code=…&type=recovery`. parseAuthCallbackUrl reads `type` from the query.
+// Supabase preserves the query param and appends `&code=...`, so the callback sees
+// `?code=...&type=recovery`. parseAuthCallbackUrl reads `type` from the query.
 const RECOVERY_REDIRECT_TYPE = "recovery";
 
 export function getWebAuthRedirectUrl(publicAppUrl = appEnv.publicAppUrl) {

@@ -6,7 +6,7 @@ import { defineConfig, devices } from "@playwright/test";
 // Default to :8099 - a dedicated e2e port so the suite never collides with a dev
 // server on :8081. Both :8081 and :8099 /auth-callback origins are allowlisted in
 // supabase/config.toml's additional_redirect_urls, which the password-reset flow
-// needs (its redirect_to …/auth-callback?type=recovery must hit an allowlisted
+// needs (its redirect_to .../auth-callback?type=recovery must hit an allowlisted
 // origin). Override with E2E_PORT to run on a different port (allowlist it too).
 const PORT = Number(process.env.E2E_PORT ?? 8099);
 

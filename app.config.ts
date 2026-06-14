@@ -20,7 +20,7 @@ const isDevelopmentBuild =
   easBuildProfile === "development" || process.env.SELFTEND_APP_VARIANT === "development";
 const appName = isDevelopmentBuild ? "Selftend Dev" : "Selftend";
 // Both variants share one EAS project (extra.eas.projectId), whose registered slug is
-// "selftend". The slug must match that project, so it does NOT change per variant — the dev
+// "selftend". The slug must match that project, so it does NOT change per variant - the dev
 // build differentiates via name/package/scheme instead.
 const appSlug = "selftend";
 const appScheme = isDevelopmentBuild ? "selftend-dev" : "selftend";

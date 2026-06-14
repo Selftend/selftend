@@ -6,7 +6,7 @@ import { SEED_USERS, createServiceClient, signInAs } from "./helpers";
 // - the text column (challenge_description) AND a text[] column (coping_steps) round-trip
 //   plaintext through the same `challenge_plans` name, while `challenge_plans_data` holds only
 //   ciphertext (*_enc).
-// PREFLIGHT CORRECTION: coping_steps is text[] (not plain text) — whole-array encryption.
+// PREFLIGHT CORRECTION: coping_steps is text[] (not plain text) - whole-array encryption.
 // FK child of recovery_plans via composite (recovery_plan_id, user_id): a parent recovery_plan
 //   is inserted first (one per user via UNIQUE(user_id)).
 

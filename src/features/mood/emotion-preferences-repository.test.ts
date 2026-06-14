@@ -103,7 +103,7 @@ describe("emotion-preferences-repository", () => {
   // -------------------------------------------------------------------------
 
   // emotion_preferences is a transparent encrypted view; a view cannot be the target of
-  // INSERT … ON CONFLICT, so the repo .insert()s and the view's trigger resolves the
+  // INSERT ... ON CONFLICT, so the repo .insert()s and the view's trigger resolves the
   // (user_id, emotion_id) merge against the base table's real unique constraint.
   describe("upsertEmotionPreference", () => {
     it("inserts the payload and maps the returned row", async () => {

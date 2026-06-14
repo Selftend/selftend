@@ -53,7 +53,7 @@ describe("profiles (integration)", () => {
     // The repository now writes COMPLETE rows (read-modify-write), so the per-user merge lives in
     // the INSTEAD OF INSERT trigger (ON CONFLICT (user_id)). Each write below sends every mutable
     // column; email/display_name are re-sent to preserve them (the trigger DO UPDATE has no
-    // coalesce, so an omitted column would NULL it — the very ambiguity the refactor removed).
+    // coalesce, so an omitted column would NULL it - the very ambiguity the refactor removed).
     const baseRow = {
       user_id: SEED_USERS.alice.id,
       email: SEED_USERS.alice.email,

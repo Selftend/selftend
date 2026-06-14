@@ -2,7 +2,7 @@ import { addDays, localDateKey } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 
 export interface WeekdayRhythm {
-  /** 0 = Sunday … 6 = Saturday. Matches Date.prototype.getDay. */
+  /** 0 = Sunday ... 6 = Saturday. Matches Date.prototype.getDay. */
   weekday: number;
   count: number;
 }
@@ -14,7 +14,7 @@ export interface IdentityRoundUp {
 
 /**
  * Ticks per weekday across the last `weeks` calendar weeks ending at `now`.
- * Always returns seven entries in order [Sun, Mon, …, Sat].
+ * Always returns seven entries in order [Sun, Mon, ..., Sat].
  */
 export function getWeeklyRhythm(
   logs: HabitLog[],

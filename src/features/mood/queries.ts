@@ -29,7 +29,7 @@ export function useMoodLogs(userId: string | null, limit = 30) {
 // Canonical recent-history window. The CBT and progress/tracker screens previously kept
 // two SEPARATE large queries (180 and 200 rows) over the same table, so cold navigation
 // fetched both and a single mood save refetched both (#60). Consolidate them into one cache
-// entry sized to the largest window and let each screen narrow with `select` — slicing the
+// entry sized to the largest window and let each screen narrow with `select` - slicing the
 // newest N is identical to fetching N (both are logged_at desc, limit N). The small 30-row
 // widget/tool/editor queries already share a single key and stay on useMoodLogs.
 const MOOD_HISTORY_WINDOW = 200;

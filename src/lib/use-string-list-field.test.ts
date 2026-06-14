@@ -39,7 +39,7 @@ describe("useStringListField", () => {
     expect(result.current.form.getValues("items")).toEqual(["a", "c"]);
   });
 
-  // worry/beliefs forms: no options — the list may go empty.
+  // worry/beliefs forms: no options - the list may go empty.
   it("remove() can empty the list when keepAtLeastOne is not set", () => {
     const { result } = setup(["only"]);
     act(() => result.current.field.remove(0));

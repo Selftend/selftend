@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Messages are i18n KEYS (resolved in the "cbt" namespace at render time via t()),
-// not literals — so validation errors follow the in-app language, not English only.
+// not literals - so validation errors follow the in-app language, not English only.
 export const milestoneSchema = z.object({
   description: z.string().trim().min(3, "goals.validation.milestoneDescription"),
   targetDate: z.string().nullable(),

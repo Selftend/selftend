@@ -32,11 +32,11 @@ export function useWidgetSnapshotSync(userId: string | null) {
   const themePref = useThemeStore((s) => s.preference);
 
   // The widget snapshot sync only does anything on Android (the effect below early-returns
-  // elsewhere), yet this hook is mounted unconditionally in the protected layout — so on
+  // elsewhere), yet this hook is mounted unconditionally in the protected layout - so on
   // iOS and web these 11 list queries were subscribed, fetched, and re-fetched on every
   // foreground for data that is never used (#61). Disable them off-Android by passing a null
-  // userId (each hook is `enabled: Boolean(userId)`). NOTE: the remaining Android-only win —
-  // also disabling these when the user has placed NO launcher widget — needs a persisted
+  // userId (each hook is `enabled: Boolean(userId)`). NOTE: the remaining Android-only win -
+  // also disabling these when the user has placed NO launcher widget - needs a persisted
   // has-launcher-widgets flag driven by the widget-task-handler's add/delete events and must
   // be validated on-device; left as a follow-up rather than guessed at blind.
   const widgetUserId = Platform.OS === "android" ? userId : null;
@@ -92,7 +92,7 @@ export function useWidgetSnapshotSync(userId: string | null) {
       const { requestWidgetUpdate } =
         require("react-native-android-widget") as typeof import("react-native-android-widget");
       // Cast the dynamic requires to their real module types so tsc type-checks the
-      // renderWidget(...) call shape — this is what catches a wrong/stale arg (the
+      // renderWidget(...) call shape - this is what catches a wrong/stale arg (the
       // original bug passed a nonexistent `shortcuts` and omitted the required `config`).
 
       const { renderWidget } =

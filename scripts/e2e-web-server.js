@@ -46,9 +46,9 @@ const distIndex = path.join(process.cwd(), OUTPUT_DIR, "index.html");
 const skipBuild = process.env.E2E_SKIP_BUILD === "1" && fs.existsSync(distIndex);
 
 if (skipBuild) {
-  console.log(`[e2e-web] E2E_SKIP_BUILD=1 — serving existing ${OUTPUT_DIR}/`);
+  console.log(`[e2e-web] E2E_SKIP_BUILD=1 - serving existing ${OUTPUT_DIR}/`);
 } else {
-  console.log(`[e2e-web] building static web export → ${OUTPUT_DIR}/ (port ${PORT})…`);
+  console.log(`[e2e-web] building static web export → ${OUTPUT_DIR}/ (port ${PORT})...`);
   const build = spawnSync(expoBin, ["export", "--platform", "web", "--output-dir", OUTPUT_DIR], {
     stdio: "inherit",
     env: buildEnv,

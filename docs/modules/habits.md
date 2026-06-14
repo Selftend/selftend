@@ -69,7 +69,7 @@ The module persists two related private tables: one for the habit definition, on
 | user_id            | uuid        | FK auth.users, on delete cascade                                                       |
 | name               | text        | NOT NULL, ≤ 120 chars, required                                                        |
 | kind               | text        | NOT NULL, default `'build'`, one of `'build' \| 'break'`                               |
-| identity           | text        | NOT NULL, default `''`, ≤ 200 chars - optional _"I'm the kind of person who…"_         |
+| identity           | text        | NOT NULL, default `''`, ≤ 200 chars - optional _"I'm the kind of person who..."_       |
 | cue_plan           | text        | NOT NULL, default `''`, ≤ 240 chars - implementation intention text                    |
 | stack_after        | text        | NOT NULL, default `''`, ≤ 120 chars - anchor habit for habit stacking                  |
 | craving_pairing    | text        | NOT NULL, default `''`, ≤ 240 chars - temptation bundling note                         |
@@ -193,12 +193,12 @@ Single-screen guided form. All fields except `name` are optional, but each field
 
 | Section                               | Field                    | Placeholder / prompt                                                      |
 | ------------------------------------- | ------------------------ | ------------------------------------------------------------------------- |
-| **Identity**                          | `identity`               | _"I'm the kind of person who…"_                                           |
+| **Identity**                          | `identity`               | _"I'm the kind of person who..."_                                         |
 | **Habit name**                        | `name` (required)        | e.g., _"Read"_, _"Walk after lunch"_                                      |
 | **Build or break**                    | `kind`                   | Segmented control. Phase 1 ships with `build` only; Phase 3 adds `break`. |
 | **Two-Minute Version (Make It Easy)** | `two_minute_version`     | _"Make the starter version under two minutes. e.g., Read one page."_      |
 | **Cue (Make It Obvious)**             | `cue_plan`               | _"I will \[BEHAVIOUR] at \[TIME] in \[LOCATION]."_                        |
-| **Stack After (Make It Obvious)**     | `stack_after`            | _"After \[CURRENT HABIT], I will…"_                                       |
+| **Stack After (Make It Obvious)**     | `stack_after`            | _"After \[CURRENT HABIT], I will..."_                                     |
 | **Pairing (Make It Attractive)**      | `craving_pairing`        | _"Only do \[want] while doing \[need]."_                                  |
 | **Reward (Make It Satisfying)**       | `reward_note`            | _"How will you mark this as a small win?"_                                |
 | **Cadence**                           | `cadence`, `custom_days` | Default daily. Custom is a seven-day toggle row.                          |

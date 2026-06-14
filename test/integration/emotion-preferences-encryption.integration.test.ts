@@ -14,7 +14,7 @@ import {
 // - pass-through columns (emoji, position, removed, is_custom, emotion_id) survive a round-trip.
 // - UPSERT: UNIQUE (user_id, emotion_id); a second INSERT for the same (user, emotion) merges
 //   (the INSTEAD OF INSERT trigger's ON CONFLICT (user_id, emotion_id) DO UPDATE) rather than
-//   erroring — the .upsert() semantics formerly carried by PostgREST.
+//   erroring - the .upsert() semantics formerly carried by PostgREST.
 // - PARTIAL-UPDATE PRESERVATION: a position-only "reorder" upsert must not wipe name/emoji;
 //   a removed-only upsert must not wipe name/position. This is the trigger's coalesce(excluded,
 //   base) behaviour replacing PostgREST's "SET <provided columns only>".
@@ -166,10 +166,10 @@ describe("emotion_preferences encrypted view (integration)", () => {
       .select("*")
       .single();
     expect(reorder.error).toBeNull();
-    // Same row (merged on the unique key) with updated position…
+    // Same row (merged on the unique key) with updated position...
     expect(reorder.data?.id).toBe(id);
     expect(reorder.data?.position).toBe(9);
-    // …and name/emoji/is_custom preserved (NOT clobbered to NULL).
+    // ...and name/emoji/is_custom preserved (NOT clobbered to NULL).
     expect(reorder.data?.name).toBe(NAME);
     expect(reorder.data?.emoji).toBe(EMOJI);
     expect(reorder.data?.is_custom).toBe(true);

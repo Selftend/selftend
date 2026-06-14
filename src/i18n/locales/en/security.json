@@ -24,7 +24,7 @@
       {
         "title": "Private to your account",
         "body": [
-          "Database access is enforced by Row-Level Security (RLS). Every query is automatically scoped to your account — no other user can read your records, and neither can an accidental misconfiguration.",
+          "Database access is enforced by Row-Level Security (RLS). Every query is automatically scoped to your account - no other user can read your records, and neither can an accidental misconfiguration.",
           "No service-role keys or database passwords are included in the app."
         ]
       },
@@ -32,7 +32,7 @@
         "title": "On your device",
         "body": [
           "On mobile, your session credentials are stored in the device's secure keychain via Expo SecureStore, not in plain app storage.",
-          "On web, your session token lives in browser localStorage — the same mechanism used by most web apps.",
+          "On web, your session token lives in browser localStorage - the same mechanism used by most web apps.",
           "You can add an extra layer on mobile by enabling the optional app lock in Settings. When on, opening the app requires your fingerprint, face, or device passcode."
         ]
       },
@@ -46,7 +46,7 @@
       {
         "title": "Can anyone at Self-tend read my entries?",
         "body": [
-          "No — not in ordinary operation. We do not read your records except to fulfil a verified privacy request, investigate a security incident, or satisfy a legal obligation.",
+          "No - not in ordinary operation. We do not read your records except to fulfil a verified privacy request, investigate a security incident, or satisfy a legal obligation.",
           "See the full Privacy Policy for the complete picture."
         ]
       },

@@ -30,7 +30,7 @@ export function parseLocalNoon(dateKey: string): Date {
   return new Date(`${dateKey}T12:00:00`);
 }
 
-// Format with the app's selected language (en/bg), not the device locale — the user
+// Format with the app's selected language (en/bg), not the device locale - the user
 // picks the in-app language independently of the OS. Falls back to the device locale
 // if i18n hasn't initialized.
 export function formatTimestamp(value: string): string {

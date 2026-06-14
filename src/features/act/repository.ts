@@ -890,7 +890,7 @@ export async function listAllActionSteps(userId: string) {
     .select("*")
     .eq("user_id", userId)
     .order("completed_at", { ascending: false })
-    // Cap the fetch (consistent with the module's other lists) — act_action_steps grows
+    // Cap the fetch (consistent with the module's other lists) - act_action_steps grows
     // unbounded and this query stays active app-wide (Home + Android widget sync).
     .limit(500);
 

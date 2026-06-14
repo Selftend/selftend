@@ -12,11 +12,11 @@
 
 The book structures gratitude practice as three progressive levels, each building on the last. Unlike the meditation module's ten stages, these levels are not mutually exclusive - a user may operate at all three simultaneously once they reach Level 3.
 
-| Level | Name                      | Core skill                                      |
-| ----- | ------------------------- | ----------------------------------------------- |
-| **1** | Noticing                  | Observe daily events without judgment           |
-| **2** | Reflecting & Appreciating | Mentally subtract positives to feel their value |
-| **3** | Practicing Gratitude      | Write "I'm grateful for…" sentences 1–3× weekly |
+| Level | Name                      | Core skill                                        |
+| ----- | ------------------------- | ------------------------------------------------- |
+| **1** | Noticing                  | Observe daily events without judgment             |
+| **2** | Reflecting & Appreciating | Mentally subtract positives to feel their value   |
+| **3** | Practicing Gratitude      | Write "I'm grateful for..." sentences 1–3× weekly |
 
 ### Core Principles
 
@@ -95,11 +95,11 @@ The book introduces gratitude as three progressive training levels. The app expl
 
 ### Level 3 - Practicing Gratitude
 
-| Prompt                                  | Field                                                    |
-| --------------------------------------- | -------------------------------------------------------- |
-| I'm grateful for… (today, up to 5)      | `items[]` (text[], 1–5 × 240 chars, at least 1 required) |
-| I'm grateful for… (in my life, up to 3) | `life_items[]` (text[], 0–3 × 240 chars)                 |
-| Optional note                           | `note` (text, 2000 chars)                                |
+| Prompt                                    | Field                                                    |
+| ----------------------------------------- | -------------------------------------------------------- |
+| I'm grateful for... (today, up to 5)      | `items[]` (text[], 1–5 × 240 chars, at least 1 required) |
+| I'm grateful for... (in my life, up to 3) | `life_items[]` (text[], 0–3 × 240 chars)                 |
+| Optional note                             | `note` (text, 2000 chars)                                |
 
 New entries are saved with `level = 3`. Level 1 and Level 2 columns remain in the table as compatibility fields and are exported if present, but the user-facing editor does not expose separate Level 1/2 modes.
 

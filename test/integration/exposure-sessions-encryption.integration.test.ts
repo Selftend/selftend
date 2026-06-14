@@ -6,7 +6,7 @@ import { SEED_USERS, createServiceClient, deleteAllExposureForUser, signInAs } f
 // - text columns (safety_behavior_description, notes) round-trip plaintext through the same
 //   `exposure_sessions` name, while `exposure_sessions_data` holds only ciphertext (*_enc).
 // - pass-through columns (pre/post_suds, duration_minutes, safety_behaviors_used) survive.
-// NOTE: exposure_sessions has only INSERT + SELECT user RLS policies (no UPDATE/DELETE) — user
+// NOTE: exposure_sessions has only INSERT + SELECT user RLS policies (no UPDATE/DELETE) - user
 //   UPDATE/DELETE are RLS no-ops; service-role flows through the INSTEAD OF triggers.
 // NOTE: neither encrypted column has a length cap, so there is no cap-rejection assertion.
 // FK chain: exposure_hierarchies -> exposure_items -> exposure_sessions (inserted in order).

@@ -37,7 +37,7 @@ export default function GratitudeHomeScreen() {
   const { selectedDate } = useSelectedDate();
 
   const { data: entries } = useGratitudeEntries(userId, 90);
-  // Exact lifetime total for the hero — the list above is capped at 90, so its length
+  // Exact lifetime total for the hero - the list above is capped at 90, so its length
   // would freeze the displayed "entries" count once a user passes that many.
   const { data: totalEntries } = useGratitudeEntryCount(userId);
 
@@ -46,7 +46,7 @@ export default function GratitudeHomeScreen() {
 
   const allEntries = entries ?? [];
   // Memoize the expensive aggregations (regex theme-mining, frequency buckets, favorite
-  // scan) so they don't recompute on every render — notably every DateBar tap. The bucket
+  // scan) so they don't recompute on every render - notably every DateBar tap. The bucket
   // window depends on the current day, so key on todayKey to keep midnight rollover exact.
   const todayKey = currentDateKey();
   const recentList = useMemo(

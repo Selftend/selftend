@@ -45,7 +45,7 @@ export const useSelectedDateStore = create<SelectedDateState>((set) => ({
  * Convenience hook for screens/components.
  *
  * When the user has NOT explicitly picked a day (the default, or after "Today"),
- * the selected date live-tracks the current local date — so a session that crosses
+ * the selected date live-tracks the current local date - so a session that crosses
  * midnight reports today, not the stale day the store was initialized on. (Writers
  * anchor "today's" entries to this value, so a stale date would silently backdate
  * them; see selected-date-store.test.ts.)

@@ -27,7 +27,7 @@ export default function JournalListScreen() {
   const { selectedDate, isToday } = useSelectedDate();
 
   const { data: entries } = useJournalEntries(userId, 50);
-  // Exact lifetime total for the hero — the list is capped at 50, so its length would
+  // Exact lifetime total for the hero - the list is capped at 50, so its length would
   // freeze the displayed entry count. (Word count stays a recent-entries figure.)
   const { data: totalEntries } = useJournalEntryCount(userId);
 
@@ -36,7 +36,7 @@ export default function JournalListScreen() {
   const allEntries = entries ?? [];
 
   // Memoize the body word-count (up to ~1 MB of text across 50 entries) and the
-  // last-activity scan so they don't recompute on every render — notably every
+  // last-activity scan so they don't recompute on every render - notably every
   // DateBar tap. Pure functions of `entries`.
   const totalWords = useMemo(
     () => allEntries.reduce((sum, entry) => sum + countWords(entry.body), 0),
@@ -44,7 +44,7 @@ export default function JournalListScreen() {
     [entries],
   );
   // "Last journaled" reflects genuine activity, so derive it from the most recent
-  // server-set updatedAt — entries are ordered by created_at, which users can backdate.
+  // server-set updatedAt - entries are ordered by created_at, which users can backdate.
   const lastActivityAt = useMemo(
     () =>
       allEntries.reduce<string | null>(

@@ -140,9 +140,9 @@ export async function upsertEmotionPreference(
   if (pref.isCustom !== undefined) payload.is_custom = pref.isCustom;
 
   // emotion_preferences is a transparent encrypted view; a view cannot be the target of
-  // INSERT … ON CONFLICT (PostgREST upsert), so we insert plainly and the view's INSTEAD OF
+  // INSERT ... ON CONFLICT (PostgREST upsert), so we insert plainly and the view's INSTEAD OF
   // trigger resolves the (user_id, emotion_id) merge against the base table's real unique
-  // constraint — preserving the partial-update semantics (omitted columns left untouched).
+  // constraint - preserving the partial-update semantics (omitted columns left untouched).
   const { data, error } = await client
     .from("emotion_preferences")
     .insert(payload)
@@ -166,9 +166,9 @@ export async function deleteEmotionPreference(userId: string, emotionId: string)
  * Persist positions for an ordered array of emotionIds.
  *
  * emotion_preferences is a transparent encrypted view; a view cannot be the target of
- * INSERT … ON CONFLICT, so we insert plainly and the view's INSTEAD OF trigger resolves the
+ * INSERT ... ON CONFLICT, so we insert plainly and the view's INSTEAD OF trigger resolves the
  * (user_id, emotion_id) merge against the base table's real unique constraint. The trigger
- * coalesces omitted columns, so **only the `position` column is updated** on conflict — name,
+ * coalesces omitted columns, so **only the `position` column is updated** on conflict - name,
  * emoji, removed, and is_custom are left intact. New rows get default values for those columns
  * (null / false), so this function should only be called with ids that already have rows or for
  * which the defaults are acceptable.

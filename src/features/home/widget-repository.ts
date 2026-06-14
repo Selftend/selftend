@@ -29,7 +29,7 @@ export async function listWidgetPreferences(userId: string): Promise<WidgetPrefe
     // created_at tiebreak so a position collision (two widgets added near-simultaneously,
     // each reading the same max(position) client-side) still yields a stable, deterministic
     // order instead of an arbitrary one. (A server-assigned position would prevent the
-    // collision outright — tracked for the DB pass.)
+    // collision outright - tracked for the DB pass.)
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data as WidgetPreferenceRow[]).map(mapWidgetPreference);

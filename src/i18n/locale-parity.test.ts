@@ -4,7 +4,7 @@ import path from "path";
 // Asserts the en and bg locale bundles stay structurally in sync: the same namespace
 // files, and the same key paths within each (so a key added/removed in one locale but
 // not the other is caught in CI). Existing, intentional translation debt is listed in
-// KNOWN_GAPS — the test allows those and fails on any NEW drift. Shrink the list as gaps
+// KNOWN_GAPS - the test allows those and fails on any NEW drift. Shrink the list as gaps
 // are translated. Background: docs/superpowers/audits/2026-06-03-cbt-module-audit.md.
 
 const LOCALES_DIR = path.join(__dirname, "locales");

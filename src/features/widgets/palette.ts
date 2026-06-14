@@ -21,7 +21,7 @@ export const PALETTE = {
 } as const;
 
 /** Apply opacity (0..1) to a #RRGGBB hex, returning #RRGGBBAA (alpha LAST, as the
- *  widget library / React Native expect — alpha-first reads as the wrong color). */
+ *  widget library / React Native expect - alpha-first reads as the wrong color). */
 export function withAlpha(hex: string, opacity: number): `#${string}` {
   const clamped = Math.max(0, Math.min(1, opacity));
   const a = Math.round(clamped * 255)

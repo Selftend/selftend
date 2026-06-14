@@ -183,7 +183,7 @@ describe("ModuleHomeHeader hero mode", () => {
         icon="psychology"
         title="Cognitive Behavioral Therapy"
         moduleLabel="CBT"
-        description="…"
+        description="..."
       />,
     );
     expect(screen.getAllByText("CBT").length).toBeGreaterThanOrEqual(1);
@@ -191,7 +191,9 @@ describe("ModuleHomeHeader hero mode", () => {
   });
 
   it("falls back to title for chip label when moduleLabel not provided", () => {
-    renderWithProviders(<ModuleHomeHeader hue="act" icon="explore" title="ACT" description="…" />);
+    renderWithProviders(
+      <ModuleHomeHeader hue="act" icon="explore" title="ACT" description="..." />,
+    );
     // chip + heading both contain "ACT"
     expect(screen.getAllByText("ACT").length).toBeGreaterThanOrEqual(2);
   });
@@ -203,7 +205,7 @@ describe("ModuleHomeHeader hero mode", () => {
         icon="psychology"
         title="Cognitive Behavioral Therapy"
         moduleLabel={null}
-        description="A focused CBT section…"
+        description="A focused CBT section..."
       />,
     );
     expect(screen.getByRole("heading", { name: "Cognitive Behavioral Therapy" })).toBeTruthy();

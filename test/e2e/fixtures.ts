@@ -17,7 +17,7 @@ export interface PoolUser {
 
 const POOL_PASSWORD = "e2e-worker-pass-123";
 
-// Must match supabase/seed.sql (e2e-w0..e2e-w7, ids …010–…017).
+// Must match supabase/seed.sql (e2e-w0..e2e-w7, ids ...010–...017).
 export const POOL_USERS: PoolUser[] = [
   {
     id: "00000000-0000-0000-0000-000000000010",
@@ -63,7 +63,7 @@ export const POOL_USERS: PoolUser[] = [
 
 // supabase-js derives its localStorage key as
 // `sb-${new URL(supabaseUrl).hostname.split(".")[0]}-auth-token`, using the URL the
-// app's client was CONSTRUCTED with — i.e. the EXPO_PUBLIC_SUPABASE_URL Metro inlined
+// app's client was CONSTRUCTED with - i.e. the EXPO_PUBLIC_SUPABASE_URL Metro inlined
 // into the web bundle. That value follows Expo's env precedence (.env.local > .env),
 // and a present .env.local wins over playwright.config.ts's webServer.env. So we must
 // resolve the same effective URL here rather than hardcode a hostname, or the planted
@@ -80,10 +80,10 @@ function resolveAppSupabaseUrl(): string {
       return undefined;
     }
   };
-  // Precedence: a local .env.local (developer machines) takes priority — empirically it
+  // Precedence: a local .env.local (developer machines) takes priority - empirically it
   // wins over the inlined webServer.env for the bundled supabase client. Next the value
   // playwright.config.ts injects via webServer.env (the source in CI, where no .env.local
-  // exists). Finally the local default. We deliberately do NOT fall back to .env — it
+  // exists). Finally the local default. We deliberately do NOT fall back to .env - it
   // holds the PROD Supabase URL, which must never drive a local e2e storage key.
   return (
     fromEnvFile(".env.local") ?? process.env.EXPO_PUBLIC_SUPABASE_URL ?? "http://localhost:54321"
@@ -92,7 +92,7 @@ function resolveAppSupabaseUrl(): string {
 
 const storageKeyForUrl = (url: string) => `sb-${new URL(url).hostname.split(".")[0]}-auth-token`;
 
-// The key under which we CAPTURE the session (any valid key works — the stored
+// The key under which we CAPTURE the session (any valid key works - the stored
 // value is the same session JSON regardless of key name).
 const CAPTURE_STORAGE_KEY = storageKeyForUrl(resolveAppSupabaseUrl());
 

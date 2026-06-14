@@ -41,7 +41,7 @@ function dayKeys(count: number, todayKey: string): string[] {
 }
 
 // Build the formatters once (constructing Intl.DateTimeFormat is expensive) and cache the
-// per-day labels — chipLabels is called for every visible chip on every render.
+// per-day labels - chipLabels is called for every visible chip on every render.
 const WEEKDAY_FMT = new Intl.DateTimeFormat(undefined, { weekday: "short" });
 const MONTH_FMT = new Intl.DateTimeFormat(undefined, { month: "short" });
 const labelCache = new Map<string, { weekday: string; month: string; day: string }>();
@@ -59,7 +59,7 @@ function chipLabels(key: string): { weekday: string; month: string; day: string 
   return labels;
 }
 
-/** Whole days between `key` and today (0 = today, 1 = yesterday, …) = its index in the list. */
+/** Whole days between `key` and today (0 = today, 1 = yesterday, ...) = its index in the list. */
 function daysBeforeToday(key: string): number {
   const a = parseLocalNoon(key);
   const b = new Date();

@@ -15,7 +15,7 @@ interface ToolStatsProps {
   accentClassName: string;
   /** Optional data line under the stats (e.g. "LAST · 5/31/2026"). Uppercase, accent-tinted. */
   subline?: string;
-  /** Optional "Inspired by …" credit, rendered as the last line under the stats. */
+  /** Optional "Inspired by ..." credit, rendered as the last line under the stats. */
   credit?: string;
 }
 

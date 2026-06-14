@@ -62,7 +62,7 @@ export async function listMindfulnessSessionsByNames(
   return (data as MindfulnessSessionRow[]).map(mapSession);
 }
 
-// Exact count of sessions of the given exercise types (e.g. grounding) for tile stats —
+// Exact count of sessions of the given exercise types (e.g. grounding) for tile stats -
 // avoids fetching full rows just to display a number.
 export async function countMindfulnessSessionsByNames(
   userId: string,

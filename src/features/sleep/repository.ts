@@ -36,7 +36,7 @@ export async function listSleepLogs(userId: string, limit = 50) {
   return (data as SleepLogRow[]).map(mapSleepLog);
 }
 
-// Exact lifetime count for hero stats — independent of the capped list query, which
+// Exact lifetime count for hero stats - independent of the capped list query, which
 // would otherwise freeze the displayed total at `limit`.
 export async function countSleepLogs(userId: string): Promise<number> {
   const client = requireSupabase();

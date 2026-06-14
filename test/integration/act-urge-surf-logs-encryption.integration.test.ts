@@ -6,7 +6,7 @@ import { SEED_USERS, createServiceClient, deleteAllActLogsForUser, signInAs } fr
 // - urge_description / trigger / surfing_notes round-trip plaintext through the same
 //   `act_urge_surf_logs` name, while `act_urge_surf_logs_data` holds only ciphertext (*_enc).
 // - pass-through columns (peak_intensity, urge_acted_on, completed_at) survive a round-trip.
-// - "trigger" is a reserved word — exercised here through the trigger functions.
+// - "trigger" is a reserved word - exercised here through the trigger functions.
 
 function cipherToText(value: unknown): string {
   if (value == null) return "";

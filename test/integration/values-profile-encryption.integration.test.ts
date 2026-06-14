@@ -14,7 +14,7 @@ import {
 // - RLS isolates a second user.
 // - UPSERT: values_profile is a per-user singleton (UNIQUE user_id). A second INSERT with the same
 //   user merges (the INSTEAD OF INSERT trigger's ON CONFLICT (user_id) DO UPDATE) rather than
-//   erroring — the saveValuesProfile semantics formerly carried by PostgREST upsert.
+//   erroring - the saveValuesProfile semantics formerly carried by PostgREST upsert.
 // NOTE: values_profile has NO DELETE RLS policy (only INSERT/SELECT/UPDATE). A user DELETE through
 //   the view is an RLS no-op (pre-existing behavior); the DELETE-trigger path is exercised via the
 //   service-role admin client (the cleanup path).

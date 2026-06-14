@@ -58,7 +58,7 @@ User-entered text columns are encrypted at rest. The schema uses a two-layer mod
 
 - **`*_data` base tables** hold `bytea` ciphertext columns for all user-entered text.
 - **Same-named decrypting views** present plaintext to the client via `INSTEAD OF INSERT/UPDATE` triggers that encrypt on write and decrypt on read.
-- **`app.encrypt_text` / `app.decrypt_text`** are `SECURITY DEFINER` helpers (pinned `search_path`, `REVOKE … FROM public, anon; GRANT … TO authenticated`) that read the Vault secret `app_field_encryption_key` — the key never appears in client SQL.
+- **`app.encrypt_text` / `app.decrypt_text`** are `SECURITY DEFINER` helpers (pinned `search_path`, `REVOKE ... FROM public, anon; GRANT ... TO authenticated`) that read the Vault secret `app_field_encryption_key` - the key never appears in client SQL.
 - **Supabase Vault** holds the encryption key outside the database. A leaked database dump yields only ciphertext.
 - **`profiles.email` is intentionally plaintext** (synced from `auth.users`). All other user-entered fields in `profiles` and across ~36 content tables are encrypted.
 
@@ -128,11 +128,11 @@ Expo loads `.env.local` with priority over `.env`, so `npm start` will now talk 
 
 Each account has its own password (defined in `supabase/seed.sql`, mirrored in `SEED_USERS` in `test/integration/helpers.ts`). They are recreated on every `npm run db:reset`.
 
-| Email              | Password              | UUID    | State                                                |
-| ------------------ | --------------------- | ------- | ---------------------------------------------------- |
-| `alice@test.local` | `test-pass-alice-123` | `…0001` | Empty account, post-signup, CBT onboarding not done  |
-| `bob@test.local`   | `test-pass-bob-123`   | `…0002` | Mid-use, 5 thought records, reminders enabled        |
-| `demo@test.local`  | `test-pass-demo-123`  | `…0003` | Polished demo/screenshot account, 10 thought records |
+| Email              | Password              | UUID      | State                                                |
+| ------------------ | --------------------- | --------- | ---------------------------------------------------- |
+| `alice@test.local` | `test-pass-alice-123` | `...0001` | Empty account, post-signup, CBT onboarding not done  |
+| `bob@test.local`   | `test-pass-bob-123`   | `...0002` | Mid-use, 5 thought records, reminders enabled        |
+| `demo@test.local`  | `test-pass-demo-123`  | `...0003` | Polished demo/screenshot account, 10 thought records |
 
 > The sign-in form rejects passwords shorter than 12 characters, so these seed passwords are intentionally ≥12 chars. If you change them in `seed.sql`, keep them long enough and update `SEED_USERS` to match.
 

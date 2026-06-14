@@ -80,7 +80,7 @@ describe("completeAuthRedirect", () => {
   });
 
   // Security: a callback link carrying caller-supplied session tokens must NOT establish
-  // a session (it would be session fixation — landing the victim in the attacker's
+  // a session (it would be session fixation - landing the victim in the attacker's
   // account). Without code/token_hash, completion rejects.
   it("rejects a link carrying only hash access/refresh tokens (no session fixation)", async () => {
     await expect(

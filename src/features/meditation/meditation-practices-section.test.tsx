@@ -7,7 +7,7 @@ jest.mock("react-i18next", () => ({
 }));
 
 describe("MeditationPracticesSection", () => {
-  it("is collapsed by default — header shown, no practice cards", () => {
+  it("is collapsed by default - header shown, no practice cards", () => {
     render(<MeditationPracticesSection />);
     expect(screen.getByText("practices.sectionLabel")).toBeTruthy();
     expect(screen.queryByText("practices.breath-awareness.title")).toBeNull();

@@ -4,7 +4,7 @@
 > (11 blind lenses → dedup → 3-skeptic adversarial verify → completeness critic → gap pass → synthesis).
 > 145 agents, 35 confirmed findings. Each finding survived ≥2 of 3 independent verifiers.
 
-## Post-audit update — 2026-06-08
+## Post-audit update - 2026-06-08
 
 Field-level encryption at rest was implemented subsequent to this audit. All user-entered text fields across ~36 tables are now stored as encrypted `bytea` ciphertext in `*_data` base tables behind same-named decrypting views. The encryption key is held in Supabase Vault (outside the database), using pgcrypto as the crypto primitive. This adds defense-in-depth against database dump/backup leaks beyond the Supabase infrastructure-level at-rest encryption noted in this report. The audit findings below remain accurate as a point-in-time record of the state on 2026-06-01.
 
@@ -14,7 +14,7 @@ Field-level encryption at rest was implemented subsequent to this audit. All use
 
 Fixed, by area:
 
-- **DB migrations** - `20260567` perf indexes (mood_logs + early CBT family + FK children); `20260568` `export_user_data()` now includes the 11 ACT tables + `plan_items` + `widget_preferences` (append-wrap + integration-test guard); `20260569` server-side avatar storage cleanup in `delete_user_account()` + `REVOKE EXECUTE … FROM public, anon` on both RPCs; `20260570` free-text length CHECKs (+ `profiles.display_name`); `20260571` `web_push_subscriptions.endpoint` allowlist CHECK + per-user row-cap trigger.
+- **DB migrations** - `20260567` perf indexes (mood_logs + early CBT family + FK children); `20260568` `export_user_data()` now includes the 11 ACT tables + `plan_items` + `widget_preferences` (append-wrap + integration-test guard); `20260569` server-side avatar storage cleanup in `delete_user_account()` + `REVOKE EXECUTE ... FROM public, anon` on both RPCs; `20260570` free-text length CHECKs (+ `profiles.display_name`); `20260571` `web_push_subscriptions.endpoint` allowlist CHECK + per-user row-cap trigger.
 - **Edge / security** - SSRF allowlist (`isAllowedPushEndpoint`, unit-tested) gates `send-web-reminders`; PKCE flow + post-callback URL scrub; `queryClient.clear()` on `SIGNED_OUT`; erasure can no longer be aborted by avatar cleanup (try/catch + regression test); `removeStoredAvatar` surfaces errors; `updateUserDisplayName` length guard; worry/beliefs zod `.max()`; CSP `script-src 'self'` + `object-src 'none'`.
 - **Performance** - mood history virtualized (`SectionList`, emotion resolver hoisted, `MoodEntryCard` memoized); O(n²) → O(n) in `useCbtInsights`; memoized aggregations in `useCbtInsights`/`MoodTrackerScreen`/`useCbtProgram`/`useActProgram`; bounded top-level list queries (`.limit(500)`); home-grid widget body memoized; `I18nProvider` value/`setLanguage` memoized; `bg` locale lazy-loaded; `react-easy-crop` web-gated out of the native bundle; shared mood cache limit.
 

@@ -1,7 +1,7 @@
 # ACT Program Spec - Harris: The Happiness Trap
 
 **Source:** _The Happiness Trap: How to Stop Struggling and Start Living_ - Russ Harris, **second edition** (Trumpeter / Shambhala, 2022)
-**Citations caveat (FID-1):** the chapter numbers cited throughout (e.g. "Ch 5", "Ch 22-23") are best-effort and were **not** verified against a 2nd-edition copy — only the 1st edition was on hand, so some may reflect 1st-edition ordering. Treat chapter references as approximate; the concepts and tool descriptions are the authoritative part.
+**Citations caveat (FID-1):** the chapter numbers cited throughout (e.g. "Ch 5", "Ch 22-23") are best-effort and were **not** verified against a 2nd-edition copy - only the 1st edition was on hand, so some may reflect 1st-edition ordering. Treat chapter references as approximate; the concepts and tool descriptions are the authoritative part.
 **Status:** Canonical spec for the ACT module. The six core principle tools are implemented; this revision (a) reconciles the module to the second edition, and (b) adds a guided four-week program mirroring the CBT program.
 **Audience:** Developers and product contributors
 
@@ -16,7 +16,7 @@ The first edition of this spec described the 1st-edition hexaflex (six principle
 - **Foundation layer:** the Choice Point (toward/away moves, hooks, OBEY/STRUGGLE), a fillable Choice Point map, and a creative-hopelessness reflection.
 - **Be Present:** Drop Anchor (the **ACE** formula), guided body scan.
 - **Open Up:** expansion reframed as **TAME**; new defusion techniques (Name the Process, Play with Text, Adding a Soundtrack, Shifting Locations); a discrete **self-compassion** tool (kind hands + kind self-talk); a worry/rumination "dipping in and out of the stream" variant; healing-the-past reflection; savoring linked to the gratitude-log tool.
-- **Do What Matters:** **willingness** and **HARD barriers** on committed action; the Challenge Formula / Values Square flow; **breaking bad habits** (5 questions); **difficult decisions** (10-step); a **maintenance plan** capstone (the 7 R's) — a post-MVP / Phase-3 enhancement (see the §4 graduation contract).
+- **Do What Matters:** **willingness** and **HARD barriers** on committed action; the Challenge Formula / Values Square flow; **breaking bad habits** (5 questions); **difficult decisions** (10-step); a **maintenance plan** capstone (the 7 R's) - a post-MVP / Phase-3 enhancement (see the §4 graduation contract).
 - **A four-week guided program** (`ACT_PROGRAM`) mirroring the CBT program machinery.
 
 The implemented module already covers: defusion, expansion (1st-ed four-step), connection, observing self, values + Bull's-Eye, committed action, urge surfing, program-state, and onboarding scaffolding. Those remain; the items above extend or reframe them.
@@ -326,7 +326,7 @@ Values are chosen directions, not goals - they can't be completed, only lived. F
 
 #### 3.3.5 Maintenance plan - the 7 R's **(new capstone)**
 
-**What it is:** The ACT analogue of the CBT recovery plan. **Post-MVP / Phase-3 enhancement — not a graduation prerequisite (see the §4 graduation contract).** A living document of what keeps the user moving toward their values and how they'll handle setbacks.
+**What it is:** The ACT analogue of the CBT recovery plan. **Post-MVP / Phase-3 enhancement - not a graduation prerequisite (see the §4 graduation contract).** A living document of what keeps the user moving toward their values and how they'll handle setbacks.
 
 **User inputs (`MaintenancePlan`, one per user):**
 
@@ -345,7 +345,7 @@ Values are chosen directions, not goals - they can't be completed, only lived. F
 
 Mirrors the CBT program (`src/features/cbt/program-definition.ts`, `derive-program.ts`, `use-cbt-program.ts`) exactly. One pillar per week; each week mixes one **recurring daily-practice** task (counted by distinct calendar days so it cannot be cleared in a single sitting) with one or two **milestone** tasks. The program **graduates** when all four weeks are complete; graduation latches once.
 
-> **Graduation contract (2026-06, authoritative): the program graduates when all four weeks are complete — there is no capstone gate.** This matches `use-act-program.ts` (`advancePhase` latches `actProgramCompletedAt` once past the last phase) and supersedes the "the artifact the program graduates on" / "graduation key" phrasing for the maintenance plan elsewhere in this doc. The **maintenance-plan (7 R's) capstone** (§3.3.5) and the discrete **self-compassion tool** are **post-MVP / Phase-3 enhancements** — not graduation prerequisites and not part of the shipped MVP. Their specs (§3.3.5, the §5 tables, the §7 routes) stand as the design for that future build, which should land in both ACT and CBT to keep the modules symmetric.
+> **Graduation contract (2026-06, authoritative): the program graduates when all four weeks are complete - there is no capstone gate.** This matches `use-act-program.ts` (`advancePhase` latches `actProgramCompletedAt` once past the last phase) and supersedes the "the artifact the program graduates on" / "graduation key" phrasing for the maintenance plan elsewhere in this doc. The **maintenance-plan (7 R's) capstone** (§3.3.5) and the discrete **self-compassion tool** are **post-MVP / Phase-3 enhancements** - not graduation prerequisites and not part of the shipped MVP. Their specs (§3.3.5, the §5 tables, the §7 routes) stand as the design for that future build, which should land in both ACT and CBT to keep the modules symmetric.
 
 ### Pillars
 
@@ -679,7 +679,7 @@ Follows the contract in `tools.md`:
 
 Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 mandatory. Completion tracked via `act_onboarding_completed`. Full content also at `/modules/act/onboarding`.
 
-> **Implementation status (2026-06): the multi-step wizard below is deferred.** The shipped onboarding is the single-page `ActInfo` info modal (`src/components/app/act-onboarding-modal.tsx`), covering steps 1-2 — the Happiness-Trap myths, the Choice Point, the three pillars (Be Present / Open Up / Do What Matters), and the flexibility formula. The personalization steps — **3 (concern picker)**, **4 (Bull's-Eye snapshot)**, **5 (recommend a principle)** — are not built. Their scaffolding is intentionally retained, not dead rot: `RECOMMENDED_PRINCIPLE` + `ACT_CONCERNS` (`src/features/act/types.ts`), `act_program_state.primaryConcerns` (+ the `primary_concerns` column), and the `onboarding.concerns` / `onboarding.bullsEye` / `onboarding.commit` i18n (en + bg; note `onboarding.commit.saving` is also consumed by the live `ActInfo` CTA, so it is not removable). This matches CBT, whose onboarding is likewise a single info page with the same personalization scaffolding deferred. Building the wizard — for both modules, to keep them symmetric — would be a separate, scheduled project.
+> **Implementation status (2026-06): the multi-step wizard below is deferred.** The shipped onboarding is the single-page `ActInfo` info modal (`src/components/app/act-onboarding-modal.tsx`), covering steps 1-2 - the Happiness-Trap myths, the Choice Point, the three pillars (Be Present / Open Up / Do What Matters), and the flexibility formula. The personalization steps - **3 (concern picker)**, **4 (Bull's-Eye snapshot)**, **5 (recommend a principle)** - are not built. Their scaffolding is intentionally retained, not dead rot: `RECOMMENDED_PRINCIPLE` + `ACT_CONCERNS` (`src/features/act/types.ts`), `act_program_state.primaryConcerns` (+ the `primary_concerns` column), and the `onboarding.concerns` / `onboarding.bullsEye` / `onboarding.commit` i18n (en + bg; note `onboarding.commit.saving` is also consumed by the live `ActInfo` CTA, so it is not removable). This matches CBT, whose onboarding is likewise a single info page with the same personalization scaffolding deferred. Building the wizard - for both modules, to keep them symmetric - would be a separate, scheduled project.
 
 1. **Welcome - The Happiness Trap.** The myths; your mind isn't broken, it evolved for survival. This is about building a rich, meaningful life, not fixing your feelings.
 2. **The Choice Point + Three Pillars.** Toward/away moves, getting hooked (OBEY/STRUGGLE), and the three pillars (Be Present, Open Up, Do What Matters). Optionally fill a first Choice Point map.
@@ -710,7 +710,7 @@ Skippable after Step 1; user lands with all six principle tools available and de
 | **4 - Supplementary**                  | Break-habit 5-Q, difficult decisions, healing the past, savoring link.                                                                                                                                                                                    |
 | **5 - Activate program**               | Wire `ACT_PROGRAM` weeks/tasks/signals to the above, graduation latch, home insights.                                                                                                                                                                     |
 
-Phases 1-4 build the tools the program references; Phase 5 activates the program once the Choice Point and the four-week machinery exist. The maintenance-plan capstone and self-compassion tool are **post-MVP enhancements**, not activation prerequisites — the program shipped without them (see the §4 graduation contract).
+Phases 1-4 build the tools the program references; Phase 5 activates the program once the Choice Point and the four-week machinery exist. The maintenance-plan capstone and self-compassion tool are **post-MVP enhancements**, not activation prerequisites - the program shipped without them (see the §4 graduation contract).
 
 ---
 
@@ -829,7 +829,7 @@ This spec is ready to drive implementation when:
 
 The program is ready to activate (Phase 5) when:
 
-- The Choice Point map persists under RLS. (The self-compassion tool and maintenance-plan capstone are post-MVP / Phase-3 enhancements — see the §4 graduation contract — and are **not** part of the shipped activation bar.)
+- The Choice Point map persists under RLS. (The self-compassion tool and maintenance-plan capstone are post-MVP / Phase-3 enhancements - see the §4 graduation contract - and are **not** part of the shipped activation bar.)
 - `ACT_PROGRAM`, `deriveActProgram`, and `useActProgram` exist and pass tests (program-state, week/task derivation, graduation latch).
 - The shared program hero/graduation render for ACT.
 - Reminder defaults stay quiet; accessibility baseline matches CBT.

@@ -1,14 +1,14 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-// #87 — the field-encryption boundary depends on a config invariant: app.decrypt_text
+// #87 - the field-encryption boundary depends on a config invariant: app.decrypt_text
 // is SECURITY DEFINER (reads the Vault key) and granted to `authenticated`, so the ONLY
 // thing stopping an authenticated user from calling it directly as a decryption oracle
 // is that the `app` schema is not exposed by PostgREST. PostgREST exposes the schemas in
 // [api].schemas (default: public, graphql_public). If `app` ever lands in that list, the
 // oracle becomes reachable at /rest/v1/rpc/decrypt_text. This test fails the build if so.
 //
-// It also guards db.extra_search_path defensively — `app` there alone does not expose the
+// It also guards db.extra_search_path defensively - `app` there alone does not expose the
 // schema over the API, but it's a smell worth catching in review.
 
 const CONFIG_PATH = resolve(__dirname, "../supabase/config.toml");
@@ -25,7 +25,7 @@ function sectionBody(toml: string, header: string): string | null {
 
 function exposedSchemas(apiBody: string | null): string[] {
   if (!apiBody) return [];
-  // schemas = ["public", "graphql_public"] — may span lines; grab from `schemas` to `]`.
+  // schemas = ["public", "graphql_public"] - may span lines; grab from `schemas` to `]`.
   const match = apiBody.match(/schemas\s*=\s*\[([\s\S]*?)\]/);
   if (!match) return [];
   return [...match[1].matchAll(/["']([^"']+)["']/g)].map((m) => m[1].trim());

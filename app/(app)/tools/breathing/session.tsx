@@ -164,8 +164,8 @@ export default function BreathingSessionScreen() {
     if (last && last !== patternId) setPatternId(last);
   }, [prefs, patternParam, patternId]);
 
-  // If the adopted (non-param) pattern no longer resolves — e.g. its custom exercise was
-  // deleted but `lastBreathingPatternId` still points at it — fall back to the default
+  // If the adopted (non-param) pattern no longer resolves - e.g. its custom exercise was
+  // deleted but `lastBreathingPatternId` still points at it - fall back to the default
   // instead of dead-ending on the notFound screen, and clear the stale remembered id so
   // every param-less entry point (home button, widget, suggestions) keeps working.
   // Marking patternTouchedRef stops the adoption effect from re-adopting the dead id

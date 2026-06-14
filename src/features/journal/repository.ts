@@ -34,7 +34,7 @@ export async function listJournalEntries(userId: string, limit = 50) {
   return (data as JournalEntryRow[]).map(mapJournalEntry);
 }
 
-// Exact lifetime count for tile/hero stats — avoids fetching (and decrypting) full
+// Exact lifetime count for tile/hero stats - avoids fetching (and decrypting) full
 // journal bodies just to display a number.
 export async function countJournalEntries(userId: string): Promise<number> {
   const client = requireSupabase();
@@ -47,7 +47,7 @@ export async function countJournalEntries(userId: string): Promise<number> {
   return count ?? 0;
 }
 
-// Exact count of entries created since `sinceIso` — for the Progress 30-day stat, so it
+// Exact count of entries created since `sinceIso` - for the Progress 30-day stat, so it
 // doesn't fetch (and decrypt) full bodies just to count recent ones.
 export async function countJournalEntriesSince(userId: string, sinceIso: string): Promise<number> {
   const client = requireSupabase();

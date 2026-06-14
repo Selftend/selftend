@@ -138,13 +138,13 @@ describe("thought_records encrypted view (integration)", () => {
 
   // thought_records intentionally has NO user DELETE RLS policy (the app archives via
   // archived_at instead of hard-deleting). The INSTEAD OF delete trigger therefore only takes
-  // effect for service-role (cleanup/admin) — which is exactly what the afterEach cleanup uses.
+  // effect for service-role (cleanup/admin) - which is exactly what the afterEach cleanup uses.
   it("DELETE via the view's trigger removes the base row (service-role), user delete is a no-op", async () => {
     const created = await alice.from("thought_records").insert(baseRow()).select("id").single();
     expect(created.error).toBeNull();
     const id = created.data!.id as string;
 
-    // A user DELETE is hidden by RLS (no delete policy) — no-op, row survives.
+    // A user DELETE is hidden by RLS (no delete policy) - no-op, row survives.
     const userDel = await alice
       .from("thought_records")
       .delete()

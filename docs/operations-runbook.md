@@ -16,7 +16,7 @@ User-entered records are encrypted at rest using a symmetric key stored as a **S
 ### First deploy
 
 1. In the Supabase Dashboard (or via the CLI `supabase secrets set`), create the Vault secret `app_field_encryption_key` with a strong random value (e.g. 32+ bytes of random hex).
-2. **Back the production key up offline immediately** (e.g. a password manager or encrypted offline store). Losing the key means losing all encrypted data — there is no recovery path without it.
+2. **Back the production key up offline immediately** (e.g. a password manager or encrypted offline store). Losing the key means losing all encrypted data - there is no recovery path without it.
 3. Use a **different key per environment** (local dev, staging, production). The local stack's key from `supabase/seed.sql` must never be used in production.
 
 ### Rotation

@@ -165,7 +165,7 @@ export function ModuleHomeHeader({
       const rect = el.getBoundingClientRect?.();
       if (rect) apply({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
     } else if (typeof viewRef.measure === "function") {
-      // measure() yields pageX/pageY in the app-window coordinate space — the SAME space the
+      // measure() yields pageX/pageY in the app-window coordinate space - the SAME space the
       // Portal overlay renders into. (measureInWindow + a separate Modal window displaced the
       // spotlight on Android.)
       viewRef.measure((_x, _y, width, height, pageX, pageY) =>

@@ -74,7 +74,7 @@ function createLanePlayer(): LanePlayer {
         }
         const created = await Audio.Sound.createAsync(asset, { isLooping: loop, volume });
         if (gen !== playGen) {
-          // A newer play()/stop() ran while we were loading — unload the orphan, don't play.
+          // A newer play()/stop() ran while we were loading - unload the orphan, don't play.
           await (created.sound as unknown as LoadedSound).unloadAsync().catch(() => {});
           return;
         }

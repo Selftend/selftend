@@ -11,7 +11,7 @@ import type { MeditationSession } from "@/src/features/meditation/types";
 import { useSession } from "@/src/providers/session-provider";
 
 // Memoized row so the FlatList only re-renders changed items, and navigation stays
-// keyed to the session id (#97 — was a .map() inside a ScrollView, all 100 rows mounted).
+// keyed to the session id (#97 - was a .map() inside a ScrollView, all 100 rows mounted).
 const SessionRow = memo(function SessionRow({ session }: { session: MeditationSession }) {
   const { t } = useTranslation("meditation");
   const onPress = useCallback(

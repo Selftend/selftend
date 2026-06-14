@@ -67,7 +67,7 @@ export function JournalEntryEditorScreen({
   }, [editMode, dateDirty, selectedDate]);
 
   // Hydrate field state ONCE per entry id; keying on the id (not the object) stops a
-  // later list/detail refetch — which yields a new object identity — from clobbering
+  // later list/detail refetch - which yields a new object identity - from clobbering
   // the user's in-progress edits. (Mirrors the editor fix in mood/gratitude/etc.)
   const hydratedIdRef = useRef<string | null>(null);
   useEffect(() => {

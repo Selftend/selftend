@@ -21,7 +21,7 @@ export function useSettingsSync(userId: string | null, preferences: UserPreferen
   // gets pushed onto the new account.
   const syncedUserId = useRef<string | null>(null);
   // True while the initial DB→local language pull is still applying. setLanguage is
-  // async (it awaits a dynamic bundle import), but setThemePreference is synchronous —
+  // async (it awaits a dynamic bundle import), but setThemePreference is synchronous -
   // so a combined pull re-fires this effect (theme is a dep) before `language` has
   // updated. Without this guard that re-run would hit the push branch and write the
   // STALE local language back onto the account, undoing the pull.

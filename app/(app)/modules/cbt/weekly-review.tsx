@@ -65,7 +65,7 @@ export default function WeeklyReviewScreen() {
   const { width } = useWindowDimensions();
 
   // 100 (not 14): the 7-day trend needs every log in the window, and a heavy day can
-  // hold many logs — a 14-row cap silently dropped early-week days for active users.
+  // hold many logs - a 14-row cap silently dropped early-week days for active users.
   const { data: moodLogs, isLoading: moodLoading } = useMoodLogs(user?.id ?? null, 100);
   const { data: activities, isLoading: activitiesLoading } = useActivities(user?.id ?? null);
   const { data: goals, isLoading: goalsLoading } = useGoals(user?.id ?? null);

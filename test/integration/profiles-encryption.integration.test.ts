@@ -15,7 +15,7 @@ import { SEED_USERS, createAnonClient, createServiceClient, signInAs } from "./h
 // - export_user_data() returns the profile (plaintext email + decrypted display_name reachable
 //   through the view); delete_user_account() deletes through the view.
 //
-// profiles has NO `id` column — identity is user_id.
+// profiles has NO `id` column - identity is user_id.
 
 function cipherToText(value: unknown): string {
   if (value == null) return "";
@@ -137,12 +137,12 @@ describe("profiles display_name encrypted view (integration)", () => {
       .select("display_name")
       .single();
 
-    // Now change ONLY the avatar — but the repo sends a COMPLETE row, re-sending display_name.
+    // Now change ONLY the avatar - but the repo sends a COMPLETE row, re-sending display_name.
     const avatarUpdate = await alice
       .from("profiles")
       .insert(
         completeRow({
-          display_name: SECRET_NAME, // re-sent (preserve) — NOT omitted
+          display_name: SECRET_NAME, // re-sent (preserve) - NOT omitted
           avatar_source: "upload",
           avatar_storage_path: `${SEED_USERS.alice.id}/avatar-x.png`,
           avatar_updated_at: new Date().toISOString(),

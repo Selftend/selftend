@@ -6,7 +6,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 
 const BAR_AREA = 80;
-const MONDAY = new Date(2024, 0, 1); // Jan 1 2024 is a Monday — used only for weekday letters.
+const MONDAY = new Date(2024, 0, 1); // Jan 1 2024 is a Monday - used only for weekday letters.
 
 export function SleepWeekdayChart({ averages }: { averages: (number | null)[] }) {
   const { t, i18n } = useTranslation("sleep");

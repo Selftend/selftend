@@ -3,7 +3,7 @@ import { createServiceClient, signInAs } from "./helpers";
 // Verifies the app schema crypto helper functions:
 // - app.encrypt_text / app.decrypt_text round-trip via pgp_sym_encrypt/decrypt
 // - app_encryption_healthcheck() is the public RPC that exercises the round trip
-//   using a fixed known-good constant (not arbitrary caller input — the old probe
+//   using a fixed known-good constant (not arbitrary caller input - the old probe
 //   function was a test artifact that shipped in prod and has been removed)
 // - ciphertext at rest is NOT equal to the plaintext bytes
 

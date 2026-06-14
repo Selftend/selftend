@@ -21,14 +21,14 @@ export function AppLockGate({ children }: AppLockGateProps) {
   const enabled = useAppLockStore((s) => s.enabled);
   const hydrated = useAppLockStore((s) => s.hydrated);
 
-  // Web never locks — pass through without waiting on the native-only store hydration.
+  // Web never locks - pass through without waiting on the native-only store hydration.
   if (Platform.OS === "web") {
     return <>{children}</>;
   }
 
   // Until the persisted preference has been read from AsyncStorage, render nothing.
   // `enabled` defaults to false, so passing children through here would briefly expose
-  // the user's content on a launch where hydration resolves after the first paint —
+  // the user's content on a launch where hydration resolves after the first paint -
   // exactly the leak this gate exists to prevent. (hydrate() always flips `hydrated`,
   // even on a read failure, so this never blocks render indefinitely.)
   if (!hydrated) {
@@ -48,7 +48,7 @@ function LockedGate({ children }: AppLockGateProps) {
   const [locked, setLocked] = useState(true);
   const [authInProgress, setAuthInProgress] = useState(false);
   // Track foreground/background so we can cover protected content the moment the app
-  // leaves the foreground — the OS task-switcher snapshot is captured then, and would
+  // leaves the foreground - the OS task-switcher snapshot is captured then, and would
   // otherwise show the user's data despite the lock.
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const authInProgressRef = useRef(false);
@@ -94,7 +94,7 @@ function LockedGate({ children }: AppLockGateProps) {
         return;
       }
 
-      // background / inactive — record when we left the foreground.
+      // background / inactive - record when we left the foreground.
       if (backgroundedAtRef.current === null) {
         backgroundedAtRef.current = Date.now();
       }

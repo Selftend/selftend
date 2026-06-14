@@ -32,7 +32,7 @@ describe("PillarCard", () => {
         letter="T"
         title="Think"
         kicker="Cognitive"
-        description="…"
+        description="..."
         onToolPress={onToolPress}
       >
         <PillarCard.Tool toolKey="thoughts" icon="article" name="Thought Records" desc="d" />
@@ -44,7 +44,7 @@ describe("PillarCard", () => {
 
   it("renders a top gradient stripe for the pillar color", () => {
     const { UNSAFE_root } = render(
-      <PillarCard tint="act" letter="A" title="Act" kicker="Action" description="…" />,
+      <PillarCard tint="act" letter="A" title="Act" kicker="Action" description="..." />,
     );
     // The LinearGradient (mocked as View) should have an absolute style with top:0 and height:3
     const tree = UNSAFE_root.findAll((node: { props: { style?: unknown } }) => {

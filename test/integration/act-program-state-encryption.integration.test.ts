@@ -9,7 +9,7 @@ import { SEED_USERS, createServiceClient, deleteAllActLogsForUser, signInAs } fr
 //   myths_acknowledged, preferred_check_in_time (PLAINTEXT structured HH:mm), last_check_in_at.
 // - UPSERT: act_program_state is a per-user singleton (PK user_id). A second INSERT with the same
 //   user merges (the INSTEAD OF INSERT trigger's ON CONFLICT (user_id) DO UPDATE) rather than
-//   erroring — the upsertACTProgramState semantics formerly carried by PostgREST upsert.
+//   erroring - the upsertACTProgramState semantics formerly carried by PostgREST upsert.
 // - This table has NO `id` column; identity is user_id.
 
 function cipherToText(value: unknown): string {

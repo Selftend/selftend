@@ -19,7 +19,7 @@ function anyReminderEnabled(prefs: UserPreferences): boolean {
 /**
  * Keeps this device's reminder channel in sync with preferences. Delivery is server-driven
  * (the edge function reads user_preferences), so the client only ensures the channel is
- * registered when reminders are on and disabled when the global master is off — plus a one-time
+ * registered when reminders are on and disabled when the global master is off - plus a one-time
  * cleanup of any local notifications scheduled by the pre-push build.
  */
 export function useNotificationSync(

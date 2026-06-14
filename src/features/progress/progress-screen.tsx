@@ -41,7 +41,7 @@ export default function ProgressScreen() {
   // day. Mood rows are needed for the chart; journal/gratitude are only counted (below).
   const { data: moodLogs, isLoading: moodLoading } = useMoodHistory(user?.id ?? null, 200);
 
-  // start-of-day 30 days ago — stable within a day, so it's a safe query key.
+  // start-of-day 30 days ago - stable within a day, so it's a safe query key.
   const thirtyDayCutoff = startOfDayDaysAgo(30);
   const thirtyDayCutoffIso = thirtyDayCutoff.toISOString();
 
