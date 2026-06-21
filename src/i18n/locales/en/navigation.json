@@ -97,7 +97,7 @@
       "habitsSub": "Build consistent daily habits"
     },
     "dashboard": {
-      "addWidgetTitle": "Add to your plan",
+      "addWidgetTitle": "Add to your dashboard",
       "addToolButton": "Add",
       "removeWidget": "Remove {{title}}",
       "doneToday": "Done today",
@@ -133,7 +133,7 @@
     "sectionModules": "Modules",
     "sectionTools": "Tools",
     "addPanel": {
-      "subtitle": "Pick a tool - its widgets appear below. There's nothing here you have to use.",
+      "subtitle": "Pick a tool - its widgets will appear in the home screen.",
       "searchPlaceholder": "Search widgets...",
       "allCategories": "All categories",
       "noResults": "No widgets match your search."

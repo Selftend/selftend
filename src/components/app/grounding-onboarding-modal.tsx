@@ -72,11 +72,6 @@ export function GroundingOnboarding({
             body={t("grounding.onboarding.techniques.senseBody")}
           />
           <OnboardingInfoRow
-            icon="crop-square"
-            title={t("grounding.onboarding.techniques.breathLabel")}
-            body={t("grounding.onboarding.techniques.breathBody")}
-          />
-          <OnboardingInfoRow
             icon="water-drop"
             title={t("grounding.onboarding.techniques.coldLabel")}
             body={t("grounding.onboarding.techniques.coldBody")}

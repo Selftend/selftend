@@ -46,12 +46,12 @@ test.describe("home widget management", () => {
     await expect(page.getByText("Dashboard")).toBeVisible({ timeout: 15_000 });
 
     // --- Add a non-default widget via the AddWidgetModal search ---
-    // The add (+) button has accessibilityLabel t("today.dashboard.addWidgetTitle") = "Add to your plan"
-    const addButton = page.getByRole("button", { name: "Add to your plan", exact: true });
+    // The add (+) button has accessibilityLabel t("today.dashboard.addWidgetTitle") = "Add to your dashboard"
+    const addButton = page.getByRole("button", { name: "Add to your dashboard", exact: true });
     await expect(addButton).toBeVisible({ timeout: 10_000 });
     await addButton.click();
 
-    // AddWidgetModal appears. Wait for the modal panel (has heading "Add to your plan").
+    // AddWidgetModal appears. Wait for the modal panel (has heading "Add to your dashboard").
     // The modal panel has a TextInput for search (placeholder "Search widgets...").
     await expect(page.getByPlaceholder("Search widgets...")).toBeVisible({ timeout: 10_000 });
 

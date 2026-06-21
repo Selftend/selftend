@@ -113,7 +113,6 @@ export default function GratitudeHomeScreen() {
             meta={
               <ToolStats
                 accentClassName="text-think"
-                credit={t("authorEyebrow")}
                 items={[
                   {
                     value: t("hero.entries", { count: totalEntries ?? allEntries.length }),

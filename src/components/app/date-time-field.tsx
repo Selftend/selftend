@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { Modal, Pressable } from "react-native";
+import { Modal, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import DateTimePicker, { useDefaultStyles } from "react-native-ui-datepicker";
 import dayjs from "dayjs";
 
+import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { THEME } from "@/lib/theme";
@@ -17,6 +18,7 @@ interface DateTimeFieldProps {
 
 export function DateTimeField({ value, onChange, accessibilityLabel }: DateTimeFieldProps) {
   const { i18n } = useTranslation("navigation");
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
 
   const scheme = useAppColorScheme();
@@ -75,12 +77,9 @@ export function DateTimeField({ value, onChange, accessibilityLabel }: DateTimeF
               maxDate={dayjs().endOf("day")}
               timePicker={true}
               onChange={({ date }) => {
-                // The library types allow a null/undefined date; guard before formatting.
                 if (!date) return;
                 const next = dayjs(date);
                 if (next.isValid()) onChange(next.toISOString());
-                // Do NOT auto-close: the time picker requires multiple taps
-                // (hour, minute, AM/PM). User closes via backdrop press.
               }}
               styles={pickerStyles}
               components={{
@@ -88,6 +87,11 @@ export function DateTimeField({ value, onChange, accessibilityLabel }: DateTimeF
                 IconNext: <Icon name="chevron-right" className="size-5 text-foreground" />,
               }}
             />
+            <View className="mt-2">
+              <Button onPress={() => setOpen(false)}>
+                <Text>{t("done")}</Text>
+              </Button>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>

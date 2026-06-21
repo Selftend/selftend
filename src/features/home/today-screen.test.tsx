@@ -60,7 +60,7 @@ jest.mock("@/src/features/home/widget-registry", () => ({
 }));
 
 describe("HomeScreen hero", () => {
-  it("renders 44px greeting hero with date eyebrow", () => {
+  it("renders the greeting hero with date eyebrow", () => {
     renderWithProviders(<HomeScreen />);
     expect(screen.getByText(/good (morning|afternoon|evening)\./i)).toBeTruthy();
   });
@@ -77,7 +77,7 @@ describe("HomeScreen hero", () => {
 
   it("renders Add tool button", () => {
     renderWithProviders(<HomeScreen />);
-    expect(screen.getByRole("button", { name: /add to your plan/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /add to your dashboard/i })).toBeTruthy();
   });
 
   it("opens the add-widget modal when the empty-state card is pressed", () => {

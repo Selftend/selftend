@@ -101,7 +101,7 @@ export default function ProtectedLayout() {
       <WidgetSnapshotSync userId={user?.id ?? null} />
       <OnboardingModal
         actionLabel={t("onboarding.appContinue")}
-        body={[t("onboarding.appBody1"), t("onboarding.appBody2"), t("onboarding.appBody3")]}
+        body={[t("onboarding.appBody1"), t("onboarding.appBody2")]}
         errorMessage={appOnboardingMutation.isError ? t("onboarding.appSaveError") : undefined}
         isPending={appOnboardingMutation.isPending}
         onComplete={() => void completeAppOnboarding()}

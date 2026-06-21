@@ -37,9 +37,8 @@
     "resetSaved": "Onboarding will be shown again.",
     "resetError": "Unable to reset onboarding.",
     "appTitle": "Welcome to Selftend",
-    "appBody1": "Selftend is a calm place for guided self-help and private reflection.",
+    "appBody1": "Selftend is a place for guided self-help and private reflection.",
     "appBody2": "It is not a diagnosis tool, therapy replacement, or emergency support. Use local emergency or crisis resources if you need urgent help.",
-    "appBody3": "The first section focuses on CBT thought records. Reminders stay optional, quiet, and easy to turn off.",
     "appContinue": "Got it",
     "appSaveError": "Unable to save app onboarding."
   },

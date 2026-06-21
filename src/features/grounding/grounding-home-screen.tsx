@@ -54,7 +54,6 @@ export default function GroundingHomeScreen() {
                 meta={
                   <ToolStats
                     accentClassName="text-clay"
-                    credit={t("grounding.authorEyebrow")}
                     items={[
                       {
                         value: t("grounding.hero.techniques", {

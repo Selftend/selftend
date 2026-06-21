@@ -1,4 +1,12 @@
-import { Modal, Pressable, ScrollView, TextInput, View, useWindowDimensions } from "react-native";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -172,11 +180,13 @@ export function AddWidgetModal({
   const isWide = width >= 640;
   const [category, setCategory] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const grouped = useMemo(widgetsByCategory, []);
 
   function handleClose() {
     setCategory(null);
     setQuery("");
+    setSearchFocused(false);
     onClose();
   }
 
@@ -287,14 +297,30 @@ export function AddWidgetModal({
             )}
           </View>
 
-          {/* Search */}
-          <View className="mx-5 mt-3.5 h-9 flex-row items-center gap-2 rounded-lg bg-muted/60 px-3">
-            <Icon name="search" className="size-[18px] text-muted-foreground" />
+          {/* Search - the focus ring lives on the whole pill (not the inner input) so */}
+          {/* the icon sits inside it. mb-2 keeps a non-scrolling gap so the ring is */}
+          {/* never clipped by list content scrolling up beneath it. */}
+          <View
+            className={cn(
+              "mx-5 mb-2 mt-3.5 h-9 flex-row items-center gap-2 rounded-lg border border-transparent bg-muted/60 px-3",
+              searchFocused &&
+                Platform.select({
+                  web: "border-ring ring-ring/50 ring-[3px]",
+                  native: "border-ring",
+                }),
+            )}
+          >
+            <Icon name="search" className="size-[18px] content-center text-muted-foreground" />
             <TextInput
               value={query}
               onChangeText={setQuery}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
               placeholder={t("home.addPanel.searchPlaceholder")}
-              className="h-9 flex-1 text-[13px] text-foreground placeholder:text-muted-foreground"
+              className={cn(
+                "h-9 flex-1 text-[13px] text-foreground placeholder:text-muted-foreground",
+                Platform.select({ web: "outline-none" }),
+              )}
             />
           </View>
 

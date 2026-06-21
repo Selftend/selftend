@@ -143,7 +143,7 @@ export default function HomeScreen() {
         </Text>
         <Text
           variant="h1"
-          className="mt-2.5 text-[44px] font-extrabold leading-[1.05] tracking-tight"
+          className="mt-2.5 text-[32px] font-extrabold leading-[1.1] tracking-tight"
         >
           {greetingLine}
         </Text>
