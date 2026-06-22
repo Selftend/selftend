@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
+import { TechniqueCard } from "@/src/features/grounding/technique-card";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ToolStats } from "@/src/components/app/tool-stats";
 import { GroundingOnboarding } from "@/src/components/app/grounding-onboarding-modal";
@@ -80,11 +80,13 @@ export default function GroundingHomeScreen() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <View className="gap-1">
+                  <View className="flex-row flex-wrap gap-2">
                     {sessions.slice(0, 3).map((s) => (
-                      <Text key={s.id} variant="muted" className="text-sm">
-                        • {t(`grounding.techniques.${s.exerciseName}.title`)}
-                      </Text>
+                      <View key={s.id} className="rounded-full bg-muted px-3 py-1.5">
+                        <Text variant="muted" className="text-xs">
+                          {t(`grounding.techniques.${s.exerciseName}.title`)}
+                        </Text>
+                      </View>
                     ))}
                   </View>
                 </CardContent>
@@ -94,10 +96,16 @@ export default function GroundingHomeScreen() {
             <View className="gap-3">
               <Text variant="h3">{t("grounding.choose")}</Text>
               {groundingTechniques.map((technique) => (
-                <AccessibleCardLink
+                <TechniqueCard
                   key={technique.slug}
+                  technique={technique}
                   title={t(`grounding.techniques.${technique.slug}.title`)}
                   description={t(`grounding.techniques.${technique.slug}.shortDescription`)}
+                  meta={
+                    technique.kind === "senses"
+                      ? t("grounding.meta.senses", { count: technique.steps.length })
+                      : t("grounding.meta.guided", { count: technique.steps.length })
+                  }
                   onPress={() => router.push(`/tools/grounding/${technique.slug}`)}
                 />
               ))}
