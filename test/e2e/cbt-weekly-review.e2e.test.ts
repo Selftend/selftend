@@ -269,7 +269,9 @@ test.describe("CBT weekly review: aggregate render", () => {
     // followed by <Text>this week</Text>.
     // weekRecords filters by created_at >= weekStart (today - 6 days).
     // We seeded 3 records at daysAgo(0), daysAgo(1), daysAgo(2) - all >= weekStart.
-    await expect(page.getByText("this week")).toBeVisible({ timeout: 10_000 });
+    // exact: true so we match only the "this week" count label, not the reflection
+    // prompt sentence ("...better than expected this week?") which contains it as a substring.
+    await expect(page.getByText("this week", { exact: true })).toBeVisible({ timeout: 10_000 });
 
     // Scope the "3" count assertion to the Thought records card to avoid ambiguity with
     // the mood chart's SVG y-axis label "3" which also appears as bare text in the DOM.
