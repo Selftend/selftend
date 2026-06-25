@@ -188,9 +188,9 @@
         "desc": "Today's self-care check-in."
       },
       "cbtOpenRecord": {
-        "title": "Open thought record",
-        "metaDesc": "Pick up your latest thought record.",
-        "shortcutCta": "New thought record"
+        "title": "Thought record",
+        "metaDesc": "Examine a difficult thought and challenge it.",
+        "shortcutCta": "New entry"
       },
       "actDropAnchor": {
         "title": "Drop anchor",
