@@ -3,8 +3,8 @@ import { expect, test } from "./fixtures";
 import { createServiceClient } from "./helpers";
 import { policyVersion } from "../../src/features/policies/policy-content";
 
-const TOUR_KEYS = ["tune", "notifications", "program", "info"] as const;
-const ACT_TOUR_KEYS = ["notifications", "program", "info"] as const;
+const TOUR_KEYS = ["cbt:tune", "cbt:notifications", "cbt:program", "cbt:info"] as const;
+const ACT_TOUR_KEYS = ["act:notifications", "act:program", "act:info"] as const;
 
 // Set from the worker's pool user in beforeAll (worker-scoped fixtures are
 // available to beforeAll). Module scope is per-worker-process, so this is safe.
@@ -84,7 +84,7 @@ test.describe("button tours", () => {
 
     await page.getByRole("button", { name: "Got it", exact: true }).click();
 
-    await expect.poll(getShownButtonTours).toEqual(["notifications"]);
+    await expect.poll(getShownButtonTours).toEqual(["act:notifications"]);
   });
 
   test("Skip all tips dismisses every header tip", async ({ page }) => {
@@ -106,9 +106,20 @@ test.describe("button tours", () => {
     await page.goto("/settings");
     await page.getByRole("button", { name: "Reset onboarding", exact: true }).click();
 
-    await expect(
-      page.getByText("Onboarding will be shown again.", { exact: true }).first(),
-    ).toBeVisible();
+    await expect(page.getByText(/Onboarding will be shown again/i).first()).toBeVisible();
     await expect.poll(getShownButtonTours).toEqual([]);
+  });
+
+  test("per-screen keys: dismissing every tip on CBT must not consume tips elsewhere", async ({
+    page,
+  }) => {
+    // Seed all CBT scoped keys as already dismissed.
+    await setTourState(TOUR_KEYS);
+
+    // Per-screen keys: dismissing every tip on CBT must not consume tips elsewhere.
+    await page.goto("/tools/mood-tracker");
+    await expect(
+      page.getByText(/Tap here to manage reminders and notification settings/i),
+    ).toBeVisible({ timeout: 10_000 });
   });
 });

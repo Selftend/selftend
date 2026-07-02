@@ -33,7 +33,10 @@ export function useSettingsSync(userId: string | null, preferences: UserPreferen
     if (syncedUserId.current !== userId) {
       syncedUserId.current = userId;
 
-      const dbLang = isSupportedLanguage(preferences.language) ? preferences.language : null;
+      const dbLang =
+        preferences.languageExplicit && isSupportedLanguage(preferences.language)
+          ? preferences.language
+          : null;
       const dbTheme = isThemePreference(preferences.theme) ? preferences.theme : null;
 
       const needsLangUpdate = dbLang !== null && dbLang !== language;

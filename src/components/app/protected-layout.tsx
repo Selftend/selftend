@@ -10,13 +10,12 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { isDatedRoute } from "@/src/features/navigation/dated-routes";
 import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
 import { ConsentGate } from "@/src/components/app/consent-gate";
-import { OnboardingModal } from "@/src/components/app/onboarding-modal";
+import { AppOnboardingWizard } from "@/src/components/app/app-onboarding-wizard";
 import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { policyVersion } from "@/src/features/policies/policy-content";
-import {
-  useUpdateOnboardingPreferences,
-  useUserPreferences,
-} from "@/src/features/settings/queries";
+import { useUserPreferences } from "@/src/features/settings/queries";
+import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
+import type { ConcernKey } from "@/src/features/onboarding/concerns";
 import { useNotificationDeepLink } from "@/src/features/notifications/use-notification-deep-link";
 import { useNotificationSync } from "@/src/features/notifications/use-notification-sync";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
@@ -31,7 +30,7 @@ export default function ProtectedLayout() {
   const isDesktop = width >= DESKTOP_BREAKPOINT;
   const { session, status, user } = useSession();
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(user?.id ?? null);
-  const appOnboardingMutation = useUpdateOnboardingPreferences(user?.id ?? null);
+  const completeOnboarding = useCompleteAppOnboarding(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
   const pathname = usePathname();
 
@@ -80,15 +79,12 @@ export default function ProtectedLayout() {
     !preferences?.appOnboardingCompleted &&
     pathname === "/";
 
-  const completeAppOnboarding = async () => {
-    if (!preferences) {
-      return;
-    }
-
+  const finishAppOnboarding = async (selectedConcerns: ConcernKey[] | null) => {
+    if (!preferences) return;
     try {
-      await appOnboardingMutation.mutateAsync({ appOnboardingCompleted: true });
+      await completeOnboarding.mutateAsync({ selectedConcerns });
     } catch {
-      // Error state is shown inside the modal.
+      // Error state is shown inside the wizard.
     }
   };
 
@@ -99,15 +95,16 @@ export default function ProtectedLayout() {
   return (
     <AppLockGate>
       <WidgetSnapshotSync userId={user?.id ?? null} />
-      <OnboardingModal
-        actionLabel={t("onboarding.appContinue")}
-        body={[t("onboarding.appBody1"), t("onboarding.appBody2")]}
-        errorMessage={appOnboardingMutation.isError ? t("onboarding.appSaveError") : undefined}
-        isPending={appOnboardingMutation.isPending}
-        onComplete={() => void completeAppOnboarding()}
-        title={t("onboarding.appTitle")}
-        visible={needsAppOnboarding}
-      />
+      {needsAppOnboarding ? (
+        <AppOnboardingWizard
+          visible
+          initialConcerns={preferences?.selectedConcerns ?? []}
+          isPending={completeOnboarding.isPending}
+          errorMessage={completeOnboarding.isError ? t("onboarding.appSaveError") : undefined}
+          onFinish={(picks) => void finishAppOnboarding(picks)}
+          onSkip={() => void finishAppOnboarding(null)}
+        />
+      ) : null}
       <View className="flex-1 flex-row bg-background">
         {isDesktop ? <SidebarNav /> : null}
         <View className="flex-1">

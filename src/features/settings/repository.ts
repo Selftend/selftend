@@ -87,6 +87,7 @@ interface UserPreferenceRow {
   theme: string | null;
   selected_concerns: string[] | null;
   active_strategies: string[] | null;
+  start_here_dismissed_at: string | null;
   shown_button_tours: string[] | null;
   breath_sound_id: string | null;
   ambient_sound_id: string | null;
@@ -186,9 +187,11 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     policyVersionAccepted: row.policy_version_accepted ?? null,
     cookieConsent: row.cookie_consent ?? null,
     language: row.language ?? defaultUserPreferences.language,
+    languageExplicit: row.language !== null,
     theme: row.theme ?? null,
     selectedConcerns: row.selected_concerns ?? [],
     activeStrategies: row.active_strategies ?? [],
+    startHereDismissedAt: row.start_here_dismissed_at ?? null,
     shownButtonTours: (row.shown_button_tours ?? []) as ButtonTourKey[],
     breathSoundId: row.breath_sound_id ?? defaultUserPreferences.breathSoundId,
     ambientSoundId: row.ambient_sound_id ?? defaultUserPreferences.ambientSoundId,
@@ -309,6 +312,7 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     theme: preferences.theme,
     selected_concerns: preferences.selectedConcerns,
     active_strategies: preferences.activeStrategies,
+    start_here_dismissed_at: preferences.startHereDismissedAt,
     shown_button_tours: preferences.shownButtonTours,
     breath_sound_id: preferences.breathSoundId,
     ambient_sound_id: preferences.ambientSoundId,
@@ -376,6 +380,8 @@ interface OnboardingPreferencesPatch {
   mindfulnessOnboardingCompleted?: boolean;
   groundingOnboardingCompleted?: boolean;
   shownButtonTours?: ButtonTourKey[];
+  selectedConcerns?: string[];
+  startHereDismissedAt?: string | null;
 }
 
 export async function updateOnboardingPreferences(
@@ -417,6 +423,12 @@ export async function updateOnboardingPreferences(
   }
   if (patch.shownButtonTours !== undefined) {
     payload.shown_button_tours = patch.shownButtonTours;
+  }
+  if (patch.selectedConcerns !== undefined) {
+    payload.selected_concerns = patch.selectedConcerns;
+  }
+  if (patch.startHereDismissedAt !== undefined) {
+    payload.start_here_dismissed_at = patch.startHereDismissedAt;
   }
 
   const { data, error } = await client

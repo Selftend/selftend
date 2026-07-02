@@ -110,6 +110,7 @@ export default function HabitsHomeScreen() {
                 hue="act"
                 icon="task-alt"
                 moduleLabel={null}
+                tourScope="habits"
                 description={t("home.subtitle")}
                 actions={[
                   { type: "notifications", targetKey: "habits" },

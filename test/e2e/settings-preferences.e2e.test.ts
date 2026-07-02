@@ -16,7 +16,7 @@
  */
 import { expect, test } from "./fixtures";
 
-import { createServiceClient } from "./helpers";
+import { createServiceClient, dismissPostSignInModals } from "./helpers";
 
 type PreferenceRow = Record<string, unknown>;
 
@@ -56,6 +56,8 @@ test.describe("settings - language switch", () => {
 
   test("switching to Bulgarian updates the UI and persists across reload", async ({ page }) => {
     await page.goto("/");
+    // Dismiss home tour (seeded users have empty shown_button_tours, so it fires on first visit).
+    await dismissPostSignInModals(page);
 
     // Open the user-menu popover (header avatar button).
     await page.getByRole("button", { name: "Open account menu", exact: true }).click();
@@ -108,6 +110,8 @@ test.describe("settings - theme switch", () => {
     page,
   }) => {
     await page.goto("/");
+    // Dismiss home tour (seeded users have empty shown_button_tours, so it fires on first visit).
+    await dismissPostSignInModals(page);
 
     // Open user-menu popover.
     await page.getByRole("button", { name: "Open account menu", exact: true }).click();
@@ -139,6 +143,8 @@ test.describe("settings - theme switch", () => {
     page,
   }) => {
     await page.goto("/");
+    // Dismiss home tour (seeded users have empty shown_button_tours, so it fires on first visit).
+    await dismissPostSignInModals(page);
 
     await page.getByRole("button", { name: "Open account menu", exact: true }).click();
     await expect(page.getByText("Switch theme", { exact: true })).toBeVisible();

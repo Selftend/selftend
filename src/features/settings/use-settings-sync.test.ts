@@ -56,21 +56,36 @@ describe("useSettingsSync", () => {
 
   it("applies DB language over local on first login", () => {
     mockContexts({ language: "en" });
-    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "bg" })));
+    // languageExplicit: true marks this as an explicitly saved DB value → pull wins.
+    renderHook(() =>
+      useSettingsSync("user-1", makePreferences({ language: "bg", languageExplicit: true })),
+    );
     expect(setLanguage).toHaveBeenCalledWith("bg");
     expect(mutate).not.toHaveBeenCalled();
   });
 
   it("applies DB theme over local on first login", () => {
     mockContexts({ theme: "system" });
-    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "en", theme: "dark" })));
+    // languageExplicit: true — DB language is "en" which matches device "en", so no lang pull.
+    renderHook(() =>
+      useSettingsSync(
+        "user-1",
+        makePreferences({ language: "en", languageExplicit: true, theme: "dark" }),
+      ),
+    );
     expect(setThemePreference).toHaveBeenCalledWith("dark");
     expect(mutate).not.toHaveBeenCalled();
   });
 
   it("applies DB values even when local storage already had a different value", () => {
     mockContexts({ language: "bg", theme: "light" });
-    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "en", theme: "dark" })));
+    // languageExplicit: true — DB language is explicitly "en", so pull overrides local "bg".
+    renderHook(() =>
+      useSettingsSync(
+        "user-1",
+        makePreferences({ language: "en", languageExplicit: true, theme: "dark" }),
+      ),
+    );
     expect(setLanguage).toHaveBeenCalledWith("en");
     expect(setThemePreference).toHaveBeenCalledWith("dark");
     expect(mutate).not.toHaveBeenCalled();
@@ -78,7 +93,13 @@ describe("useSettingsSync", () => {
 
   it("does not update when DB and local values already match", () => {
     mockContexts({ language: "bg", theme: "dark" });
-    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "bg", theme: "dark" })));
+    // languageExplicit: true — DB "bg" matches local "bg" → no pull, no push.
+    renderHook(() =>
+      useSettingsSync(
+        "user-1",
+        makePreferences({ language: "bg", languageExplicit: true, theme: "dark" }),
+      ),
+    );
     expect(setLanguage).not.toHaveBeenCalled();
     expect(setThemePreference).not.toHaveBeenCalled();
     expect(mutate).not.toHaveBeenCalled();
@@ -91,6 +112,22 @@ describe("useSettingsSync", () => {
     expect(setThemePreference).not.toHaveBeenCalled();
     // Local theme is pushed to DB to save it for the first time.
     expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ theme: "dark" }));
+  });
+
+  it("pushes device language to DB when account has never explicitly set a language (fresh account)", () => {
+    // Fresh signup: device was set to "bg" before sign-up; DB row has language=NULL
+    // (mapped to default "en" with languageExplicit: false). The hook must NOT clobber
+    // the device "bg" with "en", and must push "bg" back to the account.
+    mockContexts({ language: "bg" });
+    renderHook(() =>
+      useSettingsSync(
+        "user-1",
+        // languageExplicit: false simulates a NULL language column (new row).
+        makePreferences({ language: "en", languageExplicit: false }),
+      ),
+    );
+    expect(setLanguage).not.toHaveBeenCalled();
+    expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ language: "bg" }));
   });
 
   it("ignores unsupported DB language values", () => {
@@ -212,7 +249,8 @@ describe("useSettingsSync", () => {
     const pendingSetLanguage = jest.fn(
       () => new Promise<void>((resolve) => (resolveLang = resolve)),
     );
-    const prefs = makePreferences({ language: "bg", theme: "dark" });
+    // languageExplicit: true — DB "bg" is explicitly set, so pull must fire.
+    const prefs = makePreferences({ language: "bg", languageExplicit: true, theme: "dark" });
 
     const { rerender } = renderHook(
       ({ theme, lang }: { theme: "system" | "light" | "dark"; lang: "en" | "bg" }) => {

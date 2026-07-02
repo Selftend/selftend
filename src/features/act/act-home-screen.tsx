@@ -167,6 +167,7 @@ export default function ActHomeScreen() {
                 icon="explore"
                 moduleLabel={t("common:beta")}
                 title={t("home.fullTitle")}
+                tourScope="act"
                 description={t("home.description")}
                 actions={[
                   { type: "notifications", targetKey: "act" },

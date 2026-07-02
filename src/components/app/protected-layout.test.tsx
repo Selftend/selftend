@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { screen } from "@testing-library/react-native";
 import { Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
@@ -6,11 +6,8 @@ import ProtectedLayout from "./protected-layout";
 import { useAppLockStore } from "@/src/features/security/app-lock-store";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
-import {
-  useUpdateOnboardingPreferences,
-  useUpdateUserPreferences,
-  useUserPreferences,
-} from "@/src/features/settings/queries";
+import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 type MockSessionState = {
@@ -87,9 +84,12 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/settings/queries", () => ({
-  useUpdateOnboardingPreferences: jest.fn(),
   useUpdateUserPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
+}));
+
+jest.mock("@/src/features/onboarding/queries", () => ({
+  useCompleteAppOnboarding: jest.fn(),
 }));
 
 // Notification deep-linking touches the native expo-notifications module; it has its own
@@ -99,8 +99,8 @@ jest.mock("@/src/features/notifications/use-notification-deep-link", () => ({
 }));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
-const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jest.MockedFunction<
-  typeof useUpdateOnboardingPreferences
+const mockUseCompleteAppOnboarding = useCompleteAppOnboarding as jest.MockedFunction<
+  typeof useCompleteAppOnboarding
 >;
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
@@ -128,13 +128,13 @@ describe("ProtectedLayout app onboarding", () => {
         id: "user-1",
       },
     };
-    mutateAsync.mockResolvedValue(defaultUserPreferences);
-    mockUseUpdateOnboardingPreferences.mockReturnValue({
+    mutateAsync.mockResolvedValue(undefined);
+    mockUseCompleteAppOnboarding.mockReturnValue({
       isError: false,
       isPending: false,
       mutate: jest.fn(),
       mutateAsync,
-    } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
+    } as unknown as ReturnType<typeof useCompleteAppOnboarding>);
     mockUseUpdateUserPreferences.mockReturnValue({
       isPending: false,
       mutate: jest.fn(),
@@ -150,16 +150,25 @@ describe("ProtectedLayout app onboarding", () => {
     } as unknown as ReturnType<typeof useUserPreferences>);
   });
 
-  it("marks app onboarding complete when the user continues", async () => {
+  it("shows the wizard panel-1 title when app onboarding is needed", () => {
     renderWithProviders(<ProtectedLayout />);
 
     expect(screen.getByText("Welcome to Selftend")).toBeTruthy();
+  });
 
-    fireEvent.press(screen.getByText("Got it"));
+  it("hides the wizard when app onboarding is complete", () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: true,
+        policyVersionAccepted: policyVersion,
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
 
-    await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith({ appOnboardingCompleted: true });
-    });
+    renderWithProviders(<ProtectedLayout />);
+
+    expect(screen.queryByText("Welcome to Selftend")).toBeNull();
   });
 
   it("shows the policy gate before app onboarding when consent is outdated", () => {

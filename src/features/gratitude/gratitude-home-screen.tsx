@@ -105,6 +105,7 @@ export default function GratitudeHomeScreen() {
             icon="favorite"
             moduleLabel={null}
             title={t("home.title")}
+            tourScope="gratitude"
             description={t("tagline")}
             actions={[
               { type: "notifications", targetKey: "gratitude" },

@@ -9,6 +9,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { UserMenu } from "@/src/components/app/user-menu";
 import { useSession } from "@/src/providers/session-provider";
+import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 
 interface AppHeaderProps {
   showHamburger?: boolean;
@@ -19,19 +20,22 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
   const { t } = useTranslation("navigation");
   const { session } = useSession();
   const isSignedIn = Boolean(session);
+  const navTargetRef = useTourTargetRef("home-navigation");
 
   return (
     <SafeAreaView edges={["top"]} className="bg-card border-b border-border">
       <View className="flex-row items-center gap-2 px-2 h-14">
         {showHamburger ? (
-          <Button
-            accessibilityLabel={t("header.openNav")}
-            variant="ghost"
-            size="icon"
-            onPress={onMenuPress}
-          >
-            <Icon name="menu" className="size-6 text-foreground" />
-          </Button>
+          <View ref={navTargetRef}>
+            <Button
+              accessibilityLabel={t("header.openNav")}
+              variant="ghost"
+              size="icon"
+              onPress={onMenuPress}
+            >
+              <Icon name="menu" className="size-6 text-foreground" />
+            </Button>
+          </View>
         ) : null}
         <Pressable
           className="min-w-0 flex-1 flex-row items-center gap-2 px-2"

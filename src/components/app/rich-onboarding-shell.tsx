@@ -42,7 +42,7 @@ export function RichOnboardingShell({
       visible={visible}
     >
       <SafeAreaView className="flex-1 bg-background">
-        <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
+        <ScrollView contentContainerClassName="mx-auto w-full max-w-2xl gap-8 p-6 pb-12">
           {children}
 
           <View className="gap-3">

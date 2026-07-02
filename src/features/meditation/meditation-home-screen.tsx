@@ -118,6 +118,7 @@ export default function MeditationHomeScreen() {
                 hue="iris"
                 icon="self-improvement"
                 moduleLabel={null}
+                tourScope="meditation"
                 description={t("module.home.subtitle")}
                 actions={[
                   { type: "tune", onPress: () => setForceWizard(true) },

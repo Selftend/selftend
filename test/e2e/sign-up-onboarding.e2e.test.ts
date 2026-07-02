@@ -5,7 +5,6 @@ import {
   deleteUserByEmail,
   dismissCbtOnboarding,
   dismissCookieBanner,
-  dismissPostSignInModals,
 } from "./helpers";
 
 test.describe("sign-up + onboarding + first record", () => {
@@ -48,11 +47,47 @@ test.describe("sign-up + onboarding + first record", () => {
     await page.getByRole("button", { name: "Continue", exact: true }).click();
     await expect(page.getByText("Sign in to your account")).toBeHidden({ timeout: 15_000 });
 
-    // First-time user must accept consent + complete app onboarding before
-    // anything else. dismissPostSignInModals handles both.
-    await dismissPostSignInModals(page);
-    await expect(page.getByText("Quick policy check")).toBeHidden();
-    await expect(page.getByText(/Welcome to Selftend/)).toBeHidden();
+    // First-time user must accept consent before anything else.
+    // Handle the consent gate manually so the wizard is left for us to walk below.
+    const consentTitle = page.getByText("Quick policy check", { exact: true });
+    const consentVisible = await consentTitle
+      .waitFor({ state: "visible", timeout: 5_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (consentVisible) {
+      await page.getByRole("checkbox").first().click();
+      const acceptButton = page.getByRole("button", { name: "Accept and continue", exact: true });
+      await expect(acceptButton).toBeEnabled({ timeout: 5_000 });
+      await acceptButton.click();
+      await expect(consentTitle).toBeHidden({ timeout: 10_000 });
+    }
+
+    // Panel 1: welcome + disclaimer.
+    await expect(page.getByText("Welcome to Selftend")).toBeVisible();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    // Panel 2: structure.
+    await expect(page.getByText("How Selftend is organized")).toBeVisible();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    // Panel 3: pick a concern and finish.
+    await expect(page.getByText("What brings you here?")).toBeVisible();
+    await page.getByText("Sleep", { exact: true }).click();
+    await page.getByRole("button", { name: "Finish", exact: true }).click();
+
+    // Personalization payoff: start-here card on home, sleep widget promoted.
+    await expect(page.getByText("Start here")).toBeVisible({ timeout: 10_000 });
+
+    // Home tour appears; step one stop then skip the rest.
+    await expect(page.getByText(/Log how you feel in one tap/i)).toBeVisible({ timeout: 10_000 });
+    await page.getByRole("button", { name: "Got it", exact: true }).click();
+    await page.getByRole("button", { name: "Skip all tips", exact: true }).click();
+
+    // Reload: wizard and tour must not reappear.
+    await page.reload();
+    await dismissCookieBanner(page);
+    await expect(page.getByText("What brings you here?")).toBeHidden();
+    await expect(page.getByText(/Log how you feel in one tap/i)).toBeHidden();
 
     // Now create the first thought record.
     await page.goto("/modules/cbt/new");

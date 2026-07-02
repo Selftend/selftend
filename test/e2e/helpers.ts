@@ -98,19 +98,28 @@ export async function dismissPostSignInModals(page: Page) {
     await expect(consentTitle).toBeHidden({ timeout: 10_000 });
   }
 
-  const welcome = page.getByText(/Welcome to Selftend/i);
-  const welcomeVisible = await welcome
+  // First-run wizard: "Skip for now" completes onboarding from any panel.
+  const wizardTitle = page.getByText(/Welcome to Selftend/i);
+  const wizardVisible = await wizardTitle
     .waitFor({ state: "visible", timeout: 2_000 })
     .then(() => true)
     .catch(() => false);
-  if (welcomeVisible) {
-    // The app onboarding modal's only button is labelled by settings.json
-    // `onboarding.appContinue` ("Got it"). The modal is the only "Got it"
-    // button visible on (app) once consent has been accepted.
-    const startButton = page.getByRole("button", { name: "Got it", exact: true });
-    await expect(startButton).toBeEnabled({ timeout: 5_000 });
-    await startButton.click();
-    await expect(welcome).toBeHidden({ timeout: 10_000 });
+  if (wizardVisible) {
+    const skipButton = page.getByRole("button", { name: "Skip for now", exact: true });
+    await expect(skipButton).toBeEnabled({ timeout: 5_000 });
+    await skipButton.click();
+    await expect(wizardTitle).toBeHidden({ timeout: 10_000 });
+  }
+
+  // Home tour spotlight: one "Skip all tips" dismisses all four home stops.
+  const skipAllTips = page.getByRole("button", { name: "Skip all tips", exact: true });
+  const tourVisible = await skipAllTips
+    .waitFor({ state: "visible", timeout: 3_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (tourVisible) {
+    await skipAllTips.click();
+    await expect(skipAllTips).toBeHidden({ timeout: 10_000 });
   }
 }
 

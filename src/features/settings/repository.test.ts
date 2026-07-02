@@ -404,6 +404,74 @@ describe("settings repository", () => {
     );
   });
 
+  it("languageExplicit is false when row.language is null", async () => {
+    mockPreferenceSelect({
+      user_id: "user-1",
+      enabled_modules: ["cbt"],
+      language: null,
+    });
+
+    const result = await getUserPreferences("user-1");
+    expect(result.languageExplicit).toBe(false);
+  });
+
+  it("languageExplicit is true when row.language is set", async () => {
+    mockPreferenceSelect({
+      user_id: "user-1",
+      enabled_modules: ["cbt"],
+      language: "bg",
+    });
+
+    const result = await getUserPreferences("user-1");
+    expect(result.languageExplicit).toBe(true);
+  });
+
+  it("maps start_here_dismissed_at and selected_concerns from the row", async () => {
+    mockPreferenceSelect({
+      user_id: "user-1",
+      enabled_modules: ["cbt"],
+      start_here_dismissed_at: "2026-07-02T10:00:00Z",
+      selected_concerns: ["sleep"],
+    });
+
+    const result = await getUserPreferences("user-1");
+    expect(result.startHereDismissedAt).toBe("2026-07-02T10:00:00Z");
+    expect(result.selectedConcerns).toEqual(["sleep"]);
+  });
+
+  it("defaults startHereDismissedAt to null when column absent from row", async () => {
+    mockPreferenceSelect({
+      user_id: "user-1",
+      enabled_modules: ["cbt"],
+    });
+
+    const result = await getUserPreferences("user-1");
+    expect(result.startHereDismissedAt).toBeNull();
+  });
+
+  it("updateOnboardingPreferences writes selected_concerns and start_here_dismissed_at", async () => {
+    const { upsert } = mockPreferenceUpdate({
+      user_id: "user-1",
+      enabled_modules: ["cbt"],
+      selected_concerns: ["sleep", "habits"],
+      start_here_dismissed_at: "2026-07-02T10:00:00Z",
+    });
+
+    await updateOnboardingPreferences("user-1", {
+      selectedConcerns: ["sleep", "habits"],
+      startHereDismissedAt: "2026-07-02T10:00:00Z",
+    } as Parameters<typeof updateOnboardingPreferences>[1]);
+
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selected_concerns: ["sleep", "habits"],
+        start_here_dismissed_at: "2026-07-02T10:00:00Z",
+        user_id: "user-1",
+      }),
+      { onConflict: "user_id" },
+    );
+  });
+
   it("upserts web push subscriptions for the current user", async () => {
     const { upsert } = mockWebPushUpsert();
 

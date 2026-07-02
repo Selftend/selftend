@@ -397,6 +397,18 @@
       "dismiss": "Got it"
     }
   },
+  "homeTour": {
+    "checkin": {
+      "description": "Log how you feel in one tap - it takes ten seconds.",
+      "dismiss": "Got it"
+    },
+    "dates": { "description": "Browse previous days to see what you logged.", "dismiss": "Got it" },
+    "edit": {
+      "description": "Arrange the dashboard your way - add, remove and reorder widgets.",
+      "dismiss": "Got it"
+    },
+    "navigation": { "description": "Find all Modules and Tools here.", "dismiss": "Got it" }
+  },
   "breadcrumb": {
     "session": "Session",
     "history": "History",

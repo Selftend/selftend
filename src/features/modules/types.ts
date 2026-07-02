@@ -1,6 +1,9 @@
 export type ModuleKey = "cbt" | "meditation" | "gratitude" | "act";
 
-export type ButtonTourKey = "tune" | "notifications" | "program" | "info";
+export type ButtonTourAction = "tune" | "notifications" | "program" | "info";
+// A shown-tour storage key: legacy bare action ("info"), screen-scoped
+// ("cbt:info"), or a home tour stop ("home:checkin").
+export type ButtonTourKey = string;
 
 export type GratitudeLevel = 1 | 2 | 3;
 
@@ -85,9 +88,11 @@ export interface UserPreferences {
   policyVersionAccepted: string | null;
   cookieConsent: CookieConsent | null;
   language: string;
+  languageExplicit: boolean;
   theme: string | null;
   selectedConcerns: string[];
   activeStrategies: string[];
+  startHereDismissedAt: string | null;
   shownButtonTours: ButtonTourKey[];
   breathSoundId: string;
   ambientSoundId: string;
@@ -172,9 +177,11 @@ export const defaultUserPreferences: UserPreferences = {
   policyVersionAccepted: null,
   cookieConsent: null,
   language: "en",
+  languageExplicit: false,
   theme: null,
   selectedConcerns: [],
   activeStrategies: [],
+  startHereDismissedAt: null,
   shownButtonTours: [],
   breathSoundId: "guided",
   ambientSoundId: "none",

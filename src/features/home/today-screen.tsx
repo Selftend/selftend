@@ -21,6 +21,9 @@ import {
   useReorderWidgets,
   useWidgetPreferences,
 } from "@/src/features/home/queries";
+import { StartHereCard } from "@/src/features/home/start-here-card";
+import { HomeTour } from "@/src/features/tours/home-tour";
+import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 
 const GAP = 12;
 const PADDING = 24;
@@ -125,6 +128,9 @@ export default function HomeScreen() {
   const removeMutation = useRemoveWidget(userId);
   const reorderMutation = useReorderWidgets(userId);
 
+  const checkinTargetRef = useTourTargetRef("home-checkin");
+  const editButtonsRef = useTourTargetRef("home-edit");
+
   const widgetIds = useMemo(
     () => (preferences ?? []).map((p) => p.widgetId).filter(isImplemented),
     [preferences],
@@ -149,6 +155,8 @@ export default function HomeScreen() {
         </Text>
       </View>
 
+      <StartHereCard />
+
       {/* Section heading row */}
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 min-w-0">
@@ -159,7 +167,7 @@ export default function HomeScreen() {
             {t("today.dashboardSub")}
           </Text>
         </View>
-        <View className="flex-row gap-1">
+        <View className="flex-row gap-1" ref={editButtonsRef}>
           <Button
             variant="ghost"
             size="sm"
@@ -245,6 +253,7 @@ export default function HomeScreen() {
                 return (
                   <View
                     key={id}
+                    ref={id === "mood-checkin" ? checkinTargetRef : undefined}
                     style={{ width: cellWidth, height: WIDGET_HEIGHT, overflow: "hidden" }}
                   >
                     <View style={{ flex: 1, pointerEvents: editMode ? "none" : "auto" }}>
@@ -288,6 +297,7 @@ export default function HomeScreen() {
         onAdd={(widgetId) => addMutation.mutate(widgetId)}
         onRemove={(widgetId) => removeMutation.mutate(widgetId)}
       />
+      <HomeTour />
     </SafeAreaView>
   );
 }

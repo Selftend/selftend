@@ -152,6 +152,7 @@ describe("SettingsScreen onboarding reset", () => {
         mindfulnessOnboardingCompleted: false,
         groundingOnboardingCompleted: false,
         shownButtonTours: [],
+        startHereDismissedAt: null,
       });
     });
   });

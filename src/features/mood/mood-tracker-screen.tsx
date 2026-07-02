@@ -106,6 +106,7 @@ export default function MoodTrackerScreen() {
                 hue="be"
                 icon="mood"
                 moduleLabel={null}
+                tourScope="mood"
                 description={t("description")}
                 actions={[
                   { type: "notifications", targetKey: "mood" },

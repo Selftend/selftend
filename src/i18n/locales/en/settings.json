@@ -34,13 +34,49 @@
   },
   "onboarding": {
     "resetting": "Resetting...",
-    "resetSaved": "Onboarding will be shown again.",
+    "resetSaved": "Onboarding will be shown again. Finishing it re-applies your dashboard picks.",
     "resetError": "Unable to reset onboarding.",
     "appTitle": "Welcome to Selftend",
     "appBody1": "Selftend is a place for guided self-help and private reflection.",
     "appBody2": "It is not a diagnosis tool, therapy replacement, or emergency support. Use local emergency or crisis resources if you need urgent help.",
     "appContinue": "Got it",
-    "appSaveError": "Unable to save app onboarding."
+    "appSaveError": "Unable to save app onboarding.",
+    "wizNext": "Continue",
+    "wizBack": "Back",
+    "wizFinish": "Finish",
+    "wizSkip": "Skip for now",
+    "wizProgress": "Step {{current}} of {{total}}",
+    "wizStructureTitle": "How Selftend is organized",
+    "wizStructureIntro": "Two kinds of help, one place.",
+    "wizModulesTitle": "Modules",
+    "wizModulesBody": "Guided, structured programs based on established approaches - CBT today, ACT in beta.",
+    "wizToolsTitle": "Tools",
+    "wizToolsBody": "Quick everyday utilities - check-in, journal, breathing, sleep, habits and more.",
+    "wizDashboardTitle": "Your dashboard",
+    "wizDashboardBody": "The home screen is yours to arrange - add, remove and reorder widgets any time.",
+    "wizConcernsTitle": "What brings you here?",
+    "wizConcernsBody": "Pick anything that fits - this only arranges your dashboard. You can change it later, and nothing here is a diagnosis.",
+    "concerns": {
+      "anxious-thoughts": "Anxious thoughts",
+      "low-mood": "Low mood",
+      "stress-overwhelm": "Stress & overwhelm",
+      "sleep": "Sleep",
+      "habits": "Building habits",
+      "reflection": "Reflection & gratitude"
+    },
+    "startHere": {
+      "title": "Start here",
+      "dismiss": "Dismiss",
+      "cta": "Try it",
+      "body": {
+        "anxious-thoughts": "Anxious thoughts on your mind? A thought record helps you examine one.",
+        "low-mood": "The CBT module has gentle, structured ways to work with low mood.",
+        "stress-overwhelm": "Feeling swept up? Drop anchor - a short ACT steadying practice.",
+        "sleep": "Start by logging last night - patterns appear within a week.",
+        "habits": "Set up your first small habit - tiny and repeatable beats ambitious.",
+        "reflection": "Open the journal and write a few unpolished lines to begin."
+      }
+    }
   },
   "onboardingSection": {
     "title": "Onboarding",

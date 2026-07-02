@@ -74,6 +74,7 @@ export default function JournalListScreen() {
             icon="edit-note"
             moduleLabel={null}
             title={t("title")}
+            tourScope="journal"
             description={t("tagline")}
             actions={[
               { type: "notifications", targetKey: "journal" },

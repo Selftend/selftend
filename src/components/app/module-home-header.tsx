@@ -1,18 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import {
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-  type ViewStyle,
-} from "react-native";
-import { Portal } from "@rn-primitives/portal";
+import { Platform, Pressable, View, type ViewStyle } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useColorScheme } from "nativewind";
 
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
@@ -22,9 +12,10 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { hueToTint, type ToolHue } from "@/src/features/mindfulness/exercise-hue";
 import { useUpdateShownButtonTours, useUserPreferences } from "@/src/features/settings/queries";
-import type { ButtonTourKey } from "@/src/features/modules/types";
+import type { ButtonTourAction } from "@/src/features/modules/types";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
 import { useSession } from "@/src/providers/session-provider";
+import { TourOverlay } from "@/src/features/tours/tour-overlay";
 
 type TuneAction = { type: "tune"; onPress: () => void; accessibilityLabel?: string };
 type NotificationsAction = {
@@ -45,29 +36,17 @@ const ICON_FOR_TYPE = {
 
 const TOURABLE_ACTION_TYPES = ["tune", "notifications", "program", "info"] as const;
 
-function isTourableActionType(value: HeaderAction["type"]): value is ButtonTourKey {
+function isTourableActionType(value: HeaderAction["type"]): value is ButtonTourAction {
   return (TOURABLE_ACTION_TYPES as readonly string[]).includes(value);
 }
 
-// hsl(260, 18%, 13%) dark card, hsl(260, 28%, 99%) light card from global.css.
-const CARD_COLOR = { dark: "#1f1b27", light: "#fdfcfe" } as const;
-
-const CIRCLE_RADIUS = 16;
-const CIRCLE_DIAMETER = CIRCLE_RADIUS * 2;
-const OVERLAY_COLOR = "rgba(0, 0, 0, 0.65)";
-const HIGHLIGHT_BORDER_COLOR = "rgba(255,255,255,0.75)";
-const TOOLTIP_MAX_WIDTH = 280;
-const TOOLTIP_MARGIN = 16;
+// Fallback measured size when real measurement is unavailable: matches the 20px
+// header icon, so the padded spotlight stays the intended 32px circle.
+const MEASURE_FALLBACK_SIZE = 20;
 
 const buttonStyle: ViewStyle = {
   alignItems: "center",
   justifyContent: "center",
-};
-
-const tooltipActionsStyle: ViewStyle = {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
 };
 
 interface ButtonRect {
@@ -88,6 +67,8 @@ interface ModuleHomeHeaderProps {
   moduleLabel?: string | null;
   /** When set, shows an "add to home" button (dropdown of this category's widgets) in the actions row. */
   addWidgetCategory?: string;
+  /** Screen scope for button-tip storage keys, e.g. "cbt" → "cbt:info". */
+  tourScope: string;
 }
 
 export function ModuleHomeHeader({
@@ -99,13 +80,13 @@ export function ModuleHomeHeader({
   meta,
   moduleLabel,
   addWidgetCategory,
+  tourScope,
 }: ModuleHomeHeaderProps) {
-  const { colorScheme } = useColorScheme();
+  const { t } = useTranslation("navigation");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { data: preferences } = useUserPreferences(userId);
   const updateShownButtonTours = useUpdateShownButtonTours(userId);
-  const { width: screenWidth } = useWindowDimensions();
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [buttonRect, setButtonRect] = useState<ButtonRect | null>(null);
@@ -130,9 +111,14 @@ export function ModuleHomeHeader({
   const tourableActions = actions
     .map((action) => action.type)
     .filter(isTourableActionType)
-    .map((actionType) => ({ actionType, storageKey: actionType }));
+    .map((actionType) => ({ actionType, storageKey: `${tourScope}:${actionType}` }));
   const tourQueue = preferences
-    ? tourableActions.filter(({ storageKey }) => !preferences.shownButtonTours.includes(storageKey))
+    ? tourableActions.filter(
+        ({ actionType, storageKey }) =>
+          !preferences.shownButtonTours.includes(storageKey) &&
+          // Legacy bare keys (pre-scoping) count as seen everywhere.
+          !preferences.shownButtonTours.includes(actionType),
+      )
     : [];
   const currentTour = tourQueue[0] ?? null;
   const currentTourActionType = currentTour?.actionType ?? null;
@@ -143,7 +129,7 @@ export function ModuleHomeHeader({
   const measureCurrentTourButton = useCallback(() => {
     if (!currentTourActionType || !isFocused) return;
     if (process.env.NODE_ENV === "test") {
-      setButtonRect({ x: 0, y: 0, width: CIRCLE_DIAMETER, height: CIRCLE_DIAMETER });
+      setButtonRect({ x: 0, y: 0, width: MEASURE_FALLBACK_SIZE, height: MEASURE_FALLBACK_SIZE });
       return;
     }
     const viewRef = buttonViewRefs.current.get(currentTourActionType);
@@ -172,7 +158,7 @@ export function ModuleHomeHeader({
         apply({ x: pageX, y: pageY, width, height }),
       );
     } else {
-      apply({ x: 0, y: 0, width: CIRCLE_DIAMETER, height: CIRCLE_DIAMETER });
+      apply({ x: 0, y: 0, width: MEASURE_FALLBACK_SIZE, height: MEASURE_FALLBACK_SIZE });
     }
   }, [currentTourActionType, isFocused]);
 
@@ -242,7 +228,7 @@ export function ModuleHomeHeader({
     }
   }
 
-  const setActionRef = (key: ButtonTourKey, ref: View | null) => {
+  const setActionRef = (key: ButtonTourAction, ref: View | null) => {
     if (ref) {
       buttonViewRefs.current.set(key, ref);
       return;
@@ -284,11 +270,11 @@ export function ModuleHomeHeader({
       ) : null}
       {currentTourActionType && buttonRect && isFocused ? (
         <TourOverlay
-          buttonRect={buttonRect}
-          tourKey={currentTourActionType}
+          targetRect={buttonRect}
+          description={t(`headerTour.${currentTourActionType}.description`)}
+          dismissLabel={t(`headerTour.${currentTourActionType}.dismiss`)}
+          skipAllLabel={t("headerTour.skipAll")}
           isPending={updateShownButtonTours.isPending}
-          cardColor={CARD_COLOR[colorScheme ?? "dark"]}
-          screenWidth={screenWidth}
           onDismiss={() => void dismissTour()}
           onDismissAll={() => void dismissAllTours()}
         />
@@ -363,177 +349,5 @@ function TourButton({ action, onPress, setRef }: TourButtonProps) {
         <Icon name={ICON_FOR_TYPE[action.type]} size={20} className={iconClass} />
       </View>
     </Pressable>
-  );
-}
-
-function TourOverlay({
-  buttonRect,
-  tourKey,
-  isPending,
-  cardColor,
-  screenWidth,
-  onDismiss,
-  onDismissAll,
-}: {
-  buttonRect: ButtonRect;
-  tourKey: ButtonTourKey;
-  isPending: boolean;
-  cardColor: string;
-  screenWidth: number;
-  onDismiss: () => void;
-  onDismissAll: () => void;
-}) {
-  const { t } = useTranslation("navigation");
-  const centerX = buttonRect.x + buttonRect.width / 2;
-  const centerY = buttonRect.y + buttonRect.height / 2;
-  const circleLeft = centerX - CIRCLE_RADIUS;
-  const circleTop = centerY - CIRCLE_RADIUS;
-
-  const tooltipWidth = Math.min(screenWidth - TOOLTIP_MARGIN * 2, TOOLTIP_MAX_WIDTH);
-  const tooltipLeft = Math.min(
-    Math.max(TOOLTIP_MARGIN, centerX - tooltipWidth / 2),
-    screenWidth - tooltipWidth - TOOLTIP_MARGIN,
-  );
-  const tooltipTop = circleTop + CIRCLE_DIAMETER + 14;
-  const arrowLeft = Math.max(12, Math.min(centerX - tooltipLeft - 7, tooltipWidth - 26));
-
-  const overlayContent = (
-    <>
-      {Platform.OS === "web" ? (
-        <View style={getWebHighlightStyle(circleTop, circleLeft)} />
-      ) : (
-        <NativeHighlight circleTop={circleTop} circleLeft={circleLeft} />
-      )}
-
-      <View
-        style={{
-          position: "absolute",
-          top: tooltipTop,
-          left: tooltipLeft,
-          width: tooltipWidth,
-          backgroundColor: cardColor,
-          borderRadius: 12,
-          padding: 16,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.35,
-          shadowRadius: 10,
-          elevation: 10,
-        }}
-      >
-        <View
-          style={{
-            position: "absolute",
-            top: -7,
-            left: arrowLeft,
-            width: 14,
-            height: 14,
-            backgroundColor: cardColor,
-            transform: [{ rotate: "45deg" }],
-          }}
-        />
-        <Text variant="muted" className="text-xs leading-5 mb-3">
-          {t(`headerTour.${tourKey}.description`)}
-        </Text>
-        <View style={tooltipActionsStyle}>
-          <Pressable
-            accessibilityLabel={t("headerTour.skipAll")}
-            accessibilityRole="button"
-            disabled={isPending}
-            hitSlop={8}
-            onPress={onDismissAll}
-          >
-            <Text className="text-muted-foreground text-xs">{t("headerTour.skipAll")}</Text>
-          </Pressable>
-          <Pressable
-            accessibilityLabel={t(`headerTour.${tourKey}.dismiss`)}
-            accessibilityRole="button"
-            disabled={isPending}
-            hitSlop={8}
-            onPress={onDismiss}
-          >
-            <Text className="text-primary text-xs font-semibold">
-              {t(`headerTour.${tourKey}.dismiss`)}
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-    </>
-  );
-
-  if (Platform.OS === "web") {
-    return (
-      <Modal transparent animationType="fade" visible statusBarTranslucent>
-        <View style={{ flex: 1 }}>{overlayContent}</View>
-      </Modal>
-    );
-  }
-  return (
-    <Portal name="button-tour">
-      <View style={StyleSheet.absoluteFill}>{overlayContent}</View>
-    </Portal>
-  );
-}
-
-function getCircleStyle(top: number, left: number): ViewStyle {
-  return {
-    position: "absolute",
-    top,
-    left,
-    width: CIRCLE_DIAMETER,
-    height: CIRCLE_DIAMETER,
-    borderRadius: CIRCLE_RADIUS,
-    borderWidth: 2,
-    borderColor: HIGHLIGHT_BORDER_COLOR,
-  };
-}
-
-function getOverlayStyle(style: ViewStyle): ViewStyle {
-  return {
-    position: "absolute",
-    backgroundColor: OVERLAY_COLOR,
-    ...style,
-  };
-}
-
-function getWebHighlightStyle(top: number, left: number): ViewStyle & { boxShadow: string } {
-  return {
-    ...getCircleStyle(top, left),
-    boxShadow: `0 0 0 9999px ${OVERLAY_COLOR}`,
-  };
-}
-
-function NativeHighlight({ circleTop, circleLeft }: { circleTop: number; circleLeft: number }) {
-  return (
-    <>
-      <View
-        style={getOverlayStyle({ top: 0, left: 0, right: 0, height: Math.max(0, circleTop) })}
-      />
-      <View
-        style={getOverlayStyle({
-          top: circleTop,
-          left: 0,
-          width: Math.max(0, circleLeft),
-          height: CIRCLE_DIAMETER,
-        })}
-      />
-      <View
-        style={getOverlayStyle({
-          top: circleTop,
-          left: circleLeft + CIRCLE_DIAMETER,
-          right: 0,
-          height: CIRCLE_DIAMETER,
-        })}
-      />
-      <View
-        style={getOverlayStyle({
-          top: circleTop + CIRCLE_DIAMETER,
-          left: 0,
-          right: 0,
-          bottom: 0,
-        })}
-      />
-      <View style={getCircleStyle(circleTop, circleLeft)} />
-    </>
   );
 }

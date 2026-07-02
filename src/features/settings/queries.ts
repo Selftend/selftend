@@ -11,7 +11,7 @@ import {
   updateUserPreferences,
 } from "@/src/features/settings/repository";
 
-const preferenceKeys = {
+export const preferenceKeys = {
   detail: (userId: string) => ["preferences", userId] as const,
 };
 

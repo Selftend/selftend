@@ -232,11 +232,11 @@ test.describe("settings - reset onboarding", () => {
     // Click "Reset onboarding".
     await page.getByRole("button", { name: "Reset onboarding", exact: true }).click();
 
-    // The success message "Onboarding will be shown again." appears inline.
-    // It appears in two places (card text + toast description) - use .first().
-    await expect(
-      page.getByText("Onboarding will be shown again.", { exact: true }).first(),
-    ).toBeVisible({ timeout: 8_000 });
+    // The success message appears inline; the full text includes a follow-up
+    // sentence about dashboard picks. Use a regex to match the prefix robustly.
+    await expect(page.getByText(/Onboarding will be shown again/i).first()).toBeVisible({
+      timeout: 8_000,
+    });
 
     // DB check: app_onboarding_completed should now be false, and
     // shown_button_tours should be empty.

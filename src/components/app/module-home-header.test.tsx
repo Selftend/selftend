@@ -66,7 +66,8 @@ const mockUseUpdateShownButtonTours = useUpdateShownButtonTours as jest.MockedFu
 function renderHeader({
   includeProgram = false,
   shownButtonTours = [],
-}: { includeProgram?: boolean; shownButtonTours?: string[] } = {}) {
+  tourScope = "cbt",
+}: { includeProgram?: boolean; shownButtonTours?: string[]; tourScope?: string } = {}) {
   mockUseUserPreferences.mockReturnValue({
     data: {
       ...defaultUserPreferences,
@@ -78,6 +79,7 @@ function renderHeader({
   return renderWithProviders(
     <ModuleHomeHeader
       title="CBT"
+      tourScope={tourScope}
       actions={[
         { type: "tune", onPress: jest.fn() },
         { type: "notifications", targetKey: "cbt" },
@@ -106,7 +108,7 @@ describe("ModuleHomeHeader button tours", () => {
     fireEvent.press(await screen.findByText("Got it"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(["tune"]);
+      expect(mutateAsync).toHaveBeenCalledWith(["cbt:tune"]);
     });
   });
 
@@ -116,12 +118,17 @@ describe("ModuleHomeHeader button tours", () => {
     fireEvent.press(await screen.findByText("Skip all tips"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(["tune", "notifications", "program", "info"]);
+      expect(mutateAsync).toHaveBeenCalledWith([
+        "cbt:tune",
+        "cbt:notifications",
+        "cbt:program",
+        "cbt:info",
+      ]);
     });
   });
 
   it("starts with the first unseen action", async () => {
-    renderHeader({ shownButtonTours: ["tune"] });
+    renderHeader({ shownButtonTours: ["cbt:tune"] });
 
     expect(
       await screen.findByText(
@@ -131,7 +138,7 @@ describe("ModuleHomeHeader button tours", () => {
   });
 
   it("shows the program tip when the program action is present", async () => {
-    renderHeader({ includeProgram: true, shownButtonTours: ["tune", "notifications"] });
+    renderHeader({ includeProgram: true, shownButtonTours: ["cbt:tune", "cbt:notifications"] });
 
     expect(
       await screen.findByText("Tap here to show or restart the CBT program invitation."),
@@ -139,11 +146,48 @@ describe("ModuleHomeHeader button tours", () => {
   });
 
   it("hides a button tour when the same button was shown on another screen", async () => {
-    renderHeader({ shownButtonTours: ["tune", "notifications"] });
+    renderHeader({ shownButtonTours: ["cbt:tune", "cbt:notifications"] });
 
     expect(
       await screen.findByText("Tap here any time to read about how this module works."),
     ).toBeTruthy();
+  });
+
+  it("stores dismissals under the scoped key", async () => {
+    renderHeader({ tourScope: "cbt", shownButtonTours: [] });
+
+    fireEvent.press(await screen.findByText("Got it"));
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalledWith(["cbt:tune"]);
+    });
+  });
+
+  it("does not show a tour whose scoped key is already stored", async () => {
+    renderHeader({
+      tourScope: "cbt",
+      shownButtonTours: ["cbt:tune", "cbt:notifications", "cbt:info"],
+    });
+
+    expect(screen.queryByText("Got it")).toBeNull();
+  });
+
+  it("grandfathers legacy bare keys on every screen", async () => {
+    renderHeader({
+      tourScope: "mood",
+      shownButtonTours: ["tune", "notifications", "info"],
+    });
+
+    expect(screen.queryByText("Got it")).toBeNull();
+  });
+
+  it("shows tours on a second screen when only another scope was dismissed", async () => {
+    renderHeader({
+      tourScope: "mood",
+      shownButtonTours: ["cbt:tune", "cbt:notifications", "cbt:info"],
+    });
+
+    expect(await screen.findByText("Got it")).toBeTruthy();
   });
 });
 
@@ -164,6 +208,7 @@ describe("ModuleHomeHeader hero mode", () => {
     renderWithProviders(
       <ModuleHomeHeader
         title="Check-in"
+        tourScope="mood"
         hue="be"
         icon="mood"
         description="Log how you're feeling."
@@ -181,6 +226,7 @@ describe("ModuleHomeHeader hero mode", () => {
       <ModuleHomeHeader
         hue="think"
         icon="psychology"
+        tourScope="cbt"
         title="Cognitive Behavioral Therapy"
         moduleLabel="CBT"
         description="..."
@@ -192,7 +238,7 @@ describe("ModuleHomeHeader hero mode", () => {
 
   it("falls back to title for chip label when moduleLabel not provided", () => {
     renderWithProviders(
-      <ModuleHomeHeader hue="act" icon="explore" title="ACT" description="..." />,
+      <ModuleHomeHeader hue="act" icon="explore" tourScope="act" title="ACT" description="..." />,
     );
     // chip + heading both contain "ACT"
     expect(screen.getAllByText("ACT").length).toBeGreaterThanOrEqual(2);
@@ -203,6 +249,7 @@ describe("ModuleHomeHeader hero mode", () => {
       <ModuleHomeHeader
         hue="think"
         icon="psychology"
+        tourScope="cbt"
         title="Cognitive Behavioral Therapy"
         moduleLabel={null}
         description="A focused CBT section..."

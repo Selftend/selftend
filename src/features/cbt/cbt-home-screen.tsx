@@ -424,6 +424,7 @@ export default function CbtHomeScreen() {
               icon="psychology"
               moduleLabel={t("common:beta")}
               title={t("fullTitle")}
+              tourScope="cbt"
               description={t("home.description")}
               actions={[
                 { type: "notifications", targetKey: "cbt" },

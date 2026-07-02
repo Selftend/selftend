@@ -109,6 +109,7 @@ export default function SettingsScreen() {
         mindfulnessOnboardingCompleted: false,
         groundingOnboardingCompleted: false,
         shownButtonTours: [],
+        startHereDismissedAt: null,
       });
 
       setSuccessMessage(t("onboarding.resetSaved"));

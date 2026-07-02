@@ -46,6 +46,7 @@ export default function BreathingScreen() {
           hue="aqua"
           icon="air"
           moduleLabel={null}
+          tourScope="breathing"
           title={t("breathing.title")}
           description={t("breathing.tagline")}
           actions={[

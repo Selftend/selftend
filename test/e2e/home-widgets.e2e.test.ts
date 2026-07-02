@@ -18,7 +18,7 @@
 
 import { expect, test } from "./fixtures";
 
-import { resetWidgetPreferencesForUser } from "./helpers";
+import { dismissPostSignInModals, resetWidgetPreferencesForUser } from "./helpers";
 
 // Non-default widget to add: "self-care" (Self-care log) under CBT category.
 const ADD_WIDGET_TITLE = "Self-care log";
@@ -41,6 +41,8 @@ test.describe("home widget management", () => {
   }) => {
     // Navigate to the home/today tab.
     await page.goto("/(app)");
+    // Dismiss home tour (seeded users have empty shown_button_tours, so it fires on first visit).
+    await dismissPostSignInModals(page);
 
     // Wait for the dashboard to load (at least one default widget should be visible).
     await expect(page.getByText("Dashboard")).toBeVisible({ timeout: 15_000 });
