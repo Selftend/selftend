@@ -17,9 +17,11 @@ import { useBreathingExercises } from "@/src/features/breathing/exercises-querie
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 
 export default function BreathingScreen() {
   const { t } = useTranslation("cbt");
+  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { data: customExercises } = useBreathingExercises(user?.id ?? null);
   const customIds = (customExercises ?? []).map((e) => e.id);
@@ -186,7 +188,7 @@ export default function BreathingScreen() {
                     {s.cycles != null ? t("breathing.cycles", { count: s.cycles }) : ""}
                   </Text>
                   <Text variant="muted" className="text-xs">
-                    {new Date(s.completedAt).toLocaleString()}
+                    {formatDateTime(s.completedAt)}
                   </Text>
                 </View>
               </View>

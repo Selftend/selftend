@@ -8,9 +8,11 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 
 export function BreathingWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
+  const { formatDate } = useLocaleFormats();
   const { data: sessions } = useBreathingSessions(userId);
 
   const { selectedDate: todayKey } = useSelectedDate();
@@ -40,7 +42,7 @@ export function BreathingWidget({ userId }: { userId: string }) {
         <Text variant="muted" className="text-xs">
           {lastSession
             ? t("today.dashboard.lastSession", {
-                date: new Date(lastSession.completedAt).toLocaleDateString(),
+                date: formatDate(lastSession.completedAt),
               })
             : t("today.dashboard.breathingHint")}
         </Text>

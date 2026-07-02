@@ -41,22 +41,40 @@ function dayKeys(count: number, todayKey: string): string[] {
   return keys;
 }
 
-// Build the formatters once (constructing Intl.DateTimeFormat is expensive) and cache the
-// per-day labels - chipLabels is called for every visible chip on every render.
-const WEEKDAY_FMT = new Intl.DateTimeFormat(undefined, { weekday: "short" });
-const MONTH_FMT = new Intl.DateTimeFormat(undefined, { month: "short" });
+// Build the formatters once per language (constructing Intl.DateTimeFormat is
+// expensive) and cache labels per language+day so a language switch can never
+// serve stale labels.
+interface ChipFormatters {
+  weekday: Intl.DateTimeFormat;
+  month: Intl.DateTimeFormat;
+}
+const chipFormatters = new Map<string, ChipFormatters>();
 const labelCache = new Map<string, { weekday: string; month: string; day: string }>();
 
-function chipLabels(key: string): { weekday: string; month: string; day: string } {
-  const cached = labelCache.get(key);
+function getChipFormatters(lang: string): ChipFormatters {
+  let fmt = chipFormatters.get(lang);
+  if (!fmt) {
+    fmt = {
+      weekday: new Intl.DateTimeFormat(lang, { weekday: "short" }),
+      month: new Intl.DateTimeFormat(lang, { month: "short" }),
+    };
+    chipFormatters.set(lang, fmt);
+  }
+  return fmt;
+}
+
+function chipLabels(lang: string, key: string): { weekday: string; month: string; day: string } {
+  const cacheKey = `${lang}:${key}`;
+  const cached = labelCache.get(cacheKey);
   if (cached) return cached;
   const d = parseLocalNoon(key);
+  const fmt = getChipFormatters(lang);
   const labels = {
-    weekday: WEEKDAY_FMT.format(d),
-    month: MONTH_FMT.format(d),
+    weekday: fmt.weekday.format(d),
+    month: fmt.month.format(d),
     day: String(d.getDate()),
   };
-  labelCache.set(key, labels);
+  labelCache.set(cacheKey, labels);
   return labels;
 }
 
@@ -73,6 +91,7 @@ function daysBeforeToday(key: string): number {
 // are stable, so the other props decide re-render.
 const DayChip = memo(function DayChip({
   keyDate,
+  lang,
   selected,
   isToday,
   sameMonth,
@@ -80,13 +99,14 @@ const DayChip = memo(function DayChip({
   onSelect,
 }: {
   keyDate: string;
+  lang: string;
   selected: boolean;
   isToday: boolean;
   sameMonth: boolean;
   todayLabel: string;
   onSelect: (key: string) => void;
 }) {
-  const { weekday, month, day } = chipLabels(keyDate);
+  const { weekday, month, day } = chipLabels(lang, keyDate);
   // Dates outside the current month show the month instead of the weekday, so you always
   // know which month you're scrolled into.
   const topLabel = isToday ? todayLabel : sameMonth ? weekday : month;
@@ -125,13 +145,14 @@ const DayChip = memo(function DayChip({
 });
 
 export function DateBar() {
-  const { t } = useTranslation("navigation");
+  const { t, i18n } = useTranslation("navigation");
+  const lang = i18n.language;
   const selectedDate = useSelectedDateStore((s) => s.selectedDate);
   const setSelectedDate = useSelectedDateStore((s) => s.setSelectedDate);
   const resetToToday = useSelectedDateStore((s) => s.resetToToday);
   const datesRef = useTourTargetRef("home-dates");
   const today = currentDateKey();
-  const todayNumber = chipLabels(today).day;
+  const todayNumber = chipLabels(lang, today).day;
   const onToday = selectedDate === today;
 
   const [count, setCount] = useState(INITIAL_DAYS);
@@ -200,6 +221,7 @@ export function DateBar() {
   const renderItem = ({ item: key }: { item: string }) => (
     <DayChip
       keyDate={key}
+      lang={lang}
       selected={key === selectedDate}
       isToday={key === today}
       sameMonth={key.slice(0, 7) === today.slice(0, 7)}

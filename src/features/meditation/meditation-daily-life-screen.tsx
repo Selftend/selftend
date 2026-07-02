@@ -7,11 +7,13 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
 import { useStagePracticeNotes } from "@/src/features/meditation/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 
 const STAGE = 10;
 
 export default function MeditationDailyLifeScreen() {
   const { t } = useTranslation("meditation");
+  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { data: notes } = useStagePracticeNotes(user?.id ?? null, STAGE);
 
@@ -37,7 +39,7 @@ export default function MeditationDailyLifeScreen() {
                 {(notes ?? []).map((note) => (
                   <View key={note.id} className="gap-1 rounded-lg border border-border bg-card p-3">
                     <Text className="text-xs text-muted-foreground">
-                      {new Date(note.updatedAt).toLocaleString()}
+                      {formatDateTime(note.updatedAt)}
                     </Text>
                     <Text className="text-sm">{note.note}</Text>
                   </View>

@@ -31,9 +31,11 @@ import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/set
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useSession } from "@/src/providers/session-provider";
 import { parseHHmm } from "@/src/utils/time";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 
 export default function MeditationHomeScreen() {
   const { t } = useTranslation("meditation");
+  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { practice } = useLocalSearchParams<{ practice?: string }>();
@@ -213,7 +215,7 @@ export default function MeditationHomeScreen() {
                           {t("module.sessions.durationLabel", { count: s.durationMinutes })}
                         </Text>
                         <Text variant="muted" className="text-xs">
-                          {new Date(s.completedAt).toLocaleString()}
+                          {formatDateTime(s.completedAt)}
                         </Text>
                       </View>
                       <View className="rounded-full bg-primary/10 px-2 py-0.5">

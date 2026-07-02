@@ -15,11 +15,15 @@ interface MoodSample {
 
 // Locale-aware, day-distinct label (e.g. "24 May") so the x-axis is correct in every
 // locale and a multi-week window never reuses the same weekday name for two different days.
-function formatDayLabel(value: Date) {
-  return new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(value);
+function formatDayLabel(value: Date, lang: string) {
+  return new Intl.DateTimeFormat(lang, { day: "numeric", month: "short" }).format(value);
 }
 
-export function buildMoodChartData(logs: MoodSample[] | undefined, days: number): MoodChartPoint[] {
+export function buildMoodChartData(
+  logs: MoodSample[] | undefined,
+  days: number,
+  lang = "en",
+): MoodChartPoint[] {
   if (!logs || logs.length === 0 || days <= 0) {
     return [];
   }
@@ -50,7 +54,7 @@ export function buildMoodChartData(logs: MoodSample[] | undefined, days: number)
     const bucket = buckets.get(localDateKey(day));
     if (!bucket) continue;
     points.push({
-      day: formatDayLabel(day),
+      day: formatDayLabel(day, lang),
       score: roundTo1(bucket.sum / bucket.count),
       offset: days > 1 ? dayIndex / (days - 1) : 0,
     });

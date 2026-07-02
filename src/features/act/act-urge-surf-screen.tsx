@@ -22,18 +22,20 @@ import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 
 type Step = "urge" | "trigger" | "observe" | "complete";
 const STEP_ORDER: Step[] = ["urge", "trigger", "observe", "complete"];
 
 function UrgeSurfHistoryItem({ urge, date }: { urge: string; date: string }) {
+  const { formatDateTime } = useLocaleFormats();
   return (
     <View className="rounded-lg border border-border bg-card p-3">
       <Text className="font-medium" numberOfLines={2}>
         {urge}
       </Text>
       <Text variant="muted" className="mt-1 text-xs">
-        {new Date(date).toLocaleString()}
+        {formatDateTime(date)}
       </Text>
     </View>
   );

@@ -9,11 +9,13 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import type { MeditationSession } from "@/src/features/meditation/types";
 import { useSession } from "@/src/providers/session-provider";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 
 // Memoized row so the FlatList only re-renders changed items, and navigation stays
 // keyed to the session id (#97 - was a .map() inside a ScrollView, all 100 rows mounted).
 const SessionRow = memo(function SessionRow({ session }: { session: MeditationSession }) {
   const { t } = useTranslation("meditation");
+  const { formatDateTime } = useLocaleFormats();
   const onPress = useCallback(
     () => router.push({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } }),
     [session.id],
@@ -31,7 +33,7 @@ const SessionRow = memo(function SessionRow({ session }: { session: MeditationSe
             {t("module.sessions.durationLabel", { count: session.durationMinutes })}
           </Text>
           <Text variant="muted" className="text-xs">
-            {new Date(session.completedAt).toLocaleString()}
+            {formatDateTime(session.completedAt)}
           </Text>
         </View>
         <View className="rounded-full bg-primary/10 px-2 py-0.5">

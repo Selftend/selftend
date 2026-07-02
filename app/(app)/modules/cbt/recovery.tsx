@@ -105,8 +105,8 @@ function sanitizeRecoveryValues(values: RecoveryPlanFormSchema) {
   };
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
+function formatDate(value: string, lang: string) {
+  return new Intl.DateTimeFormat(lang, { dateStyle: "medium" }).format(new Date(value));
 }
 
 function earliestDate<T>(
@@ -152,12 +152,14 @@ function appendExportList(lines: string[], title: string, values: string[], empt
 
 function buildRecoveryPlanExport({
   challengePlans,
+  lang,
   recoveryValues,
   stats,
   t,
   timelineItems,
 }: {
   challengePlans: ChallengePlan[];
+  lang: string;
   recoveryValues: ReturnType<typeof sanitizeRecoveryValues>;
   stats: RecoveryStat[];
   t: TFunction<"cbt">;
@@ -167,7 +169,7 @@ function buildRecoveryPlanExport({
   const lines = [
     `# ${t("recovery.export.fileTitle")}`,
     "",
-    t("recovery.export.generatedAt", { date: formatDate(new Date().toISOString()) }),
+    t("recovery.export.generatedAt", { date: formatDate(new Date().toISOString(), lang) }),
   ];
 
   lines.push("", `## ${t("recovery.stats.title")}`);
@@ -181,7 +183,7 @@ function buildRecoveryPlanExport({
   } else {
     for (const item of timelineItems) {
       lines.push(
-        `- ${formatDate(item.date)}: ${getTimelineLabel(t, item.key)} (${t(
+        `- ${formatDate(item.date, lang)}: ${getTimelineLabel(t, item.key)} (${t(
           "recovery.timeline.count",
           {
             count: item.count,
@@ -232,7 +234,7 @@ function buildRecoveryPlanExport({
 }
 
 export default function RecoveryScreen() {
-  const { t } = useTranslation("cbt");
+  const { t, i18n } = useTranslation("cbt");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
 
@@ -445,6 +447,7 @@ export default function RecoveryScreen() {
     try {
       const exportText = buildRecoveryPlanExport({
         challengePlans: challengePlans ?? [],
+        lang: i18n.language,
         recoveryValues: sanitizeRecoveryValues(getValues()),
         stats: recoveryStats,
         t,
@@ -606,7 +609,9 @@ export default function RecoveryScreen() {
                     <View className="w-px flex-1 bg-border" />
                   </View>
                   <View className="flex-1 gap-1 pb-4">
-                    <Text className="text-sm text-muted-foreground">{formatDate(item.date)}</Text>
+                    <Text className="text-sm text-muted-foreground">
+                      {formatDate(item.date, i18n.language)}
+                    </Text>
                     <Text className="font-medium">{getTimelineLabel(t, item.key)}</Text>
                     <Text variant="muted">
                       {t("recovery.timeline.count", { count: item.count })}

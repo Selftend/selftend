@@ -12,9 +12,11 @@ import { useChoicePoints } from "@/src/features/act/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 
 export default function ActChoicePointListScreen() {
   const { t } = useTranslation("act");
+  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { selectedDate } = useSelectedDate();
   const { data: choicePoints, isLoading } = useChoicePoints(user?.id ?? null);
@@ -71,7 +73,7 @@ export default function ActChoicePointListScreen() {
                         {t("choicePoint.awayLabel")}: {cp.awayMoves.length}
                       </Text>
                       <Text variant="muted" className="text-xs">
-                        {new Date(cp.createdAt).toLocaleString()}
+                        {formatDateTime(cp.createdAt)}
                       </Text>
                     </View>
                     <Icon name="chevron-right" className="size-4 text-muted-foreground" />

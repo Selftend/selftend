@@ -17,6 +17,7 @@ import { useDefusionLogs } from "@/src/features/act/queries";
 import { useActProgram } from "@/src/features/act/use-act-program";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 
 interface PillarTool {
   key: string;
@@ -115,6 +116,7 @@ const PILLARS: PillarDef[] = [
 
 export default function ActHomeScreen() {
   const { t } = useTranslation("act");
+  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { data: defusionLogs } = useDefusionLogs(userId, 50);
@@ -279,7 +281,7 @@ export default function ActHomeScreen() {
                         {log.fusedThought}
                       </Text>
                       <Text variant="muted" className="mt-1 text-xs">
-                        {new Date(log.createdAt).toLocaleString()}
+                        {formatDateTime(log.createdAt)}
                         {log.fusionLevelBefore !== null && log.fusionLevelAfter !== null
                           ? `  ·  ${log.fusionLevelBefore} → ${log.fusionLevelAfter}`
                           : null}

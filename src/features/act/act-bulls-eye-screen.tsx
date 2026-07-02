@@ -19,6 +19,7 @@ import { useBullsEyeSnapshots, useSaveBullsEyeSnapshot } from "@/src/features/ac
 import { ACT_LIFE_DOMAINS, type ACTLifeDomain } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 
 type Ratings = Record<ACTLifeDomain, number | null>;
 
@@ -31,6 +32,7 @@ const INITIAL_RATINGS: Ratings = {
 
 export default function ActBullsEyeScreen() {
   const { t } = useTranslation(["act", "common"]);
+  const { formatDate } = useLocaleFormats();
   const { user } = useSession();
   const saveMutation = useSaveBullsEyeSnapshot(user?.id ?? null);
   const { data: snapshots } = useBullsEyeSnapshots(user?.id ?? null);
@@ -131,7 +133,7 @@ export default function ActBullsEyeScreen() {
                         {t(`act:values.bullsEye.${snap.domain}`)}
                       </Text>
                       <Text variant="muted" className="text-xs">
-                        {new Date(snap.reviewedAt).toLocaleDateString()}
+                        {formatDate(snap.reviewedAt)}
                       </Text>
                     </View>
                     <AlignmentPill rating={snap.alignmentRating} />

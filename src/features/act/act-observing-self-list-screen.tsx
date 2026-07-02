@@ -13,9 +13,11 @@ import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 
 export default function ActObservingSelfListScreen() {
   const { t } = useTranslation("act");
+  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { selectedDate } = useSelectedDate();
   const { data: sessions, isLoading } = useObservingSelfSessions(user?.id ?? null);
@@ -77,7 +79,7 @@ export default function ActObservingSelfListScreen() {
                         {session.moodAfter !== null ? `  ·  ${session.moodAfter}/10` : null}
                       </Text>
                       <Text variant="muted" className="text-xs">
-                        {new Date(session.createdAt).toLocaleString()}
+                        {formatDateTime(session.createdAt)}
                       </Text>
                     </View>
                     <Icon name="chevron-right" className="size-4 text-muted-foreground" />

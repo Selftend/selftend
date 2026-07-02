@@ -81,7 +81,10 @@ export default function MoodTrackerScreen() {
       label: t("stats.avgLabel"),
     },
   ];
-  const chartData = useMemo(() => buildMoodChartData(moodLogs, trendDays), [moodLogs, trendDays]);
+  const chartData = useMemo(
+    () => buildMoodChartData(moodLogs, trendDays, i18n.language),
+    [moodLogs, trendDays, i18n.language],
+  );
   const history = moodLogs ?? [];
 
   const handleChartLayout = (e: LayoutChangeEvent) => {

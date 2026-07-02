@@ -9,12 +9,14 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useSaveStagePracticeNote, useStagePracticeNotes } from "@/src/features/meditation/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 
 const STAGE = 10;
 const MAX_RECENT = 7;
 
 export function MeditationDailyLifeCard() {
   const { t } = useTranslation("meditation");
+  const { formatDate } = useLocaleFormats();
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -62,9 +64,7 @@ export function MeditationDailyLifeCard() {
             </Text>
             {recent.map((note) => (
               <View key={note.id} className="gap-0.5">
-                <Text className="text-xs text-muted-foreground">
-                  {new Date(note.updatedAt).toLocaleDateString()}
-                </Text>
+                <Text className="text-xs text-muted-foreground">{formatDate(note.updatedAt)}</Text>
                 <Text className="text-sm">{note.note}</Text>
               </View>
             ))}

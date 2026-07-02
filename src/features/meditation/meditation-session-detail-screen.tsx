@@ -8,9 +8,11 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useMeditationSession } from "@/src/features/meditation/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 
 export default function MeditationSessionDetailScreen() {
   const { t } = useTranslation("meditation");
+  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const params = useLocalSearchParams<{ id: string }>();
   const { data: session, isLoading } = useMeditationSession(user?.id ?? null, params.id ?? null);
@@ -41,7 +43,7 @@ export default function MeditationSessionDetailScreen() {
             <ScreenHeader title={t("module.sessionDetail.title")} />
             <Text variant="muted">
               {t("module.sessionDetail.completedAt", {
-                date: new Date(session.completedAt).toLocaleString(),
+                date: formatDateTime(session.completedAt),
               })}
             </Text>
           </View>
