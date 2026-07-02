@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react-native";
+import { screen, waitFor } from "@testing-library/react-native";
 import { Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
@@ -150,13 +150,15 @@ describe("ProtectedLayout app onboarding", () => {
     } as unknown as ReturnType<typeof useUserPreferences>);
   });
 
-  it("shows the wizard panel-1 title when app onboarding is needed", () => {
+  it("shows the wizard panel-1 title when app onboarding is needed", async () => {
     renderWithProviders(<ProtectedLayout />);
-
-    expect(screen.getByText("Welcome to Selftend")).toBeTruthy();
+    // ProtectedLayout renders DateBar (pathname "/" is a dated route), and
+    // VirtualizedList fires a deferred setState via setTimeout for its initial
+    // cell-render batch. waitFor flushes that inside act() so it doesn't leak.
+    await waitFor(() => expect(screen.getByText("Welcome to Selftend")).toBeTruthy());
   });
 
-  it("hides the wizard when app onboarding is complete", () => {
+  it("hides the wizard when app onboarding is complete", async () => {
     mockUseUserPreferences.mockReturnValue({
       data: {
         ...defaultUserPreferences,
@@ -167,11 +169,11 @@ describe("ProtectedLayout app onboarding", () => {
     } as unknown as ReturnType<typeof useUserPreferences>);
 
     renderWithProviders(<ProtectedLayout />);
-
-    expect(screen.queryByText("Welcome to Selftend")).toBeNull();
+    // Flush VirtualizedList's deferred _updateCellsToRender inside act().
+    await waitFor(() => expect(screen.queryByText("Welcome to Selftend")).toBeNull());
   });
 
-  it("shows the policy gate before app onboarding when consent is outdated", () => {
+  it("shows the policy gate before app onboarding when consent is outdated", async () => {
     mockUseUserPreferences.mockReturnValue({
       data: {
         ...defaultUserPreferences,
@@ -182,8 +184,8 @@ describe("ProtectedLayout app onboarding", () => {
     } as unknown as ReturnType<typeof useUserPreferences>);
 
     renderWithProviders(<ProtectedLayout />);
-
-    expect(screen.getByText("Consent gate")).toBeTruthy();
+    // Flush VirtualizedList's deferred _updateCellsToRender inside act().
+    await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
     expect(screen.queryByText("Welcome to Selftend")).toBeNull();
   });
 
@@ -195,7 +197,7 @@ describe("ProtectedLayout app onboarding", () => {
     };
 
     renderWithProviders(<ProtectedLayout />);
-
+    // No DateBar rendered when session is null (renders AuthLandingScreen instead).
     expect(screen.getByText("Signed-out landing")).toBeTruthy();
   });
 });

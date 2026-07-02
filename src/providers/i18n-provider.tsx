@@ -20,7 +20,7 @@ interface I18nContextValue {
   hydrated: boolean;
 }
 
-const I18nContext = createContext<I18nContextValue>({
+export const I18nContext = createContext<I18nContextValue>({
   language: "en",
   setLanguage: async () => {},
   hydrated: false,

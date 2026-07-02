@@ -65,6 +65,14 @@ jest.mock("@/src/features/auth/api", () => ({
   signOut: jest.fn(),
 }));
 
+// SecuritySection calls isBiometricAvailable() inside a useEffect .then() which
+// fires setAvailable() outside act() unless we resolve it synchronously. Mocking
+// it as a resolved Promise prevents the async state update from leaking out.
+jest.mock("@/src/features/security/biometric", () => ({
+  authenticate: jest.fn().mockResolvedValue(false),
+  isBiometricAvailable: jest.fn().mockResolvedValue(false),
+}));
+
 jest.mock("@/src/features/profile/queries", () => ({
   useRemoveUserAvatar: () => ({ isPending: false, mutateAsync: jest.fn() }),
   useResetUserAvatarToOAuth: () => ({ isPending: false, mutateAsync: jest.fn() }),
@@ -102,11 +110,13 @@ describe("SettingsScreen hero and profile badge", () => {
     } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
   });
 
-  it("renders hero with eyebrow + title", () => {
+  it("renders hero with eyebrow + title", async () => {
     renderWithProviders(<SettingsScreen />);
+    // waitFor flushes the SecuritySection useEffect microtasks (isBiometricAvailable
+    // and hydrate) so their async setState calls land inside act() boundaries.
+    await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
     // "Account" appears as eyebrow and as the account section card title
     expect(screen.getAllByText("Account").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Settings")).toBeTruthy();
   });
 });
 
@@ -136,6 +146,9 @@ describe("SettingsScreen onboarding reset", () => {
 
   it("resets all onboarding flags while preserving the rest of preferences", async () => {
     renderWithProviders(<SettingsScreen />);
+    // Flush SecuritySection's useEffect microtasks (isBiometricAvailable + hydrate)
+    // so async setState calls land inside act() before we interact with the screen.
+    await waitFor(() => expect(screen.getByText("Reset onboarding")).toBeTruthy());
 
     fireEvent.press(screen.getByText("Reset onboarding"));
 

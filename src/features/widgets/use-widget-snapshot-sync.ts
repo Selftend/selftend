@@ -89,17 +89,19 @@ export function useWidgetSnapshotSync(userId: string | null) {
     let cancelled = false;
 
     async function sync() {
+      /* eslint-disable @typescript-eslint/no-require-imports -- inside Platform.OS === "android"
+         guard; these modules reference Android-native code that would crash on iOS/web at
+         import time, so conditional require() is the only safe loading strategy here */
       const { requestWidgetUpdate } =
         require("react-native-android-widget") as typeof import("react-native-android-widget");
       // Cast the dynamic requires to their real module types so tsc type-checks the
       // renderWidget(...) call shape - this is what catches a wrong/stale arg (the
       // original bug passed a nonexistent `shortcuts` and omitted the required `config`).
-
       const { renderWidget } =
         require("@/src/features/widgets/render-widget") as typeof import("@/src/features/widgets/render-widget");
-
       const { readConfig } =
         require("@/src/features/widgets/widget-config-store") as typeof import("@/src/features/widgets/widget-config-store");
+      /* eslint-enable @typescript-eslint/no-require-imports */
 
       const next = userId
         ? buildSnapshot(data, {

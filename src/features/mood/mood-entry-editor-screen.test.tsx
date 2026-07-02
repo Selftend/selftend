@@ -258,8 +258,8 @@ describe("MoodEntryEditorScreen", () => {
   it("captures the four-box notice when expanded", async () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
     fireEvent.press(screen.getByLabelText("OK"));
-    // Accordion label changed from "Go deeper - notice (optional)" to "Go deeper - notice"
-    fireEvent.press(screen.getByLabelText("Go deeper - notice"));
+    // Accordion is labelled by t("mood.goDeeperTitle") = "Go deeper"
+    fireEvent.press(screen.getByLabelText("Go deeper"));
     // Situation textarea still accessible by its label
     fireEvent.changeText(screen.getByLabelText("Situation / trigger"), "Email from boss");
     // Body sensations are now chips (accessibilityRole="checkbox"); toggle one

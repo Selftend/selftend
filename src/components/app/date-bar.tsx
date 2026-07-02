@@ -182,24 +182,25 @@ export function DateBar() {
 
   // Scroll so the given day sits in the centre. Days too close to either end
   // can't centre - scrollToIndex clamps to the edge, which is what we want.
-  const centerOn = (key: string, animated = true) => {
-    const index = daysBeforeToday(key); // newest-first: today = 0
-    if (index < 0) return;
-    if (index >= count) setCount(index + LOAD_CHUNK);
-    requestAnimationFrame(() => {
-      listRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated });
-    });
-  };
+  const centerOn = useCallback(
+    (key: string, animated = true) => {
+      const index = daysBeforeToday(key); // newest-first: today = 0
+      if (index < 0) return;
+      if (index >= count) setCount(index + LOAD_CHUNK);
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated });
+      });
+    },
+    [count],
+  );
 
   // Stable identity so the memoized DayChip's onSelect prop doesn't change every render.
-  // centerOn reads count via closure (count only grows; a stale read at worst skips an
-  // auto-expand that onEndReached covers anyway).
   const handleSelect = useCallback(
     (key: string) => {
       setSelectedDate(key);
       centerOn(key);
     },
-    [setSelectedDate],
+    [setSelectedDate, centerOn],
   );
 
   const goToday = () => {

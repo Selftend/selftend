@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 
 import { DateBar } from "@/src/components/app/date-bar";
 import i18n from "@/src/i18n";
@@ -8,26 +8,36 @@ import { renderWithProviders } from "@/test/render-with-providers";
 describe("DateBar", () => {
   beforeEach(() => useSelectedDateStore.getState().resetToToday());
 
-  it("renders today as the selected chip by default", () => {
-    renderWithProviders(<DateBar />);
-    // The chip for today carries an accessible 'Today <date>' label
-    // (distinct from the jump-to-today button, labelled just 'Today').
-    expect(screen.getByLabelText(/Today \d{4}-\d{2}-\d{2}/)).toBeTruthy();
+  // Restore the shared i18n singleton to "en" after every test so that
+  // a failing assertion in the language-switch test cannot leak "bg" into
+  // later tests that rely on English labels.
+  afterEach(async () => {
+    await act(() => i18n.changeLanguage("en"));
   });
 
-  it("selecting a past chip updates the store", () => {
+  it("renders today as the selected chip by default", async () => {
     renderWithProviders(<DateBar />);
-    // Yesterday chip is present; pressing it sets the store.
+    // waitFor lets VirtualizedList's deferred _updateCellsToRender setTimeout fire
+    // inside act() so the initial batch settle does not produce act() warnings.
+    await waitFor(() => expect(screen.getByLabelText(/Today \d{4}-\d{2}-\d{2}/)).toBeTruthy());
+  });
+
+  it("selecting a past chip updates the store", async () => {
+    renderWithProviders(<DateBar />);
     const d = new Date();
     d.setDate(d.getDate() - 1);
     const yKey = d.toISOString().slice(0, 10);
+    // waitFor lets VirtualizedList's deferred _updateCellsToRender fire inside act().
+    await waitFor(() => expect(screen.getByLabelText(new RegExp(yKey))).toBeTruthy());
     fireEvent.press(screen.getByLabelText(new RegExp(yKey)));
     expect(useSelectedDateStore.getState().selectedDate).toBe(yKey);
   });
 
-  it("shows a Today button when a past day is selected and resets on press", () => {
+  it("shows a Today button when a past day is selected and resets on press", async () => {
     useSelectedDateStore.getState().setSelectedDate("2026-05-01");
     renderWithProviders(<DateBar />);
+    // waitFor lets VirtualizedList's deferred _updateCellsToRender fire inside act().
+    await waitFor(() => expect(screen.getByLabelText("Today")).toBeTruthy());
     fireEvent.press(screen.getByLabelText("Today"));
     expect(useSelectedDateStore.getState().selectedDate).toBe(currentDateKey());
   });
