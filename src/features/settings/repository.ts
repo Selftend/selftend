@@ -23,6 +23,8 @@ interface UserPreferenceRow {
   meditation_reminder_minute: number | null;
   meditation_reminder_timezone: string | null;
   app_onboarding_completed: boolean | null;
+  app_onboarding_completed_via: string | null;
+  app_onboarding_completed_at: string | null;
   cbt_onboarding_completed: boolean | null;
   cbt_wizard_completed: boolean | null;
   cbt_program_started_at: string | null;
@@ -119,6 +121,11 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
       row.meditation_reminder_minute ?? defaultUserPreferences.meditationReminderMinute,
     meditationReminderTimezone: row.meditation_reminder_timezone ?? null,
     appOnboardingCompleted: Boolean(row.app_onboarding_completed),
+    appOnboardingCompletedVia:
+      row.app_onboarding_completed_via === "finish" || row.app_onboarding_completed_via === "skip"
+        ? row.app_onboarding_completed_via
+        : null,
+    appOnboardingCompletedAt: row.app_onboarding_completed_at ?? null,
     cbtOnboardingCompleted: Boolean(row.cbt_onboarding_completed),
     cbtWizardCompleted: Boolean(row.cbt_wizard_completed),
     cbtProgramStartedAt: row.cbt_program_started_at ?? null,
@@ -248,6 +255,8 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     meditation_reminder_minute: preferences.meditationReminderMinute,
     meditation_reminder_timezone: preferences.meditationReminderTimezone,
     app_onboarding_completed: preferences.appOnboardingCompleted,
+    app_onboarding_completed_via: preferences.appOnboardingCompletedVia,
+    app_onboarding_completed_at: preferences.appOnboardingCompletedAt,
     cbt_onboarding_completed: preferences.cbtOnboardingCompleted,
     cbt_wizard_completed: preferences.cbtWizardCompleted,
     cbt_program_started_at: preferences.cbtProgramStartedAt,
@@ -370,6 +379,8 @@ export async function updateShownButtonTours(userId: string, shownButtonTours: B
 
 interface OnboardingPreferencesPatch {
   appOnboardingCompleted?: boolean;
+  appOnboardingCompletedVia?: "finish" | "skip";
+  appOnboardingCompletedAt?: string;
   cbtOnboardingCompleted?: boolean;
   gratitudeOnboardingCompleted?: boolean;
   meditationInfoCompleted?: boolean;
@@ -393,6 +404,12 @@ export async function updateOnboardingPreferences(
 
   if (patch.appOnboardingCompleted !== undefined) {
     payload.app_onboarding_completed = patch.appOnboardingCompleted;
+  }
+  if (patch.appOnboardingCompletedVia !== undefined) {
+    payload.app_onboarding_completed_via = patch.appOnboardingCompletedVia;
+  }
+  if (patch.appOnboardingCompletedAt !== undefined) {
+    payload.app_onboarding_completed_at = patch.appOnboardingCompletedAt;
   }
   if (patch.cbtOnboardingCompleted !== undefined) {
     payload.cbt_onboarding_completed = patch.cbtOnboardingCompleted;

@@ -48,6 +48,8 @@ describe("useCompleteAppOnboarding", () => {
 
     expect(mockUpdateOnboardingPreferences).toHaveBeenCalledWith("user-1", {
       appOnboardingCompleted: true,
+      appOnboardingCompletedVia: "skip",
+      appOnboardingCompletedAt: expect.any(String),
     });
     expect(mockUpdateWidgetPositions).not.toHaveBeenCalled();
   });
@@ -63,6 +65,8 @@ describe("useCompleteAppOnboarding", () => {
 
     expect(mockUpdateOnboardingPreferences).toHaveBeenCalledWith("user-1", {
       appOnboardingCompleted: true,
+      appOnboardingCompletedVia: "finish",
+      appOnboardingCompletedAt: expect.any(String),
       selectedConcerns: ["sleep"],
     });
     expect(mockUpdateWidgetPositions).toHaveBeenCalledWith(
@@ -82,6 +86,8 @@ describe("useCompleteAppOnboarding", () => {
 
     expect(mockUpdateOnboardingPreferences).toHaveBeenCalledWith("user-1", {
       appOnboardingCompleted: true,
+      appOnboardingCompletedVia: "finish",
+      appOnboardingCompletedAt: expect.any(String),
       selectedConcerns: [],
     });
     expect(mockUpdateWidgetPositions).not.toHaveBeenCalled();

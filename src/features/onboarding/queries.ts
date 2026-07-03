@@ -17,6 +17,8 @@ export function useCompleteAppOnboarding(userId: string | null) {
     mutationFn: async ({ selectedConcerns }: CompleteAppOnboardingInput) => {
       await updateOnboardingPreferences(userId!, {
         appOnboardingCompleted: true,
+        appOnboardingCompletedVia: selectedConcerns === null ? "skip" : "finish",
+        appOnboardingCompletedAt: new Date().toISOString(),
         ...(selectedConcerns !== null ? { selectedConcerns } : {}),
       });
       if (selectedConcerns !== null && selectedConcerns.length > 0) {

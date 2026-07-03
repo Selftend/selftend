@@ -449,6 +449,53 @@ describe("settings repository", () => {
     expect(result.startHereDismissedAt).toBeNull();
   });
 
+  it("maps app_onboarding_completed_via and _at", async () => {
+    mockPreferenceSelect({
+      user_id: "user-1",
+      enabled_modules: ["cbt"],
+      app_onboarding_completed_via: "finish",
+      app_onboarding_completed_at: "2026-07-03T10:00:00Z",
+    });
+
+    const result = await getUserPreferences("user-1");
+    expect(result.appOnboardingCompletedVia).toBe("finish");
+    expect(result.appOnboardingCompletedAt).toBe("2026-07-03T10:00:00Z");
+  });
+
+  it("defaults the funnel fields to null when columns absent", async () => {
+    mockPreferenceSelect({
+      user_id: "user-1",
+      enabled_modules: ["cbt"],
+    });
+
+    const result = await getUserPreferences("user-1");
+    expect(result.appOnboardingCompletedVia).toBeNull();
+    expect(result.appOnboardingCompletedAt).toBeNull();
+  });
+
+  it("updateOnboardingPreferences writes the funnel columns when defined", async () => {
+    const { upsert } = mockPreferenceUpdate({
+      user_id: "user-1",
+      enabled_modules: ["cbt"],
+      app_onboarding_completed_via: "skip",
+      app_onboarding_completed_at: "2026-07-03T10:00:00Z",
+    });
+
+    await updateOnboardingPreferences("user-1", {
+      appOnboardingCompletedVia: "skip",
+      appOnboardingCompletedAt: "2026-07-03T10:00:00Z",
+    });
+
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        app_onboarding_completed_via: "skip",
+        app_onboarding_completed_at: "2026-07-03T10:00:00Z",
+        user_id: "user-1",
+      }),
+      { onConflict: "user_id" },
+    );
+  });
+
   it("updateOnboardingPreferences writes selected_concerns and start_here_dismissed_at", async () => {
     const { upsert } = mockPreferenceUpdate({
       user_id: "user-1",

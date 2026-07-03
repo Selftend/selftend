@@ -20,6 +20,17 @@ Contributors must not add ad-hoc tracking without explicit review through the ro
 
 ### Phase 1: Supabase aggregate queries (no new dependency)
 
+#### Phase 1 in use (2026-07)
+
+`npm run analytics:onboarding` runs `scripts/analytics-onboarding.sql` (aggregate-only).
+Pass `--local` to run against the local Docker stack; for the linked production
+project, set `SUPABASE_DB_URL` (from the dashboard) in the environment first.
+The report covers: signups, wizard conversion, finish-vs-skip
+(`user_preferences.app_onboarding_completed_via` / `_at`, written at wizard
+completion), concern distribution, Start-here engagement, and home-tour
+engagement. The two funnel columns are ordinary first-party preferences,
+included in `export_user_data()` and account deletion.
+
 When basic product questions arise ("how many users signed up this week?", "how many exercises were completed?"), use server-side SQL against existing tables:
 
 - Auth tables already have timestamped sign-up records.

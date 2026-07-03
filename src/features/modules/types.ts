@@ -60,6 +60,8 @@ export interface UserPreferences {
   habitsReminderMinute: number;
   habitsReminderTimezone: string | null;
   appOnboardingCompleted: boolean;
+  appOnboardingCompletedVia: "finish" | "skip" | null;
+  appOnboardingCompletedAt: string | null;
   cbtOnboardingCompleted: boolean;
   cbtWizardCompleted: boolean;
   cbtProgramStartedAt: string | null;
@@ -149,6 +151,8 @@ export const defaultUserPreferences: UserPreferences = {
   habitsReminderMinute: 0,
   habitsReminderTimezone: null,
   appOnboardingCompleted: false,
+  appOnboardingCompletedVia: null,
+  appOnboardingCompletedAt: null,
   cbtOnboardingCompleted: false,
   cbtWizardCompleted: false,
   cbtProgramStartedAt: null,

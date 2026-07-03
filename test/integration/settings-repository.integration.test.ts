@@ -112,6 +112,54 @@ describe("user_preferences (integration)", () => {
     expect(upsert.error?.message).toMatch(/user_preferences_language_check/);
   });
 
+  it("round-trips the onboarding funnel columns", async () => {
+    const completedAt = "2026-07-03T10:00:00.000Z";
+
+    const upsert = await alice
+      .from("user_preferences")
+      .upsert(
+        {
+          user_id: SEED_USERS.alice.id,
+          app_onboarding_completed_via: "finish",
+          app_onboarding_completed_at: completedAt,
+        },
+        { onConflict: "user_id" },
+      )
+      .select("app_onboarding_completed_via, app_onboarding_completed_at")
+      .single();
+
+    expect(upsert.error).toBeNull();
+    expect(upsert.data?.app_onboarding_completed_via).toBe("finish");
+    expect(new Date(upsert.data?.app_onboarding_completed_at as string).getTime()).toBe(
+      new Date(completedAt).getTime(),
+    );
+
+    // Read back to confirm persistence
+    const read = await alice
+      .from("user_preferences")
+      .select("app_onboarding_completed_via, app_onboarding_completed_at")
+      .eq("user_id", SEED_USERS.alice.id)
+      .single();
+
+    expect(read.error).toBeNull();
+    expect(read.data?.app_onboarding_completed_via).toBe("finish");
+    expect(new Date(read.data?.app_onboarding_completed_at as string).getTime()).toBe(
+      new Date(completedAt).getTime(),
+    );
+
+    // Reset the two columns to null so seeded state stays pristine
+    const admin = createServiceClient();
+    const reset = await admin
+      .from("user_preferences")
+      .update({
+        app_onboarding_completed_via: null,
+        app_onboarding_completed_at: null,
+      })
+      .eq("user_id", SEED_USERS.alice.id);
+
+    expect(reset.error).toBeNull();
+  });
+
   it("records policy consent timestamps", async () => {
     const now = new Date();
     const upsert = await alice

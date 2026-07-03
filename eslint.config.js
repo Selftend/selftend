@@ -47,6 +47,21 @@ module.exports = [
     },
   },
   {
+    // Node.js contributor scripts — declare CommonJS globals that the React Native
+    // environment doesn't include by default.
+    files: ["scripts/**/*.js"],
+    languageOptions: {
+      globals: {
+        __dirname: "readonly",
+        __filename: "readonly",
+        require: "readonly",
+        module: "writable",
+        exports: "writable",
+        process: "readonly",
+      },
+    },
+  },
+  {
     files: ["**/*.test.ts", "**/*.test.tsx", "**/*.test.js"],
     rules: {
       // require() inside jest.mock factories is the idiomatic pattern - factories
