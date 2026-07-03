@@ -355,3 +355,15 @@ In Google Auth Platform, configure the web OAuth client with:
 - Authorized redirect URI: the Supabase provider callback, for example `https://<project-ref>.supabase.co/auth/v1/callback`
 
 See [docs/deployment.md](../docs/deployment.md) for the full web launch checklist.
+
+## Modifying export_user_data
+
+`public.export_user_data()` is a single flat definition (since migration
+`20260704_export_user_data_flatten`). To extend it: `create or replace` the
+whole function in a new migration and add your columns/tables to the relevant
+section. Do not wrap it in `export_user_data_before_*` shadows - the squash
+migration raises if any shadow existed at its point in history, and
+`test/migration-conventions.test.ts` fails if any newer migration mentions
+the wrapper pattern. Whenever you add a user-data column or
+table, add it to this function in the same migration (GDPR export
+completeness).
