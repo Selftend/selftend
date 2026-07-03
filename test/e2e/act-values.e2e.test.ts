@@ -92,7 +92,12 @@ test.describe("ACT values: edit a domain value and save a bulls-eye check-in", (
     // Save (last step)
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
-    // After save router.back() → navigate to values screen to verify persistence
+    // Wait for the "Saved" toast - it appears only after mutateAsync resolves (i.e. the DB
+    // write has committed). Without this, page.goto() can race the in-flight upsert under
+    // parallel load and land on a list that reads stale/empty data from the DB.
+    await expect(page.getByText("Saved")).toBeVisible({ timeout: 15_000 });
+
+    // Hard-navigate to the values list so the query runs fresh against the now-committed DB row.
     await page.goto("/modules/act/values");
 
     // The value statement should now appear in the Work & education domain card
@@ -133,8 +138,10 @@ test.describe("ACT values: edit a domain value and save a bulls-eye check-in", (
     // ── Save the ratings ──────────────────────────────────────────────────────
     await page.getByRole("button", { name: "Save ratings", exact: true }).click();
 
-    // After save: toast "Ratings saved" appears and router.back() is called.
-    // Navigate back to the bulls-eye screen to verify the history entry.
+    // Wait for the "Ratings saved" toast - confirms the DB writes finished before reload.
+    await expect(page.getByText("Ratings saved")).toBeVisible({ timeout: 15_000 });
+
+    // Hard-navigate back to the bulls-eye screen to verify the history entry.
     await page.goto("/modules/act/values/bulls-eye");
 
     // The history section should show at least one snapshot entry with the "7/10" rating

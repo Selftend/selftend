@@ -89,8 +89,16 @@ test.describe("settings - profile display name", () => {
       timeout: 10_000,
     });
 
-    // Fill the display-name input.
+    // Wait for the useUserProfile query (getOrSyncUserProfile) to resolve before
+    // interacting with the input. On a fresh pool user the query reads display_name=null
+    // and syncs "E2E Worker" from user_metadata.full_name, then the useEffect sets the
+    // input value. If we fill before that write lands, the useEffect fires afterward and
+    // resets the input to "E2E Worker", causing the save to persist the wrong value.
+    // Waiting for a non-empty value guarantees the profile query has settled.
     const nameInput = page.getByPlaceholder("Your name (optional)", { exact: true });
+    await expect(nameInput).not.toHaveValue("", { timeout: 10_000 });
+
+    // Fill the display-name input.
     await nameInput.fill("E2E Test Name");
 
     // Click the Save name button.
