@@ -67,7 +67,12 @@ interface ModuleHomeHeaderProps {
   moduleLabel?: string | null;
   /** When set, shows an "add to home" button (dropdown of this category's widgets) in the actions row. */
   addWidgetCategory?: string;
-  /** Screen scope for button-tip storage keys, e.g. "cbt" → "cbt:info". */
+  /**
+   * Screen scope for button-tip storage keys (e.g. "cbt").
+   * Used as a legacy-read-only prefix: the filter still checks "cbt:info" so old
+   * per-screen dismissals grandfather correctly. New dismissals write the bare
+   * action type ("info") so they suppress the tip app-wide.
+   */
   tourScope: string;
 }
 
@@ -122,7 +127,6 @@ export function ModuleHomeHeader({
     : [];
   const currentTour = tourQueue[0] ?? null;
   const currentTourActionType = currentTour?.actionType ?? null;
-  const currentTourStorageKey = currentTour?.storageKey ?? null;
 
   // Measure the active tour button in window coords so the spotlight lands on it. The equality
   // guard makes redundant re-measures (from onLayout below) cheap and loop-free.
@@ -192,11 +196,13 @@ export function ModuleHomeHeader({
 
   // Persisting "tour seen" is best-effort; a failed write must not become an unhandled
   // rejection (the tour simply shows again next time).
+  // Writes the bare action type (e.g. "notifications") so the dismissal applies
+  // app-wide across all module/tool screens.
   async function dismissTour() {
-    if (!preferences || !currentTourStorageKey || updateShownButtonTours.isPending) return;
+    if (!preferences || !currentTourActionType || updateShownButtonTours.isPending) return;
     try {
       await updateShownButtonTours.mutateAsync([
-        ...new Set([...preferences.shownButtonTours, currentTourStorageKey]),
+        ...new Set([...preferences.shownButtonTours, currentTourActionType]),
       ]);
     } catch {
       /* best-effort */
@@ -209,7 +215,7 @@ export function ModuleHomeHeader({
       await updateShownButtonTours.mutateAsync([
         ...new Set([
           ...preferences.shownButtonTours,
-          ...tourableActions.map(({ storageKey }) => storageKey),
+          ...tourableActions.map(({ actionType }) => actionType),
         ]),
       ]);
     } catch {

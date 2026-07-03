@@ -108,7 +108,7 @@ describe("ModuleHomeHeader button tours", () => {
     fireEvent.press(await screen.findByText("Got it"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(["cbt:tune"]);
+      expect(mutateAsync).toHaveBeenCalledWith(["tune"]);
     });
   });
 
@@ -118,12 +118,7 @@ describe("ModuleHomeHeader button tours", () => {
     fireEvent.press(await screen.findByText("Skip all tips"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith([
-        "cbt:tune",
-        "cbt:notifications",
-        "cbt:program",
-        "cbt:info",
-      ]);
+      expect(mutateAsync).toHaveBeenCalledWith(["tune", "notifications", "program", "info"]);
     });
   });
 
@@ -141,7 +136,7 @@ describe("ModuleHomeHeader button tours", () => {
     renderHeader({ includeProgram: true, shownButtonTours: ["cbt:tune", "cbt:notifications"] });
 
     expect(
-      await screen.findByText("Tap here to show or restart the CBT program invitation."),
+      await screen.findByText("Tap here to show or restart this module's program invitation."),
     ).toBeTruthy();
   });
 
@@ -153,13 +148,13 @@ describe("ModuleHomeHeader button tours", () => {
     ).toBeTruthy();
   });
 
-  it("stores dismissals under the scoped key", async () => {
+  it("stores dismissals under the bare action type key (app-wide)", async () => {
     renderHeader({ tourScope: "cbt", shownButtonTours: [] });
 
     fireEvent.press(await screen.findByText("Got it"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(["cbt:tune"]);
+      expect(mutateAsync).toHaveBeenCalledWith(["tune"]);
     });
   });
 
@@ -181,13 +176,13 @@ describe("ModuleHomeHeader button tours", () => {
     expect(screen.queryByText("Got it")).toBeNull();
   });
 
-  it("shows tours on a second screen when only another scope was dismissed", async () => {
+  it("bare keys suppress tours on any scope (dismissal is now app-wide)", async () => {
     renderHeader({
       tourScope: "mood",
-      shownButtonTours: ["cbt:tune", "cbt:notifications", "cbt:info"],
+      shownButtonTours: ["tune", "notifications", "info"],
     });
 
-    expect(await screen.findByText("Got it")).toBeTruthy();
+    expect(screen.queryByText("Got it")).toBeNull();
   });
 });
 
