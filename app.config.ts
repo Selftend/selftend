@@ -151,6 +151,14 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
         })),
       },
     ],
+    [
+      "@sentry/react-native/expo",
+      {
+        organization: "selftend",
+        project: "selftend",
+        url: "https://sentry.io/",
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,
