@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { validateRequiredEnv } from "@/src/lib/env";
 import { registerWebPushServiceWorker } from "@/src/lib/notifications";
 import { createAppQueryClient } from "@/src/lib/query-client";
+import { initOnlineManager } from "@/src/lib/online-manager";
 import { I18nProvider } from "@/src/providers/i18n-provider";
 import { SessionProvider } from "@/src/providers/session-provider";
 
@@ -19,6 +20,10 @@ if (Platform.OS !== "web") {
     return () => subscription.remove();
   });
 }
+
+// Same idea as the focusManager block above: teach React Query about native
+// connectivity so mutations/queries know when the device is offline.
+initOnlineManager();
 
 const queryClient = createAppQueryClient();
 
