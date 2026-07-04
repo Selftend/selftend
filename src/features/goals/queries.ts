@@ -64,6 +64,7 @@ export function useSaveGoal(userId: string | null) {
       await saveMilestones(userId!, goal.id, milestones);
       return goal;
     },
+    meta: { suppressGlobalErrorToast: true }, // wizard shows its own save-error toast
     onSuccess: async (goal) => {
       if (!userId) return;
       await Promise.all([
@@ -80,6 +81,7 @@ export function useUpdateGoalStatus(userId: string | null) {
   return useMutation({
     mutationFn: ({ goalId, status }: { goalId: string; status: GoalStatus }) =>
       updateGoalStatus(userId!, goalId, status),
+    meta: { suppressGlobalErrorToast: true }, // detail screen shows its own error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: goalKeys.all });
@@ -94,6 +96,7 @@ export function useToggleMilestone(userId: string | null, goalId: string | null)
       completed
         ? completeMilestone(userId!, milestoneId)
         : uncompleteMilestone(userId!, milestoneId),
+    meta: { suppressGlobalErrorToast: true }, // detail screen shows its own error toast
     onSuccess: async () => {
       if (!userId || !goalId) return;
       await queryClient.invalidateQueries({ queryKey: goalKeys.milestones(userId, goalId) });

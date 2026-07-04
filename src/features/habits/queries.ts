@@ -61,6 +61,7 @@ export function useSaveHabit(userId: string | null) {
   return useMutation({
     mutationFn: ({ input, habitId }: { input: HabitInput; habitId?: string }) =>
       saveHabit(userId!, input, habitId),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: habitKeys.all });
@@ -72,6 +73,7 @@ export function useArchiveHabit(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => archiveHabit(userId!, id),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: habitKeys.all });
@@ -83,6 +85,7 @@ export function useRestoreHabit(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => restoreHabit(userId!, id),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: habitKeys.all });
@@ -118,6 +121,7 @@ export function useUpsertHabitLogNote(userId: string | null) {
       loggedOn: string;
       note: string;
     }) => upsertHabitLogNote(userId!, habitId, loggedOn, note),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: habitKeys.all });

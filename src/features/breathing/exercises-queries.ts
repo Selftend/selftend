@@ -39,6 +39,7 @@ export function useSaveBreathingExercise(userId: string | null) {
   return useMutation({
     mutationFn: ({ input, id }: { input: BreathingExerciseInput; id?: string }) =>
       saveBreathingExercise(userId!, input, id),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: exerciseKeys.all });

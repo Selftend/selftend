@@ -65,6 +65,7 @@ export function useSaveTask(userId: string | null) {
       await saveSteps(userId!, task.id, steps);
       return task;
     },
+    meta: { suppressGlobalErrorToast: true }, // wizard shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: taskKeys.all });
@@ -77,6 +78,7 @@ export function useUpdateTaskStatus(userId: string | null) {
   return useMutation({
     mutationFn: ({ taskId, status }: { taskId: string; status: TaskStatus }) =>
       updateTaskStatus(userId!, taskId, status),
+    meta: { suppressGlobalErrorToast: true }, // detail screen shows its own error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: taskKeys.all });
@@ -89,6 +91,7 @@ export function useToggleStep(userId: string | null, taskId: string | null) {
   return useMutation({
     mutationFn: ({ stepId, completed }: { stepId: string; completed: boolean }) =>
       toggleStepComplete(userId!, stepId, completed),
+    meta: { suppressGlobalErrorToast: true }, // detail screen shows its own error toast
     onSuccess: async () => {
       if (!userId || !taskId) return;
       await queryClient.invalidateQueries({ queryKey: taskKeys.steps(userId, taskId) });

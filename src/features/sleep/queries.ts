@@ -47,6 +47,7 @@ export function useSaveSleepLog(userId: string | null) {
   return useMutation({
     mutationFn: ({ input, logId }: { input: SleepInput; logId?: string }) =>
       saveSleepLog(userId!, input, logId),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: sleepKeys.all });

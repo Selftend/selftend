@@ -55,6 +55,7 @@ export function useArchiveThoughtRecord(userId: string | null) {
 
   return useMutation({
     mutationFn: (recordId: string) => archiveThoughtRecord(userId!, recordId),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) {
         return;

@@ -20,6 +20,7 @@ export function useSaveValuesProfile(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: ValuesProfileInput) => saveValuesProfile(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: valuesKeys.profile(userId) });

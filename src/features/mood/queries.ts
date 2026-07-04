@@ -68,6 +68,7 @@ export function useSaveMoodLog(userId: string | null) {
   return useMutation({
     mutationFn: ({ input, moodLogId }: { input: MoodInput; moodLogId?: string }) =>
       saveMoodLog(userId!, input, moodLogId),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: moodKeys.all });

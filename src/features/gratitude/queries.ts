@@ -77,6 +77,7 @@ export function useSaveGratitudeEntry(userId: string | null) {
   return useMutation({
     mutationFn: ({ input, entryId }: { input: GratitudeInput; entryId?: string }) =>
       saveGratitudeEntry(userId!, input, entryId),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: gratitudeKeys.all });
@@ -93,6 +94,7 @@ export function useSetGratitudeEntryStarred(userId: string | null) {
   return useMutation({
     mutationFn: ({ id, starred }: { id: string; starred: boolean }) =>
       setGratitudeEntryStarred(userId!, id, starred),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     // Patch the updated row into the cached lists/detail instead of invalidating the whole
     // ["gratitude"] prefix - a one-tap star otherwise refired every mounted gratitude query,
     // including the 500-row Home widget fetch. Only favorites (whose membership actually

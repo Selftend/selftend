@@ -37,6 +37,7 @@ export function useSaveWorryEntry(userId: string | null) {
   return useMutation({
     mutationFn: ({ input, entryId }: { input: WorryEntryInput; entryId?: string }) =>
       saveWorryEntry(userId!, input, entryId),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async (entry) => {
       if (!userId) return;
       await Promise.all([
@@ -63,6 +64,7 @@ export function useToggleWorryResolved(userId: string | null) {
   return useMutation({
     mutationFn: ({ entryId, resolved }: { entryId: string; resolved: boolean }) =>
       toggleWorryResolved(userId!, entryId, resolved),
+    meta: { suppressGlobalErrorToast: true }, // list screen shows its own error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: worryKeys.list(userId) });

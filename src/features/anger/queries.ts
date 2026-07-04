@@ -35,6 +35,7 @@ export function useSaveAngerLog(userId: string | null) {
   return useMutation({
     mutationFn: ({ input, logId }: { input: AngerLogInput; logId?: string }) =>
       saveAngerLog(userId!, input, logId),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async (log) => {
       if (!userId) return;
       await Promise.all([

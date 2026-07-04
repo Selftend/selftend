@@ -31,6 +31,7 @@ export function useUploadUserAvatar(userId: string | null) {
         userId: userId!,
         ...input,
       }),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) {
         return;
@@ -47,6 +48,7 @@ export function useResetUserAvatarToOAuth(user: User | null) {
   return useMutation({
     mutationFn: (previousStoragePath?: string | null) =>
       resetUserAvatarToOAuth(user!, previousStoragePath),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!user) {
         return;
@@ -63,6 +65,7 @@ export function useRemoveUserAvatar(userId: string | null) {
   return useMutation({
     mutationFn: (previousStoragePath?: string | null) =>
       removeUserAvatar(userId!, previousStoragePath),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) {
         return;
@@ -78,6 +81,7 @@ export function useUpdateUserDisplayName(userId: string | null) {
 
   return useMutation({
     mutationFn: (displayName: string) => updateUserDisplayName(userId!, displayName),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) {
         return;

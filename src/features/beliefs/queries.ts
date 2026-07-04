@@ -37,6 +37,7 @@ export function useSaveCoreBelief(userId: string | null) {
   return useMutation({
     mutationFn: ({ input, beliefId }: { input: CoreBeliefInput; beliefId?: string }) =>
       saveCoreBelief(userId!, input, beliefId),
+    meta: { suppressGlobalErrorToast: true }, // wizard shows its own save-error toast
     onSuccess: async (belief) => {
       if (!userId) return;
       await Promise.all([
@@ -71,6 +72,7 @@ export function useUpdateBeliefStrength(userId: string | null) {
       alternativeBeliefStrength: number;
     }) =>
       updateBeliefStrength(userId!, beliefId, originalBeliefStrength, alternativeBeliefStrength),
+    meta: { suppressGlobalErrorToast: true }, // detail screen shows its own error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: beliefKeys.all });

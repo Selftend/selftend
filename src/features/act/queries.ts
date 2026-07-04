@@ -115,6 +115,7 @@ export function useSaveDefusionLog(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: DefusionLogInput) => saveDefusionLog(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.defusionList(userId) });
@@ -148,6 +149,7 @@ export function useSaveExpansionLog(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: ExpansionLogInput) => saveExpansionLog(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.expansionList(userId) });
@@ -173,6 +175,7 @@ export function useSaveUrgeSurfLog(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: UrgeSurfLogInput) => saveUrgeSurfLog(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.urgeSurfList(userId) });
@@ -202,6 +205,7 @@ export function useSaveConnectionLog(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: ConnectionLogInput) => saveConnectionLog(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.connectionList(userId) });
@@ -235,6 +239,7 @@ export function useSaveObservingSelfSession(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: ObservingSelfSessionInput) => saveObservingSelfSession(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.observingList(userId) });
@@ -268,6 +273,7 @@ export function useUpsertValueEntry(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: ValueEntryInput) => upsertValueEntry(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async (data) => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.valuesList(userId) });
@@ -290,6 +296,7 @@ export function useSaveBullsEyeSnapshot(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: BullsEyeSnapshotInput) => saveBullsEyeSnapshot(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.bullsEyeList(userId) });
@@ -319,6 +326,7 @@ export function useSaveCommittedAction(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CommittedActionInput) => saveCommittedAction(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.committedActionListPrefix(userId) });
@@ -345,6 +353,7 @@ export function useDeleteCommittedAction(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (actionId: string) => deleteCommittedAction(userId!, actionId),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.committedActionListPrefix(userId) });
@@ -447,6 +456,7 @@ export function useSaveChoicePoint(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: ChoicePointInput) => saveChoicePoint(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.choicePointList(userId) });

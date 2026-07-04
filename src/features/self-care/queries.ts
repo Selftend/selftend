@@ -36,6 +36,7 @@ export function useUpsertSelfCareLog(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: SelfCareLogInput) => upsertSelfCareLog(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async (log) => {
       if (!userId) return;
       await Promise.all([

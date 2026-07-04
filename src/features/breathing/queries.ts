@@ -26,6 +26,7 @@ export function useSaveBreathingSession(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: MindfulnessSessionInput) => saveMindfulnessSession(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       // Breathing, grounding, and mindfulness all persist into mindfulness_sessions, so a

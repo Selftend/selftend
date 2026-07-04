@@ -53,6 +53,7 @@ export function useCompleteActivity(userId: string | null) {
   return useMutation({
     mutationFn: ({ activityId, moodAfter }: { activityId: string; moodAfter: number | null }) =>
       completeActivity(userId!, activityId, moodAfter),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async (activity) => {
       if (!userId) return;
       await Promise.all([

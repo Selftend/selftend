@@ -91,6 +91,7 @@ export function useSaveHierarchy(userId: string | null) {
       await saveItems(userId!, hierarchy.id, items);
       return hierarchy;
     },
+    meta: { suppressGlobalErrorToast: true }, // wizard shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: exposureKeys.all });
@@ -103,6 +104,7 @@ export function useSaveExposureSession(userId: string | null, hierarchyId: strin
   return useMutation({
     mutationFn: ({ itemId, input }: { itemId: string; input: ExposureSessionInput }) =>
       saveSession(userId!, itemId, input),
+    meta: { suppressGlobalErrorToast: true }, // detail screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await Promise.all([

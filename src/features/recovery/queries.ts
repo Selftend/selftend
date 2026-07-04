@@ -35,6 +35,7 @@ export function useUpsertRecoveryPlan(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: RecoveryPlanInput) => upsertRecoveryPlan(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // recovery screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: recoveryKeys.plan(userId) });
@@ -54,6 +55,7 @@ export function useSaveChallengePlan(userId: string | null) {
       input: ChallengePlanInput;
       challengePlanId?: string;
     }) => saveChallengePlan(userId!, recoveryPlanId, input, challengePlanId),
+    meta: { suppressGlobalErrorToast: true }, // recovery screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: recoveryKeys.challenges(userId) });
@@ -65,6 +67,7 @@ export function useDeleteChallengePlan(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (challengePlanId: string) => deleteChallengePlan(userId!, challengePlanId),
+    meta: { suppressGlobalErrorToast: true }, // recovery screen shows its own delete-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: recoveryKeys.challenges(userId) });

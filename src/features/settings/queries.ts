@@ -33,6 +33,9 @@ export function useUpdateUserPreferences(userId: string | null) {
     // cache so a rapid follow-up save reads THIS value instead of the stale pre-save
     // snapshot (which would silently drop the first save's columns). Roll back on error;
     // reconcile with the server on settle.
+    // Callers that surface errors (notification cards, meditation onboarding) show their own
+    // toast; callers that don't (sounds-sheet, settings-sync) intentionally swallow errors.
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onMutate: async (preferences: UserPreferences) => {
       if (!userId) return {};
       await queryClient.cancelQueries({ queryKey: preferenceKeys.detail(userId) });
@@ -74,6 +77,7 @@ export function useUpdateOnboardingPreferences(userId: string | null) {
   return useMutation({
     mutationFn: (patch: Parameters<typeof updateOnboardingPreferences>[1]) =>
       updateOnboardingPreferences(userId!, patch),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) {
         return;
@@ -102,11 +106,13 @@ export function useRecordPolicyConsent(userId: string | null) {
 export function useDeleteUserAccount() {
   return useMutation({
     mutationFn: () => deleteUserAccount(),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
   });
 }
 
 export function useExportUserData() {
   return useMutation({
     mutationFn: () => exportUserData(),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
   });
 }

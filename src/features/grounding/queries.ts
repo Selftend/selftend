@@ -35,6 +35,7 @@ export function useSaveGroundingSession(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: MindfulnessSessionInput) => saveMindfulnessSession(userId!, input),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       // Shares the mindfulness_sessions table with breathing/mindfulness - refresh all three.

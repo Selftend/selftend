@@ -60,6 +60,7 @@ export function useSaveJournalEntry(userId: string | null) {
   return useMutation({
     mutationFn: ({ input, entryId }: { input: JournalInput; entryId?: string }) =>
       saveJournalEntry(userId!, input, entryId),
+    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: journalKeys.all });
