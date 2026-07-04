@@ -4,6 +4,7 @@ import type { Session, User } from "@supabase/supabase-js";
 
 import { hasSupabaseConfig } from "@/src/lib/env";
 import { initializeSupabaseAutoRefresh, supabase } from "@/src/lib/supabase";
+import { setSentryUser } from "@/src/lib/sentry";
 import { resetAllDraftStores } from "@/src/stores/draft-store-registry";
 
 type SessionStatus = "loading" | "ready";
@@ -40,6 +41,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
         }
 
         setSession(data.session);
+        setSentryUser(data.session?.user?.id ?? null);
         setStatus("ready");
       })
       .catch(() => {
@@ -58,6 +60,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
         resetAllDraftStores();
       }
 
+      // Sentry user context mirrors the session: UUID while signed in,
+      // cleared the moment the user signs out.
+      setSentryUser(nextSession?.user?.id ?? null);
       setSession(nextSession);
       setStatus("ready");
     });
