@@ -26,6 +26,11 @@ import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner"
 import { useAppColorScheme } from "@/src/lib/color-scheme";
 import { AppProviders } from "@/src/providers/app-providers";
 import { NAV_THEME, THEME_VARIABLES } from "@/lib/theme";
+import { initSentry } from "@/src/lib/sentry";
+
+// Initialize before first render so startup crashes are captured. No-op
+// without EXPO_PUBLIC_SENTRY_DSN or in dev.
+initSentry();
 
 SplashScreen.preventAutoHideAsync();
 

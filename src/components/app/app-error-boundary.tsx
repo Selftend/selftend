@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { captureError } from "@/src/lib/sentry";
 
 interface AppErrorBoundaryState {
   error: Error | null;
@@ -28,6 +29,7 @@ export class AppErrorBoundary extends Component<PropsWithChildren, AppErrorBound
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("Unhandled app error", error, info.componentStack);
+    captureError(error, { componentStack: info.componentStack ?? "" });
   }
 
   handleRetry = () => {
