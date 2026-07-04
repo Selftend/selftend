@@ -1,10 +1,11 @@
 import { useEffect, type PropsWithChildren } from "react";
-import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { focusManager, QueryClientProvider } from "@tanstack/react-query";
 import { AppState, Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { validateRequiredEnv } from "@/src/lib/env";
 import { registerWebPushServiceWorker } from "@/src/lib/notifications";
+import { createAppQueryClient } from "@/src/lib/query-client";
 import { I18nProvider } from "@/src/providers/i18n-provider";
 import { SessionProvider } from "@/src/providers/session-provider";
 
@@ -19,14 +20,7 @@ if (Platform.OS !== "web") {
   });
 }
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60_000,
-      retry: 1,
-    },
-  },
-});
+const queryClient = createAppQueryClient();
 
 export function AppProviders({ children }: PropsWithChildren) {
   useEffect(() => {
