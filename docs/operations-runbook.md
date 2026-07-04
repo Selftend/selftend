@@ -48,11 +48,11 @@ These settings live outside the repo (Supabase Dashboard). Apply per environment
 
 ### Not currently enabled (paid-plan gated)
 
-- **Prevent use of leaked passwords (HIBP check):** Pro plan and above only. Code path is wired (`LEAKED_PASSWORD_ERROR` surfaces an inline "this password appears in known data breaches" message at signup and password change) so the feature lights up automatically if/when the project upgrades to Pro. Until then, no action needed.
+- **Prevent use of leaked passwords (HIBP check):** Pro plan and above only. Code path is wired (`LEAKED_PASSWORD_ERROR` surfaces an inline "this password appears in known data breaches" message at signup and password change) so the feature lights up automatically if/when the project upgrades to Pro. See [Deferred Security Decisions](#deferred-security-decisions) for the re-evaluation trigger.
 
 ### CAPTCHA
 
-Not enabled. Decision: relying on Supabase's built-in per-IP rate limits + the client-side `useAuthThrottle` UX layer for now. Re-evaluate if abuse appears in auth logs - at that point, options are (a) Cloudflare Turnstile via Supabase's CAPTCHA toggle (server-enforced, all platforms), or (b) an Edge Function proxy verifying Turnstile tokens for web only.
+Not enabled. See [Deferred Security Decisions](#deferred-security-decisions) for the re-evaluation trigger.
 
 ### Verification after deploy
 
@@ -150,6 +150,43 @@ Open follow-up:
 - Confirm and record Netlify DPA status before broad public launch.
 - Keep processor locations, transfer mechanisms, and privacy policy disclosures current.
 - Reassess transfers if a new processor, analytics provider, AI provider, or hosted support tool is added.
+
+## Pre-Invite Checklist (Closed Testing)
+
+Complete every item before sending the first closed-testing invites. None of
+these can be verified from the repo.
+
+- **Custom SMTP is configured** in Supabase Dashboard -> Project Settings ->
+  Auth -> SMTP. Supabase's built-in email service is rate-limited to a few
+  emails per hour and will break a tester wave with email confirmations
+  enabled. Resend is the preferred provider (already a processor via the
+  send-feedback function). Send a test signup and confirm the email arrives
+  from the custom domain.
+- **Auth rate limits reviewed** in Supabase Dashboard -> Auth -> Rate Limits:
+  confirm sign-up, sign-in, OTP, and recovery limits will not lock out a
+  12-20 tester wave arriving the same day (several testers may share an
+  office/household IP).
+- **Play Console tester threshold confirmed**: personal developer accounts
+  created after November 2023 must run a closed test with a minimum number
+  of testers for 14 continuous days before production access unlocks. Check
+  the current threshold in Play Console -> Dashboard and recruit
+  accordingly.
+- **Sentry alerts on**: a new-issue email alert exists for the production
+  project and lands in a monitored inbox (weekly review minimum, per the
+  Support Workflow section).
+
+## Deferred Security Decisions
+
+Recorded here so they stay decisions, not gaps. Each lists its
+re-evaluation trigger.
+
+- **CAPTCHA on auth endpoints** (Supabase supports Cloudflare Turnstile and
+  hCaptcha): deferred. Trigger: open production release, or observed signup
+  abuse during closed testing.
+- **TOTP MFA UI** (factor type already enabled in `supabase/config.toml`):
+  deferred. Trigger: post-launch phase, after closed-testing feedback.
+- **HIBP leaked-password check**: enable if/when the project is on a
+  Supabase plan that includes it (see Auth Security Toggles above).
 
 ## Public Launch Gate
 

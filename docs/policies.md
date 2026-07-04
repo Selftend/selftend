@@ -10,6 +10,13 @@ The app has public policy routes hosted from the Expo web export:
 
 The policy version constants and fallback source text live in [src/features/policies/policy-content.ts](../src/features/policies/policy-content.ts). Displayed policy copy is loaded from the locale files in `src/i18n/locales/{lang}/policies.json`.
 
+## Legal review status
+
+The policy pages ship with a visible "pending legal review" notice
+(`LEGAL_REVIEW_PENDING` in `src/features/policies/policy-content.ts`). This
+is intentional for closed testing. Resolution trigger: obtain legal review
+and clear the flag **before the open production release**.
+
 ## Compliance approach
 
 ### Jurisdictions targeted
