@@ -1,5 +1,10 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import {
+  clearPersistedQueryCache,
   createAppQueryClient,
+  createQueryPersister,
+  QUERY_CACHE_STORAGE_KEY,
   reportMutationError,
   reportQueryError,
 } from "@/src/lib/query-client";
@@ -66,6 +71,20 @@ describe("mutation defaults", () => {
     const client = createAppQueryClient();
 
     expect(client.getDefaultOptions().mutations?.networkMode).toBe("always");
+  });
+});
+
+describe("query cache persistence", () => {
+  it("creates a persister on native", () => {
+    expect(createQueryPersister()).not.toBeNull();
+  });
+
+  it("purges the persisted cache", async () => {
+    await AsyncStorage.setItem(QUERY_CACHE_STORAGE_KEY, "{}");
+
+    await clearPersistedQueryCache();
+
+    expect(await AsyncStorage.getItem(QUERY_CACHE_STORAGE_KEY)).toBeNull();
   });
 });
 

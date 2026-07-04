@@ -29,6 +29,11 @@ jest.mock("@/src/stores/draft-store-registry", () => ({
   resetAllDraftStores: jest.fn(),
 }));
 
+jest.mock("@/src/lib/query-client", () => ({
+  ...jest.requireActual("@/src/lib/query-client"),
+  clearPersistedQueryCache: jest.fn().mockResolvedValue(undefined),
+}));
+
 function renderProvider() {
   return render(
     <QueryClientProvider client={new QueryClient()}>
@@ -53,5 +58,17 @@ describe("SessionProvider sentry user context", () => {
     authCallback("SIGNED_OUT", null);
 
     await waitFor(() => expect(setSentryUser).toHaveBeenLastCalledWith(null));
+  });
+});
+
+describe("SessionProvider sign-out purge", () => {
+  it("purges the persisted query cache on sign-out", async () => {
+    const { clearPersistedQueryCache } = jest.requireMock("@/src/lib/query-client");
+    renderProvider();
+    await waitFor(() => expect(setSentryUser).toHaveBeenCalled());
+
+    authCallback("SIGNED_OUT", null);
+
+    await waitFor(() => expect(clearPersistedQueryCache).toHaveBeenCalled());
   });
 });

@@ -1,8 +1,34 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
+import type { Persister } from "@tanstack/react-query-persist-client";
+import { Platform } from "react-native";
 
 import i18n from "@/src/i18n";
 import { captureError, isReportableError } from "@/src/lib/sentry";
 import { useToastStore } from "@/src/stores/toast-store";
+
+export const QUERY_CACHE_STORAGE_KEY = "selftend-query-cache";
+
+// Native-only: offline reads matter most on mobile, and web persistence
+// would put decrypted entries in localStorage on shared computers. Web keeps
+// the in-memory cache it has today.
+export function createQueryPersister(): Persister | null {
+  if (Platform.OS === "web") {
+    return null;
+  }
+
+  return createAsyncStoragePersister({
+    storage: AsyncStorage,
+    key: QUERY_CACHE_STORAGE_KEY,
+  });
+}
+
+// The persisted cache holds decrypted entries for the signed-in user; it must
+// not survive sign-out (session-provider calls this alongside queryClient.clear()).
+export async function clearPersistedQueryCache(): Promise<void> {
+  await AsyncStorage.removeItem(QUERY_CACHE_STORAGE_KEY);
+}
 
 declare module "@tanstack/react-query" {
   interface Register {

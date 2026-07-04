@@ -5,6 +5,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { hasSupabaseConfig } from "@/src/lib/env";
 import { initializeSupabaseAutoRefresh, supabase } from "@/src/lib/supabase";
 import { setSentryUser } from "@/src/lib/sentry";
+import { clearPersistedQueryCache } from "@/src/lib/query-client";
 import { resetAllDraftStores } from "@/src/stores/draft-store-registry";
 
 type SessionStatus = "loading" | "ready";
@@ -54,10 +55,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
       // previous user's data never lingers in memory - matters most on native, which has
       // no full page reload to drop the in-memory QueryClient. The draft stores are
       // module-level singletons that also hold PHI (e.g. an in-flight CBT thought record
-      // whose save failed) and survive sign-out, so reset them too.
+      // whose save failed) and survive sign-out, so reset them too. The AsyncStorage-backed
+      // persisted query cache also holds decrypted entries and must be removed so it cannot
+      // be read by a subsequent user or after app reinstall from a backup.
       if (event === "SIGNED_OUT") {
         queryClient.clear();
         resetAllDraftStores();
+        void clearPersistedQueryCache();
       }
 
       // Sentry user context mirrors the session: UUID while signed in,

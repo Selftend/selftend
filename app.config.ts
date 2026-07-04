@@ -100,6 +100,10 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
     edgeToEdgeEnabled: true,
     package: androidPackage,
     versionCode: 1,
+    // The AsyncStorage query cache holds decrypted entries; user data must
+    // never land in Google cloud backups. Server-side data is the restore
+    // path after reinstall.
+    allowBackup: false,
     // Firebase config for FCM (Android push). One file per build variant, since the dev and
     // prod variants use different package names. Safe to commit (public identifiers only).
     googleServicesFile: isDevelopmentBuild
