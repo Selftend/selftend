@@ -6,5 +6,8 @@
     "cardDescription": "Retry this screen, or return to the start and continue from a stable place.",
     "retry": "Retry",
     "home": "Go to start"
+  },
+  "offline": {
+    "banner": "You're offline - changes can't be saved right now"
   }
 }

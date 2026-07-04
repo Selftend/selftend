@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { DateBar } from "@/src/components/app/date-bar";
+import { OfflineBanner } from "@/src/components/app/offline-banner";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { isDatedRoute } from "@/src/features/navigation/dated-routes";
@@ -108,6 +109,7 @@ export default function ProtectedLayout() {
       <View className="flex-1 flex-row bg-background">
         {isDesktop ? <SidebarNav /> : null}
         <View className="flex-1">
+          <OfflineBanner />
           {isDatedRoute(pathname) ? <DateBar /> : null}
           <Stack
             screenOptions={{
