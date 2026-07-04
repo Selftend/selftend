@@ -4,6 +4,7 @@ import {
   reportQueryError,
 } from "@/src/lib/query-client";
 import { captureError } from "@/src/lib/sentry";
+import { useToastStore } from "@/src/stores/toast-store";
 
 jest.mock("@/src/lib/sentry", () => ({
   captureError: jest.fn(),
@@ -57,5 +58,41 @@ describe("createAppQueryClient", () => {
 
     expect(defaults.queries?.staleTime).toBe(60_000);
     expect(defaults.queries?.retry).toBe(1);
+  });
+});
+
+describe("mutation defaults", () => {
+  it("uses networkMode always so offline saves fail fast instead of pausing", () => {
+    const client = createAppQueryClient();
+
+    expect(client.getDefaultOptions().mutations?.networkMode).toBe("always");
+  });
+});
+
+describe("global mutation failure toast", () => {
+  beforeEach(() => {
+    useToastStore.setState({ toast: null });
+  });
+
+  async function runFailingMutation(meta?: { suppressGlobalErrorToast?: boolean }) {
+    const client = createAppQueryClient();
+    const mutation = client.getMutationCache().build(client, {
+      mutationFn: () => Promise.reject(new TypeError("Network request failed")),
+      meta,
+    });
+
+    await mutation.execute(undefined).catch(() => {});
+  }
+
+  it("shows the fallback toast for an unhandled failing mutation", async () => {
+    await runFailingMutation();
+
+    expect(useToastStore.getState().toast).toMatchObject({ tone: "error" });
+  });
+
+  it("stays quiet when the mutation opts out", async () => {
+    await runFailingMutation({ suppressGlobalErrorToast: true });
+
+    expect(useToastStore.getState().toast).toBeNull();
   });
 });

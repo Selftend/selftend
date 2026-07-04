@@ -9,5 +9,9 @@
   },
   "offline": {
     "banner": "You're offline - changes can't be saved right now"
+  },
+  "saveFailed": {
+    "title": "Couldn't save",
+    "description": "Your changes are still on this screen. Check your connection and try again."
   }
 }
