@@ -1,5 +1,5 @@
-export const policyLastUpdated = "2026-05-20";
-export const policyVersion = "2026-05-20-local-preferences";
+export const policyLastUpdated = "2026-07-04";
+export const policyVersion = "2026-07-04-error-monitoring";
 
 /**
  * Set to true while policies await final human/legal review.

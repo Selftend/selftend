@@ -100,7 +100,10 @@ Optional:
 EXPO_PUBLIC_GITHUB_REPO_URL=https://github.com/Selftend/selftend
 EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=<public-vapid-key>
+EXPO_PUBLIC_SENTRY_DSN=<your-sentry-dsn>
 ```
+
+Error monitoring (Sentry): leave `EXPO_PUBLIC_SENTRY_DSN` unset to disable crash reporting entirely, or set it to a DSN from your own Sentry organization or a self-hosted GlitchTip instance (GlitchTip is Sentry-protocol-compatible). The maintainer's hosted build uses Sentry SaaS; self-hosters are not required to use it.
 
 Never put service-role keys, database passwords, SMTP passwords, OAuth secrets, JWT secrets, private API keys, or backup credentials in Expo public variables. They are bundled into the client app.
 

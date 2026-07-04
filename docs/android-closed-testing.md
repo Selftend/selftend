@@ -80,7 +80,7 @@ Before widening testing:
 - do not claim diagnosis, treatment, cure, prevention, emergency support, or professional care
 - verify reminders are optional, local, and off by default
 - verify the resolved Android prebuild config does not request camera or microphone/audio permissions
-- verify no ads, analytics SDKs, social feeds, or AI mental-health coach features were added
+- verify no ads, social feeds, or AI mental-health coach features were added (note: the Sentry SDK is present as an approved Phase 2 exception per `docs/analytics.md`; it is classified essential/Art. 6(1)(f) and disabled without `EXPO_PUBLIC_SENTRY_DSN`)
 - confirm the Play Console target audience is 18+ and the app is not marked as child-directed
 
 ## Build commands

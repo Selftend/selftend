@@ -55,6 +55,14 @@ Keep these in a contributor-only context (Supabase dashboard, a local script, or
 
 ### Phase 2: Error and crash monitoring
 
+> **Status (2026-07-04): implemented with Sentry SaaS (sentry.io).** The
+> closed-testing launch was the trigger. SaaS was chosen over the
+> self-hosted options below for operational simplicity at this stage; the
+> SDK is Sentry-protocol-compatible, so self-hosted GlitchTip remains the
+> documented fallback if hosting posture changes. Classification: essential
+> (Art. 6(1)(f)), per "Consent classification" below. Monitoring is fully
+> disabled when `EXPO_PUBLIC_SENTRY_DSN` is unset.
+
 Adds minimal observability alongside the incident response process documented in [operations-runbook.md](operations-runbook.md).
 
 #### Tool options (self-hostable required)
@@ -129,7 +137,7 @@ These are deliberately excluded and should not be proposed without exceptional j
 
 Do not add analytics preemptively. Advance to the next phase only when:
 
-- **Phase 2**: The app has real users and an undiagnosable production issue occurs, or an observability initiative is actively being scoped in `.github/ROADMAP.md`.
+- **Phase 2**: Done (2026-07-04) - implemented ahead of closed testing; see status note above.
 - **Phase 3**: A concrete, documented product question cannot be answered by Supabase aggregate queries alone.
 
 ## Related files

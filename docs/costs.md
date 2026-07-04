@@ -36,6 +36,7 @@ Use this while the project is private or in early testing.
 - Supabase Free: `$0`
 - Resend Free: `$0`
 - Static web hosting on a free tier: `$0`
+- Sentry Developer plan (SaaS): `$0` at closed-testing volume; source: <https://sentry.io/pricing/> (checked 2026-07-04)
 
 Expected monthly core infra:
 
