@@ -4,7 +4,7 @@ import type { Session, User } from "@supabase/supabase-js";
 
 import { hasSupabaseConfig } from "@/src/lib/env";
 import { initializeSupabaseAutoRefresh, supabase } from "@/src/lib/supabase";
-import { setSentryUser } from "@/src/lib/sentry";
+import { captureError, setSentryUser } from "@/src/lib/sentry";
 import { clearPersistedQueryCache } from "@/src/lib/query-client";
 import { resetAllDraftStores } from "@/src/stores/draft-store-registry";
 
@@ -61,7 +61,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       if (event === "SIGNED_OUT") {
         queryClient.clear();
         resetAllDraftStores();
-        void clearPersistedQueryCache();
+        clearPersistedQueryCache().catch((error) => captureError(error));
       }
 
       // Sentry user context mirrors the session: UUID while signed in,

@@ -182,11 +182,21 @@ re-evaluation trigger.
 
 - **CAPTCHA on auth endpoints** (Supabase supports Cloudflare Turnstile and
   hCaptcha): deferred. Trigger: open production release, or observed signup
-  abuse during closed testing.
+  abuse during closed testing. Implementation options when triggered:
+  Supabase's CAPTCHA toggle with Cloudflare Turnstile (server-enforced, all
+  platforms), or an Edge Function proxy verifying Turnstile tokens for web
+  only.
 - **TOTP MFA UI** (factor type already enabled in `supabase/config.toml`):
   deferred. Trigger: post-launch phase, after closed-testing feedback.
 - **HIBP leaked-password check**: enable if/when the project is on a
   Supabase plan that includes it (see Auth Security Toggles above).
+- **Cache-owner check for the persisted query cache**: the AsyncStorage read
+  cache is purged on SIGNED_OUT, but a session that dies without that event
+  (expired refresh token) leaves the previous user's cache on device for up
+  to 24 hours. It is never rendered to another account (queries are
+  user-id-keyed) and maxAge/version-buster bound the window. Deferred:
+  implement an owner-id marker (purge on sign-in with a different user id).
+  Trigger: before the open production release.
 
 ## Public Launch Gate
 

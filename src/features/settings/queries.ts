@@ -61,6 +61,8 @@ export function useUpdateShownButtonTours(userId: string | null) {
   return useMutation({
     mutationFn: (shownButtonTours: ButtonTourKey[]) =>
       updateShownButtonTours(userId!, shownButtonTours),
+    // Both callers treat tour-seen writes as best-effort; a failure must stay invisible.
+    meta: { suppressGlobalErrorToast: true },
     onSuccess: async () => {
       if (!userId) {
         return;

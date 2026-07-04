@@ -7,7 +7,11 @@ import Constants from "expo-constants";
 
 import { validateRequiredEnv } from "@/src/lib/env";
 import { registerWebPushServiceWorker } from "@/src/lib/notifications";
-import { createAppQueryClient, createQueryPersister } from "@/src/lib/query-client";
+import {
+  createAppQueryClient,
+  createQueryPersister,
+  QUERY_CACHE_MAX_AGE_MS,
+} from "@/src/lib/query-client";
 import { initOnlineManager } from "@/src/lib/online-manager";
 import { I18nProvider } from "@/src/providers/i18n-provider";
 import { SessionProvider } from "@/src/providers/session-provider";
@@ -32,7 +36,7 @@ const persister = createQueryPersister();
 const persistOptions = persister
   ? {
       persister,
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: QUERY_CACHE_MAX_AGE_MS,
       buster: Constants.expoConfig?.version ?? "0",
       dehydrateOptions: {
         shouldDehydrateQuery: (query: { state: { status: string } }) =>

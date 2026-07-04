@@ -4,6 +4,7 @@ import {
   clearPersistedQueryCache,
   createAppQueryClient,
   createQueryPersister,
+  QUERY_CACHE_MAX_AGE_MS,
   QUERY_CACHE_STORAGE_KEY,
   reportMutationError,
   reportQueryError,
@@ -63,6 +64,13 @@ describe("createAppQueryClient", () => {
 
     expect(defaults.queries?.staleTime).toBe(60_000);
     expect(defaults.queries?.retry).toBe(1);
+  });
+
+  it("sets gcTime to match persistence maxAge so the offline cache is not eroded", () => {
+    const client = createAppQueryClient();
+    const defaults = client.getDefaultOptions();
+
+    expect(defaults.queries?.gcTime).toBe(QUERY_CACHE_MAX_AGE_MS);
   });
 });
 

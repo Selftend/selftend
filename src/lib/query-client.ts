@@ -10,6 +10,11 @@ import { useToastStore } from "@/src/stores/toast-store";
 
 export const QUERY_CACHE_STORAGE_KEY = "selftend-query-cache";
 
+// TanStack requirement: gcTime must be >= the persistence maxAge, or the
+// persister's snapshot will silently shrink to only the currently-mounted
+// queries (inactive ones get garbage-collected before they can be persisted).
+export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
 // Native-only: offline reads matter most on mobile, and web persistence
 // would put decrypted entries in localStorage on shared computers. Web keeps
 // the in-memory cache it has today.
@@ -81,6 +86,7 @@ export function createAppQueryClient(): QueryClient {
       queries: {
         staleTime: 60_000,
         retry: 1,
+        gcTime: QUERY_CACHE_MAX_AGE_MS,
       },
       mutations: {
         // Fail fast when offline: the default "online" mode silently pauses
