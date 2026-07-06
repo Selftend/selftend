@@ -164,7 +164,9 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
       {
         organization: "selftend",
         project: "selftend",
-        url: "https://sentry.io/",
+        // EU-region Sentry org (DSN host is ingest.de.sentry.io). This URL is used by
+        // sentry-cli for source-map upload; it must be the EU endpoint, not sentry.io.
+        url: "https://de.sentry.io/",
       },
     ],
   ],
