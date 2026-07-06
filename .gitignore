@@ -60,3 +60,5 @@ expo-env.d.ts
 
 # Superpowers brainstorm/plan working docs (not product)
 docs/superpowers/
+
+.env.local
