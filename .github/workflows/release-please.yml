@@ -1,0 +1,31 @@
+name: release-please
+
+# Conventional-commit driven versioning. On each push to main, release-please
+# opens/updates a release PR that bumps package.json + package-lock.json and writes
+# CHANGELOG.md from the commit history. Merging that PR tags the release (vX.Y.Z) and
+# publishes a GitHub Release. app.config.ts reads `version` from package.json, so the
+# app's versionName follows automatically; EAS remote versioning owns the versionCode.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Release please
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # Swap for a PAT secret if the release PR must run the required `verify`
+          # status check (GITHUB_TOKEN-authored PRs don't trigger other workflows).
+          token: ${{ secrets.GITHUB_TOKEN }}

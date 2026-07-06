@@ -15,6 +15,10 @@ const widgetCatalog = require("./src/features/widgets/widget-catalog.json") as {
   };
 }[];
 
+// Human-facing version name (single source of truth: package.json, bumped by
+// release-please). EAS remote versioning owns the integer versionCode separately.
+const appVersion = (require("./package.json") as { version: string }).version;
+
 const easBuildProfile = process.env.EAS_BUILD_PROFILE;
 const isDevelopmentBuild =
   easBuildProfile === "development" || process.env.SELFTEND_APP_VARIANT === "development";
@@ -76,7 +80,7 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
   owner: "vasil.yoshev",
   name: appName,
   slug: appSlug,
-  version: "0.1.0",
+  version: appVersion,
   orientation: "portrait",
   icon: "./assets/icon.png",
   scheme: appScheme,

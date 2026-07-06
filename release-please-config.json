@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "node",
+  "include-component-in-tag": false,
+  "bootstrap-sha": "63caa9e07027dda99da57b5ea41a03e67cf2d226",
+  "packages": {
+    ".": {
+      "package-name": "selftend"
+    }
+  }
+}
