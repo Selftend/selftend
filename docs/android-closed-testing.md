@@ -140,16 +140,16 @@ EXPO_PUBLIC_SECURITY_EMAIL
 Submission command after Play Console and EAS credentials are ready:
 
 ```bash
-npm run submit:android:production
+npm run submit:android:closed
 ```
 
-The current EAS submit profile targets the `alpha` track with draft release status. In Google Play Console terms, use this for the first closed-testing workflow only after the app listing, policy forms, testers, and first manual upload requirements are satisfied.
+The `closed` EAS submit profile targets the `alpha` track (Google Play's default **Closed testing** track) with `releaseStatus: completed`, so an accepted upload is sent for Google review and then released to the closed testers automatically. Use it only after the app listing, policy forms, the closed-testing track, its tester list, and the first manual upload requirements are satisfied.
 
-The `internal` submit profile targets Google Play internal testing with `releaseStatus: draft`. New Play apps often cannot accept a `completed` release through the API until the required store listing, app-content, policy, and review metadata are complete. The manual GitHub Actions workflow therefore uploads a draft internal-testing release; review and publish it from Play Console when the required metadata is ready.
+Closed-testing releases go through Google review before testers can install, unlike the internal track. If a `completed` release is rejected by the Play API because required store listing, app-content, policy, or review metadata is still incomplete, temporarily set the profile to `releaseStatus: draft` and publish from Play Console instead. The `internal` submit profile (`track: internal`, `releaseStatus: completed`) remains available for quick internal-track drops.
 
 ## Manual GitHub Actions release
 
-`.github/workflows/android-release.yml` defines `Android Play internal release`.
+`.github/workflows/android-release.yml` defines `Android Play closed testing release`.
 
 When manually triggered, it:
 
@@ -157,7 +157,7 @@ When manually triggered, it:
 - installs Node `20.19.0`, Java 17, Android API 36, and NDK `27.1.12297006`
 - runs `eas build --platform android --profile production --local --non-interactive`
 - uploads the generated `.aab` as a GitHub Actions artifact
-- uploads the `.aab` as a draft Google Play internal-testing release when `submit_to_play` is enabled
+- releases the `.aab` to the Google Play closed testing (alpha) track when `submit_to_play` is enabled
 
 Required GitHub repository variables:
 
@@ -193,7 +193,7 @@ The first manual upload requirement is now satisfied. Do not set `GOOGLE_PLAY_SE
 
 The app exists in Play Console under the confirmed public app name and package name, with the required content forms completed (privacy policy URL, data safety, health apps declaration, target audience and content, ads declaration, app access instructions for the account-required tester flow). The first production AAB was built with `npm run build:android:production` and uploaded manually.
 
-Remaining work is tracked in [.github/ROADMAP.md](../.github/ROADMAP.md) under P2: local Android verification including the permission check, store-listing copy and screenshots, the closed-testing track and tester list, release submission for Google review, and Play service account JSON setup so later internal-test builds can ship through the manual GitHub Actions release workflow or EAS Submit.
+Remaining work is tracked in [.github/ROADMAP.md](../.github/ROADMAP.md) under P2: local Android verification including the permission check, store-listing copy and screenshots, the closed-testing track and tester list, release submission for Google review, and Play service account JSON setup so closed-testing builds can ship through the manual GitHub Actions release workflow or EAS Submit.
 
 ## Closed-test acceptance checklist
 

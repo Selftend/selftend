@@ -26,7 +26,7 @@ For Google Play closed testing, use the `production` profile to create an Androi
 
 Manual GitHub Actions workflows are available for maintainer-triggered releases from `main`:
 
-- `Android Play internal release` builds a signed production `.aab` on a GitHub runner and can upload a draft Google Play internal-testing release after Play API credentials are ready.
+- `Android Play closed testing release` builds a signed production `.aab` on a GitHub runner and can release it to the Google Play closed testing (alpha) track after Play API credentials are ready.
 - `Web production deploy` exports the web app and deploys `dist` to Netlify production.
 
 These workflows are manual by design. CI still validates pushes and pull requests; release workflows should be run only when the current `main` state is intended for testers or production web users.

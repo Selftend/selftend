@@ -45,7 +45,7 @@ The Husky pre-commit hook runs `lint-staged`, not the full CI suite. For staged 
 
 Workspace settings in `.vscode/settings.json` make Prettier the default VS Code/Cursor formatter and enable format-on-save. The ESLint extension is recommended for inline diagnostics, but ESLint enforcement is handled by terminal, Husky, and CI checks.
 
-`Android Play internal release` is manual. It checks out `main`, runs a local EAS Android production build on the GitHub runner, uploads the `.aab` artifact, and can upload a draft Google Play internal-testing release.
+`Android Play closed testing release` is manual. It checks out `main`, runs a local EAS Android production build on the GitHub runner, uploads the `.aab` artifact, and can release it to the Google Play closed testing (alpha) track.
 
 `Android development APK` is manual. It checks out a chosen ref (defaults to the workflow ref), runs a local EAS Android development build on the GitHub runner via `npm run build:android:development:local`, and uploads the resulting `.apk` as an artifact. It does not submit to Google Play; use it for ad-hoc tester APKs that don't need a Play track.
 
