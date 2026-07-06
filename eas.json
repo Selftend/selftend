@@ -32,7 +32,7 @@
     "closed": {
       "android": {
         "serviceAccountKeyPath": ".secrets/google-play-service-account.json",
-        "track": "alpha",
+        "track": "Groups",
         "releaseStatus": "completed"
       }
     }
