@@ -26,6 +26,7 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v4
         with:
-          # Swap for a PAT secret if the release PR must run the required `verify`
-          # status check (GITHUB_TOKEN-authored PRs don't trigger other workflows).
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # PAT, not GITHUB_TOKEN: the org locks Actions from creating PRs, and a PAT
+          # also lets the release PR trigger the required `verify` check. Create a
+          # fine-grained PAT (Contents + Pull requests: Read/write) as this secret.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
