@@ -34,6 +34,12 @@ jobs:
       EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
       EXPO_PUBLIC_SUPPORT_EMAIL: ${{ vars.EXPO_PUBLIC_SUPPORT_EMAIL }}
       GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+      # Skip the @sentry/react-native Gradle source-map upload during the release build.
+      # That task runs sentry-cli, which needs a SENTRY_AUTH_TOKEN we don't set in CI yet,
+      # so it fails the build (sentry.gradle gates upload on this var). Runtime Sentry is
+      # unaffected (DSN-gated separately). To re-enable symbolicated crashes later: add a
+      # SENTRY_AUTH_TOKEN secret and delete this line.
+      SENTRY_DISABLE_AUTO_UPLOAD: "true"
 
     steps:
       - name: Check out repository
