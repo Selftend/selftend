@@ -49,7 +49,7 @@ module.exports = [
   {
     // Node.js contributor scripts — declare CommonJS globals that the React Native
     // environment doesn't include by default.
-    files: ["scripts/**/*.js"],
+    files: ["scripts/**/*.js", "scripts/**/*.cjs"],
     languageOptions: {
       globals: {
         __dirname: "readonly",
@@ -58,6 +58,7 @@ module.exports = [
         module: "writable",
         exports: "writable",
         process: "readonly",
+        Buffer: "readonly",
       },
     },
   },
