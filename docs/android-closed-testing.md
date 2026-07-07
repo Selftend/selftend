@@ -171,7 +171,13 @@ EXPO_PUBLIC_PRIVACY_EMAIL
 EXPO_PUBLIC_SECURITY_EMAIL
 ```
 
-`EXPO_PUBLIC_GITHUB_REPO_URL` and `EXPO_PUBLIC_EAS_PROJECT_ID` have app defaults, but setting them as GitHub variables keeps the release environment explicit.
+Optional GitHub repository variables:
+
+```text
+EXPO_PUBLIC_DISCORD_URL
+```
+
+`EXPO_PUBLIC_GITHUB_REPO_URL` and `EXPO_PUBLIC_EAS_PROJECT_ID` have app defaults, but setting them as GitHub variables keeps the release environment explicit. `EXPO_PUBLIC_DISCORD_URL` defaults to the maintainer's Discord invite; set it to an empty string to hide all Discord UI.
 
 The GitHub workflow passes repository variables into the local EAS build. Direct EAS cloud builds use the variables stored in the selected EAS environment instead. Keep both sources in sync before publishing a tester build.
 

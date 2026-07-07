@@ -1,9 +1,9 @@
 import { router } from "expo-router";
-import * as Linking from "expo-linking";
 import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import * as React from "react";
-import { Platform, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
+import { GetTheAppSection } from "@/src/components/app/get-the-app-section";
 import { ProfileAvatar } from "@/src/components/app/profile-avatar";
 import { SocialConnections } from "@/src/components/app/social-connections";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -19,6 +19,7 @@ import { cancelAllReminders } from "@/src/lib/notifications";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { supportedLanguages } from "@/src/i18n";
 import { appEnv } from "@/src/lib/env";
+import { openExternalUrl } from "@/src/lib/linking";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useLanguage } from "@/src/providers/i18n-provider";
 import { useSession } from "@/src/providers/session-provider";
@@ -45,13 +46,9 @@ export function UserMenu() {
   const email = user?.email;
   const avatarUrl = profile?.avatarUrl ?? null;
 
-  function openGitHub() {
+  function openExternal(url: string) {
     popoverTriggerRef.current?.close();
-    if (Platform.OS === "web") {
-      globalThis.window?.open(appEnv.githubRepoUrl, "_blank", "noopener,noreferrer");
-      return;
-    }
-    void Linking.openURL(appEnv.githubRepoUrl);
+    openExternalUrl(url);
   }
 
   async function onSignOut() {
@@ -145,17 +142,23 @@ export function UserMenu() {
             ))}
           </View>
 
+          <GetTheAppSection compact />
           <SocialConnections
             connections={[
               {
                 id: "github",
                 icon: "logo-github",
-                onPress: openGitHub,
+                onPress: () => openExternal(appEnv.githubRepoUrl),
               },
-              {
-                id: "discord",
-                icon: "logo-discord",
-              },
+              ...(appEnv.discordUrl
+                ? [
+                    {
+                      id: "discord",
+                      icon: "logo-discord" as const,
+                      onPress: () => openExternal(appEnv.discordUrl),
+                    },
+                  ]
+                : []),
             ]}
           />
 
@@ -171,6 +174,17 @@ export function UserMenu() {
               >
                 <Icon name="settings" className="size-4" />
                 <Text>{t("userMenu.settings")}</Text>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={() => {
+                  popoverTriggerRef.current?.close();
+                  router.push("/(app)/support");
+                }}
+              >
+                <Icon name="feedback" className="size-4" />
+                <Text>{t("userMenu.sendFeedback")}</Text>
               </Button>
               <Button variant="outline" size="sm" className="flex-1" onPress={onSignOut}>
                 <Icon name="logout" className="size-4" />

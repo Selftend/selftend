@@ -97,6 +97,55 @@ describe("hasSupabaseConfig", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Store + community link config
+// ---------------------------------------------------------------------------
+
+describe("store and community links", () => {
+  it("defaults playStoreUrl and appStoreUrl to empty strings (not released)", () => {
+    delete process.env.EXPO_PUBLIC_PLAY_STORE_URL;
+    delete process.env.EXPO_PUBLIC_APP_STORE_URL;
+
+    jest.resetModules();
+    const { appEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    expect(appEnv.playStoreUrl).toBe("");
+    expect(appEnv.appStoreUrl).toBe("");
+  });
+
+  it("uses the store URLs from env when set", () => {
+    process.env.EXPO_PUBLIC_PLAY_STORE_URL =
+      "https://play.google.com/store/apps/details?id=com.selftend.app";
+    process.env.EXPO_PUBLIC_APP_STORE_URL = "https://apps.apple.com/app/id0000000000";
+
+    jest.resetModules();
+    const { appEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    expect(appEnv.playStoreUrl).toBe(
+      "https://play.google.com/store/apps/details?id=com.selftend.app",
+    );
+    expect(appEnv.appStoreUrl).toBe("https://apps.apple.com/app/id0000000000");
+  });
+
+  it("defaults discordUrl to the permanent invite", () => {
+    delete process.env.EXPO_PUBLIC_DISCORD_URL;
+
+    jest.resetModules();
+    const { appEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    expect(appEnv.discordUrl).toBe("https://discord.gg/6QXmJfj76x");
+  });
+
+  it("lets EXPO_PUBLIC_DISCORD_URL be blanked to hide Discord UI", () => {
+    process.env.EXPO_PUBLIC_DISCORD_URL = "";
+
+    jest.resetModules();
+    const { appEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    expect(appEnv.discordUrl).toBe("");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // validateRequiredEnv - warn / error branches
 //
 // Strategy: set env vars, resetModules, require env.ts (so appEnv is baked in

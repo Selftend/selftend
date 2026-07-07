@@ -3,7 +3,8 @@
     "openNav": "Отвори навигация",
     "closeNav": "Затвори навигация",
     "goHome": "Към начало",
-    "appName": "Selftend"
+    "appName": "Selftend",
+    "joinDiscord": "Присъедини се към нашия Discord"
   },
   "sidebar": {
     "home": "Начало",
@@ -38,7 +39,16 @@
     "account": "Акаунт",
     "openMenu": "Отвори меню на акаунта",
     "settings": "Настройки",
+    "sendFeedback": "Изпрати обратна връзка",
     "signOut": "Излизане"
+  },
+  "getTheApp": {
+    "title": "Вземи мобилното приложение",
+    "android": "Android",
+    "ios": "iOS",
+    "androidAccessibility": "Изтегли приложението за Android от Google Play",
+    "iosAccessibility": "Изтегли приложението за iOS от App Store",
+    "comingSoon": "Скоро"
   },
   "languageToggle": {
     "toggle": "Смени езика",

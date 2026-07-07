@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { Image, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { GetTheAppSection } from "@/src/components/app/get-the-app-section";
 import { SignInForm } from "@/src/components/app/sign-in-form";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -21,6 +22,7 @@ export function AuthLandingBlock() {
         <Text className="text-center text-muted-foreground">{t("auth:landing.subtitle")}</Text>
       </View>
       <SignInForm />
+      <GetTheAppSection />
       <View className="items-center gap-2 pt-1">
         <Text className="text-center text-xs text-muted-foreground">
           {t("common:safety.description")}

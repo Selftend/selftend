@@ -2,6 +2,9 @@ import { Platform } from "react-native";
 
 export const appEnv = {
   githubRepoUrl: process.env.EXPO_PUBLIC_GITHUB_REPO_URL ?? "https://github.com/Selftend/selftend",
+  playStoreUrl: process.env.EXPO_PUBLIC_PLAY_STORE_URL ?? "",
+  appStoreUrl: process.env.EXPO_PUBLIC_APP_STORE_URL ?? "",
+  discordUrl: process.env.EXPO_PUBLIC_DISCORD_URL ?? "https://discord.gg/6QXmJfj76x",
   publicAppUrl: process.env.EXPO_PUBLIC_PUBLIC_APP_URL ?? "",
   privacyEmail: process.env.EXPO_PUBLIC_PRIVACY_EMAIL ?? "",
   securityEmail: process.env.EXPO_PUBLIC_SECURITY_EMAIL ?? "",

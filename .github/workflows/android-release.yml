@@ -25,6 +25,7 @@ jobs:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SUBMIT_TO_PLAY: ${{ inputs.submit_to_play }}
       EAS_LOCAL_BUILD_ARTIFACTS_DIR: build-artifacts
+      EXPO_PUBLIC_DISCORD_URL: ${{ vars.EXPO_PUBLIC_DISCORD_URL }}
       EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
       EXPO_PUBLIC_GITHUB_REPO_URL: ${{ vars.EXPO_PUBLIC_GITHUB_REPO_URL }}
       EXPO_PUBLIC_PRIVACY_EMAIL: ${{ vars.EXPO_PUBLIC_PRIVACY_EMAIL }}

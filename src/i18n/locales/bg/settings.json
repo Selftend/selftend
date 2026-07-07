@@ -203,7 +203,10 @@
     "submitSuccess": "Обратната ти връзка беше изпратена. Благодаря!",
     "submitError": "Неуспешно изпращане. Моля, опитай отново.",
     "messageTooShort": "Моля, напиши поне 10 символа.",
-    "messageTooLong": "Съобщението трябва да е не повече от 1000 символа."
+    "messageTooLong": "Съобщението трябва да е не повече от 1000 символа.",
+    "otherChannels": "Предпочиташ друг канал?",
+    "reportOnGitHub": "Докладвай в GitHub",
+    "joinDiscord": "Присъедини се към Discord"
   },
   "onboardingSection": {
     "title": "Въвеждане",

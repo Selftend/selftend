@@ -1,5 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
+import { Platform } from "react-native";
 
 import { AuthLandingBlock } from "./auth-landing-block";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -22,6 +23,10 @@ const mockPush = router.push as jest.MockedFunction<typeof router.push>;
 
 beforeEach(() => {
   jest.clearAllMocks();
+});
+
+afterEach(() => {
+  Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
 });
 
 describe("AuthLandingBlock", () => {
@@ -53,5 +58,13 @@ describe("AuthLandingBlock", () => {
     expect(mockPush).toHaveBeenCalledWith("/terms");
     expect(mockPush).toHaveBeenCalledWith("/privacy");
     expect(mockPush).toHaveBeenCalledWith("/cookies");
+  });
+
+  it("shows the get-the-app section on web", () => {
+    Object.defineProperty(Platform, "OS", { configurable: true, value: "web" });
+
+    renderWithProviders(<AuthLandingBlock />);
+
+    expect(screen.getByText("Get the mobile app")).toBeTruthy();
   });
 });

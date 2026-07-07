@@ -171,7 +171,15 @@ EXPO_PUBLIC_SECURITY_EMAIL
 EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY
 ```
 
-`EXPO_PUBLIC_GITHUB_REPO_URL` is optional in app code because a default exists, but setting it in GitHub keeps the release environment explicit.
+Optional GitHub repository variables:
+
+```text
+EXPO_PUBLIC_PLAY_STORE_URL
+EXPO_PUBLIC_APP_STORE_URL
+EXPO_PUBLIC_DISCORD_URL
+```
+
+`EXPO_PUBLIC_GITHUB_REPO_URL` is optional in app code because a default exists, but setting it in GitHub keeps the release environment explicit. `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` default to empty (showing a "Coming soon" chip), and `EXPO_PUBLIC_DISCORD_URL` defaults to the maintainer's Discord invite; set it to an empty string to hide all Discord UI.
 
 Required GitHub repository secrets:
 

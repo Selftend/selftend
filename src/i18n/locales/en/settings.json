@@ -217,6 +217,9 @@
     "submitSuccess": "Your feedback was sent. Thank you!",
     "submitError": "Failed to send feedback. Please try again.",
     "messageTooShort": "Please write at least 10 characters.",
-    "messageTooLong": "Message must be 1000 characters or fewer."
+    "messageTooLong": "Message must be 1000 characters or fewer.",
+    "otherChannels": "Prefer other channels?",
+    "reportOnGitHub": "Report on GitHub",
+    "joinDiscord": "Join our Discord"
   }
 }
