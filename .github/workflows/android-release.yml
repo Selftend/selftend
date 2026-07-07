@@ -170,3 +170,11 @@ jobs:
           fi
 
           npm exec --yes eas-cli -- submit --platform android --profile closed --path "$aab_path" --non-interactive
+
+      - name: Mirror the release onto the Alpha track
+        if: ${{ inputs.submit_to_play }}
+        run: |
+          # eas submit uploaded the AAB to Groups; assign the same versionCode to
+          # Alpha too (Play rejects re-uploading a duplicate versionCode, so we copy
+          # the release rather than submit again). Uses the key written above.
+          node scripts/promote-android-track.cjs --from Groups --to alpha
