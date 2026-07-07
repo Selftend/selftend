@@ -29,7 +29,11 @@ const KEY_PATH = arg("key", ".secrets/google-play-service-account.json");
 const API = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications";
 
 function b64url(input) {
-  return Buffer.from(input).toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  return Buffer.from(input)
+    .toString("base64")
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
 }
 
 function makeJwt(sa) {
@@ -51,11 +55,16 @@ function makeJwt(sa) {
 async function req(url, token, init = {}) {
   const res = await fetch(url, {
     ...init,
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init.headers || {}) },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(init.headers || {}),
+    },
   });
   const text = await res.text();
   const body = text ? JSON.parse(text) : {};
-  if (!res.ok) throw new Error(`${init.method || "GET"} ${url} → ${res.status}: ${JSON.stringify(body)}`);
+  if (!res.ok)
+    throw new Error(`${init.method || "GET"} ${url} → ${res.status}: ${JSON.stringify(body)}`);
   return body;
 }
 
@@ -78,13 +87,21 @@ async function main() {
   console.log(`Opened edit ${edit.id} for ${PKG}`);
 
   try {
-    const source = await req(`${API}/${PKG}/edits/${edit.id}/tracks/${encodeURIComponent(FROM)}`, token);
-    const codes = (source.releases || []).flatMap((r) => r.versionCodes || []).map(Number).filter(Boolean);
+    const source = await req(
+      `${API}/${PKG}/edits/${edit.id}/tracks/${encodeURIComponent(FROM)}`,
+      token,
+    );
+    const codes = (source.releases || [])
+      .flatMap((r) => r.versionCodes || [])
+      .map(Number)
+      .filter(Boolean);
     if (!codes.length) {
       throw new Error(`Track "${FROM}" has no active release with a versionCode to copy.`);
     }
     const versionCode = String(Math.max(...codes));
-    const name = (source.releases || []).find((r) => (r.versionCodes || []).includes(versionCode))?.name;
+    const name = (source.releases || []).find((r) =>
+      (r.versionCodes || []).includes(versionCode),
+    )?.name;
     console.log(`Source track "${FROM}" → versionCode ${versionCode}${name ? ` ("${name}")` : ""}`);
 
     const release = { status: "completed", versionCodes: [versionCode], ...(name ? { name } : {}) };
