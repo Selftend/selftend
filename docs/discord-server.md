@@ -146,26 +146,32 @@ gh api repos/Selftend/selftend/hooks -f name=web -F active=true \
 
 **New Member To-Dos** (max 5):
 
-| Channel             | Title                          | Description                                                           |
-| ------------------- | ------------------------------ | --------------------------------------------------------------------- |
-| `#rules-and-safety` | Read the rules and safety info | Two minutes — it covers what this place is and where real help lives. |
-| `#introductions`    | Introduce yourself             | Who you are and what brought you here — a sentence is plenty.         |
-| `#app-help`         | Get help with the app          | Stuck or found a bug? Open a post.                                    |
-| `#gratitude`        | Drop three good things         | Start a tiny gratitude practice right here.                           |
-| `#feedback`         | Tell us what to improve        | Ideas and rough edges — we read everything.                           |
+Discord adds a built-in, non-removable "Read the rules" task (tied to Rules
+Screening), so no rules to-do is added here:
 
-**Resource Pages** (read-only channels become document-style pages at the top
-of the server and leave the channel list — deliberate for these):
+| Channel          | Title                   | Description                                                   |
+| ---------------- | ----------------------- | ------------------------------------------------------------- |
+| `#introductions` | Introduce yourself      | Who you are and what brought you here — a sentence is plenty. |
+| `#app-help`      | Get help with the app   | Stuck or found a bug? Open a post.                            |
+| `#gratitude`     | Drop three good things  | Start a tiny gratitude practice right here.                   |
+| `#feedback`      | Tell us what to improve | Ideas and rough edges — we read everything.                   |
+
+**Resource Pages** (read-only channels become document-style pages in the
+Server Guide and leave the channel list — deliberate for these two):
 
 | Channel             | Title          | Description                           |
 | ------------------- | -------------- | ------------------------------------- |
-| `#rules-and-safety` | Rules & Safety | Community rules and boundaries        |
 | `#crisis-resources` | Get Help Now   | Emergency numbers and crisis lines    |
 | `#links`            | Official Links | Web app, stores, GitHub, translations |
 
-Keep `#announcements` and `#changelog` as normal channels — they are feeds,
-not documents. Note: the app's permanent invite targets `#links`; being a
-resource page does not affect invites, but deleting the channel would.
+Do NOT add `#rules-and-safety` as a resource page — the built-in "Read the
+rules" to-do already covers it and a resource page duplicates it; keep it as
+a normal channel. Keep `#announcements` and `#changelog` as normal channels
+too — they are feeds, not documents. Resource-page first lines use **bold**,
+not `#` headings (the resource card preview renders bold but shows heading
+markdown literally). Note: the app's permanent invite targets `#links`;
+being a resource page does not affect invites, but deleting the channel
+would.
 
 ## Occasional maintenance
 

@@ -52,7 +52,8 @@ This server cannot provide emergency help, and messages here may not be seen in 
 Thanks for helping keep this a place worth returning to. 💙`,
 ];
 
-export const linksMessage = `# 🔗 Official Selftend links
+// First line is bold, not a # heading — see note on crisis-resources.
+export const linksMessage = `**🔗 Official Selftend links**
 
 **Selftend** is a free, open-source app for tending to your mental well-being — CBT tools, mood tracking, habits, gratitude, journaling, meditation, and more.
 
@@ -75,7 +76,9 @@ This community is for practicing self-care tools together. It's not therapy or c
 /* Pinned scope post per channel, keyed by channel name. Forum channels can't
  * take a pinned message this way — their `topic` acts as post guidelines. */
 export const scopePosts = {
-  "crisis-resources": `# 🚨 If you need help now
+  // First line is bold, not a # heading: Server Guide resource-card previews
+  // render bold but show heading markdown as literal "#".
+  "crisis-resources": `**🚨 If you need help now**
 
 If you might hurt yourself or someone else, or anyone is in immediate danger, **contact your local emergency services now** — **112** in the EU, **911** in North America.
 
