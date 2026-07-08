@@ -75,6 +75,22 @@ This community is for practicing self-care tools together. It's not therapy or c
 /* Pinned scope post per channel, keyed by channel name. Forum channels can't
  * take a pinned message this way — their `topic` acts as post guidelines. */
 export const scopePosts = {
+  "crisis-resources": `# 🚨 If you need help now
+
+If you might hurt yourself or someone else, or anyone is in immediate danger, **contact your local emergency services now** — **112** in the EU, **911** in North America.
+
+**Crisis lines**
+- 🇺🇸 **United States:** call or text **988**, or chat at 988lifeline.org (988 Suicide & Crisis Lifeline)
+- 🇨🇦 **Canada:** call or text **9-8-8** (Suicide Crisis Helpline)
+- 🌍 **Everywhere else:** https://findahelpline.com — a reviewed directory of crisis and emotional-support services, by country
+
+**When it's heavy but not an emergency**
+- Tell one person you trust how you're actually doing.
+- Your doctor or GP is a real starting point for finding professional support.
+- Come back to the community when you're safe — <#introductions> and <#general> will be glad to see you.
+
+This server is a peer community. It is not monitored by crisis responders, and messages here may not be seen in time — please reach for the services above first.`,
+
   introductions: `**Say hi** 👋
 
 A sentence is plenty. If you want a nudge: who you are, what brought you here, and one small thing that helps you on rough days.`,

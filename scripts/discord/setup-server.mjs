@@ -103,6 +103,11 @@ const STRUCTURE = [
         readOnly: true,
       },
       {
+        name: "crisis-resources",
+        topic: "If you need help now: emergency numbers and crisis lines, by country.",
+        readOnly: true,
+      },
+      {
         name: "announcements",
         topic: "Project announcements from the Selftend team.",
         readOnly: true,
@@ -493,6 +498,7 @@ try {
     // or Discord shows a coverage warning in the onboarding settings.
     default_channel_ids: [
       "rules-and-safety",
+      "crisis-resources",
       "announcements",
       "links",
       "introductions",

@@ -41,6 +41,8 @@ vent channels, and any hosted bot.
 ```
 📌 Welcome
  ├ #rules-and-safety      read-only · rules, boundaries, crisis resources (pinned)
+ ├ #crisis-resources      read-only · emergency numbers and crisis lines; meant
+                          to be a Server Guide resource page
  ├ #announcements         read-only, announcement type · project news
  ├ #introductions
  └ #links                 read-only · every official link (web, stores, GitHub,
@@ -152,9 +154,18 @@ gh api repos/Selftend/selftend/hooks -f name=web -F active=true \
 | `#gratitude`        | Drop three good things         | Start a tiny gratitude practice right here.                           |
 | `#feedback`         | Tell us what to improve        | Ideas and rough edges — we read everything.                           |
 
-**Resource Pages**: `#rules-and-safety` ("Rules & Safety — community rules,
-boundaries, and crisis resources"). If the UI requires read-only channels
-and rejects others, `#announcements` also works as a second page.
+**Resource Pages** (read-only channels become document-style pages at the top
+of the server and leave the channel list — deliberate for these):
+
+| Channel             | Title          | Description                           |
+| ------------------- | -------------- | ------------------------------------- |
+| `#rules-and-safety` | Rules & Safety | Community rules and boundaries        |
+| `#crisis-resources` | Get Help Now   | Emergency numbers and crisis lines    |
+| `#links`            | Official Links | Web app, stores, GitHub, translations |
+
+Keep `#announcements` and `#changelog` as normal channels — they are feeds,
+not documents. Note: the app's permanent invite targets `#links`; being a
+resource page does not affect invites, but deleting the channel would.
 
 ## Occasional maintenance
 
