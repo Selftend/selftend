@@ -43,15 +43,16 @@ vent channels, and any hosted bot.
  ├ #rules-and-safety      read-only · rules, boundaries, crisis resources (pinned)
  ├ #announcements         read-only, announcement type · project news
  ├ #introductions
- └ #welcome               intro post pointing to app, GitHub, channels
+ └ #links                 read-only · every official link (web, stores, GitHub,
+                          Weblate); the app's permanent invite lands here —
+                          never delete this channel, rename/repurpose only
 
 💙 Selftend App
- ├ #general
+ ├ #general               join greetings (system channel) land here
  ├ #app-help              forum · support threads
  ├ #feedback              third feedback route besides in-app + GitHub issues
  ├ #feature-ideas         forum · one idea per post
- ├ #changelog             read-only, announcement type · GitHub release webhook
- └ #android-testing       closed-testing coordination
+ └ #changelog             read-only, announcement type · GitHub release webhook
 
 🌱 Practice                each channel has a pinned scope post
  ├ #cbt  ├ #act  ├ #habits  ├ #gratitude
@@ -88,14 +89,15 @@ vent channels, and any hosted bot.
 - Onboarding: "What brings you here?" → App User / Practicing / Contributor
   roles + channel highlights; defaults + options cover all public channels
 - Guild profile: server description set; native join greetings (with wave
-  button) go to `#welcome` — this is the no-bot welcome-message mechanism
+  button) go to `#general` — this is the no-bot welcome-message mechanism
 - Forum tags: `#app-help` (Bug/Question/Android/Web/Solved), `#feature-ideas`
   (New module/Improvement/Mobile/Web/Accessibility, 👍 default reaction)
 - Custom `:selftend:` emoji uploaded from `assets/favicon.png`
 - Every text channel has a pinned scope post (copy in `content.mjs`)
-- Permanent invite `https://discord.gg/pdaAr9FhcQ` → `#welcome`; this is the
+- Permanent invite `https://discord.gg/pdaAr9FhcQ` → `#links`; this is the
   app's default `discordUrl` in `src/lib/env.ts` — if the invite is ever
-  regenerated, update both together
+  regenerated, update both together. Invites die with their channel, so
+  `#links` must never be deleted (rename/repurpose instead)
 
 ## Running the setup script
 
@@ -169,6 +171,28 @@ change later:
 3. The script only adds what is missing — it never deletes. Renames and
    removals are one-off API calls or Discord UI actions; update this doc
    when structure changes.
+
+For one-off changes the script doesn't cover, the bot is just an HTTP
+credential — any Discord REST call works with
+`-H "Authorization: Bot $DISCORD_BOT_TOKEN"`:
+
+```bash
+# List channels (find IDs)
+curl -s -H "Authorization: Bot $DISCORD_BOT_TOKEN" \
+  https://discord.com/api/v10/guilds/1524102844033142956/channels
+
+# Rename a channel / change its topic (never delete #links — see Structure)
+curl -s -X PATCH -H "Authorization: Bot $DISCORD_BOT_TOKEN" \
+  -H "Content-Type: application/json" -d '{"topic":"New topic"}' \
+  https://discord.com/api/v10/channels/<channel-id>
+
+# Post a message as the bot
+curl -s -X POST -H "Authorization: Bot $DISCORD_BOT_TOKEN" \
+  -H "Content-Type: application/json" -d '{"content":"Hello"}' \
+  https://discord.com/api/v10/channels/<channel-id>/messages
+```
+
+API reference: https://discord.com/developers/docs/resources/channel
 
 The token itself must never be committed, pasted into the repo, or put in
 `.env` files that could leak; env var for the duration of the run only.

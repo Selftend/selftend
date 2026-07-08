@@ -17,7 +17,7 @@ import { readFileSync } from "node:fs";
 import {
   LINKS,
   rulesMessages,
-  welcomeMessage,
+  linksMessage,
   scopePosts,
   welcomeScreen,
   rulesScreening,
@@ -109,7 +109,13 @@ const STRUCTURE = [
         announce: true,
       },
       { name: "introductions", topic: "Say hi — who you are and what brought you here." },
-      { name: "welcome", topic: "Start here: what Selftend is and where things live." },
+      {
+        // The permanent invite in the app (appEnv.discordUrl) targets this
+        // channel's ID — never delete it; rename/repurpose only.
+        name: "links",
+        topic: "Every official Selftend link: web app, stores, GitHub, translations.",
+        readOnly: true,
+      },
     ],
   },
   {
@@ -139,10 +145,6 @@ const STRUCTURE = [
         topic: "Automatic feed of Selftend releases from GitHub.",
         readOnly: true,
         announce: true,
-      },
-      {
-        name: "android-testing",
-        topic: "Closed-testing coordination: builds, devices, bug hunts.",
       },
     ],
   },
@@ -390,12 +392,12 @@ log("\n[6/9] Guild profile");
 await api("PATCH", `/guilds/${guildId}`, {
   description:
     "Free, open-source app for tending to your mental well-being. Community, support, and practice — not therapy or crisis care.",
-  // Native join greetings ("X just landed") go to #welcome with a wave button —
+  // Native join greetings ("X just landed") go to #general with a wave button —
   // this is the no-bot welcome-message mechanism.
-  system_channel_id: byName("welcome").id,
+  system_channel_id: byName("general").id,
   system_channel_flags: 0,
 });
-log("  + description and #welcome join-greetings configured");
+log("  + description and #general join-greetings configured");
 
 const emojis = await api("GET", `/guilds/${guildId}/emojis`);
 if (emojis.some((e) => e.name === "selftend")) {
@@ -436,7 +438,7 @@ async function postAndPin(channelName, messages) {
 }
 
 await postAndPin("rules-and-safety", rulesMessages);
-await postAndPin("welcome", [welcomeMessage]);
+await postAndPin("links", [linksMessage]);
 for (const [name, post] of Object.entries(scopePosts)) {
   await postAndPin(name, [post]);
 }
@@ -492,7 +494,7 @@ try {
     default_channel_ids: [
       "rules-and-safety",
       "announcements",
-      "welcome",
+      "links",
       "introductions",
       "general",
       "feedback",

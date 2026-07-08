@@ -52,18 +52,25 @@ This server cannot provide emergency help, and messages here may not be seen in 
 Thanks for helping keep this a place worth returning to. 💙`,
 ];
 
-export const welcomeMessage = `# 👋 Welcome!
+export const linksMessage = `# 🔗 Official Selftend links
 
 **Selftend** is a free, open-source app for tending to your mental well-being — CBT tools, mood tracking, habits, gratitude, journaling, meditation, and more.
 
-**Start here:**
-- 📱 Try the app: ${LINKS.app}
-- 📌 Read the rules and safety info: <#rules-and-safety>
-- 👋 Say hi in <#introductions>
-- 🐛 App questions or problems → <#app-help> · ideas → <#feature-ideas> · everything else → <#feedback>
-- 🔧 Want to help build it? ${LINKS.github} and the Contributors channels
+**The app**
+- 🌐 Web app: ${LINKS.app} — works everywhere, installable as an app (PWA)
+- 🤖 Android: in closed testing on Google Play — ask in <#general> to join; public release coming
+- 🍎 iOS: not yet — it's on the roadmap
 
-This community is for practicing self-care tools together. It's not therapy or crisis support — the pinned post in <#rules-and-safety> lists real help for hard moments.`;
+**The project**
+- 🐙 Code, issues, and roadmap: ${LINKS.github}
+- 🌍 Translations (no coding needed): https://hosted.weblate.org/projects/selftend/
+- 💜 Invite a friend to this server: https://discord.gg/pdaAr9FhcQ
+
+**Getting around**
+- 📌 Rules, boundaries, and crisis resources: <#rules-and-safety>
+- 👋 Say hi: <#introductions> · app help: <#app-help> · ideas: <#feature-ideas> · feedback: <#feedback>
+
+This community is for practicing self-care tools together. It's not therapy or crisis support — <#rules-and-safety> lists real help for hard moments.`;
 
 /* Pinned scope post per channel, keyed by channel name. Forum channels can't
  * take a pinned message this way — their `topic` acts as post guidelines. */
@@ -79,12 +86,6 @@ A sentence is plenty. If you want a nudge: who you are, what brought you here, a
 3. **On GitHub** — ${LINKS.github}/issues for trackable bugs and requests.
 
 Everything gets read. If it's a bug, <#app-help> is even better — include your device and what you expected to happen.`,
-
-  "android-testing": `**Android closed testing** 🤖
-
-The Android app is in closed testing on Google Play. Want in? Post here with the Google account email you use on the Play Store and your device/Android version, and a maintainer will add you.
-
-Once you're in: install from the Play link you'll receive, poke around, and report anything odd in <#app-help> or right here.`,
 
   wins: `**What counts as a win?** 🎉
 
@@ -176,7 +177,7 @@ export const onboardingPrompt = {
       title: "I use the Selftend app",
       description: "App talk, help, feedback, and testing",
       role: "App User",
-      channels: ["app-help", "feature-ideas", "changelog", "android-testing"],
+      channels: ["app-help", "feature-ideas", "changelog"],
     },
     {
       title: "Working on my mental health",
