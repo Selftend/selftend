@@ -9,6 +9,8 @@ export const PALETTE = {
     muted: "#686374", // --muted-foreground 260 8% 42%
     chip: "#EAE9EC", // --secondary 260 8% 92%
     accent: "#7C49D4", // --primary 262 62% 56%
+    border: "#DCD9E2", // --border 260 14% 87%
+    mutedBg: "#F2F0F4", // --muted 260 14% 95%
   },
   dark: {
     bg: "#15121C", // --background 260 20% 9%
@@ -17,8 +19,36 @@ export const PALETTE = {
     muted: "#B4AFC0", // --muted-foreground 260 12% 72%
     chip: "#37343D", // --secondary 260 8% 22%
     accent: "#AD84EB", // --primary 264 72% 72%
+    border: "#3B3645", // --border 260 12% 24%
+    mutedBg: "#2C2833", // --muted 260 12% 18%
   },
 } as const;
+
+export type TintName = "primary" | "act" | "be" | "aqua" | "think" | "iris" | "ink" | "clay";
+
+/** In-app card tint colors (global.css HSL → hex). Chip backgrounds use withAlpha(tint, 0.1). */
+export const TINTS: Record<Theme, Record<TintName, string>> = {
+  light: {
+    primary: "#7C49D4", // 262 62% 56%
+    act: "#348D70", // 160 46% 38%
+    be: "#D26099", // 330 56% 60%
+    aqua: "#378FAE", // 196 52% 45%
+    think: "#DFAC2A", // 43 74% 52%
+    iris: "#A968CA", // 280 48% 60%
+    ink: "#5B69C2", // 232 46% 56%
+    clay: "#C2693D", // 20 52% 50%
+  },
+  dark: {
+    primary: "#AD84EB", // 264 72% 72%
+    act: "#4CCDA2", // 160 56% 55%
+    be: "#E48BB8", // 330 62% 72%
+    aqua: "#66B8D6", // 196 58% 62%
+    think: "#F2C759", // 43 86% 65%
+    iris: "#CA96E3", // 280 58% 74%
+    ink: "#909AE0", // 232 56% 72%
+    clay: "#DC9774", // 20 60% 66%
+  },
+};
 
 /** Apply opacity (0..1) to a #RRGGBB hex, returning #RRGGBBAA (alpha LAST, as the
  *  widget library / React Native expect - alpha-first reads as the wrong color). */

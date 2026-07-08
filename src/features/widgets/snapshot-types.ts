@@ -9,87 +9,154 @@ export interface Clickable {
   path: string;
 }
 
-export interface StatItem {
-  value: string;
+export interface CardCta {
   label: string;
-  /** When true, this value is reset to "-" if the snapshot's day != the device's current day. */
-  dateScoped?: boolean;
+  /** Full in-app deep-link path incl. query params. */
+  path: string;
+  /** Material icon name (in-app hyphenated form, e.g. "arrow-forward"). */
+  icon?: string;
 }
 
-export interface StatPayload {
-  kind: "stat";
+export interface MoodCheckinCardPayload {
+  kind: "mood-checkin";
   title: string;
-  emoji: string;
-  stats: StatItem[];
-  badge?: string | null;
-  dateKey?: string;
-  open: Clickable;
-  cta?: Clickable;
+  /** Shown when `today` is null (stale snapshot ⇒ nothing logged today). */
+  emptyPrompt: string;
+  today: { score: number | null; summary: string } | null;
 }
 
-export interface LauncherPayload {
-  kind: "launcher";
+export interface StatTilesCardPayload {
+  kind: "stat-tiles";
   title: string;
-  emoji: string;
-  chips: Clickable[];
+  tiles: { label: string; value: string; dim?: boolean }[];
+  openCta: CardCta;
 }
 
-export interface PromptPayload {
-  kind: "prompt";
+export interface BreathingCardPayload {
+  kind: "breathing";
   title: string;
-  emoji: string;
-  body: string;
-  open: Clickable;
-  cta?: Clickable;
+  hint: string;
+  startCta: CardCta;
+  openCta: CardCta;
+  today: { badge: string } | null;
 }
 
-export interface ShortcutPayload {
+export interface StatsCardPayload {
+  kind: "stats";
+  title: string;
+  /** null ⇒ render emptyText instead (grounding with no sessions). */
+  stats: { value: string; label: string }[] | null;
+  emptyText?: string;
+  primaryCta?: CardCta;
+  openCta: CardCta;
+  today: { badge: string } | null;
+}
+
+export interface HabitsCardPayload {
+  kind: "habits";
+  title: string;
+  hintText: string;
+  allDoneText: string;
+  newCta: CardCta;
+  openCta: CardCta;
+  today: {
+    badge: string | null;
+    first: { name: string; openLabel: string; path: string } | null;
+    scheduled: number;
+  } | null;
+}
+
+export interface CommittedActionsCardPayload {
+  kind: "committed-actions";
+  title: string;
+  moduleLabel: string;
+  actions: { title: string; steps: string | null; path: string }[];
+  emptyText: string;
+  openCta: CardCta;
+}
+
+export interface DefusionCardPayload {
+  kind: "defusion";
+  title: string;
+  moduleLabel: string;
+  lastLabel: string;
+  technique: string | null;
+  tryItText: string;
+  cta: CardCta;
+}
+
+export interface ShortcutCardPayload {
   kind: "shortcut";
   title: string;
-  emoji: string;
+  moduleLabel: string;
   description: string;
-  cta: Clickable;
+  cta: CardCta;
 }
 
-export interface MoodWidgetPayload {
-  kind: "mood";
-  /** Emoji of today's latest logged mood, or null if none today. */
-  todayFace: string | null;
-  /** Pre-localized glance line, e.g. "7-day 3.8 · 12 logs" or "No logs yet". */
-  glanceLabel: string;
+export interface PromptCardPayload {
+  kind: "prompt";
+  title: string;
+  moduleLabel: string;
+  prompt: string;
+  cta: CardCta;
 }
 
-export interface TodayStatItem {
-  key: string;
-  emoji: string;
-  value: string;
-  label: string;
-  path: string;
-}
+export type CardPayload =
+  | MoodCheckinCardPayload
+  | StatTilesCardPayload
+  | BreathingCardPayload
+  | StatsCardPayload
+  | HabitsCardPayload
+  | CommittedActionsCardPayload
+  | DefusionCardPayload
+  | ShortcutCardPayload
+  | PromptCardPayload;
 
-export interface TodayWidgetPayload {
-  kind: "today";
-  /** Priority order: mood, habits, sleep, meditation. */
-  items: TodayStatItem[];
-  homePath: string;
-}
+/** The 24 launcher-configurable cards; must mirror the in-app WIDGET_REGISTRY ids. */
+export const CARD_IDS = [
+  "mood-checkin",
+  "mood-trend",
+  "breathing-suggested",
+  "gratitude-latest",
+  "meditation-pick",
+  "habits-today",
+  "self-care",
+  "cbt-open-record",
+  "act-drop-anchor",
+  "act-observing-self",
+  "act-choice-point",
+  "sleep-latest",
+  "cbt-distortion-guide",
+  "cbt-programme",
+  "cbt-worry",
+  "cbt-beliefs",
+  "cbt-activities",
+  "cbt-exposure",
+  "cbt-goals",
+  "act-committed-actions",
+  "act-defusion",
+  "act-acceptance-prompt",
+  "journal-week",
+  "grounding-log",
+] as const;
+export type CardId = (typeof CARD_IDS)[number];
 
-export type WidgetPayload =
-  | StatPayload
-  | LauncherPayload
-  | PromptPayload
-  | ShortcutPayload
-  | MoodWidgetPayload
-  | TodayWidgetPayload;
+// The legacy StatPayload/LauncherPayload/MoodWidgetPayload/TodayWidgetPayload variants
+// (see task-2-report.md DEVIATION note) were only kept alive by resolve-for-today.*
+// and diff-snapshots.test.ts fixtures. Task 13 deleted resolve-for-today.* and moved
+// diff-snapshots.test.ts fixtures onto CardPayload, so the single-provider card shape
+// is now the only widget payload.
+export type WidgetPayload = CardPayload;
 
 export interface Snapshot {
-  schemaVersion: 1;
+  schemaVersion: 2;
   locale: string;
   generatedAt: string;
   dateKey: string;
   auth: "signed-in" | "signed-out";
   appThemePref: AppThemePref;
   widgets: Record<string, WidgetPayload>;
+  signedOutCard?: { title: string; cta: string };
 }
 
 export interface WidgetData {
@@ -109,11 +176,14 @@ export interface WidgetData {
   committedActions: { id: string; title: string; updatedAt: string }[];
   actionSteps: { actionId: string; isCompleted: boolean }[];
   defusionLogs: { createdAt: string; techniqueUsed: string }[];
+  moodLogCount: number | null;
+  gratitudeEntryCount: number | null;
 }
 
 export interface BuildContext {
   t: Translate;
   ta: Translate;
+  tc: Translate;
   locale: string;
   dateKey: string;
   appThemePref: AppThemePref;

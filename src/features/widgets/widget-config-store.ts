@@ -1,25 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export interface ResolvedShortcut {
-  label: string;
-  emoji: string;
-  path: string;
-}
-
 export type WidgetThemePref = "app" | "light" | "dark";
 
 export interface WidgetInstanceConfig {
-  shortcuts: ResolvedShortcut[];
-  statKeys: string[];
   theme: WidgetThemePref;
   opacity: number; // 0..1
+  cardId: string;
 }
 
 export const DEFAULT_CONFIG: WidgetInstanceConfig = {
-  shortcuts: [],
-  statKeys: [],
   theme: "app",
   opacity: 1,
+  cardId: "mood-checkin",
 };
 
 const keyFor = (widgetId: number) => `selftend.widgets.config.${widgetId}`;
@@ -34,15 +26,16 @@ export async function readConfig(widgetId: number): Promise<WidgetInstanceConfig
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      return { ...DEFAULT_CONFIG, shortcuts: parsed as ResolvedShortcut[] };
+      // Legacy bare-array shortcuts config from before cardId existed - nothing in it
+      // maps to the current shape, so fall back to the default.
+      return { ...DEFAULT_CONFIG };
     }
     if (parsed && typeof parsed === "object") {
       const p = parsed as Partial<WidgetInstanceConfig>;
       return {
-        shortcuts: Array.isArray(p.shortcuts) ? p.shortcuts : [],
-        statKeys: Array.isArray(p.statKeys) ? p.statKeys : [],
         theme: p.theme === "light" || p.theme === "dark" ? p.theme : "app",
         opacity: typeof p.opacity === "number" ? Math.max(0, Math.min(1, p.opacity)) : 1,
+        cardId: typeof p.cardId === "string" ? p.cardId : "mood-checkin",
       };
     }
     return null;

@@ -6,13 +6,20 @@ jest.mock("@react-native-async-storage/async-storage", () =>
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
 );
 
+const t = (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k);
+
 beforeEach(async () => {
   await AsyncStorage.clear();
 });
 
 describe("snapshot store", () => {
   it("round-trips a snapshot", async () => {
-    const snap = buildSignedOutSnapshot("en", "2026-06-05", "system");
+    const snap = buildSignedOutSnapshot({
+      t,
+      locale: "en",
+      dateKey: "2026-06-05",
+      appThemePref: "system",
+    });
     await writeSnapshot(snap);
     expect(await AsyncStorage.getItem(SNAPSHOT_KEY)).not.toBeNull();
     expect(await readSnapshot()).toEqual(snap);
@@ -29,6 +36,11 @@ describe("snapshot store", () => {
 
   it("ignores a snapshot with a different schemaVersion", async () => {
     await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify({ schemaVersion: 999 }));
+    expect(await readSnapshot()).toBeNull();
+  });
+
+  it("rejects a v1 snapshot", async () => {
+    await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify({ schemaVersion: 1, widgets: {} }));
     expect(await readSnapshot()).toBeNull();
   });
 });

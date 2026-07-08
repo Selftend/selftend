@@ -1,6 +1,5 @@
 "use no memo";
 
-import { catalogEntryByName } from "@/src/features/widgets/widget-catalog";
 import type { Snapshot } from "@/src/features/widgets/snapshot-types";
 import {
   type WidgetInstanceConfig,
@@ -8,9 +7,8 @@ import {
 } from "@/src/features/widgets/widget-config-store";
 import { effectiveThemes } from "@/src/features/widgets/palette";
 import { currentDateKey } from "@/src/utils/date";
-import { MoodWidgetView } from "@/src/features/widgets/mood-widget-view";
-import { TodayWidgetView } from "@/src/features/widgets/today-widget-view";
-import { ShortcutsWidgetView } from "@/src/features/widgets/shortcuts-widget-view";
+import { CARD_REPLICAS } from "@/src/features/widgets/cards/card-registry";
+import { SignedOutCard } from "@/src/features/widgets/cards/signed-out-card";
 
 interface RenderArgs {
   widgetName: string;
@@ -20,70 +18,43 @@ interface RenderArgs {
   config: WidgetInstanceConfig | null;
 }
 
-export function renderWidget({ widgetName, width, height, snapshot, config }: RenderArgs) {
-  const entry = catalogEntryByName(widgetName);
-  const signedIn = snapshot?.auth === "signed-in";
+export function renderWidget({ width, height, snapshot, config }: RenderArgs) {
   const cfg = config ?? DEFAULT_CONFIG;
   const themes = effectiveThemes(cfg.theme, snapshot?.appThemePref ?? "system");
-  const opacity = cfg.opacity;
-  // The OS re-renders persisted snapshots on its own schedule, so a snapshot built on a
-  // previous day would otherwise show that day's data as "today's". Blank the date-scoped
-  // fields when the snapshot's build-day no longer matches the render-day.
+  const cardId =
+    cfg.cardId in CARD_REPLICAS ? (cfg.cardId as keyof typeof CARD_REPLICAS) : "mood-checkin";
+  const entry = CARD_REPLICAS[cardId];
+  const signedIn = snapshot?.auth === "signed-in";
+  // Data only changes through the app, and opening the app rebuilds the snapshot - so a
+  // snapshot from a previous day means nothing was logged today: render the no-data-today
+  // branch by nulling the payload's `today` field.
   const stale = snapshot?.dateKey != null && snapshot.dateKey !== currentDateKey();
 
   const viewFor = (theme: "light" | "dark") => {
-    switch (entry?.kind) {
-      case "mood": {
-        const p = signedIn ? snapshot!.widgets["mood"] : undefined;
-        let payload = p?.kind === "mood" ? p : null;
-        if (payload && stale) payload = { ...payload, todayFace: null };
-        return (
-          <MoodWidgetView
-            payload={payload}
-            width={width}
-            height={height}
-            theme={theme}
-            opacity={opacity}
-          />
-        );
-      }
-      case "today": {
-        const p = signedIn ? snapshot!.widgets["today"] : undefined;
-        let payload = p?.kind === "today" ? p : null;
-        if (payload && stale) payload = { ...payload, items: [] };
-        return (
-          <TodayWidgetView
-            payload={payload}
-            statKeys={cfg.statKeys}
-            width={width}
-            height={height}
-            theme={theme}
-            opacity={opacity}
-          />
-        );
-      }
-      case "shortcuts":
-        return (
-          <ShortcutsWidgetView
-            shortcuts={cfg.shortcuts}
-            width={width}
-            height={height}
-            theme={theme}
-            opacity={opacity}
-          />
-        );
-      default:
-        return (
-          <TodayWidgetView
-            payload={null}
-            statKeys={[]}
-            width={width}
-            height={height}
-            theme={theme}
-            opacity={opacity}
-          />
-        );
+    const payload = signedIn ? snapshot!.widgets[cardId] : undefined;
+    if (!payload || payload.kind !== entry.kind) {
+      return (
+        <SignedOutCard
+          title={snapshot?.signedOutCard?.title ?? "Selftend"}
+          cta={snapshot?.signedOutCard?.cta ?? "Open Selftend"}
+          theme={theme}
+          opacity={cfg.opacity}
+        />
+      );
     }
+    const p = stale && "today" in payload ? { ...payload, today: null } : payload;
+    const Replica = entry.Component;
+    return (
+      <Replica
+        payload={p}
+        icon={entry.icon}
+        tint={entry.tint}
+        width={width}
+        height={height}
+        theme={theme}
+        opacity={cfg.opacity}
+      />
+    );
   };
 
   if (themes.length === 1) return viewFor(themes[0]);

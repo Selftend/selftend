@@ -298,24 +298,12 @@
         "minutesLabel": "Minutes",
         "empty": "No sessions yet."
       },
-      "mood": {
-        "noLogs": "No logs yet",
-        "glance": "7-day {{avg}} · {{count}} logs"
-      },
-      "today": {
-        "moodLabel": "Mood",
-        "habitsLabel": "Habits",
-        "sleepLabel": "Sleep",
-        "meditationLabel": "Meditation",
-        "gratitudeLabel": "Gratitude",
-        "journalLabel": "Journal",
-        "breathingLabel": "Breathing",
-        "groundingLabel": "Grounding"
-      },
       "config": {
         "title": "Widget settings",
-        "shortcutsSection": "Shortcuts",
-        "statsSection": "Stats",
+        "cardSection": "Card",
+        "groupTools": "Tools",
+        "groupCbt": "CBT",
+        "groupAct": "ACT",
         "themeLabel": "Theme",
         "themeApp": "Match app",
         "themeLight": "Light",
@@ -323,19 +311,8 @@
         "transparencyLabel": "Transparency",
         "save": "Save"
       },
-      "shortcutCatalog": {
-        "mood": "Log mood",
-        "breathing": "Breathing",
-        "grounding": "Grounding",
-        "journal": "Journal",
-        "gratitude": "Gratitude",
-        "meditation": "Meditation",
-        "sleep": "Sleep",
-        "habits": "Habits",
-        "thoughtRecord": "Thought record",
-        "defusion": "Defusion",
-        "dropAnchor": "Drop anchor",
-        "choicePoint": "Choice point"
+      "launcher": {
+        "signedOutCta": "Open Selftend"
       }
     }
   },

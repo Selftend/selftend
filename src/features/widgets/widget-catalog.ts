@@ -1,6 +1,6 @@
 import catalogJson from "./widget-catalog.json";
 
-type WidgetKind = "mood" | "today" | "shortcuts";
+type WidgetKind = "card";
 
 interface CatalogEntrySize {
   minWidth: string;
@@ -15,6 +15,8 @@ interface CatalogEntrySize {
 interface CatalogEntry {
   id: string;
   name: string;
+  label: string;
+  description: string;
   kind: WidgetKind;
   emoji: string;
   widgetFeatures?: string;

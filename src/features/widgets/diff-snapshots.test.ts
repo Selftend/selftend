@@ -1,15 +1,15 @@
 import { changedWidgetIds } from "@/src/features/widgets/diff-snapshots";
-import type { Snapshot, StatPayload } from "@/src/features/widgets/snapshot-types";
+import type { Snapshot, PromptCardPayload } from "@/src/features/widgets/snapshot-types";
 
-const stat = (v: string): StatPayload => ({
-  kind: "stat",
+const prompt = (v: string): PromptCardPayload => ({
+  kind: "prompt",
   title: "t",
-  emoji: "x",
-  stats: [{ value: v, label: "l" }],
-  open: { label: "o", path: "/p" },
+  moduleLabel: "m",
+  prompt: v,
+  cta: { label: "o", path: "/p" },
 });
 const snap = (widgets: Snapshot["widgets"]): Snapshot => ({
-  schemaVersion: 1,
+  schemaVersion: 2,
   locale: "en",
   generatedAt: "x",
   dateKey: "2026-06-05",
@@ -20,16 +20,19 @@ const snap = (widgets: Snapshot["widgets"]): Snapshot => ({
 
 describe("changedWidgetIds", () => {
   it("returns all ids when prev is null", () => {
-    expect(changedWidgetIds(null, snap({ a: stat("1"), b: stat("2") })).sort()).toEqual(["a", "b"]);
+    expect(changedWidgetIds(null, snap({ a: prompt("1"), b: prompt("2") })).sort()).toEqual([
+      "a",
+      "b",
+    ]);
   });
   it("returns only payloads whose content changed", () => {
-    const prev = snap({ a: stat("1"), b: stat("2") });
-    const next = snap({ a: stat("1"), b: stat("9") });
+    const prev = snap({ a: prompt("1"), b: prompt("2") });
+    const next = snap({ a: prompt("1"), b: prompt("9") });
     expect(changedWidgetIds(prev, next)).toEqual(["b"]);
   });
   it("includes ids newly present in next", () => {
-    expect(changedWidgetIds(snap({ a: stat("1") }), snap({ a: stat("1"), c: stat("3") }))).toEqual([
-      "c",
-    ]);
+    expect(
+      changedWidgetIds(snap({ a: prompt("1") }), snap({ a: prompt("1"), c: prompt("3") })),
+    ).toEqual(["c"]);
   });
 });

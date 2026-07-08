@@ -25,7 +25,7 @@ module.exports = {
     "!src/features/gratitude/breaks.ts",
     // Android-widget native-bridge glue + pure constant/type modules: exercised on
     // device (like the .tsx widget views), not in jest. The tested logic surface
-    // (snapshot-builder, snapshot-store, resolve-for-today, diff-snapshots) stays in.
+    // (snapshot-builder, snapshot-store, diff-snapshots) stays in.
     "!src/features/widgets/use-widget-snapshot-sync.ts",
     "!src/features/widgets/snapshot-types.ts",
     "!src/features/widgets/click-actions.ts",

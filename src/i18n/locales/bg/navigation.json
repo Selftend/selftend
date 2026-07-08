@@ -298,24 +298,12 @@
         "minutesLabel": "Минути",
         "empty": "Все още няма сесии."
       },
-      "mood": {
-        "noLogs": "Все още няма записи",
-        "glance": "7 дни {{avg}} · {{count}} записа"
-      },
-      "today": {
-        "moodLabel": "Настроение",
-        "habitsLabel": "Навици",
-        "sleepLabel": "Сън",
-        "meditationLabel": "Медитация",
-        "gratitudeLabel": "Благодарност",
-        "journalLabel": "Дневник",
-        "breathingLabel": "Дишане",
-        "groundingLabel": "Заземяване"
-      },
       "config": {
         "title": "Настройки на джаджата",
-        "shortcutsSection": "Преки пътища",
-        "statsSection": "Статистики",
+        "cardSection": "Карта",
+        "groupTools": "Инструменти",
+        "groupCbt": "КПТ",
+        "groupAct": "ACT",
         "themeLabel": "Тема",
         "themeApp": "Като приложението",
         "themeLight": "Светла",
@@ -323,19 +311,8 @@
         "transparencyLabel": "Прозрачност",
         "save": "Запазване"
       },
-      "shortcutCatalog": {
-        "mood": "Проследяване на настроението",
-        "breathing": "Дишане",
-        "grounding": "Заземяване",
-        "journal": "Дневник",
-        "gratitude": "Благодарност",
-        "meditation": "Медитация",
-        "sleep": "Сън",
-        "habits": "Навици",
-        "thoughtRecord": "Запис на мисли",
-        "defusion": "Дефузия",
-        "dropAnchor": "Пусни котва",
-        "choicePoint": "Момент на избор"
+      "launcher": {
+        "signedOutCta": "Отвори Selftend"
       }
     }
   },

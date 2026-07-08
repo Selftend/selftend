@@ -3,6 +3,8 @@ import { withAndroidManifest, type ConfigPlugin } from "@expo/config-plugins";
 
 const widgetCatalog = require("./src/features/widgets/widget-catalog.json") as {
   name: string;
+  label: string;
+  description: string;
   widgetFeatures?: string;
   size: {
     minWidth: string;
@@ -144,8 +146,8 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
       {
         widgets: widgetCatalog.map((w) => ({
           name: w.name,
-          label: `Selftend - ${w.name}`,
-          description: "Selftend widget",
+          label: w.label,
+          description: w.description,
           minWidth: w.size.minWidth,
           minHeight: w.size.minHeight,
           maxResizeWidth: w.size.maxWidth,
@@ -153,10 +155,18 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
           targetCellWidth: w.size.targetCellWidth,
           targetCellHeight: w.size.targetCellHeight,
           resizeMode: w.size.resizeMode,
-          previewImage: "./assets/widget-preview/stat.png",
+          previewImage: "./assets/widget-preview/moodcheckin.png",
           updatePeriodMillis: 0,
           ...(w.widgetFeatures ? { widgetFeatures: w.widgetFeatures } : {}),
         })),
+      },
+    ],
+    [
+      "expo-font",
+      {
+        fonts: [
+          "./node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialIcons.ttf",
+        ],
       },
     ],
     [

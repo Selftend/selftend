@@ -3,11 +3,11 @@ import { AppState, Platform } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { currentDateKey } from "@/src/utils/date";
-import { useMoodLogs } from "@/src/features/mood/queries";
+import { useMoodLogs, useMoodLogCount } from "@/src/features/mood/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { useActivities } from "@/src/features/activities/queries";
-import { useGratitudeEntries } from "@/src/features/gratitude/queries";
+import { useGratitudeEntries, useGratitudeEntryCount } from "@/src/features/gratitude/queries";
 import { useJournalEntries } from "@/src/features/journal/queries";
 import { useGroundingSessions } from "@/src/features/grounding/queries";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
@@ -29,6 +29,7 @@ import type { Snapshot, WidgetData } from "@/src/features/widgets/snapshot-types
 export function useWidgetSnapshotSync(userId: string | null) {
   const { t, i18n } = useTranslation("navigation");
   const { t: ta } = useTranslation("act");
+  const { t: tc } = useTranslation("cbt");
   const themePref = useThemeStore((s) => s.preference);
 
   // The widget snapshot sync only does anything on Android (the effect below early-returns
@@ -45,13 +46,16 @@ export function useWidgetSnapshotSync(userId: string | null) {
   const sleepLogs = useSleepLogs(widgetUserId, 30).data;
   const meditationSessions = useMeditationSessions(widgetUserId).data;
   const activities = useActivities(widgetUserId).data;
-  const gratitudeEntries = useGratitudeEntries(widgetUserId, 500).data;
+  // Fetch window matches the in-app gratitude card (30 most recent entries).
+  const gratitudeEntries = useGratitudeEntries(widgetUserId, 30).data;
   const journalEntries = useJournalEntries(widgetUserId).data;
   const groundingSessions = useGroundingSessions(widgetUserId).data;
   const breathingSessions = useBreathingSessions(widgetUserId).data;
   const committedActions = useCommittedActions(widgetUserId, "active").data;
   const actionSteps = useAllActionSteps(widgetUserId).data;
   const defusionLogs = useDefusionLogs(widgetUserId, 30).data;
+  const moodLogCount = useMoodLogCount(widgetUserId).data;
+  const gratitudeEntryCount = useGratitudeEntryCount(widgetUserId).data;
 
   const data: WidgetData = useMemo(
     () => ({
@@ -66,6 +70,8 @@ export function useWidgetSnapshotSync(userId: string | null) {
       committedActions: committedActions ?? [],
       actionSteps: actionSteps ?? [],
       defusionLogs: defusionLogs ?? [],
+      moodLogCount: moodLogCount ?? null,
+      gratitudeEntryCount: gratitudeEntryCount ?? null,
     }),
     [
       moodLogs,
@@ -79,6 +85,8 @@ export function useWidgetSnapshotSync(userId: string | null) {
       committedActions,
       actionSteps,
       defusionLogs,
+      moodLogCount,
+      gratitudeEntryCount,
     ],
   );
 
@@ -107,27 +115,30 @@ export function useWidgetSnapshotSync(userId: string | null) {
         ? buildSnapshot(data, {
             t,
             ta,
+            tc,
             locale: i18n.language,
             dateKey: currentDateKey(),
             appThemePref: themePref,
           })
-        : buildSignedOutSnapshot(i18n.language, currentDateKey(), themePref);
+        : buildSignedOutSnapshot({
+            t,
+            locale: i18n.language,
+            dateKey: currentDateKey(),
+            appThemePref: themePref,
+          });
 
       const changed = changedWidgetIds(prevRef.current, next);
       await writeSnapshot(next);
       prevRef.current = next;
       if (cancelled) return;
 
-      const changedNames = WIDGET_CATALOG.filter((w) => changed.includes(w.id)).map((w) => w.name);
-      const namesToUpdate = userId ? changedNames : WIDGET_CATALOG.map((w) => w.name);
+      // One reconfigurable provider: any payload change re-renders all instances (each
+      // instance's render callback reads its own config + the fresh snapshot).
+      if (userId && changed.length === 0) return;
       await Promise.all(
-        namesToUpdate.map((widgetName: string) =>
+        WIDGET_CATALOG.map((w) =>
           requestWidgetUpdate({
-            widgetName,
-            // Read each instance's saved config (theme/opacity/shortcuts/statKeys) and pass
-            // it through, exactly like the OS task-handler path. Passing the wrong key here
-            // left `config` undefined, so render-widget fell back to DEFAULT_CONFIG and wiped
-            // the user's per-widget customization on every in-app data sync.
+            widgetName: w.name,
             renderWidget: async (info) =>
               renderWidget({
                 widgetName: info.widgetName,
@@ -148,7 +159,7 @@ export function useWidgetSnapshotSync(userId: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [data, userId, i18n.language, t, ta, themePref]);
+  }, [data, userId, i18n.language, t, ta, tc, themePref]);
 
   // On app foreground, force a full refresh on the next data tick (also handles midnight rollover).
   useEffect(() => {

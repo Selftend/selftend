@@ -1,0 +1,35 @@
+"use no memo";
+
+import { FlexWidget } from "react-native-android-widget";
+import { CardFrame, ReplicaHeader, BodyText, GhostButton } from "@/src/features/widgets/cards/kit";
+import { sizeTier } from "@/src/features/widgets/widget-size";
+import type { CardViewProps } from "@/src/features/widgets/cards/shortcut-card";
+
+const nothing = <FlexWidget style={{ width: 0, height: 0 }} />;
+
+export function PromptCard({ payload, icon, tint, width, height, theme, opacity }: CardViewProps) {
+  if (payload.kind !== "prompt") return nothing;
+  const expanded = sizeTier(width, height) === "expanded";
+  return (
+    <CardFrame theme={theme} opacity={opacity}>
+      <ReplicaHeader
+        theme={theme}
+        icon={icon}
+        tint={tint}
+        title={payload.title}
+        moduleLabel={payload.moduleLabel}
+      />
+      {expanded ? <BodyText theme={theme} text={payload.prompt} /> : nothing}
+      <FlexWidget
+        style={{
+          flexDirection: "row",
+          justifyContent: "flex-end",
+          marginTop: 12,
+          width: "match_parent",
+        }}
+      >
+        <GhostButton theme={theme} cta={payload.cta} />
+      </FlexWidget>
+    </CardFrame>
+  );
+}
