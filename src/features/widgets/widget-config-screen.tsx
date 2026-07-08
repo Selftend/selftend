@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { type WidgetConfigurationScreenProps } from "react-native-android-widget";
 
@@ -40,12 +41,24 @@ const GROUPS: { labelKey: string; ids: string[] }[] = [
   },
 ];
 
-export function WidgetConfigurationScreen({
+// registerWidgetConfigurationScreen mounts this as a bare RN root without the app's
+// providers, so the screen brings its own safe-area context - edge-to-edge Android
+// otherwise draws the system nav bar over the bottom of the scroll content.
+export function WidgetConfigurationScreen(props: WidgetConfigurationScreenProps) {
+  return (
+    <SafeAreaProvider>
+      <WidgetConfigurationScreenContent {...props} />
+    </SafeAreaProvider>
+  );
+}
+
+function WidgetConfigurationScreenContent({
   widgetInfo,
   renderWidget: render,
   setResult,
 }: WidgetConfigurationScreenProps) {
   const { t } = useTranslation("navigation");
+  const insets = useSafeAreaInsets();
   const widgetName = widgetInfo.widgetName;
 
   const [cardId, setCardId] = useState<string>(DEFAULT_CONFIG.cardId);
@@ -95,7 +108,14 @@ export function WidgetConfigurationScreen({
   if (!loaded) return <View />;
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerClassName="gap-5 p-6">
+    <ScrollView
+      className="flex-1 bg-background"
+      contentContainerClassName="gap-5 p-6"
+      contentContainerStyle={{
+        paddingTop: insets.top + 24,
+        paddingBottom: insets.bottom + 24,
+      }}
+    >
       <Text variant="h3">{t("home.widgets.config.title")}</Text>
 
       <View className="gap-2">

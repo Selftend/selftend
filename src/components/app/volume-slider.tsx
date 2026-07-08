@@ -28,14 +28,21 @@ export function VolumeSlider({
   const vertical = orientation === "vertical";
   const [size, setSize] = useState(0);
   const sizeRef = useRef(0);
+  const containerRef = useRef<View>(null);
+  const originRef = useRef<number | null>(null);
   const lastRef = useRef(value);
   const onChangeRef = useRef(onChange);
   const onCommitRef = useRef(onCommit);
   onChangeRef.current = onChange;
   onCommitRef.current = onCommit;
 
-  const setFromPos = (pos: number) => {
-    if (sizeRef.current <= 0) return;
+  // Positions are tracked in page (window) coordinates against the container's
+  // measured origin. locationX/locationY are relative to whichever CHILD view the
+  // finger happens to be over (thumb, fill bar), so a drag crossing them made the
+  // value jump toward 0 - and a release at that moment committed the bogus 0.
+  const setFromPage = (page: number) => {
+    if (sizeRef.current <= 0 || originRef.current === null) return;
+    const pos = page - originRef.current;
     const next = clamp01(vertical ? 1 - pos / sizeRef.current : pos / sizeRef.current);
     lastRef.current = next;
     onChangeRef.current(next);
@@ -45,10 +52,17 @@ export function VolumeSlider({
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e) =>
-        setFromPos(vertical ? e.nativeEvent.locationY : e.nativeEvent.locationX),
-      onPanResponderMove: (e) =>
-        setFromPos(vertical ? e.nativeEvent.locationY : e.nativeEvent.locationX),
+      // A hosting ScrollView must not steal the gesture mid-drag.
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: (_e, g) => {
+        // Re-measure per gesture: the container can move (scroll, layout changes).
+        originRef.current = null;
+        containerRef.current?.measureInWindow((x, y) => {
+          originRef.current = vertical ? y : x;
+          setFromPage(vertical ? g.y0 : g.x0);
+        });
+      },
+      onPanResponderMove: (_e, g) => setFromPage(vertical ? g.moveY : g.moveX),
       onPanResponderRelease: () => onCommitRef.current?.(lastRef.current),
       onPanResponderTerminate: () => onCommitRef.current?.(lastRef.current),
     }),
@@ -60,6 +74,8 @@ export function VolumeSlider({
     return (
       <View
         {...panResponder.panHandlers}
+        ref={containerRef}
+        collapsable={false}
         accessibilityRole="adjustable"
         accessibilityLabel={accessibilityLabel}
         accessibilityValue={{ min: 0, max: 100, now: Math.round(pct * 100) }}
@@ -102,6 +118,8 @@ export function VolumeSlider({
   return (
     <View
       {...panResponder.panHandlers}
+      ref={containerRef}
+      collapsable={false}
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(pct * 100) }}

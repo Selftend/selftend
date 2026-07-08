@@ -23,7 +23,7 @@ describe("kit", () => {
     expect(glyph("mood")).toBe("mood");
   });
 
-  it("CardFrame paints an opacity-scaled card background with border", () => {
+  it("CardFrame paints an opacity-scaled borderless card that spreads content vertically", () => {
     const tree = widgetTree(
       <CardFrame theme="light" opacity={0.5}>
         {null}
@@ -32,7 +32,9 @@ describe("kit", () => {
     expect(tree.type).toBe("FlexWidget");
     expect(tree.props.style.backgroundColor).toBe(withAlpha(PALETTE.light.card, 0.5));
     expect(tree.props.style.borderRadius).toBe(12);
-    expect(tree.props.style.borderColor).toBe(PALETTE.light.border);
+    // The widget host draws borders as an unclipped rectangle - the frame must not have one.
+    expect(tree.props.style.borderWidth).toBeUndefined();
+    expect(tree.props.style.justifyContent).toBe("space-between");
   });
 
   it("ReplicaHeader renders tinted icon chip, title, and module pill", () => {

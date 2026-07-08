@@ -28,17 +28,19 @@ export function CardFrame({
   children: React.ReactNode;
 }) {
   const c = PALETTE[theme];
+  // No frame border: the widget host draws borders as an unclipped rectangle that
+  // pokes past the rounded corners. space-between pins the CTA row to the cell's
+  // bottom edge instead of leaving dead space when the cell is taller than the content.
   return (
     <FlexWidget
       style={{
         height: "match_parent",
         width: "match_parent",
         flexDirection: "column",
+        justifyContent: "space-between",
         padding: 16,
         backgroundColor: withAlpha(c.card, opacity),
         borderRadius: 12, // in-app Card rounded-xl
-        borderWidth: 1,
-        borderColor: c.border,
       }}
     >
       {children}

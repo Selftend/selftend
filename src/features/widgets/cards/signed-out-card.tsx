@@ -28,8 +28,6 @@ export function SignedOutCard({
         justifyContent: "center",
         backgroundColor: withAlpha(c.card, opacity),
         borderRadius: 12,
-        borderWidth: 1,
-        borderColor: c.border,
       }}
     >
       <TextWidget text={title} style={{ fontSize: 14, fontWeight: "600", color: c.fg }} />
