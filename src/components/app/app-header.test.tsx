@@ -24,7 +24,7 @@ jest.mock("@/src/lib/linking", () => ({
 
 jest.mock("@/src/lib/env", () => ({
   appEnv: {
-    discordUrl: "https://discord.gg/6QXmJfj76x",
+    discordUrl: "https://discord.gg/pdaAr9FhcQ",
     githubRepoUrl: "https://github.com/Selftend/selftend",
   },
 }));
@@ -32,7 +32,7 @@ jest.mock("@/src/lib/env", () => ({
 const mockOpen = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
 
 beforeEach(() => {
-  appEnv.discordUrl = "https://discord.gg/6QXmJfj76x";
+  appEnv.discordUrl = "https://discord.gg/pdaAr9FhcQ";
   jest.clearAllMocks();
 });
 
@@ -42,7 +42,7 @@ describe("AppHeader Discord icon", () => {
 
     fireEvent.press(screen.getByLabelText("Join our Discord"));
 
-    expect(mockOpen).toHaveBeenCalledWith("https://discord.gg/6QXmJfj76x");
+    expect(mockOpen).toHaveBeenCalledWith("https://discord.gg/pdaAr9FhcQ");
   });
 
   it("hides the icon when no Discord URL is configured", () => {
