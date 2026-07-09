@@ -9,6 +9,7 @@ import { Circle, Svg } from "react-native-svg";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { resolveDisplayName } from "@/src/features/profile/display-name";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
@@ -46,16 +47,6 @@ function pickGreetingKey(hour: number) {
 
 function firstWord(value: string) {
   return value.trim().split(/\s+/)[0];
-}
-
-function getMetaName(user: { user_metadata?: Record<string, unknown> } | null) {
-  if (!user) return null;
-  const metadata = user.user_metadata ?? {};
-  const fullName = typeof metadata.full_name === "string" ? metadata.full_name : null;
-  if (fullName?.trim()) return firstWord(fullName);
-  const name = typeof metadata.name === "string" ? metadata.name : null;
-  if (name?.trim()) return firstWord(name);
-  return null;
 }
 
 function BreathingDotEmpty() {
@@ -118,7 +109,8 @@ export default function HomeScreen() {
   }).format(parseLocalNoon(selectedDate));
 
   const greeting = t(pickGreetingKey(hour));
-  const displayName = profile?.displayName?.trim().split(/\s+/)[0] ?? getMetaName(user);
+  const fullName = resolveDisplayName(profile ?? null, user);
+  const displayName = fullName ? firstWord(fullName) : null;
   const greetingLine = displayName
     ? t("today.greetingWithName", { greeting, name: displayName })
     : t("today.greetingPlain", { greeting });

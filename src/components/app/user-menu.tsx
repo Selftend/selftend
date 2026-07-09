@@ -16,6 +16,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { signOut } from "@/src/features/auth/api";
 import { cancelAllReminders } from "@/src/lib/notifications";
+import { resolveDisplayName } from "@/src/features/profile/display-name";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { supportedLanguages } from "@/src/i18n";
 import { appEnv } from "@/src/lib/env";
@@ -45,6 +46,7 @@ export function UserMenu() {
 
   const email = user?.email;
   const avatarUrl = profile?.avatarUrl ?? null;
+  const displayName = resolveDisplayName(profile, user);
 
   function openExternal(url: string) {
     popoverTriggerRef.current?.close();
@@ -69,7 +71,7 @@ export function UserMenu() {
           className="size-8 rounded-full"
         >
           {isSignedIn ? (
-            <ProfileAvatar avatarUrl={avatarUrl} email={email} />
+            <ProfileAvatar avatarUrl={avatarUrl} email={email} name={displayName} />
           ) : (
             <Icon name="more-vert" className="size-6 text-foreground" />
           )}
@@ -79,8 +81,18 @@ export function UserMenu() {
         <View className="gap-3 p-3">
           {isSignedIn ? (
             <View className="flex-row items-center gap-3">
-              <ProfileAvatar avatarUrl={avatarUrl} email={email} className="size-10" />
+              <ProfileAvatar
+                avatarUrl={avatarUrl}
+                email={email}
+                name={displayName}
+                className="size-10"
+              />
               <View className="flex-1">
+                {displayName ? (
+                  <Text className="text-sm font-medium leading-5" numberOfLines={1}>
+                    {displayName}
+                  </Text>
+                ) : null}
                 <Text
                   className="text-sm text-muted-foreground font-normal leading-4"
                   numberOfLines={1}
