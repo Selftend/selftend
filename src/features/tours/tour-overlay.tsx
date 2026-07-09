@@ -100,11 +100,21 @@ export function TourOverlay({
           backgroundColor: cardColor,
           borderRadius: 12,
           padding: 16,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.35,
-          shadowRadius: 10,
-          elevation: 10,
+          // Platform-gated so native output is byte-for-byte what it was before the
+          // RN-Web deprecation migration. Web: boxShadow only (RN-Web deprecates
+          // shadow* — this silences the warning with the same look). Native: keep the
+          // original shadow* + elevation. Under New Arch/Fabric (RN 0.81) boxShadow
+          // renders a native Android shadow too, so emitting both there would DOUBLE
+          // the shadow — hence the split, not a combined declaration.
+          ...(Platform.OS === "web"
+            ? { boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.35)" }
+            : {
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.35,
+                shadowRadius: 10,
+                elevation: 10,
+              }),
         }}
       >
         <View

@@ -23,12 +23,16 @@ export function GlowBackdrop({ hue }: GlowBackdropProps) {
 
   return (
     <View
-      pointerEvents="none"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       style={[
         StyleSheet.absoluteFill,
-        { alignItems: "center", justifyContent: "center", overflow: "hidden" },
+        {
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          pointerEvents: "none",
+        },
       ]}
     >
       <Svg width={GLOW} height={GLOW}>
