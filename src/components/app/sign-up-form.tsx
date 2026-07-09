@@ -203,7 +203,7 @@ export function SignUpForm() {
 
         <View className="items-center gap-1 pt-1">
           <Text className="text-sm text-muted-foreground">{t("signUp.hasAccount")}</Text>
-          <Button onPress={() => router.push("/")} variant="link">
+          <Button onPress={() => router.push("/(auth)/sign-in")} variant="link">
             <Text>{t("signUp.signInLink")}</Text>
           </Button>
         </View>

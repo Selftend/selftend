@@ -96,7 +96,7 @@ export function ForgotPasswordForm() {
         </Button>
 
         <View className="items-center pt-2">
-          <Button onPress={() => router.push("/")} variant="link">
+          <Button onPress={() => router.push("/(auth)/sign-in")} variant="link">
             <Text>{t("forgotPassword.backToSignIn")}</Text>
           </Button>
         </View>

@@ -158,7 +158,7 @@ export default function AuthCallbackScreen() {
                 <CardDescription>{errorMessage}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button onPress={() => router.replace("/")}>
+                <Button onPress={() => router.replace("/(auth)/sign-in")}>
                   <Text>{t("callback.backToSignIn")}</Text>
                 </Button>
               </CardContent>
@@ -181,7 +181,7 @@ export default function AuthCallbackScreen() {
                 <CardDescription>{t("callback.missingDataDescription")}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button onPress={() => router.replace("/")}>
+                <Button onPress={() => router.replace("/(auth)/sign-in")}>
                   <Text>{t("callback.backToSignIn")}</Text>
                 </Button>
               </CardContent>

@@ -72,7 +72,7 @@ describe("VerifyEmailForm", () => {
   it("returns to sign in when 'Back to sign in' is pressed", () => {
     renderWithProviders(<VerifyEmailForm />);
     fireEvent.press(screen.getByText("Back to sign in"));
-    expect(mockReplace).toHaveBeenCalledWith("/");
+    expect(mockReplace).toHaveBeenCalledWith("/(auth)/sign-in");
   });
 
   it("shows a rate-limit message and disables resend after a rate-limited attempt", async () => {

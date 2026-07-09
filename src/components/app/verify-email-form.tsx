@@ -127,7 +127,7 @@ export function VerifyEmailForm() {
           </Text>
         </Button>
         <View className="items-center">
-          <Button onPress={() => router.replace("/")} variant="link">
+          <Button onPress={() => router.replace("/(auth)/sign-in")} variant="link">
             <Text>{t("verifyEmail.backToSignIn")}</Text>
           </Button>
         </View>
