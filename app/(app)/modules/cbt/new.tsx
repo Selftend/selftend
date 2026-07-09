@@ -13,22 +13,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
+import { Button } from "@/src/components/react-native-reusables/button";
 import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
-import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
+import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
 import { distortionDefinitions } from "@/src/constants/distortions";
-import { emotionOptions } from "@/src/constants/emotions";
+import { EMOTION_GROUPS } from "@/src/constants/emotions";
 import { formatDistortionLabels, formatEmotionLabels } from "@/src/features/cbt/format-labels";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
 import { thoughtRecordFormSchema, type ThoughtRecordFormSchema } from "@/src/features/cbt/schemas";
 import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
+import { useThoughtRecordIntroDismissed } from "@/src/features/cbt/use-thought-record-intro-dismissed";
 import { useWizardDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
 import { useSession } from "@/src/providers/session-provider";
 import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
@@ -133,6 +135,11 @@ export default function ThoughtRecordEditorScreen() {
 
   const { data: existingRecord, isLoading } = useThoughtRecord(user?.id ?? null, recordId);
   const saveMutation = useSaveThoughtRecord(user?.id ?? null);
+  const {
+    dismissed: introDismissed,
+    dismiss: dismissIntro,
+    hydrated: introHydrated,
+  } = useThoughtRecordIntroDismissed();
 
   const form = useForm<ThoughtRecordFormSchema>({
     defaultValues: storedDraftValues ?? defaultValues,
@@ -207,7 +214,11 @@ export default function ThoughtRecordEditorScreen() {
       return saveMutation.mutateAsync({ input: inputWithDate, recordId: recordId ?? undefined });
     },
     onSaved: (saved) =>
-      router.replace(`/modules/cbt/history/${saved.id}` as Parameters<typeof router.replace>[0]),
+      router.replace(
+        (recordId
+          ? `/modules/cbt/history/${saved.id}`
+          : `/modules/cbt/saved/${saved.id}`) as Parameters<typeof router.replace>[0],
+      ),
     onError: setSubmitError,
     toastLabels: {
       saved: t("common:feedback.saved"),
@@ -286,7 +297,7 @@ export default function ThoughtRecordEditorScreen() {
       isPending={wizard.isPending}
       headerSlot={
         <>
-          <CrisisSupportCallout />
+          <CrisisSupportBar />
           {submitError ? (
             <Card>
               <CardHeader>
@@ -299,27 +310,42 @@ export default function ThoughtRecordEditorScreen() {
       }
     >
       {currentStep.key === "situation" ? (
-        <Controller
-          control={control}
-          name="situation"
-          render={({ field: { onBlur, onChange, value } }) => (
-            <View className="gap-2">
-              <Label>{t("record.situation")}</Label>
-              <Text variant="muted">{t("record.situationPlaceholder")}</Text>
-              <Textarea
-                accessibilityHint={t("record.situationHint")}
-                accessibilityLabel={t("record.situation")}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                placeholder={t("record.situationExample")}
-                value={value}
-              />
-              {errors.situation?.message ? (
-                <Text variant="muted">{errors.situation.message}</Text>
-              ) : null}
-            </View>
-          )}
-        />
+        <View className="gap-4">
+          {!recordId && introHydrated && !introDismissed ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("record.intro.title")}</CardTitle>
+              </CardHeader>
+              <CardContent className="gap-3">
+                <Text variant="muted">{t("record.intro.body")}</Text>
+                <Button className="self-start" size="sm" onPress={dismissIntro}>
+                  <Text>{t("record.intro.dismiss")}</Text>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
+          <Controller
+            control={control}
+            name="situation"
+            render={({ field: { onBlur, onChange, value } }) => (
+              <View className="gap-2">
+                <Label>{t("record.situation")}</Label>
+                <Text variant="muted">{t("record.situationPlaceholder")}</Text>
+                <Textarea
+                  accessibilityHint={t("record.situationHint")}
+                  accessibilityLabel={t("record.situation")}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  placeholder={t("record.situationExample")}
+                  value={value}
+                />
+                {errors.situation?.message ? (
+                  <Text variant="muted">{errors.situation.message}</Text>
+                ) : null}
+              </View>
+            )}
+          />
+        </View>
       ) : null}
 
       {currentStep.key === "nats" ? (
@@ -425,27 +451,36 @@ export default function ThoughtRecordEditorScreen() {
                   <Label>{t("record.emotionsLabel")}</Label>
                   <Text variant="muted">{t("record.emotionsLabelHint")}</Text>
                 </View>
-                {emotionOptions.map((emotion) => {
-                  const checked = value.includes(emotion);
-                  const emotionKey = emotion.toLowerCase();
-                  const label = t(`emotions.${emotionKey}`);
-                  const toggle = () => {
-                    const nextValues = checked
-                      ? value.filter((item) => item !== emotion)
-                      : [...value, emotion];
-                    onChange(nextValues);
-                  };
-                  return (
-                    <View key={emotion} className="flex-row items-center gap-3">
-                      <Checkbox
-                        accessibilityLabel={label}
-                        checked={checked}
-                        onCheckedChange={toggle}
-                      />
-                      <Label onPress={toggle}>{label}</Label>
-                    </View>
-                  );
-                })}
+                {EMOTION_GROUPS.map((group) => (
+                  <View key={group.valence} className="gap-2">
+                    <Label>
+                      {group.valence === "difficult"
+                        ? t("emotions.groupDifficult")
+                        : t("emotions.groupPleasant")}
+                    </Label>
+                    {group.ids.map((emotion) => {
+                      const checked = value.includes(emotion);
+                      const emotionKey = emotion.toLowerCase();
+                      const label = t(`emotions.${emotionKey}`);
+                      const toggle = () => {
+                        const nextValues = checked
+                          ? value.filter((item) => item !== emotion)
+                          : [...value, emotion];
+                        onChange(nextValues);
+                      };
+                      return (
+                        <View key={emotion} className="flex-row items-center gap-3">
+                          <Checkbox
+                            accessibilityLabel={label}
+                            checked={checked}
+                            onCheckedChange={toggle}
+                          />
+                          <Label onPress={toggle}>{label}</Label>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ))}
                 {errors.emotions?.message ? (
                   <Text variant="muted">{errors.emotions.message}</Text>
                 ) : null}

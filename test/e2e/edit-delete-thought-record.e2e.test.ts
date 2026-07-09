@@ -67,7 +67,11 @@ test.describe("edit and archive a thought record", () => {
     // Step 8: Outcome is optional; save.
     await page.getByRole("button", { name: "Save record", exact: true }).click();
 
-    // After save, detail screen shows the record at /modules/cbt/history/<id>.
+    // A NEW record lands on the calm closing moment first; "View record" reaches detail.
+    await expect(page.getByText("You examined a thought.")).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "View record", exact: true }).click();
+
+    // After that, detail screen shows the record at /modules/cbt/history/<id>.
     await expect(page).toHaveURL(/\/modules\/cbt\/history\/[^/]+$/, { timeout: 15_000 });
     await expect(page.getByText(originalBalancedThought)).toBeVisible({ timeout: 15_000 });
 

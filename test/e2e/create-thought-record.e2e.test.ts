@@ -69,7 +69,11 @@ test.describe("create thought record", () => {
     // Step 8: Outcome is optional; save from the final step.
     await page.getByRole("button", { name: "Save record", exact: true }).click();
 
-    // After save, app routes to /cbt/history/<id>. Verify the saved values render.
+    // After save, a new record lands on the calm closing moment first.
+    await expect(page.getByText("You examined a thought.")).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "View record", exact: true }).click();
+
+    // From there, "View record" routes to /cbt/history/<id>. Verify the saved values render.
     await expect(page.getByText(situation)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(automaticThought)).toBeVisible();
     await expect(page.getByText(balancedThought)).toBeVisible();

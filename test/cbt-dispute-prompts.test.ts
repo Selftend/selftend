@@ -18,11 +18,14 @@ describe.each([
   ["en", en],
   ["bg", bg],
 ])("%s cbt.json dispute prompts", (_locale, resources) => {
-  const record = (resources as { record: Record<string, string> }).record;
+  // `record` also has nested non-string keys (e.g. `intro`), so index as `unknown`
+  // and narrow per-assertion rather than widening the whole object to strings.
+  const record = (resources as { record: Record<string, unknown> }).record;
 
   it.each(PROMPT_KEYS)("defines record.%s with real content", (key) => {
-    expect(typeof record[key]).toBe("string");
-    expect(record[key].length).toBeGreaterThan(10);
-    expect(record[key]).not.toContain("disputePrompt");
+    const value = record[key];
+    expect(typeof value).toBe("string");
+    expect((value as string).length).toBeGreaterThan(10);
+    expect(value).not.toContain("disputePrompt");
   });
 });

@@ -969,6 +969,11 @@
   "record": {
     "newTitle": "New thought record",
     "newDescription": "Use any prompts that help. Blank fields can be saved and completed later.",
+    "intro": {
+      "title": "Before you start",
+      "body": "A thought record is a short, guided way to examine one difficult thought — about 5–10 minutes. Every field is optional; you can leave blanks and finish later.",
+      "dismiss": "Got it"
+    },
     "editTitle": "Edit thought record",
     "editDescription": "Edit a saved record without losing its history.",
     "saveProblem": "Save problem",
@@ -1030,6 +1035,13 @@
     "disputePrompt4": "Are you holding yourself to a harsher standard than you would anyone else?",
     "disputePrompt5": "What evidence argues against this thought?"
   },
+  "saved": {
+    "title": "You examined a thought.",
+    "intensityBefore": "Before",
+    "intensityAfter": "After",
+    "viewRecord": "View record",
+    "backHome": "Back home"
+  },
   "detail": {
     "loading": "Loading record",
     "loadingDescription": "Fetching your saved record...",
@@ -1048,6 +1060,8 @@
     "intensityShift": "Intensity {{before}} -> {{after}} (shift {{shift}})."
   },
   "emotions": {
+    "groupDifficult": "Difficult feelings",
+    "groupPleasant": "Pleasant feelings",
     "happy": "Happy",
     "excited": "Excited",
     "loved": "Loved",

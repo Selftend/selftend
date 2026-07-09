@@ -134,6 +134,10 @@ test.describe("sign-up + onboarding + first record", () => {
 
     await page.getByRole("button", { name: "Save record", exact: true }).click();
 
+    // Saving a new record lands on the closing moment; "View record" opens the detail.
+    await expect(page.getByText("You examined a thought.")).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "View record", exact: true }).click();
+
     // Detail page renders the saved values.
     await expect(page.getByText(situation)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(balancedThought)).toBeVisible();

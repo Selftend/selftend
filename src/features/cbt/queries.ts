@@ -42,6 +42,12 @@ export function useSaveThoughtRecord(userId: string | null) {
         return;
       }
 
+      // Prime the single-record cache with the saved record so the post-save
+      // closing-moment screen (thought-record-saved-screen) reads it instantly
+      // instead of flashing a LoadingState while it re-fetches. The record query
+      // is disabled on the new-record form, so without this the cache is empty.
+      queryClient.setQueryData(cbtKeys.record(userId, record.id), record);
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: cbtKeys.records(userId) }),
         queryClient.invalidateQueries({ queryKey: cbtKeys.record(userId, record.id) }),
