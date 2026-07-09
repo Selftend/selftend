@@ -29,29 +29,31 @@ export function HelpSheet({ helpKey, visible, onDismiss }: HelpSheetProps) {
       onRequestClose={onDismiss}
     >
       <SafeAreaView className="flex-1 bg-background">
-        <ScrollView contentContainerClassName="gap-6 p-6">
-          <View className="flex-row items-start justify-between gap-3">
-            <Text variant="h2" className="flex-1">
-              {title}
-            </Text>
-            <Pressable
-              accessibilityLabel={t("ui.close")}
-              accessibilityRole="button"
-              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={onDismiss}
-            >
-              <Icon name="close" className="size-6 text-muted-foreground" />
-            </Pressable>
+        <ScrollView contentContainerClassName="p-6">
+          <View testID="help-sheet-content" className="w-full max-w-2xl mx-auto gap-6">
+            <View className="flex-row items-start justify-between gap-3">
+              <Text variant="h2" className="flex-1">
+                {title}
+              </Text>
+              <Pressable
+                accessibilityLabel={t("ui.close")}
+                accessibilityRole="button"
+                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                onPress={onDismiss}
+              >
+                <Icon name="close" className="size-6 text-muted-foreground" />
+              </Pressable>
+            </View>
+            {imageSource ? (
+              <Image
+                accessibilityLabel={title}
+                resizeMode="contain"
+                source={imageSource}
+                style={{ alignSelf: "center", height: 220, maxWidth: 320, width: "100%" }}
+              />
+            ) : null}
+            <HelpSections helpKey={helpKey} />
           </View>
-          {imageSource ? (
-            <Image
-              accessibilityLabel={title}
-              resizeMode="contain"
-              source={imageSource}
-              style={{ alignSelf: "center", height: 220, maxWidth: 320, width: "100%" }}
-            />
-          ) : null}
-          <HelpSections helpKey={helpKey} />
         </ScrollView>
       </SafeAreaView>
     </Modal>

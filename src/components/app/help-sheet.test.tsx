@@ -16,6 +16,11 @@ describe("HelpSheet", () => {
     expect(screen.getByText("Why it helps")).toBeTruthy();
   });
 
+  it("renders content inside a centered max-width container", () => {
+    renderWithProviders(<HelpSheet helpKey="beliefs" visible onDismiss={jest.fn()} />);
+    expect(screen.getByTestId("help-sheet-content")).toBeTruthy();
+  });
+
   it("calls onDismiss when the close control is pressed", () => {
     const onDismiss = jest.fn();
     renderWithProviders(<HelpSheet helpKey="beliefs" visible onDismiss={onDismiss} />);

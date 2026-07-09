@@ -15,7 +15,7 @@ export function HelpSections({ helpKey }: { helpKey: HelpKey }) {
   return (
     <View className="gap-4">
       {sections.map((section) => (
-        <View key={section.label} className="gap-1">
+        <View key={section.label} className="gap-1.5 rounded-lg border border-border p-4">
           <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {section.label}
           </Text>
