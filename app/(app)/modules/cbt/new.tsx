@@ -25,6 +25,7 @@ import { NumberRating } from "@/src/components/app/number-rating";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
 import { distortionDefinitions } from "@/src/constants/distortions";
 import { emotionOptions } from "@/src/constants/emotions";
+import { formatDistortionLabels, formatEmotionLabels } from "@/src/features/cbt/format-labels";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
 import { thoughtRecordFormSchema, type ThoughtRecordFormSchema } from "@/src/features/cbt/schemas";
 import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
@@ -618,12 +619,15 @@ export default function ThoughtRecordEditorScreen() {
                 </Text>
                 <Text>
                   {t("record.summaryEmotions", {
-                    value: getValues("emotions").join(", ") || t("record.summaryNotFilled"),
+                    value:
+                      formatEmotionLabels(getValues("emotions"), t) || t("record.summaryNotFilled"),
                   })}
                 </Text>
                 <Text>
                   {t("record.summaryPatterns", {
-                    value: getValues("distortions").join(", ") || t("record.summaryNotFilled"),
+                    value:
+                      formatDistortionLabels(getValues("distortions"), t) ||
+                      t("record.summaryNotFilled"),
                   })}
                 </Text>
               </View>

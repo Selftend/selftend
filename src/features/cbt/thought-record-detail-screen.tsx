@@ -15,6 +15,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { distortionLookup } from "@/src/constants/distortions";
 import { ErrorState, LoadingState } from "@/src/components/app/screen-state";
+import { formatEmotionLabels } from "@/src/features/cbt/format-labels";
 import { useArchiveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -188,7 +189,9 @@ export default function ThoughtRecordDetailScreen() {
           <Card>
             <CardHeader>
               <CardTitle>{t("record.emotions")}</CardTitle>
-              <CardDescription>{data.emotions.join(", ") || notFilled}</CardDescription>
+              <CardDescription>
+                {formatEmotionLabels(data.emotions, t) || notFilled}
+              </CardDescription>
             </CardHeader>
           </Card>
           {showExpandedDetail ? (
