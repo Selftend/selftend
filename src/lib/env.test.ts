@@ -132,7 +132,7 @@ describe("store and community links", () => {
     jest.resetModules();
     const { appEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
 
-    expect(appEnv.discordUrl).toBe("https://discord.gg/pdaAr9FhcQ");
+    expect(appEnv.discordUrl).toBe("https://discord.gg/R96NRx6AH3");
   });
 
   it("lets EXPO_PUBLIC_DISCORD_URL be blanked to hide Discord UI", () => {

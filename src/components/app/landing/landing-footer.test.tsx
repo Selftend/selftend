@@ -16,7 +16,7 @@ jest.mock("@/src/lib/linking", () => ({
 
 jest.mock("@/src/lib/env", () => ({
   appEnv: {
-    discordUrl: "https://discord.gg/pdaAr9FhcQ",
+    discordUrl: "https://discord.gg/R96NRx6AH3",
   },
 }));
 
@@ -24,7 +24,7 @@ const mockPush = router.push as jest.MockedFunction<typeof router.push>;
 const mockOpen = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
 
 beforeEach(() => {
-  appEnv.discordUrl = "https://discord.gg/pdaAr9FhcQ";
+  appEnv.discordUrl = "https://discord.gg/R96NRx6AH3";
   jest.clearAllMocks();
 });
 
@@ -72,7 +72,7 @@ describe("LandingFooter", () => {
 
     fireEvent.press(screen.getByText("Join our Discord"));
 
-    expect(mockOpen).toHaveBeenCalledWith("https://discord.gg/pdaAr9FhcQ");
+    expect(mockOpen).toHaveBeenCalledWith("https://discord.gg/R96NRx6AH3");
   });
 
   it("hides the Discord link when appEnv.discordUrl is empty", () => {

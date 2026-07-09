@@ -1,6 +1,6 @@
 # Discord Server
 
-The Selftend community Discord (permanent invite: `https://discord.gg/pdaAr9FhcQ`,
+The Selftend community Discord (permanent invite: `https://discord.gg/R96NRx6AH3`,
 wired into the app via `EXPO_PUBLIC_DISCORD_URL`). Design decisions are recorded
 in [superpowers/specs/2026-07-08-discord-server-setup-design.md](superpowers/specs/2026-07-08-discord-server-setup-design.md);
 community principles in [community.md](community.md).
@@ -96,7 +96,7 @@ vent channels, and any hosted bot.
   (New module/Improvement/Mobile/Web/Accessibility, 👍 default reaction)
 - Custom `:selftend:` emoji uploaded from `assets/favicon.png`
 - Every text channel has a pinned scope post (copy in `content.mjs`)
-- Permanent invite `https://discord.gg/pdaAr9FhcQ` → `#links`; this is the
+- Permanent invite `https://discord.gg/R96NRx6AH3` → `#links`; this is the
   app's default `discordUrl` in `src/lib/env.ts` — if the invite is ever
   regenerated, update both together. Invites die with their channel, so
   `#links` must never be deleted (rename/repurpose instead)
