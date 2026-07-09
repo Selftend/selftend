@@ -49,6 +49,9 @@ test.describe("create thought record", () => {
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // Step 5: Evidence is optional in this flow.
+    // The "Put the thought on trial" prompts must render real copy, not raw keys.
+    await expect(page.getByText("Is this a fact or an opinion?")).toBeVisible();
+    await expect(page.getByText(/disputePrompt/)).toHaveCount(0);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // Step 6: Distortions

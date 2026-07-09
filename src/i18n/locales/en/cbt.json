@@ -7,7 +7,7 @@
   "home": {
     "title": "CBT",
     "description": "A focused CBT section built around thought records, distortion awareness, and quiet review.",
-    "distortionGuide": "Distortion guide",
+    "distortionGuide": "Thinking patterns",
     "recordHistory": "Record history"
   },
   "program": {
@@ -156,7 +156,7 @@
     },
     "usesSharedTools": "Uses these shared tools",
     "strategyDescriptions": {
-      "thoughts": "5-step examination of one moment.",
+      "thoughts": "A guided look at one difficult moment.",
       "beliefs": "Recurring themes underneath thoughts.",
       "worry": "Sort \"what if\" from real problems.",
       "distortions": "Reference for the core thinking patterns.",
@@ -578,8 +578,8 @@
     "recordSummary": "Updated {{timestamp}}. {{balancedThought}}"
   },
   "learn": {
-    "title": "Distortion guide",
-    "description": "Short explanations of the common thinking patterns to watch for.",
+    "title": "Thinking patterns",
+    "description": "Short explanations of the common thinking patterns to watch for. Sometimes called cognitive distortions.",
     "useGently": "Use gently",
     "useGentlyDescription": "These patterns are prompts for reflection, not labels to pin on yourself."
   },
@@ -1023,7 +1023,12 @@
     "continue": "Continue",
     "saveRecord": "Save record",
     "saving": "Saving record",
-    "disputeTitle": "Put the thought on trial"
+    "disputeTitle": "Put the thought on trial",
+    "disputePrompt1": "Is this a fact or an opinion?",
+    "disputePrompt2": "What would you tell a close friend who had this thought?",
+    "disputePrompt3": "Have you faced this situation before? What actually happened?",
+    "disputePrompt4": "Are you holding yourself to a harsher standard than you would anyone else?",
+    "disputePrompt5": "What evidence argues against this thought?"
   },
   "detail": {
     "loading": "Loading record",
