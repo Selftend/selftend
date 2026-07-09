@@ -23,7 +23,6 @@ import {
   useSelectedDateStore,
 } from "@/src/stores/selected-date-store";
 import { parseLocalNoon } from "@/src/utils/date";
-import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 
 const INITIAL_DAYS = 60;
 const LOAD_CHUNK = 120;
@@ -150,7 +149,6 @@ export function DateBar() {
   const selectedDate = useSelectedDateStore((s) => s.selectedDate);
   const setSelectedDate = useSelectedDateStore((s) => s.setSelectedDate);
   const resetToToday = useSelectedDateStore((s) => s.resetToToday);
-  const datesRef = useTourTargetRef("home-dates");
   const today = currentDateKey();
   const todayNumber = chipLabels(lang, today).day;
   const onToday = selectedDate === today;
@@ -232,10 +230,7 @@ export function DateBar() {
   );
 
   return (
-    <View
-      ref={datesRef}
-      className="flex-row items-center gap-2 border-b border-border bg-background px-3 py-2"
-    >
+    <View className="flex-row items-center gap-2 border-b border-border bg-background px-3 py-2">
       {/* Calendar jump: opens an in-app month picker (all platforms). Month
           navigation only browses - the date changes only when a day is tapped. */}
       <Pressable

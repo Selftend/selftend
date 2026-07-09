@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
-import { Platform, Pressable, View, type ViewStyle } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { Pressable, View, type ViewStyle } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
@@ -11,11 +10,7 @@ import { Badge } from "@/src/components/react-native-reusables/badge";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { hueToTint, type ToolHue } from "@/src/features/mindfulness/exercise-hue";
-import { useUpdateShownButtonTours, useUserPreferences } from "@/src/features/settings/queries";
-import type { ButtonTourAction } from "@/src/features/modules/types";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
-import { useSession } from "@/src/providers/session-provider";
-import { TourOverlay } from "@/src/features/tours/tour-overlay";
 
 type TuneAction = { type: "tune"; onPress: () => void; accessibilityLabel?: string };
 type NotificationsAction = {
@@ -34,27 +29,10 @@ const ICON_FOR_TYPE = {
   info: "help-outline",
 } as const;
 
-const TOURABLE_ACTION_TYPES = ["tune", "notifications", "program", "info"] as const;
-
-function isTourableActionType(value: HeaderAction["type"]): value is ButtonTourAction {
-  return (TOURABLE_ACTION_TYPES as readonly string[]).includes(value);
-}
-
-// Fallback measured size when real measurement is unavailable: matches the 20px
-// header icon, so the padded spotlight stays the intended 32px circle.
-const MEASURE_FALLBACK_SIZE = 20;
-
 const buttonStyle: ViewStyle = {
   alignItems: "center",
   justifyContent: "center",
 };
-
-interface ButtonRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
 
 interface ModuleHomeHeaderProps {
   title: string;
@@ -68,12 +46,11 @@ interface ModuleHomeHeaderProps {
   /** When set, shows an "add to home" button (dropdown of this category's widgets) in the actions row. */
   addWidgetCategory?: string;
   /**
-   * Screen scope for button-tip storage keys (e.g. "cbt").
-   * Used as a legacy-read-only prefix: the filter still checks "cbt:info" so old
-   * per-screen dismissals grandfather correctly. New dismissals write the bare
-   * action type ("info") so they suppress the tip app-wide.
+   * No longer used: per-page button coach marks were removed (only the home dashboard
+   * keeps first-run tips now). Kept as an accepted prop so the module screens that
+   * already pass it don't need to change; safe to drop in a future cleanup pass.
    */
-  tourScope: string;
+  tourScope?: string;
 }
 
 export function ModuleHomeHeader({
@@ -85,148 +62,14 @@ export function ModuleHomeHeader({
   meta,
   moduleLabel,
   addWidgetCategory,
-  tourScope,
 }: ModuleHomeHeaderProps) {
-  const { t } = useTranslation("navigation");
-  const { user } = useSession();
-  const userId = user?.id ?? null;
-  const { data: preferences } = useUserPreferences(userId);
-  const updateShownButtonTours = useUpdateShownButtonTours(userId);
-
   const [showNotifications, setShowNotifications] = useState(false);
-  const [buttonRect, setButtonRect] = useState<ButtonRect | null>(null);
-  const [isFocused, setIsFocused] = useState(true);
-
-  const buttonViewRefs = useRef<Map<string, View | null>>(new Map());
-
-  useFocusEffect(
-    useCallback(() => {
-      setIsFocused(true);
-      return () => {
-        setIsFocused(false);
-        setButtonRect(null);
-      };
-    }, []),
-  );
 
   const notificationsAction = actions.find(
     (a): a is NotificationsAction => a.type === "notifications",
   );
 
-  const tourableActions = actions
-    .map((action) => action.type)
-    .filter(isTourableActionType)
-    .map((actionType) => ({ actionType, storageKey: `${tourScope}:${actionType}` }));
-  const tourQueue = preferences
-    ? tourableActions.filter(
-        ({ actionType, storageKey }) =>
-          !preferences.shownButtonTours.includes(storageKey) &&
-          // Legacy bare keys (pre-scoping) count as seen everywhere.
-          !preferences.shownButtonTours.includes(actionType),
-      )
-    : [];
-  const currentTour = tourQueue[0] ?? null;
-  const currentTourActionType = currentTour?.actionType ?? null;
-
-  // Measure the active tour button in window coords so the spotlight lands on it. The equality
-  // guard makes redundant re-measures (from onLayout below) cheap and loop-free.
-  const measureCurrentTourButton = useCallback(() => {
-    if (!currentTourActionType || !isFocused) return;
-    if (process.env.NODE_ENV === "test") {
-      setButtonRect({ x: 0, y: 0, width: MEASURE_FALLBACK_SIZE, height: MEASURE_FALLBACK_SIZE });
-      return;
-    }
-    const viewRef = buttonViewRefs.current.get(currentTourActionType);
-    if (!viewRef) return;
-
-    const apply = (rect: ButtonRect) =>
-      setButtonRect((prev) =>
-        prev &&
-        prev.x === rect.x &&
-        prev.y === rect.y &&
-        prev.width === rect.width &&
-        prev.height === rect.height
-          ? prev
-          : rect,
-      );
-
-    if (Platform.OS === "web") {
-      const el = viewRef as unknown as HTMLElement;
-      const rect = el.getBoundingClientRect?.();
-      if (rect) apply({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
-    } else if (typeof viewRef.measure === "function") {
-      // measure() yields pageX/pageY in the app-window coordinate space - the SAME space the
-      // Portal overlay renders into. (measureInWindow + a separate Modal window displaced the
-      // spotlight on Android.)
-      viewRef.measure((_x, _y, width, height, pageX, pageY) =>
-        apply({ x: pageX, y: pageY, width, height }),
-      );
-    } else {
-      apply({ x: 0, y: 0, width: MEASURE_FALLBACK_SIZE, height: MEASURE_FALLBACK_SIZE });
-    }
-  }, [currentTourActionType, isFocused]);
-
-  useEffect(() => {
-    if (!currentTourActionType || !isFocused) {
-      setButtonRect(null);
-      return;
-    }
-    if (process.env.NODE_ENV === "test") {
-      measureCurrentTourButton();
-      return;
-    }
-    // A single early measure caught a STALE position on Android: the flex breadcrumb sizes
-    // after first paint and pushes the actions row right, so the one-shot rect placed the
-    // spotlight left of (and below) the real button. Re-measure across a few settle points
-    // (and on every actions-row onLayout / web resize) until the layout stabilises.
-    const timers = [
-      setTimeout(measureCurrentTourButton, 150),
-      setTimeout(measureCurrentTourButton, 450),
-      setTimeout(measureCurrentTourButton, 900),
-    ];
-    if (Platform.OS === "web") {
-      window.addEventListener("resize", measureCurrentTourButton, { passive: true });
-      return () => {
-        timers.forEach(clearTimeout);
-        window.removeEventListener("resize", measureCurrentTourButton);
-      };
-    }
-    return () => timers.forEach(clearTimeout);
-  }, [currentTourActionType, isFocused, measureCurrentTourButton]);
-
-  // Persisting "tour seen" is best-effort; a failed write must not become an unhandled
-  // rejection (the tour simply shows again next time).
-  // Writes the bare action type (e.g. "notifications") so the dismissal applies
-  // app-wide across all module/tool screens.
-  async function dismissTour() {
-    if (!preferences || !currentTourActionType || updateShownButtonTours.isPending) return;
-    try {
-      await updateShownButtonTours.mutateAsync([
-        ...new Set([...preferences.shownButtonTours, currentTourActionType]),
-      ]);
-    } catch {
-      /* best-effort */
-    }
-  }
-
-  async function dismissAllTours() {
-    if (!preferences || updateShownButtonTours.isPending) return;
-    try {
-      await updateShownButtonTours.mutateAsync([
-        ...new Set([
-          ...preferences.shownButtonTours,
-          ...tourableActions.map(({ actionType }) => actionType),
-        ]),
-      ]);
-    } catch {
-      /* best-effort */
-    }
-  }
-
   function handleActionPress(action: HeaderAction) {
-    if (currentTourActionType === action.type) {
-      void dismissTour();
-    }
     if (action.type === "notifications") {
       setShowNotifications(true);
     } else {
@@ -234,31 +77,16 @@ export function ModuleHomeHeader({
     }
   }
 
-  const setActionRef = (key: ButtonTourAction, ref: View | null) => {
-    if (ref) {
-      buttonViewRefs.current.set(key, ref);
-      return;
-    }
-    buttonViewRefs.current.delete(key);
-  };
-
   const heroMode = hue != null && icon != null;
 
   const actionsRow =
     actions.length > 0 || addWidgetCategory ? (
-      // Re-measure the tour spotlight whenever this row's frame changes (e.g. the breadcrumb
-      // sizing on Android pushes it right after first paint) so the highlight tracks the button.
-      <View className="flex-row items-center gap-3" onLayout={measureCurrentTourButton}>
+      <View className="flex-row items-center gap-3">
         {actions.map((action) => (
-          <TourButton
+          <ActionButton
             key={action.type}
             action={action}
             onPress={() => handleActionPress(action)}
-            setRef={(ref) => {
-              if (isTourableActionType(action.type)) {
-                setActionRef(action.type, ref);
-              }
-            }}
           />
         ))}
         {addWidgetCategory ? <AddToHomeButton category={addWidgetCategory} /> : null}
@@ -272,17 +100,6 @@ export function ModuleHomeHeader({
           targetKey={notificationsAction.targetKey}
           visible={showNotifications}
           onDismiss={() => setShowNotifications(false)}
-        />
-      ) : null}
-      {currentTourActionType && buttonRect && isFocused ? (
-        <TourOverlay
-          targetRect={buttonRect}
-          description={t(`headerTour.${currentTourActionType}.description`)}
-          dismissLabel={t(`headerTour.${currentTourActionType}.dismiss`)}
-          skipAllLabel={t("headerTour.skipAll")}
-          isPending={updateShownButtonTours.isPending}
-          onDismiss={() => void dismissTour()}
-          onDismissAll={() => void dismissAllTours()}
         />
       ) : null}
       {heroMode ? (
@@ -333,13 +150,12 @@ export function ModuleHomeHeader({
   );
 }
 
-interface TourButtonProps {
+interface ActionButtonProps {
   action: HeaderAction;
   onPress: () => void;
-  setRef: (ref: View | null) => void;
 }
 
-function TourButton({ action, onPress, setRef }: TourButtonProps) {
+function ActionButton({ action, onPress }: ActionButtonProps) {
   const { t } = useTranslation("navigation");
   const label = action.accessibilityLabel ?? t(`headerButton.${action.type}`);
   const iconClass = action.type === "program" ? "text-act" : "text-muted-foreground";
@@ -351,9 +167,7 @@ function TourButton({ action, onPress, setRef }: TourButtonProps) {
       onPress={onPress}
       style={buttonStyle}
     >
-      <View ref={setRef}>
-        <Icon name={ICON_FOR_TYPE[action.type]} size={20} className={iconClass} />
-      </View>
+      <Icon name={ICON_FOR_TYPE[action.type]} size={20} className={iconClass} />
     </Pressable>
   );
 }

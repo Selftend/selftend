@@ -1,8 +1,6 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 
 import { ModuleHomeHeader } from "./module-home-header";
-import { defaultUserPreferences } from "@/src/features/modules/types";
-import { useUpdateShownButtonTours, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("react-native", () => {
@@ -49,154 +47,84 @@ jest.mock("expo-linear-gradient", () => {
   return { LinearGradient: View };
 });
 
-jest.mock("@/src/providers/session-provider", () => ({
-  useSession: () => ({ user: { id: "user-1" } }),
-}));
+function renderHeader({ includeProgram = false }: { includeProgram?: boolean } = {}) {
+  const onPressTune = jest.fn();
+  const onPressInfo = jest.fn();
+  const onPressProgram = jest.fn();
 
-jest.mock("@/src/features/settings/queries", () => ({
-  useUpdateShownButtonTours: jest.fn(),
-  useUserPreferences: jest.fn(),
-}));
-
-const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
-const mockUseUpdateShownButtonTours = useUpdateShownButtonTours as jest.MockedFunction<
-  typeof useUpdateShownButtonTours
->;
-
-function renderHeader({
-  includeProgram = false,
-  shownButtonTours = [],
-  tourScope = "cbt",
-}: { includeProgram?: boolean; shownButtonTours?: string[]; tourScope?: string } = {}) {
-  mockUseUserPreferences.mockReturnValue({
-    data: {
-      ...defaultUserPreferences,
-      shownButtonTours,
-    },
-    isLoading: false,
-  } as unknown as ReturnType<typeof useUserPreferences>);
-
-  return renderWithProviders(
+  renderWithProviders(
     <ModuleHomeHeader
       title="CBT"
-      tourScope={tourScope}
+      tourScope="cbt"
       actions={[
-        { type: "tune", onPress: jest.fn() },
+        { type: "tune", onPress: onPressTune },
         { type: "notifications", targetKey: "cbt" },
-        ...(includeProgram ? [{ type: "program" as const, onPress: jest.fn() }] : []),
-        { type: "info", onPress: jest.fn() },
+        ...(includeProgram ? [{ type: "program" as const, onPress: onPressProgram }] : []),
+        { type: "info", onPress: onPressInfo },
       ]}
     />,
   );
+
+  return { onPressTune, onPressInfo, onPressProgram };
 }
 
-describe("ModuleHomeHeader button tours", () => {
-  const mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences);
-
+describe("ModuleHomeHeader action buttons", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mutateAsync.mockResolvedValue(defaultUserPreferences);
-    mockUseUpdateShownButtonTours.mockReturnValue({
-      isPending: false,
-      mutateAsync,
-    } as unknown as ReturnType<typeof useUpdateShownButtonTours>);
   });
 
-  it("marks only the current tour as shown when Got it is pressed", async () => {
-    renderHeader();
-
-    fireEvent.press(await screen.findByText("Got it"));
-
-    await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(["tune"]);
-    });
-  });
-
-  it("marks every header tour as shown when Skip all tips is pressed", async () => {
+  it("renders every provided action button", () => {
     renderHeader({ includeProgram: true });
 
-    fireEvent.press(await screen.findByText("Skip all tips"));
-
-    await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(["tune", "notifications", "program", "info"]);
-    });
+    expect(screen.getByLabelText("Customise")).toBeTruthy();
+    expect(screen.getByLabelText("Notifications")).toBeTruthy();
+    expect(screen.getByLabelText("CBT program")).toBeTruthy();
+    expect(screen.getByLabelText("About this module")).toBeTruthy();
   });
 
-  it("starts with the first unseen action", async () => {
-    renderHeader({ shownButtonTours: ["cbt:tune"] });
+  it("fires onPress for a plain action button (tune)", () => {
+    const { onPressTune } = renderHeader();
 
-    expect(
-      await screen.findByText(
-        "Tap here to manage reminders and notification settings for this feature.",
-      ),
-    ).toBeTruthy();
+    fireEvent.press(screen.getByLabelText("Customise"));
+
+    expect(onPressTune).toHaveBeenCalledTimes(1);
   });
 
-  it("shows the program tip when the program action is present", async () => {
-    renderHeader({ includeProgram: true, shownButtonTours: ["cbt:tune", "cbt:notifications"] });
+  it("fires onPress for the info action button", () => {
+    const { onPressInfo } = renderHeader();
 
-    expect(
-      await screen.findByText("Tap here to show or restart this module's program invitation."),
-    ).toBeTruthy();
+    fireEvent.press(screen.getByLabelText("About this module"));
+
+    expect(onPressInfo).toHaveBeenCalledTimes(1);
   });
 
-  it("hides a button tour when the same button was shown on another screen", async () => {
-    renderHeader({ shownButtonTours: ["cbt:tune", "cbt:notifications"] });
+  it("fires onPress for the program action button", () => {
+    const { onPressProgram } = renderHeader({ includeProgram: true });
 
-    expect(
-      await screen.findByText("Tap here any time to read about how this module works."),
-    ).toBeTruthy();
+    fireEvent.press(screen.getByLabelText("CBT program"));
+
+    expect(onPressProgram).toHaveBeenCalledTimes(1);
   });
 
-  it("stores dismissals under the bare action type key (app-wide)", async () => {
-    renderHeader({ tourScope: "cbt", shownButtonTours: [] });
-
-    fireEvent.press(await screen.findByText("Got it"));
-
-    await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(["tune"]);
-    });
-  });
-
-  it("does not show a tour whose scoped key is already stored", async () => {
-    renderHeader({
-      tourScope: "cbt",
-      shownButtonTours: ["cbt:tune", "cbt:notifications", "cbt:info"],
-    });
+  it("renders no first-run coach-mark overlay for any action", () => {
+    renderHeader({ includeProgram: true });
 
     expect(screen.queryByText("Got it")).toBeNull();
+    expect(screen.queryByText("Skip all tips")).toBeNull();
   });
 
-  it("grandfathers legacy bare keys on every screen", async () => {
-    renderHeader({
-      tourScope: "mood",
-      shownButtonTours: ["tune", "notifications", "info"],
-    });
+  it("renders no tour even when actions were never dismissed", () => {
+    // No shownButtonTours mechanism remains - the module header never shows tips,
+    // regardless of any "dismissed" state (there's no dismissal to track).
+    renderHeader();
 
-    expect(screen.queryByText("Got it")).toBeNull();
-  });
-
-  it("bare keys suppress tours on any scope (dismissal is now app-wide)", async () => {
-    renderHeader({
-      tourScope: "mood",
-      shownButtonTours: ["tune", "notifications", "info"],
-    });
-
-    expect(screen.queryByText("Got it")).toBeNull();
+    expect(screen.queryByText(/Tap here/i)).toBeNull();
   });
 });
 
 describe("ModuleHomeHeader hero mode", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseUpdateShownButtonTours.mockReturnValue({
-      isPending: false,
-      mutateAsync: jest.fn(),
-    } as unknown as ReturnType<typeof useUpdateShownButtonTours>);
-    mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, shownButtonTours: ["tune", "notifications", "info"] },
-      isLoading: false,
-    } as unknown as ReturnType<typeof useUserPreferences>);
   });
 
   it("renders the title and tagline when hue and icon are provided", async () => {
@@ -253,5 +181,17 @@ describe("ModuleHomeHeader hero mode", () => {
     expect(screen.getByRole("heading", { name: "Cognitive Behavioral Therapy" })).toBeTruthy();
     // No chip rendered = no second occurrence of the title text
     expect(screen.getAllByText("Cognitive Behavioral Therapy")).toHaveLength(1);
+  });
+
+  it("renders without a tourScope prop (now unused, kept only for call-site compatibility)", () => {
+    renderWithProviders(
+      <ModuleHomeHeader
+        hue="think"
+        icon="psychology"
+        title="Cognitive Behavioral Therapy"
+        description="..."
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Cognitive Behavioral Therapy" })).toBeTruthy();
   });
 });

@@ -15,7 +15,6 @@ import { useSession } from "@/src/providers/session-provider";
 // under; storageKey is what lands in shown_button_tours.
 const HOME_TOUR_STOPS = [
   { storageKey: "home:checkin", targetKey: "home-checkin", i18nKey: "checkin" },
-  { storageKey: "home:dates", targetKey: "home-dates", i18nKey: "dates" },
   { storageKey: "home:edit", targetKey: "home-edit", i18nKey: "edit" },
   { storageKey: "home:navigation", targetKey: "home-navigation", i18nKey: "navigation" },
 ] as const;

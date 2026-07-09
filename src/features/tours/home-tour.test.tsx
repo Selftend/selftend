@@ -64,7 +64,6 @@ beforeEach(() => {
   jest.clearAllMocks();
   // Clear all registered targets between tests.
   setTourTarget("home-checkin", null);
-  setTourTarget("home-dates", null);
   setTourTarget("home-edit", null);
   setTourTarget("home-navigation", null);
 });
@@ -83,16 +82,17 @@ describe("HomeTour", () => {
   it("shows the first unseen stop whose target is registered", async () => {
     setupPreferencesMock(true, ["home:checkin"]);
     setupMutationMock();
-    setTourTarget("home-dates", fakeView as never);
     setTourTarget("home-edit", fakeView as never);
 
     renderWithProviders(<HomeTour />);
 
-    expect(await screen.findByText("Browse previous days to see what you logged.")).toBeTruthy();
+    expect(
+      await screen.findByText("Arrange the dashboard your way - add, remove and reorder widgets."),
+    ).toBeTruthy();
   });
 
   it("skips stops with no registered target (desktop: no hamburger)", () => {
-    setupPreferencesMock(true, ["home:checkin", "home:dates", "home:edit"]);
+    setupPreferencesMock(true, ["home:checkin", "home:edit"]);
     setupMutationMock();
     // Do NOT register "home-navigation"
 
@@ -102,7 +102,7 @@ describe("HomeTour", () => {
     expect(screen.queryByText("Got it")).toBeNull();
   });
 
-  it("dismiss stores the stop key; skip-all stores all four home keys", async () => {
+  it("dismiss stores the stop key; skip-all stores all three home keys", async () => {
     const mutateAsync = setupMutationMock();
     setupPreferencesMock(true, []);
     setTourTarget("home-checkin", fakeView as never);
@@ -123,12 +123,7 @@ describe("HomeTour", () => {
     fireEvent.press(await screen.findByText("Skip all tips"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith([
-        "home:checkin",
-        "home:dates",
-        "home:edit",
-        "home:navigation",
-      ]);
+      expect(mutateAsync).toHaveBeenCalledWith(["home:checkin", "home:edit", "home:navigation"]);
     });
 
     unmount();

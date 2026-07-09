@@ -3,9 +3,15 @@ import { expect, test } from "./fixtures";
 import { createServiceClient } from "./helpers";
 import { policyVersion } from "../../src/features/policies/policy-content";
 
-const TOUR_KEYS = ["cbt:tune", "cbt:notifications", "cbt:program", "cbt:info"] as const;
-const BARE_TOUR_KEYS = ["tune", "notifications", "program", "info"] as const;
-const ACT_BARE_TOUR_KEYS = ["notifications", "program", "info"] as const;
+// Home dashboard's three surviving first-run tips, in HOME_TOUR_STOPS order
+// (src/features/tours/home-tour.tsx). The day-strip "dates" tip and every
+// per-page module-header ("button tour") tip were removed - see
+// .superpowers/sdd/task-4-brief.md. This spec now covers:
+//   1. Module screens (e.g. mood-tracker): action buttons render and fire,
+//      with no coach-mark overlay ever appearing.
+//   2. The home dashboard: exactly the 3 remaining tips still show and can be
+//      dismissed individually or all at once.
+const HOME_TOUR_KEYS = ["home:checkin", "home:edit", "home:navigation"] as const;
 
 // Set from the worker's pool user in beforeAll (worker-scoped fixtures are
 // available to beforeAll). Module scope is per-worker-process, so this is safe.
@@ -65,7 +71,7 @@ async function restoreOriginalPreferences() {
   }
 }
 
-test.describe("button tours", () => {
+test.describe("module-header buttons (per-page coach marks removed)", () => {
   test.beforeAll(async ({ user }) => {
     USER_ID = user.id;
     originalPreferences = await getPreferenceRow();
@@ -75,52 +81,123 @@ test.describe("button tours", () => {
     await restoreOriginalPreferences();
   });
 
-  test("Got it dismisses only the current header tip", async ({ page }) => {
+  test("action buttons render with no coach-mark overlay on first visit", async ({ page }) => {
+    // Empty shown_button_tours used to mean "every header tip is unseen". Now there is
+    // no header-tip mechanism at all, so the module screen must render clean regardless.
     await setTourState([]);
 
-    await page.goto("/modules/act");
+    await page.goto("/tools/mood-tracker");
+
+    // The desktop sidebar also has a "Notifications" nav link (same label), so scope to
+    // the module header's own action row via .last() - it renders after the sidebar in
+    // the DOM (see src/components/app/protected-layout.tsx).
+    await expect(page.getByLabel("Notifications", { exact: true }).last()).toBeVisible();
+    await expect(page.getByLabel("About this module", { exact: true })).toBeVisible();
+
+    // None of the removed coach-mark copy/controls should ever appear.
+    await expect(page.getByRole("button", { name: "Got it", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Skip all tips", exact: true })).toHaveCount(0);
     await expect(
       page.getByText(/Tap here to manage reminders and notification settings/i),
+    ).toHaveCount(0);
+  });
+
+  test("notifications action still fires onPress (opens its modal)", async ({ page }) => {
+    await setTourState([]);
+    await page.goto("/tools/mood-tracker");
+
+    // See note above: the sidebar's own "Notifications" nav link shares this label, so
+    // the module header's action button is the LAST match, not the first.
+    await page.getByLabel("Notifications", { exact: true }).last().click();
+    await expect(page.getByRole("heading", { name: "Notifications", exact: true })).toBeVisible();
+  });
+
+  test("info action still fires onPress (opens the module's onboarding)", async ({ page }) => {
+    await setTourState([]);
+    await page.goto("/tools/mood-tracker");
+
+    await page.getByLabel("About this module", { exact: true }).click();
+    await expect(page.getByText("Know your emotional weather")).toBeVisible();
+  });
+
+  test("no coach-mark overlay appears even when no header tip was ever dismissed before", async ({
+    page,
+  }) => {
+    // Legacy bare/scoped shown_button_tours keys from before this removal should have
+    // zero effect now - the mechanism reading them is gone.
+    await setTourState(["cbt:tune", "notifications"]);
+
+    await page.goto("/modules/act");
+
+    await expect(page.getByRole("button", { name: "Got it", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Skip all tips", exact: true })).toHaveCount(0);
+  });
+});
+
+test.describe("home dashboard tips (3 remaining stops)", () => {
+  test.beforeAll(async ({ user }) => {
+    USER_ID = user.id;
+    originalPreferences = await getPreferenceRow();
+  });
+
+  test.afterEach(async () => {
+    await restoreOriginalPreferences();
+  });
+
+  // The "checkin" stop's target only registers when the "mood-checkin" widget is on the
+  // pool user's dashboard (src/features/home/today-screen.tsx:248) - a customizable,
+  // cross-spec-mutable piece of state. Pre-dismissing "home:checkin" sidesteps that and
+  // pins the first visible stop to "edit", which is always registered (today-screen.tsx:162).
+  test("shows the edit (dashboard) tip and Got it dismisses only that stop", async ({ page }) => {
+    await setTourState(["home:checkin"]);
+
+    await page.goto("/");
+    await expect(
+      page.getByText(/Arrange the dashboard your way - add, remove and reorder widgets\./i),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Got it", exact: true }).click();
 
-    await expect.poll(getShownButtonTours).toEqual(["notifications"]);
+    await expect.poll(getShownButtonTours).toEqual(["home:checkin", "home:edit"]);
   });
 
-  test("Skip all tips dismisses every header tip", async ({ page }) => {
-    await setTourState([]);
+  test("Skip all tips dismisses all 3 remaining home stops (no day-strip tip)", async ({
+    page,
+  }) => {
+    await setTourState(["home:checkin"]);
 
-    await page.goto("/modules/act");
+    await page.goto("/");
     await expect(
-      page.getByText(/Tap here to manage reminders and notification settings/i),
+      page.getByText(/Arrange the dashboard your way - add, remove and reorder widgets\./i),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Skip all tips", exact: true }).click();
 
-    await expect.poll(getShownButtonTours).toEqual([...ACT_BARE_TOUR_KEYS]);
+    await expect.poll(getShownButtonTours).toEqual([...HOME_TOUR_KEYS]);
   });
 
-  test("settings reset makes header tips eligible again", async ({ page }) => {
-    await setTourState(TOUR_KEYS);
+  test("no 4th (day-strip) tip appears once the 3 remaining stops are dismissed", async ({
+    page,
+  }) => {
+    await setTourState([...HOME_TOUR_KEYS]);
+
+    await page.goto("/");
+
+    // If the removed "dates" stop still existed, it would show now (its key was never
+    // added to shown_button_tours). Asserting nothing shows proves it's gone.
+    await expect(page.getByRole("button", { name: "Got it", exact: true })).toHaveCount(0, {
+      timeout: 10_000,
+    });
+    await expect(page.getByText(/Browse previous days to see what you logged\./i)).toHaveCount(0);
+  });
+
+  test("settings reset makes home tips eligible again", async ({ page }) => {
+    await setTourState([...HOME_TOUR_KEYS]);
 
     await page.goto("/settings");
     await page.getByRole("button", { name: "Reset onboarding", exact: true }).click();
 
     await expect(page.getByText(/Onboarding will be shown again/i).first()).toBeVisible();
     await expect.poll(getShownButtonTours).toEqual([]);
-  });
-
-  test("app-wide keys: dismissing all tips on CBT suppresses tips on other screens too", async ({
-    page,
-  }) => {
-    // Seed bare keys (what dismissing on CBT now writes) as already dismissed.
-    await setTourState(BARE_TOUR_KEYS);
-
-    // Bare keys are app-wide: tips must be gone on mood-tracker as well.
-    await page.goto("/tools/mood-tracker");
-    await expect(
-      page.getByText(/Tap here to manage reminders and notification settings/i),
-    ).not.toBeVisible({ timeout: 10_000 });
   });
 });
