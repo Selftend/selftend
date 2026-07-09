@@ -17,6 +17,7 @@ interface NavItemDef {
   activeWhen?: (pathname: string) => boolean;
   badgeKey?: "badgeLive" | "badgeSoon" | "badgeBeta";
   accentKey?: string;
+  a11yKey?: string;
 }
 
 const TODAY_ITEM: NavItemDef = {
@@ -35,6 +36,7 @@ const MODULE_ITEMS: NavItemDef[] = [
     activeWhen: (pathname) => pathname === "/modules/cbt" || pathname.startsWith("/modules/cbt/"),
     accentKey: "module-cbt",
     badgeKey: "badgeBeta",
+    a11yKey: "sidebar.cbtA11y",
   },
   {
     labelKey: "sidebar.act",
@@ -43,6 +45,7 @@ const MODULE_ITEMS: NavItemDef[] = [
     matchPrefix: "/modules/act",
     accentKey: "module-act",
     badgeKey: "badgeBeta",
+    a11yKey: "sidebar.actA11y",
   },
   {
     labelKey: "sidebar.dbt",
@@ -50,6 +53,7 @@ const MODULE_ITEMS: NavItemDef[] = [
     icon: "anchor",
     matchPrefix: "/modules/dbt",
     badgeKey: "badgeSoon",
+    a11yKey: "sidebar.dbtA11y",
   },
 ];
 
@@ -158,6 +162,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
   function renderNavItem(item: NavItemDef) {
     const active = isActive(item);
     const label = t(item.labelKey);
+    const accessibilityLabel = item.a11yKey ? t(item.a11yKey) : label;
     const badgeLabel = item.badgeKey ? t(`sidebar.${item.badgeKey}`) : null;
     const isLive = item.badgeKey === "badgeLive";
     const isBeta = item.badgeKey === "badgeBeta";
@@ -165,7 +170,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
 
     return (
       <Pressable
-        accessibilityLabel={label}
+        accessibilityLabel={accessibilityLabel}
         accessibilityRole="button"
         accessibilityState={{ selected: active }}
         key={item.labelKey}

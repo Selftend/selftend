@@ -81,6 +81,9 @@ export default function ModulesScreen() {
             <Text variant="muted" className="max-w-[64ch]">
               {t("modulesPage.description")}
             </Text>
+            <Text variant="muted" className="max-w-[64ch]">
+              {t("modulesPage.whereToStart")}
+            </Text>
           </View>
 
           <View className="flex-row flex-wrap gap-3">
