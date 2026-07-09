@@ -45,7 +45,7 @@ export function GroundingSession({
       <ScrollView contentContainerClassName="grow" showsVerticalScrollIndicator={false}>
         <View className="flex-row items-center justify-between px-4 pt-2">
           <Pressable
-            accessibilityLabel={t("common:actions.close", "Close")}
+            accessibilityLabel={t("common:close", "Close")}
             accessibilityRole="button"
             hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
             onPress={onExit}
