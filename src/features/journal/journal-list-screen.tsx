@@ -84,6 +84,7 @@ export default function JournalListScreen() {
               <ToolStats
                 accentClassName="text-ink"
                 subline={`${t("hero.last")} · ${lastWhen ?? tc("never")}`}
+                sublineTone={lastWhen ? "accent" : "muted"}
                 items={[
                   {
                     value: t("hero.entries", { count: totalEntries ?? allEntries.length }),

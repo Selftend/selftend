@@ -15,11 +15,23 @@ interface ToolStatsProps {
   accentClassName: string;
   /** Optional data line under the stats (e.g. "LAST · 5/31/2026"). Uppercase, accent-tinted. */
   subline?: string;
+  /**
+   * Styling for `subline`. "accent" (default) is the bold uppercase accent-tinted treatment.
+   * "muted" renders calm, sentence-case, muted text - use for empty/"no data yet" states so
+   * they don't read as alarming.
+   */
+  sublineTone?: "accent" | "muted";
   /** Optional "Inspired by ..." credit, rendered as the last line under the stats. */
   credit?: string;
 }
 
-export function ToolStats({ items, accentClassName, subline, credit }: ToolStatsProps) {
+export function ToolStats({
+  items,
+  accentClassName,
+  subline,
+  sublineTone = "accent",
+  credit,
+}: ToolStatsProps) {
   return (
     <View className="gap-1.5">
       <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
@@ -31,9 +43,13 @@ export function ToolStats({ items, accentClassName, subline, credit }: ToolStats
         ))}
       </View>
       {subline ? (
-        <Text className={`text-[11px] font-bold uppercase tracking-[0.14em] ${accentClassName}`}>
-          {subline}
-        </Text>
+        sublineTone === "muted" ? (
+          <Text className="text-sm text-muted-foreground">{subline}</Text>
+        ) : (
+          <Text className={`text-[11px] font-bold uppercase tracking-[0.14em] ${accentClassName}`}>
+            {subline}
+          </Text>
+        )
       ) : null}
       {credit ? (
         <Text variant="eyebrow" tint="primary" className="mt-0.5">

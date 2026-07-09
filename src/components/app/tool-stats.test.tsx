@@ -36,6 +36,38 @@ describe("ToolStats", () => {
     expect(getByText("LAST · 5/31/2026")).toBeTruthy();
   });
 
+  it("renders the subline muted (calm) when sublineTone is 'muted'", () => {
+    const { getByText } = render(
+      <ToolStats
+        accentClassName="text-be"
+        items={[{ value: "0", label: "check-ins" }]}
+        subline="No check-ins yet"
+        sublineTone="muted"
+      />,
+    );
+    const node = getByText("No check-ins yet");
+    const className = node.props.className as string;
+    expect(className).toContain("text-muted-foreground");
+    expect(className).not.toContain("uppercase");
+    expect(className).not.toContain("font-bold");
+    expect(className).not.toContain("text-be");
+  });
+
+  it("renders the subline with the accent/uppercase treatment by default", () => {
+    const { getByText } = render(
+      <ToolStats
+        accentClassName="text-be"
+        items={[{ value: "1", label: "check-ins" }]}
+        subline="LAST · 5/31/2026"
+      />,
+    );
+    const node = getByText("LAST · 5/31/2026");
+    const className = node.props.className as string;
+    expect(className).toContain("uppercase");
+    expect(className).toContain("font-bold");
+    expect(className).toContain("text-be");
+  });
+
   it("renders the optional inspired-by credit", () => {
     const { getByText } = render(
       <ToolStats

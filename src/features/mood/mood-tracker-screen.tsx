@@ -120,6 +120,7 @@ export default function MoodTrackerScreen() {
                     accentClassName="text-be"
                     items={statItems}
                     subline={lastWhen ? t("stats.last", { when: lastWhen }) : t("stats.never")}
+                    sublineTone={lastWhen ? "accent" : "muted"}
                   />
                 }
               />
