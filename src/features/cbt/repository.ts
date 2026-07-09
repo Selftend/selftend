@@ -61,6 +61,23 @@ export async function listThoughtRecords(userId: string) {
   return (data as ThoughtRecordRow[]).map(mapThoughtRecord);
 }
 
+// Exact count of non-archived thought records created since `sinceIso` - for the Progress
+// 30-day stat, mirroring countJournalEntriesSince/countGratitudeEntriesSince.
+export async function countThoughtRecordsSince(userId: string, sinceIso: string): Promise<number> {
+  const client = requireSupabase();
+  const { count, error } = await client
+    .from("thought_records")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .is("archived_at", null)
+    .gte("created_at", sinceIso);
+
+  if (error) {
+    throw error;
+  }
+  return count ?? 0;
+}
+
 export async function getThoughtRecord(userId: string, recordId: string) {
   const client = requireSupabase();
   const { data, error } = await client

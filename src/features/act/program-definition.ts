@@ -52,7 +52,10 @@ interface ProgramPhase {
 export const atOrAfter = (iso: string | null | undefined, since: number) =>
   iso != null && new Date(iso).getTime() >= since;
 
-const countSince = (items: { createdAt: string }[], since: number) =>
+// Exported so callers outside the program derivation (e.g. the Progress screen's ACT
+// entry count) can reuse the same "created since a cutoff" counting logic instead of
+// duplicating it.
+export const countSince = (items: { createdAt: string }[], since: number) =>
   items.filter((item) => atOrAfter(item.createdAt, since)).length;
 
 // 1 if a qualifying event happened on the selected local day, else 0.

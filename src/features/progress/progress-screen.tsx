@@ -13,6 +13,8 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
 import { LoadingState } from "@/src/components/app/screen-state";
+import { useActEntryCountSince } from "@/src/features/act/count-queries";
+import { useThoughtRecordCountSince } from "@/src/features/cbt/queries";
 import { dailyIntegerAverages, lastNLocalDateKeys } from "@/src/features/mood/chart-data";
 import { useGratitudeEntryCountSince } from "@/src/features/gratitude/queries";
 import { useJournalEntryCountSince } from "@/src/features/journal/queries";
@@ -53,8 +55,15 @@ export default function ProgressScreen() {
   );
   const { data: thirtyDayGratitudeCount = 0, isLoading: gratitudeLoading } =
     useGratitudeEntryCountSince(user?.id ?? null, thirtyDayCutoffIso);
+  const { data: thirtyDayThoughtRecordCount = 0, isLoading: thoughtRecordLoading } =
+    useThoughtRecordCountSince(user?.id ?? null, thirtyDayCutoffIso);
+  const { data: thirtyDayActEntryCount, isLoading: actEntryLoading } = useActEntryCountSince(
+    user?.id ?? null,
+    thirtyDayCutoffIso,
+  );
 
-  const isLoading = moodLoading || journalLoading || gratitudeLoading;
+  const isLoading =
+    moodLoading || journalLoading || gratitudeLoading || thoughtRecordLoading || actEntryLoading;
 
   const last14Dates = lastNLocalDateKeys(14);
 
@@ -136,6 +145,16 @@ export default function ProgressScreen() {
                   <Text className="text-xs text-muted-foreground">
                     {t("progress.gratitudeEntries")}
                   </Text>
+                </View>
+                <View className="gap-1">
+                  <Text className="text-3xl font-bold">{thirtyDayThoughtRecordCount}</Text>
+                  <Text className="text-xs text-muted-foreground">
+                    {t("progress.thoughtRecords")}
+                  </Text>
+                </View>
+                <View className="gap-1">
+                  <Text className="text-3xl font-bold">{thirtyDayActEntryCount}</Text>
+                  <Text className="text-xs text-muted-foreground">{t("progress.actEntries")}</Text>
                 </View>
               </View>
             </CardContent>

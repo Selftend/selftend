@@ -27,6 +27,13 @@ const TODAY_ITEM: NavItemDef = {
   matchPrefix: null,
 };
 
+const PROGRESS_ITEM: NavItemDef = {
+  labelKey: "sidebar.progress",
+  href: "/(app)/progress",
+  icon: "insights",
+  matchPrefix: "/progress",
+};
+
 const MODULE_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.cbt",
@@ -260,6 +267,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
       <ScrollView contentContainerClassName="grow px-3 py-4">
         <View className="gap-1">
           {renderNavItem(TODAY_ITEM)}
+          {renderNavItem(PROGRESS_ITEM)}
 
           {renderGroupLabel(t("sidebar.modules"), "/modules")}
           {MODULE_ITEMS.map((item) => renderNavItem(item))}

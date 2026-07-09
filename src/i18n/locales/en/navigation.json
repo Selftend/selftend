@@ -8,6 +8,7 @@
   },
   "sidebar": {
     "home": "Home",
+    "progress": "Progress",
     "notifications": "Notifications",
     "settings": "Settings",
     "support": "Support",
@@ -165,7 +166,7 @@
     },
     "widgets": {
       "moodCheckin": {
-        "title": "Daily check-in",
+        "title": "Check-in",
         "desc": "A quick five-face mood check-in.",
         "loggedSummary_one": "Logged {{count}}× today",
         "loggedSummary_other": "Logged {{count}}× today",
@@ -330,6 +331,8 @@
     "moodLogs": "mood logs",
     "journalEntries": "journal entries",
     "gratitudeEntries": "gratitude entries",
+    "thoughtRecords": "thought records",
+    "actEntries": "ACT entries",
     "reflectionTitle": "Reflection prompt",
     "reflectionDescription": "A quiet question to sit with.",
     "prompt1": "What felt manageable this month that felt hard before?",
@@ -460,5 +463,10 @@
       "toolGratitude": "Gratitude log",
       "toolHabits": "Habit tracking"
     }
+  },
+  "wizard": {
+    "stepSummary": "Step {{current}} of {{total}} · {{name}}",
+    "showAllSteps": "Show all steps",
+    "hideSteps": "Hide steps"
   }
 }

@@ -8,6 +8,7 @@
   },
   "sidebar": {
     "home": "Начало",
+    "progress": "Напредък",
     "notifications": "Известия",
     "settings": "Настройки",
     "support": "Поддръжка",
@@ -165,7 +166,7 @@
     },
     "widgets": {
       "moodCheckin": {
-        "title": "Ежедневна самооценка",
+        "title": "Проследяване на настроението",
         "desc": "Бърза проверка на настроението с пет лица.",
         "loggedSummary_one": "{{count}} запис днес",
         "loggedSummary_other": "{{count}} записа днес",
@@ -330,6 +331,8 @@
     "moodLogs": "записа на настроение",
     "journalEntries": "записа в дневника",
     "gratitudeEntries": "записа за благодарност",
+    "thoughtRecords": "записа на мисли",
+    "actEntries": "ACT записа",
     "reflectionTitle": "Въпрос за рефлексия",
     "reflectionDescription": "Тих въпрос, върху който да поразмишляваш.",
     "prompt1": "Какво се усещаше поносимо този месец, което преди изглеждаше трудно?",
@@ -466,5 +469,10 @@
       "toolGratitude": "Дневник на благодарността",
       "toolHabits": "Проследяване на навици"
     }
+  },
+  "wizard": {
+    "stepSummary": "Стъпка {{current}} от {{total}} · {{name}}",
+    "showAllSteps": "Покажи всички стъпки",
+    "hideSteps": "Скрий стъпките"
   }
 }
