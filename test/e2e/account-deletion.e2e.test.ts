@@ -41,7 +41,7 @@ test.describe("account deletion", () => {
     expect(created.user).not.toBeNull();
 
     // 2. Sign in as the throwaway user.
-    await page.goto("/");
+    await page.goto("/sign-in");
     await dismissCookieBanner(page);
     await page.getByPlaceholder("m@example.com").fill(THROWAWAY_EMAIL);
     await page.locator('input[type="password"]').fill(THROWAWAY_PASSWORD);
@@ -73,8 +73,12 @@ test.describe("account deletion", () => {
     await expect(confirmButton).toBeEnabled({ timeout: 5_000 });
     await confirmButton.click();
 
-    // 9. Assert the user is signed out to the landing / sign-in page.
-    await expect(page.getByText("Sign in to your account")).toBeVisible({ timeout: 20_000 });
+    // 9. Assert the user is signed out to the landing page (post-teardown
+    // redirect target is "/", which now renders the marketing landing page,
+    // not the sign-in form that lives at the dedicated /sign-in route).
+    await expect(
+      page.getByRole("heading", { name: "Guided self-help, private by design.", level: 1 }),
+    ).toBeVisible({ timeout: 20_000 });
 
     // 10. Verify the auth record is actually gone.
     const list = await admin.auth.admin.listUsers();

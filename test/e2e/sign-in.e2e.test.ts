@@ -8,7 +8,7 @@ test.describe("sign in", () => {
   });
 
   test("rejects a wrong password with an in-form error", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/sign-in");
     await dismissCookieBanner(page);
     await page.getByPlaceholder("m@example.com").fill(SEED_USERS.alice.email);
     await page.locator('input[type="password"]').fill("wrong-password");

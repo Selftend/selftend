@@ -18,11 +18,8 @@ test.describe("sign-up + onboarding + first record", () => {
   test("new user signs up, completes onboarding, and saves their first thought record", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/sign-up");
     await dismissCookieBanner(page);
-
-    // Click "Sign up" link to navigate to sign-up form.
-    await page.getByRole("button", { name: "Sign up", exact: true }).click();
     await expect(page.getByText("Create an account")).toBeVisible({ timeout: 10_000 });
 
     // Fill the sign-up form. Expo Router may keep both auth screens mounted,
@@ -40,7 +37,7 @@ test.describe("sign-up + onboarding + first record", () => {
     // link Mailpit received, then sign in to establish the browser session.
     await confirmSignupViaMailpit(page, email);
 
-    await page.goto("/");
+    await page.goto("/sign-in");
     await dismissCookieBanner(page);
     await page.locator('input[placeholder="m@example.com"]:visible').fill(email);
     await page.locator('input[type="password"]:visible').fill(password);

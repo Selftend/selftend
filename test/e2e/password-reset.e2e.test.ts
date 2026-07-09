@@ -55,7 +55,7 @@ test.describe("password reset flow", () => {
     expect(created.user).not.toBeNull();
 
     // 2. Navigate to sign-in page, then to the forgot-password screen.
-    await page.goto("/");
+    await page.goto("/sign-in");
     await dismissCookieBanner(page);
     await expect(page.getByText("Sign in to your account")).toBeVisible({ timeout: 10_000 });
     await page.getByRole("button", { name: "Forgot your password?", exact: true }).click();

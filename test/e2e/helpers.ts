@@ -45,7 +45,7 @@ export async function resetWidgetPreferencesForUser(userId: string): Promise<voi
 // authenticated tabs.
 export async function signInAsViaUi(page: Page, name: SeedUserName) {
   const user = SEED_USERS[name];
-  await page.goto("/");
+  await page.goto("/sign-in");
   await dismissCookieBanner(page);
   await page.getByPlaceholder("m@example.com").fill(user.email);
   await page.locator('input[type="password"]').fill(user.password);
