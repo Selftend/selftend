@@ -1,9 +1,10 @@
 import { Redirect } from "expo-router";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
+import LandingScreen from "@/src/components/app/landing/landing-screen";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -25,5 +26,5 @@ export default function IndexScreen() {
     return <Redirect href="/(app)" />;
   }
 
-  return <AuthLandingScreen />;
+  return Platform.OS === "web" ? <LandingScreen /> : <AuthLandingScreen />;
 }
