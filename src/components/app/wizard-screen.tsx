@@ -1,10 +1,13 @@
-import { type ReactNode } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { type ReactNode, useState } from "react";
+import { ActivityIndicator, useWindowDimensions, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Button } from "@/src/components/react-native-reusables/button";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { NARROW_STEP_INDICATOR_BREAKPOINT } from "@/src/constants/layout";
 
 interface WizardStep {
   title: string;
@@ -45,6 +48,18 @@ export function WizardScreen({
   titleAction,
   children,
 }: WizardScreenProps) {
+  const { t } = useTranslation("navigation");
+  const { width } = useWindowDimensions();
+  const isNarrow = width < NARROW_STEP_INDICATOR_BREAKPOINT;
+  const [stepsOpen, setStepsOpen] = useState(false);
+  const showStepList = !isNarrow || stepsOpen;
+  const currentStep = steps[stepIndex];
+  const summary = t("wizard.stepSummary", {
+    current: stepIndex + 1,
+    total: steps.length,
+    name: currentStep?.title ?? "",
+  });
+
   return (
     <MobileFormScreen
       footer={
@@ -73,23 +88,45 @@ export function WizardScreen({
 
         {headerSlot}
 
-        <View className="flex-row flex-wrap gap-2">
-          {steps.map((step, index) => {
-            const isActive = stepIndex === index;
-            const label = numberedSteps ? `${index + 1}. ${step.title}` : step.title;
-            return (
-              <Button
-                key={step.title}
-                accessibilityState={{ disabled: index > stepIndex, selected: isActive }}
-                disabled={index > stepIndex}
-                onPress={() => onJumpToStep(index)}
-                size="sm"
-                variant={isActive ? "secondary" : "ghost"}
-              >
-                <Text>{label}</Text>
-              </Button>
-            );
-          })}
+        <View className="gap-2">
+          {isNarrow ? (
+            <Button
+              accessibilityLabel={`${summary}. ${t(stepsOpen ? "wizard.hideSteps" : "wizard.showAllSteps")}`}
+              accessibilityState={{ expanded: stepsOpen }}
+              className="justify-between"
+              onPress={() => setStepsOpen((open) => !open)}
+              variant="outline"
+            >
+              <Text className="flex-1 text-left font-medium" numberOfLines={1}>
+                {summary}
+              </Text>
+              <Icon
+                className="text-muted-foreground"
+                name={stepsOpen ? "expand-less" : "expand-more"}
+              />
+            </Button>
+          ) : null}
+
+          {showStepList ? (
+            <View className="flex-row flex-wrap gap-2">
+              {steps.map((step, index) => {
+                const isActive = stepIndex === index;
+                const label = numberedSteps ? `${index + 1}. ${step.title}` : step.title;
+                return (
+                  <Button
+                    key={step.title}
+                    accessibilityState={{ disabled: index > stepIndex, selected: isActive }}
+                    disabled={index > stepIndex}
+                    onPress={() => onJumpToStep(index)}
+                    size="sm"
+                    variant={isActive ? "secondary" : "ghost"}
+                  >
+                    <Text>{label}</Text>
+                  </Button>
+                );
+              })}
+            </View>
+          ) : null}
         </View>
 
         {children}
