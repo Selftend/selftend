@@ -17,7 +17,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
+import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { ToolHero } from "@/src/components/app/tool-hero";
 import { MoodScale } from "@/src/components/app/mood-scale";
@@ -265,7 +265,6 @@ export function MoodEntryEditorScreen({
     );
   }
 
-  const showCrisis = moodScore !== null && moodScore <= 2;
   const showBreathingNudge = moodScore !== null && moodScore <= 2;
 
   return (
@@ -286,7 +285,7 @@ export function MoodEntryEditorScreen({
           />
         )}
 
-        {showCrisis ? <CrisisSupportCallout /> : null}
+        <CrisisSupportBar />
 
         <View className="gap-3">
           <Label>{t("mood.scoreLabel")}</Label>

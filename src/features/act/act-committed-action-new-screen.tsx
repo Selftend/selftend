@@ -14,6 +14,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { useSaveCommittedAction } from "@/src/features/act/queries";
 import { StepPills } from "@/src/features/act/step-pills";
@@ -107,6 +108,8 @@ export default function ActCommittedActionNewScreen() {
           <ScreenHeader title={t("act:committedAction.newTitle")} />
           <Text variant="muted">{t("act:committedAction.newSubtitle")}</Text>
         </View>
+
+        <CrisisSupportBar />
 
         {/* Step pills */}
         <StepPills

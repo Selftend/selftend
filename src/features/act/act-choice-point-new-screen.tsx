@@ -9,6 +9,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { useSaveChoicePoint } from "@/src/features/act/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -144,6 +145,8 @@ export default function ActChoicePointNewScreen() {
           <ScreenHeader title={t("act:choicePoint.title")} />
           <Text variant="muted">{t("act:choicePoint.primer")}</Text>
         </View>
+
+        <CrisisSupportBar />
 
         {submitError ? (
           <View className="rounded-lg border border-destructive bg-destructive/10 p-3">

@@ -15,6 +15,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { useSaveDefusionLog } from "@/src/features/act/queries";
@@ -118,6 +119,8 @@ export default function ActDefusionNewScreen() {
           <ScreenHeader title={t("act:defusion.newTitle")} />
           <Text variant="muted">{t("act:defusion.newSubtitle")}</Text>
         </View>
+
+        <CrisisSupportBar />
 
         {/* Step pills */}
         <StepPills

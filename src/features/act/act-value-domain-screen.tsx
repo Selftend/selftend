@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
+import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { LoadingState } from "@/src/components/app/screen-state";
@@ -142,6 +143,8 @@ export default function ActValueDomainScreen() {
           <ScreenHeader title={t(`act:values.${domain}`)} />
           <Text variant="muted">{t("act:values.domainSubtitle")}</Text>
         </View>
+
+        <CrisisSupportBar />
 
         {/* Step pills */}
         <StepPills
