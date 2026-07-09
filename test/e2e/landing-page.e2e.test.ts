@@ -14,7 +14,7 @@ test.describe("landing page (signed out)", () => {
     await dismissCookieBanner(page);
 
     await expect(
-      page.getByRole("heading", { name: "Guided self-help, private by design.", level: 1 }),
+      page.getByRole("heading", { name: "Calm, guided self-help.", level: 1 }),
     ).toBeVisible();
   });
 
