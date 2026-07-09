@@ -78,7 +78,22 @@ export function VerifyEmailForm() {
     } catch (error) {
       recordFailure(error);
       setResendStatus("idle");
-      setErrorMessage(t("verifyEmail.resendError"));
+      // Guard: a non-object throw (null, undefined, bare string) must not crash
+      // the handler itself, or the button re-enables with no message shown.
+      const err =
+        typeof error === "object" && error !== null
+          ? (error as { status?: unknown; code?: unknown })
+          : {};
+      const status = err.status;
+      const code = err.code;
+      const message = error instanceof Error ? error.message.toLowerCase() : "";
+      if (status === 429 || code === "over_email_send_rate_limit") {
+        setErrorMessage(t("verifyEmail.resendRateLimited"));
+      } else if (message.includes("already confirmed") || message.includes("already verified")) {
+        setErrorMessage(t("verifyEmail.alreadyVerified"));
+      } else {
+        setErrorMessage(t("verifyEmail.resendError"));
+      }
     }
   };
 
