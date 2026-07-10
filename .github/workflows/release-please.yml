@@ -26,8 +26,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           # PAT, not GITHUB_TOKEN: the org locks Actions from creating PRs, and a PAT
           # also lets the release PR trigger the required `verify` check. Create a
           # fine-grained PAT (Contents + Pull requests: Read/write) as this secret.
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+      # Hands-off releasing: turn on GitHub auto-merge for the release PR as soon as
+      # release-please opens/updates it. GitHub then squash-merges it the moment the
+      # required checks (verify) go green - no manual click. Idempotent: re-enabling
+      # on an already-armed PR is a no-op. Needs "Allow auto-merge" on in repo settings.
+      - name: Enable auto-merge on the release PR
+        if: ${{ steps.release.outputs.pr }}
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: >-
+          gh pr merge --repo "${{ github.repository }}" --auto --squash
+          "${{ fromJson(steps.release.outputs.pr).number }}"
