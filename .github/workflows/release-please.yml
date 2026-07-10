@@ -33,33 +33,38 @@ jobs:
           # fine-grained PAT (Contents + Pull requests: Read/write) as this secret.
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
-      # Satisfy the "require 1 approving review" rule for the RELEASE PR ONLY, so it can
-      # auto-merge without a human. The release PR is authored by the PAT (i.e. by you),
-      # and GitHub forbids self-approval - so approve as github-actions[bot] via
-      # GITHUB_TOKEN, a distinct identity. Contributors' human PRs are untouched and
-      # still need a real review. Re-runs every push, so a re-created/updated release PR
-      # stays approved. Non-fatal (continue-on-error) so the pipeline still arms
-      # auto-merge if the required setting is momentarily off.
-      # REQUIRES: Settings > Actions > General > Workflow permissions >
-      #   "Allow GitHub Actions to create and approve pull requests" = ON.
+      # Locate the current pending release PR by release-please's own label - not the
+      # action's per-run `pr` output, which is empty on runs that didn't change the
+      # release (e.g. docs/chore-only pushes). This way the approve + auto-merge below
+      # fire on every run, so the release PR can't get stranded un-approved.
+      - name: Locate the release PR
+        id: rp
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          num=$(gh pr list --repo "${{ github.repository }}" --state open \
+            --label "autorelease: pending" --json number --jq '.[0].number // empty')
+          echo "num=$num" >> "$GITHUB_OUTPUT"
+          echo "Release PR: ${num:-none}"
+
+      # Satisfy the "require 1 approving review" rule for the RELEASE PR ONLY. It is
+      # authored by the PAT (i.e. by you) and GitHub forbids self-approval, so approve as
+      # github-actions[bot] via GITHUB_TOKEN - a distinct identity. Contributors' human
+      # PRs are untouched and still need a real review. continue-on-error so a transient
+      # failure doesn't block arming auto-merge.
+      # REQUIRES the org/repo setting "Allow GitHub Actions to create and approve pull requests".
       - name: Approve the release PR (bot)
-        if: ${{ steps.release.outputs.pr }}
+        if: ${{ steps.rp.outputs.num }}
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >-
-          gh pr review --repo "${{ github.repository }}" --approve
-          "${{ fromJson(steps.release.outputs.pr).number }}"
+        run: gh pr review --repo "${{ github.repository }}" --approve "${{ steps.rp.outputs.num }}"
 
-      # Hands-off releasing: turn on GitHub auto-merge for the release PR as soon as
-      # release-please opens/updates it. GitHub then squash-merges it the moment all
-      # requirements (bot approval above + required checks) are met - no manual click.
-      # Idempotent: re-enabling on an already-armed PR is a no-op. Needs "Allow
-      # auto-merge" on in repo settings.
+      # Arm GitHub auto-merge (PAT) so it squash-merges the release PR once all
+      # requirements (the bot approval above + required checks) are met. Idempotent.
+      # Needs "Allow auto-merge" on in repo settings.
       - name: Enable auto-merge on the release PR
-        if: ${{ steps.release.outputs.pr }}
+        if: ${{ steps.rp.outputs.num }}
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-        run: >-
-          gh pr merge --repo "${{ github.repository }}" --auto --squash
-          "${{ fromJson(steps.release.outputs.pr).number }}"
+        run: gh pr merge --repo "${{ github.repository }}" --auto --squash "${{ steps.rp.outputs.num }}"
