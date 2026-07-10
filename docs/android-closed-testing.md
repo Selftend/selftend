@@ -30,7 +30,7 @@ Official references:
 - Native scheme: `selftend`
 - Android package: `org.vasilyoshev.selftend`
 - iOS bundle identifier: `org.vasilyoshev.selftend`
-- Version: `0.1.0`
+- Version: see `version` in `package.json` (release-please bumps it each release; it drives the Android `versionName`)
 - Disabled Android camera/microphone permissions: `android.permission.CAMERA`, `android.permission.RECORD_AUDIO`
 
 The public app name and Android package are now set for the Play listing. The package name cannot be changed for the same Play listing after release without creating a new app listing.
