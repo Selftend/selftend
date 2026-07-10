@@ -6,6 +6,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { NARROW_STEP_INDICATOR_BREAKPOINT } from "@/src/constants/layout";
+import { currentStateProps, DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { cn } from "@/lib/utils";
 
 interface StepPillsProps<TStep extends string> {
@@ -38,7 +39,7 @@ export function StepPills<TStep extends string>({
       {isNarrow ? (
         <Button
           accessibilityLabel={`${summary}. ${t(stepsOpen ? "wizard.hideSteps" : "wizard.showAllSteps")}`}
-          accessibilityState={{ expanded: stepsOpen }}
+          aria-expanded={stepsOpen}
           className="justify-between"
           onPress={() => setStepsOpen((open) => !open)}
           variant="outline"
@@ -62,8 +63,10 @@ export function StepPills<TStep extends string>({
               <Pressable
                 key={s}
                 accessibilityRole="button"
-                accessibilityState={{ selected: isActive, disabled: index > stepIndex }}
+                aria-disabled={index > stepIndex}
+                {...currentStateProps(isActive, "step")}
                 disabled={index > stepIndex}
+                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                 onPress={() => {
                   if (index <= stepIndex) onSelect(s);
                 }}

@@ -20,6 +20,8 @@ import { NumberRating } from "@/src/components/app/number-rating";
 import { useSaveConnectionLog } from "@/src/features/act/queries";
 import { StepPills } from "@/src/features/act/step-pills";
 import { CONNECTION_TECHNIQUES, type ConnectionTechnique } from "@/src/features/act/types";
+import { useRovingFocus } from "@/src/lib/roving-focus";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -46,6 +48,13 @@ export default function ActConnectionNewScreen() {
   const stepIndex = STEP_ORDER.indexOf(step);
   const isLastStep = stepIndex === STEP_ORDER.length - 1;
 
+  const techniqueIndex = CONNECTION_TECHNIQUES.indexOf(technique);
+  const techniqueRoving = useRovingFocus({
+    count: CONNECTION_TECHNIQUES.length,
+    activeIndex: techniqueIndex < 0 ? 0 : techniqueIndex,
+    onActivate: (index) => setTechnique(CONNECTION_TECHNIQUES[index]),
+  });
+
   function goNext() {
     if (stepIndex < STEP_ORDER.length - 1) setStep(STEP_ORDER[stepIndex + 1]);
   }
@@ -53,7 +62,7 @@ export default function ActConnectionNewScreen() {
     if (stepIndex > 0) setStep(STEP_ORDER[stepIndex - 1]);
   }
 
-  async function handleSave() {
+  const handleSave = useSingleFlight(async () => {
     if (!user) return;
     setSubmitError("");
     try {
@@ -71,7 +80,7 @@ export default function ActConnectionNewScreen() {
       const message = error instanceof Error ? error.message : t("act:connection.saveProblem");
       setSubmitError(message);
     }
-  }
+  });
 
   return (
     <MobileFormScreen
@@ -138,19 +147,26 @@ export default function ActConnectionNewScreen() {
                 {t("act:connection.techniqueHint")}
               </Text>
             </View>
-            <View className="gap-2">
-              {CONNECTION_TECHNIQUES.map((tech) => {
+            <View
+              accessibilityLabel={t("act:connection.techniqueLabel")}
+              accessibilityRole="radiogroup"
+              className="gap-2"
+              role="radiogroup"
+            >
+              {CONNECTION_TECHNIQUES.map((tech, index) => {
                 const selected = technique === tech;
                 return (
                   <Pressable
                     key={tech}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
+                    accessibilityRole="radio"
+                    aria-checked={selected}
+                    role="radio"
                     onPress={() => setTechnique(tech)}
                     className={cn(
                       "rounded-xl border p-4 active:bg-accent/40",
                       selected ? "border-act bg-act/5" : "border-border bg-card",
                     )}
+                    {...techniqueRoving.getItemProps(index, () => setTechnique(tech))}
                   >
                     <View className="gap-1">
                       <Text className={cn("font-semibold", selected && "text-act")}>

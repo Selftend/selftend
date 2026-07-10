@@ -14,8 +14,12 @@ test.describe("sign in", () => {
     await page.locator('input[type="password"]').fill("wrong-password");
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Auth error message rendered inline; sign-in form is still visible.
+    // Auth error message rendered inline; sign-in form is still visible. The raw
+    // GoTrue "Invalid login credentials" is mapped to friendly copy that also
+    // hints at the Google SSO path (signIn.invalidCredentials).
     await expect(page.getByText("Sign in to your account")).toBeVisible();
-    await expect(page.getByText(/invalid|credential/i).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/incorrect email or password/i).first()).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });

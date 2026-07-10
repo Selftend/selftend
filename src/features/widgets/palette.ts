@@ -31,11 +31,11 @@ export const TINTS: Record<Theme, Record<TintName, string>> = {
   light: {
     primary: "#7C49D4", // 262 62% 56%
     act: "#348D70", // 160 46% 38%
-    be: "#D26099", // 330 56% 60%
-    aqua: "#378FAE", // 196 52% 45%
+    be: "#BB3578", // 330 56% 47%
+    aqua: "#2C728C", // 196 52% 36%
     think: "#DFAC2A", // 43 74% 52%
     iris: "#A968CA", // 280 48% 60%
-    ink: "#5B69C2", // 232 46% 56%
+    ink: "#5462C0", // 232 46% 54%
     clay: "#C2693D", // 20 52% 50%
   },
   dark: {

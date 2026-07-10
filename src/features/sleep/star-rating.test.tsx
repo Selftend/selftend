@@ -26,4 +26,14 @@ describe("StarRating", () => {
     renderWithProviders(<StarRating value={null} onChange={() => {}} />);
     expect(screen.queryByText(/\/5$/)).toBeNull();
   });
+
+  it("exposes the stars as radios in a labelled radiogroup", () => {
+    renderWithProviders(<StarRating value={3} onChange={() => {}} />);
+    // byRole skips plain Views (not accessibility elements), so assert the
+    // container's group semantics through its label instead.
+    expect(screen.getByLabelText("Sleep quality").props.accessibilityRole).toBe("radiogroup");
+    expect(screen.getAllByRole("radio")).toHaveLength(5);
+    expect(screen.getByRole("radio", { name: "Rate 3 of 5" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Rate 2 of 5" })).not.toBeChecked();
+  });
 });

@@ -41,6 +41,7 @@
   },
   "userMenu": {
     "account": "Акаунт",
+    "avatarAlt": "Аватар на потребителя",
     "openMenu": "Отвори меню на акаунта",
     "settings": "Настройки",
     "sendFeedback": "Изпрати обратна връзка",
@@ -457,6 +458,7 @@
   "dateBar": {
     "today": "Днес",
     "openCalendar": "Отвори календар",
+    "closeCalendar": "Затвори календара",
     "selectDate": "Избери дата",
     "scrollOlder": "Покажи по-ранни дни",
     "scrollNewer": "Покажи по-късни дни",

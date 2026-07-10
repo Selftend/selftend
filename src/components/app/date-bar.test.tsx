@@ -20,6 +20,12 @@ describe("DateBar", () => {
     // waitFor lets VirtualizedList's deferred _updateCellsToRender setTimeout fire
     // inside act() so the initial batch settle does not produce act() warnings.
     await waitFor(() => expect(screen.getByLabelText(/Today \d{4}-\d{2}-\d{2}/)).toBeTruthy());
+
+    // Day chips are radios in a labelled radiogroup; today is the checked one.
+    const todayChip = screen.getByLabelText(/Today \d{4}-\d{2}-\d{2}/);
+    expect(todayChip.props.accessibilityRole).toBe("radio");
+    expect(todayChip).toBeChecked();
+    expect(screen.getByLabelText("Select date").props.accessibilityRole).toBe("radiogroup");
   });
 
   it("selecting a past chip updates the store", async () => {

@@ -24,6 +24,8 @@ import {
   type DiscomfortType,
   type ExpansionTechnique,
 } from "@/src/features/act/types";
+import { useRovingFocus } from "@/src/lib/roving-focus";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -31,6 +33,8 @@ import { cn } from "@/lib/utils";
 
 type Step = "emotion" | "body" | "struggle" | "technique" | "after";
 const STEP_ORDER: Step[] = ["emotion", "body", "struggle", "technique", "after"];
+
+const DISCOMFORT_TYPES: DiscomfortType[] = ["clean", "dirty"];
 
 export default function ActExpansionNewScreen() {
   const { t } = useTranslation(["act", "common"]);
@@ -53,6 +57,25 @@ export default function ActExpansionNewScreen() {
   const stepIndex = STEP_ORDER.indexOf(step);
   const isLastStep = stepIndex === STEP_ORDER.length - 1;
 
+  const struggleRoving = useRovingFocus({
+    count: 2,
+    // No answer yet: treat "yes" as active so the group stays tab-reachable.
+    activeIndex: struggleSwitchOn === false ? 1 : 0,
+    onActivate: (index) => setStruggleSwitchOn(index === 0),
+  });
+  const discomfortIndex = discomfortType === null ? 0 : DISCOMFORT_TYPES.indexOf(discomfortType);
+  const discomfortRoving = useRovingFocus({
+    count: DISCOMFORT_TYPES.length,
+    activeIndex: discomfortIndex < 0 ? 0 : discomfortIndex,
+    onActivate: (index) => setDiscomfortType(DISCOMFORT_TYPES[index]),
+  });
+  const techniqueIndex = EXPANSION_TECHNIQUES.indexOf(techniqueUsed);
+  const techniqueRoving = useRovingFocus({
+    count: EXPANSION_TECHNIQUES.length,
+    activeIndex: techniqueIndex < 0 ? 0 : techniqueIndex,
+    onActivate: (index) => setTechniqueUsed(EXPANSION_TECHNIQUES[index]),
+  });
+
   function goNext() {
     if (stepIndex < STEP_ORDER.length - 1) setStep(STEP_ORDER[stepIndex + 1]);
   }
@@ -60,7 +83,7 @@ export default function ActExpansionNewScreen() {
     if (stepIndex > 0) setStep(STEP_ORDER[stepIndex - 1]);
   }
 
-  async function handleSave() {
+  const handleSave = useSingleFlight(async () => {
     if (!user) return;
     setSubmitError("");
     try {
@@ -81,7 +104,7 @@ export default function ActExpansionNewScreen() {
       const message = error instanceof Error ? error.message : t("act:expansion.saveProblem");
       setSubmitError(message);
     }
-  }
+  });
 
   return (
     <MobileFormScreen
@@ -201,20 +224,27 @@ export default function ActExpansionNewScreen() {
           <View className="gap-6">
             <View className="gap-3">
               <Label>{t("act:expansion.struggleSwitchQuestion")}</Label>
-              <View className="gap-2">
-                {(["yes", "no"] as const).map((choice) => {
+              <View
+                accessibilityLabel={t("act:expansion.struggleSwitchQuestion")}
+                accessibilityRole="radiogroup"
+                className="gap-2"
+                role="radiogroup"
+              >
+                {(["yes", "no"] as const).map((choice, index) => {
                   const isOn = choice === "yes";
                   const selected = struggleSwitchOn === isOn;
                   return (
                     <Pressable
                       key={choice}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected }}
+                      accessibilityRole="radio"
+                      aria-checked={selected}
+                      role="radio"
                       onPress={() => setStruggleSwitchOn(isOn)}
                       className={cn(
                         "rounded-xl border p-4 active:bg-accent/40",
                         selected ? "border-act bg-act/5" : "border-border bg-card",
                       )}
+                      {...struggleRoving.getItemProps(index, () => setStruggleSwitchOn(isOn))}
                     >
                       <Text className={cn("font-semibold", selected && "text-act")}>
                         {t(
@@ -237,19 +267,26 @@ export default function ActExpansionNewScreen() {
                     {t("act:expansion.discomfortTypeHint")}
                   </Text>
                 </View>
-                <View className="gap-2">
-                  {(["clean", "dirty"] as DiscomfortType[]).map((type) => {
+                <View
+                  accessibilityLabel={t("act:expansion.discomfortTypeLabel")}
+                  accessibilityRole="radiogroup"
+                  className="gap-2"
+                  role="radiogroup"
+                >
+                  {DISCOMFORT_TYPES.map((type, index) => {
                     const selected = discomfortType === type;
                     return (
                       <Pressable
                         key={type}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected }}
+                        accessibilityRole="radio"
+                        aria-checked={selected}
+                        role="radio"
                         onPress={() => setDiscomfortType(type)}
                         className={cn(
                           "rounded-xl border p-4 active:bg-accent/40",
                           selected ? "border-act bg-act/5" : "border-border bg-card",
                         )}
+                        {...discomfortRoving.getItemProps(index, () => setDiscomfortType(type))}
                       >
                         <Text className={cn("font-semibold", selected && "text-act")}>
                           {t(`act:expansion.${type}`)}
@@ -272,19 +309,26 @@ export default function ActExpansionNewScreen() {
                 {t("act:expansion.techniqueHint")}
               </Text>
             </View>
-            <View className="gap-2">
-              {EXPANSION_TECHNIQUES.map((tech) => {
+            <View
+              accessibilityLabel={t("act:expansion.techniqueLabel")}
+              accessibilityRole="radiogroup"
+              className="gap-2"
+              role="radiogroup"
+            >
+              {EXPANSION_TECHNIQUES.map((tech, index) => {
                 const selected = techniqueUsed === tech;
                 return (
                   <Pressable
                     key={tech}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
+                    accessibilityRole="radio"
+                    aria-checked={selected}
+                    role="radio"
                     onPress={() => setTechniqueUsed(tech)}
                     className={cn(
                       "rounded-xl border p-4 active:bg-accent/40",
                       selected ? "border-act bg-act/5" : "border-border bg-card",
                     )}
+                    {...techniqueRoving.getItemProps(index, () => setTechniqueUsed(tech))}
                   >
                     <View className="gap-1">
                       <Text className={cn("font-semibold", selected && "text-act")}>

@@ -22,6 +22,8 @@ import {
   saveLastSessionDuration,
 } from "@/src/features/timer/storage";
 import { cn } from "@/lib/utils";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useRovingFocus } from "@/src/lib/roving-focus";
 
 type TimerState = "idle" | "running" | "paused" | "completed";
 
@@ -197,7 +199,13 @@ function DurationPicker({ value, onChange }: { value: number; onChange: (n: numb
 
   return (
     <View className="items-center gap-1">
-      <Pressable onPress={startEditing} className="items-center py-1">
+      <Pressable
+        accessibilityLabel={t("duration.editLabel")}
+        accessibilityRole="button"
+        onPress={startEditing}
+        className="items-center py-1"
+        role="button"
+      >
         {isEditing ? (
           <TextInput
             ref={inputRef}
@@ -237,18 +245,33 @@ function DurationPicker({ value, onChange }: { value: number; onChange: (n: numb
 
 function IntervalPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   const { t } = useTranslation("timer");
+  const selectedIndex = INTERVAL_OPTIONS_MINUTES.findIndex((minutes) => minutes === value);
+  const roving = useRovingFocus({
+    count: INTERVAL_OPTIONS_MINUTES.length,
+    // No match (shouldn't happen): treat the first chip as active so the group stays tab-reachable.
+    activeIndex: selectedIndex < 0 ? 0 : selectedIndex,
+    onActivate: (index) => onChange(INTERVAL_OPTIONS_MINUTES[index]),
+  });
   return (
     <View className="items-center gap-2">
       <Text className="text-xs text-muted-foreground">{t("interval.label")}</Text>
-      <View className="flex-row flex-wrap justify-center gap-2">
-        {INTERVAL_OPTIONS_MINUTES.map((minutes) => {
+      <View
+        accessibilityLabel={t("interval.label")}
+        accessibilityRole="radiogroup"
+        className="flex-row flex-wrap justify-center gap-2"
+        role="radiogroup"
+      >
+        {INTERVAL_OPTIONS_MINUTES.map((minutes, index) => {
           const selected = minutes === value;
           return (
             <Pressable
               key={minutes}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
+              accessibilityRole="radio"
+              aria-checked={selected}
+              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+              role="radio"
               onPress={() => onChange(minutes)}
+              {...roving.getItemProps(index, () => onChange(minutes))}
               className={cn(
                 "rounded-full border px-4 py-1.5",
                 selected ? "border-transparent bg-primary" : "border-border bg-card",

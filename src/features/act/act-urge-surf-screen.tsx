@@ -19,6 +19,8 @@ import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { useUrgeSurfLogs, useSaveUrgeSurfLog } from "@/src/features/act/queries";
 import { StepPills } from "@/src/features/act/step-pills";
+import { useRovingFocus } from "@/src/lib/roving-focus";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -62,6 +64,12 @@ export default function ActUrgeSurfScreen() {
   const stepIndex = STEP_ORDER.indexOf(step);
   const isLastStep = stepIndex === STEP_ORDER.length - 1;
 
+  const actedOnRoving = useRovingFocus({
+    count: 2,
+    activeIndex: urgeActedOn ? 0 : 1,
+    onActivate: (index) => setUrgeActedOn(index === 0),
+  });
+
   function startNew() {
     setStep("urge");
     setUrgeDescription("");
@@ -84,7 +92,7 @@ export default function ActUrgeSurfScreen() {
     }
   }
 
-  async function handleSave() {
+  const handleSave = useSingleFlight(async () => {
     if (!user) return;
     setSubmitError("");
     try {
@@ -104,7 +112,7 @@ export default function ActUrgeSurfScreen() {
         error instanceof Error ? error.message : t("act:expansion.urgeSurf.saveProblem");
       setSubmitError(message);
     }
-  }
+  });
 
   if (mode === "list") {
     return (
@@ -276,19 +284,26 @@ export default function ActUrgeSurfScreen() {
           <View className="gap-6">
             <View className="gap-3">
               <Label>{t("act:expansion.urgeSurf.actedOnLabel")}</Label>
-              <View className="flex-row gap-3">
-                {([true, false] as const).map((val) => {
+              <View
+                accessibilityLabel={t("act:expansion.urgeSurf.actedOnLabel")}
+                accessibilityRole="radiogroup"
+                className="flex-row gap-3"
+                role="radiogroup"
+              >
+                {([true, false] as const).map((val, index) => {
                   const selected = urgeActedOn === val;
                   return (
                     <Pressable
                       key={String(val)}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected }}
+                      accessibilityRole="radio"
+                      aria-checked={selected}
+                      role="radio"
                       onPress={() => setUrgeActedOn(val)}
                       className={cn(
                         "flex-1 rounded-xl border p-4 active:bg-accent/40",
                         selected ? "border-act bg-act/5" : "border-border bg-card",
                       )}
+                      {...actedOnRoving.getItemProps(index, () => setUrgeActedOn(val))}
                     >
                       <Text className={cn("text-center font-semibold", selected && "text-act")}>
                         {val

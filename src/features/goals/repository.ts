@@ -6,6 +6,7 @@ import type {
   MilestoneInput,
 } from "@/src/features/goals/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
 
 interface GoalRow {
   id: string;
@@ -73,6 +74,8 @@ export async function listGoals(userId: string) {
 }
 
 export async function getGoal(userId: string, goalId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(goalId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("goals")
@@ -120,6 +123,8 @@ export async function updateGoalStatus(userId: string, goalId: string, status: G
 }
 
 export async function listMilestones(userId: string, goalId: string) {
+  // goalId comes from the goal detail route; a malformed id would 400 on the uuid cast.
+  if (!isValidUuid(goalId)) return [];
   const client = requireSupabase();
   const { data, error } = await client
     .from("milestones")

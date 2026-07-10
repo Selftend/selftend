@@ -12,9 +12,8 @@ import { Portal } from "@rn-primitives/portal";
 import { useColorScheme } from "nativewind";
 
 import { Text } from "@/src/components/react-native-reusables/text";
-
-// hsl(260, 18%, 13%) dark card, hsl(260, 28%, 99%) light card from global.css.
-const CARD_COLOR = { dark: "#1f1b27", light: "#fdfcfe" } as const;
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { POPOVER_COLOR } from "@/lib/theme";
 
 const OVERLAY_COLOR = "rgba(0, 0, 0, 0.65)";
 const HIGHLIGHT_BORDER_COLOR = "rgba(255,255,255,0.75)";
@@ -55,8 +54,9 @@ export function TourOverlay({
   onDismissAll,
 }: TourOverlayProps): React.JSX.Element {
   const { colorScheme } = useColorScheme();
+  const reduceMotionEnabled = useReduceMotionEnabled();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const cardColor = CARD_COLOR[colorScheme ?? "dark"];
+  const cardColor = POPOVER_COLOR[colorScheme ?? "dark"];
 
   const spotLeft = targetRect.x - SPOTLIGHT_PADDING;
   const spotTop = targetRect.y - SPOTLIGHT_PADDING;
@@ -157,7 +157,12 @@ export function TourOverlay({
 
   if (Platform.OS === "web") {
     return (
-      <Modal transparent animationType="fade" visible statusBarTranslucent>
+      <Modal
+        transparent
+        animationType={reduceMotionEnabled ? "none" : "fade"}
+        visible
+        statusBarTranslucent
+      >
         <View style={{ flex: 1 }}>{overlayContent}</View>
       </Modal>
     );

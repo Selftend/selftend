@@ -65,7 +65,10 @@ describe("goals repository - goals", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(getGoal("user-1", "missing")).resolves.toBeNull();
+    // Well-formed uuid that matches no row, so the query itself runs (a malformed
+    // id short-circuits to null before supabase).
+    await expect(getGoal("user-1", "11111111-1111-4111-8111-111111111111")).resolves.toBeNull();
+    expect(maybeSingle).toHaveBeenCalled();
   });
 
   it("trims title and description on insert", async () => {
@@ -134,6 +137,7 @@ describe("goals repository - milestones", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("lists milestones for a goal ordered by created_at asc", async () => {
+    const goalId = "33333333-3333-4333-8333-333333333333";
     const order = jest.fn().mockResolvedValue({ data: [milestoneRow], error: null });
     const eqG = jest.fn(() => ({ order }));
     const eqUser = jest.fn(() => ({ eq: eqG }));
@@ -141,9 +145,19 @@ describe("goals repository - milestones", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await listMilestones("user-1", "g-1");
-    expect(eqG).toHaveBeenCalledWith("goal_id", "g-1");
+    await listMilestones("user-1", goalId);
+    expect(eqG).toHaveBeenCalledWith("goal_id", goalId);
     expect(order).toHaveBeenCalledWith("created_at", { ascending: true });
+  });
+
+  it("returns no milestones for a malformed goal id without calling supabase", async () => {
+    // The goal detail route feeds goalId straight from the URL; a malformed id would
+    // 400 on PostgREST's uuid cast, so it must short-circuit to the zero-rows result.
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(listMilestones("user-1", "does-not-exist")).resolves.toEqual([]);
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("trims and bulk-inserts milestones", async () => {

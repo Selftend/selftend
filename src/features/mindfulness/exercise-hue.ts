@@ -37,12 +37,12 @@ type HslPair = { light: string; dark: string };
 const HUE_HSL: Record<ExerciseHue, HslPair> = {
   mist: { light: "178, 40%, 40%", dark: "178, 48%, 58%" },
   iris: { light: "280, 48%, 60%", dark: "280, 58%, 74%" },
-  be: { light: "330, 56%, 60%", dark: "330, 62%, 72%" },
-  ink: { light: "232, 46%, 56%", dark: "232, 56%, 72%" },
+  be: { light: "330, 56%, 47%", dark: "330, 62%, 72%" },
+  ink: { light: "232, 46%, 54%", dark: "232, 56%, 72%" },
   act: { light: "160, 46%, 38%", dark: "160, 56%, 55%" },
   clay: { light: "20, 52%, 50%", dark: "20, 60%, 66%" },
   think: { light: "43, 74%, 52%", dark: "43, 86%, 65%" },
-  aqua: { light: "196, 52%, 45%", dark: "196, 58%, 62%" },
+  aqua: { light: "196, 52%, 36%", dark: "196, 58%, 62%" },
 };
 
 const HUES: Record<ExerciseHue, HueDef> = {

@@ -54,6 +54,9 @@ describe("journal repository", () => {
   });
 
   it("returns null when getJournalEntry finds no row", async () => {
+    // Well-formed uuid that matches no row, so the query itself runs (a malformed
+    // id short-circuits before supabase - covered separately below).
+    const missingId = "11111111-1111-4111-8111-111111111111";
     const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
     const eqId = jest.fn(() => ({ maybeSingle }));
     const eqUser = jest.fn(() => ({ eq: eqId }));
@@ -61,9 +64,19 @@ describe("journal repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(getJournalEntry("user-1", "missing")).resolves.toBeNull();
+    await expect(getJournalEntry("user-1", missingId)).resolves.toBeNull();
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
-    expect(eqId).toHaveBeenCalledWith("id", "missing");
+    expect(eqId).toHaveBeenCalledWith("id", missingId);
+  });
+
+  it("returns null for a malformed id without calling supabase", async () => {
+    // /tools/journal/does-not-exist: PostgREST would reject the uuid cast with a 400
+    // (console error), so the repository must not fire the doomed request at all.
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(getJournalEntry("user-1", "does-not-exist")).resolves.toBeNull();
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("trims title and body and inserts a new entry", async () => {

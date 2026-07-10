@@ -6,6 +6,7 @@ import type {
 } from "@/src/features/recovery/types";
 import { trimAndFilterEmpty } from "@/src/lib/strings";
 import { requireSupabase } from "@/src/lib/supabase";
+import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
 interface RecoveryPlanRow {
   id: string;
@@ -68,7 +69,7 @@ function mapChallengePlan(row: ChallengePlanRow): ChallengePlan {
 function sanitizeNotes(values: Record<string, string>) {
   return Object.fromEntries(
     Object.entries(values)
-      .map(([key, value]) => [key, value.trim()] as const)
+      .map(([key, value]) => [key, sanitizeUserText(value).trim()] as const)
       .filter(([, value]) => value.length > 0),
   );
 }
@@ -96,7 +97,7 @@ export async function upsertRecoveryPlan(userId: string, input: RecoveryPlanInpu
     .insert({
       user_id: userId,
       recovery_keys: trimAndFilterEmpty(input.recoveryKeys),
-      personal_slogan: input.personalSlogan.trim(),
+      personal_slogan: sanitizeUserText(input.personalSlogan).trim(),
       strategy_integration_notes: sanitizeNotes(input.strategyIntegrationNotes),
       maintenance_commitments: trimAndFilterEmpty(input.maintenanceCommitments),
     })
@@ -130,7 +131,7 @@ export async function saveChallengePlan(
   const payload = {
     recovery_plan_id: recoveryPlanId,
     user_id: userId,
-    challenge_description: input.challengeDescription.trim(),
+    challenge_description: sanitizeUserText(input.challengeDescription).trim(),
     coping_steps: trimAndFilterEmpty(input.copingSteps),
   };
 

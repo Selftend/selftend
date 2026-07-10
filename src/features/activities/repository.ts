@@ -1,5 +1,6 @@
 import type { ActivityInput, ActivityLog } from "@/src/features/activities/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
 
 interface ActivityLogRow {
   id: string;
@@ -47,6 +48,8 @@ export async function listActivities(userId: string) {
 }
 
 export async function getActivity(userId: string, activityId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(activityId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("activity_logs")

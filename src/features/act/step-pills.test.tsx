@@ -1,4 +1,5 @@
 import { fireEvent, screen } from "@testing-library/react-native";
+import { Platform } from "react-native";
 
 import { StepPills } from "@/src/features/act/step-pills";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -74,5 +75,28 @@ describe("StepPills", () => {
     expect(screen.getByText("3. Before")).toBeTruthy();
     expect(screen.queryByText("Step 2 of 3 · Category")).toBeNull();
     expect(screen.queryByLabelText(/Show all steps/)).toBeNull();
+  });
+
+  it("marks the active step as selected on native", () => {
+    mockUseWindowDimensions.mockReturnValue(WIDE_WIDTH);
+    renderPills("category", jest.fn());
+
+    expect(screen.getByRole("button", { name: "2. Category" })).toBeSelected();
+    expect(screen.getByRole("button", { name: "1. Thought" })).not.toBeSelected();
+  });
+
+  it("marks the active step with aria-current on web", () => {
+    Object.defineProperty(Platform, "OS", { configurable: true, value: "web" });
+    try {
+      mockUseWindowDimensions.mockReturnValue(WIDE_WIDTH);
+      renderPills("category", jest.fn());
+
+      const active = screen.getByRole("button", { name: "2. Category" });
+      expect(active.props["aria-current"]).toBe("step");
+      const inactive = screen.getByRole("button", { name: "1. Thought" });
+      expect(inactive.props["aria-current"]).toBeUndefined();
+    } finally {
+      Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
+    }
   });
 });

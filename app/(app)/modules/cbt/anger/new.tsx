@@ -21,6 +21,7 @@ import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { useAngerLog, useAngerLogs, useSaveAngerLog } from "@/src/features/anger/queries";
 import { angerLogFormSchema, type AngerLogFormSchema } from "@/src/features/anger/schemas";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
@@ -84,7 +85,7 @@ export default function NewAngerLogScreen() {
   const outcome = watch("outcomeRating");
   const timeOut = watch("timeOutTaken");
 
-  const handleSave = handleSubmit(async (values) => {
+  const submitForm = handleSubmit(async (values) => {
     try {
       await saveMutation.mutateAsync(
         logId
@@ -98,6 +99,9 @@ export default function NewAngerLogScreen() {
       showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
     }
   });
+  // RHF's handleSubmit does not block re-entrant calls (isSubmitting is React state that
+  // hasn't re-rendered between two rapid presses), so guard against double-press inserts.
+  const handleSave = useSingleFlight(submitForm);
 
   return (
     <MobileFormScreen
@@ -140,7 +144,7 @@ export default function NewAngerLogScreen() {
                 value={value}
               />
               {errors.triggerText?.message ? (
-                <Text className="text-sm text-destructive">{errors.triggerText.message}</Text>
+                <Text className="text-sm text-destructive">{t(errors.triggerText.message)}</Text>
               ) : null}
             </View>
           )}

@@ -1,7 +1,13 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 
 import BreathingExerciseScreen from "@/app/(app)/tools/breathing/session";
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { renderWithProviders } from "@/test/render-with-providers";
+
+jest.mock("@/src/lib/accessibility", () => ({
+  ...jest.requireActual("@/src/lib/accessibility"),
+  useReduceMotionEnabled: jest.fn(() => false),
+}));
 
 jest.mock("expo-router", () => ({
   router: { replace: jest.fn(), push: jest.fn(), canGoBack: jest.fn(() => false) },
@@ -45,6 +51,22 @@ jest.mock("@/src/stores/toast-store", () => ({
     selector({ showToast: jest.fn() }),
 }));
 
+const mockUseReduceMotionEnabled = useReduceMotionEnabled as jest.MockedFunction<
+  typeof useReduceMotionEnabled
+>;
+
+// setup.js replaces reanimated with react-native-reanimated/mock (a plain
+// object), so the pacer's withTiming calls can be observed with a spy.
+const reanimatedMock = jest.requireMock("react-native-reanimated") as {
+  withTiming: (...args: unknown[]) => unknown;
+};
+const withTimingSpy = jest.spyOn(reanimatedMock, "withTiming");
+
+beforeEach(() => {
+  mockUseReduceMotionEnabled.mockReturnValue(false);
+  withTimingSpy.mockClear();
+});
+
 describe("Breathing cycle runner", () => {
   it("opens on the default cycle count with calculated total time", () => {
     renderWithProviders(<BreathingExerciseScreen />);
@@ -65,5 +87,20 @@ describe("Breathing cycle runner", () => {
     fireEvent.press(screen.getByText("Start"));
     expect(screen.getByText("Inhale")).toBeTruthy();
     expect(screen.getByText("Cycle 1 of 8")).toBeTruthy();
+  });
+
+  it("animates the pacer with withTiming when motion is allowed", () => {
+    renderWithProviders(<BreathingExerciseScreen />);
+    fireEvent.press(screen.getByText("Start"));
+    expect(withTimingSpy).toHaveBeenCalled();
+  });
+
+  it("does not call withTiming when reduce motion is enabled", () => {
+    mockUseReduceMotionEnabled.mockReturnValue(true);
+    renderWithProviders(<BreathingExerciseScreen />);
+    fireEvent.press(screen.getByText("Start"));
+    // The pacer still runs (phase label shows) but steps state without animating.
+    expect(screen.getByText("Inhale")).toBeTruthy();
+    expect(withTimingSpy).not.toHaveBeenCalled();
   });
 });

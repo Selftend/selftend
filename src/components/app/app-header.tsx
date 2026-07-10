@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { Link } from "expo-router";
 
 // Per-family subpath, not the "@expo/vector-icons" barrel (which bundles all 15 families).
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -43,22 +43,24 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
             </Button>
           </View>
         ) : null}
-        <Pressable
-          className="min-w-0 flex-1 flex-row items-center gap-2 px-2"
-          onPress={() => router.push(isSignedIn ? "/(app)" : "/")}
-          accessibilityRole="button"
-          accessibilityLabel={t("header.goHome")}
-        >
-          <Image
-            accessible={false}
-            source={require("../../../assets/icon.png")}
-            resizeMode="contain"
-            style={{ width: 28, height: 28, borderRadius: 6 }}
-          />
-          <Text className="shrink text-lg font-semibold text-foreground" numberOfLines={1}>
-            {t("header.appName")}
-          </Text>
-        </Pressable>
+        <Link href={isSignedIn ? "/(app)" : "/"} asChild>
+          <Pressable
+            className="min-w-0 flex-1 flex-row items-center gap-2 px-2"
+            accessibilityRole="link"
+            accessibilityLabel={t("header.goHome")}
+            role="link"
+          >
+            <Image
+              accessible={false}
+              source={require("../../../assets/icon.png")}
+              resizeMode="contain"
+              style={{ width: 28, height: 28, borderRadius: 6 }}
+            />
+            <Text className="shrink text-lg font-semibold text-foreground" numberOfLines={1}>
+              {t("header.appName")}
+            </Text>
+          </Pressable>
+        </Link>
         {appEnv.discordUrl ? (
           <Button
             accessibilityLabel={t("header.joinDiscord")}

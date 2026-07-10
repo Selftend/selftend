@@ -8,6 +8,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { THEME } from "@/lib/theme";
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useAppColorScheme } from "@/src/lib/color-scheme";
 
 interface DateTimeFieldProps {
@@ -19,6 +20,7 @@ interface DateTimeFieldProps {
 export function DateTimeField({ value, onChange, accessibilityLabel }: DateTimeFieldProps) {
   const { i18n } = useTranslation("navigation");
   const { t } = useTranslation("common");
+  const reduceMotionEnabled = useReduceMotionEnabled();
   const [open, setOpen] = useState(false);
 
   const scheme = useAppColorScheme();
@@ -63,11 +65,19 @@ export function DateTimeField({ value, onChange, accessibilityLabel }: DateTimeF
         <Icon name="calendar-month" className="size-5 text-muted-foreground" />
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal
+        visible={open}
+        transparent
+        animationType={reduceMotionEnabled ? "none" : "fade"}
+        onRequestClose={() => setOpen(false)}
+      >
         {/* Dimmed backdrop - tap anywhere outside the card to close */}
         <Pressable
+          accessibilityLabel={t("close")}
+          accessibilityRole="button"
           className="flex-1 items-center justify-center bg-black/50 p-6"
           onPress={() => setOpen(false)}
+          role="button"
         >
           {/* Card - stop propagation so tapping inside doesn't dismiss */}
           <Pressable className="w-full max-w-[340px] rounded-2xl bg-card p-3" onPress={() => {}}>

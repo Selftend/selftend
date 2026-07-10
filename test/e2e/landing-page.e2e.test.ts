@@ -22,7 +22,7 @@ test.describe("landing page (signed out)", () => {
     await page.goto("/");
     await dismissCookieBanner(page);
 
-    await page.getByRole("button", { name: "Get started", exact: true }).click();
+    await page.getByRole("link", { name: "Get started", exact: true }).click();
 
     await expect(page).toHaveURL(/\/sign-up$/, { timeout: 10_000 });
     await expect(page.getByText("Create an account")).toBeVisible({ timeout: 10_000 });
@@ -32,7 +32,7 @@ test.describe("landing page (signed out)", () => {
     await page.goto("/");
     await dismissCookieBanner(page);
 
-    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await page.getByRole("link", { name: "Sign in", exact: true }).click();
 
     await expect(page).toHaveURL(/\/sign-in$/, { timeout: 10_000 });
     await expect(page.getByText("Sign in to your account")).toBeVisible({ timeout: 10_000 });
@@ -42,7 +42,7 @@ test.describe("landing page (signed out)", () => {
     await page.goto("/");
     await dismissCookieBanner(page);
 
-    await page.getByRole("button", { name: "Open crisis guidance", exact: true }).click();
+    await page.getByRole("link", { name: "Open crisis guidance", exact: true }).click();
 
     await expect(page).toHaveURL(/\/crisis$/, { timeout: 10_000 });
     await expect(page.getByText("Crisis guidance", { exact: true })).toBeVisible({

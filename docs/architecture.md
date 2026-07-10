@@ -14,6 +14,7 @@ A map of how the app is organized. For stack choices, see [stack.md](stack.md). 
 | Providers         | `src/providers/`                              | App-wide context: session, i18n, root provider tree.                                         |
 | Stores            | `src/stores/`                                 | Zustand for local UI state (sidebar, theme, toast, draft, cookie consent).                   |
 | Library           | `src/lib/`, `lib/`                            | Supabase client, env validation, notifications, theme, `cn()` utility.                       |
+| Utilities         | `src/utils/`                                  | Pure, dependency-free helpers (dates, numbers, uuid validity). Hooks belong in `src/lib/`.   |
 | Backend           | `supabase/migrations/`, `supabase/functions/` | Postgres schema, RLS, RPCs, edge functions. See [supabase/README.md](../supabase/README.md). |
 | Edge functions    | `functions/`, `supabase/functions/`           | Web push reminder delivery.                                                                  |
 
@@ -114,6 +115,52 @@ Flow:
 5. **RLS** enforces user-ownership server-side. Even if the repository forgot to filter by `user_id`, Postgres RLS blocks cross-user reads. Repository code still includes `.eq("user_id", userId)` for clarity and so the query plan uses indexes.
 
 For new modules, see the module contract in [docs/modules/tools.md](modules/tools.md).
+
+### Free-text sanitization (layering rule)
+
+All user-typed prose is sanitized before storage by `sanitizeUserText`
+([src/utils/sanitize-text.ts](../src/utils/sanitize-text.ts)): NBSP → space,
+zero-width characters and C0 controls stripped (tab/newline kept, CRLF
+normalized), unpaired UTF-16 surrogates dropped. It is applied at exactly ONE
+layer per field, on WRITE paths only:
+
+- **Zod-validated flows** (a form resolver parses before save): build the field
+  with `userText(max, ...)` from [src/lib/zod-fields.ts](../src/lib/zod-fields.ts) -
+  its `.transform` sanitizes, so the repository receives clean text and must not
+  re-sanitize.
+- **Everything else** (saves that bypass schemas - e.g. mood, journal,
+  gratitude, habits, ACT): call `sanitizeUserText` in the feature repository's
+  create/update, on the write payload.
+- **Never on READ**: mappers (`map*` row → domain) must return stored text
+  verbatim. Sanitizing reads would silently rewrite user content on display and
+  mask write-path bugs.
+- Length caps and sanitize ordering: slice/truncate FIRST, then sanitize - a
+  slice applied after sanitizing can bisect an emoji at the boundary and
+  reintroduce exactly the unpaired surrogate being removed.
+
+### Wizard draft persistence contract
+
+Multi-step wizard flows persist in-progress drafts via
+[src/stores/create-wizard-draft-store.ts](../src/stores/create-wizard-draft-store.ts)
+(zustand `persist` on AsyncStorage; consumed through
+[src/lib/use-wizard-draft.ts](../src/lib/use-wizard-draft.ts)):
+
+- **Key scheme:** `selftend:wizard-draft:<flowKey>` - one draft per flow key
+  (`cbt-thought-record`, `goal`, `core-belief`, `procrastination-task`,
+  `exposure-hierarchy`). One mode+entityId draft at a time; switching wipes the
+  previous draft.
+- **TTL:** drafts older than 24h are dropped at rehydrate (and their disk copy
+  removed - drafts are PHI).
+- **Versioning:** the persisted envelope carries a `version`; bump
+  `WIZARD_DRAFT_PERSIST_VERSION` whenever the persisted shape changes
+  incompatibly - there is deliberately no migrate function (a lost draft beats a
+  wrongly-migrated one feeding a zod resolver).
+- **Sign-out wipes disk:** `resetAllDraftStores()` (session provider on
+  SIGNED_OUT) clears both memory state and the persisted copies.
+- **Zustand + persist gotcha:** the middleware makes `set()` return the storage
+  write's promise. Store action bodies use braces (return `void`) so callers -
+  including `act()` in tests - never receive a stray thenable. Keep new actions
+  braced.
 
 ## Field-level encryption layer
 

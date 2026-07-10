@@ -3,6 +3,7 @@
     "moduleLabel": "Check-in",
     "title": "How are you feeling?",
     "tagline": "A simple 1-5 picker plus space for a note.",
+    "scoreRequired": "Pick a mood score first.",
     "scaleLabels": {
       "1": "Awful",
       "2": "Low",

@@ -64,7 +64,12 @@ describe("beliefs repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(getCoreBelief("user-1", "missing")).resolves.toBeNull();
+    // Well-formed uuid that matches no row, so the query itself runs (a malformed
+    // id short-circuits to null before supabase).
+    await expect(
+      getCoreBelief("user-1", "11111111-1111-4111-8111-111111111111"),
+    ).resolves.toBeNull();
+    expect(maybeSingle).toHaveBeenCalled();
   });
 
   it("trims text fields and inserts a new belief", async () => {

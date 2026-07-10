@@ -176,7 +176,6 @@ type ButtonProps = React.ComponentProps<typeof Pressable> &
 
 function Button({
   accessibilityRole = "button",
-  accessibilityState,
   className,
   hitSlop = DEFAULT_INTERACTIVE_HIT_SLOP,
   role = "button",
@@ -189,10 +188,7 @@ function Button({
     <TextClassContext.Provider value={buttonTextVariants({ variant, size, tint })}>
       <Pressable
         accessibilityRole={accessibilityRole}
-        accessibilityState={{
-          disabled: props.disabled ?? undefined,
-          ...accessibilityState,
-        }}
+        aria-disabled={props.disabled ?? undefined}
         className={cn(
           props.disabled && "opacity-50",
           buttonVariants({ variant, size, tint }),

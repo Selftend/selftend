@@ -31,6 +31,7 @@ export function GratitudeOnboarding({
       visible={visible}
       isPending={isPending}
       errorMessage={errorMessage}
+      accessibilityLabel={t("onboarding.welcome.title")}
       ctaLabel={t("onboarding.finish.start")}
       onComplete={onComplete}
       onDismiss={onDismiss}

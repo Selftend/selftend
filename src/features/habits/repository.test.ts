@@ -1,4 +1,9 @@
-import { saveHabit, toggleHabitLog } from "@/src/features/habits/repository";
+import {
+  getHabit,
+  listHabitLogs,
+  saveHabit,
+  toggleHabitLog,
+} from "@/src/features/habits/repository";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
@@ -43,6 +48,28 @@ const insertedHabitRow = {
 describe("habits repository", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it("returns null from getHabit for a malformed id without calling supabase", async () => {
+    // The habit detail screen feeds the route id here; a malformed id would 400 on
+    // PostgREST's uuid cast (console error), so it must short-circuit to not-found.
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(getHabit("user-1", "does-not-exist")).resolves.toBeNull();
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("returns no logs from listHabitLogs for a malformed habitId without calling supabase", async () => {
+    // The habit detail screen also queries logs by the same route id (the second of
+    // the doomed requests QA saw); it must short-circuit to the zero-rows result too.
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      listHabitLogs("user-1", { habitId: "does-not-exist", sinceDate: "2026-04-01" }),
+    ).resolves.toEqual([]);
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("inserts a new habit, trims strings, and maps the row back to camelCase", async () => {

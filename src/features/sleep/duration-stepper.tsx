@@ -28,6 +28,7 @@ export function DurationStepper({
         size="icon"
         variant="outline"
         accessibilityLabel={t("log.decreaseDuration")}
+        disabled={value <= min}
         onPress={() => onChange(Math.max(min, value - STEP))}
       >
         <Icon name="remove" className="size-5" />
@@ -37,6 +38,7 @@ export function DurationStepper({
         size="icon"
         variant="outline"
         accessibilityLabel={t("log.increaseDuration")}
+        disabled={value >= max}
         onPress={() => onChange(Math.min(max, value + STEP))}
       >
         <Icon name="add" className="size-5" />

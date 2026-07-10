@@ -14,6 +14,13 @@
 // at build time). EXPO_PUBLIC_PUBLIC_APP_URL is pinned to the serve port so the app
 // and its server agree. test/e2e/fixtures.ts is robust to whichever Supabase host
 // ends up inlined, so this stays correct on dev machines and in CI.
+//
+// The export directory is PORT-SCOPED: the default port (8099) keeps the plain
+// `dist-e2e/` name (CI and existing E2E_SKIP_BUILD workflows unchanged); any
+// other port builds and serves `dist-e2e-<port>/`. Because the bundle bakes
+// EXPO_PUBLIC_PUBLIC_APP_URL at build time, two servers on different ports
+// sharing one directory would silently serve whichever build ran last - with
+// its email redirects pointing at the WRONG origin.
 
 const { spawnSync } = require("node:child_process");
 const http = require("node:http");
@@ -21,8 +28,9 @@ const fs = require("node:fs");
 const fsp = require("node:fs/promises");
 const path = require("node:path");
 
-const PORT = process.argv[2] ?? process.env.E2E_PORT ?? "8099";
-const OUTPUT_DIR = "dist-e2e";
+const DEFAULT_PORT = "8099";
+const PORT = process.argv[2] ?? process.env.E2E_PORT ?? DEFAULT_PORT;
+const OUTPUT_DIR = PORT === DEFAULT_PORT ? "dist-e2e" : `dist-e2e-${PORT}`;
 
 // Deterministic local Supabase anon key (same value as playwright.config.ts /
 // test/integration/helpers.ts). Used only as a fallback when the parent env (the

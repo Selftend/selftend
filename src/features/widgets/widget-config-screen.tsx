@@ -19,6 +19,7 @@ import {
 } from "@/src/features/widgets/widget-config-store";
 import { renderWidget } from "@/src/features/widgets/render-widget";
 import { readSnapshot } from "@/src/features/widgets/snapshot-store";
+import { spaceKeyActivationProps } from "@/src/lib/accessibility";
 
 const THEME_OPTIONS: { value: WidgetThemePref; labelKey: string }[] = [
   { value: "app", labelKey: "home.widgets.config.themeApp" },
@@ -118,7 +119,12 @@ function WidgetConfigurationScreenContent({
     >
       <Text variant="h3">{t("home.widgets.config.title")}</Text>
 
-      <View className="gap-2">
+      <View
+        accessibilityLabel={t("home.widgets.config.cardSection")}
+        accessibilityRole="radiogroup"
+        className="gap-2"
+        role="radiogroup"
+      >
         <Text className="font-semibold">{t("home.widgets.config.cardSection")}</Text>
         {GROUPS.map((g) => (
           <View key={g.labelKey} className="gap-2">
@@ -132,10 +138,14 @@ function WidgetConfigurationScreenContent({
               return (
                 <Pressable
                   key={id}
+                  accessibilityRole="radio"
+                  aria-checked={selected}
                   onPress={() => setCardId(id)}
                   className={`flex-row items-center gap-3 rounded-xl border p-3 ${
                     selected ? "border-primary bg-primary/10" : "border-border"
                   }`}
+                  role="radio"
+                  {...spaceKeyActivationProps(() => setCardId(id))}
                 >
                   <View className={`size-8 items-center justify-center rounded-lg ${c.chip}`}>
                     <Icon name={meta.icon as MaterialIconName} className={`size-5 ${c.icon}`} />
@@ -151,14 +161,23 @@ function WidgetConfigurationScreenContent({
 
       <View className="gap-2">
         <Text className="font-semibold">{t("home.widgets.config.themeLabel")}</Text>
-        <View className="flex-row gap-2">
+        <View
+          accessibilityLabel={t("home.widgets.config.themeLabel")}
+          accessibilityRole="radiogroup"
+          className="flex-row gap-2"
+          role="radiogroup"
+        >
           {THEME_OPTIONS.map((opt) => (
             <Pressable
               key={opt.value}
+              accessibilityRole="radio"
+              aria-checked={theme === opt.value}
               onPress={() => setTheme(opt.value)}
               className={`flex-1 items-center rounded-xl border p-2 ${
                 theme === opt.value ? "border-primary bg-primary/10" : "border-border"
               }`}
+              role="radio"
+              {...spaceKeyActivationProps(() => setTheme(opt.value))}
             >
               <Text className="text-sm">{t(opt.labelKey)}</Text>
             </Pressable>

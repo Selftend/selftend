@@ -1,4 +1,4 @@
-import { ActivityIndicator, Modal, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, View } from "react-native";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -51,48 +51,55 @@ export function DeleteAccountModal({
       transparent
       visible={visible}
     >
-      <View className="flex-1 items-center justify-center bg-black/50 p-6">
-        <Card className="w-full max-w-lg">
-          <CardHeader>
-            <CardTitle>{t("account.deleteTitle")}</CardTitle>
-            <CardDescription>{t("account.deleteDescription")}</CardDescription>
-          </CardHeader>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        className="flex-1"
+      >
+        <View className="flex-1 items-center justify-center bg-black/50 p-6">
+          <Card className="w-full max-w-lg">
+            <CardHeader>
+              <CardTitle>{t("account.deleteTitle")}</CardTitle>
+              <CardDescription>{t("account.deleteDescription")}</CardDescription>
+            </CardHeader>
 
-          <CardContent>
-            <View className="gap-4">
-              <View className="gap-2">
-                <Text className="text-sm text-muted-foreground">{t("account.deleteWarning")}</Text>
+            <CardContent>
+              <View className="gap-4">
+                <View className="gap-2">
+                  <Text className="text-sm text-muted-foreground">
+                    {t("account.deleteWarning")}
+                  </Text>
 
-                <Label>{t("account.deleteConfirmLabel")}</Label>
+                  <Label>{t("account.deleteConfirmLabel")}</Label>
 
-                <Input
-                  accessibilityLabel={t("account.deleteConfirmLabel")}
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                  onChangeText={setConfirmInput}
-                  placeholder={t("account.deleteConfirmPlaceholder")}
-                  value={confirmInput}
-                />
+                  <Input
+                    accessibilityLabel={t("account.deleteConfirmLabel")}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    onChangeText={setConfirmInput}
+                    placeholder={t("account.deleteConfirmPlaceholder")}
+                    value={confirmInput}
+                  />
+                </View>
+
+                {isError ? (
+                  <Text className="text-sm text-destructive">{t("account.deleteFailed")}</Text>
+                ) : null}
+
+                <View className="gap-3">
+                  <Button disabled={isPending} onPress={onCancel} variant="secondary">
+                    <Text>{t("account.cancel")}</Text>
+                  </Button>
+
+                  <Button disabled={!canSubmit} onPress={onConfirm} variant="destructive">
+                    {isPending ? <ActivityIndicator color="#ffffff" /> : null}
+                    <Text>{isPending ? t("account.deleting") : t("account.deleteAccount")}</Text>
+                  </Button>
+                </View>
               </View>
-
-              {isError ? (
-                <Text className="text-sm text-destructive">{t("account.deleteFailed")}</Text>
-              ) : null}
-
-              <View className="gap-3">
-                <Button disabled={isPending} onPress={onCancel} variant="secondary">
-                  <Text>{t("account.cancel")}</Text>
-                </Button>
-
-                <Button disabled={!canSubmit} onPress={onConfirm} variant="destructive">
-                  {isPending ? <ActivityIndicator color="#ffffff" /> : null}
-                  <Text>{isPending ? t("account.deleting") : t("account.deleteAccount")}</Text>
-                </Button>
-              </View>
-            </View>
-          </CardContent>
-        </Card>
-      </View>
+            </CardContent>
+          </Card>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

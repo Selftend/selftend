@@ -72,6 +72,8 @@ export default function ActValueDomainScreen() {
     if (stepIndex > 0) setStep(STEP_ORDER[stepIndex - 1]);
   }
 
+  // Deliberately NOT wrapped in useSingleFlight: upsertValueEntry merges on the
+  // (user_id, life_domain) unique index, so a rapid double-press is idempotent.
   async function handleSave() {
     if (!user || !domain) return;
     setSubmitError("");

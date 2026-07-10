@@ -89,6 +89,10 @@ export default function NewTaskScreen() {
     },
   });
 
+  // Wait for the persisted draft to rehydrate before mounting the form,
+  // mirroring the edit-mode loading gates in the sibling wizard flows.
+  if (!wizard.hydrated) return null;
+
   return (
     <WizardScreen
       title={t("tasks.newTitle")}
@@ -120,7 +124,9 @@ export default function NewTaskScreen() {
                   value={value}
                 />
                 {errors.taskDescription?.message ? (
-                  <Text className="text-sm text-destructive">{errors.taskDescription.message}</Text>
+                  <Text className="text-sm text-destructive">
+                    {t(errors.taskDescription.message)}
+                  </Text>
                 ) : null}
               </View>
             )}
@@ -214,7 +220,7 @@ export default function NewTaskScreen() {
                       />
                       {errors.steps?.[index]?.description?.message ? (
                         <Text className="text-sm text-destructive">
-                          {errors.steps[index]!.description!.message}
+                          {t(errors.steps[index]!.description!.message!)}
                         </Text>
                       ) : null}
                     </View>

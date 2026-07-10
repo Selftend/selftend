@@ -1,5 +1,6 @@
 import type { AngerLog, AngerLogInput } from "@/src/features/anger/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
 
 interface AngerLogRow {
   id: string;
@@ -51,6 +52,8 @@ export async function listAngerLogs(userId: string) {
 }
 
 export async function getAngerLog(userId: string, logId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(logId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("anger_logs")

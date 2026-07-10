@@ -1,4 +1,4 @@
-import { router, usePathname, type Href } from "expo-router";
+import { Link, usePathname, type Href } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { currentStateProps, DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { toolAccent } from "@/src/features/home/tool-accent";
 
 interface NavItemDef {
@@ -176,50 +176,50 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     const accent = toolAccent(item.accentKey ?? "");
 
     return (
-      <Pressable
-        accessibilityLabel={accessibilityLabel}
-        accessibilityRole="button"
-        accessibilityState={{ selected: active }}
-        key={item.labelKey}
-        onPress={() => {
-          router.push(item.href);
-          onSelect?.();
-        }}
-        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-        role="button"
-        className={cn(
-          "flex-row items-center gap-3 rounded-md px-3 py-2.5",
-          active ? accent.chip : "active:bg-muted/50",
-        )}
-      >
-        <Icon
-          key={active ? "icon-active" : "icon-inactive"}
-          name={item.icon}
-          className={cn("size-6", active ? accent.icon : "text-muted-foreground")}
-        />
-        <Text
-          className={cn("flex-1 text-sm font-medium", active ? accent.icon : "text-foreground")}
+      <Link href={item.href} key={item.labelKey} asChild>
+        <Pressable
+          accessibilityLabel={accessibilityLabel}
+          accessibilityRole="link"
+          {...currentStateProps(active, "page")}
+          onPress={() => {
+            onSelect?.();
+          }}
+          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+          role="link"
+          className={cn(
+            "flex-row items-center gap-3 rounded-md px-3 py-2.5",
+            active ? accent.chip : "active:bg-muted/50",
+          )}
         >
-          {label}
-        </Text>
-        {badgeLabel ? (
-          <View
-            className={cn(
-              "rounded-full px-2 py-0.5",
-              isLive ? "bg-act/15" : isBeta ? "bg-primary/15" : "bg-muted",
-            )}
+          <Icon
+            key={active ? "icon-active" : "icon-inactive"}
+            name={item.icon}
+            className={cn("size-6", active ? accent.icon : "text-muted-foreground")}
+          />
+          <Text
+            className={cn("flex-1 text-sm font-medium", active ? accent.icon : "text-foreground")}
           >
-            <Text
+            {label}
+          </Text>
+          {badgeLabel ? (
+            <View
               className={cn(
-                "text-[10px] font-semibold uppercase tracking-wider",
-                isLive ? "text-act" : isBeta ? "text-primary" : "text-muted-foreground",
+                "rounded-full px-2 py-0.5",
+                isLive ? "bg-act/15" : isBeta ? "bg-primary/15" : "bg-muted",
               )}
             >
-              {badgeLabel}
-            </Text>
-          </View>
-        ) : null}
-      </Pressable>
+              <Text
+                className={cn(
+                  "text-[10px] font-semibold uppercase tracking-wider",
+                  isLive ? "text-act" : isBeta ? "text-primary" : "text-muted-foreground",
+                )}
+              >
+                {badgeLabel}
+              </Text>
+            </View>
+          ) : null}
+        </Pressable>
+      </Link>
     );
   }
 
@@ -239,20 +239,20 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     }
 
     return (
-      <Pressable
-        accessibilityLabel={label}
-        accessibilityRole="button"
-        accessibilityState={{ selected: active }}
-        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-        key={`group-${label}`}
-        onPress={() => {
-          router.push(href);
-          onSelect?.();
-        }}
-        role="button"
-      >
-        <Text className={className}>{label}</Text>
-      </Pressable>
+      <Link href={href} key={`group-${label}`} asChild>
+        <Pressable
+          accessibilityLabel={label}
+          accessibilityRole="link"
+          {...currentStateProps(active, "page")}
+          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+          onPress={() => {
+            onSelect?.();
+          }}
+          role="link"
+        >
+          <Text className={className}>{label}</Text>
+        </Pressable>
+      </Link>
     );
   }
 

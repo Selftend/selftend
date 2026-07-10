@@ -77,7 +77,12 @@ describe("exposure repository - hierarchies", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(getHierarchy("user-1", "missing")).resolves.toBeNull();
+    // Well-formed uuid that matches no row, so the query itself runs (a malformed
+    // id short-circuits to null before supabase).
+    await expect(
+      getHierarchy("user-1", "11111111-1111-4111-8111-111111111111"),
+    ).resolves.toBeNull();
+    expect(maybeSingle).toHaveBeenCalled();
   });
 
   it("trims title and anxiety type on insert", async () => {
@@ -115,6 +120,7 @@ describe("exposure repository - items", () => {
   });
 
   it("lists items by hierarchy ordered by suds ascending", async () => {
+    const hierarchyId = "33333333-3333-4333-8333-333333333333";
     const order = jest.fn().mockResolvedValue({ data: [itemRow], error: null });
     const eqH = jest.fn(() => ({ order }));
     const eqUser = jest.fn(() => ({ eq: eqH }));
@@ -122,10 +128,20 @@ describe("exposure repository - items", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await listItems("user-1", "h-1");
+    await listItems("user-1", hierarchyId);
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
-    expect(eqH).toHaveBeenCalledWith("hierarchy_id", "h-1");
+    expect(eqH).toHaveBeenCalledWith("hierarchy_id", hierarchyId);
     expect(order).toHaveBeenCalledWith("suds_rating", { ascending: true });
+  });
+
+  it("returns no items for a malformed hierarchy id without calling supabase", async () => {
+    // The hierarchy detail route feeds hierarchyId straight from the URL; a malformed
+    // id would 400 on PostgREST's uuid cast, so it must short-circuit to zero rows.
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(listItems("user-1", "does-not-exist")).resolves.toEqual([]);
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("listAllItems orders by created_at desc", async () => {

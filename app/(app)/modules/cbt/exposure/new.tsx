@@ -75,6 +75,10 @@ export default function NewExposureHierarchyScreen() {
     },
   });
 
+  // Wait for the persisted draft to rehydrate before mounting the form,
+  // mirroring the edit-mode loading gates in the sibling wizard flows.
+  if (!wizard.hydrated) return null;
+
   return (
     <WizardScreen
       title={t("exposure.newTitle")}
@@ -105,7 +109,7 @@ export default function NewExposureHierarchyScreen() {
                   value={value}
                 />
                 {errors.title?.message ? (
-                  <Text className="text-sm text-destructive">{errors.title.message}</Text>
+                  <Text className="text-sm text-destructive">{t(errors.title.message)}</Text>
                 ) : null}
               </View>
             )}
@@ -126,7 +130,7 @@ export default function NewExposureHierarchyScreen() {
                   value={value}
                 />
                 {errors.anxietyType?.message ? (
-                  <Text className="text-sm text-destructive">{errors.anxietyType.message}</Text>
+                  <Text className="text-sm text-destructive">{t(errors.anxietyType.message)}</Text>
                 ) : null}
               </View>
             )}
@@ -162,7 +166,7 @@ export default function NewExposureHierarchyScreen() {
                       />
                       {errors.items?.[index]?.description?.message ? (
                         <Text className="text-sm text-destructive">
-                          {errors.items[index]!.description!.message}
+                          {t(errors.items[index]!.description!.message!)}
                         </Text>
                       ) : null}
                     </View>
@@ -195,7 +199,7 @@ export default function NewExposureHierarchyScreen() {
           </Button>
 
           {errors.items?.message ? (
-            <Text className="text-sm text-destructive">{errors.items.message}</Text>
+            <Text className="text-sm text-destructive">{t(errors.items.message)}</Text>
           ) : null}
         </View>
       ) : null}

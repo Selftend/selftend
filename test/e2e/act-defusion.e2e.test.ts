@@ -50,7 +50,7 @@ test.describe("ACT defusion: create, view, delete", () => {
 
     // ── Step 2: Category ───────────────────────────────────────────────────────
     // Select "Worry" chip
-    await page.getByRole("button", { name: "Worry", exact: true }).click();
+    await page.getByRole("radio", { name: "Worry", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // ── Step 3: Fusion before (NumberRating 0-100 step 10) ────────────────────

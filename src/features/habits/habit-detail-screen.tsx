@@ -21,6 +21,7 @@ import {
 } from "@/src/features/habits/queries";
 import { addDays, isScheduledOn, isTickedOn, localDateKey } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
+import { spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +62,10 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
     return (
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
-          <ScreenHeader title={t("home.title")} />
+          <View className="gap-6">
+            <ScreenHeader title={t("home.title")} />
+            <Text variant="muted">{t("detail.notFound")}</Text>
+          </View>
         </ScrollView>
       </SafeAreaView>
     );
@@ -237,8 +241,8 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
               <Pressable
                 key={dayStr}
                 accessibilityLabel={dayStr}
-                accessibilityRole="button"
-                accessibilityState={{ checked: ticked }}
+                accessibilityRole="checkbox"
+                aria-checked={ticked}
                 disabled={isFuture}
                 hitSlop={2}
                 onPress={() => onToggleDay(dayStr)}
@@ -251,7 +255,8 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
                       : "border-dashed border-border bg-background",
                   isToday && "border-2 border-primary",
                 )}
-                role="button"
+                role="checkbox"
+                {...spaceKeyActivationProps(() => onToggleDay(dayStr))}
               />
             );
           })}

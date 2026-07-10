@@ -46,6 +46,7 @@ import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { useValuesProfile } from "@/src/features/values/queries";
 import { useWorryEntries } from "@/src/features/worry/queries";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useStringListField } from "@/src/lib/use-string-list-field";
 import { useSession } from "@/src/providers/session-provider";
 import { toLocalDateKey } from "@/src/stores/selected-date-store";
@@ -396,7 +397,9 @@ export default function RecoveryScreen() {
     });
   };
 
-  const handleSaveChallenge = async () => {
+  // Create-capable (a new challenge draft has no id yet -> INSERT), so a rapid
+  // double-press must not save the challenge plan twice.
+  const handleSaveChallenge = useSingleFlight(async () => {
     if (!challengeDraft) return;
 
     const parsed = challengePlanFormSchema.safeParse({
@@ -426,7 +429,7 @@ export default function RecoveryScreen() {
       const message = error instanceof Error ? error.message : t("recovery.saveError");
       showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
     }
-  };
+  });
 
   const handleDeleteChallenge = async (challengePlanId: string) => {
     try {

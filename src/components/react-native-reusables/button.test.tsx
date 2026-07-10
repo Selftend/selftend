@@ -25,12 +25,12 @@ describe("Button behavior", () => {
     expect(onPress).not.toHaveBeenCalled();
   });
 
-  it("sets accessibilityState.disabled when disabled prop is set", () => {
+  it("announces the disabled state when disabled prop is set", () => {
     const { getByRole } = render(
       <Button disabled>
         <Text>Disabled</Text>
       </Button>,
     );
-    expect(getByRole("button").props.accessibilityState).toMatchObject({ disabled: true });
+    expect(getByRole("button")).toBeDisabled();
   });
 });

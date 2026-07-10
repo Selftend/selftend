@@ -1,6 +1,5 @@
 import { router } from "expo-router";
-import { ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View } from "react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -18,6 +17,7 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
 import { requireSupabase } from "@/src/lib/supabase";
+import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { GetTheAppSection } from "@/src/components/app/get-the-app-section";
 
@@ -62,193 +62,191 @@ export default function SupportScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="grow p-6">
-        <View className="gap-6">
-          <View className="gap-2">
-            <ScreenHeader title={t("supportPage.title")} />
-            <Text variant="muted">{t("supportPage.description")}</Text>
-          </View>
+    <MobileFormScreen>
+      <View className="gap-6">
+        <View className="gap-2">
+          <ScreenHeader title={t("supportPage.title")} />
+          <Text variant="muted">{t("supportPage.description")}</Text>
+        </View>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("supportPage.boundary")}</CardTitle>
+            <CardDescription>{t("supportPage.boundaryDescription")}</CardDescription>
+          </CardHeader>
+        </Card>
+
+        {supportEmail ? (
           <Card>
             <CardHeader>
-              <CardTitle>{t("supportPage.boundary")}</CardTitle>
-              <CardDescription>{t("supportPage.boundaryDescription")}</CardDescription>
+              <CardTitle>{t("feedback.title")}</CardTitle>
+              <CardDescription>{t("feedback.description")}</CardDescription>
             </CardHeader>
-          </Card>
-
-          {supportEmail ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("feedback.title")}</CardTitle>
-                <CardDescription>{t("feedback.description")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <View className="gap-4">
-                  <Card className="border-destructive/50 bg-destructive/5">
-                    <CardContent className="pt-4">
-                      <Text className="text-sm font-medium text-destructive">
-                        {t("feedback.crisisWarning")}
+            <CardContent>
+              <View className="gap-4">
+                <Card className="border-destructive/50 bg-destructive/5">
+                  <CardContent className="pt-4">
+                    <Text className="text-sm font-medium text-destructive">
+                      {t("feedback.crisisWarning")}
+                    </Text>
+                    <Button
+                      onPress={() => router.push("/crisis")}
+                      size="sm"
+                      variant="ghost"
+                      className="mt-2 self-start px-0"
+                    >
+                      <Text className="text-sm text-destructive underline">
+                        {t("feedback.openCrisis")}
                       </Text>
-                      <Button
-                        onPress={() => router.push("/crisis")}
-                        size="sm"
-                        variant="ghost"
-                        className="mt-2 self-start px-0"
-                      >
-                        <Text className="text-sm text-destructive underline">
-                          {t("feedback.openCrisis")}
-                        </Text>
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  <View className="gap-2">
-                    <Label>{t("feedback.categoryLabel")}</Label>
-                    <View className="flex-row gap-2">
-                      {(["bug", "suggestion", "question"] as FeedbackCategory[]).map((cat) => (
-                        <Button
-                          key={cat}
-                          onPress={() => setFeedbackCategory(cat)}
-                          size="sm"
-                          variant={feedbackCategory === cat ? "default" : "outline"}
-                        >
-                          <Text>{t(`feedback.category.${cat}`)}</Text>
-                        </Button>
-                      ))}
-                    </View>
-                  </View>
-
-                  <View className="gap-2">
-                    <Label>{t("feedback.messageLabel")}</Label>
-                    <Textarea
-                      accessibilityLabel={t("feedback.messageLabel")}
-                      numberOfLines={5}
-                      onChangeText={(text) => {
-                        setFeedbackMessage(text);
-                        if (feedbackError) setFeedbackError("");
-                      }}
-                      placeholder={t("feedback.messagePlaceholder")}
-                      value={feedbackMessage}
-                    />
-                    {feedbackError ? (
-                      <Text className="text-sm text-destructive">{feedbackError}</Text>
-                    ) : null}
-                  </View>
-
-                  {submitSuccess ? (
-                    <Text className="text-sm">{t("feedback.submitSuccess")}</Text>
-                  ) : (
-                    <Button disabled={isSubmitting} onPress={() => void handleFeedbackSubmit()}>
-                      <Text>{isSubmitting ? t("feedback.submitting") : t("feedback.submit")}</Text>
                     </Button>
-                  )}
+                  </CardContent>
+                </Card>
+
+                <View className="gap-2">
+                  <Label>{t("feedback.categoryLabel")}</Label>
+                  <View className="flex-row gap-2">
+                    {(["bug", "suggestion", "question"] as FeedbackCategory[]).map((cat) => (
+                      <Button
+                        key={cat}
+                        onPress={() => setFeedbackCategory(cat)}
+                        size="sm"
+                        variant={feedbackCategory === cat ? "default" : "outline"}
+                      >
+                        <Text>{t(`feedback.category.${cat}`)}</Text>
+                      </Button>
+                    ))}
+                  </View>
                 </View>
-              </CardContent>
-            </Card>
-          ) : null}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("feedback.otherChannels")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View className="gap-3">
-                <Button
-                  variant="secondary"
-                  onPress={() => openExternalUrl(`${appEnv.githubRepoUrl}/issues`)}
-                >
-                  <Text>{t("feedback.reportOnGitHub")}</Text>
-                </Button>
-                {appEnv.discordUrl ? (
-                  <Button variant="secondary" onPress={() => openExternalUrl(appEnv.discordUrl)}>
-                    <Text>{t("feedback.joinDiscord")}</Text>
-                  </Button>
-                ) : null}
-              </View>
-            </CardContent>
-          </Card>
+                <View className="gap-2">
+                  <Label>{t("feedback.messageLabel")}</Label>
+                  <Textarea
+                    accessibilityLabel={t("feedback.messageLabel")}
+                    numberOfLines={5}
+                    onChangeText={(text) => {
+                      setFeedbackMessage(text);
+                      if (feedbackError) setFeedbackError("");
+                    }}
+                    placeholder={t("feedback.messagePlaceholder")}
+                    value={feedbackMessage}
+                  />
+                  {feedbackError ? (
+                    <Text className="text-sm text-destructive">{feedbackError}</Text>
+                  ) : null}
+                </View>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("supportPage.handles")}</CardTitle>
-              <CardDescription>{t("supportPage.handlesCovers")}</CardDescription>
-              <CardDescription>{t("supportPage.handlesNot")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onPress={() => router.push("/faq")} variant="secondary">
-                <Text>{t("supportPage.openFaq")}</Text>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("supportPage.contact")}</CardTitle>
-              <CardDescription>{t("supportPage.contactDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <View className="gap-3">
-                {supportEmail ? (
-                  <Button
-                    onPress={() =>
-                      openExternalUrl(`mailto:${supportEmail}?subject=${supportSubject}`)
-                    }
-                  >
-                    <Text>{t("supportPage.emailSupport")}</Text>
-                  </Button>
+                {submitSuccess ? (
+                  <Text className="text-sm">{t("feedback.submitSuccess")}</Text>
                 ) : (
-                  <Text variant="muted">{t("supportPage.emailNotConfigured")}</Text>
+                  <Button disabled={isSubmitting} onPress={() => void handleFeedbackSubmit()}>
+                    <Text>{isSubmitting ? t("feedback.submitting") : t("feedback.submit")}</Text>
+                  </Button>
                 )}
-                <Button onPress={() => router.push("/account-deletion")} variant="ghost">
-                  <Text>{t("supportPage.deleteAccount")}</Text>
-                </Button>
               </View>
             </CardContent>
           </Card>
+        ) : null}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("supportPage.projectLinks")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View className="gap-3">
-                <Button onPress={() => openExternalUrl(appEnv.githubRepoUrl)}>
-                  <Text>{t("supportPage.openRepo")}</Text>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("feedback.otherChannels")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View className="gap-3">
+              <Button
+                variant="secondary"
+                onPress={() => openExternalUrl(`${appEnv.githubRepoUrl}/issues`)}
+              >
+                <Text>{t("feedback.reportOnGitHub")}</Text>
+              </Button>
+              {appEnv.discordUrl ? (
+                <Button variant="secondary" onPress={() => openExternalUrl(appEnv.discordUrl)}>
+                  <Text>{t("feedback.joinDiscord")}</Text>
                 </Button>
+              ) : null}
+            </View>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("supportPage.handles")}</CardTitle>
+            <CardDescription>{t("supportPage.handlesCovers")}</CardDescription>
+            <CardDescription>{t("supportPage.handlesNot")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onPress={() => router.push("/faq")} variant="secondary">
+              <Text>{t("supportPage.openFaq")}</Text>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("supportPage.contact")}</CardTitle>
+            <CardDescription>{t("supportPage.contactDescription")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <View className="gap-3">
+              {supportEmail ? (
                 <Button
                   onPress={() =>
-                    openExternalUrl(`${appEnv.githubRepoUrl}/blob/main/.github/CONTRIBUTING.md`)
+                    openExternalUrl(`mailto:${supportEmail}?subject=${supportSubject}`)
                   }
-                  variant="secondary"
                 >
-                  <Text>{t("supportPage.openContributing")}</Text>
+                  <Text>{t("supportPage.emailSupport")}</Text>
                 </Button>
-                <GetTheAppSection />
-              </View>
-            </CardContent>
-          </Card>
+              ) : (
+                <Text variant="muted">{t("supportPage.emailNotConfigured")}</Text>
+              )}
+              <Button onPress={() => router.push("/account-deletion")} variant="ghost">
+                <Text>{t("supportPage.deleteAccount")}</Text>
+              </Button>
+            </View>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("supportPage.policiesAndSafety")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View className="gap-3">
-                <Button onPress={() => router.push("/crisis")} variant="secondary">
-                  <Text>{t("supportPage.openCrisis")}</Text>
-                </Button>
-                <Button onPress={() => router.push("/privacy")} variant="ghost">
-                  <Text>{t("supportPage.openPrivacy")}</Text>
-                </Button>
-                <Button onPress={() => router.push("/terms")} variant="ghost">
-                  <Text>{t("supportPage.openTerms")}</Text>
-                </Button>
-              </View>
-            </CardContent>
-          </Card>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("supportPage.projectLinks")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View className="gap-3">
+              <Button onPress={() => openExternalUrl(appEnv.githubRepoUrl)}>
+                <Text>{t("supportPage.openRepo")}</Text>
+              </Button>
+              <Button
+                onPress={() =>
+                  openExternalUrl(`${appEnv.githubRepoUrl}/blob/main/.github/CONTRIBUTING.md`)
+                }
+                variant="secondary"
+              >
+                <Text>{t("supportPage.openContributing")}</Text>
+              </Button>
+              <GetTheAppSection />
+            </View>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("supportPage.policiesAndSafety")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View className="gap-3">
+              <Button onPress={() => router.push("/crisis")} variant="secondary">
+                <Text>{t("supportPage.openCrisis")}</Text>
+              </Button>
+              <Button onPress={() => router.push("/privacy")} variant="ghost">
+                <Text>{t("supportPage.openPrivacy")}</Text>
+              </Button>
+              <Button onPress={() => router.push("/terms")} variant="ghost">
+                <Text>{t("supportPage.openTerms")}</Text>
+              </Button>
+            </View>
+          </CardContent>
+        </Card>
+      </View>
+    </MobileFormScreen>
   );
 }

@@ -41,21 +41,68 @@ describe("thought record schema", () => {
     ).not.toThrow();
   });
 
-  it("accepts an empty nats array for a partial in-progress record", () => {
-    expect(() =>
-      thoughtRecordFormSchema.parse({
-        situation: "",
-        nats: [],
-        emotions: [],
-        emotionIntensityBefore: null,
-        distortions: [],
-        evidenceFor: [],
-        evidenceAgainst: [],
-        balancedThought: "",
-        emotionIntensityAfter: null,
-        outcomeNotes: "",
-      }),
-    ).not.toThrow();
+  it("accepts an empty partial record (legacy records with blank fields stay saveable)", () => {
+    // Behavior parity with the pre-i18n schema: the message-key refactor must not
+    // introduce requiredness. Legacy rows with empty narrative fields must remain
+    // editable and saveable exactly as before.
+    const result = thoughtRecordFormSchema.safeParse({
+      situation: "",
+      nats: [],
+      emotions: [],
+      emotionIntensityBefore: null,
+      distortions: [],
+      evidenceFor: [],
+      evidenceAgainst: [],
+      balancedThought: "",
+      emotionIntensityAfter: null,
+      outcomeNotes: "",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("sanitizes free text on parse (NBSP normalized, unpaired surrogates dropped)", () => {
+    const result = thoughtRecordFormSchema.safeParse({
+      situation: "pasted\u00A0text with a cut emoji \uD83D",
+      nats: [{ text: "thought text", beliefRating: null, isHotThought: true }],
+      emotions: ["Anxious"],
+      emotionIntensityBefore: null,
+      distortions: ["catastrophizing"],
+      evidenceFor: ["evidence line"],
+      evidenceAgainst: [],
+      balancedThought: "balanced view",
+      emotionIntensityAfter: null,
+      outcomeNotes: "notes\uDC00 tail",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data!.situation).toBe("pasted text with a cut emoji");
+    expect(result.data!.nats[0].text).toBe("thought text");
+    expect(result.data!.evidenceFor).toEqual(["evidence line"]);
+    expect(result.data!.balancedThought).toBe("balanced view");
+    expect(result.data!.outcomeNotes).toBe("notes tail");
+  });
+
+  it("emits i18n keys for the length caps (resolved via t() in cbt/new.tsx)", () => {
+    const result = thoughtRecordFormSchema.safeParse({
+      situation: "x".repeat(4001),
+      nats: [{ text: "y".repeat(2001), beliefRating: null, isHotThought: true }],
+      emotions: [],
+      emotionIntensityBefore: null,
+      distortions: [],
+      evidenceFor: ["z".repeat(2001)],
+      evidenceAgainst: [],
+      balancedThought: "b".repeat(4001),
+      emotionIntensityAfter: null,
+      outcomeNotes: "n".repeat(4001),
+    });
+
+    expect(result.success).toBe(false);
+    const messages = result.error!.issues.map((issue) => issue.message);
+    expect(messages).toContain("record.validation.situationTooLong");
+    expect(messages).toContain("record.validation.natTooLong");
+    expect(messages).toContain("record.validation.evidenceTooLong");
+    expect(messages).toContain("record.validation.balancedThoughtTooLong");
+    expect(messages).toContain("record.validation.outcomeNotesTooLong");
   });
 
   it("rejects a beliefRating above 100", () => {
@@ -80,12 +127,12 @@ describe("thought record schema", () => {
       thoughtRecordFormSchema.parse({
         situation: "test",
         nats: [{ text: "some thought", beliefRating: null, isHotThought: true }],
-        emotions: [],
+        emotions: ["Anxious"],
         emotionIntensityBefore: null,
-        distortions: [],
+        distortions: ["catastrophizing"],
         evidenceFor: [],
         evidenceAgainst: [],
-        balancedThought: "",
+        balancedThought: "A more balanced view.",
         emotionIntensityAfter: null,
         outcomeNotes: "",
       }),

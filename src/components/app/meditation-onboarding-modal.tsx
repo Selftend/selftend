@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { suggestStageFromAssessment } from "@/src/features/meditation/stages";
 import type { StageNumber } from "@/src/features/meditation/types";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { useRovingFocus } from "@/src/lib/roving-focus";
 
 type Step = "welcome" | "attention" | "assessment" | "gardener" | "commit";
 
@@ -86,6 +87,19 @@ export function MeditationOnboarding({
   }, [assessedStage]);
 
   const stepIndex = STEP_ORDER.indexOf(step);
+
+  const durationIndex = DURATIONS.indexOf(duration);
+  const durationRoving = useRovingFocus({
+    count: DURATIONS.length,
+    activeIndex: durationIndex < 0 ? 0 : durationIndex,
+    onActivate: (index) => setDuration(DURATIONS[index]),
+  });
+  const stageIndex = STAGE_OPTIONS.indexOf(selectedStage);
+  const stageRoving = useRovingFocus({
+    count: STAGE_OPTIONS.length,
+    activeIndex: stageIndex < 0 ? 0 : stageIndex,
+    onActivate: (index) => setSelectedStage(STAGE_OPTIONS[index]),
+  });
 
   function goNext() {
     if (stepIndex < STEP_ORDER.length - 1) setStep(STEP_ORDER[stepIndex + 1]);
@@ -304,13 +318,20 @@ export function MeditationOnboarding({
                     <Text className="text-sm font-semibold">
                       {t("onboarding.commit.durationLabel")}
                     </Text>
-                    <View className="flex-row flex-wrap gap-2">
-                      {DURATIONS.map((min) => (
+                    <View
+                      accessibilityLabel={t("onboarding.commit.durationLabel")}
+                      accessibilityRole="radiogroup"
+                      className="flex-row flex-wrap gap-2"
+                      role="radiogroup"
+                    >
+                      {DURATIONS.map((min, index) => (
                         <Pressable
                           key={min}
-                          accessibilityRole="button"
-                          accessibilityState={{ selected: duration === min }}
+                          accessibilityRole="radio"
+                          aria-checked={duration === min}
+                          role="radio"
                           onPress={() => setDuration(min)}
+                          {...durationRoving.getItemProps(index, () => setDuration(min))}
                           className={cn(
                             "rounded-full border px-4 py-2",
                             duration === min
@@ -338,14 +359,21 @@ export function MeditationOnboarding({
                     <Text variant="muted" className="text-xs">
                       {t("onboarding.commit.stageHint", { stage: assessedStage })}
                     </Text>
-                    <View className="flex-row flex-wrap gap-1.5">
-                      {STAGE_OPTIONS.map((n) => (
+                    <View
+                      accessibilityLabel={t("onboarding.commit.stageLabel")}
+                      accessibilityRole="radiogroup"
+                      className="flex-row flex-wrap gap-1.5"
+                      role="radiogroup"
+                    >
+                      {STAGE_OPTIONS.map((n, index) => (
                         <Pressable
                           key={n}
-                          accessibilityRole="button"
+                          accessibilityRole="radio"
                           accessibilityLabel={t("onboarding.commit.stageOption", { stage: n })}
-                          accessibilityState={{ selected: selectedStage === n }}
+                          aria-checked={selectedStage === n}
+                          role="radio"
                           onPress={() => setSelectedStage(n)}
+                          {...stageRoving.getItemProps(index, () => setSelectedStage(n))}
                           className={cn(
                             "size-10 items-center justify-center rounded-md border",
                             selectedStage === n
@@ -419,12 +447,33 @@ interface YesNoProps {
 }
 
 function YesNoQuestion({ question, yesLabel, noLabel, value, onChange }: YesNoProps) {
+  const roving = useRovingFocus({
+    count: 2,
+    // No answer yet: treat "yes" as active so the group stays tab-reachable.
+    activeIndex: value === false ? 1 : 0,
+    onActivate: (index) => onChange(index === 0),
+  });
   return (
     <View className="gap-2">
       <Text className="text-sm font-semibold">{question}</Text>
-      <View className="flex-row gap-2">
-        <Choice selected={value === true} label={yesLabel} onPress={() => onChange(true)} />
-        <Choice selected={value === false} label={noLabel} onPress={() => onChange(false)} />
+      <View
+        accessibilityLabel={question}
+        accessibilityRole="radiogroup"
+        className="flex-row gap-2"
+        role="radiogroup"
+      >
+        <Choice
+          selected={value === true}
+          label={yesLabel}
+          onPress={() => onChange(true)}
+          rovingProps={roving.getItemProps(0, () => onChange(true))}
+        />
+        <Choice
+          selected={value === false}
+          label={noLabel}
+          onPress={() => onChange(false)}
+          rovingProps={roving.getItemProps(1, () => onChange(false))}
+        />
       </View>
     </View>
   );
@@ -443,16 +492,29 @@ function ChoiceQuestion<T extends string>({
   value,
   onChange,
 }: ChoiceQuestionProps<T>) {
+  const selectedIndex = options.findIndex((opt) => opt.value === value);
+  const roving = useRovingFocus({
+    count: options.length,
+    // No answer yet: treat the first option as active so the group stays tab-reachable.
+    activeIndex: selectedIndex < 0 ? 0 : selectedIndex,
+    onActivate: (index) => onChange(options[index].value),
+  });
   return (
     <View className="gap-2">
       <Text className="text-sm font-semibold">{question}</Text>
-      <View className="flex-row flex-wrap gap-2">
-        {options.map((opt) => (
+      <View
+        accessibilityLabel={question}
+        accessibilityRole="radiogroup"
+        className="flex-row flex-wrap gap-2"
+        role="radiogroup"
+      >
+        {options.map((opt, index) => (
           <Choice
             key={opt.value}
             selected={value === opt.value}
             label={opt.label}
             onPress={() => onChange(opt.value)}
+            rovingProps={roving.getItemProps(index, () => onChange(opt.value))}
           />
         ))}
       </View>
@@ -464,20 +526,24 @@ function Choice({
   selected,
   label,
   onPress,
+  rovingProps,
 }: {
   selected: boolean;
   label: string;
   onPress: () => void;
+  rovingProps: ReturnType<ReturnType<typeof useRovingFocus>["getItemProps"]>;
 }) {
   return (
     <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
+      accessibilityRole="radio"
+      aria-checked={selected}
+      role="radio"
       onPress={onPress}
       className={cn(
         "rounded-full border px-4 py-2",
         selected ? "border-primary bg-primary" : "border-border bg-card active:bg-muted",
       )}
+      {...rovingProps}
     >
       <Text
         className={cn(

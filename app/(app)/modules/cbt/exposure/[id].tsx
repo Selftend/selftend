@@ -1,5 +1,12 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, Modal, ScrollView, View } from "react-native";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,6 +35,7 @@ import {
   useSaveExposureSession,
 } from "@/src/features/exposure/queries";
 import type { ExposureItem } from "@/src/features/exposure/types";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
@@ -69,7 +77,7 @@ function SessionSheet({
   const saveMutation = useSaveExposureSession(user?.id ?? null, hierarchyId);
   const [form, setForm] = useState<SessionFormState>(emptySession);
 
-  const handleSave = async () => {
+  const handleSave = useSingleFlight(async () => {
     if (!item || form.preSuds === null || form.postSuds === null) return;
     const duration = parseInt(form.durationMinutes || "0", 10);
     if (Number.isNaN(duration)) return;
@@ -91,7 +99,7 @@ function SessionSheet({
     } catch {
       showToast({ title: t("common:feedback.problem"), tone: "error" });
     }
-  };
+  });
 
   return (
     <Modal
@@ -100,103 +108,112 @@ function SessionSheet({
       visible={visible}
     >
       <SafeAreaView className="flex-1 bg-background">
-        <ScrollView contentContainerClassName="gap-6 p-6 pb-12">
-          <View className="gap-2">
-            <Text variant="h2">{t("exposure.session.title")}</Text>
-            {item ? <Text variant="muted">{item.description}</Text> : null}
-          </View>
-
-          <View className="gap-2">
-            <Label>{t("exposure.session.preSuds")}</Label>
-            <Text variant="muted">{t("exposure.session.preSudsHint")}</Text>
-            <NumberRating
-              max={100}
-              min={0}
-              step={10}
-              value={form.preSuds}
-              onChange={(n) => setForm((p) => ({ ...p, preSuds: n }))}
-            />
-          </View>
-
-          <View className="gap-2">
-            <Label>{t("exposure.session.postSuds")}</Label>
-            <Text variant="muted">{t("exposure.session.postSudsHint")}</Text>
-            <NumberRating
-              max={100}
-              min={0}
-              step={10}
-              value={form.postSuds}
-              onChange={(n) => setForm((p) => ({ ...p, postSuds: n }))}
-            />
-          </View>
-
-          <View className="gap-2">
-            <Label>{t("exposure.session.duration")}</Label>
-            <Input
-              accessibilityLabel={t("exposure.session.duration")}
-              keyboardType="numeric"
-              onChangeText={(text) => setForm((p) => ({ ...p, durationMinutes: text }))}
-              placeholder="0"
-              value={form.durationMinutes}
-            />
-          </View>
-
-          <View className="flex-row items-center gap-3">
-            <Checkbox
-              accessibilityLabel={t("exposure.session.safetyBehaviorsUsed")}
-              checked={form.safetyBehaviorsUsed}
-              onCheckedChange={(checked) =>
-                setForm((p) => ({ ...p, safetyBehaviorsUsed: Boolean(checked) }))
-              }
-            />
-            <Label
-              onPress={() =>
-                setForm((p) => ({ ...p, safetyBehaviorsUsed: !p.safetyBehaviorsUsed }))
-              }
-            >
-              {t("exposure.session.safetyBehaviorsUsed")}
-            </Label>
-          </View>
-
-          {form.safetyBehaviorsUsed ? (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          className="flex-1"
+        >
+          <ScrollView contentContainerClassName="gap-6 p-6 pb-12">
             <View className="gap-2">
-              <Label>{t("exposure.session.safetyBehaviorDescription")}</Label>
-              <Textarea
-                accessibilityLabel={t("exposure.session.safetyBehaviorDescription")}
-                onChangeText={(text) => setForm((p) => ({ ...p, safetyBehaviorDescription: text }))}
-                placeholder={t("exposure.session.safetyBehaviorPlaceholder")}
-                value={form.safetyBehaviorDescription}
+              <Text variant="h2">{t("exposure.session.title")}</Text>
+              {item ? <Text variant="muted">{item.description}</Text> : null}
+            </View>
+
+            <View className="gap-2">
+              <Label>{t("exposure.session.preSuds")}</Label>
+              <Text variant="muted">{t("exposure.session.preSudsHint")}</Text>
+              <NumberRating
+                max={100}
+                min={0}
+                step={10}
+                value={form.preSuds}
+                onChange={(n) => setForm((p) => ({ ...p, preSuds: n }))}
               />
             </View>
-          ) : null}
 
-          <View className="gap-2">
-            <Label>{t("exposure.session.notes")}</Label>
-            <Textarea
-              accessibilityLabel={t("exposure.session.notes")}
-              onChangeText={(text) => setForm((p) => ({ ...p, notes: text }))}
-              placeholder={t("exposure.session.notesPlaceholder")}
-              value={form.notes}
-            />
-          </View>
-
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button onPress={onClose} variant="ghost">
-                <Text>{t("exposure.session.cancel")}</Text>
-              </Button>
+            <View className="gap-2">
+              <Label>{t("exposure.session.postSuds")}</Label>
+              <Text variant="muted">{t("exposure.session.postSudsHint")}</Text>
+              <NumberRating
+                max={100}
+                min={0}
+                step={10}
+                value={form.postSuds}
+                onChange={(n) => setForm((p) => ({ ...p, postSuds: n }))}
+              />
             </View>
-            <View className="flex-1">
-              <Button
-                disabled={form.preSuds === null || form.postSuds === null || saveMutation.isPending}
-                onPress={() => void handleSave()}
+
+            <View className="gap-2">
+              <Label>{t("exposure.session.duration")}</Label>
+              <Input
+                accessibilityLabel={t("exposure.session.duration")}
+                keyboardType="numeric"
+                onChangeText={(text) => setForm((p) => ({ ...p, durationMinutes: text }))}
+                placeholder="0"
+                value={form.durationMinutes}
+              />
+            </View>
+
+            <View className="flex-row items-center gap-3">
+              <Checkbox
+                accessibilityLabel={t("exposure.session.safetyBehaviorsUsed")}
+                checked={form.safetyBehaviorsUsed}
+                onCheckedChange={(checked) =>
+                  setForm((p) => ({ ...p, safetyBehaviorsUsed: Boolean(checked) }))
+                }
+              />
+              <Label
+                onPress={() =>
+                  setForm((p) => ({ ...p, safetyBehaviorsUsed: !p.safetyBehaviorsUsed }))
+                }
               >
-                {saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
-                <Text>{t("exposure.session.save")}</Text>
-              </Button>
+                {t("exposure.session.safetyBehaviorsUsed")}
+              </Label>
             </View>
-          </View>
-        </ScrollView>
+
+            {form.safetyBehaviorsUsed ? (
+              <View className="gap-2">
+                <Label>{t("exposure.session.safetyBehaviorDescription")}</Label>
+                <Textarea
+                  accessibilityLabel={t("exposure.session.safetyBehaviorDescription")}
+                  onChangeText={(text) =>
+                    setForm((p) => ({ ...p, safetyBehaviorDescription: text }))
+                  }
+                  placeholder={t("exposure.session.safetyBehaviorPlaceholder")}
+                  value={form.safetyBehaviorDescription}
+                />
+              </View>
+            ) : null}
+
+            <View className="gap-2">
+              <Label>{t("exposure.session.notes")}</Label>
+              <Textarea
+                accessibilityLabel={t("exposure.session.notes")}
+                onChangeText={(text) => setForm((p) => ({ ...p, notes: text }))}
+                placeholder={t("exposure.session.notesPlaceholder")}
+                value={form.notes}
+              />
+            </View>
+
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <Button onPress={onClose} variant="ghost">
+                  <Text>{t("exposure.session.cancel")}</Text>
+                </Button>
+              </View>
+              <View className="flex-1">
+                <Button
+                  disabled={
+                    form.preSuds === null || form.postSuds === null || saveMutation.isPending
+                  }
+                  onPress={() => void handleSave()}
+                >
+                  {saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
+                  <Text>{t("exposure.session.save")}</Text>
+                </Button>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
   );

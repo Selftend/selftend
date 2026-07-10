@@ -31,7 +31,7 @@ import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { parseLocalNoon } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -277,8 +277,7 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
                 ? t("list.tapToAvoid")
                 : t("list.tapToTick")
           }
-          accessibilityRole="button"
-          accessibilityState={{ checked: tickedToday }}
+          aria-checked={tickedToday}
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
           onPress={onToggle}
           className={cn(
@@ -286,6 +285,7 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
             tickedToday ? `${colorClass.bg} ${colorClass.border}` : "border-border bg-background",
           )}
           role="checkbox"
+          {...spaceKeyActivationProps(onToggle)}
         >
           {tickedToday ? (
             <Icon name="check" className={`size-5 ${colorClass.text}`} />

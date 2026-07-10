@@ -41,6 +41,7 @@
   },
   "userMenu": {
     "account": "Account",
+    "avatarAlt": "User avatar",
     "openMenu": "Open account menu",
     "settings": "Settings",
     "sendFeedback": "Send feedback",
@@ -451,6 +452,7 @@
   "dateBar": {
     "today": "Today",
     "openCalendar": "Open calendar",
+    "closeCalendar": "Close calendar",
     "selectDate": "Select date",
     "scrollOlder": "Show earlier days",
     "scrollNewer": "Show later days",

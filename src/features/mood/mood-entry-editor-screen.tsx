@@ -16,6 +16,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { Icon } from "@/src/components/react-native-reusables/icon";
+import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
@@ -23,6 +24,13 @@ import { ToolHero } from "@/src/components/app/tool-hero";
 import { MoodScale } from "@/src/components/app/mood-scale";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { cn } from "@/lib/utils";
+import {
+  announceMessage,
+  DEFAULT_INTERACTIVE_HIT_SLOP,
+  politeLiveRegionProps,
+  spaceKeyActivationProps,
+} from "@/src/lib/accessibility";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { parseBodyChips, toggleBodyChip } from "@/src/features/mood/body-sensations";
 import { useCompleteActivity } from "@/src/features/activities/queries";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
@@ -73,12 +81,13 @@ const EmotionGrid = memo(function EmotionGrid({
             key={emotion.id}
             accessibilityLabel={emotion.name}
             accessibilityRole="checkbox"
-            accessibilityState={{ checked: selected }}
+            aria-checked={selected}
             onPress={() => onToggle(emotion.id)}
             className={cn(
               "min-w-[72px] items-center gap-1 rounded-2xl border-2 px-2 py-2",
               selected ? "border-primary bg-primary/10" : "border-border bg-card",
             )}
+            {...spaceKeyActivationProps(() => onToggle(emotion.id))}
           >
             <Text className="text-2xl">{emotion.emoji}</Text>
             <Text
@@ -140,6 +149,8 @@ export function MoodEntryEditorScreen({
   );
   const [dateDirty, setDateDirty] = useState(false);
   const [error, setError] = useState("");
+  const [scoreError, setScoreError] = useState("");
+  const scoreSectionRef = useRef<View>(null);
   const [situation, setSituation] = useState("");
   const [thoughts, setThoughts] = useState("");
   const [behaviours, setBehaviours] = useState("");
@@ -195,8 +206,23 @@ export function MoodEntryEditorScreen({
     router.push(fallbackHref);
   };
 
-  const handleSave = async () => {
-    if (!moodScore || !user) return;
+  const handleSave = useSingleFlight(async () => {
+    if (!user) return;
+    if (!moodScore) {
+      const message = tMood("checkin.scoreRequired");
+      setScoreError(message);
+      announceMessage(message);
+      // The score row isn't focusable, so scroll it (and the error) into view on
+      // web; native keeps the announcement only.
+      const node = scoreSectionRef.current as unknown as {
+        scrollIntoView?: (options: { block: "center" }) => void;
+      } | null;
+      if (node && typeof node.scrollIntoView === "function") {
+        node.scrollIntoView({ block: "center" });
+      }
+      return;
+    }
+    setScoreError("");
     setError("");
     try {
       const saved = await saveMutation.mutateAsync({
@@ -227,9 +253,13 @@ export function MoodEntryEditorScreen({
 
       router.replace(`/tools/mood-tracker/${saved.id}` as Parameters<typeof router.replace>[0]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("mood.saveError"));
+      const message = e instanceof Error ? e.message : t("mood.saveError");
+      setError(message);
+      // The error renders next to the footer's Save button (a polite live
+      // region on web); announce for native screen readers too.
+      announceMessage(message);
     }
-  };
+  });
 
   // Stable so the memoized EmotionGrid isn't re-rendered while the user types in the
   // notes / four-box fields (those keystrokes re-render the screen, not the grid).
@@ -268,210 +298,235 @@ export function MoodEntryEditorScreen({
   const showBreathingNudge = moodScore !== null && moodScore <= 2;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerClassName="grow gap-6 p-6 pb-12">
-        {editMode ? (
-          <View className="gap-2">
-            <ScreenHeader title={t("mood.editTitle")} />
-            <Text variant="muted">{t("mood.editDescription")}</Text>
+    <MobileFormScreen
+      contentClassName="mx-auto w-full max-w-2xl gap-6"
+      footer={
+        <View className="mx-auto w-full max-w-2xl gap-3">
+          {/* The save-failure error lives WITH the pinned Save button: a user
+              saving from the footer while scrolled must see it without hunting
+              through the content column. */}
+          {error ? (
+            <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
+              {error}
+            </Text>
+          ) : null}
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Button onPress={goBack} variant="ghost">
+                <Text>{t("mood.cancel")}</Text>
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button disabled={saving || !user} onPress={() => void handleSave()}>
+                {saving ? <ActivityIndicator color="#ffffff" /> : null}
+                <Text>{editMode ? t("mood.update") : t("mood.save")}</Text>
+              </Button>
+            </View>
           </View>
-        ) : (
-          <ToolHero
-            hue="be"
-            icon="mood"
-            title={tMood("checkin.title")}
-            moduleLabel={tMood("checkin.moduleLabel")}
-            tagline={tMood("checkin.tagline")}
-          />
-        )}
-
-        <CrisisSupportBar />
-
-        <View className="gap-3">
-          <Label>{t("mood.scoreLabel")}</Label>
-          <Text variant="muted">{t("mood.scoreHint")}</Text>
-          <MoodScale value={moodScore} onChange={setMoodScore} />
         </View>
-
-        {showBreathingNudge ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() =>
-              router.push({
-                pathname: "/tools/breathing/session",
-                params: { pattern: "box-breathing" },
-              })
-            }
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("breathing.nudgeTitle")}</CardTitle>
-                <CardDescription>{t("breathing.nudgeDescription")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Text className="text-primary text-sm font-medium">
-                  {t("breathing.nudgeButton")} →
-                </Text>
-              </CardContent>
-            </Card>
-          </Pressable>
-        ) : null}
-
-        <View className="gap-3">
-          <View className="flex-row items-center justify-between">
-            <Label>{t("mood.emotionsLabel")}</Label>
-            <Pressable
-              onPress={() => setManageEmotionsOpen(true)}
-              accessibilityRole="button"
-              accessibilityLabel={tMood("emotions.manage.title")}
-            >
-              <Text className="text-xs text-primary">{tMood("emotions.manage.title")}</Text>
-            </Pressable>
-          </View>
-          {emotionsLoading ? (
-            <ActivityIndicator />
-          ) : (
-            <EmotionGrid emotions={allEmotions} selectedIds={emotions} onToggle={toggleEmotion} />
-          )}
+      }
+    >
+      {editMode ? (
+        <View className="gap-2">
+          <ScreenHeader title={t("mood.editTitle")} />
+          <Text variant="muted">{t("mood.editDescription")}</Text>
         </View>
-
-        <ManageEmotionsModal
-          visible={manageEmotionsOpen}
-          onClose={() => setManageEmotionsOpen(false)}
+      ) : (
+        <ToolHero
+          hue="be"
+          icon="mood"
+          title={tMood("checkin.title")}
+          moduleLabel={tMood("checkin.moduleLabel")}
+          tagline={tMood("checkin.tagline")}
         />
+      )}
 
-        <View className="gap-2">
-          <Label>{t("mood.loggedAtLabel")}</Label>
-          <DateTimeField
-            value={loggedAt}
-            onChange={(v) => {
-              setDateDirty(true);
-              setLoggedAt(v);
-            }}
-            accessibilityLabel={t("mood.loggedAtLabel")}
-          />
-        </View>
+      <CrisisSupportBar />
 
-        <View className="gap-2">
-          <Label>{t("mood.notesLabel")}</Label>
-          <Textarea
-            accessibilityLabel={t("mood.notesLabel")}
-            onChangeText={setNotes}
-            placeholder={t("mood.notesPlaceholder")}
-            value={notes}
-          />
-        </View>
+      <View ref={scoreSectionRef} className="gap-3">
+        <Label>{t("mood.scoreLabel")}</Label>
+        <Text variant="muted">{t("mood.scoreHint")}</Text>
+        <MoodScale
+          value={moodScore}
+          onChange={(score) => {
+            setMoodScore(score);
+            setScoreError("");
+          }}
+        />
+        {scoreError ? (
+          <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
+            {scoreError}
+          </Text>
+        ) : null}
+      </View>
 
-        <View className="gap-3">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t("mood.goDeeperTitle")}
-            onPress={() => setShowDeeper((v) => !v)}
-            className="flex-row items-center gap-2"
-          >
-            <Icon
-              name={showDeeper ? "expand-less" : "expand-more"}
-              className="size-5 text-muted-foreground"
-            />
-            <Text className="text-sm font-medium">{t("mood.goDeeperTitle")}</Text>
-          </Pressable>
-          {showDeeper ? (
-            <View className="gap-4 rounded-2xl border border-be/20 bg-be/[0.06] p-4">
-              <Text variant="muted" className="text-[13px]">
-                {t("mood.goDeeperIntro")}
+      {showBreathingNudge ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() =>
+            router.push({
+              pathname: "/tools/breathing/session",
+              params: { pattern: "box-breathing" },
+            })
+          }
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle aria-level={2}>{t("breathing.nudgeTitle")}</CardTitle>
+              <CardDescription>{t("breathing.nudgeDescription")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Text className="text-primary text-sm font-medium">
+                {t("breathing.nudgeButton")} →
               </Text>
-              <View className="gap-4">
-                <View className="gap-1.5">
-                  <Text className="text-[13px] font-bold">{t("mood.situationLabel")}</Text>
-                  <Text variant="muted" className="text-[12px]">
-                    {t("mood.situationHelp")}
-                  </Text>
-                  <Textarea
-                    accessibilityLabel={t("mood.situationLabel")}
-                    onChangeText={setSituation}
-                    placeholder={t("mood.situationPlaceholder")}
-                    value={situation}
-                  />
-                </View>
-                <View className="gap-1.5">
-                  <Text className="text-[13px] font-bold">{t("mood.thoughtsLabel")}</Text>
-                  <Text variant="muted" className="text-[12px]">
-                    {t("mood.thoughtsHelp")}
-                  </Text>
-                  <Textarea
-                    accessibilityLabel={t("mood.thoughtsLabel")}
-                    onChangeText={setThoughts}
-                    placeholder={t("mood.thoughtsPlaceholder")}
-                    value={thoughts}
-                  />
-                </View>
-                <View className="gap-1.5">
-                  <Text className="text-[13px] font-bold">{t("mood.responseLabel")}</Text>
-                  <Text variant="muted" className="text-[12px]">
-                    {t("mood.responseHelp")}
-                  </Text>
-                  <Textarea
-                    accessibilityLabel={t("mood.responseLabel")}
-                    onChangeText={setBehaviours}
-                    placeholder={t("mood.behavioursPlaceholder")}
-                    value={behaviours}
-                  />
-                </View>
-                <View className="gap-1.5">
-                  <Text className="text-[13px] font-bold">{t("mood.bodyLabel")}</Text>
-                  <Text variant="muted" className="text-[12px]">
-                    {t("mood.bodyHelp")}
-                  </Text>
-                  <View className="flex-row flex-wrap gap-2 pt-1">
-                    {BODY_CHIP_KEYS.map((key) => {
-                      const label = t(`mood.bodyChips.${key}`);
-                      const selected = selectedBodyChips.includes(label);
-                      return (
-                        <Pressable
-                          key={key}
-                          accessibilityRole="checkbox"
-                          accessibilityState={{ checked: selected }}
-                          accessibilityLabel={label}
-                          onPress={() => setBodilySensations((prev) => toggleBodyChip(prev, label))}
+            </CardContent>
+          </Card>
+        </Pressable>
+      ) : null}
+
+      <View className="gap-3">
+        <View className="flex-row items-center justify-between">
+          <Label>{t("mood.emotionsLabel")}</Label>
+          <Pressable
+            onPress={() => setManageEmotionsOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={tMood("emotions.manage.title")}
+          >
+            <Text className="text-xs text-primary">{tMood("emotions.manage.title")}</Text>
+          </Pressable>
+        </View>
+        {emotionsLoading ? (
+          <ActivityIndicator />
+        ) : (
+          <EmotionGrid emotions={allEmotions} selectedIds={emotions} onToggle={toggleEmotion} />
+        )}
+      </View>
+
+      <ManageEmotionsModal
+        visible={manageEmotionsOpen}
+        onClose={() => setManageEmotionsOpen(false)}
+      />
+
+      <View className="gap-2">
+        <Label>{t("mood.loggedAtLabel")}</Label>
+        <DateTimeField
+          value={loggedAt}
+          onChange={(v) => {
+            setDateDirty(true);
+            setLoggedAt(v);
+          }}
+          accessibilityLabel={t("mood.loggedAtLabel")}
+        />
+      </View>
+
+      <View className="gap-2">
+        <Label>{t("mood.notesLabel")}</Label>
+        <Textarea
+          accessibilityLabel={t("mood.notesLabel")}
+          onChangeText={setNotes}
+          placeholder={t("mood.notesPlaceholder")}
+          value={notes}
+        />
+      </View>
+
+      <View className="gap-3">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("mood.goDeeperTitle")}
+          aria-expanded={showDeeper}
+          onPress={() => setShowDeeper((v) => !v)}
+          className="flex-row items-center gap-2"
+        >
+          <Icon
+            name={showDeeper ? "expand-less" : "expand-more"}
+            className="size-5 text-muted-foreground"
+          />
+          <Text className="text-sm font-medium">{t("mood.goDeeperTitle")}</Text>
+        </Pressable>
+        {showDeeper ? (
+          <View className="gap-4 rounded-2xl border border-be/20 bg-be/[0.06] p-4">
+            <Text variant="muted" className="text-[13px]">
+              {t("mood.goDeeperIntro")}
+            </Text>
+            <View className="gap-4">
+              <View className="gap-1.5">
+                <Text className="text-[13px] font-bold">{t("mood.situationLabel")}</Text>
+                <Text variant="muted" className="text-[12px]">
+                  {t("mood.situationHelp")}
+                </Text>
+                <Textarea
+                  accessibilityLabel={t("mood.situationLabel")}
+                  onChangeText={setSituation}
+                  placeholder={t("mood.situationPlaceholder")}
+                  value={situation}
+                />
+              </View>
+              <View className="gap-1.5">
+                <Text className="text-[13px] font-bold">{t("mood.thoughtsLabel")}</Text>
+                <Text variant="muted" className="text-[12px]">
+                  {t("mood.thoughtsHelp")}
+                </Text>
+                <Textarea
+                  accessibilityLabel={t("mood.thoughtsLabel")}
+                  onChangeText={setThoughts}
+                  placeholder={t("mood.thoughtsPlaceholder")}
+                  value={thoughts}
+                />
+              </View>
+              <View className="gap-1.5">
+                <Text className="text-[13px] font-bold">{t("mood.responseLabel")}</Text>
+                <Text variant="muted" className="text-[12px]">
+                  {t("mood.responseHelp")}
+                </Text>
+                <Textarea
+                  accessibilityLabel={t("mood.responseLabel")}
+                  onChangeText={setBehaviours}
+                  placeholder={t("mood.behavioursPlaceholder")}
+                  value={behaviours}
+                />
+              </View>
+              <View className="gap-1.5">
+                <Text className="text-[13px] font-bold">{t("mood.bodyLabel")}</Text>
+                <Text variant="muted" className="text-[12px]">
+                  {t("mood.bodyHelp")}
+                </Text>
+                <View className="flex-row flex-wrap gap-2 pt-1">
+                  {BODY_CHIP_KEYS.map((key) => {
+                    const label = t(`mood.bodyChips.${key}`);
+                    const selected = selectedBodyChips.includes(label);
+                    return (
+                      <Pressable
+                        key={key}
+                        accessibilityRole="checkbox"
+                        aria-checked={selected}
+                        accessibilityLabel={label}
+                        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                        onPress={() => setBodilySensations((prev) => toggleBodyChip(prev, label))}
+                        className={cn(
+                          "rounded-full border px-3 py-1.5",
+                          selected ? "border-be bg-be/10" : "border-border bg-card",
+                        )}
+                        {...spaceKeyActivationProps(() =>
+                          setBodilySensations((prev) => toggleBodyChip(prev, label)),
+                        )}
+                      >
+                        <Text
                           className={cn(
-                            "rounded-full border px-3 py-1.5",
-                            selected ? "border-be bg-be/10" : "border-border bg-card",
+                            "text-[13px]",
+                            selected ? "text-be font-medium" : "text-foreground",
                           )}
                         >
-                          <Text
-                            className={cn(
-                              "text-[13px]",
-                              selected ? "text-be font-medium" : "text-foreground",
-                            )}
-                          >
-                            {label}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
+                          {label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
               </View>
             </View>
-          ) : null}
-        </View>
-
-        {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
-
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <Button onPress={goBack} variant="ghost">
-              <Text>{t("mood.cancel")}</Text>
-            </Button>
           </View>
-          <View className="flex-1">
-            <Button disabled={!moodScore || saving || !user} onPress={() => void handleSave()}>
-              {saving ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{editMode ? t("mood.update") : t("mood.save")}</Text>
-            </Button>
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        ) : null}
+      </View>
+    </MobileFormScreen>
   );
 }

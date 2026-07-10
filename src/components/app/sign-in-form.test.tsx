@@ -1,6 +1,8 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen } from "@testing-library/react-native";
 import { TextInput } from "react-native";
 
+import bgAuth from "@/src/i18n/locales/bg/auth.json";
+import i18n from "@/src/i18n";
 import { SignInForm } from "./sign-in-form";
 import { signInWithPassword } from "@/src/features/auth/api";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -14,6 +16,7 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/auth/api", () => ({
+  INVALID_CREDENTIALS_ERROR: "INVALID_CREDENTIALS",
   signInWithPassword: jest.fn(),
   signInWithGoogle: jest.fn(),
   resendVerificationEmail: jest.fn().mockResolvedValue(undefined),
@@ -47,15 +50,73 @@ describe("SignInForm", () => {
     expect(screen.queryByText("Email not confirmed")).toBeNull();
   });
 
-  it("shows the raw error and no resend link for other sign-in failures", async () => {
-    mockSignIn.mockRejectedValue(new Error("Invalid login credentials"));
+  it("maps invalid credentials to friendly copy with the SSO hint (no raw GoTrue text)", async () => {
+    mockSignIn.mockRejectedValue(new Error("INVALID_CREDENTIALS"));
     renderWithProviders(<SignInForm />);
 
     fillCredentials();
     fireEvent.press(screen.getByText("Continue"));
 
-    expect(await screen.findByText("Invalid login credentials")).toBeTruthy();
+    expect(
+      await screen.findByText(
+        "Incorrect email or password. If you signed up with Google, use 'Continue with Google' instead.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText("Invalid login credentials")).toBeNull();
+    expect(screen.queryByText("Resend verification email")).toBeNull();
+  });
+
+  it("shows the raw error and no resend link for other sign-in failures", async () => {
+    mockSignIn.mockRejectedValue(new Error("Network request failed"));
+    renderWithProviders(<SignInForm />);
+
+    fillCredentials();
+    fireEvent.press(screen.getByText("Continue"));
+
+    expect(await screen.findByText("Network request failed")).toBeTruthy();
     expect(screen.queryByText(NOT_CONFIRMED_MESSAGE)).toBeNull();
     expect(screen.queryByText("Resend verification email")).toBeNull();
+  });
+
+  it("gives the email and password inputs accessible names", () => {
+    renderWithProviders(<SignInForm />);
+
+    expect(screen.getByLabelText("Email").props.keyboardType).toBe("email-address");
+    expect(screen.getByLabelText("Password").props.secureTextEntry).toBe(true);
+  });
+
+  it("renders Google first, then the divider, then the email fields (SSO-first order)", () => {
+    renderWithProviders(<SignInForm />);
+
+    // Serialize the rendered tree; textual order mirrors visual order here.
+    const flat = JSON.stringify(screen.toJSON());
+    const googleIndex = flat.indexOf("Continue with Google");
+    const dividerIndex = flat.indexOf("or continue with email");
+    const emailIndex = flat.indexOf("Email");
+
+    expect(googleIndex).toBeGreaterThan(-1);
+    expect(dividerIndex).toBeGreaterThan(googleIndex);
+    expect(emailIndex).toBeGreaterThan(dividerIndex);
+  });
+
+  it("renders schema validation messages translated (bg)", async () => {
+    // Schemas emit i18n KEYS ("validation.emailRequired"), resolved via t() at
+    // render - so switching language switches the validation copy.
+    i18n.addResourceBundle("bg", "auth", bgAuth, true, true);
+    await act(async () => {
+      await i18n.changeLanguage("bg");
+    });
+    try {
+      renderWithProviders(<SignInForm />);
+
+      fireEvent.press(screen.getByText("Продължи"));
+
+      expect(await screen.findByText("Въведи имейл адреса си.")).toBeTruthy();
+      expect(screen.queryByText("validation.emailRequired")).toBeNull();
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage("en");
+      });
+    }
   });
 });

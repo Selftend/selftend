@@ -15,6 +15,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { WIDGET_META, isImplemented, type WidgetMeta } from "@/src/features/home/widget-registry";
 import { tintClasses } from "@/src/features/home/widget-tint";
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
 interface AddWidgetModalProps {
   visible: boolean;
@@ -151,6 +152,7 @@ function CategoryRow({
       : t("home.widgetCount", { count: metas.length });
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={onPress}
       className="flex-row items-center gap-3 border-t border-border px-5 py-3 active:bg-muted/40"
     >
@@ -176,6 +178,7 @@ export function AddWidgetModal({
   onRemove,
 }: AddWidgetModalProps) {
   const { t } = useTranslation("navigation");
+  const reduceMotionEnabled = useReduceMotionEnabled();
   const { width } = useWindowDimensions();
   const isWide = width >= 640;
   const [category, setCategory] = useState<string | null>(null);
@@ -226,7 +229,7 @@ export function AddWidgetModal({
 
   return (
     <Modal
-      animationType={isWide ? "fade" : "slide"}
+      animationType={reduceMotionEnabled ? "none" : isWide ? "fade" : "slide"}
       onRequestClose={handleClose}
       transparent
       visible={visible}
@@ -234,7 +237,13 @@ export function AddWidgetModal({
       {/* Backdrop and panel are siblings - nesting them caused the panel Pressable to absorb */}
       {/* touches on Android before the ScrollView could claim them. */}
       <View className="flex-1">
-        <Pressable className="absolute inset-0 bg-black/40" onPress={handleClose} />
+        <Pressable
+          accessibilityLabel={t("common:close")}
+          accessibilityRole="button"
+          className="absolute inset-0 bg-black/40"
+          onPress={handleClose}
+          role="button"
+        />
         <View
           className={cn(
             "absolute bg-card",

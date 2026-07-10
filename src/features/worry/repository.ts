@@ -1,5 +1,6 @@
 import type { WorryEntry, WorryEntryInput } from "@/src/features/worry/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
 
 interface WorryEntryRow {
   id: string;
@@ -47,6 +48,8 @@ export async function listWorryEntries(userId: string) {
 }
 
 export async function getWorryEntry(userId: string, entryId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(entryId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("worry_entries")

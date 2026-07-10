@@ -51,3 +51,33 @@ describe("procrastinationTaskFormSchema", () => {
     expect(procrastinationTaskFormSchema.safeParse({ ...base, steps: [] }).success).toBe(false);
   });
 });
+
+describe("validation messages are i18n keys", () => {
+  it("emits keys for a missing task description, empty step, and empty step list", () => {
+    const result = procrastinationTaskFormSchema.safeParse({
+      taskDescription: "",
+      avoidanceReason: "",
+      fearThought: "",
+      challengedThought: "",
+      deadline: null,
+      reward: "",
+      steps: [{ description: "", estimatedMinutes: null }],
+    });
+    expect(result.success).toBe(false);
+    const messages = result.error!.issues.map((issue) => issue.message);
+    expect(messages).toContain("tasks.validation.taskDescription");
+    expect(messages).toContain("tasks.validation.stepDescription");
+
+    const noSteps = procrastinationTaskFormSchema.safeParse({
+      taskDescription: "A real task",
+      avoidanceReason: "",
+      fearThought: "",
+      challengedThought: "",
+      deadline: null,
+      reward: "",
+      steps: [],
+    });
+    expect(noSteps.success).toBe(false);
+    expect(noSteps.error!.issues.map((issue) => issue.message)).toContain("tasks.validation.steps");
+  });
+});

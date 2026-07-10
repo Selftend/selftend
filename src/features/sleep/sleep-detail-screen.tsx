@@ -103,7 +103,7 @@ export default function SleepDetailScreen() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("detail.duration")}</CardTitle>
+              <CardTitle aria-level={2}>{t("detail.duration")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Text className="text-4xl font-bold">{formatDuration(entry.durationMinutes)}</Text>
@@ -112,7 +112,7 @@ export default function SleepDetailScreen() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("detail.quality")}</CardTitle>
+              <CardTitle aria-level={2}>{t("detail.quality")}</CardTitle>
             </CardHeader>
             <CardContent>
               <View className="flex-row items-center gap-3">
@@ -126,7 +126,7 @@ export default function SleepDetailScreen() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("detail.loggedAt")}</CardTitle>
+              <CardTitle aria-level={2}>{t("detail.loggedAt")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Text>{formatTimestamp(entry.loggedAt)}</Text>
@@ -135,7 +135,7 @@ export default function SleepDetailScreen() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("detail.notes")}</CardTitle>
+              <CardTitle aria-level={2}>{t("detail.notes")}</CardTitle>
             </CardHeader>
             <CardContent>
               {trimmedNotes ? (

@@ -1,10 +1,9 @@
-import { router } from "expo-router";
 import { Image, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { LinkButton } from "@/src/components/app/link-button";
 
 import { HelpKindsSection } from "./help-kinds-section";
 import { LandingFooter } from "./landing-footer";
@@ -56,12 +55,12 @@ function LandingHero() {
         </Text>
       </View>
       <View className="w-full max-w-xs flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:justify-center">
-        <Button size="lg" onPress={() => router.push("/(auth)/sign-up")}>
+        <LinkButton size="lg" href="/(auth)/sign-up">
           <Text>{t("landingPage.getStarted")}</Text>
-        </Button>
-        <Button variant="outline" size="lg" onPress={() => router.push("/(auth)/sign-in")}>
+        </LinkButton>
+        <LinkButton variant="outline" size="lg" href="/(auth)/sign-in">
           <Text>{t("landingPage.signInCta")}</Text>
-        </Button>
+        </LinkButton>
       </View>
     </View>
   );

@@ -49,7 +49,7 @@ export function ResetPasswordForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("resetPassword.title")}</CardTitle>
+        <CardTitle aria-level={1}>{t("resetPassword.title")}</CardTitle>
         <CardDescription>{t("resetPassword.subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="gap-4">
@@ -60,6 +60,7 @@ export function ResetPasswordForm() {
             <View className="gap-2">
               <Label>{t("resetPassword.newPassword")}</Label>
               <Input
+                accessibilityLabel={t("resetPassword.newPassword")}
                 autoCapitalize="none"
                 autoCorrect={false}
                 onBlur={onBlur}
@@ -72,7 +73,7 @@ export function ResetPasswordForm() {
                 {t("validation.passwordMin12Hint")}
               </Text>
               {errors.password?.message ? (
-                <Text className="text-sm text-destructive">{errors.password.message}</Text>
+                <Text className="text-sm text-destructive">{t(errors.password.message)}</Text>
               ) : null}
             </View>
           )}
@@ -85,6 +86,7 @@ export function ResetPasswordForm() {
             <View className="gap-2">
               <Label>{t("resetPassword.confirmPassword")}</Label>
               <Input
+                accessibilityLabel={t("resetPassword.confirmPassword")}
                 autoCapitalize="none"
                 autoCorrect={false}
                 onBlur={onBlur}
@@ -94,7 +96,9 @@ export function ResetPasswordForm() {
                 value={value}
               />
               {errors.confirmPassword?.message ? (
-                <Text className="text-sm text-destructive">{errors.confirmPassword.message}</Text>
+                <Text className="text-sm text-destructive">
+                  {t(errors.confirmPassword.message)}
+                </Text>
               ) : null}
             </View>
           )}

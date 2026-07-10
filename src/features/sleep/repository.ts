@@ -1,5 +1,7 @@
 import type { SleepInput, SleepLog } from "@/src/features/sleep/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
+import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
 interface SleepLogRow {
   id: string;
@@ -50,6 +52,8 @@ export async function countSleepLogs(userId: string): Promise<number> {
 }
 
 export async function getSleepLog(userId: string, id: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(id)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("sleep_logs")
@@ -67,7 +71,7 @@ export async function saveSleepLog(userId: string, input: SleepInput, logId?: st
   const payload = {
     duration_minutes: input.durationMinutes,
     quality: input.quality,
-    notes: input.notes.trim(),
+    notes: sanitizeUserText(input.notes).trim(),
   };
 
   const insertPayload: Record<string, unknown> = { ...payload, user_id: userId };

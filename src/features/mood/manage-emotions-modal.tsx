@@ -1,4 +1,13 @@
-import { ActivityIndicator, Modal, Pressable, ScrollView, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+} from "react-native";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
@@ -8,7 +17,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Icon } from "@/src/components/react-native-reusables/icon";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
 import {
   useAddCustomEmotion,
   useRemoveEmotion,
@@ -32,6 +41,7 @@ interface EmotionEditorModalProps {
 
 function EmotionEditorModal({ state, addPosition, onClose }: EmotionEditorModalProps) {
   const { t } = useTranslation("mood");
+  const reduceMotionEnabled = useReduceMotionEnabled();
   const { user } = useSession();
   const userId = user?.id ?? null;
   const upsertEmotion = useUpsertEmotionPreference(userId);
@@ -66,53 +76,69 @@ function EmotionEditorModal({ state, addPosition, onClose }: EmotionEditorModalP
   const title = state.mode === "add" ? t("emotions.manage.addTitle") : t("emotions.manage.edit");
 
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={onClose}>
-      <Pressable className="flex-1 items-center justify-center bg-black/50 p-6" onPress={onClose}>
-        {/* Inner card - stops tap-through to backdrop */}
-        <Pressable className="w-full max-w-[400px] rounded-2xl bg-card p-4" onPress={() => {}}>
-          <Text variant="h3" className="mb-4">
-            {title}
-          </Text>
+    <Modal
+      transparent
+      animationType={reduceMotionEnabled ? "none" : "fade"}
+      visible
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        className="flex-1"
+      >
+        <Pressable
+          accessibilityLabel={t("emotions.manage.close")}
+          accessibilityRole="button"
+          className="flex-1 items-center justify-center bg-black/50 p-6"
+          onPress={onClose}
+          role="button"
+        >
+          {/* Inner card - stops tap-through to backdrop */}
+          <Pressable className="w-full max-w-[400px] rounded-2xl bg-card p-4" onPress={() => {}}>
+            <Text variant="h3" className="mb-4">
+              {title}
+            </Text>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <View className="gap-4">
-              {/* Emoji picker */}
-              <View>
-                <Text className="mb-2 text-xs text-muted-foreground">
-                  {t("emotions.manage.emoji")}
-                </Text>
-                <EmojiPicker value={emoji} onSelect={setEmoji} />
-              </View>
-
-              {/* Name input */}
-              <View>
-                <Text className="mb-1 text-xs text-muted-foreground">
-                  {t("emotions.manage.name")}
-                </Text>
-                <TextInput
-                  value={name}
-                  onChangeText={setName}
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-foreground"
-                  placeholder={t("emotions.manage.namePlaceholder")}
-                  accessibilityLabel={t("emotions.manage.name")}
-                />
-              </View>
-
-              {/* Footer buttons */}
-              <View className="flex-row gap-2">
-                <Button variant="ghost" onPress={onClose} className="flex-1">
-                  <Text>{t("emotions.manage.cancel")}</Text>
-                </Button>
-                <Button onPress={handleSave} disabled={!canSave} className="flex-1">
-                  <Text>
-                    {state.mode === "add" ? t("emotions.manage.add") : t("emotions.manage.save")}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View className="gap-4">
+                {/* Emoji picker */}
+                <View>
+                  <Text className="mb-2 text-xs text-muted-foreground">
+                    {t("emotions.manage.emoji")}
                   </Text>
-                </Button>
+                  <EmojiPicker value={emoji} onSelect={setEmoji} />
+                </View>
+
+                {/* Name input */}
+                <View>
+                  <Text className="mb-1 text-xs text-muted-foreground">
+                    {t("emotions.manage.name")}
+                  </Text>
+                  <TextInput
+                    value={name}
+                    onChangeText={setName}
+                    className="rounded-lg border border-border bg-background px-3 py-2 text-foreground"
+                    placeholder={t("emotions.manage.namePlaceholder")}
+                    accessibilityLabel={t("emotions.manage.name")}
+                  />
+                </View>
+
+                {/* Footer buttons */}
+                <View className="flex-row gap-2">
+                  <Button variant="ghost" onPress={onClose} className="flex-1">
+                    <Text>{t("emotions.manage.cancel")}</Text>
+                  </Button>
+                  <Button onPress={handleSave} disabled={!canSave} className="flex-1">
+                    <Text>
+                      {state.mode === "add" ? t("emotions.manage.add") : t("emotions.manage.save")}
+                    </Text>
+                  </Button>
+                </View>
               </View>
-            </View>
-          </ScrollView>
+            </ScrollView>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -157,6 +183,7 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("emotions.manage.edit")}
+              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
               onPress={() => openEditor(emotion)}
             >
               <Icon name="edit" className="size-5 text-muted-foreground" />
@@ -167,7 +194,7 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
               onPress={() =>
                 removeEmotion.mutate({ emotionId: emotion.id, isCustom: emotion.isCustom })
               }
-              hitSlop={8}
+              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
             >
               <Icon name="delete-outline" className="size-5 text-destructive" />
             </Pressable>

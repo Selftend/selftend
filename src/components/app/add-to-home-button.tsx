@@ -13,7 +13,7 @@ import { WIDGET_META, isImplemented } from "@/src/features/home/widget-registry"
 import { tintClasses } from "@/src/features/home/widget-tint";
 import { useWidgetToggle } from "@/src/features/home/use-widget-toggle";
 import { useSession } from "@/src/providers/session-provider";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, toggleButtonStateProps } from "@/src/lib/accessibility";
 import { cn } from "@/lib/utils";
 
 type AddToHomeButtonProps = { size?: number; className?: string } & (
@@ -66,10 +66,10 @@ export function AddToHomeButton({
             <Pressable
               key={w.id}
               accessibilityRole="button"
-              accessibilityState={{ selected: added }}
               hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
               onPress={() => toggle.toggle(w.id)}
               className="flex-row items-center gap-3 rounded-md px-2 py-2 active:bg-accent"
+              {...toggleButtonStateProps(added)}
             >
               <View className={cn("size-7 items-center justify-center rounded-lg", tint.chip)}>
                 <Icon name={w.icon} className={cn("size-4", tint.icon)} />

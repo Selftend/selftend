@@ -13,6 +13,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useSaveConnectionLog } from "@/src/features/act/queries";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -24,7 +25,7 @@ export default function ActDropAnchorScreen() {
   const saveMutation = useSaveConnectionLog(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
 
-  async function handleLog() {
+  const handleLog = useSingleFlight(async () => {
     if (!user) return;
     try {
       await saveMutation.mutateAsync({
@@ -36,7 +37,7 @@ export default function ActDropAnchorScreen() {
     } catch {
       // error is surfaced via saveMutation.isError
     }
-  }
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>

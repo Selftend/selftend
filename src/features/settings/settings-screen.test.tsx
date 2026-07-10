@@ -118,6 +118,11 @@ describe("SettingsScreen hero and profile badge", () => {
     // "Account" appears as eyebrow and as the account section card title
     expect(screen.getAllByText("Account").length).toBeGreaterThanOrEqual(1);
   });
+
+  it("labels the display name input for assistive tech", async () => {
+    renderWithProviders(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByLabelText("Display name")).toBeTruthy());
+  });
 });
 
 describe("SettingsScreen onboarding reset", () => {

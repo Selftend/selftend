@@ -8,6 +8,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { NARROW_STEP_INDICATOR_BREAKPOINT } from "@/src/constants/layout";
+import { currentStateProps } from "@/src/lib/accessibility";
 
 interface WizardStep {
   title: string;
@@ -92,7 +93,7 @@ export function WizardScreen({
           {isNarrow ? (
             <Button
               accessibilityLabel={`${summary}. ${t(stepsOpen ? "wizard.hideSteps" : "wizard.showAllSteps")}`}
-              accessibilityState={{ expanded: stepsOpen }}
+              aria-expanded={stepsOpen}
               className="justify-between"
               onPress={() => setStepsOpen((open) => !open)}
               variant="outline"
@@ -115,7 +116,7 @@ export function WizardScreen({
                 return (
                   <Button
                     key={step.title}
-                    accessibilityState={{ disabled: index > stepIndex, selected: isActive }}
+                    {...currentStateProps(isActive, "step")}
                     disabled={index > stepIndex}
                     onPress={() => onJumpToStep(index)}
                     size="sm"

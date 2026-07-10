@@ -60,7 +60,7 @@ export function InfoScreen({
           {notice ? (
             <Card>
               <CardHeader>
-                <CardTitle>{t("launchReview")}</CardTitle>
+                <CardTitle aria-level={2}>{t("launchReview")}</CardTitle>
                 <CardDescription>{notice}</CardDescription>
               </CardHeader>
             </Card>
@@ -69,7 +69,7 @@ export function InfoScreen({
           {actions.length ? (
             <Card>
               <CardHeader>
-                <CardTitle>{t("helpfulLinks")}</CardTitle>
+                <CardTitle aria-level={2}>{t("helpfulLinks")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <View className="gap-3">
@@ -93,7 +93,7 @@ export function InfoScreen({
             ? sections.map((section, index) => (
                 <Card key={index}>
                   <CardHeader>
-                    <CardTitle>{section.title}</CardTitle>
+                    <CardTitle aria-level={2}>{section.title}</CardTitle>
                     {section.body.map((paragraph, pIndex) => (
                       <CardDescription key={pIndex}>{paragraph}</CardDescription>
                     ))}

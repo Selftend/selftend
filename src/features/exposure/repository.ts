@@ -7,6 +7,7 @@ import type {
   ExposureSessionInput,
 } from "@/src/features/exposure/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
 
 interface HierarchyRow {
   id: string;
@@ -95,6 +96,8 @@ export async function listHierarchies(userId: string) {
 }
 
 export async function getHierarchy(userId: string, hierarchyId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(hierarchyId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("exposure_hierarchies")
@@ -124,6 +127,8 @@ export async function saveHierarchy(userId: string, input: ExposureHierarchyInpu
 }
 
 export async function listItems(userId: string, hierarchyId: string) {
+  // hierarchyId comes from the hierarchy detail route; a malformed id would 400 on the uuid cast.
+  if (!isValidUuid(hierarchyId)) return [];
   const client = requireSupabase();
   const { data, error } = await client
     .from("exposure_items")

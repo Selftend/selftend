@@ -1,12 +1,18 @@
 import { cn } from "@/lib/utils";
 import { getTextFontStyle } from "@/src/components/react-native-reusables/text";
+import { useScrollIntoViewOnFocus } from "@/src/lib/use-scroll-into-view-on-focus";
 import { Platform, TextInput } from "react-native";
 
 function Input({
   className,
   style,
+  onFocus,
+  onBlur,
   ...props
 }: React.ComponentProps<typeof TextInput> & React.RefAttributes<TextInput>) {
+  // Web-only: keep the focused input visible above the on-screen keyboard.
+  const keepVisible = useScrollIntoViewOnFocus();
+
   return (
     <TextInput
       className={cn(
@@ -27,6 +33,14 @@ function Input({
         className,
       )}
       style={[getTextFontStyle([className]), style]}
+      onFocus={(event) => {
+        keepVisible.onFocus(event);
+        onFocus?.(event);
+      }}
+      onBlur={(event) => {
+        keepVisible.onBlur();
+        onBlur?.(event);
+      }}
       {...props}
     />
   );

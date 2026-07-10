@@ -17,7 +17,7 @@ export const THEME = {
     mutedForeground: "hsl(260 8% 42%)",
     accent: "hsl(260 28% 93%)",
     accentForeground: "hsl(260 28% 25%)",
-    destructive: "hsl(0 72% 51%)",
+    destructive: "hsl(0 72% 48%)",
     destructiveForeground: "hsl(0 0% 100%)",
     border: "hsl(260 14% 87%)",
     input: "hsl(260 14% 87%)",
@@ -44,7 +44,7 @@ export const THEME = {
     mutedForeground: "hsl(260 12% 72%)",
     accent: "hsl(260 20% 24%)",
     accentForeground: "hsl(260 32% 93%)",
-    destructive: "hsl(0 68% 59%)",
+    destructive: "hsl(0 68% 64%)",
     destructiveForeground: "hsl(0 0% 100%)",
     border: "hsl(260 12% 24%)",
     input: "hsl(260 12% 22%)",
@@ -99,7 +99,7 @@ export const THEME_VARIABLES = {
     "--muted-foreground": "260 8% 42%",
     "--accent": "260 28% 93%",
     "--accent-foreground": "260 28% 25%",
-    "--destructive": "0 72% 51%",
+    "--destructive": "0 72% 48%",
     "--destructive-foreground": "0 0% 100%",
     "--border": "260 14% 87%",
     "--input": "260 14% 87%",
@@ -126,7 +126,7 @@ export const THEME_VARIABLES = {
     "--muted-foreground": "260 12% 72%",
     "--accent": "260 20% 24%",
     "--accent-foreground": "260 32% 93%",
-    "--destructive": "0 68% 59%",
+    "--destructive": "0 68% 64%",
     "--destructive-foreground": "0 0% 100%",
     "--border": "260 12% 24%",
     "--input": "260 12% 22%",
@@ -139,3 +139,12 @@ export const THEME_VARIABLES = {
     "--chart-5": "43 86% 65%",
   }),
 };
+
+// Concrete hex mirrors of the surface tokens for code that needs a literal
+// color (gradient fade targets, tooltip backgrounds). MUST be kept in sync
+// with global.css when the palette changes (test/theme-token-sync.test.ts
+// enforces this):
+//   CARD_COLOR    = --card:    light hsl(260 28% 99%), dark hsl(260 16% 16%)
+//   POPOVER_COLOR = --popover: light hsl(260 28% 99%), dark hsl(260 18% 13%)
+export const CARD_COLOR = { dark: "#27222f", light: "#fcfcfd" } as const;
+export const POPOVER_COLOR = { dark: "#1f1b27", light: "#fcfcfd" } as const;

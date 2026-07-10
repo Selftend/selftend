@@ -23,17 +23,27 @@ describe("DurationStepper", () => {
     expect(onChange).toHaveBeenCalledWith(420);
   });
 
-  it("clamps at the minimum", () => {
+  it("disables - at the minimum and ignores presses", () => {
     const onChange = jest.fn();
     renderWithProviders(<DurationStepper value={30} min={30} onChange={onChange} />);
-    fireEvent.press(screen.getByLabelText("Subtract 30 minutes"));
-    expect(onChange).toHaveBeenCalledWith(30);
+    const decrease = screen.getByLabelText("Subtract 30 minutes");
+    expect(decrease).toBeDisabled();
+    fireEvent.press(decrease);
+    expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("clamps at the maximum", () => {
+  it("disables + at the maximum and ignores presses", () => {
     const onChange = jest.fn();
     renderWithProviders(<DurationStepper value={840} max={840} onChange={onChange} />);
-    fireEvent.press(screen.getByLabelText("Add 30 minutes"));
-    expect(onChange).toHaveBeenCalledWith(840);
+    const increase = screen.getByLabelText("Add 30 minutes");
+    expect(increase).toBeDisabled();
+    fireEvent.press(increase);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("keeps both buttons enabled between the bounds", () => {
+    renderWithProviders(<DurationStepper value={450} onChange={() => {}} />);
+    expect(screen.getByLabelText("Subtract 30 minutes")).not.toBeDisabled();
+    expect(screen.getByLabelText("Add 30 minutes")).not.toBeDisabled();
   });
 });

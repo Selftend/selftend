@@ -18,7 +18,7 @@
     --muted-foreground: 260 8% 42%;
     --accent: 260 28% 93%;
     --accent-foreground: 260 28% 25%;
-    --destructive: 0 72% 51%;
+    --destructive: 0 72% 48%;
     --destructive-foreground: 0 0% 100%;
     --border: 260 14% 87%;
     --input: 260 14% 87%;
@@ -31,11 +31,11 @@
     --chart-5: 43 74% 58%;
     --think: 43 74% 52%;
     --act: 160 46% 38%;
-    --be: 330 56% 60%;
-    --aqua: 196 52% 45%;
+    --be: 330 56% 47%;
+    --aqua: 196 52% 36%;
     --mist: 178 40% 40%;
     --iris: 280 48% 60%;
-    --ink: 232 46% 56%;
+    --ink: 232 46% 54%;
     --clay: 20 52% 50%;
   }
 
@@ -54,7 +54,7 @@
     --muted-foreground: 260 12% 72%;
     --accent: 260 20% 24%;
     --accent-foreground: 260 32% 93%;
-    --destructive: 0 68% 59%;
+    --destructive: 0 68% 64%;
     --destructive-foreground: 0 0% 100%;
     --border: 260 12% 24%;
     --input: 260 12% 22%;

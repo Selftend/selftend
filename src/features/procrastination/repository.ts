@@ -6,6 +6,7 @@ import type {
   TaskStepInput,
 } from "@/src/features/procrastination/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
 
 interface TaskRow {
   id: string;
@@ -75,6 +76,8 @@ export async function listTasks(userId: string) {
 }
 
 export async function getTask(userId: string, taskId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(taskId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("procrastination_tasks")
@@ -119,6 +122,8 @@ export async function updateTaskStatus(userId: string, taskId: string, status: T
 }
 
 export async function listSteps(userId: string, taskId: string) {
+  // taskId comes from the task detail route; a malformed id would 400 on the uuid cast.
+  if (!isValidUuid(taskId)) return [];
   const client = requireSupabase();
   const { data, error } = await client
     .from("task_steps")

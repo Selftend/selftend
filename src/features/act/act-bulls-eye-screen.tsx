@@ -17,6 +17,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { useBullsEyeSnapshots, useSaveBullsEyeSnapshot } from "@/src/features/act/queries";
 import { ACT_LIFE_DOMAINS, type ACTLifeDomain } from "@/src/features/act/types";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { useLocaleFormats } from "@/src/lib/locale-format";
@@ -39,30 +40,35 @@ export default function ActBullsEyeScreen() {
   const showToast = useToastStore((state) => state.showToast);
 
   const [ratings, setRatings] = useState<Ratings>(INITIAL_RATINGS);
-  const [submitError, setSubmitError] = useState("");
+  // Domains whose save rejected on the last attempt. While non-empty, the save
+  // button retries ONLY these - the fulfilled ones are already on the server and
+  // must not be duplicated.
+  const [failedDomains, setFailedDomains] = useState<ACTLifeDomain[]>([]);
 
   function setRating(domain: ACTLifeDomain, value: number | null) {
     setRatings((prev) => ({ ...prev, [domain]: value }));
   }
 
-  async function handleSave() {
+  const handleSave = useSingleFlight(async () => {
     if (!user) return;
-    setSubmitError("");
-    const domainsToSave = ACT_LIFE_DOMAINS.filter((d) => ratings[d] !== null);
+    const candidates = failedDomains.length > 0 ? failedDomains : ACT_LIFE_DOMAINS;
+    const domainsToSave = candidates.filter((d) => ratings[d] !== null);
     if (domainsToSave.length === 0) return;
-    try {
-      await Promise.all(
-        domainsToSave.map((domain) =>
-          saveMutation.mutateAsync({ domain, alignmentRating: ratings[domain]! }),
-        ),
-      );
-      showToast({ title: t("act:values.bullsEye.savedToast"), tone: "success" });
-      router.back();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t("act:values.bullsEye.saveProblem");
-      setSubmitError(message);
-    }
-  }
+    // allSettled (not Promise.all) so one rejected domain doesn't hide the fate
+    // of the others: fulfilled ones are saved for real, and only the rejected
+    // ones stay queued for retry.
+    const results = await Promise.allSettled(
+      domainsToSave.map((domain) =>
+        saveMutation.mutateAsync({ domain, alignmentRating: ratings[domain]! }),
+      ),
+    );
+    const failed = domainsToSave.filter((_, index) => results[index].status === "rejected");
+    setFailedDomains(failed);
+    if (failed.length > 0) return; // keep the screen open; the card lists them
+
+    showToast({ title: t("act:values.bullsEye.savedToast"), tone: "success" });
+    router.back();
+  });
 
   const anyRated = ACT_LIFE_DOMAINS.some((d) => ratings[d] !== null);
 
@@ -95,13 +101,19 @@ export default function ActBullsEyeScreen() {
             ))}
           </View>
 
-          {submitError ? (
+          {failedDomains.length > 0 ? (
             <Card>
               <CardHeader>
                 <CardTitle>{t("act:values.bullsEye.saveProblem")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Text variant="muted">{submitError}</Text>
+                <View className="gap-1">
+                  {failedDomains.map((domain) => (
+                    <Text key={domain} variant="muted">
+                      {t(`act:values.bullsEye.${domain}`)}
+                    </Text>
+                  ))}
+                </View>
               </CardContent>
             </Card>
           ) : null}

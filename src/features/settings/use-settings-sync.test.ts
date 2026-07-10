@@ -19,6 +19,12 @@ jest.mock("@/src/stores/theme-store", () => ({
   isThemePreference: (v: unknown) => v === "light" || v === "dark" || v === "system",
 }));
 
+const mockSignOut = jest.fn();
+
+jest.mock("@/src/lib/supabase", () => ({
+  supabase: { auth: { signOut: (...args: unknown[]) => mockSignOut(...args) } },
+}));
+
 const mockUseLanguage = useLanguage as jest.MockedFunction<typeof useLanguage>;
 const mockUseThemeStore = useThemeStore as jest.MockedFunction<typeof useThemeStore>;
 const mockUseUpdatePreferences = useUpdateUserPreferences as jest.MockedFunction<
@@ -111,7 +117,10 @@ describe("useSettingsSync", () => {
     // Local theme is preserved - DB null does not reset it to system.
     expect(setThemePreference).not.toHaveBeenCalled();
     // Local theme is pushed to DB to save it for the first time.
-    expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ theme: "dark" }));
+    expect(mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ theme: "dark" }),
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 
   it("pushes device language to DB when account has never explicitly set a language (fresh account)", () => {
@@ -127,7 +136,10 @@ describe("useSettingsSync", () => {
       ),
     );
     expect(setLanguage).not.toHaveBeenCalled();
-    expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ language: "bg" }));
+    expect(mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ language: "bg" }),
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 
   it("ignores unsupported DB language values", () => {
@@ -161,7 +173,10 @@ describe("useSettingsSync", () => {
     });
 
     expect(mutate).toHaveBeenCalledTimes(1);
-    expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ language: "bg" }));
+    expect(mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ language: "bg" }),
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 
   it("pushes local theme change to DB after initial sync", () => {
@@ -181,7 +196,10 @@ describe("useSettingsSync", () => {
     });
 
     expect(mutate).toHaveBeenCalledTimes(1);
-    expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ theme: "dark" }));
+    expect(mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ theme: "dark" }),
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 
   it("re-pulls DB values on account switch instead of pushing the previous user's local values", () => {
@@ -283,5 +301,56 @@ describe("useSettingsSync", () => {
     });
     act(() => rerender({ theme: "dark", lang: "bg" }));
     expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it("stops pushing after a failed push until the next auth change", () => {
+    mockContexts({ theme: "dark" });
+    // DB theme null vs local "dark" -> the hook pushes on every effect run.
+    const { rerender } = renderHook(
+      ({ uid, prefs }: { uid: string; prefs: UserPreferences }) => useSettingsSync(uid, prefs),
+      { initialProps: { uid: "user-1", prefs: makePreferences({ language: "en", theme: null }) } },
+    );
+    expect(mutate).toHaveBeenCalledTimes(1);
+
+    // The push fails (e.g. the endless-409 stale-session case).
+    const options = mutate.mock.calls[0][1] as { onError: (error: unknown) => void };
+    act(() => options.onError(new Error("upsert failed")));
+
+    // A fresh preferences tick still differs from local - without the bail flag this
+    // would re-push (and re-fail) forever.
+    act(() => rerender({ uid: "user-1", prefs: makePreferences({ language: "en", theme: null }) }));
+    expect(mutate).toHaveBeenCalledTimes(1);
+
+    // Next auth change (different user) resets the bail: pushing works again.
+    act(() => rerender({ uid: "user-2", prefs: makePreferences({ language: "en", theme: null }) }));
+    expect(mutate).toHaveBeenCalledTimes(2);
+  });
+
+  it("signs out when the failed push proves the user is gone (Postgres 23503 FK-to-auth.users)", () => {
+    mockContexts({ theme: "dark" });
+    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "en", theme: null })));
+    expect(mutate).toHaveBeenCalledTimes(1);
+
+    const options = mutate.mock.calls[0][1] as { onError: (error: unknown) => void };
+    act(() => options.onError({ code: "23503" }));
+
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["network failure", new Error("Failed to fetch")],
+    // PGRST301 (expired JWT at PostgREST) can be transient clock skew that a token
+    // refresh would fix - signing out here would falsely wipe persisted PHI drafts.
+    // The pushFailedRef bail already stops the retry loop for it.
+    ["PGRST301 expired-JWT rejection", { code: "PGRST301" }],
+  ])("does not sign out for non-proof push failures: %s", (_label, error) => {
+    mockContexts({ theme: "dark" });
+    renderHook(() => useSettingsSync("user-1", makePreferences({ language: "en", theme: null })));
+    expect(mutate).toHaveBeenCalledTimes(1);
+
+    const options = mutate.mock.calls[0][1] as { onError: (error: unknown) => void };
+    act(() => options.onError(error));
+
+    expect(mockSignOut).not.toHaveBeenCalled();
   });
 });

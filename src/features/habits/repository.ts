@@ -7,6 +7,8 @@ import type {
   HabitCadence,
 } from "@/src/features/habits/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
+import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
 interface HabitRow {
   id: string;
@@ -72,14 +74,14 @@ function mapHabitLog(row: HabitLogRow): HabitLog {
 
 function payloadFromInput(input: HabitInput) {
   return {
-    name: input.name.trim(),
+    name: sanitizeUserText(input.name).trim(),
     kind: input.kind,
-    identity: input.identity.trim(),
-    cue_plan: input.cuePlan.trim(),
-    stack_after: input.stackAfter.trim(),
-    craving_pairing: input.cravingPairing.trim(),
-    two_minute_version: input.twoMinuteVersion.trim(),
-    reward_note: input.rewardNote.trim(),
+    identity: sanitizeUserText(input.identity).trim(),
+    cue_plan: sanitizeUserText(input.cuePlan).trim(),
+    stack_after: sanitizeUserText(input.stackAfter).trim(),
+    craving_pairing: sanitizeUserText(input.cravingPairing).trim(),
+    two_minute_version: sanitizeUserText(input.twoMinuteVersion).trim(),
+    reward_note: sanitizeUserText(input.rewardNote).trim(),
     cadence: input.cadence,
     custom_days: input.cadence === "custom" ? Array.from(new Set(input.customDays)).sort() : [],
     color: input.color,
@@ -104,6 +106,8 @@ export async function listHabits(userId: string, includeArchived = false): Promi
 }
 
 export async function getHabit(userId: string, id: string): Promise<Habit | null> {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(id)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("habits")
@@ -172,6 +176,9 @@ export async function listHabitLogs(
   userId: string,
   options: { habitId?: string; sinceDate?: string; limit?: number } = {},
 ): Promise<HabitLog[]> {
+  // The habit detail/log screens pass the route's habitId here too; a malformed id
+  // would 400 on the uuid cast, so short-circuit to the same zero-rows result.
+  if (options.habitId && !isValidUuid(options.habitId)) return [];
   const client = requireSupabase();
   let query = client
     .from("habit_logs")
@@ -245,7 +252,7 @@ export async function upsertHabitLogNote(
       user_id: userId,
       habit_id: habitId,
       logged_on: loggedOn,
-      note: note.trim(),
+      note: sanitizeUserText(note).trim(),
     })
     .select("*")
     .single();

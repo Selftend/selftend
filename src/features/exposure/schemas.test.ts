@@ -74,3 +74,28 @@ describe("exposureSessionFormSchema", () => {
     expect(exposureSessionFormSchema.safeParse({ ...base, postSuds: -1 }).success).toBe(false);
   });
 });
+
+describe("validation messages are i18n keys", () => {
+  it("emits keys for missing title, anxiety type, item description, and empty items", () => {
+    const result = exposureHierarchyFormSchema.safeParse({
+      title: "",
+      anxietyType: "",
+      items: [{ description: "", sudsRating: 20 }],
+    });
+    expect(result.success).toBe(false);
+    const messages = result.error!.issues.map((issue) => issue.message);
+    expect(messages).toContain("exposure.validation.title");
+    expect(messages).toContain("exposure.validation.anxietyType");
+    expect(messages).toContain("exposure.validation.itemDescription");
+
+    const noItems = exposureHierarchyFormSchema.safeParse({
+      title: "Public speaking",
+      anxietyType: "social",
+      items: [],
+    });
+    expect(noItems.success).toBe(false);
+    expect(noItems.error!.issues.map((issue) => issue.message)).toContain(
+      "exposure.validation.items",
+    );
+  });
+});

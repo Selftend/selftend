@@ -9,11 +9,19 @@ jest.mock("expo-linear-gradient", () => {
 });
 
 describe("MoodScale", () => {
-  it("renders 5 emoji buttons with a11y labels (no visible word labels)", () => {
+  it("renders 5 emoji radios with a11y labels (no visible word labels)", () => {
     renderWithProviders(<MoodScale value={null} onChange={() => {}} />);
     expect(screen.getByLabelText("Awful")).toBeTruthy();
     expect(screen.getByLabelText("Great")).toBeTruthy();
-    expect(screen.getAllByRole("button")).toHaveLength(5);
+    expect(screen.getAllByRole("radio")).toHaveLength(5);
+  });
+
+  it("exposes the scale as a labelled radiogroup", () => {
+    renderWithProviders(<MoodScale value={null} onChange={() => {}} />);
+    // byRole skips plain Views (not accessibility elements), so assert the
+    // container's group semantics through its label instead.
+    const group = screen.getByLabelText("How are you feeling?");
+    expect(group.props.accessibilityRole).toBe("radiogroup");
   });
 
   it("invokes onChange with the step value when pressed", () => {
@@ -23,9 +31,9 @@ describe("MoodScale", () => {
     expect(onChange).toHaveBeenCalledWith(5);
   });
 
-  it("marks the selected step in the a11y tree", () => {
+  it("marks the selected step as checked in the a11y tree", () => {
     renderWithProviders(<MoodScale value={4} onChange={() => {}} />);
-    const selected = screen.getByLabelText("Good");
-    expect(selected.props.accessibilityState).toMatchObject({ selected: true });
+    expect(screen.getByRole("radio", { name: "Good" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Great" })).not.toBeChecked();
   });
 });

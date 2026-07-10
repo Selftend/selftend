@@ -17,15 +17,23 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { SubmitButtonContent } from "@/src/components/app/submit-button-content";
-import { resendVerificationEmail, signInWithPassword } from "@/src/features/auth/api";
+import {
+  INVALID_CREDENTIALS_ERROR,
+  resendVerificationEmail,
+  signInWithPassword,
+} from "@/src/features/auth/api";
 import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
 import { signInSchema, type SignInSchema } from "@/src/features/auth/schemas";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
+import { COMPACT_CONTROL_HIT_SLOP } from "@/src/lib/accessibility";
+import { useAppColorScheme } from "@/src/lib/color-scheme";
 import { useSession } from "@/src/providers/session-provider";
+import { THEME } from "@/lib/theme";
 
 export function SignInForm() {
   const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
+  const colorScheme = useAppColorScheme();
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
   const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false);
@@ -64,9 +72,15 @@ export function SignInForm() {
       const rawMessage = error instanceof Error ? error.message : "";
       const isNotConfirmed = rawMessage.toLowerCase().includes("not confirmed");
       setIsEmailNotConfirmed(isNotConfirmed);
-      setSubmitError(
-        isNotConfirmed ? t("signIn.emailNotConfirmed") : rawMessage || t("signIn.error"),
-      );
+      if (isNotConfirmed) {
+        setSubmitError(t("signIn.emailNotConfirmed"));
+      } else if (rawMessage === INVALID_CREDENTIALS_ERROR) {
+        // Includes the SSO hint: Google-created accounts have no password, and
+        // "wrong password" is the most common dead end for them.
+        setSubmitError(t("signIn.invalidCredentials"));
+      } else {
+        setSubmitError(rawMessage || t("signIn.error"));
+      }
     }
   });
 
@@ -87,10 +101,33 @@ export function SignInForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("signIn.title")}</CardTitle>
+        <CardTitle aria-level={1}>{t("signIn.title")}</CardTitle>
         <CardDescription>{t("signIn.subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="gap-4">
+        <Button
+          disabled={!hasSupabaseConfig || isGoogleSubmitting}
+          onPress={() => void onGoogleSubmit()}
+          variant="outline"
+        >
+          {isGoogleSubmitting ? (
+            <ActivityIndicator color={THEME[colorScheme].mutedForeground} />
+          ) : (
+            <Image
+              source={require("../../../assets/branding/google-logo.png")}
+              style={{ width: 18, height: 18 }}
+              resizeMode="contain"
+            />
+          )}
+          <Text>{isGoogleSubmitting ? t("signIn.googleOpening") : t("signIn.googleButton")}</Text>
+        </Button>
+
+        <View className="flex-row items-center gap-3">
+          <View className="h-px flex-1 bg-border" />
+          <Text className="text-xs text-muted-foreground">{t("common:orContinueWithEmail")}</Text>
+          <View className="h-px flex-1 bg-border" />
+        </View>
+
         <Controller
           control={control}
           name="email"
@@ -98,6 +135,7 @@ export function SignInForm() {
             <View className="gap-2">
               <Label>{t("signIn.email")}</Label>
               <Input
+                accessibilityLabel={t("signIn.email")}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
@@ -109,7 +147,7 @@ export function SignInForm() {
                 value={value}
               />
               {errors.email?.message ? (
-                <Text className="text-sm text-destructive">{errors.email.message}</Text>
+                <Text className="text-sm text-destructive">{t(errors.email.message)}</Text>
               ) : null}
             </View>
           )}
@@ -123,6 +161,7 @@ export function SignInForm() {
               <View className="flex-row items-center justify-between">
                 <Label>{t("signIn.password")}</Label>
                 <Button
+                  hitSlop={COMPACT_CONTROL_HIT_SLOP}
                   onPress={() => router.push("/(auth)/reset-password")}
                   variant="link"
                   size="sm"
@@ -132,6 +171,7 @@ export function SignInForm() {
               </View>
               <Input
                 ref={passwordRef}
+                accessibilityLabel={t("signIn.password")}
                 autoCapitalize="none"
                 autoCorrect={false}
                 onBlur={onBlur}
@@ -143,7 +183,7 @@ export function SignInForm() {
                 value={value}
               />
               {errors.password?.message ? (
-                <Text className="text-sm text-destructive">{errors.password.message}</Text>
+                <Text className="text-sm text-destructive">{t(errors.password.message)}</Text>
               ) : null}
             </View>
           )}
@@ -188,33 +228,12 @@ export function SignInForm() {
           />
         </Button>
 
-        <View className="items-center gap-1 pt-1">
+        <View className="flex-row flex-wrap items-center justify-center gap-x-1 pt-1">
           <Text className="text-sm text-muted-foreground">{t("signIn.noAccount")}</Text>
           <Button onPress={() => router.push("/(auth)/sign-up")} variant="link">
             <Text>{t("signIn.signUpLink")}</Text>
           </Button>
         </View>
-
-        <View className="items-center">
-          <Text className="text-sm text-muted-foreground">{t("common:or")}</Text>
-        </View>
-
-        <Button
-          disabled={!hasSupabaseConfig || isGoogleSubmitting}
-          onPress={() => void onGoogleSubmit()}
-          variant="outline"
-        >
-          {isGoogleSubmitting ? (
-            <ActivityIndicator color="#20312c" />
-          ) : (
-            <Image
-              source={require("../../../assets/branding/google-logo.png")}
-              style={{ width: 18, height: 18 }}
-              resizeMode="contain"
-            />
-          )}
-          <Text>{isGoogleSubmitting ? t("signIn.googleOpening") : t("signIn.googleButton")}</Text>
-        </Button>
       </CardContent>
     </Card>
   );

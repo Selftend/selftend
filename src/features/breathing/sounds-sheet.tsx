@@ -10,7 +10,8 @@ import { mergeUserPreferences, type UserPreferences } from "@/src/features/modul
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { useRovingFocus } from "@/src/lib/roving-focus";
 
 interface SoundsSheetProps {
   visible: boolean;
@@ -20,6 +21,7 @@ interface SoundsSheetProps {
 // Sound *selection* only - volume is handled by the always-visible sliders on the session screen.
 export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
   const { t } = useTranslation("cbt");
+  const reduceMotionEnabled = useReduceMotionEnabled();
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { data: prefs } = useUserPreferences(userId);
@@ -41,7 +43,12 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
     AMBIENT_SOUNDS.find((s) => s.id === effective.ambientSoundId) ?? AMBIENT_SOUNDS[0];
 
   return (
-    <Modal animationType="slide" visible={visible} onRequestClose={onDismiss} transparent>
+    <Modal
+      animationType={reduceMotionEnabled ? "none" : "slide"}
+      visible={visible}
+      onRequestClose={onDismiss}
+      transparent
+    >
       <View className="flex-1 justify-end bg-black/40">
         <SafeAreaView edges={["bottom"]} className="rounded-t-2xl bg-background">
           <ScrollView contentContainerClassName="gap-6 p-6">
@@ -65,6 +72,7 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
             />
             {openPicker === "breath" ? (
               <Picker
+                label={t("breathing.sounds.breathLabel")}
                 items={BREATH_SOUNDS.map((s) => ({ id: s.id, label: t(s.labelKey) }))}
                 selectedId={effective.breathSoundId}
                 onSelect={(id) => patch({ breathSoundId: id })}
@@ -79,6 +87,7 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
             />
             {openPicker === "ambient" ? (
               <Picker
+                label={t("breathing.sounds.ambientLabel")}
                 items={AMBIENT_SOUNDS.map((s) => ({ id: s.id, label: t(s.labelKey) }))}
                 selectedId={effective.ambientSoundId}
                 onSelect={(id) => patch({ ambientSoundId: id })}
@@ -119,23 +128,39 @@ function Lane({ label, soundName, onPress, pickLabel }: LaneProps) {
 }
 
 interface PickerProps {
+  label: string;
   items: { id: string; label: string }[];
   selectedId: string;
   onSelect: (id: string) => void;
 }
 
-function Picker({ items, selectedId, onSelect }: PickerProps) {
+function Picker({ label, items, selectedId, onSelect }: PickerProps) {
+  const selectedIndex = items.findIndex((item) => item.id === selectedId);
+  const roving = useRovingFocus({
+    count: items.length,
+    // No selection: treat the first item as active so the group stays tab-reachable.
+    activeIndex: selectedIndex < 0 ? 0 : selectedIndex,
+    onActivate: (index) => onSelect(items[index].id),
+  });
+
   return (
-    <View className="gap-1 rounded-xl border border-border p-2">
-      {items.map((item) => {
+    <View
+      accessibilityLabel={label}
+      accessibilityRole="radiogroup"
+      className="gap-1 rounded-xl border border-border p-2"
+      role="radiogroup"
+    >
+      {items.map((item, index) => {
         const active = item.id === selectedId;
         return (
           <Pressable
             key={item.id}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
+            accessibilityRole="radio"
+            aria-checked={active}
             hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+            role="radio"
             onPress={() => onSelect(item.id)}
+            {...roving.getItemProps(index, () => onSelect(item.id))}
             className={cn(
               "flex-row items-center justify-between rounded-lg px-3 py-2",
               active ? "bg-aqua/10" : "bg-transparent",

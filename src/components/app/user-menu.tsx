@@ -22,6 +22,7 @@ import { supportedLanguages } from "@/src/i18n";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useLanguage } from "@/src/providers/i18n-provider";
 import { useSession } from "@/src/providers/session-provider";
 import { useThemeStore, type ThemePreference } from "@/src/stores/theme-store";
@@ -47,6 +48,19 @@ export function UserMenu() {
   const email = user?.email;
   const avatarUrl = profile?.avatarUrl ?? null;
   const displayName = resolveDisplayName(profile, user);
+
+  const languageIndex = supportedLanguages.indexOf(language);
+  const languageRoving = useRovingFocus({
+    count: supportedLanguages.length,
+    activeIndex: languageIndex < 0 ? 0 : languageIndex,
+    onActivate: (index) => void setLanguage(supportedLanguages[index]),
+  });
+  const themeIndex = THEME_OPTIONS.indexOf(preference);
+  const themeRoving = useRovingFocus({
+    count: THEME_OPTIONS.length,
+    activeIndex: themeIndex < 0 ? 0 : themeIndex,
+    onActivate: (index) => setPreference(THEME_OPTIONS[index]),
+  });
 
   function openExternal(url: string) {
     popoverTriggerRef.current?.close();
@@ -103,20 +117,25 @@ export function UserMenu() {
             </View>
           ) : null}
 
-          <View>
+          <View
+            accessibilityLabel={t("languageToggle.toggle")}
+            accessibilityRole="radiogroup"
+            role="radiogroup"
+          >
             <Text className="text-xs font-medium text-muted-foreground px-2 pb-1">
               {t("languageToggle.toggle")}
             </Text>
-            {supportedLanguages.map((code) => (
+            {supportedLanguages.map((code, index) => (
               <Pressable
                 accessibilityLabel={t(`languageToggle.${code}`)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: language === code }}
+                accessibilityRole="radio"
+                aria-checked={language === code}
                 key={code}
                 className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                 onPress={() => void setLanguage(code)}
-                role="button"
+                role="radio"
+                {...languageRoving.getItemProps(index, () => void setLanguage(code))}
               >
                 <View className="size-4 items-center justify-center">
                   {language === code ? (
@@ -128,20 +147,25 @@ export function UserMenu() {
             ))}
           </View>
 
-          <View>
+          <View
+            accessibilityLabel={t("themeToggle.toggle")}
+            accessibilityRole="radiogroup"
+            role="radiogroup"
+          >
             <Text className="text-xs font-medium text-muted-foreground px-2 pb-1">
               {t("themeToggle.toggle")}
             </Text>
-            {THEME_OPTIONS.map((value) => (
+            {THEME_OPTIONS.map((value, index) => (
               <Pressable
                 accessibilityLabel={t(`themeToggle.${value}`)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: preference === value }}
+                accessibilityRole="radio"
+                aria-checked={preference === value}
                 key={value}
                 className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                 onPress={() => setPreference(value)}
-                role="button"
+                role="radio"
+                {...themeRoving.getItemProps(index, () => setPreference(value))}
               >
                 <View className="size-4 items-center justify-center">
                   {preference === value ? (

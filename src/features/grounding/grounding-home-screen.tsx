@@ -75,7 +75,7 @@ export default function GroundingHomeScreen() {
             {sessions && sessions.length > 0 ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>{t("grounding.streakTitle")}</CardTitle>
+                  <CardTitle aria-level={2}>{t("grounding.streakTitle")}</CardTitle>
                   <CardDescription>
                     {t("grounding.recentCount", { count: sessions.length })}
                   </CardDescription>

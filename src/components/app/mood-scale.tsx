@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
+import { useRovingFocus } from "@/src/lib/roving-focus";
 
 interface MoodScaleProps {
   value: number | null;
@@ -50,19 +51,33 @@ export const MOOD_EMOJI_BY_SCORE: Record<number, string> = STEPS.reduce(
 
 export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) {
   const { t } = useTranslation("mood");
+  const selectedIndex = STEPS.findIndex((step) => step.score === value);
+  const roving = useRovingFocus({
+    count: STEPS.length,
+    // No selection yet: treat the first step as active so the group stays tab-reachable.
+    activeIndex: selectedIndex < 0 ? 0 : selectedIndex,
+    onActivate: (index) => onChange(STEPS[index].score),
+  });
 
   return (
-    <View className={cn("flex-row", compact ? "gap-1.5" : "gap-2.5")}>
-      {STEPS.map((step) => {
+    <View
+      accessibilityLabel={t("checkin.title")}
+      accessibilityRole="radiogroup"
+      className={cn("flex-row", compact ? "gap-1.5" : "gap-2.5")}
+      role="radiogroup"
+    >
+      {STEPS.map((step, index) => {
         const selected = value === step.score;
         const label = t(`checkin.scaleLabels.${step.score}`);
         return (
           <Pressable
             key={step.score}
-            accessibilityRole="button"
+            accessibilityRole="radio"
             accessibilityLabel={label}
-            accessibilityState={{ selected }}
+            aria-checked={selected}
+            role="radio"
             onPress={() => onChange(step.score)}
+            {...roving.getItemProps(index, () => onChange(step.score))}
             className={cn(
               "flex-1 items-center overflow-hidden rounded-2xl border",
               compact ? "px-1 py-2" : "px-1.5 py-3.5",

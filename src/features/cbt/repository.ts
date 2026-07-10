@@ -5,6 +5,7 @@ import type {
 } from "@/src/features/cbt/types";
 import { trimAndFilterEmpty } from "@/src/lib/strings";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
 
 interface ThoughtRecordRow {
   id: string;
@@ -79,6 +80,8 @@ export async function countThoughtRecordsSince(userId: string, sinceIso: string)
 }
 
 export async function getThoughtRecord(userId: string, recordId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(recordId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("thought_records")

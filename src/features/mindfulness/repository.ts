@@ -1,5 +1,6 @@
 import type { MindfulnessSession, MindfulnessSessionInput } from "@/src/features/mindfulness/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
 interface MindfulnessSessionRow {
   id: string;
@@ -87,7 +88,7 @@ export async function saveMindfulnessSession(userId: string, input: MindfulnessS
       user_id: userId,
       exercise_name: input.exerciseName,
       duration_minutes: input.durationMinutes,
-      reflection: input.reflection.trim(),
+      reflection: sanitizeUserText(input.reflection).trim(),
       feeling_after: input.feelingAfter ?? null,
       mood_after: null,
       cycles: input.cycles ?? null,

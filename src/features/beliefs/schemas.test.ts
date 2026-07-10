@@ -42,3 +42,23 @@ describe("coreBeliefFormSchema", () => {
     );
   });
 });
+
+describe("validation messages are i18n keys", () => {
+  it("emits keys for a missing belief statement and alternative belief", () => {
+    const result = coreBeliefFormSchema.safeParse({
+      beliefStatement: "",
+      triggeringSituations: [],
+      evidenceFor: [],
+      evidenceAgainst: [],
+      alternativeBelief: "",
+      originalBeliefStrength: 50,
+      alternativeBeliefStrength: 50,
+      reinforcementPlan: "",
+      nextReviewDate: null,
+    });
+    expect(result.success).toBe(false);
+    const messages = result.error!.issues.map((issue) => issue.message);
+    expect(messages).toContain("beliefs.validation.beliefStatement");
+    expect(messages).toContain("beliefs.validation.alternativeBelief");
+  });
+});

@@ -13,13 +13,13 @@ test.describe("edit and delete a mood log", () => {
   test("alice edits then deletes a mood log", async ({ page }) => {
     // Create: score 3 ("OK") → emoji 😐
     await page.goto("/tools/mood-tracker/new");
-    await page.getByRole("button", { name: "OK", exact: true }).click();
+    await page.getByRole("radio", { name: "OK", exact: true }).click();
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("😐")).toBeVisible({ timeout: 15_000 });
 
     // EDIT: tap Edit, change to score 4 ("Good") → emoji 😊, then Update.
     await page.getByRole("button", { name: "Edit", exact: true }).click();
-    await page.getByRole("button", { name: "Good", exact: true }).click();
+    await page.getByRole("radio", { name: "Good", exact: true }).click();
     await page.getByRole("button", { name: "Update", exact: true }).click();
     // After Update the app navigates back to the detail screen (/tools/mood-tracker/[id]).
     // The URL is the most reliable signal; just wait for it.

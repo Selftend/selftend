@@ -25,16 +25,15 @@ test.describe("edit and delete a habit", () => {
 
     // --- TOGGLE TODAY'S COMPLETION ---
     // The calendar strip shows today's day cell. Today's cell has accessibilityLabel = today's
-    // date string (YYYY-MM-DD) and starts unticked. Click it to tick, then assert checked=true.
+    // date string (YYYY-MM-DD), role="checkbox", and starts unticked. Click it to tick.
     const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
-    const todayCell = page.getByRole("button", { name: todayStr, exact: true });
+    const todayCell = page.getByRole("checkbox", { name: todayStr, exact: true });
     await expect(todayCell).toBeVisible({ timeout: 10_000 });
-    // Assert the cell starts unticked before clicking.
+    // Assert the cell starts unticked before clicking (aria-checked comes from the
+    // aria-checked prop, which react-native-web forwards to the DOM).
     await expect(todayCell).not.toHaveClass(/bg-primary/, { timeout: 5_000 });
     await todayCell.click();
     // After toggling, the cell's CSS class changes to include the habit colour (bg-primary/20).
-    // React Native Web renders accessibilityState checked, but in Playwright the attribute value
-    // comes through as null rather than "true"; asserting the class change is more reliable.
     await expect(todayCell).toHaveClass(/bg-primary/, { timeout: 10_000 });
 
     // --- EDIT ---

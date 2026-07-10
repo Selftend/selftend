@@ -126,7 +126,7 @@ export default function JournalDetailScreen() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("detail.createdAt")}</CardTitle>
+              <CardTitle aria-level={2}>{t("detail.createdAt")}</CardTitle>
               <CardDescription>{createdAtLabel}</CardDescription>
             </CardHeader>
           </Card>

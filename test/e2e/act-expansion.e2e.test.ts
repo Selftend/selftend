@@ -52,10 +52,10 @@ test.describe("ACT expansion: create, view, delete", () => {
     // ── Step 3: Struggle switch ───────────────────────────────────────────────
     // Select "Yes - I'm resisting or trying to get rid of it"
     await page
-      .getByRole("button", { name: "Yes - I'm resisting or trying to get rid of it", exact: true })
+      .getByRole("radio", { name: "Yes - I'm resisting or trying to get rid of it", exact: true })
       .click();
     // Select discomfort type "The original feeling, as it is"
-    await page.getByRole("button", { name: "The original feeling, as it is", exact: true }).click();
+    await page.getByRole("radio", { name: "The original feeling, as it is", exact: true }).click();
 
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 

@@ -132,7 +132,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow p-4">
-        <View className="gap-6">
+        <View className="mx-auto w-full max-w-2xl gap-6">
           {/* Hero */}
           <View className="mt-2">
             <Text variant="eyebrow">{t("account.eyebrow")}</Text>
@@ -304,15 +304,16 @@ export default function SettingsScreen() {
             </View>
             <View className="gap-3">
               <ExportDataButton />
-              <DeleteAccountButton />
               <Button
-                variant="destructive"
+                variant="outline"
                 className="justify-start"
                 onPress={() => void handleSignOut()}
               >
                 <Icon name="logout" size={18} />
                 <Text>{t("account.signOut")}</Text>
               </Button>
+              {/* Destructive action stays last - and stays the only red element. */}
+              <DeleteAccountButton />
             </View>
           </Card>
         </View>
@@ -645,6 +646,7 @@ function ProfilePictureCard({ user }: { user: User | null }) {
           <Label className="mb-1.5 text-sm font-semibold">{t("profile.displayNameLabel")}</Label>
           <View className="flex-row gap-2 mt-1.5">
             <Input
+              accessibilityLabel={t("profile.displayNameLabel")}
               className="flex-1"
               value={nameValue}
               onChangeText={setNameValue}
@@ -747,7 +749,7 @@ function ExportDataButton() {
         const { Share } = await import("react-native");
         await Share.share({
           message: json,
-          title: "Selftend Data Export",
+          title: t("account.exportShareTitle"),
         });
       }
 

@@ -73,7 +73,10 @@ describe("anger repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(getAngerLog("user-1", "missing")).resolves.toBeNull();
+    // Well-formed uuid that matches no row, so the query itself runs (a malformed
+    // id short-circuits to null before supabase).
+    await expect(getAngerLog("user-1", "11111111-1111-4111-8111-111111111111")).resolves.toBeNull();
+    expect(maybeSingle).toHaveBeenCalled();
   });
 
   it("trims free-text fields and inserts a new log", async () => {

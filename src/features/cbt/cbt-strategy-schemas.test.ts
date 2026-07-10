@@ -122,3 +122,16 @@ describe("newer CBT strategy schemas", () => {
     ).toBe(false);
   });
 });
+
+describe("validation messages are i18n keys", () => {
+  it("challengePlanFormSchema emits keys for a missing description and empty coping steps", () => {
+    const result = challengePlanFormSchema.safeParse({
+      challengeDescription: "",
+      copingSteps: [],
+    });
+    expect(result.success).toBe(false);
+    const messages = result.error!.issues.map((issue) => issue.message);
+    expect(messages).toContain("recovery.validation.challengeDescription");
+    expect(messages).toContain("recovery.validation.copingSteps");
+  });
+});

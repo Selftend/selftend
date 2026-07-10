@@ -61,6 +61,73 @@ Smoke test:
 - Sign up with an 11-char password - must be rejected with `weak_password / length` ("Password should be at least 12 characters").
 - Sign up with a 12-char password - must succeed.
 
+## Auth Email Templates (production Dashboard - owner action)
+
+The default Supabase email templates link through `{{ .ConfirmationURL }}`,
+which under the PKCE flow produces a `?code=` link that only completes in the
+browser profile that initiated the request ("PKCE code verifier not found in
+storage" anywhere else - e.g. requesting a reset on your phone and opening the
+email on your laptop). The app's callback completes `token_hash` links via
+`verifyOtp`, which works in **any** browser. Local dev already uses token_hash
+templates (`supabase/config.toml` + `supabase/templates/*.html`); production
+must mirror them by hand - templates are not part of `db push`.
+
+### Steps
+
+1. Supabase Dashboard → **Authentication → Emails** (template editor).
+2. For each of the five templates below, set the **subject** and replace the
+   **message body** with the exact HTML from the matching file in
+   `supabase/templates/` (single source of truth - copy from the repo, do not
+   retype). The critical part is the link format (in the raw HTML the `&` is
+   written `&amp;`, exactly as in the repo files):
+
+   | Template       | Subject                               | Link in body (exact format)                                       |
+   | -------------- | ------------------------------------- | ----------------------------------------------------------------- |
+   | Confirm signup | `Confirm your email for Selftend`     | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=signup`       |
+   | Reset password | `Reset your Selftend password`        | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery`     |
+   | Magic link     | `Your Selftend sign-in link`          | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=magiclink`    |
+   | Change email   | `Confirm your new email for Selftend` | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email_change` |
+   | Invite user    | `You're invited to Selftend`          | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=invite`       |
+
+   Body files: `confirmation.html`, `recovery.html`, `magic_link.html`,
+   `email_change.html`, `invite.html` in `supabase/templates/`. (Invite matters
+   even without an invite UI: admin-API invitations from the Dashboard would
+   otherwise send the default PKCE `?code=` link, which breaks cross-browser.)
+
+3. **Verify Site URL** = `https://selftend.org` (Authentication → URL
+   Configuration). `{{ .RedirectTo }}` is the allowlist-validated `redirect_to`
+   the app sends; when a request carries none (or an unlisted one), GoTrue falls
+   back to the Site URL - it must be the production origin, never a preview or
+   localhost value. **Symptom of the fallback misfiring:** the emailed link
+   lands on the app ROOT (`https://<site-url>/?token_hash=...`) instead of
+   `/auth-callback`, nothing verifies, and the single-use token is silently
+   wasted - the user just sees the landing page.
+4. **Verify the redirect allowlist** contains `https://selftend.org/auth-callback`
+   (same URL Configuration page).
+5. Smoke test after saving: request a password reset from the production site,
+   open the email **in a different browser** than the one that requested it, and
+   confirm the link lands on `/auth-callback?token_hash=...&type=recovery` and
+   reaches the "Reset your password" screen. Repeat once for a fresh signup
+   confirmation.
+
+### Local development note
+
+The local stack reads these templates only at `supabase start` (`npm run
+db:start`) - a `db:reset` does NOT reload them. After editing
+`supabase/config.toml` or any file in `supabase/templates/`, restart the stack
+(`npm run db:stop && npm run db:start`) or the old templates keep being sent.
+
+### Deployment-order note
+
+Update these templates **together with (or before)** deploying an app version
+that includes the query-less password-reset redirect (2026-07). With NEW app +
+OLD templates, a recovery email still signs the user in but lands them in the
+app instead of the update-password screen (the old `?code=` link no longer
+carries the recovery marker). With OLD app + NEW templates everything works -
+the callback has handled `token_hash` links since the previous release. Links
+from emails sent before the switch keep working either way (the callback
+retains the `code` branch, which is also still used by web Google OAuth).
+
 ## Support Workflow
 
 - Check `support@selftend.org` at least weekly during testing and more often during public launch windows.

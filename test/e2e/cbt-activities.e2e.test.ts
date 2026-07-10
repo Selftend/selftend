@@ -60,7 +60,7 @@ test.describe("CBT activities: schedule and complete a behavioral-activation act
 
     // Rate mood before: click "Good" (score 4 on the MoodScale).
     // MoodScale renders Pressables with accessibilityLabel from mood:checkin.scaleLabels.
-    await page.getByRole("button", { name: "Good", exact: true }).click();
+    await page.getByRole("radio", { name: "Good", exact: true }).click();
 
     await page.getByRole("button", { name: "Save activity", exact: true }).click();
 
@@ -83,7 +83,7 @@ test.describe("CBT activities: schedule and complete a behavioral-activation act
     await expect(page).toHaveURL(/\/tools\/mood-tracker\/new/, { timeout: 15_000 });
 
     // Select mood score: "Good" (score 4, emoji 😊)
-    await page.getByRole("button", { name: "Good", exact: true }).click();
+    await page.getByRole("radio", { name: "Good", exact: true }).click();
 
     // Save the mood log - this also completes the activity and redirects back.
     await page.getByRole("button", { name: "Save", exact: true }).click();

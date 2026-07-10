@@ -9,6 +9,7 @@ import DateTimePicker, {
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { dateToTime, formatHHmm, timeToDate, type TimeOfDay } from "@/src/utils/time";
 
 interface TimeFieldProps {
@@ -20,6 +21,7 @@ interface TimeFieldProps {
 
 export function TimeField({ value, onChange, accessibilityLabel, disabled }: TimeFieldProps) {
   const { t } = useTranslation("common");
+  const reduceMotionEnabled = useReduceMotionEnabled();
   const [open, setOpen] = useState(false);
 
   // Android fires `dismissed` on cancel; ignore it and any missing date.
@@ -47,7 +49,7 @@ export function TimeField({ value, onChange, accessibilityLabel, disabled }: Tim
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ disabled: Boolean(disabled) }}
+        aria-disabled={Boolean(disabled)}
         disabled={disabled}
         onPress={openPicker}
         className={cn(
@@ -59,10 +61,18 @@ export function TimeField({ value, onChange, accessibilityLabel, disabled }: Tim
       </Pressable>
 
       {/* iOS only: Android uses the OS dialog opened above. */}
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal
+        visible={open}
+        transparent
+        animationType={reduceMotionEnabled ? "none" : "fade"}
+        onRequestClose={() => setOpen(false)}
+      >
         <Pressable
+          accessibilityLabel={t("close")}
+          accessibilityRole="button"
           className="flex-1 items-center justify-center bg-black/50 p-6"
           onPress={() => setOpen(false)}
+          role="button"
         >
           <Pressable className="w-full max-w-[340px] rounded-2xl bg-card p-3" onPress={() => {}}>
             <DateTimePicker

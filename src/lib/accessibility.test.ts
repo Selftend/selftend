@@ -20,7 +20,13 @@ import { AccessibilityInfo, Platform } from "react-native";
 
 // We drive Platform.OS per describe block by mutating the property.
 
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import {
+  announceMessage,
+  currentStateProps,
+  politeLiveRegionProps,
+  toggleButtonStateProps,
+  useReduceMotionEnabled,
+} from "@/src/lib/accessibility";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -198,6 +204,107 @@ describe("useReduceMotionEnabled - web", () => {
     });
 
     expect(result.current).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// toggleButtonStateProps / currentStateProps
+// ---------------------------------------------------------------------------
+
+describe("toggleButtonStateProps", () => {
+  afterEach(() => {
+    setPlatform("ios");
+  });
+
+  it("returns aria-pressed on web", () => {
+    setPlatform("web");
+
+    expect(toggleButtonStateProps(true)).toEqual({ "aria-pressed": true });
+    expect(toggleButtonStateProps(false)).toEqual({ "aria-pressed": false });
+  });
+
+  it("returns aria-selected on native", () => {
+    setPlatform("ios");
+
+    expect(toggleButtonStateProps(true)).toEqual({ "aria-selected": true });
+    expect(toggleButtonStateProps(false)).toEqual({ "aria-selected": false });
+  });
+});
+
+describe("currentStateProps", () => {
+  afterEach(() => {
+    setPlatform("ios");
+  });
+
+  it("returns aria-current with the kind when active on web", () => {
+    setPlatform("web");
+
+    expect(currentStateProps(true, "page")).toEqual({ "aria-current": "page" });
+    expect(currentStateProps(true, "step")).toEqual({ "aria-current": "step" });
+  });
+
+  it("returns aria-current undefined when inactive on web so the attribute is omitted", () => {
+    setPlatform("web");
+
+    expect(currentStateProps(false, "page")).toEqual({ "aria-current": undefined });
+  });
+
+  it("returns aria-selected on native", () => {
+    setPlatform("ios");
+
+    expect(currentStateProps(true, "page")).toEqual({ "aria-selected": true });
+    expect(currentStateProps(false, "step")).toEqual({ "aria-selected": false });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// politeLiveRegionProps / announceMessage
+// ---------------------------------------------------------------------------
+
+describe("politeLiveRegionProps", () => {
+  afterEach(() => {
+    setPlatform("ios");
+  });
+
+  it("returns a polite live region on web", () => {
+    setPlatform("web");
+
+    expect(politeLiveRegionProps()).toEqual({ "aria-live": "polite" });
+  });
+
+  it("returns nothing on native (announceMessage covers it)", () => {
+    setPlatform("ios");
+
+    expect(politeLiveRegionProps()).toEqual({});
+  });
+});
+
+describe("announceMessage", () => {
+  const mockAnnounce = jest.spyOn(AccessibilityInfo, "announceForAccessibility");
+
+  beforeEach(() => {
+    mockAnnounce.mockClear();
+    mockAnnounce.mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    setPlatform("ios");
+  });
+
+  it("announces via AccessibilityInfo on native", () => {
+    setPlatform("ios");
+
+    announceMessage("Saved");
+
+    expect(mockAnnounce).toHaveBeenCalledWith("Saved");
+  });
+
+  it("is a no-op on web", () => {
+    setPlatform("web");
+
+    announceMessage("Saved");
+
+    expect(mockAnnounce).not.toHaveBeenCalled();
   });
 });
 

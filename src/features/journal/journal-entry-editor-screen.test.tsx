@@ -208,6 +208,46 @@ describe("JournalEntryEditorScreen", () => {
     );
   });
 
+  it("saves exactly once when Save is pressed twice rapidly", async () => {
+    const mutateAsync = jest.fn().mockResolvedValue({
+      id: "j-1",
+      userId: "user-1",
+      title: "",
+      body: "Hello world",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    mockUseSaveJournalEntry.mockReturnValue({
+      mutateAsync,
+      isPending: false, // isPending has not re-rendered between the two presses
+    } as unknown as ReturnType<typeof useSaveJournalEntry>);
+
+    renderWithProviders(<JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />);
+
+    fireEvent.changeText(screen.getByLabelText("Body"), "Hello world");
+    fireEvent.press(screen.getByText("Save"));
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalled());
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows an inline error under Body and does not save when the body is empty", async () => {
+    const mutateAsync = jest.fn();
+    mockUseSaveJournalEntry.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useSaveJournalEntry>);
+
+    renderWithProviders(<JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />);
+
+    // Save stays enabled; pressing it with an empty body surfaces the inline error.
+    fireEvent.press(screen.getByText("Save"));
+
+    expect(await screen.findByText("Write a line or two before saving.")).toBeTruthy();
+    expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
   it("shows the generic save error and not the raw backend message on failure", async () => {
     const mutateAsync = jest
       .fn()

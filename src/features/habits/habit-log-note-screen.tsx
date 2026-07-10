@@ -1,9 +1,9 @@
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ActivityIndicator, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Label } from "@/src/components/react-native-reusables/label";
@@ -57,31 +57,9 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
   const saving = upsertNote.isPending;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerClassName="grow gap-6 p-6">
-        <View className="gap-2">
-          <ScreenHeader title={t("log.title")} />
-          <Text variant="muted">{t("log.subtitle")}</Text>
-          {habit ? (
-            <Text variant="muted" className="text-xs">
-              {habit.name} · {dateStr}
-            </Text>
-          ) : null}
-        </View>
-
-        <View className="gap-2">
-          <Label>{t("log.title")}</Label>
-          <Textarea
-            accessibilityLabel={t("log.title")}
-            maxLength={HABIT_NOTE_MAX}
-            onChangeText={setNote}
-            placeholder={t("log.placeholder")}
-            value={note}
-          />
-        </View>
-
-        {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
-
+    <MobileFormScreen
+      contentClassName="gap-6"
+      footer={
         <View className="flex-row gap-3">
           <View className="flex-1">
             <Button onPress={() => router.back()} variant="ghost">
@@ -95,7 +73,30 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
             </Button>
           </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      }
+    >
+      <View className="gap-2">
+        <ScreenHeader title={t("log.title")} />
+        <Text variant="muted">{t("log.subtitle")}</Text>
+        {habit ? (
+          <Text variant="muted" className="text-xs">
+            {habit.name} · {dateStr}
+          </Text>
+        ) : null}
+      </View>
+
+      <View className="gap-2">
+        <Label>{t("log.title")}</Label>
+        <Textarea
+          accessibilityLabel={t("log.title")}
+          maxLength={HABIT_NOTE_MAX}
+          onChangeText={setNote}
+          placeholder={t("log.placeholder")}
+          value={note}
+        />
+      </View>
+
+      {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
+    </MobileFormScreen>
   );
 }

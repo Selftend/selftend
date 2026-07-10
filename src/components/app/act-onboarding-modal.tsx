@@ -32,6 +32,7 @@ export function ActInfo({
       visible={visible}
       isPending={isPending}
       errorMessage={errorMessage}
+      accessibilityLabel={t("onboarding.welcome.title")}
       ctaLabel={isPending ? t("onboarding.commit.saving") : t("onboarding.info.gotIt")}
       ctaAlwaysCompletes
       onComplete={onComplete}

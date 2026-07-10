@@ -25,11 +25,14 @@ import {
 import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
 import { signUpSchema, type SignUpSchema } from "@/src/features/auth/schemas";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
+import { useAppColorScheme } from "@/src/lib/color-scheme";
 import { useSession } from "@/src/providers/session-provider";
+import { THEME } from "@/lib/theme";
 
 export function SignUpForm() {
   const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
+  const colorScheme = useAppColorScheme();
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
@@ -75,10 +78,33 @@ export function SignUpForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("signUp.title")}</CardTitle>
+        <CardTitle aria-level={1}>{t("signUp.title")}</CardTitle>
         <CardDescription>{t("signUp.subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="gap-4">
+        <Button
+          disabled={!hasSupabaseConfig || isGoogleSubmitting}
+          onPress={() => void onGoogleSubmit()}
+          variant="outline"
+        >
+          {isGoogleSubmitting ? (
+            <ActivityIndicator color={THEME[colorScheme].mutedForeground} />
+          ) : (
+            <Image
+              source={require("../../../assets/branding/google-logo.png")}
+              style={{ width: 18, height: 18 }}
+              resizeMode="contain"
+            />
+          )}
+          <Text>{isGoogleSubmitting ? t("signUp.googleOpening") : t("signUp.googleButton")}</Text>
+        </Button>
+
+        <View className="flex-row items-center gap-3">
+          <View className="h-px flex-1 bg-border" />
+          <Text className="text-xs text-muted-foreground">{t("common:orContinueWithEmail")}</Text>
+          <View className="h-px flex-1 bg-border" />
+        </View>
+
         <Controller
           control={control}
           name="name"
@@ -86,6 +112,7 @@ export function SignUpForm() {
             <View className="gap-2">
               <Label>{t("signUp.name")}</Label>
               <Input
+                accessibilityLabel={t("signUp.name")}
                 autoCapitalize="words"
                 autoCorrect={false}
                 onBlur={onBlur}
@@ -96,7 +123,7 @@ export function SignUpForm() {
                 value={value}
               />
               {errors.name?.message ? (
-                <Text className="text-sm text-destructive">{errors.name.message}</Text>
+                <Text className="text-sm text-destructive">{t(errors.name.message)}</Text>
               ) : null}
             </View>
           )}
@@ -110,6 +137,7 @@ export function SignUpForm() {
               <Label>{t("signUp.email")}</Label>
               <Input
                 ref={emailRef}
+                accessibilityLabel={t("signUp.email")}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
@@ -121,7 +149,7 @@ export function SignUpForm() {
                 value={value}
               />
               {errors.email?.message ? (
-                <Text className="text-sm text-destructive">{errors.email.message}</Text>
+                <Text className="text-sm text-destructive">{t(errors.email.message)}</Text>
               ) : null}
             </View>
           )}
@@ -135,6 +163,7 @@ export function SignUpForm() {
               <Label>{t("signUp.password")}</Label>
               <Input
                 ref={passwordRef}
+                accessibilityLabel={t("signUp.password")}
                 autoCapitalize="none"
                 autoCorrect={false}
                 onBlur={onBlur}
@@ -149,7 +178,7 @@ export function SignUpForm() {
                 {t("validation.passwordMin12Hint")}
               </Text>
               {errors.password?.message ? (
-                <Text className="text-sm text-destructive">{errors.password.message}</Text>
+                <Text className="text-sm text-destructive">{t(errors.password.message)}</Text>
               ) : null}
             </View>
           )}
@@ -163,6 +192,7 @@ export function SignUpForm() {
               <Label>{t("signUp.confirmPassword")}</Label>
               <Input
                 ref={confirmPasswordRef}
+                accessibilityLabel={t("signUp.confirmPassword")}
                 autoCapitalize="none"
                 autoCorrect={false}
                 onBlur={onBlur}
@@ -174,7 +204,9 @@ export function SignUpForm() {
                 value={value}
               />
               {errors.confirmPassword?.message ? (
-                <Text className="text-sm text-destructive">{errors.confirmPassword.message}</Text>
+                <Text className="text-sm text-destructive">
+                  {t(errors.confirmPassword.message)}
+                </Text>
               ) : null}
             </View>
           )}
@@ -201,7 +233,7 @@ export function SignUpForm() {
           />
         </Button>
 
-        <View className="items-center gap-1 pt-1">
+        <View className="flex-row flex-wrap items-center justify-center gap-x-1 pt-1">
           <Text className="text-sm text-muted-foreground">{t("signUp.hasAccount")}</Text>
           <Button onPress={() => router.push("/(auth)/sign-in")} variant="link">
             <Text>{t("signUp.signInLink")}</Text>
@@ -216,27 +248,6 @@ export function SignUpForm() {
             <Text className="text-xs">{t("signUp.privacyLink")}</Text>
           </Button>
         </View>
-
-        <View className="items-center">
-          <Text className="text-sm text-muted-foreground">{t("common:or")}</Text>
-        </View>
-
-        <Button
-          disabled={!hasSupabaseConfig || isGoogleSubmitting}
-          onPress={() => void onGoogleSubmit()}
-          variant="outline"
-        >
-          {isGoogleSubmitting ? (
-            <ActivityIndicator color="#20312c" />
-          ) : (
-            <Image
-              source={require("../../../assets/branding/google-logo.png")}
-              style={{ width: 18, height: 18 }}
-              resizeMode="contain"
-            />
-          )}
-          <Text>{isGoogleSubmitting ? t("signUp.googleOpening") : t("signUp.googleButton")}</Text>
-        </Button>
       </CardContent>
     </Card>
   );

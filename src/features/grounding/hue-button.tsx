@@ -8,7 +8,8 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 // Hues bright enough in light mode that white text fails contrast — use dark text.
 // In dark mode every hue is pastel, so dark text is always used.
-const LIGHT_MODE_DARK_TEXT = new Set<ExerciseHue>(["iris", "be", "think"]);
+// "be" moved out when its light token darkened to 330 56% 47% (white 5.4:1, dark text 3.4:1).
+const LIGHT_MODE_DARK_TEXT = new Set<ExerciseHue>(["iris", "think"]);
 const DARK_TEXT = "#15121b";
 const LIGHT_TEXT = "#ffffff";
 
@@ -36,7 +37,7 @@ export function HueButton({ hue, label, onPress, icon, disabled, loading }: HueB
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="button"
-      accessibilityState={{ disabled: blocked }}
+      aria-disabled={blocked}
       disabled={blocked}
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={onPress}

@@ -58,6 +58,7 @@ export function CbtOnboarding({
       visible={visible}
       isPending={isPending}
       errorMessage={errorMessage}
+      accessibilityLabel={t("onboarding.intro.title")}
       ctaLabel={t("onboarding.intro.continue")}
       onComplete={onComplete}
       onDismiss={onDismiss}

@@ -131,7 +131,12 @@ describe("worry repository", () => {
     const select = jest.fn(() => ({ eq: eqUser }));
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
-    await expect(getWorryEntry("user-1", "missing")).resolves.toBeNull();
+    // Well-formed uuid that matches no row, so the query itself runs (a malformed
+    // id short-circuits to null before supabase).
+    await expect(
+      getWorryEntry("user-1", "11111111-1111-4111-8111-111111111111"),
+    ).resolves.toBeNull();
+    expect(maybeSingle).toHaveBeenCalled();
   });
 
   it("updates an existing worry when entryId is provided", async () => {

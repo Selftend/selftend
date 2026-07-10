@@ -41,7 +41,7 @@ import { playIntroCue, useBreathingAudio } from "@/src/features/breathing/use-br
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useAppColorScheme } from "@/src/lib/color-scheme";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useSaveBreathingSession } from "@/src/features/breathing/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -50,6 +50,15 @@ type ScreenPhase = "intro" | "preroll" | "active";
 
 const CIRCLE_MIN = 80;
 const CIRCLE_MAX = 160;
+// Reduced-motion pacer: instead of animating the inner circle's size, each
+// phase steps its opacity (both holds share the mid step). The phase label and
+// countdown below the pacer carry the same information as text.
+const PHASE_OPACITY: Record<BreathingPhase["label"], number> = {
+  inhale: 1,
+  hold: 0.7,
+  exhale: 0.4,
+  holdOut: 0.7,
+};
 const TICK_MS = 250;
 const DEFAULT_PATTERN = "box-breathing";
 // A beat of silence after the spoken intro before the breathing sequence starts.
@@ -99,7 +108,9 @@ export default function BreathingSessionScreen() {
   const finishingRef = useRef(false);
   const prerollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const reduceMotionEnabled = useReduceMotionEnabled();
   const circleSize = useSharedValue(CIRCLE_MIN);
+  const innerOpacity = useSharedValue(1);
   const saveMutation = useSaveBreathingSession(user?.id ?? null);
   const audioPrefs = mergeUserPreferences(prefs, {});
 
@@ -139,6 +150,8 @@ export default function BreathingSessionScreen() {
     width: circleSize.value,
     height: circleSize.value,
     borderRadius: circleSize.value / 2,
+    // Stays at 1 unless reduced motion steps it per phase in animateForPhase.
+    opacity: innerOpacity.value,
     backgroundColor: `hsla(${aqua}, 0.22)`,
     borderWidth: 2,
     borderColor: `hsl(${aqua})`,
@@ -203,6 +216,13 @@ export default function BreathingSessionScreen() {
         : phase.label === "exhale"
           ? CIRCLE_MIN
           : circleSize.value;
+    if (reduceMotionEnabled) {
+      // Reduced motion: no withTiming - jump straight to the phase's size and
+      // step the inner circle's opacity so each phase stays distinguishable.
+      circleSize.value = toSize;
+      innerOpacity.value = PHASE_OPACITY[phase.label];
+      return;
+    }
     circleSize.value = withTiming(toSize, {
       duration: phase.durationSeconds * 1000,
       easing: Easing.inOut(Easing.ease),
@@ -259,6 +279,7 @@ export default function BreathingSessionScreen() {
         finishingRef.current = false;
         phaseIndexRef.current = -1;
         circleSize.value = CIRCLE_MIN;
+        innerOpacity.value = 1;
         setScreenPhase("intro"); // also stops audio (useBreathingAudio active → false)
         setCurrentPhase(null);
         setCurrentCycle(0);
@@ -423,7 +444,7 @@ export default function BreathingSessionScreen() {
               <Card>
                 {benefit ? (
                   <CardHeader>
-                    <CardTitle>{benefit}</CardTitle>
+                    <CardTitle aria-level={2}>{benefit}</CardTitle>
                   </CardHeader>
                 ) : null}
                 <CardContent>

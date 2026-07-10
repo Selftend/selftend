@@ -23,10 +23,9 @@ import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { CARD_COLOR } from "@/lib/theme";
 
 const COLLAPSED_PAIRS = 2;
-// Fade target = the card background, mirroring module-home-header's CARD_COLOR.
-const CARD_COLOR = { dark: "#1f1b27", light: "#fdfcfe" } as const;
 
 export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
   const { t } = useTranslation("gratitude");
@@ -83,6 +82,8 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t(expanded ? "list.collapseEntry" : "list.expandEntry", { when })}
+        // Only a real toggle announces expanded state; short entries are a no-op press.
+        aria-expanded={hasMore ? isOpen : undefined}
         onPress={() => {
           if (hasMore) setExpanded((v) => !v);
         }}

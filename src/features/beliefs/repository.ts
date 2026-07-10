@@ -1,5 +1,6 @@
 import type { CoreBelief, CoreBeliefInput } from "@/src/features/beliefs/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
 
 interface CoreBeliefRow {
   id: string;
@@ -49,6 +50,8 @@ export async function listCoreBeliefs(userId: string) {
 }
 
 export async function getCoreBelief(userId: string, beliefId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(beliefId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("core_beliefs")

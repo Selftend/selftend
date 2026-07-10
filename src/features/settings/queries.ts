@@ -48,7 +48,13 @@ export function useUpdateUserPreferences(userId: string | null) {
         queryClient.setQueryData(preferenceKeys.detail(userId), context.previous);
       }
     },
-    onSettled: async () => {
+    // Reconcile with the server on SUCCESS ONLY - never after a failure. Invalidating
+    // after a failed push refetches preferences, which hands settings-sync a "fresh"
+    // preferences object whose values still differ from local, which re-triggers the
+    // push, which fails again... an infinite upsert loop (observed as endless 409s
+    // when a still-valid JWT belongs to a deleted user). On error the onMutate
+    // rollback above already restored the cache.
+    onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: preferenceKeys.detail(userId) });
     },

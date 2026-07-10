@@ -16,6 +16,7 @@ import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { useRecordPolicyConsent } from "@/src/features/settings/queries";
+import { spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 
 interface ConsentGateProps {
@@ -62,13 +63,15 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
               <Pressable
                 accessibilityLabel={t("consent.checkbox")}
                 accessibilityRole="checkbox"
-                accessibilityState={{ checked: accepted }}
+                aria-checked={accepted}
                 className="flex-row items-start gap-3"
                 onPress={() => setAccepted(!accepted)}
                 role="checkbox"
+                {...spaceKeyActivationProps(() => setAccepted(!accepted))}
               >
                 <Checkbox
                   accessibilityElementsHidden
+                  aria-hidden
                   checked={accepted}
                   importantForAccessibility="no"
                   onCheckedChange={setAccepted}
@@ -76,10 +79,7 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
                 <Text className="flex-1 text-sm">{t("consent.checkbox")}</Text>
               </Pressable>
               <Button
-                accessibilityState={{
-                  busy: consentMutation.isPending,
-                  disabled: !accepted || consentMutation.isPending,
-                }}
+                aria-busy={consentMutation.isPending}
                 disabled={!accepted || consentMutation.isPending}
                 onPress={() => void handleAccept()}
               >

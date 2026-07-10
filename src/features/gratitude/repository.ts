@@ -7,6 +7,8 @@ import {
 } from "@/src/features/gratitude/schemas";
 import type { GratitudeLevel } from "@/src/features/modules/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
+import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
 interface GratitudeEntryRow {
   id: string;
@@ -32,13 +34,22 @@ interface GratitudeEntryRow {
 }
 
 // Trim and clamp each slot, keep positions, pad/truncate to a fixed length.
-// Blanks are preserved - slot index ↔ question index.
+// Blanks are preserved - slot index ↔ question index. Pure positioning only:
+// sanitizing is a WRITE-path concern (sanitizeWriteItems below); this also runs
+// on READ (mapGratitudeEntry), which must never rewrite stored text.
 function positionalItems(items: string[], count: number): string[] {
   const out: string[] = [];
   for (let i = 0; i < count; i++) {
     out.push((items[i] ?? "").trim().slice(0, GRATITUDE_ITEM_MAX));
   }
   return out;
+}
+
+// Write-path sanitize, applied AFTER the slice above: slicing after sanitizing
+// could cut an emoji pair at the length boundary and reintroduce exactly the
+// unpaired surrogate sanitizeUserText exists to remove (a failed insert).
+function sanitizeWriteItems(items: string[]): string[] {
+  return items.map((item) => sanitizeUserText(item).trim());
 }
 
 function sanitizeLevel(value: number | null): GratitudeLevel {
@@ -128,6 +139,8 @@ export async function listFavoriteGratitudeEntries(userId: string, limit = 100) 
 }
 
 export async function getGratitudeEntry(userId: string, id: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(id)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("gratitude_entries")
@@ -141,14 +154,16 @@ export async function getGratitudeEntry(userId: string, id: string) {
 }
 
 export async function saveGratitudeEntry(userId: string, input: GratitudeInput, entryId?: string) {
-  const items = positionalItems(input.items, GRATITUDE_ITEM_COUNT);
+  const items = sanitizeWriteItems(positionalItems(input.items, GRATITUDE_ITEM_COUNT));
   if (items.every((item) => item.length === 0)) {
     throw new Error("At least one gratitude item is required.");
   }
 
-  const lifeItems = positionalItems(input.lifeItems ?? [], GRATITUDE_LIFE_ITEM_COUNT);
+  const lifeItems = sanitizeWriteItems(
+    positionalItems(input.lifeItems ?? [], GRATITUDE_LIFE_ITEM_COUNT),
+  );
   const events = (input.events ?? [])
-    .map((e) => e.trim())
+    .map((e) => sanitizeUserText(e).trim())
     .filter((e) => e.length > 0)
     .slice(0, GRATITUDE_EVENT_COUNT);
 
@@ -160,11 +175,11 @@ export async function saveGratitudeEntry(userId: string, input: GratitudeInput, 
     item_3: items[2] ?? "",
     item_4: items[3] ?? "",
     item_5: items[4] ?? "",
-    note: input.note.trim(),
+    note: sanitizeUserText(input.note).trim(),
     events,
-    good_moment: (input.goodMoment ?? "").trim(),
-    miss_if_gone: (input.missIfGone ?? "").trim(),
-    hidden_good: (input.hiddenGood ?? "").trim(),
+    good_moment: sanitizeUserText(input.goodMoment ?? "").trim(),
+    miss_if_gone: sanitizeUserText(input.missIfGone ?? "").trim(),
+    hidden_good: sanitizeUserText(input.hiddenGood ?? "").trim(),
     life_item_1: lifeItems[0] ?? "",
     life_item_2: lifeItems[1] ?? "",
     life_item_3: lifeItems[2] ?? "",

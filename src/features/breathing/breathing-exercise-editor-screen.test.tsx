@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 
 import { BreathingExerciseEditorScreen } from "@/src/features/breathing/breathing-exercise-editor-screen";
+import { BREATHING_EXERCISE_COLORS } from "@/src/features/breathing/exercise-types";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 const mockSave = jest.fn().mockResolvedValue({ id: "e-1" });
@@ -40,5 +41,17 @@ describe("BreathingExerciseEditorScreen", () => {
     fireEvent.press(screen.getByText("Save"));
     await waitFor(() => expect(mockSave).toHaveBeenCalled());
     expect(mockSave.mock.calls[0][0].input.name).toBe("Evening wind-down");
+  });
+
+  it("exposes the color picker as radios with exactly one checked color", () => {
+    renderWithProviders(<BreathingExerciseEditorScreen exerciseId={null} />);
+    const radios = screen.getAllByRole("radio");
+    expect(radios).toHaveLength(BREATHING_EXERCISE_COLORS.length);
+
+    fireEvent.press(radios[2]);
+
+    const checked = screen.getAllByRole("radio", { checked: true });
+    expect(checked).toHaveLength(1);
+    expect(checked[0]).toBe(radios[2]);
   });
 });

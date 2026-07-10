@@ -16,6 +16,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { THEME } from "@/lib/theme";
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useAppColorScheme } from "@/src/lib/color-scheme";
 import {
   currentDateKey,
@@ -113,9 +114,10 @@ const DayChip = memo(function DayChip({
   return (
     <View style={{ width: ITEM_WIDTH }} className="items-center">
       <Pressable
-        accessibilityRole="button"
+        accessibilityRole="radio"
         accessibilityLabel={a11y}
-        accessibilityState={{ selected }}
+        aria-checked={selected}
+        role="radio"
         onPress={() => onSelect(keyDate)}
         className={cn(
           "min-w-[44px] items-center rounded-full px-2 py-1.5",
@@ -145,6 +147,7 @@ const DayChip = memo(function DayChip({
 
 export function DateBar() {
   const { t, i18n } = useTranslation("navigation");
+  const reduceMotionEnabled = useReduceMotionEnabled();
   const lang = i18n.language;
   const selectedDate = useSelectedDateStore((s) => s.selectedDate);
   const setSelectedDate = useSelectedDateStore((s) => s.setSelectedDate);
@@ -255,6 +258,9 @@ export function DateBar() {
 
       <FlatList
         ref={listRef}
+        accessibilityLabel={t("dateBar.selectDate")}
+        accessibilityRole="radiogroup"
+        role="radiogroup"
         data={days}
         extraData={selectedDate}
         keyExtractor={(key) => key}
@@ -294,7 +300,7 @@ export function DateBar() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t("dateBar.today")}
-        accessibilityState={{ disabled: onToday }}
+        aria-disabled={onToday}
         disabled={onToday}
         onPress={goToday}
         className={cn(
@@ -313,12 +319,15 @@ export function DateBar() {
       <Modal
         visible={pickerOpen}
         transparent
-        animationType="fade"
+        animationType={reduceMotionEnabled ? "none" : "fade"}
         onRequestClose={() => setPickerOpen(false)}
       >
         <Pressable
+          accessibilityLabel={t("dateBar.closeCalendar")}
+          accessibilityRole="button"
           className="flex-1 items-center justify-center bg-black/50 p-6"
           onPress={() => setPickerOpen(false)}
+          role="button"
         >
           <Pressable className="w-full max-w-[340px] rounded-2xl bg-card p-3" onPress={() => {}}>
             <DateTimePicker

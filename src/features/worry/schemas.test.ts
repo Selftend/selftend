@@ -66,3 +66,37 @@ describe("worryEntryFormSchema", () => {
     );
   });
 });
+
+describe("validation messages are i18n keys", () => {
+  // Resolved via t() in the "cbt" namespace at render time; the i18n
+  // key-coverage test guarantees each key exists in en and bg.
+  it("emits keys for the empty statement, missing coping statement, and missing steps", () => {
+    const hypothetical = worryEntryFormSchema.safeParse({
+      worryStatement: "",
+      worryCategory: "hypothetical",
+      probabilityEstimate: null,
+      evidenceFor: [],
+      evidenceAgainst: [],
+      copingStatement: "",
+      actionSteps: [],
+    });
+    expect(hypothetical.success).toBe(false);
+    const hypotheticalMessages = hypothetical.error!.issues.map((issue) => issue.message);
+    expect(hypotheticalMessages).toContain("worry.validation.worryStatement");
+    expect(hypotheticalMessages).toContain("worry.validation.copingStatement");
+
+    const real = worryEntryFormSchema.safeParse({
+      worryStatement: "Deadline tight",
+      worryCategory: "real_problem",
+      probabilityEstimate: null,
+      evidenceFor: [],
+      evidenceAgainst: [],
+      copingStatement: "",
+      actionSteps: [],
+    });
+    expect(real.success).toBe(false);
+    expect(real.error!.issues.map((issue) => issue.message)).toContain(
+      "worry.validation.actionSteps",
+    );
+  });
+});

@@ -21,8 +21,8 @@ const MAX_SCORE = 5;
 
 export function MoodLineChart({ data, height = 160, width = 300 }: MoodLineChartProps) {
   const isDark = useAppColorScheme() === "dark";
-  const lineColor = isDark ? "hsl(330, 62%, 72%)" : "hsl(330, 56%, 60%)";
-  const fillColor = isDark ? "hsla(330, 62%, 72%, 0.14)" : "hsla(330, 56%, 60%, 0.12)";
+  const lineColor = isDark ? "hsl(330, 62%, 72%)" : "hsl(330, 56%, 47%)";
+  const fillColor = isDark ? "hsla(330, 62%, 72%, 0.14)" : "hsla(330, 56%, 47%, 0.12)";
   const gridColor = isDark ? "hsl(260, 12%, 24%)" : "hsl(260, 14%, 87%)";
   const labelColor = isDark ? "hsl(260, 12%, 72%)" : "hsl(260, 8%, 42%)";
 

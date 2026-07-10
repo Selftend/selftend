@@ -9,6 +9,8 @@ import type {
   TmiTechnique,
 } from "@/src/features/meditation/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
+import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
 interface MeditationSessionRow {
   id: string;
@@ -126,6 +128,8 @@ export async function countMeditationSessions(userId: string): Promise<number> {
 }
 
 export async function getMeditationSession(userId: string, sessionId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(sessionId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("meditation_sessions")
@@ -151,7 +155,7 @@ export async function saveMeditationSession(userId: string, input: MeditationSes
       dullness_level: input.dullnessLevel ?? null,
       distraction_level: input.distractionLevel ?? null,
       obstacle_tags: input.obstacleTags ?? [],
-      reflection: input.reflection?.trim() ?? "",
+      reflection: sanitizeUserText(input.reflection ?? "").trim(),
       mood_after: input.moodAfter ?? null,
       technique_used: input.techniqueUsed ?? null,
     })

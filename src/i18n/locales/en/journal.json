@@ -36,6 +36,7 @@
     "cancel": "Cancel",
     "save": "Save",
     "update": "Update",
+    "bodyRequired": "Write a line or two before saving.",
     "saveError": "Couldn't save your entry. Try again.",
     "notFound": "We couldn't find that entry."
   },

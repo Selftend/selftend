@@ -14,6 +14,7 @@ import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { useSaveWorryEntry, useWorryEntry } from "@/src/features/worry/queries";
 import { worryEntryFormSchema, type WorryEntryFormSchema } from "@/src/features/worry/schemas";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
@@ -73,7 +74,7 @@ export default function NewWorryScreen() {
   const evidenceAgainstField = useStringListField(form, "evidenceAgainst");
   const actionStepsField = useStringListField(form, "actionSteps");
 
-  const handleSave = handleSubmit(async (values) => {
+  const submitForm = handleSubmit(async (values) => {
     try {
       const sanitized: WorryEntryFormSchema = {
         ...values,
@@ -96,6 +97,9 @@ export default function NewWorryScreen() {
       showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
     }
   });
+  // RHF's handleSubmit does not block re-entrant calls (isSubmitting is React state that
+  // hasn't re-rendered between two rapid presses), so guard against double-press inserts.
+  const handleSave = useSingleFlight(submitForm);
 
   const renderArrayInput = (
     label: string,
@@ -160,7 +164,7 @@ export default function NewWorryScreen() {
                 value={value}
               />
               {errors.worryStatement?.message ? (
-                <Text className="text-sm text-destructive">{errors.worryStatement.message}</Text>
+                <Text className="text-sm text-destructive">{t(errors.worryStatement.message)}</Text>
               ) : null}
             </View>
           )}
@@ -232,7 +236,7 @@ export default function NewWorryScreen() {
                   />
                   {errors.copingStatement?.message ? (
                     <Text className="text-sm text-destructive">
-                      {errors.copingStatement.message}
+                      {t(errors.copingStatement.message)}
                     </Text>
                   ) : null}
                 </View>
@@ -248,7 +252,7 @@ export default function NewWorryScreen() {
               actionStepsField,
             )}
             {errors.actionSteps?.message ? (
-              <Text className="text-sm text-destructive">{errors.actionSteps.message}</Text>
+              <Text className="text-sm text-destructive">{t(errors.actionSteps.message)}</Text>
             ) : null}
           </View>
         )}

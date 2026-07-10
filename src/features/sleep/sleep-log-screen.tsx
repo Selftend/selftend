@@ -8,12 +8,14 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { DurationStepper } from "@/src/features/sleep/duration-stepper";
 import { StarRating } from "@/src/features/sleep/star-rating";
 import { useSleepLog, useSleepLogs, useSaveSleepLog } from "@/src/features/sleep/queries";
 import type { SleepLog } from "@/src/features/sleep/types";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate, loggedAtForSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -72,7 +74,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
     router.push(fallbackHref);
   };
 
-  const handleSave = async () => {
+  const handleSave = useSingleFlight(async () => {
     if (!user) return;
     if (!durationMinutes) {
       setError(t("log.durationRequired"));
@@ -97,7 +99,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
     } catch (e) {
       setError(e instanceof Error ? e.message : t("log.saveError"));
     }
-  };
+  });
 
   if (editMode && !fromCache && isLoading) {
     return (
@@ -123,42 +125,10 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerClassName="grow gap-6 p-6 pb-12">
-        <View className="gap-2">
-          <ScreenHeader title={editMode ? t("log.editTitle") : t("log.title")} />
-          <Text variant="muted">{editMode ? t("log.editDescription") : t("log.description")}</Text>
-        </View>
-
-        <View className="gap-3">
-          <Label>{t("log.durationLabel")}</Label>
-          <DurationStepper
-            value={durationMinutes ?? DEFAULT_DURATION_MINUTES}
-            onChange={setDurationMinutes}
-          />
-        </View>
-
-        <View className="gap-3">
-          <Label>{t("log.qualityLabel")}</Label>
-          <Text variant="muted" className="text-sm">
-            {t("log.qualityHint")}
-          </Text>
-          <StarRating value={quality} onChange={setQuality} />
-        </View>
-
-        <View className="gap-2">
-          <Label>{t("log.notesLabel")}</Label>
-          <Textarea
-            accessibilityLabel={t("log.notesLabel")}
-            onChangeText={setNotes}
-            placeholder={t("log.notesPlaceholder")}
-            value={notes}
-          />
-        </View>
-
-        {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
-
-        <View className="flex-row gap-3">
+    <MobileFormScreen
+      contentClassName="mx-auto w-full max-w-2xl gap-6"
+      footer={
+        <View className="mx-auto w-full max-w-2xl flex-row gap-3">
           <View className="flex-1">
             <Button onPress={goBack} variant="ghost">
               <Text>{t("log.cancel")}</Text>
@@ -171,7 +141,40 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
             </Button>
           </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      }
+    >
+      <View className="gap-2">
+        <ScreenHeader title={editMode ? t("log.editTitle") : t("log.title")} />
+        <Text variant="muted">{editMode ? t("log.editDescription") : t("log.description")}</Text>
+      </View>
+
+      <View className="gap-3">
+        <Label>{t("log.durationLabel")}</Label>
+        <DurationStepper
+          value={durationMinutes ?? DEFAULT_DURATION_MINUTES}
+          onChange={setDurationMinutes}
+        />
+      </View>
+
+      <View className="gap-3">
+        <Label>{t("log.qualityLabel")}</Label>
+        <Text variant="muted" className="text-sm">
+          {t("log.qualityHint")}
+        </Text>
+        <StarRating value={quality} onChange={setQuality} />
+      </View>
+
+      <View className="gap-2">
+        <Label>{t("log.notesLabel")}</Label>
+        <Textarea
+          accessibilityLabel={t("log.notesLabel")}
+          onChangeText={setNotes}
+          placeholder={t("log.notesPlaceholder")}
+          value={notes}
+        />
+      </View>
+
+      {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
+    </MobileFormScreen>
   );
 }

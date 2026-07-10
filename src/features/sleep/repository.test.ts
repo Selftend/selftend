@@ -48,7 +48,20 @@ describe("sleep repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(getSleepLog("user-1", "missing")).resolves.toBeNull();
+    // Well-formed uuid that matches no row, so the query itself runs (a malformed
+    // id short-circuits to null before supabase).
+    await expect(getSleepLog("user-1", "11111111-1111-4111-8111-111111111111")).resolves.toBeNull();
+    expect(maybeSingle).toHaveBeenCalled();
+  });
+
+  it("returns null for a malformed id without calling supabase", async () => {
+    // /tools/sleep/999: PostgREST would reject the uuid cast with a 400 (console
+    // error), so the repository must not fire the doomed request at all.
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(getSleepLog("user-1", "999")).resolves.toBeNull();
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("trims notes and inserts a new log", async () => {

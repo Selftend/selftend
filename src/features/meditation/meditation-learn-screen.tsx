@@ -19,21 +19,21 @@ export default function MeditationLearnScreen() {
 
           <Card className="border-primary/30 bg-primary/5">
             <CardContent className="gap-2 pt-6">
-              <CardTitle>{t("module.learn.attentionTitle")}</CardTitle>
+              <CardTitle aria-level={2}>{t("module.learn.attentionTitle")}</CardTitle>
               <Text variant="muted">{t("module.learn.attentionBody")}</Text>
             </CardContent>
           </Card>
 
           <Card className="border-be/30 bg-be/5">
             <CardContent className="gap-2 pt-6">
-              <CardTitle>{t("module.learn.gardenerTitle")}</CardTitle>
+              <CardTitle aria-level={2}>{t("module.learn.gardenerTitle")}</CardTitle>
               <Text variant="muted">{t("module.learn.gardenerBody")}</Text>
             </CardContent>
           </Card>
 
           <Card className="border-act/30 bg-act/5">
             <CardContent className="gap-2 pt-6">
-              <CardTitle>{t("module.learn.nonLinearTitle")}</CardTitle>
+              <CardTitle aria-level={2}>{t("module.learn.nonLinearTitle")}</CardTitle>
               <Text variant="muted">{t("module.learn.nonLinearBody")}</Text>
             </CardContent>
           </Card>

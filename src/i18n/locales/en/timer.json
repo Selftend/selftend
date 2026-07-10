@@ -1,7 +1,8 @@
 {
   "duration": {
     "minutes": "{{count}} min",
-    "minutesUnit": "min"
+    "minutesUnit": "min",
+    "editLabel": "Edit duration in minutes"
   },
   "interval": {
     "label": "Interval bell",

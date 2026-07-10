@@ -6,7 +6,7 @@ import { hasSupabaseConfig } from "@/src/lib/env";
 import { initializeSupabaseAutoRefresh, supabase } from "@/src/lib/supabase";
 import { captureError, setSentryUser } from "@/src/lib/sentry";
 import { clearPersistedQueryCache } from "@/src/lib/query-client";
-import { resetAllDraftStores } from "@/src/stores/draft-store-registry";
+import { purgePersistedWizardDrafts, resetAllDraftStores } from "@/src/stores/draft-store-registry";
 
 type SessionStatus = "loading" | "ready";
 
@@ -61,6 +61,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
       if (event === "SIGNED_OUT") {
         queryClient.clear();
         resetAllDraftStores();
+        // resetAllDraftStores only reaches stores REGISTERED in this JS context
+        // (registration happens at module evaluation) - a wizard whose screen was
+        // never visited in this page load still has its persisted draft (PHI) on
+        // disk. The prefix purge removes every persisted wizard draft regardless
+        // of registration, so a later account on the same device can never see a
+        // previous user's in-progress records.
+        purgePersistedWizardDrafts().catch((error) => captureError(error));
         clearPersistedQueryCache().catch((error) => captureError(error));
       }
 

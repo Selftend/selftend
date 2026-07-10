@@ -8,6 +8,7 @@ import { Card, CardContent, CardTitle } from "@/src/components/react-native-reus
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useSaveStagePracticeNote, useStagePracticeNotes } from "@/src/features/meditation/queries";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useLocaleFormats } from "@/src/lib/locale-format";
 
@@ -25,23 +26,23 @@ export function MeditationDailyLifeCard() {
 
   const [draft, setDraft] = useState("");
 
-  function handleSave() {
+  const handleSave = useSingleFlight(async () => {
     const trimmed = draft.trim();
     if (!trimmed) return;
-    saveMutation.mutate(
-      { stage: STAGE, note: trimmed },
-      {
-        onSuccess: () => setDraft(""),
-      },
-    );
-  }
+    try {
+      await saveMutation.mutateAsync({ stage: STAGE, note: trimmed });
+      setDraft("");
+    } catch {
+      // Failure is surfaced via the global save-failed toast.
+    }
+  });
 
   const recent = (notes ?? []).slice(0, MAX_RECENT);
 
   return (
     <Card className="border-be/30 bg-be/5">
       <CardContent className="gap-3 pt-6">
-        <CardTitle>{t("module.dailyLife.title")}</CardTitle>
+        <CardTitle aria-level={2}>{t("module.dailyLife.title")}</CardTitle>
         <Text variant="muted" className="text-sm">
           {t("module.dailyLife.subtitle")}
         </Text>

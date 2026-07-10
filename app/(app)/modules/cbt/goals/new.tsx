@@ -117,7 +117,9 @@ export default function NewGoalScreen() {
     },
   });
 
-  if (goalId && (goalLoading || milestonesLoading)) {
+  // Wait for the persisted draft to rehydrate before mounting the form, exactly
+  // like the edit-mode data gate below - otherwise the wizard would flash empty.
+  if (!wizard.hydrated || (goalId && (goalLoading || milestonesLoading))) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">

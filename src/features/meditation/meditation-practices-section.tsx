@@ -30,7 +30,7 @@ export function MeditationPracticesSection({ initialPractice }: MeditationPracti
     <View className="gap-3">
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ expanded: sectionOpen }}
+        aria-expanded={sectionOpen}
         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
         onPress={() => setSectionOpen((o) => !o)}
         className="flex-row items-center justify-between"
@@ -54,7 +54,7 @@ export function MeditationPracticesSection({ initialPractice }: MeditationPracti
               <Pressable
                 key={p.slug}
                 accessibilityRole="button"
-                accessibilityState={{ expanded: open }}
+                aria-expanded={open}
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                 onPress={() => setSelected(open ? null : p.slug)}
                 className={cn("overflow-hidden rounded-2xl border bg-card p-4", hue.classes.border)}

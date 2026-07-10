@@ -1,5 +1,6 @@
 import type { SelfCareLog, SelfCareLogInput } from "@/src/features/self-care/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
 interface SelfCareLogRow {
   id: string;
@@ -73,12 +74,12 @@ export async function upsertSelfCareLog(userId: string, input: SelfCareLogInput)
       log_date: input.logDate,
       exercise_done: input.exerciseDone,
       exercise_minutes: input.exerciseMinutes,
-      exercise_type: input.exerciseType.trim(),
+      exercise_type: sanitizeUserText(input.exerciseType).trim(),
       meals_structured: input.mealsStructured,
       emotional_eating: input.emotionalEating,
       social_connection_made: input.socialConnectionMade,
-      social_notes: input.socialNotes.trim(),
-      meaningful_activity: input.meaningfulActivity.trim(),
+      social_notes: sanitizeUserText(input.socialNotes).trim(),
+      meaningful_activity: sanitizeUserText(input.meaningfulActivity).trim(),
     })
     .select("*")
     .single();

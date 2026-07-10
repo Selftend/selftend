@@ -66,17 +66,17 @@ test.describe("settings - language switch", () => {
     await expect(page.getByText("Switch language", { exact: true })).toBeVisible();
 
     // Verify "English" is currently selected (has a checkmark) and "Bulgarian" is not.
-    // The Pressable role="button" has accessibilityLabel = t(`languageToggle.${code}`).
+    // The Pressable role="radio" has accessibilityLabel = t(`languageToggle.${code}`).
     // We click "Bulgarian" to switch.
-    await page.getByRole("button", { name: "Bulgarian", exact: true }).click();
+    await page.getByRole("radio", { name: "Bulgarian", exact: true }).click();
 
     // After the language change the UI re-renders in Bulgarian. The popover stays
     // open - the language-toggle label in the still-open popover updates immediately
     // from "Switch language" → "Смени езика".
     await expect(page.getByText("Смени езика", { exact: true })).toBeVisible({ timeout: 5_000 });
 
-    // The "Bulgarian" button should now show as active (selected).
-    await expect(page.getByRole("button", { name: "Български", exact: true })).toBeVisible({
+    // The "Bulgarian" radio should now show as active (selected).
+    await expect(page.getByRole("radio", { name: "Български", exact: true })).toBeVisible({
       timeout: 3_000,
     });
 
@@ -120,7 +120,7 @@ test.describe("settings - theme switch", () => {
     await expect(page.getByText("Switch theme", { exact: true })).toBeVisible();
 
     // Click "Dark" theme option (accessibilityLabel = "Dark").
-    await page.getByRole("button", { name: "Dark", exact: true }).click();
+    await page.getByRole("radio", { name: "Dark", exact: true }).click();
 
     // The root html element should have class "dark" after the theme store updates.
     await expect(page.locator("html")).toHaveClass(/dark/, { timeout: 5_000 });
@@ -136,7 +136,7 @@ test.describe("settings - theme switch", () => {
     // if context isolation fails.
     await page.getByRole("button", { name: "Open account menu", exact: true }).click();
     await expect(page.getByText("Switch theme", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "System", exact: true }).click();
+    await page.getByRole("radio", { name: "System", exact: true }).click();
   });
 
   test("switching to light theme updates the color scheme and persists across reload", async ({
@@ -150,7 +150,7 @@ test.describe("settings - theme switch", () => {
     await expect(page.getByText("Switch theme", { exact: true })).toBeVisible();
 
     // Click "Light" theme option.
-    await page.getByRole("button", { name: "Light", exact: true }).click();
+    await page.getByRole("radio", { name: "Light", exact: true }).click();
 
     // The root html element should NOT have class "dark" for light mode.
     // Instead it should have "light" class (NativeWind applies the matching class).
@@ -162,6 +162,6 @@ test.describe("settings - theme switch", () => {
 
     // Restore to System.
     await page.getByRole("button", { name: "Open account menu", exact: true }).click();
-    await page.getByRole("button", { name: "System", exact: true }).click();
+    await page.getByRole("radio", { name: "System", exact: true }).click();
   });
 });

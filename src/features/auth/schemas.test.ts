@@ -97,6 +97,72 @@ describe("forgotPasswordSchema", () => {
   });
 });
 
+describe("validation messages are i18n keys", () => {
+  // The forms resolve these via t() in the "auth" namespace at render time.
+  // Asserting the KEYS here pins the contract; the i18n key-coverage test
+  // guarantees each key exists in en and bg.
+  it("signInSchema emits keys for empty email and short password", () => {
+    const result = signInSchema.safeParse({ email: "", password: "short" });
+
+    expect(result.success).toBe(false);
+    const messages = result.error!.issues.map((issue) => issue.message);
+    expect(messages).toContain("validation.emailRequired");
+    expect(messages).toContain("validation.passwordMin12");
+  });
+
+  it("signUpSchema emits keys for invalid email, long name, and mismatched passwords", () => {
+    const result = signUpSchema.safeParse({
+      name: "x".repeat(101),
+      email: "not-an-email",
+      password: "twelvechars1",
+      confirmPassword: "different123",
+    });
+
+    expect(result.success).toBe(false);
+    const messages = result.error!.issues.map((issue) => issue.message);
+    expect(messages).toContain("validation.emailInvalid");
+    expect(messages).toContain("validation.nameMax100");
+    expect(messages).toContain("validation.passwordsDoNotMatch");
+  });
+
+  it("signUpSchema emits the key for a missing confirmation", () => {
+    const result = signUpSchema.safeParse({
+      email: "a@b.com",
+      password: "twelvechars1",
+      confirmPassword: "",
+    });
+
+    expect(result.success).toBe(false);
+    const messages = result.error!.issues.map((issue) => issue.message);
+    expect(messages).toContain("validation.confirmPasswordRequired");
+  });
+
+  it("resetPasswordSchema emits the key for a missing confirmation", () => {
+    const result = resetPasswordSchema.safeParse({
+      password: "twelvechars1",
+      confirmPassword: "",
+    });
+
+    expect(result.success).toBe(false);
+    const messages = result.error!.issues.map((issue) => issue.message);
+    expect(messages).toContain("validation.confirmNewPasswordRequired");
+  });
+
+  it("emits no raw English sentences (keys only)", () => {
+    const result = signUpSchema.safeParse({
+      name: "x".repeat(101),
+      email: "",
+      password: "short",
+      confirmPassword: "",
+    });
+
+    expect(result.success).toBe(false);
+    for (const issue of result.error!.issues) {
+      expect(issue.message).toMatch(/^validation\.[a-zA-Z0-9]+$/);
+    }
+  });
+});
+
 describe("resetPasswordSchema", () => {
   it("accepts a 12-char password with matching confirmation", () => {
     const result = resetPasswordSchema.safeParse({

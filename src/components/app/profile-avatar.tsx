@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   Avatar,
@@ -28,8 +29,10 @@ export function ProfileAvatar({
   email?: string | null;
   name?: string | null;
 }) {
+  const { t } = useTranslation("navigation");
+
   return (
-    <Avatar alt="User avatar" className={cn("size-8", className)} {...props}>
+    <Avatar alt={t("userMenu.avatarAlt")} className={cn("size-8", className)} {...props}>
       {avatarUrl ? <AvatarImage source={{ uri: avatarUrl }} /> : null}
       <AvatarFallback>
         <Text>{getInitial(name, email)}</Text>

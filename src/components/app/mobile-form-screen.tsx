@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { PropsWithChildren, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+import { useWebKeyboardInset } from "@/src/lib/use-web-keyboard-inset";
 
 interface MobileFormScreenProps extends PropsWithChildren {
   contentClassName?: string;
@@ -10,11 +11,16 @@ interface MobileFormScreenProps extends PropsWithChildren {
 }
 
 export function MobileFormScreen({ children, contentClassName, footer }: MobileFormScreenProps) {
+  // KeyboardAvoidingView renders as a plain View on web; the visual-viewport
+  // inset pads the footer/content above the on-screen keyboard there.
+  const keyboardInset = useWebKeyboardInset();
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
+        style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
       >
         <ScrollView
           contentContainerClassName={cn("grow p-6", contentClassName)}

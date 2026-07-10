@@ -1,16 +1,18 @@
 import { z } from "zod";
 
-import { trimmedStringList } from "@/src/lib/zod-fields";
+import { trimmedStringList, userText } from "@/src/lib/zod-fields";
 
+// Messages are i18n KEYS (resolved in the "cbt" namespace at render time via t()),
+// not literals - so validation errors follow the in-app language, not English only.
 export const coreBeliefFormSchema = z.object({
-  beliefStatement: z.string().trim().min(3, "Describe the belief.").max(4000),
+  beliefStatement: userText(4000, { min: 3, message: "beliefs.validation.beliefStatement" }),
   triggeringSituations: trimmedStringList(),
   evidenceFor: trimmedStringList(),
   evidenceAgainst: trimmedStringList(),
-  alternativeBelief: z.string().trim().min(3, "Write an alternative belief.").max(4000),
+  alternativeBelief: userText(4000, { min: 3, message: "beliefs.validation.alternativeBelief" }),
   originalBeliefStrength: z.number().min(0).max(100),
   alternativeBeliefStrength: z.number().min(0).max(100),
-  reinforcementPlan: z.string().max(4000),
+  reinforcementPlan: userText(4000),
   nextReviewDate: z.string().nullable(),
 });
 

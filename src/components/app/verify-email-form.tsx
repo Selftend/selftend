@@ -100,7 +100,7 @@ export function VerifyEmailForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("verifyEmail.title")}</CardTitle>
+        <CardTitle aria-level={1}>{t("verifyEmail.title")}</CardTitle>
         <CardDescription>
           {t("verifyEmail.subtitle", { email: email ?? "your email" })}
         </CardDescription>

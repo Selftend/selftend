@@ -83,7 +83,7 @@ export default function MeditationSessionDetailScreen() {
           {session.reflection ? (
             <Card>
               <CardContent className="gap-2 pt-6">
-                <CardTitle>{t("module.sessionDetail.reflection")}</CardTitle>
+                <CardTitle aria-level={2}>{t("module.sessionDetail.reflection")}</CardTitle>
                 <Text variant="muted">{session.reflection}</Text>
               </CardContent>
             </Card>
@@ -92,7 +92,7 @@ export default function MeditationSessionDetailScreen() {
           {session.obstacleTags.length > 0 ? (
             <Card>
               <CardContent className="gap-2 pt-6">
-                <CardTitle>{t("module.sessionDetail.obstacles")}</CardTitle>
+                <CardTitle aria-level={2}>{t("module.sessionDetail.obstacles")}</CardTitle>
                 <View className="flex-row flex-wrap gap-2">
                   {session.obstacleTags.map((tag) => (
                     <View key={tag} className="rounded-full bg-muted px-3 py-1">

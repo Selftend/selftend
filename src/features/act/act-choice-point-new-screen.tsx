@@ -12,6 +12,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { useSaveChoicePoint } from "@/src/features/act/queries";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -31,6 +32,7 @@ function StringArrayEditor({
   onRemove: (index: number) => void;
   addLabel: string;
 }) {
+  const { t } = useTranslation("act");
   const [inputValue, setInputValue] = useState("");
 
   function handleAdd() {
@@ -57,7 +59,11 @@ function StringArrayEditor({
               className="flex-row items-center gap-2 rounded-lg border border-border bg-card px-3 py-2"
             >
               <Text className="flex-1 text-sm">{item}</Text>
-              <Pressable accessibilityRole="button" onPress={() => onRemove(index)}>
+              <Pressable
+                accessibilityLabel={t("choicePoint.removeItem", { item })}
+                accessibilityRole="button"
+                onPress={() => onRemove(index)}
+              >
                 <Icon name="close" className="size-4 text-muted-foreground" />
               </Pressable>
             </View>
@@ -112,7 +118,7 @@ export default function ActChoicePointNewScreen() {
     return (index: number) => setter((prev) => prev.filter((_, i) => i !== index));
   }
 
-  async function handleSave() {
+  const handleSave = useSingleFlight(async () => {
     if (!user) return;
     setSubmitError("");
     try {
@@ -129,7 +135,7 @@ export default function ActChoicePointNewScreen() {
       const message = error instanceof Error ? error.message : t("act:choicePoint.save");
       setSubmitError(message);
     }
-  }
+  });
 
   return (
     <MobileFormScreen

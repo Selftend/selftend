@@ -57,4 +57,18 @@ describe("UserMenu", () => {
 
     expect(screen.getByText("Get the mobile app")).toBeTruthy();
   });
+
+  it("exposes the language and theme rows as radios in labelled radiogroups", () => {
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    // byRole skips plain Views (not accessibility elements), so assert the
+    // containers' group semantics through their labels instead.
+    expect(screen.getByLabelText("Switch language").props.accessibilityRole).toBe("radiogroup");
+    expect(screen.getByLabelText("Switch theme").props.accessibilityRole).toBe("radiogroup");
+    expect(screen.getByRole("radio", { name: "English" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Bulgarian" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "System" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Dark" })).not.toBeChecked();
+  });
 });

@@ -1,17 +1,23 @@
-import { fireEvent, screen } from "@testing-library/react-native";
-import { router } from "expo-router";
+import { screen } from "@testing-library/react-native";
 
 import LandingScreen from "./landing-screen";
 import { renderWithProviders } from "@/test/render-with-providers";
 
-jest.mock("expo-router", () => ({
-  router: { push: jest.fn() },
-}));
-
-const mockPush = router.push as jest.MockedFunction<typeof router.push>;
-
-beforeEach(() => {
-  jest.clearAllMocks();
+jest.mock("expo-router", () => {
+  const React = require("react");
+  return {
+    // Mirror Link asChild: forward the href onto the wrapped pressable so
+    // tests can assert real link targets instead of spying on router.push.
+    Link: ({
+      href,
+      asChild: _asChild,
+      children,
+    }: {
+      href: string;
+      asChild?: boolean;
+      children: React.ReactElement;
+    }) => React.cloneElement(React.Children.only(children), { href }),
+  };
 });
 
 describe("LandingScreen", () => {
@@ -31,19 +37,15 @@ describe("LandingScreen", () => {
     ).toBeTruthy();
   });
 
-  it("navigates to sign-up when Get started is pressed", () => {
+  it("links Get started to sign-up", () => {
     renderWithProviders(<LandingScreen />);
 
-    fireEvent.press(screen.getByText("Get started"));
-
-    expect(mockPush).toHaveBeenCalledWith("/(auth)/sign-up");
+    expect(screen.getByRole("link", { name: "Get started" }).props.href).toBe("/(auth)/sign-up");
   });
 
-  it("navigates to sign-in when Sign in is pressed", () => {
+  it("links Sign in to sign-in", () => {
     renderWithProviders(<LandingScreen />);
 
-    fireEvent.press(screen.getByText("Sign in"));
-
-    expect(mockPush).toHaveBeenCalledWith("/(auth)/sign-in");
+    expect(screen.getByRole("link", { name: "Sign in" }).props.href).toBe("/(auth)/sign-in");
   });
 });

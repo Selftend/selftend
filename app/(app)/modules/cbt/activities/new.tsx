@@ -19,6 +19,7 @@ import { useActivity, useSaveActivity } from "@/src/features/activities/queries"
 import { activityFormSchema, type ActivityFormSchema } from "@/src/features/activities/schemas";
 import { isoToScheduleInput, scheduleInputToIso } from "@/src/features/activities/schedule-format";
 import type { PACECategory } from "@/src/features/activities/types";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useActivityDraftStore } from "@/src/stores/activity-draft-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -105,7 +106,7 @@ export default function NewActivityScreen() {
     reset(valueLinkedDefaults);
   }, [activityId, existing, reset, storedDraft, valueDomain, valueLinkedDefaults]);
 
-  const handleSave = handleSubmit(async (values) => {
+  const submitForm = handleSubmit(async (values) => {
     setDraftValues(values);
     // Normalize the free-text "YYYY-MM-DD HH:MM" (local) to an ISO instant before saving.
     const scheduledIso = scheduleInputToIso(values.scheduledAt);
@@ -130,6 +131,9 @@ export default function NewActivityScreen() {
       showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
     }
   });
+  // RHF's handleSubmit does not block re-entrant calls (isSubmitting is React state that
+  // hasn't re-rendered between two rapid presses), so guard against double-press inserts.
+  const handleSave = useSingleFlight(submitForm);
 
   if (activityId && isLoading) {
     return (
@@ -179,7 +183,7 @@ export default function NewActivityScreen() {
                 value={value}
               />
               {errors.activityName?.message ? (
-                <Text className="text-sm text-destructive">{errors.activityName.message}</Text>
+                <Text className="text-sm text-destructive">{t(errors.activityName.message)}</Text>
               ) : null}
             </View>
           )}

@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,6 +17,7 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useSelfCareLog, useUpsertSelfCareLog } from "@/src/features/self-care/queries";
@@ -108,172 +109,172 @@ export default function SelfCareScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="grow p-6">
-        <View className="gap-6">
-          <View className="gap-2">
-            <ScreenHeader title={t("selfCare.title")} right={<HelpButton helpKey="selfCare" />} />
-            <Text variant="muted">{t("selfCare.description", { date: selectedDate })}</Text>
+    <MobileFormScreen
+      footer={
+        <Button disabled={upsertMutation.isPending} onPress={() => void handleSave()}>
+          {upsertMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
+          <Text>{existing ? t("selfCare.update") : t("selfCare.save")}</Text>
+        </Button>
+      }
+    >
+      <View className="gap-6">
+        <View className="gap-2">
+          <ScreenHeader title={t("selfCare.title")} right={<HelpButton helpKey="selfCare" />} />
+          <Text variant="muted">{t("selfCare.description", { date: selectedDate })}</Text>
+        </View>
+
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={t("selfCare.sleepLinkTitle")}
+          accessibilityHint={t("selfCare.sleepLinkDesc")}
+          onPress={() => router.push("/tools/sleep")}
+          className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
+        >
+          <Icon name="bedtime" className="size-6 text-foreground" />
+          <View className="flex-1">
+            <Text className="text-sm font-semibold">{t("selfCare.sleepLinkTitle")}</Text>
+            <Text variant="muted" className="text-xs">
+              {t("selfCare.sleepLinkDesc")}
+            </Text>
           </View>
+          <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
+        </Pressable>
 
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={t("selfCare.sleepLinkTitle")}
-            accessibilityHint={t("selfCare.sleepLinkDesc")}
-            onPress={() => router.push("/tools/sleep")}
-            className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
-          >
-            <Icon name="bedtime" className="size-6 text-foreground" />
-            <View className="flex-1">
-              <Text className="text-sm font-semibold">{t("selfCare.sleepLinkTitle")}</Text>
-              <Text variant="muted" className="text-xs">
-                {t("selfCare.sleepLinkDesc")}
-              </Text>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={t("selfCare.gratitudeLinkTitle")}
+          accessibilityHint={t("selfCare.gratitudeLinkDesc")}
+          onPress={() => router.push("/tools/gratitude-log")}
+          className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
+        >
+          <Icon name="favorite" className="size-6 text-foreground" />
+          <View className="flex-1">
+            <Text className="text-sm font-semibold">{t("selfCare.gratitudeLinkTitle")}</Text>
+            <Text variant="muted" className="text-xs">
+              {t("selfCare.gratitudeLinkDesc")}
+            </Text>
+          </View>
+          <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
+        </Pressable>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("selfCare.exercise")}</CardTitle>
+          </CardHeader>
+          <CardContent className="gap-4">
+            <View className="flex-row items-center gap-3">
+              <Checkbox
+                accessibilityLabel={t("selfCare.exerciseDone")}
+                checked={form.exerciseDone}
+                onCheckedChange={(c) => setForm((p) => ({ ...p, exerciseDone: Boolean(c) }))}
+              />
+              <Label onPress={() => setForm((p) => ({ ...p, exerciseDone: !p.exerciseDone }))}>
+                {t("selfCare.exerciseDone")}
+              </Label>
             </View>
-            <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
-          </Pressable>
 
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={t("selfCare.gratitudeLinkTitle")}
-            accessibilityHint={t("selfCare.gratitudeLinkDesc")}
-            onPress={() => router.push("/tools/gratitude-log")}
-            className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
-          >
-            <Icon name="favorite" className="size-6 text-foreground" />
-            <View className="flex-1">
-              <Text className="text-sm font-semibold">{t("selfCare.gratitudeLinkTitle")}</Text>
-              <Text variant="muted" className="text-xs">
-                {t("selfCare.gratitudeLinkDesc")}
-              </Text>
-            </View>
-            <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
-          </Pressable>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("selfCare.exercise")}</CardTitle>
-            </CardHeader>
-            <CardContent className="gap-4">
-              <View className="flex-row items-center gap-3">
-                <Checkbox
-                  accessibilityLabel={t("selfCare.exerciseDone")}
-                  checked={form.exerciseDone}
-                  onCheckedChange={(c) => setForm((p) => ({ ...p, exerciseDone: Boolean(c) }))}
-                />
-                <Label onPress={() => setForm((p) => ({ ...p, exerciseDone: !p.exerciseDone }))}>
-                  {t("selfCare.exerciseDone")}
-                </Label>
-              </View>
-
-              {form.exerciseDone ? (
-                <>
-                  <View className="gap-2">
-                    <Label>{t("selfCare.exerciseMinutes")}</Label>
-                    <Input
-                      accessibilityLabel={t("selfCare.exerciseMinutes")}
-                      keyboardType="numeric"
-                      onChangeText={(text) => setForm((p) => ({ ...p, exerciseMinutes: text }))}
-                      placeholder="30"
-                      value={form.exerciseMinutes}
-                    />
-                  </View>
-                  <View className="gap-2">
-                    <Label>{t("selfCare.exerciseType")}</Label>
-                    <Input
-                      accessibilityLabel={t("selfCare.exerciseType")}
-                      onChangeText={(text) => setForm((p) => ({ ...p, exerciseType: text }))}
-                      placeholder={t("selfCare.exerciseTypePlaceholder")}
-                      value={form.exerciseType}
-                    />
-                  </View>
-                </>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("selfCare.meals")}</CardTitle>
-            </CardHeader>
-            <CardContent className="gap-4">
-              <View className="gap-2">
-                <Label>{t("selfCare.mealsStructured")}</Label>
-                <Text variant="muted">{t("selfCare.mealsStructuredHint")}</Text>
-                <NumberRating
-                  max={5}
-                  value={form.mealsStructured}
-                  onChange={(n) => setForm((p) => ({ ...p, mealsStructured: n }))}
-                />
-              </View>
-              <View className="flex-row items-center gap-3">
-                <Checkbox
-                  accessibilityLabel={t("selfCare.emotionalEating")}
-                  checked={form.emotionalEating}
-                  onCheckedChange={(c) => setForm((p) => ({ ...p, emotionalEating: Boolean(c) }))}
-                />
-                <Label
-                  onPress={() => setForm((p) => ({ ...p, emotionalEating: !p.emotionalEating }))}
-                >
-                  {t("selfCare.emotionalEating")}
-                </Label>
-              </View>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("selfCare.social")}</CardTitle>
-            </CardHeader>
-            <CardContent className="gap-4">
-              <View className="flex-row items-center gap-3">
-                <Checkbox
-                  accessibilityLabel={t("selfCare.socialConnection")}
-                  checked={form.socialConnectionMade}
-                  onCheckedChange={(c) =>
-                    setForm((p) => ({ ...p, socialConnectionMade: Boolean(c) }))
-                  }
-                />
-                <Label
-                  onPress={() =>
-                    setForm((p) => ({
-                      ...p,
-                      socialConnectionMade: !p.socialConnectionMade,
-                    }))
-                  }
-                >
-                  {t("selfCare.socialConnection")}
-                </Label>
-              </View>
-              {form.socialConnectionMade ? (
+            {form.exerciseDone ? (
+              <>
                 <View className="gap-2">
-                  <Label>{t("selfCare.socialNotes")}</Label>
-                  <Textarea
-                    accessibilityLabel={t("selfCare.socialNotes")}
-                    onChangeText={(text) => setForm((p) => ({ ...p, socialNotes: text }))}
-                    placeholder={t("selfCare.socialNotesPlaceholder")}
-                    value={form.socialNotes}
+                  <Label>{t("selfCare.exerciseMinutes")}</Label>
+                  <Input
+                    accessibilityLabel={t("selfCare.exerciseMinutes")}
+                    keyboardType="numeric"
+                    onChangeText={(text) => setForm((p) => ({ ...p, exerciseMinutes: text }))}
+                    placeholder="30"
+                    value={form.exerciseMinutes}
                   />
                 </View>
-              ) : null}
+                <View className="gap-2">
+                  <Label>{t("selfCare.exerciseType")}</Label>
+                  <Input
+                    accessibilityLabel={t("selfCare.exerciseType")}
+                    onChangeText={(text) => setForm((p) => ({ ...p, exerciseType: text }))}
+                    placeholder={t("selfCare.exerciseTypePlaceholder")}
+                    value={form.exerciseType}
+                  />
+                </View>
+              </>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("selfCare.meals")}</CardTitle>
+          </CardHeader>
+          <CardContent className="gap-4">
+            <View className="gap-2">
+              <Label>{t("selfCare.mealsStructured")}</Label>
+              <Text variant="muted">{t("selfCare.mealsStructuredHint")}</Text>
+              <NumberRating
+                max={5}
+                value={form.mealsStructured}
+                onChange={(n) => setForm((p) => ({ ...p, mealsStructured: n }))}
+              />
+            </View>
+            <View className="flex-row items-center gap-3">
+              <Checkbox
+                accessibilityLabel={t("selfCare.emotionalEating")}
+                checked={form.emotionalEating}
+                onCheckedChange={(c) => setForm((p) => ({ ...p, emotionalEating: Boolean(c) }))}
+              />
+              <Label
+                onPress={() => setForm((p) => ({ ...p, emotionalEating: !p.emotionalEating }))}
+              >
+                {t("selfCare.emotionalEating")}
+              </Label>
+            </View>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("selfCare.social")}</CardTitle>
+          </CardHeader>
+          <CardContent className="gap-4">
+            <View className="flex-row items-center gap-3">
+              <Checkbox
+                accessibilityLabel={t("selfCare.socialConnection")}
+                checked={form.socialConnectionMade}
+                onCheckedChange={(c) =>
+                  setForm((p) => ({ ...p, socialConnectionMade: Boolean(c) }))
+                }
+              />
+              <Label
+                onPress={() =>
+                  setForm((p) => ({
+                    ...p,
+                    socialConnectionMade: !p.socialConnectionMade,
+                  }))
+                }
+              >
+                {t("selfCare.socialConnection")}
+              </Label>
+            </View>
+            {form.socialConnectionMade ? (
               <View className="gap-2">
-                <Label>{t("selfCare.meaningfulActivity")}</Label>
-                <Input
-                  accessibilityLabel={t("selfCare.meaningfulActivity")}
-                  onChangeText={(text) => setForm((p) => ({ ...p, meaningfulActivity: text }))}
-                  placeholder={t("selfCare.meaningfulActivityPlaceholder")}
-                  value={form.meaningfulActivity}
+                <Label>{t("selfCare.socialNotes")}</Label>
+                <Textarea
+                  accessibilityLabel={t("selfCare.socialNotes")}
+                  onChangeText={(text) => setForm((p) => ({ ...p, socialNotes: text }))}
+                  placeholder={t("selfCare.socialNotesPlaceholder")}
+                  value={form.socialNotes}
                 />
               </View>
-            </CardContent>
-          </Card>
-
-          <Button disabled={upsertMutation.isPending} onPress={() => void handleSave()}>
-            {upsertMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
-            <Text>{existing ? t("selfCare.update") : t("selfCare.save")}</Text>
-          </Button>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            ) : null}
+            <View className="gap-2">
+              <Label>{t("selfCare.meaningfulActivity")}</Label>
+              <Input
+                accessibilityLabel={t("selfCare.meaningfulActivity")}
+                onChangeText={(text) => setForm((p) => ({ ...p, meaningfulActivity: text }))}
+                placeholder={t("selfCare.meaningfulActivityPlaceholder")}
+                value={form.meaningfulActivity}
+              />
+            </View>
+          </CardContent>
+        </Card>
+      </View>
+    </MobileFormScreen>
   );
 }

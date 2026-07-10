@@ -25,7 +25,7 @@
     "todayHeading": "Today",
     "todayEmpty": "No habits scheduled for today.",
     "noHabitsTitle": "Start with one two-minute habit",
-    "noHabitsBody": "Atomic Habits suggests scaling new behaviours under two minutes. Pick something small - the goal is to cast a vote for the kind of person you want to become.",
+    "noHabitsBody": "Atomic Habits suggests scaling new behaviors under two minutes. Pick something small - the goal is to cast a vote for the kind of person you want to become.",
     "recentActivity": "Recent activity",
     "recentEmpty": "Ticks you make will appear here.",
     "weekStripLabel": "Last 7 days",
@@ -50,13 +50,13 @@
     "kindLabel": "Build or break",
     "kindBuild": "Build",
     "kindBreak": "Break",
-    "kindBuildHelp": "A new behaviour you want to cast votes for.",
-    "kindBreakHelp": "A behaviour you want to do less. Inverse the four laws - invisible, unattractive, difficult, unsatisfying.",
+    "kindBuildHelp": "A new behavior you want to cast votes for.",
+    "kindBreakHelp": "A behavior you want to do less. Inverse the four laws - invisible, unattractive, difficult, unsatisfying.",
     "twoMinuteLabel": "Two-minute version (Make It Easy)",
     "twoMinutePlaceholder": "Make the starter version under two minutes. e.g., Read one page.",
     "twoMinuteHelp": "Scale the habit down so it's easy to start.",
     "difficultLabel": "Friction (Make It Difficult)",
-    "difficultPlaceholder": "Add steps that slow the behaviour. e.g., Log out after every session.",
+    "difficultPlaceholder": "Add steps that slow the behavior. e.g., Log out after every session.",
     "difficultHelp": "Increase friction so the unwanted action takes more effort than ignoring it.",
     "invisibleLabel": "Hide the cue (Make It Invisible)",
     "invisiblePlaceholder": "Remove or hide the trigger. e.g., Put the phone in another room while reading.",
@@ -65,7 +65,7 @@
     "unsatisfyingLabel": "Add a cost (Make It Unsatisfying)",
     "unsatisfyingPlaceholder": "Add a small immediate consequence. e.g., Tell a friend; pay a forfeit.",
     "cueLabel": "Cue plan (Make It Obvious)",
-    "cuePlaceholder": "I will [behaviour] at [time] in [location].",
+    "cuePlaceholder": "I will [behavior] at [time] in [location].",
     "stackLabel": "Stack after (Make It Obvious)",
     "stackPlaceholder": "After [current habit], I will...",
     "pairingLabel": "Pairing (Make It Attractive)",
@@ -79,11 +79,11 @@
     "customDaysLabel": "Days of the week",
     "customDaysHelp": "Pick at least one day.",
     "customDaysRequired": "Pick at least one day for a custom cadence.",
-    "colorLabel": "Colour",
+    "colorLabel": "Color",
     "colors": {
-      "primary": "Primary",
-      "be": "Be",
-      "act": "Act",
+      "primary": "Purple",
+      "be": "Pink",
+      "act": "Teal",
       "amber": "Amber",
       "emerald": "Emerald",
       "violet": "Violet",
@@ -101,6 +101,7 @@
     "saveError": "Couldn't save the habit. Try again."
   },
   "detail": {
+    "notFound": "We couldn't find that habit.",
     "calendarTitle": "Recent ticks",
     "calendarEmpty": "No ticks recorded yet. Tap any day to tick it.",
     "detailsTitle": "Details",
@@ -233,12 +234,12 @@
       "habit-loop": {
         "title": "The habit loop",
         "short": "Cue → craving → response → reward.",
-        "body": "Every habit cycles through four stages: a cue notices a trigger, a craving generates motivation, a response performs the behaviour, and a reward closes the loop. Each of the four laws is a design rule attached to one stage."
+        "body": "Every habit cycles through four stages: a cue notices a trigger, a craving generates motivation, a response performs the behavior, and a reward closes the loop. Each of the four laws is a design rule attached to one stage."
       },
       "make-obvious": {
         "title": "1st law - Make it obvious",
         "short": "Design a cue you cannot miss.",
-        "body": "Behaviours start with a cue. Two strategies make the cue obvious: implementation intentions (\"I will [behaviour] at [time] in [location]\") and habit stacking (\"After [current habit], I will [new habit]\"). Both pin the new habit to a specific moment instead of vague intention."
+        "body": "Behaviors start with a cue. Two strategies make the cue obvious: implementation intentions (\"I will [behavior] at [time] in [location]\") and habit stacking (\"After [current habit], I will [new habit]\"). Both pin the new habit to a specific moment instead of vague intention."
       },
       "make-attractive": {
         "title": "2nd law - Make it attractive",
@@ -248,7 +249,7 @@
       "make-easy": {
         "title": "3rd law - Make it easy",
         "short": "Reduce friction so starting is trivial.",
-        "body": "Habits stop at friction. Lay out the gym clothes the night before. Pre-portion the snack. Disable the notification. The fewer steps between you and the behaviour, the more reliably the habit fires."
+        "body": "Habits stop at friction. Lay out the gym clothes the night before. Pre-portion the snack. Disable the notification. The fewer steps between you and the behavior, the more reliably the habit fires."
       },
       "make-satisfying": {
         "title": "4th law - Make it satisfying",

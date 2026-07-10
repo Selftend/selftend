@@ -1,5 +1,7 @@
 import type { JournalEntry, JournalInput } from "@/src/features/journal/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
+import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
 interface JournalEntryRow {
   id: string;
@@ -62,6 +64,8 @@ export async function countJournalEntriesSince(userId: string, sinceIso: string)
 }
 
 export async function getJournalEntry(userId: string, id: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(id)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("journal_entries")
@@ -90,8 +94,8 @@ function normalizeCreatedAt(createdAt: string): string {
 export async function saveJournalEntry(userId: string, input: JournalInput, entryId?: string) {
   const client = requireSupabase();
   const payload = {
-    title: input.title.trim(),
-    body: input.body.trim(),
+    title: sanitizeUserText(input.title).trim(),
+    body: sanitizeUserText(input.body).trim(),
     ...(input.createdAt ? { created_at: normalizeCreatedAt(input.createdAt) } : {}),
   };
 

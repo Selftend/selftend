@@ -124,7 +124,9 @@ export default function NewBeliefScreen() {
     },
   });
 
-  if (beliefId && isLoading) {
+  // Wait for the persisted draft to rehydrate before mounting the form, exactly
+  // like the edit-mode data gate below - otherwise the wizard would flash empty.
+  if (!wizard.hydrated || (beliefId && isLoading)) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">
@@ -197,7 +199,9 @@ export default function NewBeliefScreen() {
                   value={value}
                 />
                 {errors.beliefStatement?.message ? (
-                  <Text className="text-sm text-destructive">{errors.beliefStatement.message}</Text>
+                  <Text className="text-sm text-destructive">
+                    {t(errors.beliefStatement.message)}
+                  </Text>
                 ) : null}
               </View>
             )}
@@ -247,7 +251,7 @@ export default function NewBeliefScreen() {
                 />
                 {errors.alternativeBelief?.message ? (
                   <Text className="text-sm text-destructive">
-                    {errors.alternativeBelief.message}
+                    {t(errors.alternativeBelief.message)}
                   </Text>
                 ) : null}
               </View>

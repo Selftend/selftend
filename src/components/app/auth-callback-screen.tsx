@@ -14,10 +14,22 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { completeAuthRedirect } from "@/src/features/auth/callback";
+import { completeAuthRedirect, parseAuthCallbackUrl } from "@/src/features/auth/callback";
+import {
+  isAuthCallbackError,
+  type AuthCallbackErrorCode,
+} from "@/src/features/auth/callback-errors";
 import { useSession } from "@/src/providers/session-provider";
 
 const AUTH_CALLBACK_TIMEOUT_MS = 15000;
+
+class CallbackTimeoutError extends Error {}
+
+// The completion either timed out or failed with a classified code. Raw error
+// text (GoTrue messages, the URL's error_description) is NEVER stored here -
+// the render maps codes to translated copy, so nothing attacker-influenceable
+// or jargon-y can reach the screen.
+type CallbackFailure = { kind: "timeout" } | { kind: "error"; code: AuthCallbackErrorCode };
 
 function getCurrentWebUrl() {
   if (Platform.OS !== "web" || typeof window === "undefined") {
@@ -38,11 +50,7 @@ function scrubAuthUrlFromHistory() {
   window.history.replaceState(window.history.state, "", window.location.pathname);
 }
 
-async function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  timeoutMessage: string,
-): Promise<T> {
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   try {
@@ -50,7 +58,7 @@ async function withTimeout<T>(
       promise,
       new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => {
-          reject(new Error(timeoutMessage));
+          reject(new CallbackTimeoutError());
         }, timeoutMs);
       }),
     ]);
@@ -67,15 +75,8 @@ export default function AuthCallbackScreen() {
   const linkingUrl = Linking.useLinkingURL();
   const url = linkingUrl ?? getCurrentWebUrl();
   const processedUrl = useRef<string | null>(null);
-  const fallbackErrorMessage = useRef(t("callback.unableToContinue"));
-  const timeoutErrorMessage = useRef(t("callback.timeout"));
-  const [errorMessage, setErrorMessage] = useState("");
+  const [failure, setFailure] = useState<CallbackFailure | null>(null);
   const [verified, setVerified] = useState(false);
-
-  useEffect(() => {
-    fallbackErrorMessage.current = t("callback.unableToContinue");
-    timeoutErrorMessage.current = t("callback.timeout");
-  }, [t]);
 
   useEffect(() => {
     if (!hasSupabaseConfig || !url || processedUrl.current === url) {
@@ -87,11 +88,7 @@ export default function AuthCallbackScreen() {
 
     void (async () => {
       try {
-        const outcome = await withTimeout(
-          completeAuthRedirect(url),
-          AUTH_CALLBACK_TIMEOUT_MS,
-          timeoutErrorMessage.current,
-        );
+        const outcome = await withTimeout(completeAuthRedirect(url), AUTH_CALLBACK_TIMEOUT_MS);
         if (!active) {
           return;
         }
@@ -119,7 +116,21 @@ export default function AuthCallbackScreen() {
           return;
         }
 
-        setErrorMessage(error instanceof Error ? error.message : fallbackErrorMessage.current);
+        // Failed or not, the URL's auth material (token_hash / code) must not
+        // linger in the address bar or browser history. The failure screen's
+        // "Request a new link" routing reads the type from the captured `url`
+        // variable, not from the location, so scrubbing is safe here too.
+        scrubAuthUrlFromHistory();
+
+        if (error instanceof CallbackTimeoutError) {
+          setFailure({ kind: "timeout" });
+        } else if (isAuthCallbackError(error)) {
+          setFailure({ kind: "error", code: error.code });
+        } else {
+          // Unknown throw (network layer, etc.) - same calm generic copy, never
+          // the raw message.
+          setFailure({ kind: "error", code: "generic" });
+        }
       }
     })();
 
@@ -146,7 +157,20 @@ export default function AuthCallbackScreen() {
     );
   }
 
-  if (errorMessage) {
+  if (failure) {
+    const description =
+      failure.kind === "timeout" ? t("callback.timeout") : t(`callback.errors.${failure.code}`);
+    // "Request a new link" goes where a fresh link of the SAME kind can be
+    // requested: recovery links -> the forgot-password form, signup links -> the
+    // verify-email screen (resend button), anything else -> sign-in.
+    const linkType = url ? parseAuthCallbackUrl(url).type : null;
+    const requestNewLinkRoute =
+      linkType === "recovery"
+        ? "/(auth)/reset-password"
+        : linkType === "signup"
+          ? "/(auth)/verify-email"
+          : "/(auth)/sign-in";
+
     return (
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
@@ -155,12 +179,17 @@ export default function AuthCallbackScreen() {
             <Card>
               <CardHeader>
                 <CardTitle>{t("callback.unableToContinue")}</CardTitle>
-                <CardDescription>{errorMessage}</CardDescription>
+                <CardDescription>{description}</CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button onPress={() => router.replace("/(auth)/sign-in")}>
-                  <Text>{t("callback.backToSignIn")}</Text>
+              <CardContent className="gap-3">
+                <Button onPress={() => router.replace(requestNewLinkRoute)}>
+                  <Text>{t("callback.requestNewLink")}</Text>
                 </Button>
+                {requestNewLinkRoute !== "/(auth)/sign-in" ? (
+                  <Button onPress={() => router.replace("/(auth)/sign-in")} variant="link">
+                    <Text>{t("callback.backToSignIn")}</Text>
+                  </Button>
+                ) : null}
               </CardContent>
             </Card>
           </View>

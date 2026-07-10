@@ -64,7 +64,10 @@ describe("procrastination repository - tasks", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(getTask("user-1", "missing")).resolves.toBeNull();
+    // Well-formed uuid that matches no row, so the query itself runs (a malformed
+    // id short-circuits to null before supabase).
+    await expect(getTask("user-1", "11111111-1111-4111-8111-111111111111")).resolves.toBeNull();
+    expect(maybeSingle).toHaveBeenCalled();
   });
 
   it("trims text fields and inserts a task", async () => {
@@ -117,9 +120,20 @@ describe("procrastination repository - steps", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await listSteps("user-1", "t-1");
-    expect(eqT).toHaveBeenCalledWith("task_id", "t-1");
+    const taskId = "33333333-3333-4333-8333-333333333333";
+    await listSteps("user-1", taskId);
+    expect(eqT).toHaveBeenCalledWith("task_id", taskId);
     expect(order).toHaveBeenCalledWith("created_at", { ascending: true });
+  });
+
+  it("returns no steps for a malformed task id without calling supabase", async () => {
+    // The task detail route feeds taskId straight from the URL; a malformed id would
+    // 400 on PostgREST's uuid cast, so it must short-circuit to the zero-rows result.
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(listSteps("user-1", "does-not-exist")).resolves.toEqual([]);
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("bulk-inserts trimmed steps with null estimate fallback", async () => {

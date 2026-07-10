@@ -18,7 +18,7 @@ import { HelpButton } from "@/src/components/app/help-button";
 import { personalValuesList } from "@/src/constants/personal-values-list";
 import { useValuesProfile, useSaveValuesProfile } from "@/src/features/values/queries";
 import type { PersonalValue, ValueTier } from "@/src/features/values/types";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -143,7 +143,7 @@ export default function ValuesScreen() {
                         accessibilityRole="button"
                         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                         accessibilityLabel={`${t(`personalValues.${key}.label`)} - ${t("values.priorityMoveUp")}`}
-                        accessibilityState={{ disabled: index === 0 }}
+                        aria-disabled={index === 0}
                         disabled={index === 0}
                         onPress={() => movePriority(index, -1)}
                         className={index === 0 ? "opacity-40" : ""}
@@ -154,7 +154,7 @@ export default function ValuesScreen() {
                         accessibilityRole="button"
                         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                         accessibilityLabel={`${t(`personalValues.${key}.label`)} - ${t("values.priorityMoveDown")}`}
-                        accessibilityState={{ disabled: index === priorities.length - 1 }}
+                        aria-disabled={index === priorities.length - 1}
                         disabled={index === priorities.length - 1}
                         onPress={() => movePriority(index, 1)}
                         className={index === priorities.length - 1 ? "opacity-40" : ""}
@@ -210,15 +210,24 @@ export default function ValuesScreen() {
                 <CardHeader>
                   <CardTitle>{label}</CardTitle>
                   <CardDescription>{t(`personalValues.${def.key}.description`)}</CardDescription>
-                  <View className="flex-row gap-2 mt-2">
+                  <View
+                    accessibilityLabel={label}
+                    accessibilityRole="radiogroup"
+                    className="flex-row gap-2 mt-2"
+                    role="radiogroup"
+                  >
                     {TIERS.map((tier) => (
                       <Pressable
                         key={tier}
-                        accessibilityRole="button"
+                        accessibilityRole="radio"
                         accessibilityLabel={`${label} - ${t(`values.tier${tier}`)}`}
-                        accessibilityState={{ selected: currentTier === tier }}
+                        aria-checked={currentTier === tier}
                         onPress={() => setTier(def.key, currentTier === tier ? null : tier)}
                         className="flex-1"
+                        role="radio"
+                        {...spaceKeyActivationProps(() =>
+                          setTier(def.key, currentTier === tier ? null : tier),
+                        )}
                       >
                         <View
                           className={`rounded-md border px-2 py-1 items-center ${

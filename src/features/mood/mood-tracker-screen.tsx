@@ -189,7 +189,7 @@ function TodayCheckInCard({ summary, isToday, dayLabel }: TodayCheckInCardProps)
       <CardHeader>
         <View className="flex-row items-center gap-2">
           {logged ? <Icon name="check-circle" className="size-5 text-primary" /> : null}
-          <CardTitle>{isToday ? t("today.title") : dayLabel}</CardTitle>
+          <CardTitle aria-level={2}>{isToday ? t("today.title") : dayLabel}</CardTitle>
         </View>
         <CardDescription>{description}</CardDescription>
       </CardHeader>

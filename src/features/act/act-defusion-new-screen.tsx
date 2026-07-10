@@ -26,6 +26,8 @@ import {
   type DefusionTechnique,
   type ThoughtCategory,
 } from "@/src/features/act/types";
+import { useRovingFocus } from "@/src/lib/roving-focus";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -54,6 +56,19 @@ export default function ActDefusionNewScreen() {
   const stepIndex = STEP_ORDER.indexOf(step);
   const isLastStep = stepIndex === STEP_ORDER.length - 1;
 
+  const categoryIndex = THOUGHT_CATEGORIES.indexOf(thoughtCategory);
+  const categoryRoving = useRovingFocus({
+    count: THOUGHT_CATEGORIES.length,
+    activeIndex: categoryIndex < 0 ? 0 : categoryIndex,
+    onActivate: (index) => setThoughtCategory(THOUGHT_CATEGORIES[index]),
+  });
+  const techniqueIndex = DEFUSION_TECHNIQUES.indexOf(techniqueUsed);
+  const techniqueRoving = useRovingFocus({
+    count: DEFUSION_TECHNIQUES.length,
+    activeIndex: techniqueIndex < 0 ? 0 : techniqueIndex,
+    onActivate: (index) => setTechniqueUsed(DEFUSION_TECHNIQUES[index]),
+  });
+
   function goNext() {
     if (stepIndex < STEP_ORDER.length - 1) setStep(STEP_ORDER[stepIndex + 1]);
   }
@@ -61,7 +76,7 @@ export default function ActDefusionNewScreen() {
     if (stepIndex > 0) setStep(STEP_ORDER[stepIndex - 1]);
   }
 
-  async function handleSave() {
+  const handleSave = useSingleFlight(async () => {
     if (!user) return;
     setSubmitError("");
     try {
@@ -81,7 +96,7 @@ export default function ActDefusionNewScreen() {
       const message = error instanceof Error ? error.message : t("act:defusion.saveProblem");
       setSubmitError(message);
     }
-  }
+  });
 
   return (
     <MobileFormScreen
@@ -162,19 +177,26 @@ export default function ActDefusionNewScreen() {
         {step === "category" ? (
           <View className="gap-3">
             <Label>{t("act:defusion.categoryLabel")}</Label>
-            <View className="flex-row flex-wrap gap-2">
-              {THOUGHT_CATEGORIES.map((cat) => {
+            <View
+              accessibilityLabel={t("act:defusion.categoryLabel")}
+              accessibilityRole="radiogroup"
+              className="flex-row flex-wrap gap-2"
+              role="radiogroup"
+            >
+              {THOUGHT_CATEGORIES.map((cat, index) => {
                 const selected = thoughtCategory === cat;
                 return (
                   <Pressable
                     key={cat}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
+                    accessibilityRole="radio"
+                    aria-checked={selected}
+                    role="radio"
                     onPress={() => setThoughtCategory(cat)}
                     className={cn(
                       "rounded-full border px-4 py-2",
                       selected ? "border-act bg-act" : "border-border bg-card active:bg-muted",
                     )}
+                    {...categoryRoving.getItemProps(index, () => setThoughtCategory(cat))}
                   >
                     <Text
                       className={cn(
@@ -219,19 +241,26 @@ export default function ActDefusionNewScreen() {
                 {t("act:defusion.techniqueHint")}
               </Text>
             </View>
-            <View className="gap-2">
-              {DEFUSION_TECHNIQUES.map((tech) => {
+            <View
+              accessibilityLabel={t("act:defusion.techniqueLabel")}
+              accessibilityRole="radiogroup"
+              className="gap-2"
+              role="radiogroup"
+            >
+              {DEFUSION_TECHNIQUES.map((tech, index) => {
                 const selected = techniqueUsed === tech;
                 return (
                   <Pressable
                     key={tech}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
+                    accessibilityRole="radio"
+                    aria-checked={selected}
+                    role="radio"
                     onPress={() => setTechniqueUsed(tech)}
                     className={cn(
                       "rounded-xl border p-4 active:bg-accent/40",
                       selected ? "border-act bg-act/5" : "border-border bg-card",
                     )}
+                    {...techniqueRoving.getItemProps(index, () => setTechniqueUsed(tech))}
                   >
                     <View className="gap-1">
                       <Text className={cn("font-semibold", selected && "text-act")}>

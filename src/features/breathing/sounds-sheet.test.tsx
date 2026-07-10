@@ -29,4 +29,16 @@ describe("SoundsSheet", () => {
     expect(mockUpdate).toHaveBeenCalled();
     expect(mockUpdate.mock.calls[0][0].breathSoundId).toBe("ocean-swell");
   });
+
+  it("exposes the open picker as radios in a labelled radiogroup", () => {
+    renderWithProviders(<SoundsSheet visible onDismiss={() => {}} />);
+    fireEvent.press(screen.getByLabelText("Choose a breath sound"));
+    // byRole skips plain Views (not accessibility elements), so assert the
+    // container's group semantics through its label instead.
+    expect(screen.getByLabelText("Breath").props.accessibilityRole).toBe("radiogroup");
+    expect(screen.getAllByRole("radio").length).toBeGreaterThan(1);
+    // Default selection is the "guided" breath sound.
+    expect(screen.getByRole("radio", { name: "Guided voice" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Ocean swell" })).not.toBeChecked();
+  });
 });

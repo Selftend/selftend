@@ -36,3 +36,24 @@ describe("angerLogFormSchema", () => {
     expect(angerLogFormSchema.safeParse({ ...base, outcomeRating: null }).success).toBe(true);
   });
 });
+
+describe("validation messages are i18n keys", () => {
+  it("emits the key for a missing trigger", () => {
+    const result = angerLogFormSchema.safeParse({
+      triggerText: "",
+      interpretation: "",
+      arousalLevel: 5,
+      urge: "",
+      behaviorChosen: "",
+      consequence: "",
+      timeOutTaken: false,
+      alternativeInterpretation: "",
+      outcomeRating: null,
+      notes: "",
+    });
+    expect(result.success).toBe(false);
+    expect(result.error!.issues.map((issue) => issue.message)).toContain(
+      "anger.validation.triggerText",
+    );
+  });
+});

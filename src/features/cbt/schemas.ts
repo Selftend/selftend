@@ -1,22 +1,31 @@
 import { z } from "zod";
 
+import { userText } from "@/src/lib/zod-fields";
+
 const natSchema = z.object({
-  text: z.string(),
+  text: userText(2000, { maxMessage: "record.validation.natTooLong" }),
   beliefRating: z.number().min(0).max(100).nullable(),
   isHotThought: z.boolean(),
 });
 
+// Messages are i18n KEYS (resolved in the "cbt" namespace at render time via t()),
+// not literals - so validation errors follow the in-app language, not English only.
+//
+// Requiredness deliberately matches the pre-i18n schema: every narrative field
+// accepts empty values, so legacy records with blank fields stay editable and
+// saveable. (Create-mode-only requiredness is a tracked product follow-up.) The
+// length caps + sanitization come from userText().
 export const thoughtRecordFormSchema = z.object({
-  situation: z.string(),
+  situation: userText(4000, { maxMessage: "record.validation.situationTooLong" }),
   nats: z.array(natSchema),
   emotions: z.array(z.string()),
   emotionIntensityBefore: z.number().min(0).max(100).nullable(),
   distortions: z.array(z.string()),
-  evidenceFor: z.array(z.string()),
-  evidenceAgainst: z.array(z.string()),
-  balancedThought: z.string(),
+  evidenceFor: z.array(userText(2000, { maxMessage: "record.validation.evidenceTooLong" })),
+  evidenceAgainst: z.array(userText(2000, { maxMessage: "record.validation.evidenceTooLong" })),
+  balancedThought: userText(4000, { maxMessage: "record.validation.balancedThoughtTooLong" }),
   emotionIntensityAfter: z.number().min(0).max(100).nullable(),
-  outcomeNotes: z.string(),
+  outcomeNotes: userText(4000, { maxMessage: "record.validation.outcomeNotesTooLong" }),
 });
 
 export type ThoughtRecordFormSchema = z.infer<typeof thoughtRecordFormSchema>;

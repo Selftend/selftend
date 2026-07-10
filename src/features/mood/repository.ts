@@ -1,5 +1,7 @@
 import type { MoodInput, MoodLog } from "@/src/features/mood/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
+import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
 interface MoodLogRow {
   id: string;
@@ -47,6 +49,8 @@ export async function listMoodLogs(userId: string, limit = 30) {
 }
 
 export async function getMoodLog(userId: string, id: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(id)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("mood_logs")
@@ -71,13 +75,13 @@ export async function saveMoodLog(userId: string, input: MoodInput, moodLogId?: 
   const payload = {
     mood_score: input.moodScore,
     emotions: input.emotions,
-    notes: input.notes.trim(),
+    notes: sanitizeUserText(input.notes).trim(),
     linked_strategy: input.linkedStrategy ?? null,
     logged_at: loggedAt,
-    situation: input.situation.trim(),
-    thoughts: input.thoughts.trim(),
-    behaviours: input.behaviours.trim(),
-    bodily_sensations: input.bodilySensations.trim(),
+    situation: sanitizeUserText(input.situation).trim(),
+    thoughts: sanitizeUserText(input.thoughts).trim(),
+    behaviours: sanitizeUserText(input.behaviours).trim(),
+    bodily_sensations: sanitizeUserText(input.bodilySensations).trim(),
   };
 
   const query = moodLogId

@@ -10,6 +10,7 @@ import { GroundingDone } from "@/src/features/grounding/grounding-done";
 import { GroundingIntro } from "@/src/features/grounding/grounding-intro";
 import { GroundingSession } from "@/src/features/grounding/grounding-session";
 import { useSaveGroundingSession } from "@/src/features/grounding/queries";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -24,6 +25,23 @@ export function GroundingFlow({ slug }: { slug: string }) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [stepIndex, setStepIndex] = useState(0);
   const saveMutation = useSaveGroundingSession(user?.id ?? null);
+
+  // Declared before the not-found early return below so the hook call is unconditional.
+  const handleSave = useSingleFlight(async () => {
+    if (!technique) return;
+    try {
+      await saveMutation.mutateAsync({
+        exerciseName: technique.slug,
+        durationMinutes: 1,
+        reflection: "",
+        feelingAfter: null,
+      });
+      showToast({ title: t("common:feedback.saved"), tone: "success" });
+      router.replace("/tools/grounding" as Parameters<typeof router.replace>[0]);
+    } catch {
+      showToast({ title: t("common:feedback.problem"), tone: "error" });
+    }
+  });
 
   if (!technique) {
     return (
@@ -58,21 +76,6 @@ export function GroundingFlow({ slug }: { slug: string }) {
   const handleExit = () => {
     setStepIndex(0);
     setPhase("intro");
-  };
-
-  const handleSave = async () => {
-    try {
-      await saveMutation.mutateAsync({
-        exerciseName: technique.slug,
-        durationMinutes: 1,
-        reflection: "",
-        feelingAfter: null,
-      });
-      showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace("/tools/grounding" as Parameters<typeof router.replace>[0]);
-    } catch {
-      showToast({ title: t("common:feedback.problem"), tone: "error" });
-    }
   };
 
   if (phase === "intro") {

@@ -159,7 +159,7 @@ export default function GratitudeDetailScreen() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("detail.itemsTitle")}</CardTitle>
+              <CardTitle aria-level={2}>{t("detail.itemsTitle")}</CardTitle>
               <CardDescription>{t("detail.itemsDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -177,7 +177,7 @@ export default function GratitudeDetailScreen() {
           {lifeAnswers.length > 0 ? (
             <Card>
               <CardHeader>
-                <CardTitle>{t("detail.lifeItemsTitle")}</CardTitle>
+                <CardTitle aria-level={2}>{t("detail.lifeItemsTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <View className="gap-4">
@@ -195,7 +195,7 @@ export default function GratitudeDetailScreen() {
           {entry.note.trim().length > 0 ? (
             <Card>
               <CardHeader>
-                <CardTitle>{t("detail.noteTitle")}</CardTitle>
+                <CardTitle aria-level={2}>{t("detail.noteTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Text className="text-base leading-6">{entry.note.trim()}</Text>
@@ -205,7 +205,7 @@ export default function GratitudeDetailScreen() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("detail.loggedAt")}</CardTitle>
+              <CardTitle aria-level={2}>{t("detail.loggedAt")}</CardTitle>
               <CardDescription>{formatLocalTimestamp(entry.loggedAt)}</CardDescription>
             </CardHeader>
           </Card>

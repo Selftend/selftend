@@ -1,9 +1,9 @@
-import { router } from "expo-router";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { LinkButton } from "@/src/components/app/link-button";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
 
@@ -27,21 +27,21 @@ export function LandingFooter() {
         {t("common:safety.description")}
       </Text>
       <View className="flex-row flex-wrap items-center justify-center">
-        <Button onPress={() => router.push("/crisis")} variant="link" size="sm">
+        <LinkButton href="/crisis" variant="link" size="sm">
           <Text className="text-xs">{t("common:safety.openCrisis")}</Text>
-        </Button>
-        <Button onPress={() => router.push("/terms")} variant="link" size="sm">
+        </LinkButton>
+        <LinkButton href="/terms" variant="link" size="sm">
           <Text className="text-xs">{t("policies:terms.pageTitle")}</Text>
-        </Button>
-        <Button onPress={() => router.push("/privacy")} variant="link" size="sm">
+        </LinkButton>
+        <LinkButton href="/privacy" variant="link" size="sm">
           <Text className="text-xs">{t("policies:privacy.pageTitle")}</Text>
-        </Button>
-        <Button onPress={() => router.push("/cookies")} variant="link" size="sm">
+        </LinkButton>
+        <LinkButton href="/cookies" variant="link" size="sm">
           <Text className="text-xs">{t("policies:cookies.pageTitle")}</Text>
-        </Button>
-        <Button onPress={() => router.push("/faq")} variant="link" size="sm">
+        </LinkButton>
+        <LinkButton href="/faq" variant="link" size="sm">
           <Text className="text-xs">{t("auth:landingPage.footerFaq")}</Text>
-        </Button>
+        </LinkButton>
         {appEnv.discordUrl ? (
           <Button onPress={() => openExternalUrl(appEnv.discordUrl)} variant="link" size="sm">
             <Text className="text-xs">{t("navigation:header.joinDiscord")}</Text>

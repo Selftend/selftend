@@ -64,6 +64,9 @@ describe("mood repository", () => {
   });
 
   it("returns null when getMoodLog finds no row", async () => {
+    // Well-formed uuid that matches no row, so the query itself runs (a malformed
+    // id short-circuits before supabase - covered separately below).
+    const missingId = "11111111-1111-4111-8111-111111111111";
     const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
     const eqId = jest.fn(() => ({ maybeSingle }));
     const eqUser = jest.fn(() => ({ eq: eqId }));
@@ -71,14 +74,25 @@ describe("mood repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(getMoodLog("user-1", "missing")).resolves.toBeNull();
+    await expect(getMoodLog("user-1", missingId)).resolves.toBeNull();
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
-    expect(eqId).toHaveBeenCalledWith("id", "missing");
+    expect(eqId).toHaveBeenCalledWith("id", missingId);
+  });
+
+  it("returns null for a malformed id without calling supabase", async () => {
+    // PostgREST would reject the uuid cast with a 400 (console error), so the
+    // repository must not fire the doomed request at all.
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(getMoodLog("user-1", "does-not-exist")).resolves.toBeNull();
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("maps a single mood log when getMoodLog finds it", async () => {
+    const logId = "22222222-2222-4222-8222-222222222222";
     const row = {
-      id: "log-1",
+      id: logId,
       user_id: "user-1",
       mood_score: 2,
       emotions: null,
@@ -98,8 +112,8 @@ describe("mood repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(getMoodLog("user-1", "log-1")).resolves.toEqual({
-      id: "log-1",
+    await expect(getMoodLog("user-1", logId)).resolves.toEqual({
+      id: logId,
       userId: "user-1",
       moodScore: 2,
       emotions: [],
@@ -159,6 +173,28 @@ describe("mood repository", () => {
         bodily_sensations: "",
       }),
     );
+  });
+
+  it("sanitizes free text at save (mood saves bypass the zod schemas)", async () => {
+    const single = jest.fn().mockResolvedValue({ data: { id: "log-1" }, error: null });
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
+    const insert = jest.fn(() => ({ select }));
+    const from = jest.fn(() => ({ insert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await saveMoodLog("user-1", {
+      moodScore: 3,
+      emotions: [],
+      // NBSP between words + an unpaired surrogate at the end.
+      notes: "pasted\u00A0note \uD83D",
+      linkedStrategy: null,
+      situation: "",
+      thoughts: "",
+      behaviours: "",
+      bodilySensations: "",
+    });
+
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ notes: "pasted note" }));
   });
 
   it("throws a clean not-found when updating a missing or RLS-hidden mood log (#85)", async () => {

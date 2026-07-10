@@ -154,7 +154,7 @@ export default function MeditationHomeScreen() {
 
             <Card className="border-primary/30">
               <CardContent className="gap-3 pt-6">
-                <CardTitle>{t("module.home.todayCard")}</CardTitle>
+                <CardTitle aria-level={2}>{t("module.home.todayCard")}</CardTitle>
                 <TimerWidget initialDuration={suggestedDuration} />
               </CardContent>
             </Card>

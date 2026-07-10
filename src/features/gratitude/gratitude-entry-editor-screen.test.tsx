@@ -131,6 +131,40 @@ describe("GratitudeEntryEditorScreen", () => {
     );
   });
 
+  it("saves exactly once when Save is pressed twice rapidly", async () => {
+    const mutateAsync = jest.fn().mockResolvedValue({
+      id: "g-1",
+      userId: "user-1",
+      level: 3,
+      items: ["Warm coffee"],
+      events: [],
+      goodMoment: "",
+      missIfGone: "",
+      hiddenGood: "",
+      lifeItems: [],
+      starred: false,
+      note: "",
+      loggedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    mockUseSaveGratitudeEntry.mockReturnValue({
+      mutateAsync,
+      isPending: false, // isPending has not re-rendered between the two presses
+    } as unknown as ReturnType<typeof useSaveGratitudeEntry>);
+
+    renderWithProviders(
+      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
+    );
+
+    fireEvent.changeText(screen.getByLabelText("What made you laugh?"), "Warm coffee");
+    fireEvent.press(screen.getByText("Save"));
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalled());
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
+  });
+
   it("preserves the answered slot positionally when saving", async () => {
     const mutateAsync = jest.fn().mockResolvedValue({
       id: "g-2",

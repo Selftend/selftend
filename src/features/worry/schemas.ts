@@ -1,15 +1,17 @@
 import { z } from "zod";
 
-import { trimmedStringList } from "@/src/lib/zod-fields";
+import { trimmedStringList, userText } from "@/src/lib/zod-fields";
 
+// Messages are i18n KEYS (resolved in the "cbt" namespace at render time via t()),
+// not literals - so validation errors follow the in-app language, not English only.
 export const worryEntryFormSchema = z
   .object({
-    worryStatement: z.string().trim().min(3, "Describe the worry.").max(4000),
+    worryStatement: userText(4000, { min: 3, message: "worry.validation.worryStatement" }),
     worryCategory: z.enum(["hypothetical", "real_problem"]),
     probabilityEstimate: z.number().min(0).max(100).nullable(),
     evidenceFor: trimmedStringList(),
     evidenceAgainst: trimmedStringList(),
-    copingStatement: z.string().max(4000),
+    copingStatement: userText(4000),
     actionSteps: trimmedStringList(),
   })
   .superRefine((data, ctx) => {
@@ -18,14 +20,14 @@ export const worryEntryFormSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["copingStatement"],
-          message: "Write a coping statement.",
+          message: "worry.validation.copingStatement",
         });
       }
     } else if (data.actionSteps.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["actionSteps"],
-        message: "Add at least one action step.",
+        message: "worry.validation.actionSteps",
       });
     }
   });

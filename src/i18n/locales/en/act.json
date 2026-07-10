@@ -523,6 +523,7 @@
     "notesLabel": "Notes",
     "save": "Save",
     "addItem": "Add",
+    "removeItem": "Remove {{item}}",
     "primer": "At any moment you can move toward the life you want or away from it. When difficult thoughts and feelings hook you, you get pulled into away moves. Unhooking skills give you the choice.",
     "deleteConfirm": "Delete this choice point?",
     "deleteConfirmBody": "This cannot be undone.",

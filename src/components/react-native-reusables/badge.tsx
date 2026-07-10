@@ -25,7 +25,10 @@ const badgeVariants = cva(
           Platform.select({ web: "[a&]:hover:bg-secondary/90" }),
         ),
         destructive: cn(
-          "bg-destructive border-transparent",
+          // dark:bg-destructive/60 mirrors the Button's destructive variant: the raised
+          // dark --destructive fails white-text contrast as a solid fill (3.35:1) but
+          // passes composited at 60% over the dark background.
+          "bg-destructive dark:bg-destructive/60 border-transparent",
           Platform.select({ web: "[a&]:hover:bg-destructive/90" }),
         ),
         outline: Platform.select({ web: "[a&]:hover:bg-accent [a&]:hover:text-accent-foreground" }),

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { useScrollIntoViewOnFocus } from "@/src/lib/use-scroll-into-view-on-focus";
 import { Platform, TextInput } from "react-native";
 
 function Textarea({
@@ -6,8 +7,13 @@ function Textarea({
   multiline = true,
   numberOfLines = Platform.select({ web: 2, native: 8 }), // On web, numberOfLines also determines initial height. On native, it determines the maximum height.
   placeholderClassName,
+  onFocus,
+  onBlur,
   ...props
 }: React.ComponentProps<typeof TextInput> & React.RefAttributes<TextInput>) {
+  // Web-only: keep the focused textarea visible above the on-screen keyboard.
+  const keepVisible = useScrollIntoViewOnFocus();
+
   return (
     <TextInput
       className={cn(
@@ -22,6 +28,14 @@ function Textarea({
       multiline={multiline}
       numberOfLines={numberOfLines}
       textAlignVertical="top"
+      onFocus={(event) => {
+        keepVisible.onFocus(event);
+        onFocus?.(event);
+      }}
+      onBlur={(event) => {
+        keepVisible.onBlur();
+        onBlur?.(event);
+      }}
       {...props}
     />
   );

@@ -101,11 +101,12 @@
   },
   "account": {
     "eyebrow": "Account",
-    "intro": "Quiet defaults, private account access, and a narrow first section.",
+    "intro": "Quiet defaults, and control over your account and data.",
     "title": "Account",
     "signedIn": "Signed-in account",
     "exporting": "Exporting...",
     "exportButton": "Export my data",
+    "exportShareTitle": "Selftend data export",
     "exported": "Data exported successfully.",
     "exportError": "Export failed. Please try again.",
     "deleteTitle": "Delete account permanently?",

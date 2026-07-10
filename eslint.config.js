@@ -74,5 +74,25 @@ module.exports = [
       "no-undef": "off",
     },
   },
+  {
+    // react-native-web 0.21 silently drops the object-form accessibilityState prop,
+    // so state set that way never reaches the browser's accessibility tree. The
+    // aria-* props (aria-checked/selected/expanded/disabled/busy) map to
+    // accessibilityState on native AND emit real ARIA on web. Only the
+    // react-native-reusables wrappers keep the object form - it is consumed by
+    // the @rn-primitives roots, which emit correct ARIA themselves.
+    files: ["**/*.tsx"],
+    ignores: ["src/components/react-native-reusables/**"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "JSXAttribute[name.name='accessibilityState']",
+          message:
+            "accessibilityState is dropped by react-native-web; use the equivalent aria-* prop (aria-checked/aria-selected/aria-expanded/aria-disabled/aria-busy) instead.",
+        },
+      ],
+    },
+  },
   prettierConfig,
 ];

@@ -1,5 +1,9 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 
+import {
+  AuthCallbackError,
+  classifyAuthCallbackFailure,
+} from "@/src/features/auth/callback-errors";
 import { requireSupabase } from "@/src/lib/supabase";
 
 const supportedEmailOtpTypes = new Set<EmailOtpType>([
@@ -77,13 +81,20 @@ export async function completeAuthRedirect(url: string): Promise<CompletedAuthRe
   const params = parseAuthCallbackUrl(url);
 
   if (params.errorCode || params.errorDescription) {
-    throw new Error(params.errorDescription ?? "Unable to complete the authentication link.");
+    // Never re-throw errorDescription: it is URL text under the sender's control
+    // (an attacker can craft a link with arbitrary error_description) and raw
+    // GoTrue phrasing reads as jargon anyway. Classify into a closed code set.
+    throw new AuthCallbackError(
+      classifyAuthCallbackFailure(params.errorCode, params.errorDescription),
+    );
   }
 
   if (params.code) {
     const { data, error } = await client.auth.exchangeCodeForSession(params.code);
     if (error) {
-      throw error;
+      throw new AuthCallbackError(
+        classifyAuthCallbackFailure((error as { code?: string }).code, error.message),
+      );
     }
 
     return classifyAuthOutcome(params.type, Boolean(data.session));
@@ -96,7 +107,9 @@ export async function completeAuthRedirect(url: string): Promise<CompletedAuthRe
       type: otpType,
     });
     if (error) {
-      throw error;
+      throw new AuthCallbackError(
+        classifyAuthCallbackFailure((error as { code?: string }).code, error.message),
+      );
     }
 
     return classifyAuthOutcome(otpType, Boolean(data.session));
@@ -109,5 +122,5 @@ export async function completeAuthRedirect(url: string): Promise<CompletedAuthRe
   // sign the victim into the ATTACKER's account (session fixation). The client is
   // configured flowType:'pkce' with detectSessionInUrl:false, so real email links arrive
   // as `code`/`token_hash` and never as `#access_token`.
-  throw new Error("The authentication link is missing the required parameters.");
+  throw new AuthCallbackError("missing_params");
 }

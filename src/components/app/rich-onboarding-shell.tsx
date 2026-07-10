@@ -13,6 +13,8 @@ interface RichOnboardingShellProps {
   isPending?: boolean;
   errorMessage?: string;
   ctaLabel: string;
+  /** Accessible name for the dialog, usually the onboarding title. */
+  accessibilityLabel?: string;
   /** When true, the CTA always fires onComplete and the back gesture is a no-op (used by ActInfo). */
   ctaAlwaysCompletes?: boolean;
   onComplete: () => void;
@@ -26,6 +28,7 @@ export function RichOnboardingShell({
   isPending = false,
   errorMessage,
   ctaLabel,
+  accessibilityLabel,
   ctaAlwaysCompletes = false,
   onComplete,
   onDismiss,
@@ -37,6 +40,7 @@ export function RichOnboardingShell({
 
   return (
     <Modal
+      accessibilityLabel={accessibilityLabel}
       animationType={reduceMotionEnabled ? "none" : "slide"}
       onRequestClose={onDismiss ?? (() => undefined)}
       visible={visible}

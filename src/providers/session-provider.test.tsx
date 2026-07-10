@@ -27,6 +27,7 @@ jest.mock("@/src/lib/supabase", () => ({
 
 jest.mock("@/src/stores/draft-store-registry", () => ({
   resetAllDraftStores: jest.fn(),
+  purgePersistedWizardDrafts: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("@/src/lib/query-client", () => ({
@@ -70,5 +71,20 @@ describe("SessionProvider sign-out purge", () => {
     authCallback("SIGNED_OUT", null);
 
     await waitFor(() => expect(clearPersistedQueryCache).toHaveBeenCalled());
+  });
+
+  it("purges persisted wizard drafts (PHI) by key prefix on sign-out", async () => {
+    // The registry reset only reaches stores registered in THIS JS context; the
+    // prefix purge is the registration-independent disk guarantee.
+    const { purgePersistedWizardDrafts, resetAllDraftStores } = jest.requireMock(
+      "@/src/stores/draft-store-registry",
+    );
+    renderProvider();
+    await waitFor(() => expect(setSentryUser).toHaveBeenCalled());
+
+    authCallback("SIGNED_OUT", null);
+
+    await waitFor(() => expect(purgePersistedWizardDrafts).toHaveBeenCalled());
+    expect(resetAllDraftStores).toHaveBeenCalled();
   });
 });

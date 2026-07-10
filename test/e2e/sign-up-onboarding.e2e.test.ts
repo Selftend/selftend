@@ -1,11 +1,13 @@
+// STALENESS WARNING: the confirmation step expects the token_hash email links
+// from supabase/templates/. A Supabase stack started before those templates
+// existed (templates load only at `supabase start`, not on db:reset) or a stale
+// dist-e2e export / reused foreign server (E2E_REUSE_EXISTING_SERVER=1) sends
+// old-format links and fails this spec - restart the stack and rebuild the
+// export before debugging anything else.
+
 import { expect, test } from "@playwright/test";
 
-import {
-  confirmSignupViaMailpit,
-  deleteUserByEmail,
-  dismissCbtOnboarding,
-  dismissCookieBanner,
-} from "./helpers";
+import { confirmSignupViaMailpit, deleteUserByEmail, dismissCookieBanner } from "./helpers";
 
 test.describe("sign-up + onboarding + first record", () => {
   const email = `signup-e2e-${Date.now()}@test.local`;
@@ -33,16 +35,13 @@ test.describe("sign-up + onboarding + first record", () => {
     // Sign-up routes the user to /verify-email.
     await expect(page.getByText("Verify your email")).toBeVisible({ timeout: 15_000 });
 
-    // Email confirmations are enabled locally, so complete verification via the
-    // link Mailpit received, then sign in to establish the browser session.
-    await confirmSignupViaMailpit(page, email);
-
-    await page.goto("/sign-in");
+    // Email confirmations are enabled locally. The confirmation email carries a
+    // direct token_hash link into the app callback (see supabase/templates/);
+    // opening it verifies the address AND establishes the session, then the
+    // "Continue to the app" button lands us in the authenticated app - the real
+    // user journey, no separate sign-in needed.
+    await confirmSignupViaMailpit(page, email, test.info().project.use.baseURL as string);
     await dismissCookieBanner(page);
-    await page.locator('input[placeholder="m@example.com"]:visible').fill(email);
-    await page.locator('input[type="password"]:visible').fill(password);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-    await expect(page.getByText("Sign in to your account")).toBeHidden({ timeout: 15_000 });
 
     // First-time user must accept consent before anything else.
     // Handle the consent gate manually so the wizard is left for us to walk below.
@@ -86,9 +85,9 @@ test.describe("sign-up + onboarding + first record", () => {
     await expect(page.getByText("What brings you here?")).toBeHidden();
     await expect(page.getByText(/Log how you feel in one tap/i)).toBeHidden();
 
-    // Now create the first thought record.
+    // Now create the first thought record. (The CBT onboarding modal mounts on
+    // the CBT home screen only, so navigating straight to /new skips it.)
     await page.goto("/modules/cbt/new");
-    await dismissCbtOnboarding(page);
     await page
       .getByRole("button", { name: "Essential only", exact: true })
       .click({ timeout: 2_000 })

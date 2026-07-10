@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -29,6 +30,7 @@ import {
   asQuestionList,
 } from "@/src/features/gratitude/questions";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
@@ -110,7 +112,7 @@ export function GratitudeEntryEditorScreen({
   const updateLifeItem = (index: number, value: string) =>
     setLifeItems((prev) => prev.map((v, i) => (i === index ? value : v)));
 
-  const handleSave = async () => {
+  const handleSave = useSingleFlight(async () => {
     if (!user) return;
     setError("");
     if (answeredCount(items) === 0) {
@@ -137,7 +139,7 @@ export function GratitudeEntryEditorScreen({
     } catch (e) {
       setError(e instanceof Error ? e.message : t("editor.saveError"));
     }
-  };
+  });
 
   if (editMode && !fromCache && isLoading) {
     return (
@@ -163,65 +165,10 @@ export function GratitudeEntryEditorScreen({
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerClassName="grow gap-6 p-6 pb-12">
-        <View className="gap-2">
-          <ScreenHeader title={editMode ? t("editor.editTitle") : t("editor.createTitle")} />
-          <Text variant="muted">
-            {editMode ? t("editor.editDescription") : t("editor.createDescription")}
-          </Text>
-        </View>
-
-        <View className="gap-4">
-          <Label>{t("editor.todayItemsLabel")}</Label>
-          {items.map((item, index) => (
-            <View className="gap-2" key={index}>
-              <Label>{todayQuestions[index] ?? ""}</Label>
-              <Input
-                accessibilityLabel={
-                  todayQuestions[index] ?? t("editor.itemLabel", { number: index + 1 })
-                }
-                maxLength={GRATITUDE_ITEM_MAX}
-                onChangeText={(value) => updateItem(index, value)}
-                placeholder={t("editor.itemPlaceholder")}
-                value={item}
-              />
-            </View>
-          ))}
-        </View>
-
-        <View className="gap-4">
-          <Label>{t("editor.lifeItemsLabel")}</Label>
-          {lifeItems.map((item, index) => (
-            <View className="gap-2" key={index}>
-              <Label>{lifeQuestions[index] ?? ""}</Label>
-              <Input
-                accessibilityLabel={
-                  lifeQuestions[index] ?? t("editor.lifeItemLabel", { number: index + 1 })
-                }
-                maxLength={GRATITUDE_ITEM_MAX}
-                onChangeText={(value) => updateLifeItem(index, value)}
-                placeholder={t("editor.lifeItemPlaceholder")}
-                value={item}
-              />
-            </View>
-          ))}
-        </View>
-
-        <View className="gap-2">
-          <Label>{t("editor.noteLabel")}</Label>
-          <Textarea
-            accessibilityLabel={t("editor.noteLabel")}
-            maxLength={GRATITUDE_NOTE_MAX}
-            onChangeText={setNote}
-            placeholder={t("editor.notePlaceholder")}
-            value={note}
-          />
-        </View>
-
-        {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
-
-        <View className="flex-row gap-3">
+    <MobileFormScreen
+      contentClassName="mx-auto w-full max-w-2xl gap-6"
+      footer={
+        <View className="mx-auto w-full max-w-2xl flex-row gap-3">
           <View className="flex-1">
             <Button onPress={goBack} variant="ghost">
               <Text>{t("editor.cancel")}</Text>
@@ -234,7 +181,63 @@ export function GratitudeEntryEditorScreen({
             </Button>
           </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      }
+    >
+      <View className="gap-2">
+        <ScreenHeader title={editMode ? t("editor.editTitle") : t("editor.createTitle")} />
+        <Text variant="muted">
+          {editMode ? t("editor.editDescription") : t("editor.createDescription")}
+        </Text>
+      </View>
+
+      <View className="gap-4">
+        <Label>{t("editor.todayItemsLabel")}</Label>
+        {items.map((item, index) => (
+          <View className="gap-2" key={index}>
+            <Label>{todayQuestions[index] ?? ""}</Label>
+            <Input
+              accessibilityLabel={
+                todayQuestions[index] ?? t("editor.itemLabel", { number: index + 1 })
+              }
+              maxLength={GRATITUDE_ITEM_MAX}
+              onChangeText={(value) => updateItem(index, value)}
+              placeholder={t("editor.itemPlaceholder")}
+              value={item}
+            />
+          </View>
+        ))}
+      </View>
+
+      <View className="gap-4">
+        <Label>{t("editor.lifeItemsLabel")}</Label>
+        {lifeItems.map((item, index) => (
+          <View className="gap-2" key={index}>
+            <Label>{lifeQuestions[index] ?? ""}</Label>
+            <Input
+              accessibilityLabel={
+                lifeQuestions[index] ?? t("editor.lifeItemLabel", { number: index + 1 })
+              }
+              maxLength={GRATITUDE_ITEM_MAX}
+              onChangeText={(value) => updateLifeItem(index, value)}
+              placeholder={t("editor.lifeItemPlaceholder")}
+              value={item}
+            />
+          </View>
+        ))}
+      </View>
+
+      <View className="gap-2">
+        <Label>{t("editor.noteLabel")}</Label>
+        <Textarea
+          accessibilityLabel={t("editor.noteLabel")}
+          maxLength={GRATITUDE_NOTE_MAX}
+          onChangeText={setNote}
+          placeholder={t("editor.notePlaceholder")}
+          value={note}
+        />
+      </View>
+
+      {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
+    </MobileFormScreen>
   );
 }

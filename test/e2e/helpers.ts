@@ -123,20 +123,6 @@ export async function dismissPostSignInModals(page: Page) {
   }
 }
 
-// Dismisses the CBT onboarding modal that appears on first visit to CBT screens
-// when cbt_onboarding_completed is false.
-export async function dismissCbtOnboarding(page: Page) {
-  const cbtOnboardingTitle = page.getByText(/Using CBT gently/);
-  const visible = await cbtOnboardingTitle
-    .waitFor({ state: "visible", timeout: 5_000 })
-    .then(() => true)
-    .catch(() => false);
-  if (visible) {
-    await page.getByRole("button", { name: "Continue to CBT", exact: true }).click();
-    await expect(cbtOnboardingTitle).toBeHidden({ timeout: 10_000 });
-  }
-}
-
 // Local mail server bundled with the Supabase CLI stack (Mailpit). Its REST API
 // lets tests read the messages the app sends.
 const MAILPIT_URL = process.env.MAILPIT_URL ?? "http://localhost:54324";
@@ -146,11 +132,22 @@ interface MailpitMessageSummary {
   To?: { Address?: string }[];
 }
 
-// Finds the most recent message Mailpit holds for `email` and pulls the Supabase
-// `/auth/v1/verify` confirmation link out of its body. Polls because the email
-// arrives a beat after sign-up.
-async function fetchConfirmationLink(page: Page, email: string): Promise<string> {
+// Finds the most recent message Mailpit holds for `email` and pulls the auth
+// link out of its body. The custom email templates (supabase/templates/) link
+// STRAIGHT to the app callback - `<redirect_to>?token_hash=...&type=<type>` -
+// instead of GoTrue's /auth/v1/verify, so token_hash links complete in any
+// browser (no PKCE verifier needed). Polls because the email arrives a beat
+// after the triggering request.
+async function fetchAuthEmailLink(page: Page, email: string, type: string): Promise<string> {
   const target = email.toLowerCase();
+  const linkPattern = new RegExp(
+    `https?://[^\\s"'<>]*auth-callback\\?token_hash=[^\\s"'<>]*type=${type}[^\\s"'<>]*`,
+  );
+  // The hrefs seen in the newest matching email - included in the failure
+  // message so a wrong link FORMAT (e.g. an /auth/v1/verify link from a stack
+  // started before the custom templates existed) is distinguishable from "no
+  // email arrived at all".
+  let seenLinks: string[] = [];
   for (let attempt = 0; attempt < 20; attempt++) {
     const listRes = await page.request.get(`${MAILPIT_URL}/api/v1/messages?limit=50`);
     if (listRes.ok()) {
@@ -160,52 +157,50 @@ async function fetchConfirmationLink(page: Page, email: string): Promise<string>
         const msgRes = await page.request.get(`${MAILPIT_URL}/api/v1/message/${match.ID}`);
         const body = (await msgRes.json()) as { HTML?: string; Text?: string };
         const haystack = `${body.Text ?? ""}\n${body.HTML ?? ""}`.replace(/&amp;/g, "&");
-        const link = haystack.match(/https?:\/\/[^\s"'<>]*\/auth\/v1\/verify[^\s"'<>]*/);
+        const link = haystack.match(linkPattern);
         if (link) return link[0];
+        seenLinks = haystack.match(/https?:\/\/[^\s"'<>]+/g) ?? [];
       }
     }
     await page.waitForTimeout(500);
   }
-  throw new Error(`No Mailpit confirmation email found for ${email}`);
+  throw new Error(
+    `No Mailpit ${type} email with an auth-callback?token_hash link found for ${email}.` +
+      (seenLinks.length > 0
+        ? ` An email arrived, but its links do not match the expected format - the local stack is` +
+          ` likely running templates from before supabase/templates/ existed (restart with` +
+          ` db:stop + db:start). Links found: ${seenLinks.join(", ")}`
+        : " No email for this address arrived at all."),
+  );
 }
 
-// Completes local email verification for a freshly signed-up user. Hitting the
-// verify endpoint confirms the address server-side; we deliberately do NOT follow
-// its redirect - confirmation only needs the server-side verify, so the caller
-// establishes the browser session by signing in afterward.
-export async function confirmSignupViaMailpit(page: Page, email: string) {
-  const link = await fetchConfirmationLink(page, email);
-  const res = await page.request.get(link, { maxRedirects: 0 });
-  expect([200, 301, 302, 303]).toContain(res.status());
+// The app bakes redirect_to from its inlined EXPO_PUBLIC_PUBLIC_APP_URL, which is
+// not necessarily the port THIS e2e server runs on (e.g. a reused :8081 dev
+// server). Rewrite the link's origin to the current baseURL so the callback runs
+// against the server under test. token_hash links are origin-independent (the
+// callback completes them via verifyOtp - no PKCE verifier in storage needed),
+// so this rewrite does not weaken what the test proves.
+export function rewriteAuthLinkOrigin(link: string, baseURL: string): string {
+  const url = new URL(link);
+  const origin = new URL(baseURL).origin;
+  return `${origin}${url.pathname}${url.search}${url.hash}`;
+}
+
+// Completes local email verification for a freshly signed-up user by opening the
+// emailed token_hash link in THIS page. The app callback verifies the OTP
+// (establishing a session) and shows the verified card; clicking through lands
+// in the authenticated app - exactly the real user journey.
+export async function confirmSignupViaMailpit(page: Page, email: string, baseURL: string) {
+  const link = await fetchAuthEmailLink(page, email, "signup");
+  await page.goto(rewriteAuthLinkOrigin(link, baseURL));
+  await expect(page.getByText("You're verified")).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "Continue to the app", exact: true }).click();
 }
 
 // Finds the most recent password-RECOVERY email in Mailpit for `email` and
-// returns the Supabase `/auth/v1/verify?...type=recovery...` link.
-// Mirrors fetchConfirmationLink but filters for the recovery type.
+// returns its `...auth-callback?token_hash=...&type=recovery` link.
 export async function fetchRecoveryLink(page: Page, email: string): Promise<string> {
-  const target = email.toLowerCase();
-  for (let attempt = 0; attempt < 20; attempt++) {
-    const listRes = await page.request.get(`${MAILPIT_URL}/api/v1/messages?limit=50`);
-    if (listRes.ok()) {
-      const { messages = [] } = (await listRes.json()) as { messages?: MailpitMessageSummary[] };
-      const match = messages.find((m) => m.To?.some((to) => to.Address?.toLowerCase() === target));
-      if (match) {
-        const msgRes = await page.request.get(`${MAILPIT_URL}/api/v1/message/${match.ID}`);
-        const body = (await msgRes.json()) as { HTML?: string; Text?: string };
-        const haystack = `${body.Text ?? ""}\n${body.HTML ?? ""}`.replace(/&amp;/g, "&");
-        // Match a recovery verify link specifically (type=recovery in URL)
-        const link = haystack.match(
-          /https?:\/\/[^\s"'<>]*\/auth\/v1\/verify[^\s"'<>]*type=recovery[^\s"'<>]*/,
-        );
-        if (link) return link[0];
-        // Fallback: match any verify link (recovery emails may not have type in URL depending on config)
-        const anyLink = haystack.match(/https?:\/\/[^\s"'<>]*\/auth\/v1\/verify[^\s"'<>]*/);
-        if (anyLink) return anyLink[0];
-      }
-    }
-    await page.waitForTimeout(500);
-  }
-  throw new Error(`No Mailpit recovery email found for ${email}`);
+  return fetchAuthEmailLink(page, email, "recovery");
 }
 
 // Removes a user via service role admin API. Used for sign-up tests that

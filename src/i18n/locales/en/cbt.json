@@ -252,7 +252,11 @@
     "saveStrength": "Save strength",
     "strengthSummary": "Original {{original}} · Alternative {{alternative}}",
     "deleteTitle": "Delete this belief?",
-    "deleteMessage": "This permanently removes the belief and its strength history. This can't be undone."
+    "deleteMessage": "This permanently removes the belief and its strength history. This can't be undone.",
+    "validation": {
+      "beliefStatement": "Describe the belief.",
+      "alternativeBelief": "Write an alternative belief."
+    }
   },
   "exposure": {
     "title": "Anxiety & exposure",
@@ -313,7 +317,13 @@
     },
     "deleteHierarchy": "Delete hierarchy",
     "deleteTitle": "Delete this hierarchy?",
-    "deleteMessage": "This permanently removes the hierarchy and all of its items and session history. This can't be undone."
+    "deleteMessage": "This permanently removes the hierarchy and all of its items and session history. This can't be undone.",
+    "validation": {
+      "title": "Give the hierarchy a title.",
+      "anxietyType": "Name the type of anxiety.",
+      "itemDescription": "Describe the exposure step.",
+      "items": "Add at least one step."
+    }
   },
   "worry": {
     "title": "Worry journal",
@@ -357,7 +367,12 @@
     "notFound": "Worry not found",
     "loadingDetail": "Loading worry...",
     "deleteTitle": "Delete this worry?",
-    "deleteMessage": "This permanently removes the entry. This can't be undone."
+    "deleteMessage": "This permanently removes the entry. This can't be undone.",
+    "validation": {
+      "worryStatement": "Describe the worry.",
+      "copingStatement": "Write a coping statement.",
+      "actionSteps": "Add at least one action step."
+    }
   },
   "tasks": {
     "title": "Procrastination",
@@ -417,6 +432,11 @@
       "active": "Active",
       "completed": "Completed",
       "abandoned": "Abandoned"
+    },
+    "validation": {
+      "taskDescription": "Name the task.",
+      "stepDescription": "Describe the step.",
+      "steps": "Add at least one step."
     }
   },
   "anger": {
@@ -468,7 +488,10 @@
     "editTitle": "Edit anger log",
     "editDescription": "Update the details of this episode.",
     "deleteTitle": "Delete this anger log?",
-    "deleteMessage": "This permanently removes the log. This can't be undone."
+    "deleteMessage": "This permanently removes the log. This can't be undone.",
+    "validation": {
+      "triggerText": "Describe what triggered the anger."
+    }
   },
   "selfCare": {
     "title": "Self-care today",
@@ -565,7 +588,11 @@
     "addCommitment": "Add commitment",
     "removeCommitment": "Remove",
     "commitmentPlaceholder": "Example: Do a weekly review on Sunday.",
-    "saveError": "Unable to save the recovery plan."
+    "saveError": "Unable to save the recovery plan.",
+    "validation": {
+      "challengeDescription": "Describe the challenge.",
+      "copingSteps": "Add at least one coping step."
+    }
   },
   "history": {
     "title": "Thought history",
@@ -745,6 +772,9 @@
     "category": {
       "pleasure": "Pleasure",
       "mastery": "Mastery"
+    },
+    "validation": {
+      "activityName": "Name the activity."
     }
   },
   "values": {
@@ -1033,7 +1063,14 @@
     "disputePrompt2": "What would you tell a close friend who had this thought?",
     "disputePrompt3": "Have you faced this situation before? What actually happened?",
     "disputePrompt4": "Are you holding yourself to a harsher standard than you would anyone else?",
-    "disputePrompt5": "What evidence argues against this thought?"
+    "disputePrompt5": "What evidence argues against this thought?",
+    "validation": {
+      "situationTooLong": "Keep the situation under 4000 characters.",
+      "natTooLong": "Keep each thought under 2000 characters.",
+      "evidenceTooLong": "Keep each evidence line under 2000 characters.",
+      "balancedThoughtTooLong": "Keep the balanced thought under 4000 characters.",
+      "outcomeNotesTooLong": "Keep the notes under 4000 characters."
+    }
   },
   "saved": {
     "title": "You examined a thought.",

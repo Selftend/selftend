@@ -85,9 +85,22 @@ describe("gratitude repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(getGratitudeEntry("user-1", "missing")).resolves.toBeNull();
+    // Well-formed uuid that matches no row, so the query itself runs (a malformed
+    // id short-circuits before supabase).
+    const missingId = "11111111-1111-4111-8111-111111111111";
+    await expect(getGratitudeEntry("user-1", missingId)).resolves.toBeNull();
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
-    expect(eqId).toHaveBeenCalledWith("id", "missing");
+    expect(eqId).toHaveBeenCalledWith("id", missingId);
+  });
+
+  it("returns null for a malformed id without calling supabase", async () => {
+    // PostgREST would reject the uuid cast with a 400 (console error), so the
+    // repository must not fire the doomed request at all.
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(getGratitudeEntry("user-1", "does-not-exist")).resolves.toBeNull();
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("lists favorite entries newest-first", async () => {

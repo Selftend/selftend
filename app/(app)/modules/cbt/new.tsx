@@ -31,6 +31,7 @@ import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queri
 import { thoughtRecordFormSchema, type ThoughtRecordFormSchema } from "@/src/features/cbt/schemas";
 import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
 import { useThoughtRecordIntroDismissed } from "@/src/features/cbt/use-thought-record-intro-dismissed";
+import { spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { useWizardDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
 import { useSession } from "@/src/providers/session-provider";
 import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
@@ -107,7 +108,7 @@ function NatAddForm({ onAdd }: { onAdd: (nat: NegativeAutomaticThought) => void 
           />
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ disabled: !text.trim() }}
+            aria-disabled={!text.trim()}
             onPress={handleAdd}
             disabled={!text.trim()}
             className={`mt-1 ${!text.trim() ? "opacity-40" : ""}`}
@@ -265,7 +266,9 @@ export default function ThoughtRecordEditorScreen() {
     await wizard.handleNext();
   };
 
-  if (recordId && isLoading) {
+  // Wait for the persisted draft to rehydrate before mounting the form, exactly
+  // like the edit-mode data gate below - otherwise the wizard would flash empty.
+  if (!wizard.hydrated || (recordId && isLoading)) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">
@@ -340,7 +343,7 @@ export default function ThoughtRecordEditorScreen() {
                   value={value}
                 />
                 {errors.situation?.message ? (
-                  <Text variant="muted">{errors.situation.message}</Text>
+                  <Text variant="muted">{t(errors.situation.message)}</Text>
                 ) : null}
               </View>
             )}
@@ -395,6 +398,12 @@ export default function ThoughtRecordEditorScreen() {
                 }}
               />
               {natsError ? <Text variant="muted">{natsError}</Text> : null}
+              {/* The only per-item schema constraint is the 2000-char cap, so a
+                  fixed message is accurate; without it an overlong paste would
+                  silently block Continue. */}
+              {errors.nats ? (
+                <Text variant="muted">{t("record.validation.natTooLong")}</Text>
+              ) : null}
             </View>
           )}
         />
@@ -405,7 +414,12 @@ export default function ThoughtRecordEditorScreen() {
           control={control}
           name="nats"
           render={({ field: { onChange, value } }) => (
-            <View className="gap-4">
+            <View
+              accessibilityLabel={t("record.hotThought")}
+              accessibilityRole="radiogroup"
+              className="gap-4"
+              role="radiogroup"
+            >
               <View className="gap-2">
                 <Label>{t("record.hotThought")}</Label>
                 <Text variant="muted">{t("record.hotThoughtInstruction")}</Text>
@@ -413,12 +427,16 @@ export default function ThoughtRecordEditorScreen() {
               {value.map((nat, index) => (
                 <Pressable
                   key={index}
-                  accessibilityRole="button"
+                  accessibilityRole="radio"
                   accessibilityLabel={nat.text}
-                  accessibilityState={{ selected: nat.isHotThought }}
+                  aria-checked={nat.isHotThought}
                   onPress={() =>
                     onChange(value.map((n, i) => ({ ...n, isHotThought: i === index })))
                   }
+                  role="radio"
+                  {...spaceKeyActivationProps(() =>
+                    onChange(value.map((n, i) => ({ ...n, isHotThought: i === index }))),
+                  )}
                 >
                   <Card className={nat.isHotThought ? "border-primary border-2" : ""}>
                     <CardHeader>
@@ -482,7 +500,7 @@ export default function ThoughtRecordEditorScreen() {
                   </View>
                 ))}
                 {errors.emotions?.message ? (
-                  <Text variant="muted">{errors.emotions.message}</Text>
+                  <Text variant="muted">{t(errors.emotions.message)}</Text>
                 ) : null}
               </View>
             )}
@@ -540,6 +558,9 @@ export default function ThoughtRecordEditorScreen() {
                   placeholder={t("record.evidenceForPlaceholder")}
                   value={listToText(value)}
                 />
+                {errors.evidenceFor ? (
+                  <Text variant="muted">{t("record.validation.evidenceTooLong")}</Text>
+                ) : null}
               </View>
             )}
           />
@@ -557,6 +578,9 @@ export default function ThoughtRecordEditorScreen() {
                   placeholder={t("record.evidenceAgainstPlaceholder")}
                   value={listToText(value)}
                 />
+                {errors.evidenceAgainst ? (
+                  <Text variant="muted">{t("record.validation.evidenceTooLong")}</Text>
+                ) : null}
               </View>
             )}
           />
@@ -601,7 +625,7 @@ export default function ThoughtRecordEditorScreen() {
                 );
               })}
               {errors.distortions?.message ? (
-                <Text variant="muted">{errors.distortions.message}</Text>
+                <Text variant="muted">{t(errors.distortions.message)}</Text>
               ) : null}
             </View>
           )}
@@ -626,7 +650,7 @@ export default function ThoughtRecordEditorScreen() {
                   value={value}
                 />
                 {errors.balancedThought?.message ? (
-                  <Text variant="muted">{errors.balancedThought.message}</Text>
+                  <Text variant="muted">{t(errors.balancedThought.message)}</Text>
                 ) : null}
               </View>
             )}
@@ -699,6 +723,9 @@ export default function ThoughtRecordEditorScreen() {
                   placeholder={t("record.outcomeNotesPlaceholder")}
                   value={value}
                 />
+                {errors.outcomeNotes?.message ? (
+                  <Text variant="muted">{t(errors.outcomeNotes.message)}</Text>
+                ) : null}
               </View>
             )}
           />

@@ -69,9 +69,12 @@ describe("activities repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(getActivity("user-1", "missing")).resolves.toBeNull();
+    // Well-formed uuid that matches no row, so the query itself runs (a malformed
+    // id short-circuits to null before supabase).
+    const missingId = "11111111-1111-4111-8111-111111111111";
+    await expect(getActivity("user-1", missingId)).resolves.toBeNull();
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
-    expect(eqId).toHaveBeenCalledWith("id", "missing");
+    expect(eqId).toHaveBeenCalledWith("id", missingId);
   });
 
   it("trims input and inserts a new activity", async () => {

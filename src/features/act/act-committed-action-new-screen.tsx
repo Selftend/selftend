@@ -19,6 +19,8 @@ import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { useSaveCommittedAction } from "@/src/features/act/queries";
 import { StepPills } from "@/src/features/act/step-pills";
 import { ACT_LIFE_DOMAINS, type ACTLifeDomain } from "@/src/features/act/types";
+import { useRovingFocus } from "@/src/lib/roving-focus";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
@@ -43,6 +45,13 @@ export default function ActCommittedActionNewScreen() {
   const stepIndex = STEP_ORDER.indexOf(step);
   const isLastStep = stepIndex === STEP_ORDER.length - 1;
 
+  const domainIndex = ACT_LIFE_DOMAINS.indexOf(lifeDomain);
+  const domainRoving = useRovingFocus({
+    count: ACT_LIFE_DOMAINS.length,
+    activeIndex: domainIndex < 0 ? 0 : domainIndex,
+    onActivate: (index) => setLifeDomain(ACT_LIFE_DOMAINS[index]),
+  });
+
   function goNext() {
     if (stepIndex < STEP_ORDER.length - 1) setStep(STEP_ORDER[stepIndex + 1]);
   }
@@ -50,7 +59,7 @@ export default function ActCommittedActionNewScreen() {
     if (stepIndex > 0) setStep(STEP_ORDER[stepIndex - 1]);
   }
 
-  async function handleSave() {
+  const handleSave = useSingleFlight(async () => {
     if (!user) return;
     setSubmitError("");
     try {
@@ -70,7 +79,7 @@ export default function ActCommittedActionNewScreen() {
       const message = error instanceof Error ? error.message : t("act:committedAction.saveProblem");
       setSubmitError(message);
     }
-  }
+  });
 
   const canGoNext = step !== "action" || title.trim().length > 0;
 
@@ -136,19 +145,26 @@ export default function ActCommittedActionNewScreen() {
             <View className="gap-1">
               <Label>{t("act:committedAction.domainLabel")}</Label>
             </View>
-            <View className="gap-2">
-              {ACT_LIFE_DOMAINS.map((domain) => {
+            <View
+              accessibilityLabel={t("act:committedAction.domainLabel")}
+              accessibilityRole="radiogroup"
+              className="gap-2"
+              role="radiogroup"
+            >
+              {ACT_LIFE_DOMAINS.map((domain, index) => {
                 const selected = lifeDomain === domain;
                 return (
                   <Pressable
                     key={domain}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
+                    accessibilityRole="radio"
+                    aria-checked={selected}
+                    role="radio"
                     onPress={() => setLifeDomain(domain)}
                     className={cn(
                       "rounded-xl border p-4 active:bg-accent/40",
                       selected ? "border-act bg-act/5" : "border-border bg-card",
                     )}
+                    {...domainRoving.getItemProps(index, () => setLifeDomain(domain))}
                   >
                     <Text className={cn("font-semibold", selected && "text-act")}>
                       {t(`act:values.${domain}`)}

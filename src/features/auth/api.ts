@@ -8,14 +8,15 @@ import { requireSupabase } from "@/src/lib/supabase";
 
 const AUTH_CALLBACK_PATH = "auth-callback";
 
-// Under the PKCE flow the recovery email redirects to the callback as
-// `.../auth-callback?code=<uuid>` with NO `type` param, and supabase-js emits a
-// plain SIGNED_IN event (not PASSWORD_RECOVERY). Without a marker the callback
-// can't tell a reset link from a normal sign-in and would drop the user into the
-// app instead of the update-password screen. We carry the intent in redirect_to;
-// Supabase preserves the query param and appends `&code=...`, so the callback sees
-// `?code=...&type=recovery`. parseAuthCallbackUrl reads `type` from the query.
-const RECOVERY_REDIRECT_TYPE = "recovery";
+// Email links are templated as `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=...`
+// (see supabase/templates/ and docs/operations-runbook.md "Auth Email Templates"), so
+// every redirect URL the app sends for EMAILS must stay query-less - the template
+// appends its own query string, and a `?` already present in redirect_to would break
+// the join. The `type` the callback needs to route (recovery -> update-password,
+// signup -> verified card) now comes from the template's `&type=` param. A previous
+// revision carried a `?type=recovery` marker on the recovery redirect; links from
+// emails sent back then still work - they route through /auth/v1/verify and arrive
+// as `?type=recovery&code=...`, which the callback's `code` branch handles.
 
 export function getWebAuthRedirectUrl(publicAppUrl = appEnv.publicAppUrl) {
   const configuredPublicAppUrl = publicAppUrl.trim();
@@ -27,15 +28,8 @@ export function getWebAuthRedirectUrl(publicAppUrl = appEnv.publicAppUrl) {
 }
 
 export function getPasswordResetRedirectUrl() {
-  if (Platform.OS === "web") {
-    const url = new URL(getWebAuthRedirectUrl());
-    url.searchParams.set("type", RECOVERY_REDIRECT_TYPE);
-    return url.toString();
-  }
-
-  return Linking.createURL(AUTH_CALLBACK_PATH, {
-    queryParams: { type: RECOVERY_REDIRECT_TYPE },
-  });
+  // Query-less on purpose: the recovery template appends `?token_hash=...&type=recovery`.
+  return getDefaultAuthRedirectUrl();
 }
 
 function getDefaultAuthRedirectUrl() {
@@ -90,12 +84,16 @@ export async function signInWithPassword(email: string, password: string) {
   const client = requireSupabase();
   const { error } = await client.auth.signInWithPassword({ email, password });
   if (error) {
+    if ((error as SupabaseAuthError).code === "invalid_credentials") {
+      throw new Error(INVALID_CREDENTIALS_ERROR);
+    }
     throw error;
   }
 }
 
 export const EMAIL_ALREADY_EXISTS_ERROR = "EMAIL_ALREADY_EXISTS";
 export const LEAKED_PASSWORD_ERROR = "LEAKED_PASSWORD";
+export const INVALID_CREDENTIALS_ERROR = "INVALID_CREDENTIALS";
 
 type SupabaseAuthError = Error & {
   code?: string;
@@ -124,6 +122,13 @@ export async function signUpWithPassword(email: string, password: string, name?:
   if (error) {
     if (isLeakedPasswordError(error)) {
       throw new Error(LEAKED_PASSWORD_ERROR);
+    }
+    // Without email enumeration protection (the local stack, and hosted projects
+    // that disable it) GoTrue rejects an existing email outright instead of
+    // silently succeeding - map it to the same friendly branch as the
+    // empty-identities case below so local and hosted behave identically.
+    if ((error as SupabaseAuthError).code === "user_already_exists") {
+      throw new Error(EMAIL_ALREADY_EXISTS_ERROR);
     }
     throw error;
   }

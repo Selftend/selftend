@@ -81,7 +81,7 @@ jest.mock("@/src/components/react-native-reusables/checkbox", () => {
       <Pressable
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="checkbox"
-        accessibilityState={{ checked: Boolean(checked) }}
+        aria-checked={Boolean(checked)}
         onPress={() => onCheckedChange?.(!checked)}
       />
     ),
@@ -213,6 +213,35 @@ describe("MoodEntryEditorScreen", () => {
         moodLogId: "log-1",
       });
     });
+  });
+
+  it("saves exactly once when Save is pressed twice rapidly", async () => {
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+
+    fireEvent.press(screen.getByLabelText("OK"));
+    // isPending has not re-rendered between the two presses, so only the
+    // single-flight guard stands between the double-press and two inserts.
+    fireEvent.press(screen.getByText("Save"));
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() => expect(saveMood).toHaveBeenCalled());
+    expect(saveMood).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows an inline error next to the score row and does not save without a score", async () => {
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+
+    // Save stays enabled; pressing it without a score surfaces the inline error.
+    fireEvent.press(screen.getByText("Save"));
+
+    expect(await screen.findByText("Pick a mood score first.")).toBeTruthy();
+    expect(saveMood).not.toHaveBeenCalled();
+
+    // Picking a score clears the error and lets the save go through.
+    fireEvent.press(screen.getByLabelText("OK"));
+    expect(screen.queryByText("Pick a mood score first.")).toBeNull();
+    fireEvent.press(screen.getByText("Save"));
+    await waitFor(() => expect(saveMood).toHaveBeenCalledTimes(1));
   });
 
   it("preserves in-progress edits when the entry refetches (no hydration clobber)", () => {

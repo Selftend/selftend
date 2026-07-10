@@ -1,9 +1,9 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ActivityIndicator, Pressable, TextInput, View } from "react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -29,6 +29,8 @@ import {
 } from "@/src/features/act/queries";
 import { type ActionStatus } from "@/src/features/act/types";
 import { useCachedItem } from "@/src/features/act/use-cached-item";
+import { spaceKeyActivationProps } from "@/src/lib/accessibility";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -68,6 +70,15 @@ export default function ActCommittedActionDetailScreen() {
   const [deleteError, setDeleteError] = useState("");
   const [newStepText, setNewStepText] = useState("");
 
+  // Reachable from two triggers (the input's onSubmitEditing and the add button), so a fast
+  // Enter+tap would insert the step twice without the single-flight guard. Declared before
+  // the loading/not-found early returns below so the hook call is unconditional.
+  const handleAddStep = useSingleFlight(async () => {
+    if (!actionId || !newStepText.trim()) return;
+    await saveStepMutation.mutateAsync({ actionId, description: newStepText });
+    setNewStepText("");
+  });
+
   if (isLoading) {
     return <ActDetailLoading title={t("committedAction.listTitle")} />;
   }
@@ -99,12 +110,6 @@ export default function ActCommittedActionDetailScreen() {
     }
   }
 
-  async function handleAddStep() {
-    if (!actionId || !newStepText.trim()) return;
-    await saveStepMutation.mutateAsync({ actionId, description: newStepText });
-    setNewStepText("");
-  }
-
   async function handleToggleStep(stepId: string, current: boolean) {
     if (!actionId) return;
     const completed = !current;
@@ -130,8 +135,40 @@ export default function ActCommittedActionDetailScreen() {
   const doneCount = steps.filter((s) => s.isCompleted).length;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerClassName="grow p-6">
+    <>
+      <MobileFormScreen
+        footer={
+          <View className="flex-row items-center gap-2 rounded-xl border border-border bg-card px-3">
+            <TextInput
+              className="flex-1 py-3 text-sm text-foreground"
+              placeholder={t("committedAction.addStepPlaceholder")}
+              placeholderTextColor="gray"
+              value={newStepText}
+              onChangeText={setNewStepText}
+              onSubmitEditing={() => void handleAddStep()}
+              returnKeyType="done"
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("committedAction.addStep")}
+              onPress={() => void handleAddStep()}
+              disabled={!newStepText.trim() || saveStepMutation.isPending}
+            >
+              {saveStepMutation.isPending ? (
+                <ActivityIndicator />
+              ) : (
+                <Icon
+                  name="add-circle"
+                  className={cn(
+                    "size-6",
+                    newStepText.trim() ? "text-act" : "text-muted-foreground",
+                  )}
+                />
+              )}
+            </Pressable>
+          </View>
+        }
+      >
         <View className="gap-6">
           {/* Header */}
           <View className="gap-2">
@@ -229,10 +266,14 @@ export default function ActCommittedActionDetailScreen() {
                     className="flex-row items-start gap-3 rounded-lg border border-border bg-card p-3"
                   >
                     <Pressable
+                      accessibilityLabel={step.description}
                       accessibilityRole="checkbox"
-                      accessibilityState={{ checked: step.isCompleted }}
+                      aria-checked={step.isCompleted}
                       onPress={() => void handleToggleStep(step.id, step.isCompleted)}
                       className="mt-0.5"
+                      {...spaceKeyActivationProps(
+                        () => void handleToggleStep(step.id, step.isCompleted),
+                      )}
                     >
                       <Icon
                         name={step.isCompleted ? "check-circle" : "radio-button-unchecked"}
@@ -261,40 +302,9 @@ export default function ActCommittedActionDetailScreen() {
                 ))}
               </View>
             )}
-
-            {/* Add step input */}
-            <View className="flex-row items-center gap-2 rounded-xl border border-border bg-card px-3">
-              <TextInput
-                className="flex-1 py-3 text-sm text-foreground"
-                placeholder={t("committedAction.addStepPlaceholder")}
-                placeholderTextColor="gray"
-                value={newStepText}
-                onChangeText={setNewStepText}
-                onSubmitEditing={() => void handleAddStep()}
-                returnKeyType="done"
-              />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("committedAction.addStep")}
-                onPress={() => void handleAddStep()}
-                disabled={!newStepText.trim() || saveStepMutation.isPending}
-              >
-                {saveStepMutation.isPending ? (
-                  <ActivityIndicator />
-                ) : (
-                  <Icon
-                    name="add-circle"
-                    className={cn(
-                      "size-6",
-                      newStepText.trim() ? "text-act" : "text-muted-foreground",
-                    )}
-                  />
-                )}
-              </Pressable>
-            </View>
           </View>
         </View>
-      </ScrollView>
+      </MobileFormScreen>
 
       <ConfirmDialog
         cancelLabel={t("committedAction.cancel")}
@@ -310,7 +320,7 @@ export default function ActCommittedActionDetailScreen() {
         title={t("committedAction.deleteConfirm")}
         visible={confirmOpen}
       />
-    </SafeAreaView>
+    </>
   );
 }
 

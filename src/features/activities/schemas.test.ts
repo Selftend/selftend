@@ -62,3 +62,20 @@ describe("activityFormSchema", () => {
     expect(activityFormSchema.safeParse({ ...base, paceCategory: "other" }).success).toBe(false);
   });
 });
+
+describe("validation messages are i18n keys", () => {
+  it("emits the key for a missing activity name", () => {
+    const result = activityFormSchema.safeParse({
+      activityName: "",
+      category: "pleasure",
+      paceCategory: null,
+      scheduledAt: null,
+      moodBefore: null,
+      notes: "",
+    });
+    expect(result.success).toBe(false);
+    expect(result.error!.issues.map((issue) => issue.message)).toContain(
+      "activities.validation.activityName",
+    );
+  });
+});

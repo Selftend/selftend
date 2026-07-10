@@ -90,6 +90,10 @@ Every real module must use the shared app foundation:
 - shared loading, empty, error, toast, safety/crisis, and mobile form patterns
 - online-first drafts that survive failed saves and clear after confirmed save or explicit discard
 - reminders off by default, explicit, local where possible, and non-punitive
+- repository fetch-by-route-id functions validate the id with `isValidUuid` (`src/utils/uuid.ts`) and return their normal not-found result (`null` / `[]`) without a network call
+- user-triggered async save handlers wrap in `useSingleFlight` (`src/lib/use-single-flight.ts`) so a rapid double-press cannot insert twice; upserts that merge on a unique index may skip it
+- free-text fields are sanitized exactly once, on WRITE: `userText(max, ...)` (`src/lib/zod-fields.ts`) when the flow is zod-validated, otherwise `sanitizeUserText` (`src/utils/sanitize-text.ts`) in the repository's create/update; never sanitize on read - see "Free-text sanitization" in [architecture.md](../architecture.md)
+- multi-step wizards persist drafts through `createWizardDraftStore("<flow-key>")` + `useWizardDraft` (24h TTL, versioned envelope, sign-out wipes disk) - see "Wizard draft persistence contract" in [architecture.md](../architecture.md)
 - schema/repository tests plus one component state test for user-facing flows
 
 Planned boundaries:

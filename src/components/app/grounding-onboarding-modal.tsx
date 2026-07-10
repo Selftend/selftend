@@ -34,6 +34,7 @@ export function GroundingOnboarding({
       visible={visible}
       isPending={isPending}
       errorMessage={errorMessage}
+      accessibilityLabel={t("grounding.onboarding.welcome.title")}
       ctaLabel={t("grounding.onboarding.finish.start")}
       onComplete={onComplete}
       onDismiss={onDismiss}

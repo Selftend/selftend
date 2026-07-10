@@ -49,7 +49,7 @@ export function ForgotPasswordForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("forgotPassword.title")}</CardTitle>
+        <CardTitle aria-level={1}>{t("forgotPassword.title")}</CardTitle>
         <CardDescription>{t("forgotPassword.subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="gap-4">
@@ -60,6 +60,7 @@ export function ForgotPasswordForm() {
             <View className="gap-2">
               <Label>{t("forgotPassword.email")}</Label>
               <Input
+                accessibilityLabel={t("forgotPassword.email")}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
@@ -69,7 +70,7 @@ export function ForgotPasswordForm() {
                 value={value}
               />
               {errors.email?.message ? (
-                <Text className="text-sm text-destructive">{errors.email.message}</Text>
+                <Text className="text-sm text-destructive">{t(errors.email.message)}</Text>
               ) : null}
             </View>
           )}

@@ -47,7 +47,7 @@ test.describe("ACT committed action: create, add step, toggle step, change statu
 
     // ── Step 1: Domain ─────────────────────────────────────────────────────────
     // "Health & personal growth" maps to domain key "personalGrowth"
-    await page.getByRole("button", { name: "Health & personal growth", exact: true }).click();
+    await page.getByRole("radio", { name: "Health & personal growth", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // ── Step 2: Action ─────────────────────────────────────────────────────────

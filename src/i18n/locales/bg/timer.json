@@ -1,7 +1,8 @@
 {
   "duration": {
     "minutes": "{{count}} мин",
-    "minutesUnit": "мин"
+    "minutesUnit": "мин",
+    "editLabel": "Редактирай продължителността в минути"
   },
   "interval": {
     "label": "Междинен звън",

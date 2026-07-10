@@ -9,6 +9,7 @@ import {
 } from "@/src/components/app/rich-onboarding-shell";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { CONCERN_KEYS, isConcernKey, type ConcernKey } from "@/src/features/onboarding/concerns";
+import { spaceKeyActivationProps } from "@/src/lib/accessibility";
 
 const welcomeIllustration = require("../../../assets/images/onboarding/app_welcome.png");
 
@@ -50,14 +51,28 @@ export function AppOnboardingWizard({
     setPanel((p) => p + 1);
   };
 
+  // Android hardware back / web Escape: step back one panel rather than
+  // permanently skipping the whole wizard from any panel; only from the first
+  // panel does it skip, and never mid-submit (matches the Skip button's gate).
+  const handleDismiss = () => {
+    if (isPending) return;
+    if (panel > 0) {
+      setPanel((p) => p - 1);
+      return;
+    }
+    onSkip();
+  };
+
   return (
     <RichOnboardingShell
       visible={visible}
       isPending={isPending}
       errorMessage={errorMessage}
+      accessibilityLabel={t("onboarding.appTitle")}
       ctaLabel={isLast ? t("onboarding.wizFinish") : t("onboarding.wizNext")}
       ctaAlwaysCompletes
       onComplete={handleCta}
+      onDismiss={handleDismiss}
       footerSlot={
         <View className="gap-3">
           <View className="flex-row items-center justify-between">
@@ -150,13 +165,14 @@ export function AppOnboardingWizard({
                 <Pressable
                   key={key}
                   accessibilityRole="checkbox"
-                  accessibilityState={{ checked: active }}
+                  aria-checked={active}
                   onPress={() => toggleConcern(key)}
                   className={
                     active
                       ? "rounded-full border border-primary bg-primary/10 px-4 py-2"
                       : "rounded-full border border-border px-4 py-2"
                   }
+                  {...spaceKeyActivationProps(() => toggleConcern(key))}
                 >
                   <Text className={active ? "text-sm font-semibold text-primary" : "text-sm"}>
                     {t(`onboarding.concerns.${key}`)}

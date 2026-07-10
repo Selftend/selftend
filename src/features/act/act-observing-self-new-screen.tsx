@@ -20,6 +20,8 @@ import { NumberRating } from "@/src/components/app/number-rating";
 import { useSaveObservingSelfSession } from "@/src/features/act/queries";
 import { StepPills } from "@/src/features/act/step-pills";
 import { OBSERVING_TECHNIQUES, type ObservingTechnique } from "@/src/features/act/types";
+import { useRovingFocus } from "@/src/lib/roving-focus";
+import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -54,6 +56,13 @@ export default function ActObservingSelfNewScreen() {
   const stepIndex = STEP_ORDER.indexOf(step);
   const isLastStep = stepIndex === STEP_ORDER.length - 1;
 
+  const techniqueIndex = OBSERVING_TECHNIQUES.indexOf(techniqueUsed);
+  const techniqueRoving = useRovingFocus({
+    count: OBSERVING_TECHNIQUES.length,
+    activeIndex: techniqueIndex < 0 ? 0 : techniqueIndex,
+    onActivate: (index) => setTechniqueUsed(OBSERVING_TECHNIQUES[index]),
+  });
+
   function goNext() {
     if (stepIndex < STEP_ORDER.length - 1) setStep(STEP_ORDER[stepIndex + 1]);
   }
@@ -61,7 +70,7 @@ export default function ActObservingSelfNewScreen() {
     if (stepIndex > 0) setStep(STEP_ORDER[stepIndex - 1]);
   }
 
-  async function handleSave() {
+  const handleSave = useSingleFlight(async () => {
     if (!user) return;
     setSubmitError("");
     try {
@@ -78,7 +87,7 @@ export default function ActObservingSelfNewScreen() {
       const message = error instanceof Error ? error.message : t("act:observingSelf.saveProblem");
       setSubmitError(message);
     }
-  }
+  });
 
   const guideKey = GUIDE_KEY[techniqueUsed];
 
@@ -147,19 +156,26 @@ export default function ActObservingSelfNewScreen() {
                 {t("act:observingSelf.techniqueHint")}
               </Text>
             </View>
-            <View className="gap-2">
-              {OBSERVING_TECHNIQUES.map((tech) => {
+            <View
+              accessibilityLabel={t("act:observingSelf.techniqueLabel")}
+              accessibilityRole="radiogroup"
+              className="gap-2"
+              role="radiogroup"
+            >
+              {OBSERVING_TECHNIQUES.map((tech, index) => {
                 const selected = techniqueUsed === tech;
                 return (
                   <Pressable
                     key={tech}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
+                    accessibilityRole="radio"
+                    aria-checked={selected}
+                    role="radio"
                     onPress={() => setTechniqueUsed(tech)}
                     className={cn(
                       "rounded-xl border p-4 active:bg-accent/40",
                       selected ? "border-act bg-act/5" : "border-border bg-card",
                     )}
+                    {...techniqueRoving.getItemProps(index, () => setTechniqueUsed(tech))}
                   >
                     <View className="gap-1">
                       <Text className={cn("font-semibold", selected && "text-act")}>

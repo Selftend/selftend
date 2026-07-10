@@ -4,6 +4,7 @@ import type {
   BreathingExerciseInput,
 } from "@/src/features/breathing/exercise-types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
 
 interface BreathingExerciseRow {
   id: string;
@@ -62,6 +63,8 @@ export async function getBreathingExercise(
   userId: string,
   id: string,
 ): Promise<BreathingExercise | null> {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(id)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("breathing_exercises")

@@ -64,19 +64,20 @@ describe("getPasswordResetRedirectUrl", () => {
     Object.defineProperty(Platform, "OS", { configurable: true, value: originalOS });
   });
 
-  it("carries the recovery type marker on web so the PKCE callback knows it is a reset", () => {
+  // The email templates append `?token_hash=...&type=recovery` to {{ .RedirectTo }},
+  // so the redirect URL the app sends MUST stay query-less - a `?type=recovery`
+  // marker here would produce a link with two `?` and break the callback.
+  it("is query-less on web (the recovery template appends token_hash and type)", () => {
     Object.defineProperty(Platform, "OS", { configurable: true, value: "web" });
 
-    expect(getPasswordResetRedirectUrl()).toBe("https://selftend.org/auth-callback?type=recovery");
+    expect(getPasswordResetRedirectUrl()).toBe("https://selftend.org/auth-callback");
   });
 
-  it("passes the recovery type as a deep-link query param on native", () => {
+  it("is the plain deep link on native (no marker query params)", () => {
     Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
-    jest.mocked(Linking.createURL).mockReturnValue("selftend://auth-callback?type=recovery");
+    jest.mocked(Linking.createURL).mockReturnValue("selftend://auth-callback");
 
-    expect(getPasswordResetRedirectUrl()).toBe("selftend://auth-callback?type=recovery");
-    expect(Linking.createURL).toHaveBeenCalledWith("auth-callback", {
-      queryParams: { type: "recovery" },
-    });
+    expect(getPasswordResetRedirectUrl()).toBe("selftend://auth-callback");
+    expect(Linking.createURL).toHaveBeenCalledWith("auth-callback");
   });
 });

@@ -2,6 +2,7 @@ import { Pressable, View } from "react-native";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
+import { useRovingFocus } from "@/src/lib/roving-focus";
 
 interface SegmentOption<T extends string | number> {
   value: T;
@@ -19,17 +20,31 @@ export function SegmentedControl<T extends string | number>({
   value,
   onChange,
 }: SegmentedControlProps<T>) {
+  const activeIndex = options.findIndex((opt) => opt.value === value);
+  const roving = useRovingFocus({
+    count: options.length,
+    // No match: treat the first segment as active so the group stays tab-reachable.
+    activeIndex: activeIndex < 0 ? 0 : activeIndex,
+    onActivate: (index) => onChange(options[index].value),
+  });
+
   return (
-    <View className="flex-row rounded-full bg-muted p-0.5">
-      {options.map((opt) => {
+    <View
+      accessibilityRole="tablist"
+      className="flex-row rounded-full bg-muted p-0.5"
+      role="tablist"
+    >
+      {options.map((opt, index) => {
         const active = opt.value === value;
         return (
           <Pressable
             key={String(opt.value)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
+            accessibilityRole="tab"
+            aria-selected={active}
+            role="tab"
             onPress={() => onChange(opt.value)}
             className={cn("rounded-full px-3 py-1", active ? "bg-card" : "")}
+            {...roving.getItemProps(index, () => onChange(opt.value))}
           >
             <Text
               className={cn(

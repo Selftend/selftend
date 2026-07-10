@@ -49,4 +49,13 @@ describe("SignUpForm", () => {
       ),
     ).toBeTruthy();
   });
+
+  it("gives every input an accessible name", () => {
+    renderWithProviders(<SignUpForm />);
+
+    expect(screen.getByLabelText("Display name")).toBeTruthy();
+    expect(screen.getByLabelText("Email").props.keyboardType).toBe("email-address");
+    expect(screen.getByLabelText("Password").props.secureTextEntry).toBe(true);
+    expect(screen.getByLabelText("Confirm password").props.secureTextEntry).toBe(true);
+  });
 });

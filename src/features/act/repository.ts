@@ -34,6 +34,8 @@ import type {
   ChoicePointInput,
 } from "@/src/features/act/types";
 import { requireSupabase } from "@/src/lib/supabase";
+import { isValidUuid } from "@/src/utils/uuid";
+import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
 interface ACTProgramStateRow {
   user_id: string;
@@ -165,6 +167,8 @@ export async function listDefusionLogs(userId: string, limit = 30) {
 }
 
 export async function getDefusionLog(userId: string, logId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(logId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("act_defusion_logs")
@@ -187,13 +191,13 @@ export async function saveDefusionLog(userId: string, input: DefusionLogInput) {
     .from("act_defusion_logs")
     .insert({
       user_id: userId,
-      fused_thought: input.fusedThought.trim(),
+      fused_thought: sanitizeUserText(input.fusedThought).trim(),
       thought_category: input.thoughtCategory,
       fusion_level_before: input.fusionLevelBefore ?? null,
       technique_used: input.techniqueUsed,
-      defused_version: input.defusedVersion?.trim() ?? "",
+      defused_version: sanitizeUserText(input.defusedVersion ?? "").trim(),
       fusion_level_after: input.fusionLevelAfter ?? null,
-      notes: input.notes?.trim() ?? "",
+      notes: sanitizeUserText(input.notes ?? "").trim(),
       ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
@@ -265,6 +269,8 @@ export async function listExpansionLogs(userId: string, limit = 30) {
 }
 
 export async function getExpansionLog(userId: string, logId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(logId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("act_expansion_logs")
@@ -287,14 +293,14 @@ export async function saveExpansionLog(userId: string, input: ExpansionLogInput)
     .from("act_expansion_logs")
     .insert({
       user_id: userId,
-      emotion: input.emotion.trim(),
-      body_sensation: input.bodySensation?.trim() ?? "",
+      emotion: sanitizeUserText(input.emotion).trim(),
+      body_sensation: sanitizeUserText(input.bodySensation ?? "").trim(),
       intensity_before: input.intensityBefore ?? null,
       struggle_switch_on: input.struggleSwitchOn ?? null,
       discomfort_type: input.discomfortType ?? null,
       technique_used: input.techniqueUsed,
       intensity_after: input.intensityAfter ?? null,
-      notes: input.notes?.trim() ?? "",
+      notes: sanitizeUserText(input.notes ?? "").trim(),
       ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
@@ -367,10 +373,10 @@ export async function saveUrgeSurfLog(userId: string, input: UrgeSurfLogInput) {
     .from("act_urge_surf_logs")
     .insert({
       user_id: userId,
-      urge_description: input.urgeDescription.trim(),
-      trigger: input.trigger?.trim() ?? "",
+      urge_description: sanitizeUserText(input.urgeDescription).trim(),
+      trigger: sanitizeUserText(input.trigger ?? "").trim(),
       peak_intensity: input.peakIntensity ?? null,
-      surfing_notes: input.surfingNotes?.trim() ?? "",
+      surfing_notes: sanitizeUserText(input.surfingNotes ?? "").trim(),
       urge_acted_on: input.urgeActedOn ?? false,
       completed_at: input.completedAt ?? new Date().toISOString(),
       ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
@@ -429,6 +435,8 @@ export async function listConnectionLogs(userId: string, limit = 30) {
 }
 
 export async function getConnectionLog(userId: string, logId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(logId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("act_connection_logs")
@@ -452,11 +460,11 @@ export async function saveConnectionLog(userId: string, input: ConnectionLogInpu
     .insert({
       user_id: userId,
       technique: input.technique,
-      activity_context: input.activityContext?.trim() ?? "",
-      notices_from_senses: input.noticesFromSenses?.trim() ?? "",
+      activity_context: sanitizeUserText(input.activityContext ?? "").trim(),
+      notices_from_senses: sanitizeUserText(input.noticesFromSenses ?? "").trim(),
       duration_minutes: input.durationMinutes ?? null,
       mood_after: input.moodAfter ?? null,
-      notes: input.notes?.trim() ?? "",
+      notes: sanitizeUserText(input.notes ?? "").trim(),
       ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
@@ -522,6 +530,8 @@ export async function listObservingSelfSessions(userId: string, limit = 30) {
 }
 
 export async function getObservingSelfSession(userId: string, sessionId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(sessionId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("act_observing_self_sessions")
@@ -545,10 +555,10 @@ export async function saveObservingSelfSession(userId: string, input: ObservingS
     .insert({
       user_id: userId,
       technique_used: input.techniqueUsed,
-      what_was_observed: input.whatWasObserved?.trim() ?? "",
+      what_was_observed: sanitizeUserText(input.whatWasObserved ?? "").trim(),
       duration_minutes: input.durationMinutes ?? null,
       mood_after: input.moodAfter ?? null,
-      notes: input.notes?.trim() ?? "",
+      notes: sanitizeUserText(input.notes ?? "").trim(),
       ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
@@ -640,15 +650,16 @@ export async function upsertValueEntry(userId: string, input: ValueEntryInput) {
     life_domain: input.lifeDomain,
     updated_at: new Date().toISOString(),
   };
-  if (input.valueStatement !== undefined) payload.value_statement = input.valueStatement.trim();
+  if (input.valueStatement !== undefined)
+    payload.value_statement = sanitizeUserText(input.valueStatement).trim();
   if (input.importanceRating !== undefined) payload.importance_rating = input.importanceRating;
   if (input.currentAlignmentRating !== undefined)
     payload.current_alignment_rating = input.currentAlignmentRating;
   if (input.currentActionsNote !== undefined)
-    payload.current_actions_note = input.currentActionsNote.trim();
+    payload.current_actions_note = sanitizeUserText(input.currentActionsNote).trim();
   if (input.desiredActionsNote !== undefined)
-    payload.desired_actions_note = input.desiredActionsNote.trim();
-  if (input.barriers !== undefined) payload.barriers = input.barriers.trim();
+    payload.desired_actions_note = sanitizeUserText(input.desiredActionsNote).trim();
+  if (input.barriers !== undefined) payload.barriers = sanitizeUserText(input.barriers).trim();
 
   // act_value_entries is a transparent encrypted view; a view cannot be the target of
   // INSERT ... ON CONFLICT, so we insert plainly and the view's INSTEAD OF trigger resolves the
@@ -767,6 +778,8 @@ export async function listCommittedActions(userId: string, status?: ActionStatus
 }
 
 export async function getCommittedAction(userId: string, actionId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(actionId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("act_committed_actions")
@@ -790,11 +803,11 @@ export async function saveCommittedAction(userId: string, input: CommittedAction
     .insert({
       user_id: userId,
       life_domain: input.lifeDomain,
-      title: input.title.trim(),
-      description: input.description?.trim() ?? "",
+      title: sanitizeUserText(input.title).trim(),
+      description: sanitizeUserText(input.description ?? "").trim(),
       status: input.status ?? "active",
       target_date: input.targetDate ?? null,
-      obstacles: input.obstacles?.trim() ?? "",
+      obstacles: sanitizeUserText(input.obstacles ?? "").trim(),
     })
     .select("*")
     .single();
@@ -810,11 +823,12 @@ export async function updateCommittedAction(
 ) {
   const client = requireSupabase();
   const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  if (patch.title !== undefined) payload.title = patch.title.trim();
-  if (patch.description !== undefined) payload.description = patch.description.trim();
+  if (patch.title !== undefined) payload.title = sanitizeUserText(patch.title).trim();
+  if (patch.description !== undefined)
+    payload.description = sanitizeUserText(patch.description).trim();
   if (patch.status !== undefined) payload.status = patch.status;
   if (patch.targetDate !== undefined) payload.target_date = patch.targetDate;
-  if (patch.obstacles !== undefined) payload.obstacles = patch.obstacles.trim();
+  if (patch.obstacles !== undefined) payload.obstacles = sanitizeUserText(patch.obstacles).trim();
 
   const { data, error } = await client
     .from("act_committed_actions")
@@ -866,6 +880,8 @@ function mapActionStep(row: ActionStepRow): ActionStep {
 }
 
 export async function listActionSteps(userId: string, actionId: string) {
+  // actionId comes from the committed-action detail route; a malformed id would 400 on the uuid cast.
+  if (!isValidUuid(actionId)) return [];
   const client = requireSupabase();
   const { data, error } = await client
     .from("act_action_steps")
@@ -908,7 +924,7 @@ export async function saveActionStep(userId: string, input: ActionStepInput) {
     .insert({
       user_id: userId,
       action_id: input.actionId,
-      description: input.description.trim(),
+      description: sanitizeUserText(input.description).trim(),
     })
     .select("*")
     .single();
@@ -994,6 +1010,8 @@ export async function listChoicePoints(userId: string, limit = 30) {
 }
 
 export async function getChoicePoint(userId: string, choicePointId: string) {
+  // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
+  if (!isValidUuid(choicePointId)) return null;
   const client = requireSupabase();
   const { data, error } = await client
     .from("act_choice_points")
@@ -1019,7 +1037,7 @@ export async function saveChoicePoint(userId: string, input: ChoicePointInput) {
       hooks: input.hooks ?? [],
       away_moves: input.awayMoves ?? [],
       toward_moves: input.towardMoves ?? [],
-      notes: input.notes?.trim() ?? "",
+      notes: sanitizeUserText(input.notes ?? "").trim(),
       ...(input.createdAt !== undefined ? { created_at: input.createdAt } : {}),
     })
     .select("*")
