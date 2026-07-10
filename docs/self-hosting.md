@@ -52,7 +52,7 @@ The project documents this path but does not maintain a production Docker Compos
 
 The client currently depends on:
 
-- Supabase Auth for accounts, sessions, magic links, and Google OAuth
+- Supabase Auth for accounts, sessions, and Google OAuth
 - Supabase Postgres tables and RLS in `supabase/migrations`
 - Supabase client access from Expo using public URL and publishable/anon key
 - auth redirects for web and native flows

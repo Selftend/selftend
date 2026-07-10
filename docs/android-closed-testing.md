@@ -209,7 +209,6 @@ Use a real Android device, not only an emulator.
 - sign-in screens do not show the Supabase-not-configured message
 - session restores after force close and restart
 - Google sign-in returns to the app through `selftend://auth-callback`
-- magic-link email returns to the app through `selftend://auth-callback`
 - CBT record create/edit/archive works against the intended Supabase project
 - optional profile-picture upload works without camera or microphone/audio permission prompts
 - reminders are off by default
@@ -291,7 +290,7 @@ Send testers:
 - closed-testing opt-in link from Play Console
 - support email for feedback
 - warning not to enter urgent crisis details into feedback channels
-- test account instructions for Google or magic-link sign-in
+- test account instructions for Google sign-in
 - expected checks:
   - sign in
   - create one short CBT record

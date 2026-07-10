@@ -9,7 +9,6 @@ import { requireSupabase } from "@/src/lib/supabase";
 const supportedEmailOtpTypes = new Set<EmailOtpType>([
   "signup",
   "invite",
-  "magiclink",
   "recovery",
   "email_change",
   "email",

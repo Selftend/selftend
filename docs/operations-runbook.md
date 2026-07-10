@@ -85,12 +85,11 @@ must mirror them by hand - templates are not part of `db push`.
    | -------------- | ------------------------------------- | ----------------------------------------------------------------- |
    | Confirm signup | `Confirm your email for Selftend`     | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=signup`       |
    | Reset password | `Reset your Selftend password`        | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery`     |
-   | Magic link     | `Your Selftend sign-in link`          | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=magiclink`    |
    | Change email   | `Confirm your new email for Selftend` | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email_change` |
    | Invite user    | `You're invited to Selftend`          | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=invite`       |
 
-   Body files: `confirmation.html`, `recovery.html`, `magic_link.html`,
-   `email_change.html`, `invite.html` in `supabase/templates/`. (Invite matters
+   Body files: `confirmation.html`, `recovery.html`, `email_change.html`,
+   `invite.html` in `supabase/templates/`. (Invite matters
    even without an invite UI: admin-API invitations from the Dashboard would
    otherwise send the default PKCE `?code=` link, which breaks cross-browser.)
 

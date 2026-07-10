@@ -306,16 +306,6 @@ https://<project-ref>.supabase.co/auth/v1/callback
 
 Use the exact redirect URI shown by the Supabase Google provider page for the active project.
 
-## Magic-Link Email Configuration
-
-Passwordless email sign-in uses `emailRedirectTo` from the app:
-
-- web returns to `https://selftend.org/auth-callback`
-- development native builds return to `selftend-dev://auth-callback`
-- production native builds return to `selftend://auth-callback`
-
-If Supabase email templates are customized, keep them redirect-aware by using the redirect target rather than hard-coding the Site URL.
-
 ## Pre-Deployment Verification
 
 Run:
@@ -333,7 +323,6 @@ Manual smoke:
 - open `/auth-callback` directly and confirm the missing-link state renders
 - open `/missing-test` and confirm the not-found screen renders
 - sign in with Google on web
-- sign in with a magic link on web
 - create, edit, and archive a CBT record against the live Supabase project
 
 ### Account Deletion E2E Verification
@@ -371,7 +360,6 @@ Web launch is acceptable only when:
 - unknown browser routes render the app not-found screen
 - public policy and account-deletion routes are reachable without signing in
 - Supabase Google sign-in returns to `/auth-callback`
-- Supabase magic links return to `/auth-callback`
 - authenticated CBT persistence works against the intended Supabase project
 - support/privacy/security contacts are real operational inboxes
 - crisis and legal copy has been reviewed for the target launch jurisdictions

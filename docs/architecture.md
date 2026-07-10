@@ -69,7 +69,7 @@ Public routes stay reachable without sign-in. The `(app)` group is gated by [src
 
 - **Platform storage:** web uses `localStorage`; native uses `expo-secure-store`.
 - **Chunked native auth storage:** `src/lib/secure-store-storage.ts` splits oversized session values across SecureStore keys.
-- **`detectSessionInUrl: false`.** The app handles callback URLs explicitly through `app/(auth)/auth-callback.tsx` and `src/features/auth/callback.ts` instead of letting Supabase auto-parse the URL. This makes Expo Router + deep linking + magic-link + OAuth + recovery flows behave consistently across platforms.
+- **`detectSessionInUrl: false`.** The app handles callback URLs explicitly through `app/(auth)/auth-callback.tsx` and `src/features/auth/callback.ts` instead of letting Supabase auto-parse the URL. This makes Expo Router + deep linking + OAuth + recovery flows behave consistently across platforms.
 
 `requireSupabase()` is the call-site helper that throws if the client is `null` (i.e., env vars missing). All repository code uses it - no caller hand-rolls null checks.
 

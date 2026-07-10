@@ -37,7 +37,7 @@ The maintainer will:
 - Expo web app at `selftend.org`
 - Android and iOS builds released under the Selftend identity
 - Supabase schema, RLS policies, storage rules, and edge functions in this repo
-- sign-in, magic links, OAuth, sessions, account deletion, and export flows
+- sign-in, OAuth, sessions, account deletion, and export flows
 - user-data leaks, missing RLS, or data sent to unintended parties
 - web push reminder infrastructure controlled by this project
 

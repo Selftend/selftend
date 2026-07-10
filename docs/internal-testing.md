@@ -39,9 +39,6 @@ These workflows are manual by design. CI still validates pushes and pull request
 - Google consent returns to `/auth-callback` on web
 - Google consent returns to the app in the Android development build
 - Expo Go auth checks either return through an allowlisted `exp://**/--/auth-callback` URL or are skipped in favor of the development build
-- magic-link email sends successfully from the sign-in screen
-- magic-link email opens `/auth-callback` on web
-- magic-link email opens the app through `selftend://...` on device builds
 - sign out
 - session restore after app restart
 
