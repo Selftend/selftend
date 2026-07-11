@@ -15,28 +15,28 @@ import { useSleepLogs } from "@/src/features/sleep/queries";
 import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import { roundTo1 as roundedTenth } from "@/src/utils/number";
 
-interface TopDistortion {
+export interface TopDistortion {
   key: string;
   count: number;
 }
 
-interface ExerciseMoodLift {
+export interface ExerciseMoodLift {
   withExercise: number;
   withoutExercise: number;
 }
 
-interface ActivityMoodLift {
+export interface ActivityMoodLift {
   category: ActivityCategory;
   averageLift: number;
   count: number;
 }
 
-interface RecurringThoughtSuggestion {
+export interface RecurringThoughtSuggestion {
   thought: string;
   count: number;
 }
 
-interface SelfCareTrend {
+export interface SelfCareTrend {
   totalDays: number;
   exerciseDays: number;
   socialDays: number;
@@ -44,16 +44,28 @@ interface SelfCareTrend {
   averageSleepHours: number | null;
 }
 
-interface AngerPattern {
+export interface AngerPattern {
   averageArousal: number;
   timeOutsTaken: number;
   totalLogs: number;
   commonUrge: string | null;
 }
 
-interface ExposureProgress {
+export interface ExposureProgress {
   completed: number;
   total: number;
+}
+
+export interface CbtInsights {
+  topDistortions: TopDistortion[];
+  exerciseMoodLift: ExerciseMoodLift | null;
+  activityMoodLiftByCategory: ActivityMoodLift[];
+  beliefReviewSuggestions: CoreBelief[];
+  recurringThoughtSuggestions: RecurringThoughtSuggestion[];
+  selfCareTrend: SelfCareTrend | null;
+  angerPattern: AngerPattern | null;
+  exposureProgress: ExposureProgress | null;
+  slogan: string;
 }
 
 function average(values: number[]) {
@@ -72,7 +84,7 @@ function normalizeLabel(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-export function useCbtInsights(userId: string | null) {
+export function useCbtInsights(userId: string | null): CbtInsights {
   const { data: activities } = useActivities(userId);
   const { data: angerLogs } = useAngerLogs(userId);
   const { data: thoughtRecords } = useThoughtRecords(userId);

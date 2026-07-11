@@ -1,28 +1,17 @@
 import type { User } from "@supabase/supabase-js";
 
+import { getErrorMessage } from "@/src/utils/error-message";
+
+// Re-exported so existing profile imports keep working. The canonical
+// implementation now lives in src/utils/error-message.ts (shared with settings).
+export { getErrorMessage };
+
 export const allowedMimeTypes = new Map([
   ["image/jpeg", "jpg"],
   ["image/jpg", "jpg"],
   ["image/png", "png"],
   ["image/webp", "webp"],
 ]);
-
-export function getErrorMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (
-    error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
-    return error.message;
-  }
-
-  return "";
-}
 
 export function isMissingDisplayNameColumn(error: unknown) {
   if (!error || typeof error !== "object") return false;

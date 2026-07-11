@@ -4,7 +4,6 @@ import { ActivityIndicator, Platform, View } from "react-native";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { TFunction } from "i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -29,6 +28,19 @@ import { useGoals } from "@/src/features/goals/queries";
 import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { useTasks } from "@/src/features/procrastination/queries";
+import { resolveActiveStrategyKeys } from "@/src/features/recovery/active-strategies";
+import {
+  addCopingStep as addCopingStepToDraft,
+  removeCopingStep as removeCopingStepFromDraft,
+  updateCopingStep as updateCopingStepInDraft,
+  type ChallengeDraft,
+} from "@/src/features/recovery/challenge-draft";
+import { buildRecoveryPlanExport } from "@/src/features/recovery/export";
+import {
+  defaultValues,
+  sanitizeRecoveryValues,
+  toEditableList,
+} from "@/src/features/recovery/form-values";
 import {
   useChallengePlans,
   useDeleteChallengePlan,
@@ -41,6 +53,9 @@ import {
   recoveryPlanFormSchema,
   type RecoveryPlanFormSchema,
 } from "@/src/features/recovery/schemas";
+import type { RecoverySources } from "@/src/features/recovery/sources";
+import { computeRecoveryStats } from "@/src/features/recovery/stats";
+import { buildTimeline, formatDate, getTimelineLabel } from "@/src/features/recovery/timeline";
 import type { ChallengePlan } from "@/src/features/recovery/types";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useUserPreferences } from "@/src/features/settings/queries";
@@ -49,190 +64,12 @@ import { useWorryEntries } from "@/src/features/worry/queries";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useStringListField } from "@/src/lib/use-string-list-field";
 import { useSession } from "@/src/providers/session-provider";
-import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { isStrategyKey, strategyKeys, type StrategyKey } from "@/src/features/cbt/strategies";
+import { type StrategyKey } from "@/src/features/cbt/strategies";
 import { currentDateKey } from "@/src/utils/date";
 
-type TimelineKey = StrategyKey | "mood" | "recovery";
 type ListFieldName = "recoveryKeys" | "maintenanceCommitments";
-
-interface RecoveryStat {
-  key:
-    | "thoughtRecords"
-    | "exposuresCompleted"
-    | "moodDays"
-    | "goalsAchieved"
-    | "activitiesCompleted";
-  value: number;
-}
-
-interface TimelineItem {
-  key: TimelineKey;
-  date: string;
-  count: number;
-}
-
-interface ChallengeDraft {
-  id?: string;
-  challengeDescription: string;
-  copingSteps: string[];
-}
-
-const defaultValues: RecoveryPlanFormSchema = {
-  recoveryKeys: [""],
-  personalSlogan: "",
-  strategyIntegrationNotes: {},
-  maintenanceCommitments: [""],
-};
-
-function toEditableList(values: string[]) {
-  return values.length > 0 ? values : [""];
-}
-
-function sanitizeRecoveryValues(values: RecoveryPlanFormSchema) {
-  return {
-    recoveryKeys: values.recoveryKeys.map((value) => value.trim()).filter(Boolean),
-    personalSlogan: values.personalSlogan.trim(),
-    strategyIntegrationNotes: Object.fromEntries(
-      Object.entries(values.strategyIntegrationNotes)
-        .map(([key, value]) => [key, value.trim()] as const)
-        .filter(([, value]) => value.length > 0),
-    ),
-    maintenanceCommitments: values.maintenanceCommitments
-      .map((value) => value.trim())
-      .filter(Boolean),
-  };
-}
-
-function formatDate(value: string, lang: string) {
-  return new Intl.DateTimeFormat(lang, { dateStyle: "medium" }).format(new Date(value));
-}
-
-function earliestDate<T>(
-  records: T[] | undefined,
-  getDate: (record: T) => string | null | undefined,
-) {
-  const dates = records?.map(getDate).filter((value): value is string => Boolean(value)) ?? [];
-  return dates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime())[0] ?? null;
-}
-
-function createTimelineItem<T>(
-  key: TimelineKey,
-  records: T[] | undefined,
-  getDate: (record: T) => string | null | undefined,
-) {
-  if (!records || records.length === 0) {
-    return null;
-  }
-
-  const date = earliestDate(records, getDate);
-  return date ? { key, date, count: records.length } : null;
-}
-
-function getTimelineLabel(t: TFunction<"cbt">, key: TimelineKey) {
-  if (key === "mood" || key === "recovery") {
-    return t(`recovery.timeline.${key}`);
-  }
-
-  return t(`dashboard.strategies.${key}`);
-}
-
-function appendExportList(lines: string[], title: string, values: string[], emptyLabel: string) {
-  lines.push("", `## ${title}`);
-  if (values.length === 0) {
-    lines.push(emptyLabel);
-    return;
-  }
-
-  for (const value of values) {
-    lines.push(`- ${value}`);
-  }
-}
-
-function buildRecoveryPlanExport({
-  challengePlans,
-  lang,
-  recoveryValues,
-  stats,
-  t,
-  timelineItems,
-}: {
-  challengePlans: ChallengePlan[];
-  lang: string;
-  recoveryValues: ReturnType<typeof sanitizeRecoveryValues>;
-  stats: RecoveryStat[];
-  t: TFunction<"cbt">;
-  timelineItems: TimelineItem[];
-}) {
-  const emptyLabel = t("recovery.export.empty");
-  const lines = [
-    `# ${t("recovery.export.fileTitle")}`,
-    "",
-    t("recovery.export.generatedAt", { date: formatDate(new Date().toISOString(), lang) }),
-  ];
-
-  lines.push("", `## ${t("recovery.stats.title")}`);
-  for (const stat of stats) {
-    lines.push(`- ${t(`recovery.stats.${stat.key}`, { count: stat.value })}: ${stat.value}`);
-  }
-
-  lines.push("", `## ${t("recovery.timeline.title")}`);
-  if (timelineItems.length === 0) {
-    lines.push(emptyLabel);
-  } else {
-    for (const item of timelineItems) {
-      lines.push(
-        `- ${formatDate(item.date, lang)}: ${getTimelineLabel(t, item.key)} (${t(
-          "recovery.timeline.count",
-          {
-            count: item.count,
-          },
-        )})`,
-      );
-    }
-  }
-
-  appendExportList(lines, t("recovery.recoveryKeys"), recoveryValues.recoveryKeys, emptyLabel);
-
-  lines.push("", `## ${t("recovery.personalSlogan")}`);
-  lines.push(recoveryValues.personalSlogan || emptyLabel);
-
-  lines.push("", `## ${t("recovery.strategyNotes")}`);
-  const strategyNotes = Object.entries(recoveryValues.strategyIntegrationNotes);
-  if (strategyNotes.length === 0) {
-    lines.push(emptyLabel);
-  } else {
-    for (const [strategyKey, note] of strategyNotes) {
-      const label = isStrategyKey(strategyKey)
-        ? t(`dashboard.strategies.${strategyKey}`)
-        : strategyKey;
-      lines.push(`- ${label}: ${note}`);
-    }
-  }
-
-  lines.push("", `## ${t("recovery.challengePlans")}`);
-  if (challengePlans.length === 0) {
-    lines.push(emptyLabel);
-  } else {
-    for (const plan of challengePlans) {
-      lines.push(`- ${plan.challengeDescription}`);
-      for (const step of plan.copingSteps) {
-        lines.push(`  - ${step}`);
-      }
-    }
-  }
-
-  appendExportList(
-    lines,
-    t("recovery.maintenanceCommitments"),
-    recoveryValues.maintenanceCommitments,
-    emptyLabel,
-  );
-
-  return lines.join("\n");
-}
 
 export default function RecoveryScreen() {
   const { t, i18n } = useTranslation("cbt");
@@ -259,6 +96,22 @@ export default function RecoveryScreen() {
   const { data: tasks } = useTasks(user?.id ?? null);
   const { data: angerLogs } = useAngerLogs(user?.id ?? null);
   const { data: selfCareLogs } = useSelfCareLogs(user?.id ?? null);
+
+  const sources: RecoverySources = {
+    goals,
+    activities,
+    thoughtRecords,
+    valuesProfile,
+    beliefs,
+    hierarchies,
+    exposureItems,
+    moodLogs,
+    worries,
+    mindfulnessSessions,
+    tasks,
+    angerLogs,
+    selfCareLogs,
+  };
 
   const [challengeDraft, setChallengeDraft] = useState<ChallengeDraft | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -298,75 +151,11 @@ export default function RecoveryScreen() {
     });
   }, [recoveryPlan, reset]);
 
-  const activeStrategyKeys = (() => {
-    const configured = preferences?.activeStrategies.filter(isStrategyKey) ?? [];
-    if (configured.length > 0) {
-      return configured;
-    }
+  const activeStrategyKeys = resolveActiveStrategyKeys(preferences, sources);
 
-    const recordBacked: StrategyKey[] = [];
-    if ((goals?.length ?? 0) > 0) recordBacked.push("goals");
-    if ((activities?.length ?? 0) > 0) recordBacked.push("activities");
-    if ((thoughtRecords?.length ?? 0) > 0) recordBacked.push("thoughts");
-    if (valuesProfile != null && valuesProfile.personalValues.length > 0)
-      recordBacked.push("values");
-    if ((beliefs?.length ?? 0) > 0) recordBacked.push("beliefs");
-    if ((hierarchies?.length ?? 0) > 0) recordBacked.push("exposure");
-    if ((worries?.length ?? 0) > 0) recordBacked.push("worry");
-    if ((mindfulnessSessions?.length ?? 0) > 0) recordBacked.push("mindfulness");
-    if ((tasks?.length ?? 0) > 0) recordBacked.push("tasks");
-    if ((angerLogs?.length ?? 0) > 0) recordBacked.push("anger");
-    if ((selfCareLogs?.length ?? 0) > 0) recordBacked.push("selfCare");
+  const recoveryStats = computeRecoveryStats(sources);
 
-    return recordBacked.length > 0 ? recordBacked : [...strategyKeys];
-  })();
-
-  const recoveryStats: RecoveryStat[] = (() => {
-    const moodDays = new Set((moodLogs ?? []).map((log) => toLocalDateKey(log.loggedAt)));
-
-    return [
-      { key: "thoughtRecords", value: thoughtRecords?.length ?? 0 },
-      {
-        key: "exposuresCompleted",
-        value: exposureItems?.filter((item) => item.completedAt).length ?? 0,
-      },
-      { key: "moodDays", value: moodDays.size },
-      {
-        key: "goalsAchieved",
-        value: goals?.filter((goal) => goal.status === "completed").length ?? 0,
-      },
-      {
-        key: "activitiesCompleted",
-        value: activities?.filter((activity) => activity.completedAt).length ?? 0,
-      },
-    ];
-  })();
-
-  const timelineItems: TimelineItem[] = (() => {
-    const items = [
-      createTimelineItem("mood", moodLogs, (log) => log.loggedAt),
-      createTimelineItem("goals", goals, (goal) => goal.createdAt),
-      createTimelineItem("activities", activities, (activity) => activity.createdAt),
-      createTimelineItem("thoughts", thoughtRecords, (record) => record.createdAt),
-      createTimelineItem(
-        "values",
-        valuesProfile ? [valuesProfile] : undefined,
-        (profile) => profile.updatedAt,
-      ),
-      createTimelineItem("beliefs", beliefs, (belief) => belief.createdAt),
-      createTimelineItem("exposure", hierarchies, (hierarchy) => hierarchy.createdAt),
-      createTimelineItem("worry", worries, (worry) => worry.createdAt),
-      createTimelineItem("mindfulness", mindfulnessSessions, (session) => session.completedAt),
-      createTimelineItem("tasks", tasks, (task) => task.createdAt),
-      createTimelineItem("anger", angerLogs, (log) => log.createdAt),
-      createTimelineItem("selfCare", selfCareLogs, (log) => log.createdAt),
-      recoveryPlan ? { key: "recovery" as const, date: recoveryPlan.createdAt, count: 1 } : null,
-    ];
-
-    return items
-      .filter((item): item is TimelineItem => Boolean(item))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  })();
+  const timelineItems = buildTimeline(sources, recoveryPlan);
 
   const updateStrategyNote = (strategyKey: StrategyKey, value: string) => {
     setValue(
@@ -489,26 +278,15 @@ export default function RecoveryScreen() {
   };
 
   const updateCopingStep = (index: number, value: string) => {
-    setChallengeDraft((draft) => {
-      if (!draft) return draft;
-      const next = [...draft.copingSteps];
-      next[index] = value;
-      return { ...draft, copingSteps: next };
-    });
+    setChallengeDraft((draft) => (draft ? updateCopingStepInDraft(draft, index, value) : draft));
   };
 
   const addCopingStep = () => {
-    setChallengeDraft((draft) =>
-      draft ? { ...draft, copingSteps: [...draft.copingSteps, ""] } : draft,
-    );
+    setChallengeDraft((draft) => (draft ? addCopingStepToDraft(draft) : draft));
   };
 
   const removeCopingStep = (index: number) => {
-    setChallengeDraft((draft) => {
-      if (!draft) return draft;
-      const next = draft.copingSteps.filter((_, itemIndex) => itemIndex !== index);
-      return { ...draft, copingSteps: next.length > 0 ? next : [""] };
-    });
+    setChallengeDraft((draft) => (draft ? removeCopingStepFromDraft(draft, index) : draft));
   };
 
   const renderList = (
