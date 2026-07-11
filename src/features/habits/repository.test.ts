@@ -1,8 +1,13 @@
 import {
+  archiveHabit,
+  deleteHabit,
   getHabit,
+  listHabits,
   listHabitLogs,
+  restoreHabit,
   saveHabit,
   toggleHabitLog,
+  upsertHabitLogNote,
 } from "@/src/features/habits/repository";
 import { requireSupabase } from "@/src/lib/supabase";
 
@@ -11,6 +16,24 @@ jest.mock("@/src/lib/supabase", () => ({
 }));
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
+
+const VALID_ID = "11111111-1111-4111-8111-111111111111";
+
+function buildClient(builders: Record<string, unknown>) {
+  return { from: jest.fn((t: string) => builders[t]) } as unknown as ReturnType<
+    typeof requireSupabase
+  >;
+}
+
+const habitLogRow = {
+  id: "log-1",
+  user_id: "user-1",
+  habit_id: "h-1",
+  logged_on: "2026-05-17",
+  note: "done",
+  created_at: "2026-05-17T08:00:00.000Z",
+  updated_at: "2026-05-17T08:00:00.000Z",
+};
 
 const baseInput = {
   name: "Read",
@@ -185,6 +208,324 @@ describe("habits repository", () => {
       habit_id: "h-1",
       logged_on: "2026-05-17",
       note: "",
+    });
+  });
+
+  it("listHabits filters out archived rows by default and maps them", async () => {
+    const is = jest.fn().mockResolvedValue({ data: [insertedHabitRow], error: null });
+    const order = jest.fn(() => ({ is }));
+    const eq = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { select } }));
+
+    const result = await listHabits("user-1");
+
+    expect(eq).toHaveBeenCalledWith("user_id", "user-1");
+    expect(order).toHaveBeenCalledWith("created_at", { ascending: false });
+    expect(is).toHaveBeenCalledWith("archived_at", null);
+    expect(result).toEqual([expect.objectContaining({ id: "h-1", userId: "user-1" })]);
+  });
+
+  it("listHabits includes archived rows without the archived_at filter", async () => {
+    const order = jest.fn().mockResolvedValue({ data: [insertedHabitRow], error: null });
+    const is = jest.fn();
+    const eq = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { select } }));
+
+    const result = await listHabits("user-1", true);
+
+    expect(is).not.toHaveBeenCalled();
+    expect(result).toHaveLength(1);
+  });
+
+  it("listHabits throws when the query errors", async () => {
+    const is = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
+    const order = jest.fn(() => ({ is }));
+    const eq = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { select } }));
+
+    await expect(listHabits("user-1")).rejects.toMatchObject({ code: "42501" });
+  });
+
+  it("getHabit maps a found row for a valid uuid", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: insertedHabitRow, error: null });
+    const eqId = jest.fn(() => ({ maybeSingle }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { select } }));
+
+    const result = await getHabit("user-1", VALID_ID);
+
+    expect(eqId).toHaveBeenCalledWith("id", VALID_ID);
+    expect(result).toMatchObject({ id: "h-1", userId: "user-1" });
+  });
+
+  it("getHabit defaults custom_days to an empty array when the row has null", async () => {
+    const maybeSingle = jest
+      .fn()
+      .mockResolvedValue({ data: { ...insertedHabitRow, custom_days: null }, error: null });
+    const eqId = jest.fn(() => ({ maybeSingle }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { select } }));
+
+    const result = await getHabit("user-1", VALID_ID);
+
+    expect(result).toMatchObject({ id: "h-1", customDays: [] });
+  });
+
+  it("getHabit returns null when no row is found", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+    const eqId = jest.fn(() => ({ maybeSingle }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { select } }));
+
+    await expect(getHabit("user-1", VALID_ID)).resolves.toBeNull();
+  });
+
+  it("getHabit throws when the lookup errors", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
+    const eqId = jest.fn(() => ({ maybeSingle }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { select } }));
+
+    await expect(getHabit("user-1", VALID_ID)).rejects.toMatchObject({ code: "42501" });
+  });
+
+  it("saveHabit updates the existing habit when a habitId is passed", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: insertedHabitRow, error: null });
+    const select = jest.fn(() => ({ maybeSingle }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    const insert = jest.fn();
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { update, insert } }));
+
+    const result = await saveHabit("user-1", baseInput, "h-1");
+
+    expect(insert).not.toHaveBeenCalled();
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(eqId).toHaveBeenCalledWith("id", "h-1");
+    const payload = (update.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(payload).toMatchObject({ name: "Read", cadence: "daily" });
+    expect(payload).not.toHaveProperty("user_id");
+    expect(result).toMatchObject({ id: "h-1" });
+  });
+
+  it("saveHabit throws Habit not found when the update returns no row", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+    const select = jest.fn(() => ({ maybeSingle }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { update } }));
+
+    await expect(saveHabit("user-1", baseInput, "h-1")).rejects.toThrow("Habit not found");
+  });
+
+  it("saveHabit throws when the write errors", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: { code: "23505" } });
+    const select = jest.fn(() => ({ maybeSingle }));
+    const insert = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { insert } }));
+
+    await expect(saveHabit("user-1", baseInput)).rejects.toMatchObject({ code: "23505" });
+  });
+
+  it("archiveHabit stamps archived_at and maps the row", async () => {
+    const single = jest.fn().mockResolvedValue({ data: insertedHabitRow, error: null });
+    const select = jest.fn(() => ({ single }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { update } }));
+
+    const result = await archiveHabit("user-1", "h-1");
+
+    const payload = (update.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(typeof payload.archived_at).toBe("string");
+    expect(eqId).toHaveBeenCalledWith("id", "h-1");
+    expect(result).toMatchObject({ id: "h-1" });
+  });
+
+  it("archiveHabit throws when the update errors", async () => {
+    const single = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
+    const select = jest.fn(() => ({ single }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { update } }));
+
+    await expect(archiveHabit("user-1", "h-1")).rejects.toMatchObject({ code: "42501" });
+  });
+
+  it("restoreHabit clears archived_at and maps the row", async () => {
+    const single = jest.fn().mockResolvedValue({ data: insertedHabitRow, error: null });
+    const select = jest.fn(() => ({ single }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { update } }));
+
+    const result = await restoreHabit("user-1", "h-1");
+
+    expect(update).toHaveBeenCalledWith({ archived_at: null });
+    expect(result).toMatchObject({ id: "h-1" });
+  });
+
+  it("restoreHabit throws when the update errors", async () => {
+    const single = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
+    const select = jest.fn(() => ({ single }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { update } }));
+
+    await expect(restoreHabit("user-1", "h-1")).rejects.toMatchObject({ code: "42501" });
+  });
+
+  it("deleteHabit issues a scoped delete", async () => {
+    const eqId = jest.fn().mockResolvedValue({ error: null });
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const del = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { delete: del } }));
+
+    await expect(deleteHabit("user-1", "h-1")).resolves.toBeUndefined();
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(eqId).toHaveBeenCalledWith("id", "h-1");
+  });
+
+  it("deleteHabit throws when the delete errors", async () => {
+    const eqId = jest.fn().mockResolvedValue({ error: { code: "42501" } });
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const del = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habits: { delete: del } }));
+
+    await expect(deleteHabit("user-1", "h-1")).rejects.toMatchObject({ code: "42501" });
+  });
+
+  it("listHabitLogs lists all logs when no options are passed", async () => {
+    const order = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
+    const eqUser = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
+
+    const result = await listHabitLogs("user-1");
+
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(order).toHaveBeenCalledWith("logged_on", { ascending: false });
+    expect(result).toEqual([expect.objectContaining({ id: "log-1", note: "done" })]);
+  });
+
+  it("listHabitLogs applies habitId, sinceDate and limit filters together", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
+    const gte = jest.fn(() => ({ limit }));
+    const eqHabit = jest.fn(() => ({ gte }));
+    const order = jest.fn(() => ({ eq: eqHabit }));
+    const eqUser = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
+
+    const result = await listHabitLogs("user-1", {
+      habitId: VALID_ID,
+      sinceDate: "2026-04-01",
+      limit: 10,
+    });
+
+    expect(eqHabit).toHaveBeenCalledWith("habit_id", VALID_ID);
+    expect(gte).toHaveBeenCalledWith("logged_on", "2026-04-01");
+    expect(limit).toHaveBeenCalledWith(10);
+    expect(result).toHaveLength(1);
+  });
+
+  it("listHabitLogs throws when the query errors", async () => {
+    const order = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
+    const eqUser = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
+
+    await expect(listHabitLogs("user-1")).rejects.toMatchObject({ code: "42501" });
+  });
+
+  it("toggleHabitLog throws when the lookup errors", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
+    const eqLoggedOn = jest.fn(() => ({ maybeSingle }));
+    const eqHabit = jest.fn(() => ({ eq: eqLoggedOn }));
+    const eqUser = jest.fn(() => ({ eq: eqHabit }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
+
+    await expect(toggleHabitLog("user-1", "h-1", "2026-05-17")).rejects.toMatchObject({
+      code: "42501",
+    });
+  });
+
+  it("toggleHabitLog throws when deleting the existing tick errors", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: habitLogRow, error: null });
+    const eqLoggedOn = jest.fn(() => ({ maybeSingle }));
+    const eqHabit = jest.fn(() => ({ eq: eqLoggedOn }));
+    const eqUser = jest.fn(() => ({ eq: eqHabit }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+
+    const eqDeleteId = jest.fn().mockResolvedValue({ error: { code: "42501" } });
+    const eqDeleteUser = jest.fn(() => ({ eq: eqDeleteId }));
+    const del = jest.fn(() => ({ eq: eqDeleteUser }));
+
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select, delete: del } }));
+
+    await expect(toggleHabitLog("user-1", "h-1", "2026-05-17")).rejects.toMatchObject({
+      code: "42501",
+    });
+  });
+
+  it("toggleHabitLog throws when inserting the new tick errors", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+    const eqLoggedOn = jest.fn(() => ({ maybeSingle }));
+    const eqHabit = jest.fn(() => ({ eq: eqLoggedOn }));
+    const eqUser = jest.fn(() => ({ eq: eqHabit }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+
+    const single = jest.fn().mockResolvedValue({ data: null, error: { code: "23505" } });
+    const selectAfterInsert = jest.fn(() => ({ single }));
+    const insert = jest.fn(() => ({ select: selectAfterInsert }));
+
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select, insert } }));
+
+    await expect(toggleHabitLog("user-1", "h-1", "2026-05-17")).rejects.toMatchObject({
+      code: "23505",
+    });
+  });
+
+  it("upsertHabitLogNote sanitises and trims the note then maps the row", async () => {
+    const single = jest.fn().mockResolvedValue({ data: habitLogRow, error: null });
+    const select = jest.fn(() => ({ single }));
+    const insert = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { insert } }));
+
+    const result = await upsertHabitLogNote("user-1", "h-1", "2026-05-17", "  keep going  ");
+
+    const payload = (insert.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(payload).toMatchObject({
+      user_id: "user-1",
+      habit_id: "h-1",
+      logged_on: "2026-05-17",
+      note: "keep going",
+    });
+    expect(result).toMatchObject({ id: "log-1", note: "done" });
+  });
+
+  it("upsertHabitLogNote throws when the insert errors", async () => {
+    const single = jest.fn().mockResolvedValue({ data: null, error: { code: "23505" } });
+    const select = jest.fn(() => ({ single }));
+    const insert = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { insert } }));
+
+    await expect(upsertHabitLogNote("user-1", "h-1", "2026-05-17", "note")).rejects.toMatchObject({
+      code: "23505",
     });
   });
 });

@@ -9,7 +9,7 @@ let notificationsModule: NotificationsModule | null = null;
 function getNativeNotifications(): NotificationsModule | null {
   if (Platform.OS === "web") return null;
   if (!notificationsModule) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- native-only branch (web returned above); lazy require avoids loading expo-notifications on web
     notificationsModule = require("expo-notifications") as NotificationsModule;
   }
   return notificationsModule;

@@ -60,7 +60,7 @@ function createLanePlayer(): LanePlayer {
     async play(asset, volume, loop) {
       const gen = ++playGen;
       try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- native-only branch (web returned above); lazy require keeps expo-av out of the web bundle
         const { Audio } = require("expo-av") as ExpoAvModule;
         if (!nativeAudioModeConfigured) {
           await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
@@ -114,7 +114,7 @@ export function playIntroCue(asset: number, volume: number): void {
   }
   void (async () => {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- native-only branch (web returned above); lazy require keeps expo-av out of the web bundle
       const { Audio } = require("expo-av") as ExpoAvModule;
       if (!nativeAudioModeConfigured) {
         await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
@@ -177,7 +177,7 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
     // Cue sounds (loop === false) fire once at the start of the phase; texture sounds loop.
     if (clip !== null) void lane.play(clip, breathVolume, sound?.loop ?? true);
     else void lane.stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- breathVolume intentionally omitted: it's applied live by the volume effect below, so adding it here would restart playback on every volume tick
   }, [active, phaseLabel, breathSoundId]);
 
   // Live volume changes without restarting playback.

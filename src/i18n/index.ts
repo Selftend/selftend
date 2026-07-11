@@ -24,7 +24,7 @@ import enSecurity from "./locales/en/security.json";
 export const supportedLanguages = ["en", "bg"] as const;
 export type SupportedLanguage = (typeof supportedLanguages)[number];
 
-// eslint-disable-next-line import/no-named-as-default-member
+// eslint-disable-next-line import/no-named-as-default-member -- i18next's default export is the singleton; `.use()` is a method on it, not the separate `use` named export the rule warns about
 i18n.use(initReactI18next).init({
   fallbackLng: "en",
   defaultNS: "common",

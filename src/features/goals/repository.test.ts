@@ -213,3 +213,217 @@ describe("goals repository - milestones", () => {
     expect(updateU).toHaveBeenCalledWith({ completed_at: null });
   });
 });
+
+describe("goals repository - error and guard paths", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("listGoals maps rows and throws on a query error", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: [goalRow], error: null });
+    const order = jest.fn(() => ({ limit }));
+    const eq = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ select })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+
+    const rows = await listGoals("user-1");
+    expect(rows).toEqual([
+      {
+        id: "g-1",
+        userId: "user-1",
+        title: "Run 5k",
+        description: "Couch to 5k",
+        lifeDomain: "health",
+        goalType: "outcome",
+        targetDate: "2026-09-01",
+        status: "active",
+        createdAt: "2026-05-15T08:00:00.000Z",
+        updatedAt: "2026-05-15T08:00:00.000Z",
+      },
+    ]);
+
+    const errLimit = jest.fn().mockResolvedValue({ data: null, error: { code: "42P01" } });
+    const errOrder = jest.fn(() => ({ limit: errLimit }));
+    const errEq = jest.fn(() => ({ order: errOrder }));
+    const errSelect = jest.fn(() => ({ eq: errEq }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ select: errSelect })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(listGoals("user-1")).rejects.toMatchObject({ code: "42P01" });
+  });
+
+  it("getGoal returns null for a malformed uuid without querying", async () => {
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(getGoal("user-1", "not-a-uuid")).resolves.toBeNull();
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("getGoal maps a found row", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: goalRow, error: null });
+    const eqId = jest.fn(() => ({ maybeSingle }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ select })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(getGoal("user-1", "11111111-1111-4111-8111-111111111111")).resolves.toMatchObject({
+      id: "g-1",
+      title: "Run 5k",
+      lifeDomain: "health",
+    });
+  });
+
+  it("getGoal throws when the query errors", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: { code: "PGRST301" } });
+    const eqId = jest.fn(() => ({ maybeSingle }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ select })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(getGoal("user-1", "11111111-1111-4111-8111-111111111111")).rejects.toMatchObject({
+      code: "PGRST301",
+    });
+  });
+
+  it("saveGoal throws 'Goal not found' when an update matches no row", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+    const select = jest.fn(() => ({ maybeSingle }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ update })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      saveGoal(
+        "user-1",
+        {
+          title: "Run 5k",
+          description: "",
+          lifeDomain: "health",
+          goalType: "outcome",
+          targetDate: null,
+        },
+        "missing-goal",
+      ),
+    ).rejects.toThrow("Goal not found");
+  });
+
+  it("saveGoal throws on an insert error", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: { code: "23505" } });
+    const select = jest.fn(() => ({ maybeSingle }));
+    const insert = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ insert })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      saveGoal("user-1", {
+        title: "Run 5k",
+        description: "Couch to 5k",
+        lifeDomain: "health",
+        goalType: "outcome",
+        targetDate: "2026-09-01",
+      }),
+    ).rejects.toMatchObject({ code: "23505" });
+  });
+
+  it("updateGoalStatus throws on a query error", async () => {
+    const eqId = jest.fn().mockResolvedValue({ error: { code: "42501" } });
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ update })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(updateGoalStatus("user-1", "g-1", "completed")).rejects.toMatchObject({
+      code: "42501",
+    });
+  });
+
+  it("listMilestones maps rows and throws on a query error", async () => {
+    const goalId = "33333333-3333-4333-8333-333333333333";
+    const order = jest.fn().mockResolvedValue({ data: [milestoneRow], error: null });
+    const eqG = jest.fn(() => ({ order }));
+    const eqUser = jest.fn(() => ({ eq: eqG }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ select })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+
+    const rows = await listMilestones("user-1", goalId);
+    expect(rows).toEqual([
+      {
+        id: "m-1",
+        goalId: "g-1",
+        userId: "user-1",
+        description: "Run 1k",
+        targetDate: "2026-06-01",
+        completedAt: null,
+        createdAt: "2026-05-15T08:00:00.000Z",
+        updatedAt: "2026-05-15T08:00:00.000Z",
+      },
+    ]);
+
+    const errOrder = jest.fn().mockResolvedValue({ data: null, error: { code: "42P01" } });
+    const errEqG = jest.fn(() => ({ order: errOrder }));
+    const errEqUser = jest.fn(() => ({ eq: errEqG }));
+    const errSelect = jest.fn(() => ({ eq: errEqUser }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ select: errSelect })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(listMilestones("user-1", goalId)).rejects.toMatchObject({ code: "42P01" });
+  });
+
+  it("saveMilestones throws on an insert error", async () => {
+    const insert = jest.fn().mockResolvedValue({ error: { code: "23503" } });
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ insert })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      saveMilestones("user-1", "g-1", [{ description: "Run 1k", targetDate: null }]),
+    ).rejects.toMatchObject({ code: "23503" });
+  });
+
+  it("deleteMilestonesForGoal throws on a query error", async () => {
+    const eqG = jest.fn().mockResolvedValue({ error: { code: "42501" } });
+    const eqUser = jest.fn(() => ({ eq: eqG }));
+    const del = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ delete: del })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(deleteMilestonesForGoal("user-1", "g-1")).rejects.toMatchObject({
+      code: "42501",
+    });
+  });
+
+  it("completeMilestone throws on a query error", async () => {
+    const eqId = jest.fn().mockResolvedValue({ error: { code: "42501" } });
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ update })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(completeMilestone("user-1", "m-1")).rejects.toMatchObject({ code: "42501" });
+  });
+
+  it("uncompleteMilestone throws on a query error", async () => {
+    const eqId = jest.fn().mockResolvedValue({ error: { code: "42501" } });
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ update })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(uncompleteMilestone("user-1", "m-1")).rejects.toMatchObject({ code: "42501" });
+  });
+});

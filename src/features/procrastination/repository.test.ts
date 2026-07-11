@@ -56,6 +56,74 @@ describe("procrastination repository - tasks", () => {
     expect(order).toHaveBeenCalledWith("created_at", { ascending: false });
   });
 
+  it("listTasks maps rows and throws on error", async () => {
+    const limitOk = jest.fn().mockResolvedValue({ data: [taskRow], error: null });
+    const orderOk = jest.fn(() => ({ limit: limitOk }));
+    const eqOk = jest.fn(() => ({ order: orderOk }));
+    const selectOk = jest.fn(() => ({ eq: eqOk }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ select: selectOk })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+    const rows = await listTasks("user-1");
+    expect(rows).toEqual([
+      {
+        id: "t-1",
+        userId: "user-1",
+        taskDescription: "Write report",
+        avoidanceReason: "boring",
+        fearThought: "will be judged",
+        challengedThought: "feedback is useful",
+        deadline: "2026-06-01",
+        reward: "coffee",
+        status: "in_progress",
+        createdAt: "2026-05-15T08:00:00.000Z",
+        updatedAt: "2026-05-15T08:00:00.000Z",
+      },
+    ]);
+
+    const limitErr = jest.fn().mockResolvedValue({ data: null, error: { code: "500" } });
+    const orderErr = jest.fn(() => ({ limit: limitErr }));
+    const eqErr = jest.fn(() => ({ order: orderErr }));
+    const selectErr = jest.fn(() => ({ eq: eqErr }));
+    mockRequireSupabase.mockReturnValue({
+      from: jest.fn(() => ({ select: selectErr })),
+    } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(listTasks("user-1")).rejects.toMatchObject({ code: "500" });
+  });
+
+  it("getTask short-circuits to null on a malformed id without querying", async () => {
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(getTask("user-1", "not-a-uuid")).resolves.toBeNull();
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("getTask maps a found row", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: taskRow, error: null });
+    const eqId = jest.fn(() => ({ maybeSingle }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    const result = await getTask("user-1", "11111111-1111-4111-8111-111111111111");
+    expect(result).toMatchObject({ id: "t-1", taskDescription: "Write report" });
+    expect(eqId).toHaveBeenCalledWith("id", "11111111-1111-4111-8111-111111111111");
+  });
+
+  it("getTask throws on a real error", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: { code: "42P01" } });
+    const eqId = jest.fn(() => ({ maybeSingle }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(getTask("user-1", "11111111-1111-4111-8111-111111111111")).rejects.toMatchObject({
+      code: "42P01",
+    });
+  });
+
   it("returns null when getTask finds nothing", async () => {
     const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
     const eqId = jest.fn(() => ({ maybeSingle }));
@@ -97,6 +165,25 @@ describe("procrastination repository - tasks", () => {
     });
   });
 
+  it("saveTask throws on a real error", async () => {
+    const single = jest.fn().mockResolvedValue({ data: null, error: { code: "23505" } });
+    const select = jest.fn(() => ({ single }));
+    const insert = jest.fn(() => ({ select }));
+    const from = jest.fn(() => ({ insert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      saveTask("user-1", {
+        taskDescription: "x",
+        avoidanceReason: "y",
+        fearThought: "z",
+        challengedThought: "w",
+        deadline: null,
+        reward: "r",
+      }),
+    ).rejects.toMatchObject({ code: "23505" });
+  });
+
   it("updateTaskStatus updates just status", async () => {
     const eqId = jest.fn().mockResolvedValue({ error: null });
     const eqUser = jest.fn(() => ({ eq: eqId }));
@@ -106,6 +193,18 @@ describe("procrastination repository - tasks", () => {
 
     await updateTaskStatus("user-1", "t-1", "completed");
     expect(update).toHaveBeenCalledWith({ status: "completed" });
+  });
+
+  it("updateTaskStatus throws on a real error", async () => {
+    const eqId = jest.fn().mockResolvedValue({ error: { code: "500" } });
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ update }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(updateTaskStatus("user-1", "t-1", "completed")).rejects.toMatchObject({
+      code: "500",
+    });
   });
 });
 
@@ -121,9 +220,34 @@ describe("procrastination repository - steps", () => {
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
     const taskId = "33333333-3333-4333-8333-333333333333";
-    await listSteps("user-1", taskId);
+    const result = await listSteps("user-1", taskId);
+    expect(result).toEqual([
+      {
+        id: "s-1",
+        taskId: "t-1",
+        userId: "user-1",
+        description: "Outline",
+        estimatedMinutes: 10,
+        completedAt: null,
+        createdAt: "2026-05-15T08:00:00.000Z",
+        updatedAt: "2026-05-15T08:00:00.000Z",
+      },
+    ]);
     expect(eqT).toHaveBeenCalledWith("task_id", taskId);
     expect(order).toHaveBeenCalledWith("created_at", { ascending: true });
+  });
+
+  it("listSteps throws on a real error", async () => {
+    const order = jest.fn().mockResolvedValue({ data: null, error: { code: "500" } });
+    const eqT = jest.fn(() => ({ order }));
+    const eqUser = jest.fn(() => ({ eq: eqT }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(listSteps("user-1", "33333333-3333-4333-8333-333333333333")).rejects.toMatchObject(
+      { code: "500" },
+    );
   });
 
   it("returns no steps for a malformed task id without calling supabase", async () => {
@@ -151,6 +275,16 @@ describe("procrastination repository - steps", () => {
     ]);
   });
 
+  it("saveSteps throws on a real error", async () => {
+    const insert = jest.fn().mockResolvedValue({ error: { code: "23503" } });
+    const from = jest.fn(() => ({ insert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      saveSteps("user-1", "t-1", [{ description: "x", estimatedMinutes: 5 }]),
+    ).rejects.toMatchObject({ code: "23503" });
+  });
+
   it("toggleStepComplete sets or clears completed_at", async () => {
     const eqIdT = jest.fn().mockResolvedValue({ error: null });
     const eqUserT = jest.fn(() => ({ eq: eqIdT }));
@@ -170,5 +304,15 @@ describe("procrastination repository - steps", () => {
     } as unknown as ReturnType<typeof requireSupabase>);
     await toggleStepComplete("user-1", "s-1", false);
     expect(updateF).toHaveBeenCalledWith({ completed_at: null });
+  });
+
+  it("toggleStepComplete throws on a real error", async () => {
+    const eqId = jest.fn().mockResolvedValue({ error: { code: "500" } });
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ update }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(toggleStepComplete("user-1", "s-1", true)).rejects.toMatchObject({ code: "500" });
   });
 });
