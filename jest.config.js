@@ -32,4 +32,16 @@ module.exports = {
   ],
   coverageDirectory: "coverage",
   coverageReporters: ["json-summary", "text-summary", "lcov"],
+  // Per-file branch floor for the refactored data-layer modules (2026-07 ACT/profile
+  // split). Glob keys enforce the threshold on EACH matching file individually (a bare
+  // directory key would only check the directory aggregate, letting a weak file hide).
+  // Scoped strictly to the refactored paths — NOT the whole feature dirs, which contain
+  // untouched .ts files below this bar. The global ratchet (baseline.json) guards the rest.
+  coverageThreshold: {
+    "./src/features/act/repository/**/*.ts": { branches: 80 },
+    "./src/features/act/queries/**/*.ts": { branches: 80 },
+    "./src/features/profile/repository.ts": { branches: 80 },
+    "./src/features/profile/profile-sync.ts": { branches: 80 },
+    "./src/features/profile/profile-avatar.ts": { branches: 80 },
+  },
 };

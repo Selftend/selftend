@@ -2,34 +2,29 @@ import type { User } from "@supabase/supabase-js";
 
 import { requireSupabase } from "@/src/lib/supabase";
 
+import {
+  allowedMimeTypes,
+  decodeBase64ToArrayBuffer,
+  getAvatarSetupError,
+  getOAuthAvatarUrl,
+  getStringMetadataValue,
+  getSupportedMimeType,
+  isMissingDisplayNameColumn,
+} from "./profile-avatar";
+import {
+  buildSyncedProfileFields,
+  emptyMutableFields,
+  hasProfileFieldChanges,
+  mapUserProfile,
+  pickMutableFields,
+} from "./profile-sync";
+import type { ProfileMutableFields, ProfileRow } from "./profile-sync";
+
+export { getOAuthAvatarUrl } from "./profile-avatar";
+export { buildSyncedProfileFields } from "./profile-sync";
+
 const AVATAR_BUCKET = "profile-pics";
 const AVATAR_SIGNED_URL_SECONDS = 60 * 60;
-
-type AvatarSource = "oauth" | "upload" | "none";
-
-interface ProfileRow {
-  user_id: string;
-  email: string | null;
-  display_name: string | null;
-  avatar_url: string | null;
-  avatar_storage_path: string | null;
-  avatar_source: AvatarSource | null;
-  avatar_updated_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface UserProfile {
-  userId: string;
-  email: string | null;
-  displayName: string | null;
-  avatarUrl: string | null;
-  avatarStoragePath: string | null;
-  avatarSource: AvatarSource | null;
-  avatarUpdatedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface AvatarUploadInput {
   userId: string;
@@ -38,138 +33,6 @@ export interface AvatarUploadInput {
   fileName?: string | null;
   mimeType?: string | null;
   previousStoragePath?: string | null;
-}
-
-interface SyncedProfileFields {
-  email: string | null;
-  avatar_url: string | null;
-  avatar_storage_path: string | null;
-  avatar_source: AvatarSource | null;
-  avatar_updated_at: string | null;
-}
-
-const allowedMimeTypes = new Map([
-  ["image/jpeg", "jpg"],
-  ["image/jpg", "jpg"],
-  ["image/png", "png"],
-  ["image/webp", "webp"],
-]);
-
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (
-    error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
-    return error.message;
-  }
-
-  return "";
-}
-
-function isMissingDisplayNameColumn(error: unknown) {
-  if (!error || typeof error !== "object") return false;
-  const maybeError = error as { code?: unknown; message?: unknown };
-  return (
-    maybeError.code === "PGRST204" &&
-    typeof maybeError.message === "string" &&
-    maybeError.message.includes("display_name")
-  );
-}
-
-function getAvatarSetupError(error: unknown) {
-  const message = getErrorMessage(error);
-
-  if (message.includes("avatar_source") && message.includes("schema cache")) {
-    return new Error(
-      "Profile picture database fields are not applied yet. Run the latest Supabase migrations and retry.",
-    );
-  }
-
-  if (message.includes("row-level security policy")) {
-    return new Error(
-      "Profile picture storage permissions are not applied yet. Run the latest Supabase migrations so the profile-pics bucket policies are installed.",
-    );
-  }
-
-  return error;
-}
-
-function getStringMetadataValue(metadata: User["user_metadata"], key: string) {
-  const value = metadata?.[key];
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-export function getOAuthAvatarUrl(user: User | null | undefined) {
-  if (!user) {
-    return null;
-  }
-
-  return (
-    getStringMetadataValue(user.user_metadata, "avatar_url") ??
-    getStringMetadataValue(user.user_metadata, "picture")
-  );
-}
-
-function getSupportedMimeType(mimeType?: string | null, fileName?: string | null) {
-  const normalizedMimeType = mimeType?.toLowerCase();
-  if (normalizedMimeType && allowedMimeTypes.has(normalizedMimeType)) {
-    return normalizedMimeType;
-  }
-
-  const extension = fileName?.split(".").pop()?.toLowerCase();
-  if (extension === "jpg" || extension === "jpeg") {
-    return "image/jpeg";
-  }
-  if (extension === "png") {
-    return "image/png";
-  }
-  if (extension === "webp") {
-    return "image/webp";
-  }
-
-  return null;
-}
-
-// The mutable column set every write must send IN FULL. Reads are merged onto the
-// current row so a mutation NEVER omits a column: "clear" sends null explicitly,
-// "preserve" re-sends the current value explicitly. This removes the omitted-vs-null
-// ambiguity that blocked encrypting display_name behind an INSTEAD OF view trigger.
-interface ProfileMutableFields {
-  email: string | null;
-  display_name: string | null;
-  avatar_url: string | null;
-  avatar_storage_path: string | null;
-  avatar_source: AvatarSource | null;
-  avatar_updated_at: string | null;
-}
-
-function pickMutableFields(row: ProfileRow): ProfileMutableFields {
-  return {
-    email: row.email,
-    display_name: row.display_name,
-    avatar_url: row.avatar_url,
-    avatar_storage_path: row.avatar_storage_path,
-    avatar_source: row.avatar_source,
-    avatar_updated_at: row.avatar_updated_at,
-  };
-}
-
-// A new row's defaults when no profile exists yet (every column explicit, all null).
-function emptyMutableFields(): ProfileMutableFields {
-  return {
-    email: null,
-    display_name: null,
-    avatar_url: null,
-    avatar_storage_path: null,
-    avatar_source: null,
-    avatar_updated_at: null,
-  };
 }
 
 async function getCurrentProfileRow(userId: string): Promise<ProfileRow | null> {
@@ -218,100 +81,6 @@ async function writeCompleteProfile(
   }
 
   return data as ProfileRow;
-}
-
-function mapUserProfile(row: ProfileRow, avatarUrl: string | null): UserProfile {
-  return {
-    userId: row.user_id,
-    email: row.email,
-    displayName: row.display_name,
-    avatarUrl,
-    avatarStoragePath: row.avatar_storage_path,
-    avatarSource: row.avatar_source,
-    avatarUpdatedAt: row.avatar_updated_at,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-export function buildSyncedProfileFields(
-  row: Pick<
-    ProfileRow,
-    "email" | "avatar_url" | "avatar_storage_path" | "avatar_source" | "avatar_updated_at"
-  > | null,
-  email: string | null,
-  oauthAvatarUrl: string | null,
-  now: string,
-): SyncedProfileFields {
-  if (!row) {
-    return {
-      email,
-      avatar_url: oauthAvatarUrl,
-      avatar_storage_path: null,
-      avatar_source: oauthAvatarUrl ? "oauth" : null,
-      avatar_updated_at: oauthAvatarUrl ? now : null,
-    };
-  }
-
-  const next: SyncedProfileFields = {
-    email: row.email,
-    avatar_url: row.avatar_url,
-    avatar_storage_path: row.avatar_storage_path,
-    avatar_source: row.avatar_source,
-    avatar_updated_at: row.avatar_updated_at,
-  };
-
-  if (row.email !== email) {
-    next.email = email;
-  }
-
-  if (row.avatar_source === "upload" || isRemovedAvatarRow(row)) {
-    return next;
-  }
-
-  if (row.avatar_url !== oauthAvatarUrl) {
-    next.avatar_url = oauthAvatarUrl;
-    next.avatar_source = oauthAvatarUrl ? "oauth" : null;
-    next.avatar_updated_at = oauthAvatarUrl ? now : null;
-  }
-
-  if (!oauthAvatarUrl && row.avatar_source === "oauth") {
-    next.avatar_source = null;
-    next.avatar_updated_at = null;
-  }
-
-  return next;
-}
-
-function isRemovedAvatarRow(
-  row: Pick<
-    ProfileRow,
-    "avatar_url" | "avatar_storage_path" | "avatar_source" | "avatar_updated_at"
-  >,
-) {
-  return (
-    row.avatar_source === "none" ||
-    (row.avatar_source === null &&
-      row.avatar_url === null &&
-      row.avatar_storage_path === null &&
-      row.avatar_updated_at !== null)
-  );
-}
-
-function hasProfileFieldChanges(
-  row: Pick<
-    ProfileRow,
-    "email" | "avatar_url" | "avatar_storage_path" | "avatar_source" | "avatar_updated_at"
-  >,
-  next: SyncedProfileFields,
-) {
-  return (
-    row.email !== next.email ||
-    row.avatar_url !== next.avatar_url ||
-    row.avatar_storage_path !== next.avatar_storage_path ||
-    row.avatar_source !== next.avatar_source ||
-    row.avatar_updated_at !== next.avatar_updated_at
-  );
 }
 
 async function createSignedAvatarUrl(storagePath: string | null) {
@@ -402,12 +171,7 @@ export async function uploadUserAvatar(input: AvatarUploadInput) {
 
   let arrayBuffer: ArrayBuffer;
   if (input.base64) {
-    const binaryString = atob(input.base64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    arrayBuffer = bytes.buffer as ArrayBuffer;
+    arrayBuffer = decodeBase64ToArrayBuffer(input.base64);
   } else {
     const response = await fetch(input.uri);
     arrayBuffer = await response.arrayBuffer();
