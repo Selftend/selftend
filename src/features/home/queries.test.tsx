@@ -2,12 +2,19 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
-import { useAddWidget, useWidgetPreferences } from "@/src/features/home/queries";
 import {
+  useAddWidget,
+  useRemoveWidget,
+  useReorderWidgets,
+  useWidgetPreferences,
+} from "@/src/features/home/queries";
+import {
+  deleteWidgetPreference,
   getWidgetsSeeded,
   insertWidgetPreferences,
   listWidgetPreferences,
   markWidgetsSeeded,
+  updateWidgetPositions,
 } from "@/src/features/home/widget-repository";
 import { resolveInitialWidgetIds } from "@/src/features/home/seeding";
 import { listPlanItems } from "@/src/features/plan/repository";
@@ -38,6 +45,13 @@ const mockResolveInitial = resolveInitialWidgetIds as jest.MockedFunction<
   typeof resolveInitialWidgetIds
 >;
 const mockListPlanItems = listPlanItems as jest.MockedFunction<typeof listPlanItems>;
+const mockDelete = deleteWidgetPreference as jest.MockedFunction<typeof deleteWidgetPreference>;
+const mockUpdatePositions = updateWidgetPositions as jest.MockedFunction<
+  typeof updateWidgetPositions
+>;
+
+// widgetKeys.list(userId) mirrored from queries.ts for exact-key assertions.
+const listKey = (userId: string) => ["widgets", "list", userId];
 
 function makeWrapper(client: QueryClient) {
   return function wrapper({ children }: PropsWithChildren) {
@@ -125,6 +139,7 @@ describe("useAddWidget - nextPosition", () => {
     mockGetSeeded.mockResolvedValue(true);
 
     const client = createTestQueryClient();
+    const spy = jest.spyOn(client, "invalidateQueries");
     const { result } = renderHook(() => useAddWidget("u1"), { wrapper: makeWrapper(client) });
 
     await act(async () => {
@@ -133,6 +148,24 @@ describe("useAddWidget - nextPosition", () => {
 
     // max position is 2, so nextPosition = 3
     expect(mockInsert).toHaveBeenCalledWith("u1", ["habits-today"], 3);
+    // onSuccess invalidates the user's widget list with the exact key.
+    const keys = spy.mock.calls.map((c) => (c[0] as { queryKey?: unknown }).queryKey);
+    expect(keys).toContainEqual(listKey("u1"));
+  });
+
+  it("skips invalidation when userId is null (onSuccess guard)", async () => {
+    mockListWidgets.mockResolvedValue([]);
+    mockInsert.mockResolvedValue();
+
+    const client = createTestQueryClient();
+    const spy = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useAddWidget(null), { wrapper: makeWrapper(client) });
+
+    await act(async () => {
+      await result.current.mutateAsync("habits-today");
+    });
+
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it("uses position 0 when there are no existing widgets", async () => {
@@ -148,5 +181,74 @@ describe("useAddWidget - nextPosition", () => {
     });
 
     expect(mockInsert).toHaveBeenCalledWith("u1", ["habits-today"], 0);
+  });
+});
+
+describe("useRemoveWidget", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("deletes the widget and invalidates the list for a real user", async () => {
+    mockDelete.mockResolvedValue();
+
+    const client = createTestQueryClient();
+    const spy = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useRemoveWidget("u1"), { wrapper: makeWrapper(client) });
+
+    await act(async () => {
+      await result.current.mutateAsync("mood-checkin");
+    });
+
+    expect(mockDelete).toHaveBeenCalledWith("u1", "mood-checkin");
+    const keys = spy.mock.calls.map((c) => (c[0] as { queryKey?: unknown }).queryKey);
+    expect(keys).toContainEqual(listKey("u1"));
+  });
+
+  it("skips invalidation when userId is null (onSuccess guard)", async () => {
+    mockDelete.mockResolvedValue();
+
+    const client = createTestQueryClient();
+    const spy = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useRemoveWidget(null), { wrapper: makeWrapper(client) });
+
+    await act(async () => {
+      await result.current.mutateAsync("mood-checkin");
+    });
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("useReorderWidgets", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("persists the new order and invalidates the list for a real user", async () => {
+    mockUpdatePositions.mockResolvedValue();
+    const order = ["mood-trend", "mood-checkin", "habits-today"];
+
+    const client = createTestQueryClient();
+    const spy = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useReorderWidgets("u1"), { wrapper: makeWrapper(client) });
+
+    await act(async () => {
+      await result.current.mutateAsync(order);
+    });
+
+    expect(mockUpdatePositions).toHaveBeenCalledWith("u1", order);
+    const keys = spy.mock.calls.map((c) => (c[0] as { queryKey?: unknown }).queryKey);
+    expect(keys).toContainEqual(listKey("u1"));
+  });
+
+  it("skips invalidation when userId is null (onSuccess guard)", async () => {
+    mockUpdatePositions.mockResolvedValue();
+
+    const client = createTestQueryClient();
+    const spy = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useReorderWidgets(null), { wrapper: makeWrapper(client) });
+
+    await act(async () => {
+      await result.current.mutateAsync(["mood-trend"]);
+    });
+
+    expect(spy).not.toHaveBeenCalled();
   });
 });

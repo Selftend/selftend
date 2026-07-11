@@ -2,8 +2,23 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
-import { useSaveTask, useToggleStep } from "@/src/features/procrastination/queries";
-import { saveSteps, saveTask, toggleStepComplete } from "@/src/features/procrastination/repository";
+import {
+  useSaveTask,
+  useTask,
+  useTaskSteps,
+  useTasks,
+  useToggleStep,
+  useUpdateTaskStatus,
+} from "@/src/features/procrastination/queries";
+import {
+  getTask,
+  listSteps,
+  listTasks,
+  saveSteps,
+  saveTask,
+  toggleStepComplete,
+  updateTaskStatus,
+} from "@/src/features/procrastination/repository";
 import { createTestQueryClient } from "@/test/render-with-providers";
 
 jest.mock("@/src/features/procrastination/repository", () => ({
@@ -16,9 +31,13 @@ jest.mock("@/src/features/procrastination/repository", () => ({
   updateTaskStatus: jest.fn(),
 }));
 
+const mockGetTask = getTask as jest.MockedFunction<typeof getTask>;
+const mockListSteps = listSteps as jest.MockedFunction<typeof listSteps>;
+const mockListTasks = listTasks as jest.MockedFunction<typeof listTasks>;
 const mockSaveTask = saveTask as jest.MockedFunction<typeof saveTask>;
 const mockSaveSteps = saveSteps as jest.MockedFunction<typeof saveSteps>;
 const mockToggleStep = toggleStepComplete as jest.MockedFunction<typeof toggleStepComplete>;
+const mockUpdateTaskStatus = updateTaskStatus as jest.MockedFunction<typeof updateTaskStatus>;
 
 function makeWrapper(client: QueryClient) {
   return function wrapper({ children }: PropsWithChildren) {
@@ -69,6 +88,147 @@ describe("useSaveTask", () => {
     });
 
     expect(returned).toBe(task);
+  });
+
+  it("invalidates the procrastination root key for a real user", async () => {
+    mockSaveTask.mockResolvedValue({ id: "t1" } as never);
+    mockSaveSteps.mockResolvedValue(undefined);
+
+    const client = createTestQueryClient();
+    const spy = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useSaveTask("u1"), { wrapper: makeWrapper(client) });
+
+    await act(async () => {
+      await result.current.mutateAsync({ input: {} as never, steps: [] });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const queryKeys = spy.mock.calls.map((c) => (c[0] as { queryKey?: unknown }).queryKey);
+    expect(queryKeys).toContainEqual(["procrastination"]);
+  });
+
+  it("does not invalidate when userId is null", async () => {
+    mockSaveTask.mockResolvedValue({ id: "t1" } as never);
+    mockSaveSteps.mockResolvedValue(undefined);
+
+    const client = createTestQueryClient();
+    const spy = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useSaveTask(null), { wrapper: makeWrapper(client) });
+
+    await act(async () => {
+      await result.current.mutateAsync({ input: {} as never, steps: [] });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("useTasks enabled gate", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockListTasks.mockResolvedValue([]);
+  });
+
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useTasks(null), { wrapper: makeWrapper(client) });
+    expect(mockListTasks).not.toHaveBeenCalled();
+  });
+
+  it("fetches with the userId when a user is present", async () => {
+    const client = createTestQueryClient();
+    renderHook(() => useTasks("u1"), { wrapper: makeWrapper(client) });
+    await waitFor(() => expect(mockListTasks).toHaveBeenCalledWith("u1"));
+  });
+});
+
+describe("useTask enabled gate", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetTask.mockResolvedValue(null);
+  });
+
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useTask(null, "t1"), { wrapper: makeWrapper(client) });
+    expect(mockGetTask).not.toHaveBeenCalled();
+  });
+
+  it("does not fetch when taskId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useTask("u1", null), { wrapper: makeWrapper(client) });
+    expect(mockGetTask).not.toHaveBeenCalled();
+  });
+
+  it("fetches when both userId and taskId are present", async () => {
+    const client = createTestQueryClient();
+    renderHook(() => useTask("u1", "t1"), { wrapper: makeWrapper(client) });
+    await waitFor(() => expect(mockGetTask).toHaveBeenCalledWith("u1", "t1"));
+  });
+});
+
+describe("useTaskSteps enabled gate", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockListSteps.mockResolvedValue([]);
+  });
+
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useTaskSteps(null, "t1"), { wrapper: makeWrapper(client) });
+    expect(mockListSteps).not.toHaveBeenCalled();
+  });
+
+  it("does not fetch when taskId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useTaskSteps("u1", null), { wrapper: makeWrapper(client) });
+    expect(mockListSteps).not.toHaveBeenCalled();
+  });
+
+  it("fetches when both userId and taskId are present", async () => {
+    const client = createTestQueryClient();
+    renderHook(() => useTaskSteps("u1", "t1"), { wrapper: makeWrapper(client) });
+    await waitFor(() => expect(mockListSteps).toHaveBeenCalledWith("u1", "t1"));
+  });
+});
+
+describe("useUpdateTaskStatus onSuccess guard", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUpdateTaskStatus.mockResolvedValue(undefined);
+  });
+
+  it("updates the status and invalidates the root key for a real user", async () => {
+    const client = createTestQueryClient();
+    const spy = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useUpdateTaskStatus("u1"), {
+      wrapper: makeWrapper(client),
+    });
+
+    await act(async () => {
+      await result.current.mutateAsync({ taskId: "t1", status: "done" as never });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(mockUpdateTaskStatus).toHaveBeenCalledWith("u1", "t1", "done");
+    const queryKeys = spy.mock.calls.map((c) => (c[0] as { queryKey?: unknown }).queryKey);
+    expect(queryKeys).toContainEqual(["procrastination"]);
+  });
+
+  it("does not invalidate when userId is null", async () => {
+    const client = createTestQueryClient();
+    const spy = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useUpdateTaskStatus(null), {
+      wrapper: makeWrapper(client),
+    });
+
+    await act(async () => {
+      await result.current.mutateAsync({ taskId: "t1", status: "done" as never });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(spy).not.toHaveBeenCalled();
   });
 });
 
