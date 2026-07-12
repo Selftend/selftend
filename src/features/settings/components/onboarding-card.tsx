@@ -1,0 +1,40 @@
+import { ActivityIndicator } from "react-native";
+import { useTranslation } from "react-i18next";
+
+import { Button } from "@/src/components/react-native-reusables/button";
+import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { SettingsSectionCard } from "@/src/features/settings/components/settings-section-card";
+
+interface OnboardingCardProps {
+  disabled: boolean;
+  isPending: boolean;
+  onReset: () => void;
+}
+
+/**
+ * Onboarding section. Presentational; the reset logic lives in
+ * `useResetOnboarding` at the screen level so its feedback stays the single
+ * shared banner (R7).
+ */
+export function OnboardingCard({ disabled, isPending, onReset }: OnboardingCardProps) {
+  const { t } = useTranslation("settings");
+
+  return (
+    <SettingsSectionCard
+      icon="auto-stories"
+      iconClassName="text-iris"
+      badgeClassName="bg-[hsl(var(--iris)/0.10)]"
+      title={t("onboardingSection.title")}
+      description={t("onboardingSection.description")}
+    >
+      <Button variant="outline" className="justify-start" disabled={disabled} onPress={onReset}>
+        {isPending ? <ActivityIndicator /> : null}
+        <Icon name="replay" size={18} />
+        <Text className="flex-1">
+          {isPending ? t("onboarding.resetting") : t("onboardingSection.reset")}
+        </Text>
+      </Button>
+    </SettingsSectionCard>
+  );
+}

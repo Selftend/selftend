@@ -29,6 +29,14 @@ module.exports = {
     "!src/features/widgets/use-widget-snapshot-sync.ts",
     "!src/features/widgets/snapshot-types.ts",
     "!src/features/widgets/click-actions.ts",
+    // Platform-IO hooks/modules extracted in the 2026-07 screen splits: their
+    // branches (ImageManipulator + native image-picker; web Blob download vs native
+    // Share) are unreachable under jest and are exercised on-device / in the web
+    // smoke test. Their pure cores (buildAvatarManipulation, validatePickedAsset,
+    // export markdown builders) are unit-tested separately.
+    "!src/features/settings/use-profile-avatar.ts",
+    "!src/features/settings/use-export-data.ts",
+    "!src/features/recovery/export-target.ts",
   ],
   coverageDirectory: "coverage",
   coverageReporters: ["json-summary", "text-summary", "lcov"],
