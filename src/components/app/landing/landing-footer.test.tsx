@@ -28,7 +28,7 @@ jest.mock("@/src/lib/linking", () => ({
 
 jest.mock("@/src/lib/env", () => ({
   appEnv: {
-    discordUrl: "https://discord.gg/R96NRx6AH3",
+    discordUrl: "https://discord.gg/pdaAr9FhcQ",
   },
 }));
 
@@ -39,7 +39,7 @@ function linkHref(name: string) {
 }
 
 beforeEach(() => {
-  appEnv.discordUrl = "https://discord.gg/R96NRx6AH3";
+  appEnv.discordUrl = "https://discord.gg/pdaAr9FhcQ";
   jest.clearAllMocks();
 });
 
@@ -79,7 +79,7 @@ describe("LandingFooter", () => {
 
     fireEvent.press(screen.getByText("Join our Discord"));
 
-    expect(mockOpen).toHaveBeenCalledWith("https://discord.gg/R96NRx6AH3");
+    expect(mockOpen).toHaveBeenCalledWith("https://discord.gg/pdaAr9FhcQ");
   });
 
   it("hides the Discord link when appEnv.discordUrl is empty", () => {
