@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/Selftend/selftend/compare/v0.2.0...v0.2.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* **deps:** override postcss to ^8.5.10 (resolves GHSA-qx2v-qp2m-jg93 XSS in CSS stringify) ([6b786cc](https://github.com/Selftend/selftend/commit/6b786cc534ebe7dd63903c3beef3eed158cc86d3))
+
 ## [0.2.0](https://github.com/Selftend/selftend/compare/v0.1.0...v0.2.0) (2026-07-10)
 
 
