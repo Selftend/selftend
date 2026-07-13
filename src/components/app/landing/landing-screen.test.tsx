@@ -32,7 +32,7 @@ describe("LandingScreen", () => {
 
     expect(
       screen.getByText(
-        "Free, open-source tools for working with thoughts, moods, and habits — no ads, no subscriptions.",
+        "Free, open-source tools for working with thoughts, moods, and habits - no ads, no subscriptions.",
       ),
     ).toBeTruthy();
   });

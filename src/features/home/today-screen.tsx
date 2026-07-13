@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, RefreshControl, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, RefreshControl, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,10 @@ import Sortable from "react-native-sortables";
 import { Circle, Svg } from "react-native-svg";
 
 import { Button } from "@/src/components/react-native-reusables/button";
+import {
+  AppOnboardingWizard,
+  type AppOnboardingResult,
+} from "@/src/components/app/app-onboarding-wizard";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { resolveDisplayName } from "@/src/features/profile/display-name";
@@ -20,17 +24,24 @@ import {
   useAddWidget,
   useRemoveWidget,
   useReorderWidgets,
+  useRestoreWidget,
   useWidgetPreferences,
 } from "@/src/features/home/queries";
-import { StartHereCard } from "@/src/features/home/start-here-card";
+import { useApplyWidgetSuggestions } from "@/src/features/onboarding/queries";
+import { useUserPreferences } from "@/src/features/settings/queries";
 import { HomeTour } from "@/src/features/tours/home-tour";
 import { useTourTargetRef } from "@/src/features/tours/tour-targets";
+import { cn } from "@/lib/utils";
 
 const GAP = 12;
 const PADDING = 24;
 const MIN_WIDGET_WIDTH = 280;
 const WIDGET_HEIGHT = 200;
 const MAX_COLUMNS = 3;
+type WidgetEditAction =
+  | { type: "add"; widgetId: string }
+  | { type: "remove"; widgetId: string; position: number }
+  | { type: "reorder"; widgetIds: string[] };
 
 // Memoized widget body. id and userId are stable, so the (data-fetching, computation-heavy)
 // widget subtree is not re-run on the frequent grid re-renders (edit-mode toggle, add-modal
@@ -97,6 +108,8 @@ export default function HomeScreen() {
   const { data: profile } = useUserProfile(user);
   const [editMode, setEditMode] = useState(false);
   const [addVisible, setAddVisible] = useState(false);
+  const [suggestionsVisible, setSuggestionsVisible] = useState(false);
+  const [undoStack, setUndoStack] = useState<WidgetEditAction[]>([]);
   const [containerWidth, setContainerWidth] = useState(0);
   const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
@@ -116,17 +129,86 @@ export default function HomeScreen() {
     : t("today.greetingPlain", { greeting });
 
   const { data: preferences, isLoading, refetch, isRefetching } = useWidgetPreferences(userId);
+  const { data: userPreferences } = useUserPreferences(userId);
   const addMutation = useAddWidget(userId);
   const removeMutation = useRemoveWidget(userId);
+  const restoreMutation = useRestoreWidget(userId);
   const reorderMutation = useReorderWidgets(userId);
+  const applySuggestions = useApplyWidgetSuggestions(userId);
 
-  const checkinTargetRef = useTourTargetRef("home-checkin");
   const editButtonsRef = useTourTargetRef("home-edit");
 
   const widgetIds = useMemo(
     () => (preferences ?? []).map((p) => p.widgetId).filter(isImplemented),
     [preferences],
   );
+
+  const mutationPending =
+    addMutation.isPending ||
+    removeMutation.isPending ||
+    restoreMutation.isPending ||
+    reorderMutation.isPending;
+
+  const addWidget = (widgetId: string) => {
+    if (mutationPending) return;
+    addMutation.mutate(widgetId, {
+      onSuccess: () => setUndoStack((current) => [...current, { type: "add", widgetId }]),
+    });
+  };
+
+  const removeWidget = (widgetId: string) => {
+    if (mutationPending) return;
+    const position = widgetIds.indexOf(widgetId);
+    removeMutation.mutate(widgetId, {
+      onSuccess: () =>
+        setUndoStack((current) => [
+          ...current,
+          {
+            type: "remove",
+            widgetId,
+            position: Math.max(position, 0),
+          },
+        ]),
+    });
+  };
+
+  const reorderWidgets = (next: string[]) => {
+    if (mutationPending || next.every((widgetId, index) => widgetId === widgetIds[index])) return;
+    const previous = [...widgetIds];
+    reorderMutation.mutate(next, {
+      onSuccess: () =>
+        setUndoStack((current) => [...current, { type: "reorder", widgetIds: previous }]),
+    });
+  };
+
+  const moveWidget = (widgetId: string, offset: -1 | 1) => {
+    const currentIndex = widgetIds.indexOf(widgetId);
+    const nextIndex = currentIndex + offset;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= widgetIds.length) return;
+    const next = [...widgetIds];
+    [next[currentIndex], next[nextIndex]] = [next[nextIndex], next[currentIndex]];
+    reorderWidgets(next);
+  };
+
+  const undoLastEdit = () => {
+    const action = undoStack[undoStack.length - 1];
+    if (!action || mutationPending) return;
+    const onSuccess = () =>
+      setUndoStack((current) =>
+        current[current.length - 1] === action ? current.slice(0, -1) : current,
+      );
+
+    if (action.type === "add") {
+      removeMutation.mutate(action.widgetId, { onSuccess });
+    } else if (action.type === "remove") {
+      restoreMutation.mutate(
+        { widgetId: action.widgetId, position: action.position },
+        { onSuccess },
+      );
+    } else {
+      reorderMutation.mutate(action.widgetIds, { onSuccess });
+    }
+  };
 
   const gridWidth = Math.max(0, containerWidth - PADDING * 2);
   const numColumns = computeColumns(gridWidth);
@@ -147,8 +229,6 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      <StartHereCard />
-
       {/* Section heading row */}
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 min-w-0">
@@ -168,6 +248,22 @@ export default function HomeScreen() {
           >
             <Icon name={editMode ? "check" : "edit"} className="size-5 text-primary" />
           </Button>
+          {editMode ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={undoStack.length === 0}
+              onPress={undoLastEdit}
+              accessibilityLabel={t("today.dashboard.undo")}
+            >
+              <Icon
+                name="undo"
+                className={
+                  undoStack.length === 0 ? "size-5 text-primary/40" : "size-5 text-primary"
+                }
+              />
+            </Button>
+          ) : null}
           <Button
             variant="ghost"
             size="sm"
@@ -180,14 +276,11 @@ export default function HomeScreen() {
       </View>
 
       {editMode ? (
-        <View className="flex-row items-center justify-between rounded-xl border border-primary/25 bg-primary/[0.08] px-3 py-2">
+        <View className="flex-row items-center rounded-xl border border-primary/25 bg-primary/[0.08] px-3 py-2">
           <View className="flex-row items-center gap-2">
             <Icon name="drag-indicator" className="size-4 text-primary" />
             <Text className="text-xs font-semibold text-primary">{t("home.editingHint")}</Text>
           </View>
-          <Button size="sm" variant="ghost" onPress={() => setEditMode(false)}>
-            <Text className="text-primary">{t("home.doneLabel")}</Text>
-          </Button>
         </View>
       ) : null}
     </View>
@@ -195,7 +288,11 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <View className="flex-1" onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}>
+      <View
+        testID="home-layout"
+        className="flex-1"
+        onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+      >
         <Animated.ScrollView
           ref={scrollableRef}
           contentContainerStyle={{ padding: PADDING }}
@@ -208,13 +305,7 @@ export default function HomeScreen() {
               <ActivityIndicator />
             </View>
           ) : widgetIds.length === 0 ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("today.emptyTitle")}
-              accessibilityHint={t("today.emptyDescription")}
-              onPress={() => setAddVisible(true)}
-              className="mt-2 items-center gap-3.5 rounded-2xl border border-dashed border-border px-6 py-10 active:bg-accent/40"
-            >
+            <View className="mt-2 items-center gap-3.5 rounded-2xl border border-dashed border-border px-6 py-10">
               <BreathingDotEmpty />
               <View className="items-center gap-1.5 px-6">
                 <Text className="text-center text-[15px] font-semibold">
@@ -227,7 +318,15 @@ export default function HomeScreen() {
                   {t("today.emptyDescription")}
                 </Text>
               </View>
-            </Pressable>
+              <View className="mt-2 w-full max-w-sm gap-2 sm:flex-row">
+                <Button variant="outline" className="flex-1" onPress={() => setAddVisible(true)}>
+                  <Text>{t("today.addManually")}</Text>
+                </Button>
+                <Button className="flex-1" onPress={() => setSuggestionsVisible(true)}>
+                  <Text>{t("today.getSuggestions")}</Text>
+                </Button>
+              </View>
+            </View>
           ) : cellWidth > 0 ? (
             <Sortable.Flex
               width={gridWidth}
@@ -236,16 +335,15 @@ export default function HomeScreen() {
               gap={GAP}
               scrollableRef={scrollableRef}
               dragActivationDelay={0}
-              sortEnabled={editMode}
+              sortEnabled={editMode && !mutationPending}
               customHandle
-              onDragEnd={({ order }) => reorderMutation.mutate(order(widgetIds))}
+              onDragEnd={({ order }) => reorderWidgets(order(widgetIds))}
             >
-              {widgetIds.map((id) => {
+              {widgetIds.map((id, index) => {
                 const meta = metaForWidget(id);
                 return (
                   <View
                     key={id}
-                    ref={id === "mood-checkin" ? checkinTargetRef : undefined}
                     style={{ width: cellWidth, height: WIDGET_HEIGHT, overflow: "hidden" }}
                   >
                     <View style={{ flex: 1, pointerEvents: editMode ? "none" : "auto" }}>
@@ -257,7 +355,10 @@ export default function HomeScreen() {
                           <View
                             accessibilityElementsHidden
                             importantForAccessibility="no"
-                            className="size-7 items-center justify-center rounded-full border border-primary/35 bg-card"
+                            className={cn(
+                              "size-7 items-center justify-center rounded-full border border-primary/35 bg-card active:bg-accent",
+                              Platform.select({ web: "hover:bg-accent" }),
+                            )}
                           >
                             <Icon name="drag-indicator" className="size-4 text-primary" />
                           </View>
@@ -267,11 +368,48 @@ export default function HomeScreen() {
                           accessibilityLabel={t("today.dashboard.removeWidget", {
                             title: meta ? t(meta.titleKey) : id,
                           })}
-                          onPress={() => removeMutation.mutate(id)}
-                          className="absolute right-1 top-1 size-7 items-center justify-center rounded-full border border-destructive/35 bg-card"
+                          disabled={mutationPending}
+                          onPress={() => removeWidget(id)}
+                          className={cn(
+                            "absolute right-1 top-1 size-7 items-center justify-center rounded-full border border-destructive/35 bg-card active:bg-destructive/10 disabled:opacity-40",
+                            Platform.select({ web: "hover:bg-destructive/10" }),
+                          )}
                         >
                           <Icon name="close" className="size-4 text-destructive" />
                         </Pressable>
+                        <View
+                          pointerEvents="box-none"
+                          className="absolute left-0 right-0 top-1 flex-row justify-center gap-1"
+                        >
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={t("today.dashboard.moveEarlier", {
+                              title: meta ? t(meta.titleKey) : id,
+                            })}
+                            disabled={index === 0 || mutationPending}
+                            onPress={() => moveWidget(id, -1)}
+                            className={cn(
+                              "size-7 items-center justify-center rounded-full border border-border bg-card active:bg-accent disabled:opacity-40",
+                              Platform.select({ web: "hover:bg-accent" }),
+                            )}
+                          >
+                            <Icon name="chevron-left" className="size-4 text-primary" />
+                          </Pressable>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={t("today.dashboard.moveLater", {
+                              title: meta ? t(meta.titleKey) : id,
+                            })}
+                            disabled={index === widgetIds.length - 1 || mutationPending}
+                            onPress={() => moveWidget(id, 1)}
+                            className={cn(
+                              "size-7 items-center justify-center rounded-full border border-border bg-card active:bg-accent disabled:opacity-40",
+                              Platform.select({ web: "hover:bg-accent" }),
+                            )}
+                          >
+                            <Icon name="chevron-right" className="size-4 text-primary" />
+                          </Pressable>
+                        </View>
                       </>
                     ) : null}
                   </View>
@@ -286,9 +424,26 @@ export default function HomeScreen() {
         visible={addVisible}
         onClose={() => setAddVisible(false)}
         existingWidgetIds={widgetIds}
-        onAdd={(widgetId) => addMutation.mutate(widgetId)}
-        onRemove={(widgetId) => removeMutation.mutate(widgetId)}
+        onAdd={addWidget}
+        onRemove={removeWidget}
       />
+      {suggestionsVisible && widgetIds.length === 0 ? (
+        <AppOnboardingWizard
+          visible
+          includeWelcome={false}
+          initialConcerns={userPreferences?.selectedConcerns ?? []}
+          isPending={applySuggestions.isPending}
+          errorMessage={
+            applySuggestions.isError ? t("settings:onboarding.appSaveError") : undefined
+          }
+          onFinish={(result: AppOnboardingResult) => {
+            applySuggestions.mutate(result, {
+              onSuccess: () => setSuggestionsVisible(false),
+            });
+          }}
+          onSkip={() => setSuggestionsVisible(false)}
+        />
+      ) : null}
       <HomeTour />
     </SafeAreaView>
   );

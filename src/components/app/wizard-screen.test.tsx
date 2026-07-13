@@ -117,4 +117,29 @@ describe("WizardScreen step indicator", () => {
     expect(screen.queryByText("Step 2 of 4 · Thoughts")).toBeNull();
     expect(screen.queryByLabelText(/Show all steps/)).toBeNull();
   });
+
+  it("offers an explicit draft discard action when the flow provides one", () => {
+    const onDiscard = jest.fn();
+    renderWithProviders(
+      <WizardScreen
+        title="New thought record"
+        steps={steps}
+        stepIndex={0}
+        onJumpToStep={jest.fn()}
+        onBack={jest.fn()}
+        onPrimary={jest.fn()}
+        primaryLabel="Continue"
+        pendingLabel="Saving..."
+        backLabel="Back"
+        discardLabel="Discard draft"
+        onDiscard={onDiscard}
+        isPending={false}
+      >
+        <Text>Form content</Text>
+      </WizardScreen>,
+    );
+
+    fireEvent.press(screen.getByText("Discard draft"));
+    expect(onDiscard).toHaveBeenCalledTimes(1);
+  });
 });

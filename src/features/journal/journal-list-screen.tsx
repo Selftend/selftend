@@ -37,7 +37,7 @@ export default function JournalListScreen() {
 
   // Memoize the body word-count (up to ~1 MB of text across 50 entries) and the
   // last-activity scan so they don't recompute on every render - notably every
-  // DateBar tap. Pure functions of `entries`.
+  // parent render. Pure functions of `entries`.
   const totalWords = useMemo(
     () => allEntries.reduce((sum, entry) => sum + countWords(entry.body), 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps

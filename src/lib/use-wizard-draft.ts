@@ -39,6 +39,7 @@ interface UseWizardDraftReturn {
   handleSave: () => Promise<void>;
   previousStep: () => void;
   goToStep: (index: number) => void;
+  clearDraft: () => void;
 }
 
 export function useWizardDraft<TForm extends FieldValues, TSaved>({
@@ -175,6 +176,15 @@ export function useWizardDraft<TForm extends FieldValues, TSaved>({
     await submitForm();
   });
 
+  const clearDraft = () => {
+    if (captureTimerRef.current) {
+      clearTimeout(captureTimerRef.current);
+      captureTimerRef.current = null;
+    }
+    reset();
+    clearPersisted();
+  };
+
   return {
     stepIndex,
     isLastStep,
@@ -183,6 +193,7 @@ export function useWizardDraft<TForm extends FieldValues, TSaved>({
     handleNext,
     handleSave,
     previousStep,
+    clearDraft,
     goToStep: (index) => {
       if (index <= stepIndex) setStepIndex(index);
     },

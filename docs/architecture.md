@@ -56,7 +56,6 @@ app/
     ├── settings.tsx       settings
     ├── cbt/               index, learn, new, [id], history
     ├── tools/             mood-tracker, journal, mindfulness, gratitude-log (working); act, meditation (placeholders)
-    ├── history.tsx        compatibility redirect to cbt/history
     ├── legal.tsx
     └── support.tsx
 ```
@@ -146,9 +145,9 @@ Multi-step wizard flows persist in-progress drafts via
 [src/lib/use-wizard-draft.ts](../src/lib/use-wizard-draft.ts)):
 
 - **Key scheme:** `selftend:wizard-draft:<flowKey>` - one draft per flow key
-  (`cbt-thought-record`, `goal`, `core-belief`, `procrastination-task`,
-  `exposure-hierarchy`). One mode+entityId draft at a time; switching wipes the
-  previous draft.
+  (`cbt-thought-record`, `act-defusion`, `goal`, `core-belief`,
+  `procrastination-task`, `exposure-hierarchy`). One mode+entityId draft at a
+  time; switching wipes the previous draft.
 - **TTL:** drafts older than 24h are dropped at rehydrate (and their disk copy
   removed - drafts are PHI).
 - **Versioning:** the persisted envelope carries a `version`; bump
@@ -157,6 +156,8 @@ Multi-step wizard flows persist in-progress drafts via
   wrongly-migrated one feeding a zod resolver).
 - **Sign-out wipes disk:** `resetAllDraftStores()` (session provider on
   SIGNED_OUT) clears both memory state and the persisted copies.
+- **User-controlled cleanup:** long-form screens expose a confirmed discard
+  action. A successful save also clears both memory and disk before navigation.
 - **Zustand + persist gotcha:** the middleware makes `set()` return the storage
   write's promise. Store action bodies use braces (return `void`) so callers -
   including `act()` in tests - never receive a stray thenable. Keep new actions
@@ -175,6 +176,18 @@ All user-entered text fields are encrypted at rest. The pattern is **encrypt-on-
 - **`profiles.email` is intentionally plaintext** (synced from `auth.users`; encrypting it is a documented Supabase footgun). `profiles.display_name` is encrypted.
 
 The system is **provider-recoverable** (not zero-knowledge): the operator can decrypt, and forgot-password recovery works normally. The protection is breach-resilience - a leaked database backup cannot expose user content.
+
+## Android launcher widgets
+
+Android exposes one reconfigurable `SelftendCard` provider. Each placed instance selects one
+of the 27 Home card IDs and stores its own card, theme, and opacity configuration. The app
+builds a pre-localized snapshot from the same React Query data used by Home, then the native
+widget layer renders the selected card with `react-native-android-widget` primitives.
+
+The CBT and ACT programme replicas preserve the Home cards' three states: review before
+enrollment, current programme goals with deep links while enrolled, and completion guidance.
+Programme enrollment is never triggered from the launcher widget. Adding or changing a
+provider still requires a native Android rebuild; card payload and replica changes do not.
 
 ## Reminders: native vs. web
 

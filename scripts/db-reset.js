@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Wraps `supabase db reset` and restarts the Kong container afterwards.
-// `db reset` recreates the GoTrue container with a fresh IP, but Kong's nginx
-// caches the old upstream IP and returns 502 Bad Gateway until restarted.
+// Wraps `supabase db reset` and refreshes the local API containers afterwards.
+// `db reset` can leave PostgREST serving its pre-migration function cache, and
+// recreating GoTrue can leave Kong's nginx pointing at its old container IP.
 
 const { spawnSync } = require("node:child_process");
 
@@ -28,20 +28,22 @@ if (isWindows) {
   run("npm", ["exec", "supabase", "--", "db", "reset"]);
 }
 
-const ps = tryRun("docker", ["ps", "-q", "--filter", "name=^supabase_kong_"]);
-const kongIds = ps.stdout?.toString().trim().split("\n").filter(Boolean) ?? [];
+function restartMatchingContainers(namePattern, label, reason) {
+  const ps = tryRun("docker", ["ps", "-q", "--filter", `name=^${namePattern}`]);
+  const ids = ps.stdout?.toString().trim().split("\n").filter(Boolean) ?? [];
+  if (ids.length === 0) {
+    console.warn(`[db-reset] No ${label} container found to restart.`);
+    return;
+  }
 
-if (kongIds.length === 0) {
-  console.warn(
-    "[db-reset] No Kong container found to restart. If sign-in returns 502, run: docker restart supabase_kong_<project>",
-  );
-  process.exit(0);
+  console.log(`[db-reset] Restarting ${label} (${ids.join(", ")}) ${reason}...`);
+  const restart = tryRun("docker", ["restart", ...ids]);
+  if (restart.status !== 0) {
+    console.warn(`[db-reset] ${label} restart failed: ${restart.stderr?.toString().trim()}`);
+    process.exit(restart.status ?? 1);
+  }
+  console.log(`[db-reset] ${label} restarted.`);
 }
 
-console.log(`[db-reset] Restarting Kong (${kongIds.join(", ")}) to refresh upstream IPs...`);
-const restart = tryRun("docker", ["restart", ...kongIds]);
-if (restart.status !== 0) {
-  console.warn(`[db-reset] Kong restart failed: ${restart.stderr?.toString().trim()}`);
-  process.exit(restart.status ?? 1);
-}
-console.log("[db-reset] Kong restarted.");
+restartMatchingContainers("supabase_rest_", "PostgREST", "to load the completed migration schema");
+restartMatchingContainers("supabase_kong_", "Kong", "to refresh upstream IPs");

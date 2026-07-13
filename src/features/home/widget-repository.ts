@@ -80,6 +80,17 @@ export async function insertWidgetPreferences(
   if (error) throw error;
 }
 
+export async function replaceWidgetPreferences(userId: string, widgetIds: string[]): Promise<void> {
+  const client = requireSupabase();
+  const { error: deleteError } = await client
+    .from("widget_preferences")
+    .delete()
+    .eq("user_id", userId);
+  if (deleteError) throw deleteError;
+
+  await insertWidgetPreferences(userId, widgetIds, 0);
+}
+
 export async function deleteWidgetPreference(userId: string, widgetId: string): Promise<void> {
   const client = requireSupabase();
   const { error } = await client
@@ -88,6 +99,22 @@ export async function deleteWidgetPreference(userId: string, widgetId: string): 
     .eq("user_id", userId)
     .eq("widget_id", widgetId);
   if (error) throw error;
+}
+
+export async function restoreWidgetPreference(
+  userId: string,
+  widgetId: string,
+  position: number,
+): Promise<void> {
+  const current = await listWidgetPreferences(userId);
+  const orderedWidgetIds = current
+    .map((preference) => preference.widgetId)
+    .filter((currentWidgetId) => currentWidgetId !== widgetId);
+  const restoredPosition = Math.max(0, Math.min(position, orderedWidgetIds.length));
+  orderedWidgetIds.splice(restoredPosition, 0, widgetId);
+
+  await insertWidgetPreferences(userId, [widgetId], orderedWidgetIds.length - 1);
+  await updateWidgetPositions(userId, orderedWidgetIds);
 }
 
 export async function updateWidgetPositions(

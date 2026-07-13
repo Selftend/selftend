@@ -15,6 +15,7 @@ import { useToastStore } from "@/src/stores/toast-store";
  */
 export function useResetOnboarding(
   user: User | null,
+  previousCompletionVia: "finish" | "skip" | null | undefined,
   setErrorMessage: (message: string) => void,
   setSuccessMessage: (message: string) => void,
 ) {
@@ -31,7 +32,13 @@ export function useResetOnboarding(
       setErrorMessage("");
       setSuccessMessage("");
 
-      await resetOnboardingMutation.mutateAsync(RESET_ONBOARDING_PREFERENCES);
+      await resetOnboardingMutation.mutateAsync({
+        ...RESET_ONBOARDING_PREFERENCES,
+        // This distinguishes a Settings replay from a genuinely new account. Preserve the
+        // original completion mode when available; legacy rows predate this field, so use
+        // "finish" only as their replay marker.
+        appOnboardingCompletedVia: previousCompletionVia ?? "finish",
+      });
 
       setSuccessMessage(t("onboarding.resetSaved"));
       showToast({

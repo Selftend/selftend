@@ -67,6 +67,7 @@ describe("gratitude repository", () => {
         starred: true,
         note: "A steady morning.",
         loggedAt: "2026-05-15T08:00:00.000Z",
+        loggedOffsetMinutes: 0,
         createdAt: "2026-05-15T08:00:00.000Z",
         updatedAt: "2026-05-15T08:00:00.000Z",
       },
@@ -248,6 +249,7 @@ describe("gratitude repository", () => {
       starred: false,
       note: "",
       loggedAt: "2026-05-15T08:00:00.000Z",
+      loggedOffsetMinutes: 0,
       createdAt: "2026-05-15T08:00:00.000Z",
       updatedAt: "2026-05-15T08:30:00.000Z",
     });
@@ -504,6 +506,7 @@ describe("gratitude repository", () => {
       starred: false,
       note: "n",
       loggedAt: "2026-05-15T08:00:00.000Z",
+      loggedOffsetMinutes: 0,
       createdAt: "2026-05-15T08:00:00.000Z",
       updatedAt: "2026-05-15T08:00:00.000Z",
     });

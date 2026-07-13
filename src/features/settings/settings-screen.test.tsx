@@ -160,6 +160,7 @@ describe("SettingsScreen onboarding reset", () => {
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledWith({
         appOnboardingCompleted: false,
+        appOnboardingCompletedVia: "finish",
         cbtOnboardingCompleted: false,
         gratitudeOnboardingCompleted: false,
         meditationInfoCompleted: false,

@@ -36,7 +36,7 @@ export {
   deleteAllActivityLogsForUser,
 };
 
-// Alias: reset widget preferences for a user (deletes all rows so the app re-seeds defaults).
+// Alias: clear widget preferences. Empty Home is intentional and no longer seeds defaults.
 export async function resetWidgetPreferencesForUser(userId: string): Promise<void> {
   await deleteAllWidgetPreferencesForUser(userId);
 }

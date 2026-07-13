@@ -108,7 +108,15 @@ describe("global mutation failure toast", () => {
       meta,
     });
 
-    await mutation.execute(undefined).catch(() => {});
+    try {
+      await mutation.execute(undefined).catch(() => {});
+    } finally {
+      // MutationCache schedules a long garbage-collection timer when a mutation is
+      // built. Production owns a process-long client; this short-lived test client
+      // must be cleared so it does not keep Jest alive.
+      mutation.destroy();
+      client.clear();
+    }
   }
 
   it("shows the fallback toast for an unhandled failing mutation", async () => {

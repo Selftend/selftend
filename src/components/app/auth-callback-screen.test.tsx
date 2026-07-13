@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import * as Linking from "expo-linking";
 
 import AuthCallbackScreen from "./auth-callback-screen";
@@ -51,6 +51,18 @@ describe("AuthCallbackScreen (email verified)", () => {
 
     expect(await screen.findByText("You're verified")).toBeTruthy();
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("does not retry a verified link when URL scrubbing publishes the clean callback URL", async () => {
+    const view = renderWithProviders(<AuthCallbackScreen />);
+    expect(await screen.findByText("You're verified")).toBeTruthy();
+
+    mockUseLinkingURL.mockReturnValue("http://localhost:8081/auth-callback");
+    view.rerender(<AuthCallbackScreen />);
+
+    await waitFor(() => expect(mockCompleteAuthRedirect).toHaveBeenCalledTimes(1));
+    expect(screen.getByText("You're verified")).toBeTruthy();
+    expect(screen.queryByText("Authentication link problem")).toBeNull();
   });
 
   it("enters the app when 'Continue to the app' is pressed", async () => {

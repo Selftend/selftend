@@ -8,6 +8,8 @@ interface JournalEntryRow {
   user_id: string;
   title: string;
   body: string;
+  occurred_at?: string;
+  occurred_offset_minutes?: number;
   created_at: string;
   updated_at: string;
 }
@@ -18,6 +20,8 @@ function mapJournalEntry(row: JournalEntryRow): JournalEntry {
     userId: row.user_id,
     title: row.title,
     body: row.body,
+    occurredAt: row.occurred_at ?? row.created_at,
+    occurredOffsetMinutes: row.occurred_offset_minutes ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -29,7 +33,7 @@ export async function listJournalEntries(userId: string, limit = 50) {
     .from("journal_entries")
     .select("*")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false })
+    .order("occurred_at", { ascending: false })
     .limit(limit);
 
   if (error) throw error;
@@ -57,7 +61,7 @@ export async function countJournalEntriesSince(userId: string, sinceIso: string)
     .from("journal_entries")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
-    .gte("created_at", sinceIso);
+    .gte("occurred_at", sinceIso);
 
   if (error) throw error;
   return count ?? 0;
@@ -78,14 +82,12 @@ export async function getJournalEntry(userId: string, id: string) {
   return data ? mapJournalEntry(data as JournalEntryRow) : null;
 }
 
-function normalizeCreatedAt(createdAt: string): string {
-  const parsed = new Date(createdAt);
+function normalizeOccurredAt(occurredAt: string): string {
+  const parsed = new Date(occurredAt);
   if (Number.isNaN(parsed.getTime())) {
     throw new Error("Invalid entry date");
   }
-  // Reject implausible future timestamps (allow a day of clock skew); the entry
-  // date is user-chosen, but a future date should never pin an entry at the top.
-  if (parsed.getTime() > Date.now() + 24 * 60 * 60 * 1000) {
+  if (parsed.getTime() > Date.now()) {
     throw new Error("Entry date cannot be in the future");
   }
   return parsed.toISOString();
@@ -96,7 +98,14 @@ export async function saveJournalEntry(userId: string, input: JournalInput, entr
   const payload = {
     title: sanitizeUserText(input.title).trim(),
     body: sanitizeUserText(input.body).trim(),
-    ...(input.createdAt ? { created_at: normalizeCreatedAt(input.createdAt) } : {}),
+    ...((input.occurredAt ?? input.createdAt)
+      ? {
+          occurred_at: normalizeOccurredAt((input.occurredAt ?? input.createdAt)!),
+          occurred_offset_minutes:
+            input.occurredOffsetMinutes ??
+            -new Date((input.occurredAt ?? input.createdAt)!).getTimezoneOffset(),
+        }
+      : {}),
   };
 
   if (entryId) {

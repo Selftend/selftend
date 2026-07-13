@@ -23,10 +23,15 @@ import { writeSnapshot } from "@/src/features/widgets/snapshot-store";
 import { changedWidgetIds } from "@/src/features/widgets/diff-snapshots";
 import { WIDGET_CATALOG } from "@/src/features/widgets/widget-catalog";
 import type { Snapshot, WidgetData } from "@/src/features/widgets/snapshot-types";
+import type { UserPreferences } from "@/src/features/modules/types";
+import { useProgramWidgetTaskStatus } from "@/src/features/home/program-widget-status";
 
 /** Reuses the SAME data hooks the in-app widgets use; assembles the snapshot and pushes updates.
  *  Native widget APIs are loaded lazily behind a Platform guard so the web/iOS bundles stay clean. */
-export function useWidgetSnapshotSync(userId: string | null) {
+export function useWidgetSnapshotSync(
+  userId: string | null,
+  preferences: UserPreferences | null | undefined,
+) {
   const { t, i18n } = useTranslation("navigation");
   const { t: ta } = useTranslation("act");
   const { t: tc } = useTranslation("cbt");
@@ -56,6 +61,20 @@ export function useWidgetSnapshotSync(userId: string | null) {
   const defusionLogs = useDefusionLogs(widgetUserId, 30).data;
   const moodLogCount = useMoodLogCount(widgetUserId).data;
   const gratitudeEntryCount = useGratitudeEntryCount(widgetUserId).data;
+  const cbtTaskStatuses = useProgramWidgetTaskStatus({
+    userId: widgetUserId ?? "",
+    module: "cbt",
+    enabled: Boolean(
+      widgetUserId && preferences?.cbtProgramStartedAt && !preferences.cbtProgramCompletedAt,
+    ),
+  }).data;
+  const actTaskStatuses = useProgramWidgetTaskStatus({
+    userId: widgetUserId ?? "",
+    module: "act",
+    enabled: Boolean(
+      widgetUserId && preferences?.actProgramStartedAt && !preferences.actProgramCompletedAt,
+    ),
+  }).data;
 
   const data: WidgetData = useMemo(
     () => ({
@@ -72,6 +91,20 @@ export function useWidgetSnapshotSync(userId: string | null) {
       defusionLogs: defusionLogs ?? [],
       moodLogCount: moodLogCount ?? null,
       gratitudeEntryCount: gratitudeEntryCount ?? null,
+      programmes: {
+        cbt: {
+          startedAt: preferences?.cbtProgramStartedAt ?? null,
+          completedAt: preferences?.cbtProgramCompletedAt ?? null,
+          phaseIndex: preferences?.cbtProgramPhaseIndex ?? 0,
+          taskStatuses: cbtTaskStatuses ?? [],
+        },
+        act: {
+          startedAt: preferences?.actProgramStartedAt ?? null,
+          completedAt: preferences?.actProgramCompletedAt ?? null,
+          phaseIndex: preferences?.actProgramPhaseIndex ?? 0,
+          taskStatuses: actTaskStatuses ?? [],
+        },
+      },
     }),
     [
       moodLogs,
@@ -87,6 +120,14 @@ export function useWidgetSnapshotSync(userId: string | null) {
       defusionLogs,
       moodLogCount,
       gratitudeEntryCount,
+      preferences?.cbtProgramStartedAt,
+      preferences?.cbtProgramCompletedAt,
+      preferences?.cbtProgramPhaseIndex,
+      preferences?.actProgramStartedAt,
+      preferences?.actProgramCompletedAt,
+      preferences?.actProgramPhaseIndex,
+      cbtTaskStatuses,
+      actTaskStatuses,
     ],
   );
 

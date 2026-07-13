@@ -9,6 +9,13 @@ jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
 }));
 
+// The native overlay warns when react-test-renderer is not attached to a real iOS
+// window. The popover behavior itself remains exercised through rn-primitives.
+jest.mock("react-native-screens", () => ({
+  ...jest.requireActual("react-native-screens"),
+  FullWindowOverlay: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({
     session: { access_token: "token" },

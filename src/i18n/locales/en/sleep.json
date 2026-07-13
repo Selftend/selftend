@@ -17,6 +17,7 @@
     "qualityStarLabel": "Rate {{value}} of {{max}}",
     "qualityValue": "{{value}}/{{max}}",
     "notesLabel": "Notes (optional)",
+    "whenLabel": "When",
     "notesPlaceholder": "Anything that affected your sleep?",
     "save": "Save",
     "update": "Update",

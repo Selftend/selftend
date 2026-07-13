@@ -3,15 +3,15 @@ import { expect, test } from "./fixtures";
 import { createServiceClient } from "./helpers";
 import { policyVersion } from "../../src/features/policies/policy-content";
 
-// Home dashboard's three surviving first-run tips, in HOME_TOUR_STOPS order
+// Home dashboard's two surviving first-run tips, in HOME_TOUR_STOPS order
 // (src/features/tours/home-tour.tsx). The day-strip "dates" tip and every
 // per-page module-header ("button tour") tip were removed - see
 // .superpowers/sdd/task-4-brief.md. This spec now covers:
 //   1. Module screens (e.g. mood-tracker): action buttons render and fire,
 //      with no coach-mark overlay ever appearing.
-//   2. The home dashboard: exactly the 3 remaining tips still show and can be
+//   2. The home dashboard: exactly the 2 remaining tips still show and can be
 //      dismissed individually or all at once.
-const HOME_TOUR_KEYS = ["home:checkin", "home:edit", "home:navigation"] as const;
+const HOME_TOUR_KEYS = ["home:edit", "home:navigation"] as const;
 
 // Set from the worker's pool user in beforeAll (worker-scoped fixtures are
 // available to beforeAll). Module scope is per-worker-process, so this is safe.
@@ -134,7 +134,7 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
   });
 });
 
-test.describe("home dashboard tips (3 remaining stops)", () => {
+test.describe("home dashboard tips (2 remaining stops)", () => {
   test.beforeAll(async ({ user }) => {
     USER_ID = user.id;
     originalPreferences = await getPreferenceRow();
@@ -144,12 +144,8 @@ test.describe("home dashboard tips (3 remaining stops)", () => {
     await restoreOriginalPreferences();
   });
 
-  // The "checkin" stop's target only registers when the "mood-checkin" widget is on the
-  // pool user's dashboard (src/features/home/today-screen.tsx:248) - a customizable,
-  // cross-spec-mutable piece of state. Pre-dismissing "home:checkin" sidesteps that and
-  // pins the first visible stop to "edit", which is always registered (today-screen.tsx:162).
   test("shows the edit (dashboard) tip and Got it dismisses only that stop", async ({ page }) => {
-    await setTourState(["home:checkin"]);
+    await setTourState([]);
 
     await page.goto("/");
     await expect(
@@ -158,13 +154,13 @@ test.describe("home dashboard tips (3 remaining stops)", () => {
 
     await page.getByRole("button", { name: "Got it", exact: true }).click();
 
-    await expect.poll(getShownButtonTours).toEqual(["home:checkin", "home:edit"]);
+    await expect.poll(getShownButtonTours).toEqual(["home:edit"]);
   });
 
-  test("Skip all tips dismisses all 3 remaining home stops (no day-strip tip)", async ({
+  test("Skip all tips dismisses both remaining home stops (no check-in or day-strip tip)", async ({
     page,
   }) => {
-    await setTourState(["home:checkin"]);
+    await setTourState([]);
 
     await page.goto("/");
     await expect(
@@ -176,9 +172,7 @@ test.describe("home dashboard tips (3 remaining stops)", () => {
     await expect.poll(getShownButtonTours).toEqual([...HOME_TOUR_KEYS]);
   });
 
-  test("no 4th (day-strip) tip appears once the 3 remaining stops are dismissed", async ({
-    page,
-  }) => {
+  test("no additional tip appears once the 2 remaining stops are dismissed", async ({ page }) => {
     await setTourState([...HOME_TOUR_KEYS]);
 
     await page.goto("/");
@@ -197,7 +191,7 @@ test.describe("home dashboard tips (3 remaining stops)", () => {
     await page.goto("/settings");
     await page.getByRole("button", { name: "Reset onboarding", exact: true }).click();
 
-    await expect(page.getByText(/Onboarding will be shown again/i).first()).toBeVisible();
+    await expect(page.getByText(/Tool introductions will be shown again/i).first()).toBeVisible();
     await expect.poll(getShownButtonTours).toEqual([]);
   });
 });

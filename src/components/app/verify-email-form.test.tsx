@@ -64,7 +64,7 @@ describe("VerifyEmailForm", () => {
     });
     expect(
       await screen.findByText(
-        "Verification email sent. Check your inbox — if this address is already verified, just sign in.",
+        "Verification email sent. Check your inbox - if this address is already verified, just sign in.",
       ),
     ).toBeTruthy();
   });

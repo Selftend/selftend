@@ -77,6 +77,7 @@ describe("gratitude_entries encrypted view (integration)", () => {
       note: NOTE,
       level: 2,
       starred: true,
+      logged_offset_minutes: 0,
     });
 
     const id = insert.data!.id as string;

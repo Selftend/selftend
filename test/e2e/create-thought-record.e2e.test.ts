@@ -2,6 +2,8 @@ import { expect, test } from "./fixtures";
 
 import { deleteAllThoughtRecordsForUser } from "./helpers";
 
+const THOUGHT_DRAFT_KEY = "selftend:wizard-draft:cbt-thought-record";
+
 test.describe("create thought record", () => {
   test.beforeEach(async ({ user }) => {
     // Alice starts with zero records by seed; clean to be doubly sure across reruns.
@@ -35,6 +37,9 @@ test.describe("create thought record", () => {
       )
       .fill(situation);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await expect
+      .poll(() => page.evaluate((key) => localStorage.getItem(key), THOUGHT_DRAFT_KEY))
+      .not.toBeNull();
 
     // Step 2: NATs - type thought, add it, then continue
     await page.getByPlaceholder("What did your mind say?").fill(automaticThought);
@@ -71,6 +76,9 @@ test.describe("create thought record", () => {
 
     // After save, a new record lands on the calm closing moment first.
     await expect(page.getByText("You examined a thought.")).toBeVisible({ timeout: 15_000 });
+    await expect
+      .poll(() => page.evaluate((key) => localStorage.getItem(key), THOUGHT_DRAFT_KEY))
+      .toBeNull();
     await page.getByRole("button", { name: "View record", exact: true }).click();
 
     // From there, "View record" routes to /cbt/history/<id>. Verify the saved values render.

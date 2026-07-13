@@ -8,7 +8,6 @@ import {
   useJournalEntry,
   useSaveJournalEntry,
 } from "@/src/features/journal/queries";
-import { useSelectedDate, loggedAtForSelectedDate } from "@/src/stores/selected-date-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -43,26 +42,14 @@ jest.mock("@/src/features/journal/queries", () => ({
   useSaveJournalEntry: jest.fn(),
 }));
 
-jest.mock("@/src/stores/selected-date-store", () => ({
-  useSelectedDate: jest.fn(() => ({ selectedDate: "2026-05-24", isToday: true })),
-  loggedAtForSelectedDate: jest.fn(() => "2026-05-24T10:00:00.000Z"),
-}));
-
 const mockUseJournalEntries = useJournalEntries as jest.MockedFunction<typeof useJournalEntries>;
 const mockUseJournalEntry = useJournalEntry as jest.MockedFunction<typeof useJournalEntry>;
 const mockUseSaveJournalEntry = useSaveJournalEntry as jest.MockedFunction<
   typeof useSaveJournalEntry
 >;
-const mockUseSelectedDate = useSelectedDate as jest.MockedFunction<typeof useSelectedDate>;
-const mockLoggedAtForSelectedDate = loggedAtForSelectedDate as jest.MockedFunction<
-  typeof loggedAtForSelectedDate
->;
-
 describe("JournalEntryEditorScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-24", isToday: true });
-    mockLoggedAtForSelectedDate.mockReturnValue("2026-05-24T10:00:00.000Z");
     mockUseJournalEntries.mockReturnValue({ data: [] } as unknown as ReturnType<
       typeof useJournalEntries
     >);
@@ -106,7 +93,12 @@ describe("JournalEntryEditorScreen", () => {
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({
-        input: { title: "", body: "Hello world", createdAt: "2026-05-24T10:00:00.000Z" },
+        input: {
+          title: "",
+          body: "Hello world",
+          occurredAt: expect.any(String),
+          occurredOffsetMinutes: expect.any(Number),
+        },
         entryId: undefined,
       }),
     );
@@ -140,7 +132,7 @@ describe("JournalEntryEditorScreen", () => {
     expect(screen.getByText("Update")).toBeTruthy();
   });
 
-  it("includes the entry's createdAt in the save input on edit", async () => {
+  it("includes the entry's occurrence time in the save input on edit", async () => {
     const mutateAsync = jest.fn().mockResolvedValue({
       id: "j-9",
       userId: "user-1",
@@ -174,36 +166,13 @@ describe("JournalEntryEditorScreen", () => {
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({
-        input: { title: "Yesterday", body: "I rested.", createdAt: "2026-05-10T08:00:00.000Z" },
+        input: {
+          title: "Yesterday",
+          body: "I rested.",
+          occurredAt: "2026-05-10T08:00:00.000Z",
+          occurredOffsetMinutes: expect.any(Number),
+        },
         entryId: "j-9",
-      }),
-    );
-  });
-
-  it("re-derives the create-mode date when the selected day changes", async () => {
-    mockLoggedAtForSelectedDate.mockImplementation((date) => `${date}T10:00:00.000Z`);
-    mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-24", isToday: true });
-    const mutateAsync = jest.fn().mockResolvedValue({ id: "j-1" });
-    mockUseSaveJournalEntry.mockReturnValue({
-      mutateAsync,
-      isPending: false,
-    } as unknown as ReturnType<typeof useSaveJournalEntry>);
-
-    const { rerender } = renderWithProviders(
-      <JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />,
-    );
-
-    // Selected day rolls over while the (untouched) editor stays mounted.
-    mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-25", isToday: true });
-    rerender(<JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />);
-
-    fireEvent.changeText(screen.getByLabelText("Body"), "Hello world");
-    fireEvent.press(screen.getByText("Save"));
-
-    await waitFor(() =>
-      expect(mutateAsync).toHaveBeenCalledWith({
-        input: { title: "", body: "Hello world", createdAt: "2026-05-25T10:00:00.000Z" },
-        entryId: undefined,
       }),
     );
   });

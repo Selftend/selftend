@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { DateTimeField } from "@/src/components/app/date-time-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -31,9 +32,9 @@ import {
 } from "@/src/features/gratitude/questions";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
+import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 
 interface GratitudeEntryEditorScreenProps {
   fallbackHref: Href;
@@ -52,7 +53,6 @@ export function GratitudeEntryEditorScreen({
   const { t } = useTranslation("gratitude");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
-  const { selectedDate } = useSelectedDate();
   const editMode = mode === "edit";
 
   const { data: cachedList } = useGratitudeEntries(user?.id ?? null, 50);
@@ -68,6 +68,10 @@ export function GratitudeEntryEditorScreen({
   const [items, setItems] = useState<string[]>(EMPTY_ITEMS);
   const [lifeItems, setLifeItems] = useState<string[]>(EMPTY_LIFE_ITEMS);
   const [note, setNote] = useState("");
+  const [loggedAt, setLoggedAt] = useState(() => new Date().toISOString());
+  const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState(
+    () => occurrenceTimeFromDate().occurredOffsetMinutes,
+  );
 
   const [error, setError] = useState("");
   const saving = saveMutation.isPending;
@@ -87,6 +91,11 @@ export function GratitudeEntryEditorScreen({
       existingEntry.items[4] ?? "",
     ]);
     setNote(existingEntry.note);
+    setLoggedAt(existingEntry.loggedAt);
+    setLoggedOffsetMinutes(
+      existingEntry.loggedOffsetMinutes ??
+        occurrenceTimeFromDate(new Date(existingEntry.loggedAt)).occurredOffsetMinutes,
+    );
     setLifeItems([
       existingEntry.lifeItems[0] ?? "",
       existingEntry.lifeItems[1] ?? "",
@@ -125,7 +134,8 @@ export function GratitudeEntryEditorScreen({
           level: 3,
           items,
           note: note.trim().slice(0, GRATITUDE_NOTE_MAX),
-          ...(!editMode ? { loggedAt: loggedAtForSelectedDate(selectedDate) } : {}),
+          loggedAt,
+          loggedOffsetMinutes,
           events: [],
           goodMoment: "",
           missIfGone: "",
@@ -224,6 +234,19 @@ export function GratitudeEntryEditorScreen({
             />
           </View>
         ))}
+      </View>
+
+      <View className="gap-2">
+        <Label>{t("editor.whenLabel")}</Label>
+        <DateTimeField
+          value={loggedAt}
+          onChange={(next) => {
+            const occurrence = occurrenceTimeFromDate(new Date(next));
+            setLoggedAt(occurrence.occurredAt);
+            setLoggedOffsetMinutes(occurrence.occurredOffsetMinutes);
+          }}
+          accessibilityLabel={t("editor.whenLabel")}
+        />
       </View>
 
       <View className="gap-2">

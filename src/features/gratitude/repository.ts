@@ -21,6 +21,7 @@ interface GratitudeEntryRow {
   item_5?: string | null;
   note: string;
   logged_at: string;
+  logged_offset_minutes?: number;
   created_at: string;
   updated_at: string;
   events: string[] | null;
@@ -68,6 +69,7 @@ function mapGratitudeEntry(row: GratitudeEntryRow): GratitudeEntry {
     ),
     note: row.note,
     loggedAt: row.logged_at,
+    loggedOffsetMinutes: row.logged_offset_minutes ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     events: row.events ?? [],
@@ -183,16 +185,20 @@ export async function saveGratitudeEntry(userId: string, input: GratitudeInput, 
     life_item_1: lifeItems[0] ?? "",
     life_item_2: lifeItems[1] ?? "",
     life_item_3: lifeItems[2] ?? "",
+    ...(input.loggedAt
+      ? {
+          logged_at: input.loggedAt,
+          logged_offset_minutes:
+            input.loggedOffsetMinutes ?? -new Date(input.loggedAt).getTimezoneOffset(),
+        }
+      : {}),
   };
-
-  const loggedAt = input.loggedAt ?? new Date().toISOString();
 
   const query = entryId
     ? client.from("gratitude_entries").update(payload).eq("user_id", userId).eq("id", entryId)
     : client.from("gratitude_entries").insert({
         ...payload,
         user_id: userId,
-        logged_at: loggedAt,
       });
 
   const { data, error } = await query.select("*").maybeSingle();

@@ -101,6 +101,17 @@ export interface PromptCardPayload {
   cta: CardCta;
 }
 
+export interface ProgrammeCardPayload {
+  kind: "programme";
+  title: string;
+  moduleLabel: string;
+  state: "not-enrolled" | "in-progress" | "completed";
+  message: string | null;
+  goals: { label: string; done: boolean; path: string }[];
+  moreGoalsLabel: string | null;
+  programmeCta: CardCta;
+}
+
 export type CardPayload =
   | MoodCheckinCardPayload
   | StatTilesCardPayload
@@ -110,9 +121,10 @@ export type CardPayload =
   | CommittedActionsCardPayload
   | DefusionCardPayload
   | ShortcutCardPayload
-  | PromptCardPayload;
+  | PromptCardPayload
+  | ProgrammeCardPayload;
 
-/** The 24 launcher-configurable cards; must mirror the in-app WIDGET_REGISTRY ids. */
+/** Launcher-configurable cards; must mirror the in-app WIDGET_REGISTRY ids. */
 export const CARD_IDS = [
   "mood-checkin",
   "mood-trend",
@@ -128,6 +140,9 @@ export const CARD_IDS = [
   "sleep-latest",
   "cbt-distortion-guide",
   "cbt-programme",
+  "act-programme",
+  "cbt-module-shortcut",
+  "act-module-shortcut",
   "cbt-worry",
   "cbt-beliefs",
   "cbt-activities",
@@ -178,6 +193,15 @@ export interface WidgetData {
   defusionLogs: { createdAt: string; techniqueUsed: string }[];
   moodLogCount: number | null;
   gratitudeEntryCount: number | null;
+  programmes?: Record<
+    "cbt" | "act",
+    {
+      startedAt: string | null;
+      completedAt: string | null;
+      phaseIndex: number;
+      taskStatuses: { taskKey: string; done: boolean }[];
+    }
+  >;
 }
 
 export interface BuildContext {

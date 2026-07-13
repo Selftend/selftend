@@ -11,6 +11,8 @@ import { SelfCareWidget } from "@/src/features/home/widgets/self-care-widget";
 import { SleepWidget } from "@/src/features/home/widgets/sleep-widget";
 import { CbtDistortionGuideWidget } from "@/src/features/home/widgets/cbt-distortion-guide-widget";
 import { CbtProgrammeWidget } from "@/src/features/home/widgets/cbt-programme-widget";
+import { ActProgrammeWidget } from "@/src/features/home/widgets/act-programme-widget";
+import { ModuleShortcutWidget } from "@/src/features/home/widgets/module-shortcut-widget";
 import { CbtOpenRecordWidget } from "@/src/features/home/widgets/cbt-open-record-widget";
 import { CbtWorryWidget } from "@/src/features/home/widgets/cbt-worry-widget";
 import { CbtBeliefsWidget } from "@/src/features/home/widgets/cbt-beliefs-widget";
@@ -54,6 +56,9 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "sleep-latest": SleepWidget,
   "cbt-distortion-guide": CbtDistortionGuideWidget,
   "cbt-programme": CbtProgrammeWidget,
+  "act-programme": ActProgrammeWidget,
+  "cbt-module-shortcut": () => <ModuleShortcutWidget module="cbt" />,
+  "act-module-shortcut": () => <ModuleShortcutWidget module="act" />,
   "cbt-worry": CbtWorryWidget,
   "cbt-beliefs": CbtBeliefsWidget,
   "cbt-activities": CbtActivitiesWidget,
@@ -191,6 +196,33 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     titleKey: "home.widgets.cbtProgramme.title",
     descriptionKey: "home.widgets.cbtProgramme.metaDesc",
     tint: "primary",
+    status: "available",
+  },
+  "act-programme": {
+    id: "act-programme",
+    toolKey: "act",
+    icon: "school",
+    titleKey: "home.widgets.actProgramme.title",
+    descriptionKey: "home.widgets.actProgramme.metaDesc",
+    tint: "act",
+    status: "available",
+  },
+  "cbt-module-shortcut": {
+    id: "cbt-module-shortcut",
+    toolKey: "cbt",
+    icon: "psychology",
+    titleKey: "home.widgets.cbtModuleShortcut.title",
+    descriptionKey: "home.widgets.cbtModuleShortcut.metaDesc",
+    tint: "primary",
+    status: "available",
+  },
+  "act-module-shortcut": {
+    id: "act-module-shortcut",
+    toolKey: "act",
+    icon: "explore",
+    titleKey: "home.widgets.actModuleShortcut.title",
+    descriptionKey: "home.widgets.actModuleShortcut.metaDesc",
+    tint: "act",
     status: "available",
   },
   "cbt-worry": {

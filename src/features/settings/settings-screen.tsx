@@ -29,6 +29,7 @@ export default function SettingsScreen() {
   const handleSignOut = useSignOut(user?.id ?? null, setErrorMessage);
   const { reset, isPending: resetPending } = useResetOnboarding(
     user,
+    data?.appOnboardingCompletedVia,
     setErrorMessage,
     setSuccessMessage,
   );

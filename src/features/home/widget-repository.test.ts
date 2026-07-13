@@ -4,6 +4,7 @@ import {
   insertWidgetPreferences,
   listWidgetPreferences,
   markWidgetsSeeded,
+  restoreWidgetPreference,
   updateWidgetPositions,
 } from "@/src/features/home/widget-repository";
 import { requireSupabase } from "@/src/lib/supabase";
@@ -216,5 +217,40 @@ describe("widget-repository updateWidgetPositions", () => {
     mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { upsert } }));
 
     await expect(updateWidgetPositions("u1", ["a"])).rejects.toMatchObject({ code: "23505" });
+  });
+});
+
+describe("widget-repository restoreWidgetPreference", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("re-inserts a removed widget and restores the requested order", async () => {
+    const orderCreated = jest.fn().mockResolvedValue({
+      data: [
+        { ...ROW, widget_id: "a", position: 0 },
+        { ...ROW, id: "22222222-2222-4222-8222-222222222222", widget_id: "c", position: 1 },
+      ],
+      error: null,
+    });
+    const orderPosition = jest.fn(() => ({ order: orderCreated }));
+    const eq = jest.fn(() => ({ order: orderPosition }));
+    const select = jest.fn(() => ({ eq }));
+    const upsert = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { select, upsert } }));
+
+    await restoreWidgetPreference("u1", "b", 1);
+
+    expect(upsert).toHaveBeenNthCalledWith(1, [{ user_id: "u1", widget_id: "b", position: 2 }], {
+      onConflict: "user_id,widget_id",
+      ignoreDuplicates: true,
+    });
+    expect(upsert).toHaveBeenNthCalledWith(
+      2,
+      [
+        { user_id: "u1", widget_id: "a", position: 0 },
+        { user_id: "u1", widget_id: "b", position: 1 },
+        { user_id: "u1", widget_id: "c", position: 2 },
+      ],
+      { onConflict: "user_id,widget_id" },
+    );
   });
 });

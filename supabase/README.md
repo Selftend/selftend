@@ -111,7 +111,7 @@ npm run db:reset    # drop + re-apply migrations + run supabase/seed.sql
 npm run db:stop     # shut everything down
 ```
 
-`db:reset` is wrapped in `scripts/db-reset.js` because `supabase db reset` recreates the GoTrue container with a new Docker IP, but Kong's nginx caches the old upstream IP and returns 502 Bad Gateway for auth requests until it's restarted. The wrapper restarts Kong automatically after each reset.
+`db:reset` is wrapped in `scripts/db-reset.js` because `supabase db reset` can leave PostgREST serving its pre-migration function cache, and recreating GoTrue can leave Kong's nginx pointing at an old Docker IP. The wrapper restarts PostgREST and Kong after each reset so new RPCs and auth routes are ready when the command finishes.
 
 ### Point the app at the local stack
 
@@ -268,6 +268,8 @@ The following invariants should hold on a fully-migrated project:
 - `user_preferences.reminder_consent_updated_at` exists for timestamped reminder opt-in and withdrawal state
 - `user_preferences.cbt_reminder_timezone` and `web_push_subscriptions` exist for opted-in browser reminders
 - `activity_logs`, `mood_logs`, `self_care_logs`, and the rest of the per-module strategy tables exist with owner-scoped RLS policies
+- mood, gratitude, sleep, and journal views expose occurrence-offset metadata; journal occurrence time is separate from its immutable creation timestamp
+- `apply_widget_recommendations()` applies an empty or populated Home layout atomically, and `program_widget_task_status()` returns only lightweight current-goal completion flags
 
 The local and remote migration histories include `20260507000000_reminder_consent_timestamp.sql`, which adds `user_preferences.reminder_consent_updated_at` and export coverage for timestamped reminder consent. The 2026-05-07 version is used so the file sorts after the legacy 8-digit `20260506_onboarding_flags.sql` migration.
 

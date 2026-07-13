@@ -7,6 +7,7 @@ export interface GratitudeEntry {
   items: string[];
   note: string;
   loggedAt: string;
+  loggedOffsetMinutes?: number;
   createdAt: string;
   updatedAt: string;
   events: string[];
@@ -22,6 +23,7 @@ export interface GratitudeInput {
   items: string[];
   note: string;
   loggedAt?: string;
+  loggedOffsetMinutes?: number;
   events?: string[];
   goodMoment?: string;
   missIfGone?: string;

@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { ActivityIndicator, Pressable, View } from "react-native";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -15,6 +15,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
@@ -28,7 +29,12 @@ import {
 } from "@/src/features/act/types";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
+import { useStateWizardDraft } from "@/src/lib/use-state-wizard-draft";
 import { useSession } from "@/src/providers/session-provider";
+import {
+  type ActDefusionDraft,
+  useActDefusionDraftStore,
+} from "@/src/stores/act-defusion-draft-store";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
@@ -52,9 +58,46 @@ export default function ActDefusionNewScreen() {
   const [fusionLevelAfter, setFusionLevelAfter] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [discardOpen, setDiscardOpen] = useState(false);
 
   const stepIndex = STEP_ORDER.indexOf(step);
   const isLastStep = stepIndex === STEP_ORDER.length - 1;
+  const draftValues = useMemo<ActDefusionDraft>(
+    () => ({
+      fusedThought,
+      thoughtCategory,
+      fusionLevelBefore,
+      techniqueUsed,
+      defusedVersion,
+      fusionLevelAfter,
+      notes,
+    }),
+    [
+      defusedVersion,
+      fusedThought,
+      fusionLevelAfter,
+      fusionLevelBefore,
+      notes,
+      techniqueUsed,
+      thoughtCategory,
+    ],
+  );
+  const restoreDraft = useCallback((draft: ActDefusionDraft, restoredStepIndex: number) => {
+    setFusedThought(draft.fusedThought);
+    setThoughtCategory(draft.thoughtCategory);
+    setFusionLevelBefore(draft.fusionLevelBefore);
+    setTechniqueUsed(draft.techniqueUsed);
+    setDefusedVersion(draft.defusedVersion);
+    setFusionLevelAfter(draft.fusionLevelAfter);
+    setNotes(draft.notes);
+    setStep(STEP_ORDER[Math.min(Math.max(restoredStepIndex, 0), STEP_ORDER.length - 1)]);
+  }, []);
+  const { hydrated: draftHydrated, clearDraft } = useStateWizardDraft({
+    useDraftStore: useActDefusionDraftStore,
+    values: draftValues,
+    stepIndex,
+    restore: restoreDraft,
+  });
 
   const categoryIndex = THOUGHT_CATEGORIES.indexOf(thoughtCategory);
   const categoryRoving = useRovingFocus({
@@ -90,6 +133,7 @@ export default function ActDefusionNewScreen() {
         notes: notes.trim(),
         createdAt: loggedAtForSelectedDate(selectedDate),
       });
+      clearDraft();
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.back();
     } catch (error) {
@@ -98,33 +142,50 @@ export default function ActDefusionNewScreen() {
     }
   });
 
+  if (!draftHydrated) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
   return (
     <MobileFormScreen
       footer={
-        <View className="flex-row gap-3">
-          {stepIndex > 0 ? (
+        <View className="gap-2">
+          <Button
+            disabled={saveMutation.isPending}
+            onPress={() => setDiscardOpen(true)}
+            variant="ghost"
+          >
+            <Text className="text-destructive">{t("common:draft.discardAction")}</Text>
+          </Button>
+          <View className="flex-row gap-3">
+            {stepIndex > 0 ? (
+              <View className="flex-1">
+                <Button onPress={goBack} variant="ghost">
+                  <Text>{t("act:defusion.back")}</Text>
+                </Button>
+              </View>
+            ) : null}
             <View className="flex-1">
-              <Button onPress={goBack} variant="ghost">
-                <Text>{t("act:defusion.back")}</Text>
+              <Button
+                disabled={
+                  saveMutation.isPending || (step === "thought" && fusedThought.trim().length === 0)
+                }
+                onPress={() => void (isLastStep ? handleSave() : goNext())}
+              >
+                {saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
+                <Text>
+                  {saveMutation.isPending
+                    ? t("act:defusion.saving")
+                    : isLastStep
+                      ? t("act:defusion.saveLog")
+                      : t("act:defusion.continue")}
+                </Text>
               </Button>
             </View>
-          ) : null}
-          <View className="flex-1">
-            <Button
-              disabled={
-                saveMutation.isPending || (step === "thought" && fusedThought.trim().length === 0)
-              }
-              onPress={() => void (isLastStep ? handleSave() : goNext())}
-            >
-              {saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>
-                {saveMutation.isPending
-                  ? t("act:defusion.saving")
-                  : isLastStep
-                    ? t("act:defusion.saveLog")
-                    : t("act:defusion.continue")}
-              </Text>
-            </Button>
           </View>
         </View>
       }
@@ -153,6 +214,21 @@ export default function ActDefusionNewScreen() {
             </CardHeader>
           </Card>
         ) : null}
+
+        <ConfirmDialog
+          visible={discardOpen}
+          isPending={false}
+          title={t("common:draft.discardTitle")}
+          message={t("common:draft.discardMessage")}
+          confirmLabel={t("common:draft.discardConfirm")}
+          cancelLabel={t("common:cancel")}
+          onCancel={() => setDiscardOpen(false)}
+          onConfirm={() => {
+            clearDraft();
+            setDiscardOpen(false);
+            router.back();
+          }}
+        />
 
         {/* Step 1: Thought */}
         {step === "thought" ? (

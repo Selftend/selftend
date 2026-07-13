@@ -73,13 +73,22 @@ export default function AuthCallbackScreen() {
   const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
   const linkingUrl = Linking.useLinkingURL();
-  const url = linkingUrl ?? getCurrentWebUrl();
+  const incomingUrl = linkingUrl ?? getCurrentWebUrl();
+  // Expo Linking follows browser URL changes. Scrubbing a successfully consumed
+  // token from history can therefore publish the clean `/auth-callback` URL back
+  // to this mounted screen. Keep the original callback URL for the lifetime of
+  // the screen so a successful verification is never retried as an incomplete link.
+  const callbackUrl = useRef<string | null>(null);
+  if (!callbackUrl.current && incomingUrl) callbackUrl.current = incomingUrl;
+  const url = callbackUrl.current;
   const processedUrl = useRef<string | null>(null);
   const [failure, setFailure] = useState<CallbackFailure | null>(null);
   const [verified, setVerified] = useState(false);
 
   useEffect(() => {
-    if (!hasSupabaseConfig || !url || processedUrl.current === url) {
+    // One mounted callback screen represents one link attempt. In particular,
+    // do not process the sanitized URL emitted after `replaceState` as a second link.
+    if (!hasSupabaseConfig || !url || processedUrl.current !== null) {
       return;
     }
 

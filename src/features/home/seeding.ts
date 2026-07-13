@@ -1,18 +1,3 @@
-// Widgets seeded for a brand-new user. The daily check-in (mood-checkin) is a
-// normal, movable, removable widget seeded at the top - no longer pinned.
-export const DEFAULT_WIDGET_IDS = [
-  "mood-checkin",
-  "mood-trend",
-  "cbt-open-record",
-  "act-drop-anchor",
-  "journal-week",
-  "breathing-suggested",
-  "gratitude-latest",
-  "meditation-pick",
-  "sleep-latest",
-  "habits-today",
-] as const;
-
 // Maps a legacy plan_items.tool_id to the equivalent widget id.
 const TOOL_TO_WIDGET_ID: Record<string, string> = {
   mood: "mood-trend",
@@ -28,7 +13,7 @@ const TOOL_TO_WIDGET_ID: Record<string, string> = {
 };
 
 export function resolveInitialWidgetIds(planItems: { toolId: string; order: number }[]): string[] {
-  if (planItems.length === 0) return [...DEFAULT_WIDGET_IDS];
+  if (planItems.length === 0) return [];
 
   const ordered = [...planItems].sort((a, b) => a.order - b.order);
   const seen = new Set<string>();

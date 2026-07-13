@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { Platform } from "react-native";
+import { usePathname } from "expo-router";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -14,7 +15,6 @@ import { useSession } from "@/src/providers/session-provider";
 // Stop order = visual priority. targetKey is the registry key components register
 // under; storageKey is what lands in shown_button_tours.
 const HOME_TOUR_STOPS = [
-  { storageKey: "home:checkin", targetKey: "home-checkin", i18nKey: "checkin" },
   { storageKey: "home:edit", targetKey: "home-edit", i18nKey: "edit" },
   { storageKey: "home:navigation", targetKey: "home-navigation", i18nKey: "navigation" },
 ] as const;
@@ -24,6 +24,7 @@ const ALL_HOME_KEYS = HOME_TOUR_STOPS.map((s) => s.storageKey);
 export function HomeTour(): React.JSX.Element | null {
   const { t } = useTranslation("navigation");
   const { user } = useSession();
+  const pathname = usePathname();
   const userId = user?.id ?? null;
   const { data: preferences } = useUserPreferences(userId);
   const updateShownButtonTours = useUpdateShownButtonTours(userId);
@@ -37,11 +38,12 @@ export function HomeTour(): React.JSX.Element | null {
   );
 
   const shown = preferences?.shownButtonTours ?? [];
-  const queue = preferences?.appOnboardingCompleted
-    ? HOME_TOUR_STOPS.filter(
-        (stop) => !shown.includes(stop.storageKey) && getTourTarget(stop.targetKey) !== null,
-      )
-    : [];
+  const queue =
+    preferences?.appOnboardingCompleted && pathname === "/"
+      ? HOME_TOUR_STOPS.filter(
+          (stop) => !shown.includes(stop.storageKey) && getTourTarget(stop.targetKey) !== null,
+        )
+      : [];
   const current = queue[0] ?? null;
 
   const measure = useCallback(() => {

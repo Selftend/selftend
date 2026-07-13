@@ -15,7 +15,7 @@
  */
 import { expect, test } from "./fixtures";
 
-import { createServiceClient } from "./helpers";
+import { createServiceClient, dismissPostSignInModals } from "./helpers";
 
 type PreferenceRow = Record<string, unknown>;
 type ProfileRow = Record<string, unknown>;
@@ -24,6 +24,7 @@ let USER_ID: string;
 
 let originalPreferences: PreferenceRow | null = null;
 let originalProfile: ProfileRow | null = null;
+let originalWidgets: PreferenceRow[] | null = null;
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -47,6 +48,17 @@ async function getProfileRow(): Promise<ProfileRow> {
   return data as ProfileRow;
 }
 
+async function getWidgetRows(): Promise<PreferenceRow[]> {
+  const admin = createServiceClient();
+  const { data, error } = await admin
+    .from("widget_preferences")
+    .select("*")
+    .eq("user_id", USER_ID)
+    .order("position");
+  if (error) throw new Error(`Could not read widget_preferences: ${error.message}`);
+  return (data ?? []) as PreferenceRow[];
+}
+
 async function restorePreferences() {
   if (!originalPreferences) return;
   const admin = createServiceClient();
@@ -63,6 +75,21 @@ async function restoreProfile() {
   // resolves the per-user merge (PostgREST upsert's ON CONFLICT cannot target a view).
   const { error } = await admin.from("profiles").insert(originalProfile);
   if (error) throw new Error(`Could not restore profiles: ${error.message}`);
+}
+
+async function restoreWidgets() {
+  if (!originalWidgets) return;
+  const admin = createServiceClient();
+  const { error: deleteError } = await admin
+    .from("widget_preferences")
+    .delete()
+    .eq("user_id", USER_ID);
+  if (deleteError) throw new Error(`Could not clear widget_preferences: ${deleteError.message}`);
+  if (originalWidgets.length === 0) return;
+  const { error: insertError } = await admin.from("widget_preferences").insert(originalWidgets);
+  if (insertError) {
+    throw new Error(`Could not restore widget_preferences: ${insertError.message}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -222,15 +249,32 @@ test.describe("settings - reset onboarding", () => {
     USER_ID = user.id;
     if (!originalPreferences) originalPreferences = await getPreferenceRow();
     if (!originalProfile) originalProfile = await getProfileRow();
+    originalWidgets = await getWidgetRows();
   });
 
   test.afterEach(async () => {
     await restorePreferences();
     await restoreProfile();
+    await restoreWidgets();
   });
 
-  test("reset onboarding clears onboarding flags and shows confirmation", async ({ page }) => {
+  test("reset onboarding replays the introduction and preserves Home widgets", async ({ page }) => {
+    const admin = createServiceClient();
+    const { error: deleteError } = await admin
+      .from("widget_preferences")
+      .delete()
+      .eq("user_id", USER_ID);
+    if (deleteError)
+      throw new Error(`Could not prepare widget preferences: ${deleteError.message}`);
+    const { error: insertError } = await admin.from("widget_preferences").insert([
+      { user_id: USER_ID, widget_id: "mood-checkin", position: 0 },
+      { user_id: USER_ID, widget_id: "self-care", position: 1 },
+    ]);
+    if (insertError)
+      throw new Error(`Could not prepare widget preferences: ${insertError.message}`);
+
     await page.goto("/(app)/settings");
+    await dismissPostSignInModals(page);
 
     // Wait for the onboarding section.
     await expect(page.getByText("Onboarding", { exact: true }).first()).toBeVisible({
@@ -240,15 +284,11 @@ test.describe("settings - reset onboarding", () => {
     // Click "Reset onboarding".
     await page.getByRole("button", { name: "Reset onboarding", exact: true }).click();
 
-    // The success message appears inline; the full text includes a follow-up
-    // sentence about dashboard picks. Use a regex to match the prefix robustly.
-    await expect(page.getByText(/Onboarding will be shown again/i).first()).toBeVisible({
+    await expect(page.getByText(/Tool introductions will be shown again/i).first()).toBeVisible({
       timeout: 8_000,
     });
 
-    // DB check: app_onboarding_completed should now be false, and
-    // shown_button_tours should be empty.
-    const admin = createServiceClient();
+    // The app introduction and tool introductions reset. Existing widgets are not touched.
     const { data } = await admin
       .from("user_preferences")
       .select(
@@ -260,14 +300,35 @@ test.describe("settings - reset onboarding", () => {
     expect(data?.cbt_onboarding_completed).toBe(false);
     expect(data?.shown_button_tours ?? []).toEqual([]);
 
-    // Persist check: navigate to "/" → the onboarding modal reappears because
-    // app_onboarding_completed is now false. The modal is only shown at pathname "/".
+    expect(
+      (await getWidgetRows()).map(({ widget_id, position }) => ({ widget_id, position })),
+    ).toEqual([
+      { widget_id: "mood-checkin", position: 0 },
+      { widget_id: "self-care", position: 1 },
+    ]);
+
+    // Returning Home replays only the welcome introduction. Completing it must not enter
+    // recommendation questions or replace the current Home layout.
     await page.goto("/");
-    const welcomeModal = page.getByText(/Welcome to Selftend/i);
-    const modalVisible = await welcomeModal
-      .waitFor({ state: "visible", timeout: 10_000 })
-      .then(() => true)
-      .catch(() => false);
-    expect(modalVisible).toBe(true);
+    await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Finish", exact: true }).click();
+    await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeHidden();
+    await expect(page.getByText("What brings you here?", { exact: true })).toBeHidden();
+    const home = page.getByTestId("home-layout");
+    await expect(home.getByText("Check-in", { exact: true })).toBeVisible();
+    await expect(home.getByText("Self-care log", { exact: true })).toBeVisible();
+
+    const { data: completed } = await admin
+      .from("user_preferences")
+      .select("app_onboarding_completed")
+      .eq("user_id", USER_ID)
+      .single();
+    expect(completed?.app_onboarding_completed).toBe(true);
+    expect(
+      (await getWidgetRows()).map(({ widget_id, position }) => ({ widget_id, position })),
+    ).toEqual([
+      { widget_id: "mood-checkin", position: 0 },
+      { widget_id: "self-care", position: 1 },
+    ]);
   });
 });

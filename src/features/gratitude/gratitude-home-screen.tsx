@@ -46,7 +46,7 @@ export default function GratitudeHomeScreen() {
 
   const allEntries = entries ?? [];
   // Memoize the expensive aggregations (regex theme-mining, frequency buckets, favorite
-  // scan) so they don't recompute on every render - notably every DateBar tap. The bucket
+  // scan) so they don't recompute on every parent render. The bucket
   // window depends on the current day, so key on todayKey to keep midnight rollover exact.
   const todayKey = currentDateKey();
   const recentList = useMemo(

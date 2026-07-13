@@ -1,5 +1,5 @@
 import type { ExpoConfig } from "expo/config";
-import { withAndroidManifest, type ConfigPlugin } from "@expo/config-plugins";
+import { withAndroidManifest, type ConfigPlugin } from "expo/config-plugins";
 
 const widgetCatalog = require("./src/features/widgets/widget-catalog.json") as {
   name: string;

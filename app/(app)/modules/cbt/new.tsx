@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { View } from "react-native";
+import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -11,6 +13,7 @@ import {
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
+import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
 import { useThoughtRecordEditor } from "@/src/features/cbt/use-thought-record-editor";
@@ -25,6 +28,8 @@ import { SituationStep } from "@/src/features/cbt/steps/situation-step";
 
 export default function ThoughtRecordEditorScreen() {
   const { t } = useTranslation("cbt");
+  const { t: tc } = useTranslation("common");
+  const [discardOpen, setDiscardOpen] = useState(false);
   const {
     form,
     errors,
@@ -71,6 +76,8 @@ export default function ThoughtRecordEditorScreen() {
       primaryLabel={wizard.isLastStep ? t("record.saveRecord") : t("record.continue")}
       pendingLabel={t("record.saving")}
       backLabel={t("record.back")}
+      discardLabel={tc("draft.discardAction")}
+      onDiscard={() => setDiscardOpen(true)}
       isPending={wizard.isPending}
       headerSlot={
         <>
@@ -119,6 +126,21 @@ export default function ThoughtRecordEditorScreen() {
       ) : null}
 
       {currentStep.key === "outcome" ? <OutcomeStep control={control} errors={errors} /> : null}
+
+      <ConfirmDialog
+        visible={discardOpen}
+        isPending={false}
+        title={tc("draft.discardTitle")}
+        message={tc("draft.discardMessage")}
+        confirmLabel={tc("draft.discardConfirm")}
+        cancelLabel={tc("cancel")}
+        onCancel={() => setDiscardOpen(false)}
+        onConfirm={() => {
+          wizard.clearDraft();
+          setDiscardOpen(false);
+          router.back();
+        }}
+      />
     </WizardScreen>
   );
 }

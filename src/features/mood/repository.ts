@@ -11,6 +11,7 @@ interface MoodLogRow {
   notes: string;
   linked_strategy: string | null;
   logged_at: string;
+  logged_offset_minutes?: number;
   created_at: string;
   situation: string;
   thoughts: string;
@@ -27,6 +28,7 @@ function mapMoodLog(row: MoodLogRow): MoodLog {
     notes: row.notes,
     linkedStrategy: row.linked_strategy,
     loggedAt: row.logged_at,
+    loggedOffsetMinutes: row.logged_offset_minutes ?? 0,
     createdAt: row.created_at,
     situation: row.situation,
     thoughts: row.thoughts,
@@ -72,12 +74,14 @@ export async function deleteMoodLog(userId: string, id: string) {
 export async function saveMoodLog(userId: string, input: MoodInput, moodLogId?: string) {
   const client = requireSupabase();
   const loggedAt = input.loggedAt ?? new Date().toISOString();
+  const loggedOffsetMinutes = input.loggedOffsetMinutes ?? -new Date(loggedAt).getTimezoneOffset();
   const payload = {
     mood_score: input.moodScore,
     emotions: input.emotions,
     notes: sanitizeUserText(input.notes).trim(),
     linked_strategy: input.linkedStrategy ?? null,
     logged_at: loggedAt,
+    logged_offset_minutes: loggedOffsetMinutes,
     situation: sanitizeUserText(input.situation).trim(),
     thoughts: sanitizeUserText(input.thoughts).trim(),
     behaviours: sanitizeUserText(input.behaviours).trim(),

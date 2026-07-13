@@ -6,6 +6,7 @@ export interface MoodLog {
   notes: string;
   linkedStrategy: string | null;
   loggedAt: string;
+  loggedOffsetMinutes?: number;
   createdAt: string;
   situation: string;
   thoughts: string;
@@ -19,6 +20,7 @@ export interface MoodInput {
   notes: string;
   linkedStrategy: string | null;
   loggedAt?: string; // ISO string; defaults to now if omitted
+  loggedOffsetMinutes?: number;
   situation: string;
   thoughts: string;
   behaviours: string;

@@ -24,7 +24,7 @@ interface JournalCardProps {
 
 export const JournalCard = memo(function JournalCard({ entry, onOpen }: JournalCardProps) {
   const { t } = useTranslation("journal");
-  const when = formatMoodRelativeTime(entry.createdAt, t);
+  const when = formatMoodRelativeTime(entry.occurredAt ?? entry.createdAt, t);
   const title = entry.title.trim().length > 0 ? entry.title.trim() : t("list.untitled");
   const preview = firstLine(entry.body);
   const words = countWords(entry.body);

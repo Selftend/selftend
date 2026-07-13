@@ -23,7 +23,7 @@ export function JournalDayCard({ entries, selectedDate, isToday }: JournalDayCar
   const { t, i18n } = useTranslation("journal");
 
   const dayEntries = useMemo(
-    () => entries.filter((e) => toLocalDateKey(e.createdAt) === selectedDate),
+    () => entries.filter((e) => toLocalDateKey(e.occurredAt ?? e.createdAt) === selectedDate),
     [entries, selectedDate],
   );
   const dayLabel = useMemo(

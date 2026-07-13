@@ -1,4 +1,36 @@
-/* global jest */
+/* global afterEach, beforeEach, jest */
+
+let unexpectedConsoleError;
+let unexpectedConsoleWarn;
+
+function formatConsoleArguments(args) {
+  return args
+    .map((value) => {
+      if (value instanceof Error) return value.stack ?? value.message;
+      if (typeof value === "string") return value;
+
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return String(value);
+      }
+    })
+    .join(" ");
+}
+
+beforeEach(() => {
+  unexpectedConsoleError = jest.spyOn(console, "error").mockImplementation((...args) => {
+    throw new Error(`Unexpected console.error: ${formatConsoleArguments(args)}`);
+  });
+  unexpectedConsoleWarn = jest.spyOn(console, "warn").mockImplementation((...args) => {
+    throw new Error(`Unexpected console.warn: ${formatConsoleArguments(args)}`);
+  });
+});
+
+afterEach(() => {
+  unexpectedConsoleError?.mockRestore();
+  unexpectedConsoleWarn?.mockRestore();
+});
 
 jest.mock("@react-native-async-storage/async-storage", () =>
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"),

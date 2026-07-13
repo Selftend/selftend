@@ -6,10 +6,10 @@ import {
 
 it("stores and clears targets", () => {
   const fake = {} as never;
-  setTourTarget("home-checkin", fake);
-  expect(getTourTarget("home-checkin")).toBe(fake);
-  setTourTarget("home-checkin", null);
-  expect(getTourTarget("home-checkin")).toBeNull();
+  setTourTarget("home-edit", fake);
+  expect(getTourTarget("home-edit")).toBe(fake);
+  setTourTarget("home-edit", null);
+  expect(getTourTarget("home-edit")).toBeNull();
 });
 
 it("notifies subscribers on change and stops after unsubscribe", () => {

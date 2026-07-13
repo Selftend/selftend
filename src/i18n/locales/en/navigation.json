@@ -8,7 +8,7 @@
   },
   "sidebar": {
     "home": "Home",
-    "progress": "Progress",
+    "progress": "Insights",
     "notifications": "Notifications",
     "settings": "Settings",
     "support": "Support",
@@ -25,9 +25,9 @@
     "act": "ACT",
     "dbt": "DBT",
     "cbt": "CBT",
-    "cbtA11y": "CBT module — Cognitive Behavioral Therapy",
-    "actA11y": "ACT module — Acceptance and Commitment Therapy",
-    "dbtA11y": "DBT module — Dialectical Behavior Therapy (coming soon)",
+    "cbtA11y": "CBT module - Cognitive Behavioral Therapy",
+    "actA11y": "ACT module - Acceptance and Commitment Therapy",
+    "dbtA11y": "DBT module - Dialectical Behavior Therapy (coming soon)",
     "modules": "Modules",
     "gratitudeLog": "Gratitude log",
     "sleep": "Sleep tracker",
@@ -81,7 +81,9 @@
     "dashboardLabel": "Dashboard",
     "dashboardSub": "Tools you check in with each day",
     "emptyTitle": "Add tools you want to check in with each day",
-    "emptyDescription": "Choose from any of your tools in the sidebar. They'll show up here as a quiet daily list.",
+    "emptyDescription": "Build a dashboard yourself, or answer a few questions for tailored suggestions.",
+    "addManually": "Add manually",
+    "getSuggestions": "Get suggestions",
     "moodSnapshot": {
       "sevenDay": "Last 7 days",
       "entries": "Entries"
@@ -115,6 +117,9 @@
       "addWidgetTitle": "Add to your dashboard",
       "addToolButton": "Add",
       "removeWidget": "Remove {{title}}",
+      "undo": "Undo",
+      "moveEarlier": "Move {{title}} earlier",
+      "moveLater": "Move {{title}} later",
       "doneToday": "Done today",
       "startBreathing": "Start breathing",
       "write": "Write",
@@ -165,6 +170,16 @@
       "sleep": "Sleep",
       "habits": "Habits"
     },
+    "programWidget": {
+      "notEnrolled": "A guided path through this module. Open it to review the full programme before choosing whether to begin.",
+      "viewProgram": "View programme",
+      "completed": "Programme complete - well done.",
+      "continueOnOwn": "The full module remains available whenever you want to continue on your own.",
+      "openModule": "Open module",
+      "openProgram": "Open programme",
+      "moreGoals_one": "+{{count}} more goal",
+      "moreGoals_other": "+{{count}} more goals"
+    },
     "widgets": {
       "moodCheckin": {
         "title": "Check-in",
@@ -179,8 +194,8 @@
         "desc": "Your running average and recent entries."
       },
       "breathingSuggested": {
-        "title": "Suggested pattern",
-        "desc": "A breathing pattern for right now."
+        "title": "Breathing practice",
+        "desc": "Start a breathing exercise and see your latest session."
       },
       "gratitudeLatest": {
         "title": "Gratitude log",
@@ -242,6 +257,21 @@
         "title": "CBT programme",
         "metaDesc": "Your guided programme progress.",
         "shortcutCta": "Open programme"
+      },
+      "actProgramme": {
+        "title": "ACT programme",
+        "metaDesc": "Your guided ACT programme and current goals.",
+        "shortcutCta": "Open programme"
+      },
+      "cbtModuleShortcut": {
+        "title": "CBT module",
+        "metaDesc": "Explore CBT tools and learning at your own pace.",
+        "cta": "Open CBT"
+      },
+      "actModuleShortcut": {
+        "title": "ACT module",
+        "metaDesc": "Explore ACT practices and learning at your own pace.",
+        "cta": "Open ACT"
       },
       "cbtWorry": {
         "title": "Worry journal",
@@ -322,8 +352,8 @@
     }
   },
   "progress": {
-    "title": "Reflection summary",
-    "description": "A quiet look at the last 30 days - no scores, no pressure.",
+    "title": "Insights",
+    "description": "A quiet place to notice mood patterns and reflect on what may be helping.",
     "moodTrend": "Mood trend",
     "moodTrendDescription": "Daily average over the last 14 days.",
     "noMoodData": "Log a mood to start your trend.",
@@ -392,10 +422,6 @@
     }
   },
   "homeTour": {
-    "checkin": {
-      "description": "Log how you feel in one tap - it takes ten seconds.",
-      "dismiss": "Got it"
-    },
     "dates": { "description": "Browse previous days to see what you logged.", "dismiss": "Got it" },
     "edit": {
       "description": "Arrange the dashboard your way - add, remove and reorder widgets.",

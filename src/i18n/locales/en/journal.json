@@ -44,7 +44,7 @@
     "title": "Journal entry",
     "edit": "Edit",
     "delete": "Delete",
-    "createdAt": "Written",
+    "createdAt": "When",
     "notFound": "We couldn't find that journal entry.",
     "deleteError": "Couldn't delete this entry. Try again.",
     "confirmDelete": {

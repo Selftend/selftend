@@ -9,6 +9,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { DateTimeField } from "@/src/components/app/date-time-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { DurationStepper } from "@/src/features/sleep/duration-stepper";
@@ -16,8 +17,8 @@ import { StarRating } from "@/src/features/sleep/star-rating";
 import { useSleepLog, useSleepLogs, useSaveSleepLog } from "@/src/features/sleep/queries";
 import type { SleepLog } from "@/src/features/sleep/types";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
+import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
-import { useSelectedDate, loggedAtForSelectedDate } from "@/src/stores/selected-date-store";
 
 interface SleepLogScreenProps {
   fallbackHref: Href;
@@ -40,14 +41,16 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
   );
   const existingLog: SleepLog | null = mode === "edit" ? (fromCache ?? fetched ?? null) : null;
 
-  const { selectedDate } = useSelectedDate();
-
   const saveMutation = useSaveSleepLog(user?.id ?? null);
   const [durationMinutes, setDurationMinutes] = useState<number | null>(
     mode === "create" ? DEFAULT_DURATION_MINUTES : null,
   );
   const [quality, setQuality] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
+  const [loggedAt, setLoggedAt] = useState(() => new Date().toISOString());
+  const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState(
+    () => occurrenceTimeFromDate().occurredOffsetMinutes,
+  );
   const [error, setError] = useState("");
 
   const editMode = mode === "edit";
@@ -63,6 +66,11 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
     setDurationMinutes(existingLog.durationMinutes);
     setQuality(existingLog.quality);
     setNotes(existingLog.notes);
+    setLoggedAt(existingLog.loggedAt);
+    setLoggedOffsetMinutes(
+      existingLog.loggedOffsetMinutes ??
+        occurrenceTimeFromDate(new Date(existingLog.loggedAt)).occurredOffsetMinutes,
+    );
     setError("");
   }, [existingLog]);
 
@@ -91,7 +99,8 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
           durationMinutes,
           quality,
           notes,
-          ...(!editMode && { loggedAt: loggedAtForSelectedDate(selectedDate) }),
+          loggedAt,
+          loggedOffsetMinutes,
         },
         logId: editMode ? (logId ?? undefined) : undefined,
       });
@@ -162,6 +171,19 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
           {t("log.qualityHint")}
         </Text>
         <StarRating value={quality} onChange={setQuality} />
+      </View>
+
+      <View className="gap-2">
+        <Label>{t("log.whenLabel")}</Label>
+        <DateTimeField
+          value={loggedAt}
+          onChange={(next) => {
+            const occurrence = occurrenceTimeFromDate(new Date(next));
+            setLoggedAt(occurrence.occurredAt);
+            setLoggedOffsetMinutes(occurrence.occurredOffsetMinutes);
+          }}
+          accessibilityLabel={t("log.whenLabel")}
+        />
       </View>
 
       <View className="gap-2">

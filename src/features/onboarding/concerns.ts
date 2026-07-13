@@ -1,5 +1,3 @@
-import { DEFAULT_WIDGET_IDS } from "@/src/features/home/seeding";
-
 export const CONCERN_KEYS = [
   "anxious-thoughts",
   "low-mood",
@@ -15,31 +13,28 @@ export function isConcernKey(value: unknown): value is ConcernKey {
   return typeof value === "string" && (CONCERN_KEYS as readonly string[]).includes(value);
 }
 
-// Widgets each concern promotes toward the top of the dashboard, in priority order.
-// Ids must exist in DEFAULT_WIDGET_IDS (src/features/home/seeding.ts).
+// Shared, standalone tools each concern can suggest. Module-specific exercises are
+// deliberately excluded; CBT/ACT are recommended separately as modules/programs.
 const CONCERN_WIDGETS: Record<ConcernKey, readonly string[]> = {
-  "anxious-thoughts": ["cbt-open-record", "act-drop-anchor", "breathing-suggested"],
-  "low-mood": ["mood-trend", "cbt-open-record", "gratitude-latest"],
-  "stress-overwhelm": ["breathing-suggested", "act-drop-anchor", "meditation-pick"],
+  "anxious-thoughts": ["mood-checkin", "breathing-suggested", "journal-week"],
+  "low-mood": ["mood-checkin", "gratitude-latest", "habits-today"],
+  "stress-overwhelm": ["mood-checkin", "breathing-suggested", "meditation-pick"],
   sleep: ["sleep-latest", "meditation-pick", "breathing-suggested"],
   habits: ["habits-today", "journal-week"],
-  reflection: ["journal-week", "gratitude-latest", "mood-trend"],
+  reflection: ["journal-week", "gratitude-latest", "mood-checkin"],
 };
 
-// Full dashboard order for the picked concerns: check-in first, then the union of
-// picked concerns' widgets in pick order, then all remaining defaults.
+// Suggested shared tools for picked concerns. Nothing is added when no concern is
+// selected, and no unrelated defaults are appended.
 export function resolveConcernWidgetIds(selected: readonly string[]): string[] {
   const picked = selected.filter(isConcernKey);
-  if (picked.length === 0) return [...DEFAULT_WIDGET_IDS];
+  if (picked.length === 0) return [];
 
-  const ordered: string[] = ["mood-checkin"];
+  const ordered: string[] = [];
   for (const concern of picked) {
     for (const widgetId of CONCERN_WIDGETS[concern]) {
       if (!ordered.includes(widgetId)) ordered.push(widgetId);
     }
-  }
-  for (const widgetId of DEFAULT_WIDGET_IDS) {
-    if (!ordered.includes(widgetId)) ordered.push(widgetId);
   }
   return ordered;
 }

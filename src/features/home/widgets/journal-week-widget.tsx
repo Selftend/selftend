@@ -20,7 +20,7 @@ export function JournalWeekWidget({ userId }: { userId: string }) {
 
   const all = entries ?? [];
   // Memoize the per-body word count (up to ~50 full journal bodies) so it isn't recomputed
-  // on every Home re-render / DateBar tap; pure function of `entries`.
+  // on every Home re-render; pure function of `entries`.
   const totalWords = useMemo(
     () => all.reduce((sum, e) => sum + countWords(e.body), 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps

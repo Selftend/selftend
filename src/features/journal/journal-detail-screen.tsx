@@ -70,7 +70,8 @@ export default function JournalDetailScreen() {
     );
   }
 
-  const when = formatMoodRelativeTime(entry.createdAt, t);
+  const occurredAt = entry.occurredAt ?? entry.createdAt;
+  const when = formatMoodRelativeTime(occurredAt, t);
   const trimmedTitle = entry.title.trim();
   const heading = trimmedTitle.length > 0 ? trimmedTitle : t("detail.title");
 
@@ -79,9 +80,9 @@ export default function JournalDetailScreen() {
     createdAtLabel = new Intl.DateTimeFormat(i18n.language, {
       dateStyle: "medium",
       timeStyle: "short",
-    }).format(new Date(entry.createdAt));
+    }).format(new Date(occurredAt));
   } catch {
-    createdAtLabel = formatLocalTimestamp(entry.createdAt);
+    createdAtLabel = formatLocalTimestamp(occurredAt);
   }
 
   const confirmDelete = async () => {

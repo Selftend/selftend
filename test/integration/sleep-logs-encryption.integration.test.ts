@@ -49,6 +49,7 @@ describe("sleep_logs encrypted view (integration)", () => {
       duration_minutes: 420,
       quality: 3,
       notes: NOTES,
+      logged_offset_minutes: 0,
     });
 
     const id = insert.data!.id as string;

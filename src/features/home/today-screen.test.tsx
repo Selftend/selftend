@@ -5,6 +5,12 @@ import { View as mockView } from "react-native";
 import HomeScreen from "./today-screen";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+let mockWidgetIds: string[] = [];
+const mockAddWidget = jest.fn();
+const mockRemoveWidget = jest.fn();
+const mockRestoreWidget = jest.fn();
+const mockReorderWidgets = jest.fn();
+
 jest.mock("react-native-svg", () => {
   const View = mockView;
   return {
@@ -29,20 +35,53 @@ jest.mock("@/src/features/profile/queries", () => ({
   useUserProfile: () => ({ data: null }),
 }));
 
+jest.mock("@/src/features/settings/queries", () => ({
+  useUserPreferences: () => ({ data: { selectedConcerns: [] } }),
+  useUpdateShownButtonTours: () => ({ mutate: jest.fn() }),
+}));
+
+jest.mock("@/src/features/onboarding/queries", () => ({
+  useApplyWidgetSuggestions: () => ({
+    isPending: false,
+    isError: false,
+    mutate: jest.fn(),
+  }),
+}));
+
+jest.mock("@/src/components/app/app-onboarding-wizard", () => {
+  const { View } = require("react-native");
+  return {
+    AppOnboardingWizard: ({
+      visible,
+      includeWelcome,
+    }: {
+      visible: boolean;
+      includeWelcome?: boolean;
+    }) =>
+      visible ? (
+        <View
+          testID="suggestion-wizard-visible"
+          accessibilityLabel={includeWelcome ? "with welcome" : "without welcome"}
+        />
+      ) : null,
+  };
+});
+
 jest.mock("@/src/stores/selected-date-store", () => ({
   useSelectedDate: () => ({ selectedDate: "2026-05-28", isToday: true }),
 }));
 
 jest.mock("@/src/features/home/queries", () => ({
   useWidgetPreferences: () => ({
-    data: [],
+    data: mockWidgetIds.map((widgetId, position) => ({ widgetId, position })),
     isLoading: false,
     refetch: jest.fn(),
     isRefetching: false,
   }),
-  useAddWidget: () => ({ mutate: jest.fn() }),
-  useRemoveWidget: () => ({ mutate: jest.fn() }),
-  useReorderWidgets: () => ({ mutate: jest.fn() }),
+  useAddWidget: () => ({ mutate: mockAddWidget, isPending: false }),
+  useRemoveWidget: () => ({ mutate: mockRemoveWidget, isPending: false }),
+  useRestoreWidget: () => ({ mutate: mockRestoreWidget, isPending: false }),
+  useReorderWidgets: () => ({ mutate: mockReorderWidgets, isPending: false }),
 }));
 
 jest.mock("@/src/features/home/add-widget-modal", () => {
@@ -54,10 +93,31 @@ jest.mock("@/src/features/home/add-widget-modal", () => {
 });
 
 jest.mock("@/src/features/home/widget-registry", () => ({
-  isImplemented: () => false,
-  metaForWidget: () => undefined,
+  isImplemented: () => true,
+  metaForWidget: (widgetId: string) => ({
+    titleKey:
+      widgetId === "mood-checkin"
+        ? "home.widgets.moodCheckin.title"
+        : "home.widgets.moodTrend.title",
+  }),
   resolveWidget: () => null,
 }));
+
+beforeEach(() => {
+  mockWidgetIds = [];
+  jest.clearAllMocks();
+  for (const mutation of [mockAddWidget, mockRemoveWidget, mockRestoreWidget, mockReorderWidgets]) {
+    mutation.mockImplementation((_value, options) => options?.onSuccess?.());
+  }
+});
+
+function renderPopulatedHome() {
+  mockWidgetIds = ["mood-checkin", "mood-trend"];
+  renderWithProviders(<HomeScreen />);
+  fireEvent(screen.getByTestId("home-layout"), "layout", {
+    nativeEvent: { layout: { width: 900 } },
+  });
+}
 
 describe("HomeScreen hero", () => {
   it("renders the greeting hero with date eyebrow", () => {
@@ -80,12 +140,50 @@ describe("HomeScreen hero", () => {
     expect(screen.getByRole("button", { name: /add to your dashboard/i })).toBeTruthy();
   });
 
-  it("opens the add-widget modal when the empty-state card is pressed", () => {
+  it("opens the add-widget modal from the manual action", () => {
     renderWithProviders(<HomeScreen />);
-    const emptyCard = screen.getByRole("button", {
-      name: /add tools you want to check in/i,
-    });
-    fireEvent.press(emptyCard);
+    fireEvent.press(screen.getByRole("button", { name: /add manually/i }));
     expect(screen.getByTestId("add-widget-modal-visible")).toBeTruthy();
+  });
+
+  it("opens the suggestion wizard only from an empty Home", () => {
+    renderWithProviders(<HomeScreen />);
+    fireEvent.press(screen.getByRole("button", { name: /get suggestions/i }));
+    expect(screen.getByTestId("suggestion-wizard-visible")).toBeTruthy();
+    expect(screen.getByLabelText("without welcome")).toBeTruthy();
+  });
+
+  it("shows undo only in edit mode and disables it before the first edit", () => {
+    renderPopulatedHome();
+
+    expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
+    fireEvent.press(screen.getByRole("button", { name: "Edit widgets" }));
+
+    expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
+    fireEvent.press(screen.getAllByRole("button", { name: "Done" })[0]);
+    expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
+  });
+
+  it("undoes multiple removals in reverse order", () => {
+    renderPopulatedHome();
+    fireEvent.press(screen.getByRole("button", { name: "Edit widgets" }));
+
+    fireEvent.press(screen.getByRole("button", { name: "Remove Check-in" }));
+    fireEvent.press(screen.getByRole("button", { name: "Remove Mood, last 7 days" }));
+
+    const undo = screen.getByRole("button", { name: "Undo" });
+    expect(undo).toBeEnabled();
+    fireEvent.press(undo);
+    expect(mockRestoreWidget).toHaveBeenLastCalledWith(
+      { widgetId: "mood-trend", position: 1 },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+
+    fireEvent.press(screen.getByRole("button", { name: "Undo" }));
+    expect(mockRestoreWidget).toHaveBeenLastCalledWith(
+      { widgetId: "mood-checkin", position: 0 },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+    expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
   });
 });

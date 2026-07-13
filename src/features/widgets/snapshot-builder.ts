@@ -8,6 +8,8 @@ import {
 import { formatHours } from "@/src/features/sleep/format";
 import { countWords } from "@/src/features/journal/word-count";
 import { answeredCount } from "@/src/features/gratitude/questions";
+import { CBT_PROGRAM } from "@/src/features/cbt/program-definition";
+import { ACT_PROGRAM } from "@/src/features/act/program-definition";
 import {
   CARD_IDS,
   type CardId,
@@ -53,13 +55,6 @@ const CBT_SHORTCUTS: {
     path: "/modules/cbt/learn",
   },
   {
-    id: "cbt-programme",
-    titleKey: "home.widgets.cbtProgramme.title",
-    descKey: "home.widgets.cbtProgramme.metaDesc",
-    ctaKey: "home.widgets.cbtProgramme.shortcutCta",
-    path: "/modules/cbt",
-  },
-  {
     id: "cbt-worry",
     titleKey: "home.widgets.cbtWorry.title",
     descKey: "home.widgets.cbtWorry.metaDesc",
@@ -93,6 +88,32 @@ const CBT_SHORTCUTS: {
     descKey: "home.widgets.cbtGoals.metaDesc",
     ctaKey: "home.widgets.cbtGoals.shortcutCta",
     path: "/modules/cbt/goals/new",
+  },
+];
+
+const MODULE_SHORTCUTS: {
+  id: CardId;
+  module: "cbt" | "act";
+  titleKey: string;
+  descKey: string;
+  ctaKey: string;
+  path: string;
+}[] = [
+  {
+    id: "cbt-module-shortcut",
+    module: "cbt",
+    titleKey: "home.widgets.cbtModuleShortcut.title",
+    descKey: "home.widgets.cbtModuleShortcut.metaDesc",
+    ctaKey: "home.widgets.cbtModuleShortcut.cta",
+    path: "/modules/cbt",
+  },
+  {
+    id: "act-module-shortcut",
+    module: "act",
+    titleKey: "home.widgets.actModuleShortcut.title",
+    descKey: "home.widgets.actModuleShortcut.metaDesc",
+    ctaKey: "home.widgets.actModuleShortcut.cta",
+    path: "/modules/act",
   },
 ];
 
@@ -134,6 +155,9 @@ const ACT_PROMPTS: {
 ];
 
 const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
+  "cbt-programme": (data, { t, tc }) => buildProgrammeCard("cbt", data, t, tc),
+  "act-programme": (data, { t, ta }) => buildProgrammeCard("act", data, t, ta),
+
   "mood-checkin": (data, { t, locale, dateKey }) => {
     const todayLogs = data.moodLogs
       .filter((m) => toLocalDateKey(m.loggedAt) === dateKey)
@@ -417,11 +441,89 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
   // family's keys at runtime.
 };
 
+function buildProgrammeCard(
+  module: "cbt" | "act",
+  data: WidgetData,
+  t: Translate,
+  tm: Translate,
+): CardPayload {
+  const route = module === "cbt" ? "/modules/cbt" : "/modules/act";
+  const programme = data.programmes?.[module] ?? {
+    startedAt: null,
+    completedAt: null,
+    phaseIndex: 0,
+    taskStatuses: [],
+  };
+  const definitions = module === "cbt" ? CBT_PROGRAM : ACT_PROGRAM;
+  const phase = definitions[Math.min(Math.max(programme.phaseIndex, 0), definitions.length - 1)];
+  const doneByTask = new Map(programme.taskStatuses.map((status) => [status.taskKey, status.done]));
+  const allGoals = phase
+    ? [
+        ...(phase.dailyPractice ? [{ task: phase.dailyPractice, isDaily: true }] : []),
+        ...phase.milestones.map((task) => ({ task, isDaily: false })),
+      ]
+        .map(({ task, isDaily }) => ({
+          label: tm(task.labelKey),
+          done: doneByTask.get(task.key) ?? false,
+          path: String(task.route),
+          isDaily,
+        }))
+        .sort((left, right) => {
+          if (left.done !== right.done) return left.done ? 1 : -1;
+          if (left.isDaily !== right.isDaily) return left.isDaily ? -1 : 1;
+          return 0;
+        })
+    : [];
+  const goals = programme.startedAt && !programme.completedAt ? allGoals.slice(0, 2) : [];
+  const remaining = Math.max(0, allGoals.length - goals.length);
+  const state = !programme.startedAt
+    ? "not-enrolled"
+    : programme.completedAt
+      ? "completed"
+      : "in-progress";
+
+  return {
+    kind: "programme",
+    title: t(`home.widgets.${module}Programme.title`),
+    moduleLabel: tm("module.label"),
+    state,
+    message:
+      state === "not-enrolled"
+        ? t("home.programWidget.notEnrolled")
+        : state === "completed"
+          ? `${t("home.programWidget.completed")} ${t("home.programWidget.continueOnOwn")}`
+          : null,
+    goals,
+    moreGoalsLabel:
+      state === "in-progress" && remaining > 0
+        ? t("home.programWidget.moreGoals", { count: remaining })
+        : null,
+    programmeCta: {
+      label:
+        state === "not-enrolled"
+          ? t("home.programWidget.viewProgram")
+          : state === "completed"
+            ? t("home.programWidget.openModule")
+            : t("home.programWidget.openProgram"),
+      path: route,
+    },
+  };
+}
+
 for (const s of CBT_SHORTCUTS) {
   CARD_BUILDERS[s.id] = (_d, { t, tc }) => ({
     kind: "shortcut",
     title: t(s.titleKey),
     moduleLabel: tc("module.label"),
+    description: t(s.descKey),
+    cta: { label: t(s.ctaKey), path: s.path },
+  });
+}
+for (const s of MODULE_SHORTCUTS) {
+  CARD_BUILDERS[s.id] = (_d, { t, ta, tc }) => ({
+    kind: "shortcut",
+    title: t(s.titleKey),
+    moduleLabel: s.module === "act" ? ta("module.label") : tc("module.label"),
     description: t(s.descKey),
     cta: { label: t(s.ctaKey), path: s.path },
   });
@@ -442,8 +544,7 @@ function signedOutCard(t: Translate) {
 
 export function buildSnapshot(data: WidgetData, ctx: BuildContext): Snapshot {
   const widgets: Record<string, CardPayload> = {};
-  // Non-null: CARD_BUILDERS is populated for every CardId (11 explicit + 9 CBT shortcuts +
-  // 4 ACT prompts = CARD_IDS.length) by the assignments above.
+  // Non-null: CARD_BUILDERS is populated for every CardId by the assignments above.
   for (const id of CARD_IDS) widgets[id] = CARD_BUILDERS[id]!(data, ctx);
   return {
     schemaVersion: 2,

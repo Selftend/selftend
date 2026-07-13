@@ -40,7 +40,7 @@ export default function MoodTrackerScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  // Fetch enough history to cover the 60-day DateBar window even for users who
+  // Fetch enough history to cover the 60-day trend window even for users who
   // log several times a day, so day-scoped views aren't empty for older dates.
   const { data: moodLogs } = useMoodHistory(userId, 200);
   const { selectedDate, isToday } = useSelectedDate();
@@ -50,7 +50,7 @@ export default function MoodTrackerScreen() {
   const [trendDays, setTrendDays] = useState<7 | 14 | 30>(14);
 
   // Each aggregation iterates up to 200 logs; memoize so unrelated re-renders (chart-width
-  // onLayout, onboarding toggle, DateBar changes) don't recompute the week/day summaries.
+  // onLayout or onboarding toggle) don't recompute the week/day summaries.
   const daySummary = useMemo(
     () => getDayMoodSummary(moodLogs, selectedDate),
     [moodLogs, selectedDate],

@@ -10,6 +10,7 @@ interface SleepLogRow {
   quality: number;
   notes: string;
   logged_at: string;
+  logged_offset_minutes?: number;
   created_at: string;
 }
 
@@ -21,6 +22,7 @@ function mapSleepLog(row: SleepLogRow): SleepLog {
     quality: row.quality,
     notes: row.notes,
     loggedAt: row.logged_at,
+    loggedOffsetMinutes: row.logged_offset_minutes ?? 0,
     createdAt: row.created_at,
   };
 }
@@ -72,10 +74,16 @@ export async function saveSleepLog(userId: string, input: SleepInput, logId?: st
     duration_minutes: input.durationMinutes,
     quality: input.quality,
     notes: sanitizeUserText(input.notes).trim(),
+    ...(input.loggedAt
+      ? {
+          logged_at: input.loggedAt,
+          logged_offset_minutes:
+            input.loggedOffsetMinutes ?? -new Date(input.loggedAt).getTimezoneOffset(),
+        }
+      : {}),
   };
 
   const insertPayload: Record<string, unknown> = { ...payload, user_id: userId };
-  if (!logId && input.loggedAt) insertPayload.logged_at = input.loggedAt;
 
   const query = logId
     ? client.from("sleep_logs").update(payload).eq("user_id", userId).eq("id", logId)

@@ -4,19 +4,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { DateBar } from "@/src/components/app/date-bar";
 import { OfflineBanner } from "@/src/components/app/offline-banner";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { isDatedRoute } from "@/src/features/navigation/dated-routes";
 import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
 import { ConsentGate } from "@/src/components/app/consent-gate";
-import { AppOnboardingWizard } from "@/src/components/app/app-onboarding-wizard";
+import {
+  AppOnboardingWizard,
+  type AppOnboardingResult,
+} from "@/src/components/app/app-onboarding-wizard";
 import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { policyVersion } from "@/src/features/policies/policy-content";
-import { useUserPreferences } from "@/src/features/settings/queries";
+import {
+  useUpdateOnboardingPreferences,
+  useUserPreferences,
+} from "@/src/features/settings/queries";
 import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
-import type { ConcernKey } from "@/src/features/onboarding/concerns";
 import { useNotificationDeepLink } from "@/src/features/notifications/use-notification-deep-link";
 import { useNotificationSync } from "@/src/features/notifications/use-notification-sync";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
@@ -32,6 +35,7 @@ export default function ProtectedLayout() {
   const { session, status, user } = useSession();
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(user?.id ?? null);
   const completeOnboarding = useCompleteAppOnboarding(user?.id ?? null);
+  const completeIntroduction = useUpdateOnboardingPreferences(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
   const pathname = usePathname();
 
@@ -79,11 +83,16 @@ export default function ProtectedLayout() {
     Boolean(preferences) &&
     !preferences?.appOnboardingCompleted &&
     pathname === "/";
+  const isIntroductionReplay = Boolean(preferences?.appOnboardingCompletedVia);
 
-  const finishAppOnboarding = async (selectedConcerns: ConcernKey[] | null) => {
+  const finishAppOnboarding = async (result: AppOnboardingResult | null) => {
     if (!preferences) return;
     try {
-      await completeOnboarding.mutateAsync({ selectedConcerns });
+      if (isIntroductionReplay) {
+        await completeIntroduction.mutateAsync({ appOnboardingCompleted: true });
+        return;
+      }
+      await completeOnboarding.mutateAsync(result ?? { selectedConcerns: null, widgetIds: [] });
     } catch {
       // Error state is shown inside the wizard.
     }
@@ -95,14 +104,19 @@ export default function ProtectedLayout() {
 
   return (
     <AppLockGate>
-      <WidgetSnapshotSync userId={user?.id ?? null} />
+      <WidgetSnapshotSync userId={user?.id ?? null} preferences={preferences} />
       {needsAppOnboarding ? (
         <AppOnboardingWizard
           visible
+          introductionOnly={isIntroductionReplay}
           initialConcerns={preferences?.selectedConcerns ?? []}
-          isPending={completeOnboarding.isPending}
-          errorMessage={completeOnboarding.isError ? t("onboarding.appSaveError") : undefined}
-          onFinish={(picks) => void finishAppOnboarding(picks)}
+          isPending={completeOnboarding.isPending || completeIntroduction.isPending}
+          errorMessage={
+            completeOnboarding.isError || completeIntroduction.isError
+              ? t("onboarding.appSaveError")
+              : undefined
+          }
+          onFinish={(result) => void finishAppOnboarding(result)}
           onSkip={() => void finishAppOnboarding(null)}
         />
       ) : null}
@@ -110,7 +124,6 @@ export default function ProtectedLayout() {
         {isDesktop ? <SidebarNav /> : null}
         <View className="flex-1">
           <OfflineBanner />
-          {isDatedRoute(pathname) ? <DateBar /> : null}
           <Stack
             screenOptions={{
               headerShown: false,
@@ -158,7 +171,6 @@ export default function ProtectedLayout() {
             <Stack.Screen name="tools/meditation/index" />
             <Stack.Screen name="tools/act" />
             <Stack.Screen name="tools/gratitude-log/index" />
-            <Stack.Screen name="history" />
             <Stack.Screen name="support" />
             <Stack.Screen name="legal" />
             <Stack.Screen name="progress" />

@@ -33,6 +33,8 @@ These workflows are manual by design. CI still validates pushes and pull request
 
 ## Minimum internal verification before widening scope
 
+New accounts receive the Home recommendation wizard once after consent. Finishing applies only the reviewed widgets; skipping leaves Home empty. An empty Home offers manual addition and suggestions, while resetting educational onboarding in Settings does not replace an existing widget layout.
+
 ### Auth
 
 - Google sign-in opens the browser flow

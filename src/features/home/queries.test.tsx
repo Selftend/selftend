@@ -6,46 +6,30 @@ import {
   useAddWidget,
   useRemoveWidget,
   useReorderWidgets,
+  useRestoreWidget,
   useWidgetPreferences,
 } from "@/src/features/home/queries";
 import {
   deleteWidgetPreference,
-  getWidgetsSeeded,
   insertWidgetPreferences,
   listWidgetPreferences,
-  markWidgetsSeeded,
+  restoreWidgetPreference,
   updateWidgetPositions,
 } from "@/src/features/home/widget-repository";
-import { resolveInitialWidgetIds } from "@/src/features/home/seeding";
-import { listPlanItems } from "@/src/features/plan/repository";
 import { createTestQueryClient } from "@/test/render-with-providers";
 
 jest.mock("@/src/features/home/widget-repository", () => ({
   deleteWidgetPreference: jest.fn(),
-  getWidgetsSeeded: jest.fn(),
   insertWidgetPreferences: jest.fn(),
   listWidgetPreferences: jest.fn(),
-  markWidgetsSeeded: jest.fn(),
+  restoreWidgetPreference: jest.fn(),
   updateWidgetPositions: jest.fn(),
 }));
 
-jest.mock("@/src/features/home/seeding", () => ({
-  resolveInitialWidgetIds: jest.fn(),
-}));
-
-jest.mock("@/src/features/plan/repository", () => ({
-  listPlanItems: jest.fn(),
-}));
-
 const mockListWidgets = listWidgetPreferences as jest.MockedFunction<typeof listWidgetPreferences>;
-const mockGetSeeded = getWidgetsSeeded as jest.MockedFunction<typeof getWidgetsSeeded>;
 const mockInsert = insertWidgetPreferences as jest.MockedFunction<typeof insertWidgetPreferences>;
-const mockMarkSeeded = markWidgetsSeeded as jest.MockedFunction<typeof markWidgetsSeeded>;
-const mockResolveInitial = resolveInitialWidgetIds as jest.MockedFunction<
-  typeof resolveInitialWidgetIds
->;
-const mockListPlanItems = listPlanItems as jest.MockedFunction<typeof listPlanItems>;
 const mockDelete = deleteWidgetPreference as jest.MockedFunction<typeof deleteWidgetPreference>;
+const mockRestore = restoreWidgetPreference as jest.MockedFunction<typeof restoreWidgetPreference>;
 const mockUpdatePositions = updateWidgetPositions as jest.MockedFunction<
   typeof updateWidgetPositions
 >;
@@ -59,10 +43,10 @@ function makeWrapper(client: QueryClient) {
   };
 }
 
-describe("useWidgetPreferences - listOrSeed", () => {
+describe("useWidgetPreferences", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("returns existing widgets when present without seeding", async () => {
+  it("returns existing widgets", async () => {
     const existing = [
       { id: "w1", userId: "u1", widgetId: "mood-checkin", position: 0, createdAt: "2026-01-01" },
     ];
@@ -75,13 +59,11 @@ describe("useWidgetPreferences - listOrSeed", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(existing);
-    expect(mockGetSeeded).not.toHaveBeenCalled();
     expect(mockInsert).not.toHaveBeenCalled();
   });
 
-  it("returns empty array when list is empty and seeding already ran (no re-seed)", async () => {
+  it("keeps an empty Home empty without seeding defaults", async () => {
     mockListWidgets.mockResolvedValue([]);
-    mockGetSeeded.mockResolvedValue(true);
 
     const client = createTestQueryClient();
     const { result } = renderHook(() => useWidgetPreferences("u1"), {
@@ -91,30 +73,6 @@ describe("useWidgetPreferences - listOrSeed", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual([]);
     expect(mockInsert).not.toHaveBeenCalled();
-    expect(mockMarkSeeded).not.toHaveBeenCalled();
-  });
-
-  it("seeds widgets when list is empty and not yet seeded, then marks seeded", async () => {
-    const seededWidgets = [
-      { id: "w1", userId: "u1", widgetId: "mood-checkin", position: 0, createdAt: "2026-01-01" },
-    ];
-    // First call: empty (triggers seed); second call: after seeding
-    mockListWidgets.mockResolvedValueOnce([]).mockResolvedValueOnce(seededWidgets);
-    mockGetSeeded.mockResolvedValue(false);
-    mockListPlanItems.mockResolvedValue([]);
-    mockResolveInitial.mockReturnValue(["mood-checkin"]);
-    mockInsert.mockResolvedValue();
-    mockMarkSeeded.mockResolvedValue();
-
-    const client = createTestQueryClient();
-    const { result } = renderHook(() => useWidgetPreferences("u1"), {
-      wrapper: makeWrapper(client),
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockInsert).toHaveBeenCalledWith("u1", ["mood-checkin"], 0);
-    expect(mockMarkSeeded).toHaveBeenCalledWith("u1");
-    expect(result.current.data).toEqual(seededWidgets);
   });
 
   it("does not fetch when userId is null (query disabled)", () => {
@@ -135,8 +93,6 @@ describe("useAddWidget - nextPosition", () => {
     ];
     mockListWidgets.mockResolvedValue(existing);
     mockInsert.mockResolvedValue();
-    // For the invalidation re-fetch after onSuccess
-    mockGetSeeded.mockResolvedValue(true);
 
     const client = createTestQueryClient();
     const spy = jest.spyOn(client, "invalidateQueries");
@@ -171,7 +127,6 @@ describe("useAddWidget - nextPosition", () => {
   it("uses position 0 when there are no existing widgets", async () => {
     mockListWidgets.mockResolvedValue([]);
     mockInsert.mockResolvedValue();
-    mockGetSeeded.mockResolvedValue(true);
 
     const client = createTestQueryClient();
     const { result } = renderHook(() => useAddWidget("u1"), { wrapper: makeWrapper(client) });
@@ -250,5 +205,26 @@ describe("useReorderWidgets", () => {
     });
 
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("useRestoreWidget", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("restores the widget at its prior position and invalidates the list", async () => {
+    mockRestore.mockResolvedValue();
+    const client = createTestQueryClient();
+    const spy = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useRestoreWidget("u1"), {
+      wrapper: makeWrapper(client),
+    });
+
+    await act(async () => {
+      await result.current.mutateAsync({ widgetId: "mood-checkin", position: 1 });
+    });
+
+    expect(mockRestore).toHaveBeenCalledWith("u1", "mood-checkin", 1);
+    const keys = spy.mock.calls.map((call) => (call[0] as { queryKey?: unknown }).queryKey);
+    expect(keys).toContainEqual(listKey("u1"));
   });
 });

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, waitFor } from "@testing-library/react-native";
+import { act, render, waitFor } from "@testing-library/react-native";
 import { Text } from "react-native";
 
 import { setSentryUser } from "@/src/lib/sentry";
@@ -56,7 +56,7 @@ describe("SessionProvider sentry user context", () => {
     renderProvider();
     await waitFor(() => expect(setSentryUser).toHaveBeenCalled());
 
-    authCallback("SIGNED_OUT", null);
+    act(() => authCallback("SIGNED_OUT", null));
 
     await waitFor(() => expect(setSentryUser).toHaveBeenLastCalledWith(null));
   });
@@ -68,7 +68,7 @@ describe("SessionProvider sign-out purge", () => {
     renderProvider();
     await waitFor(() => expect(setSentryUser).toHaveBeenCalled());
 
-    authCallback("SIGNED_OUT", null);
+    act(() => authCallback("SIGNED_OUT", null));
 
     await waitFor(() => expect(clearPersistedQueryCache).toHaveBeenCalled());
   });
@@ -82,7 +82,7 @@ describe("SessionProvider sign-out purge", () => {
     renderProvider();
     await waitFor(() => expect(setSentryUser).toHaveBeenCalled());
 
-    authCallback("SIGNED_OUT", null);
+    act(() => authCallback("SIGNED_OUT", null));
 
     await waitFor(() => expect(purgePersistedWizardDrafts).toHaveBeenCalled());
     expect(resetAllDraftStores).toHaveBeenCalled();

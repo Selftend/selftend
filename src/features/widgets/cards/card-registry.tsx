@@ -9,6 +9,7 @@ import { StatsCard } from "@/src/features/widgets/cards/stats-card";
 import { HabitsCard } from "@/src/features/widgets/cards/habits-card";
 import { CommittedActionsCard } from "@/src/features/widgets/cards/committed-actions-card";
 import { DefusionCard } from "@/src/features/widgets/cards/defusion-card";
+import { ProgrammeCard } from "@/src/features/widgets/cards/programme-card";
 
 export interface CardReplicaEntry {
   kind: CardPayload["kind"];
@@ -71,7 +72,23 @@ export const CARD_REPLICAS: Record<CardId, CardReplicaEntry> = {
   "act-choice-point": prompt("alt-route"),
   "sleep-latest": stats("bedtime", "ink"),
   "cbt-distortion-guide": shortcut("menu-book"),
-  "cbt-programme": shortcut("school"),
+  "cbt-programme": {
+    kind: "programme",
+    icon: "school",
+    tint: "primary",
+    Component: ProgrammeCard,
+  },
+  "act-programme": {
+    kind: "programme",
+    icon: "school",
+    tint: "act",
+    Component: ProgrammeCard,
+  },
+  "cbt-module-shortcut": shortcut("psychology"),
+  "act-module-shortcut": {
+    ...shortcut("explore"),
+    tint: "act",
+  },
   "cbt-worry": shortcut("psychology"),
   "cbt-beliefs": shortcut("anchor"),
   "cbt-activities": shortcut("directions-run"),

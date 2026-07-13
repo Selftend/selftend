@@ -383,6 +383,30 @@ describe("useWizardDraft - draft capture and persistence", () => {
     expect(await AsyncStorage.getItem(storageKey)).toBeNull();
   });
 
+  it("explicitly discards the draft from memory and disk without a delayed capture reviving it", async () => {
+    jest.useFakeTimers();
+    try {
+      const { hookResult, emitChange, useDraftStore, flowKey } = await setupHook({
+        formValues: { name: "private draft", description: "unfinished" },
+      });
+      const storageKey = `selftend:wizard-draft:${flowKey}`;
+
+      act(() => emitChange());
+      act(() => useDraftStore.getState().setValues({ name: "private draft", description: "" }));
+      await act(async () => Promise.resolve());
+      expect(await AsyncStorage.getItem(storageKey)).not.toBeNull();
+
+      act(() => hookResult.result.current.clearDraft());
+      act(() => jest.advanceTimersByTime(1_000));
+      await act(async () => Promise.resolve());
+
+      expect(useDraftStore.getState().values).toBeNull();
+      expect(await AsyncStorage.getItem(storageKey)).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it("keeps the draft when the save fails", async () => {
     const onSave = jest.fn().mockRejectedValue(new Error("save failed"));
     const { hookResult, useDraftStore } = await setupHook({ onSave });

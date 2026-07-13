@@ -62,28 +62,38 @@ test.describe("sign-up + onboarding + first record", () => {
     await expect(page.getByText("Welcome to Selftend")).toBeVisible();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Panel 2: structure.
-    await expect(page.getByText("How Selftend is organized")).toBeVisible();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Panel 3: pick a concern and finish.
+    // Panel 2: pick a concern.
     await expect(page.getByText("What brings you here?")).toBeVisible();
     await page.getByText("Sleep", { exact: true }).click();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    // Final panel: leave both optional modules unselected for a tools-only setup.
+    // Guidance is skipped and recommendations are applied automatically.
+    await expect(page.getByText("Would a self-help module be useful?")).toBeVisible();
     await page.getByRole("button", { name: "Finish", exact: true }).click();
+    await expect(page.getByText("Would a self-help module be useful?", { exact: true })).toBeHidden(
+      {
+        timeout: 15_000,
+      },
+    );
 
-    // Personalization payoff: start-here card on home, sleep widget promoted.
-    await expect(page.getByText("Start here")).toBeVisible({ timeout: 10_000 });
+    // Personalization payoff: the selected shared widgets are now on Home.
+    await expect(page.getByText("Check-in", { exact: true }).last()).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByText("Sleep tracker", { exact: true }).last()).toBeVisible({
+      timeout: 10_000,
+    });
 
-    // Home tour appears; step one stop then skip the rest.
-    await expect(page.getByText(/Log how you feel in one tap/i)).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("button", { name: "Got it", exact: true }).click();
-    await page.getByRole("button", { name: "Skip all tips", exact: true }).click();
+    // The optional Home tour may be ineligible after the personalized setup. If
+    // it appears, dismiss it so the reload assertion remains deterministic.
+    const skipTour = page.getByRole("button", { name: "Skip all tips", exact: true });
+    if (await skipTour.isVisible()) await skipTour.click();
 
-    // Reload: wizard and tour must not reappear.
+    // Reload: the one-time widget wizard must not reappear.
     await page.reload();
     await dismissCookieBanner(page);
-    await expect(page.getByText("What brings you here?")).toBeHidden();
-    await expect(page.getByText(/Log how you feel in one tap/i)).toBeHidden();
+    await expect(page.getByText("Welcome to Selftend")).toBeHidden();
 
     // Now create the first thought record. (The CBT onboarding modal mounts on
     // the CBT home screen only, so navigating straight to /new skips it.)

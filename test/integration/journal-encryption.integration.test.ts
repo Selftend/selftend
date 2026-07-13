@@ -54,6 +54,8 @@ describe("journal_entries encrypted view (integration)", () => {
     });
     expect(insert.data?.created_at).toEqual(expect.any(String));
     expect(insert.data?.updated_at).toEqual(expect.any(String));
+    expect(insert.data?.occurred_at).toEqual(expect.any(String));
+    expect(insert.data?.occurred_offset_minutes).toBe(0);
 
     const id = insert.data!.id as string;
 

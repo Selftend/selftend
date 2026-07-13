@@ -6,7 +6,11 @@ import ProtectedLayout from "./protected-layout";
 import { useAppLockStore } from "@/src/features/security/app-lock-store";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
-import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import {
+  useUpdateOnboardingPreferences,
+  useUpdateUserPreferences,
+  useUserPreferences,
+} from "@/src/features/settings/queries";
 import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -63,6 +67,12 @@ jest.mock("@/src/components/app/sidebar-nav", () => ({
   SidebarNav: () => null,
 }));
 
+// The date strip and native widget bridge each own timers/listeners and have dedicated
+// tests. This suite only verifies the protected-layout gates, so render inert boundaries.
+jest.mock("@/src/features/widgets/widget-snapshot-sync", () => ({
+  WidgetSnapshotSync: () => null,
+}));
+
 jest.mock("@/src/components/app/auth-landing-screen", () => {
   const Text = mockText;
 
@@ -84,6 +94,7 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/settings/queries", () => ({
+  useUpdateOnboardingPreferences: jest.fn(),
   useUpdateUserPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
 }));
@@ -98,12 +109,22 @@ jest.mock("@/src/features/notifications/use-notification-deep-link", () => ({
   useNotificationDeepLink: jest.fn(),
 }));
 
+// Background notification reconciliation has dedicated unit coverage. Keeping it out of
+// this layout test also prevents the native Expo notifications module from registering
+// listeners merely because the layout rendered.
+jest.mock("@/src/features/notifications/use-notification-sync", () => ({
+  useNotificationSync: jest.fn(),
+}));
+
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseCompleteAppOnboarding = useCompleteAppOnboarding as jest.MockedFunction<
   typeof useCompleteAppOnboarding
 >;
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
+>;
+const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jest.MockedFunction<
+  typeof useUpdateOnboardingPreferences
 >;
 
 describe("ProtectedLayout app onboarding", () => {
@@ -140,6 +161,12 @@ describe("ProtectedLayout app onboarding", () => {
       mutate: jest.fn(),
       mutateAsync: jest.fn(),
     } as unknown as ReturnType<typeof useUpdateUserPreferences>);
+    mockUseUpdateOnboardingPreferences.mockReturnValue({
+      isError: false,
+      isPending: false,
+      mutate: jest.fn(),
+      mutateAsync: jest.fn().mockResolvedValue(defaultUserPreferences),
+    } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
     mockUseUserPreferences.mockReturnValue({
       data: {
         ...defaultUserPreferences,
@@ -152,9 +179,6 @@ describe("ProtectedLayout app onboarding", () => {
 
   it("shows the wizard panel-1 title when app onboarding is needed", async () => {
     renderWithProviders(<ProtectedLayout />);
-    // ProtectedLayout renders DateBar (pathname "/" is a dated route), and
-    // VirtualizedList fires a deferred setState via setTimeout for its initial
-    // cell-render batch. waitFor flushes that inside act() so it doesn't leak.
     await waitFor(() => expect(screen.getByText("Welcome to Selftend")).toBeTruthy());
   });
 
@@ -169,8 +193,23 @@ describe("ProtectedLayout app onboarding", () => {
     } as unknown as ReturnType<typeof useUserPreferences>);
 
     renderWithProviders(<ProtectedLayout />);
-    // Flush VirtualizedList's deferred _updateCellsToRender inside act().
     await waitFor(() => expect(screen.queryByText("Welcome to Selftend")).toBeNull());
+  });
+
+  it("replays only the introduction after Settings resets onboarding", async () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: false,
+        appOnboardingCompletedVia: "finish",
+        policyVersionAccepted: policyVersion,
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+    await waitFor(() => expect(screen.getByText("Welcome to Selftend")).toBeTruthy());
+    expect(screen.queryByText("What brings you here?")).toBeNull();
   });
 
   it("shows the policy gate before app onboarding when consent is outdated", async () => {
@@ -184,7 +223,6 @@ describe("ProtectedLayout app onboarding", () => {
     } as unknown as ReturnType<typeof useUserPreferences>);
 
     renderWithProviders(<ProtectedLayout />);
-    // Flush VirtualizedList's deferred _updateCellsToRender inside act().
     await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
     expect(screen.queryByText("Welcome to Selftend")).toBeNull();
   });
@@ -197,7 +235,6 @@ describe("ProtectedLayout app onboarding", () => {
     };
 
     renderWithProviders(<ProtectedLayout />);
-    // No DateBar rendered when session is null (renders AuthLandingScreen instead).
     expect(screen.getByText("Signed-out landing")).toBeTruthy();
   });
 });

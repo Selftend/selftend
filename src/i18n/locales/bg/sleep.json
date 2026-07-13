@@ -17,6 +17,7 @@
     "qualityStarLabel": "Оцени {{value}} от {{max}}",
     "qualityValue": "{{value}}/{{max}}",
     "notesLabel": "Бележки (по избор)",
+    "whenLabel": "Кога",
     "notesPlaceholder": "Нещо, което повлия на съня ти?",
     "save": "Запази",
     "update": "Актуализирай",

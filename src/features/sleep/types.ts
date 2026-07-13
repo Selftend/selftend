@@ -5,6 +5,7 @@ export interface SleepLog {
   quality: number;
   notes: string;
   loggedAt: string;
+  loggedOffsetMinutes?: number;
   createdAt: string;
 }
 
@@ -13,4 +14,5 @@ export interface SleepInput {
   quality: number;
   notes: string;
   loggedAt?: string;
+  loggedOffsetMinutes?: number;
 }

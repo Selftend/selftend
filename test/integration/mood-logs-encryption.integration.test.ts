@@ -64,6 +64,7 @@ describe("mood_logs encrypted view (integration)", () => {
       behaviours: BEHAVIOURS,
       bodily_sensations: BODILY,
       linked_strategy: "breathing",
+      logged_offset_minutes: 0,
     });
 
     const id = insert.data!.id as string;

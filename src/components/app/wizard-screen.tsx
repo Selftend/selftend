@@ -26,6 +26,8 @@ interface WizardScreenProps {
   primaryLabel: string;
   pendingLabel: string;
   backLabel: string;
+  discardLabel?: string;
+  onDiscard?: () => void;
   isPending: boolean;
   headerSlot?: ReactNode;
   titleAction?: ReactNode;
@@ -44,6 +46,8 @@ export function WizardScreen({
   primaryLabel,
   pendingLabel,
   backLabel,
+  discardLabel,
+  onDiscard,
   isPending,
   headerSlot,
   titleAction,
@@ -64,19 +68,26 @@ export function WizardScreen({
   return (
     <MobileFormScreen
       footer={
-        <View className="flex-row gap-3">
-          {stepIndex > 0 ? (
+        <View className="gap-2">
+          {onDiscard && discardLabel ? (
+            <Button disabled={isPending} onPress={onDiscard} variant="ghost">
+              <Text className="text-destructive">{discardLabel}</Text>
+            </Button>
+          ) : null}
+          <View className="flex-row gap-3">
+            {stepIndex > 0 ? (
+              <View className="flex-1">
+                <Button onPress={onBack} variant="ghost">
+                  <Text>{backLabel}</Text>
+                </Button>
+              </View>
+            ) : null}
             <View className="flex-1">
-              <Button onPress={onBack} variant="ghost">
-                <Text>{backLabel}</Text>
+              <Button disabled={isPending} onPress={onPrimary}>
+                {isPending ? <ActivityIndicator color="#ffffff" /> : null}
+                <Text>{isPending ? pendingLabel : primaryLabel}</Text>
               </Button>
             </View>
-          ) : null}
-          <View className="flex-1">
-            <Button disabled={isPending} onPress={onPrimary}>
-              {isPending ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{isPending ? pendingLabel : primaryLabel}</Text>
-            </Button>
           </View>
         </View>
       }

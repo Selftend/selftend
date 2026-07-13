@@ -8,6 +8,7 @@ import type {
   HabitsCardPayload,
   StatsCardPayload,
   CommittedActionsCardPayload,
+  ProgrammeCardPayload,
 } from "@/src/features/widgets/snapshot-types";
 
 const t = (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k);
@@ -133,6 +134,36 @@ describe("buildSnapshot v2", () => {
     expect((snap.widgets["act-acceptance-prompt"] as { cta: { path: string } }).cta.path).toBe(
       "/modules/act/expansion",
     );
+  });
+
+  it("programme cards carry enrollment state, current goals, and programme links", () => {
+    const data: WidgetData = {
+      ...empty,
+      programmes: {
+        cbt: {
+          startedAt: "2026-06-01T10:00:00Z",
+          completedAt: null,
+          phaseIndex: 0,
+          taskStatuses: [{ taskKey: "thought-record", done: true }],
+        },
+        act: {
+          startedAt: "2026-05-01T10:00:00Z",
+          completedAt: "2026-06-01T10:00:00Z",
+          phaseIndex: 0,
+          taskStatuses: [],
+        },
+      },
+    };
+    const snapshot = buildSnapshot(data, ctx);
+    const cbt = snapshot.widgets["cbt-programme"] as ProgrammeCardPayload;
+    const act = snapshot.widgets["act-programme"] as ProgrammeCardPayload;
+
+    expect(cbt.state).toBe("in-progress");
+    expect(cbt.goals.length).toBeGreaterThan(0);
+    expect(cbt.programmeCta.path).toBe("/modules/cbt");
+    expect(act.state).toBe("completed");
+    expect(act.goals).toEqual([]);
+    expect(act.programmeCta.path).toBe("/modules/act");
   });
 });
 

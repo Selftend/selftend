@@ -84,12 +84,14 @@ export function DateTimeField({ value, onChange, accessibilityLabel }: DateTimeF
             <DateTimePicker
               mode="single"
               date={parsedDate}
-              maxDate={dayjs().endOf("day")}
+              maxDate={dayjs()}
               timePicker={true}
               onChange={({ date }) => {
                 if (!date) return;
                 const next = dayjs(date);
-                if (next.isValid()) onChange(next.toISOString());
+                if (!next.isValid()) return;
+                const now = dayjs();
+                onChange((next.isAfter(now) ? now : next).toISOString());
               }}
               styles={pickerStyles}
               components={{

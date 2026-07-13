@@ -2,7 +2,7 @@ export type ModuleKey = "cbt" | "meditation" | "gratitude" | "act";
 
 export type ButtonTourAction = "tune" | "notifications" | "program" | "info";
 // A shown-tour storage key: legacy bare action ("info"), screen-scoped
-// ("cbt:info"), or a home tour stop ("home:checkin").
+// ("cbt:info"), or a home tour stop ("home:edit").
 export type ButtonTourKey = string;
 
 export type GratitudeLevel = 1 | 2 | 3;

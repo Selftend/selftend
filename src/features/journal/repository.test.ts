@@ -43,13 +43,15 @@ describe("journal repository", () => {
         userId: "user-1",
         title: "Today",
         body: "Walked outside",
+        occurredAt: "2026-05-15T08:00:00.000Z",
+        occurredOffsetMinutes: 0,
         createdAt: "2026-05-15T08:00:00.000Z",
         updatedAt: "2026-05-15T08:00:00.000Z",
       },
     ]);
     expect(from).toHaveBeenCalledWith("journal_entries");
     expect(eq).toHaveBeenCalledWith("user_id", "user-1");
-    expect(order).toHaveBeenCalledWith("created_at", { ascending: false });
+    expect(order).toHaveBeenCalledWith("occurred_at", { ascending: false });
     expect(limit).toHaveBeenCalledWith(25);
   });
 
@@ -132,6 +134,8 @@ describe("journal repository", () => {
       userId: "user-1",
       title: "Updated",
       body: "Body",
+      occurredAt: "2026-05-15T08:00:00.000Z",
+      occurredOffsetMinutes: 0,
       createdAt: "2026-05-15T08:00:00.000Z",
       updatedAt: "2026-05-15T08:30:00.000Z",
     });
@@ -144,13 +148,15 @@ describe("journal repository", () => {
     expect(eqId).toHaveBeenCalledWith("id", "j-1");
   });
 
-  it("includes created_at in the update payload when provided", async () => {
+  it("keeps audit created_at immutable when an occurrence time is provided", async () => {
     const row = {
       id: "j-1",
       user_id: "user-1",
       title: "Updated",
       body: "Body",
-      created_at: "2026-04-01T09:00:00.000Z",
+      occurred_at: "2026-04-01T09:00:00.000Z",
+      occurred_offset_minutes: 180,
+      created_at: "2026-05-15T08:00:00.000Z",
       updated_at: "2026-05-15T08:30:00.000Z",
     };
     const maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
@@ -170,7 +176,8 @@ describe("journal repository", () => {
     expect(update).toHaveBeenCalledWith({
       title: "Updated",
       body: "Body",
-      created_at: "2026-04-01T09:00:00.000Z",
+      occurred_at: "2026-04-01T09:00:00.000Z",
+      occurred_offset_minutes: expect.any(Number),
     });
   });
 
@@ -188,7 +195,7 @@ describe("journal repository", () => {
     ).rejects.toThrow("Entry not found");
   });
 
-  it("rejects a future created_at timestamp", async () => {
+  it("rejects a future occurrence timestamp", async () => {
     const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const from = jest.fn();
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -233,7 +240,7 @@ describe("journal repository", () => {
     await expect(countJournalEntries("user-1")).resolves.toBe(0);
   });
 
-  it("counts journal entries created since a cutoff (head request + gte filter)", async () => {
+  it("counts journal entries occurring since a cutoff (head request + gte filter)", async () => {
     const gte = jest.fn().mockResolvedValue({ count: 4, error: null });
     const eqUser = jest.fn(() => ({ gte }));
     const select = jest.fn(() => ({ eq: eqUser }));
@@ -243,6 +250,6 @@ describe("journal repository", () => {
     await expect(countJournalEntriesSince("user-1", "2026-05-13T00:00:00.000Z")).resolves.toBe(4);
     expect(select).toHaveBeenCalledWith("id", { count: "exact", head: true });
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
-    expect(gte).toHaveBeenCalledWith("created_at", "2026-05-13T00:00:00.000Z");
+    expect(gte).toHaveBeenCalledWith("occurred_at", "2026-05-13T00:00:00.000Z");
   });
 });

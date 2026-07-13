@@ -13,14 +13,9 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { MoodLineChart } from "@/src/components/app/mood-line-chart";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { useActEntryCountSince } from "@/src/features/act/count-queries";
-import { useThoughtRecordCountSince } from "@/src/features/cbt/queries";
 import { dailyIntegerAverages, lastNLocalDateKeys } from "@/src/features/mood/chart-data";
-import { useGratitudeEntryCountSince } from "@/src/features/gratitude/queries";
-import { useJournalEntryCountSince } from "@/src/features/journal/queries";
 import { useMoodHistory } from "@/src/features/mood/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { startOfDayDaysAgo } from "@/src/utils/date";
 
 const REFLECTION_PROMPTS = [
   "progress.prompt1",
@@ -39,31 +34,7 @@ export default function ProgressScreen() {
   const { user } = useSession();
   const { width } = useWindowDimensions();
 
-  // 200 (not 60) so the 30-day mood count isn't capped for users who check in many times a
-  // day. Mood rows are needed for the chart; journal/gratitude are only counted (below).
-  const { data: moodLogs, isLoading: moodLoading } = useMoodHistory(user?.id ?? null, 200);
-
-  // start-of-day 30 days ago - stable within a day, so it's a safe query key.
-  const thirtyDayCutoff = startOfDayDaysAgo(30);
-  const thirtyDayCutoffIso = thirtyDayCutoff.toISOString();
-
-  // Journal/gratitude 30-day stats use exact head-counts instead of fetching (and
-  // decrypting) up to 200 full journal bodies + gratitude entries just to count recent ones.
-  const { data: thirtyDayJournalCount = 0, isLoading: journalLoading } = useJournalEntryCountSince(
-    user?.id ?? null,
-    thirtyDayCutoffIso,
-  );
-  const { data: thirtyDayGratitudeCount = 0, isLoading: gratitudeLoading } =
-    useGratitudeEntryCountSince(user?.id ?? null, thirtyDayCutoffIso);
-  const { data: thirtyDayThoughtRecordCount = 0, isLoading: thoughtRecordLoading } =
-    useThoughtRecordCountSince(user?.id ?? null, thirtyDayCutoffIso);
-  const { data: thirtyDayActEntryCount, isLoading: actEntryLoading } = useActEntryCountSince(
-    user?.id ?? null,
-    thirtyDayCutoffIso,
-  );
-
-  const isLoading =
-    moodLoading || journalLoading || gratitudeLoading || thoughtRecordLoading || actEntryLoading;
+  const { data: moodLogs, isLoading } = useMoodHistory(user?.id ?? null, 60);
 
   const last14Dates = lastNLocalDateKeys(14);
 
@@ -80,10 +51,6 @@ export default function ProgressScreen() {
     day: string;
     score: number;
   }[];
-
-  const thirtyDayMoodCount = moodLogs
-    ? moodLogs.filter((l) => new Date(l.loggedAt) >= thirtyDayCutoff).length
-    : 0;
 
   const promptKey = REFLECTION_PROMPTS[new Date().getDay() % REFLECTION_PROMPTS.length];
   const chartWidth = Math.min(width - 48, 400);
@@ -119,44 +86,6 @@ export default function ProgressScreen() {
               ) : (
                 <Text variant="muted">{t("progress.noMoodData")}</Text>
               )}
-            </CardContent>
-          </Card>
-
-          {/* 30-day activity counts */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("progress.activityTitle")}</CardTitle>
-              <CardDescription>{t("progress.activityDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <View className="flex-row flex-wrap gap-4">
-                <View className="gap-1">
-                  <Text className="text-3xl font-bold">{thirtyDayMoodCount}</Text>
-                  <Text className="text-xs text-muted-foreground">{t("progress.moodLogs")}</Text>
-                </View>
-                <View className="gap-1">
-                  <Text className="text-3xl font-bold">{thirtyDayJournalCount}</Text>
-                  <Text className="text-xs text-muted-foreground">
-                    {t("progress.journalEntries")}
-                  </Text>
-                </View>
-                <View className="gap-1">
-                  <Text className="text-3xl font-bold">{thirtyDayGratitudeCount}</Text>
-                  <Text className="text-xs text-muted-foreground">
-                    {t("progress.gratitudeEntries")}
-                  </Text>
-                </View>
-                <View className="gap-1">
-                  <Text className="text-3xl font-bold">{thirtyDayThoughtRecordCount}</Text>
-                  <Text className="text-xs text-muted-foreground">
-                    {t("progress.thoughtRecords")}
-                  </Text>
-                </View>
-                <View className="gap-1">
-                  <Text className="text-3xl font-bold">{thirtyDayActEntryCount}</Text>
-                  <Text className="text-xs text-muted-foreground">{t("progress.actEntries")}</Text>
-                </View>
-              </View>
             </CardContent>
           </Card>
 

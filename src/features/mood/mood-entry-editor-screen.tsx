@@ -31,6 +31,7 @@ import {
   spaceKeyActivationProps,
 } from "@/src/lib/accessibility";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
+import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { parseBodyChips, toggleBodyChip } from "@/src/features/mood/body-sensations";
 import { useCompleteActivity } from "@/src/features/activities/queries";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
@@ -38,7 +39,6 @@ import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
 import { type EmotionDisplay, useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import type { MoodLog } from "@/src/features/mood/types";
 import { useSession } from "@/src/providers/session-provider";
-import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 
 const BODY_CHIP_KEYS = [
   "chestTight",
@@ -130,7 +130,6 @@ export function MoodEntryEditorScreen({
       ? parsedScore
       : null;
 
-  const { selectedDate } = useSelectedDate();
   const { data: cachedList } = useMoodLogs(mode === "edit" ? (user?.id ?? null) : null, 30);
   const fromCache = moodId ? (cachedList?.find((log) => log.id === moodId) ?? null) : null;
   const { data: fetched, isLoading } = useMoodLog(
@@ -144,10 +143,10 @@ export function MoodEntryEditorScreen({
   const [moodScore, setMoodScore] = useState<number | null>(initialScore);
   const [emotions, setEmotions] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
-  const [loggedAt, setLoggedAt] = useState<string>(
-    mode === "create" ? loggedAtForSelectedDate(selectedDate) : new Date().toISOString(),
+  const [loggedAt, setLoggedAt] = useState<string>(() => new Date().toISOString());
+  const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState(
+    () => occurrenceTimeFromDate().occurredOffsetMinutes,
   );
-  const [dateDirty, setDateDirty] = useState(false);
   const [error, setError] = useState("");
   const [scoreError, setScoreError] = useState("");
   const scoreSectionRef = useRef<View>(null);
@@ -160,14 +159,6 @@ export function MoodEntryEditorScreen({
   const editMode = mode === "edit";
   const saving = saveMutation.isPending || completeActivityMutation.isPending;
   const { allEmotions, isLoading: emotionsLoading } = useEmotionDisplay();
-
-  // Create mode: keep the timestamp in sync with the app's selected day (e.g. midnight
-  // rollover or a DateBar change) until the user edits the field themselves. Mirrors the
-  // journal editor - without it, a create-editor opened earlier stamps the stale day.
-  useEffect(() => {
-    if (editMode || dateDirty) return;
-    setLoggedAt(loggedAtForSelectedDate(selectedDate));
-  }, [editMode, dateDirty, selectedDate]);
 
   // Hydrate local field state from the saved entry ONCE per entry id. Keying on the id
   // (not the object) stops a later list/detail refetch - which produces a new object
@@ -182,6 +173,10 @@ export function MoodEntryEditorScreen({
     setEmotions(existingEntry.emotions);
     setNotes(existingEntry.notes);
     setLoggedAt(existingEntry.loggedAt);
+    setLoggedOffsetMinutes(
+      existingEntry.loggedOffsetMinutes ??
+        occurrenceTimeFromDate(new Date(existingEntry.loggedAt)).occurredOffsetMinutes,
+    );
     setSituation(existingEntry.situation);
     setThoughts(existingEntry.thoughts);
     setBehaviours(existingEntry.behaviours);
@@ -232,6 +227,7 @@ export function MoodEntryEditorScreen({
           notes,
           linkedStrategy: linkedStrategy ?? existingEntry?.linkedStrategy ?? null,
           loggedAt,
+          loggedOffsetMinutes,
           situation,
           thoughts,
           behaviours,
@@ -411,9 +407,10 @@ export function MoodEntryEditorScreen({
         <Label>{t("mood.loggedAtLabel")}</Label>
         <DateTimeField
           value={loggedAt}
-          onChange={(v) => {
-            setDateDirty(true);
-            setLoggedAt(v);
+          onChange={(next) => {
+            const occurrence = occurrenceTimeFromDate(new Date(next));
+            setLoggedAt(occurrence.occurredAt);
+            setLoggedOffsetMinutes(occurrence.occurredOffsetMinutes);
           }}
           accessibilityLabel={t("mood.loggedAtLabel")}
         />

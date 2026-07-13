@@ -11,6 +11,12 @@
   "or": "or",
   "orContinueWithEmail": "or continue with email",
   "never": "never",
+  "draft": {
+    "discardAction": "Discard draft",
+    "discardTitle": "Discard this draft?",
+    "discardMessage": "Your unfinished answers on this form will be removed from this device.",
+    "discardConfirm": "Discard draft"
+  },
   "feedback": {
     "saved": "Saved",
     "problem": "Something did not save",

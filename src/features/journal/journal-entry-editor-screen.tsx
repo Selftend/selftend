@@ -22,9 +22,9 @@ import {
 import { JOURNAL_BODY_MAX, JOURNAL_TITLE_MAX } from "@/src/features/journal/schemas";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
+import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 
 interface JournalEntryEditorScreenProps {
   fallbackHref: Href;
@@ -40,7 +40,6 @@ export function JournalEntryEditorScreen({
   const { t } = useTranslation("journal");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
-  const { selectedDate } = useSelectedDate();
   const editMode = mode === "edit";
 
   const { data: cachedList } = useJournalEntries(editMode ? (user?.id ?? null) : null, 50);
@@ -57,19 +56,11 @@ export function JournalEntryEditorScreen({
   const [error, setError] = useState("");
   const [bodyError, setBodyError] = useState("");
   const bodyInputRef = useRef<TextInput>(null);
-  const [createdAt, setCreatedAt] = useState<string>(
-    mode === "create" ? loggedAtForSelectedDate(selectedDate) : new Date().toISOString(),
+  const [occurredAt, setOccurredAt] = useState<string>(() => new Date().toISOString());
+  const [occurredOffsetMinutes, setOccurredOffsetMinutes] = useState(
+    () => occurrenceTimeFromDate().occurredOffsetMinutes,
   );
-  const [dateDirty, setDateDirty] = useState(false);
   const saving = saveMutation.isPending;
-
-  // Create mode: keep the pre-filled date in sync with the app's selected day
-  // (e.g. midnight rollover or another consumer changing the store) until the
-  // user edits the field themselves.
-  useEffect(() => {
-    if (editMode || dateDirty) return;
-    setCreatedAt(loggedAtForSelectedDate(selectedDate));
-  }, [editMode, dateDirty, selectedDate]);
 
   // Hydrate field state ONCE per entry id; keying on the id (not the object) stops a
   // later list/detail refetch - which yields a new object identity - from clobbering
@@ -81,7 +72,12 @@ export function JournalEntryEditorScreen({
     hydratedIdRef.current = existingEntry.id;
     setTitle(existingEntry.title);
     setBody(existingEntry.body);
-    setCreatedAt(existingEntry.createdAt);
+    const restoredOccurredAt = existingEntry.occurredAt ?? existingEntry.createdAt;
+    setOccurredAt(restoredOccurredAt);
+    setOccurredOffsetMinutes(
+      existingEntry.occurredOffsetMinutes ??
+        occurrenceTimeFromDate(new Date(restoredOccurredAt)).occurredOffsetMinutes,
+    );
     setError("");
   }, [existingEntry]);
 
@@ -111,7 +107,8 @@ export function JournalEntryEditorScreen({
         input: {
           title: title.trim().slice(0, JOURNAL_TITLE_MAX),
           body: trimmedBody.slice(0, JOURNAL_BODY_MAX),
-          createdAt,
+          occurredAt,
+          occurredOffsetMinutes,
         },
         entryId: editMode ? (entryId ?? undefined) : undefined,
       });
@@ -221,10 +218,11 @@ export function JournalEntryEditorScreen({
       <View className="gap-2">
         <Label>{t("editor.dateLabel")}</Label>
         <DateTimeField
-          value={createdAt}
-          onChange={(value) => {
-            setDateDirty(true);
-            setCreatedAt(value);
+          value={occurredAt}
+          onChange={(next) => {
+            const occurrence = occurrenceTimeFromDate(new Date(next));
+            setOccurredAt(occurrence.occurredAt);
+            setOccurredOffsetMinutes(occurrence.occurredOffsetMinutes);
           }}
           accessibilityLabel={t("editor.dateLabel")}
         />

@@ -12,6 +12,10 @@ jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: () => ({ data: undefined }),
   useUpdateUserPreferences: () => ({ mutateAsync: mockUpdate, isPending: false }),
 }));
+jest.mock("@/src/lib/accessibility", () => ({
+  ...jest.requireActual("@/src/lib/accessibility"),
+  useReduceMotionEnabled: () => false,
+}));
 
 describe("SoundsSheet", () => {
   beforeEach(() => jest.clearAllMocks());

@@ -47,11 +47,11 @@ describe("widget registry", () => {
     expect(WIDGET_META["act-defusion"].toolKey).toBe("act");
   });
 
-  it("no longer registers the removed act-values / act-programme widgets", () => {
-    for (const id of ["act-values", "act-programme"]) {
-      expect(isImplemented(id)).toBe(false);
-      expect(WIDGET_META[id]).toBeUndefined();
-    }
+  it("registers the ACT programme widget but not the removed act-values widget", () => {
+    expect(isImplemented("act-programme")).toBe(true);
+    expect(WIDGET_META["act-programme"]?.status).toBe("available");
+    expect(isImplemented("act-values")).toBe(false);
+    expect(WIDGET_META["act-values"]).toBeUndefined();
   });
 
   it("registers act-drop-anchor as a default ACT widget", () => {

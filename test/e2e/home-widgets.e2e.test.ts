@@ -1,33 +1,26 @@
 /**
  * Home widget management e2e test.
  *
- * Signs in as alice, resets her widget preferences before and after each test so
- * the app re-seeds defaults on the next load. Tests:
- *   1. Add a widget NOT in the defaults via the add (+) button → AddWidgetModal.
- *   2. Assert the widget renders on the home screen.
- *   3. Assert persistence across page.reload().
- *   4. Enter edit mode, remove a default widget via its close (x) button.
- *   5. Assert the removed widget is gone.
- *   6. Widget reorder via drag-handle is DONE_WITH_CONCERNS (attempted but not
- *      asserted as a hard pass/fail - Sortable.Flex + Playwright drag is unreliable).
+ * Signs in as alice and starts with an intentionally empty dashboard. Tests:
+ *   1. Verify the empty-state recovery choices and open the manual widget picker.
+ *   2. Assert the widget renders and persists across reload.
+ *   3. Remove it and verify Home returns to the empty state.
  *
- * Non-default widget chosen: "self-care" (id: "self-care", title: "Self-care log",
- * category: CBT) - it is "available" in WIDGET_META but NOT in DEFAULT_WIDGET_IDS.
- * Widget to remove: "mood-trend" (title key → "Mood, last 7 days") - in defaults.
+ * Widget chosen: "self-care" (id: "self-care", title: "Self-care log", category: CBT).
  */
 
 import { expect, test } from "./fixtures";
 
 import { dismissPostSignInModals, resetWidgetPreferencesForUser } from "./helpers";
 
-// Non-default widget to add: "self-care" (Self-care log) under CBT category.
+// Widget to add: "self-care" (Self-care log) under CBT category.
 const ADD_WIDGET_TITLE = "Self-care log";
 // We remove the same widget we added - ensures it's definitely visible on screen.
 const REMOVE_WIDGET_ARIA = `Remove ${ADD_WIDGET_TITLE}`;
 
 test.describe("home widget management", () => {
   test.beforeEach(async ({ user }) => {
-    // Reset preferences so the app re-seeds defaults on next load.
+    // Empty is now a deliberate, stable state; defaults are never auto-seeded.
     await resetWidgetPreferencesForUser(user.id);
   });
 
@@ -44,12 +37,14 @@ test.describe("home widget management", () => {
     // Dismiss home tour (seeded users have empty shown_button_tours, so it fires on first visit).
     await dismissPostSignInModals(page);
 
-    // Wait for the dashboard to load (at least one default widget should be visible).
-    await expect(page.getByText("Dashboard")).toBeVisible({ timeout: 15_000 });
+    // Wait for the dashboard and verify the zero-widget recovery choices.
+    await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Add tools you want to check in with each day")).toBeVisible();
 
-    // --- Add a non-default widget via the AddWidgetModal search ---
-    // The add (+) button has accessibilityLabel t("today.dashboard.addWidgetTitle") = "Add to your dashboard"
-    const addButton = page.getByRole("button", { name: "Add to your dashboard", exact: true });
+    // --- Add a widget from the empty-state manual action ---
+    const addButton = page.getByRole("button", { name: "Add manually", exact: true });
     await expect(addButton).toBeVisible({ timeout: 10_000 });
     await addButton.click();
 
@@ -107,6 +102,7 @@ test.describe("home widget management", () => {
     await expect(page.getByText(ADD_WIDGET_TITLE, { exact: true })).toBeHidden({
       timeout: 10_000,
     });
+    await expect(page.getByText("Add tools you want to check in with each day")).toBeVisible();
 
     // Exit edit mode.
     const doneButton = page.getByRole("button", { name: "Done", exact: true }).first();

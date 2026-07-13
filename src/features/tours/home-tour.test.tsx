@@ -8,6 +8,12 @@ import { defaultUserPreferences } from "@/src/features/modules/types";
 import { useUpdateShownButtonTours, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+let mockPathname = "/";
+
+jest.mock("expo-router", () => ({
+  usePathname: () => mockPathname,
+}));
+
 // Mock Modal so it renders children in test (same pattern as module-home-header.test.tsx).
 jest.mock("react-native", () => {
   const React = require("react") as typeof import("react");
@@ -62,8 +68,8 @@ function setupPreferencesMock(appOnboardingCompleted: boolean, shownButtonTours:
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockPathname = "/";
   // Clear all registered targets between tests.
-  setTourTarget("home-checkin", null);
   setTourTarget("home-edit", null);
   setTourTarget("home-navigation", null);
 });
@@ -72,15 +78,17 @@ describe("HomeTour", () => {
   it("renders nothing until app onboarding is complete", () => {
     setupPreferencesMock(false, []);
     setupMutationMock();
-    setTourTarget("home-checkin", fakeView as never);
+    setTourTarget("home-edit", fakeView as never);
 
     renderWithProviders(<HomeTour />);
 
-    expect(screen.queryByText("Log how you feel in one tap - it takes ten seconds.")).toBeNull();
+    expect(
+      screen.queryByText("Arrange the dashboard your way - add, remove and reorder widgets."),
+    ).toBeNull();
   });
 
   it("shows the first unseen stop whose target is registered", async () => {
-    setupPreferencesMock(true, ["home:checkin"]);
+    setupPreferencesMock(true, []);
     setupMutationMock();
     setTourTarget("home-edit", fakeView as never);
 
@@ -91,8 +99,21 @@ describe("HomeTour", () => {
     ).toBeTruthy();
   });
 
+  it("does not show Home tips while another route covers Home", () => {
+    mockPathname = "/settings";
+    setupPreferencesMock(true, []);
+    setupMutationMock();
+    setTourTarget("home-edit", fakeView as never);
+
+    renderWithProviders(<HomeTour />);
+
+    expect(
+      screen.queryByText("Arrange the dashboard your way - add, remove and reorder widgets."),
+    ).toBeNull();
+  });
+
   it("skips stops with no registered target (desktop: no hamburger)", () => {
-    setupPreferencesMock(true, ["home:checkin", "home:edit"]);
+    setupPreferencesMock(true, ["home:edit"]);
     setupMutationMock();
     // Do NOT register "home-navigation"
 
@@ -102,17 +123,17 @@ describe("HomeTour", () => {
     expect(screen.queryByText("Got it")).toBeNull();
   });
 
-  it("dismiss stores the stop key; skip-all stores all three home keys", async () => {
+  it("dismiss stores the stop key; skip-all stores both home keys", async () => {
     const mutateAsync = setupMutationMock();
     setupPreferencesMock(true, []);
-    setTourTarget("home-checkin", fakeView as never);
+    setTourTarget("home-edit", fakeView as never);
 
     renderWithProviders(<HomeTour />);
 
     fireEvent.press(await screen.findByText("Got it"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(["home:checkin"]);
+      expect(mutateAsync).toHaveBeenCalledWith(["home:edit"]);
     });
 
     // Reset and re-render to test skip-all.
@@ -123,7 +144,7 @@ describe("HomeTour", () => {
     fireEvent.press(await screen.findByText("Skip all tips"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(["home:checkin", "home:edit", "home:navigation"]);
+      expect(mutateAsync).toHaveBeenCalledWith(["home:edit", "home:navigation"]);
     });
 
     unmount();

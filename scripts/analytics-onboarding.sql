@@ -38,17 +38,14 @@ from public.user_preferences
 where app_onboarding_completed
 group by 1 order by 1;
 
--- 5) Start-here engagement among users with at least one concern
-select case when start_here_dismissed_at is not null then 'dismissed_or_used'
-            else 'still_active' end as start_here_state,
-       count(*)
-from public.user_preferences
-where coalesce(array_length(selected_concerns, 1), 0) > 0
-group by 1;
+-- 5) Current Home widget selection (the wizard never adds hidden defaults)
+select widget_id, count(*) as users
+from public.widget_preferences
+group by 1 order by 2 desc, 1;
 
--- 6) Home tour engagement: how many of the 4 home stops each user has seen
+-- 6) Home tour engagement: how many of the 3 current Home stops each user has seen
 select ( select count(*) from unnest(shown_button_tours) k
-         where k in ('home:checkin','home:dates','home:edit','home:navigation') )
+         where k in ('home:checkin','home:edit','home:navigation') )
          as home_stops_seen,
        count(*) as users
 from public.user_preferences
