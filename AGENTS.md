@@ -96,8 +96,9 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 
 ## Git safety rule
 
-- Agents must never stage files, create commits, or push branches/remotes by themselves.
-- Only perform staging, committing, or pushing if the user explicitly asks for that exact git action.
+- Agents may stage, commit, and push on feature branches, and open PRs, without asking - including in autonomous loops (policy changed 2026-07-14).
+- Direct pushes to `main` only when the user explicitly asks for that; otherwise changes reach `main` through PRs and the required `verify` check.
+- Never force-push, never skip hooks (`--no-verify`), never merge PRs autonomously - merging is a human action.
 
 ## Product discipline
 
