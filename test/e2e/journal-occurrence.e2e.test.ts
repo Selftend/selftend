@@ -21,6 +21,13 @@ async function selectCalendarDay(page: Page, day: number) {
   await dayButton.click();
 }
 
+function expectedOffsetMinutes(date: Date) {
+  // getTimezoneOffset() returns 0 in UTC, and negating 0 yields -0. Postgres
+  // normalizes -0 to 0 for numeric columns, so compare against a normalized
+  // value to avoid Object.is(-0, 0) === false failures in toBe().
+  return -date.getTimezoneOffset() || 0;
+}
+
 function expectSameLocalDay(actualIso: string, expected: Date) {
   const actual = new Date(actualIso);
   expect([actual.getFullYear(), actual.getMonth(), actual.getDate()]).toEqual([
@@ -70,7 +77,7 @@ test.describe("journal occurrence date and time", () => {
       .single();
     if (createdError) throw new Error(createdError.message);
     expectSameLocalDay(created.occurred_at, firstOccurrence);
-    expect(created.occurred_offset_minutes).toBe(-firstOccurrence.getTimezoneOffset());
+    expect(created.occurred_offset_minutes).toBe(expectedOffsetMinutes(firstOccurrence));
 
     await page.getByRole("button", { name: "Edit", exact: true }).click();
     await page.getByRole("button", { name: "Date", exact: true }).click();
@@ -97,6 +104,6 @@ test.describe("journal occurrence date and time", () => {
       .single();
     if (editedError) throw new Error(editedError.message);
     expectSameLocalDay(edited.occurred_at, editedOccurrence);
-    expect(edited.occurred_offset_minutes).toBe(-editedOccurrence.getTimezoneOffset());
+    expect(edited.occurred_offset_minutes).toBe(expectedOffsetMinutes(editedOccurrence));
   });
 });
