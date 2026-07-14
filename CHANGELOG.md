@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/Selftend/selftend/compare/v0.2.1...v0.3.0) (2026-07-14)
+
+
+### Features
+
+* **analytics:** add aggregate engagement report (activation, retention, module adoption) ([0ff68e0](https://github.com/Selftend/selftend/commit/0ff68e0bafcb900d808764ee10731e4a8f6b005f))
+* **reminders:** one-time contextual reminder prompt after first tool completion ([ba75b50](https://github.com/Selftend/selftend/commit/ba75b5012effa832d8c82731ef0ef16329cce06a))
+
+
+### Bug Fixes
+
+* **e2e:** normalize -0 offset in journal occurrence test on UTC runners ([fb2da22](https://github.com/Selftend/selftend/commit/fb2da22eb58b32cefb848e4a8eb33af9eefbd10a))
+* **sentry:** remove wizard-injected Sentry.init with PII and session replay ([eb743cb](https://github.com/Selftend/selftend/commit/eb743cbde507be035c494870d5ec41b5b40bdf5b))
+
 ## [0.2.1](https://github.com/Selftend/selftend/compare/v0.2.0...v0.2.1) (2026-07-12)
 
 
