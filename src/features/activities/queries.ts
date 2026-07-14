@@ -7,6 +7,7 @@ import {
   saveActivity,
 } from "@/src/features/activities/repository";
 import type { ActivityInput } from "@/src/features/activities/types";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const activityKeys = {
   list: (userId: string) => ["activities", "list", userId] as const,
@@ -38,7 +39,8 @@ export function useSaveActivity(userId: string | null) {
   return useMutation({
     mutationFn: ({ input, activityId }: { input: ActivityInput; activityId?: string }) =>
       saveActivity(userId!, input, activityId),
-    onSuccess: async (activity) => {
+    onSuccess: async (activity, { activityId }) => {
+      if (!activityId) requestReminderPrompt("cbt");
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: activityKeys.list(userId) }),

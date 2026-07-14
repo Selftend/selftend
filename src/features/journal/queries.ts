@@ -10,6 +10,7 @@ import {
 } from "@/src/features/journal/repository";
 import type { JournalInput } from "@/src/features/journal/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const journalKeys = {
   all: ["journal"] as const,
@@ -61,7 +62,8 @@ export function useSaveJournalEntry(userId: string | null) {
     mutationFn: ({ input, entryId }: { input: JournalInput; entryId?: string }) =>
       saveJournalEntry(userId!, input, entryId),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
-    onSuccess: async () => {
+    onSuccess: async (_data, { entryId }) => {
+      if (!entryId) requestReminderPrompt("journal");
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: journalKeys.all });
     },

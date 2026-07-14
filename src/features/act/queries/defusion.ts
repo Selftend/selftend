@@ -8,6 +8,7 @@ import {
 } from "@/src/features/act/repository";
 import type { DefusionLogInput } from "@/src/features/act/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { actKeys } from "./keys";
 
 export function useDefusionLogs(userId: string | null, limit = 30) {
@@ -34,6 +35,7 @@ export function useSaveDefusionLog(userId: string | null) {
     mutationFn: (input: DefusionLogInput) => saveDefusionLog(userId!, input),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
+      requestReminderPrompt("act");
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.defusionList(userId) });
     },

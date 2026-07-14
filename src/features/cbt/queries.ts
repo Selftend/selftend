@@ -8,6 +8,7 @@ import {
   saveThoughtRecord,
 } from "@/src/features/cbt/repository";
 import type { ThoughtRecordInput } from "@/src/features/cbt/types";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const cbtKeys = {
   all: ["cbt"] as const,
@@ -50,7 +51,8 @@ export function useSaveThoughtRecord(userId: string | null) {
   return useMutation({
     mutationFn: ({ input, recordId }: { input: ThoughtRecordInput; recordId?: string }) =>
       saveThoughtRecord(userId!, input, recordId),
-    onSuccess: async (record) => {
+    onSuccess: async (record, { recordId }) => {
+      if (!recordId) requestReminderPrompt("cbt");
       if (!userId) {
         return;
       }

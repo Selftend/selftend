@@ -16,6 +16,7 @@ import type {
   ExposureItemInput,
   ExposureSessionInput,
 } from "@/src/features/exposure/types";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const exposureKeys = {
   all: ["exposure"] as const,
@@ -106,6 +107,7 @@ export function useSaveExposureSession(userId: string | null, hierarchyId: strin
       saveSession(userId!, itemId, input),
     meta: { suppressGlobalErrorToast: true }, // detail screen shows its own save-error toast
     onSuccess: async () => {
+      requestReminderPrompt("cbt");
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: exposureKeys.all }),

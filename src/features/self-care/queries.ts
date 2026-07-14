@@ -6,6 +6,7 @@ import {
   upsertSelfCareLog,
 } from "@/src/features/self-care/repository";
 import type { SelfCareLogInput } from "@/src/features/self-care/types";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const selfCareKeys = {
   all: ["self-care"] as const,
@@ -38,6 +39,9 @@ export function useUpsertSelfCareLog(userId: string | null) {
     mutationFn: (input: SelfCareLogInput) => upsertSelfCareLog(userId!, input),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async (log) => {
+      // The upsert merges on (user_id, log_date); only a fresh insert (audit
+      // timestamps identical) is a completion, re-saving today's log is an edit.
+      if (log.createdAt === log.updatedAt) requestReminderPrompt("cbt");
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: selfCareKeys.list(userId) }),

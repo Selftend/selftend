@@ -7,6 +7,7 @@ import {
   saveAngerLog,
 } from "@/src/features/anger/repository";
 import type { AngerLogInput } from "@/src/features/anger/types";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const angerKeys = {
   all: ["anger"] as const,
@@ -36,7 +37,8 @@ export function useSaveAngerLog(userId: string | null) {
     mutationFn: ({ input, logId }: { input: AngerLogInput; logId?: string }) =>
       saveAngerLog(userId!, input, logId),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
-    onSuccess: async (log) => {
+    onSuccess: async (log, { logId }) => {
+      if (!logId) requestReminderPrompt("cbt");
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: angerKeys.list(userId) }),

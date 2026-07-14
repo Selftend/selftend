@@ -9,6 +9,7 @@ import {
 } from "@/src/features/mood/repository";
 import type { MoodInput } from "@/src/features/mood/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const moodKeys = {
   all: ["mood"] as const,
@@ -69,7 +70,8 @@ export function useSaveMoodLog(userId: string | null) {
     mutationFn: ({ input, moodLogId }: { input: MoodInput; moodLogId?: string }) =>
       saveMoodLog(userId!, input, moodLogId),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
-    onSuccess: async () => {
+    onSuccess: async (_data, { moodLogId }) => {
+      if (!moodLogId) requestReminderPrompt("mood");
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: moodKeys.all });
     },

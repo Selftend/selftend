@@ -14,6 +14,7 @@ import type {
   MeditationProgramStateInput,
   MeditationSessionInput,
 } from "@/src/features/meditation/types";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const meditationKeys = {
   all: ["meditation"] as const,
@@ -62,6 +63,7 @@ export function useSaveMeditationSession(userId: string | null) {
   return useMutation({
     mutationFn: (input: MeditationSessionInput) => saveMeditationSession(userId!, input),
     onSuccess: async () => {
+      requestReminderPrompt("meditation");
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: meditationKeys.list(userId) });
       await queryClient.invalidateQueries({ queryKey: meditationKeys.programState(userId) });

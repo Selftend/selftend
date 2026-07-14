@@ -7,6 +7,7 @@ import {
 } from "@/src/features/mindfulness/repository";
 import type { MindfulnessSessionInput } from "@/src/features/mindfulness/types";
 import { groundingSlugs } from "@/src/constants/grounding";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const groundingKeys = {
   list: (userId: string) => ["grounding", "list", userId] as const,
@@ -37,6 +38,7 @@ export function useSaveGroundingSession(userId: string | null) {
     mutationFn: (input: MindfulnessSessionInput) => saveMindfulnessSession(userId!, input),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
+      requestReminderPrompt("grounding");
       if (!userId) return;
       // Shares the mindfulness_sessions table with breathing/mindfulness - refresh all three.
       await Promise.all([

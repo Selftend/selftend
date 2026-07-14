@@ -12,6 +12,7 @@ import {
 } from "@/src/features/gratitude/repository";
 import type { GratitudeEntry, GratitudeInput } from "@/src/features/gratitude/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const gratitudeKeys = {
   all: ["gratitude"] as const,
@@ -78,7 +79,8 @@ export function useSaveGratitudeEntry(userId: string | null) {
     mutationFn: ({ input, entryId }: { input: GratitudeInput; entryId?: string }) =>
       saveGratitudeEntry(userId!, input, entryId),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
-    onSuccess: async () => {
+    onSuccess: async (_data, { entryId }) => {
+      if (!entryId) requestReminderPrompt("gratitude");
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: gratitudeKeys.all });
     },

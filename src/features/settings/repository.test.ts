@@ -110,6 +110,43 @@ describe("act program preference flags", () => {
   });
 });
 
+describe("reminder prompt preference fields", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("defaults reminderPromptedTools to an empty list", () => {
+    expect(defaultUserPreferences.reminderPromptedTools).toEqual([]);
+  });
+
+  it("maps reminder_prompted_tools from the user_preferences row", async () => {
+    mockPreferenceSelect({
+      reminder_prompted_tools: ["mood", "cbt"],
+      user_id: "user-1",
+    });
+
+    await expect(getUserPreferences("user-1")).resolves.toMatchObject({
+      reminderPromptedTools: ["mood", "cbt"],
+    });
+  });
+
+  it("includes reminder_prompted_tools when updating preferences", async () => {
+    const { upsert } = mockPreferenceUpdate({ user_id: "user-1" });
+
+    await updateUserPreferences("user-1", {
+      ...defaultUserPreferences,
+      reminderPromptedTools: ["journal"],
+    });
+
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reminder_prompted_tools: ["journal"],
+      }),
+      expect.anything(),
+    );
+  });
+});
+
 describe("settings repository", () => {
   beforeEach(() => {
     jest.clearAllMocks();

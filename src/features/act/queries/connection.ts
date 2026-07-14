@@ -8,6 +8,7 @@ import {
 } from "@/src/features/act/repository";
 import type { ConnectionLogInput } from "@/src/features/act/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { actKeys } from "./keys";
 
 export function useConnectionLogs(userId: string | null, limit = 30) {
@@ -32,6 +33,7 @@ export function useSaveConnectionLog(userId: string | null) {
     mutationFn: (input: ConnectionLogInput) => saveConnectionLog(userId!, input),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
+      requestReminderPrompt("act");
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.connectionList(userId) });
     },

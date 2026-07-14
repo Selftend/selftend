@@ -3,6 +3,7 @@ import {
   sanitizeEnabledModules,
   type ButtonTourKey,
   type CookieConsent,
+  type ReminderPromptedTool,
   type UserPreferences,
 } from "@/src/features/modules/types";
 import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
@@ -91,6 +92,7 @@ interface UserPreferenceRow {
   active_strategies: string[] | null;
   start_here_dismissed_at: string | null;
   shown_button_tours: string[] | null;
+  reminder_prompted_tools: string[] | null;
   breath_sound_id: string | null;
   ambient_sound_id: string | null;
   breath_volume: number | null;
@@ -200,6 +202,7 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     activeStrategies: row.active_strategies ?? [],
     startHereDismissedAt: row.start_here_dismissed_at ?? null,
     shownButtonTours: (row.shown_button_tours ?? []) as ButtonTourKey[],
+    reminderPromptedTools: (row.reminder_prompted_tools ?? []) as ReminderPromptedTool[],
     breathSoundId: row.breath_sound_id ?? defaultUserPreferences.breathSoundId,
     ambientSoundId: row.ambient_sound_id ?? defaultUserPreferences.ambientSoundId,
     breathVolume: row.breath_volume ?? defaultUserPreferences.breathVolume,
@@ -323,6 +326,7 @@ export async function updateUserPreferences(userId: string, preferences: UserPre
     active_strategies: preferences.activeStrategies,
     start_here_dismissed_at: preferences.startHereDismissedAt,
     shown_button_tours: preferences.shownButtonTours,
+    reminder_prompted_tools: preferences.reminderPromptedTools,
     breath_sound_id: preferences.breathSoundId,
     ambient_sound_id: preferences.ambientSoundId,
     breath_volume: preferences.breathVolume,

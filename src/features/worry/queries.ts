@@ -8,6 +8,7 @@ import {
   toggleWorryResolved,
 } from "@/src/features/worry/repository";
 import type { WorryEntryInput } from "@/src/features/worry/types";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const worryKeys = {
   all: ["worry"] as const,
@@ -38,7 +39,8 @@ export function useSaveWorryEntry(userId: string | null) {
     mutationFn: ({ input, entryId }: { input: WorryEntryInput; entryId?: string }) =>
       saveWorryEntry(userId!, input, entryId),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
-    onSuccess: async (entry) => {
+    onSuccess: async (entry, { entryId }) => {
+      if (!entryId) requestReminderPrompt("cbt");
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: worryKeys.list(userId) }),

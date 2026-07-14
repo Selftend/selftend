@@ -5,6 +5,10 @@ export type ButtonTourAction = "tune" | "notifications" | "program" | "info";
 // ("cbt:info"), or a home tour stop ("home:edit").
 export type ButtonTourKey = string;
 
+// A notification target key ("mood", "cbt", ...) the one-time contextual
+// reminder prompt has already been shown for.
+export type ReminderPromptedTool = string;
+
 export type GratitudeLevel = 1 | 2 | 3;
 
 export interface CookieConsent {
@@ -96,6 +100,7 @@ export interface UserPreferences {
   activeStrategies: string[];
   startHereDismissedAt: string | null;
   shownButtonTours: ButtonTourKey[];
+  reminderPromptedTools: ReminderPromptedTool[];
   breathSoundId: string;
   ambientSoundId: string;
   breathVolume: number;
@@ -187,6 +192,7 @@ export const defaultUserPreferences: UserPreferences = {
   activeStrategies: [],
   startHereDismissedAt: null,
   shownButtonTours: [],
+  reminderPromptedTools: [],
   breathSoundId: "guided",
   ambientSoundId: "none",
   breathVolume: 0.7,

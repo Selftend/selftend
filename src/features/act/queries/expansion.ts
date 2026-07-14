@@ -8,6 +8,7 @@ import {
 } from "@/src/features/act/repository";
 import type { ExpansionLogInput } from "@/src/features/act/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { actKeys } from "./keys";
 
 export function useExpansionLogs(userId: string | null, limit = 30) {
@@ -32,6 +33,7 @@ export function useSaveExpansionLog(userId: string | null) {
     mutationFn: (input: ExpansionLogInput) => saveExpansionLog(userId!, input),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
+      requestReminderPrompt("act");
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.expansionList(userId) });
     },

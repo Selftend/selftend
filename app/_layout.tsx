@@ -23,6 +23,7 @@ import { AppShell } from "@/src/components/app/app-shell";
 import { AppErrorBoundary } from "@/src/components/app/app-error-boundary";
 import { AppToast } from "@/src/components/app/app-toast";
 import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner";
+import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt-card";
 import { useAppColorScheme } from "@/src/lib/color-scheme";
 import { AppProviders } from "@/src/providers/app-providers";
 import { NAV_THEME, THEME_VARIABLES } from "@/lib/theme";
@@ -90,6 +91,7 @@ export default Sentry.wrap(function RootLayout() {
             <AppErrorBoundary>
               <AppShell />
               <CookieConsentBanner />
+              <ReminderPromptCard />
               <AppToast />
             </AppErrorBoundary>
             <PortalHost />

@@ -115,5 +115,11 @@
   "sections": {
     "modules": "Modules",
     "tools": "Tools"
+  },
+  "reminderPrompt": {
+    "title": "Nice work. Want a daily reminder?",
+    "description": "A gentle nudge for {{label}} around this time each day. You can change or turn it off anytime.",
+    "accept": "Set reminder",
+    "decline": "No thanks"
   }
 }

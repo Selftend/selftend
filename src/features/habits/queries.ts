@@ -13,6 +13,7 @@ import {
 } from "@/src/features/habits/repository";
 import type { HabitInput } from "@/src/features/habits/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const habitKeys = {
   all: ["habits"] as const,
@@ -102,7 +103,9 @@ export function useToggleHabitLog(userId: string | null) {
   return useMutation({
     mutationFn: ({ habitId, loggedOn }: { habitId: string; loggedOn: string }) =>
       toggleHabitLog(userId!, habitId, loggedOn),
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      // Only a tick (log created) is a completion; unticking is not.
+      if (data.ticked) requestReminderPrompt("habits");
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: habitKeys.all });
     },
