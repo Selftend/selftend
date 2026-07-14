@@ -116,3 +116,17 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - "AI therapist" or "AI counselor" framing.
 - Large dependency additions without a clear reason.
 - Casual copying from AGPL or GPL projects without tracking license implications.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (Selftend/selftend) via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage labels, used as-is (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` at the repo root plus `docs/adr/`. See `docs/agents/domain.md`.
