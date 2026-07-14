@@ -36,11 +36,12 @@ const STEPS: Step[] = [
   { key: "journal", label: "Journal", icon: "edit-note" },
 ];
 
-const VARIANTS = ["A", "B", "C"];
+const VARIANTS = ["A", "B", "C", "D"];
 const LABELS = {
   A: "Bottom card (precedence)",
   B: "Top snackbar (coexist)",
   C: "Full sheet (takeover)",
+  D: "Floating button → sheet (on demand)",
 };
 
 export default function RoutineNextActionPrototype() {
@@ -68,8 +69,9 @@ export default function RoutineNextActionPrototype() {
   //  A - routine card takes the bottom slot; reminder prompt is DEFERRED.
   //  B - routine nudge sits at the top; reminder card still shows at the bottom.
   //  C - the sheet owns the moment; reminder prompt is SUPPRESSED while open.
-  // So the reminder card only ever renders here under variant B.
-  const reminderShows = reminderEligible && variant === "B";
+  //  D - nothing takes over; a floating button opens the sheet on demand, so
+  //      the reminder card is free to show (like B).
+  const reminderShows = reminderEligible && (variant === "B" || variant === "D");
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
@@ -83,6 +85,7 @@ export default function RoutineNextActionPrototype() {
       {variant === "A" ? <VariantA {...ctx} /> : null}
       {variant === "B" ? <VariantB {...ctx} reminderEligible={reminderEligible} /> : null}
       {variant === "C" ? <VariantC key={justCompleted} {...ctx} /> : null}
+      {variant === "D" ? <VariantD {...ctx} /> : null}
 
       <PrototypeControls
         justCompleted={justCompleted}
@@ -229,11 +232,61 @@ function VariantB(ctx: Ctx & { reminderEligible: boolean }) {
 // routine's OWN opt-in reminder.
 // ---------------------------------------------------------------------------
 function VariantC(ctx: Ctx) {
+  // Auto-opens (takeover) as soon as a step completes.
   const [open, setOpen] = useState(true);
+  return <RoutineSheet ctx={ctx} open={open} onClose={() => setOpen(false)} />;
+}
+
+// ---------------------------------------------------------------------------
+// VARIANT D - Floating button that opens the C sheet on demand. Nothing takes
+// over the post-save moment: a persistent progress FAB sits in the corner, the
+// reminder card is free to show, and the rich step list is a *pull*, not a
+// push. Tapping the FAB opens the same sheet as C.
+// ---------------------------------------------------------------------------
+function VariantD(ctx: Ctx) {
+  const insets = useSafeAreaInsets();
+  const [open, setOpen] = useState(false);
   return (
-    <Modal transparent visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
+    <>
+      <View
+        className="absolute right-4 z-[72]"
+        style={{ pointerEvents: "box-none", bottom: insets.bottom + 20 }}
+      >
+        <Pressable
+          onPress={() => setOpen(true)}
+          className="flex-row items-center gap-2 rounded-full border border-[hsl(var(--iris)/0.30)] bg-[hsl(var(--iris)/0.12)] py-2.5 pl-3 pr-4 shadow-md"
+          accessibilityLabel={`Open ${ctx.routineName}, ${ctx.doneCount} of ${ctx.total} done`}
+        >
+          <View className="size-8 items-center justify-center rounded-full bg-background">
+            <Icon
+              name={ctx.isLast ? "check-circle" : "playlist-play"}
+              className="size-5 text-[hsl(var(--iris))]"
+            />
+          </View>
+          {ctx.isLast ? (
+            <Text className="text-sm font-semibold text-[hsl(var(--iris))]">Done</Text>
+          ) : (
+            <View className="gap-1">
+              <Text className="text-xs font-semibold text-[hsl(var(--iris))]">
+                {ctx.doneCount}/{ctx.total}
+              </Text>
+              <ProgressDots done={ctx.doneCount} total={ctx.total} />
+            </View>
+          )}
+        </Pressable>
+      </View>
+      <RoutineSheet ctx={ctx} open={open} onClose={() => setOpen(false)} />
+    </>
+  );
+}
+
+// The "continue your routine" sheet body, shared by C (auto-opens) and D
+// (opens from the floating button). Whole step list + next + completion.
+function RoutineSheet({ ctx, open, onClose }: { ctx: Ctx; open: boolean; onClose: () => void }) {
+  return (
+    <Modal transparent visible={open} animationType="slide" onRequestClose={onClose}>
       {/* Backdrop and panel are siblings, not nested (Android touch bug). */}
-      <Pressable className="absolute inset-0 bg-black/40" onPress={() => setOpen(false)} />
+      <Pressable className="absolute inset-0 bg-black/40" onPress={onClose} />
       <View className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-border bg-background p-5 pb-8">
         <View className="mb-4 items-center">
           <View className="h-1 w-10 rounded-full bg-muted" />
@@ -292,21 +345,21 @@ function VariantC(ctx: Ctx) {
         <View className="mt-5 gap-2">
           {ctx.isLast ? (
             <>
-              <Button variant="tinted" tint={ROUTINE_TINT} onPress={() => setOpen(false)}>
+              <Button variant="tinted" tint={ROUTINE_TINT} onPress={onClose}>
                 <Icon name="notifications-none" className="size-4 text-[hsl(var(--iris))]" />
                 <Text className="text-[hsl(var(--iris))]">Remind me daily</Text>
               </Button>
-              <Button variant="ghost" onPress={() => setOpen(false)}>
+              <Button variant="ghost" onPress={onClose}>
                 <Text className="text-muted-foreground">Close</Text>
               </Button>
             </>
           ) : (
             <>
-              <Button onPress={() => setOpen(false)}>
+              <Button onPress={onClose}>
                 <Text>Do next step: {ctx.next?.label}</Text>
                 <Icon name="arrow-forward" className="size-4 text-primary-foreground" />
               </Button>
-              <Button variant="ghost" onPress={() => setOpen(false)}>
+              <Button variant="ghost" onPress={onClose}>
                 <Text className="text-muted-foreground">Not now</Text>
               </Button>
             </>
@@ -474,7 +527,9 @@ function PrototypeControls({
           ? "A: routine card takes the bottom slot; reminder deferred."
           : variant === "B"
             ? "B: nudge at top; reminder card still shows at bottom."
-            : "C: sheet takes over; reminder suppressed while open."}
+            : variant === "C"
+              ? "C: sheet takes over; reminder suppressed while open."
+              : "D: floating button opens the sheet on demand; nothing takes over; reminder free to show."}
       </Text>
     </View>
   );
