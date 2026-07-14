@@ -22,9 +22,20 @@ Contributors must not add ad-hoc tracking without explicit review through the ro
 
 #### Phase 1 in use (2026-07)
 
-`npm run analytics:onboarding` runs `scripts/analytics-onboarding.sql` (aggregate-only).
+Two aggregate-only reports run through the shared runner `scripts/analytics-report.js`.
 Pass `--local` to run against the local Docker stack; for the linked production
 project, set `SUPABASE_DB_URL` (from the dashboard) in the environment first.
+
+`npm run analytics:engagement` runs `scripts/analytics-engagement.sql` (added
+2026-07-14). It covers: activation (first row in any user-content table, ever
+and within 72h of signup; setup actions excluded), retention (signup-anchored
+weekly cohorts, W1-W4, retained = any content row in the window, percentages
+over mature users only), module adoption (per enableable module: % enabled,
+% with >=1 record, % enabled-but-never-used), and core tool usage (mood,
+journal, sleep, habits, mindfulness — always available, so usage % only).
+All queries count distinct users; none emit per-user rows.
+
+`npm run analytics:onboarding` runs `scripts/analytics-onboarding.sql`.
 The report covers: signups, widget-suggestion wizard conversion, finish-vs-skip
 (`user_preferences.app_onboarding_completed_via` / `_at`, written at wizard
 completion), concern distribution, current Home widget selection, and home-tour
@@ -86,6 +97,13 @@ When this phase begins: choose Sentry self-hosted or GlitchTip; add the SDK depe
 ### Phase 3: Opt-in product analytics (only if Phase 1 is insufficient)
 
 Only proceed if Supabase aggregate queries cannot answer a concrete product question that requires client-side event data.
+
+> **Status (2026-07-14): considered and deferred.** Reviewed ahead of closed
+> testing; no concrete product question required client-side events. The
+> candidate questions (silent churn location, in-wizard abandonment, feature
+> discovery) are better answered during closed testing by talking to testers
+> directly — opt-in event data from a cohort of tens of users would be too
+> sparse to beat that. Phase 1 was extended with the engagement report instead.
 
 #### Tool options (self-hostable, privacy-respecting)
 

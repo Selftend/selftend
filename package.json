@@ -39,7 +39,8 @@
     "db:reset": "node scripts/db-reset.js",
     "db:status": "npm exec supabase -- status",
     "db:push:prod": "npm exec supabase -- db push --linked",
-    "analytics:onboarding": "node scripts/analytics-onboarding.js",
+    "analytics:onboarding": "node scripts/analytics-report.js onboarding",
+    "analytics:engagement": "node scripts/analytics-report.js engagement",
     "prepare": "husky",
     "android": "expo run:android"
   },
