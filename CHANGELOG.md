@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/Selftend/selftend/compare/v0.3.0...v0.3.1) (2026-07-14)
+
+
+### Bug Fixes
+
+* **overlays:** pass pointerEvents box-none as prop so overlays don't swallow taps ([#36](https://github.com/Selftend/selftend/issues/36)) ([a4d8e9e](https://github.com/Selftend/selftend/commit/a4d8e9e78681d091a589e95d5959bf7d9d02d5f1))
+
 ## [0.3.0](https://github.com/Selftend/selftend/compare/v0.2.1...v0.3.0) (2026-07-14)
 
 
