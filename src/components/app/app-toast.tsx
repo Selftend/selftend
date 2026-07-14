@@ -39,8 +39,12 @@ export function AppToast() {
 
   return (
     <View
+      // box-none must be the prop, not style.pointerEvents: "box-none" is invalid CSS
+      // and gets ignored when passed via NativeWind's style, leaving this overlay
+      // interactive and able to swallow taps. The prop uses RNW's box-none polyfill.
+      pointerEvents="box-none"
       className="absolute inset-x-0 z-[80] items-center px-4"
-      style={{ pointerEvents: "box-none", top: insets.top + 12 }}
+      style={{ top: insets.top + 12 }}
     >
       <Pressable
         accessibilityHint={t("toast.dismissHint")}
