@@ -1,0 +1,682 @@
+<title>Routine management — prototype (#29)</title>
+<!--
+  THROWAWAY PROTOTYPE for Selftend wayfinder ticket #29 "Routine management page prototype".
+  Question: what does the routine management surface look like?
+  Three radically different variants on one route, switchable via the floating bottom bar
+  (or ?variant=A|B|C, or ← / → arrow keys). NOT wired to real RN components — visual mock only.
+  Faithful to the app's tokens: primary hsl(262 62% 56%), per-tool accents, rounded-2xl cards.
+  Terms follow CONTEXT.md ubiquitous language: routine / step / step-completion / routine status
+  / reminder / anchor. No streaks, opt-in reminders, neutral "unfinished = fine" status.
+-->
+<style>
+  :root {
+    --bg: 260 30% 98.5%;
+    --card: 0 0% 100%;
+    --card-2: 260 24% 97%;
+    --fg: 260 20% 14%;
+    --muted: 260 10% 46%;
+    --border: 260 18% 90%;
+    --border-strong: 260 16% 82%;
+    --primary: 262 62% 56%;
+    --primary-fg: 0 0% 100%;
+    --ring: 262 62% 56%;
+    /* per-tool accent hues (mirror src/lib/design-tokens + tool-accent.ts) */
+    --think: 38 92% 48%;
+    --act: 142 52% 40%;
+    --be: 322 62% 54%;
+    --aqua: 190 68% 42%;
+    --iris: 250 66% 62%;
+    --ink: 220 26% 44%;
+    --clay: 18 56% 48%;
+    /* semantic status (separate from accent) */
+    --ok: 142 52% 40%;
+    --wip: 262 62% 56%;
+    --shadow: 260 30% 20%;
+    --sheet-scrim: 260 30% 14%;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: 260 22% 8%;
+      --card: 260 18% 12.5%;
+      --card-2: 260 16% 15%;
+      --fg: 260 18% 92%;
+      --muted: 260 10% 62%;
+      --border: 260 14% 20%;
+      --border-strong: 260 14% 27%;
+      --primary: 262 70% 68%;
+      --primary-fg: 260 30% 10%;
+      --think: 38 88% 60%;
+      --act: 142 46% 55%;
+      --be: 322 66% 68%;
+      --aqua: 190 62% 58%;
+      --iris: 250 70% 74%;
+      --ink: 220 30% 68%;
+      --clay: 18 60% 62%;
+      --ok: 142 46% 55%;
+      --wip: 262 70% 68%;
+      --shadow: 260 40% 2%;
+      --sheet-scrim: 260 40% 3%;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: 260 22% 8%; --card: 260 18% 12.5%; --card-2: 260 16% 15%;
+    --fg: 260 18% 92%; --muted: 260 10% 62%; --border: 260 14% 20%; --border-strong: 260 14% 27%;
+    --primary: 262 70% 68%; --primary-fg: 260 30% 10%;
+    --think: 38 88% 60%; --act: 142 46% 55%; --be: 322 66% 68%; --aqua: 190 62% 58%;
+    --iris: 250 70% 74%; --ink: 220 30% 68%; --clay: 18 60% 62%;
+    --ok: 142 46% 55%; --wip: 262 70% 68%; --shadow: 260 40% 2%; --sheet-scrim: 260 40% 3%;
+  }
+  :root[data-theme="light"] {
+    --bg: 260 30% 98.5%; --card: 0 0% 100%; --card-2: 260 24% 97%;
+    --fg: 260 20% 14%; --muted: 260 10% 46%; --border: 260 18% 90%; --border-strong: 260 16% 82%;
+    --primary: 262 62% 56%; --primary-fg: 0 0% 100%;
+    --think: 38 92% 48%; --act: 142 52% 40%; --be: 322 62% 54%; --aqua: 190 68% 42%;
+    --iris: 250 66% 62%; --ink: 220 26% 44%; --clay: 18 56% 48%;
+    --ok: 142 52% 40%; --wip: 262 62% 56%; --shadow: 260 30% 20%; --sheet-scrim: 260 30% 14%;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: hsl(var(--bg));
+    color: hsl(var(--fg));
+    font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  /* ---------- app shell ---------- */
+  .app { display: grid; grid-template-columns: 256px 1fr; min-height: 100vh; }
+  .sidebar {
+    border-right: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    padding: 20px 14px;
+    display: flex; flex-direction: column; gap: 4px;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; }
+  .brand .dot { width: 26px; height: 26px; border-radius: 8px;
+    background: linear-gradient(140deg, hsl(var(--primary)), hsl(var(--iris))); }
+  .brand b { font-size: 16px; letter-spacing: -.01em; }
+  .nav-group-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .09em; color: hsl(var(--muted)); padding: 14px 10px 6px; }
+  .nav-item { display: flex; align-items: center; gap: 11px; padding: 8px 10px;
+    border-radius: 10px; color: hsl(var(--fg)); text-decoration: none; font-size: 14px; }
+  .nav-item .ic { color: hsl(var(--muted)); flex: 0 0 auto; }
+  .nav-item:hover { background: hsl(var(--card-2)); }
+  .nav-item.active { background: hsl(var(--primary) / .12); color: hsl(var(--primary)); font-weight: 600; }
+  .nav-item.active .ic { color: hsl(var(--primary)); }
+  .nav-item .new { margin-left: auto; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: hsl(var(--primary)); background: hsl(var(--primary)/.12);
+    padding: 2px 6px; border-radius: 999px; }
+  .nav-divider { height: 1px; background: hsl(var(--border)); margin: 12px 6px; }
+
+  .main { padding: 30px 34px 120px; max-width: 1040px; }
+  .page-head { margin-bottom: 22px; }
+  .crumb { font-size: 12px; color: hsl(var(--muted)); margin-bottom: 6px; }
+  .crumb b { color: hsl(var(--fg)); font-weight: 600; }
+  h1.title { font-size: 26px; letter-spacing: -.02em; margin: 0 0 6px; text-wrap: balance; }
+  .subtitle { color: hsl(var(--muted)); margin: 0; max-width: 62ch; }
+
+  /* ---------- primitives ---------- */
+  .btn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid transparent;
+    border-radius: 12px; padding: 9px 14px; font: inherit; font-weight: 600; font-size: 14px;
+    cursor: pointer; background: none; color: inherit; }
+  .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-fg)); }
+  .btn-primary:hover { filter: brightness(1.05); }
+  .btn-ghost { color: hsl(var(--fg)); }
+  .btn-ghost:hover { background: hsl(var(--card-2)); }
+  .btn-outline { border-color: hsl(var(--border-strong)); }
+  .btn-outline:hover { background: hsl(var(--card-2)); }
+  .btn-sm { padding: 6px 10px; font-size: 13px; border-radius: 10px; }
+  .btn-danger { color: hsl(0 62% 52%); }
+  :root[data-theme="dark"] .btn-danger, :root:not([data-theme="light"]) .btn-danger { }
+
+  .card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 18px; }
+  .icon-chip { width: 38px; height: 38px; border-radius: 11px; display: inline-flex;
+    align-items: center; justify-content: center; flex: 0 0 auto; }
+  .icon-chip.sm { width: 30px; height: 30px; border-radius: 9px; }
+  .icon-chip.lg { width: 46px; height: 46px; border-radius: 13px; }
+
+  .step-chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px 5px 6px;
+    border-radius: 999px; background: hsl(var(--card-2)); border: 1px solid hsl(var(--border));
+    font-size: 13px; font-weight: 500; }
+  .step-chip .icon-chip.sm { width: 22px; height: 22px; border-radius: 7px; }
+
+  .status-dot { width: 9px; height: 9px; border-radius: 999px; flex: 0 0 auto; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600;
+    padding: 4px 10px; border-radius: 999px; }
+  .pill-muted { background: hsl(var(--card-2)); color: hsl(var(--muted)); border: 1px solid hsl(var(--border)); }
+  .pill-ok { background: hsl(var(--ok)/.12); color: hsl(var(--ok)); }
+  .pill-wip { background: hsl(var(--wip)/.12); color: hsl(var(--wip)); }
+
+  /* toggle */
+  .toggle { --w: 42px; --h: 24px; position: relative; width: var(--w); height: var(--h);
+    border-radius: 999px; background: hsl(var(--border-strong)); border: none; cursor: pointer;
+    flex: 0 0 auto; transition: background .16s; }
+  .toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+    border-radius: 999px; background: #fff; transition: transform .16s; box-shadow: 0 1px 2px hsl(var(--shadow)/.4); }
+  .toggle[aria-checked="true"] { background: hsl(var(--primary)); }
+  .toggle[aria-checked="true"]::after { transform: translateX(18px); }
+
+  .muted { color: hsl(var(--muted)); }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .between { justify-content: space-between; }
+  .grow { flex: 1 1 auto; min-width: 0; }
+  .stack { display: flex; flex-direction: column; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* reorder mini-buttons */
+  .ro { display: inline-flex; flex-direction: column; }
+  .icon-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid hsl(var(--border));
+    background: hsl(var(--card)); color: hsl(var(--muted)); cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; }
+  .icon-btn:hover { background: hsl(var(--card-2)); color: hsl(var(--fg)); }
+  .icon-btn:disabled { opacity: .35; cursor: default; }
+  .handle { color: hsl(var(--muted)); cursor: grab; }
+
+  /* empty */
+  .empty { text-align: center; padding: 34px 20px; }
+
+  /* ---------- variant A: list ---------- */
+  .routine-card { padding: 16px 18px; margin-bottom: 14px; }
+  .step-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+  /* ---------- variant B: accordion ---------- */
+  .acc-item { margin-bottom: 12px; overflow: hidden; }
+  .acc-head { padding: 15px 18px; cursor: pointer; }
+  .acc-body { border-top: 1px solid hsl(var(--border)); padding: 6px 18px 18px;
+    background: hsl(var(--card-2)/.5); }
+  .chev { transition: transform .18s; color: hsl(var(--muted)); }
+  .acc-item.open .chev { transform: rotate(90deg); }
+  .step-edit-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; }
+  .step-edit-row + .step-edit-row { border-top: 1px dashed hsl(var(--border)); }
+  .field-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+    color: hsl(var(--muted)); margin: 16px 0 7px; }
+  .text-input { width: 100%; padding: 10px 12px; border-radius: 11px; border: 1px solid hsl(var(--border-strong));
+    background: hsl(var(--card)); color: hsl(var(--fg)); font: inherit; }
+  .text-input:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; border-color: transparent; }
+
+  /* ---------- variant C: builder ---------- */
+  .builder { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: start; }
+  .rail { padding: 10px; }
+  .rail-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 12px;
+    cursor: pointer; }
+  .rail-item:hover { background: hsl(var(--card-2)); }
+  .rail-item.active { background: hsl(var(--primary)/.12); }
+  .rail-item.active .rail-name { color: hsl(var(--primary)); font-weight: 700; }
+  .builder-pane { padding: 20px 22px; }
+  .chain { display: flex; flex-direction: column; gap: 0; margin: 6px 0 4px; }
+  .chain-step { display: flex; align-items: center; gap: 13px; padding: 12px 0; position: relative; }
+  .chain-step:not(:last-child)::before { content: ""; position: absolute; left: 22px; top: 46px;
+    bottom: -4px; width: 2px; background: hsl(var(--border-strong)); }
+  .seq { width: 26px; height: 26px; border-radius: 999px; background: hsl(var(--primary)/.14);
+    color: hsl(var(--primary)); font-size: 12px; font-weight: 700; display: inline-flex;
+    align-items: center; justify-content: center; flex: 0 0 auto; z-index: 1; }
+  .palette { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .palette-chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 8px;
+    border-radius: 999px; border: 1px solid hsl(var(--border-strong)); background: hsl(var(--card));
+    cursor: pointer; font-size: 13px; font-weight: 600; }
+  .palette-chip:hover { background: hsl(var(--card-2)); }
+  .palette-chip:disabled { opacity: .4; cursor: default; }
+  .palette-chip .badge-rec { font-size: 10px; font-weight: 700; color: hsl(var(--ok)); }
+
+  /* ---------- annotation callout ---------- */
+  .note { display: flex; gap: 11px; padding: 12px 14px; border-radius: 13px; margin-top: 22px;
+    background: hsl(var(--iris)/.09); border: 1px solid hsl(var(--iris)/.28); font-size: 13px; }
+  .note .ic { color: hsl(var(--iris)); flex: 0 0 auto; margin-top: 1px; }
+  .note b { color: hsl(var(--fg)); }
+  .note ul { margin: 6px 0 0; padding-left: 18px; }
+  .note li { margin: 3px 0; }
+
+  /* ---------- sheet (variant A editor) ---------- */
+  .scrim { position: fixed; inset: 0; background: hsl(var(--sheet-scrim)/.55); backdrop-filter: blur(2px);
+    display: none; align-items: flex-end; justify-content: center; z-index: 40; }
+  .scrim.open { display: flex; }
+  .sheet { background: hsl(var(--card)); width: min(560px, 100%); max-height: 88vh; overflow-y: auto;
+    border-radius: 22px 22px 0 0; border: 1px solid hsl(var(--border)); padding: 8px 22px 26px;
+    animation: rise .22s ease; }
+  @keyframes rise { from { transform: translateY(24px); opacity: .4; } to { transform: none; opacity: 1; } }
+  .grabber { width: 40px; height: 4px; border-radius: 999px; background: hsl(var(--border-strong));
+    margin: 8px auto 14px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  }
+
+  /* ---------- floating switcher ---------- */
+  .switcher { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 60;
+    display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 999px;
+    background: hsl(var(--fg)); color: hsl(var(--bg)); box-shadow: 0 10px 30px hsl(var(--shadow)/.4); }
+  .switcher button { width: 34px; height: 34px; border-radius: 999px; border: none; cursor: pointer;
+    background: transparent; color: inherit; font-size: 18px; display: inline-flex; align-items: center;
+    justify-content: center; }
+  .switcher button:hover { background: hsl(var(--bg)/.16); }
+  .switcher .label { padding: 0 12px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .switcher .label small { opacity: .6; font-weight: 500; }
+
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .main { padding: 22px 18px 120px; }
+    .builder { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="dot"></span><b>Selftend</b></div>
+    <a class="nav-item" href="#"><span class="ic" data-i="home"></span>Home</a>
+    <a class="nav-item active" href="#"><span class="ic" data-i="route"></span>Routines <span class="new">New</span></a>
+    <a class="nav-item" href="#"><span class="ic" data-i="insights"></span>Progress</a>
+    <div class="nav-group-label">Modules</div>
+    <a class="nav-item" href="#"><span class="ic" data-i="cbt"></span>CBT</a>
+    <a class="nav-item" href="#"><span class="ic" data-i="act"></span>ACT</a>
+    <div class="nav-group-label">Tools</div>
+    <a class="nav-item" href="#"><span class="ic" data-i="mood"></span>Mood</a>
+    <a class="nav-item" href="#"><span class="ic" data-i="journal"></span>Journal</a>
+    <a class="nav-item" href="#"><span class="ic" data-i="breathing"></span>Breathing</a>
+    <a class="nav-item" href="#"><span class="ic" data-i="gratitude"></span>Gratitude</a>
+    <a class="nav-item" href="#"><span class="ic" data-i="sleep"></span>Sleep</a>
+    <div class="nav-divider"></div>
+    <a class="nav-item" href="#"><span class="ic" data-i="settings"></span>Settings</a>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div class="crumb">Home &amp; Insights · <b>Routines</b></div>
+      <h1 class="title" id="page-title">Your routines</h1>
+      <p class="subtitle" id="page-sub">Small sequences you can do in one sitting. Every routine is checked each day — finish one, part of one, or none. Unfinished is fine.</p>
+    </div>
+    <div id="view"></div>
+    <div id="anno"></div>
+  </main>
+</div>
+
+<div class="scrim" id="scrim" role="dialog" aria-modal="true" aria-label="Edit routine">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<div class="switcher" role="group" aria-label="Prototype variant switcher">
+  <button id="prev" aria-label="Previous variant">‹</button>
+  <span class="label" id="sw-label"></span>
+  <button id="next" aria-label="Next variant">›</button>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- tool registry (mirrors src/features/notifications/registry.ts + tool-accent.ts) ----------
+  // record: keeps a dated record → eligible as a step per #22. The record=false ones are the OPEN QUESTION.
+  var TOOLS = {
+    mood:       { label: "Mood",       accent: "be",    record: true  },
+    journal:    { label: "Journal",    accent: "ink",   record: true  },
+    gratitude:  { label: "Gratitude",  accent: "think", record: true  },
+    sleep:      { label: "Sleep",      accent: "ink",   record: true  },
+    habits:     { label: "Habits",     accent: "act",   record: true  },
+    cbt:        { label: "CBT",        accent: "iris",  record: true  },
+    grounding:  { label: "Grounding",  accent: "clay",  record: false },
+    breathing:  { label: "Breathing",  accent: "aqua",  record: false },
+    meditation: { label: "Meditation", accent: "iris",  record: false }
+  };
+
+  // ---------- icons (compact inline SVG, Material-ish) ----------
+  var P = {
+    home: "M4 11l8-7 8 7M6 10v9h4v-5h4v5h4v-9",
+    route: "M6 19a3 3 0 100-6 3 3 0 000 6zM18 11a3 3 0 100-6 3 3 0 000 6zM6 13V9a3 3 0 013-3h6",
+    insights: "M4 19V5M4 19h16M8 15l3-4 3 2 4-6",
+    mood: "M12 21a9 9 0 100-18 9 9 0 000 18zM9 10h.01M15 10h.01M8.5 14a4 4 0 007 0",
+    journal: "M5 4h11l3 3v13H5zM9 4v16M12 9h4M12 13h4",
+    breathing: "M3 8h10a3 3 0 100-6M3 12h15a3 3 0 110 6M3 16h8",
+    gratitude: "M12 20s-7-4.6-7-10a4 4 0 017-2 4 4 0 017 2c0 5.4-7 10-7 10z",
+    grounding: "M12 6a2 2 0 100-4 2 2 0 000 4zM12 6v13M6 12H4a8 8 0 0016 0h-2M12 19a8 8 0 004-1.2",
+    meditation: "M12 6a2 2 0 100-4 2 2 0 000 4zM4 20c1-4 4-6 8-6s7 2 8 6M12 14l-5 2M12 14l5 2",
+    sleep: "M20 14a8 8 0 11-9-11 6 6 0 009 11z",
+    habits: "M9 11l3 3 8-8M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9",
+    cbt: "M9 3a4 4 0 00-2 7.5A3 3 0 007 16a3 3 0 003 3V3zM15 3a4 4 0 012 7.5A3 3 0 0117 16a3 3 0 01-3 3V3z",
+    act: "M12 2a10 10 0 100 20 10 10 0 000-20zM12 6v6l4 2",
+    settings: "M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 00-1.7-1L14.5 3h-4l-.3 2.5a7 7 0 00-1.7 1l-2.4-1-2 3.5L6 11a7 7 0 000 2l-2 1.5 2 3.5 2.4-1a7 7 0 001.7 1l.3 2.5h4l.3-2.5a7 7 0 001.7-1l2.4 1 2-3.5-2-1.5a7 7 0 00.1-1z",
+    add: "M12 5v14M5 12h14",
+    edit: "M4 20h4L18 10l-4-4L4 16zM14 6l4 4",
+    clock: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 8v4l3 2",
+    chev: "M9 6l6 6-6 6",
+    up: "M6 15l6-6 6 6",
+    down: "M6 9l6 6 6-6",
+    drag: "M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01",
+    x: "M6 6l12 12M18 6L6 18",
+    bell: "M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6zM10 20a2 2 0 004 0"
+  };
+  function svg(name, size) {
+    size = size || 18;
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="' + (P[name] || "") + '"/></svg>';
+  }
+  function toolChipHTML(key, size) {
+    var t = TOOLS[key];
+    return '<span class="icon-chip sm" style="background:hsl(var(--' + t.accent + ')/.15);color:hsl(var(--' + t.accent + '))">' +
+      svg(key, size || 14) + '</span>';
+  }
+
+  // paint sidebar icons
+  document.querySelectorAll(".nav-item .ic").forEach(function (el) { el.innerHTML = svg(el.getAttribute("data-i"), 18); });
+
+  // ---------- seed data (real content, in-memory only) ----------
+  var routines = [
+    { id: "r1", name: "Morning wind-up", enabled: true, reminder: "07:30",
+      steps: ["breathing", "mood", "journal"], done: ["breathing"] },
+    { id: "r2", name: "Midday check-in", enabled: true, reminder: "13:00",
+      steps: ["mood", "grounding"], done: ["mood", "grounding"] },
+    { id: "r3", name: "Evening reset", enabled: true, reminder: null,
+      steps: ["gratitude", "sleep"], done: [] },
+    { id: "r4", name: "Anxious moment", enabled: false, reminder: null,
+      steps: ["breathing", "cbt"], done: [] }
+  ];
+
+  function status(r) {
+    var active = r.steps;
+    var done = r.done.filter(function (s) { return active.indexOf(s) !== -1; });
+    if (!r.enabled) return { key: "paused", label: "Paused", cls: "pill-muted" };
+    if (done.length === 0) return { key: "not", label: "Not started", cls: "pill-muted" };
+    if (done.length === active.length) return { key: "done", label: "Complete", cls: "pill-ok" };
+    return { key: "wip", label: done.length + " of " + active.length + " done today", cls: "pill-wip" };
+  }
+  function reminderPill(r) {
+    if (r.reminder) return '<span class="pill pill-muted tnum">' + svg("bell", 13) + " " + r.reminder + "</span>";
+    return '<span class="pill pill-muted">' + svg("bell", 13) + " No reminder</span>";
+  }
+
+  // ---------- shared step-list editor (used by B accordion + A sheet + C builder) ----------
+  function moveStep(r, i, dir) {
+    var j = i + dir;
+    if (j < 0 || j >= r.steps.length) return;
+    var tmp = r.steps[i]; r.steps[i] = r.steps[j]; r.steps[j] = tmp;
+    render();
+  }
+  function removeStep(r, i) { r.steps.splice(i, 1); render(); }
+  function addStep(r, key) { if (r.steps.indexOf(key) === -1) { r.steps.push(key); render(); } }
+  function toggleEnabled(r) { r.enabled = !r.enabled; render(); }
+  function toggleReminder(r) { r.reminder = r.reminder ? null : "08:00"; render(); }
+
+  function paletteHTML(r) {
+    return Object.keys(TOOLS).map(function (key) {
+      var t = TOOLS[key], used = r.steps.indexOf(key) !== -1;
+      return '<button class="palette-chip" data-add="' + r.id + ':' + key + '"' + (used ? " disabled" : "") + '>' +
+        toolChipHTML(key, 13) + t.label +
+        (t.record ? "" : ' <span class="badge-rec" title="no dated record yet — open question">?</span>') +
+        '</button>';
+    }).join("");
+  }
+
+  function stepEditorHTML(r) {
+    var rows = r.steps.map(function (key, i) {
+      var t = TOOLS[key];
+      return '<div class="step-edit-row">' +
+        '<span class="handle" title="drag to reorder">' + svg("drag", 18) + '</span>' +
+        toolChipHTML(key, 15) +
+        '<span class="grow">' + t.label +
+          (t.record ? "" : ' <span class="muted" style="font-size:12px">· no record yet</span>') + '</span>' +
+        '<span class="row" style="gap:6px">' +
+          '<button class="icon-btn" data-move="' + r.id + ':' + i + ':-1"' + (i === 0 ? " disabled" : "") + ' aria-label="Move up">' + svg("up", 15) + '</button>' +
+          '<button class="icon-btn" data-move="' + r.id + ':' + i + ':1"' + (i === r.steps.length - 1 ? " disabled" : "") + ' aria-label="Move down">' + svg("down", 15) + '</button>' +
+          '<button class="icon-btn" data-remove="' + r.id + ':' + i + '" aria-label="Remove step">' + svg("x", 15) + '</button>' +
+        '</span></div>';
+    }).join("");
+    return rows +
+      '<div class="field-label">Add a step</div>' +
+      '<div class="palette">' + paletteHTML(r) + '</div>' +
+      '<div class="field-label">Daily reminder</div>' +
+      '<div class="row between card" style="padding:11px 14px">' +
+        '<span class="row" style="gap:9px">' + svg("bell", 16) +
+          (r.reminder ? '<b class="tnum">' + r.reminder + '</b>' : '<span class="muted">Off — opt in</span>') + '</span>' +
+        '<button class="toggle" role="switch" aria-checked="' + (r.reminder ? "true" : "false") + '" data-rem="' + r.id + '"></button>' +
+      '</div>';
+  }
+
+  // =========================================================
+  // VARIANT A — list of cards + full editor sheet
+  // =========================================================
+  function renderA(mount) {
+    var cta = '<div class="row between" style="margin-bottom:18px">' +
+        '<span class="muted">' + routines.length + ' routines · equal footing, all checked daily</span>' +
+        '<button class="btn btn-primary" data-new="1">' + svg("add", 17) + 'New routine</button></div>';
+    var cards = routines.map(function (r) {
+      var st = status(r);
+      var strip = r.steps.map(function (k) {
+        return '<span class="step-chip">' + toolChipHTML(k, 13) + TOOLS[k].label + '</span>';
+      }).join("");
+      return '<div class="card routine-card">' +
+        '<div class="row between">' +
+          '<div class="row" style="gap:11px">' +
+            '<span class="status-dot" style="background:hsl(var(--' +
+              (st.key === "done" ? "ok" : st.key === "wip" ? "wip" : "border-strong") + '))"></span>' +
+            '<b style="font-size:16px">' + r.name + '</b>' +
+          '</div>' +
+          '<div class="row" style="gap:8px">' + reminderPill(r) +
+            '<button class="btn btn-outline btn-sm" data-edit="' + r.id + '">' + svg("edit", 15) + 'Edit</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="step-strip">' + strip + '</div>' +
+        '<div class="row between" style="margin-top:13px">' +
+          '<span class="pill ' + st.cls + '">' + st.label + '</span>' +
+          '<label class="row muted" style="gap:9px;font-size:13px">' + (r.enabled ? "Active" : "Paused") +
+            '<button class="toggle" role="switch" aria-checked="' + (r.enabled ? "true" : "false") + '" data-en="' + r.id + '"></button></label>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+    mount.innerHTML = cta + cards;
+  }
+
+  function openSheet(r) {
+    var isNew = !r;
+    if (isNew) { r = { id: "r" + (Date.now() % 100000), name: "", enabled: true, reminder: null, steps: [], done: [] };
+      routines.push(r); editingNewId = r.id; }
+    var sheet = document.getElementById("sheet");
+    sheet.innerHTML = '<div class="grabber"></div>' +
+      '<div class="row between" style="margin-bottom:4px"><h2 style="margin:0;font-size:20px">' +
+        (isNew ? "New routine" : "Edit routine") + '</h2>' +
+        '<button class="icon-btn" data-close="1" aria-label="Close" style="border:none">' + svg("x", 18) + '</button></div>' +
+      '<div class="field-label">Name</div>' +
+      '<input class="text-input" id="name-field" placeholder="e.g. Morning wind-up" value="' + r.name.replace(/"/g, "&quot;") + '">' +
+      '<div class="field-label">Steps · drag to reorder</div>' +
+      '<div id="sheet-steps">' + stepEditorHTML(r) + '</div>' +
+      '<div class="row between" style="margin-top:22px">' +
+        '<button class="btn btn-ghost btn-danger" data-close="1">' + (isNew ? "Discard" : "Delete routine") + '</button>' +
+        '<button class="btn btn-primary" data-close="1">Save routine</button></div>';
+    document.getElementById("scrim").classList.add("open");
+    activeSheetId = r.id;
+    var nf = document.getElementById("name-field");
+    nf.addEventListener("input", function () { r.name = nf.value; });
+  }
+  function closeSheet() {
+    document.getElementById("scrim").classList.remove("open");
+    activeSheetId = null; editingNewId = null;
+    render();
+  }
+  var activeSheetId = null, editingNewId = null;
+
+  // =========================================================
+  // VARIANT B — inline accordion, edit in place
+  // =========================================================
+  var openIds = { r1: true };
+  function renderB(mount) {
+    var cta = '<div class="row between" style="margin-bottom:18px">' +
+        '<span class="muted">Tap a routine to edit it in place</span>' +
+        '<button class="btn btn-primary" data-new="1">' + svg("add", 17) + 'New routine</button></div>';
+    var items = routines.map(function (r) {
+      var st = status(r), open = !!openIds[r.id];
+      var icons = r.steps.map(function (k) { return toolChipHTML(k, 13); }).join(" ");
+      var head = '<div class="acc-head row between" data-toggle="' + r.id + '">' +
+          '<div class="row" style="gap:11px">' + '<span class="chev">' + svg("chev", 18) + '</span>' +
+            '<b style="font-size:16px">' + (r.name || "Untitled routine") + '</b>' +
+            '<span class="row" style="gap:4px">' + icons + '</span>' +
+          '</div>' +
+          '<div class="row" style="gap:8px">' + reminderPill(r) + '<span class="pill ' + st.cls + '">' + st.label + '</span></div>' +
+        '</div>';
+      var body = open ? '<div class="acc-body">' +
+          '<div class="field-label">Name</div>' +
+          '<input class="text-input" data-name="' + r.id + '" value="' + r.name.replace(/"/g, "&quot;") + '">' +
+          '<div class="field-label">Steps · drag to reorder</div>' + stepEditorHTML(r) +
+          '<div class="row between" style="margin-top:20px">' +
+            '<label class="row muted" style="gap:9px;font-size:13px">' + (r.enabled ? "Active" : "Paused") +
+              '<button class="toggle" role="switch" aria-checked="' + (r.enabled ? "true" : "false") + '" data-en="' + r.id + '"></button></label>' +
+            '<button class="btn btn-ghost btn-danger btn-sm">Delete routine</button>' +
+          '</div>' +
+        '</div>' : "";
+      return '<div class="card acc-item ' + (open ? "open" : "") + '">' + head + body + '</div>';
+    }).join("");
+    mount.innerHTML = cta + items;
+  }
+
+  // =========================================================
+  // VARIANT C — two-pane builder with tool palette
+  // =========================================================
+  var activeBuildId = "r1";
+  function renderC(mount) {
+    var rail = routines.map(function (r) {
+      var st = status(r);
+      return '<div class="rail-item ' + (r.id === activeBuildId ? "active" : "") + '" data-build="' + r.id + '">' +
+        '<span class="status-dot" style="background:hsl(var(--' +
+          (st.key === "done" ? "ok" : st.key === "wip" ? "wip" : st.key === "paused" ? "muted" : "border-strong") + '))"></span>' +
+        '<span class="rail-name grow truncate">' + (r.name || "Untitled") + '</span>' +
+        '<span class="muted" style="font-size:12px">' + r.steps.length + '</span></div>';
+    }).join("");
+    var railHTML = '<div class="card rail"><div class="field-label" style="margin:6px 8px">Routines</div>' + rail +
+      '<button class="btn btn-ghost btn-sm" data-new="1" style="width:100%;justify-content:flex-start;margin-top:4px">' +
+      svg("add", 16) + 'New routine</button></div>';
+
+    var r = routines.filter(function (x) { return x.id === activeBuildId; })[0] || routines[0];
+    var st = status(r);
+    var chain = r.steps.length ? r.steps.map(function (key, i) {
+      var t = TOOLS[key];
+      return '<div class="chain-step">' +
+        '<span class="seq">' + (i + 1) + '</span>' + toolChipHTML(key, 16) +
+        '<span class="grow"><b>' + t.label + '</b>' +
+          (t.record ? "" : ' <span class="muted" style="font-size:12px">· no dated record yet</span>') + '</span>' +
+        '<span class="row" style="gap:6px">' +
+          '<button class="icon-btn" data-move="' + r.id + ':' + i + ':-1"' + (i === 0 ? " disabled" : "") + ' aria-label="Move up">' + svg("up", 15) + '</button>' +
+          '<button class="icon-btn" data-move="' + r.id + ':' + i + ':1"' + (i === r.steps.length - 1 ? " disabled" : "") + ' aria-label="Move down">' + svg("down", 15) + '</button>' +
+          '<button class="icon-btn" data-remove="' + r.id + ':' + i + '" aria-label="Remove step">' + svg("x", 15) + '</button>' +
+        '</span></div>';
+    }).join("") : '<div class="muted" style="padding:14px 0">No steps yet — add one below.</div>';
+
+    var pane = '<div class="card builder-pane">' +
+      '<div class="row between" style="margin-bottom:6px">' +
+        '<input class="text-input" data-name="' + r.id + '" style="font-size:19px;font-weight:700;border:none;padding:6px 0;background:none" value="' + r.name.replace(/"/g, "&quot;") + '">' +
+        '<span class="pill ' + st.cls + '">' + st.label + '</span></div>' +
+      '<div class="chain">' + chain + '</div>' +
+      '<div class="field-label">Add a step · tools that keep a daily record</div>' +
+      '<div class="palette">' + paletteHTML(r) + '</div>' +
+      '<div class="row between" style="margin-top:20px;border-top:1px solid hsl(var(--border));padding-top:16px">' +
+        '<label class="row" style="gap:9px;font-size:13px">' + svg("bell", 16) +
+          (r.reminder ? '<b class="tnum">Reminder ' + r.reminder + '</b>' : '<span class="muted">Reminder off</span>') +
+          '<button class="toggle" role="switch" aria-checked="' + (r.reminder ? "true" : "false") + '" data-rem="' + r.id + '"></button></label>' +
+        '<label class="row muted" style="gap:9px;font-size:13px">' + (r.enabled ? "Active" : "Paused") +
+          '<button class="toggle" role="switch" aria-checked="' + (r.enabled ? "true" : "false") + '" data-en="' + r.id + '"></button></label>' +
+      '</div></div>';
+
+    mount.innerHTML = '<div class="builder">' + railHTML + pane + '</div>';
+  }
+
+  // ---------- annotation per variant (what to react to) ----------
+  var ANNO = {
+    A: { name: "List + editor sheet", sub: "Scannable list; each routine opens a focused full-screen editor (mirrors the Habits feature: list → detail/editor).",
+      points: ["<b>Placement:</b> a <b>Routines</b> item in the Home &amp; Insights sidebar group (per #22) — not a 4th pillar.",
+        "<b>Reorder:</b> inside the sheet, via the same react-native-sortables handle used in the Home widget editor, plus up/down arrows for keyboard/a11y.",
+        "<b>Enable/disable:</b> a per-routine <b>Active/Paused</b> switch right on the card — pause without deleting.",
+        "<b>Open question — offerable tools:</b> the step palette lists all 9 candidates; the <b>?</b>-marked (Grounding, Breathing, Meditation) don't persist a dated record yet, so per #22 they can't yet drive step-completion. Offer only the 6 record-keeping tools, or build records for the others first?"] },
+    B: { name: "Inline accordion", sub: "One page; every routine expands in place to edit. No navigating away — good for many equal-footing routines.",
+      points: ["<b>Placement:</b> same Routines sidebar item; everything lives on one screen.",
+        "<b>Naming/reorder/reminder/enable</b> all edit inline in the expanded card — nothing hidden behind a route.",
+        "<b>Trade-off:</b> density. With many routines the page gets tall; expansion keeps only one or two open at a time.",
+        "<b>Same open question</b> on which tools are offerable as steps (see the <b>?</b> chips)."] },
+    C: { name: "Two-pane builder", sub: "Routine rail + a step-chain builder that makes the 'second-action bridge' visible as a numbered sequence with a tool palette.",
+      points: ["<b>Primary affordance:</b> composing the step chain — the numbered connector line renders the routine as an ordered bridge.",
+        "<b>Add step:</b> tap a tool in the palette to append it to the chain (reorder with the arrows / drag handle).",
+        "<b>Mobile:</b> the two panes stack (rail → builder) below 860px.",
+        "<b>Open question</b> unchanged: which tools belong in the palette (record-keeping only, or all?)."] }
+  };
+
+  // ---------- variant plumbing ----------
+  var VARIANTS = ["A", "B", "C"];
+  var NAMES = { A: "List + editor", B: "Inline accordion", C: "Two-pane builder" };
+  var current = "A";
+
+  function readVariant() {
+    var q = new URLSearchParams(location.search).get("variant");
+    if (q && VARIANTS.indexOf(q.toUpperCase()) !== -1) return q.toUpperCase();
+    var h = (location.hash || "").replace("#", "").toUpperCase();
+    if (VARIANTS.indexOf(h) !== -1) return h;
+    return "A";
+  }
+  function render() {
+    var mount = document.getElementById("view");
+    if (current === "A") renderA(mount);
+    else if (current === "B") renderB(mount);
+    else renderC(mount);
+
+    var a = ANNO[current];
+    document.getElementById("anno").innerHTML = '<div class="note">' + svg("edit", 18) +
+      '<div><b>Variant ' + current + ' — ' + a.name + '.</b> ' + a.sub +
+      '<ul>' + a.points.map(function (p) { return "<li>" + p + "</li>"; }).join("") + '</ul></div></div>';
+
+    document.getElementById("sw-label").innerHTML = current + ' <small>· ' + NAMES[current] + '</small>';
+    // keep an open sheet in sync if editing under A
+    if (current === "A" && activeSheetId) {
+      var r = routines.filter(function (x) { return x.id === activeSheetId; })[0];
+      if (r) { var ss = document.getElementById("sheet-steps"); if (ss) ss.innerHTML = stepEditorHTML(r); }
+    }
+  }
+  function setVariant(v) {
+    current = v;
+    if (activeSheetId) closeSheet();
+    try { history.replaceState(null, "", "?variant=" + v); } catch (e) { location.hash = v; }
+    render();
+  }
+  function cycle(dir) {
+    var i = VARIANTS.indexOf(current);
+    setVariant(VARIANTS[(i + dir + VARIANTS.length) % VARIANTS.length]);
+  }
+
+  // ---------- delegated events ----------
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-move],[data-remove],[data-add],[data-en],[data-rem],[data-edit],[data-new],[data-close],[data-toggle],[data-build]");
+    if (!t) return;
+    var v;
+    if ((v = t.getAttribute("data-move"))) { var p = v.split(":"); moveStep(find(p[0]), +p[1], +p[2]); }
+    else if ((v = t.getAttribute("data-remove"))) { var q = v.split(":"); removeStep(find(q[0]), +q[1]); }
+    else if ((v = t.getAttribute("data-add"))) { var a = v.split(":"); addStep(find(a[0]), a[1]); }
+    else if ((v = t.getAttribute("data-en"))) { toggleEnabled(find(v)); }
+    else if ((v = t.getAttribute("data-rem"))) { toggleReminder(find(v)); }
+    else if ((v = t.getAttribute("data-edit"))) { openSheet(find(v)); }
+    else if (t.hasAttribute("data-new")) { if (current === "A") openSheet(null); else { var nr = { id: "r" + (Date.now() % 100000), name: "New routine", enabled: true, reminder: null, steps: [], done: [] }; routines.push(nr); activeBuildId = nr.id; openIds[nr.id] = true; render(); } }
+    else if (t.hasAttribute("data-close")) { closeSheet(); }
+    else if ((v = t.getAttribute("data-toggle"))) { openIds[v] = !openIds[v]; render(); }
+    else if ((v = t.getAttribute("data-build"))) { activeBuildId = v; render(); }
+  });
+  document.addEventListener("input", function (e) {
+    var id = e.target.getAttribute && e.target.getAttribute("data-name");
+    if (id) { var r = find(id); if (r) { r.name = e.target.value; /* live, no full re-render to keep focus */
+      // update rail/title lightly for C
+      if (current === "C") { var rn = document.querySelector('.rail-item.active .rail-name'); if (rn) rn.textContent = r.name || "Untitled"; } } }
+  });
+  function find(id) { return routines.filter(function (x) { return x.id === id; })[0]; }
+
+  document.getElementById("prev").addEventListener("click", function () { cycle(-1); });
+  document.getElementById("next").addEventListener("click", function () { cycle(1); });
+  document.getElementById("scrim").addEventListener("click", function (e) { if (e.target.id === "scrim") closeSheet(); });
+  document.addEventListener("keydown", function (e) {
+    var tag = (document.activeElement && document.activeElement.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || (document.activeElement && document.activeElement.isContentEditable)) return;
+    if (e.key === "ArrowLeft") cycle(-1);
+    else if (e.key === "ArrowRight") cycle(1);
+    else if (e.key === "Escape" && activeSheetId) closeSheet();
+  });
+
+  current = readVariant();
+  render();
+})();
+</script>
