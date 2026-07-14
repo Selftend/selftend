@@ -41,3 +41,7 @@ The user's local calendar day. Routine status resets at local midnight; a routin
 _Avoid_: session, cycle
 
 > Note: there is intentionally no "run" term. A routine has a definition and a status derived per day; there is no separate object representing one day's execution.
+
+**Routine vs. Habit**:
+Selftend keeps both, as distinct features. The line is _who reports completion_: a **routine** step completes when the app sees a real record in its in-app tool (auto-derived, never marked); a **habit** is a behaviour the user marks done themselves (a self-report tick that can stand for anything, including off-app behaviour). If the app can see it, it's a routine; if only the user knows, it's a habit. They coexist in v1; folding habits into routines is a deliberately deferred option, not a v1 goal.
+_Avoid_: treating "routine" and "habit" as synonyms; calling a self-tracked habit a routine.
