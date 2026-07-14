@@ -120,8 +120,14 @@ export function ReminderPromptCard() {
 
   return (
     <View
+      // box-none must be the prop, not style.pointerEvents: NativeWind passes the
+      // style value through as raw CSS, and "box-none" is invalid CSS (ignored), so
+      // this full-width overlay would capture clicks meant for the screen behind it.
+      // The prop routes through react-native-web's box-none polyfill (container
+      // non-interactive, direct children interactive).
+      pointerEvents="box-none"
       className="absolute inset-x-0 z-[70] items-center px-4"
-      style={{ pointerEvents: "box-none", bottom: insets.bottom + 16 }}
+      style={{ bottom: insets.bottom + 16 }}
     >
       <Card className="w-full max-w-xl shadow-md">
         <CardHeader className="gap-1">
