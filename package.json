@@ -30,6 +30,7 @@
     "test:watch": "jest --watch",
     "test:integration": "jest -c jest.integration.config.js --runInBand",
     "test:e2e": "playwright test",
+    "test:e2e:local": "node scripts/e2e-local.js",
     "test:coverage": "jest --coverage --runInBand",
     "coverage:ratchet": "node scripts/check-coverage-ratchet.js",
     "coverage:ratchet:update": "node scripts/check-coverage-ratchet.js --update",
