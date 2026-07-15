@@ -98,6 +98,22 @@ describe("RoutineDetailScreen", () => {
     expect(screen.getByText("Not yet today")).toBeTruthy();
   });
 
+  it("renders the last-7-days strip with the calm note and only neutral gaps", () => {
+    // Only a mood log today: the two-step routine never reached complete on
+    // any of the 7 days, so every cell is a neutral open day.
+    renderWithProviders(<RoutineDetailScreen routineId="r-1" />);
+
+    expect(screen.getByText("Last 7 days")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Filled days are days the whole routine came together. Empty days are just empty - one missed day doesn't undo what you're building.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryAllByLabelText(/: routine complete$/)).toHaveLength(0);
+    expect(screen.getAllByLabelText(/: not completed$/)).toHaveLength(7);
+    expect(screen.queryByText(/streak/i)).toBeNull();
+  });
+
   it("deletes the routine after the confirm dialog and returns to the list", async () => {
     renderWithProviders(<RoutineDetailScreen routineId="r-1" />);
 

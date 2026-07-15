@@ -1,4 +1,10 @@
-import { calendarDayDiff, formatTimestamp, parseLocalNoon } from "@/src/utils/date";
+import {
+  calendarDayDiff,
+  formatTimestamp,
+  lastNDayKeys,
+  localDateKey,
+  parseLocalNoon,
+} from "@/src/utils/date";
 
 describe("formatTimestamp", () => {
   const ISO = "2026-05-24T10:00:00.000Z";
@@ -50,6 +56,37 @@ describe("calendarDayDiff", () => {
     const from = new Date(2026, 4, 25, 0, 0, 0);
     const to = new Date(2026, 4, 24, 0, 0, 0);
     expect(calendarDayDiff(from, to)).toBe(-1);
+  });
+});
+
+describe("lastNDayKeys", () => {
+  it("returns `count` local day keys ending on the reference day, oldest first", () => {
+    const reference = new Date(2026, 6, 15, 9, 30); // Jul 15, mid-morning
+    expect(lastNDayKeys(7, reference)).toEqual([
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+    ]);
+  });
+
+  it("walks back across month boundaries", () => {
+    const reference = new Date(2026, 7, 1, 23, 59); // Aug 1, late evening
+    expect(lastNDayKeys(3, reference)).toEqual(["2026-07-30", "2026-07-31", "2026-08-01"]);
+  });
+
+  it("a count of 1 is just the reference day", () => {
+    const reference = new Date(2026, 0, 1, 0, 0, 1);
+    expect(lastNDayKeys(1, reference)).toEqual(["2026-01-01"]);
+  });
+
+  it("defaults the reference to now, so the last key is today's key", () => {
+    const keys = lastNDayKeys(7);
+    expect(keys).toHaveLength(7);
+    expect(keys[keys.length - 1]).toBe(localDateKey(new Date()));
   });
 });
 

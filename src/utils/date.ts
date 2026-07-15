@@ -23,6 +23,23 @@ export function currentDateKey(): string {
 }
 
 /**
+ * The last `count` LOCAL day keys ending on `reference`'s day, oldest first
+ * (today last). The shared "last N day keys" helper behind multi-day views
+ * like the routines 7-day strip; anchored at local noon so stepping across a
+ * DST change can't shift the civil date.
+ */
+export function lastNDayKeys(count: number, reference: Date = new Date()): string[] {
+  const keys: string[] = [];
+  for (let i = count - 1; i >= 0; i -= 1) {
+    const day = new Date(reference);
+    day.setHours(12, 0, 0, 0);
+    day.setDate(day.getDate() - i);
+    keys.push(localDateKey(day));
+  }
+  return keys;
+}
+
+/**
  * Parse a `YYYY-MM-DD` key into a Date at LOCAL noon. The `T12:00:00` (no `Z`)
  * suffix avoids DST/midnight rollovers that can shift the civil date by a day.
  */

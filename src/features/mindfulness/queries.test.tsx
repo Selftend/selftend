@@ -40,8 +40,10 @@ describe("useMindfulnessSessions enabled gate", () => {
 
     expect(repo.listMindfulnessSessions).not.toHaveBeenCalled();
     // The null-user branch primes the "anonymous" cache key, never the list key.
-    expect(client.getQueryData(["mindfulness", "list", "anonymous"])).toBeUndefined();
-    expect(client.getQueryState(["mindfulness", "list", "anonymous"])?.fetchStatus).toBe("idle");
+    expect(client.getQueryData(["mindfulness", "list", "anonymous", 30])).toBeUndefined();
+    expect(client.getQueryState(["mindfulness", "list", "anonymous", 30])?.fetchStatus).toBe(
+      "idle",
+    );
   });
 
   it("fetches with the default limit for a real user (list queryKey branch)", async () => {
@@ -56,8 +58,9 @@ describe("useMindfulnessSessions enabled gate", () => {
 
     expect(repo.listMindfulnessSessions).toHaveBeenCalledWith("u1", 30);
     expect(result.current.data).toEqual(sessions);
-    // Data lands under the user-scoped list key, not the anonymous one.
-    expect(client.getQueryData(["mindfulness", "list", "u1"])).toEqual(sessions);
+    // Data lands under the user-scoped, limit-suffixed list key (limit is in
+    // the key so different windows don't collide), not the anonymous one.
+    expect(client.getQueryData(["mindfulness", "list", "u1", 30])).toEqual(sessions);
   });
 
   it("forwards a custom limit to the repository", async () => {

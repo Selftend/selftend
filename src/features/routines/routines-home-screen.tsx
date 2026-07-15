@@ -8,6 +8,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { RoutineDayStrip } from "@/src/features/routines/day-strip";
 import {
   deriveRoutine,
   type RoutineStatus,
@@ -160,6 +161,13 @@ function RoutineCard({ routine, records, dayKey, onOpen }: RoutineCardProps) {
           </Text>
         ) : null}
         <Icon name="chevron-right" className="size-5 text-muted-foreground" />
+      </View>
+
+      <View className="gap-1.5">
+        <Text variant="muted" className="text-[10px] uppercase tracking-wider">
+          {t("strip.label")}
+        </Text>
+        <RoutineDayStrip steps={routine.steps} records={records} />
       </View>
     </Pressable>
   );
