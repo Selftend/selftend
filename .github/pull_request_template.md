@@ -1,3 +1,5 @@
+> **Base branch:** `dev` — only `hotfix/*` and the `dev→main` promotion PR target `main`. **PR title:** PRs into `dev` are squash-merged, so use a Conventional Commit title (`feat:`, `fix:`, `docs:` …) — it becomes the commit that drives versioning. Promotion and hotfix PRs merge as **merge commits** instead. See [docs/releasing.md](../docs/releasing.md).
+
 ## Summary
 
 - what changed

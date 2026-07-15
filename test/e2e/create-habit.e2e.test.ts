@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 
-import { deleteAllHabitsForUser } from "./helpers";
+import { deleteAllHabitsForUser, dismissPostSignInModals } from "./helpers";
 
 test.describe("create habit", () => {
   test.beforeEach(async ({ user }) => {
@@ -17,6 +17,12 @@ test.describe("create habit", () => {
     const habitName = "E2E read one page";
 
     // Navigate directly to the editor - bypasses the home-screen onboarding gate.
+    await page.goto("/tools/habits/new");
+
+    // A prior spec's trailing preferences write can leave this worker user with a
+    // stale policy_version_accepted at boot; the consent gate then hijacks the
+    // deep link to "/". Clear any gates (no-op when absent), then deep-link again.
+    await dismissPostSignInModals(page);
     await page.goto("/tools/habits/new");
 
     await page.getByPlaceholder("Read, Walk after lunch, Stretch...").fill(habitName);

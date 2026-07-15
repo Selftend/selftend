@@ -118,6 +118,17 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Large dependency additions without a clear reason.
 - Casual copying from AGPL or GPL projects without tracking license implications.
 
+## Review guidelines
+
+These guide automated PR reviewers (e.g. Codex) and human reviewers alike. Flag high-severity issues; prefer signal over nitpicks, and defer formatting to ESLint/Prettier.
+
+- **Privacy & safety (highest priority):** personal or health data logged, sent to a third party, or added as a new field without feature-level justification; new tracking/analytics/ads/behavioral nudges without explicit review; product copy implying diagnosis, medical outcomes, or "AI therapist/counselor" framing; crisis/safety guidance made less visible or blended into self-help features.
+- **Security:** secrets, tokens, or keys committed or hardcoded; Supabase changes with missing/incorrect RLS, queries that bypass row ownership, or service-role usage reachable from the client; untrusted input reaching SQL, file paths, or HTML sinks without validation; Zod validation removed or weakened on external input.
+- **Retention & product guardrails:** default-on streaks, reminders, or notifications; punitive "missed day" mechanics; manipulative retention; notifications that aren't explicit, quiet-by-default, and easy to disable.
+- **i18n:** user-visible strings hardcoded in components instead of translation files; new screens/features missing keys in the relevant namespace for supported languages.
+- **Correctness & tests:** tests weakened or assertions rewritten to match broken behavior (call this out explicitly); a feature or bugfix landing without corresponding test coverage; TanStack Query / Zustand misuse (stale cache keys, mutations that don't invalidate) and violations of the Reanimated / React hooks rules.
+- **Dependencies:** a new third-party dependency where an Expo built-in or approved dependency would do, or with unclear maintenance/privacy cost; code or text copied from the reference repos (`../ifme`, `../quirk`, `../awesome-mental-health`) without license tracking.
+
 ## Agent skills
 
 ### Issue tracker
