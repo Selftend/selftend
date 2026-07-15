@@ -1,0 +1,44 @@
+name: Back-merge main into dev
+
+# After every release (normal promotion or hotfix), open a main→dev sync PR so
+# release-please's version/CHANGELOG bump - and any hotfix commits - flow back
+# to dev. This keeps dev from drifting behind main, and merge conflicts (e.g.
+# package.json / CHANGELOG) surface here for manual resolution instead of at
+# the next promotion PR (decision #18).
+#
+# The PR is opened head=main base=dev, reviewed and merged by the maintainer
+# as a MERGE COMMIT (dev's ruleset allows it; never squash a sync merge).
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  open-sync-pr:
+    name: Open main→dev sync PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Open or reuse the sync PR
+        env:
+          # PAT, not GITHUB_TOKEN: the org locks Actions from creating PRs
+          # (same constraint as release-please.yml).
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          existing=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
+            --base dev --json number,headRefName \
+            --jq '[.[] | select(.headRefName == "main")][0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "Sync PR #$existing already open - main advanced onto it automatically."
+            exit 0
+          fi
+
+          title="chore: back-merge main into dev${TAG:+ ($TAG)}"
+          gh pr create --repo "$GITHUB_REPOSITORY" --head main --base dev \
+            --title "$title" \
+            --body "$(printf 'Automated main→dev sync opened by back-merge.yml after %s was published.\n\nCarries the release-please version/CHANGELOG bump (and any hotfix commits) back into dev so promotion PRs stay conflict-free.\n\n**Merge this as a MERGE COMMIT** (never squash) once checks pass. Conflicts, if any, are resolved on this PR.' "${TAG:-a release}")"
