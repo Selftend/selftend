@@ -229,6 +229,19 @@ export async function deleteAllEmotionPreferencesForUser(userId: string) {
   if (error) throw new Error(`deleteAllEmotionPreferencesForUser cleanup failed: ${error.message}`);
 }
 
+export async function deleteAllRoutinesForUser(userId: string) {
+  const admin = createServiceClient();
+  // Delete routine_steps before routines (FK → routines_data ON DELETE CASCADE, but explicit is safer).
+  const { error: stepError } = await admin.from("routine_steps").delete().eq("user_id", userId);
+  if (stepError)
+    throw new Error(
+      `deleteAllRoutinesForUser (routine_steps) cleanup failed: ${stepError.message}`,
+    );
+  const { error } = await admin.from("routines").delete().eq("user_id", userId);
+  if (error)
+    throw new Error(`deleteAllRoutinesForUser (routines) cleanup failed: ${error.message}`);
+}
+
 export async function deleteAllActLogsForUser(userId: string) {
   const admin = createServiceClient();
   // Delete act_action_steps first (FK → act_committed_actions ON DELETE CASCADE, but explicit is safer)
