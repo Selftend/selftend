@@ -1,6 +1,12 @@
 [build]
   command = "npm run export:web"
   publish = "dist"
+  # Skip ALL git-triggered Netlify builds: GitHub Actions is the only deployer
+  # (it builds and pushes prebuilt output via netlify-cli, which this setting
+  # does not affect). Exit 0 means "nothing changed, do not build", so pushes
+  # to main cannot start failing/duplicate Netlify-side builds even when the
+  # dashboard Build status is Active.
+  ignore = "exit 0"
 
 [build.environment]
   NODE_VERSION = "20.19.0"
