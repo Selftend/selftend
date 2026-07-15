@@ -218,6 +218,10 @@ export const test = base.extend<object, WorkerFixtures>({
 // Per-test normalization: guarantee the consent + onboarding gates never fire,
 // even after a snapshot/restore spec puts back stale prefs. Reads the live
 // policyVersion constant so it can never drift.
+// reminder_consent(+updated_at) marks the one-time reminder prompt as already
+// declined (see isReminderPromptEligible) - otherwise the "Want a daily
+// reminder?" modal pops after any tool completion and blocks unrelated specs'
+// buttons/navigation.
 test.beforeEach(async ({ user }) => {
   const admin = createServiceClient();
   const { error } = await admin
@@ -226,6 +230,8 @@ test.beforeEach(async ({ user }) => {
       app_onboarding_completed: true,
       cbt_onboarding_completed: true,
       policy_version_accepted: policyVersion,
+      reminder_consent: false,
+      reminder_consent_updated_at: "2026-01-01T00:00:00.000Z",
     })
     .eq("user_id", user.id);
   if (error) {
