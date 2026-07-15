@@ -34,7 +34,7 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
     if (!userId) return;
     // Best-effort persistence of the sound selection; a failed write must not become an
     // unhandled rejection (the local selection is applied immediately regardless).
-    void updateMutation.mutateAsync(mergeUserPreferences(prefs, p)).catch(() => undefined);
+    void updateMutation.mutateAsync(p).catch(() => undefined);
   };
 
   const breathSound =
