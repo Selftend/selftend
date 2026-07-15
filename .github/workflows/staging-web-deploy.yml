@@ -1,0 +1,32 @@
+name: Staging web deploy (manual)
+
+# MANUAL-ONLY staging deploy: builds the chosen ref (default dev) and publishes
+# it to the separate staging Netlify site via the reusable web workflow, scoped
+# to the `staging` GitHub Environment. Deliberately NO push trigger - staging
+# ships only when a human dispatches it (the automated push-to-dev pipeline is
+# #44's scope and stays parked until the staging Supabase project exists).
+#
+# Interim caveat (#44): until the staging Supabase project is provisioned, the
+# staging Environment defines no EXPO_PUBLIC_SUPABASE_URL/_PUBLISHABLE_KEY
+# overrides, so the build falls back to the repo-level values - i.e. staging
+# web talks to the PRODUCTION Supabase project. Real, RLS-guarded user data;
+# fine for a solo maintainer's smoke-checks, not for public sharing.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to build and deploy to staging
+        type: string
+        default: dev
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-web-staging:
+    name: Deploy web (staging)
+    uses: ./.github/workflows/web-deploy.yml
+    with:
+      ref: ${{ inputs.ref }}
+      environment: staging
+    secrets: inherit
