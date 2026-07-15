@@ -32,13 +32,24 @@ jobs:
         run: |
           existing=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
             --base dev --json number,headRefName \
-            --jq '[.[] | select(.headRefName == "main")][0].number // empty')
+            --jq '[.[] | select(.headRefName | startswith("sync/main-"))][0].number // empty')
           if [ -n "$existing" ]; then
-            echo "Sync PR #$existing already open - main advanced onto it automatically."
+            echo "Sync PR #$existing already open."
             exit 0
           fi
 
+          # Open the PR from a sync BRANCH at main's current commit, never from
+          # head=main directly: dev's strict up-to-date rule compares the PR head
+          # against dev's tip, and once anything lands on dev after the release,
+          # a head=main PR can never satisfy it (observed on the v0.3.3 sync) -
+          # a branch can simply be updated with dev instead.
+          main_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
+          branch="sync/main-${TAG:-$main_sha}"
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/heads/$branch" -f sha="$main_sha" \
+            || echo "branch $branch already exists"
+
           title="chore: back-merge main into dev${TAG:+ ($TAG)}"
-          gh pr create --repo "$GITHUB_REPOSITORY" --head main --base dev \
+          gh pr create --repo "$GITHUB_REPOSITORY" --head "$branch" --base dev \
             --title "$title" \
-            --body "$(printf 'Automated main→dev sync opened by back-merge.yml after %s was published.\n\nCarries the release-please version/CHANGELOG bump (and any hotfix commits) back into dev so promotion PRs stay conflict-free.\n\n**Merge this as a MERGE COMMIT** (never squash) once checks pass. Conflicts, if any, are resolved on this PR.' "${TAG:-a release}")"
+            --body "$(printf 'Automated main→dev sync opened by back-merge.yml after %s was published.\n\nCarries the release-please version/CHANGELOG bump (and any hotfix commits) back into dev so promotion PRs stay conflict-free.\n\n**Merge this as a MERGE COMMIT** (never squash) once checks pass. If dev advances first, use Update branch; conflicts, if any, are resolved on this PR.' "${TAG:-a release}")"
