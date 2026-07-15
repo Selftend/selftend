@@ -10,6 +10,12 @@ on:
 permissions:
   contents: read
 
+# Cancel superseded in-progress runs for the same ref (a new push to a PR branch
+# obsoletes the previous run). Push runs on main are serialized per-ref the same way.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest

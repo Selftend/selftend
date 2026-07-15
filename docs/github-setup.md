@@ -111,11 +111,11 @@ Prepared label set:
 
 ## Branching
 
-Practical default:
+See [releasing.md](releasing.md) for the full branch and release model. In short:
 
-- protect `main`
-- use short feature branches
-- prefer draft PRs for larger work
+- `dev` is the integration branch: branch off it, PR into it, squash-merge
+- `main` is the release branch: it only receives the `dev→main` promotion PR (merge commit), `hotfix/*` PRs, and release-please's PRs
+- both branches are protected; prefer draft PRs for larger work
 
 ## Repository setup checklist
 
