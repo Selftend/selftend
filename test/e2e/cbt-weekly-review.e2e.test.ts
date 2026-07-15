@@ -52,7 +52,10 @@ function daysAgo(n: number): string {
   // Use noon local time expressed as UTC to avoid midnight boundary issues.
   // We write the local-noon as UTC by backing out the UTC offset.
   d.setHours(12, 0, 0, 0);
-  return d.toISOString();
+  // Never return a future timestamp: for n=0, local noon is still ahead of `now`
+  // during a UTC-morning run, and validate_occurrence_time() rejects inserts more
+  // than 5 minutes in the future. Clamp to one minute ago in that case.
+  return new Date(Math.min(d.getTime(), Date.now() - 60_000)).toISOString();
 }
 
 test.describe("CBT weekly review: aggregate render", () => {
