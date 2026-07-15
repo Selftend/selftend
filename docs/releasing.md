@@ -34,7 +34,30 @@ This doc defines the two-branch release flow: how everyday changes land, how a r
 
 ## Hotfixes
 
-For an urgent production fix, branch `hotfix/*` off `main`, use a `fix:` Conventional Commit, and open a **merge-commit** PR straight into `main` through the normal checks. release-please cuts a patch release from it. A back-merge returns the fix and the version bump to `dev` after the release.
+For an urgent production fix, branch `hotfix/*` off `main`, use a `fix:` Conventional Commit, and open a **merge-commit** PR straight into `main` through the normal checks. release-please cuts a patch release from it, and the full release pipeline (migrate → deploys) runs. A back-merge returns the fix and the version bump to `dev` after the release.
+
+## Back-merge (automated)
+
+On every `release: published`, `back-merge.yml` opens a **`main → dev` sync PR** via the PAT. Review it and merge it as a **merge commit** — it carries the version/CHANGELOG bump and any hotfix commits back into `dev`, so `dev` never drifts and the next promotion PR stays conflict-free. Merge conflicts (typically `package.json` / `CHANGELOG.md`) surface on this PR and are resolved there.
+
+## Rollback runbook
+
+Two speeds: mitigate first, then make the fix permanent. The database is
+**forward-only** — never roll schema back under a live app.
+
+**1. Immediate mitigation (minutes):**
+
+- **Web** — re-publish the previous good deploy: Netlify → `silver-tartufo-aee20e` (production site) → Deploys → pick the last good deploy → **Publish deploy**. Instant, no rebuild. Fallback: `workflow_dispatch` the release pipeline with the prior release `tag`.
+- **Android** — Play has no un-release for a versionCode: in Play Console, **halt/deactivate the bad release** on the closed-testing track. A fixed build with a higher versionCode supersedes it.
+- **Database** — do nothing schema-wise. For genuine data corruption only: restore from the daily `db-backup.yml` backup (accepts up to ~24h data loss unless Supabase PITR is enabled — recommended).
+
+**2. Permanent fix (hours):**
+
+1. `git revert` the offending commit(s) on a branch off `dev` → squash PR into `dev` (normal checks).
+2. Promote `dev → main` as usual → release-please cuts a new **patch** release → the pipeline ships it.
+3. Keep the bad tag/Release in history — the revert produces a new, higher version; nothing is deleted.
+
+For a production emergency where `dev` carries unrelated unreleased work, use the [hotfix path](#hotfixes) instead of a revert-through-promotion.
 
 ## Invariants
 
