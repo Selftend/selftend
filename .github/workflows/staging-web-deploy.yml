@@ -23,8 +23,29 @@ permissions:
   contents: read
 
 jobs:
+  # secrets: inherit means a missing staging-Environment NETLIFY_SITE_ID would
+  # silently fall back to the repository-level secret - the PRODUCTION site.
+  # Refuse to deploy unless the staging Environment supplies its own site id.
+  guard:
+    name: Assert staging Netlify target
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: staging
+    steps:
+      - name: Fail unless NETLIFY_SITE_ID is the staging site's own
+        env:
+          SITE: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          # The production site id is not a secret (it appears in Netlify URLs);
+          # comparing against it catches the silent-fallback case.
+          if [ -z "$SITE" ] || [ "$SITE" = "da5b7e44-d551-44ee-b0d8-a7d7a5433433" ]; then
+            echo "::error::NETLIFY_SITE_ID resolves to the production site (or is empty) - the staging Environment secret is missing. Refusing to deploy."
+            exit 1
+          fi
+
   deploy-web-staging:
     name: Deploy web (staging)
+    needs: guard
     uses: ./.github/workflows/web-deploy.yml
     with:
       ref: ${{ inputs.ref }}
