@@ -1,6 +1,7 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 
 import { AppOnboardingWizard } from "@/src/components/app/app-onboarding-wizard";
+import { useAddStep, useCreateRoutine, useRoutines } from "@/src/features/routines/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 // RichOnboardingShell wraps content in a Modal. Replace Modal with a pass-through
@@ -19,6 +20,42 @@ jest.mock("react-native", () => {
       return Reflect.get(target, prop, receiver);
     },
   });
+});
+
+jest.mock("@/src/providers/session-provider", () => ({
+  useSession: () => ({ user: { id: "user-1" } }),
+}));
+
+// The starter-routine gate reads the routine list; "Keep" writes through the
+// normal routine mutations. Mock the query layer, keep the hooks real.
+jest.mock("@/src/features/routines/queries", () => ({
+  useRoutines: jest.fn(),
+  useCreateRoutine: jest.fn(),
+  useAddStep: jest.fn(),
+}));
+
+const mockUseRoutines = useRoutines as jest.MockedFunction<typeof useRoutines>;
+const mockUseCreateRoutine = useCreateRoutine as jest.MockedFunction<typeof useCreateRoutine>;
+const mockUseAddStep = useAddStep as jest.MockedFunction<typeof useAddStep>;
+
+const createRoutine = jest.fn();
+const addStep = jest.fn();
+
+beforeEach(() => {
+  jest.clearAllMocks();
+
+  // Default: a fresh user with zero routines - the starter gate is open.
+  mockUseRoutines.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useRoutines>);
+  mockUseCreateRoutine.mockReturnValue({
+    mutateAsync: createRoutine,
+    isPending: false,
+  } as unknown as ReturnType<typeof useCreateRoutine>);
+  mockUseAddStep.mockReturnValue({
+    mutateAsync: addStep,
+    isPending: false,
+  } as unknown as ReturnType<typeof useAddStep>);
+  createRoutine.mockResolvedValue({ id: "r-new" });
+  addStep.mockResolvedValue({ id: "s-new" });
 });
 
 function renderWizard(overrides: Partial<React.ComponentProps<typeof AppOnboardingWizard>> = {}) {
@@ -87,25 +124,151 @@ it("can replay only the welcome introduction without entering recommendations", 
 
   expect(onSkip).toHaveBeenCalledTimes(1);
   expect(screen.queryByText("What brings you here?")).toBeNull();
+  // The starter panel is structurally unreachable in the welcome-only replay.
+  expect(screen.queryByText("One small routine to start?")).toBeNull();
+  expect(mockUseRoutines).toHaveBeenCalledWith(null);
 });
 
-it("skips guidance when no module is selected and applies tool suggestions", () => {
+it("skips guidance when no module is selected and offers the starter before finish", () => {
   const { onFinish } = renderWizard();
   fireEvent.press(screen.getByText("Continue"));
   fireEvent.press(screen.getByText("Sleep"));
   fireEvent.press(screen.getByText("Continue"));
 
-  expect(screen.getByText("Finish")).toBeTruthy();
-  fireEvent.press(screen.getByText("Finish"));
-
+  // No module selected: guidance is skipped and the starter panel is next.
+  fireEvent.press(screen.getByText("Continue"));
   expect(screen.queryByText("How much structure would you like?")).toBeNull();
+  expect(screen.getByText("One small routine to start?")).toBeTruthy();
+
+  // Declining the starter writes nothing and finishes with the suggestions.
+  fireEvent.press(screen.getByText("Skip"));
+
+  expect(createRoutine).not.toHaveBeenCalled();
+  expect(addStep).not.toHaveBeenCalled();
   expect(onFinish).toHaveBeenCalledWith({
     selectedConcerns: ["sleep"],
     widgetIds: ["mood-checkin", "sleep-latest", "meditation-pick", "breathing-suggested"],
   });
 });
 
-it("applies guided programme and tool recommendations without a review panel", () => {
+it("offers the starter panel after guidance and keeps it through the routine write path", async () => {
+  const { onFinish } = renderWizard();
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Sleep"));
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("ACT - make room for feelings and act on values"));
+  fireEvent.press(screen.getByText("Continue"));
+  expect(screen.getByText("How much structure would you like?")).toBeTruthy();
+  fireEvent.press(screen.getByText("Continue"));
+
+  // Panel sits after guidance, before finish: read-only numbered steps
+  // (kept tools, Habits excluded, capped at 3) and an editable name.
+  expect(screen.getByText("One small routine to start?")).toBeTruthy();
+  expect(screen.getByText("Mood check-in")).toBeTruthy();
+  expect(screen.getByText("Sleep log")).toBeTruthy();
+  expect(screen.getByText("Meditation")).toBeTruthy();
+  fireEvent.changeText(screen.getByLabelText("Routine name"), "Morning kit");
+
+  fireEvent.press(screen.getByText("Keep"));
+
+  await waitFor(() => expect(onFinish).toHaveBeenCalledTimes(1));
+  expect(createRoutine).toHaveBeenCalledWith({ name: "Morning kit" });
+  expect(addStep).toHaveBeenCalledTimes(3);
+  expect(addStep).toHaveBeenNthCalledWith(1, { routineId: "r-new", toolId: "mood", position: 0 });
+  expect(addStep).toHaveBeenNthCalledWith(2, { routineId: "r-new", toolId: "sleep", position: 1 });
+  expect(addStep).toHaveBeenNthCalledWith(3, {
+    routineId: "r-new",
+    toolId: "meditation",
+    position: 2,
+  });
+  expect(onFinish).toHaveBeenCalledWith({
+    selectedConcerns: ["sleep"],
+    widgetIds: [
+      "act-programme",
+      "mood-checkin",
+      "sleep-latest",
+      "meditation-pick",
+      "breathing-suggested",
+    ],
+  });
+});
+
+it("keeps the starter under the default name when the edited name is blank", async () => {
+  const { onFinish } = renderWizard();
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Sleep"));
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Continue"));
+
+  fireEvent.changeText(screen.getByLabelText("Routine name"), "   ");
+  fireEvent.press(screen.getByText("Keep"));
+
+  await waitFor(() => expect(onFinish).toHaveBeenCalledTimes(1));
+  expect(createRoutine).toHaveBeenCalledWith({ name: "My daily routine" });
+});
+
+it("shows the save error and does not finish when Keep fails", async () => {
+  createRoutine.mockRejectedValue(new Error("boom"));
+  const { onFinish } = renderWizard();
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Sleep"));
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Continue"));
+
+  fireEvent.press(screen.getByText("Keep"));
+
+  await waitFor(() => expect(screen.getByText("boom")).toBeTruthy());
+  expect(onFinish).not.toHaveBeenCalled();
+  expect(addStep).not.toHaveBeenCalled();
+});
+
+it("never offers the starter once the user already has a routine", () => {
+  mockUseRoutines.mockReturnValue({
+    data: [{ id: "r-1", name: "Morning reset", steps: [] }],
+  } as unknown as ReturnType<typeof useRoutines>);
+
+  const { onFinish } = renderWizard();
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Sleep"));
+  fireEvent.press(screen.getByText("Continue"));
+
+  // Modules panel is last again: Finish goes straight out, no starter panel.
+  fireEvent.press(screen.getByText("Finish"));
+
+  expect(screen.queryByText("One small routine to start?")).toBeNull();
+  expect(createRoutine).not.toHaveBeenCalled();
+  expect(onFinish).toHaveBeenCalledTimes(1);
+});
+
+it("does not offer the starter while the routine list is still unknown", () => {
+  mockUseRoutines.mockReturnValue({ data: undefined } as unknown as ReturnType<typeof useRoutines>);
+
+  const { onFinish } = renderWizard();
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Sleep"));
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Finish"));
+
+  expect(screen.queryByText("One small routine to start?")).toBeNull();
+  expect(onFinish).toHaveBeenCalledTimes(1);
+});
+
+it("does not offer the starter when fewer than two eligible steps compose", () => {
+  // No concerns selected: only the mood check-in composes, below the min-2 gate.
+  const { onFinish } = renderWizard();
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Finish"));
+
+  expect(screen.queryByText("One small routine to start?")).toBeNull();
+  expect(createRoutine).not.toHaveBeenCalled();
+  expect(onFinish).toHaveBeenCalledWith({
+    selectedConcerns: [],
+    widgetIds: ["mood-checkin"],
+  });
+});
+
+it("applies guided programme and tool recommendations after declining the starter", () => {
   const { onFinish } = renderWizard();
   fireEvent.press(screen.getByText("Continue"));
   fireEvent.press(screen.getByText("Sleep"));
@@ -113,7 +276,8 @@ it("applies guided programme and tool recommendations without a review panel", (
   fireEvent.press(screen.getByText("Continue"));
   fireEvent.press(screen.getByText("ACT - make room for feelings and act on values"));
   fireEvent.press(screen.getByText("Continue"));
-  fireEvent.press(screen.getByText("Finish"));
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Skip"));
 
   expect(screen.queryByText("Your Home suggestions")).toBeNull();
   expect(onFinish).toHaveBeenCalledWith({
@@ -143,4 +307,17 @@ it("prefills initial concerns and can skip from any panel", () => {
   fireEvent.press(screen.getByText("Skip for now"));
   expect(onSkip).toHaveBeenCalled();
   expect(onFinish).not.toHaveBeenCalled();
+});
+
+it("supports Back from the starter panel to the previous panel", () => {
+  renderWizard();
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Sleep"));
+  fireEvent.press(screen.getByText("Continue"));
+  fireEvent.press(screen.getByText("Continue"));
+  expect(screen.getByText("One small routine to start?")).toBeTruthy();
+
+  // No module was selected, so Back returns to the modules panel.
+  fireEvent.press(screen.getByText("Back"));
+  expect(screen.getByText("Would a self-help module be useful?")).toBeTruthy();
 });

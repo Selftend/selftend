@@ -36,6 +36,11 @@
     "deleteConfirmTitle": "Delete routine",
     "deleteConfirmBody": "Delete this routine and its steps? Your tool entries are untouched. This can't be undone."
   },
+  "onboarding": {
+    "title": "One small routine to start?",
+    "body": "We put together a tiny routine from the tools you just picked. Keep it if it helps - nothing is created unless you say so.",
+    "stepsNote": "Steps complete themselves when you use the tools - nothing to tick off, and no reminders unless you add one later."
+  },
   "form": {
     "newTitle": "New routine",
     "editTitle": "Edit routine",
