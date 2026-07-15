@@ -51,5 +51,10 @@ module.exports = {
     "./src/features/profile/repository.ts": { branches: 80 },
     "./src/features/profile/profile-sync.ts": { branches: 80 },
     "./src/features/profile/profile-avatar.ts": { branches: 80 },
+    // Routines data layer (#42): the ticket's acceptance floor for the new
+    // query/hook files.
+    "./src/features/routines/repository.ts": { branches: 80 },
+    "./src/features/routines/queries.ts": { branches: 80 },
+    "./src/features/routines/schemas.ts": { branches: 80 },
   },
 };
