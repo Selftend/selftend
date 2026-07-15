@@ -15,13 +15,13 @@ import {
   type RoutineToolRecords,
   type SteppableToolId,
 } from "@/src/features/routines/derive";
-import { useAddStep, useCreateRoutine, useRoutines } from "@/src/features/routines/queries";
+import { useRoutines } from "@/src/features/routines/queries";
 import { buildStarterSteps } from "@/src/features/routines/starter";
+import { useKeepStarterRoutine } from "@/src/features/routines/use-keep-starter-routine";
 import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
 import type { RoutineWithSteps } from "@/src/features/routines/types";
 import { useWidgetPreferences } from "@/src/features/home/queries";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
@@ -182,26 +182,15 @@ function RoutinesEmptyState({ keptWidgetIds }: { keptWidgetIds: readonly string[
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  const createRoutine = useCreateRoutine(userId);
-  const addStep = useAddStep(userId);
+  const { keep, saving, error: starterError } = useKeepStarterRoutine(userId);
   const [starterDismissed, setStarterDismissed] = useState(false);
-  const [starterError, setStarterError] = useState("");
 
   const starterSteps = buildStarterSteps(keptWidgetIds);
-  const saving = createRoutine.isPending || addStep.isPending;
 
-  const handleKeep = useSingleFlight(async () => {
-    if (!user || !starterSteps) return;
-    setStarterError("");
-    try {
-      const routine = await createRoutine.mutateAsync({ name: t("form.defaultName") });
-      for (const [index, toolId] of starterSteps.entries()) {
-        await addStep.mutateAsync({ routineId: routine.id, toolId, position: index });
-      }
-    } catch (error) {
-      setStarterError(error instanceof Error ? error.message : t("form.saveError"));
-    }
-  });
+  const handleKeep = () => {
+    if (!starterSteps) return;
+    void keep({ name: t("form.defaultName"), steps: starterSteps });
+  };
 
   if (starterSteps && !starterDismissed) {
     return (
@@ -221,7 +210,7 @@ function RoutinesEmptyState({ keptWidgetIds }: { keptWidgetIds: readonly string[
         </View>
         {starterError ? <Text className="text-sm text-destructive">{starterError}</Text> : null}
         <View className="flex-row gap-2">
-          <Button disabled={saving || !user} onPress={() => void handleKeep()}>
+          <Button disabled={saving || !user} onPress={handleKeep}>
             {saving ? <ActivityIndicator color="#ffffff" /> : null}
             <Text>{t("cta.keep")}</Text>
           </Button>
