@@ -42,19 +42,19 @@ describe("useRoutineToolRecords", () => {
 
     expect(useMoodHistory).toHaveBeenCalledWith("user-1");
     // Grounding shares the mindfulness store, so its query is live too.
-    expect(useMindfulnessSessions).toHaveBeenCalledWith("user-1", 100);
+    expect(useMindfulnessSessions).toHaveBeenCalledWith("user-1", 250);
     // Everything unreferenced stays disabled via the null-userId convention.
-    expect(useJournalEntries).toHaveBeenCalledWith(null, 100);
-    expect(useGratitudeEntries).toHaveBeenCalledWith(null, 100);
-    expect(useSleepLogs).toHaveBeenCalledWith(null, 100);
+    expect(useJournalEntries).toHaveBeenCalledWith(null, 250);
+    expect(useGratitudeEntries).toHaveBeenCalledWith(null, 250);
+    expect(useSleepLogs).toHaveBeenCalledWith(null, 250);
     expect(useThoughtRecords).toHaveBeenCalledWith(null);
-    expect(useMeditationSessions).toHaveBeenCalledWith(null, 100);
+    expect(useMeditationSessions).toHaveBeenCalledWith(null, 250);
     expect(useHabitLogs).toHaveBeenCalledWith(null, { sinceDate: stripWindowStartKey() });
   });
 
   it("enables the mindfulness query for breathing steps as well", () => {
     renderHook(() => useRoutineToolRecords("user-1", ["breathing"]));
-    expect(useMindfulnessSessions).toHaveBeenCalledWith("user-1", 100);
+    expect(useMindfulnessSessions).toHaveBeenCalledWith("user-1", 250);
   });
 
   it("fetches windows wide enough for the 7-day strip", () => {
@@ -70,14 +70,14 @@ describe("useRoutineToolRecords", () => {
       ]),
     );
 
-    // Count-limited lists widen to 100 newest rows (>= 7 days even at heavy
+    // Count-limited lists widen to 250 newest rows (>= 7 days even at heavy
     // use); habit logs mirror habits' own strip with a date window that
     // starts exactly 7 local days back (today inclusive).
-    expect(useJournalEntries).toHaveBeenCalledWith("user-1", 100);
-    expect(useGratitudeEntries).toHaveBeenCalledWith("user-1", 100);
-    expect(useSleepLogs).toHaveBeenCalledWith("user-1", 100);
-    expect(useMindfulnessSessions).toHaveBeenCalledWith("user-1", 100);
-    expect(useMeditationSessions).toHaveBeenCalledWith("user-1", 100);
+    expect(useJournalEntries).toHaveBeenCalledWith("user-1", 250);
+    expect(useGratitudeEntries).toHaveBeenCalledWith("user-1", 250);
+    expect(useSleepLogs).toHaveBeenCalledWith("user-1", 250);
+    expect(useMindfulnessSessions).toHaveBeenCalledWith("user-1", 250);
+    expect(useMeditationSessions).toHaveBeenCalledWith("user-1", 250);
     expect(useHabitLogs).toHaveBeenCalledWith("user-1", { sinceDate: lastNDayKeys(7)[0] });
     // Mood rides the canonical 200-row history window.
     expect(useMoodHistory).toHaveBeenCalledWith("user-1");

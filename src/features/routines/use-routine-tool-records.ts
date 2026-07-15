@@ -13,9 +13,13 @@ import { lastNDayKeys } from "@/src/utils/date";
 // referenced tool's records must cover that whole window, not just "today".
 // Habits solved this for its own strip with a date-based `sinceDate` window;
 // habit logs mirror that exactly. The other repositories only expose newest-N
-// list queries, so their windows widen by count instead: 100 rows spans 7 days
-// even at a heavy ~14 records/day per tool (thought records already fetch 500).
-const RECENT_LIST_LIMIT = 100;
+// list queries, so their windows widen by count instead. KNOWN BOUND: past
+// ~35 records/day of one tool (or combined breathing+grounding sessions) for a
+// whole week, the oldest in-window day can fall off the cap and its dot renders
+// conservatively OPEN - acceptable for a calm indicator; a date-ranged fetch
+// across six feature repositories is not worth that edge (review, #81). The
+// rows are tiny (timestamps + short fields); 250 stays a cheap query.
+const RECENT_LIST_LIMIT = 250;
 
 /** Oldest day the 7-day derivation window can reach, as a local date key. */
 export function stripWindowStartKey(): string {
