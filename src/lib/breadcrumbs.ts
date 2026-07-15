@@ -7,6 +7,8 @@ export interface Breadcrumb {
 const STATIC_ROUTES: Record<string, string> = {
   "/support": "sidebar.support",
   "/progress": "breadcrumb.progress",
+  "/routines": "sidebar.routines",
+  "/routines/new": "breadcrumb.new",
   "/legal": "breadcrumb.legal",
   "/notifications": "sidebar.notifications",
   "/settings": "sidebar.settings",
