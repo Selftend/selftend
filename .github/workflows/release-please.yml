@@ -51,9 +51,13 @@ jobs:
         run: |
           num=$(printf '%s' "$RELEASE_PR" | jq -r '.number // empty' 2>/dev/null || true)
           if [ -z "$num" ]; then
+            # --head matches by branch NAME across forks too - restrict to heads
+            # in this repo, or a fork PR named like the release branch could get
+            # bot-approved and auto-merged.
             num=$(gh pr list --repo "${{ github.repository }}" --state open \
               --head "release-please--branches--main--components--selftend" \
-              --json number --jq '.[0].number // empty')
+              --json number,headRepositoryOwner \
+              --jq '[.[] | select(.headRepositoryOwner.login == "${{ github.repository_owner }}")][0].number // empty')
           fi
           if [ -z "$num" ]; then
             num=$(gh pr list --repo "${{ github.repository }}" --state open \
