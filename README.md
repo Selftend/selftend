@@ -63,17 +63,18 @@ After running `npm run coverage:ratchet:update`, commit the updated `coverage/ba
 
 ## Documentation
 
-| Topic              | Guide                                                      |
-| ------------------ | ---------------------------------------------------------- |
-| Contributing       | [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)         |
-| Security           | [.github/SECURITY.md](.github/SECURITY.md)                 |
-| Code of Conduct    | [.github/CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md)   |
-| Docs index         | [docs/README.md](docs/README.md)                           |
-| Android setup      | [docs/android-development.md](docs/android-development.md) |
-| Architecture       | [docs/architecture.md](docs/architecture.md)               |
-| Stack              | [docs/stack.md](docs/stack.md)                             |
-| Privacy data model | [docs/data-privacy-model.md](docs/data-privacy-model.md)   |
-| Supabase setup     | [supabase/README.md](supabase/README.md)                   |
+| Topic                | Guide                                                      |
+| -------------------- | ---------------------------------------------------------- |
+| Contributing         | [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)         |
+| Branching & releases | [docs/releasing.md](docs/releasing.md)                     |
+| Security             | [.github/SECURITY.md](.github/SECURITY.md)                 |
+| Code of Conduct      | [.github/CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md)   |
+| Docs index           | [docs/README.md](docs/README.md)                           |
+| Android setup        | [docs/android-development.md](docs/android-development.md) |
+| Architecture         | [docs/architecture.md](docs/architecture.md)               |
+| Stack                | [docs/stack.md](docs/stack.md)                             |
+| Privacy data model   | [docs/data-privacy-model.md](docs/data-privacy-model.md)   |
+| Supabase setup       | [supabase/README.md](supabase/README.md)                   |
 
 ## License
 

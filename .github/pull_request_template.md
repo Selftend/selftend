@@ -1,3 +1,5 @@
+> **Base branch:** `dev` — not `main` — unless this is a `hotfix/*`. **PR title:** a Conventional Commit (`feat:`, `fix:`, `docs:` …); it becomes the squash commit that drives versioning. See [docs/releasing.md](../docs/releasing.md).
+
 ## Summary
 
 - what changed

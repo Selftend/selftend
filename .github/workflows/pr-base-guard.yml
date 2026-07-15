@@ -1,0 +1,35 @@
+name: PR base guard
+
+# main stays the repo's default branch (release-event wiring must live there),
+# so GitHub defaults new PRs' base to main - but everyday work lands on dev.
+# This comments a retarget nudge on stray base=main feature PRs, excluding the
+# PRs that legitimately target main: the dev→main promotion PR (head=dev),
+# hotfix/* branches, and release-please's PRs (decision #19). Comment-only,
+# never blocking.
+#
+# pull_request_target is safe here: the job never checks out or runs PR code -
+# it only needs the write-scoped token to comment on fork PRs too.
+on:
+  pull_request_target:
+    types: [opened]
+    branches: [main]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  nudge:
+    name: Nudge stray base=main PRs toward dev
+    if: >-
+      github.head_ref != 'dev' &&
+      !startsWith(github.head_ref, 'hotfix/') &&
+      !startsWith(github.head_ref, 'release-please--')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Comment the retarget nudge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" --repo "$GITHUB_REPOSITORY" --body "$(printf '👋 This PR targets **main**, but everyday changes land on **dev** (main only receives the dev→main promotion PR, hotfix/* PRs, and release-please PRs).\n\nPlease change the base branch to dev: **Edit** (next to the PR title) → base: **dev**. No need to close or reopen.\n\nSee [docs/releasing.md](https://github.com/%s/blob/dev/docs/releasing.md) for the branch model.' "$GITHUB_REPOSITORY")"
