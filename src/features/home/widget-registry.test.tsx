@@ -4,6 +4,8 @@ import {
   isImplemented,
   metaForWidget,
 } from "@/src/features/home/widget-registry";
+import { CONCERN_KEYS, resolveConcernWidgetIds } from "@/src/features/onboarding/concerns";
+import { SHARED_TOOL_WIDGET_IDS } from "@/src/features/onboarding/recommendations";
 
 describe("widget registry", () => {
   it("exposes the daily check-in (mood-checkin) meta", () => {
@@ -142,6 +144,25 @@ describe("widget registry", () => {
       expect(isImplemented(id)).toBe(false);
       expect(WIDGET_META[id]).toBeUndefined();
     }
+  });
+
+  it("registers routines-today as an opt-in widget - available, never default-seeded", () => {
+    expect(isImplemented("routines-today")).toBe(true);
+    expect(WIDGET_META["routines-today"].toolKey).toBe("routines");
+    // The exact flag difference to habits-today: habits-today is a
+    // default-seeded widget ("default"); routines-today must stay "available"
+    // (offered in the Add-Widget modal, never auto-added).
+    expect(WIDGET_META["routines-today"].status).toBe("available");
+    expect(WIDGET_META["habits-today"].status).toBe("default");
+    expect(WIDGET_META["routines-today"].status).not.toBe(WIDGET_META["habits-today"].status);
+  });
+
+  it("keeps routines-today out of every auto-seeding surface", () => {
+    // Onboarding's shared-tool widget offer (habits-today IS in this list).
+    expect(SHARED_TOOL_WIDGET_IDS).not.toContain("routines-today");
+    expect(SHARED_TOOL_WIDGET_IDS).toContain("habits-today");
+    // Concern-based suggestions across every concern.
+    expect(resolveConcernWidgetIds([...CONCERN_KEYS])).not.toContain("routines-today");
   });
 
   it("metaForWidget returns undefined for unknown ids", () => {

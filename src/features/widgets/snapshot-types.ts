@@ -153,6 +153,7 @@ export const CARD_IDS = [
   "act-acceptance-prompt",
   "journal-week",
   "grounding-log",
+  "routines-today",
 ] as const;
 export type CardId = (typeof CARD_IDS)[number];
 

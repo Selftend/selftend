@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { OfflineBanner } from "@/src/components/app/offline-banner";
+import { RoutineFab } from "@/src/components/app/routine-fab";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
@@ -175,6 +176,10 @@ export default function ProtectedLayout() {
             <Stack.Screen name="legal" />
             <Stack.Screen name="progress" />
           </Stack>
+          {/* Corner-floating routine-progress handle: authenticated shell only,
+              bottom-right so it coexists with the bottom-center reminder prompt
+              card by construction. Renders nothing while no routine step is open. */}
+          <RoutineFab />
         </View>
       </View>
     </AppLockGate>
