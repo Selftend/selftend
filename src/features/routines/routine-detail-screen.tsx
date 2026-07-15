@@ -10,6 +10,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { RoutineDayStrip } from "@/src/features/routines/day-strip";
 import { deriveRoutine, type RoutineStatus } from "@/src/features/routines/derive";
 import { useDeleteRoutine, useRoutine } from "@/src/features/routines/queries";
 import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
@@ -158,6 +159,16 @@ export function RoutineDetailScreen({ routineId }: RoutineDetailScreenProps) {
             )}
             <Text variant="muted" className="text-xs">
               {t("detail.orderNote")}
+            </Text>
+          </View>
+
+          <View className="gap-2">
+            <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              {t("strip.label")}
+            </Text>
+            <RoutineDayStrip steps={routine.steps} records={records} />
+            <Text variant="muted" className="text-xs">
+              {t("strip.note")}
             </Text>
           </View>
         </ScrollView>
