@@ -26,6 +26,7 @@ Use this as the map for project docs. Each entry below links to the doc that own
 - [internal-testing.md](internal-testing.md) - internal build and testing checklist
 - [android-closed-testing.md](android-closed-testing.md) - Google Play closed-testing readiness
 - [github-setup.md](github-setup.md) - workflows, labels, release variables, branching
+- [releasing.md](releasing.md) - branch model, dev→main promotion, release-please invariants
 - [operations-runbook.md](operations-runbook.md) - support, privacy, security, breach workflows
 
 ## Policy And Planning
