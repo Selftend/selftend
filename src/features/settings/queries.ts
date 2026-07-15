@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { ButtonTourKey, UserPreferences } from "@/src/features/modules/types";
+import {
+  mergeUserPreferences,
+  type ButtonTourKey,
+  type UserPreferences,
+} from "@/src/features/modules/types";
 import {
   deleteUserAccount,
   exportUserData,
@@ -27,20 +31,23 @@ export function useUpdateUserPreferences(userId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (preferences: UserPreferences) => updateUserPreferences(userId!, preferences),
-    // updateUserPreferences writes the WHOLE ~80-column row, and callers build it with
-    // mergeUserPreferences(cachedPrefs, patch). Optimistically write the new row into the
-    // cache so a rapid follow-up save reads THIS value instead of the stale pre-save
-    // snapshot (which would silently drop the first save's columns). Roll back on error;
-    // reconcile with the server on settle.
+    // Callers pass ONLY the fields they change; the repository writes only those
+    // columns (#57 - a whole-row write clobbers concurrent writers with values
+    // captured at mount). Optimistically merge the patch into the cached row so a
+    // rapid follow-up save reads THIS value instead of the stale pre-save snapshot.
+    // Roll back on error; reconcile with the server on success.
     // Callers that surface errors (notification cards, meditation onboarding) show their own
     // toast; callers that don't (sounds-sheet, settings-sync) intentionally swallow errors.
+    mutationFn: (patch: Partial<UserPreferences>) => updateUserPreferences(userId!, patch),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
-    onMutate: async (preferences: UserPreferences) => {
+    onMutate: async (patch: Partial<UserPreferences>) => {
       if (!userId) return {};
       await queryClient.cancelQueries({ queryKey: preferenceKeys.detail(userId) });
       const previous = queryClient.getQueryData<UserPreferences>(preferenceKeys.detail(userId));
-      queryClient.setQueryData(preferenceKeys.detail(userId), preferences);
+      queryClient.setQueryData(
+        preferenceKeys.detail(userId),
+        mergeUserPreferences(previous, patch),
+      );
       return { previous };
     },
     onError: (_error, _preferences, context) => {

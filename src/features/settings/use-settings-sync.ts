@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { mergeUserPreferences, type UserPreferences } from "@/src/features/modules/types";
+import { type UserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences } from "@/src/features/settings/queries";
 import { supportedLanguages, type SupportedLanguage } from "@/src/i18n";
 import { supabase } from "@/src/lib/supabase";
@@ -89,20 +89,23 @@ export function useSettingsSync(userId: string | null, preferences: UserPreferen
     if (pushFailedRef.current) return;
 
     if (language !== preferences.language || themePreference !== preferences.theme) {
-      updatePreferences(mergeUserPreferences(preferences, { language, theme: themePreference }), {
-        onError: (error) => {
-          pushFailedRef.current = true;
-          // Stale-session guard, deliberately scoped HERE and not in a global fetch
-          // interceptor: this hook is the one writer that fires automatically on
-          // every preferences tick, so it is where a dead session turns into a
-          // silent infinite failure loop. User-initiated writes surface their own
-          // errors and stop. Signing out clears the zombie JWT and lands the user
-          // on sign-in instead of a half-working app.
-          if (isStaleSessionError(error)) {
-            void supabase?.auth.signOut();
-          }
+      updatePreferences(
+        { language, theme: themePreference },
+        {
+          onError: (error) => {
+            pushFailedRef.current = true;
+            // Stale-session guard, deliberately scoped HERE and not in a global fetch
+            // interceptor: this hook is the one writer that fires automatically on
+            // every preferences tick, so it is where a dead session turns into a
+            // silent infinite failure loop. User-initiated writes surface their own
+            // errors and stop. Signing out clears the zombie JWT and lands the user
+            // on sign-in instead of a half-working app.
+            if (isStaleSessionError(error)) {
+              void supabase?.auth.signOut();
+            }
+          },
         },
-      });
+      );
     }
   }, [
     hydrated,

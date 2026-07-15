@@ -14,7 +14,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { mergeUserPreferences, type UserPreferences } from "@/src/features/modules/types";
+import { type UserPreferences } from "@/src/features/modules/types";
 import {
   isReminderPromptEligible,
   roundToNearestHalfHour,
@@ -72,11 +72,9 @@ export function ReminderPromptCard() {
     setTime(roundToNearestHalfHour(new Date(request.completedAt)));
     // Mark prompted on show: navigating away without touching the card still
     // counts as asked. Best-effort - a failed write only risks one more ask.
-    persistPreferences(
-      mergeUserPreferences(preferences, {
-        reminderPromptedTools: promptedToolsIncluding(preferences, request.targetKey),
-      }),
-    ).catch(() => {});
+    persistPreferences({
+      reminderPromptedTools: promptedToolsIncluding(preferences, request.targetKey),
+    }).catch(() => {});
   }, [request, userId, preferences, dismissRequest, persistPreferences]);
 
   if (!activeTarget || !preferences || !userId) return null;
@@ -104,7 +102,7 @@ export function ReminderPromptCard() {
       if (target.hourField) patch[target.hourField] = hour;
       if (target.minuteField) patch[target.minuteField] = minute;
       if (target.timezoneField) patch[target.timezoneField] = getReminderTimeZone();
-      await persistPreferences(mergeUserPreferences(preferences, patch));
+      await persistPreferences(patch);
       showToast({ title: t("feedback.saved"), description: t(target.labelKey), tone: "success" });
       setActiveTarget(null);
     } catch (error) {

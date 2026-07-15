@@ -12,7 +12,7 @@ import {
   useValueEntries,
 } from "@/src/features/act/queries";
 import { deriveActProgram, type ActProgramView } from "@/src/features/act/derive-act-program";
-import { mergeUserPreferences } from "@/src/features/modules/types";
+import {} from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -89,11 +89,11 @@ export function useActProgram(userId: string | null): UseActProgramResult {
     void updatePreferences
       .mutateAsync(
         idx >= last
-          ? mergeUserPreferences(preferences, { actProgramCompletedAt: new Date().toISOString() })
-          : mergeUserPreferences(preferences, {
+          ? { actProgramCompletedAt: new Date().toISOString() }
+          : {
               actProgramPhaseIndex: idx + 1,
               actProgramPhaseStartedAt: new Date().toISOString(),
-            }),
+            },
       )
       .catch(() => undefined);
   };
@@ -101,73 +101,63 @@ export function useActProgram(userId: string | null): UseActProgramResult {
   const startProgram = () => {
     if (!preferences) return;
     void updatePreferences
-      .mutateAsync(
-        mergeUserPreferences(preferences, {
-          actProgramStartedAt: new Date().toISOString(),
-          actProgramCompletedAt: null,
-          actProgramPromptDismissedAt: null,
-          actOnboardingCompleted: true,
-          actProgramPhaseIndex: 0,
-          actProgramPhaseStartedAt: new Date().toISOString(),
-          actGraduationDismissedAt: null,
-        }),
-      )
+      .mutateAsync({
+        actProgramStartedAt: new Date().toISOString(),
+        actProgramCompletedAt: null,
+        actProgramPromptDismissedAt: null,
+        actOnboardingCompleted: true,
+        actProgramPhaseIndex: 0,
+        actProgramPhaseStartedAt: new Date().toISOString(),
+        actGraduationDismissedAt: null,
+      })
       .catch(() => undefined);
   };
 
   const dismissProgramPrompt = () => {
     if (!preferences) return;
     void updatePreferences
-      .mutateAsync(
-        mergeUserPreferences(preferences, {
-          actProgramPromptDismissedAt: new Date().toISOString(),
-        }),
-      )
+      .mutateAsync({
+        actProgramPromptDismissedAt: new Date().toISOString(),
+      })
       .catch(() => undefined);
   };
 
   const showProgramPrompt = () => {
     if (!preferences) return;
     void updatePreferences
-      .mutateAsync(mergeUserPreferences(preferences, { actProgramPromptDismissedAt: null }))
+      .mutateAsync({ actProgramPromptDismissedAt: null })
       .catch(() => undefined);
   };
 
   const abandonProgram = () => {
     if (!preferences) return;
     void updatePreferences
-      .mutateAsync(
-        mergeUserPreferences(preferences, {
-          actProgramStartedAt: null,
-          actProgramCompletedAt: null,
-          actProgramPromptDismissedAt: new Date().toISOString(),
-        }),
-      )
+      .mutateAsync({
+        actProgramStartedAt: null,
+        actProgramCompletedAt: null,
+        actProgramPromptDismissedAt: new Date().toISOString(),
+      })
       .catch(() => undefined);
   };
 
   const replayProgram = () => {
     if (!preferences) return;
     void updatePreferences
-      .mutateAsync(
-        mergeUserPreferences(preferences, {
-          actProgramStartedAt: new Date().toISOString(),
-          actProgramCompletedAt: null,
-          actProgramPromptDismissedAt: null,
-          actProgramPhaseIndex: 0,
-          actProgramPhaseStartedAt: new Date().toISOString(),
-          actGraduationDismissedAt: null,
-        }),
-      )
+      .mutateAsync({
+        actProgramStartedAt: new Date().toISOString(),
+        actProgramCompletedAt: null,
+        actProgramPromptDismissedAt: null,
+        actProgramPhaseIndex: 0,
+        actProgramPhaseStartedAt: new Date().toISOString(),
+        actGraduationDismissedAt: null,
+      })
       .catch(() => undefined);
   };
 
   const dismissGraduation = () => {
     if (!preferences) return;
     void updatePreferences
-      .mutateAsync(
-        mergeUserPreferences(preferences, { actGraduationDismissedAt: new Date().toISOString() }),
-      )
+      .mutateAsync({ actGraduationDismissedAt: new Date().toISOString() })
       .catch(() => undefined);
   };
 

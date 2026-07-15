@@ -8,7 +8,7 @@ import { useHierarchies } from "@/src/features/exposure/queries";
 import { useGoals } from "@/src/features/goals/queries";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { useMoodHistory } from "@/src/features/mood/queries";
-import { mergeUserPreferences } from "@/src/features/modules/types";
+import {} from "@/src/features/modules/types";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useValuesProfile } from "@/src/features/values/queries";
@@ -88,11 +88,11 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
     void updatePreferences
       .mutateAsync(
         idx >= last
-          ? mergeUserPreferences(preferences, { cbtProgramCompletedAt: new Date().toISOString() })
-          : mergeUserPreferences(preferences, {
+          ? { cbtProgramCompletedAt: new Date().toISOString() }
+          : {
               cbtProgramPhaseIndex: idx + 1,
               cbtProgramPhaseStartedAt: new Date().toISOString(),
-            }),
+            },
       )
       .catch(() => undefined);
   };
@@ -100,79 +100,67 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
   const startProgram = () => {
     if (!preferences) return;
     void updatePreferences
-      .mutateAsync(
-        mergeUserPreferences(preferences, {
-          cbtProgramStartedAt: new Date().toISOString(),
-          cbtProgramCompletedAt: null,
-          cbtProgramPromptDismissedAt: null,
-          cbtGraduationDismissedAt: null,
-          cbtOnboardingCompleted: true,
-          cbtProgramPhaseIndex: 0,
-          cbtProgramPhaseStartedAt: new Date().toISOString(),
-        }),
-      )
+      .mutateAsync({
+        cbtProgramStartedAt: new Date().toISOString(),
+        cbtProgramCompletedAt: null,
+        cbtProgramPromptDismissedAt: null,
+        cbtGraduationDismissedAt: null,
+        cbtOnboardingCompleted: true,
+        cbtProgramPhaseIndex: 0,
+        cbtProgramPhaseStartedAt: new Date().toISOString(),
+      })
       .catch(() => undefined);
   };
 
   const dismissProgramPrompt = () => {
     if (!preferences) return;
     void updatePreferences
-      .mutateAsync(
-        mergeUserPreferences(preferences, {
-          cbtProgramPromptDismissedAt: new Date().toISOString(),
-        }),
-      )
+      .mutateAsync({
+        cbtProgramPromptDismissedAt: new Date().toISOString(),
+      })
       .catch(() => undefined);
   };
 
   const showProgramPrompt = () => {
     if (!preferences) return;
     void updatePreferences
-      .mutateAsync(
-        mergeUserPreferences(preferences, {
-          cbtProgramPromptDismissedAt: null,
-        }),
-      )
+      .mutateAsync({
+        cbtProgramPromptDismissedAt: null,
+      })
       .catch(() => undefined);
   };
 
   const abandonProgram = () => {
     if (!preferences) return;
     void updatePreferences
-      .mutateAsync(
-        mergeUserPreferences(preferences, {
-          cbtProgramStartedAt: null,
-          cbtProgramCompletedAt: null,
-          cbtProgramPromptDismissedAt: new Date().toISOString(),
-        }),
-      )
+      .mutateAsync({
+        cbtProgramStartedAt: null,
+        cbtProgramCompletedAt: null,
+        cbtProgramPromptDismissedAt: new Date().toISOString(),
+      })
       .catch(() => undefined);
   };
 
   const replayProgram = () => {
     if (!preferences) return;
     void updatePreferences
-      .mutateAsync(
-        mergeUserPreferences(preferences, {
-          cbtProgramStartedAt: new Date().toISOString(),
-          cbtProgramCompletedAt: null,
-          cbtProgramPromptDismissedAt: null,
-          cbtGraduationDismissedAt: null,
-          cbtProgramPhaseIndex: 0,
-          cbtProgramPhaseStartedAt: new Date().toISOString(),
-        }),
-      )
+      .mutateAsync({
+        cbtProgramStartedAt: new Date().toISOString(),
+        cbtProgramCompletedAt: null,
+        cbtProgramPromptDismissedAt: null,
+        cbtGraduationDismissedAt: null,
+        cbtProgramPhaseIndex: 0,
+        cbtProgramPhaseStartedAt: new Date().toISOString(),
+      })
       .catch(() => undefined);
   };
 
   const dismissGraduation = () => {
     if (!preferences) return;
     void updatePreferences
-      .mutateAsync(
-        mergeUserPreferences(preferences, {
-          cbtGraduationDismissedAt: new Date().toISOString(),
-        }),
-      )
+      .mutateAsync({
+        cbtGraduationDismissedAt: new Date().toISOString(),
+      })
       .catch(() => undefined);
   };
 

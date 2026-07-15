@@ -14,7 +14,7 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { mergeUserPreferences, type UserPreferences } from "@/src/features/modules/types";
+import { type UserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences } from "@/src/features/settings/queries";
 import {
   type NotificationTarget,
@@ -103,7 +103,7 @@ export function NotificationTargetCard({
           if (!result.enabled) {
             patch[enabledField] = false;
             setEnabled(false);
-            await updatePreferences.mutateAsync(mergeUserPreferences(preferences, patch));
+            await updatePreferences.mutateAsync(patch);
             const message = t("feedback.problem");
             setErrorMessage(message);
             showToast({ title: message, description: result.reason, tone: "error" });
@@ -120,7 +120,7 @@ export function NotificationTargetCard({
       patch.reminderConsent = reminderConsent;
       patch.reminderConsentUpdatedAt = getReminderConsentUpdatedAt(preferences, reminderConsent);
 
-      await updatePreferences.mutateAsync(mergeUserPreferences(preferences, patch));
+      await updatePreferences.mutateAsync(patch);
       showToast({
         title: t("feedback.saved"),
         description: t(target.labelKey),
