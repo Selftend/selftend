@@ -1,16 +1,28 @@
 name: Android Play closed testing release
 
+# Reusable build+submit invoked by the release orchestrator (release.yml) after
+# migrate-prod. workflow_dispatch is kept as a manual fallback (builds main).
 on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build (release tag from the orchestrator)
+        type: string
+        required: true
+      submit_to_play:
+        description: Release the AAB to the Google Play closed testing (alpha) track
+        type: boolean
+        default: true
+      environment:
+        description: GitHub Environment providing the app vars and Play secrets
+        type: string
+        default: production
   workflow_dispatch:
     inputs:
       submit_to_play:
         description: Build the AAB and release it to the Google Play closed testing (alpha) track
         type: boolean
         default: true
-
-concurrency:
-  group: android-release-main
-  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -20,6 +32,13 @@ jobs:
     name: Build Android App Bundle
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    environment: ${{ inputs.environment || 'production' }}
+    # Job-level (not workflow-level) so it still applies when this file runs as a
+    # reusable workflow inside the caller's run. A newer release cancels an
+    # in-flight ~90-minute build - the cost guard from decision #15.
+    concurrency:
+      group: android-release
+      cancel-in-progress: true
 
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
@@ -47,7 +66,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          ref: main
+          # Build the exact release tag when called from the orchestrator -
+          # reproducible and immune to the branch advancing mid-build.
+          ref: ${{ inputs.ref || 'main' }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

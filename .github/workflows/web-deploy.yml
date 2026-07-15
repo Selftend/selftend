@@ -1,11 +1,20 @@
-name: Web production deploy
+name: Web deploy
 
+# Reusable deploy invoked by the release orchestrator (release.yml) after
+# migrate-prod, and later by the staging orchestrator with staging inputs.
+# workflow_dispatch is kept as a manual fallback (deploys main to production).
 on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build (release tag from the orchestrator)
+        type: string
+        required: true
+      environment:
+        description: GitHub Environment providing the Netlify site + app vars
+        type: string
+        default: production
   workflow_dispatch:
-
-concurrency:
-  group: web-production-deploy-main
-  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -15,6 +24,13 @@ jobs:
     name: Deploy Web To Netlify
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment: ${{ inputs.environment || 'production' }}
+    # Job-level (not workflow-level) so it still applies when this file runs as a
+    # reusable workflow inside the caller's run. A newer deploy to the same
+    # environment supersedes an in-flight one.
+    concurrency:
+      group: web-deploy-${{ inputs.environment || 'production' }}
+      cancel-in-progress: true
 
     env:
       EXPO_PUBLIC_APP_STORE_URL: ${{ vars.EXPO_PUBLIC_APP_STORE_URL }}
@@ -34,7 +50,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          ref: main
+          # Build the exact release tag when called from the orchestrator -
+          # reproducible and immune to the branch advancing mid-build.
+          ref: ${{ inputs.ref || 'main' }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
