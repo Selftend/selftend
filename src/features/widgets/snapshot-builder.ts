@@ -538,6 +538,18 @@ for (const p of ACT_PROMPTS) {
   });
 }
 
+// Launcher replica of the in-app routines-today widget (#50): a plain shortcut
+// into the Routines page. The launcher card derives no status - the in-app
+// widget owns the today aggregate; the "routines:" prefix resolves the keys
+// from the routines namespace through the navigation-bound translator.
+CARD_BUILDERS["routines-today"] = (_d, { t }) => ({
+  kind: "shortcut",
+  title: t("routines:widget.metaTitle"),
+  moduleLabel: t("home.categories.routines"),
+  description: t("routines:widget.metaDesc"),
+  cta: { label: t("today.dashboard.open"), path: "/routines" },
+});
+
 function signedOutCard(t: Translate) {
   return { title: "Selftend", cta: t("home.widgets.launcher.signedOutCta") };
 }

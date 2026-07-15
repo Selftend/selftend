@@ -26,7 +26,8 @@ interface AddWidgetModalProps {
 }
 
 const MODULE_CATS = ["cbt", "act"];
-const CATEGORY_ORDER = [
+// Exported for the registry/meta tests pinning the routines category (#50).
+export const CATEGORY_ORDER = [
   "mood",
   "cbt",
   "act",
@@ -37,9 +38,10 @@ const CATEGORY_ORDER = [
   "meditation",
   "sleep",
   "habits",
+  "routines",
 ];
 
-const CATEGORY_ICON: Record<string, WidgetMeta["icon"]> = {
+export const CATEGORY_ICON: Record<string, WidgetMeta["icon"]> = {
   mood: "mood",
   cbt: "psychology",
   act: "explore",
@@ -50,6 +52,7 @@ const CATEGORY_ICON: Record<string, WidgetMeta["icon"]> = {
   meditation: "self-improvement",
   sleep: "bedtime",
   habits: "task-alt",
+  routines: "repeat",
 };
 
 function widgetsByCategory(): Record<string, WidgetMeta[]> {

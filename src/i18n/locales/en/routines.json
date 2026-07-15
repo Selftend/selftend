@@ -75,5 +75,37 @@
     "grounding": "Grounding",
     "meditation": "Meditation",
     "habits": "Habits"
+  },
+  "widget": {
+    "metaTitle": "Routines today",
+    "metaDesc": "All your routines' progress for the day in one calm card.",
+    "title": "Routines today",
+    "progress": "{{done}}/{{total}} steps",
+    "routineProgress": "{{done}}/{{total}}",
+    "allDone": "Everything came together today. Nothing left to do here.",
+    "emptyBody": "A routine strings a few small tool actions together. If you'd like one, the Routines page is the place to start.",
+    "emptyCta": "Explore routines",
+    "open": "Open"
+  },
+  "fab": {
+    "progress": "{{done}}/{{total}}",
+    "a11y": "Continue your routine: {{done}} of {{total}} steps done today"
+  },
+  "sheet": {
+    "title": "Continue your routine",
+    "switchLabel": "Switch routine",
+    "next": "Next",
+    "doNextStep": "Do next step",
+    "stepDone": "Done today",
+    "stepOpen": "Not yet today",
+    "orderNote": "Order is just a suggestion - any step, any order.",
+    "close": "Close",
+    "completeTitle": "That was the last step",
+    "completeBody": "\"{{name}}\" came together today. There's nothing more to do here.",
+    "reminderOffer": "If it would help, this routine can nudge you once a day. It stays off unless you turn it on.",
+    "reminderTimeLabel": "Reminder time",
+    "reminderAccept": "Set a daily reminder",
+    "reminderDecline": "Not now",
+    "reminderSaveError": "Could not save the reminder. You can set it any time from the routine."
   }
 }
