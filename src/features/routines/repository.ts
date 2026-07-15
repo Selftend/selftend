@@ -211,12 +211,17 @@ export async function reorderSteps(
   if (orderedStepIds.length === 0) return;
   const client = requireSupabase();
   for (const [index, stepId] of orderedStepIds.entries()) {
-    const { error } = await client
+    const { data, error } = await client
       .from("routine_steps")
       .update({ position: index })
       .eq("user_id", userId)
       .eq("routine_id", routineId)
-      .eq("id", stepId);
+      .eq("id", stepId)
+      .select("id");
     if (error) throw error;
+    // A zero-row match (stale id, or a step of another routine) is a silent
+    // no-op at the PostgREST layer - surface it instead of "saving" a gapped
+    // or duplicated order the caller believes persisted.
+    if (!data || data.length === 0) throw new Error("Routine step not found");
   }
 }

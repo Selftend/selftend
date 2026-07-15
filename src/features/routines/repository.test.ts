@@ -419,7 +419,8 @@ describe("routines repository", () => {
   });
 
   it("reorderSteps writes each step's index as its position, fully scoped", async () => {
-    const eqId = jest.fn().mockResolvedValue({ error: null });
+    const select = jest.fn().mockResolvedValue({ data: [{ id: "s" }], error: null });
+    const eqId = jest.fn(() => ({ select }));
     const eqRoutine = jest.fn(() => ({ eq: eqId }));
     const eqUser = jest.fn(() => ({ eq: eqRoutine }));
     const update = jest.fn(() => ({ eq: eqUser }));
@@ -448,12 +449,28 @@ describe("routines repository", () => {
   });
 
   it("reorderSteps throws when a position update errors", async () => {
-    const eqId = jest.fn().mockResolvedValue({ error: { code: "42501" } });
+    const select = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
+    const eqId = jest.fn(() => ({ select }));
     const eqRoutine = jest.fn(() => ({ eq: eqId }));
     const eqUser = jest.fn(() => ({ eq: eqRoutine }));
     const update = jest.fn(() => ({ eq: eqUser }));
     mockRequireSupabase.mockReturnValue(buildClient({ routine_steps: { update } }));
 
     await expect(reorderSteps("user-1", "r-1", ["s-1"])).rejects.toMatchObject({ code: "42501" });
+  });
+});
+
+describe("reorderSteps zero-row guard", () => {
+  it("throws when an id matches no row instead of silently saving a gapped order", async () => {
+    const select = jest.fn().mockResolvedValue({ data: [], error: null });
+    const eqId = jest.fn(() => ({ select }));
+    const eqRoutine = jest.fn(() => ({ eq: eqId }));
+    const eqUser = jest.fn(() => ({ eq: eqRoutine }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ routine_steps: { update } }));
+
+    await expect(reorderSteps("user-1", "r-1", ["stale-id"])).rejects.toThrow(
+      "Routine step not found",
+    );
   });
 });
