@@ -118,7 +118,7 @@ export default function BreathingSessionScreen() {
     if (!user?.id) return;
     // Best-effort persistence of volume/cycle/last-pattern prefs; a failed write must
     // not become an unhandled rejection (the local UI state is authoritative this session).
-    void updatePrefs.mutateAsync(mergeUserPreferences(prefs, p)).catch(() => undefined);
+    void updatePrefs.mutateAsync(p).catch(() => undefined);
   };
 
   const selectPattern = (id: string) => {

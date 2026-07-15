@@ -28,7 +28,7 @@ import { median } from "@/src/features/meditation/median";
 import { getStage } from "@/src/features/meditation/stages";
 import type { StageNumber } from "@/src/features/meditation/types";
 import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
-import { mergeUserPreferences } from "@/src/features/modules/types";
+import {} from "@/src/features/modules/types";
 import { useSession } from "@/src/providers/session-provider";
 import { parseHHmm } from "@/src/utils/time";
 import { useLocaleFormats } from "@/src/lib/locale-format";
@@ -71,15 +71,13 @@ export default function MeditationHomeScreen() {
         preferredDurationMinutes: result.preferredDurationMinutes,
         preferredTimeOfDay: result.preferredTimeOfDay,
       });
-      await updatePreferences.mutateAsync(
-        mergeUserPreferences(preferences, {
-          meditationOnboardingCompleted: true,
-          meditationRemindersEnabled: result.remindersEnabled,
-          meditationReminderHour: preferredTime.hour,
-          meditationReminderMinute: preferredTime.minute,
-          enabledModules: addModule(preferences.enabledModules, "meditation"),
-        }),
-      );
+      await updatePreferences.mutateAsync({
+        meditationOnboardingCompleted: true,
+        meditationRemindersEnabled: result.remindersEnabled,
+        meditationReminderHour: preferredTime.hour,
+        meditationReminderMinute: preferredTime.minute,
+        enabledModules: addModule(preferences.enabledModules, "meditation"),
+      });
       setForceWizard(false);
     } catch (error) {
       const fallback = t("onboarding.commit.error");

@@ -13,7 +13,7 @@ import {
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { mergeUserPreferences } from "@/src/features/modules/types";
+import {} from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { NOTIFICATION_TARGETS } from "@/src/features/notifications/registry";
 import { NotificationTargetCard } from "@/src/features/notifications/notification-target-card";
@@ -37,9 +37,7 @@ export default function NotificationsScreen() {
     try {
       // Write the preference first (it drives server-side delivery), then tear the channel
       // down - so a teardown failure can't leave the pref enabled with the channel gone.
-      await updatePreferences.mutateAsync(
-        mergeUserPreferences(preferences, { notificationsEnabledGlobal: next }),
-      );
+      await updatePreferences.mutateAsync({ notificationsEnabledGlobal: next });
       if (!next) {
         await cancelAllReminders(userId);
       }
