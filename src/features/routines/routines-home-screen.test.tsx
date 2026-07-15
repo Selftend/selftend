@@ -6,7 +6,7 @@ import { useAddStep, useCreateRoutine, useRoutines } from "@/src/features/routin
 import type { RoutineWithSteps } from "@/src/features/routines/types";
 import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { currentDateKey } from "@/src/utils/date";
+import { currentDateKey, lastNDayKeys } from "@/src/utils/date";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -117,6 +117,28 @@ describe("RoutinesHomeScreen", () => {
     expect(screen.getByText("Done for today")).toBeTruthy();
     expect(screen.getByText("Evening wind-down")).toBeTruthy();
     expect(screen.getByText("Not started")).toBeTruthy();
+  });
+
+  it("renders a last-7-days strip per card, filled only on complete days", () => {
+    mockUseRoutines.mockReturnValue({
+      data: [makeRoutine("r-1", "Morning reset", ["mood"])],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useRoutines>);
+    // Mood logged yesterday (day -1) and three days ago (day -3), not today.
+    const dayKeys = lastNDayKeys(7);
+    mockUseRoutineToolRecords.mockReturnValue({
+      moodLogs: [{ loggedAt: `${dayKeys[5]}T12:00:00` }, { loggedAt: `${dayKeys[3]}T12:00:00` }],
+    });
+
+    renderWithProviders(<RoutinesHomeScreen />);
+
+    expect(screen.getByText("Last 7 days")).toBeTruthy();
+    expect(screen.getAllByLabelText(/: routine complete$/)).toHaveLength(2);
+    // The five gap days render as neutral "not completed" cells; there is no
+    // streak counter anywhere on the card (the only "streak" text on this
+    // screen is the subtitle's "no streaks" promise).
+    expect(screen.getAllByLabelText(/: not completed$/)).toHaveLength(5);
+    expect(screen.queryByText(/\d+.?(day|week) streak/i)).toBeNull();
   });
 
   it("offers the starter routine at zero routines and writes it on Keep", async () => {

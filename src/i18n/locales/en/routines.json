@@ -9,6 +9,12 @@
     "starterBody": "Composed from the tools already on your Home. Keep it as is, or skip - you can always build your own.",
     "openDetail": "Open routine"
   },
+  "strip": {
+    "label": "Last 7 days",
+    "dayComplete": "{{date}}: routine complete",
+    "dayOpen": "{{date}}: not completed",
+    "note": "Filled days are days the whole routine came together. Empty days are just empty - one missed day doesn't undo what you're building."
+  },
   "status": {
     "notStarted": "Not started",
     "inProgress": "In progress",

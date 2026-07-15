@@ -1,6 +1,7 @@
 import { groundingSlugs } from "@/src/constants/grounding";
 import {
   deriveRoutine,
+  deriveRoutineStrip,
   isSteppableToolId,
   stepDoneOnDate,
   type RoutineToolRecords,
@@ -145,6 +146,47 @@ describe("deriveRoutine", () => {
     expect(deriveRoutine(single, { sleepLogs: [{ loggedAt: onDayTs }] }, DAY).status).toBe(
       "complete",
     );
+  });
+});
+
+describe("deriveRoutineStrip", () => {
+  const weekKeys = [
+    "2026-07-09",
+    "2026-07-10",
+    "2026-07-11",
+    "2026-07-12",
+    "2026-07-13",
+    "2026-07-14",
+    "2026-07-15",
+  ];
+
+  it("fills exactly the days the whole routine derived complete, in day order", () => {
+    // Mood logged on days -3 and -1 relative to DAY; every other day is open.
+    const strip = deriveRoutineStrip(
+      steps("mood"),
+      { moodLogs: [{ loggedAt: "2026-07-14T08:00:00" }, { loggedAt: "2026-07-12T21:15:00" }] },
+      weekKeys,
+    );
+
+    expect(strip.map((day) => day.dayKey)).toEqual(weekKeys);
+    expect(strip.filter((day) => day.complete).map((day) => day.dayKey)).toEqual([
+      "2026-07-12",
+      "2026-07-14",
+    ]);
+  });
+
+  it("a partially-done day stays open on a multi-step routine", () => {
+    const strip = deriveRoutineStrip(
+      steps("mood", "journal"),
+      { moodLogs: [{ loggedAt: onDayTs }] },
+      [DAY],
+    );
+    expect(strip).toEqual([{ dayKey: DAY, complete: false }]);
+  });
+
+  it("an empty routine never fills a day (no hollow complete)", () => {
+    const strip = deriveRoutineStrip([], { moodLogs: [{ loggedAt: onDayTs }] }, [DAY]);
+    expect(strip).toEqual([{ dayKey: DAY, complete: false }]);
   });
 });
 
