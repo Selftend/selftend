@@ -33,17 +33,36 @@ jobs:
           # fine-grained PAT (Contents + Pull requests: Read/write) as this secret.
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
-      # Locate the current pending release PR by release-please's own label - not the
-      # action's per-run `pr` output, which is empty on runs that didn't change the
-      # release (e.g. docs/chore-only pushes). This way the approve + auto-merge below
-      # fire on every run, so the release PR can't get stranded un-approved.
+      # Locate the current pending release PR, three tiers (#64: the label-only
+      # query raced GitHub's search index - a PR created seconds earlier wasn't
+      # findable by label yet, so the v0.3.2 release PR stranded un-approved):
+      #   1. The action's own `pr` output - authoritative on the run that created
+      #      or updated the PR (exactly the run that used to lose the race), but
+      #      empty on runs that didn't change the release (docs/chore pushes).
+      #   2. Head-branch query - the REST pulls API is strongly consistent, no
+      #      search-index lag; covers sweeping a stranded PR on later pushes.
+      #   3. Label query - last resort, keeps working if the branch naming ever
+      #      changes.
       - name: Locate the release PR
         id: rp
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
         run: |
-          num=$(gh pr list --repo "${{ github.repository }}" --state open \
-            --label "autorelease: pending" --json number --jq '.[0].number // empty')
+          num=$(printf '%s' "$RELEASE_PR" | jq -r '.number // empty' 2>/dev/null || true)
+          if [ -z "$num" ]; then
+            # --head matches by branch NAME across forks too - restrict to heads
+            # in this repo, or a fork PR named like the release branch could get
+            # bot-approved and auto-merged.
+            num=$(gh pr list --repo "${{ github.repository }}" --state open \
+              --head "release-please--branches--main--components--selftend" \
+              --json number,headRepositoryOwner \
+              --jq '[.[] | select(.headRepositoryOwner.login == "${{ github.repository_owner }}")][0].number // empty')
+          fi
+          if [ -z "$num" ]; then
+            num=$(gh pr list --repo "${{ github.repository }}" --state open \
+              --label "autorelease: pending" --json number --jq '.[0].number // empty')
+          fi
           echo "num=$num" >> "$GITHUB_OUTPUT"
           echo "Release PR: ${num:-none}"
 
