@@ -25,6 +25,7 @@ jest.mock("@/src/features/routines/queries", () => ({
   useRoutines: jest.fn(),
   useCreateRoutine: jest.fn(),
   useAddStep: jest.fn(),
+  useDeleteRoutine: jest.fn(() => ({ mutateAsync: jest.fn(), isPending: false })),
 }));
 
 jest.mock("@/src/features/routines/use-routine-tool-records", () => ({
