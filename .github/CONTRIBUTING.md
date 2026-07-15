@@ -73,10 +73,12 @@ Do not open public issues for vulnerabilities, private account data, private hea
 
 ## Contribution Flow
 
+`dev` is the integration branch; `main` is release-only (promotion, hotfix, and release-please PRs). The full branch and release model lives in [docs/releasing.md](../docs/releasing.md).
+
 1. Open or claim an issue. For changes larger than a typo, explain the approach first.
-2. Branch from `main` with a short descriptive name, such as `fix/cbt-empty-state` or `docs/contributing-map`.
+2. Branch from `dev` with a short descriptive name, such as `fix/cbt-empty-state` or `docs/contributing-map`.
 3. Keep each PR to one concern.
-4. Open the PR against `main` and fill in the template honestly.
+4. Open the PR against `dev` (GitHub defaults the base to `main` — retarget it) and fill in the template honestly. Give it a Conventional Commit title (`feat:`, `fix:`, `docs:` …): PRs are squash-merged and the title becomes the commit release-please versions from.
 5. Update [.github/ROADMAP.md](ROADMAP.md) when the change affects product status, implementation progress, or next steps.
 6. Update docs in the same PR when setup, commands, deployment, env vars, safety boundaries, legal boundaries, or current blockers change.
 
