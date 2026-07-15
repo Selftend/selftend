@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/Selftend/selftend/compare/v0.3.1...v0.3.2) (2026-07-15)
+
+
+### Bug Fixes
+
+* **e2e:** deflake time/UTC seeds, mood-list race, reminder-prompt interference; add local runner ([#56](https://github.com/Selftend/selftend/issues/56)) ([daf6963](https://github.com/Selftend/selftend/commit/daf69639d955b5ec105e07353aca0f629de3b1d0))
+
 ## [0.3.1](https://github.com/Selftend/selftend/compare/v0.3.0...v0.3.1) (2026-07-14)
 
 
