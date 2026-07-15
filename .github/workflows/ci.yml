@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - main
+  # Runs checks on merge-queue groups if/when a merge queue is enabled on dev;
+  # inert otherwise.
+  merge_group:
   workflow_dispatch:
 
 permissions:
@@ -16,6 +19,10 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# All three jobs run in PARALLEL: verify is a quality gate, not a build
+# prerequisite, and gating the DB jobs on it added its full ~3 minutes to every
+# run's wall clock. The trade-off (a lint failure still spends test-job minutes)
+# is worth it at this scale.
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -28,7 +35,15 @@ jobs:
           node-version: 20.19.0
           cache: npm
 
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json', 'package.json') }}
+
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Verify
@@ -43,7 +58,6 @@ jobs:
 
   integration:
     runs-on: ubuntu-latest
-    needs: verify
 
     steps:
       - uses: actions/checkout@v4
@@ -53,7 +67,15 @@ jobs:
           node-version: 20.19.0
           cache: npm
 
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json', 'package.json') }}
+
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Set up Supabase CLI
@@ -62,7 +84,12 @@ jobs:
           version: latest
 
       - name: Start local Supabase
-        run: supabase start
+        # Skip services no test touches (verified: no realtime channels, no
+        # edge-function invocations, no image transforms in src/ or test/;
+        # studio/meta/logflare/vector are dashboard & telemetry plumbing).
+        # mailpit MUST stay: password-reset + signup tests read emails from it.
+        # storage-api MUST stay: avatar tests upload to storage.
+        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,postgres-meta,realtime
 
       - name: Apply seed
         run: supabase db reset
@@ -76,7 +103,6 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    needs: verify
 
     steps:
       - uses: actions/checkout@v4
@@ -86,7 +112,15 @@ jobs:
           node-version: 20.19.0
           cache: npm
 
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json', 'package.json') }}
+
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Set up Supabase CLI
@@ -95,12 +129,21 @@ jobs:
           version: latest
 
       - name: Start local Supabase
-        run: supabase start
+        # Same exclusions as the integration job (see the comment there).
+        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,postgres-meta,realtime
 
       - name: Apply seed
         run: supabase db reset
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
       - name: Install Playwright browsers
+        # Fast no-op when the cache restored the browser build; --with-deps
+        # still installs any missing OS packages.
         run: npm exec playwright -- install --with-deps chromium
 
       - name: Run E2E tests
