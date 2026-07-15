@@ -166,3 +166,25 @@ export function deriveRoutine(
     nextStep: stepViews.find((s) => !s.done) ?? null,
   };
 }
+
+export interface RoutineStripDay {
+  dayKey: string;
+  complete: boolean;
+}
+
+/**
+ * The multi-day view behind the last-7-days strip (spec #37, ticket #49): one
+ * entry per requested local day key, `complete` only when that day's derived
+ * status is "complete". Each day is an independent fact - deliberately no
+ * streaks, no run lengths, no "broken" state.
+ */
+export function deriveRoutineStrip(
+  steps: readonly { toolId: SteppableToolId }[],
+  records: RoutineToolRecords,
+  dayKeys: readonly string[],
+): RoutineStripDay[] {
+  return dayKeys.map((dayKey) => ({
+    dayKey,
+    complete: deriveRoutine(steps, records, dayKey).status === "complete",
+  }));
+}
