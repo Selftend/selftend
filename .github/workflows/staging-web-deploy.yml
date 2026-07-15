@@ -1,0 +1,53 @@
+name: Staging web deploy (manual)
+
+# MANUAL-ONLY staging deploy: builds the chosen ref (default dev) and publishes
+# it to the separate staging Netlify site via the reusable web workflow, scoped
+# to the `staging` GitHub Environment. Deliberately NO push trigger - staging
+# ships only when a human dispatches it (the automated push-to-dev pipeline is
+# #44's scope and stays parked until the staging Supabase project exists).
+#
+# Interim caveat (#44): until the staging Supabase project is provisioned, the
+# staging Environment defines no EXPO_PUBLIC_SUPABASE_URL/_PUBLISHABLE_KEY
+# overrides, so the build falls back to the repo-level values - i.e. staging
+# web talks to the PRODUCTION Supabase project. Real, RLS-guarded user data;
+# fine for a solo maintainer's smoke-checks, not for public sharing.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to build and deploy to staging
+        type: string
+        default: dev
+
+permissions:
+  contents: read
+
+jobs:
+  # secrets: inherit means a missing staging-Environment NETLIFY_SITE_ID would
+  # silently fall back to the repository-level secret - the PRODUCTION site.
+  # Refuse to deploy unless the staging Environment supplies its own site id.
+  guard:
+    name: Assert staging Netlify target
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: staging
+    steps:
+      - name: Fail unless NETLIFY_SITE_ID is the staging site's own
+        env:
+          SITE: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          # The production site id is not a secret (it appears in Netlify URLs);
+          # comparing against it catches the silent-fallback case.
+          if [ -z "$SITE" ] || [ "$SITE" = "da5b7e44-d551-44ee-b0d8-a7d7a5433433" ]; then
+            echo "::error::NETLIFY_SITE_ID resolves to the production site (or is empty) - the staging Environment secret is missing. Refusing to deploy."
+            exit 1
+          fi
+
+  deploy-web-staging:
+    name: Deploy web (staging)
+    needs: guard
+    uses: ./.github/workflows/web-deploy.yml
+    with:
+      ref: ${{ inputs.ref }}
+      environment: staging
+    secrets: inherit
