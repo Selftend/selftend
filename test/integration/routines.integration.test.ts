@@ -78,6 +78,28 @@ describe("routines encrypted view + routine_steps (integration)", () => {
     expect(readBack.data?.name).toBe(PLAINTEXT_NAME);
   });
 
+  it("INSERT without reminder_enabled returns the stored default false, not null", async () => {
+    // The INSTEAD OF INSERT trigger copies the persisted reminder_enabled back into NEW,
+    // so PostgREST's insert().select() response reflects the column default rather than
+    // echoing the omitted (null) input value.
+    const insert = await alice
+      .from("routines")
+      .insert({ user_id: SEED_USERS.alice.id, name: PLAINTEXT_NAME })
+      .select("*")
+      .single();
+    expect(insert.error).toBeNull();
+    expect(insert.data?.reminder_enabled).toBe(false);
+
+    // And the row really stores false at rest.
+    const atRest = await admin
+      .from("routines_data")
+      .select("reminder_enabled")
+      .eq("id", insert.data!.id as string)
+      .single();
+    expect(atRest.error).toBeNull();
+    expect(atRest.data?.reminder_enabled).toBe(false);
+  });
+
   it("UPDATE through the view re-encrypts and refreshes updated_at", async () => {
     const created = await alice
       .from("routines")
@@ -208,6 +230,26 @@ describe("routines encrypted view + routine_steps (integration)", () => {
       position: 1,
     });
     expect(spoof.error).not.toBeNull(); // WITH CHECK rejects rows owned by someone else
+
+    // Bob inserting a step he OWNS but pointing at Alice's routine is rejected too:
+    // the policy's WITH CHECK requires ownership of the parent routine, not just
+    // FK existence (prevents cross-tenant step pollution / routine-id probing).
+    const crossTenant = await bob.from("routine_steps").insert({
+      routine_id: routineId,
+      user_id: SEED_USERS.bob.id,
+      tool_id: "breathing",
+      position: 0,
+    });
+    expect(crossTenant.error).not.toBeNull();
+    expect(crossTenant.error?.code).toBe("42501"); // row-level security with-check violation
+
+    // Nothing landed on Alice's routine.
+    const stepsOnAliceRoutine = await admin
+      .from("routine_steps")
+      .select("id, user_id")
+      .eq("routine_id", routineId);
+    expect(stepsOnAliceRoutine.error).toBeNull();
+    expect(stepsOnAliceRoutine.data).toEqual([{ id: stepId, user_id: SEED_USERS.alice.id }]);
 
     const aliceRead = await alice
       .from("routine_steps")

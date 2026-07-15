@@ -95,8 +95,8 @@ begin
     coalesce(new.reminder_enabled, false),
     new.reminder_hour, new.reminder_minute, new.reminder_timezone,
     coalesce(new.created_at, timezone('utc', now())), timezone('utc', now()))
-  returning id, user_id, created_at, updated_at
-    into new.id, new.user_id, new.created_at, new.updated_at;
+  returning id, user_id, reminder_enabled, created_at, updated_at
+    into new.id, new.user_id, new.reminder_enabled, new.created_at, new.updated_at;
   return new;
 end; $$;
 drop trigger if exists routines_ins on public.routines;
@@ -161,11 +161,25 @@ for each row execute function public.set_current_timestamp_updated_at();
 
 alter table public.routine_steps enable row level security;
 
+-- WITH CHECK also requires ownership of the PARENT routine: the FK alone only proves
+-- the routine exists, so without this a user could attach steps to another user's
+-- routine (cross-tenant pollution the owner can't see) or probe foreign routine ids.
+-- Reads stay scoped by user_id alone. The failure mode is a plain RLS with-check
+-- violation either way, so "routine doesn't exist" and "routine is someone else's"
+-- are indistinguishable to the caller.
 drop policy if exists routine_steps_manage_own on public.routine_steps;
 create policy routine_steps_manage_own on public.routine_steps
   for all to authenticated
   using ((select auth.uid()) = user_id)
-  with check ((select auth.uid()) = user_id);
+  with check (
+    (select auth.uid()) = user_id
+    and exists (
+      select 1
+      from public.routines_data r
+      where r.id = routine_id
+        and r.user_id = (select auth.uid())
+    )
+  );
 
 -- ── retire plan_items ───────────────────────────────────────────────────────────
 
