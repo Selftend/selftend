@@ -18,19 +18,26 @@ function anyReminderEnabled(prefs: UserPreferences): boolean {
 
 /**
  * Keeps this device's reminder channel in sync with preferences. Delivery is server-driven
- * (the edge function reads user_preferences), so the client only ensures the channel is
- * registered when reminders are on and disabled when the global master is off - plus a one-time
- * cleanup of any local notifications scheduled by the pre-push build.
+ * (the edge function reads user_preferences plus the per-routine reminder fields on the
+ * routines rows), so the client only ensures the channel is registered when reminders are on
+ * and disabled when the global master is off - plus a one-time cleanup of any local
+ * notifications scheduled by the pre-push build.
+ *
+ * `anyRoutineReminderEnabled` folds the per-routine opt-ins into the "any reminder enabled"
+ * condition (routine reminders live on routines rows, not in user_preferences).
  */
 export function useNotificationSync(
   userId: string | null,
   preferences: UserPreferences | undefined,
+  anyRoutineReminderEnabled = false,
 ) {
   const cleanedUp = useRef(false);
   const prefsRef = useRef(preferences);
   const uidRef = useRef(userId);
+  const routineRef = useRef(anyRoutineReminderEnabled);
   prefsRef.current = preferences;
   uidRef.current = userId;
+  routineRef.current = anyRoutineReminderEnabled;
 
   useEffect(() => {
     if (Platform.OS === "web" || !preferences || !userId) return;
@@ -46,7 +53,8 @@ export function useNotificationSync(
           await clearLegacyLocalReminders();
         }
 
-        if (anyReminderEnabled(prefs)) {
+        const routineReminderOn = prefs.notificationsEnabledGlobal && routineRef.current;
+        if (anyReminderEnabled(prefs) || routineReminderOn) {
           // Native is server-driven: this just ensures the device push token is registered.
           // The target/hour/minute args are ignored on native.
           await scheduleReminder("cbt", 0, 0, uid);
@@ -65,5 +73,5 @@ export function useNotificationSync(
     });
 
     return () => subscription.remove();
-  }, [preferences, userId]);
+  }, [preferences, userId, anyRoutineReminderEnabled]);
 }

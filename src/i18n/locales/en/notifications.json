@@ -68,6 +68,10 @@
     "habits": {
       "title": "Time for your habits",
       "body": "Take a quick look at today's habits."
+    },
+    "routine": {
+      "title": "Your routine",
+      "body": "A couple of small steps, whenever you're ready."
     }
   },
   "targets": {

@@ -19,6 +19,7 @@ export interface WebPushSubscriptionRow {
   endpoint: string;
   failure_count: number;
   id: string;
+  last_routine_reminder_keys: Record<string, string> | null;
   last_cbt_reminder_key: string | null;
   last_meditation_reminder_key: string | null;
   last_act_reminder_key: string | null;
@@ -387,6 +388,114 @@ export function activityWindowForTarget(
   };
 }
 
+// ----- Per-routine reminders (issue #47) -----
+//
+// Routine reminders are per-ROW (routines.reminder_* fields), unlike the fixed
+// per-tool preference columns, so the due/dedup logic generalizes the per-tool
+// mechanism: the same 5-minute due window and day-key stamp, but the stamp lives
+// in a `{ routineId: 'YYYY-MM-DD' }` jsonb map per delivery-channel row
+// (last_routine_reminder_keys), guaranteeing <= 1 notification per routine per
+// day per channel. Routines have no server-side activity suppression (deriving
+// "routine complete today" would need every step tool's table; like breathing
+// and act, they simply never suppress).
+
+/**
+ * The reminder-relevant slice of a `routines` view row. `name` comes decrypted
+ * through the view: the service role holds execute on app.decrypt_text (granted
+ * in 20260587 for export_user_data), so the edge function can personalize the
+ * notification title with the routine's name.
+ */
+export interface RoutineReminderRow {
+  id: string;
+  user_id: string;
+  name: string | null;
+  reminder_enabled: boolean;
+  reminder_hour: number | null;
+  reminder_minute: number | null;
+  reminder_timezone: string | null;
+}
+
+/** The slice of a delivery-channel row the routine due-check reads. */
+export interface RoutineReminderChannel {
+  time_zone: string | null;
+  last_routine_reminder_keys: Record<string, string> | null;
+}
+
+export function routineUrl(routineId: string): string {
+  return `/routines/${routineId}`;
+}
+
+/** Per-routine notification tag so two routines' notifications never replace each other. */
+export function routineTag(routineId: string): string {
+  return `selftend-routine-${routineId}-reminder`;
+}
+
+/**
+ * Notification copy for a routine: the routine's (decrypted-view) name as the
+ * title when present, otherwise the static localized fallback. The body always
+ * comes from the localized fallback.
+ */
+export function routineNotificationCopy(
+  routine: RoutineReminderRow,
+  fallback: { title: string; body: string },
+): { title: string; body: string } {
+  const name = routine.name?.trim();
+  return name ? { title: name, body: fallback.body } : fallback;
+}
+
+/**
+ * Routine analogue of reminderKeyIfDue: today's day key when the routine's
+ * reminder is enabled, configured, inside the 5-minute due window, and not yet
+ * stamped for this channel today - otherwise null.
+ */
+export function routineReminderKeyIfDue(
+  routine: RoutineReminderRow,
+  channel: RoutineReminderChannel,
+  now: Date,
+): string | null {
+  if (!routine.reminder_enabled) return null;
+  if (routine.reminder_hour === null || routine.reminder_minute === null) return null;
+
+  // Channel tz takes precedence over the routine's stored tz, then UTC (same
+  // precedence as tool reminders).
+  const timeZone = channel.time_zone ?? routine.reminder_timezone ?? "UTC";
+  const parts = getZonedParts(now, timeZone);
+  if (!parts) return null;
+
+  const reminderKey = `${parts.year}-${parts.month}-${parts.day}`;
+  if (channel.last_routine_reminder_keys?.[routine.id] === reminderKey) return null;
+
+  // Same hour-boundary-spanning minute-of-day window as reminderKeyIfDue.
+  const MINUTES_PER_DAY = 24 * 60;
+  const nowMinuteOfDay = parts.hour * 60 + parts.minute;
+  const targetMinuteOfDay = routine.reminder_hour * 60 + routine.reminder_minute;
+  const minutesSinceTarget =
+    (((nowMinuteOfDay - targetMinuteOfDay) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+  if (minutesSinceTarget >= 5) return null;
+
+  return reminderKey;
+}
+
+/**
+ * The next value of a channel's last_routine_reminder_keys map after stamping
+ * `routineId` with `reminderKey`. Entries for routines not in `activeRoutineIds`
+ * (deleted, or reminder since disabled) are pruned so the map stays bounded.
+ */
+export function nextRoutineReminderKeys(
+  current: Record<string, string> | null,
+  routineId: string,
+  reminderKey: string,
+  activeRoutineIds: Iterable<string>,
+): Record<string, string> {
+  const active = new Set(activeRoutineIds);
+  const next: Record<string, string> = {};
+  for (const [id, key] of Object.entries(current ?? {})) {
+    if (active.has(id)) next[id] = key;
+  }
+  next[routineId] = reminderKey;
+  return next;
+}
+
 export interface ExpoPushMessage {
   to: string;
   title: string;
@@ -406,6 +515,20 @@ export function buildExpoPushMessage(
     body: copy.body,
     sound: "default",
     data: { url: TARGET_CONFIGS[target].url },
+  };
+}
+
+export function buildRoutineExpoPushMessage(
+  token: string,
+  routineId: string,
+  copy: { title: string; body: string },
+): ExpoPushMessage {
+  return {
+    to: token,
+    title: copy.title,
+    body: copy.body,
+    sound: "default",
+    data: { url: routineUrl(routineId) },
   };
 }
 
