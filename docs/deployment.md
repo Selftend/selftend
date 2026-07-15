@@ -55,7 +55,7 @@ The portable contract is:
 
 ## Netlify Deployment
 
-Auto-deploy on push to `main` is disabled. Deploys are triggered manually from the Netlify dashboard (Deploys → Trigger deploy) to stay within the free-tier build-minute budget. Do not re-enable continuous deployment without checking remaining credits for the billing period.
+Netlify never builds this project: `netlify.toml` sets `ignore = "exit 0"`, which skips ALL git- and dashboard-triggered builds (the dashboard's "Trigger deploy" button included — it will report "no content change"). GitHub Actions is the only deployer: it builds the export and publishes prebuilt output via `netlify-cli`, which this guard does not affect. Production deploys run automatically on a published Release (`release.yml`); manual fallbacks are the "Web deploy" and "Staging web deploy (manual)" workflows in the Actions tab. Keep the dashboard's Build status on "Stopped builds" — it expresses the same architecture and spends no Netlify build credits.
 
 This repo also includes a manual GitHub Actions workflow, `Web production deploy`, for maintainer-triggered production deploys from the current `main` branch. Use that workflow when you want a reproducible deploy from GitHub without enabling Netlify's continuous deployment hook.
 
