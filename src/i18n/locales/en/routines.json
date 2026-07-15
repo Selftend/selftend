@@ -1,0 +1,68 @@
+{
+  "home": {
+    "title": "Routines",
+    "subtitle": "A few small tool actions that go together. Done when you do them - no streaks, no pressure.",
+    "listHeading": "Your routines",
+    "emptyTitle": "No routines yet",
+    "emptyBody": "A routine strings a few small tool actions together - a check-in, a line of gratitude, a short breath. Steps complete themselves when you use the tools.",
+    "starterTitle": "Start with a ready-made routine?",
+    "starterBody": "Composed from the tools already on your Home. Keep it as is, or skip - you can always build your own.",
+    "openDetail": "Open routine"
+  },
+  "status": {
+    "notStarted": "Not started",
+    "inProgress": "In progress",
+    "complete": "Done for today",
+    "progress": "{{done}}/{{total}} today"
+  },
+  "cta": {
+    "newRoutine": "New routine",
+    "create": "Create a routine",
+    "keep": "Keep",
+    "skip": "Skip",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "detail": {
+    "notFound": "This routine doesn't exist anymore.",
+    "stepsTitle": "Steps",
+    "stepsEmpty": "No steps yet - add some in the editor.",
+    "stepDone": "Done today",
+    "stepNotDone": "Not yet today",
+    "orderNote": "Order is just a suggestion - do the steps in any order, or leave some for another day.",
+    "deleteConfirmTitle": "Delete routine",
+    "deleteConfirmBody": "Delete this routine and its steps? Your tool entries are untouched. This can't be undone."
+  },
+  "form": {
+    "newTitle": "New routine",
+    "editTitle": "Edit routine",
+    "nameLabel": "Routine name",
+    "defaultName": "My daily routine",
+    "nameRequired": "Give the routine a short name.",
+    "saveError": "Could not save the routine. Please try again.",
+    "stepsLabel": "Steps",
+    "stepsHelp": "Each step points at a tool. It completes on days you use that tool - nothing to tick off.",
+    "stepsEmpty": "No steps yet. Add a tool below.",
+    "addStepLabel": "Add a step",
+    "addStep": "Add {{tool}}",
+    "stepAlreadyAdded": "{{tool}} is already a step",
+    "removeStep": "Remove {{tool}}",
+    "moveUp": "Move {{tool}} up",
+    "moveDown": "Move {{tool}} down",
+    "dragHint": "Drag to reorder"
+  },
+  "tools": {
+    "mood": "Mood check-in",
+    "journal": "Journal",
+    "gratitude": "Gratitude",
+    "sleep": "Sleep log",
+    "cbt": "Thought record",
+    "breathing": "Breathing",
+    "grounding": "Grounding",
+    "meditation": "Meditation",
+    "habits": "Habits"
+  }
+}

@@ -16,6 +16,7 @@ import enPolicies from "./locales/en/policies.json";
 import enErrors from "./locales/en/errors.json";
 import enSleep from "./locales/en/sleep.json";
 import enHabits from "./locales/en/habits.json";
+import enRoutines from "./locales/en/routines.json";
 import enAct from "./locales/en/act.json";
 import enNotifications from "./locales/en/notifications.json";
 import enHelp from "./locales/en/help.json";
@@ -44,6 +45,7 @@ i18n.use(initReactI18next).init({
     "errors",
     "sleep",
     "habits",
+    "routines",
     "act",
     "notifications",
     "help",
@@ -67,6 +69,7 @@ i18n.use(initReactI18next).init({
       errors: enErrors,
       sleep: enSleep,
       habits: enHabits,
+      routines: enRoutines,
       act: enAct,
       notifications: enNotifications,
       help: enHelp,

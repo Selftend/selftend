@@ -15,6 +15,7 @@ import bgPolicies from "./policies.json";
 import bgErrors from "./errors.json";
 import bgSleep from "./sleep.json";
 import bgHabits from "./habits.json";
+import bgRoutines from "./routines.json";
 import bgAct from "./act.json";
 import bgNotifications from "./notifications.json";
 import bgHelp from "./help.json";
@@ -36,6 +37,7 @@ export const bgResources: Record<string, object> = {
   errors: bgErrors,
   sleep: bgSleep,
   habits: bgHabits,
+  routines: bgRoutines,
   act: bgAct,
   notifications: bgNotifications,
   help: bgHelp,
