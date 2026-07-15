@@ -145,6 +145,25 @@ describe("reminder prompt preference fields", () => {
       expect.anything(),
     );
   });
+
+  it("writes ONLY the patched columns - a partial patch must not carry the whole row", async () => {
+    // The lost-update guarantee behind #57: a concurrent writer's columns (another
+    // device, the e2e fixtures' normalization) must never be overwritten by fields
+    // the caller did not change.
+    const { upsert } = mockPreferenceUpdate({ user_id: "user-1" });
+
+    await updateUserPreferences("user-1", { theme: "dark" });
+
+    expect(upsert).toHaveBeenCalledWith({ user_id: "user-1", theme: "dark" }, expect.anything());
+  });
+
+  it("ignores derived preference fields that have no column", async () => {
+    const { upsert } = mockPreferenceUpdate({ user_id: "user-1" });
+
+    await updateUserPreferences("user-1", { language: "en", languageExplicit: true });
+
+    expect(upsert).toHaveBeenCalledWith({ user_id: "user-1", language: "en" }, expect.anything());
+  });
 });
 
 describe("settings repository", () => {
