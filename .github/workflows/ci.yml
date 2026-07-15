@@ -7,6 +7,13 @@ on:
       - main
   workflow_dispatch:
 
+# Cancel superseded in-progress runs for the same ref (e.g. a new push to a PR
+# obsoletes the previous run). Each PR has its own merge ref, so runs for
+# different PRs never cancel each other.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
