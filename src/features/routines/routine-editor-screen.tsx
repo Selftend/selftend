@@ -31,14 +31,21 @@ import {
   useUpdateRoutine,
 } from "@/src/features/routines/queries";
 import { ROUTINE_NAME_MAX, routineInputSchema } from "@/src/features/routines/schemas";
-import type { RoutineInput, RoutineUpdate, RoutineWithSteps } from "@/src/features/routines/types";
+import type {
+  RoutineCadence,
+  RoutineInput,
+  RoutineUpdate,
+  RoutineWithSteps,
+} from "@/src/features/routines/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import {
   announceMessage,
   DEFAULT_INTERACTIVE_HIT_SLOP,
   politeLiveRegionProps,
+  spaceKeyActivationProps,
 } from "@/src/lib/accessibility";
 import { cancelReminder, getReminderTimeZone, scheduleReminder } from "@/src/lib/notifications";
+import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -62,6 +69,17 @@ interface EditorStep {
 // Default reminder time when none is stored yet - mirrors the per-tool cards'
 // readHour/readMinute fallbacks (19:00).
 const DEFAULT_REMINDER_TIME: TimeOfDay = { hour: 19, minute: 0 };
+
+// Days section (#105): HabitCadence's chip vocabulary plus "on-demand" (#96).
+const CADENCE_OPTIONS: RoutineCadence[] = ["daily", "weekdays", "custom", "on-demand"];
+
+// Day chips render Monday-first (Mon..Sun); the values stay JS getDay()
+// numbers (0=Sun..6=Sat), same as habits.
+const CUSTOM_DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
+
+// Switching TO custom with no days picked preselects Mon-Fri - the same
+// hydration rule as habitToInput in the habit editor.
+const DEFAULT_CUSTOM_DAYS = [1, 2, 3, 4, 5];
 
 export function RoutineEditorScreen({
   fallbackHref,
@@ -100,6 +118,10 @@ export function RoutineEditorScreen({
   // Create starts from the i18n default name (spec: "My daily routine").
   const [name, setName] = useState(() => (editMode ? "" : t("form.defaultName")));
   const [steps, setSteps] = useState<EditorStep[]>([]);
+  // Schedule (#105): new routines default to every day with no custom days,
+  // matching the type/DB defaults.
+  const [cadence, setCadence] = useState<RoutineCadence>("daily");
+  const [customDays, setCustomDays] = useState<number[]>([]);
   const [error, setError] = useState("");
   // Routine reminder (spec #37/#47): an independent opt-in, OFF by default.
   const [reminderEnabled, setReminderEnabled] = useState(false);
@@ -107,6 +129,12 @@ export function RoutineEditorScreen({
   const [reminderError, setReminderError] = useState("");
   const nameInputRef = useRef<TextInput>(null);
   const localKeyRef = useRef(0);
+
+  const cadenceRoving = useRovingFocus({
+    count: CADENCE_OPTIONS.length,
+    activeIndex: Math.max(0, CADENCE_OPTIONS.indexOf(cadence)),
+    onActivate: (index) => selectCadence(CADENCE_OPTIONS[index]),
+  });
 
   // Hydrate ONCE per routine id; keying on the id (not the object) stops a later
   // refetch's new object identity from clobbering the user's in-progress edits.
@@ -117,6 +145,14 @@ export function RoutineEditorScreen({
     hydratedIdRef.current = existing.id;
     setName(existing.name);
     setSteps(existing.steps.map((step) => ({ key: step.id, id: step.id, toolId: step.toolId })));
+    setCadence(existing.cadence);
+    // Same hydration rule as habitToInput: a custom routine with no stored
+    // days starts from Mon-Fri so the chips never open all-empty.
+    setCustomDays(
+      existing.cadence === "custom" && existing.customDays.length === 0
+        ? DEFAULT_CUSTOM_DAYS
+        : existing.customDays,
+    );
     setReminderEnabled(existing.reminderEnabled);
     setReminderTime({
       hour: existing.reminderHour ?? DEFAULT_REMINDER_TIME.hour,
@@ -136,6 +172,23 @@ export function RoutineEditorScreen({
 
   function removeStep(key: string) {
     setSteps((prev) => prev.filter((step) => step.key !== key));
+  }
+
+  function selectCadence(next: RoutineCadence) {
+    setCadence(next);
+    // Switching TO custom preselects Mon-Fri when nothing is picked yet.
+    if (next === "custom") {
+      setCustomDays((prev) => (prev.length === 0 ? DEFAULT_CUSTOM_DAYS : prev));
+    }
+  }
+
+  function toggleCustomDay(day: number) {
+    setCustomDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(day)) next.delete(day);
+      else next.add(day);
+      return Array.from(next).sort();
+    });
   }
 
   function moveStep(index: number, delta: -1 | 1) {
@@ -175,7 +228,13 @@ export function RoutineEditorScreen({
       nameInputRef.current?.focus();
       return;
     }
-    const parsed = routineInputSchema.safeParse({ name: trimmedName });
+    // "Custom" with no days is unschedulable - block the save with an inline
+    // error, mirroring the habit editor and the routines zod/DB constraint.
+    if (cadence === "custom" && customDays.length === 0) {
+      showError(t("form.customDaysRequired"));
+      return;
+    }
+    const parsed = routineInputSchema.safeParse({ name: trimmedName, cadence, customDays });
     if (!parsed.success) {
       showError(t("form.saveError"));
       return;
@@ -188,9 +247,12 @@ export function RoutineEditorScreen({
       // registered the same way enabling a per-tool target does. If the channel
       // can't be enabled, save everything else with the reminder OFF and say so -
       // a reminder is never persisted as on without a working opt-in path.
+      // On-demand routines never nudge (#102): the reminder is forced off in
+      // the save payload, so switching an existing routine to on-demand
+      // disables its reminder.
       let channelFailed = false;
-      let effectiveReminderEnabled = reminderEnabled;
-      if (reminderEnabled && globalEnabled) {
+      let effectiveReminderEnabled = cadence !== "on-demand" && reminderEnabled;
+      if (effectiveReminderEnabled && globalEnabled) {
         const { hour, minute } = clampTime(reminderTime);
         const result = await scheduleReminder("routine", hour, minute, user.id);
         if (result.enabled) {
@@ -228,6 +290,12 @@ export function RoutineEditorScreen({
 
   async function saveCreate(trimmedName: string, remEnabled: boolean): Promise<string> {
     const input: RoutineInput = { name: trimmedName };
+    // Schedule fields ride along only when they differ from the DB defaults
+    // (daily, no custom days) - "just a name" keeps creating a daily routine.
+    if (cadence !== "daily") {
+      input.cadence = cadence;
+      if (cadence === "custom") input.customDays = customDays;
+    }
     if (remEnabled) {
       const { hour, minute } = clampTime(reminderTime);
       input.reminderEnabled = true;
@@ -255,6 +323,14 @@ export function RoutineEditorScreen({
 
     const patch: RoutineUpdate = {};
     if (trimmedName !== existing.name) patch.name = trimmedName;
+    if (cadence !== existing.cadence) patch.cadence = cadence;
+    // Custom days only matter while the cadence IS custom; leaving them
+    // untouched otherwise preserves the previous selection for a later
+    // switch back (the DB constraint only checks them under custom).
+    const daysChanged =
+      customDays.length !== existing.customDays.length ||
+      customDays.some((day, index) => existing.customDays[index] !== day);
+    if (cadence === "custom" && daysChanged) patch.customDays = customDays;
     const { hour, minute } = clampTime(reminderTime);
     const reminderChanged =
       remEnabled !== existing.reminderEnabled ||
@@ -444,61 +520,147 @@ export function RoutineEditorScreen({
       </View>
 
       <View className="gap-2">
-        <Label>{t("reminder.sectionLabel")}</Label>
-        <Text variant="muted" className="text-xs">
-          {t("reminder.help")}
-        </Text>
-        <View className="w-full flex-row items-center justify-between gap-4 rounded-2xl border border-border bg-card p-3">
-          <Text className="flex-1 text-sm">{t("reminder.toggleLabel")}</Text>
-          <Switch
-            accessibilityLabel={t("reminder.toggleLabel")}
-            checked={reminderEnabled}
-            disabled={saving}
-            onCheckedChange={setReminderEnabled}
-          />
-        </View>
-        {reminderEnabled ? (
-          <View className="gap-2">
-            <Text className={cn("text-sm", saving && "text-muted-foreground")}>
-              {t("reminder.timeLabel")}
-            </Text>
-            <TimeField
-              value={reminderTime}
-              onChange={setReminderTime}
-              disabled={saving}
-              accessibilityLabel={t("reminder.timeLabel")}
+        <Label>{t("form.daysLabel")}</Label>
+        <View
+          accessibilityLabel={t("form.daysLabel")}
+          accessibilityRole="radiogroup"
+          className="flex-row flex-wrap gap-2"
+          role="radiogroup"
+        >
+          {CADENCE_OPTIONS.map((option, index) => (
+            <CadenceChip
+              key={option}
+              active={cadence === option}
+              label={t(`form.cadence.${option}` as const)}
+              onPress={() => selectCadence(option)}
+              rovingProps={cadenceRoving.getItemProps(index, () => selectCadence(option))}
             />
-          </View>
-        ) : null}
-        {reminderError ? (
-          <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
-            {reminderError}
+          ))}
+        </View>
+        {cadence === "on-demand" ? (
+          <Text variant="muted" className="text-xs">
+            {t("form.onDemandHelp")}
           </Text>
         ) : null}
-        {overlapTargets.length > 0 ? (
-          <View className="gap-3 rounded-2xl border border-border bg-muted/40 p-3">
-            <Text className="text-sm">{t("overlap.note")}</Text>
-            {overlapTargets.map(({ toolId, target }) => {
-              const label = t(`tools.${toolId}`);
-              return (
-                <View key={toolId} className="flex-row items-center justify-between gap-2">
-                  <Text className="flex-1 text-sm font-semibold">{label}</Text>
-                  <Button
-                    accessibilityLabel={t("overlap.turnOff", { tool: label })}
-                    disabled={saving || updatePreferences.isPending}
-                    onPress={() => void turnOffToolReminder(target, label)}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Text>{t("overlap.turnOff", { tool: label })}</Text>
-                  </Button>
-                </View>
-              );
-            })}
+        {cadence === "custom" ? (
+          <View className="gap-2">
+            <Label>{t("form.customDaysLabel")}</Label>
+            <View className="flex-row gap-1.5">
+              {CUSTOM_DAY_ORDER.map((day) => (
+                <Pressable
+                  key={day}
+                  accessibilityRole="checkbox"
+                  aria-checked={customDays.includes(day)}
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={() => toggleCustomDay(day)}
+                  className={cn(
+                    "h-10 flex-1 items-center justify-center rounded-md border",
+                    customDays.includes(day)
+                      ? "border-primary bg-primary/15"
+                      : "border-border bg-background",
+                  )}
+                  role="checkbox"
+                  {...spaceKeyActivationProps(() => toggleCustomDay(day))}
+                >
+                  <Text className="text-xs font-semibold">{t(`form.weekday.${day}` as const)}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text variant="muted" className="text-xs">
+              {t("form.customDaysHelp")}
+            </Text>
           </View>
         ) : null}
       </View>
+
+      {cadence !== "on-demand" ? (
+        <View className="gap-2">
+          <Label>{t("reminder.sectionLabel")}</Label>
+          <Text variant="muted" className="text-xs">
+            {t("reminder.help")}
+          </Text>
+          <View className="w-full flex-row items-center justify-between gap-4 rounded-2xl border border-border bg-card p-3">
+            <Text className="flex-1 text-sm">{t("reminder.toggleLabel")}</Text>
+            <Switch
+              accessibilityLabel={t("reminder.toggleLabel")}
+              checked={reminderEnabled}
+              disabled={saving}
+              onCheckedChange={setReminderEnabled}
+            />
+          </View>
+          {reminderEnabled ? (
+            <View className="gap-2">
+              <Text className={cn("text-sm", saving && "text-muted-foreground")}>
+                {t("reminder.timeLabel")}
+              </Text>
+              <TimeField
+                value={reminderTime}
+                onChange={setReminderTime}
+                disabled={saving}
+                accessibilityLabel={t("reminder.timeLabel")}
+              />
+            </View>
+          ) : null}
+          {reminderError ? (
+            <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
+              {reminderError}
+            </Text>
+          ) : null}
+          {overlapTargets.length > 0 ? (
+            <View className="gap-3 rounded-2xl border border-border bg-muted/40 p-3">
+              <Text className="text-sm">{t("overlap.note")}</Text>
+              {overlapTargets.map(({ toolId, target }) => {
+                const label = t(`tools.${toolId}`);
+                return (
+                  <View key={toolId} className="flex-row items-center justify-between gap-2">
+                    <Text className="flex-1 text-sm font-semibold">{label}</Text>
+                    <Button
+                      accessibilityLabel={t("overlap.turnOff", { tool: label })}
+                      disabled={saving || updatePreferences.isPending}
+                      onPress={() => void turnOffToolReminder(target, label)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Text>{t("overlap.turnOff", { tool: label })}</Text>
+                    </Button>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
     </MobileFormScreen>
+  );
+}
+
+// getItemProps result from useRovingFocus: web-only ref/tabIndex/onKeyDown ({} on native).
+type RovingItemProps = ReturnType<ReturnType<typeof useRovingFocus>["getItemProps"]>;
+
+interface CadenceChipProps {
+  active: boolean;
+  label: string;
+  onPress: () => void;
+  rovingProps: RovingItemProps;
+}
+
+// Same chip as the habit editor's CadenceChip: one radio in the Days radiogroup.
+function CadenceChip({ active, label, onPress, rovingProps }: CadenceChipProps) {
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      aria-checked={active}
+      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+      onPress={onPress}
+      className={cn(
+        "rounded-full border px-4 py-2",
+        active ? "border-primary bg-primary/15" : "border-border bg-background",
+      )}
+      role="radio"
+      {...rovingProps}
+    >
+      <Text className={cn("text-sm", active && "font-semibold text-primary")}>{label}</Text>
+    </Pressable>
   );
 }
 

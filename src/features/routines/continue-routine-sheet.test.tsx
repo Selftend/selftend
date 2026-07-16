@@ -8,7 +8,7 @@ import {
   type SteppableToolId,
 } from "@/src/features/routines/derive";
 import { useUpdateRoutine } from "@/src/features/routines/queries";
-import type { RoutineWithSteps } from "@/src/features/routines/types";
+import type { RoutineCadence, RoutineWithSteps } from "@/src/features/routines/types";
 import type { RoutineTodayView } from "@/src/features/routines/use-routines-today";
 import { currentDateKey } from "@/src/utils/date";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -40,6 +40,7 @@ function makeRoutine(
   name: string,
   toolIds: readonly SteppableToolId[],
   reminderEnabled = false,
+  cadence: RoutineCadence = "daily",
 ): RoutineWithSteps {
   return {
     id,
@@ -49,7 +50,7 @@ function makeRoutine(
     reminderHour: reminderEnabled ? 8 : null,
     reminderMinute: reminderEnabled ? 30 : null,
     reminderTimezone: reminderEnabled ? "Europe/Sofia" : null,
-    cadence: "daily",
+    cadence,
     customDays: [],
     createdAt: "2026-07-01T08:00:00.000Z",
     updatedAt: "2026-07-01T08:00:00.000Z",
@@ -188,6 +189,20 @@ describe("ContinueRoutineSheet", () => {
 
     expect(mutateAsync).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("skips the offer for an on-demand routine: only the plain Close (#102)", () => {
+    const records: RoutineToolRecords = {
+      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+    };
+    renderSheet([view(makeRoutine("r-1", "Morning reset", ["mood"], false, "on-demand"), records)]);
+
+    // Completion state shows, but an on-demand routine never nudges - so no
+    // reminder offer, just the Close button (same branch as reminderEnabled).
+    expect(screen.getByText("That was the last step")).toBeTruthy();
+    expect(screen.queryByText("Set a daily reminder")).toBeNull();
+    expect(screen.queryByText("Not now")).toBeNull();
+    expect(screen.getByText("Close")).toBeTruthy();
   });
 
   it("skips the offer when the routine already has its reminder set", () => {

@@ -199,7 +199,9 @@ export function ContinueRoutineSheet({
                   </Text>
                 </View>
 
-                {routine.reminderEnabled ? (
+                {/* On-demand routines never nudge (#102): no reminder offer,
+                    just the plain close - same as when the reminder is set. */}
+                {routine.reminderEnabled || routine.cadence === "on-demand" ? (
                   <Button variant="outline" onPress={onClose}>
                     <Text>{t("sheet.close")}</Text>
                   </Button>

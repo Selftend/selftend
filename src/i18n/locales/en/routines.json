@@ -63,7 +63,27 @@
     "removeStep": "Remove {{tool}}",
     "moveUp": "Move {{tool}} up",
     "moveDown": "Move {{tool}} down",
-    "dragHint": "Drag to reorder"
+    "dragHint": "Drag to reorder",
+    "daysLabel": "Days",
+    "cadence": {
+      "daily": "Every day",
+      "weekdays": "Weekdays",
+      "custom": "Custom",
+      "on-demand": "On demand"
+    },
+    "onDemandHelp": "Runs only when you start it yourself - no reminders.",
+    "customDaysLabel": "Days of the week",
+    "customDaysHelp": "Pick at least one day.",
+    "customDaysRequired": "Pick at least one day for a custom cadence.",
+    "weekday": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    }
   },
   "tools": {
     "mood": "Mood check-in",
