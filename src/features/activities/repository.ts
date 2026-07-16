@@ -47,6 +47,26 @@ export async function listActivities(userId: string) {
   return (data as ActivityLogRow[]).map(mapActivity);
 }
 
+/**
+ * Newest COMPLETED activities, ordered by completed_at desc. The default list
+ * is capped at 500 rows ordered by scheduled_at, so a heavy scheduler's recent
+ * completion can fall outside it; routine derivation needs "completed on day
+ * X" specifically, which this window answers directly (PR #124 review).
+ */
+export async function listRecentCompletedActivities(userId: string, limit = 250) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("activity_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .not("completed_at", "is", null)
+    .order("completed_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data as ActivityLogRow[]).map(mapActivity);
+}
+
 export async function getActivity(userId: string, activityId: string) {
   // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
   if (!isValidUuid(activityId)) return null;

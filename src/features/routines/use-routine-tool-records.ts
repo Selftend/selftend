@@ -10,7 +10,7 @@ import {
   useObservingSelfSessions,
   useUrgeSurfLogs,
 } from "@/src/features/act/queries";
-import { useActivities } from "@/src/features/activities/queries";
+import { useRecentCompletedActivities } from "@/src/features/activities/queries";
 import { useRecentExposureSessions } from "@/src/features/exposure/queries";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { useHabitLogs } from "@/src/features/habits/queries";
@@ -45,10 +45,10 @@ export function stripWindowStartKey(): string {
 // same gating the habit editor uses), so a mood-and-journal routine costs two
 // fetches, not twenty.
 //
-// ACT hooks whose query key EXCLUDES the limit (connection, observing self,
-// choice points) are called with their default limit so this hook shares one
-// cache entry with useActProgram/the list screens instead of racing them with
-// a differently-sized result under the same key. 30 newest rows still cover
+// ACT hooks whose query key EXCLUDES the limit (observing self, choice
+// points) are called with their default limit so this hook shares one cache
+// entry with useActProgram/the list screens instead of racing them with a
+// differently-sized result under the same key. 30 newest rows still cover
 // the 7-day strip up to ~4 logs/day of one tool - inside the KNOWN BOUND above.
 export function useRoutineToolRecords(
   userId: string | null,
@@ -78,9 +78,13 @@ export function useRoutineToolRecords(
   // home strip uses - so fetch exactly the strip's 7 local days.
   const { data: habitLogs } = useHabitLogs(wants("habits"), { sinceDate: stripWindowStartKey() });
 
-  // CBT (#123): activities and exposure sessions share their feature caches
-  // (both queries are unlimited/500-capped feature lists, no limit in the key).
-  const { data: activityLogs } = useActivities(wants("activities"));
+  // CBT (#123): activities derive from COMPLETION, so ride the completed_at
+  // window - the default activities list is 500 rows by scheduled_at and can
+  // miss a recent completion for a heavy scheduler (PR #124 review).
+  const { data: activityLogs } = useRecentCompletedActivities(
+    wants("activities"),
+    RECENT_LIST_LIMIT,
+  );
   const { data: exposureSessions } = useRecentExposureSessions(
     wants("exposure"),
     RECENT_LIST_LIMIT,
@@ -93,9 +97,12 @@ export function useRoutineToolRecords(
   const { data: urgeSurfLogs } = useUrgeSurfLogs(wants("urgeSurf"), RECENT_LIST_LIMIT);
   // Connection and drop anchor share the connection-log store; one fetch
   // serves both step kinds (the guided drop-anchor screen saves a
-  // ConnectionLog with technique "dropAnchor").
+  // ConnectionLog with technique "dropAnchor"). The hook's key includes the
+  // limit (PR #124 review), so this wide window can't collide with the
+  // default-30 program/list consumers.
   const { data: connectionLogs } = useConnectionLogs(
     toolIds.includes("connection") || toolIds.includes("dropAnchor") ? userId : null,
+    RECENT_LIST_LIMIT,
   );
   const { data: observingSelfSessions } = useObservingSelfSessions(wants("observingSelf"));
   const { data: bullsEyeSnapshots } = useBullsEyeSnapshots(wants("bullsEye"));

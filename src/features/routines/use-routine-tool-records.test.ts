@@ -12,7 +12,7 @@ import {
   useObservingSelfSessions,
   useUrgeSurfLogs,
 } from "@/src/features/act/queries";
-import { useActivities } from "@/src/features/activities/queries";
+import { useRecentCompletedActivities } from "@/src/features/activities/queries";
 import { useRecentExposureSessions } from "@/src/features/exposure/queries";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { useHabitLogs } from "@/src/features/habits/queries";
@@ -32,7 +32,9 @@ jest.mock("@/src/features/cbt/queries", () => ({ useThoughtRecords: jest.fn() })
 jest.mock("@/src/features/mindfulness/queries", () => ({ useMindfulnessSessions: jest.fn() }));
 jest.mock("@/src/features/meditation/queries", () => ({ useMeditationSessions: jest.fn() }));
 jest.mock("@/src/features/habits/queries", () => ({ useHabitLogs: jest.fn() }));
-jest.mock("@/src/features/activities/queries", () => ({ useActivities: jest.fn() }));
+jest.mock("@/src/features/activities/queries", () => ({
+  useRecentCompletedActivities: jest.fn(),
+}));
 jest.mock("@/src/features/exposure/queries", () => ({ useRecentExposureSessions: jest.fn() }));
 jest.mock("@/src/features/act/queries", () => ({
   useDefusionLogs: jest.fn(),
@@ -55,7 +57,7 @@ const hookMocks = [
   useMindfulnessSessions,
   useMeditationSessions,
   useHabitLogs,
-  useActivities,
+  useRecentCompletedActivities,
   useRecentExposureSessions,
   useDefusionLogs,
   useExpansionLogs,
@@ -87,12 +89,12 @@ describe("useRoutineToolRecords", () => {
     expect(useThoughtRecords).toHaveBeenCalledWith(null);
     expect(useMeditationSessions).toHaveBeenCalledWith(null, 250);
     expect(useHabitLogs).toHaveBeenCalledWith(null, { sinceDate: stripWindowStartKey() });
-    expect(useActivities).toHaveBeenCalledWith(null);
+    expect(useRecentCompletedActivities).toHaveBeenCalledWith(null, 250);
     expect(useRecentExposureSessions).toHaveBeenCalledWith(null, 250);
     expect(useDefusionLogs).toHaveBeenCalledWith(null, 250);
     expect(useExpansionLogs).toHaveBeenCalledWith(null, 250);
     expect(useUrgeSurfLogs).toHaveBeenCalledWith(null, 250);
-    expect(useConnectionLogs).toHaveBeenCalledWith(null);
+    expect(useConnectionLogs).toHaveBeenCalledWith(null, 250);
     expect(useObservingSelfSessions).toHaveBeenCalledWith(null);
     expect(useBullsEyeSnapshots).toHaveBeenCalledWith(null);
     expect(useChoicePoints).toHaveBeenCalledWith(null);
@@ -108,12 +110,12 @@ describe("useRoutineToolRecords", () => {
   it("enables the connection query for either connection or dropAnchor steps", () => {
     renderHook(() => useRoutineToolRecords("user-1", ["dropAnchor"]));
     // Drop anchor's log lives in the connection store (technique dropAnchor).
-    expect(useConnectionLogs).toHaveBeenCalledWith("user-1");
+    expect(useConnectionLogs).toHaveBeenCalledWith("user-1", 250);
 
     jest.clearAllMocks();
     for (const mock of hookMocks) mock.mockReturnValue({ data: undefined });
     renderHook(() => useRoutineToolRecords("user-1", ["connection"]));
-    expect(useConnectionLogs).toHaveBeenCalledWith("user-1");
+    expect(useConnectionLogs).toHaveBeenCalledWith("user-1", 250);
   });
 
   it("a committedAction step enables both the actions and the action-steps queries", () => {
@@ -132,10 +134,12 @@ describe("useRoutineToolRecords", () => {
         "breathing",
         "meditation",
         "habits",
+        "activities",
         "exposure",
         "defusion",
         "expansion",
         "urgeSurf",
+        "connection",
       ]),
     );
 
@@ -148,24 +152,25 @@ describe("useRoutineToolRecords", () => {
     expect(useMindfulnessSessions).toHaveBeenCalledWith("user-1", 250);
     expect(useMeditationSessions).toHaveBeenCalledWith("user-1", 250);
     expect(useHabitLogs).toHaveBeenCalledWith("user-1", { sinceDate: lastNDayKeys(7)[0] });
+    // Activities derive from completion, so the window is completed_at-based
+    // (the scheduled_at-ordered default list can miss a recent completion).
+    expect(useRecentCompletedActivities).toHaveBeenCalledWith("user-1", 250);
     expect(useRecentExposureSessions).toHaveBeenCalledWith("user-1", 250);
     // These ACT hooks include the limit in their query key, so the wide
     // routines window can't collide with the 30-row list screens.
     expect(useDefusionLogs).toHaveBeenCalledWith("user-1", 250);
     expect(useExpansionLogs).toHaveBeenCalledWith("user-1", 250);
     expect(useUrgeSurfLogs).toHaveBeenCalledWith("user-1", 250);
+    expect(useConnectionLogs).toHaveBeenCalledWith("user-1", 250);
     // Mood rides the canonical 200-row history window.
     expect(useMoodHistory).toHaveBeenCalledWith("user-1");
   });
 
   it("shares the default-limit cache entries for ACT hooks whose key excludes the limit", () => {
-    renderHook(() =>
-      useRoutineToolRecords("user-1", ["connection", "observingSelf", "choicePoint"]),
-    );
+    renderHook(() => useRoutineToolRecords("user-1", ["observingSelf", "choicePoint"]));
 
     // Called WITHOUT a limit override: one cache entry shared with the ACT
     // program/list screens instead of racing them under the same key.
-    expect(useConnectionLogs).toHaveBeenCalledWith("user-1");
     expect(useObservingSelfSessions).toHaveBeenCalledWith("user-1");
     expect(useChoicePoints).toHaveBeenCalledWith("user-1");
   });
