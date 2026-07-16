@@ -27,6 +27,7 @@ import { ActDefusionWidget } from "@/src/features/home/widgets/act-defusion-widg
 import { ActAcceptancePromptWidget } from "@/src/features/home/widgets/act-acceptance-prompt-widget";
 import { JournalWeekWidget } from "@/src/features/home/widgets/journal-week-widget";
 import { GroundingLogWidget } from "@/src/features/home/widgets/grounding-log-widget";
+import { RoutinesWidget } from "@/src/features/home/widgets/routines-widget";
 
 type WidgetComponent = React.ComponentType<{ userId: string }>;
 type WidgetStatus = "default" | "available" | "soon";
@@ -69,6 +70,7 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "act-acceptance-prompt": ActAcceptancePromptWidget,
   "journal-week": JournalWeekWidget,
   "grounding-log": GroundingLogWidget,
+  "routines-today": RoutinesWidget,
 };
 
 export const WIDGET_META: Record<string, WidgetMeta> = {
@@ -313,6 +315,19 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     titleKey: "home.widgets.groundingLog.title",
     descriptionKey: "home.widgets.groundingLog.metaDesc",
     tint: "clay",
+    status: "available",
+  },
+  // Deliberately "available", NOT "default" (spec #37 / #50): routines-today
+  // is offered in the Add-Widget modal but never default-seeded - unlike
+  // habits-today, Home stays something the user chose. It must also stay out
+  // of every auto-seeding surface (SHARED_TOOL_WIDGET_IDS, concern widgets).
+  "routines-today": {
+    id: "routines-today",
+    toolKey: "routines",
+    icon: "repeat",
+    titleKey: "routines:widget.metaTitle",
+    descriptionKey: "routines:widget.metaDesc",
+    tint: "iris",
     status: "available",
   },
 };
