@@ -68,9 +68,10 @@ test.describe("routine completes via tool use", () => {
     await expect(card.getByText("Not started", { exact: true })).toBeVisible();
     await expect(card.getByText("0/1 today", { exact: true })).toBeVisible();
 
-    // The floating routine handle is visible while a step is still open today.
+    // The floating routine handle is visible while a step is still open today,
+    // labelled with the routine it counts (#91).
     await expect(
-      page.getByRole("button", { name: "Continue your routine: 0 of 1 steps done today" }),
+      page.getByRole("button", { name: `Continue "${routineName}": 0 of 1 steps done today` }),
     ).toBeVisible({ timeout: 15_000 });
 
     // --- Qualifying action: log a mood, all in-app (no hard gotos) ---
@@ -103,7 +104,15 @@ test.describe("routine completes via tool use", () => {
     await expect(card.getByText("1/1 today", { exact: true })).toBeVisible();
 
     // No open steps left today, so the floating handle is gone (any label).
-    await expect(page.getByRole("button", { name: /Continue your routine/ })).toBeHidden({
+    // The completed checkmark (#91) plays only on a LIVE visible->done
+    // transition; the transition here happened while the FAB was suppressed on
+    // the mood form, so nothing shows at all.
+    await expect(page.getByRole("button", { name: /^Continue "/ })).toBeHidden({
+      timeout: 15_000,
+    });
+    // If the completion refetch landed while the FAB was briefly visible, the
+    // checkmark plays and fades (~3s) - retry until it is gone for good.
+    await expect(page.getByRole("button", { name: "Routine complete" })).toBeHidden({
       timeout: 15_000,
     });
   });
