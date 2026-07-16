@@ -6,33 +6,13 @@ import {
   type RoutineToolRecords,
   type SteppableToolId,
 } from "@/src/features/routines/derive";
+import { isScheduledOn } from "@/src/features/routines/scheduling";
 import type { Routine } from "@/src/features/routines/types";
 import { lastNDayKeys, parseLocalNoon } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 
 /** The slice of a routine that says when it runs (#97). */
 export type RoutineSchedule = Pick<Routine, "cadence" | "customDays">;
-
-/**
- * Was the routine scheduled to run on `date`'s local day? Pure calendar
- * membership - deliberately schedule-only, so derived completion stays an
- * independent fact (deriveRoutine never sees the schedule).
- */
-// TODO(#104 merge): swap to src/features/routines/scheduling.ts isScheduledOn
-export function isRoutineScheduledOn(schedule: RoutineSchedule, date: Date): boolean {
-  switch (schedule.cadence) {
-    case "daily":
-      return true;
-    case "weekdays": {
-      const day = date.getDay();
-      return day >= 1 && day <= 5;
-    }
-    case "custom":
-      return schedule.customDays.includes(date.getDay());
-    case "on-demand":
-      return false;
-  }
-}
 
 interface RoutineDayStripProps {
   steps: readonly { toolId: SteppableToolId }[];
@@ -63,7 +43,7 @@ export function RoutineDayStrip({ steps, records, schedule }: RoutineDayStripPro
   return (
     <View className="flex-row gap-1.5">
       {days.map((day) => {
-        const scheduled = isRoutineScheduledOn(schedule, parseLocalNoon(day.dayKey));
+        const scheduled = isScheduledOn(schedule, parseLocalNoon(day.dayKey));
         const labelKey = day.complete
           ? "strip.dayComplete"
           : scheduled
