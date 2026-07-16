@@ -51,24 +51,28 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
             </Button>
           </View>
         ) : null}
-        <Link href={isSignedIn ? "/(app)" : "/"} asChild>
-          <Pressable
-            className="min-w-0 flex-1 flex-row items-center gap-2 px-2"
-            accessibilityRole="link"
-            accessibilityLabel={t("header.goHome")}
-            role="link"
-          >
-            <Image
-              accessible={false}
-              source={require("../../../assets/icon.png")}
-              resizeMode="contain"
-              style={{ width: 28, height: 28, borderRadius: 6 }}
-            />
-            <Text className="shrink text-lg font-semibold text-foreground" numberOfLines={1}>
-              {t("header.appName")}
-            </Text>
-          </Pressable>
-        </Link>
+        {/* The flex-1 spacer is a plain View so the pressable hit area stays
+            the logo + wordmark, not the whole strip up to the right icons. */}
+        <View className="min-w-0 flex-1 flex-row items-center">
+          <Link href={isSignedIn ? "/(app)" : "/"} asChild>
+            <Pressable
+              className="min-w-0 shrink flex-row items-center gap-2 px-2"
+              accessibilityRole="link"
+              accessibilityLabel={t("header.goHome")}
+              role="link"
+            >
+              <Image
+                accessible={false}
+                source={require("../../../assets/icon.png")}
+                resizeMode="contain"
+                style={{ width: 28, height: 28, borderRadius: 6 }}
+              />
+              <Text className="shrink text-lg font-semibold text-foreground" numberOfLines={1}>
+                {t("header.appName")}
+              </Text>
+            </Pressable>
+          </Link>
+        </View>
         {isDesktop && appEnv.discordUrl ? (
           <Button
             accessibilityLabel={t("header.joinDiscord")}

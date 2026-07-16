@@ -78,6 +78,16 @@ describe("AppHeader home link", () => {
 
     expect(screen.getByRole("link", { name: "Go to home" }).props.href).toBe("/");
   });
+
+  it("keeps the hit area on the logo + name, not the whole header strip", () => {
+    renderWithProviders(<AppHeader />);
+
+    // The flex-1 spacer must live on a plain wrapper View: a flex-1 pressable
+    // stretched the clickable area across the entire header.
+    const link = screen.getByRole("link", { name: "Go to home" });
+    expect(link.props.className).not.toContain("flex-1");
+    expect(link.props.className).toContain("shrink");
+  });
 });
 
 describe("AppHeader community links (#92)", () => {
