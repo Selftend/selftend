@@ -23,6 +23,7 @@ const FORM_ROUTE_SUFFIXES = ["/new", "/edit", "/log"];
 const FORM_ROUTE_PATHS = [
   "/support",
   "/modules/cbt/recovery",
+  "/modules/cbt/values",
   "/modules/cbt/self-care",
   "/modules/act/expansion/urge-surfing",
   "/tools/meditation/daily-life",

@@ -132,6 +132,7 @@ describe("RoutineFab", () => {
       ["/routines/routine-1/edit", "an edit form"],
       ["/tools/habits/habit-1/log", "a log form"],
       ["/modules/cbt/self-care", "a fixed-path form"],
+      ["/modules/cbt/values", "the CBT values editor"],
       ["/modules/act/values/health", "a dynamic-segment form"],
     ])("stays hidden on %s (%s)", (pathname) => {
       mockUsePathname.mockReturnValue(pathname);
