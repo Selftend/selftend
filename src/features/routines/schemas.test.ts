@@ -51,6 +51,40 @@ describe("routineInputSchema", () => {
   it("rejects fractional reminder times", () => {
     expect(routineInputSchema.safeParse({ name: "n", reminderHour: 7.5 }).success).toBe(false);
   });
+
+  // Schedule fields (#103, design #96-#98): DB CHECKs are
+  // routines_data_cadence_valid / _custom_days_valid.
+  it("accepts every cadence, with custom days for custom", () => {
+    expect(routineInputSchema.safeParse({ name: "n", cadence: "daily" }).success).toBe(true);
+    expect(routineInputSchema.safeParse({ name: "n", cadence: "weekdays" }).success).toBe(true);
+    expect(routineInputSchema.safeParse({ name: "n", cadence: "on-demand" }).success).toBe(true);
+    expect(
+      routineInputSchema.safeParse({ name: "n", cadence: "custom", customDays: [1, 3, 5] }).success,
+    ).toBe(true);
+  });
+
+  it("rejects an unknown cadence", () => {
+    expect(routineInputSchema.safeParse({ name: "n", cadence: "weekly" }).success).toBe(false);
+  });
+
+  it("rejects custom cadence without at least one day (DB check parity)", () => {
+    expect(routineInputSchema.safeParse({ name: "n", cadence: "custom" }).success).toBe(false);
+    expect(
+      routineInputSchema.safeParse({ name: "n", cadence: "custom", customDays: [] }).success,
+    ).toBe(false);
+  });
+
+  it("rejects out-of-range or fractional days (getDay() values are 0-6 ints)", () => {
+    expect(
+      routineInputSchema.safeParse({ name: "n", cadence: "custom", customDays: [7] }).success,
+    ).toBe(false);
+    expect(
+      routineInputSchema.safeParse({ name: "n", cadence: "custom", customDays: [-1] }).success,
+    ).toBe(false);
+    expect(
+      routineInputSchema.safeParse({ name: "n", cadence: "custom", customDays: [1.5] }).success,
+    ).toBe(false);
+  });
 });
 
 describe("routineUpdateSchema", () => {
@@ -60,6 +94,16 @@ describe("routineUpdateSchema", () => {
 
   it("still rejects a blank name when one is supplied", () => {
     expect(routineUpdateSchema.safeParse({ name: " " }).success).toBe(false);
+  });
+
+  it("accepts a schedule-only patch", () => {
+    expect(routineUpdateSchema.safeParse({ cadence: "custom", customDays: [0, 6] }).success).toBe(
+      true,
+    );
+  });
+
+  it("still rejects a day-less switch to custom", () => {
+    expect(routineUpdateSchema.safeParse({ cadence: "custom" }).success).toBe(false);
   });
 });
 

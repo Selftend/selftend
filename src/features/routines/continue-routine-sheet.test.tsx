@@ -49,6 +49,8 @@ function makeRoutine(
     reminderHour: reminderEnabled ? 8 : null,
     reminderMinute: reminderEnabled ? 30 : null,
     reminderTimezone: reminderEnabled ? "Europe/Sofia" : null,
+    cadence: "daily",
+    customDays: [],
     createdAt: "2026-07-01T08:00:00.000Z",
     updatedAt: "2026-07-01T08:00:00.000Z",
     steps: toolIds.map((toolId, index) => ({

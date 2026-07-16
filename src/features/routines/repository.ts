@@ -1,6 +1,7 @@
 import type { SteppableToolId } from "@/src/features/routines/derive";
 import type {
   Routine,
+  RoutineCadence,
   RoutineInput,
   RoutineStep,
   RoutineUpdate,
@@ -22,6 +23,8 @@ interface RoutineRow {
   reminder_hour: number | null;
   reminder_minute: number | null;
   reminder_timezone: string | null;
+  cadence: RoutineCadence;
+  custom_days: number[];
   created_at: string;
   updated_at: string;
 }
@@ -45,6 +48,8 @@ function mapRoutine(row: RoutineRow): Routine {
     reminderHour: row.reminder_hour,
     reminderMinute: row.reminder_minute,
     reminderTimezone: row.reminder_timezone,
+    cadence: row.cadence,
+    customDays: row.custom_days,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -72,6 +77,8 @@ function payloadFromInput(input: RoutineUpdate) {
   if (input.reminderHour !== undefined) payload.reminder_hour = input.reminderHour;
   if (input.reminderMinute !== undefined) payload.reminder_minute = input.reminderMinute;
   if (input.reminderTimezone !== undefined) payload.reminder_timezone = input.reminderTimezone;
+  if (input.cadence !== undefined) payload.cadence = input.cadence;
+  if (input.customDays !== undefined) payload.custom_days = input.customDays;
   return payload;
 }
 
