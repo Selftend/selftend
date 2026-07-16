@@ -33,6 +33,7 @@ jobs:
       cancel-in-progress: true
 
     env:
+      EXPO_PUBLIC_APP_ENV: ${{ vars.EXPO_PUBLIC_APP_ENV }}
       EXPO_PUBLIC_APP_STORE_URL: ${{ vars.EXPO_PUBLIC_APP_STORE_URL }}
       EXPO_PUBLIC_DISCORD_URL: ${{ vars.EXPO_PUBLIC_DISCORD_URL }}
       EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
@@ -91,6 +92,15 @@ jobs:
 
       - name: Export web app
         run: npm run export:web
+
+      - name: Mark staging as noindex
+        # Staging is public but unlisted (decision #16): a dist-level _headers
+        # file APPENDS X-Robots-Tag only on staging deploys - appended, never
+        # redirected, so the security headers exported from public/_headers
+        # (CSP, HSTS, ...) survive; production is untouched.
+        if: ${{ inputs.environment == 'staging' }}
+        run: |
+          printf '\n/*\n  X-Robots-Tag: noindex\n' >> dist/_headers
 
       - name: Deploy to Netlify production
         env:

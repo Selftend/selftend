@@ -1,6 +1,9 @@
 import * as Sentry from "@sentry/react-native";
 
 const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN ?? "";
+// One shared DSN across deployments; events are told apart by environment
+// (production vs staging - decision #16). Unset means a production build.
+const sentryEnvironment = process.env.EXPO_PUBLIC_APP_ENV ?? "production";
 
 export function shouldEnableSentry(dsn: string, isDev: boolean): boolean {
   return Boolean(dsn) && !isDev;
@@ -43,6 +46,7 @@ export function initSentry(): void {
 
   Sentry.init({
     dsn: sentryDsn,
+    environment: sentryEnvironment,
     sendDefaultPii: false,
     beforeSend: (event) => scrubEvent(event as ScrubbableEvent) as typeof event,
     beforeBreadcrumb: (breadcrumb) => dropConsoleBreadcrumb(breadcrumb as { category?: string }),
