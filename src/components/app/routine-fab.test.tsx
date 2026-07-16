@@ -9,7 +9,12 @@ import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
+  usePathname: jest.fn(() => "/"),
 }));
+
+const mockUsePathname = jest.requireMock("expo-router").usePathname as jest.MockedFunction<
+  () => string
+>;
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
@@ -76,6 +81,7 @@ function setRoutines(routines: RoutineWithSteps[], isLoading = false) {
 describe("RoutineFab", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUsePathname.mockReturnValue("/");
     mockUseRoutineToolRecords.mockReturnValue({});
   });
 
@@ -112,6 +118,42 @@ describe("RoutineFab", () => {
     expect(screen.getByTestId("routine-fab")).toBeTruthy();
     expect(screen.getByText("1/3")).toBeTruthy();
     expect(screen.getByLabelText("Continue your routine: 1 of 3 steps done today")).toBeTruthy();
+  });
+
+  // #90: the FAB never renders over data-entry screens - it covered
+  // MobileFormScreen's sticky Save footer (e.g. the mood editor on mobile).
+  describe("data-entry route suppression (#90)", () => {
+    beforeEach(() => {
+      setRoutines([makeRoutine("r-1", "Morning reset", ["mood"])]);
+    });
+
+    it.each([
+      ["/tools/mood-tracker/new", "a creation form"],
+      ["/routines/routine-1/edit", "an edit form"],
+      ["/tools/habits/habit-1/log", "a log form"],
+      ["/modules/cbt/self-care", "a fixed-path form"],
+      ["/modules/act/values/health", "a dynamic-segment form"],
+    ])("stays hidden on %s (%s)", (pathname) => {
+      mockUsePathname.mockReturnValue(pathname);
+
+      renderWithProviders(<RoutineFab />);
+
+      expect(screen.queryByTestId("routine-fab")).toBeNull();
+    });
+
+    it.each([
+      ["/", "home"],
+      ["/routines", "the routines list"],
+      ["/routines/routine-1", "a routine detail"],
+      ["/tools/gratitude-log", "a tool index whose name merely ends in -log"],
+      ["/modules/act/values", "the values index"],
+    ])("stays visible on %s (%s)", (pathname) => {
+      mockUsePathname.mockReturnValue(pathname);
+
+      renderWithProviders(<RoutineFab />);
+
+      expect(screen.getByTestId("routine-fab")).toBeTruthy();
+    });
   });
 
   it("opens the continue-your-routine sheet on press", () => {
