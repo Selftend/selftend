@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1600px; height: 900px; overflow: hidden; font-family: "Segoe UI", "Noto Sans", sans-serif; }
+  .banner {
+    width: 1600px; height: 900px; display: flex; align-items: center;
+    background:
+      radial-gradient(1200px 800px at 85% -10%, rgba(123, 76, 217, 0.18), transparent 60%),
+      radial-gradient(900px 700px at -5% 110%, rgba(123, 76, 217, 0.14), transparent 55%),
+      linear-gradient(135deg, #f6f3fb 0%, #efe9f8 55%, #e9e1f6 100%);
+  }
+  .left { width: 640px; padding: 0 0 0 90px; }
+  .brand { display: flex; align-items: center; gap: 24px; margin-bottom: 36px; }
+  .brand img { width: 110px; height: 110px; border-radius: 26px; box-shadow: 0 12px 30px rgba(93, 57, 172, 0.25); }
+  .brand .name { font-size: 64px; font-weight: 700; color: #241b33; letter-spacing: -1px; }
+  h1 { font-size: 44px; font-weight: 700; color: #2c2140; line-height: 1.18; margin-bottom: 22px; letter-spacing: -0.5px; }
+  h1 .accent { color: #7b4cd9; }
+  .sub { font-size: 25px; color: #574a70; line-height: 1.5; margin-bottom: 34px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 12px; }
+  .pill {
+    font-size: 21px; font-weight: 600; color: #5d39ac; background: rgba(255,255,255,0.85);
+    border: 2px solid rgba(123, 76, 217, 0.35); border-radius: 999px; padding: 10px 22px;
+  }
+  .phones { position: relative; flex: 1; height: 100%; }
+  .phone {
+    position: absolute; border-radius: 34px; overflow: hidden;
+    border: 10px solid #241b33; background: #241b33;
+    box-shadow: 0 30px 60px rgba(40, 25, 75, 0.35);
+  }
+  .phone img { display: block; width: 100%; }
+  .phone.p1 { width: 300px; left: 40px;  top: 150px; transform: rotate(-5deg); z-index: 3; }
+  .phone.p2 { width: 300px; left: 330px; top: 60px;  z-index: 2; }
+  .phone.p3 { width: 300px; left: 620px; top: 150px; transform: rotate(5deg); z-index: 1; }
+</style>
+</head>
+<body>
+  <div class="banner">
+    <div class="left">
+      <div class="brand">
+        <img src="logo.png" alt="">
+        <div class="name">Selftend</div>
+      </div>
+      <h1>Calm, guided self-help — <span class="accent">looking for Android testers</span></h1>
+      <div class="sub">Free, open-source tools for working with thoughts, moods, and habits.</div>
+      <div class="pills">
+        <div class="pill">No ads</div>
+        <div class="pill">Open source</div>
+        <div class="pill">Private by design</div>
+        <div class="pill">I'll test yours back</div>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone p1"><img src="screen-thought-record.png"></div>
+      <div class="phone p2"><img src="screen-dashboard.png"></div>
+      <div class="phone p3"><img src="screen-breathing.png"></div>
+    </div>
+  </div>
+</body>
+</html>
