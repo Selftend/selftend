@@ -86,8 +86,14 @@ export function RoutineFab() {
   // Whether the PREVIOUS render showed the counting button - the completed
   // state plays only on a live visible->done transition, never on mount.
   const wasCountVisibleRef = useRef(false);
+  // The routine the count was showing last - pressing the completed checkmark
+  // must open the sheet on the routine that JUST finished, not on the sheet's
+  // no-open-routines fallback (views[0], which may be one completed earlier).
+  const lastCountedRoutineIdRef = useRef<string | null>(null);
+  const [completedRoutineId, setCompletedRoutineId] = useState<string | null>(null);
 
   const firstOpen = firstOpenRoutineView(today.views);
+  if (firstOpen) lastCountedRoutineIdRef.current = firstOpen.routine.id;
   const showCount =
     !today.isLoading && today.openSteps > 0 && firstOpen !== null && !isDataEntryPath(pathname);
 
@@ -103,6 +109,7 @@ export function RoutineFab() {
     }
     if (wasVisible && !today.isLoading && today.openSteps === 0) {
       completedOpacity.setValue(1);
+      setCompletedRoutineId(lastCountedRoutineIdRef.current);
       setShowCompleted(true);
       announceMessage(t("fab.complete"));
     }
@@ -179,6 +186,7 @@ export function RoutineFab() {
         userId={userId}
         views={today.views}
         visible={sheetOpen}
+        initialRoutineId={showCompleted ? completedRoutineId : null}
         onClose={() => setSheetOpen(false)}
       />
     </>

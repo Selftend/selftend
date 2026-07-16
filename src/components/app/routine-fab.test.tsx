@@ -251,6 +251,35 @@ describe("RoutineFab", () => {
       expect(screen.queryByTestId("routine-fab-complete")).toBeNull();
     });
 
+    it("pressing the check opens the sheet on the routine that JUST finished", () => {
+      // r-1 was already complete before this session's transition; r-2 is the
+      // one finishing now. The sheet must show r-2's completion, not fall
+      // back to views[0] (r-1).
+      setRoutines([
+        makeRoutine("r-1", "Morning reset", ["mood"]),
+        makeRoutine("r-2", "Evening wind-down", ["journal"]),
+      ]);
+      mockUseRoutineToolRecords.mockReturnValue({
+        moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      });
+
+      renderWithProviders(<RoutineFab />);
+      expect(screen.getByLabelText(/Evening wind-down/)).toBeTruthy();
+
+      mockUseRoutineToolRecords.mockReturnValue({
+        moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+        journalEntries: [
+          { occurredAt: `${currentDateKey()}T09:00:00`, createdAt: `${currentDateKey()}T09:00:00` },
+        ],
+      });
+      screen.rerender(<RoutineFab />);
+
+      fireEvent.press(screen.getByTestId("routine-fab-complete"));
+
+      expect(screen.getByText("Evening wind-down")).toBeTruthy();
+      expect(screen.queryByText("Morning reset")).toBeNull();
+    });
+
     it("returns to the counter if steps open again while the check shows", () => {
       setRoutines([makeRoutine("r-1", "Morning reset", ["mood"])]);
 

@@ -23,6 +23,12 @@ interface ContinueRoutineSheetProps {
   userId: string;
   views: RoutineTodayView[];
   visible: boolean;
+  /**
+   * Routine to pin when the sheet opens with no open routines left (the
+   * completed-state FAB passes the routine that just finished, so the sheet
+   * shows ITS completion rather than falling back to views[0]).
+   */
+  initialRoutineId?: string | null;
   onClose: () => void;
 }
 
@@ -38,6 +44,7 @@ export function ContinueRoutineSheet({
   userId,
   views,
   visible,
+  initialRoutineId = null,
   onClose,
 }: ContinueRoutineSheetProps) {
   const { t } = useTranslation("routines");
@@ -63,9 +70,13 @@ export function ContinueRoutineSheet({
     }
     setSelectedId(
       (current) =>
-        current ?? firstOpenRoutineView(views)?.routine.id ?? views[0]?.routine.id ?? null,
+        current ??
+        firstOpenRoutineView(views)?.routine.id ??
+        initialRoutineId ??
+        views[0]?.routine.id ??
+        null,
     );
-  }, [visible, views]);
+  }, [visible, views, initialRoutineId]);
 
   const selected = views.find((view) => view.routine.id === selectedId) ?? openViews[0] ?? null;
 
