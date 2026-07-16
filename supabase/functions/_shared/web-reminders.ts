@@ -496,15 +496,6 @@ export function routineReminderKeyIfDue(
   const parts = getZonedParts(now, timeZone);
   if (!parts) return null;
 
-  // Schedule gate (#113): suppress the reminder on days the routine is not
-  // scheduled. The weekday is the LOCAL one in the resolved timezone (late-UTC
-  // Friday can already be local Saturday), derived from the already-zoned civil
-  // date so no second Intl pass is needed.
-  const weekday = new Date(
-    Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)),
-  ).getUTCDay();
-  if (!isRoutineScheduledOn(routine, weekday)) return null;
-
   const reminderKey = `${parts.year}-${parts.month}-${parts.day}`;
   if (channel.last_routine_reminder_keys?.[routine.id] === reminderKey) return null;
 
@@ -515,6 +506,21 @@ export function routineReminderKeyIfDue(
   const minutesSinceTarget =
     (((nowMinuteOfDay - targetMinuteOfDay) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
   if (minutesSinceTarget >= 5) return null;
+
+  // Schedule gate (#113): suppress the reminder on days the routine is not
+  // scheduled. The weekday is the LOCAL one in the resolved timezone (late-UTC
+  // Friday can already be local Saturday), derived from the already-zoned civil
+  // date so no second Intl pass is needed. It is the weekday of the TARGET
+  // occurrence, not of "now": for target minutes 56-59 the due window spans
+  // midnight (that is why the window math wraps mod MINUTES_PER_DAY), so a
+  // Friday 23:58 target fires at the Saturday 00:00 cron tick and must be gated
+  // as Friday. Inside the window, the target belongs to the previous local day
+  // exactly when the raw difference went negative before the mod wrapped it.
+  const localWeekday = new Date(
+    Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)),
+  ).getUTCDay();
+  const targetWeekday = nowMinuteOfDay < targetMinuteOfDay ? (localWeekday + 6) % 7 : localWeekday;
+  if (!isRoutineScheduledOn(routine, targetWeekday)) return null;
 
   return reminderKey;
 }

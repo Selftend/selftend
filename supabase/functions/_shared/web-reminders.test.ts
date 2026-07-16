@@ -429,6 +429,58 @@ describe("routineReminderKeyIfDue (#47 - per-routine fan-out)", () => {
       ).toBe("2026-05-23");
     });
 
+    it("gates on the TARGET day when the due window crosses midnight (Fri 23:58 → Sat 00:00)", () => {
+      // A 23:58 target is never hit by the */5 cron before midnight (ticks at
+      // :55, :00), so it intentionally fires at the next day's 00:00 tick. That
+      // occurrence belongs to FRIDAY, so a weekdays routine is due even though
+      // the send-day is Saturday.
+      const routine = {
+        ...baseRoutine,
+        cadence: "weekdays" as const,
+        reminder_hour: 23,
+        reminder_minute: 58,
+      };
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-23T00:00:00.000Z")),
+      ).toBe("2026-05-23");
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-23T00:02:00.000Z")),
+      ).toBe("2026-05-23");
+    });
+
+    it("does not fire an unscheduled Monday 23:58 target at the Tuesday 00:00 tick (custom Tue-only)", () => {
+      const routine = {
+        ...baseRoutine,
+        cadence: "custom" as const,
+        custom_days: [2],
+        reminder_hour: 23,
+        reminder_minute: 58,
+      };
+      // Tuesday 00:00: the target occurrence is Monday 23:58 - not scheduled.
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-26T00:00:00.000Z")),
+      ).toBeNull();
+      // Wednesday 00:00: the target occurrence is Tuesday 23:58 - scheduled, due.
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-27T00:00:00.000Z")),
+      ).toBe("2026-05-27");
+    });
+
+    it("wraps Sunday back to Saturday for a crossed-midnight Saturday target", () => {
+      // Saturday 23:58 target, evaluated at the Sunday 00:00 tick: target
+      // weekday is (0 + 6) % 7 = 6 (Sat), so a Sat-only custom routine fires.
+      const routine = {
+        ...baseRoutine,
+        cadence: "custom" as const,
+        custom_days: [6],
+        reminder_hour: 23,
+        reminder_minute: 58,
+      };
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-24T00:00:00.000Z")),
+      ).toBe("2026-05-24");
+    });
+
     it("treats a missing/undefined cadence as daily (pre-#103-migration rows)", () => {
       // baseRoutine carries no cadence at all; a null cadence gets the same treatment.
       expect(routineReminderKeyIfDue(baseRoutine, baseChannel, saturday)).toBe("2026-05-23");
