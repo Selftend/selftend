@@ -137,8 +137,11 @@
   },
   "fab": {
     "progress": "{{done}}/{{total}}",
+    "progressQueued": "{{done}}/{{total}} ·+{{queued}}",
     "a11y": "Continue \"{{name}}\": {{done}} of {{total}} steps done today",
-    "complete": "Routine complete"
+    "complete": "Routine complete",
+    "moreAfter_one": "1 more routine after this",
+    "moreAfter_other": "{{count}} more routines after this"
   },
   "sheet": {
     "title": "Continue your routine",

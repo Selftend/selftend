@@ -39,15 +39,26 @@ export interface RoutinesToday {
 }
 
 /**
- * The routine the continue sheet pins when it opens: the FIRST routine (by
- * routine order) that is scheduled today AND has an open step, else null. The
- * FAB counts this same view (#91), so the number on the button and the
- * routine the sheet opens on can never diverge - both must select through
- * this helper. Unscheduled routines never qualify (#104): open steps on an
- * on-demand or off-today routine must not surface.
+ * The routine the continue sheet pins when it opens - and the one the FAB
+ * counts (#91): the two must select through this helper so the number on the
+ * button and the routine the sheet opens on can never diverge. Selection
+ * (#121): the first IN-PROGRESS scheduled routine today (some steps done,
+ * some open) wins - the FAB follows what the user is actually doing - else
+ * the first open one by routine order. Unscheduled routines never qualify
+ * (#104): open steps on an on-demand or off-today routine must not surface.
  */
 export function firstOpenRoutineView(views: RoutineTodayView[]): RoutineTodayView | null {
-  return views.find((view) => view.scheduledToday && view.day.nextStep !== null) ?? null;
+  const open = openScheduledViews(views);
+  return open.find((view) => view.day.doneCount > 0) ?? open[0] ?? null;
+}
+
+/**
+ * Every routine scheduled today that still has an open step - the FAB's
+ * queue (#121): it counts the first (per firstOpenRoutineView) and shows the
+ * rest as a "+N" suffix.
+ */
+export function openScheduledViews(views: RoutineTodayView[]): RoutineTodayView[] {
+  return views.filter((view) => view.scheduledToday && view.day.nextStep !== null);
 }
 
 /**
