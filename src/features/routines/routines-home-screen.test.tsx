@@ -182,6 +182,25 @@ describe("RoutinesHomeScreen", () => {
     expect(screen.queryByText("Not started")).toBeNull();
   });
 
+  it("hides the zero-progress badge on a resting card", () => {
+    mockUseRoutines.mockReturnValue({
+      data: [
+        makeRoutine("r-1", "Deep clean", ["mood", "journal"], {
+          cadence: "on-demand",
+          customDays: [],
+        }),
+      ],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useRoutines>);
+
+    renderWithProviders(<RoutinesHomeScreen />);
+
+    // Nothing was expected today, so no "0/2 today" unmet count either.
+    expect(screen.getByText("On demand")).toBeTruthy();
+    expect(screen.queryByText("0/2 today")).toBeNull();
+    expect(screen.queryByText(/\/2 today/)).toBeNull();
+  });
+
   it("keeps live progress on an off-today routine once anything is done today", () => {
     mockUseRoutines.mockReturnValue({
       data: [

@@ -179,7 +179,9 @@ function RoutineCard({ routine, records, dayKey, onOpen }: RoutineCardProps) {
             </Text>
           )}
         </View>
-        {day.totalCount > 0 ? (
+        {/* A resting card (off-today, nothing done) also hides the 0/N badge:
+            an unmet count has no place on a day when nothing was expected. */}
+        {day.totalCount > 0 && !restingToday ? (
           <Text variant="muted" className="text-xs">
             {t("status.progress", { done: day.doneCount, total: day.totalCount })}
           </Text>
