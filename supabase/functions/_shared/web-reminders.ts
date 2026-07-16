@@ -400,10 +400,22 @@ export function activityWindowForTarget(
 // and act, they simply never suppress).
 
 /**
+ * When a routine runs (#103/#113). Mirrors RoutineCadence in
+ * src/features/routines/types.ts — duplicated (like GROUNDING_EXERCISE_NAMES)
+ * so this module stays import-free for the Deno bundle. `custom_days` uses JS
+ * getDay() numbering (0=Sun..6=Sat), same as habits.
+ */
+export type RoutineCadence = "daily" | "weekdays" | "custom" | "on-demand";
+
+/**
  * The reminder-relevant slice of a `routines` view row. `name` comes decrypted
  * through the view: the service role holds execute on app.decrypt_text (granted
  * in 20260587 for export_user_data), so the edge function can personalize the
  * notification title with the routine's name.
+ *
+ * `cadence`/`custom_days` (#113) are optional + nullable so the due-check stays
+ * defensive against rows read before the #103 migration (or a SELECT that omits
+ * them): a missing cadence is treated as 'daily'.
  */
 export interface RoutineReminderRow {
   id: string;
@@ -413,6 +425,8 @@ export interface RoutineReminderRow {
   reminder_hour: number | null;
   reminder_minute: number | null;
   reminder_timezone: string | null;
+  cadence?: RoutineCadence | null;
+  custom_days?: number[] | null;
 }
 
 /** The slice of a delivery-channel row the routine due-check reads. */
@@ -444,9 +458,29 @@ export function routineNotificationCopy(
 }
 
 /**
+ * Whether a routine's schedule includes the given local weekday (JS getDay(),
+ * 0=Sun..6=Sat). Decided server-side per issue #113: daily → always; weekdays →
+ * Mon-Fri; custom → custom_days contains the weekday; on-demand → NEVER (those
+ * routines only run manually and never nudge). A missing/unknown cadence is
+ * treated as 'daily' so pre-#103-migration rows keep their reminders.
+ */
+function isRoutineScheduledOn(routine: RoutineReminderRow, weekday: number): boolean {
+  switch (routine.cadence) {
+    case "on-demand":
+      return false;
+    case "weekdays":
+      return weekday >= 1 && weekday <= 5;
+    case "custom":
+      return (routine.custom_days ?? []).includes(weekday);
+    default:
+      return true; // 'daily', or missing/unknown cadence
+  }
+}
+
+/**
  * Routine analogue of reminderKeyIfDue: today's day key when the routine's
- * reminder is enabled, configured, inside the 5-minute due window, and not yet
- * stamped for this channel today - otherwise null.
+ * reminder is enabled, scheduled today (#113), configured, inside the 5-minute
+ * due window, and not yet stamped for this channel today - otherwise null.
  */
 export function routineReminderKeyIfDue(
   routine: RoutineReminderRow,
@@ -472,6 +506,21 @@ export function routineReminderKeyIfDue(
   const minutesSinceTarget =
     (((nowMinuteOfDay - targetMinuteOfDay) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
   if (minutesSinceTarget >= 5) return null;
+
+  // Schedule gate (#113): suppress the reminder on days the routine is not
+  // scheduled. The weekday is the LOCAL one in the resolved timezone (late-UTC
+  // Friday can already be local Saturday), derived from the already-zoned civil
+  // date so no second Intl pass is needed. It is the weekday of the TARGET
+  // occurrence, not of "now": for target minutes 56-59 the due window spans
+  // midnight (that is why the window math wraps mod MINUTES_PER_DAY), so a
+  // Friday 23:58 target fires at the Saturday 00:00 cron tick and must be gated
+  // as Friday. Inside the window, the target belongs to the previous local day
+  // exactly when the raw difference went negative before the mod wrapped it.
+  const localWeekday = new Date(
+    Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)),
+  ).getUTCDay();
+  const targetWeekday = nowMinuteOfDay < targetMinuteOfDay ? (localWeekday + 6) % 7 : localWeekday;
+  if (!isRoutineScheduledOn(routine, targetWeekday)) return null;
 
   return reminderKey;
 }
