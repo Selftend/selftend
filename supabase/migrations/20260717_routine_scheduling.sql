@@ -904,3 +904,7 @@ begin
   return result;
 end;
 $$;
+
+-- PostgREST caches the API schema; reload so the new view columns and the
+-- updated export_user_data shape are visible immediately after migration.
+notify pgrst, 'reload schema';
