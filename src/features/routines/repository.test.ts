@@ -32,6 +32,8 @@ const routineRow = {
   reminder_hour: null,
   reminder_minute: null,
   reminder_timezone: null,
+  cadence: "daily",
+  custom_days: [],
   created_at: "2026-07-15T08:00:00.000Z",
   updated_at: "2026-07-15T08:00:00.000Z",
 };
@@ -257,6 +259,27 @@ describe("routines repository", () => {
       reminder_hour: 7,
       reminder_minute: 30,
       reminder_timezone: "Europe/Sofia",
+    });
+  });
+
+  it("createRoutine passes schedule fields through in snake_case when provided", async () => {
+    const single = jest.fn().mockResolvedValue({ data: routineRow, error: null });
+    const selectAfter = jest.fn(() => ({ single }));
+    const insert = jest.fn(() => ({ select: selectAfter }));
+    const from = jest.fn(() => ({ insert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await createRoutine("user-1", {
+      name: "Morning",
+      cadence: "custom",
+      customDays: [1, 3, 5],
+    });
+
+    expect(insert).toHaveBeenCalledWith({
+      user_id: "user-1",
+      name: "Morning",
+      cadence: "custom",
+      custom_days: [1, 3, 5],
     });
   });
 
