@@ -4,11 +4,13 @@
     "closeNav": "Затвори навигация",
     "goHome": "Към начало",
     "appName": "Selftend",
-    "joinDiscord": "Присъедини се към нашия Discord"
+    "joinDiscord": "Присъедини се към нашия Discord",
+    "viewGithub": "Виж изходния код в GitHub"
   },
   "sidebar": {
     "home": "Начало",
     "progress": "Наблюдения",
+    "routines": "Рутини",
     "notifications": "Известия",
     "settings": "Настройки",
     "support": "Поддръжка",
@@ -168,7 +170,8 @@
       "gratitude": "Благодарност",
       "meditation": "Медитация",
       "sleep": "Сън",
-      "habits": "Навици"
+      "habits": "Навици",
+      "routines": "Рутини"
     },
     "programWidget": {
       "notEnrolled": "Воден път през този модул. Отвори го, за да прегледаш цялата програма, преди да решиш дали да започнеш.",

@@ -7,25 +7,37 @@ import {
   classifyPushError,
   isAllowedPushEndpoint,
   buildExpoPushMessage,
+  buildRoutineExpoPushMessage,
   classifyExpoTicket,
+  nextRoutineReminderKeys,
   reminderKeyIfDue,
   resolveReminderLanguage,
+  routineNotificationCopy,
+  routineReminderKeyIfDue,
+  routineTag,
+  routineUrl,
   TARGET_CONFIGS,
   TARGETS,
   type ExpoPushMessage,
   type ExpoTicket,
   type ReminderTarget,
+  type RoutineReminderRow,
   type UserPreferenceRow,
   type WebPushSubscriptionRow,
 } from "../_shared/web-reminders.ts";
 
-// Notification copy is centralized in the `notifications` namespace under `copy.<target>`.
+// Notification copy is centralized in the `notifications` namespace under `copy.<target>`,
+// plus `copy.routine` for per-routine reminders. A routine's notification title is the
+// routine's (decrypted-view) NAME when present - the service role holds execute on
+// app.decrypt_text (granted in 20260587 for export_user_data), so reading through the
+// `routines` view works here; `copy.routine` supplies the body and the blank-name fallback.
+type NotificationCopyKey = ReminderTarget | "routine";
 const notificationCopyByLanguage: Record<
   "bg" | "en",
-  Record<ReminderTarget, { title: string; body: string }>
+  Record<NotificationCopyKey, { title: string; body: string }>
 > = {
-  bg: bgNotifications.copy as Record<ReminderTarget, { title: string; body: string }>,
-  en: enNotifications.copy as Record<ReminderTarget, { title: string; body: string }>,
+  bg: bgNotifications.copy as Record<NotificationCopyKey, { title: string; body: string }>,
+  en: enNotifications.copy as Record<NotificationCopyKey, { title: string; body: string }>,
 };
 
 const jsonHeaders = {
@@ -54,7 +66,7 @@ function timingSafeEqual(a: string, b: string): boolean {
   return mismatch === 0;
 }
 
-function getNotificationCopy(language: string | null, target: ReminderTarget) {
+function getNotificationCopy(language: string | null, target: NotificationCopyKey) {
   return notificationCopyByLanguage[resolveReminderLanguage(language)][target];
 }
 
@@ -104,7 +116,7 @@ Deno.serve(async (request) => {
       supabase
         .from("web_push_subscriptions")
         .select(
-          "id,user_id,endpoint,p256dh,auth,time_zone,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,failure_count",
+          "id,user_id,endpoint,p256dh,auth,time_zone,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,last_routine_reminder_keys,failure_count",
         )
         .eq("enabled", true)
         .range(from, to),
@@ -117,7 +129,7 @@ Deno.serve(async (request) => {
       supabase
         .from("device_push_tokens")
         .select(
-          "id,user_id,expo_push_token,time_zone,failure_count,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key",
+          "id,user_id,expo_push_token,time_zone,failure_count,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,last_routine_reminder_keys",
         )
         .eq("enabled", true)
         .range(from, to),
@@ -198,6 +210,39 @@ Deno.serve(async (request) => {
     const preferencesByUser = new Map(
       preferencesRows.map((preferences) => [preferences.user_id, preferences]),
     );
+
+    // Per-routine reminders (issue #47): fan out over routines with an enabled
+    // reminder. Read through the DECRYPTING VIEW `routines` so the notification can
+    // carry the routine's name: the view is security_invoker, and the service role
+    // both bypasses RLS and holds execute on app.decrypt_text (granted in 20260587
+    // for export_user_data). Chunked by the channel-user union, like preferences.
+    // cadence/custom_days (#113) feed the schedule gate in routineReminderKeyIfDue.
+    const ROUTINE_COLUMNS =
+      "id,user_id,name,reminder_enabled,reminder_hour,reminder_minute,reminder_timezone,cadence,custom_days";
+    const routineRows: RoutineReminderRow[] = [];
+    for (let i = 0; i < userIds.length; i += PAGE_SIZE) {
+      const chunk = userIds.slice(i, i + PAGE_SIZE);
+      const chunkRows = (await fetchAllPaged((from, to) =>
+        supabase
+          .from("routines")
+          .select(ROUTINE_COLUMNS)
+          .eq("reminder_enabled", true)
+          .in("user_id", chunk)
+          .range(from, to),
+      )) as RoutineReminderRow[];
+      routineRows.push(...chunkRows);
+    }
+
+    const routinesByUser = new Map<string, RoutineReminderRow[]>();
+    for (const routine of routineRows) {
+      const bucket = routinesByUser.get(routine.user_id);
+      if (bucket) bucket.push(routine);
+      else routinesByUser.set(routine.user_id, [routine]);
+    }
+    // Ids with a currently-enabled reminder, per user - used to prune stale stamp entries.
+    const activeRoutineIds = (userId: string) =>
+      (routinesByUser.get(userId) ?? []).map((routine) => routine.id);
+
     let sent = 0;
     let disabled = 0;
 
@@ -322,15 +367,100 @@ Deno.serve(async (request) => {
           }
         }
       }
+
+      // Per-routine fan-out (issue #47): same consent/global/SSRF gates as above
+      // (already applied for this subscription), same failure handling; dedup via
+      // the last_routine_reminder_keys map (<= 1 per routine per day per channel).
+      // No activity suppression - routines have no single activity table (like
+      // breathing/act, they never suppress).
+      for (const routine of routinesByUser.get(subscription.user_id) ?? []) {
+        if (subscriptionDisabled) break;
+
+        const reminderKey = routineReminderKeyIfDue(routine, subscription, now);
+        if (!reminderKey) continue;
+
+        const copy = routineNotificationCopy(
+          routine,
+          getNotificationCopy(preferences.language, "routine"),
+        );
+
+        try {
+          await webpush.sendNotification(
+            {
+              endpoint: subscription.endpoint,
+              keys: {
+                auth: subscription.auth,
+                p256dh: subscription.p256dh,
+              },
+            },
+            JSON.stringify({
+              body: copy.body,
+              tag: routineTag(routine.id),
+              title: copy.title,
+              url: routineUrl(routine.id),
+            }),
+          );
+
+          const nextKeys = nextRoutineReminderKeys(
+            subscription.last_routine_reminder_keys,
+            routine.id,
+            reminderKey,
+            activeRoutineIds(subscription.user_id),
+          );
+          await supabase
+            .from("web_push_subscriptions")
+            .update({
+              failure_count: 0,
+              last_failure_at: null,
+              last_routine_reminder_keys: nextKeys,
+              last_success_at: now.toISOString(),
+            })
+            .eq("id", subscription.id);
+
+          // Keep the local copy in sync so the next routine in the same loop
+          // sees the freshly written map.
+          subscription.last_routine_reminder_keys = nextKeys;
+          sent += 1;
+        } catch (error) {
+          const { expired } = classifyPushError(error);
+          const nextFailureCount = subscription.failure_count + 1;
+
+          const { error: failureUpdateError } = await supabase
+            .from("web_push_subscriptions")
+            .update({
+              enabled: expired ? false : true,
+              failure_count: nextFailureCount,
+              last_failure_at: now.toISOString(),
+            })
+            .eq("id", subscription.id);
+          if (failureUpdateError) {
+            console.error(
+              "send-web-reminders: failed to record push failure for subscription",
+              subscription.id,
+              failureUpdateError,
+            );
+          }
+
+          if (expired) {
+            disabled += 1;
+            subscriptionDisabled = true;
+          }
+        }
+      }
     }
 
     // ----- Native (Expo) push tokens -----
     // Same due/suppression logic as web, delivered to every registered device via Expo Push.
     // tokenRows was fetched up front (unfiltered by user) so native-only users are covered (#1).
+    // What to stamp on the token row after a successful ticket: a per-tool
+    // last-key column, or an entry in the per-routine key map.
+    type PushStamp =
+      | { kind: "target"; target: ReminderTarget }
+      | { kind: "routine"; routineId: string };
     const pushMessages: {
       msg: ExpoPushMessage;
       row: TokenRow;
-      target: ReminderTarget;
+      stamp: PushStamp;
       key: string;
     }[] = [];
 
@@ -383,7 +513,25 @@ Deno.serve(async (request) => {
         pushMessages.push({
           msg: buildExpoPushMessage(row.expo_push_token, target, copy),
           row,
-          target,
+          stamp: { kind: "target", target },
+          key: reminderKey,
+        });
+      }
+
+      // Per-routine fan-out (issue #47): same gates as above, no activity
+      // suppression (see the web loop), dedup via last_routine_reminder_keys.
+      for (const routine of routinesByUser.get(row.user_id) ?? []) {
+        const reminderKey = routineReminderKeyIfDue(routine, row, now);
+        if (!reminderKey) continue;
+
+        const copy = routineNotificationCopy(
+          routine,
+          getNotificationCopy(preferences.language, "routine"),
+        );
+        pushMessages.push({
+          msg: buildRoutineExpoPushMessage(row.expo_push_token, routine.id, copy),
+          row,
+          stamp: { kind: "routine", routineId: routine.id },
           key: reminderKey,
         });
       }
@@ -407,19 +555,37 @@ Deno.serve(async (request) => {
       }
 
       for (let j = 0; j < batch.length; j++) {
-        const { row, target, key } = batch[j];
+        const { row, stamp, key } = batch[j];
         const verdict = classifyExpoTicket(tickets[j] ?? { status: "error" });
-        const config = TARGET_CONFIGS[target];
         if (verdict.ok) {
-          await supabase
-            .from("device_push_tokens")
-            .update({
-              [config.lastKeyField]: key,
-              failure_count: 0,
-              last_success_at: now.toISOString(),
-            })
-            .eq("id", row.id);
-          (row as unknown as Record<string, unknown>)[config.lastKeyField] = key;
+          if (stamp.kind === "target") {
+            const config = TARGET_CONFIGS[stamp.target];
+            await supabase
+              .from("device_push_tokens")
+              .update({
+                [config.lastKeyField]: key,
+                failure_count: 0,
+                last_success_at: now.toISOString(),
+              })
+              .eq("id", row.id);
+            (row as unknown as Record<string, unknown>)[config.lastKeyField] = key;
+          } else {
+            const nextKeys = nextRoutineReminderKeys(
+              row.last_routine_reminder_keys,
+              stamp.routineId,
+              key,
+              activeRoutineIds(row.user_id),
+            );
+            await supabase
+              .from("device_push_tokens")
+              .update({
+                last_routine_reminder_keys: nextKeys,
+                failure_count: 0,
+                last_success_at: now.toISOString(),
+              })
+              .eq("id", row.id);
+            row.last_routine_reminder_keys = nextKeys;
+          }
           sent += 1;
         } else if (verdict.removeToken) {
           await supabase.from("device_push_tokens").delete().eq("id", row.id);

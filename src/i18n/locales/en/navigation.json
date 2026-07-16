@@ -4,11 +4,13 @@
     "closeNav": "Close navigation",
     "goHome": "Go to home",
     "appName": "Selftend",
-    "joinDiscord": "Join our Discord"
+    "joinDiscord": "Join our Discord",
+    "viewGithub": "View the source code on GitHub"
   },
   "sidebar": {
     "home": "Home",
     "progress": "Insights",
+    "routines": "Routines",
     "notifications": "Notifications",
     "settings": "Settings",
     "support": "Support",
@@ -168,7 +170,8 @@
       "gratitude": "Gratitude",
       "meditation": "Meditation",
       "sleep": "Sleep",
-      "habits": "Habits"
+      "habits": "Habits",
+      "routines": "Routines"
     },
     "programWidget": {
       "notEnrolled": "A guided path through this module. Open it to review the full programme before choosing whether to begin.",

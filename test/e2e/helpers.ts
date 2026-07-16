@@ -17,6 +17,7 @@ import {
   deleteAllWidgetPreferencesForUser,
   deleteAllExposureForUser,
   deleteAllActivityLogsForUser,
+  deleteAllRoutinesForUser,
 } from "../integration/helpers";
 
 export {
@@ -34,6 +35,7 @@ export {
   deleteAllActLogsForUser,
   deleteAllExposureForUser,
   deleteAllActivityLogsForUser,
+  deleteAllRoutinesForUser,
 };
 
 // Alias: clear widget preferences. Empty Home is intentional and no longer seeds defaults.

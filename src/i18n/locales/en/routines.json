@@ -1,0 +1,181 @@
+{
+  "home": {
+    "title": "Routines",
+    "subtitle": "A few small tool actions that go together. Done when you do them - no streaks, no pressure.",
+    "listHeading": "Your routines",
+    "emptyTitle": "No routines yet",
+    "emptyBody": "A routine strings a few small tool actions together - a check-in, a line of gratitude, a short breath. Steps complete themselves when you use the tools.",
+    "starterTitle": "Start with a ready-made routine?",
+    "starterBody": "Composed from the tools already on your Home. Keep it as is, or skip - you can always build your own.",
+    "openDetail": "Open routine"
+  },
+  "strip": {
+    "label": "Last 7 days",
+    "dayComplete": "{{date}}: routine complete",
+    "dayOpen": "{{date}}: not completed",
+    "dayNotScheduled": "{{date}}: not scheduled",
+    "note": "Filled days are days the whole routine came together. Empty days are just empty - one missed day doesn't undo what you're building."
+  },
+  "status": {
+    "notStarted": "Not started",
+    "inProgress": "In progress",
+    "complete": "Done for today",
+    "progress": "{{done}}/{{total}} today"
+  },
+  "schedule": {
+    "onDemand": "On demand",
+    "weekdays": "Runs weekdays",
+    "customDays": "Runs {{days}}",
+    "weekday": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    }
+  },
+  "cta": {
+    "newRoutine": "New routine",
+    "create": "Create a routine",
+    "keep": "Keep",
+    "skip": "Skip",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "detail": {
+    "notFound": "This routine doesn't exist anymore.",
+    "stepsTitle": "Steps",
+    "stepsEmpty": "No steps yet - add some in the editor.",
+    "stepDone": "Done today",
+    "stepNotDone": "Not yet today",
+    "orderNote": "Order is just a suggestion - do the steps in any order, or leave some for another day.",
+    "deleteConfirmTitle": "Delete routine",
+    "deleteConfirmBody": "Delete this routine and its steps? Your tool entries are untouched. This can't be undone."
+  },
+  "onboarding": {
+    "title": "One small routine to start?",
+    "body": "We put together a tiny routine from the tools you just picked. Keep it if it helps - nothing is created unless you say so.",
+    "stepsNote": "Steps complete themselves when you use the tools - nothing to tick off, and no reminders unless you add one later."
+  },
+  "form": {
+    "newTitle": "New routine",
+    "editTitle": "Edit routine",
+    "nameLabel": "Routine name",
+    "defaultName": "My daily routine",
+    "nameRequired": "Give the routine a short name.",
+    "saveError": "Could not save the routine. Please try again.",
+    "stepsLabel": "Steps",
+    "stepsHelp": "Each step points at a tool. It completes on days you use that tool - nothing to tick off.",
+    "stepsEmpty": "No steps yet. Add a tool below.",
+    "addStepLabel": "Add a step",
+    "groups": {
+      "checkins": "Check-ins & logs",
+      "mindfulness": "Mindfulness",
+      "cbt": "CBT",
+      "act": "ACT",
+      "habits": "Habits"
+    },
+    "addStep": "Add {{tool}}",
+    "stepAlreadyAdded": "{{tool}} is already a step",
+    "removeStep": "Remove {{tool}}",
+    "moveUp": "Move {{tool}} up",
+    "moveDown": "Move {{tool}} down",
+    "dragHint": "Drag to reorder",
+    "daysLabel": "Days",
+    "cadence": {
+      "daily": "Every day",
+      "weekdays": "Weekdays",
+      "custom": "Custom",
+      "on-demand": "On demand"
+    },
+    "onDemandHelp": "Runs only when you start it yourself - no reminders.",
+    "customDaysLabel": "Days of the week",
+    "customDaysHelp": "Pick at least one day.",
+    "customDaysRequired": "Pick at least one day for a custom cadence.",
+    "weekday": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    }
+  },
+  "tools": {
+    "mood": "Mood check-in",
+    "journal": "Journal",
+    "gratitude": "Gratitude",
+    "sleep": "Sleep log",
+    "cbt": "Thought record",
+    "activities": "Activities",
+    "exposure": "Exposure session",
+    "breathing": "Breathing",
+    "grounding": "Grounding",
+    "meditation": "Meditation",
+    "habits": "Habits",
+    "defusion": "Defusion log",
+    "expansion": "Acceptance log",
+    "urgeSurf": "Urge surfing",
+    "connection": "Connection log",
+    "dropAnchor": "Drop anchor",
+    "observingSelf": "Observing Self",
+    "bullsEye": "Values check-in",
+    "choicePoint": "Choice point",
+    "committedAction": "Committed Action"
+  },
+  "reminder": {
+    "sectionLabel": "Daily reminder",
+    "help": "One gentle notification a day, at a time you pick. It stays off unless you turn it on.",
+    "toggleLabel": "Remind me about this routine",
+    "timeLabel": "Reminder time",
+    "channelError": "Notifications couldn't be turned on for this device, so the routine was saved with the reminder off. You can try again anytime."
+  },
+  "overlap": {
+    "note": "Some steps also have their own tool reminder. That's fine - nothing changes unless you choose to.",
+    "turnOff": "Turn off the {{tool}} reminder",
+    "turnedOff": "The {{tool}} reminder is off.",
+    "turnOffError": "Couldn't turn off the {{tool}} reminder. Please try again."
+  },
+  "widget": {
+    "metaTitle": "Routines today",
+    "metaDesc": "All your routines' progress for the day in one calm card.",
+    "title": "Routines today",
+    "progress": "{{done}}/{{total}} steps",
+    "routineProgress": "{{done}}/{{total}}",
+    "allDone": "Everything came together today. Nothing left to do here.",
+    "emptyBody": "A routine strings a few small tool actions together. If you'd like one, the Routines page is the place to start.",
+    "emptyCta": "Explore routines",
+    "open": "Open"
+  },
+  "fab": {
+    "progress": "{{done}}/{{total}}",
+    "progressQueued": "{{done}}/{{total}} ·+{{queued}}",
+    "a11y": "Continue \"{{name}}\": {{done}} of {{total}} steps done today",
+    "complete": "Routine complete",
+    "moreAfter_one": "1 more routine after this",
+    "moreAfter_other": "{{count}} more routines after this"
+  },
+  "sheet": {
+    "title": "Continue your routine",
+    "switchLabel": "Switch routine",
+    "next": "Next",
+    "doNextStep": "Do next step",
+    "stepDone": "Done today",
+    "stepOpen": "Not yet today",
+    "orderNote": "Order is just a suggestion - any step, any order.",
+    "close": "Close",
+    "completeTitle": "That was the last step",
+    "completeBody": "\"{{name}}\" came together today. There's nothing more to do here.",
+    "reminderOffer": "If it would help, this routine can nudge you once a day. It stays off unless you turn it on.",
+    "reminderTimeLabel": "Reminder time",
+    "reminderAccept": "Set a daily reminder",
+    "reminderDecline": "Not now",
+    "reminderSaveError": "Could not save the reminder. You can set it any time from the routine."
+  }
+}

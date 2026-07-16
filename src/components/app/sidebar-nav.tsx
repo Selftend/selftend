@@ -34,6 +34,15 @@ const PROGRESS_ITEM: NavItemDef = {
   matchPrefix: "/progress",
 };
 
+// Routines lives with the Home & Insights pair (spec #37, "Navigation
+// placement") - not a fourth module pillar and not another tools entry.
+const ROUTINES_ITEM: NavItemDef = {
+  labelKey: "sidebar.routines",
+  href: "/(app)/routines",
+  icon: "checklist",
+  matchPrefix: "/routines",
+};
+
 const MODULE_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.cbt",
@@ -268,6 +277,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
         <View className="gap-1">
           {renderNavItem(TODAY_ITEM)}
           {renderNavItem(PROGRESS_ITEM)}
+          {renderNavItem(ROUTINES_ITEM)}
 
           {renderGroupLabel(t("sidebar.modules"), "/modules")}
           {MODULE_ITEMS.map((item) => renderNavItem(item))}

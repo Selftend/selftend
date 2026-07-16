@@ -193,6 +193,23 @@ export async function listSessions(userId: string, itemId: string) {
   return (data as SessionRow[]).map(mapSession);
 }
 
+/**
+ * Newest sessions across every item - the routines derive engine needs "any
+ * session completed on day X" without knowing item ids (mirrors listAllItems).
+ */
+export async function listRecentSessions(userId: string, limit = 250) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("exposure_sessions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("completed_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data as SessionRow[]).map(mapSession);
+}
+
 export async function deleteHierarchy(userId: string, hierarchyId: string) {
   const client = requireSupabase();
   const { error } = await client

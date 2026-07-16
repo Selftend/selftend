@@ -3,14 +3,21 @@ import { groundingSlugs } from "@/src/constants/grounding";
 import {
   activityWindowForTarget,
   buildExpoPushMessage,
+  buildRoutineExpoPushMessage,
   classifyExpoTicket,
   classifyPushError,
   getZonedParts,
   GROUNDING_EXERCISE_NAMES,
   isAllowedPushEndpoint,
+  nextRoutineReminderKeys,
   reminderKeyIfDue,
   resolveReminderLanguage,
+  routineNotificationCopy,
+  routineReminderKeyIfDue,
+  routineTag,
+  routineUrl,
   startOfZonedDay,
+  type RoutineReminderRow,
   type UserPreferenceRow,
   type WebPushSubscriptionRow,
 } from "./web-reminders";
@@ -266,6 +273,288 @@ describe("startOfZonedDay (#70 - DST-correct local midnight)", () => {
 describe("GROUNDING_EXERCISE_NAMES parity", () => {
   it("matches the canonical grounding slugs (drift guard for #24)", () => {
     expect([...GROUNDING_EXERCISE_NAMES].sort()).toEqual([...groundingSlugs].sort());
+  });
+});
+
+describe("routineReminderKeyIfDue (#47 - per-routine fan-out)", () => {
+  const baseRoutine: RoutineReminderRow = {
+    id: "r1",
+    user_id: "u1",
+    name: "Morning reset",
+    reminder_enabled: true,
+    reminder_hour: 9,
+    reminder_minute: 0,
+    reminder_timezone: "UTC",
+  };
+  const baseChannel = { time_zone: "UTC", last_routine_reminder_keys: null };
+  const now = new Date("2026-05-24T09:02:00.000Z"); // inside the 09:00-09:05 window
+
+  it("returns the day key when due inside the 5-minute window", () => {
+    expect(routineReminderKeyIfDue(baseRoutine, baseChannel, now)).toBe("2026-05-24");
+  });
+
+  it("returns null when the routine reminder is disabled (opt-in gate)", () => {
+    expect(
+      routineReminderKeyIfDue({ ...baseRoutine, reminder_enabled: false }, baseChannel, now),
+    ).toBeNull();
+  });
+
+  it("returns null when hour/minute were never configured", () => {
+    expect(
+      routineReminderKeyIfDue({ ...baseRoutine, reminder_hour: null }, baseChannel, now),
+    ).toBeNull();
+    expect(
+      routineReminderKeyIfDue({ ...baseRoutine, reminder_minute: null }, baseChannel, now),
+    ).toBeNull();
+  });
+
+  it("returns null when this routine is already stamped today (<= 1/routine/day per channel)", () => {
+    const channel = { time_zone: "UTC", last_routine_reminder_keys: { r1: "2026-05-24" } };
+    expect(routineReminderKeyIfDue(baseRoutine, channel, now)).toBeNull();
+  });
+
+  it("another routine's stamp does not suppress this routine", () => {
+    const channel = { time_zone: "UTC", last_routine_reminder_keys: { other: "2026-05-24" } };
+    expect(routineReminderKeyIfDue(baseRoutine, channel, now)).toBe("2026-05-24");
+  });
+
+  it("returns null outside the window and at/after the upper boundary", () => {
+    expect(
+      routineReminderKeyIfDue(baseRoutine, baseChannel, new Date("2026-05-24T10:02:00.000Z")),
+    ).toBeNull();
+    expect(
+      routineReminderKeyIfDue(baseRoutine, baseChannel, new Date("2026-05-24T09:05:00.000Z")),
+    ).toBeNull();
+  });
+
+  it("spans the hour boundary for target minutes 56-59 (same */5 cron fix as tools)", () => {
+    const routine = { ...baseRoutine, reminder_hour: 9, reminder_minute: 58 };
+    expect(
+      routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-24T10:00:00.000Z")),
+    ).toBe("2026-05-24");
+    expect(
+      routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-24T09:55:00.000Z")),
+    ).toBeNull();
+  });
+
+  it("falls back to the routine timezone when the channel has none, then UTC", () => {
+    // 09:02 UTC == 12:02 in Europe/Sofia (UTC+3 in May); routine set for 12:00 Sofia is due.
+    const channel = { time_zone: null, last_routine_reminder_keys: null };
+    expect(
+      routineReminderKeyIfDue(
+        { ...baseRoutine, reminder_hour: 12, reminder_timezone: "Europe/Sofia" },
+        channel,
+        now,
+      ),
+    ).toBe("2026-05-24");
+    expect(routineReminderKeyIfDue({ ...baseRoutine, reminder_timezone: null }, channel, now)).toBe(
+      "2026-05-24",
+    );
+  });
+
+  it("prefers the channel timezone over the routine timezone (same precedence as tools)", () => {
+    // Channel tz Sofia: 09:02 UTC is 12:02 local, so a 09:00 routine is NOT due.
+    const channel = { time_zone: "Europe/Sofia", last_routine_reminder_keys: null };
+    expect(routineReminderKeyIfDue(baseRoutine, channel, now)).toBeNull();
+  });
+
+  it("returns null for an invalid timezone", () => {
+    expect(
+      routineReminderKeyIfDue(
+        { ...baseRoutine, reminder_timezone: "Not/AZone" },
+        { time_zone: null, last_routine_reminder_keys: null },
+        now,
+      ),
+    ).toBeNull();
+  });
+
+  it("fires a midnight (hour 0) routine reminder (Intl 1-24 clock normalization)", () => {
+    expect(
+      routineReminderKeyIfDue(
+        { ...baseRoutine, reminder_hour: 0 },
+        baseChannel,
+        new Date("2026-05-24T00:02:00.000Z"),
+      ),
+    ).toBe("2026-05-24");
+  });
+
+  describe("schedule gate (#113 - cadence-aware suppression)", () => {
+    // Anchor dates (all 09:02 UTC, inside the 09:00-09:05 window):
+    // 2026-05-23 Sat, 2026-05-25 Mon, 2026-05-27 Wed, 2026-05-28 Thu.
+    const monday = new Date("2026-05-25T09:02:00.000Z");
+    const saturday = new Date("2026-05-23T09:02:00.000Z");
+
+    it("weekdays routine is due on Monday but not on Saturday", () => {
+      const routine = { ...baseRoutine, cadence: "weekdays" as const };
+      expect(routineReminderKeyIfDue(routine, baseChannel, monday)).toBe("2026-05-25");
+      expect(routineReminderKeyIfDue(routine, baseChannel, saturday)).toBeNull();
+    });
+
+    it("custom routine is due only on its custom_days (Mon+Wed: due Wed, not Thu)", () => {
+      const routine = { ...baseRoutine, cadence: "custom" as const, custom_days: [1, 3] };
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-27T09:02:00.000Z")),
+      ).toBe("2026-05-27");
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-28T09:02:00.000Z")),
+      ).toBeNull();
+    });
+
+    it("on-demand routine is never due, even inside the window on any day", () => {
+      const routine = { ...baseRoutine, cadence: "on-demand" as const };
+      expect(routineReminderKeyIfDue(routine, baseChannel, now)).toBeNull();
+      expect(routineReminderKeyIfDue(routine, baseChannel, monday)).toBeNull();
+      expect(routineReminderKeyIfDue(routine, baseChannel, saturday)).toBeNull();
+    });
+
+    it("daily routine fires on any day (weekend included)", () => {
+      const routine = { ...baseRoutine, cadence: "daily" as const };
+      expect(routineReminderKeyIfDue(routine, baseChannel, monday)).toBe("2026-05-25");
+      expect(routineReminderKeyIfDue(routine, baseChannel, saturday)).toBe("2026-05-23");
+    });
+
+    it("uses the LOCAL weekday, not the UTC one (late-UTC Friday = Auckland Saturday)", () => {
+      // 2026-05-22T13:02Z (Friday in UTC) is already Saturday 01:02 in
+      // Pacific/Auckland (NZST, UTC+12 in May). A weekdays routine set for
+      // 01:00 local must be suppressed; a daily one proves the window matched
+      // and stamps the LOCAL Saturday day key.
+      const lateUtcFriday = new Date("2026-05-22T13:02:00.000Z");
+      const channel = { time_zone: "Pacific/Auckland", last_routine_reminder_keys: null };
+      const routine = { ...baseRoutine, reminder_hour: 1, reminder_minute: 0 };
+      expect(
+        routineReminderKeyIfDue({ ...routine, cadence: "weekdays" }, channel, lateUtcFriday),
+      ).toBeNull();
+      expect(
+        routineReminderKeyIfDue({ ...routine, cadence: "daily" }, channel, lateUtcFriday),
+      ).toBe("2026-05-23");
+    });
+
+    it("gates on the TARGET day when the due window crosses midnight (Fri 23:58 → Sat 00:00)", () => {
+      // A 23:58 target is never hit by the */5 cron before midnight (ticks at
+      // :55, :00), so it intentionally fires at the next day's 00:00 tick. That
+      // occurrence belongs to FRIDAY, so a weekdays routine is due even though
+      // the send-day is Saturday.
+      const routine = {
+        ...baseRoutine,
+        cadence: "weekdays" as const,
+        reminder_hour: 23,
+        reminder_minute: 58,
+      };
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-23T00:00:00.000Z")),
+      ).toBe("2026-05-23");
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-23T00:02:00.000Z")),
+      ).toBe("2026-05-23");
+    });
+
+    it("does not fire an unscheduled Monday 23:58 target at the Tuesday 00:00 tick (custom Tue-only)", () => {
+      const routine = {
+        ...baseRoutine,
+        cadence: "custom" as const,
+        custom_days: [2],
+        reminder_hour: 23,
+        reminder_minute: 58,
+      };
+      // Tuesday 00:00: the target occurrence is Monday 23:58 - not scheduled.
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-26T00:00:00.000Z")),
+      ).toBeNull();
+      // Wednesday 00:00: the target occurrence is Tuesday 23:58 - scheduled, due.
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-27T00:00:00.000Z")),
+      ).toBe("2026-05-27");
+    });
+
+    it("wraps Sunday back to Saturday for a crossed-midnight Saturday target", () => {
+      // Saturday 23:58 target, evaluated at the Sunday 00:00 tick: target
+      // weekday is (0 + 6) % 7 = 6 (Sat), so a Sat-only custom routine fires.
+      const routine = {
+        ...baseRoutine,
+        cadence: "custom" as const,
+        custom_days: [6],
+        reminder_hour: 23,
+        reminder_minute: 58,
+      };
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-24T00:00:00.000Z")),
+      ).toBe("2026-05-24");
+    });
+
+    it("treats a missing/undefined cadence as daily (pre-#103-migration rows)", () => {
+      // baseRoutine carries no cadence at all; a null cadence gets the same treatment.
+      expect(routineReminderKeyIfDue(baseRoutine, baseChannel, saturday)).toBe("2026-05-23");
+      expect(
+        routineReminderKeyIfDue({ ...baseRoutine, cadence: null }, baseChannel, saturday),
+      ).toBe("2026-05-23");
+    });
+  });
+});
+
+describe("nextRoutineReminderKeys", () => {
+  it("stamps the routine and keeps other active routines' stamps", () => {
+    expect(nextRoutineReminderKeys({ r2: "2026-05-23" }, "r1", "2026-05-24", ["r1", "r2"])).toEqual(
+      { r1: "2026-05-24", r2: "2026-05-23" },
+    );
+  });
+
+  it("prunes stamps for routines no longer in the active set (deleted / disabled)", () => {
+    expect(
+      nextRoutineReminderKeys({ gone: "2026-05-20", r1: "2026-05-23" }, "r1", "2026-05-24", ["r1"]),
+    ).toEqual({ r1: "2026-05-24" });
+  });
+
+  it("handles a null map (fresh channel row)", () => {
+    expect(nextRoutineReminderKeys(null, "r1", "2026-05-24", ["r1"])).toEqual({
+      r1: "2026-05-24",
+    });
+  });
+});
+
+describe("routine url/tag helpers", () => {
+  it("deep-links to the routine detail screen and tags per routine", () => {
+    expect(routineUrl("abc")).toBe("/routines/abc");
+    // Distinct per routine so two routines' notifications never replace each other.
+    expect(routineTag("abc")).not.toBe(routineTag("def"));
+  });
+});
+
+describe("routineNotificationCopy", () => {
+  const routine: RoutineReminderRow = {
+    id: "r1",
+    user_id: "u1",
+    name: "Morning reset",
+    reminder_enabled: true,
+    reminder_hour: 9,
+    reminder_minute: 0,
+    reminder_timezone: "UTC",
+  };
+  const fallback = { title: "Your routine", body: "A couple of small steps." };
+
+  it("titles the notification with the routine's decrypted-view name", () => {
+    expect(routineNotificationCopy(routine, fallback)).toEqual({
+      title: "Morning reset",
+      body: "A couple of small steps.",
+    });
+  });
+
+  it("falls back to the static localized copy for a blank or missing name", () => {
+    expect(routineNotificationCopy({ ...routine, name: "  " }, fallback)).toEqual(fallback);
+    expect(routineNotificationCopy({ ...routine, name: null }, fallback)).toEqual(fallback);
+  });
+});
+
+describe("buildRoutineExpoPushMessage", () => {
+  it("builds an Expo push message deep-linking to the routine", () => {
+    expect(
+      buildRoutineExpoPushMessage("ExponentPushToken[x]", "r1", { title: "T", body: "B" }),
+    ).toEqual({
+      to: "ExponentPushToken[x]",
+      title: "T",
+      body: "B",
+      sound: "default",
+      data: { url: "/routines/r1" },
+    });
   });
 });
 

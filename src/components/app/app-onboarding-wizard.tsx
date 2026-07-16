@@ -3,7 +3,10 @@ import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { OnboardingHero, RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
+import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Input } from "@/src/components/react-native-reusables/input";
+import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { CONCERN_KEYS, isConcernKey, type ConcernKey } from "@/src/features/onboarding/concerns";
 import {
@@ -12,11 +15,16 @@ import {
   type GuidancePreference,
   type ModuleInterest,
 } from "@/src/features/onboarding/recommendations";
+import { useRoutines } from "@/src/features/routines/queries";
+import { ROUTINE_NAME_MAX } from "@/src/features/routines/schemas";
+import { buildStarterSteps } from "@/src/features/routines/starter";
+import { useKeepStarterRoutine } from "@/src/features/routines/use-keep-starter-routine";
 import { spaceKeyActivationProps } from "@/src/lib/accessibility";
+import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 
 const welcomeIllustration = require("../../../assets/images/onboarding/app_welcome.png");
-type OnboardingPanel = "welcome" | "concerns" | "modules" | "guidance";
+type OnboardingPanel = "welcome" | "concerns" | "modules" | "guidance" | "routines";
 
 export interface AppOnboardingResult {
   selectedConcerns: ConcernKey[];
@@ -74,22 +82,29 @@ export function AppOnboardingWizard({
   onSkip,
 }: AppOnboardingWizardProps) {
   const { t } = useTranslation("settings");
+  const { user } = useSession();
+  const userId = user?.id ?? null;
   const [panel, setPanel] = useState<OnboardingPanel>(includeWelcome ? "welcome" : "concerns");
   const [selected, setSelected] = useState<ConcernKey[]>(() =>
     initialConcerns.filter(isConcernKey),
   );
   const [modules, setModules] = useState<ModuleInterest[]>([]);
   const [guidance, setGuidance] = useState<GuidancePreference>("guided");
-  const isLast =
-    introductionOnly || panel === "guidance" || (panel === "modules" && modules.length === 0);
+  const [routineName, setRoutineName] = useState(() => t("routines:form.defaultName"));
 
-  const toggle = <T extends string>(value: T, setter: (next: T[]) => void, current: T[]) =>
-    setter(
-      current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
-    );
+  // Starter-routine offer (spec #37, "Onboarding starter routine"). The
+  // `routines` panel is gated on the user having ZERO routines; skip the fetch
+  // entirely in the welcome-only introduction replay, where the panel is
+  // structurally unreachable (that flow ends on the welcome panel).
+  const { data: existingRoutines } = useRoutines(introductionOnly ? null : userId);
+  const {
+    keep: keepStarter,
+    saving: starterSaving,
+    error: starterError,
+  } = useKeepStarterRoutine(userId);
 
-  const finish = () => {
-    const recommendations = buildWidgetRecommendations({
+  const buildRecommendations = () =>
+    buildWidgetRecommendations({
       concerns: selected,
       moduleInterests: modules,
       guidance,
@@ -97,9 +112,45 @@ export function AppOnboardingWizard({
         new Set(["mood-checkin" as const, ...suggestSharedToolWidgetIds(selected)]),
       ),
     });
+
+  // The starter is pre-composed from the widgets this very wizard is about to
+  // keep on Home, so the candidate list is the current recommendation set (in
+  // concern-resolution order; buildStarterSteps drops non-steppable widgets,
+  // excludes Habits, and enforces the cap-3 / min-2 rules).
+  const starterSteps = buildStarterSteps(buildRecommendations().map((item) => item.widgetId));
+  const starterEligible =
+    !introductionOnly &&
+    existingRoutines !== undefined &&
+    existingRoutines.length === 0 &&
+    starterSteps !== null;
+
+  const isLast =
+    introductionOnly ||
+    panel === "routines" ||
+    (panel === "guidance" && !starterEligible) ||
+    (panel === "modules" && modules.length === 0 && !starterEligible);
+
+  const toggle = <T extends string>(value: T, setter: (next: T[]) => void, current: T[]) =>
+    setter(
+      current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
+    );
+
+  const finish = () => {
     onFinish({
       selectedConcerns: selected,
-      widgetIds: recommendations.map((item) => item.widgetId),
+      widgetIds: buildRecommendations().map((item) => item.widgetId),
+    });
+  };
+
+  // "Keep" is the only path that writes the starter routine: one routine + N
+  // steps through the normal repository write path, then the wizard finishes.
+  // Skipping (or abandoning the wizard) writes no routine at all.
+  const keepStarterRoutine = () => {
+    if (!starterSteps) return;
+    void keepStarter({
+      name: routineName.trim() || t("routines:form.defaultName"),
+      steps: starterSteps,
+      onKept: finish,
     });
   };
 
@@ -108,20 +159,26 @@ export function AppOnboardingWizard({
     else if (panel === "welcome") setPanel("concerns");
     else if (panel === "concerns") setPanel("modules");
     else if (panel === "modules" && modules.length > 0) setPanel("guidance");
+    else if (panel === "routines") keepStarterRoutine();
+    else if (starterEligible) setPanel("routines");
     else finish();
   };
 
   const previousPanel: OnboardingPanel | null =
-    panel === "guidance"
-      ? "modules"
-      : panel === "modules"
-        ? "concerns"
-        : panel === "concerns" && includeWelcome
-          ? "welcome"
-          : null;
+    panel === "routines"
+      ? modules.length > 0
+        ? "guidance"
+        : "modules"
+      : panel === "guidance"
+        ? "modules"
+        : panel === "modules"
+          ? "concerns"
+          : panel === "concerns" && includeWelcome
+            ? "welcome"
+            : null;
 
   const handleDismiss = () => {
-    if (isPending) return;
+    if (isPending || starterSaving) return;
     if (previousPanel) setPanel(previousPanel);
     else onSkip();
   };
@@ -129,10 +186,16 @@ export function AppOnboardingWizard({
   return (
     <RichOnboardingShell
       visible={visible}
-      isPending={isPending}
-      errorMessage={errorMessage}
+      isPending={isPending || starterSaving}
+      errorMessage={errorMessage ?? (starterError || undefined)}
       accessibilityLabel={t("onboarding.appTitle")}
-      ctaLabel={isLast ? t("onboarding.wizFinish") : t("onboarding.wizNext")}
+      ctaLabel={
+        panel === "routines"
+          ? t("routines:cta.keep")
+          : isLast
+            ? t("onboarding.wizFinish")
+            : t("onboarding.wizNext")
+      }
       ctaAlwaysCompletes
       onComplete={nextPanel}
       onDismiss={handleDismiss}
@@ -142,7 +205,7 @@ export function AppOnboardingWizard({
             {previousPanel ? (
               <Pressable
                 accessibilityRole="button"
-                disabled={isPending}
+                disabled={isPending || starterSaving}
                 hitSlop={8}
                 onPress={() => setPanel(previousPanel)}
               >
@@ -151,7 +214,12 @@ export function AppOnboardingWizard({
             ) : (
               <View />
             )}
-            <Pressable accessibilityRole="button" disabled={isPending} hitSlop={8} onPress={onSkip}>
+            <Pressable
+              accessibilityRole="button"
+              disabled={isPending || starterSaving}
+              hitSlop={8}
+              onPress={onSkip}
+            >
               <Text className="text-sm text-muted-foreground">{t("onboarding.wizSkip")}</Text>
             </Pressable>
           </View>
@@ -232,6 +300,48 @@ export function AppOnboardingWizard({
             active={guidance === "self-directed"}
             onPress={() => setGuidance("self-directed")}
           />
+        </View>
+      ) : null}
+
+      {panel === "routines" && starterSteps ? (
+        <View className="gap-4">
+          <Text variant="h2" className="text-center">
+            {t("routines:onboarding.title")}
+          </Text>
+          <Text variant="muted" className="text-center">
+            {t("routines:onboarding.body")}
+          </Text>
+          <View className="gap-2">
+            <Label>{t("routines:form.nameLabel")}</Label>
+            <Input
+              accessibilityLabel={t("routines:form.nameLabel")}
+              maxLength={ROUTINE_NAME_MAX}
+              onChangeText={setRoutineName}
+              placeholder={t("routines:form.defaultName")}
+              value={routineName}
+            />
+          </View>
+          <View className="gap-2">
+            {starterSteps.map((toolId, index) => (
+              <View key={toolId} className="flex-row items-center gap-3">
+                <View className="size-7 items-center justify-center rounded-full border border-primary/40 bg-primary/10">
+                  <Text className="text-xs font-semibold text-primary">{index + 1}</Text>
+                </View>
+                <Text className="text-sm">{t(`routines:tools.${toolId}`)}</Text>
+              </View>
+            ))}
+          </View>
+          <Text variant="muted" className="text-center text-xs">
+            {t("routines:onboarding.stepsNote")}
+          </Text>
+          <Button
+            variant="ghost"
+            disabled={isPending || starterSaving}
+            onPress={finish}
+            className="self-center"
+          >
+            <Text>{t("routines:cta.skip")}</Text>
+          </Button>
         </View>
       ) : null}
     </RichOnboardingShell>

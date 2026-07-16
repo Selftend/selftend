@@ -67,15 +67,19 @@ test.describe("sign-up + onboarding + first record", () => {
     await page.getByText("Sleep", { exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Final panel: leave both optional modules unselected for a tools-only setup.
-    // Guidance is skipped and recommendations are applied automatically.
+    // Panel 3: leave both optional modules unselected for a tools-only setup.
+    // Guidance is skipped; with >= 2 eligible steps and zero routines the
+    // starter-routine offer (#46) is the panel before finish.
     await expect(page.getByText("Would a self-help module be useful?")).toBeVisible();
-    await page.getByRole("button", { name: "Finish", exact: true }).click();
-    await expect(page.getByText("Would a self-help module be useful?", { exact: true })).toBeHidden(
-      {
-        timeout: 15_000,
-      },
-    );
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    // Final panel: the pre-composed starter routine. Decline it - skipping must
+    // write nothing and simply finish onboarding with the tool suggestions.
+    await expect(page.getByText("One small routine to start?")).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "Skip", exact: true }).click();
+    await expect(page.getByText("One small routine to start?", { exact: true })).toBeHidden({
+      timeout: 15_000,
+    });
 
     // Personalization payoff: the selected shared widgets are now on Home.
     await expect(page.getByText("Check-in", { exact: true }).last()).toBeVisible({

@@ -11,6 +11,8 @@ const LABELS: Record<string, string> = {
   "breadcrumb.entry": "Entry",
   "sidebar.gratitudeLog": "Gratitude log",
   "breadcrumb.history": "History",
+  "sidebar.routines": "Routines",
+  "breadcrumb.edit": "Edit",
 };
 const t = (key: string) => LABELS[key] ?? key;
 
@@ -29,6 +31,13 @@ describe("computeBreadcrumbs", () => {
 
   it("returns nothing for the root", () => {
     expect(computeBreadcrumbs("/", t)).toEqual([]);
+  });
+
+  it("resolves the routines detail and edit routes", () => {
+    const crumbs = computeBreadcrumbs("/routines/3f9a-uuid/edit", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Routines", "Entry", "Edit"]);
+    expect(crumbs[0].href).toBe("/routines");
+    expect(crumbs[2].href).toBeUndefined();
   });
 
   it("labels the gratitude entries list as History, not a generic entry", () => {

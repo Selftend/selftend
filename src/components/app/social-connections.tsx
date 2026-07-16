@@ -8,6 +8,7 @@ import type { ComponentProps } from "react";
 type SocialConnection = {
   id: string;
   icon: ComponentProps<typeof Ionicons>["name"];
+  accessibilityLabel?: string;
   onPress?: () => void;
 };
 
@@ -22,7 +23,14 @@ export function SocialConnections({ connections }: SocialConnectionsProps) {
   return (
     <View className="flex-row gap-1">
       {connections.map((item) => (
-        <Button key={item.id} variant="ghost" size="sm" className="flex-1" onPress={item.onPress}>
+        <Button
+          key={item.id}
+          accessibilityLabel={item.accessibilityLabel}
+          variant="ghost"
+          size="sm"
+          className="flex-1"
+          onPress={item.onPress}
+        >
           <Ionicons name={item.icon} size={18} color={isDark ? "#fafafa" : "#0a0a0a"} />
         </Button>
       ))}

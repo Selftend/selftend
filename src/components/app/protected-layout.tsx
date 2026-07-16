@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { OfflineBanner } from "@/src/components/app/offline-banner";
+import { RoutineFab } from "@/src/components/app/routine-fab";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
@@ -22,6 +23,7 @@ import {
 import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
 import { useNotificationDeepLink } from "@/src/features/notifications/use-notification-deep-link";
 import { useNotificationSync } from "@/src/features/notifications/use-notification-sync";
+import { useRoutines } from "@/src/features/routines/queries";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useSession } from "@/src/providers/session-provider";
 import { WidgetSnapshotSync } from "@/src/features/widgets/widget-snapshot-sync";
@@ -42,7 +44,15 @@ export default function ProtectedLayout() {
   const hydrateAppLock = useAppLockStore((s) => s.hydrate);
 
   useSettingsSync(user?.id ?? null, preferences);
-  useNotificationSync(user?.id ?? null, preferences);
+  // Routine reminders live on routines rows (not user_preferences), so fold them into
+  // the sync hook's "any reminder enabled" condition. Native-only fetch: the hook is a
+  // no-op on web (the routine editor registers the web push channel at enable time).
+  const { data: routines } = useRoutines(Platform.OS === "web" ? null : (user?.id ?? null));
+  useNotificationSync(
+    user?.id ?? null,
+    preferences,
+    routines?.some((routine) => routine.reminderEnabled) ?? false,
+  );
   useNotificationDeepLink();
 
   useEffect(() => {
@@ -175,6 +185,10 @@ export default function ProtectedLayout() {
             <Stack.Screen name="legal" />
             <Stack.Screen name="progress" />
           </Stack>
+          {/* Corner-floating routine-progress handle: authenticated shell only,
+              bottom-right so it coexists with the bottom-center reminder prompt
+              card by construction. Renders nothing while no routine step is open. */}
+          <RoutineFab />
         </View>
       </View>
     </AppLockGate>

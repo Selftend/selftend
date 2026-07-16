@@ -179,11 +179,15 @@ export function UserMenu() {
           </View>
 
           <GetTheAppSection compact />
+          {/* Community links. On mobile the header shows no Discord/GitHub
+              icons (#92), so this social row is the canonical Discord entry
+              point there; it keeps hiding Discord when no URL is configured. */}
           <SocialConnections
             connections={[
               {
                 id: "github",
                 icon: "logo-github",
+                accessibilityLabel: t("header.viewGithub"),
                 onPress: () => openExternal(appEnv.githubRepoUrl),
               },
               ...(appEnv.discordUrl
@@ -191,6 +195,7 @@ export function UserMenu() {
                     {
                       id: "discord",
                       icon: "logo-discord" as const,
+                      accessibilityLabel: t("header.joinDiscord"),
                       onPress: () => openExternal(appEnv.discordUrl),
                     },
                   ]

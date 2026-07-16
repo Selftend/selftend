@@ -1,0 +1,100 @@
+name: Staging pipeline
+
+# On every push to dev: migrate the staging Supabase project first, then deploy
+# Edge Functions - the function deploy gates on the migration via needs:, so
+# staging never runs new code against an un-migrated database (decisions
+# #16/#17; spec §6). workflow_dispatch is the manual fallback.
+#
+# The staging WEB build is deliberately NOT deployed here: every Netlify deploy
+# costs credits, so web deploys are manual-only via staging-web-deploy.yml
+# (day-to-day testing happens locally). Production web deploys still run
+# automatically from release.yml on main.
+#
+# No workflow-level concurrency (same reasoning as release.yml): cancelling a
+# run mid `db push` must be impossible; per-job groups serialize instead.
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrate-staging:
+    name: Migrate staging database
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    # Serialize database pushes; never cancel one mid-flight.
+    concurrency:
+      group: migrate-staging
+      cancel-in-progress: false
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+      STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
+
+    steps:
+      - name: Check migration environment
+        run: |
+          missing=0
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD STAGING_PROJECT_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name must be set (staging environment secrets) before migrating."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        # `latest` per research R1: older CLI versions lack the IPv4/Supavisor
+        # pooler handling GitHub runners need.
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link staging project
+        run: supabase link --project-ref "$STAGING_PROJECT_ID"
+
+      - name: Apply migrations
+        run: supabase db push
+
+  deploy-functions-staging:
+    name: Deploy edge functions (staging)
+    needs: migrate-staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    # Serialize function deploys; never cancel one mid-flight.
+    concurrency:
+      group: deploy-functions-staging
+      cancel-in-progress: false
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link staging project
+        run: supabase link --project-ref "$STAGING_PROJECT_ID"
+
+      - name: Deploy edge functions
+        # Code only; function runtime secrets stay managed in the Supabase
+        # project (decision #17).
+        run: supabase functions deploy

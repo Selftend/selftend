@@ -109,4 +109,8 @@ export const CARD_REPLICAS: Record<CardId, CardReplicaEntry> = {
   "act-acceptance-prompt": prompt("open-in-full"),
   "journal-week": stats("edit-note", "ink"),
   "grounding-log": stats("history", "clay"),
+  "routines-today": {
+    ...shortcut("repeat"),
+    tint: "iris",
+  },
 };

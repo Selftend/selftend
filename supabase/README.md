@@ -23,7 +23,6 @@ CBT:
 - `activity_logs`
 - `procrastination_tasks`, `task_steps`
 - `recovery_plans`, `challenge_plans`
-- `plan_items`
 
 ACT:
 
@@ -45,12 +44,13 @@ Other tools (shared across modules):
 - `breathing_exercises`
 - `habits`, `habit_logs`
 - `self_care_logs`
+- `routines`, `routine_steps` (routines replaced the retired `plan_items` care plan)
 
 The mindfulness _tool_ has been absorbed into meditation, but the `mindfulness_sessions` data layer is still shared and live; do not treat the table as dead.
 
 `profiles` stores account-level metadata only: email plus optional avatar fields. Google OAuth avatars are stored as URLs with `avatar_source = 'oauth'`; manually chosen images store a private Storage object path with `avatar_source = 'upload'`; removed photos keep `avatar_source = null` and set `avatar_updated_at` so the app does not immediately re-import the Google photo.
 
-`export_user_data()` is the GDPR data export: it includes account metadata, preferences, web push subscriptions, and every private per-module record (CBT, ACT, mood, journal, sleep, meditation, gratitude, habits, breathing, plan items, widget preferences, and the rest). Because user-entered fields are encrypted at rest, `export_user_data()` reads through the decrypting views so the exported JSON is plaintext for the owner. `delete_user_account()` deletes owned private rows directly or through `auth.users` cascade, including private avatar objects in Storage.
+`export_user_data()` is the GDPR data export: it includes account metadata, preferences, web push subscriptions, and every private per-module record (CBT, ACT, mood, journal, sleep, meditation, gratitude, habits, breathing, routines, widget preferences, and the rest). Because user-entered fields are encrypted at rest, `export_user_data()` reads through the decrypting views so the exported JSON is plaintext for the owner. `delete_user_account()` deletes owned private rows directly or through `auth.users` cascade, including private avatar objects in Storage.
 
 ## Field-level encryption
 
