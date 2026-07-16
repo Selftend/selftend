@@ -8,7 +8,8 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { isRoutineScheduledOn, RoutineDayStrip } from "@/src/features/routines/day-strip";
+import { RoutineDayStrip } from "@/src/features/routines/day-strip";
+import { isScheduledOn } from "@/src/features/routines/scheduling";
 import {
   deriveRoutine,
   type RoutineStatus,
@@ -126,7 +127,7 @@ function RoutineCard({ routine, records, dayKey, onOpen }: RoutineCardProps) {
   // Off-today and on-demand routines with nothing done yet swap "Not started"
   // for a calm schedule label (#106) - "not expected today", never "behind".
   // Any progress today (a manual run) flips the card back to live tracking.
-  const scheduledToday = isRoutineScheduledOn(routine, parseLocalNoon(dayKey));
+  const scheduledToday = isScheduledOn(routine, parseLocalNoon(dayKey));
   const restingToday = !scheduledToday && day.doneCount === 0;
   // Daily routines are always scheduled, so only the other three cadences
   // can reach the label.
