@@ -20,7 +20,7 @@ import {
   readEnabled,
   type NotificationTarget,
 } from "@/src/features/notifications/registry";
-import { STEPPABLE_TOOL_IDS, type SteppableToolId } from "@/src/features/routines/derive";
+import { type SteppableToolId } from "@/src/features/routines/derive";
 import {
   useAddStep,
   useCreateRoutine,
@@ -80,6 +80,34 @@ const CUSTOM_DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
 // Switching TO custom with no days picked preselects Mon-Fri - the same
 // hydration rule as habitToInput in the habit editor.
 const DEFAULT_CUSTOM_DAYS = [1, 2, 3, 4, 5];
+
+// Add-step picker groups (#123): with the steppable set grown to every
+// loggable CBT/ACT tool, a flat chip wrap stops scanning well. Small muted
+// headers split it by family; every steppable tool appears in exactly one
+// group (asserted by the editor test) and chip behavior is unchanged.
+export const STEP_TOOL_GROUPS: readonly {
+  key: "checkins" | "mindfulness" | "cbt" | "act" | "habits";
+  tools: readonly SteppableToolId[];
+}[] = [
+  { key: "checkins", tools: ["mood", "journal", "gratitude", "sleep"] },
+  { key: "mindfulness", tools: ["breathing", "grounding", "meditation"] },
+  { key: "cbt", tools: ["cbt", "activities", "exposure"] },
+  {
+    key: "act",
+    tools: [
+      "defusion",
+      "expansion",
+      "urgeSurf",
+      "connection",
+      "dropAnchor",
+      "observingSelf",
+      "bullsEye",
+      "choicePoint",
+      "committedAction",
+    ],
+  },
+  { key: "habits", tools: ["habits"] },
+];
 
 export function RoutineEditorScreen({
   fallbackHref,
@@ -487,36 +515,43 @@ export function RoutineEditorScreen({
         )}
       </View>
 
-      <View className="gap-2">
+      <View className="gap-3">
         <Label>{t("form.addStepLabel")}</Label>
-        <View className="flex-row flex-wrap gap-2">
-          {STEPPABLE_TOOL_IDS.map((toolId) => {
-            const used = usedTools.has(toolId);
-            const label = t(`tools.${toolId}`);
-            return (
-              <Pressable
-                key={toolId}
-                accessibilityLabel={
-                  used
-                    ? t("form.stepAlreadyAdded", { tool: label })
-                    : t("form.addStep", { tool: label })
-                }
-                accessibilityRole="button"
-                disabled={used || saving}
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => addStep(toolId)}
-                className={cn(
-                  "flex-row items-center gap-1.5 rounded-full border px-3 py-2",
-                  used ? "border-border bg-muted/40 opacity-50" : "border-border bg-background",
-                )}
-                role="button"
-              >
-                <Icon name={used ? "check" : "add"} className="size-4 text-muted-foreground" />
-                <Text className="text-sm">{label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        {STEP_TOOL_GROUPS.map((group) => (
+          <View key={group.key} className="gap-2">
+            <Text variant="muted" className="text-xs font-semibold uppercase tracking-wide">
+              {t(`form.groups.${group.key}` as const)}
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {group.tools.map((toolId) => {
+                const used = usedTools.has(toolId);
+                const label = t(`tools.${toolId}`);
+                return (
+                  <Pressable
+                    key={toolId}
+                    accessibilityLabel={
+                      used
+                        ? t("form.stepAlreadyAdded", { tool: label })
+                        : t("form.addStep", { tool: label })
+                    }
+                    accessibilityRole="button"
+                    disabled={used || saving}
+                    hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                    onPress={() => addStep(toolId)}
+                    className={cn(
+                      "flex-row items-center gap-1.5 rounded-full border px-3 py-2",
+                      used ? "border-border bg-muted/40 opacity-50" : "border-border bg-background",
+                    )}
+                    role="button"
+                  >
+                    <Icon name={used ? "check" : "add"} className="size-4 text-muted-foreground" />
+                    <Text className="text-sm">{label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ))}
       </View>
 
       <View className="gap-2">

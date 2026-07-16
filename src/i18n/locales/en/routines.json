@@ -73,6 +73,13 @@
     "stepsHelp": "Each step points at a tool. It completes on days you use that tool - nothing to tick off.",
     "stepsEmpty": "No steps yet. Add a tool below.",
     "addStepLabel": "Add a step",
+    "groups": {
+      "checkins": "Check-ins & logs",
+      "mindfulness": "Mindfulness",
+      "cbt": "CBT",
+      "act": "ACT",
+      "habits": "Habits"
+    },
     "addStep": "Add {{tool}}",
     "stepAlreadyAdded": "{{tool}} is already a step",
     "removeStep": "Remove {{tool}}",
@@ -106,10 +113,21 @@
     "gratitude": "Gratitude",
     "sleep": "Sleep log",
     "cbt": "Thought record",
+    "activities": "Activities",
+    "exposure": "Exposure session",
     "breathing": "Breathing",
     "grounding": "Grounding",
     "meditation": "Meditation",
-    "habits": "Habits"
+    "habits": "Habits",
+    "defusion": "Defusion log",
+    "expansion": "Acceptance log",
+    "urgeSurf": "Urge surfing",
+    "connection": "Connection log",
+    "dropAnchor": "Drop anchor",
+    "observingSelf": "Observing Self",
+    "bullsEye": "Values check-in",
+    "choicePoint": "Choice point",
+    "committedAction": "Committed Action"
   },
   "reminder": {
     "sectionLabel": "Daily reminder",

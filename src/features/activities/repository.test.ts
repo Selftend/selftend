@@ -2,6 +2,7 @@ import {
   completeActivity,
   getActivity,
   listActivities,
+  listRecentCompletedActivities,
   saveActivity,
 } from "@/src/features/activities/repository";
 import { requireSupabase } from "@/src/lib/supabase";
@@ -59,6 +60,38 @@ describe("activities repository", () => {
     expect(from).toHaveBeenCalledWith("activity_logs");
     expect(eq).toHaveBeenCalledWith("user_id", "user-1");
     expect(order).toHaveBeenCalledWith("scheduled_at", { ascending: true, nullsFirst: false });
+  });
+
+  it("lists recent COMPLETED activities newest-first by completed_at, capped and mapped", async () => {
+    const completedRow = { ...sampleRow, completed_at: "2026-05-16T10:00:00.000Z" };
+    const limit = jest.fn().mockResolvedValue({ data: [completedRow], error: null });
+    const order = jest.fn(() => ({ limit }));
+    const not = jest.fn(() => ({ order }));
+    const eq = jest.fn(() => ({ not }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    const result = await listRecentCompletedActivities("user-1");
+    expect(from).toHaveBeenCalledWith("activity_logs");
+    expect(eq).toHaveBeenCalledWith("user_id", "user-1");
+    // Only completed rows: routine derivation asks "completed on day X".
+    expect(not).toHaveBeenCalledWith("completed_at", "is", null);
+    expect(order).toHaveBeenCalledWith("completed_at", { ascending: false });
+    expect(limit).toHaveBeenCalledWith(250);
+    expect(result).toEqual([{ ...sampleMapped, completedAt: "2026-05-16T10:00:00.000Z" }]);
+  });
+
+  it("throws when listRecentCompletedActivities query errors", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: null, error: { code: "42P01" } });
+    const order = jest.fn(() => ({ limit }));
+    const not = jest.fn(() => ({ order }));
+    const eq = jest.fn(() => ({ not }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(listRecentCompletedActivities("user-1")).rejects.toMatchObject({ code: "42P01" });
   });
 
   it("returns null when getActivity finds no row", async () => {

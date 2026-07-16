@@ -88,10 +88,117 @@ describe("stepDoneOnDate", () => {
     expect(stepDoneOnDate("habits", { habitLogs: [{ loggedOn: "2026-07-14" }] }, DAY)).toBe(false);
   });
 
+  it("activities count only completion - a scheduled-but-open activity stays open", () => {
+    const records: RoutineToolRecords = {
+      activityLogs: [{ completedAt: null }, { completedAt: onDayTs }],
+    };
+    expect(stepDoneOnDate("activities", records, DAY)).toBe(true);
+    expect(stepDoneOnDate("activities", { activityLogs: [{ completedAt: null }] }, DAY)).toBe(
+      false,
+    );
+    expect(stepDoneOnDate("activities", { activityLogs: [{ completedAt: prevDayTs }] }, DAY)).toBe(
+      false,
+    );
+  });
+
+  it("exposure reads the session's completedAt", () => {
+    expect(stepDoneOnDate("exposure", { exposureSessions: [{ completedAt: onDayTs }] }, DAY)).toBe(
+      true,
+    );
+    expect(
+      stepDoneOnDate("exposure", { exposureSessions: [{ completedAt: prevDayTs }] }, DAY),
+    ).toBe(false);
+  });
+
+  it("matches each createdAt-dated ACT log on the day and rejects other days", () => {
+    const records: RoutineToolRecords = {
+      defusionLogs: [{ createdAt: onDayTs }],
+      expansionLogs: [{ createdAt: prevDayTs }],
+      observingSelfSessions: [{ createdAt: onDayTs }],
+      choicePoints: [{ createdAt: nextDayTs }],
+    };
+    expect(stepDoneOnDate("defusion", records, DAY)).toBe(true);
+    expect(stepDoneOnDate("expansion", records, DAY)).toBe(false);
+    expect(stepDoneOnDate("observingSelf", records, DAY)).toBe(true);
+    expect(stepDoneOnDate("choicePoint", records, DAY)).toBe(false);
+  });
+
+  it("urge surfing reads completedAt and bulls-eye reads reviewedAt", () => {
+    expect(stepDoneOnDate("urgeSurf", { urgeSurfLogs: [{ completedAt: onDayTs }] }, DAY)).toBe(
+      true,
+    );
+    expect(stepDoneOnDate("urgeSurf", { urgeSurfLogs: [{ completedAt: null }] }, DAY)).toBe(false);
+    expect(stepDoneOnDate("bullsEye", { bullsEyeSnapshots: [{ reviewedAt: onDayTs }] }, DAY)).toBe(
+      true,
+    );
+    expect(
+      stepDoneOnDate("bullsEye", { bullsEyeSnapshots: [{ reviewedAt: prevDayTs }] }, DAY),
+    ).toBe(false);
+  });
+
+  it("a drop-anchor log completes BOTH the dropAnchor and connection steps (subset, not split)", () => {
+    const dropAnchorLog: RoutineToolRecords = {
+      connectionLogs: [{ technique: "dropAnchor", createdAt: onDayTs }],
+    };
+    expect(stepDoneOnDate("dropAnchor", dropAnchorLog, DAY)).toBe(true);
+    expect(stepDoneOnDate("connection", dropAnchorLog, DAY)).toBe(true);
+
+    // Any other connection technique completes connection but NOT drop anchor.
+    const otherTechnique: RoutineToolRecords = {
+      connectionLogs: [{ technique: "noticeFiveThings", createdAt: onDayTs }],
+    };
+    expect(stepDoneOnDate("connection", otherTechnique, DAY)).toBe(true);
+    expect(stepDoneOnDate("dropAnchor", otherTechnique, DAY)).toBe(false);
+  });
+
+  it("committed action derives from any progress update: action created/patched or step added/ticked", () => {
+    // Action patched today (created earlier).
+    expect(
+      stepDoneOnDate(
+        "committedAction",
+        { committedActions: [{ createdAt: prevDayTs, updatedAt: onDayTs }] },
+        DAY,
+      ),
+    ).toBe(true);
+    // Step ticked complete today.
+    expect(
+      stepDoneOnDate(
+        "committedAction",
+        { actionSteps: [{ createdAt: prevDayTs, completedAt: onDayTs }] },
+        DAY,
+      ),
+    ).toBe(true);
+    // Step added today but not completed (completedAt null) still counts.
+    expect(
+      stepDoneOnDate(
+        "committedAction",
+        { actionSteps: [{ createdAt: onDayTs, completedAt: null }] },
+        DAY,
+      ),
+    ).toBe(true);
+    // Nothing dated today: an old action with an old step stays open.
+    expect(
+      stepDoneOnDate(
+        "committedAction",
+        {
+          committedActions: [{ createdAt: prevDayTs, updatedAt: prevDayTs }],
+          actionSteps: [{ createdAt: prevDayTs, completedAt: null }],
+        },
+        DAY,
+      ),
+    ).toBe(false);
+  });
+
   it("treats absent record slices as no records", () => {
     expect(stepDoneOnDate("mood", {}, DAY)).toBe(false);
     expect(stepDoneOnDate("breathing", {}, DAY)).toBe(false);
     expect(stepDoneOnDate("habits", {}, DAY)).toBe(false);
+    expect(stepDoneOnDate("activities", {}, DAY)).toBe(false);
+    expect(stepDoneOnDate("exposure", {}, DAY)).toBe(false);
+    expect(stepDoneOnDate("defusion", {}, DAY)).toBe(false);
+    expect(stepDoneOnDate("connection", {}, DAY)).toBe(false);
+    expect(stepDoneOnDate("dropAnchor", {}, DAY)).toBe(false);
+    expect(stepDoneOnDate("committedAction", {}, DAY)).toBe(false);
   });
 });
 
@@ -194,7 +301,12 @@ describe("isSteppableToolId", () => {
   it("accepts the steppable set and rejects other strings", () => {
     expect(isSteppableToolId("breathing")).toBe(true);
     expect(isSteppableToolId("habits")).toBe(true);
+    expect(isSteppableToolId("defusion")).toBe(true);
+    expect(isSteppableToolId("committedAction")).toBe(true);
     expect(isSteppableToolId("plan")).toBe(false);
+    // Weekly review stays out by decision (weekly by design; a daily routine
+    // would read open 6/7 days).
+    expect(isSteppableToolId("weeklyReview")).toBe(false);
     expect(isSteppableToolId("")).toBe(false);
   });
 });

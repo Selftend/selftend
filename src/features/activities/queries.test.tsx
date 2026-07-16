@@ -6,6 +6,7 @@ import {
   useActivities,
   useActivity,
   useCompleteActivity,
+  useRecentCompletedActivities,
   useSaveActivity,
 } from "@/src/features/activities/queries";
 import * as repo from "@/src/features/activities/repository";
@@ -17,6 +18,7 @@ jest.mock("@/src/features/activities/repository", () => ({
   completeActivity: jest.fn(),
   getActivity: jest.fn(),
   listActivities: jest.fn(),
+  listRecentCompletedActivities: jest.fn(),
   saveActivity: jest.fn(),
 }));
 
@@ -50,6 +52,30 @@ describe("useActivities enabled gate", () => {
     const { result } = renderHook(() => useActivities("u1"), { wrapper: wrap(client) });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(repo.listActivities).toHaveBeenCalledWith("u1");
+    expect(result.current.data).toEqual([{ id: "a1" }]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useRecentCompletedActivities: same gate; the repo fn also receives the
+// window size (#124 review: routines derive from completed_at, which the
+// scheduled_at-ordered default list cannot answer reliably).
+// ---------------------------------------------------------------------------
+describe("useRecentCompletedActivities enabled gate", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useRecentCompletedActivities(null), { wrapper: wrap(client) });
+    expect(repo.listRecentCompletedActivities).not.toHaveBeenCalled();
+  });
+
+  it("fetches with the real userId and limit when present", async () => {
+    (repo.listRecentCompletedActivities as jest.Mock).mockResolvedValue([{ id: "a1" }]);
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => useRecentCompletedActivities("u1", 250), {
+      wrapper: wrap(client),
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(repo.listRecentCompletedActivities).toHaveBeenCalledWith("u1", 250);
     expect(result.current.data).toEqual([{ id: "a1" }]);
   });
 });

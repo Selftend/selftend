@@ -3,7 +3,11 @@ import { Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import { RoutineEditorScreen } from "@/src/features/routines/routine-editor-screen";
+import { STEPPABLE_TOOL_IDS } from "@/src/features/routines/derive";
+import {
+  RoutineEditorScreen,
+  STEP_TOOL_GROUPS,
+} from "@/src/features/routines/routine-editor-screen";
 import {
   useAddStep,
   useCreateRoutine,
@@ -293,6 +297,44 @@ describe("RoutineEditorScreen", () => {
     // Pressing the disabled chip must not add a duplicate row.
     fireEvent.press(screen.getByLabelText("Mood check-in is already a step"));
     expect(screen.getAllByLabelText(/Remove Mood check-in/)).toHaveLength(1);
+  });
+
+  // ----- Grouped Add-step picker (#123) -----
+
+  it("partitions the steppable set: every tool appears in exactly one picker group", () => {
+    const grouped = STEP_TOOL_GROUPS.flatMap((group) => group.tools);
+    expect([...grouped].sort()).toEqual([...STEPPABLE_TOOL_IDS].sort());
+    expect(new Set(grouped).size).toBe(grouped.length);
+  });
+
+  it("renders the five group headers over the add-step chips", () => {
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    expect(screen.getByText("Check-ins & logs")).toBeTruthy();
+    expect(screen.getByText("Mindfulness")).toBeTruthy();
+    expect(screen.getByText("CBT")).toBeTruthy();
+    expect(screen.getByText("ACT")).toBeTruthy();
+    // "Habits" is both the group header and its only chip's label.
+    expect(screen.getAllByText("Habits").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("adds a newly admitted ACT tool as a step and saves it like any other", async () => {
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    fireEvent.press(screen.getByLabelText("Add Defusion log"));
+
+    // Same chip behavior as the original nine: added state + a step row.
+    expect(screen.getByLabelText("Defusion log is already a step")).toBeTruthy();
+    expect(screen.getByLabelText("Remove Defusion log")).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() => expect(createRoutine).toHaveBeenCalled());
+    expect(addStep).toHaveBeenCalledWith({
+      routineId: "r-new",
+      toolId: "defusion",
+      position: 0,
+    });
   });
 
   // ----- Days section (#105) -----

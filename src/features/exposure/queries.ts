@@ -6,6 +6,7 @@ import {
   listAllItems,
   listHierarchies,
   listItems,
+  listRecentSessions,
   listSessions,
   saveHierarchy,
   saveItems,
@@ -27,6 +28,8 @@ const exposureKeys = {
   items: (userId: string, hierarchyId: string) =>
     ["exposure", "items", userId, hierarchyId] as const,
   sessions: (userId: string, itemId: string) => ["exposure", "sessions", userId, itemId] as const,
+  recentSessions: (userId: string, limit: number) =>
+    ["exposure", "sessions", "recent", userId, limit] as const,
 };
 
 export function useHierarchies(userId: string | null) {
@@ -75,6 +78,21 @@ export function useExposureSessions(userId: string | null, itemId: string | null
         : ["exposure", "sessions", "anonymous"],
     queryFn: () => listSessions(userId!, itemId!),
     enabled: Boolean(userId && itemId),
+  });
+}
+
+/**
+ * Newest sessions across all items - feeds the routines derive engine ("any
+ * exposure session completed on day X"). Invalidated by every session save
+ * via the exposureKeys.all prefix.
+ */
+export function useRecentExposureSessions(userId: string | null, limit = 250) {
+  return useQuery({
+    queryKey: userId
+      ? exposureKeys.recentSessions(userId, limit)
+      : ["exposure", "sessions", "recent", "anonymous"],
+    queryFn: () => listRecentSessions(userId!, limit),
+    enabled: Boolean(userId),
   });
 }
 
