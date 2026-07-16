@@ -166,7 +166,7 @@ export function RoutineDetailScreen({ routineId }: RoutineDetailScreenProps) {
             <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               {t("strip.label")}
             </Text>
-            <RoutineDayStrip steps={routine.steps} records={records} />
+            <RoutineDayStrip steps={routine.steps} records={records} schedule={routine} />
             <Text variant="muted" className="text-xs">
               {t("strip.note")}
             </Text>

@@ -27,6 +27,7 @@ import {
   useRestoreWidget,
   useWidgetPreferences,
 } from "@/src/features/home/queries";
+import { useVisibleWidgetIds } from "@/src/features/home/use-visible-widget-ids";
 import { useApplyWidgetSuggestions } from "@/src/features/onboarding/queries";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { HomeTour } from "@/src/features/tours/home-tour";
@@ -142,6 +143,14 @@ export default function HomeScreen() {
     () => (preferences ?? []).map((p) => p.widgetId).filter(isImplemented),
     [preferences],
   );
+
+  // Day-level slot suppression (#104): some widgets (routines-today on a day
+  // with nothing scheduled) must not render AT ALL - not even their
+  // fixed-height slot. Edit mode still shows every owned widget so it can be
+  // reordered/removed regardless of today's schedule, and all preference
+  // mutations keep operating on the full owned list.
+  const visibleWidgetIds = useVisibleWidgetIds(userId, widgetIds);
+  const gridWidgetIds = editMode ? widgetIds : visibleWidgetIds;
 
   const mutationPending =
     addMutation.isPending ||
@@ -339,7 +348,7 @@ export default function HomeScreen() {
               customHandle
               onDragEnd={({ order }) => reorderWidgets(order(widgetIds))}
             >
-              {widgetIds.map((id, index) => {
+              {gridWidgetIds.map((id, index) => {
                 const meta = metaForWidget(id);
                 return (
                   <View

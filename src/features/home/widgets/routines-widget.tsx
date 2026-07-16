@@ -9,14 +9,20 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { useRoutinesToday } from "@/src/features/routines/use-routines-today";
 
 // The single aggregate routines-today card (spec #37 Home integration, #50):
-// one widget summarizing ALL routines' progress for the day - deliberately not
+// one widget summarizing SCHEDULED-TODAY routines' progress - deliberately not
 // one-widget-per-routine, and never default-seeded (opt-in via the Add-Widget
 // modal only). States: quiet doorway to the Routines page at zero routines; a
-// per-routine progress summary while steps are open; a calm "done for today"
-// (no streaks, no celebration) when everything is complete.
+// per-routine progress summary while scheduled steps are open; a calm "done
+// for today" (no streaks, no celebration) when everything scheduled is
+// complete. On days where the user HAS routines but none are scheduled
+// (off-day custom cadences, on-demand-only), the widget renders NOTHING
+// (#104) - no empty shell, no nudge.
 export function RoutinesWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("routines");
   const today = useRoutinesToday(userId);
+
+  // Nothing scheduled today (but routines exist): render nothing at all.
+  if (!today.isLoading && today.hasRoutines && today.scheduledViews.length === 0) return null;
 
   return (
     <Card className="flex-1">
@@ -58,7 +64,7 @@ export function RoutinesWidget({ userId }: { userId: string }) {
           </Text>
         ) : (
           <View className="gap-1.5">
-            {today.views.map(({ routine, day }) => (
+            {today.scheduledViews.map(({ routine, day }) => (
               <View
                 key={routine.id}
                 className="flex-row items-center gap-3 rounded-lg bg-muted/50 px-3 py-2"
