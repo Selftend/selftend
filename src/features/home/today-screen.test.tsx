@@ -92,15 +92,29 @@ jest.mock("@/src/features/home/add-widget-modal", () => {
   };
 });
 
-jest.mock("@/src/features/home/widget-registry", () => ({
-  isImplemented: () => true,
-  metaForWidget: (widgetId: string) => ({
-    titleKey:
-      widgetId === "mood-checkin"
-        ? "home.widgets.moodCheckin.title"
-        : "home.widgets.moodTrend.title",
-  }),
-  resolveWidget: () => null,
+jest.mock("@/src/features/home/widget-registry", () => {
+  const { View } = require("react-native");
+  return {
+    isImplemented: () => true,
+    metaForWidget: (widgetId: string) => ({
+      titleKey:
+        widgetId === "mood-checkin"
+          ? "home.widgets.moodCheckin.title"
+          : "home.widgets.moodTrend.title",
+    }),
+    // Marker per widget id so tests can assert which SLOTS the grid renders.
+    resolveWidget: (widgetId: string) => <View testID={`widget-${widgetId}`} />,
+  };
+});
+
+// Real useVisibleWidgetIds -> useRoutinesToday runs against these mocks, so
+// the slot-suppression tests below exercise the actual scheduling logic.
+jest.mock("@/src/features/routines/queries", () => ({
+  useRoutines: jest.fn(() => ({ data: [], isLoading: false })),
+}));
+
+jest.mock("@/src/features/routines/use-routine-tool-records", () => ({
+  useRoutineToolRecords: jest.fn(() => ({})),
 }));
 
 beforeEach(() => {
@@ -118,6 +132,88 @@ function renderPopulatedHome() {
     nativeEvent: { layout: { width: 900 } },
   });
 }
+
+// #104: on days where routines exist but none are scheduled, the routines
+// widget must not render AT ALL - the grid wraps every id in a fixed-height
+// slot, so the id has to be dropped at the grid level, not inside the widget.
+describe("HomeScreen routines slot suppression (#104)", () => {
+  const { useRoutines } = jest.requireMock("@/src/features/routines/queries") as {
+    useRoutines: jest.Mock;
+  };
+
+  function makeRoutine(cadence: "daily" | "on-demand" | "custom", customDays: number[] = []) {
+    return {
+      id: "r-1",
+      userId: "user-1",
+      name: "Morning reset",
+      reminderEnabled: false,
+      reminderHour: null,
+      reminderMinute: null,
+      reminderTimezone: null,
+      cadence,
+      customDays,
+      createdAt: "2026-07-01T08:00:00.000Z",
+      updatedAt: "2026-07-01T08:00:00.000Z",
+      steps: [
+        {
+          id: "r-1-step-0",
+          routineId: "r-1",
+          userId: "user-1",
+          toolId: "mood",
+          position: 0,
+          createdAt: "2026-07-01T08:00:00.000Z",
+          updatedAt: "2026-07-01T08:00:00.000Z",
+        },
+      ],
+    };
+  }
+
+  function renderHomeWithRoutinesWidget() {
+    mockWidgetIds = ["routines-today", "mood-checkin"];
+    renderWithProviders(<HomeScreen />);
+    fireEvent(screen.getByTestId("home-layout"), "layout", {
+      nativeEvent: { layout: { width: 900 } },
+    });
+  }
+
+  it("drops the routines slot entirely when routines exist but none are scheduled today", () => {
+    useRoutines.mockReturnValue({ data: [makeRoutine("on-demand")], isLoading: false });
+
+    renderHomeWithRoutinesWidget();
+
+    expect(screen.queryByTestId("widget-routines-today")).toBeNull();
+    // The neighboring slot is untouched - no gap, no shifted grid.
+    expect(screen.getByTestId("widget-mood-checkin")).toBeTruthy();
+  });
+
+  it("renders the slot normally when a routine is scheduled today", () => {
+    useRoutines.mockReturnValue({ data: [makeRoutine("daily")], isLoading: false });
+
+    renderHomeWithRoutinesWidget();
+
+    expect(screen.getByTestId("widget-routines-today")).toBeTruthy();
+    expect(screen.getByTestId("widget-mood-checkin")).toBeTruthy();
+  });
+
+  it("keeps the slot at zero routines so the onboarding doorway still shows", () => {
+    useRoutines.mockReturnValue({ data: [], isLoading: false });
+
+    renderHomeWithRoutinesWidget();
+
+    expect(screen.getByTestId("widget-routines-today")).toBeTruthy();
+  });
+
+  it("still shows the suppressed slot in edit mode so it can be removed or reordered", () => {
+    useRoutines.mockReturnValue({ data: [makeRoutine("on-demand")], isLoading: false });
+
+    renderHomeWithRoutinesWidget();
+    expect(screen.queryByTestId("widget-routines-today")).toBeNull();
+
+    fireEvent.press(screen.getByRole("button", { name: "Edit widgets" }));
+
+    expect(screen.getByTestId("widget-routines-today")).toBeTruthy();
+  });
+});
 
 describe("HomeScreen hero", () => {
   it("renders the greeting hero with date eyebrow", () => {
