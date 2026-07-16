@@ -81,7 +81,11 @@ export function ContinueRoutineSheet({
     );
   }, [visible, views, initialRoutineId]);
 
-  const selected = views.find((view) => view.routine.id === selectedId) ?? openViews[0] ?? null;
+  // Pre-effect fallback goes through the SAME selector the FAB counts with
+  // (#121): openViews[0] could disagree for the first visible frame when a
+  // later routine is in progress, flashing (and announcing) the wrong one.
+  const selected =
+    views.find((view) => view.routine.id === selectedId) ?? firstOpenRoutineView(views) ?? null;
 
   if (!selected) return null;
 

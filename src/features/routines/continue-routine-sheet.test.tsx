@@ -158,6 +158,24 @@ describe("ContinueRoutineSheet", () => {
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/breathing");
   });
 
+  // #121: the sheet starts on the routine the FAB counts - an in-progress
+  // routine outranks an earlier not-started one, including on the very first
+  // visible frame (the pre-pin fallback selects through the same helper).
+  it("starts on the in-progress routine, not the first open one", () => {
+    // r-1 is untouched; r-2 has its mood step done (1/2 in progress).
+    const records: RoutineToolRecords = {
+      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+    };
+    renderSheet([
+      view(makeRoutine("r-1", "Morning reset", ["journal"]), records),
+      view(makeRoutine("r-2", "Evening wind-down", ["mood", "gratitude"]), records),
+    ]);
+
+    // r-2's open step is highlighted; r-1's journal shows only as its chip.
+    expect(screen.getByText("Gratitude")).toBeTruthy();
+    expect(screen.queryByText("Journal")).toBeNull();
+  });
+
   // #104: unscheduled routines never surface - not as the starting routine
   // and not in the chip row - however many open steps they have.
   it("skips unscheduled routines when starting and offers no chip for them", () => {
