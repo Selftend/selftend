@@ -1,9 +1,14 @@
 name: Staging pipeline
 
 # On every push to dev: migrate the staging Supabase project first, then deploy
-# Edge Functions and the staging web build - deploys gate on the migration via
-# needs:, so staging never runs new code against an un-migrated database
-# (decisions #16/#17; spec §6). workflow_dispatch is the manual fallback.
+# Edge Functions - the function deploy gates on the migration via needs:, so
+# staging never runs new code against an un-migrated database (decisions
+# #16/#17; spec §6). workflow_dispatch is the manual fallback.
+#
+# The staging WEB build is deliberately NOT deployed here: every Netlify deploy
+# costs credits, so web deploys are manual-only via staging-web-deploy.yml
+# (day-to-day testing happens locally). Production web deploys still run
+# automatically from release.yml on main.
 #
 # No workflow-level concurrency (same reasoning as release.yml): cancelling a
 # run mid `db push` must be impossible; per-job groups serialize instead.
@@ -93,30 +98,3 @@ jobs:
         # Code only; function runtime secrets stay managed in the Supabase
         # project (decision #17).
         run: supabase functions deploy
-
-  # secrets: inherit means a missing staging-Environment NETLIFY_SITE_ID would
-  # silently fall back to the repository-level secret - the PRODUCTION site.
-  # Same guard as the manual staging deploy workflow.
-  guard:
-    name: Assert staging Netlify target
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    environment: staging
-    steps:
-      - name: Fail unless NETLIFY_SITE_ID is the staging site's own
-        env:
-          SITE: ${{ secrets.NETLIFY_SITE_ID }}
-        run: |
-          if [ -z "$SITE" ] || [ "$SITE" = "da5b7e44-d551-44ee-b0d8-a7d7a5433433" ]; then
-            echo "::error::NETLIFY_SITE_ID resolves to the production site (or is empty) - the staging Environment secret is missing. Refusing to deploy."
-            exit 1
-          fi
-
-  deploy-web-staging:
-    name: Deploy web (staging)
-    needs: [migrate-staging, guard]
-    uses: ./.github/workflows/web-deploy.yml
-    with:
-      ref: ${{ github.sha }}
-      environment: staging
-    secrets: inherit
