@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
+import { defaultUserPreferences } from "@/src/features/modules/types";
 import { RoutineEditorScreen } from "@/src/features/routines/routine-editor-screen";
 import {
   useAddStep,
@@ -13,6 +14,8 @@ import {
   useUpdateRoutine,
 } from "@/src/features/routines/queries";
 import type { RoutineWithSteps } from "@/src/features/routines/types";
+import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import { cancelReminder, scheduleReminder } from "@/src/lib/notifications";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { router } from "expo-router";
 
@@ -60,6 +63,23 @@ jest.mock("@/src/features/routines/queries", () => ({
   useReorderSteps: jest.fn(),
 }));
 
+jest.mock("@/src/features/settings/queries", () => ({
+  useUserPreferences: jest.fn(),
+  useUpdateUserPreferences: jest.fn(),
+}));
+
+jest.mock("@/src/lib/notifications", () => ({
+  scheduleReminder: jest.fn(),
+  cancelReminder: jest.fn(),
+  getReminderTimeZone: jest.fn(() => "Europe/Sofia"),
+}));
+
+const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
+const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
+  typeof useUpdateUserPreferences
+>;
+const mockScheduleReminder = scheduleReminder as jest.MockedFunction<typeof scheduleReminder>;
+const mockCancelReminder = cancelReminder as jest.MockedFunction<typeof cancelReminder>;
 const mockUseRoutine = useRoutine as jest.MockedFunction<typeof useRoutine>;
 const mockUseRoutines = useRoutines as jest.MockedFunction<typeof useRoutines>;
 const mockUseCreateRoutine = useCreateRoutine as jest.MockedFunction<typeof useCreateRoutine>;
@@ -106,9 +126,20 @@ describe("RoutineEditorScreen", () => {
   const addStep = jest.fn();
   const removeStep = jest.fn();
   const reorderSteps = jest.fn();
+  const updatePreferences = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseUserPreferences.mockReturnValue({
+      data: defaultUserPreferences,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+    mockUseUpdateUserPreferences.mockReturnValue({
+      mutateAsync: updatePreferences,
+      isPending: false,
+    } as unknown as ReturnType<typeof useUpdateUserPreferences>);
+    updatePreferences.mockResolvedValue(undefined);
+    mockScheduleReminder.mockResolvedValue({ enabled: true });
+    mockCancelReminder.mockResolvedValue(undefined);
     mockUseRoutines.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useRoutines>);
     mockUseRoutine.mockReturnValue({ data: null, isLoading: false } as unknown as ReturnType<
       typeof useRoutine
@@ -260,5 +291,149 @@ describe("RoutineEditorScreen", () => {
     // Pressing the disabled chip must not add a duplicate row.
     fireEvent.press(screen.getByLabelText("Mood check-in is already a step"));
     expect(screen.getAllByLabelText(/Remove Mood check-in/)).toHaveLength(1);
+  });
+
+  // ----- Routine reminder (#47) -----
+
+  it("keeps the reminder OFF by default: no time field, no channel registration, no reminder fields saved", async () => {
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    // Toggle rendered but off; the time picker only appears once enabled.
+    expect(screen.getByLabelText("Remind me about this routine")).toBeTruthy();
+    expect(screen.queryByLabelText("Reminder time")).toBeNull();
+
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() => expect(createRoutine).toHaveBeenCalledWith({ name: "My daily routine" }));
+    expect(mockScheduleReminder).not.toHaveBeenCalled();
+    expect(updatePreferences).not.toHaveBeenCalled();
+  });
+
+  it("enabling + save registers the push channel and persists the reminder fields (create)", async () => {
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    fireEvent.press(screen.getByLabelText("Remind me about this routine"));
+    expect(screen.getByLabelText("Reminder time")).toBeTruthy();
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() =>
+      expect(createRoutine).toHaveBeenCalledWith({
+        name: "My daily routine",
+        reminderEnabled: true,
+        reminderHour: 19,
+        reminderMinute: 0,
+        reminderTimezone: "Europe/Sofia",
+      }),
+    );
+    expect(mockScheduleReminder).toHaveBeenCalledWith("routine", 19, 0, "user-1");
+    // Enabling is the explicit opt-in: consent is recorded (default prefs had none).
+    expect(updatePreferences).toHaveBeenCalledWith(
+      expect.objectContaining({ reminderConsent: true }),
+    );
+  });
+
+  it("enabling in edit mode writes the reminder patch through updateRoutine", async () => {
+    mockUseRoutines.mockReturnValue({ data: [EXISTING] } as unknown as ReturnType<
+      typeof useRoutines
+    >);
+
+    renderWithProviders(
+      <RoutineEditorScreen fallbackHref="/routines/r-1" mode="edit" routineId="r-1" />,
+    );
+
+    fireEvent.press(screen.getByLabelText("Remind me about this routine"));
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() =>
+      expect(updateRoutine).toHaveBeenCalledWith({
+        id: "r-1",
+        patch: {
+          reminderEnabled: true,
+          reminderHour: 19,
+          reminderMinute: 0,
+          reminderTimezone: "Europe/Sofia",
+        },
+      }),
+    );
+    expect(mockScheduleReminder).toHaveBeenCalledWith("routine", 19, 0, "user-1");
+  });
+
+  it("saves the reminder OFF and explains when the channel can't be enabled", async () => {
+    mockScheduleReminder.mockResolvedValue({ enabled: false, reason: "permission-denied" });
+
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    fireEvent.press(screen.getByLabelText("Remind me about this routine"));
+    fireEvent.press(screen.getByText("Save"));
+
+    // The routine itself still saves - with NO reminder fields - and the user stays
+    // on the editor with a calm explanation instead of a silent "on".
+    await waitFor(() => expect(createRoutine).toHaveBeenCalledWith({ name: "My daily routine" }));
+    expect(
+      await screen.findByText(
+        "Notifications couldn't be turned on for this device, so the routine was saved with the reminder off. You can try again anytime.",
+      ),
+    ).toBeTruthy();
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  // ----- Overlap note (#47: calm, non-blocking, tap-only) -----
+
+  it("shows the overlap note only when the routine reminder is on AND a step tool's reminder is on", () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: { ...defaultUserPreferences, moodRemindersEnabled: true },
+    } as unknown as ReturnType<typeof useUserPreferences>);
+    mockUseRoutines.mockReturnValue({ data: [EXISTING] } as unknown as ReturnType<
+      typeof useRoutines
+    >);
+
+    renderWithProviders(
+      <RoutineEditorScreen fallbackHref="/routines/r-1" mode="edit" routineId="r-1" />,
+    );
+
+    // Routine reminder still off -> no note even though mood's tool reminder is on.
+    const noteText =
+      "Some steps also have their own tool reminder. That's fine - nothing changes unless you choose to.";
+    expect(screen.queryByText(noteText)).toBeNull();
+
+    fireEvent.press(screen.getByLabelText("Remind me about this routine"));
+
+    // Now the overlap is real: the note lists mood (reminder on) but not journal (off).
+    expect(screen.getByText(noteText)).toBeTruthy();
+    expect(screen.getByLabelText("Turn off the Mood check-in reminder")).toBeTruthy();
+    expect(screen.queryByLabelText("Turn off the Journal reminder")).toBeNull();
+  });
+
+  it("one tap disables exactly that per-tool reminder; nothing changes without a tap", async () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        moodRemindersEnabled: true,
+        journalRemindersEnabled: true,
+      },
+    } as unknown as ReturnType<typeof useUserPreferences>);
+    mockUseRoutines.mockReturnValue({ data: [EXISTING] } as unknown as ReturnType<
+      typeof useRoutines
+    >);
+
+    renderWithProviders(
+      <RoutineEditorScreen fallbackHref="/routines/r-1" mode="edit" routineId="r-1" />,
+    );
+
+    fireEvent.press(screen.getByLabelText("Remind me about this routine"));
+
+    // Both overlapping tools listed; NOTHING written yet (no auto-consolidation).
+    expect(screen.getByLabelText("Turn off the Mood check-in reminder")).toBeTruthy();
+    expect(screen.getByLabelText("Turn off the Journal reminder")).toBeTruthy();
+    expect(updatePreferences).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getByLabelText("Turn off the Mood check-in reminder"));
+
+    await waitFor(() =>
+      expect(updatePreferences).toHaveBeenCalledWith({ moodRemindersEnabled: false }),
+    );
+    // Exactly one write, scoped to the tapped tool - journal's reminder is untouched.
+    expect(updatePreferences).toHaveBeenCalledTimes(1);
+    expect(mockCancelReminder).toHaveBeenCalledWith("mood", "user-1");
   });
 });

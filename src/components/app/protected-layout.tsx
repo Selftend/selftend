@@ -23,6 +23,7 @@ import {
 import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
 import { useNotificationDeepLink } from "@/src/features/notifications/use-notification-deep-link";
 import { useNotificationSync } from "@/src/features/notifications/use-notification-sync";
+import { useRoutines } from "@/src/features/routines/queries";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useSession } from "@/src/providers/session-provider";
 import { WidgetSnapshotSync } from "@/src/features/widgets/widget-snapshot-sync";
@@ -43,7 +44,15 @@ export default function ProtectedLayout() {
   const hydrateAppLock = useAppLockStore((s) => s.hydrate);
 
   useSettingsSync(user?.id ?? null, preferences);
-  useNotificationSync(user?.id ?? null, preferences);
+  // Routine reminders live on routines rows (not user_preferences), so fold them into
+  // the sync hook's "any reminder enabled" condition. Native-only fetch: the hook is a
+  // no-op on web (the routine editor registers the web push channel at enable time).
+  const { data: routines } = useRoutines(Platform.OS === "web" ? null : (user?.id ?? null));
+  useNotificationSync(
+    user?.id ?? null,
+    preferences,
+    routines?.some((routine) => routine.reminderEnabled) ?? false,
+  );
   useNotificationDeepLink();
 
   useEffect(() => {

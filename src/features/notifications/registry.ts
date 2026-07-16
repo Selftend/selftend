@@ -73,9 +73,13 @@ export interface NotificationTarget {
   minuteField?: MinuteField;
   timezoneField?: TimezoneField;
   /**
-   * True if saving this target should actually schedule an OS notification
-   * (currently only CBT). Other live targets persist toggles but rely on
-   * platform-specific scheduling that isn't wired up yet.
+   * True if enabling this target participates in OS notification delivery.
+   * Delivery is server-driven for EVERY live target: the send-web-reminders
+   * edge function reads user_preferences and pushes via the registered
+   * web-push subscription / device push token; the client only ensures that
+   * channel is registered (see notification-target-card / use-notification-sync).
+   * All live targets set this to true, and the notification-sync reconciliation
+   * depends on that all-true data - do not flip the values.
    */
   schedulesOs?: boolean;
 }

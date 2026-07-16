@@ -246,12 +246,13 @@ async function unsubscribeWebPushIfPresent(userId?: string | null) {
 
 /**
  * "Enables" a reminder for the current channel. Reminder content + timing are server-driven
- * (read from user_preferences by the send-web-reminders edge function); this only ensures the
- * channel is registered: a web push subscription on web, a device push token on native. The
- * hour/minute params are unused on native and kept for the web/signature compatibility.
+ * (read from user_preferences - or, for `"routine"`, the per-routine reminder fields on the
+ * routines rows - by the send-web-reminders edge function); this only ensures the channel is
+ * registered: a web push subscription on web, a device push token on native. The hour/minute
+ * params are unused on native and kept for the web/signature compatibility.
  */
 export async function scheduleReminder(
-  target: ReminderTarget,
+  target: ReminderTarget | "routine",
   _hour: number,
   _minute: number,
   userId?: string | null,

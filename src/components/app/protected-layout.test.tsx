@@ -116,6 +116,14 @@ jest.mock("@/src/features/notifications/use-notification-sync", () => ({
   useNotificationSync: jest.fn(),
 }));
 
+// The layout reads routines only to fold "any routine reminder enabled" into the
+// notification-sync condition (#47); the data layer has its own tests. Keep the rest
+// of the module real - the onboarding wizard consumes its other hooks.
+jest.mock("@/src/features/routines/queries", () => ({
+  ...jest.requireActual("@/src/features/routines/queries"),
+  useRoutines: jest.fn(() => ({ data: [] })),
+}));
+
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseCompleteAppOnboarding = useCompleteAppOnboarding as jest.MockedFunction<
   typeof useCompleteAppOnboarding

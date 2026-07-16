@@ -82,6 +82,29 @@ describe("useNotificationSync", () => {
     expect(mockCancelAllReminders).not.toHaveBeenCalled();
   });
 
+  it("ensures a push token when only a ROUTINE reminder is enabled (#47)", async () => {
+    // No per-tool target enabled - the routine opt-in alone must register the channel.
+    const prefs = makePreferences({ notificationsEnabledGlobal: true });
+
+    renderHook(() => useNotificationSync("user-1", prefs, true));
+
+    await waitFor(() => {
+      expect(mockScheduleReminder).toHaveBeenCalled();
+    });
+    expect(mockScheduleReminder.mock.calls[0]?.[3]).toBe("user-1");
+  });
+
+  it("routine reminders do not register the channel while global is off", async () => {
+    const prefs = makePreferences({ notificationsEnabledGlobal: false });
+
+    renderHook(() => useNotificationSync("user-1", prefs, true));
+
+    await waitFor(() => {
+      expect(mockCancelAllReminders).toHaveBeenCalledWith("user-1");
+    });
+    expect(mockScheduleReminder).not.toHaveBeenCalled();
+  });
+
   it("runs the one-time legacy local cleanup once", async () => {
     const prefs = makePreferences({
       notificationsEnabledGlobal: true,

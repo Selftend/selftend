@@ -76,6 +76,19 @@
     "meditation": "Meditation",
     "habits": "Habits"
   },
+  "reminder": {
+    "sectionLabel": "Daily reminder",
+    "help": "One gentle notification a day, at a time you pick. It stays off unless you turn it on.",
+    "toggleLabel": "Remind me about this routine",
+    "timeLabel": "Reminder time",
+    "channelError": "Notifications couldn't be turned on for this device, so the routine was saved with the reminder off. You can try again anytime."
+  },
+  "overlap": {
+    "note": "Some steps also have their own tool reminder. That's fine - nothing changes unless you choose to.",
+    "turnOff": "Turn off the {{tool}} reminder",
+    "turnedOff": "The {{tool}} reminder is off.",
+    "turnOffError": "Couldn't turn off the {{tool}} reminder. Please try again."
+  },
   "widget": {
     "metaTitle": "Routines today",
     "metaDesc": "All your routines' progress for the day in one calm card.",
