@@ -216,8 +216,9 @@ Deno.serve(async (request) => {
     // carry the routine's name: the view is security_invoker, and the service role
     // both bypasses RLS and holds execute on app.decrypt_text (granted in 20260587
     // for export_user_data). Chunked by the channel-user union, like preferences.
+    // cadence/custom_days (#113) feed the schedule gate in routineReminderKeyIfDue.
     const ROUTINE_COLUMNS =
-      "id,user_id,name,reminder_enabled,reminder_hour,reminder_minute,reminder_timezone";
+      "id,user_id,name,reminder_enabled,reminder_hour,reminder_minute,reminder_timezone,cadence,custom_days";
     const routineRows: RoutineReminderRow[] = [];
     for (let i = 0; i < userIds.length; i += PAGE_SIZE) {
       const chunk = userIds.slice(i, i + PAGE_SIZE);

@@ -377,6 +377,66 @@ describe("routineReminderKeyIfDue (#47 - per-routine fan-out)", () => {
       ),
     ).toBe("2026-05-24");
   });
+
+  describe("schedule gate (#113 - cadence-aware suppression)", () => {
+    // Anchor dates (all 09:02 UTC, inside the 09:00-09:05 window):
+    // 2026-05-23 Sat, 2026-05-25 Mon, 2026-05-27 Wed, 2026-05-28 Thu.
+    const monday = new Date("2026-05-25T09:02:00.000Z");
+    const saturday = new Date("2026-05-23T09:02:00.000Z");
+
+    it("weekdays routine is due on Monday but not on Saturday", () => {
+      const routine = { ...baseRoutine, cadence: "weekdays" as const };
+      expect(routineReminderKeyIfDue(routine, baseChannel, monday)).toBe("2026-05-25");
+      expect(routineReminderKeyIfDue(routine, baseChannel, saturday)).toBeNull();
+    });
+
+    it("custom routine is due only on its custom_days (Mon+Wed: due Wed, not Thu)", () => {
+      const routine = { ...baseRoutine, cadence: "custom" as const, custom_days: [1, 3] };
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-27T09:02:00.000Z")),
+      ).toBe("2026-05-27");
+      expect(
+        routineReminderKeyIfDue(routine, baseChannel, new Date("2026-05-28T09:02:00.000Z")),
+      ).toBeNull();
+    });
+
+    it("on-demand routine is never due, even inside the window on any day", () => {
+      const routine = { ...baseRoutine, cadence: "on-demand" as const };
+      expect(routineReminderKeyIfDue(routine, baseChannel, now)).toBeNull();
+      expect(routineReminderKeyIfDue(routine, baseChannel, monday)).toBeNull();
+      expect(routineReminderKeyIfDue(routine, baseChannel, saturday)).toBeNull();
+    });
+
+    it("daily routine fires on any day (weekend included)", () => {
+      const routine = { ...baseRoutine, cadence: "daily" as const };
+      expect(routineReminderKeyIfDue(routine, baseChannel, monday)).toBe("2026-05-25");
+      expect(routineReminderKeyIfDue(routine, baseChannel, saturday)).toBe("2026-05-23");
+    });
+
+    it("uses the LOCAL weekday, not the UTC one (late-UTC Friday = Auckland Saturday)", () => {
+      // 2026-05-22T13:02Z (Friday in UTC) is already Saturday 01:02 in
+      // Pacific/Auckland (NZST, UTC+12 in May). A weekdays routine set for
+      // 01:00 local must be suppressed; a daily one proves the window matched
+      // and stamps the LOCAL Saturday day key.
+      const lateUtcFriday = new Date("2026-05-22T13:02:00.000Z");
+      const channel = { time_zone: "Pacific/Auckland", last_routine_reminder_keys: null };
+      const routine = { ...baseRoutine, reminder_hour: 1, reminder_minute: 0 };
+      expect(
+        routineReminderKeyIfDue({ ...routine, cadence: "weekdays" }, channel, lateUtcFriday),
+      ).toBeNull();
+      expect(
+        routineReminderKeyIfDue({ ...routine, cadence: "daily" }, channel, lateUtcFriday),
+      ).toBe("2026-05-23");
+    });
+
+    it("treats a missing/undefined cadence as daily (pre-#103-migration rows)", () => {
+      // baseRoutine carries no cadence at all; a null cadence gets the same treatment.
+      expect(routineReminderKeyIfDue(baseRoutine, baseChannel, saturday)).toBe("2026-05-23");
+      expect(
+        routineReminderKeyIfDue({ ...baseRoutine, cadence: null }, baseChannel, saturday),
+      ).toBe("2026-05-23");
+    });
+  });
 });
 
 describe("nextRoutineReminderKeys", () => {
