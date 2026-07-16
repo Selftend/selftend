@@ -29,6 +29,16 @@ export interface RoutinesToday {
 }
 
 /**
+ * The routine the continue sheet pins when it opens: the FIRST routine (by
+ * routine order) with an open step today, else null. The FAB counts this same
+ * view (#91), so the number on the button and the routine the sheet opens on
+ * can never diverge - both must select through this helper.
+ */
+export function firstOpenRoutineView(views: RoutineTodayView[]): RoutineTodayView | null {
+  return views.find((view) => view.day.nextStep !== null) ?? null;
+}
+
+/**
  * The shared today-aggregate behind the routines-today Home widget and the
  * floating routine-progress button (spec #37 Home integration, issue #50):
  * every routine's derived day view plus the cross-routine step totals. Purely

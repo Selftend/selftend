@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen } from "@testing-library/react-native";
 
 import { RoutineFab } from "@/src/components/app/routine-fab";
 import { useRoutines } from "@/src/features/routines/queries";
@@ -93,6 +93,8 @@ describe("RoutineFab", () => {
     expect(screen.queryByTestId("routine-fab")).toBeNull();
   });
 
+  // The completed check plays only on a LIVE transition to zero open steps -
+  // a fresh render with everything already done must show nothing at all.
   it("renders nothing while all steps are complete today", () => {
     setRoutines([makeRoutine("r-1", "Morning reset", ["mood"])]);
     mockUseRoutineToolRecords.mockReturnValue({
@@ -102,9 +104,32 @@ describe("RoutineFab", () => {
     renderWithProviders(<RoutineFab />);
 
     expect(screen.queryByTestId("routine-fab")).toBeNull();
+    expect(screen.queryByTestId("routine-fab-complete")).toBeNull();
   });
 
-  it("shows the aggregate N/M while some step is still open", () => {
+  // #91: the count is the FIRST OPEN routine's, not the cross-routine
+  // aggregate. Mood is done in both routines, so the aggregate would be 2/4 -
+  // the button must show the first routine's 1/3.
+  it("counts the first open routine, not the aggregate", () => {
+    setRoutines([
+      makeRoutine("r-1", "Morning reset", ["mood", "journal", "gratitude"]),
+      makeRoutine("r-2", "Evening wind-down", ["mood"]),
+    ]);
+    mockUseRoutineToolRecords.mockReturnValue({
+      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+    });
+
+    renderWithProviders(<RoutineFab />);
+
+    expect(screen.getByTestId("routine-fab")).toBeTruthy();
+    expect(screen.getByText("1/3")).toBeTruthy();
+    expect(screen.queryByText("2/4")).toBeNull();
+    expect(screen.getByLabelText('Continue "Morning reset": 1 of 3 steps done today')).toBeTruthy();
+  });
+
+  // #91: the counted routine is exactly the one the sheet opens pinned -
+  // with the first routine complete, both must skip to the second.
+  it("counts the same routine the sheet opens pinned", () => {
     setRoutines([
       makeRoutine("r-1", "Morning reset", ["mood"]),
       makeRoutine("r-2", "Evening wind-down", ["journal", "gratitude"]),
@@ -115,9 +140,16 @@ describe("RoutineFab", () => {
 
     renderWithProviders(<RoutineFab />);
 
-    expect(screen.getByTestId("routine-fab")).toBeTruthy();
-    expect(screen.getByText("1/3")).toBeTruthy();
-    expect(screen.getByLabelText("Continue your routine: 1 of 3 steps done today")).toBeTruthy();
+    expect(screen.getByText("0/2")).toBeTruthy();
+    expect(
+      screen.getByLabelText('Continue "Evening wind-down": 0 of 2 steps done today'),
+    ).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId("routine-fab"));
+
+    // The sheet pins the same first-open routine the button counted.
+    expect(screen.getByText("Evening wind-down")).toBeTruthy();
+    expect(screen.queryByText("Morning reset")).toBeNull();
   });
 
   // #90: the FAB never renders over data-entry screens - it covered
@@ -166,5 +198,77 @@ describe("RoutineFab", () => {
     fireEvent.press(screen.getByTestId("routine-fab"));
     expect(screen.getByText("Continue your routine")).toBeTruthy();
     expect(screen.getByText("Do next step")).toBeTruthy();
+  });
+
+  // #91: completing the last open step must not yank the button away - it
+  // morphs to a checkmark, holds ~2.5s, fades ~400ms, and stays gone until
+  // steps open again.
+  describe("completed state (#91)", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    function completeTheOnlyStep() {
+      mockUseRoutineToolRecords.mockReturnValue({
+        moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      });
+    }
+
+    it("morphs to a check on completion, holds, then fades away for good", () => {
+      setRoutines([makeRoutine("r-1", "Morning reset", ["mood"])]);
+
+      renderWithProviders(<RoutineFab />);
+      expect(screen.getByTestId("routine-fab")).toBeTruthy();
+
+      completeTheOnlyStep();
+      screen.rerender(<RoutineFab />);
+
+      // The counter is gone; the checkmark acknowledgment took its place.
+      expect(screen.queryByTestId("routine-fab")).toBeNull();
+      expect(screen.getByTestId("routine-fab-complete")).toBeTruthy();
+      expect(screen.getByLabelText("Routine complete")).toBeTruthy();
+      expect(screen.queryByText("1/1")).toBeNull();
+
+      // Still holding just before the 2.5s mark.
+      act(() => {
+        jest.advanceTimersByTime(2400);
+      });
+      expect(screen.getByTestId("routine-fab-complete")).toBeTruthy();
+
+      // Hold elapses and the ~400ms fade completes - the button unmounts.
+      act(() => {
+        jest.advanceTimersByTime(100 + 400 + 100);
+      });
+      expect(screen.queryByTestId("routine-fab-complete")).toBeNull();
+
+      // Pinned: it must NOT reappear on later renders while nothing is open.
+      screen.rerender(<RoutineFab />);
+      expect(screen.queryByTestId("routine-fab")).toBeNull();
+      expect(screen.queryByTestId("routine-fab-complete")).toBeNull();
+    });
+
+    it("returns to the counter if steps open again while the check shows", () => {
+      setRoutines([makeRoutine("r-1", "Morning reset", ["mood"])]);
+
+      renderWithProviders(<RoutineFab />);
+      completeTheOnlyStep();
+      screen.rerender(<RoutineFab />);
+      expect(screen.getByTestId("routine-fab-complete")).toBeTruthy();
+
+      // A new open step (new routine) arrives mid-hold: count wins.
+      setRoutines([
+        makeRoutine("r-1", "Morning reset", ["mood"]),
+        makeRoutine("r-2", "Evening wind-down", ["journal"]),
+      ]);
+      screen.rerender(<RoutineFab />);
+
+      expect(screen.getByTestId("routine-fab")).toBeTruthy();
+      expect(screen.queryByTestId("routine-fab-complete")).toBeNull();
+      expect(screen.getByText("0/1")).toBeTruthy();
+    });
   });
 });

@@ -10,7 +10,10 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { roundToNearestHalfHour } from "@/src/features/notifications/reminder-prompt";
 import { useUpdateRoutine } from "@/src/features/routines/queries";
 import { routeForTool } from "@/src/features/routines/tool-routes";
-import type { RoutineTodayView } from "@/src/features/routines/use-routines-today";
+import {
+  firstOpenRoutineView,
+  type RoutineTodayView,
+} from "@/src/features/routines/use-routines-today";
 import { useReduceMotionEnabled, DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { getReminderTimeZone } from "@/src/lib/notifications";
 import { clampTime } from "@/src/utils/time";
@@ -47,10 +50,11 @@ export function ContinueRoutineSheet({
 
   const openViews = views.filter((view) => view.day.nextStep !== null);
 
-  // Pin the shown routine when the sheet opens (first with an open step, by
-  // routine order) so it stays put if it completes mid-session - that is the
-  // moment the completion state must show instead of the view jumping to
-  // another routine. Reset on close so the next open starts fresh.
+  // Pin the shown routine when the sheet opens (firstOpenRoutineView - the
+  // same selection the FAB counts, #91) so it stays put if it completes
+  // mid-session - that is the moment the completion state must show instead
+  // of the view jumping to another routine. Reset on close so the next open
+  // starts fresh.
   useEffect(() => {
     if (!visible) {
       setSelectedId(null);
@@ -59,10 +63,7 @@ export function ContinueRoutineSheet({
     }
     setSelectedId(
       (current) =>
-        current ??
-        views.find((view) => view.day.nextStep !== null)?.routine.id ??
-        views[0]?.routine.id ??
-        null,
+        current ?? firstOpenRoutineView(views)?.routine.id ?? views[0]?.routine.id ?? null,
     );
   }, [visible, views]);
 
