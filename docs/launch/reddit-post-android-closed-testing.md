@@ -27,19 +27,21 @@ copy ever changes.
 ## Body
 
 ```text
-Solo dev here. **Selftend** is a free, open-source self-help app: guided CBT-style thought records, mood check-ins, breathing, journaling, gratitude, and habits. No ads, no subscriptions. (Not therapy or crisis support — a self-help tool.)
+Hi all. I've been building **Selftend** — a free, open-source self-help and wellness app: guided CBT-style thought records, mood check-ins, breathing, journaling, gratitude, and habits. No ads, no subscriptions. (To be clear: it's a self-help tool, not therapy or crisis support.)
 
-I need 12+ testers for Google Play closed testing:
+It's ready for Google Play closed testing and I need 12+ testers to get it over the line.
+
+**How to join:**
 
 1. Join the Google Group: https://groups.google.com/g/selftend-testers
-2. Become a tester: https://play.google.com/apps/testing/org.vasilyoshev.selftend
+2. Become a tester (web opt-in): https://play.google.com/apps/testing/org.vasilyoshev.selftend
 3. Install from Google Play: https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend
 
-Then open the app once and keep it installed for 14 days.
+Then just open the app at least once and keep it installed for 14 days.
 
-**Test for test:** drop your links in the comments and I'll join your test the same day.
+**Test for test:** drop your Group + opt-in + Play links in the comments and I'll join your test the same day — happy to swap install screenshots.
 
-Web version: https://selftend.org · Feedback: Discord — https://discord.gg/pdaAr9FhcQ
+Curious first? There's a web version at https://selftend.org. Questions or feedback: Discord — https://discord.gg/pdaAr9FhcQ
 ```
 
 ## Posting checklist
