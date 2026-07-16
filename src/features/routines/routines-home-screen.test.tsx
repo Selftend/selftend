@@ -50,6 +50,7 @@ function makeRoutine(
   id: string,
   name: string,
   toolIds: readonly ("mood" | "journal")[],
+  schedule?: Pick<RoutineWithSteps, "cadence" | "customDays">,
 ): RoutineWithSteps {
   return {
     id,
@@ -59,8 +60,8 @@ function makeRoutine(
     reminderHour: null,
     reminderMinute: null,
     reminderTimezone: null,
-    cadence: "daily",
-    customDays: [],
+    cadence: schedule?.cadence ?? "daily",
+    customDays: schedule?.customDays ?? [],
     createdAt: "2026-07-01T08:00:00.000Z",
     updatedAt: "2026-07-01T08:00:00.000Z",
     steps: toolIds.map((toolId, index) => ({
@@ -142,6 +143,84 @@ describe("RoutinesHomeScreen", () => {
     // screen is the subtitle's "no streaks" promise).
     expect(screen.getAllByLabelText(/: not completed$/)).toHaveLength(5);
     expect(screen.queryByText(/\d+.?(day|week) streak/i)).toBeNull();
+  });
+
+  it("shows a calm schedule label for on-demand routines while daily cards keep their status", () => {
+    mockUseRoutines.mockReturnValue({
+      data: [
+        makeRoutine("r-1", "Morning reset", ["journal"]),
+        makeRoutine("r-2", "Deep clean", ["mood"], { cadence: "on-demand", customDays: [] }),
+      ],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useRoutines>);
+
+    renderWithProviders(<RoutinesHomeScreen />);
+
+    // The daily routine is unaffected; only the on-demand card swaps its line.
+    expect(screen.getAllByText("Not started")).toHaveLength(1);
+    expect(screen.getByText("On demand")).toBeTruthy();
+  });
+
+  it("shows the custom day list on a custom routine's off-day", () => {
+    // Scheduled on two weekdays that are both NOT today, so today is an
+    // off-day regardless of when the test runs.
+    const today = new Date().getDay();
+    const customDays = [(today + 1) % 7, (today + 3) % 7];
+    mockUseRoutines.mockReturnValue({
+      data: [makeRoutine("r-1", "Stretch", ["mood"], { cadence: "custom", customDays })],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useRoutines>);
+
+    renderWithProviders(<RoutinesHomeScreen />);
+
+    const shortNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dayList = [...customDays]
+      .sort((a, b) => a - b)
+      .map((d) => shortNames[d])
+      .join(", ");
+    expect(screen.getByText(`Runs ${dayList}`)).toBeTruthy();
+    expect(screen.queryByText("Not started")).toBeNull();
+  });
+
+  it("hides the zero-progress badge on a resting card", () => {
+    mockUseRoutines.mockReturnValue({
+      data: [
+        makeRoutine("r-1", "Deep clean", ["mood", "journal"], {
+          cadence: "on-demand",
+          customDays: [],
+        }),
+      ],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useRoutines>);
+
+    renderWithProviders(<RoutinesHomeScreen />);
+
+    // Nothing was expected today, so no "0/2 today" unmet count either.
+    expect(screen.getByText("On demand")).toBeTruthy();
+    expect(screen.queryByText("0/2 today")).toBeNull();
+    expect(screen.queryByText(/\/2 today/)).toBeNull();
+  });
+
+  it("keeps live progress on an off-today routine once anything is done today", () => {
+    mockUseRoutines.mockReturnValue({
+      data: [
+        makeRoutine("r-1", "Deep clean", ["mood", "journal"], {
+          cadence: "on-demand",
+          customDays: [],
+        }),
+      ],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useRoutines>);
+    // A manual run: mood logged today on a never-scheduled routine.
+    mockUseRoutineToolRecords.mockReturnValue({
+      moodLogs: [{ loggedAt: `${currentDateKey()}T12:00:00` }],
+    });
+
+    renderWithProviders(<RoutinesHomeScreen />);
+
+    expect(screen.getByText("In progress")).toBeTruthy();
+    expect(screen.getByText("1/2 today")).toBeTruthy();
+    expect(screen.queryByText("On demand")).toBeNull();
   });
 
   it("offers the starter routine at zero routines and writes it on Keep", async () => {

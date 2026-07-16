@@ -13,6 +13,7 @@
     "label": "Last 7 days",
     "dayComplete": "{{date}}: routine complete",
     "dayOpen": "{{date}}: not completed",
+    "dayNotScheduled": "{{date}}: not scheduled",
     "note": "Filled days are days the whole routine came together. Empty days are just empty - one missed day doesn't undo what you're building."
   },
   "status": {
@@ -20,6 +21,20 @@
     "inProgress": "In progress",
     "complete": "Done for today",
     "progress": "{{done}}/{{total}} today"
+  },
+  "schedule": {
+    "onDemand": "On demand",
+    "weekdays": "Runs weekdays",
+    "customDays": "Runs {{days}}",
+    "weekday": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    }
   },
   "cta": {
     "newRoutine": "New routine",
