@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.4.0](https://github.com/Selftend/selftend/compare/v0.3.3...v0.4.0) (2026-07-16)
+
+
+### Features
+
+* **reminders:** suppress routine reminders on unscheduled days ([#113](https://github.com/Selftend/selftend/issues/113)) ([#116](https://github.com/Selftend/selftend/issues/116)) ([8906a84](https://github.com/Selftend/selftend/commit/8906a84334df24a39a9bae4b34057f1afd91e5ae))
+* **routines:** admit all loggable CBT/ACT tools as steps; grouped Add-step picker ([#123](https://github.com/Selftend/selftend/issues/123)) ([#124](https://github.com/Selftend/selftend/issues/124)) ([d35e0a1](https://github.com/Selftend/selftend/commit/d35e0a176aa7e7e138d0666328ea1b612a9dc53c))
+* **routines:** cadence + custom_days schema and data layer ([#103](https://github.com/Selftend/selftend/issues/103)) ([#114](https://github.com/Selftend/selftend/issues/114)) ([a314fde](https://github.com/Selftend/selftend/commit/a314fdeceba3644bd84b635d2f2df197d079a356))
+* **routines:** calm schedule labels and muted off-day strip dots ([#106](https://github.com/Selftend/selftend/issues/106)) ([#117](https://github.com/Selftend/selftend/issues/117)) ([19f2db3](https://github.com/Selftend/selftend/commit/19f2db33833e15ee602e4327eb518c4d6da30780))
+* **routines:** DB schema, RLS, encryption & export migration (retire plan_items) ([#77](https://github.com/Selftend/selftend/issues/77)) ([6230698](https://github.com/Selftend/selftend/commit/6230698184151666198657b901667d0780347c60))
+* **routines:** editor Days section with cadence chips ([#105](https://github.com/Selftend/selftend/issues/105)) ([#119](https://github.com/Selftend/selftend/issues/119)) ([ac4784a](https://github.com/Selftend/selftend/commit/ac4784a6433d2e4b340ed69fc57f8b89980397cb))
+* **routines:** FAB follows the in-progress routine and shows the queued count ([#121](https://github.com/Selftend/selftend/issues/121)) ([#122](https://github.com/Selftend/selftend/issues/122)) ([f2f0f91](https://github.com/Selftend/selftend/commit/f2f0f911c4ee5e0dca7a5b154f5548ac269d1014))
+* **routines:** Home integration - routines-today widget, routine FAB, continue-sheet ([#50](https://github.com/Selftend/selftend/issues/50)) ([#83](https://github.com/Selftend/selftend/issues/83)) ([f1b1d7e](https://github.com/Selftend/selftend/commit/f1b1d7e1b34c2493d860c85ca7b4cd5e145a9147))
+* **routines:** last-7-days no-streak dot strip on cards & detail ([#49](https://github.com/Selftend/selftend/issues/49)) ([#81](https://github.com/Selftend/selftend/issues/81)) ([b56c10e](https://github.com/Selftend/selftend/commit/b56c10e3857a2f6ccaaf0d403b2c5db63eb4ddfe))
+* **routines:** management screens, editor & navigation (list -&gt; detail -&gt; editor) ([#45](https://github.com/Selftend/selftend/issues/45)) ([#79](https://github.com/Selftend/selftend/issues/79)) ([480d2a3](https://github.com/Selftend/selftend/commit/480d2a38ac785dded31d26e3236146c3d1931b96))
+* **routines:** onboarding starter-routine panel — offer, never auto-create ([#46](https://github.com/Selftend/selftend/issues/46)) ([#82](https://github.com/Selftend/selftend/issues/82)) ([ec1c923](https://github.com/Selftend/selftend/commit/ec1c923b62d12dff435d70e8110769146ced990f))
+* **routines:** pure deriveRoutine/stepDoneOnDate status-derivation engine ([#40](https://github.com/Selftend/selftend/issues/40)) ([#76](https://github.com/Selftend/selftend/issues/76)) ([58cb397](https://github.com/Selftend/selftend/commit/58cb3972b9bb8c4321b40b334e3a336192ea6b1d))
+* **routines:** repository + queries data layer ([#78](https://github.com/Selftend/selftend/issues/78)) ([f4d9043](https://github.com/Selftend/selftend/commit/f4d9043f35f0d567e05bab0e0d4a6e80e2870fa6))
+* **routines:** routine-level reminders — editor opt-in, push fan-out, overlap note ([#47](https://github.com/Selftend/selftend/issues/47)) ([#84](https://github.com/Selftend/selftend/issues/84)) ([fe7bda9](https://github.com/Selftend/selftend/commit/fe7bda932d54baee5041f6abafa62a9012be0bab))
+* **routines:** surface scheduled-today routines only ([#104](https://github.com/Selftend/selftend/issues/104)) ([#118](https://github.com/Selftend/selftend/issues/118)) ([57fcb6c](https://github.com/Selftend/selftend/commit/57fcb6c34744541cb04a916383312cedee0da4af))
+
+
+### Bug Fixes
+
+* **app:** keep the FAB off form screens; move community links per breakpoint ([#90](https://github.com/Selftend/selftend/issues/90), [#92](https://github.com/Selftend/selftend/issues/92)) ([#94](https://github.com/Selftend/selftend/issues/94)) ([0fc0a28](https://github.com/Selftend/selftend/commit/0fc0a28a152d7dd1e07e65cbb8ba3f2c832d576b))
+* **header:** constrain the home-link hit area to the logo and name ([#100](https://github.com/Selftend/selftend/issues/100)) ([0870f2f](https://github.com/Selftend/selftend/commit/0870f2ff16ab91dc44c8f8a9babc6a8b9331f0eb))
+* **routines:** FAB counts the first open routine and fades out on completion ([#91](https://github.com/Selftend/selftend/issues/91)) ([#99](https://github.com/Selftend/selftend/issues/99)) ([4fd7c4c](https://github.com/Selftend/selftend/commit/4fd7c4cd42c64ff799b7a3b351e3391c42368e2b))
+
 ## [0.3.3](https://github.com/Selftend/selftend/compare/v0.3.2...v0.3.3) (2026-07-15)
 
 
