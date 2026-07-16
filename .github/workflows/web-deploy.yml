@@ -92,6 +92,14 @@ jobs:
       - name: Export web app
         run: npm run export:web
 
+      - name: Mark staging as noindex
+        # Staging is public but unlisted (decision #16): a dist-level _headers
+        # file adds X-Robots-Tag only to staging deploys, leaving production
+        # untouched (netlify.toml's shared headers apply to both).
+        if: ${{ inputs.environment == 'staging' }}
+        run: |
+          printf '/*\n  X-Robots-Tag: noindex\n' > dist/_headers
+
       - name: Deploy to Netlify production
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
