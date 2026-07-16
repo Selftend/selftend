@@ -155,6 +155,69 @@ describe("RoutineFab", () => {
     expect(screen.queryByText("Morning reset")).toBeNull();
   });
 
+  // #121: the queue is visible at a glance - other scheduled routines with
+  // open steps surface as a "+N" suffix after the counted routine's steps.
+  it("shows how many routines queue behind the counted one", () => {
+    setRoutines([
+      makeRoutine("r-1", "Morning reset", ["mood"]),
+      makeRoutine("r-2", "Evening wind-down", ["journal"]),
+    ]);
+
+    renderWithProviders(<RoutineFab />);
+
+    expect(screen.getByText("0/1 ·+1")).toBeTruthy();
+    expect(
+      screen.getByLabelText(
+        'Continue "Morning reset": 0 of 1 steps done today, 1 more routine after this',
+      ),
+    ).toBeTruthy();
+  });
+
+  it("pluralizes the queue suffix and drops it when nothing follows", () => {
+    setRoutines([
+      makeRoutine("r-1", "Morning reset", ["mood"]),
+      makeRoutine("r-2", "Evening wind-down", ["journal"]),
+      makeRoutine("r-3", "Midday pause", ["gratitude"]),
+    ]);
+
+    renderWithProviders(<RoutineFab />);
+
+    expect(screen.getByText("0/1 ·+2")).toBeTruthy();
+    expect(screen.getByLabelText(/2 more routines after this/)).toBeTruthy();
+
+    // The last routine standing carries no suffix.
+    mockUseRoutineToolRecords.mockReturnValue({
+      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      gratitudeEntries: [{ loggedAt: `${currentDateKey()}T09:00:00` }],
+    });
+    screen.rerender(<RoutineFab />);
+    expect(screen.getByText("0/1")).toBeTruthy();
+    expect(screen.queryByText(/·\+/)).toBeNull();
+  });
+
+  // #121: the count follows what the user is actually DOING - an in-progress
+  // routine outranks an earlier not-started one.
+  it("follows the in-progress routine instead of the first open", () => {
+    setRoutines([
+      makeRoutine("r-1", "Morning reset", ["journal"]),
+      makeRoutine("r-2", "Evening wind-down", ["mood", "gratitude"]),
+    ]);
+    mockUseRoutineToolRecords.mockReturnValue({
+      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+    });
+
+    renderWithProviders(<RoutineFab />);
+
+    // r-2 is 1/2 in progress; r-1 (first by order) is merely not started.
+    expect(screen.getByText("1/2 ·+1")).toBeTruthy();
+    expect(
+      screen.getByLabelText(
+        'Continue "Evening wind-down": 1 of 2 steps done today, 1 more routine after this',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText("0/1 ·+1")).toBeNull();
+  });
+
   // #104: scheduling composes at the view layer - the FAB surfaces ONLY
   // routines scheduled today. Open steps on unscheduled routines are
   // invisible to it.

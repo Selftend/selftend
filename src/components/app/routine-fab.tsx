@@ -7,7 +7,11 @@ import { useTranslation } from "react-i18next";
 import { Fab } from "@/src/components/app/fab";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ContinueRoutineSheet } from "@/src/features/routines/continue-routine-sheet";
-import { firstOpenRoutineView, useRoutinesToday } from "@/src/features/routines/use-routines-today";
+import {
+  firstOpenRoutineView,
+  openScheduledViews,
+  useRoutinesToday,
+} from "@/src/features/routines/use-routines-today";
 import {
   announceMessage,
   politeLiveRegionProps,
@@ -97,6 +101,9 @@ export function RoutineFab() {
 
   const firstOpen = firstOpenRoutineView(today.scheduledViews);
   if (firstOpen) lastCountedRoutineIdRef.current = firstOpen.routine.id;
+  // Other scheduled routines still waiting behind the counted one - surfaced
+  // as a "+N" suffix so the queue is visible at a glance (#121).
+  const queued = firstOpen ? openScheduledViews(today.scheduledViews).length - 1 : 0;
   const showCount =
     !today.isLoading && today.openSteps > 0 && firstOpen !== null && !isDataEntryPath(pathname);
 
@@ -149,15 +156,18 @@ export function RoutineFab() {
         >
           <Fab
             icon="repeat"
-            label={t("fab.progress", {
+            label={t(queued > 0 ? "fab.progressQueued" : "fab.progress", {
               done: firstOpen.day.doneCount,
               total: firstOpen.day.totalCount,
+              queued,
             })}
-            accessibilityLabel={t("fab.a11y", {
-              name: firstOpen.routine.name,
-              done: firstOpen.day.doneCount,
-              total: firstOpen.day.totalCount,
-            })}
+            accessibilityLabel={
+              t("fab.a11y", {
+                name: firstOpen.routine.name,
+                done: firstOpen.day.doneCount,
+                total: firstOpen.day.totalCount,
+              }) + (queued > 0 ? `, ${t("fab.moreAfter", { count: queued })}` : "")
+            }
             onPress={() => setSheetOpen(true)}
             testID="routine-fab"
           />
