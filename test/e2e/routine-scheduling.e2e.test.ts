@@ -1,6 +1,7 @@
 import { expect, test } from "./fixtures";
 
 import {
+  createServiceClient,
   deleteAllMoodLogsForUser,
   deleteAllRoutinesForUser,
   dismissPostSignInModals,
@@ -13,15 +14,46 @@ const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 // The editor preselects Mon-Fri when switching to a custom cadence.
 const PRESELECTED_DAYS = [1, 2, 3, 4, 5];
 
+type WidgetRow = Record<string, unknown>;
+
 test.describe("routine scheduling (#95: custom days, off-day surfaces, manual runs)", () => {
+  let originalWidgets: WidgetRow[] = [];
+
+  // The routines-today widget is never default-seeded (WIDGET_META marks it
+  // "available"), so a clean worker would pass the Home suppression check
+  // vacuously. Seed it onto the dashboard, restoring the original rows after.
   test.beforeEach(async ({ user }) => {
     await deleteAllRoutinesForUser(user.id);
     await deleteAllMoodLogsForUser(user.id);
+
+    const admin = createServiceClient();
+    const widgets = await admin
+      .from("widget_preferences")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("position");
+    if (widgets.error) throw new Error(widgets.error.message);
+    originalWidgets = (widgets.data ?? []) as WidgetRow[];
+
+    const del = await admin.from("widget_preferences").delete().eq("user_id", user.id);
+    if (del.error) throw new Error(del.error.message);
+    const ins = await admin
+      .from("widget_preferences")
+      .insert([{ user_id: user.id, widget_id: "routines-today", position: 0 }]);
+    if (ins.error) throw new Error(ins.error.message);
   });
 
   test.afterEach(async ({ user }) => {
     await deleteAllRoutinesForUser(user.id);
     await deleteAllMoodLogsForUser(user.id);
+
+    const admin = createServiceClient();
+    const del = await admin.from("widget_preferences").delete().eq("user_id", user.id);
+    if (del.error) throw new Error(del.error.message);
+    if (originalWidgets.length > 0) {
+      const ins = await admin.from("widget_preferences").insert(originalWidgets);
+      if (ins.error) throw new Error(ins.error.message);
+    }
   });
 
   test("an off-today custom routine hides from FAB and Home, labels its card, and still tracks a manual run", async ({
@@ -39,10 +71,18 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     const offDays = PRESELECTED_DAYS.filter((day) => !targetDays.includes(day));
     const expectedLabel = `Runs ${targetDays.map((day) => DAY_NAMES[day]).join(", ")}`;
 
-    // Initial load + gate dismissal, then in-app nav (create-habit pattern:
-    // in-app navigation is immune to the consent-gate deep-link hijack).
-    await page.goto("/routines");
+    // Initial load + gate dismissal (create-habit pattern: in-app navigation
+    // is immune to the consent-gate deep-link hijack).
+    await page.goto("/");
     await dismissPostSignInModals(page);
+
+    // Positive control: with the widget seeded and no routines yet, Home
+    // renders the routines-today slot (its explore-routines empty state) -
+    // so the later disappearance is real suppression, not a never-there.
+    await expect(page.getByText("Routines today", { exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
+
     await page.getByRole("link", { name: "Routines", exact: true }).first().click();
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
 
@@ -84,9 +124,12 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     await expect(page.getByTestId("routine-fab")).toBeHidden();
 
     // --- Home: the routines-today widget slot is suppressed entirely ---
+    // (routines exist, none scheduled today - the whole slot unmounts, #97)
     await page.getByRole("link", { name: "Home", exact: true }).first().click();
     await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
-    await expect(page.getByText("Routines today", { exact: true })).toBeHidden();
+    await expect(page.getByText("Routines today", { exact: true })).toBeHidden({
+      timeout: 15_000,
+    });
     await expect(page.getByTestId("routine-fab")).toBeHidden();
 
     // --- Manual run: off-schedule still tracks (independent-fact rule) ---
