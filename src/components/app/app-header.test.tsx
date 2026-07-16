@@ -42,11 +42,34 @@ jest.mock("@/src/lib/env", () => ({
   },
 }));
 
+const mockUseWindowDimensions = jest.fn();
+
+// Partial mock via Proxy (mirrors wizard-screen.test.tsx): spreading
+// `{...actual}` would eagerly evaluate every lazy getter React Native's module
+// defines and can blow up in the test environment, so only intercept the one
+// export this suite needs to control.
+jest.mock("react-native", () => {
+  const actual = jest.requireActual("react-native");
+  return new Proxy(actual, {
+    get(target, prop, receiver) {
+      if (prop === "useWindowDimensions") {
+        return mockUseWindowDimensions;
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  });
+});
+
+// Either side of the sidebar-vs-hamburger switch (DESKTOP_BREAKPOINT = 768).
+const MOBILE_DIMENSIONS = { width: 390, height: 844, scale: 3, fontScale: 1 };
+const DESKTOP_DIMENSIONS = { width: 1024, height: 768, scale: 1, fontScale: 1 };
+
 const mockOpen = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
 
 beforeEach(() => {
   appEnv.discordUrl = "https://discord.gg/pdaAr9FhcQ";
   jest.clearAllMocks();
+  mockUseWindowDimensions.mockReturnValue(DESKTOP_DIMENSIONS);
 });
 
 describe("AppHeader home link", () => {
@@ -57,20 +80,32 @@ describe("AppHeader home link", () => {
   });
 });
 
-describe("AppHeader Discord icon", () => {
-  it("opens the Discord invite from the toolbar", () => {
+describe("AppHeader community links (#92)", () => {
+  it("shows Discord and GitHub icon links on desktop, opening the right URLs", () => {
     renderWithProviders(<AppHeader />);
 
     fireEvent.press(screen.getByLabelText("Join our Discord"));
-
     expect(mockOpen).toHaveBeenCalledWith("https://discord.gg/pdaAr9FhcQ");
+
+    fireEvent.press(screen.getByLabelText("View the source code on GitHub"));
+    expect(mockOpen).toHaveBeenCalledWith("https://github.com/Selftend/selftend");
   });
 
-  it("hides the icon when no Discord URL is configured", () => {
+  it("shows neither icon in the mobile header (Discord lives in the account menu)", () => {
+    mockUseWindowDimensions.mockReturnValue(MOBILE_DIMENSIONS);
+
+    renderWithProviders(<AppHeader />);
+
+    expect(screen.queryByLabelText("Join our Discord")).toBeNull();
+    expect(screen.queryByLabelText("View the source code on GitHub")).toBeNull();
+  });
+
+  it("hides the Discord icon when no Discord URL is configured, keeping GitHub", () => {
     appEnv.discordUrl = "";
 
     renderWithProviders(<AppHeader />);
 
     expect(screen.queryByLabelText("Join our Discord")).toBeNull();
+    expect(screen.getByLabelText("View the source code on GitHub")).toBeTruthy();
   });
 });

@@ -3,6 +3,8 @@ import { router } from "expo-router";
 import { Platform } from "react-native";
 
 import { UserMenu } from "./user-menu";
+import { appEnv } from "@/src/lib/env";
+import { openExternalUrl } from "@/src/lib/linking";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -40,9 +42,13 @@ jest.mock("@/src/lib/linking", () => ({
 }));
 
 const mockPush = router.push as jest.MockedFunction<typeof router.push>;
+const mockOpen = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
+
+const originalDiscordUrl = appEnv.discordUrl;
 
 afterEach(() => {
   Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
+  appEnv.discordUrl = originalDiscordUrl;
   jest.clearAllMocks();
 });
 
@@ -63,6 +69,29 @@ describe("UserMenu", () => {
     fireEvent.press(screen.getByLabelText("Open account menu"));
 
     expect(screen.getByText("Get the mobile app")).toBeTruthy();
+  });
+
+  // #92: on mobile the header carries no community icons, so the dropdown's
+  // social row is the Discord entry point - pin its presence and its
+  // hide-when-unconfigured behavior.
+  it("offers the Discord link in the dropdown", () => {
+    appEnv.discordUrl = "https://discord.gg/pdaAr9FhcQ";
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    fireEvent.press(screen.getByLabelText("Join our Discord"));
+    expect(mockOpen).toHaveBeenCalledWith("https://discord.gg/pdaAr9FhcQ");
+  });
+
+  it("hides the Discord link when no Discord URL is configured, keeping GitHub", () => {
+    appEnv.discordUrl = "";
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.queryByLabelText("Join our Discord")).toBeNull();
+    expect(screen.getByLabelText("View the source code on GitHub")).toBeTruthy();
   });
 
   it("exposes the language and theme rows as radios in labelled radiogroups", () => {

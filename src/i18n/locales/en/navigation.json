@@ -4,7 +4,8 @@
     "closeNav": "Close navigation",
     "goHome": "Go to home",
     "appName": "Selftend",
-    "joinDiscord": "Join our Discord"
+    "joinDiscord": "Join our Discord",
+    "viewGithub": "View the source code on GitHub"
   },
   "sidebar": {
     "home": "Home",

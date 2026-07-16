@@ -4,7 +4,8 @@
     "closeNav": "Затвори навигация",
     "goHome": "Към начало",
     "appName": "Selftend",
-    "joinDiscord": "Присъедини се към нашия Discord"
+    "joinDiscord": "Присъедини се към нашия Discord",
+    "viewGithub": "Виж изходния код в GitHub"
   },
   "sidebar": {
     "home": "Начало",
