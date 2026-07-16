@@ -9,6 +9,7 @@ import {
   useExposureSessions,
   useHierarchies,
   useHierarchy,
+  useRecentExposureSessions,
   useSaveExposureSession,
   useSaveHierarchy,
 } from "@/src/features/exposure/queries";
@@ -23,6 +24,7 @@ jest.mock("@/src/features/exposure/repository", () => ({
   listAllItems: jest.fn(),
   listHierarchies: jest.fn(),
   listItems: jest.fn(),
+  listRecentSessions: jest.fn(),
   listSessions: jest.fn(),
   saveHierarchy: jest.fn(),
   saveItems: jest.fn(),
@@ -74,6 +76,22 @@ describe.each(listHooks)("%s enabled gate", (_name, useHook, repoFn) => {
       wrapper: makeWrapper(client),
     });
     await waitFor(() => expect(repoFn).toHaveBeenCalledWith("u1"));
+  });
+});
+
+// Same enabled gate, but the repo fn also receives the limit (#123: feeds the
+// routines derive engine's "any session completed on day X").
+describe("useRecentExposureSessions enabled gate", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useRecentExposureSessions(null), { wrapper: makeWrapper(client) });
+    expect(repo.listRecentSessions).not.toHaveBeenCalled();
+  });
+
+  it("fetches with the real userId and limit when present", async () => {
+    const client = createTestQueryClient();
+    renderHook(() => useRecentExposureSessions("u1", 250), { wrapper: makeWrapper(client) });
+    await waitFor(() => expect(repo.listRecentSessions).toHaveBeenCalledWith("u1", 250));
   });
 });
 

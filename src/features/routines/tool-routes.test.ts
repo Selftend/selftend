@@ -24,4 +24,25 @@ describe("tool-routes", () => {
     expect(routeForTool("meditation")).toBe("/tools/meditation");
     expect(routeForTool("habits")).toBe("/tools/habits");
   });
+
+  it("routes ACT tools to their record-writing surface (#123)", () => {
+    expect(routeForTool("defusion")).toBe("/modules/act/defusion/new");
+    expect(routeForTool("expansion")).toBe("/modules/act/expansion/new");
+    // Guided screens save their own log on completion.
+    expect(routeForTool("urgeSurf")).toBe("/modules/act/expansion/urge-surfing");
+    expect(routeForTool("dropAnchor")).toBe("/modules/act/connection/drop-anchor");
+    expect(routeForTool("connection")).toBe("/modules/act/connection/new");
+    expect(routeForTool("observingSelf")).toBe("/modules/act/observing-self/new");
+    expect(routeForTool("bullsEye")).toBe("/modules/act/values/bulls-eye");
+    expect(routeForTool("choicePoint")).toBe("/modules/act/choice-point/new");
+    // Progress is an update to an EXISTING action - the list is the doorway.
+    expect(routeForTool("committedAction")).toBe("/modules/act/committed-action");
+  });
+
+  it("routes CBT list-first tools to their lists (#123)", () => {
+    // Completing an activity / logging an exposure session happens against an
+    // existing entity, not on a /new form.
+    expect(routeForTool("activities")).toBe("/modules/cbt/activities");
+    expect(routeForTool("exposure")).toBe("/modules/cbt/exposure");
+  });
 });
