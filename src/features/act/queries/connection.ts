@@ -13,7 +13,10 @@ import { actKeys } from "./keys";
 
 export function useConnectionLogs(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: actKeys.connectionList(userId),
+    // Include limit so 30/N callers don't collide on one cache entry (routines
+    // fetch a 250-row strip window, PR #124 review); the limit-less prefix in
+    // actKeys.connectionList still matches every variant on invalidation.
+    queryKey: [...actKeys.connectionList(userId), limit],
     queryFn: () => listConnectionLogs(userId!, limit),
     enabled: Boolean(userId),
   });

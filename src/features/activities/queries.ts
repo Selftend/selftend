@@ -4,6 +4,7 @@ import {
   completeActivity,
   getActivity,
   listActivities,
+  listRecentCompletedActivities,
   saveActivity,
 } from "@/src/features/activities/repository";
 import type { ActivityInput } from "@/src/features/activities/types";
@@ -11,6 +12,11 @@ import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const activityKeys = {
   list: (userId: string) => ["activities", "list", userId] as const,
+  // Nested under the list prefix so the existing save/complete invalidations
+  // refresh it too; the limit rides in the key so differently-sized windows
+  // never collide on one cache entry.
+  recentCompleted: (userId: string, limit: number) =>
+    ["activities", "list", userId, "recent-completed", limit] as const,
   detail: (userId: string, activityId: string) =>
     ["activities", "detail", userId, activityId] as const,
 };
@@ -19,6 +25,21 @@ export function useActivities(userId: string | null) {
   return useQuery({
     queryKey: userId ? activityKeys.list(userId) : ["activities", "list", "anonymous"],
     queryFn: () => listActivities(userId!),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * Newest completed activities by completed_at - feeds the routines derive
+ * engine ("activity completed on day X"), which the scheduled_at-ordered
+ * 500-row default list cannot answer reliably (PR #124 review).
+ */
+export function useRecentCompletedActivities(userId: string | null, limit = 250) {
+  return useQuery({
+    queryKey: userId
+      ? activityKeys.recentCompleted(userId, limit)
+      : ["activities", "list", "anonymous", "recent-completed"],
+    queryFn: () => listRecentCompletedActivities(userId!, limit),
     enabled: Boolean(userId),
   });
 }

@@ -8,7 +8,7 @@ import {
   type SteppableToolId,
 } from "@/src/features/routines/derive";
 import { useUpdateRoutine } from "@/src/features/routines/queries";
-import type { RoutineWithSteps } from "@/src/features/routines/types";
+import type { RoutineCadence, RoutineWithSteps } from "@/src/features/routines/types";
 import type { RoutineTodayView } from "@/src/features/routines/use-routines-today";
 import { currentDateKey } from "@/src/utils/date";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -40,6 +40,7 @@ function makeRoutine(
   name: string,
   toolIds: readonly SteppableToolId[],
   reminderEnabled = false,
+  cadence: RoutineCadence = "daily",
 ): RoutineWithSteps {
   return {
     id,
@@ -49,6 +50,8 @@ function makeRoutine(
     reminderHour: reminderEnabled ? 8 : null,
     reminderMinute: reminderEnabled ? 30 : null,
     reminderTimezone: reminderEnabled ? "Europe/Sofia" : null,
+    cadence,
+    customDays: [],
     createdAt: "2026-07-01T08:00:00.000Z",
     updatedAt: "2026-07-01T08:00:00.000Z",
     steps: toolIds.map((toolId, index) => ({
@@ -63,8 +66,12 @@ function makeRoutine(
   };
 }
 
-function view(routine: RoutineWithSteps, records: RoutineToolRecords = {}): RoutineTodayView {
-  return { routine, day: deriveRoutine(routine.steps, records, currentDateKey()) };
+function view(
+  routine: RoutineWithSteps,
+  records: RoutineToolRecords = {},
+  scheduledToday = true,
+): RoutineTodayView {
+  return { routine, day: deriveRoutine(routine.steps, records, currentDateKey()), scheduledToday };
 }
 
 function renderSheet(views: RoutineTodayView[], onClose = jest.fn()) {
@@ -151,6 +158,44 @@ describe("ContinueRoutineSheet", () => {
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/breathing");
   });
 
+  // #121: the sheet starts on the routine the FAB counts - an in-progress
+  // routine outranks an earlier not-started one, including on the very first
+  // visible frame (the pre-pin fallback selects through the same helper).
+  it("starts on the in-progress routine, not the first open one", () => {
+    // r-1 is untouched; r-2 has its mood step done (1/2 in progress).
+    const records: RoutineToolRecords = {
+      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+    };
+    renderSheet([
+      view(makeRoutine("r-1", "Morning reset", ["journal"]), records),
+      view(makeRoutine("r-2", "Evening wind-down", ["mood", "gratitude"]), records),
+    ]);
+
+    // r-2's open step is highlighted; r-1's journal shows only as its chip.
+    expect(screen.getByText("Gratitude")).toBeTruthy();
+    expect(screen.queryByText("Journal")).toBeNull();
+  });
+
+  // #104: unscheduled routines never surface - not as the starting routine
+  // and not in the chip row - however many open steps they have.
+  it("skips unscheduled routines when starting and offers no chip for them", () => {
+    // r-1 is NOT scheduled today (e.g. on-demand) yet fully open; r-2 is the
+    // only scheduled routine. The sheet must start on r-2 and, with a single
+    // switchable candidate, show no chip row at all (no "Reset kit" chip).
+    renderSheet([
+      view(makeRoutine("r-1", "Reset kit", ["journal"]), {}, false),
+      view(makeRoutine("r-2", "Morning reset", ["mood"])),
+    ]);
+
+    expect(screen.getByText("Morning reset")).toBeTruthy();
+    expect(screen.getByText("Mood check-in")).toBeTruthy();
+    expect(screen.queryByText("Reset kit")).toBeNull();
+    expect(screen.queryByText("Journal")).toBeNull();
+
+    fireEvent.press(screen.getByText("Do next step"));
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/new");
+  });
+
   it("offers the routine's reminder on completion and writes only on accept", async () => {
     const records: RoutineToolRecords = {
       moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
@@ -186,6 +231,20 @@ describe("ContinueRoutineSheet", () => {
 
     expect(mutateAsync).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("skips the offer for an on-demand routine: only the plain Close (#102)", () => {
+    const records: RoutineToolRecords = {
+      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+    };
+    renderSheet([view(makeRoutine("r-1", "Morning reset", ["mood"], false, "on-demand"), records)]);
+
+    // Completion state shows, but an on-demand routine never nudges - so no
+    // reminder offer, just the Close button (same branch as reminderEnabled).
+    expect(screen.getByText("That was the last step")).toBeTruthy();
+    expect(screen.queryByText("Set a daily reminder")).toBeNull();
+    expect(screen.queryByText("Not now")).toBeNull();
+    expect(screen.getByText("Close")).toBeTruthy();
   });
 
   it("skips the offer when the routine already has its reminder set", () => {

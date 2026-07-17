@@ -44,6 +44,8 @@ const ROUTINE: RoutineWithSteps = {
   reminderHour: null,
   reminderMinute: null,
   reminderTimezone: null,
+  cadence: "daily",
+  customDays: [],
   createdAt: "2026-07-01T08:00:00.000Z",
   updatedAt: "2026-07-01T08:00:00.000Z",
   steps: [

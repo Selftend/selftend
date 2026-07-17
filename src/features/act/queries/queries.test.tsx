@@ -133,6 +133,23 @@ describe.each(listHooks)("%s enabled gate", (_name, useHook, repoFn) => {
   });
 });
 
+// The connection list key includes the limit (PR #124 review): the routines
+// engine's wide window and the default-30 program/list consumers must live in
+// separate cache entries, each fetching its own size.
+describe("useConnectionLogs limit keying", () => {
+  it("forwards the limit to the repository and keeps per-limit cache entries", async () => {
+    const client = createTestQueryClient();
+    renderHook(() => useConnectionLogs("u1", 250), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.listConnectionLogs).toHaveBeenCalledWith("u1", 250));
+
+    // A default-limit consumer on the same client fetches separately (no
+    // cache-entry collision with the 250-row window).
+    renderHook(() => useConnectionLogs("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.listConnectionLogs).toHaveBeenCalledWith("u1", 30));
+    expect(repo.listConnectionLogs).toHaveBeenCalledTimes(2);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Detail hooks: enabled = Boolean(userId) && Boolean(secondaryId). Cover all
 // three branches: userId missing, secondaryId missing, both present.

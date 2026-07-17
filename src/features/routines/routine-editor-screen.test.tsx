@@ -3,7 +3,11 @@ import { Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import { RoutineEditorScreen } from "@/src/features/routines/routine-editor-screen";
+import { STEPPABLE_TOOL_IDS } from "@/src/features/routines/derive";
+import {
+  RoutineEditorScreen,
+  STEP_TOOL_GROUPS,
+} from "@/src/features/routines/routine-editor-screen";
 import {
   useAddStep,
   useCreateRoutine,
@@ -96,6 +100,8 @@ const EXISTING: RoutineWithSteps = {
   reminderHour: null,
   reminderMinute: null,
   reminderTimezone: null,
+  cadence: "daily",
+  customDays: [],
   createdAt: "2026-07-01T08:00:00.000Z",
   updatedAt: "2026-07-01T08:00:00.000Z",
   steps: [
@@ -291,6 +297,206 @@ describe("RoutineEditorScreen", () => {
     // Pressing the disabled chip must not add a duplicate row.
     fireEvent.press(screen.getByLabelText("Mood check-in is already a step"));
     expect(screen.getAllByLabelText(/Remove Mood check-in/)).toHaveLength(1);
+  });
+
+  // ----- Grouped Add-step picker (#123) -----
+
+  it("partitions the steppable set: every tool appears in exactly one picker group", () => {
+    const grouped = STEP_TOOL_GROUPS.flatMap((group) => group.tools);
+    expect([...grouped].sort()).toEqual([...STEPPABLE_TOOL_IDS].sort());
+    expect(new Set(grouped).size).toBe(grouped.length);
+  });
+
+  it("renders the five group headers over the add-step chips", () => {
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    expect(screen.getByText("Check-ins & logs")).toBeTruthy();
+    expect(screen.getByText("Mindfulness")).toBeTruthy();
+    expect(screen.getByText("CBT")).toBeTruthy();
+    expect(screen.getByText("ACT")).toBeTruthy();
+    // "Habits" is both the group header and its only chip's label.
+    expect(screen.getAllByText("Habits").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("adds a newly admitted ACT tool as a step and saves it like any other", async () => {
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    fireEvent.press(screen.getByLabelText("Add Defusion log"));
+
+    // Same chip behavior as the original nine: added state + a step row.
+    expect(screen.getByLabelText("Defusion log is already a step")).toBeTruthy();
+    expect(screen.getByLabelText("Remove Defusion log")).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() => expect(createRoutine).toHaveBeenCalled());
+    expect(addStep).toHaveBeenCalledWith({
+      routineId: "r-new",
+      toolId: "defusion",
+      position: 0,
+    });
+  });
+
+  // ----- Days section (#105) -----
+
+  it("renders the cadence chips with Every day active and keeps the default create payload schedule-free", async () => {
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    expect(screen.getByRole("radio", { name: "Every day" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Weekdays" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "Custom" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "On demand" })).not.toBeChecked();
+    // The day chips only appear under Custom.
+    expect(screen.queryByRole("checkbox", { name: "Mon" })).toBeNull();
+
+    fireEvent.press(screen.getByText("Save"));
+
+    // Daily is the DB default - the payload stays "just a name".
+    await waitFor(() => expect(createRoutine).toHaveBeenCalledWith({ name: "My daily routine" }));
+  });
+
+  it("saves the weekdays cadence in the create payload", async () => {
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    fireEvent.press(screen.getByRole("radio", { name: "Weekdays" }));
+    expect(screen.getByRole("radio", { name: "Weekdays" })).toBeChecked();
+
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() =>
+      expect(createRoutine).toHaveBeenCalledWith({
+        name: "My daily routine",
+        cadence: "weekdays",
+      }),
+    );
+  });
+
+  it("switching to Custom shows the Mon-first day chips with Mon-Fri preselected and saves them", async () => {
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    fireEvent.press(screen.getByRole("radio", { name: "Custom" }));
+
+    for (const day of ["Mon", "Tue", "Wed", "Thu", "Fri"]) {
+      expect(screen.getByRole("checkbox", { name: day })).toBeChecked();
+    }
+    expect(screen.getByRole("checkbox", { name: "Sat" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Sun" })).not.toBeChecked();
+
+    fireEvent.press(screen.getByRole("checkbox", { name: "Mon" }));
+    fireEvent.press(screen.getByRole("checkbox", { name: "Sun" }));
+    fireEvent.press(screen.getByText("Save"));
+
+    // Days stay JS getDay() numbers, sorted ascending (Sun toggled on = 0).
+    await waitFor(() =>
+      expect(createRoutine).toHaveBeenCalledWith({
+        name: "My daily routine",
+        cadence: "custom",
+        customDays: [0, 2, 3, 4, 5],
+      }),
+    );
+  });
+
+  it("blocks the save with an inline error when Custom has zero days", async () => {
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    fireEvent.press(screen.getByRole("radio", { name: "Custom" }));
+    for (const day of ["Mon", "Tue", "Wed", "Thu", "Fri"]) {
+      fireEvent.press(screen.getByRole("checkbox", { name: day }));
+    }
+    fireEvent.press(screen.getByText("Save"));
+
+    expect(await screen.findByText("Pick at least one day for a custom cadence.")).toBeTruthy();
+    expect(createRoutine).not.toHaveBeenCalled();
+  });
+
+  it("hydrates a custom routine's days and patches only the toggled days on save", async () => {
+    const custom: RoutineWithSteps = { ...EXISTING, cadence: "custom", customDays: [1, 3] };
+    mockUseRoutines.mockReturnValue({ data: [custom] } as unknown as ReturnType<
+      typeof useRoutines
+    >);
+
+    renderWithProviders(
+      <RoutineEditorScreen fallbackHref="/routines/r-1" mode="edit" routineId="r-1" />,
+    );
+
+    expect(screen.getByRole("radio", { name: "Custom" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Mon" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Wed" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Tue" })).not.toBeChecked();
+
+    fireEvent.press(screen.getByRole("checkbox", { name: "Sat" }));
+    fireEvent.press(screen.getByText("Save"));
+
+    // Cadence is unchanged, so the patch carries just the new day set.
+    await waitFor(() =>
+      expect(updateRoutine).toHaveBeenCalledWith({
+        id: "r-1",
+        patch: { customDays: [1, 3, 6] },
+      }),
+    );
+  });
+
+  // ----- On demand hides reminders (#102) -----
+
+  it("hides the reminder section under On demand and keeps the create payload reminder-free", async () => {
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    // Turn the reminder on FIRST, then go on-demand: the section disappears
+    // and the forced-off reminder never reaches the payload or the channel.
+    fireEvent.press(screen.getByLabelText("Remind me about this routine"));
+    fireEvent.press(screen.getByRole("radio", { name: "On demand" }));
+
+    expect(screen.queryByLabelText("Remind me about this routine")).toBeNull();
+    expect(screen.queryByLabelText("Reminder time")).toBeNull();
+
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() =>
+      expect(createRoutine).toHaveBeenCalledWith({
+        name: "My daily routine",
+        cadence: "on-demand",
+      }),
+    );
+    expect(mockScheduleReminder).not.toHaveBeenCalled();
+  });
+
+  it("switching an existing routine to On demand disables its reminder in the patch", async () => {
+    const withReminder: RoutineWithSteps = {
+      ...EXISTING,
+      reminderEnabled: true,
+      reminderHour: 8,
+      reminderMinute: 30,
+      reminderTimezone: "Europe/Sofia",
+    };
+    mockUseRoutines.mockReturnValue({ data: [withReminder] } as unknown as ReturnType<
+      typeof useRoutines
+    >);
+
+    renderWithProviders(
+      <RoutineEditorScreen fallbackHref="/routines/r-1" mode="edit" routineId="r-1" />,
+    );
+
+    // Reminder section visible while daily...
+    expect(screen.getByLabelText("Remind me about this routine")).toBeTruthy();
+
+    fireEvent.press(screen.getByRole("radio", { name: "On demand" }));
+    expect(screen.queryByLabelText("Remind me about this routine")).toBeNull();
+
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() =>
+      expect(updateRoutine).toHaveBeenCalledWith({
+        id: "r-1",
+        patch: {
+          cadence: "on-demand",
+          reminderEnabled: false,
+          reminderHour: 8,
+          reminderMinute: 30,
+          reminderTimezone: "Europe/Sofia",
+        },
+      }),
+    );
+    expect(mockScheduleReminder).not.toHaveBeenCalled();
   });
 
   // ----- Routine reminder (#47) -----

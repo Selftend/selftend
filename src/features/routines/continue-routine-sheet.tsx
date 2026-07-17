@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 
 interface ContinueRoutineSheetProps {
   userId: string;
+  /** Scheduled-today routines only (#104) - the FAB passes `scheduledViews`. */
   views: RoutineTodayView[];
   visible: boolean;
   /**
@@ -55,7 +56,9 @@ export function ContinueRoutineSheet({
   const [reminderTime, setReminderTime] = useState(() => roundToNearestHalfHour(new Date()));
   const [reminderError, setReminderError] = useState<string | undefined>();
 
-  const openViews = views.filter((view) => view.day.nextStep !== null);
+  // Only scheduled-today routines qualify (#104): open steps on an on-demand
+  // or off-today routine never surface in the sheet, mirroring the FAB.
+  const openViews = views.filter((view) => view.scheduledToday && view.day.nextStep !== null);
 
   // Pin the shown routine when the sheet opens (firstOpenRoutineView - the
   // same selection the FAB counts, #91) so it stays put if it completes
@@ -78,7 +81,11 @@ export function ContinueRoutineSheet({
     );
   }, [visible, views, initialRoutineId]);
 
-  const selected = views.find((view) => view.routine.id === selectedId) ?? openViews[0] ?? null;
+  // Pre-effect fallback goes through the SAME selector the FAB counts with
+  // (#121): openViews[0] could disagree for the first visible frame when a
+  // later routine is in progress, flashing (and announcing) the wrong one.
+  const selected =
+    views.find((view) => view.routine.id === selectedId) ?? firstOpenRoutineView(views) ?? null;
 
   if (!selected) return null;
 
@@ -86,10 +93,11 @@ export function ContinueRoutineSheet({
   const isComplete = day.totalCount > 0 && day.nextStep === null;
   const nextIndex = day.steps.findIndex((step) => !step.done);
 
-  // Chip row candidates: every open routine plus the pinned one (which may
-  // just have completed). Only shown when there is something to switch to.
+  // Chip row candidates: every open SCHEDULED routine plus the pinned one
+  // (which may just have completed). Only shown when there is something to
+  // switch to.
   const switchable = views.filter(
-    (view) => view.day.nextStep !== null || view.routine.id === routine.id,
+    (view) => (view.scheduledToday && view.day.nextStep !== null) || view.routine.id === routine.id,
   );
 
   function doNextStep() {
@@ -199,7 +207,9 @@ export function ContinueRoutineSheet({
                   </Text>
                 </View>
 
-                {routine.reminderEnabled ? (
+                {/* On-demand routines never nudge (#102): no reminder offer,
+                    just the plain close - same as when the reminder is set. */}
+                {routine.reminderEnabled || routine.cadence === "on-demand" ? (
                   <Button variant="outline" onPress={onClose}>
                     <Text>{t("sheet.close")}</Text>
                   </Button>

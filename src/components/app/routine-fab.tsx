@@ -7,7 +7,11 @@ import { useTranslation } from "react-i18next";
 import { Fab } from "@/src/components/app/fab";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ContinueRoutineSheet } from "@/src/features/routines/continue-routine-sheet";
-import { firstOpenRoutineView, useRoutinesToday } from "@/src/features/routines/use-routines-today";
+import {
+  firstOpenRoutineView,
+  openScheduledViews,
+  useRoutinesToday,
+} from "@/src/features/routines/use-routines-today";
 import {
   announceMessage,
   politeLiveRegionProps,
@@ -54,11 +58,14 @@ const COMPLETED_FADE_MS = 400;
 
 // The floating routine-progress handle (spec #37 Home integration, #50, #91).
 // Conditional by construction: the button renders only while at least one
-// routine step is still open today - hidden at zero routines and once all are
-// done. Visibility is aggregate (any open step anywhere), but the N/M it
-// shows is the FIRST OPEN routine's count - exactly the routine the
-// continue sheet opens pinned (firstOpenRoutineView, shared with the sheet),
-// not the cross-routine total, which read as noise (#91). It sits in the
+// SCHEDULED-TODAY routine step is still open - hidden at zero routines, once
+// all scheduled ones are done, and on days nothing is scheduled (#104:
+// on-demand and off-today routines never surface here, however many open
+// steps they have). Visibility is aggregate (any open scheduled step
+// anywhere), but the N/M it shows is the FIRST OPEN scheduled routine's
+// count - exactly the routine the continue sheet opens pinned
+// (firstOpenRoutineView, shared with the sheet), not the cross-routine
+// total, which read as noise (#91). It sits in the
 // bottom-RIGHT corner so it can never collide with the bottom-CENTER one-time
 // reminder prompt card: coexistence by placement, no suppression, no
 // arbitration. The sheet stays mounted independently of the button so
@@ -92,8 +99,11 @@ export function RoutineFab() {
   const lastCountedRoutineIdRef = useRef<string | null>(null);
   const [completedRoutineId, setCompletedRoutineId] = useState<string | null>(null);
 
-  const firstOpen = firstOpenRoutineView(today.views);
+  const firstOpen = firstOpenRoutineView(today.scheduledViews);
   if (firstOpen) lastCountedRoutineIdRef.current = firstOpen.routine.id;
+  // Other scheduled routines still waiting behind the counted one - surfaced
+  // as a "+N" suffix so the queue is visible at a glance (#121).
+  const queued = firstOpen ? openScheduledViews(today.scheduledViews).length - 1 : 0;
   const showCount =
     !today.isLoading && today.openSteps > 0 && firstOpen !== null && !isDataEntryPath(pathname);
 
@@ -146,15 +156,18 @@ export function RoutineFab() {
         >
           <Fab
             icon="repeat"
-            label={t("fab.progress", {
+            label={t(queued > 0 ? "fab.progressQueued" : "fab.progress", {
               done: firstOpen.day.doneCount,
               total: firstOpen.day.totalCount,
+              queued,
             })}
-            accessibilityLabel={t("fab.a11y", {
-              name: firstOpen.routine.name,
-              done: firstOpen.day.doneCount,
-              total: firstOpen.day.totalCount,
-            })}
+            accessibilityLabel={
+              t("fab.a11y", {
+                name: firstOpen.routine.name,
+                done: firstOpen.day.doneCount,
+                total: firstOpen.day.totalCount,
+              }) + (queued > 0 ? `, ${t("fab.moreAfter", { count: queued })}` : "")
+            }
             onPress={() => setSheetOpen(true)}
             testID="routine-fab"
           />
@@ -184,7 +197,7 @@ export function RoutineFab() {
       ) : null}
       <ContinueRoutineSheet
         userId={userId}
-        views={today.views}
+        views={today.scheduledViews}
         visible={sheetOpen}
         initialRoutineId={showCompleted ? completedRoutineId : null}
         onClose={() => setSheetOpen(false)}

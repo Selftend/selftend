@@ -5,6 +5,7 @@ import {
   listAllItems,
   listHierarchies,
   listItems,
+  listRecentSessions,
   listSessions,
   saveHierarchy,
   saveItems,
@@ -359,6 +360,33 @@ describe("exposure repository - sessions", () => {
     await listSessions("user-1", "i-1");
     expect(eqI).toHaveBeenCalledWith("exposure_item_id", "i-1");
     expect(order).toHaveBeenCalledWith("completed_at", { ascending: false });
+  });
+
+  it("lists recent sessions across all items, newest completed first, capped and mapped", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: [sessionRow], error: null });
+    const order = jest.fn(() => ({ limit }));
+    const eqUser = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    const result = await listRecentSessions("user-1");
+    expect(from).toHaveBeenCalledWith("exposure_sessions");
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(order).toHaveBeenCalledWith("completed_at", { ascending: false });
+    expect(limit).toHaveBeenCalledWith(250);
+    expect(result[0]).toMatchObject({ id: "s-1", completedAt: "2026-05-15T08:30:00.000Z" });
+  });
+
+  it("throws when listRecentSessions query errors", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: null, error: { code: "42P01" } });
+    const order = jest.fn(() => ({ limit }));
+    const eqUser = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(listRecentSessions("user-1")).rejects.toMatchObject({ code: "42P01" });
   });
 
   it("saves a session and marks the item completed", async () => {

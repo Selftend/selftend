@@ -9,6 +9,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { RoutineDayStrip } from "@/src/features/routines/day-strip";
+import { isScheduledOn } from "@/src/features/routines/scheduling";
 import {
   deriveRoutine,
   type RoutineStatus,
@@ -23,7 +24,7 @@ import type { RoutineWithSteps } from "@/src/features/routines/types";
 import { useWidgetPreferences } from "@/src/features/home/queries";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
-import { currentDateKey } from "@/src/utils/date";
+import { currentDateKey, parseLocalNoon } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 
 const STATUS_KEYS: Record<RoutineStatus, "notStarted" | "inProgress" | "complete"> = {
@@ -123,6 +124,26 @@ function RoutineCard({ routine, records, dayKey, onOpen }: RoutineCardProps) {
   const day = deriveRoutine(routine.steps, records, dayKey);
   const complete = day.status === "complete";
 
+  // Off-today and on-demand routines with nothing done yet swap "Not started"
+  // for a calm schedule label (#106) - "not expected today", never "behind".
+  // Any progress today (a manual run) flips the card back to live tracking.
+  const scheduledToday = isScheduledOn(routine, parseLocalNoon(dayKey));
+  const restingToday = !scheduledToday && day.doneCount === 0;
+  // Daily routines are always scheduled, so only the other three cadences
+  // can reach the label.
+  const scheduleLabel = !restingToday
+    ? null
+    : routine.cadence === "on-demand"
+      ? t("schedule.onDemand")
+      : routine.cadence === "weekdays"
+        ? t("schedule.weekdays")
+        : t("schedule.customDays", {
+            days: [...routine.customDays]
+              .sort((a, b) => a - b)
+              .map((d) => t(`schedule.weekday.${d}` as const))
+              .join(", "),
+          });
+
   return (
     <Pressable
       accessibilityLabel={t("home.openDetail")}
@@ -146,16 +167,22 @@ function RoutineCard({ routine, records, dayKey, onOpen }: RoutineCardProps) {
         </View>
         <View className="flex-1">
           <Text className="text-base font-semibold">{routine.name}</Text>
-          <Text
-            className={cn(
-              "text-xs",
-              day.status === "not_started" ? "text-muted-foreground" : "text-primary",
-            )}
-          >
-            {t(`status.${STATUS_KEYS[day.status]}`)}
-          </Text>
+          {restingToday ? (
+            <Text className="text-xs text-muted-foreground">{scheduleLabel}</Text>
+          ) : (
+            <Text
+              className={cn(
+                "text-xs",
+                day.status === "not_started" ? "text-muted-foreground" : "text-primary",
+              )}
+            >
+              {t(`status.${STATUS_KEYS[day.status]}`)}
+            </Text>
+          )}
         </View>
-        {day.totalCount > 0 ? (
+        {/* A resting card (off-today, nothing done) also hides the 0/N badge:
+            an unmet count has no place on a day when nothing was expected. */}
+        {day.totalCount > 0 && !restingToday ? (
           <Text variant="muted" className="text-xs">
             {t("status.progress", { done: day.doneCount, total: day.totalCount })}
           </Text>
@@ -167,7 +194,7 @@ function RoutineCard({ routine, records, dayKey, onOpen }: RoutineCardProps) {
         <Text variant="muted" className="text-[10px] uppercase tracking-wider">
           {t("strip.label")}
         </Text>
-        <RoutineDayStrip steps={routine.steps} records={records} />
+        <RoutineDayStrip steps={routine.steps} records={records} schedule={routine} />
       </View>
     </Pressable>
   );

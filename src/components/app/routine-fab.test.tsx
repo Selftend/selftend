@@ -49,6 +49,7 @@ function makeRoutine(
   id: string,
   name: string,
   toolIds: readonly ("mood" | "journal" | "gratitude")[],
+  schedule: Partial<Pick<RoutineWithSteps, "cadence" | "customDays">> = {},
 ): RoutineWithSteps {
   return {
     id,
@@ -58,6 +59,8 @@ function makeRoutine(
     reminderHour: null,
     reminderMinute: null,
     reminderTimezone: null,
+    cadence: schedule.cadence ?? "daily",
+    customDays: schedule.customDays ?? [],
     createdAt: "2026-07-01T08:00:00.000Z",
     updatedAt: "2026-07-01T08:00:00.000Z",
     steps: toolIds.map((toolId, index) => ({
@@ -150,6 +153,134 @@ describe("RoutineFab", () => {
     // The sheet pins the same first-open routine the button counted.
     expect(screen.getByText("Evening wind-down")).toBeTruthy();
     expect(screen.queryByText("Morning reset")).toBeNull();
+  });
+
+  // #121: the queue is visible at a glance - other scheduled routines with
+  // open steps surface as a "+N" suffix after the counted routine's steps.
+  it("shows how many routines queue behind the counted one", () => {
+    setRoutines([
+      makeRoutine("r-1", "Morning reset", ["mood"]),
+      makeRoutine("r-2", "Evening wind-down", ["journal"]),
+    ]);
+
+    renderWithProviders(<RoutineFab />);
+
+    expect(screen.getByText("0/1 ·+1")).toBeTruthy();
+    expect(
+      screen.getByLabelText(
+        'Continue "Morning reset": 0 of 1 steps done today, 1 more routine after this',
+      ),
+    ).toBeTruthy();
+  });
+
+  it("pluralizes the queue suffix and drops it when nothing follows", () => {
+    setRoutines([
+      makeRoutine("r-1", "Morning reset", ["mood"]),
+      makeRoutine("r-2", "Evening wind-down", ["journal"]),
+      makeRoutine("r-3", "Midday pause", ["gratitude"]),
+    ]);
+
+    renderWithProviders(<RoutineFab />);
+
+    expect(screen.getByText("0/1 ·+2")).toBeTruthy();
+    expect(screen.getByLabelText(/2 more routines after this/)).toBeTruthy();
+
+    // The last routine standing carries no suffix.
+    mockUseRoutineToolRecords.mockReturnValue({
+      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      gratitudeEntries: [{ loggedAt: `${currentDateKey()}T09:00:00` }],
+    });
+    screen.rerender(<RoutineFab />);
+    expect(screen.getByText("0/1")).toBeTruthy();
+    expect(screen.queryByText(/·\+/)).toBeNull();
+  });
+
+  // #121: the count follows what the user is actually DOING - an in-progress
+  // routine outranks an earlier not-started one.
+  it("follows the in-progress routine instead of the first open", () => {
+    setRoutines([
+      makeRoutine("r-1", "Morning reset", ["journal"]),
+      makeRoutine("r-2", "Evening wind-down", ["mood", "gratitude"]),
+    ]);
+    mockUseRoutineToolRecords.mockReturnValue({
+      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+    });
+
+    renderWithProviders(<RoutineFab />);
+
+    // r-2 is 1/2 in progress; r-1 (first by order) is merely not started.
+    expect(screen.getByText("1/2 ·+1")).toBeTruthy();
+    expect(
+      screen.getByLabelText(
+        'Continue "Evening wind-down": 1 of 2 steps done today, 1 more routine after this',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText("0/1 ·+1")).toBeNull();
+  });
+
+  // #104: scheduling composes at the view layer - the FAB surfaces ONLY
+  // routines scheduled today. Open steps on unscheduled routines are
+  // invisible to it.
+  describe("scheduled-today filtering (#104)", () => {
+    const todayDow = new Date().getDay();
+    const otherDow = (todayDow + 1) % 7;
+
+    it("renders nothing when the only open routine is on-demand", () => {
+      setRoutines([makeRoutine("r-1", "Reset kit", ["mood"], { cadence: "on-demand" })]);
+
+      renderWithProviders(<RoutineFab />);
+
+      expect(screen.queryByTestId("routine-fab")).toBeNull();
+      expect(screen.queryByTestId("routine-fab-complete")).toBeNull();
+    });
+
+    it("hides a custom-days routine on a day it is not scheduled", () => {
+      setRoutines([
+        makeRoutine("r-1", "Off-day routine", ["mood"], {
+          cadence: "custom",
+          customDays: [otherDow],
+        }),
+      ]);
+
+      renderWithProviders(<RoutineFab />);
+
+      expect(screen.queryByTestId("routine-fab")).toBeNull();
+    });
+
+    it("still counts a custom-days routine scheduled for today", () => {
+      setRoutines([
+        makeRoutine("r-1", "On-day routine", ["mood"], {
+          cadence: "custom",
+          customDays: [todayDow],
+        }),
+      ]);
+
+      renderWithProviders(<RoutineFab />);
+
+      expect(screen.getByTestId("routine-fab")).toBeTruthy();
+      expect(screen.getByText("0/1")).toBeTruthy();
+    });
+
+    it("counts only scheduled routines and keeps unscheduled ones out of the sheet", () => {
+      // r-1 (on-demand) has an open step but must be invisible: the count is
+      // r-2's alone, and the sheet must not offer r-1 as a chip.
+      setRoutines([
+        makeRoutine("r-1", "Reset kit", ["journal"], { cadence: "on-demand" }),
+        makeRoutine("r-2", "Morning reset", ["mood", "gratitude"]),
+      ]);
+
+      renderWithProviders(<RoutineFab />);
+
+      expect(screen.getByText("0/2")).toBeTruthy();
+      expect(
+        screen.getByLabelText('Continue "Morning reset": 0 of 2 steps done today'),
+      ).toBeTruthy();
+
+      fireEvent.press(screen.getByTestId("routine-fab"));
+
+      expect(screen.getByText("Morning reset")).toBeTruthy();
+      expect(screen.queryByText("Reset kit")).toBeNull();
+    });
   });
 
   // #90: the FAB never renders over data-entry screens - it covered
@@ -249,6 +380,24 @@ describe("RoutineFab", () => {
       screen.rerender(<RoutineFab />);
       expect(screen.queryByTestId("routine-fab")).toBeNull();
       expect(screen.queryByTestId("routine-fab-complete")).toBeNull();
+    });
+
+    // #104: "all done" means all SCHEDULED routines done - an on-demand
+    // routine's open steps must not hold the check back.
+    it("plays the check when all scheduled routines finish, despite open on-demand steps", () => {
+      setRoutines([
+        makeRoutine("r-1", "Morning reset", ["mood"]),
+        makeRoutine("r-2", "Reset kit", ["journal"], { cadence: "on-demand" }),
+      ]);
+
+      renderWithProviders(<RoutineFab />);
+      expect(screen.getByText("0/1")).toBeTruthy();
+
+      completeTheOnlyStep();
+      screen.rerender(<RoutineFab />);
+
+      expect(screen.queryByTestId("routine-fab")).toBeNull();
+      expect(screen.getByTestId("routine-fab-complete")).toBeTruthy();
     });
 
     it("pressing the check opens the sheet on the routine that JUST finished", () => {

@@ -30,6 +30,7 @@ function makeRoutine(
   id: string,
   name: string,
   toolIds: readonly ("mood" | "journal" | "gratitude")[],
+  schedule: Partial<Pick<RoutineWithSteps, "cadence" | "customDays">> = {},
 ): RoutineWithSteps {
   return {
     id,
@@ -39,6 +40,8 @@ function makeRoutine(
     reminderHour: null,
     reminderMinute: null,
     reminderTimezone: null,
+    cadence: schedule.cadence ?? "daily",
+    customDays: schedule.customDays ?? [],
     createdAt: "2026-07-01T08:00:00.000Z",
     updatedAt: "2026-07-01T08:00:00.000Z",
     steps: toolIds.map((toolId, index) => ({
@@ -97,6 +100,75 @@ describe("RoutinesWidget", () => {
 
     fireEvent.press(screen.getByText("Open"));
     expect(mockRouter.push).toHaveBeenCalledWith("/routines");
+  });
+
+  // #104: the widget surfaces SCHEDULED-TODAY routines only.
+  describe("scheduled-today filtering (#104)", () => {
+    const todayDow = new Date().getDay();
+    const otherDow = (todayDow + 1) % 7;
+
+    it("lists only scheduled routines and counts only their steps", () => {
+      // r-2 is on-demand with an open step: invisible to the widget, and the
+      // progress pill counts r-1's single step only (not 0/2).
+      setRoutines([
+        makeRoutine("r-1", "Morning reset", ["mood"]),
+        makeRoutine("r-2", "Reset kit", ["journal"], { cadence: "on-demand" }),
+      ]);
+
+      renderWithProviders(<RoutinesWidget userId="user-1" />);
+
+      expect(screen.getByText("Morning reset")).toBeTruthy();
+      expect(screen.queryByText("Reset kit")).toBeNull();
+      expect(screen.getByText("0/1 steps")).toBeTruthy();
+      expect(screen.queryByText("0/2 steps")).toBeNull();
+    });
+
+    it("renders nothing at all on a day where no routine is scheduled", () => {
+      setRoutines([
+        makeRoutine("r-1", "Off-day routine", ["mood"], {
+          cadence: "custom",
+          customDays: [otherDow],
+        }),
+        makeRoutine("r-2", "Reset kit", ["journal"], { cadence: "on-demand" }),
+      ]);
+
+      renderWithProviders(<RoutinesWidget userId="user-1" />);
+
+      expect(screen.queryByText("Routines today")).toBeNull();
+      expect(screen.queryByText("Off-day routine")).toBeNull();
+      expect(screen.queryByText("Open")).toBeNull();
+    });
+
+    it("still lists a custom-days routine that is scheduled today", () => {
+      setRoutines([
+        makeRoutine("r-1", "On-day routine", ["mood"], {
+          cadence: "custom",
+          customDays: [todayDow],
+        }),
+      ]);
+
+      renderWithProviders(<RoutinesWidget userId="user-1" />);
+
+      expect(screen.getByText("On-day routine")).toBeTruthy();
+      expect(screen.getByText("0/1 steps")).toBeTruthy();
+    });
+
+    it("reaches done-for-today when all scheduled steps are done, despite open on-demand steps", () => {
+      setRoutines([
+        makeRoutine("r-1", "Morning reset", ["mood"]),
+        makeRoutine("r-2", "Reset kit", ["journal"], { cadence: "on-demand" }),
+      ]);
+      mockUseRoutineToolRecords.mockReturnValue({
+        moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      });
+
+      renderWithProviders(<RoutinesWidget userId="user-1" />);
+
+      expect(
+        screen.getByText("Everything came together today. Nothing left to do here."),
+      ).toBeTruthy();
+      expect(screen.getByText("1/1 steps")).toBeTruthy();
+    });
   });
 
   it("shows the calm done-for-today state with no streak language when all complete", () => {
