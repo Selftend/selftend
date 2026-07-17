@@ -103,8 +103,11 @@ test.describe("CBT belief: create, edit strength, and edit via wizard", () => {
     // Verify the new strength value (60) persisted: the selected NumberRating button
     // renders with variant="default" → "bg-primary" class; unselected buttons get
     // variant="outline" → "bg-background". Assert the first "60" button is selected.
+    // The selected state hydrates in an effect after the belief query resolves, so
+    // allow the same window as the belief-statement check above (default 5s can race it).
     await expect(page.getByRole("button", { name: "60", exact: true }).first()).toHaveClass(
       /bg-primary/,
+      { timeout: 10_000 },
     );
 
     // ── Full edit via wizard ────────────────────────────────────────────────────

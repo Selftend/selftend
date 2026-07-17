@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 
-import { deleteAllGratitudeEntriesForUser } from "./helpers";
+import { deleteAllGratitudeEntriesForUser, dismissPostSignInModals } from "./helpers";
 
 test.describe("edit and delete a gratitude entry", () => {
   test.beforeEach(async ({ user }) => {
@@ -16,6 +16,13 @@ test.describe("edit and delete a gratitude entry", () => {
 
     // --- CREATE ---
     await page.goto("/tools/gratitude-log/new");
+
+    // A prior spec's trailing preferences write can leave this worker user with a
+    // stale policy_version_accepted at boot; the consent gate then hijacks the
+    // deep link to "/". Clear any gates (no-op when absent), then deep-link again.
+    await dismissPostSignInModals(page);
+    await page.goto("/tools/gratitude-log/new");
+
     await page.getByRole("textbox", { name: "What made you laugh?" }).fill(originalItem);
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
