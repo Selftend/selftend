@@ -3,7 +3,7 @@
 Ready-to-post package for recruiting Google Play closed-test testers. Post this
 verbatim as an **image gallery post with body text** on r/AndroidClosedTesting.
 Format and conventions come from
-[docs/research/2026-07-16-reddit-androidclosedtesting-format.md](research/2026-07-16-reddit-androidclosedtesting-format.md)
+[docs/research/2026-07-16-reddit-androidclosedtesting-format.md](https://github.com/Selftend/selftend/blob/research/reddit-androidclosedtesting-format/docs/research/2026-07-16-reddit-androidclosedtesting-format.md) (on the `research/reddit-androidclosedtesting-format` branch)
 (wayfinder map [#108](https://github.com/Selftend/selftend/issues/108)).
 
 ## Title
