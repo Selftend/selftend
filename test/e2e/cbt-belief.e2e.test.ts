@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 
-import { deleteAllCoreBeliefsForUser } from "./helpers";
+import { deleteAllCoreBeliefsForUser, dismissPostSignInModals } from "./helpers";
 
 /**
  * Routes:
@@ -49,6 +49,12 @@ test.describe("CBT belief: create, edit strength, and edit via wizard", () => {
     const editedAlternativeBelief =
       "I am capable and continue to develop my skills with each challenge.";
 
+    await page.goto("/modules/cbt/beliefs/new");
+
+    // A prior spec's trailing preferences write can leave this worker user with a
+    // stale policy_version_accepted at boot; the consent gate then hijacks the
+    // deep link to "/". Clear any gates (no-op when absent), then deep-link again.
+    await dismissPostSignInModals(page);
     await page.goto("/modules/cbt/beliefs/new");
 
     // ── Step 1: Belief & triggers ──────────────────────────────────────────────
