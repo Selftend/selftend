@@ -111,9 +111,25 @@ jobs:
       # intended deploy->verify->bind path); if that release must also reach
       # the live Netlify site, re-publish it there manually. The note dies with
       # the Netlify site at cutover.
+
+      # wrangler 4.x requires Node >= 22; without this bump wrangler-action
+      # falls back to wrangler 3.90, which uploads _headers as a plain asset
+      # instead of applying it -- no CSP/HSTS, and staging loses its
+      # X-Robots-Tag (found at control-tower#68 verification). The Expo build
+      # above keeps 20.19.0.
+      - name: Switch to Node 22 for wrangler
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Pin Wrangler 4 explicitly: this repo has no wrangler dependency, so
+          # wrangler-action@v3 would otherwise install its packaged default
+          # (3.90), which uploads _headers as a plain asset. 4.x applies it (and
+          # requires the Node 22 step above).
+          wranglerVersion: "4"
           command: deploy --config ${{ inputs.environment == 'staging' && 'wrangler.staging.toml' || 'wrangler.toml' }}
