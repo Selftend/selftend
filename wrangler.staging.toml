@@ -1,0 +1,10 @@
+# Cloudflare Workers static-assets deploy — STAGING → staging.selftend.org
+# (Netlify-exit spec §4c). web-deploy.yml selects this config when called with
+# environment=staging; the guard job in staging.yml asserts the name below is
+# the staging Worker (never "selftend") before any deploy runs.
+name = "selftend-staging"
+compatibility_date = "2026-07-01"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
