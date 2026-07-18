@@ -1,8 +1,11 @@
 name: Web deploy
 
 # Reusable deploy invoked by the release orchestrator (release.yml) after
-# migrate-prod, and later by the staging orchestrator with staging inputs.
+# migrate-prod, and by the staging pipeline (staging.yml) with staging inputs.
 # workflow_dispatch is kept as a manual fallback (deploys main to production).
+# Target: Cloudflare Workers static assets (Netlify-exit spec §4c) — the
+# environment selects the wrangler config (prod: wrangler.toml → Worker
+# "selftend"; staging: wrangler.staging.toml → "selftend-staging").
 on:
   workflow_call:
     inputs:
@@ -21,7 +24,7 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy Web To Netlify
+    name: Deploy Web To Cloudflare
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: ${{ inputs.environment || 'production' }}
@@ -66,8 +69,8 @@ jobs:
 
       - name: Check deploy environment
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           missing=0
           for name in \
@@ -77,8 +80,8 @@ jobs:
             EXPO_PUBLIC_SUPPORT_EMAIL \
             EXPO_PUBLIC_PRIVACY_EMAIL \
             EXPO_PUBLIC_SECURITY_EMAIL \
-            NETLIFY_AUTH_TOKEN \
-            NETLIFY_SITE_ID
+            CLOUDFLARE_API_TOKEN \
+            CLOUDFLARE_ACCOUNT_ID
           do
             if [ -z "${!name}" ]; then
               echo "::error::$name must be set before deploying the web app."
@@ -102,8 +105,31 @@ jobs:
         run: |
           printf '\n/*\n  X-Robots-Tag: noindex\n' >> dist/_headers
 
-      - name: Deploy to Netlify production
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        run: npm exec --yes netlify-cli -- deploy --prod --dir=dist --site "$NETLIFY_SITE_ID" --auth "$NETLIFY_AUTH_TOKEN"
+      # TRANSITION NOTE (until the prod cutover, control-tower#69): production
+      # traffic is still served by Netlify until the owner binds selftend.org
+      # to the Worker. A Release in that window updates ONLY the Worker (the
+      # intended deploy->verify->bind path); if that release must also reach
+      # the live Netlify site, re-publish it there manually. The note dies with
+      # the Netlify site at cutover.
+
+      # wrangler 4.x requires Node >= 22; without this bump wrangler-action
+      # falls back to wrangler 3.90, which uploads _headers as a plain asset
+      # instead of applying it -- no CSP/HSTS, and staging loses its
+      # X-Robots-Tag (found at control-tower#68 verification). The Expo build
+      # above keeps 20.19.0.
+      - name: Switch to Node 22 for wrangler
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Pin Wrangler 4 explicitly: this repo has no wrangler dependency, so
+          # wrangler-action@v3 would otherwise install its packaged default
+          # (3.90), which uploads _headers as a plain asset. 4.x applies it (and
+          # requires the Node 22 step above).
+          wranglerVersion: "4"
+          command: deploy --config ${{ inputs.environment == 'staging' && 'wrangler.staging.toml' || 'wrangler.toml' }}

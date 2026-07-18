@@ -5,10 +5,14 @@ name: Staging pipeline
 # staging never runs new code against an un-migrated database (decisions
 # #16/#17; spec §6). workflow_dispatch is the manual fallback.
 #
-# The staging WEB build is deliberately NOT deployed here: every Netlify deploy
-# costs credits, so web deploys are manual-only via staging-web-deploy.yml
-# (day-to-day testing happens locally). Production web deploys still run
-# automatically from release.yml on main.
+# The staging WEB deploy returned to push-to-dev in the Netlify exit (spec
+# §4c): Cloudflare Workers has no per-deploy billing, so the credits reason
+# for manual-only staging web is gone. It gates on migrate-staging (staging
+# never serves new web against an un-migrated database) and on the guard job
+# (no silent prod-target fallback), and skips with a warning until the
+# CLOUDFLARE_* secrets exist in the staging Environment (control-tower#65).
+# The old manual staging-web-deploy.yml is retired; this workflow_dispatch
+# covers manual staging redeploys.
 #
 # No workflow-level concurrency (same reasoning as release.yml): cancelling a
 # run mid `db push` must be impossible; per-job groups serialize instead.
@@ -98,3 +102,62 @@ jobs:
         # Code only; function runtime secrets stay managed in the Supabase
         # project (decision #17).
         run: supabase functions deploy
+
+  # The old Netlify guard asserted the staging Environment's NETLIFY_SITE_ID
+  # wasn't silently falling back to the production site under secrets: inherit.
+  # The Cloudflare-shaped equivalent (spec §4c): the deploy target is now the
+  # committed wrangler config web-deploy.yml selects for staging, so assert
+  # those configs name the right Workers - a drift (or a copy-paste of the prod
+  # config) fails here before anything deploys. Also decides whether the deploy
+  # can run at all: skip with a warning while the CLOUDFLARE_* secrets are
+  # unprovisioned, rather than failing every push to dev.
+  guard:
+    name: Assert staging deploy target
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: staging
+    outputs:
+      configured: ${{ steps.secrets.outputs.configured }}
+    steps:
+      - name: Check out repository
+        # No ref: the triggering event's SHA - the same commit the migrate job
+        # runs and deploy-web-staging builds, so the guard checks the configs
+        # that will actually deploy.
+        uses: actions/checkout@v4
+
+      - name: Fail unless the wrangler configs target the right Workers
+        run: |
+          if ! grep -q '^name = "selftend-staging"$' wrangler.staging.toml; then
+            echo "::error::wrangler.staging.toml must name the staging Worker 'selftend-staging'. Refusing to deploy."
+            exit 1
+          fi
+          if ! grep -q '^name = "selftend"$' wrangler.toml; then
+            echo "::error::wrangler.toml must name the production Worker 'selftend'. Refusing to deploy."
+            exit 1
+          fi
+
+      - name: Check Cloudflare secrets
+        id: secrets
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$TOKEN" ] && [ -n "$ACCOUNT" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set in the staging Environment - skipping the web deploy (control-tower#65)."
+          fi
+
+  deploy-web-staging:
+    name: Deploy web (staging)
+    needs: [migrate-staging, guard]
+    if: needs.guard.outputs.configured == 'true'
+    uses: ./.github/workflows/web-deploy.yml
+    with:
+      # The triggering SHA, not the moving dev branch: if another commit lands
+      # on dev mid-run, this run still deploys exactly the commit its
+      # migrate-staging job migrated for (the next push's run covers the rest).
+      ref: ${{ github.sha }}
+      environment: staging
+    secrets: inherit

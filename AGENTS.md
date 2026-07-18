@@ -44,7 +44,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Image handling: expo-image-picker, expo-image-manipulator, react-easy-crop
 - Navigation support: react-native-screens, react-native-safe-area-context
 - Builds and submission: EAS Build and EAS Submit
-- Web deployment: Netlify
+- Web deployment: Cloudflare Workers (static assets; `wrangler.toml` prod / `wrangler.staging.toml` staging)
 - i18n: i18next + react-i18next + expo-localization, seven namespaces in `src/i18n/locales/`
 - Testing: Jest + @testing-library/react-native + jest-expo
 - Code quality: ESLint, Prettier, Husky (pre-commit hooks)
@@ -87,12 +87,21 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 ## Documentation rules
 
 - Keep docs direct and implementation-oriented.
-- `AGENTS.md` is the single source of truth for AI-agent instructions. No other file (`CLAUDE.md`, `.cursorrules`, `.clinerules`, `.windsurfrules`, etc.) should hold AI-agent rules. Contributor, user, product, and process docs are written for humans and should not link to, quote, or depend on AI-agent instructions.
+- `AGENTS.md` is the single source of truth for AI-agent instructions. No other file (`CLAUDE.md`, `.cursorrules`, `.clinerules`, `.windsurfrules`, etc.) should hold AI-agent rules. One exception: a `CLAUDE.md` that consists solely of an `@AGENTS.md` import line is permitted — it holds no rules itself, it only makes this file load for tools that read `CLAUDE.md`. Contributor, user, product, and process docs are written for humans and should not link to, quote, or depend on AI-agent instructions.
 - Prefer concrete decisions over vague aspiration.
 - When pricing or platform policy is mentioned, link to official sources where possible and record the date checked.
 - If a decision is uncertain, mark it as an assumption or open question instead of hiding the uncertainty.
 - After each meaningful product, infrastructure, or process change, update any human-facing doc whose content the change affects - setup, commands, deployment, store submission, environment variables, safety/legal boundaries, blockers, or expected user inputs. If a change affects setup commands or contributor-visible defaults, update `README.md` in the same change.
 - Per-PR review gates live in `.github/pull_request_template.md`.
+
+## Architecture rule
+
+Architectural changes must update control-tower. If this change adds/removes/moves a service,
+changes hosting/provider, adds or changes a domain or public URL, introduces a new external or
+cross-project dependency, or touches a credential — file a control-tower issue
+(`gh issue create -R vasilyoshev/control-tower ...`) or edit its `docs/inventory.md` directly if
+you have it checked out. Canonical rule:
+https://github.com/vasilyoshev/control-tower/blob/main/docs/architecture-rule.md
 
 ## Git safety rule
 
