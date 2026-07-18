@@ -97,13 +97,17 @@ jobs:
         run: npm run export:web
 
       - name: Mark staging as noindex
-        # Staging is public but unlisted (decision #16): a dist-level _headers
-        # file APPENDS X-Robots-Tag only on staging deploys - appended, never
-        # redirected, so the security headers exported from public/_headers
-        # (CSP, HSTS, ...) survive; production is untouched.
+        # Staging is public but unlisted (decision #16): inject X-Robots-Tag
+        # into the EXISTING `/*` block of dist/_headers on staging deploys only.
+        # It must be merged, not appended as a second `/*` block: Netlify merged
+        # duplicate-pattern blocks, but Cloudflare Workers static assets does
+        # NOT — a second `/*` clobbers the first, silently dropping every
+        # security header (CSP, HSTS, X-Frame-Options, ...). Verified against
+        # wrangler dev. Production skips this step, so its single `/*` block is
+        # untouched.
         if: ${{ inputs.environment == 'staging' }}
         run: |
-          printf '\n/*\n  X-Robots-Tag: noindex\n' >> dist/_headers
+          sed -i '0,/^\/\*$/s//\/*\n  X-Robots-Tag: noindex/' dist/_headers
 
       # TRANSITION NOTE (until the prod cutover, control-tower#69): production
       # traffic is still served by Netlify until the owner binds selftend.org
