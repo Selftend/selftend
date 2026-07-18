@@ -1,5 +1,5 @@
-export const policyLastUpdated = "2026-07-04";
-export const policyVersion = "2026-07-04-error-monitoring";
+export const policyLastUpdated = "2026-07-18";
+export const policyVersion = "2026-07-18-web-host-cloudflare";
 
 /**
  * Set to true while policies await final human/legal review.
