@@ -20,7 +20,7 @@ References:
 
 Current launch path and default public product path:
 
-- Expo web app on Netlify or equivalent static host
+- Expo web app on Cloudflare Workers (static assets) or equivalent static host
 - maintainer Supabase project
 - mobile builds configured with maintainer Supabase URL and publishable key
 
