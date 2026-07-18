@@ -120,10 +120,10 @@ jobs:
       configured: ${{ steps.secrets.outputs.configured }}
     steps:
       - name: Check out repository
+        # No ref: the triggering event's SHA - the same commit the migrate job
+        # runs and deploy-web-staging builds, so the guard checks the configs
+        # that will actually deploy.
         uses: actions/checkout@v4
-        with:
-          # web-deploy.yml builds ref dev - guard the same ref's configs.
-          ref: dev
 
       - name: Fail unless the wrangler configs target the right Workers
         run: |
@@ -155,6 +155,9 @@ jobs:
     if: needs.guard.outputs.configured == 'true'
     uses: ./.github/workflows/web-deploy.yml
     with:
-      ref: dev
+      # The triggering SHA, not the moving dev branch: if another commit lands
+      # on dev mid-run, this run still deploys exactly the commit its
+      # migrate-staging job migrated for (the next push's run covers the rest).
+      ref: ${{ github.sha }}
       environment: staging
     secrets: inherit

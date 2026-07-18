@@ -105,6 +105,12 @@ jobs:
         run: |
           printf '\n/*\n  X-Robots-Tag: noindex\n' >> dist/_headers
 
+      # TRANSITION NOTE (until the prod cutover, control-tower#69): production
+      # traffic is still served by Netlify until the owner binds selftend.org
+      # to the Worker. A Release in that window updates ONLY the Worker (the
+      # intended deploy->verify->bind path); if that release must also reach
+      # the live Netlify site, re-publish it there manually. The note dies with
+      # the Netlify site at cutover.
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
