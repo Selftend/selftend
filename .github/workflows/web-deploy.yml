@@ -127,4 +127,9 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Pin Wrangler 4 explicitly: this repo has no wrangler dependency, so
+          # wrangler-action@v3 would otherwise install its packaged default
+          # (3.90), which uploads _headers as a plain asset. 4.x applies it (and
+          # requires the Node 22 step above).
+          wranglerVersion: "4"
           command: deploy --config ${{ inputs.environment == 'staging' && 'wrangler.staging.toml' || 'wrangler.toml' }}
