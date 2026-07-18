@@ -1,0 +1,10 @@
+# Cloudflare Workers static-assets deploy — PRODUCTION → selftend.org
+# (Netlify-exit spec §4c, control-tower docs/migrations/netlify-exit.md).
+# Separate configs keep prod/staging isolated; staging.yml's guard asserts the
+# names below never drift onto each other's Worker.
+name = "selftend"
+compatibility_date = "2026-07-01"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"

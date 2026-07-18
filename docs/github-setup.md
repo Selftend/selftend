@@ -49,7 +49,7 @@ Workspace settings in `.vscode/settings.json` make Prettier the default VS Code/
 
 `Android development APK` is manual. It checks out a chosen ref (defaults to the workflow ref), runs a local EAS Android development build on the GitHub runner via `npm run build:android:development:local`, and uploads the resulting `.apk` as an artifact. It does not submit to Google Play; use it for ad-hoc tester APKs that don't need a Play track.
 
-`Web production deploy` is manual. It checks out `main`, exports the Expo web app, and deploys `dist` to Netlify production.
+`Web production deploy` is manual. It checks out `main`, exports the Expo web app, and deploys `dist` to the production Cloudflare Worker (`wrangler.toml`); staging deploys run from `staging.yml` on push to `dev` against `wrangler.staging.toml`.
 
 ### Release variables
 
@@ -75,8 +75,8 @@ Workspace settings in `.vscode/settings.json` make Prettier the default VS Code/
 | Secret                             | Web deploy | Android release                                   | Android development | Notes                                                                          |
 | ---------------------------------- | ---------- | ------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------ |
 | `EXPO_TOKEN`                       | n/a        | required                                          | required            | EAS authentication for both Android builds.                                    |
-| `NETLIFY_AUTH_TOKEN`               | required   | n/a                                               | n/a                 | Netlify CLI deploy.                                                            |
-| `NETLIFY_SITE_ID`                  | required   | n/a                                               | n/a                 | Netlify CLI deploy.                                                            |
+| `CLOUDFLARE_API_TOKEN`             | required   | n/a                                               | n/a                 | Wrangler deploy ("Edit Cloudflare Workers" template token; per-Environment).   |
+| `CLOUDFLARE_ACCOUNT_ID`            | required   | n/a                                               | n/a                 | Cloudflare account id (not sensitive, stored alongside the token).             |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | n/a        | required only when `submit_to_play` input is true | n/a                 | The release workflow errors out when this is missing while submitting to Play. |
 
 Use GitHub branch, environment, or workflow permission controls before sharing release rights with additional maintainers.
