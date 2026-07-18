@@ -56,10 +56,6 @@ export function ContinueRoutineSheet({
   const [reminderTime, setReminderTime] = useState(() => roundToNearestHalfHour(new Date()));
   const [reminderError, setReminderError] = useState<string | undefined>();
 
-  // Only scheduled-today routines qualify (#104): open steps on an on-demand
-  // or off-today routine never surface in the sheet, mirroring the FAB.
-  const openViews = views.filter((view) => view.scheduledToday && view.day.nextStep !== null);
-
   // Pin the shown routine when the sheet opens (firstOpenRoutineView - the
   // same selection the FAB counts, #91) so it stays put if it completes
   // mid-session - that is the moment the completion state must show instead
@@ -82,8 +78,9 @@ export function ContinueRoutineSheet({
   }, [visible, views, initialRoutineId]);
 
   // Pre-effect fallback goes through the SAME selector the FAB counts with
-  // (#121): openViews[0] could disagree for the first visible frame when a
-  // later routine is in progress, flashing (and announcing) the wrong one.
+  // (#121): a naive first-scheduled-open pick could disagree for the first
+  // visible frame when a later routine is in progress, flashing (and
+  // announcing) the wrong one.
   const selected =
     views.find((view) => view.routine.id === selectedId) ?? firstOpenRoutineView(views) ?? null;
 
