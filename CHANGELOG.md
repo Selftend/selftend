@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/Selftend/selftend/compare/v0.4.0...v0.4.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* **deps:** override transitive uuid@7 to 11.1.1 (Dependabot alert 10) ([#129](https://github.com/Selftend/selftend/issues/129)) ([3138abe](https://github.com/Selftend/selftend/commit/3138abe027b3d61161bf1652cbaaa8e208693feb))
+* run wrangler on Node 22 so _headers applies ([#132](https://github.com/Selftend/selftend/issues/132)) ([779546f](https://github.com/Selftend/selftend/commit/779546ff2728b71523f0fbf1dabefea472629d48))
+
 ## [0.4.0](https://github.com/Selftend/selftend/compare/v0.3.3...v0.4.0) (2026-07-16)
 
 
