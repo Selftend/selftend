@@ -47,7 +47,7 @@ Two speeds: mitigate first, then make the fix permanent. The database is
 
 **1. Immediate mitigation (minutes):**
 
-- **Web** — re-publish the previous good deploy: Netlify → `silver-tartufo-aee20e` (production site) → Deploys → pick the last good deploy → **Publish deploy**. Instant, no rebuild. Fallback: `workflow_dispatch` the release pipeline with the prior release `tag`.
+- **Web** — redeploy the previous good version to the Cloudflare Worker: either **Cloudflare dash → Workers → `selftend` → Deployments → roll back** to the prior version (instant, no rebuild), or `workflow_dispatch` the `Web production deploy` workflow (`web-deploy.yml`) / re-run `release.yml` on the prior release `tag`.
 - **Android** — Play has no un-release for a versionCode: in Play Console, **halt/deactivate the bad release** on the closed-testing track. A fixed build with a higher versionCode supersedes it.
 - **Database** — do nothing schema-wise. For genuine data corruption only: restore from the daily `db-backup.yml` backup (accepts up to ~24h data loss unless Supabase PITR is enabled — recommended).
 

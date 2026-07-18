@@ -1,5 +1,5 @@
-export const policyLastUpdated = "2026-07-04";
-export const policyVersion = "2026-07-04-error-monitoring";
+export const policyLastUpdated = "2026-07-18";
+export const policyVersion = "2026-07-18-web-host-cloudflare";
 
 /**
  * Set to true while policies await final human/legal review.
@@ -71,7 +71,7 @@ export const privacyPolicySections: PolicySection[] = [
     body: [
       "Supabase (Supabase Inc., USA): provides authentication, database hosting, and backend infrastructure. Supabase processes your email and app data on our behalf under their Data Processing Agreement. See supabase.com/privacy.",
       "Google (Google LLC, USA): processes your email and account identifiers only if you choose Google OAuth sign-in. See policies.google.com/privacy.",
-      "Netlify (Netlify Inc., USA): serves the static web application. Netlify does not receive or process your personal data beyond standard web server logs (IP address in access logs, subject to Netlify's privacy policy).",
+      "Cloudflare (Cloudflare, Inc., USA): serves the static web application via Cloudflare Workers. Cloudflare does not receive or process your personal data beyond standard edge server logs (IP address in access logs, subject to Cloudflare's privacy policy).",
       "Expo / EAS (Expo Inc., USA): used for mobile app builds and submission. Does not receive user personal data at runtime.",
       "Browser push services (for example Apple, Google, Mozilla, or Microsoft depending on your browser): deliver web push reminders only after you opt in through your browser.",
       "We do not share your data with any other third parties, advertisers, or data brokers.",

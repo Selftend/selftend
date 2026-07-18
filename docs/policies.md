@@ -47,14 +47,14 @@ and clear the flag **before the open production release**.
 
 ### Data processors
 
-| Processor                                  | Role                      | DPA                                                   |
-| ------------------------------------------ | ------------------------- | ----------------------------------------------------- |
-| Supabase Inc. (USA)                        | Database, auth, backend   | [Supabase DPA](https://supabase.com/legal/dpa)        |
-| Google LLC (USA)                           | OAuth provider (optional) | [Google Privacy](https://policies.google.com/privacy) |
-| Netlify Inc. (USA)                         | Static web hosting        | [Netlify DPA](https://www.netlify.com/legal/dpa/)     |
-| Expo Inc. (USA)                            | Build tooling only        | No runtime data processing                            |
-| Functional Software, Inc. dba Sentry (USA) | Crash and error reporting | [Sentry DPA](https://sentry.io/legal/dpa/)            |
-| Browser push services                      | Web push delivery         | Depends on the user's browser vendor                  |
+| Processor                                  | Role                      | DPA                                                                   |
+| ------------------------------------------ | ------------------------- | --------------------------------------------------------------------- |
+| Supabase Inc. (USA)                        | Database, auth, backend   | [Supabase DPA](https://supabase.com/legal/dpa)                        |
+| Google LLC (USA)                           | OAuth provider (optional) | [Google Privacy](https://policies.google.com/privacy)                 |
+| Cloudflare, Inc. (USA)                     | Static web hosting        | [Cloudflare DPA](https://www.cloudflare.com/cloudflare-customer-dpa/) |
+| Expo Inc. (USA)                            | Build tooling only        | No runtime data processing                                            |
+| Functional Software, Inc. dba Sentry (USA) | Crash and error reporting | [Sentry DPA](https://sentry.io/legal/dpa/)                            |
+| Browser push services                      | Web push delivery         | Depends on the user's browser vendor                                  |
 
 ### Data retention
 
@@ -65,7 +65,7 @@ and clear the flag **before the open production release**.
 
 ### International transfers
 
-EU/EEA data may be processed in the US by Supabase, Google, Netlify, and Sentry. Transfers rely on:
+EU/EEA data may be processed in the US by Supabase, Google, Cloudflare, and Sentry. Transfers rely on:
 
 - Standard Contractual Clauses (SCCs)
 - Processor DPAs with appropriate safeguards
