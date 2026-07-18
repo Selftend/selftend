@@ -15,7 +15,7 @@
 - Media: Expo ImagePicker for profile pictures
 - Secure local storage: Expo SecureStore
 - Builds/submission: EAS Build + EAS Submit
-- Web hosting: static Expo web export on Netlify or equivalent
+- Web hosting: static Expo web export on Cloudflare Workers (static assets) or equivalent
 - Testing: Jest + React Native Testing Library; Playwright for web e2e
 
 ## Platform Decisions
@@ -91,7 +91,7 @@ Avoid by default:
 
 ## Backend And Hosting
 
-Supabase is the MVP backend for auth, Postgres, RLS, storage, and edge functions. **Supabase Vault** holds the field encryption key outside the database; **pgcrypto** (`pgp_sym_encrypt` / `pgp_sym_decrypt`) is the crypto primitive for field-level encryption at rest. Netlify is the frontend host for the Expo web app at `https://selftend.org`. Native apps use Supabase directly and may open Netlify-hosted public policy pages.
+Supabase is the MVP backend for auth, Postgres, RLS, storage, and edge functions. **Supabase Vault** holds the field encryption key outside the database; **pgcrypto** (`pgp_sym_encrypt` / `pgp_sym_decrypt`) is the crypto primitive for field-level encryption at rest. Cloudflare Workers (static assets) is the frontend host for the Expo web app at `https://selftend.org`. Native apps use Supabase directly and may open the Cloudflare-hosted public policy pages.
 
 The hosted path uses public `EXPO_PUBLIC_*` values. Never put service-role keys, database passwords, SMTP secrets, OAuth secrets, JWT secrets, or private backend credentials in Expo public env vars.
 

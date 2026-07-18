@@ -4,21 +4,21 @@ This project should launch the browser app as a single-page Expo web export. Do 
 
 Recommended production shape:
 
-- Domain registrar and DNS: Porkbun, using `selftend.org`
-- Frontend host: Netlify
+- Domain registrar: Porkbun (`selftend.org`); DNS: Cloudflare (nameservers `daphne`/`moura.ns.cloudflare.com`)
+- Frontend host: Cloudflare Workers (static assets)
 - Backend: Supabase
 - App routing: Expo Router, with `app/+not-found.tsx` handling unmatched routes at runtime
 
-Netlify serves the browser app and public policy pages. Supabase manages accounts, sessions, OAuth, and private app data for both web and native builds. Keep those responsibilities separate: do not add a custom web backend just to host the Expo app, and do not move the frontend into Supabase Edge Functions by default.
+Cloudflare Workers serves the browser app and public policy pages as static assets. Supabase manages accounts, sessions, OAuth, and private app data for both web and native builds. Keep those responsibilities separate: do not add a custom web backend just to host the Expo app, and do not move the frontend into Supabase Edge Functions by default.
 
 For self-hosted and bring-your-own-Supabase builds, see [self-hosting.md](self-hosting.md).
 
 Official references:
 
 - Expo publishing websites: <https://docs.expo.dev/guides/publishing-websites/>
-- Netlify deploy configuration: <https://docs.netlify.com/configure-builds/file-based-configuration/>
-- Netlify redirects and rewrites: <https://docs.netlify.com/routing/redirects/>
-- Netlify custom domains: <https://docs.netlify.com/domains-https/custom-domains/>
+- Cloudflare Workers static assets: <https://developers.cloudflare.com/workers/static-assets/>
+- Workers `_headers` / `_redirects`: <https://developers.cloudflare.com/workers/static-assets/headers/>
+- Workers custom domains: <https://developers.cloudflare.com/workers/configuration/routing/custom-domains/>
 - Supabase redirect URLs: <https://supabase.com/docs/guides/auth/redirect-urls>
 - Supabase custom domains: <https://supabase.com/docs/guides/platform/custom-domains>
 - Expo Linking createURL: <https://docs.expo.dev/linking/into-other-apps/>
@@ -41,7 +41,7 @@ Porkbun's included email forwarding is enough for early aliases such as `support
 
 ## Hosting Portability
 
-Netlify is the recommended first production frontend host. It is not a backend dependency. Supabase remains the backend for auth, database, storage, and any future Supabase Edge Functions.
+Cloudflare Workers (static assets) is the production frontend host. It is not a backend dependency. Supabase remains the backend for auth, database, storage, and any future Supabase Edge Functions. The frontend stays portable — any static host that serves `index.html` for unknown routes works — so the host can change without touching app code.
 
 Do not move the frontend app into Supabase Edge Functions as the default plan. Supabase custom domains are for Supabase project URLs such as APIs, Auth, Storage, and Edge Functions; Supabase documents that custom domains are not intended to host frontend applications through Edge Functions.
 
@@ -53,34 +53,23 @@ The portable contract is:
 - let Expo Router handle unmatched paths with `app/+not-found.tsx`
 - keep app URLs in environment variables and Supabase dashboard configuration, not hard-coded into app flows
 
-## Netlify Deployment
+## Cloudflare Workers Deployment
 
-Netlify never builds this project: `netlify.toml` sets `ignore = "exit 0"`, which skips ALL git- and dashboard-triggered builds (the dashboard's "Trigger deploy" button included — it will report "no content change"). GitHub Actions is the only deployer: it builds the export and publishes prebuilt output via `netlify-cli`, which this guard does not affect. Production deploys run automatically on a published Release (`release.yml`); manual fallbacks are the "Web deploy" and "Staging web deploy (manual)" workflows in the Actions tab. Keep the dashboard's Build status on "Stopped builds" — it expresses the same architecture and spends no Netlify build credits.
+GitHub Actions is the only deployer. It builds the Expo web export and publishes the prebuilt `dist/` to a Cloudflare Worker (static assets) via `wrangler` — Cloudflare never builds the project itself. Cloudflare Workers has **no per-deploy billing**, so deploys run on push:
 
-This repo also includes a manual GitHub Actions workflow, `Web production deploy`, for maintainer-triggered production deploys from the current `main` branch. Use that workflow when you want a reproducible deploy from GitHub without enabling Netlify's continuous deployment hook.
+- **Production** (`selftend.org` + `www.selftend.org`, Worker `selftend`): deploys on a **published Release** (`release.yml`, after the prod DB migration gate). Manual fallback: the `Web production deploy` (`web-deploy.yml`) workflow in the Actions tab.
+- **Staging** (`staging.selftend.org`, Worker `selftend-staging`): deploys on **push to `dev`** (`staging.yml`, after the staging DB migration gate). Staging is served `noindex`.
 
-This repo includes [netlify.toml](../netlify.toml), which sets:
+The deploy step uses `cloudflare/wrangler-action@v3` on Node 22, selecting the config by environment:
 
-- build command: `npm run export:web`
-- publish directory: `dist`
-- Node version: `20.19.0`
-- SPA fallback: `/*` rewrites to `/index.html`
+- [`wrangler.toml`](../wrangler.toml) — production Worker `selftend`, assets from `dist/`, SPA fallback (`not_found_handling = "single-page-application"`).
+- [`wrangler.staging.toml`](../wrangler.staging.toml) — staging Worker `selftend-staging`.
 
-Netlify setup:
+Build env comes from GitHub Actions **variables** (`EXPO_PUBLIC_*`); the deploy needs the `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` secrets (see below). Security headers ship via `public/_headers` (copied into `dist/`), which Cloudflare Workers static assets applies natively; the staging deploy injects `X-Robots-Tag: noindex` into the existing `/*` block.
 
-1. Create or sign in to a Netlify account.
-2. Add a new site from GitHub.
-3. Select `Selftend/selftend`.
-4. Use the settings from `netlify.toml`.
-5. Add production environment variables listed below.
-6. Deploy from `main`.
-7. Open the Netlify preview URL and verify the public routes.
-8. Add `selftend.org` as the production custom domain.
-9. Keep DNS at Porkbun unless there is a reason to move it.
-10. Add the DNS records Netlify provides into Porkbun DNS.
-11. Wait for HTTPS certificate provisioning to complete.
+Custom-domain binding (one-time, dashboard): Cloudflare dash → Workers → the Worker → **Domains → Add Domain**. The zone must be on Cloudflare nameservers first, and any pre-existing DNS record for the hostname must be deleted before binding (Cloudflare refuses a custom domain over an existing record). Cloudflare provisions the edge TLS cert automatically.
 
-Required Netlify environment variables:
+Required build-time GitHub Actions **variables** (production Environment):
 
 ```text
 EXPO_PUBLIC_SUPABASE_URL=<supabase-project-url>
@@ -99,7 +88,7 @@ Optional:
 EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 ```
 
-`EXPO_PUBLIC_PUBLIC_APP_URL` is baked into the JavaScript bundle during export and is used as the explicit web auth callback base. If it changes or was missing, update the Netlify environment variable and redeploy.
+`EXPO_PUBLIC_PUBLIC_APP_URL` is baked into the JavaScript bundle during export and is used as the explicit web auth callback base. If it changes or was missing, update the GitHub Actions variable and redeploy.
 
 `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` is also baked into the web bundle. Browser reminders stay disabled until this public key is present and the matching private key is configured in Supabase Edge Function secrets.
 
@@ -112,7 +101,7 @@ Because the app uses `web.output = "single"`, PWA head tags are added through `p
 Before production web push testing:
 
 1. Generate VAPID keys, for example with `npx web-push generate-vapid-keys`.
-2. Set `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` in Netlify and GitHub repository variables.
+2. Set `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` in the GitHub repository variables.
 3. Apply the database migration so `web_push_subscriptions`, `pg_cron`, `pg_net`, and Vault are available:
 
 ```bash
@@ -151,12 +140,11 @@ iOS and iPadOS web push requires the user to install the web app to the Home Scr
 
 ### GitHub Actions Web Deploy
 
-The manual `.github/workflows/web-deploy.yml` workflow:
+The reusable `.github/workflows/web-deploy.yml` workflow (called by `release.yml` for prod and `staging.yml` for staging; also manually dispatchable):
 
-- checks out `main`
-- installs dependencies with Node `20.19.0`
-- runs `npm run export:web`
-- deploys `dist` to Netlify production with `netlify-cli`
+- checks out the release tag (prod) or the triggering `dev` SHA (staging)
+- installs dependencies and builds with Node `20.19.0`, runs `npm run export:web`
+- switches to Node 22 and deploys `dist` (+ the `worker`-less static-assets config) via `cloudflare/wrangler-action@v3`, selecting `wrangler.toml` (prod) or `wrangler.staging.toml` (staging)
 
 Required GitHub repository variables:
 
@@ -181,14 +169,14 @@ EXPO_PUBLIC_DISCORD_URL
 
 `EXPO_PUBLIC_GITHUB_REPO_URL` is optional in app code because a default exists, but setting it in GitHub keeps the release environment explicit. `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` default to empty (showing a "Coming soon" chip), and `EXPO_PUBLIC_DISCORD_URL` defaults to the maintainer's Discord invite; set it to an empty string to hide all Discord UI.
 
-Required GitHub repository secrets:
+Required GitHub secrets (per Environment — `production` and `staging`):
 
 ```text
-NETLIFY_AUTH_TOKEN
-NETLIFY_SITE_ID
+CLOUDFLARE_API_TOKEN
+CLOUDFLARE_ACCOUNT_ID
 ```
 
-Use GitHub repository or environment protection rules if more than one maintainer can run production deploys.
+`CLOUDFLARE_API_TOKEN` is an "Edit Cloudflare Workers" template token scoped to the account; `CLOUDFLARE_ACCOUNT_ID` is the account id (not secret, stored alongside). Use GitHub repository or environment protection rules if more than one maintainer can run production deploys.
 
 ## Web Build
 
@@ -220,7 +208,7 @@ The web build uses `web.output = "single"` in [app.config.ts](../app.config.ts).
 
 ## Production Headers
 
-[public/\_headers](../public/_headers) contains the Netlify security headers. Keep the Content Security Policy restrictive, but allow avatar images from:
+[public/\_headers](../public/_headers) contains the security headers (Cloudflare Workers static assets applies this file natively; it is copied into `dist/` by the export). Keep the Content Security Policy restrictive, but allow avatar images from:
 
 - `https://*.supabase.co` for private Storage signed URLs
 - `https://*.googleusercontent.com` for Google OAuth profile photos
@@ -366,15 +354,14 @@ Web launch is acceptable only when:
 
 ## Troubleshooting
 
-### Unknown routes show Netlify's 404 page
+### Unknown routes return 404 instead of the app
 
 Check in this order:
 
-1. Confirm [netlify.toml](../netlify.toml) is present in the deployed branch.
-2. Confirm the latest Netlify deploy used the repo root, not a subdirectory.
-3. Confirm publish directory is `dist`.
-4. Confirm the deployed `netlify.toml` has the `/*` rewrite to `/index.html`.
-5. Redeploy from `main`.
+1. Confirm [wrangler.toml](../wrangler.toml) has `not_found_handling = "single-page-application"` under `[assets]`.
+2. Confirm the deploy uploaded `dist/` (the Expo web export), not an empty or wrong directory.
+3. Confirm the latest `Web deploy` GitHub Actions run for the environment succeeded.
+4. Re-run the deploy (`release.yml` for prod, push to `dev` / `staging.yml` for staging).
 
 ### Google sign-in returns to `localhost:8081`
 
@@ -398,7 +385,7 @@ https://selftend.org/auth-callback
 http://localhost:8081/auth-callback
 ```
 
-4. In Netlify, set and redeploy with:
+4. In the GitHub Actions production variables, set and redeploy with:
 
 ```text
 EXPO_PUBLIC_PUBLIC_APP_URL=https://selftend.org

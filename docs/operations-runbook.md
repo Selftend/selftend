@@ -177,7 +177,7 @@ A personal data breach means a security incident that affects confidentiality, a
 3. Assess risk to individuals. Pay extra attention to account data, self-help records, reminder subscriptions, and any content that could reveal mental-health or wellness information.
 4. If the breach is likely to risk individuals' rights and freedoms, notify the relevant supervisory authority without undue delay and no later than 72 hours after becoming aware of it.
 5. If the breach is likely to create high risk for affected users, notify those users directly unless effective measures make the risk unlikely to materialize.
-6. If Selftend receives a processor breach notice from Supabase, Netlify, Google, Expo, or another provider, assess whether Selftend must notify authorities or users.
+6. If Selftend receives a processor breach notice from Supabase, Cloudflare, Google, Expo, or another provider, assess whether Selftend must notify authorities or users.
 7. After closure, add prevention tasks to [.github/ROADMAP.md](../.github/ROADMAP.md) without exposing private incident details.
 
 ## DPIA Screening
@@ -206,14 +206,14 @@ Initial decision on 2026-05-12: Selftend uses US-based processors and relies on 
 Current safeguards:
 
 - Supabase DPA executed via PandaDoc on 2026-05-12.
-- Netlify, Supabase, Google OAuth, Expo/EAS, and browser push services are disclosed in the privacy policy where relevant.
+- Cloudflare, Supabase, Google OAuth, Expo/EAS, and browser push services are disclosed in the privacy policy where relevant.
 - No advertising networks, analytics trackers, or data brokers are used.
 - User data is minimized to account email, preferences, optional reminder data, and user-created records.
 - Users can request transfer-safeguard information through `privacy@selftend.org`.
 
 Open follow-up:
 
-- Confirm and record Netlify DPA status before broad public launch.
+- Confirm and record Cloudflare DPA status before broad public launch.
 - Keep processor locations, transfer mechanisms, and privacy policy disclosures current.
 - Reassess transfers if a new processor, analytics provider, AI provider, or hosted support tool is added.
 

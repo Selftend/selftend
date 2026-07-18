@@ -104,9 +104,9 @@ Expo gives the web build, not the hosting bill.
 
 Initial recommendation:
 
-- static frontend hosting on Netlify's free tier or an equivalent platform
-- Netlify should be verified against current pricing and bandwidth/build limits before launch
-- Source: <https://www.netlify.com/pricing/>
+- static frontend hosting on Cloudflare Workers' free tier (static-asset requests are free/unmetered; no per-deploy billing) or an equivalent platform
+- Cloudflare Workers limits should be verified against current pricing before launch
+- Source: <https://developers.cloudflare.com/workers/platform/pricing/>
 
 The browser app should stay cheap if it remains a mostly static front-end that talks to Supabase.
 
@@ -178,7 +178,7 @@ Avoid paying for these before the product earns them:
 - Supabase self-hosting with Docker: <https://supabase.com/docs/guides/self-hosting/docker>
 - PikaPods docs: <https://docs.pikapods.com/>
 - Resend pricing: <https://resend.com/pricing>
-- Netlify pricing: <https://www.netlify.com/pricing/>
+- Cloudflare Workers pricing: <https://developers.cloudflare.com/workers/platform/pricing/>
 - Google Play developer account requirements: <https://support.google.com/googleplay/android-developer/answer/13628312>
 - Google Play registration payment: <https://support.google.com/googleplay/android-developer/answer/6112435>
 - Google Workspace pricing update reference: <https://workspace.google.com/blog/product-announcements/pricing-updates-and-more-flexible-payment-options-google-workspace>
