@@ -67,7 +67,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.20",
-    "expo": "~54.0.35",
+    "expo": "~54.0.36",
     "expo-av": "~16.0.8",
     "expo-constants": "~18.0.13",
     "expo-dev-client": "~6.0.21",
