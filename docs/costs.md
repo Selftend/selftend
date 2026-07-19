@@ -34,7 +34,7 @@ Use this while the project is private or in early testing.
 
 - Expo Free: `$0`
 - Supabase Free: `$0`
-- Resend Free: `$0`
+- AWS SES (pay-per-use, ~`$0.10`/1k emails): `~$0` at prototype volume
 - Static web hosting on a free tier: `$0`
 - Sentry Developer plan (SaaS): `$0` at closed-testing volume; source: <https://sentry.io/pricing/> (checked 2026-07-04)
 
@@ -54,13 +54,13 @@ This is the realistic baseline for a real public launch with account-based sync.
 
 - Expo Starter: `$19/month`
 - Supabase Pro: `$25/month`
-- Resend Free to Pro: `$0-$20/month`
+- AWS SES (pay-per-use): `~$0-$1/month` at MVP volume
 - Static web hosting: `$0/month` on a free-tier static host, if usage remains modest
 
 Expected monthly core infra:
 
-- lean public launch: about `$44/month`
-- with paid email: about `$64/month`
+- lean public launch: about `$44/month` (email on SES is pay-per-use and rounds
+  to `~$0` at this volume, so it does not materially change the total)
 
 Plus annual / one-time:
 
@@ -75,8 +75,8 @@ Use this when the product has real traffic, more frequent builds, or a small act
 - Expo Production: `$199/month` if Starter becomes too limiting
 - Supabase Pro: `$25/month`, plus usage and possibly extra project compute
 - Supabase additional project compute: `~$10/month` per additional default project, per the billing FAQ example
-- Resend Pro: `$20/month`
-- Resend Scale if volume demands it: `$90/month`
+- AWS SES (pay-per-use): `~$1-$5/month` at this volume
+- AWS SES dedicated IP, only if deliverability demands it: `~$25/month`
 
 Expected monthly core infra:
 
@@ -177,7 +177,7 @@ Avoid paying for these before the product earns them:
 - Supabase billing overview: <https://supabase.com/docs/guides/platform/billing-on-supabase>
 - Supabase self-hosting with Docker: <https://supabase.com/docs/guides/self-hosting/docker>
 - PikaPods docs: <https://docs.pikapods.com/>
-- Resend pricing: <https://resend.com/pricing>
+- AWS SES pricing: <https://aws.amazon.com/ses/pricing/>
 - Cloudflare Workers pricing: <https://developers.cloudflare.com/workers/platform/pricing/>
 - Google Play developer account requirements: <https://support.google.com/googleplay/android-developer/answer/13628312>
 - Google Play registration payment: <https://support.google.com/googleplay/android-developer/answer/6112435>

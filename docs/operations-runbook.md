@@ -225,9 +225,10 @@ these can be verified from the repo.
 - **Custom SMTP is configured** in Supabase Dashboard -> Project Settings ->
   Auth -> SMTP. Supabase's built-in email service is rate-limited to a few
   emails per hour and will break a tester wave with email confirmations
-  enabled. Resend is the preferred provider (already a processor via the
-  send-feedback function). Send a test signup and confirm the email arrives
-  from the custom domain.
+  enabled. The stack uses **AWS SES** for outbound mail (the `send-feedback`
+  function; Resend is being retired — control-tower #102), so prefer **SES** for
+  auth custom SMTP too. Send a test signup and confirm the email arrives from
+  the custom domain.
 - **Auth rate limits reviewed** in Supabase Dashboard -> Auth -> Rate Limits:
   confirm sign-up, sign-in, OTP, and recovery limits will not lock out a
   12-20 tester wave arriving the same day (several testers may share an

@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.103.2";
 import { buildFeedbackEmailHtml, validateFeedbackInput } from "../_shared/feedback.ts";
+import { sendEmail } from "../_shared/ses.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,7 +90,7 @@ Deno.serve(async (request) => {
       });
     }
 
-    // Per-user rate limit (prevents authenticated email-bomb / Resend quota abuse).
+    // Per-user rate limit (prevents authenticated email-bomb / SES quota + cost abuse).
     const { data: allowed, error: rateError } = await supabase.rpc("record_feedback_submission");
     if (rateError) throw rateError;
     if (!allowed) {
@@ -99,30 +100,25 @@ Deno.serve(async (request) => {
       });
     }
 
-    const resendApiKey = requiredEnv("RESEND_API_KEY");
     const supportEmail = requiredEnv("SUPPORT_EMAIL");
-    const fromEmail = requiredEnv("RESEND_FROM_EMAIL");
+    const fromEmail = requiredEnv("SES_FROM_EMAIL");
 
-    const resendResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${resendApiKey}`,
+    // `category` is the sanitized value returned by validateFeedbackInput; sendEmail
+    // throws on any non-2xx SES response, caught by the outer try/catch below.
+    await sendEmail(
+      {
+        accessKeyId: requiredEnv("SES_ACCESS_KEY_ID"),
+        secretAccessKey: requiredEnv("SES_SECRET_ACCESS_KEY"),
+        region: requiredEnv("SES_REGION"),
       },
-      body: JSON.stringify({
+      {
         from: fromEmail,
         to: supportEmail,
-        reply_to: user.email,
+        replyTo: user.email ?? undefined,
         subject: `Selftend feedback [${category}]`,
         html: buildFeedbackEmailHtml(category, trimmed, user.email ?? ""),
-        // `category` here is the sanitized value returned by validateFeedbackInput.
-      }),
-    });
-
-    if (!resendResponse.ok) {
-      const body = await resendResponse.text();
-      throw new Error(`Resend error ${resendResponse.status}: ${body}`);
-    }
+      },
+    );
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...jsonHeaders, ...corsHeaders },
