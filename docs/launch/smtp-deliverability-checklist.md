@@ -17,10 +17,15 @@ tester wave can be lost silently.
   templates at `supabase/templates/*.html` (confirmation, recovery, email_change,
   invite). Those bodies are for the **local** stack; **production must mirror them
   in the Supabase Dashboard** (the config comment says so explicitly).
-- The project already uses **Resend** as an email provider for the
-  `send-feedback` edge function (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`). Resend
-  is therefore the preferred SMTP provider for auth mail too — the domain
-  authentication may already be partly done.
+- The `send-feedback` edge function sends via **AWS SES** (env
+  `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY`, `SES_REGION`, `SES_FROM_EMAIL`)
+  from the DKIM-verified `send.selftend.org` identity — Resend was retired for
+  feedback (control-tower #111). The stack is retiring Resend entirely
+  (control-tower #102), so the **auth custom SMTP below should also target SES**,
+  not Resend: when you configure it, replace the Resend-specific host/SPF/DKIM
+  values in A1–A3 with the SES equivalents (SES SMTP credentials,
+  `include:amazonses.com`, SES Easy DKIM CNAMEs). Sending-domain authentication
+  for `send.selftend.org` is already in place via SES.
 - Canonical domain is **`selftend.org`** (Porkbun registrar/DNS, per
   `docs/deployment.md`). Aliases like `support@`, `privacy@`, `security@` forward
   to the owner's inbox.
