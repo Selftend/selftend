@@ -17,8 +17,7 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP, toggleButtonStateProps } from "@/src/lib/
 import { cn } from "@/lib/utils";
 
 type AddToHomeButtonProps = { size?: number; className?: string } & (
-  | { widgetId: string; category?: never }
-  | { category: string; widgetId?: never }
+  { widgetId: string; category?: never } | { category: string; widgetId?: never }
 );
 
 export function AddToHomeButton({

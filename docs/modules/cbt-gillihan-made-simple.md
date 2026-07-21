@@ -748,13 +748,7 @@ type GoalType = "doMore" | "doLess" | "improveRelationship" | "improveQuality";
 type GoalStatus = "active" | "completed" | "paused" | "abandoned";
 
 type AnxietyType =
-  | "specificPhobia"
-  | "socialAnxiety"
-  | "panicDisorder"
-  | "gad"
-  | "ptsd"
-  | "ocd"
-  | "other";
+  "specificPhobia" | "socialAnxiety" | "panicDisorder" | "gad" | "ptsd" | "ocd" | "other";
 ```
 
 ---

@@ -1,10 +1,5 @@
 export type ACTPrinciple =
-  | "defusion"
-  | "expansion"
-  | "connection"
-  | "observingSelf"
-  | "values"
-  | "committedAction";
+  "defusion" | "expansion" | "connection" | "observingSelf" | "values" | "committedAction";
 
 export type ACTConcern =
   | "anxiety"
@@ -19,12 +14,7 @@ export type ACTConcern =
 export type ACTLifeDomain = "work" | "leisure" | "relationships" | "personalGrowth";
 
 export type ThoughtCategory =
-  | "selfJudgment"
-  | "worry"
-  | "pastRegret"
-  | "prediction"
-  | "ruleStatement"
-  | "other";
+  "selfJudgment" | "worry" | "pastRegret" | "prediction" | "ruleStatement" | "other";
 
 export type DefusionTechnique =
   | "havingTheThoughtThat"
@@ -173,11 +163,7 @@ export interface UrgeSurfLogInput {
 }
 
 export type ConnectionTechnique =
-  | "noticeFiveThings"
-  | "mindfulActivity"
-  | "tenDeepBreaths"
-  | "dropAnchor"
-  | "bodyScan";
+  "noticeFiveThings" | "mindfulActivity" | "tenDeepBreaths" | "dropAnchor" | "bodyScan";
 
 export interface ConnectionLog {
   id: string;

@@ -31,8 +31,7 @@ type ReminderScheduleFailureReason =
   | "unsupported";
 
 type ReminderScheduleResult =
-  | { enabled: true }
-  | { enabled: false; reason: ReminderScheduleFailureReason };
+  { enabled: true } | { enabled: false; reason: ReminderScheduleFailureReason };
 
 function getNativeNotifications() {
   if (Platform.OS === "web") {
