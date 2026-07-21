@@ -1,5 +1,17 @@
 /* global afterEach, beforeEach, jest */
 
+// @sentry/react-native v8 starts a module-scope cleanup interval on import
+// (AsyncExpiringMap), which keeps jest's event loop alive after tests finish.
+// App code only touches these four APIs; mock the module everywhere so no
+// suite pays that import side effect. sentry.test.ts covers the real logic
+// (pure helpers) and supplies its own mock.
+jest.mock("@sentry/react-native", () => ({
+  init: jest.fn(),
+  setUser: jest.fn(),
+  captureException: jest.fn(),
+  wrap: (component) => component,
+}));
+
 let unexpectedConsoleError;
 let unexpectedConsoleWarn;
 
