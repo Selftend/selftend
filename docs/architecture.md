@@ -28,7 +28,7 @@ AppProviders                          (src/providers/app-providers.tsx)
 ├── QueryClientProvider               (TanStack Query: staleTime 60s, retry 1)
 ├── I18nProvider                      (i18next; persists to AsyncStorage; syncs to user_preferences.language)
 └── SessionProvider                   (subscribes to Supabase onAuthStateChange)
-    └── ThemeProvider                 (@react-navigation/native, NAV_THEME from lib/theme.ts)
+    └── ThemeProvider                 (expo-router, NAV_THEME from lib/theme.ts)
         └── AppErrorBoundary
             └── AppShell              (header + Stack + sidebar)
                 + CookieConsentBanner
