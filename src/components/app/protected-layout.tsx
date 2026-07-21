@@ -35,7 +35,11 @@ export default function ProtectedLayout() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= DESKTOP_BREAKPOINT;
   const { session, status, user } = useSession();
-  const { data: preferences, isLoading: prefsLoading } = useUserPreferences(user?.id ?? null);
+  const {
+    data: preferences,
+    isLoading: prefsLoading,
+    isError: prefsError,
+  } = useUserPreferences(user?.id ?? null);
   const completeOnboarding = useCompleteAppOnboarding(user?.id ?? null);
   const completeIntroduction = useUpdateOnboardingPreferences(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
@@ -85,8 +89,15 @@ export default function ProtectedLayout() {
     return <Redirect href="/(auth)/verify-email" />;
   }
 
+  // A failed preferences fetch leaves the acceptance state UNKNOWN — gating on
+  // it would re-prompt users who already accepted (#164: transient network
+  // errors flashed the gate). Fail open: skip the gate until a successful load
+  // settles the question; TanStack's retry/refocus refetch re-evaluates this.
   const needsConsent =
-    !consentDismissed && !prefsLoading && preferences?.policyVersionAccepted !== policyVersion;
+    !consentDismissed &&
+    !prefsLoading &&
+    !prefsError &&
+    preferences?.policyVersionAccepted !== policyVersion;
   const needsAppOnboarding =
     !needsConsent &&
     !prefsLoading &&

@@ -235,6 +235,32 @@ describe("ProtectedLayout app onboarding", () => {
     expect(screen.queryByText("Welcome to Selftend")).toBeNull();
   });
 
+  it("does not flash the consent gate when the preferences fetch fails (#164)", async () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+    // Acceptance state is unknown — the layout must fail open into the app
+    // shell, not re-prompt a user who may already have accepted.
+    await waitFor(() => expect(screen.queryByText("Consent gate")).toBeNull());
+    expect(screen.queryByText("Welcome to Selftend")).toBeNull();
+    expect(screen.queryByText("Signed-out landing")).toBeNull();
+  });
+
+  it("still gates a loaded user with no acceptance on record", async () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: null,
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+    await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
+  });
+
   it("shows the landing page when the session is cleared", () => {
     mockSessionState = {
       session: null,
