@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/Selftend/selftend/compare/v0.4.1...v0.4.2) (2026-07-18)
+
+
+### Miscellaneous Chores
+
+* release selftend 0.4.2 ([#143](https://github.com/Selftend/selftend/issues/143)) ([87f59da](https://github.com/Selftend/selftend/commit/87f59da1758f55f34c2e1c323dca13557c65a832))
+
 ## [0.4.1](https://github.com/Selftend/selftend/compare/v0.4.0...v0.4.1) (2026-07-18)
 
 
