@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { ActivityIndicator, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -51,11 +51,10 @@ export default function NewWorryScreen() {
     formState: { errors, isSubmitting },
     handleSubmit,
     setValue,
-    watch,
   } = form;
 
-  const category = watch("worryCategory");
-  const probability = watch("probabilityEstimate");
+  const category = useWatch({ control, name: "worryCategory" });
+  const probability = useWatch({ control, name: "probabilityEstimate" });
 
   useEffect(() => {
     if (!existingEntry) return;

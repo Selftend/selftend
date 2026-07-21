@@ -187,7 +187,7 @@ export function AddWidgetModal({
   const [category, setCategory] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
-  const grouped = useMemo(widgetsByCategory, []);
+  const grouped = useMemo(() => widgetsByCategory(), []);
 
   function handleClose() {
     setCategory(null);

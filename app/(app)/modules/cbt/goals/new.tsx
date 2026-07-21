@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { View } from "react-native";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -59,12 +59,11 @@ export default function NewGoalScreen() {
     formState: { errors },
     reset,
     setValue,
-    watch,
   } = form;
 
   const { fields, append, remove } = useFieldArray({ control, name: "milestones" });
-  const selectedDomain = watch("lifeDomain");
-  const selectedType = watch("goalType");
+  const selectedDomain = useWatch({ control, name: "lifeDomain" });
+  const selectedType = useWatch({ control, name: "goalType" });
 
   useEffect(() => {
     if (!existingGoal || !existingMilestones || storedDraftValues) return;

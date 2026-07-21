@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { ActivityIndicator, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -59,7 +59,6 @@ export default function NewAngerLogScreen() {
     handleSubmit,
     reset,
     setValue,
-    watch,
   } = useForm<AngerLogFormSchema>({
     defaultValues,
     resolver: zodResolver(angerLogFormSchema),
@@ -81,9 +80,9 @@ export default function NewAngerLogScreen() {
     });
   }, [existingLog, reset]);
 
-  const arousal = watch("arousalLevel");
-  const outcome = watch("outcomeRating");
-  const timeOut = watch("timeOutTaken");
+  const arousal = useWatch({ control, name: "arousalLevel" });
+  const outcome = useWatch({ control, name: "outcomeRating" });
+  const timeOut = useWatch({ control, name: "timeOutTaken" });
 
   const submitForm = handleSubmit(async (values) => {
     try {
