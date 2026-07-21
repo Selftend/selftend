@@ -87,7 +87,6 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
   icon: "./assets/icon.png",
   scheme: appScheme,
   userInterfaceStyle: "automatic",
-  newArchEnabled: true,
   splash: {
     image: "./assets/splash-icon.png",
     resizeMode: "contain",
@@ -103,7 +102,6 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
       foregroundImage: "./assets/adaptive-icon.png",
       backgroundColor: "#f4efe5",
     },
-    edgeToEdgeEnabled: true,
     package: androidPackage,
     versionCode: 1,
     // The AsyncStorage query cache holds decrypted entries; user data must

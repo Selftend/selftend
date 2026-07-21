@@ -75,6 +75,10 @@ jest.mock(
 jest.mock("@rn-primitives/slot", () => ({
   Slot: require("react-native").Text,
 }));
+// reanimated's mock re-exports from its real index, which initializes
+// react-native-worklets natively — mock worklets first (worklets 0.7 ships the
+// mock but no "./mock" exports alias yet; drop the lib/module path when it does).
+jest.mock("react-native-worklets", () => require("react-native-worklets/lib/module/mock"));
 jest.mock("react-native-reanimated", () => require("react-native-reanimated/mock"));
 
 jest.mock("@react-native-community/datetimepicker", () => ({

@@ -1,19 +1,11 @@
 import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
+import type { AudioPlayer } from "expo-audio";
 
 import type { PhaseLabel } from "@/src/constants/breathing";
 import { ambientSoundLookup, breathSoundLookup } from "@/src/constants/breathing-sounds";
 import { breathClipFor } from "@/src/features/breathing/breath-audio-plan";
-
-type ExpoAvModule = typeof import("expo-av");
-type LoadedSound = {
-  setVolumeAsync: (v: number) => Promise<unknown>;
-  stopAsync: () => Promise<unknown>;
-  unloadAsync: () => Promise<unknown>;
-  playAsync: () => Promise<unknown>;
-};
-
-let nativeAudioModeConfigured = false;
+import { ensureNativeAudioMode, loadExpoAudio, playOneShot } from "@/src/lib/native-audio";
 
 interface BreathingAudioOptions {
   active: boolean;
@@ -52,88 +44,48 @@ function createLanePlayer(): LanePlayer {
     };
   }
 
-  let sound: LoadedSound | null = null;
-  // Bumped by every play()/stop(); a play() whose async createAsync resolves after it was
-  // superseded unloads its orphan sound instead of leaking a looping track.
+  let player: AudioPlayer | null = null;
+  // Bumped by every play()/stop(); a play() that resumes after awaiting the
+  // audio-mode setup only proceeds if it hasn't been superseded meanwhile.
   let playGen = 0;
   return {
     async play(asset, volume, loop) {
       const gen = ++playGen;
       try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports -- native-only branch (web returned above); lazy require keeps expo-av out of the web bundle
-        const { Audio } = require("expo-av") as ExpoAvModule;
-        if (!nativeAudioModeConfigured) {
-          await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-          nativeAudioModeConfigured = true;
-        }
+        const audio = loadExpoAudio();
+        await ensureNativeAudioMode(audio);
         if (gen !== playGen) return;
-        if (sound) {
-          await sound.stopAsync().catch(() => {});
-          await sound.unloadAsync().catch(() => {});
-          sound = null;
-        }
-        const created = await Audio.Sound.createAsync(asset, { isLooping: loop, volume });
-        if (gen !== playGen) {
-          // A newer play()/stop() ran while we were loading - unload the orphan, don't play.
-          await (created.sound as unknown as LoadedSound).unloadAsync().catch(() => {});
-          return;
-        }
-        sound = created.sound as unknown as LoadedSound;
-        await sound.playAsync();
+        player?.remove();
+        player = audio.createAudioPlayer(asset);
+        player.loop = loop;
+        player.volume = volume;
+        player.play();
       } catch {
         // Audio is best-effort; never crash a breathing session.
       }
     },
     async setVolume(volume) {
-      await sound?.setVolumeAsync(volume).catch(() => {});
+      try {
+        if (player) player.volume = volume;
+      } catch {
+        // ignore
+      }
     },
     async stop() {
       playGen++;
       try {
-        await sound?.stopAsync();
-        await sound?.unloadAsync();
+        player?.remove();
       } catch {
         // ignore
       }
-      sound = null;
+      player = null;
     },
   };
 }
 
-/** Fire-and-forget one-shot (used for the spoken intro before a session). Self-unloads. */
+/** Fire-and-forget one-shot (used for the spoken intro before a session). Self-releases. */
 export function playIntroCue(asset: number, volume: number): void {
-  if (Platform.OS === "web") {
-    try {
-      const el = new window.Audio(asset as unknown as string);
-      el.volume = volume;
-      void el.play().catch(() => {});
-    } catch {
-      // best-effort
-    }
-    return;
-  }
-  void (async () => {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports -- native-only branch (web returned above); lazy require keeps expo-av out of the web bundle
-      const { Audio } = require("expo-av") as ExpoAvModule;
-      if (!nativeAudioModeConfigured) {
-        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-        nativeAudioModeConfigured = true;
-      }
-      const created = await Audio.Sound.createAsync(asset, { volume });
-      const s = created.sound as unknown as LoadedSound & {
-        setOnPlaybackStatusUpdate?: (
-          cb: (st: { isLoaded?: boolean; didJustFinish?: boolean }) => void,
-        ) => void;
-      };
-      await s.playAsync();
-      s.setOnPlaybackStatusUpdate?.((st) => {
-        if (st.isLoaded && st.didJustFinish) void s.unloadAsync();
-      });
-    } catch {
-      // best-effort
-    }
-  })();
+  playOneShot(asset, volume);
 }
 
 export function useBreathingAudio(opts: BreathingAudioOptions): void {
