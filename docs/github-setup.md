@@ -37,7 +37,7 @@ This repo already includes:
 
 ## Workflows
 
-`CI` runs on pull requests and pushes to `main` with Node `20.19.0`.
+`CI` runs on pull requests and pushes to `main` with Node `22.23.1`.
 
 The main CI verification job checks linting, formatting, typechecking, and tests through `npm run verify`. CI also runs integration and end-to-end jobs against local Supabase.
 

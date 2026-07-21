@@ -154,7 +154,7 @@ Closed-testing releases go through Google review before testers can install, unl
 When manually triggered, it:
 
 - checks out `main`
-- installs Node `20.19.0`, Java 17, Android API 36, and NDK `27.1.12297006`
+- installs Node `22.23.1`, Java 17, Android API 36, and NDK `27.1.12297006`
 - runs `eas build --platform android --profile production --local --non-interactive`
 - uploads the generated `.aab` as a GitHub Actions artifact
 - releases the `.aab` to the Google Play closed testing (alpha) track when `submit_to_play` is enabled
