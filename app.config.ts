@@ -87,11 +87,6 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
   icon: "./assets/icon.png",
   scheme: appScheme,
   userInterfaceStyle: "automatic",
-  splash: {
-    image: "./assets/splash-icon.png",
-    resizeMode: "contain",
-    backgroundColor: "#f4efe5",
-  },
   ios: {
     supportsTablet: true,
     buildNumber: "1",
@@ -123,6 +118,15 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
     "expo-router",
     "expo-localization",
     "expo-web-browser",
+    // SDK 56 removed the top-level `splash` key; the plugin is the only way.
+    [
+      "expo-splash-screen",
+      {
+        image: "./assets/splash-icon.png",
+        resizeMode: "contain",
+        backgroundColor: "#f4efe5",
+      },
+    ],
     [
       "expo-notifications",
       {

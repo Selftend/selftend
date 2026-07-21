@@ -13,8 +13,11 @@ module.exports = {
   // in sibling @sentry/* packages (core, browser, ...) that ship ESM — widen
   // to the whole scope so jest transforms them.
   transformIgnorePatterns: expoPreset.transformIgnorePatterns.map((pattern) =>
+    // Match on the bare package name, not a "...))" suffix — jest-expo keeps
+    // appending entries to the alternation (56 added standard-navigation) and
+    // an anchored replace breaks silently.
     pattern
-      .replace("native-base))", "native-base|@rn-primitives))")
+      .replace("native-base", "native-base|@rn-primitives")
       .replace("@sentry/react-native", "@sentry"),
   ),
   // Coverage is scoped to the .ts logic surface. .tsx screens/components are
