@@ -1,5 +1,11 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+// Side-effect import: polyfills global WebSocket on Node < 22, which
+// supabase-js >= 2.110 requires at createClient() time. Every Node-side test
+// client (integration suites, e2e helpers and fixtures) flows through this
+// module, so the polyfill loads before any client is constructed.
+import "../websocket-polyfill";
+
 // Local Supabase CLI uses deterministic keys derived from the default JWT secret,
 // so they're identical on every developer machine and in CI. Hardcoding avoids
 // any env-loading complexity in the test runner.
