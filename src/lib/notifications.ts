@@ -61,12 +61,40 @@ function getNativeNotifications() {
 
 // ----- Deep-link routing (server push carries the route in data.url) -----
 
-/** Pulls the deep-link route out of a tapped notification's response, or null. */
+/**
+ * Server-minted reminder routes. Mirrors the edge function's `TARGET_CONFIGS[*].url` and
+ * `routineUrl()` in `supabase/functions/_shared/web-reminders.ts` - the only place these URLs
+ * originate. Defense-in-depth: a tapped notification's `data.url` is trusted today, but this
+ * allowlist ensures a malformed or off-origin value can never reach `router.navigate()`.
+ */
+const ALLOWED_REMINDER_ROUTES = new Set<string>([
+  "/modules/cbt",
+  "/tools/meditation",
+  "/modules/act",
+  "/tools/mood-tracker",
+  "/tools/journal",
+  "/tools/gratitude-log",
+  "/tools/grounding",
+  "/tools/breathing",
+  "/tools/sleep",
+  "/tools/habits",
+]);
+
+// `/routines/<id>` - a single non-slash path segment, so `//host`, `../` traversal, and
+// absolute/scheme URLs are all rejected.
+const ROUTINE_ROUTE_PATTERN = /^\/routines\/[A-Za-z0-9-]+$/;
+
+/** True when `url` is a known server-minted reminder route (fixed tool route or `/routines/<id>`). */
+export function isAllowedReminderRoute(url: string): boolean {
+  return ALLOWED_REMINDER_ROUTES.has(url) || ROUTINE_ROUTE_PATTERN.test(url);
+}
+
+/** Pulls the deep-link route out of a tapped notification's response, or null if not allowlisted. */
 function reminderUrlFromResponse(response: unknown): string | null {
   const url = (
     response as { notification?: { request?: { content?: { data?: { url?: unknown } } } } } | null
   )?.notification?.request?.content?.data?.url;
-  return typeof url === "string" && url.length > 0 ? url : null;
+  return typeof url === "string" && isAllowedReminderRoute(url) ? url : null;
 }
 
 /** The route the app was cold-launched into by tapping a reminder, or null. */
