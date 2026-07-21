@@ -10,7 +10,7 @@ import { NotoSans_500Medium } from "@expo-google-fonts/noto-sans/500Medium";
 import { NotoSans_600SemiBold } from "@expo-google-fonts/noto-sans/600SemiBold";
 import { NotoSans_700Bold } from "@expo-google-fonts/noto-sans/700Bold";
 import { NotoSans_800ExtraBold } from "@expo-google-fonts/noto-sans/800ExtraBold";
-import { ThemeProvider } from "@react-navigation/native";
+import { ThemeProvider } from "expo-router";
 import { useFonts } from "expo-font";
 import { PortalHost } from "@rn-primitives/portal";
 import * as SplashScreen from "expo-splash-screen";
