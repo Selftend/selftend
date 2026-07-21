@@ -4,6 +4,10 @@ import path from "node:path";
 import { test as base, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 
+// Side-effect import first: polyfills global WebSocket on Node < 22, which
+// supabase-js needs at createClient() time (here and in integration/helpers).
+import "../websocket-polyfill";
+
 import { createServiceClient, LOCAL_SUPABASE_URL, LOCAL_ANON_KEY } from "../integration/helpers";
 // Relative import (not the "@/" alias) keeps this resolvable under Playwright's
 // loader. policy-content.ts has zero runtime imports, so it is safe in Node.
