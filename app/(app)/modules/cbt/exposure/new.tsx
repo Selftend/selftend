@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -44,11 +44,10 @@ export default function NewExposureHierarchyScreen() {
     control,
     formState: { errors },
     setValue,
-    watch,
   } = form;
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
-  const items = watch("items");
+  const items = useWatch({ control, name: "items" });
 
   const steps: { title: string; fields: readonly (keyof ExposureHierarchyFormSchema)[] }[] = [
     { title: t("exposure.step1"), fields: ["title", "anxietyType"] },

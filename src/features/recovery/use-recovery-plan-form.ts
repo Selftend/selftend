@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -47,10 +47,9 @@ export function useRecoveryPlanForm({
     handleSubmit,
     reset,
     setValue,
-    watch,
   } = form;
 
-  const strategyIntegrationNotes = watch("strategyIntegrationNotes");
+  const strategyIntegrationNotes = useWatch({ control, name: "strategyIntegrationNotes" });
 
   const recoveryKeysField = useStringListField(form, "recoveryKeys", {
     shouldDirty: true,

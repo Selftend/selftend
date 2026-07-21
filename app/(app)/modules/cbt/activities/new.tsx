@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { ActivityIndicator, View } from "react-native";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -75,14 +75,13 @@ export default function NewActivityScreen() {
     formState: { errors, isSubmitting },
     handleSubmit,
     reset,
-    watch,
   } = useForm<ActivityFormSchema>({
     defaultValues: storedDraft ?? valueLinkedDefaults,
     resolver: zodResolver(activityFormSchema),
   });
 
-  const selectedCategory = watch("category");
-  const selectedPaceCategory = watch("paceCategory");
+  const selectedCategory = useWatch({ control, name: "category" });
+  const selectedPaceCategory = useWatch({ control, name: "paceCategory" });
 
   useEffect(() => {
     hydrateDraft(activityId);
