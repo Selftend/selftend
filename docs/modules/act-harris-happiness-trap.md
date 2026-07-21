@@ -307,16 +307,16 @@ Values are chosen directions, not goals - they can't be completed, only lived. F
 
 **User inputs (`HabitPlan`):**
 
-| Field                 | Type     | Question                                       |
+| Field | Type | Question |
 | --------------------- | -------- | ---------------------------------------------- | --------- | ---------- |
-| `habitDescription`    | string   | The away-move habit                            |
-| `triggers`            | string   | Q1: What are the triggers?                     |
-| `payoffs`             | string   | Q2a: What are the payoffs?                     |
-| `costs`               | string   | Q2b: What are the costs?                       |
-| `alternativeBehavior` | string   | Q3: A good alternative (toward move), and why? |
-| `unhookingSkills`     | string[] | Q4: Which unhooking skills are needed?         |
-| `supports`            | string   | Q5: What or who can help?                      |
-| `status`              | enum     | `active                                        | completed | abandoned` |
+| `habitDescription` | string | The away-move habit |
+| `triggers` | string | Q1: What are the triggers? |
+| `payoffs` | string | Q2a: What are the payoffs? |
+| `costs` | string | Q2b: What are the costs? |
+| `alternativeBehavior` | string | Q3: A good alternative (toward move), and why? |
+| `unhookingSkills` | string[] | Q4: Which unhooking skills are needed? |
+| `supports` | string | Q5: What or who can help? |
+| `status` | enum | `active                                        | completed | abandoned` |
 
 #### 3.3.4 Difficult decisions - 10-step worksheet **(new, persisted)**
 
@@ -568,12 +568,7 @@ MoodLog {
 
 ```typescript
 type ACTPrinciple =
-  | "defusion"
-  | "expansion"
-  | "connection"
-  | "observingSelf"
-  | "values"
-  | "committedAction";
+  "defusion" | "expansion" | "connection" | "observingSelf" | "values" | "committedAction";
 
 type ProgramPillar = "foundation" | "bePresent" | "openUp" | "doWhatMatters";
 
@@ -590,12 +585,7 @@ type ACTConcern =
   | "other";
 
 type ThoughtCategory =
-  | "selfJudgment"
-  | "worry"
-  | "pastRegret"
-  | "prediction"
-  | "ruleStatement"
-  | "other";
+  "selfJudgment" | "worry" | "pastRegret" | "prediction" | "ruleStatement" | "other";
 
 type DefusionTechnique =
   | "havingTheThoughtThat"
@@ -614,11 +604,7 @@ type ExpansionTechnique = "tame" | "acceptanceSelfTalk" | "acceptanceImagery";
 // legacy alias: "fourStepExpansion" maps to "tame" for existing rows
 
 type ConnectionTechnique =
-  | "noticeFiveThings"
-  | "mindfulActivity"
-  | "tenDeepBreaths"
-  | "dropAnchor"
-  | "bodyScan"; // new
+  "noticeFiveThings" | "mindfulActivity" | "tenDeepBreaths" | "dropAnchor" | "bodyScan"; // new
 
 type ObservingTechnique = "tenDeepBreaths" | "observingFromBoard" | "bodyAwareness";
 

@@ -34,13 +34,7 @@ export type SharedTool = SharedToolBase &
   );
 
 export type AdvancedToolInfoKey =
-  | "gratitude"
-  | "grounding"
-  | "habits"
-  | "journal"
-  | "meditation"
-  | "mood"
-  | "sleep";
+  "gratitude" | "grounding" | "habits" | "journal" | "meditation" | "mood" | "sleep";
 
 export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
   think: [

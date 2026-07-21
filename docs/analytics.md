@@ -132,10 +132,7 @@ Example allowlist:
 
 ```typescript
 type AllowedEvent =
-  | "exercise_completed"
-  | "tool_opened"
-  | "check_in_submitted"
-  | "onboarding_completed";
+  "exercise_completed" | "tool_opened" | "check_in_submitted" | "onboarding_completed";
 ```
 
 #### Implementation notes

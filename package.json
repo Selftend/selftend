@@ -4,7 +4,7 @@
   "version": "0.4.2",
   "private": true,
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "start": "node --env-file=.env.local scripts/start-dev-client.js",
@@ -126,7 +126,14 @@
     "prettier": "^3.8.3",
     "qrcode-terminal": "^0.12.0",
     "react-test-renderer": "19.1.0",
-    "typescript": "~5.9.2"
+    "typescript": "~6.0.3"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "typescript"
+      ]
+    }
   },
   "overrides": {
     "shell-quote": "1.9.0",

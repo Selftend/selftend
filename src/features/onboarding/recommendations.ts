@@ -30,11 +30,7 @@ export interface WidgetRecommendationInput {
 export interface WidgetRecommendation {
   widgetId: string;
   reason:
-    | "selected-tool"
-    | "matched-concern"
-    | "optional-tool"
-    | "guided-module"
-    | "module-shortcut";
+    "selected-tool" | "matched-concern" | "optional-tool" | "guided-module" | "module-shortcut";
 }
 
 export function suggestSharedToolWidgetIds(concerns: readonly ConcernKey[]): SharedToolWidgetId[] {

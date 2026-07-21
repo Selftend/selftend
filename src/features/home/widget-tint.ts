@@ -1,14 +1,5 @@
 export type WidgetTint =
-  | "primary"
-  | "act"
-  | "be"
-  | "aqua"
-  | "mist"
-  | "iris"
-  | "ink"
-  | "clay"
-  | "think"
-  | "destructive";
+  "primary" | "act" | "be" | "aqua" | "mist" | "iris" | "ink" | "clay" | "think" | "destructive";
 
 interface TintClasses {
   chip: string;
