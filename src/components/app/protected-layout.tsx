@@ -89,14 +89,17 @@ export default function ProtectedLayout() {
     return <Redirect href="/(auth)/verify-email" />;
   }
 
-  // A failed preferences fetch leaves the acceptance state UNKNOWN — gating on
-  // it would re-prompt users who already accepted (#164: transient network
-  // errors flashed the gate). Fail open: skip the gate until a successful load
-  // settles the question; TanStack's retry/refocus refetch re-evaluates this.
+  // A failed preferences fetch WITH nothing cached leaves the acceptance state
+  // UNKNOWN — gating on it would re-prompt users who already accepted (#164:
+  // transient network errors flashed the gate). Fail open only then; TanStack's
+  // retry/refocus refetch re-evaluates once a load succeeds. When cached data
+  // exists the state is known even if the latest refetch errored, so a stale
+  // acceptance still gates.
+  const prefsUnknown = prefsError && !preferences;
   const needsConsent =
     !consentDismissed &&
     !prefsLoading &&
-    !prefsError &&
+    !prefsUnknown &&
     preferences?.policyVersionAccepted !== policyVersion;
   const needsAppOnboarding =
     !needsConsent &&

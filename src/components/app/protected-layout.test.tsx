@@ -250,6 +250,23 @@ describe("ProtectedLayout app onboarding", () => {
     expect(screen.queryByText("Signed-out landing")).toBeNull();
   });
 
+  it("keeps the gate when cached preferences are stale and a refetch fails", async () => {
+    // TanStack retains last data alongside isError on background-refetch
+    // failure; a known-stale acceptance must still gate.
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: true,
+        policyVersionAccepted: "2026-05-01",
+      },
+      isLoading: false,
+      isError: true,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+    await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
+  });
+
   it("still gates a loaded user with no acceptance on record", async () => {
     mockUseUserPreferences.mockReturnValue({
       data: null,
