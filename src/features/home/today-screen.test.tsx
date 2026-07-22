@@ -19,13 +19,28 @@ jest.mock("react-native-svg", () => {
   };
 });
 
-jest.mock("react-native-sortables", () => ({
-  __esModule: true,
-  default: {
-    Flex: ({ children }: { children?: ReactNode }) => <>{children}</>,
-    Handle: ({ children }: { children?: ReactNode }) => <>{children}</>,
-  },
-}));
+jest.mock("react-native-sortables", () => {
+  const { Fragment } = require("react");
+  return {
+    __esModule: true,
+    default: {
+      Grid: ({
+        data,
+        renderItem,
+      }: {
+        data: string[];
+        renderItem: (info: { item: string; index: number }) => ReactNode;
+      }) => (
+        <>
+          {data.map((item, index) => (
+            <Fragment key={item}>{renderItem({ item, index })}</Fragment>
+          ))}
+        </>
+      ),
+      Handle: ({ children }: { children?: ReactNode }) => <>{children}</>,
+    },
+  };
+});
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),

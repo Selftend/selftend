@@ -455,8 +455,7 @@ Deno.serve(async (request) => {
     // What to stamp on the token row after a successful ticket: a per-tool
     // last-key column, or an entry in the per-routine key map.
     type PushStamp =
-      | { kind: "target"; target: ReminderTarget }
-      | { kind: "routine"; routineId: string };
+      { kind: "target"; target: ReminderTarget } | { kind: "routine"; routineId: string };
     const pushMessages: {
       msg: ExpoPushMessage;
       row: TokenRow;

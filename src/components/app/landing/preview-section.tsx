@@ -129,26 +129,28 @@ export function PreviewSection() {
         markInteracted();
       }
       const wrapped = wrapSlideIndex(target, count);
-      if (wrapped === index || animating.value) {
+      if (wrapped === index || animating.get()) {
         return;
       }
       if (reduceMotion || frameWidth <= 0) {
-        activeIndexSv.value = wrapped;
-        translate.value = 0;
+        activeIndexSv.set(wrapped);
+        translate.set(0);
         commitNavigation(wrapped, source);
         return;
       }
-      animating.value = true;
+      animating.set(true);
       const step = wrappedSlideOffset(wrapped, index, count);
-      translate.value = withTiming(-step * frameWidth, SLIDE_TIMING, (finished) => {
-        "worklet";
-        if (finished) {
-          activeIndexSv.value = wrapped;
-          runOnJS(commitNavigation)(wrapped, source);
-        }
-        translate.value = 0;
-        animating.value = false;
-      });
+      translate.set(
+        withTiming(-step * frameWidth, SLIDE_TIMING, (finished) => {
+          "worklet";
+          if (finished) {
+            activeIndexSv.set(wrapped);
+            runOnJS(commitNavigation)(wrapped, source);
+          }
+          translate.set(0);
+          animating.set(false);
+        }),
+      );
     },
     [
       activeIndexSv,
@@ -182,37 +184,39 @@ export function PreviewSection() {
           if (event.pointerType === PointerType.MOUSE) {
             return;
           }
-          if (animating.value || reduceMotion || frameWidth <= 0) {
+          if (animating.get() || reduceMotion || frameWidth <= 0) {
             return;
           }
-          translate.value = Math.max(-frameWidth, Math.min(frameWidth, event.translationX));
+          translate.set(Math.max(-frameWidth, Math.min(frameWidth, event.translationX)));
         })
         .onEnd((event) => {
-          if (event.pointerType === PointerType.MOUSE || animating.value) {
+          if (event.pointerType === PointerType.MOUSE || animating.get()) {
             return;
           }
           const step = resolveDragCommit(event.translationX, event.velocityX, frameWidth);
           if (step === 0) {
             if (!reduceMotion) {
-              translate.value = withTiming(0, SETTLE_TIMING);
+              translate.set(withTiming(0, SETTLE_TIMING));
             }
             return;
           }
-          const target = wrapSlideIndex(activeIndexSv.value + step, count);
+          const target = wrapSlideIndex(activeIndexSv.get() + step, count);
           if (reduceMotion) {
-            activeIndexSv.value = target;
+            activeIndexSv.set(target);
             runOnJS(commitNavigation)(target, "user");
             return;
           }
-          animating.value = true;
-          translate.value = withTiming(-step * frameWidth, SLIDE_TIMING, (finished) => {
-            if (finished) {
-              activeIndexSv.value = target;
-              runOnJS(commitNavigation)(target, "user");
-            }
-            translate.value = 0;
-            animating.value = false;
-          });
+          animating.set(true);
+          translate.set(
+            withTiming(-step * frameWidth, SLIDE_TIMING, (finished) => {
+              if (finished) {
+                activeIndexSv.set(target);
+                runOnJS(commitNavigation)(target, "user");
+              }
+              translate.set(0);
+              animating.set(false);
+            }),
+          );
         }),
     [
       activeIndexSv,
@@ -471,7 +475,7 @@ function CarouselSlide({
   const animatedStyle = useAnimatedStyle(() => {
     if (reduceMotion) {
       return {
-        opacity: withTiming(activeIndexSv.value === slideIndex ? 1 : 0, CROSSFADE_TIMING),
+        opacity: withTiming(activeIndexSv.get() === slideIndex ? 1 : 0, CROSSFADE_TIMING),
         transform: [{ translateX: 0 }],
       };
     }
@@ -480,9 +484,9 @@ function CarouselSlide({
       transform: [
         {
           translateX:
-            wrappedSlideOffset(slideIndex, activeIndexSv.value, PREVIEW_IMAGES.length) *
+            wrappedSlideOffset(slideIndex, activeIndexSv.get(), PREVIEW_IMAGES.length) *
               frameWidth +
-            translate.value,
+            translate.get(),
         },
       ],
     };

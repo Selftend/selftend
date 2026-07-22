@@ -12,7 +12,7 @@ Your entries are encrypted in the database at the field level; a leaked database
 
 ## Quick Start
 
-Requires Node `20.19.0+`.
+Requires Node `22.13.0+`.
 
 ```bash
 git clone https://github.com/Selftend/selftend.git

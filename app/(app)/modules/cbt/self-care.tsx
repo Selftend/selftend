@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 
@@ -59,7 +59,10 @@ export default function SelfCareScreen() {
 
   const [form, setForm] = useState<FormState>(emptyForm);
 
-  useEffect(() => {
+  // Re-seed the form whenever the loaded log changes (render-time adjustment).
+  const [prevExisting, setPrevExisting] = useState(existing);
+  if (existing !== prevExisting) {
+    setPrevExisting(existing);
     if (existing) {
       setForm({
         exerciseDone: existing.exerciseDone,
@@ -76,7 +79,7 @@ export default function SelfCareScreen() {
       // answers can't be carried over (and accidentally saved) onto this date.
       setForm(emptyForm);
     }
-  }, [existing]);
+  }
 
   const handleSave = async () => {
     try {

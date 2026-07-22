@@ -5,9 +5,10 @@ import { defineConfig, devices } from "@playwright/test";
 //
 // Default to :8099 - a dedicated e2e port so the suite never collides with a dev
 // server on :8081. Both :8081 and :8099 /auth-callback origins are allowlisted in
-// supabase/config.toml's additional_redirect_urls, which the password-reset flow
-// needs (its redirect_to .../auth-callback?type=recovery must hit an allowlisted
-// origin). Override with E2E_PORT to run on a different port (allowlist it too).
+// supabase/config.toml's additional_redirect_urls so the redirect_to the app
+// sends stays allowlist-valid; emailed links themselves point at site_url
+// (:8081) and the password-reset e2e rewrites their origin to this port.
+// Override with E2E_PORT to run on a different port (allowlist it too).
 const PORT = Number(process.env.E2E_PORT ?? 8099);
 
 // Deterministic Supabase CLI defaults - same on every dev machine and in CI,
@@ -29,7 +30,11 @@ export default defineConfig({
 
   use: {
     baseURL: `http://localhost:${PORT}`,
-    trace: "on-first-retry",
+    // retain-on-failure, not on-first-retry: with retries:0 a retry never
+    // happens, so the flake family in #172 left no trace evidence. The trace
+    // records the prefs network responses, which is exactly what diagnosing a
+    // prefs-dependent-UI failure needs; it is only written to disk on failure.
+    trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
   },

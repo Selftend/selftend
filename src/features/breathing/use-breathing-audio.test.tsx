@@ -2,24 +2,37 @@ import { renderHook } from "@testing-library/react-native";
 
 import { useBreathingAudio } from "@/src/features/breathing/use-breathing-audio";
 
-const mockCreateAsync = jest.fn().mockResolvedValue({
-  sound: {
-    playAsync: jest.fn().mockResolvedValue(undefined),
-    stopAsync: jest.fn().mockResolvedValue(undefined),
-    unloadAsync: jest.fn().mockResolvedValue(undefined),
-    setVolumeAsync: jest.fn().mockResolvedValue(undefined),
-  },
+type FakePlayer = {
+  play: jest.Mock;
+  remove: jest.Mock;
+  addListener: jest.Mock;
+  loop: boolean;
+  volume: number;
+};
+
+const players: FakePlayer[] = [];
+const mockCreateAudioPlayer = jest.fn((..._args: unknown[]) => {
+  const player: FakePlayer = {
+    play: jest.fn(),
+    remove: jest.fn(),
+    addListener: jest.fn(),
+    loop: false,
+    volume: 1,
+  };
+  players.push(player);
+  return player;
 });
 
-jest.mock("expo-av", () => ({
-  Audio: {
-    setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
-    Sound: { createAsync: (...args: unknown[]) => mockCreateAsync(...args) },
-  },
+jest.mock("expo-audio", () => ({
+  setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
+  createAudioPlayer: (...args: unknown[]) => mockCreateAudioPlayer(...args),
 }));
 
 describe("useBreathingAudio", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    players.length = 0;
+  });
 
   it("does nothing while inactive", () => {
     renderHook(() =>
@@ -32,7 +45,7 @@ describe("useBreathingAudio", () => {
         ambientVolume: 0.5,
       }),
     );
-    expect(mockCreateAsync).not.toHaveBeenCalled();
+    expect(mockCreateAudioPlayer).not.toHaveBeenCalled();
   });
 
   it("plays a breath clip on an active inhale", async () => {
@@ -46,9 +59,11 @@ describe("useBreathingAudio", () => {
         ambientVolume: 0.5,
       }),
     );
-    // microtask flush
+    // flush the audio-mode await inside LanePlayer.play
     await Promise.resolve();
-    expect(mockCreateAsync).toHaveBeenCalled();
+    await Promise.resolve();
+    expect(mockCreateAudioPlayer).toHaveBeenCalled();
+    expect(players[0]?.play).toHaveBeenCalled();
   });
 
   it("fires a guided cue once (not looping) at the start of a phase", async () => {
@@ -63,10 +78,9 @@ describe("useBreathingAudio", () => {
       }),
     );
     await Promise.resolve();
-    expect(mockCreateAsync).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ isLooping: false }),
-    );
+    await Promise.resolve();
+    expect(mockCreateAudioPlayer).toHaveBeenCalled();
+    expect(players[0]?.loop).toBe(false);
   });
 
   it("stays silent when both lanes are 'none'", () => {
@@ -80,6 +94,6 @@ describe("useBreathingAudio", () => {
         ambientVolume: 0.5,
       }),
     );
-    expect(mockCreateAsync).not.toHaveBeenCalled();
+    expect(mockCreateAudioPlayer).not.toHaveBeenCalled();
   });
 });

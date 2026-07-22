@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "expo-router";
 import { Animated, Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -89,18 +89,20 @@ export function RoutineFab() {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const [showCompleted, setShowCompleted] = useState(false);
-  const completedOpacity = useRef(new Animated.Value(1)).current;
-  // Whether the PREVIOUS render showed the counting button - the completed
-  // state plays only on a live visible->done transition, never on mount.
-  const wasCountVisibleRef = useRef(false);
-  // The routine the count was showing last - pressing the completed checkmark
-  // must open the sheet on the routine that JUST finished, not on the sheet's
-  // no-open-routines fallback (views[0], which may be one completed earlier).
-  const lastCountedRoutineIdRef = useRef<string | null>(null);
+  const [completedOpacity] = useState(() => new Animated.Value(1));
   const [completedRoutineId, setCompletedRoutineId] = useState<string | null>(null);
 
   const firstOpen = firstOpenRoutineView(today.scheduledViews);
-  if (firstOpen) lastCountedRoutineIdRef.current = firstOpen.routine.id;
+  const firstOpenId = firstOpen?.routine.id ?? null;
+  // The routine the count was showing last - pressing the completed checkmark
+  // must open the sheet on the routine that JUST finished, not on the sheet's
+  // no-open-routines fallback (views[0], which may be one completed earlier).
+  // Latched via render-time adjustment, so on the very render where firstOpen
+  // turns null the latch still holds the routine that just finished.
+  const [lastCountedRoutineId, setLastCountedRoutineId] = useState<string | null>(null);
+  if (firstOpenId && firstOpenId !== lastCountedRoutineId) {
+    setLastCountedRoutineId(firstOpenId);
+  }
   // Other scheduled routines still waiting behind the counted one - surfaced
   // as a "+N" suffix so the queue is visible at a glance (#121).
   const queued = firstOpen ? openScheduledViews(today.scheduledViews).length - 1 : 0;
@@ -108,22 +110,27 @@ export function RoutineFab() {
     !today.isLoading && today.openSteps > 0 && firstOpen !== null && !isDataEntryPath(pathname);
 
   // Detect the live transition to zero open steps while the button was
-  // visible; only then arm the completed state.
-  useEffect(() => {
-    const wasVisible = wasCountVisibleRef.current;
-    wasCountVisibleRef.current = showCount;
+  // visible - only that arms the completed state, never on mount
+  // (render-time adjustment).
+  const [prevShowCount, setPrevShowCount] = useState(false);
+  if (showCount !== prevShowCount) {
+    setPrevShowCount(showCount);
     if (showCount) {
       // Steps (re)opened - any lingering completed state yields to the count.
       setShowCompleted(false);
-      return;
-    }
-    if (wasVisible && !today.isLoading && today.openSteps === 0) {
-      completedOpacity.setValue(1);
-      setCompletedRoutineId(lastCountedRoutineIdRef.current);
+    } else if (!today.isLoading && today.openSteps === 0) {
+      setCompletedRoutineId(lastCountedRoutineId);
       setShowCompleted(true);
-      announceMessage(t("fab.complete"));
     }
-  }, [showCount, today.isLoading, today.openSteps, completedOpacity, t]);
+  }
+
+  // The arm's side effects: make sure a prior fade's opacity can't leak into
+  // this showing, and announce the completion to screen readers.
+  useEffect(() => {
+    if (!showCompleted) return;
+    completedOpacity.setValue(1);
+    announceMessage(t("fab.complete"));
+  }, [showCompleted, completedOpacity, t]);
 
   // Hold the checkmark, then fade it out (instantly under reduced motion).
   useEffect(() => {
@@ -138,7 +145,11 @@ export function RoutineFab() {
         duration: COMPLETED_FADE_MS,
         useNativeDriver: Platform.OS !== "web",
       }).start(({ finished }) => {
-        if (finished) setShowCompleted(false);
+        if (finished) {
+          setShowCompleted(false);
+          // Reset while hidden so the next arm starts fully opaque.
+          completedOpacity.setValue(1);
+        }
       });
     }, COMPLETED_HOLD_MS);
     return () => clearTimeout(hold);

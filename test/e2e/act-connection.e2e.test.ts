@@ -55,6 +55,10 @@ test.describe("ACT connection: create, view, delete", () => {
     // Save
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
+    // Wait for the "Saved" toast (fires after the DB write committed) before
+    // the hard goto() - navigating earlier aborts the in-flight insert (#172).
+    await expect(page.getByText("Saved")).toBeVisible({ timeout: 15_000 });
+
     // ── Navigate to list ───────────────────────────────────────────────────────
     await page.goto("/modules/act/connection");
     await expect(page.getByText(noticesText)).toBeVisible({ timeout: 15_000 });

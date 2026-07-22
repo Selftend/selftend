@@ -215,25 +215,36 @@ export const test = base.extend<object, WorkerFixtures>({
   },
 });
 
-// Per-test normalization: guarantee the consent + onboarding gates never fire,
-// even after a snapshot/restore spec puts back stale prefs. Reads the live
-// policyVersion constant so it can never drift.
-// reminder_consent(+updated_at) marks the one-time reminder prompt as already
-// declined (see isReminderPromptEligible) - otherwise the "Want a daily
-// reminder?" modal pops after any tool completion and blocks unrelated specs'
-// buttons/navigation.
+// The user_preferences gate fields (column names) that must always hold
+// non-gate-firing values while the suite runs. Reads the live policyVersion
+// constant so it can never drift. reminder_consent(+updated_at) marks the
+// one-time reminder prompt as already declined (see isReminderPromptEligible)
+// - otherwise the "Want a daily reminder?" modal pops after any tool
+// completion and blocks unrelated specs' buttons/navigation.
+//
+// Snapshot/restore specs MUST spread this over any captured full row before
+// restoring it: a beforeAll capture happens before this file's normalization
+// ever ran, so the raw capture can hold the seed's stale policy version and a
+// null reminder timestamp - restoring that resurrects the consent gate for a
+// later test (#172: a trace caught the gate rendering from exactly such a
+// restored row).
+export const NORMALIZED_GATE_PREFS = {
+  app_onboarding_completed: true,
+  cbt_onboarding_completed: true,
+  policy_version_accepted: policyVersion,
+  reminder_consent: false,
+  reminder_consent_updated_at: "2026-01-01T00:00:00.000Z",
+} as const;
+
+// Per-test normalization: guarantee the consent + onboarding gates never fire.
+// Upsert, not update: an UPDATE against a missing row is a silent 0-row no-op,
+// leaving the app to lazily recreate the row with gate-firing defaults
+// mid-test (#172). Every other column keeps its table default on insert.
 test.beforeEach(async ({ user }) => {
   const admin = createServiceClient();
   const { error } = await admin
     .from("user_preferences")
-    .update({
-      app_onboarding_completed: true,
-      cbt_onboarding_completed: true,
-      policy_version_accepted: policyVersion,
-      reminder_consent: false,
-      reminder_consent_updated_at: "2026-01-01T00:00:00.000Z",
-    })
-    .eq("user_id", user.id);
+    .upsert({ user_id: user.id, ...NORMALIZED_GATE_PREFS }, { onConflict: "user_id" });
   if (error) {
     throw new Error(`Prefs normalization failed for ${user.id}: ${error.message}`);
   }

@@ -10,8 +10,8 @@
  *   2. Assert success copy appears.
  *   3. Fetch the recovery link from Mailpit. The custom recovery template
  *      (supabase/templates/recovery.html) links STRAIGHT to the app callback:
- *      `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery` - no
- *      /auth/v1/verify hop and no PKCE `code`, so the link works in ANY
+ *      `{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&type=recovery`
+ *      - no /auth/v1/verify hop and no PKCE `code`, so the link works in ANY
  *      browser, not just the one that requested the reset.
  *   4. page.goto(recoveryLink) - AuthCallbackScreen completes it via
  *      verifyOtp and, seeing type=recovery, routes to /(auth)/update-password.
@@ -82,16 +82,16 @@ test.describe("password reset flow", () => {
     });
 
     // 5. Fetch the recovery link from Mailpit: a direct token_hash link into the
-    //    app callback (the template's `{{ .RedirectTo }}` is the allowlisted
-    //    redirect_to the app sent - see supabase/config.toml).
+    //    app callback (the template's `{{ .SiteURL }}` base - see
+    //    supabase/config.toml).
     const recoveryLink = await fetchRecoveryLink(page, THROWAWAY_EMAIL);
     expect(recoveryLink).toContain("/auth-callback?token_hash=");
     expect(recoveryLink).toContain("type=recovery");
     expect(recoveryLink).not.toContain("/auth/v1/verify");
 
-    // The app bakes redirect_to from its inlined EXPO_PUBLIC_PUBLIC_APP_URL, which
-    // may differ from the port this e2e server runs on. Rewrite the origin to THIS
-    // baseURL; token_hash completion is origin-independent (verifyOtp needs no
+    // The link's origin is the local stack's site_url (:8081), which differs from
+    // the port this e2e server runs on. Rewrite the origin to THIS baseURL;
+    // token_hash completion is origin-independent (verifyOtp needs no
     // browser-local PKCE state), so the rewrite doesn't weaken the proof.
     const verifyUrl = rewriteAuthLinkOrigin(
       recoveryLink,

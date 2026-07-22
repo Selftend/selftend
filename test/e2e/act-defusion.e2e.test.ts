@@ -74,6 +74,10 @@ test.describe("ACT defusion: create, view, delete", () => {
     // Save the log
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
+    // Wait for the "Saved" toast (fires after the DB write committed) before
+    // the hard goto() - navigating earlier aborts the in-flight insert (#172).
+    await expect(page.getByText("Saved")).toBeVisible({ timeout: 15_000 });
+
     // After save, router.back() navigates away. Go directly to the list.
     await page.goto("/modules/act/defusion");
     await expect(page.getByText(fusedThought)).toBeVisible({ timeout: 15_000 });

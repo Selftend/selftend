@@ -121,7 +121,7 @@ export async function saveThoughtRecord(
     ? client.from("thought_records").update(payload).eq("user_id", userId).eq("id", recordId)
     : client
         .from("thought_records")
-        .insert(input.createdAt ? { ...payload, created_at: input.createdAt } : payload);
+        .insert({ ...payload, ...(input.createdAt ? { created_at: input.createdAt } : {}) });
 
   const { data, error } = await query.select("*").maybeSingle();
 

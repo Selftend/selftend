@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { View } from "react-native";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -57,11 +57,10 @@ export default function NewBeliefScreen() {
     formState: { errors },
     reset,
     setValue,
-    watch,
   } = form;
 
-  const originalStrength = watch("originalBeliefStrength");
-  const alternativeStrength = watch("alternativeBeliefStrength");
+  const originalStrength = useWatch({ control, name: "originalBeliefStrength" });
+  const alternativeStrength = useWatch({ control, name: "alternativeBeliefStrength" });
 
   const triggeringSituationsField = useStringListField(form, "triggeringSituations");
   const evidenceForField = useStringListField(form, "evidenceFor");

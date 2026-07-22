@@ -1,13 +1,12 @@
 /**
  * Tests for useReduceMotionEnabled.
  *
- * Web path:
- *   - Reads globalThis.window?.matchMedia?.("(prefers-reduced-motion: reduce)")
- *   - Sets initial state from mediaQuery.matches
+ * Web path (useSyncExternalStore):
+ *   - Snapshot reads globalThis.window?.matchMedia?.("(prefers-reduced-motion: reduce)").matches
  *   - Subscribes via addEventListener("change", handler) if available
  *   - Falls back to addListener(handler) if addEventListener is absent
  *   - Cleans up via removeEventListener / removeListener on unmount
- *   - Returns false (no state change) if matchMedia is absent
+ *   - Returns false if matchMedia is absent
  *
  * Native path:
  *   - Calls AccessibilityInfo.isReduceMotionEnabled() for initial state
@@ -67,8 +66,11 @@ describe("useReduceMotionEnabled - web", () => {
     const listeners: ((e: { matches: boolean }) => void)[] = [];
     const mediaQuery: Record<string, unknown> = {
       matches,
-      // Provide a helper to simulate a change event from outside
+      // Provide a helper to simulate a change event from outside. A real
+      // MediaQueryList updates .matches before dispatching the event, and the
+      // hook's snapshot reads .matches - mirror that here.
       _fire: (newMatches: boolean) => {
+        mediaQuery.matches = newMatches;
         for (const fn of listeners) fn({ matches: newMatches });
       },
     };

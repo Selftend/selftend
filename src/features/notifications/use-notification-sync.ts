@@ -32,28 +32,23 @@ export function useNotificationSync(
   anyRoutineReminderEnabled = false,
 ) {
   const cleanedUp = useRef(false);
-  const prefsRef = useRef(preferences);
-  const uidRef = useRef(userId);
-  const routineRef = useRef(anyRoutineReminderEnabled);
-  prefsRef.current = preferences;
-  uidRef.current = userId;
-  routineRef.current = anyRoutineReminderEnabled;
 
   useEffect(() => {
     if (Platform.OS === "web" || !preferences || !userId) return;
+    // Narrowed locals (TS doesn't carry the guard into the nested closure).
+    // No latest-value refs needed: every input is an effect dependency, so this
+    // closure (and the AppState listener re-registered with it) is always fresh.
+    const prefs = preferences;
+    const uid = userId;
 
     async function sync() {
-      const prefs = prefsRef.current;
-      const uid = uidRef.current;
-      if (!prefs || !uid) return;
-
       try {
         if (!cleanedUp.current) {
           cleanedUp.current = true;
           await clearLegacyLocalReminders();
         }
 
-        const routineReminderOn = prefs.notificationsEnabledGlobal && routineRef.current;
+        const routineReminderOn = prefs.notificationsEnabledGlobal && anyRoutineReminderEnabled;
         if (anyReminderEnabled(prefs) || routineReminderOn) {
           // Native is server-driven: this just ensures the device push token is registered.
           // The target/hour/minute args are ignored on native.

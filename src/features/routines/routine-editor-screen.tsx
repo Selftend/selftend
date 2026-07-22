@@ -247,6 +247,87 @@ export function RoutineEditorScreen({
 
   const globalEnabled = preferences?.notificationsEnabledGlobal ?? true;
 
+  async function saveCreate(trimmedName: string, remEnabled: boolean): Promise<string> {
+    const input: RoutineInput = { name: trimmedName };
+    // Schedule fields ride along only when they differ from the DB defaults
+    // (daily, no custom days) - "just a name" keeps creating a daily routine.
+    if (cadence !== "daily") {
+      input.cadence = cadence;
+      if (cadence === "custom") input.customDays = customDays;
+    }
+    if (remEnabled) {
+      const { hour, minute } = clampTime(reminderTime);
+      input.reminderEnabled = true;
+      input.reminderHour = hour;
+      input.reminderMinute = minute;
+      input.reminderTimezone = getReminderTimeZone();
+    }
+    const routine = await createMutation.mutateAsync(input);
+    for (const [index, step] of steps.entries()) {
+      await addStepMutation.mutateAsync({
+        routineId: routine.id,
+        toolId: step.toolId,
+        position: index,
+      });
+    }
+    return routine.id;
+  }
+  async function saveEdit(trimmedName: string, remEnabled: boolean): Promise<string> {
+    if (!existing || !routineId) throw new Error(t("detail.notFound"));
+
+    const patch: RoutineUpdate = {};
+    if (trimmedName !== existing.name) patch.name = trimmedName;
+    if (cadence !== existing.cadence) patch.cadence = cadence;
+    // Custom days only matter while the cadence IS custom; leaving them
+    // untouched otherwise preserves the previous selection for a later
+    // switch back (the DB constraint only checks them under custom).
+    const daysChanged =
+      customDays.length !== existing.customDays.length ||
+      customDays.some((day, index) => existing.customDays[index] !== day);
+    if (cadence === "custom" && daysChanged) patch.customDays = customDays;
+    const { hour, minute } = clampTime(reminderTime);
+    const reminderChanged =
+      remEnabled !== existing.reminderEnabled ||
+      (remEnabled && (hour !== existing.reminderHour || minute !== existing.reminderMinute));
+    if (reminderChanged) {
+      patch.reminderEnabled = remEnabled;
+      patch.reminderHour = hour;
+      patch.reminderMinute = minute;
+      patch.reminderTimezone = getReminderTimeZone();
+    }
+    if (Object.keys(patch).length > 0) {
+      await updateMutation.mutateAsync({ id: routineId, patch });
+    }
+
+    const keptIds = new Set(steps.map((step) => step.id).filter((id): id is string => id !== null));
+    for (const step of existing.steps) {
+      if (!keptIds.has(step.id)) await removeStepMutation.mutateAsync(step.id);
+    }
+
+    const finalIds: string[] = [];
+    for (const [index, step] of steps.entries()) {
+      if (step.id) {
+        finalIds.push(step.id);
+        continue;
+      }
+      const created = await addStepMutation.mutateAsync({
+        routineId,
+        toolId: step.toolId,
+        position: index,
+      });
+      finalIds.push(created.id);
+    }
+
+    const originalIds = existing.steps.map((step) => step.id);
+    const changed =
+      finalIds.length !== originalIds.length ||
+      finalIds.some((id, index) => originalIds[index] !== id);
+    if (changed && finalIds.length > 0) {
+      await reorderStepsMutation.mutateAsync({ routineId, orderedStepIds: finalIds });
+    }
+    return routineId;
+  }
+
   const handleSave = useSingleFlight(async () => {
     if (!user) return;
     const trimmedName = name.trim();
@@ -316,91 +397,10 @@ export function RoutineEditorScreen({
     }
   });
 
-  async function saveCreate(trimmedName: string, remEnabled: boolean): Promise<string> {
-    const input: RoutineInput = { name: trimmedName };
-    // Schedule fields ride along only when they differ from the DB defaults
-    // (daily, no custom days) - "just a name" keeps creating a daily routine.
-    if (cadence !== "daily") {
-      input.cadence = cadence;
-      if (cadence === "custom") input.customDays = customDays;
-    }
-    if (remEnabled) {
-      const { hour, minute } = clampTime(reminderTime);
-      input.reminderEnabled = true;
-      input.reminderHour = hour;
-      input.reminderMinute = minute;
-      input.reminderTimezone = getReminderTimeZone();
-    }
-    const routine = await createMutation.mutateAsync(input);
-    for (const [index, step] of steps.entries()) {
-      await addStepMutation.mutateAsync({
-        routineId: routine.id,
-        toolId: step.toolId,
-        position: index,
-      });
-    }
-    return routine.id;
-  }
-
   // Persist the edit as a diff against the loaded routine: rename and/or change
   // the reminder in one update, remove dropped steps, insert new ones at their
   // final index, then normalize every position with one reorder when the set or
   // order changed.
-  async function saveEdit(trimmedName: string, remEnabled: boolean): Promise<string> {
-    if (!existing || !routineId) throw new Error(t("detail.notFound"));
-
-    const patch: RoutineUpdate = {};
-    if (trimmedName !== existing.name) patch.name = trimmedName;
-    if (cadence !== existing.cadence) patch.cadence = cadence;
-    // Custom days only matter while the cadence IS custom; leaving them
-    // untouched otherwise preserves the previous selection for a later
-    // switch back (the DB constraint only checks them under custom).
-    const daysChanged =
-      customDays.length !== existing.customDays.length ||
-      customDays.some((day, index) => existing.customDays[index] !== day);
-    if (cadence === "custom" && daysChanged) patch.customDays = customDays;
-    const { hour, minute } = clampTime(reminderTime);
-    const reminderChanged =
-      remEnabled !== existing.reminderEnabled ||
-      (remEnabled && (hour !== existing.reminderHour || minute !== existing.reminderMinute));
-    if (reminderChanged) {
-      patch.reminderEnabled = remEnabled;
-      patch.reminderHour = hour;
-      patch.reminderMinute = minute;
-      patch.reminderTimezone = getReminderTimeZone();
-    }
-    if (Object.keys(patch).length > 0) {
-      await updateMutation.mutateAsync({ id: routineId, patch });
-    }
-
-    const keptIds = new Set(steps.map((step) => step.id).filter((id): id is string => id !== null));
-    for (const step of existing.steps) {
-      if (!keptIds.has(step.id)) await removeStepMutation.mutateAsync(step.id);
-    }
-
-    const finalIds: string[] = [];
-    for (const [index, step] of steps.entries()) {
-      if (step.id) {
-        finalIds.push(step.id);
-        continue;
-      }
-      const created = await addStepMutation.mutateAsync({
-        routineId,
-        toolId: step.toolId,
-        position: index,
-      });
-      finalIds.push(created.id);
-    }
-
-    const originalIds = existing.steps.map((step) => step.id);
-    const changed =
-      finalIds.length !== originalIds.length ||
-      finalIds.some((id, index) => originalIds[index] !== id);
-    if (changed && finalIds.length > 0) {
-      await reorderStepsMutation.mutateAsync({ routineId, orderedStepIds: finalIds });
-    }
-    return routineId;
-  }
 
   if (editMode && !fromCache && isLoading) {
     return (

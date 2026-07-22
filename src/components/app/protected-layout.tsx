@@ -35,7 +35,11 @@ export default function ProtectedLayout() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= DESKTOP_BREAKPOINT;
   const { session, status, user } = useSession();
-  const { data: preferences, isLoading: prefsLoading } = useUserPreferences(user?.id ?? null);
+  const {
+    data: preferences,
+    isLoading: prefsLoading,
+    isError: prefsError,
+  } = useUserPreferences(user?.id ?? null);
   const completeOnboarding = useCompleteAppOnboarding(user?.id ?? null);
   const completeIntroduction = useUpdateOnboardingPreferences(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
@@ -61,6 +65,16 @@ export default function ProtectedLayout() {
     void hydrateAppLock().catch(() => {});
   }, [hydrateAppLock]);
 
+  // Web signed-out redirect: mutating window.location is a side effect, so it
+  // lives in an effect (the compiler's immutability rule forbids it in render);
+  // the render below returns null for this state while the redirect kicks in.
+  const signedOutOnWeb = status !== "loading" && !session && Platform.OS === "web";
+  useEffect(() => {
+    if (signedOutOnWeb && typeof window !== "undefined") {
+      window.location.href = "/";
+    }
+  }, [signedOutOnWeb]);
+
   if (status === "loading") {
     return (
       <SafeAreaView className="flex-1 bg-background">
@@ -75,7 +89,6 @@ export default function ProtectedLayout() {
 
   if (!session) {
     if (Platform.OS === "web" && typeof window !== "undefined") {
-      window.location.href = "/";
       return null;
     }
     return <AuthLandingScreen />;
@@ -85,8 +98,18 @@ export default function ProtectedLayout() {
     return <Redirect href="/(auth)/verify-email" />;
   }
 
+  // A failed preferences fetch WITH nothing cached leaves the acceptance state
+  // UNKNOWN — gating on it would re-prompt users who already accepted (#164:
+  // transient network errors flashed the gate). Fail open only then; TanStack's
+  // retry/refocus refetch re-evaluates once a load succeeds. When cached data
+  // exists the state is known even if the latest refetch errored, so a stale
+  // acceptance still gates.
+  const prefsUnknown = prefsError && !preferences;
   const needsConsent =
-    !consentDismissed && !prefsLoading && preferences?.policyVersionAccepted !== policyVersion;
+    !consentDismissed &&
+    !prefsLoading &&
+    !prefsUnknown &&
+    preferences?.policyVersionAccepted !== policyVersion;
   const needsAppOnboarding =
     !needsConsent &&
     !prefsLoading &&

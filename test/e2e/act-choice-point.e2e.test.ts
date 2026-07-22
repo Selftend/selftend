@@ -73,6 +73,10 @@ test.describe("ACT choice-point: create, view, delete", () => {
     // ── Save ───────────────────────────────────────────────────────────────────
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
+    // Wait for the "Saved" toast (fires after the DB write committed) before
+    // the hard goto() - navigating earlier aborts the in-flight insert (#172).
+    await expect(page.getByText("Saved")).toBeVisible({ timeout: 15_000 });
+
     // ── Navigate to list ───────────────────────────────────────────────────────
     await page.goto("/modules/act/choice-point");
     // List card primary text = hooks.join(", ")

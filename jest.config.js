@@ -9,8 +9,16 @@ module.exports = {
   testPathIgnorePatterns: ["/node_modules/", "/dist/", "/test/integration/", "/test/e2e/"],
   // jest-expo's default leaves @rn-primitives untransformed; our UI primitives
   // (Text, Label) depend on it, so widen the allowlist to transform it too.
+  // Likewise the default only lists @sentry/react-native, but sentry v8 pulls
+  // in sibling @sentry/* packages (core, browser, ...) that ship ESM — widen
+  // to the whole scope so jest transforms them.
   transformIgnorePatterns: expoPreset.transformIgnorePatterns.map((pattern) =>
-    pattern.replace("native-base))", "native-base|@rn-primitives))"),
+    // Match on the bare package name, not a "...))" suffix — jest-expo keeps
+    // appending entries to the alternation (56 added standard-navigation) and
+    // an anchored replace breaks silently.
+    pattern
+      .replace("native-base", "native-base|@rn-primitives")
+      .replace("@sentry/react-native", "@sentry"),
   ),
   // Coverage is scoped to the .ts logic surface. .tsx screens/components are
   // covered by e2e (not ratcheted); pure data/barrel modules are excluded.

@@ -38,6 +38,10 @@ module.exports = [
       "import/no-unresolved": ["error", { commonjs: true }],
     },
     settings: {
+      // Explicit version is LOAD-BEARING under ESLint 10: eslint-plugin-react's
+      // "detect" path calls context.getFilename(), which ESLint 10 removed —
+      // pinning the version skips that path entirely (#158). Bump alongside React.
+      react: { version: "19.2" },
       "import/resolver": {
         typescript: { alwaysTryTypes: true },
         node: {

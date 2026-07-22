@@ -1,5 +1,5 @@
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, View } from "react-native";
-import { useEffect, useState } from "react";
+import { ActivityIndicator, KeyboardAvoidingView, Modal, View } from "react-native";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -14,6 +14,7 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 
 interface DeleteAccountModalProps {
   visible: boolean;
@@ -36,11 +37,13 @@ export function DeleteAccountModal({
   const reduceMotionEnabled = useReduceMotionEnabled();
   const [confirmInput, setConfirmInput] = useState("");
 
-  useEffect(() => {
-    if (!visible) {
-      setConfirmInput("");
-    }
-  }, [visible]);
+  // Clear the typed confirmation whenever the modal closes, so a reopened
+  // modal never starts pre-armed.
+  const [prevVisible, setPrevVisible] = useState(visible);
+  if (visible !== prevVisible) {
+    setPrevVisible(visible);
+    if (!visible) setConfirmInput("");
+  }
 
   const canSubmit = confirmInput === DELETE_CONFIRMATION && !isPending;
 
@@ -51,10 +54,7 @@ export function DeleteAccountModal({
       transparent
       visible={visible}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-      >
+      <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
         <View className="flex-1 items-center justify-center bg-black/50 p-6">
           <Card className="w-full max-w-lg">
             <CardHeader>

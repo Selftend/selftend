@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { PanResponder, Platform, Pressable, TextInput, View } from "react-native";
+import { PanResponder, Pressable, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useRovingFocus } from "@/src/lib/roving-focus";
+import { playOneShot } from "@/src/lib/native-audio";
 
 type TimerState = "idle" | "running" | "paused" | "completed";
 
@@ -36,8 +37,6 @@ const BAR_MIN_H = 3;
 const SIGMA = 4.5;
 const bellSound = require("@/assets/sounds/meditation-bell.wav") as number;
 const intervalSound = require("@/assets/sounds/interval-temple-block.wav") as number;
-let nativeAudioModeConfigured = false;
-type ExpoAvModule = typeof import("expo-av");
 
 function clampDuration(value: number): number {
   return Math.max(MIN_TIMER_DURATION_MINUTES, Math.min(MAX_TIMER_DURATION_MINUTES, value));
@@ -54,30 +53,8 @@ function formatTime(seconds: number) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-async function playSound(asset: number) {
-  try {
-    if (Platform.OS === "web") {
-      const audio = new window.Audio(asset as unknown as string);
-      await audio.play();
-      return;
-    }
-
-    // Keep expo-av out of the web startup path; native still uses it until the expo-audio migration.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { Audio } = require("expo-av") as ExpoAvModule;
-    if (!nativeAudioModeConfigured) {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-      nativeAudioModeConfigured = true;
-    }
-
-    const { sound } = await Audio.Sound.createAsync(asset);
-    await sound.playAsync();
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && status.didJustFinish) sound.unloadAsync();
-    });
-  } catch (e) {
-    console.error("[timer] sound error", e);
-  }
+function playSound(asset: number) {
+  playOneShot(asset, 1);
 }
 
 function DurationPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {
@@ -92,16 +69,24 @@ function DurationPicker({ value, onChange }: { value: number; onChange: (n: numb
   const dragStartPosRef = useRef<number>(value);
   const inputRef = useRef<TextInput>(null);
 
-  // Sync when value changes externally (e.g. text input commit)
-  useEffect(() => {
-    if (Math.round(continuousPosRef.current) !== value) {
-      continuousPosRef.current = value;
-      setContinuousPos(value);
-    }
+  // Sync when value changes externally (e.g. text input commit) - a
+  // render-time adjustment; the gesture callbacks' ref mirror is kept in
+  // sync by the effect below.
+  const [prevSync, setPrevSync] = useState({ value, isEditing });
+  if (value !== prevSync.value || isEditing !== prevSync.isEditing) {
+    setPrevSync({ value, isEditing });
+    if (Math.round(continuousPos) !== value) setContinuousPos(value);
     if (!isEditing) setInputText(String(value));
-  }, [value, isEditing]);
+  }
 
-  const panResponder = useRef(
+  // PanResponder callbacks can't see fresh state, so continuousPosRef mirrors
+  // continuousPos for them (refs may only be written outside render).
+  useEffect(() => {
+    continuousPosRef.current = continuousPos;
+  }, [continuousPos]);
+
+  // eslint-disable-next-line react-hooks/refs -- PanResponder's callbacks are defined here but only ever run during gestures, never in render; the legacy API offers no compiler-era alternative
+  const [panResponder] = useState(() =>
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
@@ -129,7 +114,7 @@ function DurationPicker({ value, onChange }: { value: number; onChange: (n: numb
         onChange(snapped);
       },
     }),
-  ).current;
+  );
 
   function startEditing() {
     setInputText(String(Math.round(continuousPosRef.current)));
@@ -355,23 +340,19 @@ export function TimerWidget({
   }, []);
 
   useEffect(() => {
-    if (timerState === "idle") setSecondsLeft(durationMinutes * 60);
-  }, [durationMinutes, timerState]);
-
-  useEffect(() => {
     if (timerState === "running") {
       intervalRef.current = setInterval(() => {
         setSecondsLeft((prev) => {
           if (prev <= 1) {
             if (intervalRef.current) clearInterval(intervalRef.current);
             setTimerState("completed");
-            void playSound(bellSound);
+            playSound(bellSound);
             return 0;
           }
           const next = prev - 1;
           const elapsed = sessionTotalSecondsRef.current - next;
           if (isIntervalTick(elapsed, intervalSecondsRef.current)) {
-            void playSound(intervalSound);
+            playSound(intervalSound);
           }
           return next;
         });
@@ -408,7 +389,10 @@ export function TimerWidget({
     void saveIntervalMinutes(sessionInterval).catch((error) => {
       console.error("[timer] failed to save interval", error);
     });
-    void playSound(bellSound);
+    playSound(bellSound);
+    // secondsLeft is only rendered while active, so seeding it here (instead
+    // of tracking every idle duration change) keeps it correct.
+    setSecondsLeft(sessionDuration * 60);
     setTimerState("running");
   }
 

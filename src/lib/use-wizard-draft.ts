@@ -132,48 +132,51 @@ export function useWizardDraft<TForm extends FieldValues, TSaved>({
     }
   };
 
-  const submitForm = form.handleSubmit(
-    async (values) => {
-      setValues(values);
-      try {
-        const saved = await onSave(values);
-        // The record is saved - the draft (memory AND disk; it holds PHI) must go.
-        // Cancel any debounced capture first so it cannot resurrect the draft
-        // after the reset.
-        if (captureTimerRef.current) {
-          clearTimeout(captureTimerRef.current);
-          captureTimerRef.current = null;
+  // Created inside handleSave (call time), not render: RHF's handleSubmit
+  // touches form internals the compiler treats as refs.
+  const buildSubmitForm = () =>
+    form.handleSubmit(
+      async (values) => {
+        setValues(values);
+        try {
+          const saved = await onSave(values);
+          // The record is saved - the draft (memory AND disk; it holds PHI) must go.
+          // Cancel any debounced capture first so it cannot resurrect the draft
+          // after the reset.
+          if (captureTimerRef.current) {
+            clearTimeout(captureTimerRef.current);
+            captureTimerRef.current = null;
+          }
+          reset();
+          clearPersisted();
+          showToast({ title: toastLabels.saved, tone: "success" });
+          onSaved(saved);
+        } catch (e) {
+          const message = e instanceof Error ? e.message : toastLabels.fallbackError;
+          onError?.(message);
+          showToast({ title: toastLabels.problem, description: message, tone: "error" });
         }
-        reset();
-        clearPersisted();
-        showToast({ title: toastLabels.saved, tone: "success" });
-        onSaved(saved);
-      } catch (e) {
-        const message = e instanceof Error ? e.message : toastLabels.fallbackError;
-        onError?.(message);
-        showToast({ title: toastLabels.problem, description: message, tone: "error" });
-      }
-    },
-    (fieldErrors) => {
-      // A field on an EARLIER step can be invalid at save time (an overlong paste,
-      // a rehydrated draft the schema rejects) - per-step trigger() never re-checks
-      // it, and without this handler Save would silently no-op. Jump to the first
-      // step that owns an invalid field so its inline message is visible, and
-      // raise the problem toast so the jump is explained.
-      const failingStep = stepFields.findIndex((fields) =>
-        fields.some((field) => field.split(".")[0] in fieldErrors),
-      );
-      if (failingStep >= 0 && failingStep !== stepIndex) {
-        setStepIndex(failingStep);
-      }
-      showToast({ title: toastLabels.problem, tone: "error" });
-    },
-  );
+      },
+      (fieldErrors) => {
+        // A field on an EARLIER step can be invalid at save time (an overlong paste,
+        // a rehydrated draft the schema rejects) - per-step trigger() never re-checks
+        // it, and without this handler Save would silently no-op. Jump to the first
+        // step that owns an invalid field so its inline message is visible, and
+        // raise the problem toast so the jump is explained.
+        const failingStep = stepFields.findIndex((fields) =>
+          fields.some((field) => field.split(".")[0] in fieldErrors),
+        );
+        if (failingStep >= 0 && failingStep !== stepIndex) {
+          setStepIndex(failingStep);
+        }
+        showToast({ title: toastLabels.problem, tone: "error" });
+      },
+    );
   // RHF's handleSubmit does NOT block re-entrant calls (isSubmitting is React state that
   // hasn't re-rendered between two rapid presses), so a double-press on the final wizard
   // step would insert the record twice without this guard.
   const handleSave = useSingleFlight(async () => {
-    await submitForm();
+    await buildSubmitForm()();
   });
 
   const clearDraft = () => {

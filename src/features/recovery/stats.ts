@@ -3,11 +3,7 @@ import { toLocalDateKey } from "@/src/stores/selected-date-store";
 
 export interface RecoveryStat {
   key:
-    | "thoughtRecords"
-    | "exposuresCompleted"
-    | "moodDays"
-    | "goalsAchieved"
-    | "activitiesCompleted";
+    "thoughtRecords" | "exposuresCompleted" | "moodDays" | "goalsAchieved" | "activitiesCompleted";
   value: number;
 }
 

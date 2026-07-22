@@ -61,7 +61,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.19.0
+          node-version: 22.23.1
           cache: npm
 
       - name: Install dependencies
@@ -112,16 +112,11 @@ jobs:
       # the live Netlify site, re-publish it there manually. The note dies with
       # the Netlify site at cutover.
 
-      # wrangler 4.x requires Node >= 22; without this bump wrangler-action
-      # falls back to wrangler 3.90, which uploads _headers as a plain asset
-      # instead of applying it -- no CSP/HSTS, and staging loses its
-      # X-Robots-Tag (found at control-tower#68 verification). The Expo build
-      # above keeps 20.19.0.
-      - name: Switch to Node 22 for wrangler
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
+      # wrangler 4.x requires Node >= 22; below that, wrangler-action falls
+      # back to wrangler 3.90, which uploads _headers as a plain asset instead
+      # of applying it -- no CSP/HSTS, and staging loses its X-Robots-Tag
+      # (found at control-tower#68 verification). The whole job runs on 22 now,
+      # so no per-step Node switch is needed.
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:

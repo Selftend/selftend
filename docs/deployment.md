@@ -143,7 +143,7 @@ iOS and iPadOS web push requires the user to install the web app to the Home Scr
 The reusable `.github/workflows/web-deploy.yml` workflow (called by `release.yml` for prod and `staging.yml` for staging; also manually dispatchable):
 
 - checks out the release tag (prod) or the triggering `dev` SHA (staging)
-- installs dependencies and builds with Node `20.19.0`, runs `npm run export:web`
+- installs dependencies and builds with Node `22.23.1`, runs `npm run export:web`
 - switches to Node 22 and deploys `dist` (+ the `worker`-less static-assets config) via `cloudflare/wrangler-action@v3`, selecting `wrangler.toml` (prod) or `wrangler.staging.toml` (staging)
 
 Required GitHub repository variables:

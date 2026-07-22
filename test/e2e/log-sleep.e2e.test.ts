@@ -25,8 +25,13 @@ test.describe("log sleep", () => {
 
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
-    // After save the app redirects to the detail page; the notes string is the
-    // most stable identifier for the saved entry.
+    // Wait for the post-save redirect to the detail page (log-mood lesson):
+    // the form's own textarea also carries the notes text, so a bare text
+    // check can pass while still on /new - and the goto below then aborts the
+    // in-flight insert (#172: the trace showed the POST cancelled and the
+    // list correctly reading []). Ids are UUIDs, so a "new" segment can only
+    // be the editor itself.
+    await expect(page).toHaveURL(/\/tools\/sleep\/(?!new)[^/]+$/, { timeout: 15_000 });
     await expect(page.getByText(notes)).toBeVisible({ timeout: 15_000 });
 
     // The entry also appears on the sleep list.

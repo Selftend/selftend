@@ -116,7 +116,7 @@ npm run build:android:production
 EAS_LOCAL_BUILD_ARTIFACTS_DIR=./build-artifacts npm exec eas-cli -- build --platform android --profile production --local --non-interactive
 ```
 
-Use Node `20.19.0+` so your local runtime matches the current `package.json` engine requirement before you install or test anything.
+Use Node `22.13.0+` so your local runtime matches the current `package.json` engine requirement before you install or test anything.
 
 ## Android development build
 

@@ -78,9 +78,10 @@ export default function AuthCallbackScreen() {
   // token from history can therefore publish the clean `/auth-callback` URL back
   // to this mounted screen. Keep the original callback URL for the lifetime of
   // the screen so a successful verification is never retried as an incomplete link.
-  const callbackUrl = useRef<string | null>(null);
-  if (!callbackUrl.current && incomingUrl) callbackUrl.current = incomingUrl;
-  const url = callbackUrl.current;
+  // State (set during render - React's supported adjust-state-on-change form),
+  // not a render-written ref: latches once, ignores later URL changes.
+  const [url, setUrl] = useState<string | null>(incomingUrl ?? null);
+  if (!url && incomingUrl) setUrl(incomingUrl);
   const processedUrl = useRef<string | null>(null);
   const [failure, setFailure] = useState<CallbackFailure | null>(null);
   const [verified, setVerified] = useState(false);

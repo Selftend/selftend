@@ -56,6 +56,12 @@ test.describe("ACT observing-self: create, view, delete", () => {
     // Save
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
+    // Wait for the "Saved" toast - it appears only after mutateAsync resolves
+    // (the DB write committed). goto() is a hard navigation in the static
+    // export, so navigating earlier aborts the in-flight insert (#172: the
+    // trace showed the POST cancelled and the list correctly reading []).
+    await expect(page.getByText("Saved")).toBeVisible({ timeout: 15_000 });
+
     // ── Navigate to list ───────────────────────────────────────────────────────
     await page.goto("/modules/act/observing-self");
     await expect(page.getByText(observedText)).toBeVisible({ timeout: 15_000 });

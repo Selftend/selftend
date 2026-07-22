@@ -5,6 +5,7 @@ import {
   cancelAllReminders,
   cancelReminder,
   clearLegacyLocalReminders,
+  isAllowedReminderRoute,
   registerWebPushServiceWorker,
   scheduleReminder,
 } from "@/src/lib/notifications";
@@ -277,5 +278,39 @@ describe("Reminder notifications", () => {
       "user-1",
       "https://push.example/subscription",
     );
+  });
+});
+
+describe("isAllowedReminderRoute (deep-link allowlist)", () => {
+  it("accepts every server-minted fixed tool/module route", () => {
+    for (const route of [
+      "/modules/cbt",
+      "/tools/meditation",
+      "/modules/act",
+      "/tools/mood-tracker",
+      "/tools/journal",
+      "/tools/gratitude-log",
+      "/tools/grounding",
+      "/tools/breathing",
+      "/tools/sleep",
+      "/tools/habits",
+    ]) {
+      expect(isAllowedReminderRoute(route)).toBe(true);
+    }
+  });
+
+  it("accepts a single-segment /routines/<id> route", () => {
+    expect(isAllowedReminderRoute("/routines/1f9a4c2e-0d6b-4e2a-9b31-abc123def456")).toBe(true);
+    expect(isAllowedReminderRoute("/routines/abc-123")).toBe(true);
+  });
+
+  it("rejects off-origin, protocol-relative, scheme, and traversal URLs", () => {
+    expect(isAllowedReminderRoute("https://evil.example/modules/cbt")).toBe(false);
+    expect(isAllowedReminderRoute("//evil.example/modules/cbt")).toBe(false);
+    expect(isAllowedReminderRoute("javascript:alert(1)")).toBe(false);
+    expect(isAllowedReminderRoute("/routines/../../modules/cbt")).toBe(false);
+    expect(isAllowedReminderRoute("/routines/id/extra")).toBe(false);
+    expect(isAllowedReminderRoute("/unknown")).toBe(false);
+    expect(isAllowedReminderRoute("")).toBe(false);
   });
 });
