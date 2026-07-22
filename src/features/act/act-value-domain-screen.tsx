@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -50,17 +50,17 @@ export default function ActValueDomainScreen() {
   const [submitError, setSubmitError] = useState("");
   const [prefilled, setPrefilled] = useState(false);
 
-  useEffect(() => {
-    if (existing && !prefilled) {
-      setValueStatement(existing.valueStatement ?? "");
-      setCurrentActionsNote(existing.currentActionsNote ?? "");
-      setDesiredActionsNote(existing.desiredActionsNote ?? "");
-      setBarriers(existing.barriers ?? "");
-      setImportanceRating(existing.importanceRating ?? null);
-      setAlignmentRating(existing.currentAlignmentRating ?? null);
-      setPrefilled(true);
-    }
-  }, [existing, prefilled]);
+  // Prefill exactly once from the loaded entry (render-time adjustment);
+  // later refetches must not clobber in-progress edits.
+  if (existing && !prefilled) {
+    setValueStatement(existing.valueStatement ?? "");
+    setCurrentActionsNote(existing.currentActionsNote ?? "");
+    setDesiredActionsNote(existing.desiredActionsNote ?? "");
+    setBarriers(existing.barriers ?? "");
+    setImportanceRating(existing.importanceRating ?? null);
+    setAlignmentRating(existing.currentAlignmentRating ?? null);
+    setPrefilled(true);
+  }
 
   const stepIndex = STEP_ORDER.indexOf(step);
   const isLastStep = stepIndex === STEP_ORDER.length - 1;

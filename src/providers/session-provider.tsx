@@ -21,14 +21,12 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 
 export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
-  const [status, setStatus] = useState<SessionStatus>("loading");
+  // Without a Supabase client there is nothing to wait for - start "ready".
+  const [status, setStatus] = useState<SessionStatus>(supabase ? "loading" : "ready");
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!supabase) {
-      setStatus("ready");
-      return;
-    }
+    if (!supabase) return;
 
     initializeSupabaseAutoRefresh();
 

@@ -67,15 +67,25 @@ export function HomeTour(): React.JSX.Element | null {
     }
   }, [current]);
 
-  useEffect(() => {
+  // Drop the stale rect the moment the stop (or the target registry) changes,
+  // so the spotlight never flashes on the previous stop's position while the
+  // new target is measured (render-time adjustment).
+  const measureKey = current ? `${current.storageKey}:${registryVersion}` : null;
+  const [prevMeasureKey, setPrevMeasureKey] = useState(measureKey);
+  if (measureKey !== prevMeasureKey) {
+    setPrevMeasureKey(measureKey);
     setTargetRect(null);
+  }
+
+  useEffect(() => {
     if (!current) return;
-    if (process.env.NODE_ENV === "test") {
-      measure();
-      return;
-    }
-    // Same settle-point strategy as module-home-header: layout shifts after first paint.
-    const timers = [setTimeout(measure, 150), setTimeout(measure, 450), setTimeout(measure, 900)];
+    // Same settle-point strategy as module-home-header: layout shifts after
+    // first paint. Tests measure on the next tick - the settle delays would
+    // only slow them down.
+    const timers =
+      process.env.NODE_ENV === "test"
+        ? [setTimeout(measure, 0)]
+        : [setTimeout(measure, 150), setTimeout(measure, 450), setTimeout(measure, 900)];
     if (Platform.OS === "web") {
       window.addEventListener("resize", measure, { passive: true });
       return () => {

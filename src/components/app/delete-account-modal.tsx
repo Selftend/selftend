@@ -1,5 +1,5 @@
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, View } from "react-native";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -36,11 +36,13 @@ export function DeleteAccountModal({
   const reduceMotionEnabled = useReduceMotionEnabled();
   const [confirmInput, setConfirmInput] = useState("");
 
-  useEffect(() => {
-    if (!visible) {
-      setConfirmInput("");
-    }
-  }, [visible]);
+  // Clear the typed confirmation whenever the modal closes, so a reopened
+  // modal never starts pre-armed.
+  const [prevVisible, setPrevVisible] = useState(visible);
+  if (visible !== prevVisible) {
+    setPrevVisible(visible);
+    if (!visible) setConfirmInput("");
+  }
 
   const canSubmit = confirmInput === DELETE_CONFIRMATION && !isPending;
 

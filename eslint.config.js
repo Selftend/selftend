@@ -36,10 +36,6 @@ module.exports = [
   {
     rules: {
       "import/no-unresolved": ["error", { commonjs: true }],
-      // react-hooks v7 (via eslint-config-expo 56) added new compiler-aligned
-      // rules; pre-existing violations were burned down in #167 — this last
-      // override is deleted when set-state-in-effect reaches zero.
-      "react-hooks/set-state-in-effect": "warn",
     },
     settings: {
       // Explicit version is LOAD-BEARING under ESLint 10: eslint-plugin-react's
