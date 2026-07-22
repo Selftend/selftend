@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { UserProfile } from "@/src/features/profile/profile-sync";
@@ -7,20 +7,25 @@ import { getErrorMessage } from "@/src/utils/error-message";
 
 /**
  * Display-name field state + save handler, extracted verbatim from
- * `ProfilePictureCard`. The effect keeps the input seeded from the loaded
- * profile; `save` writes through the mutation and surfaces a localized message
- * or error.
+ * `ProfilePictureCard`. The input stays seeded from the loaded profile via a
+ * render-time adjustment; `save` writes through the mutation and surfaces a
+ * localized message or error.
  */
 export function useDisplayName(userId: string | null, profile: UserProfile | null | undefined) {
   const { t } = useTranslation("settings");
   const updateNameMutation = useUpdateUserDisplayName(userId);
-  const [value, setValue] = useState("");
+  const displayName = profile?.displayName ?? "";
+  const [value, setValue] = useState(displayName);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    setValue(profile?.displayName ?? "");
-  }, [profile?.displayName]);
+  // Re-seed the field whenever the loaded profile's name changes (initial
+  // load included), without clobbering unrelated in-progress edits.
+  const [prevDisplayName, setPrevDisplayName] = useState(displayName);
+  if (displayName !== prevDisplayName) {
+    setPrevDisplayName(displayName);
+    setValue(displayName);
+  }
 
   const save = async () => {
     try {

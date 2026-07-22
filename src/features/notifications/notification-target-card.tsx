@@ -1,5 +1,5 @@
 import { ActivityIndicator, View } from "react-native";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { TimeField } from "@/src/components/app/time-field";
@@ -70,10 +70,22 @@ export function NotificationTargetCard({
   const [time, setTime] = useState<TimeOfDay>({ hour: initialHour, minute: initialMinute });
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
+  // Re-sync the local controls whenever the server-backed values change
+  // (render-time adjustment).
+  const [prevInitial, setPrevInitial] = useState({
+    enabled: initialEnabled,
+    hour: initialHour,
+    minute: initialMinute,
+  });
+  if (
+    prevInitial.enabled !== initialEnabled ||
+    prevInitial.hour !== initialHour ||
+    prevInitial.minute !== initialMinute
+  ) {
+    setPrevInitial({ enabled: initialEnabled, hour: initialHour, minute: initialMinute });
     setEnabled(initialEnabled);
     setTime({ hour: initialHour, minute: initialMinute });
-  }, [initialEnabled, initialHour, initialMinute]);
+  }
 
   const masterDisabled = !globalEnabled || isPlaceholder;
   const controlsDisabled = masterDisabled || !enabled;

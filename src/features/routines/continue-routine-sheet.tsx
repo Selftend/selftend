@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Modal, Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -60,24 +60,22 @@ export function ContinueRoutineSheet({
   // same selection the FAB counts, #91) so it stays put if it completes
   // mid-session - that is the moment the completion state must show instead
   // of the view jumping to another routine. Reset on close so the next open
-  // starts fresh.
-  useEffect(() => {
+  // starts fresh. Both are render-time adjustments.
+  const [prevVisible, setPrevVisible] = useState(visible);
+  if (visible !== prevVisible) {
+    setPrevVisible(visible);
     if (!visible) {
       setSelectedId(null);
       setReminderError(undefined);
-      return;
     }
+  }
+  if (visible && selectedId === null) {
     setSelectedId(
-      (current) =>
-        current ??
-        firstOpenRoutineView(views)?.routine.id ??
-        initialRoutineId ??
-        views[0]?.routine.id ??
-        null,
+      firstOpenRoutineView(views)?.routine.id ?? initialRoutineId ?? views[0]?.routine.id ?? null,
     );
-  }, [visible, views, initialRoutineId]);
+  }
 
-  // Pre-effect fallback goes through the SAME selector the FAB counts with
+  // Pre-pin fallback goes through the SAME selector the FAB counts with
   // (#121): a naive first-scheduled-open pick could disagree for the first
   // visible frame when a later routine is in progress, flashing (and
   // announcing) the wrong one.

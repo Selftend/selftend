@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -34,14 +34,14 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | undefined>();
 
-  const initializedRef = useRef(false);
   // Hydrate the field from the saved note exactly once, after the logs query first
-  // settles. Re-running on later refetches would overwrite the user's in-progress text.
-  useEffect(() => {
-    if (initializedRef.current || logs === undefined) return;
-    initializedRef.current = true;
+  // settles (render-time adjustment). Re-running on later refetches would overwrite
+  // the user's in-progress text.
+  const [hydrated, setHydrated] = useState(false);
+  if (!hydrated && logs !== undefined) {
+    setHydrated(true);
     if (existing) setNote(existing.note);
-  }, [logs, existing]);
+  }
 
   async function handleSave() {
     if (!user) return;

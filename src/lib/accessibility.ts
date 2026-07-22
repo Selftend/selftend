@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { AccessibilityInfo, Platform, type Insets } from "react-native";
 
 export const DEFAULT_INTERACTIVE_HIT_SLOP: Insets = {
@@ -98,62 +98,62 @@ export function announceMessage(message: string) {
   }
 }
 
+const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeWebReduceMotion(onStoreChange: () => void) {
+  const mediaQuery = globalThis.window?.matchMedia?.(REDUCE_MOTION_QUERY);
+  if (!mediaQuery) {
+    return () => {};
+  }
+  if (typeof mediaQuery.addEventListener === "function") {
+    mediaQuery.addEventListener("change", onStoreChange);
+    return () => mediaQuery.removeEventListener("change", onStoreChange);
+  }
+  mediaQuery.addListener(onStoreChange);
+  return () => mediaQuery.removeListener(onStoreChange);
+}
+
+function getWebReduceMotionSnapshot() {
+  return globalThis.window?.matchMedia?.(REDUCE_MOTION_QUERY)?.matches ?? false;
+}
+
+// The native probe is async, so the last known value is cached module-side for
+// the synchronous snapshot; motion stays enabled (false) until it resolves.
+let nativeReduceMotion = false;
+
+function subscribeNativeReduceMotion(onStoreChange: () => void) {
+  let active = true;
+  AccessibilityInfo.isReduceMotionEnabled()
+    .then((isEnabled) => {
+      if (active && nativeReduceMotion !== isEnabled) {
+        nativeReduceMotion = isEnabled;
+        onStoreChange();
+      }
+    })
+    .catch(() => {
+      // Probe can reject on some platforms; keep the motion-enabled default.
+    });
+
+  const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", (isEnabled) => {
+    nativeReduceMotion = isEnabled;
+    onStoreChange();
+  });
+
+  return () => {
+    active = false;
+    subscription.remove();
+  };
+}
+
+function getNativeReduceMotionSnapshot() {
+  return nativeReduceMotion;
+}
+
 export function useReduceMotionEnabled() {
-  const [enabled, setEnabled] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-
-    if (Platform.OS === "web") {
-      const mediaQuery = globalThis.window?.matchMedia?.("(prefers-reduced-motion: reduce)");
-
-      if (!mediaQuery) {
-        return () => {
-          mounted = false;
-        };
-      }
-
-      const handleChange = (event: MediaQueryList | MediaQueryListEvent) => {
-        if (mounted) {
-          setEnabled(event.matches);
-        }
-      };
-
-      setEnabled(mediaQuery.matches);
-      if (typeof mediaQuery.addEventListener === "function") {
-        mediaQuery.addEventListener("change", handleChange);
-      } else {
-        mediaQuery.addListener(handleChange);
-      }
-
-      return () => {
-        mounted = false;
-        if (typeof mediaQuery.removeEventListener === "function") {
-          mediaQuery.removeEventListener("change", handleChange);
-        } else {
-          mediaQuery.removeListener(handleChange);
-        }
-      };
-    }
-
-    AccessibilityInfo.isReduceMotionEnabled()
-      .then((isEnabled) => {
-        if (mounted) {
-          setEnabled(isEnabled);
-        }
-      })
-      .catch(() => {
-        // Probe can reject on some platforms; default to motion enabled.
-        if (mounted) setEnabled(false);
-      });
-
-    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setEnabled);
-
-    return () => {
-      mounted = false;
-      subscription.remove();
-    };
-  }, []);
-
-  return enabled;
+  return useSyncExternalStore(
+    Platform.OS === "web" ? subscribeWebReduceMotion : subscribeNativeReduceMotion,
+    Platform.OS === "web" ? getWebReduceMotionSnapshot : getNativeReduceMotionSnapshot,
+    // Static/server rendering has no OS setting to read - default to motion.
+    () => false,
+  );
 }
