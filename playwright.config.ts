@@ -29,7 +29,11 @@ export default defineConfig({
 
   use: {
     baseURL: `http://localhost:${PORT}`,
-    trace: "on-first-retry",
+    // retain-on-failure, not on-first-retry: with retries:0 a retry never
+    // happens, so the flake family in #172 left no trace evidence. The trace
+    // records the prefs network responses, which is exactly what diagnosing a
+    // prefs-dependent-UI failure needs; it is only written to disk on failure.
+    trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
   },
