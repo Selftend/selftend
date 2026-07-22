@@ -335,7 +335,7 @@ The app uses Google OAuth and email/password for authentication (`signInWithGoog
 - manual profile-picture uploads take priority until the user resets to the Google photo or removes the photo
 - removing a profile picture stores `avatar_source = null` with a removal timestamp; users can still choose Use Google photo later
 
-Auth email templates live in `supabase/templates/` (wired via `[auth.email.template.*]` in `config.toml`); they link straight to the app callback with `{{ .RedirectTo }}?token_hash=...&type=...` so links work in any browser. The local stack reads them only at `supabase start` - after editing a template or its config block, restart the stack (`npm run db:stop && npm run db:start`); a `db:reset` alone does NOT reload them. Production templates are pasted by hand in the Dashboard - see docs/operations-runbook.md "Auth Email Templates".
+Auth email templates live in `supabase/templates/` (wired via `[auth.email.template.*]` in `config.toml`); they link straight to the app callback with `{{ .SiteURL }}/auth-callback?token_hash=...&type=...` so links work in any browser and from native-app requests alike (never `{{ .RedirectTo }}` - a native app-scheme redirect_to makes Go's html/template render the href as the dead literal `ZgotmplZ`). The local stack reads them only at `supabase start` - after editing a template or its config block, restart the stack (`npm run db:stop && npm run db:start`); a `db:reset` alone does NOT reload them. Production templates are pasted by hand in the Dashboard - see docs/operations-runbook.md "Auth Email Templates".
 
 ## Production launch checklist
 

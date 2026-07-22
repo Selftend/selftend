@@ -8,15 +8,18 @@ import { requireSupabase } from "@/src/lib/supabase";
 
 const AUTH_CALLBACK_PATH = "auth-callback";
 
-// Email links are templated as `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=...`
-// (see supabase/templates/ and docs/operations-runbook.md "Auth Email Templates"), so
-// every redirect URL the app sends for EMAILS must stay query-less - the template
-// appends its own query string, and a `?` already present in redirect_to would break
-// the join. The `type` the callback needs to route (recovery -> update-password,
-// signup -> verified card) now comes from the template's `&type=` param. A previous
-// revision carried a `?type=recovery` marker on the recovery redirect; links from
-// emails sent back then still work - they route through /auth/v1/verify and arrive
-// as `?type=recovery&code=...`, which the callback's `code` branch handles.
+// Email links are templated as `{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&type=...`
+// (see supabase/templates/ and docs/operations-runbook.md "Auth Email Templates"): the
+// link base is the project Site URL, NOT the redirect URL this app sends. Native
+// clients send the app scheme (`selftend://auth-callback`) as redirect_to, and Go's
+// html/template refuses custom schemes in an href - a `{{ .RedirectTo }}`-based link
+// renders as the dead literal `ZgotmplZ?...` in those emails. The redirect URLs below
+// are still sent (GoTrue validates them against the allowlist, and OAuth uses them for
+// the actual browser return trip); they just no longer decide where email links point.
+// The `type` the callback needs to route (recovery -> update-password, signup ->
+// verified card) comes from the template's `&type=` param. Links from emails sent by
+// older template revisions still work - they route through /auth/v1/verify and arrive
+// as `?code=...`, which the callback's `code` branch handles.
 
 export function getWebAuthRedirectUrl(publicAppUrl = appEnv.publicAppUrl) {
   const configuredPublicAppUrl = publicAppUrl.trim();

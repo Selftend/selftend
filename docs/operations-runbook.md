@@ -81,26 +81,30 @@ must mirror them by hand - templates are not part of `db push`.
    retype). The critical part is the link format (in the raw HTML the `&` is
    written `&amp;`, exactly as in the repo files):
 
-   | Template       | Subject                               | Link in body (exact format)                                       |
-   | -------------- | ------------------------------------- | ----------------------------------------------------------------- |
-   | Confirm signup | `Confirm your email for Selftend`     | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=signup`       |
-   | Reset password | `Reset your Selftend password`        | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery`     |
-   | Change email   | `Confirm your new email for Selftend` | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email_change` |
-   | Invite user    | `You're invited to Selftend`          | `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=invite`       |
+   | Template       | Subject                               | Link in body (exact format)                                                  |
+   | -------------- | ------------------------------------- | ---------------------------------------------------------------------------- |
+   | Confirm signup | `Confirm your email for Selftend`     | `{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&type=signup`       |
+   | Reset password | `Reset your Selftend password`        | `{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&type=recovery`     |
+   | Change email   | `Confirm your new email for Selftend` | `{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&type=email_change` |
+   | Invite user    | `You're invited to Selftend`          | `{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&type=invite`       |
+
+   Never use `{{ .RedirectTo }}` as the link base: native clients send the app
+   scheme (`selftend://auth-callback`) as `redirect_to`, and GoTrue's Go
+   html/template refuses custom schemes inside an `href` - the button renders
+   with the dead literal `ZgotmplZ?token_hash=...` and clicking does nothing
+   (found live in prod, 2026-07-22). `{{ .SiteURL }}` is always http(s), so
+   the link works from every client and email app.
 
    Body files: `confirmation.html`, `recovery.html`, `email_change.html`,
    `invite.html` in `supabase/templates/`. (Invite matters
    even without an invite UI: admin-API invitations from the Dashboard would
    otherwise send the default PKCE `?code=` link, which breaks cross-browser.)
 
-3. **Verify Site URL** = `https://selftend.org` (Authentication → URL
-   Configuration). `{{ .RedirectTo }}` is the allowlist-validated `redirect_to`
-   the app sends; when a request carries none (or an unlisted one), GoTrue falls
-   back to the Site URL - it must be the production origin, never a preview or
-   localhost value. **Symptom of the fallback misfiring:** the emailed link
-   lands on the app ROOT (`https://<site-url>/?token_hash=...`) instead of
-   `/auth-callback`, nothing verifies, and the single-use token is silently
-   wasted - the user just sees the landing page.
+3. **Verify Site URL** = `https://selftend.org` - exactly, with **no trailing
+   slash** (Authentication → URL Configuration). `{{ .SiteURL }}` is the base
+   of every emailed link, so it must be the production origin, never a preview
+   or localhost value; a trailing slash turns links into
+   `https://selftend.org//auth-callback?...`, which does not route.
 4. **Verify the redirect allowlist** contains `https://selftend.org/auth-callback`
    (same URL Configuration page).
 5. Smoke test after saving: request a password reset from the production site,

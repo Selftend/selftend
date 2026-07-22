@@ -89,17 +89,17 @@ Supabase Dashboard → Project Settings → Auth → **SMTP Settings**:
 - [ ] In Supabase Dashboard → Auth → Email Templates, paste the bodies from
       `supabase/templates/{confirmation,recovery,email_change,invite}.html` so
       production matches local. **Critical:** these templates use
-      `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=...` links (not the
-      default `{{ .ConfirmationURL }}`) — the config comment explains this is
-      required for cross-browser/device PKCE compatibility. If you paste the
-      default template instead, confirmation links will fail with "PKCE code
-      verifier not found in storage".
+      `{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&type=...` links
+      (not the default `{{ .ConfirmationURL }}`, and not `{{ .RedirectTo }}`) —
+      the config comment explains why: `ConfirmationURL` breaks cross-browser
+      ("PKCE code verifier not found in storage"), and `RedirectTo` renders as
+      the dead literal `ZgotmplZ` when a native client sent the app scheme.
 - [ ] Confirm the subjects match config.toml (`Confirm your email for Selftend`,
       `Reset your Selftend password`, etc.).
-- [ ] Confirm the `Site URL` and redirect allow-list in Auth settings include
-      the production origin (`https://selftend.org`, `https://selftend.org/auth-callback`)
-      and the app scheme(s) — otherwise `{{ .RedirectTo }}` falls back and links
-      may land on the wrong origin.
+- [ ] Confirm the `Site URL` is exactly `https://selftend.org` (no trailing
+      slash — `{{ .SiteURL }}` is the base of every emailed link) and the
+      redirect allow-list includes `https://selftend.org/auth-callback` plus
+      the app scheme(s).
 - [ ] Auth → Rate Limits: confirm signup/OTP/recovery limits won't lock out a
       12–20 tester wave arriving the same day (several may share an office/household
       IP). Raise if needed for the wave.
@@ -117,7 +117,7 @@ Supabase Dashboard → Project Settings → Auth → **SMTP Settings**:
       "ignore this email if you didn't request it" line — both help spam scoring
       and user trust. (Present as of this writing.)
 - [ ] Confirm links are absolute `https://` (spam filters penalize bare/relative
-      links) — they are, via `{{ .RedirectTo }}`.
+      links) — they are, via `{{ .SiteURL }}`.
 - [ ] Note: templates render an HTML button with a bare-domain fallback is
       **absent** — consider adding a visible plain URL under the button for
       clients that strip buttons. (Owner judgment; not a blocker.)
