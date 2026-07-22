@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.5.0](https://github.com/Selftend/selftend/compare/v0.4.2...v0.5.0) (2026-07-22)
+
+
+### Features
+
+* **edge:** send feedback email via AWS SES instead of Resend ([#146](https://github.com/Selftend/selftend/issues/146)) ([f4790bb](https://github.com/Selftend/selftend/commit/f4790bb973651efe84381d28085148be3fa592f7))
+* **platform:** upgrade Expo SDK 54→55 (RN 0.83, React 19.2), expo-av→expo-audio ([#160](https://github.com/Selftend/selftend/issues/160)) ([#166](https://github.com/Selftend/selftend/issues/166)) ([321f321](https://github.com/Selftend/selftend/commit/321f32119025649fb61ec04669cd2574f6538a23))
+* **platform:** upgrade Expo SDK 55→56 — RN 0.85, Hermes V1 default, expo-router navigation independence ([#168](https://github.com/Selftend/selftend/issues/168)) ([57193c0](https://github.com/Selftend/selftend/commit/57193c0fa6b1c194aee17bd9e4c13ab495d4f5be))
+* **platform:** upgrade Expo SDK 56→57 — land the spine target ([#162](https://github.com/Selftend/selftend/issues/162)) ([#169](https://github.com/Selftend/selftend/issues/169)) ([553b4b8](https://github.com/Selftend/selftend/commit/553b4b87c936dab1d4a39b622e2e48822e4383cd))
+
+
+### Bug Fixes
+
+* **auth:** base email links on SiteURL so native-initiated emails work ([#179](https://github.com/Selftend/selftend/issues/179)) ([5831572](https://github.com/Selftend/selftend/commit/5831572edbcc2d0ecdca388871e0ea9229a88b59))
+* **consent:** don't flash the policy gate when the preferences fetch fails ([#170](https://github.com/Selftend/selftend/issues/170)) ([91a9f8a](https://github.com/Selftend/selftend/commit/91a9f8a657cc8572b78266f55228268fea4de969))
+* **home:** rework dashboard grid to Sortable.Grid so columns never collapse ([#180](https://github.com/Selftend/selftend/issues/180)) ([b2de787](https://github.com/Selftend/selftend/commit/b2de787804f81d3718e3b400cc54e76dc093bfd8))
+* **keyboard:** restore Android keyboard avoidance lost to edge-to-edge ([#181](https://github.com/Selftend/selftend/issues/181)) ([302bbe5](https://github.com/Selftend/selftend/commit/302bbe5bb4ee15deb006149b3ae789313efad7ef))
+* **security:** post-launch advisor + defense-in-depth hardening ([#138](https://github.com/Selftend/selftend/issues/138)) ([#147](https://github.com/Selftend/selftend/issues/147)) ([89d069f](https://github.com/Selftend/selftend/commit/89d069fb68f63e8209e491a44841e6dd12d48c4f))
+
 ## [0.4.2](https://github.com/Selftend/selftend/compare/v0.4.1...v0.4.2) (2026-07-18)
 
 
