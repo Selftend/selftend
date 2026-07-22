@@ -32,7 +32,7 @@ import {
   cycleSeconds,
 } from "@/src/features/breathing/cycle-math";
 import { scheduleStateAt } from "@/src/features/breathing/schedule";
-import { useResolvedExercise } from "@/src/features/breathing/resolve-exercise";
+import { resolveBuiltin, useResolvedExercise } from "@/src/features/breathing/resolve-exercise";
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
 import { SoundsSheet } from "@/src/features/breathing/sounds-sheet";
 import { VolumeSlider } from "@/src/components/app/volume-slider";
@@ -61,6 +61,10 @@ const PHASE_OPACITY: Record<BreathingPhase["label"], number> = {
 };
 const TICK_MS = 250;
 const DEFAULT_PATTERN = "box-breathing";
+// Pre-resolved fallback for when a remembered pattern no longer exists; a
+// module constant so its identity is stable across renders (the ticking
+// effect keys on `resolved`).
+const DEFAULT_RESOLVED = resolveBuiltin(DEFAULT_PATTERN);
 // A beat of silence after the spoken intro before the breathing sequence starts.
 const POST_INTRO_PAUSE_MS = 1000;
 
@@ -81,26 +85,44 @@ export default function BreathingSessionScreen() {
   const { data: customExercises } = useBreathingExercises(user?.id ?? null);
   const updatePrefs = useUpdateUserPreferences(user?.id ?? null);
 
-  // The active pattern: the ?pattern param wins, otherwise the server-remembered last one,
-  // otherwise a sensible default. `patternTouched` stops the remembered-pattern effect from
-  // overriding an explicit choice.
-  const [patternId, setPatternId] = useState<string>(() => patternParam || DEFAULT_PATTERN);
-  const patternTouchedRef = useRef(Boolean(patternParam));
-  const { resolved, isLoading, notFound } = useResolvedExercise(patternId);
+  // The active pattern is fully derived: an explicit in-session choice wins,
+  // then the ?pattern param, then the server-remembered last one, then a
+  // sensible default - so prefs loading needs no adoption effect.
+  const [chosenPatternId, setChosenPatternId] = useState<string | null>(null);
+  const requestedPatternId =
+    chosenPatternId ?? (patternParam || prefs?.lastBreathingPatternId || DEFAULT_PATTERN);
+  const requested = useResolvedExercise(requestedPatternId);
+  // If the requested (non-param) pattern no longer resolves - e.g. its custom
+  // exercise was deleted but `lastBreathingPatternId` still points at it -
+  // fall back to the default instead of dead-ending on the notFound screen.
+  // A notFound from an explicit ?pattern param is left to show notFound (the
+  // user deep-linked to a specific, missing exercise).
+  const fallbackToDefault =
+    requested.notFound && !patternParam && requestedPatternId !== DEFAULT_PATTERN;
+  const patternId = fallbackToDefault ? DEFAULT_PATTERN : requestedPatternId;
+  const { resolved, isLoading, notFound } = fallbackToDefault
+    ? { resolved: DEFAULT_RESOLVED, isLoading: false, notFound: false }
+    : requested;
 
   const [screenPhase, setScreenPhase] = useState<ScreenPhase>("intro");
-  const [selectedCycles, setSelectedCycles] = useState<number>(0);
   const [currentCycle, setCurrentCycle] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [currentPhase, setCurrentPhase] = useState<BreathingPhase | null>(null);
   const [phaseSecondsLeft, setPhaseSecondsLeft] = useState(0);
   const [soundsOpen, setSoundsOpen] = useState(false);
 
-  // Volume is frontend-authoritative (instant audio); the DB only stores the last value so it
-  // restores next session. Hydrated from prefs once, then owned locally.
-  const [breathVolume, setBreathVolume] = useState(0.7);
-  const [ambientVolume, setAmbientVolume] = useState(0.5);
-  const hydratedRef = useRef(false);
+  // Volume is frontend-authoritative (instant audio); the DB only stores the
+  // last value so it restores next session. The server value seeds the slider
+  // until the user drags it, then the local override owns it.
+  const [breathVolumeOverride, setBreathVolumeOverride] = useState<number | null>(null);
+  const [ambientVolumeOverride, setAmbientVolumeOverride] = useState<number | null>(null);
+  const breathVolume = breathVolumeOverride ?? prefs?.breathVolume ?? 0.7;
+  const ambientVolume = ambientVolumeOverride ?? prefs?.ambientVolume ?? 0.5;
+
+  // Global cycle count: the local override, else the server-remembered count,
+  // else the resolved pattern's default once it loads.
+  const [cyclesOverride, setCyclesOverride] = useState<number | null>(null);
+  const selectedCycles = cyclesOverride ?? (prefs?.breathingCycles || resolved?.defaultCycles || 0);
 
   const phaseIndexRef = useRef(-1);
   const startMsRef = useRef(0);
@@ -123,14 +145,13 @@ export default function BreathingSessionScreen() {
 
   const selectPattern = (id: string) => {
     if (id === patternId) return;
-    patternTouchedRef.current = true;
-    setPatternId(id);
+    setChosenPatternId(id);
     patchPrefs({ lastBreathingPatternId: id }); // cycles are global - keep them across patterns
   };
 
   // Cycle count is global: change it locally and persist for next session.
   const changeCycles = (next: number) => {
-    setSelectedCycles(next);
+    setCyclesOverride(next);
     patchPrefs({ breathingCycles: next });
   };
 
@@ -170,44 +191,15 @@ export default function BreathingSessionScreen() {
     justifyContent: "center" as const,
   };
 
-  // Adopt the server-remembered pattern once prefs load (unless the user picked one / passed a param).
+  // When the remembered pattern falls back to the default, also clear the
+  // stale remembered id (best-effort) so every param-less entry point (home
+  // button, widget, suggestions) keeps working next session.
   useEffect(() => {
-    if (patternTouchedRef.current || patternParam) return;
-    const last = prefs?.lastBreathingPatternId;
-    if (last && last !== patternId) setPatternId(last);
-  }, [prefs, patternParam, patternId]);
-
-  // If the adopted (non-param) pattern no longer resolves - e.g. its custom exercise was
-  // deleted but `lastBreathingPatternId` still points at it - fall back to the default
-  // instead of dead-ending on the notFound screen, and clear the stale remembered id so
-  // every param-less entry point (home button, widget, suggestions) keeps working.
-  // Marking patternTouchedRef stops the adoption effect from re-adopting the dead id
-  // before the cleared pref propagates. A notFound from an explicit ?pattern param is
-  // left to show notFound (the user deep-linked to a specific, missing exercise).
-  useEffect(() => {
-    if (!notFound || patternParam || patternId === DEFAULT_PATTERN) return;
-    patternTouchedRef.current = true;
-    setPatternId(DEFAULT_PATTERN);
+    if (!fallbackToDefault) return;
     patchPrefs({ lastBreathingPatternId: DEFAULT_PATTERN });
-    // patchPrefs reads latest prefs/user via closure; deps kept to the resolution signals.
+    // patchPrefs reads latest prefs/user via closure; deps kept to the resolution signal.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notFound, patternParam, patternId]);
-
-  // Hydrate frontend-owned values (volumes + global cycles) from prefs once they load.
-  useEffect(() => {
-    if (hydratedRef.current || !prefs) return;
-    hydratedRef.current = true;
-    setBreathVolume(prefs.breathVolume);
-    setAmbientVolume(prefs.ambientVolume);
-    if (prefs.breathingCycles) setSelectedCycles(prefs.breathingCycles);
-  }, [prefs]);
-
-  // If no global cycle count is saved yet, fall back to the pattern's default once it resolves.
-  useEffect(() => {
-    if (resolved && selectedCycles === 0 && !prefs?.breathingCycles) {
-      setSelectedCycles(resolved.defaultCycles);
-    }
-  }, [resolved, selectedCycles, prefs]);
+  }, [fallbackToDefault]);
 
   const animateForPhase = (phase: BreathingPhase) => {
     const toSize =
@@ -506,7 +498,7 @@ export default function BreathingSessionScreen() {
                     <VolumeSlider
                       orientation="vertical"
                       value={breathVolume}
-                      onChange={setBreathVolume}
+                      onChange={setBreathVolumeOverride}
                       onCommit={(v) => patchPrefs({ breathVolume: v })}
                       accessibilityLabel={t("breathing.sounds.breathVolume")}
                     />
@@ -536,7 +528,7 @@ export default function BreathingSessionScreen() {
                     <VolumeSlider
                       orientation="vertical"
                       value={ambientVolume}
-                      onChange={setAmbientVolume}
+                      onChange={setAmbientVolumeOverride}
                       onCommit={(v) => patchPrefs({ ambientVolume: v })}
                       accessibilityLabel={t("breathing.sounds.ambientVolume")}
                     />

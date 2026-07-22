@@ -62,16 +62,25 @@ export function ReminderPromptCard() {
 
   const { mutateAsync: persistPreferences } = updatePreferences;
 
+  // Consume the request's UI state during render (render-time adjustment);
+  // from here the card is driven by local state, so the preference write
+  // below can't hide the card mid-interaction.
+  const [consumedRequest, setConsumedRequest] = useState<typeof request>(null);
+  if (request && request !== consumedRequest && userId && preferences) {
+    setConsumedRequest(request);
+    if (isReminderPromptEligible(preferences, request.targetKey)) {
+      setActiveTarget(request.targetKey);
+      setTime(roundToNearestHalfHour(new Date(request.completedAt)));
+    }
+  }
+
+  // The consumption's side effects: clear the store request, and mark
+  // prompted on show - navigating away without touching the card still
+  // counts as asked. Best-effort - a failed write only risks one more ask.
   useEffect(() => {
     if (!request || !userId || !preferences) return;
-    // Consume the request; from here the card is driven by local state, so the
-    // preference write below can't hide the card mid-interaction.
     dismissRequest();
     if (!isReminderPromptEligible(preferences, request.targetKey)) return;
-    setActiveTarget(request.targetKey);
-    setTime(roundToNearestHalfHour(new Date(request.completedAt)));
-    // Mark prompted on show: navigating away without touching the card still
-    // counts as asked. Best-effort - a failed write only risks one more ask.
     persistPreferences({
       reminderPromptedTools: promptedToolsIncluding(preferences, request.targetKey),
     }).catch(() => {});

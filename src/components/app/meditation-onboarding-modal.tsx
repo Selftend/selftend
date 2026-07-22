@@ -1,6 +1,6 @@
 import { ActivityIndicator, Modal, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -71,7 +71,12 @@ export function MeditationOnboarding({
   const [timeOfDay, setTimeOfDay] = useState("07:00");
   const [duration, setDuration] = useState<number>(15);
   const [remindersEnabled, setRemindersEnabled] = useState(false);
-  const [selectedStage, setSelectedStage] = useState<StageNumber>(1);
+  // A manual stage pick is only valid for the assessment it was made under -
+  // changing an answer re-derives the suggestion and drops the stale pick.
+  const [stagePick, setStagePick] = useState<{
+    assessed: StageNumber;
+    stage: StageNumber;
+  } | null>(null);
 
   const assessedStage = suggestStageFromAssessment({
     hasDailyHabit: answers.hasDailyHabit ?? false,
@@ -81,10 +86,8 @@ export function MeditationOnboarding({
     extendedNoThoughts: answers.extendedNoThoughts ?? false,
   });
 
-  // Sync the picker default with the assessment whenever it changes.
-  useEffect(() => {
-    setSelectedStage(assessedStage);
-  }, [assessedStage]);
+  const selectedStage = stagePick?.assessed === assessedStage ? stagePick.stage : assessedStage;
+  const setSelectedStage = (stage: StageNumber) => setStagePick({ assessed: assessedStage, stage });
 
   const stepIndex = STEP_ORDER.indexOf(step);
 

@@ -69,14 +69,21 @@ function DurationPicker({ value, onChange }: { value: number; onChange: (n: numb
   const dragStartPosRef = useRef<number>(value);
   const inputRef = useRef<TextInput>(null);
 
-  // Sync when value changes externally (e.g. text input commit)
-  useEffect(() => {
-    if (Math.round(continuousPosRef.current) !== value) {
-      continuousPosRef.current = value;
-      setContinuousPos(value);
-    }
+  // Sync when value changes externally (e.g. text input commit) - a
+  // render-time adjustment; the gesture callbacks' ref mirror is kept in
+  // sync by the effect below.
+  const [prevSync, setPrevSync] = useState({ value, isEditing });
+  if (value !== prevSync.value || isEditing !== prevSync.isEditing) {
+    setPrevSync({ value, isEditing });
+    if (Math.round(continuousPos) !== value) setContinuousPos(value);
     if (!isEditing) setInputText(String(value));
-  }, [value, isEditing]);
+  }
+
+  // PanResponder callbacks can't see fresh state, so continuousPosRef mirrors
+  // continuousPos for them (refs may only be written outside render).
+  useEffect(() => {
+    continuousPosRef.current = continuousPos;
+  }, [continuousPos]);
 
   // eslint-disable-next-line react-hooks/refs -- PanResponder's callbacks are defined here but only ever run during gestures, never in render; the legacy API offers no compiler-era alternative
   const [panResponder] = useState(() =>
@@ -333,10 +340,6 @@ export function TimerWidget({
   }, []);
 
   useEffect(() => {
-    if (timerState === "idle") setSecondsLeft(durationMinutes * 60);
-  }, [durationMinutes, timerState]);
-
-  useEffect(() => {
     if (timerState === "running") {
       intervalRef.current = setInterval(() => {
         setSecondsLeft((prev) => {
@@ -387,6 +390,9 @@ export function TimerWidget({
       console.error("[timer] failed to save interval", error);
     });
     playSound(bellSound);
+    // secondsLeft is only rendered while active, so seeding it here (instead
+    // of tracking every idle duration change) keeps it correct.
+    setSecondsLeft(sessionDuration * 60);
     setTimerState("running");
   }
 
