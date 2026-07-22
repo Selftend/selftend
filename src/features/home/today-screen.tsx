@@ -19,6 +19,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { parseLocalNoon } from "@/src/utils/date";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
+import { GAP, computeColumns } from "@/src/features/home/grid-layout";
 import { isImplemented, metaForWidget, resolveWidget } from "@/src/features/home/widget-registry";
 import {
   useAddWidget,
@@ -34,11 +35,8 @@ import { HomeTour } from "@/src/features/tours/home-tour";
 import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 import { cn } from "@/lib/utils";
 
-const GAP = 12;
 const PADDING = 24;
-const MIN_WIDGET_WIDTH = 280;
 const WIDGET_HEIGHT = 200;
-const MAX_COLUMNS = 3;
 type WidgetEditAction =
   | { type: "add"; widgetId: string }
   | { type: "remove"; widgetId: string; position: number }
@@ -91,14 +89,6 @@ function BreathingDotEmpty() {
         <Icon name="add" size={22} className="text-primary" />
       </View>
     </View>
-  );
-}
-
-function computeColumns(gridWidth: number) {
-  if (gridWidth <= 0) return 1;
-  return Math.max(
-    1,
-    Math.min(MAX_COLUMNS, Math.floor((gridWidth + GAP) / (MIN_WIDGET_WIDTH + GAP))),
   );
 }
 
@@ -221,7 +211,6 @@ export default function HomeScreen() {
 
   const gridWidth = Math.max(0, containerWidth - PADDING * 2);
   const numColumns = computeColumns(gridWidth);
-  const cellWidth = (gridWidth - (numColumns - 1) * GAP) / numColumns;
 
   const header = (
     <View className="gap-6 pb-3">
@@ -336,25 +325,21 @@ export default function HomeScreen() {
                 </Button>
               </View>
             </View>
-          ) : cellWidth > 0 ? (
-            <Sortable.Flex
-              width={gridWidth}
-              flexDirection="row"
-              flexWrap="wrap"
-              gap={GAP}
+          ) : gridWidth > 0 ? (
+            <Sortable.Grid
+              data={gridWidgetIds}
+              columns={numColumns}
+              rowGap={GAP}
+              columnGap={GAP}
               scrollableRef={scrollableRef}
               dragActivationDelay={0}
               sortEnabled={editMode && !mutationPending}
               customHandle
-              onDragEnd={({ order }) => reorderWidgets(order(widgetIds))}
-            >
-              {gridWidgetIds.map((id, index) => {
+              onDragEnd={({ data }) => reorderWidgets(data)}
+              renderItem={({ item: id, index }) => {
                 const meta = metaForWidget(id);
                 return (
-                  <View
-                    key={id}
-                    style={{ width: cellWidth, height: WIDGET_HEIGHT, overflow: "hidden" }}
-                  >
+                  <View style={{ height: WIDGET_HEIGHT, overflow: "hidden" }}>
                     <View style={{ flex: 1, pointerEvents: editMode ? "none" : "auto" }}>
                       <WidgetContent id={id} userId={userId ?? ""} />
                     </View>
@@ -423,8 +408,8 @@ export default function HomeScreen() {
                     ) : null}
                   </View>
                 );
-              })}
-            </Sortable.Flex>
+              }}
+            />
           ) : null}
         </Animated.ScrollView>
       </View>

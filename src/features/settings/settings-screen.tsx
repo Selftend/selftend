@@ -1,8 +1,9 @@
-import { ScrollView, View } from "react-native";
+import { KeyboardAvoidingView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -16,6 +17,7 @@ import { SettingsHero } from "@/src/features/settings/components/settings-hero";
 import { SupportCard } from "@/src/features/settings/components/support-card";
 import { useResetOnboarding } from "@/src/features/settings/use-reset-onboarding";
 import { useSignOut } from "@/src/features/settings/use-sign-out";
+import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 
 export default function SettingsScreen() {
   const { t } = useTranslation("settings");
@@ -36,35 +38,39 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerClassName="grow p-4">
-        <View className="mx-auto w-full max-w-2xl gap-6">
-          <SettingsHero />
+      {/* Keyboard avoidance for the display-name field (edge-to-edge Android
+          gets no window resize, so the screen must pad itself). */}
+      <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
+        <KeyboardAwareScrollView contentContainerClassName="grow p-4">
+          <View className="mx-auto w-full max-w-2xl gap-6">
+            <SettingsHero />
 
-          {isLoading ? <LoadingState title={t("loading")} /> : null}
-          {errorMessage ? (
-            <SettingsFeedbackBanner title={t("problem")} message={errorMessage} />
-          ) : null}
-          {successMessage ? (
-            <SettingsFeedbackBanner title={t("saved")} message={successMessage} />
-          ) : null}
+            {isLoading ? <LoadingState title={t("loading")} /> : null}
+            {errorMessage ? (
+              <SettingsFeedbackBanner title={t("problem")} message={errorMessage} />
+            ) : null}
+            {successMessage ? (
+              <SettingsFeedbackBanner title={t("saved")} message={successMessage} />
+            ) : null}
 
-          <ProfilePictureCard user={user} />
+            <ProfilePictureCard user={user} />
 
-          <RemindersCard />
+            <RemindersCard />
 
-          <SecuritySection />
+            <SecuritySection />
 
-          <OnboardingCard
-            disabled={!data || resetPending}
-            isPending={resetPending}
-            onReset={() => void reset()}
-          />
+            <OnboardingCard
+              disabled={!data || resetPending}
+              isPending={resetPending}
+              onReset={() => void reset()}
+            />
 
-          <SupportCard />
+            <SupportCard />
 
-          <AccountCard user={user} onSignOut={() => void handleSignOut()} />
-        </View>
-      </ScrollView>
+            <AccountCard user={user} onSignOut={() => void handleSignOut()} />
+          </View>
+        </KeyboardAwareScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

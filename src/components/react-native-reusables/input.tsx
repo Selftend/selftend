@@ -10,7 +10,8 @@ function Input({
   onBlur,
   ...props
 }: React.ComponentProps<typeof TextInput> & React.RefAttributes<TextInput>) {
-  // Web-only: keep the focused input visible above the on-screen keyboard.
+  // Keep the focused input visible above the on-screen keyboard (web via
+  // scrollIntoView; native via the enclosing KeyboardAwareScrollView).
   const keepVisible = useScrollIntoViewOnFocus();
 
   return (
