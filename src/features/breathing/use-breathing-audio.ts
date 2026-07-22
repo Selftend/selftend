@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 import type { AudioPlayer } from "expo-audio";
 
@@ -90,16 +90,15 @@ export function playIntroCue(asset: number, volume: number): void {
 
 export function useBreathingAudio(opts: BreathingAudioOptions): void {
   const { active, phaseLabel, breathSoundId, ambientSoundId, breathVolume, ambientVolume } = opts;
-  const breathLane = useRef<LanePlayer | null>(null);
-  const ambientLane = useRef<LanePlayer | null>(null);
+  // Lazy useState instead of a render-written ref: same one-instance-per-mount
+  // semantics, no ref access during render.
+  const [breathLane] = useState(createLanePlayer);
+  const [ambientLane] = useState(createLanePlayer);
   const breathClipRef = useRef<number | null>(null);
-
-  if (!breathLane.current) breathLane.current = createLanePlayer();
-  if (!ambientLane.current) ambientLane.current = createLanePlayer();
 
   // Ambient: start/stop with the session; restart when the chosen sound changes.
   useEffect(() => {
-    const lane = ambientLane.current!;
+    const lane = ambientLane;
     if (!active) {
       void lane.stop();
       return;
@@ -116,7 +115,7 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
 
   // Breath: on each phase (or sound) change, fire the phase's cue / swap the looped texture.
   useEffect(() => {
-    const lane = breathLane.current!;
+    const lane = breathLane;
     if (!active) {
       breathClipRef.current = null;
       void lane.stop();
@@ -134,16 +133,16 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
 
   // Live volume changes without restarting playback.
   useEffect(() => {
-    void breathLane.current?.setVolume(breathVolume);
-  }, [breathVolume]);
+    void breathLane.setVolume(breathVolume);
+  }, [breathLane, breathVolume]);
   useEffect(() => {
-    void ambientLane.current?.setVolume(ambientVolume);
-  }, [ambientVolume]);
+    void ambientLane.setVolume(ambientVolume);
+  }, [ambientLane, ambientVolume]);
 
   useEffect(() => {
     return () => {
-      void breathLane.current?.stop();
-      void ambientLane.current?.stop();
+      void breathLane.stop();
+      void ambientLane.stop();
     };
-  }, []);
+  }, [breathLane, ambientLane]);
 }

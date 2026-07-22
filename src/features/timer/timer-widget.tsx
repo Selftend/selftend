@@ -78,7 +78,8 @@ function DurationPicker({ value, onChange }: { value: number; onChange: (n: numb
     if (!isEditing) setInputText(String(value));
   }, [value, isEditing]);
 
-  const panResponder = useRef(
+  // eslint-disable-next-line react-hooks/refs -- PanResponder's callbacks are defined here but only ever run during gestures, never in render; the legacy API offers no compiler-era alternative
+  const [panResponder] = useState(() =>
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
@@ -106,7 +107,7 @@ function DurationPicker({ value, onChange }: { value: number; onChange: (n: numb
         onChange(snapped);
       },
     }),
-  ).current;
+  );
 
   function startEditing() {
     setInputText(String(Math.round(continuousPosRef.current)));

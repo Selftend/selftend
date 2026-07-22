@@ -89,7 +89,7 @@ export function RoutineFab() {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const [showCompleted, setShowCompleted] = useState(false);
-  const completedOpacity = useRef(new Animated.Value(1)).current;
+  const [completedOpacity] = useState(() => new Animated.Value(1));
   // Whether the PREVIOUS render showed the counting button - the completed
   // state plays only on a live visible->done transition, never on mount.
   const wasCountVisibleRef = useRef(false);
@@ -100,7 +100,13 @@ export function RoutineFab() {
   const [completedRoutineId, setCompletedRoutineId] = useState<string | null>(null);
 
   const firstOpen = firstOpenRoutineView(today.scheduledViews);
-  if (firstOpen) lastCountedRoutineIdRef.current = firstOpen.routine.id;
+  const firstOpenId = firstOpen?.routine.id ?? null;
+  // Latched in an effect (not during render); this effect is declared before
+  // the transition effect below, so within a commit the latch still lands
+  // before the transition reads it - same ordering as the old render write.
+  useEffect(() => {
+    if (firstOpenId) lastCountedRoutineIdRef.current = firstOpenId;
+  }, [firstOpenId]);
   // Other scheduled routines still waiting behind the counted one - surfaced
   // as a "+N" suffix so the queue is visible at a glance (#121).
   const queued = firstOpen ? openScheduledViews(today.scheduledViews).length - 1 : 0;

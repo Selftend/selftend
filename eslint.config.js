@@ -36,12 +36,9 @@ module.exports = [
   {
     rules: {
       "import/no-unresolved": ["error", { commonjs: true }],
-      // react-hooks v7 (via eslint-config-expo 56) added these compiler-aligned
-      // rules; the pre-existing violations are tracked for burn-down in #167 —
-      // new code should not add more (they still warn). Each override is
-      // deleted when its rule's count reaches zero (use-memo,
-      // incompatible-library, and immutability already cleared).
-      "react-hooks/refs": "warn",
+      // react-hooks v7 (via eslint-config-expo 56) added new compiler-aligned
+      // rules; pre-existing violations were burned down in #167 — this last
+      // override is deleted when set-state-in-effect reaches zero.
       "react-hooks/set-state-in-effect": "warn",
     },
     settings: {
