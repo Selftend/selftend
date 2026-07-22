@@ -18,16 +18,20 @@ minimum_password_length = 12
 [auth.email]
 enable_confirmations = true
 
-# Email templates use `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=...` links
-# instead of the default `{{ .ConfirmationURL }}`. The default runs through GoTrue's
+# Email templates use `{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&type=...`
+# links instead of the default `{{ .ConfirmationURL }}`. The default runs through GoTrue's
 # /auth/v1/verify, which under the PKCE flow 303s back with a `?code=` that can only
 # be exchanged by the browser profile that initiated the request (the PKCE
 # code_verifier lives in that profile's storage) - opening the email on any other
 # browser/device fails with "PKCE code verifier not found in storage". token_hash
 # links skip /verify entirely; the app callback completes them via verifyOtp, which
-# needs no local verifier state, so they work in any browser. `{{ .RedirectTo }}` is
-# the (allowlist-validated) redirect_to the client sent, falling back to site_url -
-# so links land on the requesting origin (:8081 dev, :8099 e2e) without pinning.
+# needs no local verifier state, so they work in any browser. `{{ .SiteURL }}` (not
+# `{{ .RedirectTo }}`) is the link base on purpose: native clients send the app scheme
+# (`selftend://auth-callback`) as redirect_to, and Go's html/template rejects custom
+# schemes in an href - the link renders as the literal dead string `ZgotmplZ?...`.
+# site_url is always http(s), so the link survives every client. site_url must have
+# NO trailing slash or links become `//auth-callback`. The e2e suite rewrites the
+# link origin to its own port, so pinning to site_url doesn't break it.
 # Production must mirror these bodies in the Dashboard - see
 # docs/operations-runbook.md "Auth Email Templates".
 [auth.email.template.confirmation]

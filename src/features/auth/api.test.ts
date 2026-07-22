@@ -102,10 +102,10 @@ describe("getPasswordResetRedirectUrl", () => {
     Object.defineProperty(Platform, "OS", { configurable: true, value: originalOS });
   });
 
-  // The email templates append `?token_hash=...&type=recovery` to {{ .RedirectTo }},
-  // so the redirect URL the app sends MUST stay query-less - a `?type=recovery`
-  // marker here would produce a link with two `?` and break the callback.
-  it("is query-less on web (the recovery template appends token_hash and type)", () => {
+  // The email templates build `{{ .SiteURL }}/auth-callback?token_hash=...&type=recovery`
+  // server-side; the redirect URL the app sends no longer feeds the link, but it
+  // stays query-less so it matches the redirect allowlist entries exactly.
+  it("is query-less on web (the recovery template supplies token_hash and type)", () => {
     Object.defineProperty(Platform, "OS", { configurable: true, value: "web" });
 
     expect(getPasswordResetRedirectUrl()).toBe("https://selftend.org/auth-callback");
