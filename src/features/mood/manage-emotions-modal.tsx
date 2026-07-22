@@ -2,7 +2,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   TextInput,
@@ -18,6 +17,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 import {
   useAddCustomEmotion,
   useRemoveEmotion,
@@ -82,10 +82,7 @@ function EmotionEditorModal({ state, addPosition, onClose }: EmotionEditorModalP
       visible
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-      >
+      <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
         <Pressable
           accessibilityLabel={t("emotions.manage.close")}
           accessibilityRole="button"

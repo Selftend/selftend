@@ -1,8 +1,10 @@
-import { Platform, KeyboardAvoidingView, ScrollView, View } from "react-native";
+import { KeyboardAvoidingView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { PropsWithChildren, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
+import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 import { useWebKeyboardInset } from "@/src/lib/use-web-keyboard-inset";
 
 interface MobileFormScreenProps extends PropsWithChildren {
@@ -18,17 +20,17 @@ export function MobileFormScreen({ children, contentClassName, footer }: MobileF
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
         className="flex-1"
         style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
       >
-        <ScrollView
+        <KeyboardAwareScrollView
           contentContainerClassName={cn("grow p-6", contentClassName)}
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
         >
           {children}
-        </ScrollView>
+        </KeyboardAwareScrollView>
         {footer ? <View className="border-t border-border bg-background p-4">{footer}</View> : null}
       </KeyboardAvoidingView>
     </SafeAreaView>

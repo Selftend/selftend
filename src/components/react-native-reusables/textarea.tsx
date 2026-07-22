@@ -11,7 +11,8 @@ function Textarea({
   onBlur,
   ...props
 }: React.ComponentProps<typeof TextInput> & React.RefAttributes<TextInput>) {
-  // Web-only: keep the focused textarea visible above the on-screen keyboard.
+  // Keep the focused textarea visible above the on-screen keyboard (web via
+  // scrollIntoView; native via the enclosing KeyboardAwareScrollView).
   const keepVisible = useScrollIntoViewOnFocus();
 
   return (

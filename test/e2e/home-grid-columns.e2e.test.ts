@@ -74,11 +74,16 @@ test.describe("home dashboard grid columns", () => {
 
     const failures: string[] = [];
 
-    for (const width of widths) {
-      await page.setViewportSize({ width, height: 900 });
-      await page.waitForTimeout(120);
+    // The bug this test guards against is a PERSISTENT mis-wrap (a stale
+    // measurement that never gets re-accepted), so each width polls until the
+    // rendered count settles on the expected one. A single fixed-delay probe
+    // flakes under CI load: the grid re-wraps asynchronously and the rendered
+    // count briefly lags the resize by one step.
+    const SETTLE_MS = 3_000;
+    const POLL_INTERVAL_MS = 100;
 
-      const probe = await page.evaluate((titles: string[]) => {
+    const probeOnce = async () =>
+      page.evaluate((titles: string[]) => {
         const home = document.querySelector('[data-testid="home-layout"]') as HTMLElement | null;
         if (!home) return { error: "no home-layout" };
         const byText = (needle: string): HTMLElement | null => {
@@ -105,17 +110,33 @@ test.describe("home dashboard grid columns", () => {
         };
       }, CARD_TITLES);
 
-      if ("error" in probe) {
-        failures.push(`w=${width}: ${probe.error}`);
-        continue;
-      }
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: 900 });
 
-      const gridWidth = probe.homeWidth - PADDING * 2;
-      const expCols = Math.min(expectedColumns(gridWidth), probe.rowYs.length);
-      const firstRowY = Math.min(...probe.rowYs);
-      const obsCols = probe.rowYs.filter((y) => y === firstRowY).length;
-      if (obsCols !== expCols) {
-        failures.push(`w=${width}: expected ${expCols} columns, rendered ${obsCols}`);
+      const deadline = Date.now() + SETTLE_MS;
+      let lastMismatch: string | null = null;
+      do {
+        await page.waitForTimeout(POLL_INTERVAL_MS);
+        const probe = await probeOnce();
+
+        if ("error" in probe) {
+          lastMismatch = `w=${width}: ${probe.error}`;
+          continue;
+        }
+
+        const gridWidth = probe.homeWidth - PADDING * 2;
+        const expCols = Math.min(expectedColumns(gridWidth), probe.rowYs.length);
+        const firstRowY = Math.min(...probe.rowYs);
+        const obsCols = probe.rowYs.filter((y) => y === firstRowY).length;
+        if (obsCols === expCols) {
+          lastMismatch = null;
+          break;
+        }
+        lastMismatch = `w=${width}: expected ${expCols} columns, rendered ${obsCols}`;
+      } while (Date.now() < deadline);
+
+      if (lastMismatch !== null) {
+        failures.push(lastMismatch);
       }
     }
 

@@ -16,13 +16,19 @@
  *   - Ignores targets without scrollIntoView
  *
  * Native path:
- *   - onFocus/onBlur are no-ops
+ *   - No-op outside a KeyboardScrollContainerContext provider
+ *   - Inside one: scrolls immediately when the keyboard is already open,
+ *     scrolls on keyboardDidShow otherwise, and blur/unmount detach the
+ *     keyboard listener
  */
 
+import { createElement } from "react";
+import type { PropsWithChildren } from "react";
 import { renderHook } from "@testing-library/react-native";
-import { Platform } from "react-native";
-import type { NativeSyntheticEvent, TargetedEvent } from "react-native";
+import { Keyboard, Platform } from "react-native";
+import type { EmitterSubscription, NativeSyntheticEvent, TargetedEvent } from "react-native";
 
+import { KeyboardScrollContainerContext } from "@/src/lib/keyboard-scroll";
 import { useScrollIntoViewOnFocus } from "@/src/lib/use-scroll-into-view-on-focus";
 
 function setPlatform(os: string) {
@@ -212,15 +218,49 @@ describe("useScrollIntoViewOnFocus - web", () => {
 describe("useScrollIntoViewOnFocus - native", () => {
   beforeEach(() => {
     setPlatform("ios");
+    // Run rAF callbacks synchronously so the scroll attempt is observable.
+    globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+      callback(0);
+      return 0;
+    }) as typeof globalThis.requestAnimationFrame;
   });
 
   afterEach(() => {
     restoreGlobals();
+    jest.restoreAllMocks();
   });
 
-  it("does nothing on focus", () => {
+  function buildContainerWrapper(scrollFocusedInputIntoView: jest.Mock) {
+    function ContainerWrapper({ children }: PropsWithChildren) {
+      return createElement(
+        KeyboardScrollContainerContext.Provider,
+        { value: { scrollFocusedInputIntoView } },
+        children,
+      );
+    }
+    return ContainerWrapper;
+  }
+
+  function mockKeyboard(visible: boolean) {
+    let didShowHandler: (() => void) | null = null;
+    // Mirrors the real emitter: removing the subscription stops delivery.
+    const remove = jest.fn(() => {
+      didShowHandler = null;
+    });
+    jest.spyOn(Keyboard, "isVisible").mockReturnValue(visible);
+    jest.spyOn(Keyboard, "addListener").mockImplementation((eventName, handler) => {
+      if (eventName === "keyboardDidShow") {
+        didShowHandler = handler as () => void;
+      }
+      return { remove } as unknown as EmitterSubscription;
+    });
+    return { remove, fireDidShow: () => didShowHandler?.() };
+  }
+
+  it("does nothing on focus outside a keyboard-aware container", () => {
     const viewport = buildViewport(450);
     setWindow({ innerHeight: 800, viewport });
+    const addListener = jest.spyOn(Keyboard, "addListener");
     const scrollIntoView = jest.fn();
     const { result } = renderHook(() => useScrollIntoViewOnFocus());
 
@@ -229,5 +269,63 @@ describe("useScrollIntoViewOnFocus - native", () => {
 
     expect(scrollIntoView).not.toHaveBeenCalled();
     expect(viewport.addEventListener).not.toHaveBeenCalled();
+    expect(addListener).not.toHaveBeenCalled();
+  });
+
+  it("scrolls when the keyboard opens after focus", () => {
+    const keyboard = mockKeyboard(false);
+    const scrollFocusedInputIntoView = jest.fn();
+    const { result } = renderHook(() => useScrollIntoViewOnFocus(), {
+      wrapper: buildContainerWrapper(scrollFocusedInputIntoView),
+    });
+
+    result.current.onFocus(buildFocusEvent(jest.fn()));
+    expect(scrollFocusedInputIntoView).not.toHaveBeenCalled();
+
+    keyboard.fireDidShow();
+    expect(scrollFocusedInputIntoView).toHaveBeenCalledTimes(1);
+
+    result.current.onBlur();
+  });
+
+  it("scrolls immediately when focus lands with the keyboard already open", () => {
+    mockKeyboard(true);
+    const scrollFocusedInputIntoView = jest.fn();
+    const { result } = renderHook(() => useScrollIntoViewOnFocus(), {
+      wrapper: buildContainerWrapper(scrollFocusedInputIntoView),
+    });
+
+    result.current.onFocus(buildFocusEvent(jest.fn()));
+    expect(scrollFocusedInputIntoView).toHaveBeenCalledTimes(1);
+
+    result.current.onBlur();
+  });
+
+  it("stops listening for the keyboard after blur", () => {
+    const keyboard = mockKeyboard(false);
+    const scrollFocusedInputIntoView = jest.fn();
+    const { result } = renderHook(() => useScrollIntoViewOnFocus(), {
+      wrapper: buildContainerWrapper(scrollFocusedInputIntoView),
+    });
+
+    result.current.onFocus(buildFocusEvent(jest.fn()));
+    result.current.onBlur();
+
+    expect(keyboard.remove).toHaveBeenCalled();
+    keyboard.fireDidShow();
+    expect(scrollFocusedInputIntoView).not.toHaveBeenCalled();
+  });
+
+  it("stops listening for the keyboard when unmounted while focused", () => {
+    const keyboard = mockKeyboard(false);
+    const scrollFocusedInputIntoView = jest.fn();
+    const { result, unmount } = renderHook(() => useScrollIntoViewOnFocus(), {
+      wrapper: buildContainerWrapper(scrollFocusedInputIntoView),
+    });
+
+    result.current.onFocus(buildFocusEvent(jest.fn()));
+    unmount();
+
+    expect(keyboard.remove).toHaveBeenCalled();
   });
 });
