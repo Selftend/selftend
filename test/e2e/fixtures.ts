@@ -222,18 +222,22 @@ export const test = base.extend<object, WorkerFixtures>({
 // declined (see isReminderPromptEligible) - otherwise the "Want a daily
 // reminder?" modal pops after any tool completion and blocks unrelated specs'
 // buttons/navigation.
+// Upsert, not update: an UPDATE against a missing row is a silent 0-row no-op,
+// leaving the app to lazily recreate the row with gate-firing defaults
+// mid-test (#172). Every other column keeps its table default on insert.
 test.beforeEach(async ({ user }) => {
   const admin = createServiceClient();
-  const { error } = await admin
-    .from("user_preferences")
-    .update({
+  const { error } = await admin.from("user_preferences").upsert(
+    {
+      user_id: user.id,
       app_onboarding_completed: true,
       cbt_onboarding_completed: true,
       policy_version_accepted: policyVersion,
       reminder_consent: false,
       reminder_consent_updated_at: "2026-01-01T00:00:00.000Z",
-    })
-    .eq("user_id", user.id);
+    },
+    { onConflict: "user_id" },
+  );
   if (error) {
     throw new Error(`Prefs normalization failed for ${user.id}: ${error.message}`);
   }
