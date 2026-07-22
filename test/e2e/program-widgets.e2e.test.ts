@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures";
+import { expect, NORMALIZED_GATE_PREFS, test } from "./fixtures";
 
 import { createServiceClient, dismissPostSignInModals } from "./helpers";
 
@@ -50,9 +50,11 @@ test.describe("CBT and ACT programme widgets", () => {
   test.afterEach(async () => {
     const admin = createServiceClient();
     if (originalPreferences) {
+      // Gate fields re-normalized on restore so a restored row can never
+      // resurrect a consent/onboarding/reminder gate for a later test (#172).
       const { error } = await admin
         .from("user_preferences")
-        .upsert(originalPreferences, { onConflict: "user_id" });
+        .upsert({ ...originalPreferences, ...NORMALIZED_GATE_PREFS }, { onConflict: "user_id" });
       if (error) throw new Error(error.message);
     }
     const { error: deleteError } = await admin

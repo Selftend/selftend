@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures";
+import { expect, NORMALIZED_GATE_PREFS, test } from "./fixtures";
 
 import { createServiceClient } from "./helpers";
 import { policyVersion } from "../../src/features/policies/policy-content";
@@ -62,9 +62,12 @@ async function restoreOriginalPreferences() {
   if (!originalPreferences) return;
 
   const admin = createServiceClient();
+  // Gate fields re-normalized on restore: the beforeAll capture predates the
+  // fixtures' per-test normalization, so the raw row can carry gate-firing
+  // values (stale policy version) that would hit a later test (#172).
   const { error } = await admin
     .from("user_preferences")
-    .upsert(originalPreferences, { onConflict: "user_id" });
+    .upsert({ ...originalPreferences, ...NORMALIZED_GATE_PREFS }, { onConflict: "user_id" });
 
   if (error) {
     throw new Error(`Could not restore user preferences: ${error.message}`);
