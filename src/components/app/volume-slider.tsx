@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PanResponder, View } from "react-native";
 
 interface VolumeSliderProps {
@@ -31,10 +31,14 @@ export function VolumeSlider({
   const containerRef = useRef<View>(null);
   const originRef = useRef<number | null>(null);
   const lastRef = useRef(value);
+  // Latest-callback refs, written in an effect (not render) so the compiler's
+  // rules hold; the once-created PanResponder reads them at gesture time.
   const onChangeRef = useRef(onChange);
   const onCommitRef = useRef(onCommit);
-  onChangeRef.current = onChange;
-  onCommitRef.current = onCommit;
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onCommitRef.current = onCommit;
+  });
 
   // Positions are tracked in page (window) coordinates against the container's
   // measured origin. locationX/locationY are relative to whichever CHILD view the
@@ -48,7 +52,8 @@ export function VolumeSlider({
     onChangeRef.current(next);
   };
 
-  const panResponder = useRef(
+  // eslint-disable-next-line react-hooks/refs -- PanResponder's callbacks are defined here but only ever run during gestures, never in render; the legacy API offers no compiler-era alternative
+  const [panResponder] = useState(() =>
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
@@ -66,7 +71,7 @@ export function VolumeSlider({
       onPanResponderRelease: () => onCommitRef.current?.(lastRef.current),
       onPanResponderTerminate: () => onCommitRef.current?.(lastRef.current),
     }),
-  ).current;
+  );
 
   const pct = clamp01(value);
 
