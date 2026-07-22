@@ -65,6 +65,16 @@ export default function ProtectedLayout() {
     void hydrateAppLock().catch(() => {});
   }, [hydrateAppLock]);
 
+  // Web signed-out redirect: mutating window.location is a side effect, so it
+  // lives in an effect (the compiler's immutability rule forbids it in render);
+  // the render below returns null for this state while the redirect kicks in.
+  const signedOutOnWeb = status !== "loading" && !session && Platform.OS === "web";
+  useEffect(() => {
+    if (signedOutOnWeb && typeof window !== "undefined") {
+      window.location.href = "/";
+    }
+  }, [signedOutOnWeb]);
+
   if (status === "loading") {
     return (
       <SafeAreaView className="flex-1 bg-background">
@@ -79,7 +89,6 @@ export default function ProtectedLayout() {
 
   if (!session) {
     if (Platform.OS === "web" && typeof window !== "undefined") {
-      window.location.href = "/";
       return null;
     }
     return <AuthLandingScreen />;

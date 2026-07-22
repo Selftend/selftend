@@ -147,11 +147,11 @@ export default function BreathingSessionScreen() {
   const aqua = colorScheme === "dark" ? "196, 58%, 62%" : "196, 52%, 45%";
 
   const circleStyle = useAnimatedStyle(() => ({
-    width: circleSize.value,
-    height: circleSize.value,
-    borderRadius: circleSize.value / 2,
+    width: circleSize.get(),
+    height: circleSize.get(),
+    borderRadius: circleSize.get() / 2,
     // Stays at 1 unless reduced motion steps it per phase in animateForPhase.
-    opacity: innerOpacity.value,
+    opacity: innerOpacity.get(),
     backgroundColor: `hsla(${aqua}, 0.22)`,
     borderWidth: 2,
     borderColor: `hsl(${aqua})`,
@@ -215,18 +215,58 @@ export default function BreathingSessionScreen() {
         ? CIRCLE_MAX
         : phase.label === "exhale"
           ? CIRCLE_MIN
-          : circleSize.value;
+          : circleSize.get();
     if (reduceMotionEnabled) {
       // Reduced motion: no withTiming - jump straight to the phase's size and
       // step the inner circle's opacity so each phase stays distinguishable.
-      circleSize.value = toSize;
-      innerOpacity.value = PHASE_OPACITY[phase.label];
+      circleSize.set(toSize);
+      innerOpacity.set(PHASE_OPACITY[phase.label]);
       return;
     }
-    circleSize.value = withTiming(toSize, {
-      duration: phase.durationSeconds * 1000,
-      easing: Easing.inOut(Easing.ease),
-    });
+    circleSize.set(
+      withTiming(toSize, {
+        duration: phase.durationSeconds * 1000,
+        easing: Easing.inOut(Easing.ease),
+      }),
+    );
+  };
+
+  const handleFinish = async () => {
+    // Declared above the ticking effect that calls it (compiler lint: no
+    // use-before-declaration), so `resolved` isn't narrowed yet — every caller
+    // runs after the not-found guard, making this a type-level guard only.
+    if (!resolved || !selectedCycles) return;
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    const planned = totalSeconds(resolved.phases, selectedCycles);
+    const elapsed = (Date.now() - startMsRef.current) / 1000;
+    const remaining = Math.max(0, planned - elapsed);
+    const elapsedMins = elapsedMinutes(planned, remaining);
+    // Completed full cycles + exact elapsed seconds (capped at the planned total) for history.
+    const completedCycles = Math.min(
+      selectedCycles,
+      Math.floor(elapsed / cycleSeconds(resolved.phases)),
+    );
+    const elapsedSeconds = Math.round(Math.min(elapsed, planned));
+    try {
+      await saveMutation.mutateAsync({
+        exerciseName: resolved.exerciseName,
+        durationMinutes: elapsedMins,
+        reflection: "",
+        feelingAfter: null,
+        cycles: completedCycles,
+        durationSeconds: elapsedSeconds,
+      });
+      showToast({ title: t("common:feedback.saved"), tone: "success" });
+      router.replace("/tools/breathing" as Parameters<typeof router.replace>[0]);
+    } catch {
+      finishingRef.current = false;
+      showToast({ title: t("common:feedback.problem"), tone: "error" });
+    }
   };
 
   useEffect(() => {
@@ -278,8 +318,8 @@ export default function BreathingSessionScreen() {
         }
         finishingRef.current = false;
         phaseIndexRef.current = -1;
-        circleSize.value = CIRCLE_MIN;
-        innerOpacity.value = 1;
+        circleSize.set(CIRCLE_MIN);
+        innerOpacity.set(1);
         setScreenPhase("intro"); // also stops audio (useBreathingAudio active → false)
         setCurrentPhase(null);
         setCurrentCycle(0);
@@ -342,41 +382,6 @@ export default function BreathingSessionScreen() {
       prerollRef.current = setTimeout(beginActive, (breath.introMs ?? 3000) + POST_INTRO_PAUSE_MS);
     } else {
       beginActive();
-    }
-  };
-
-  const handleFinish = async () => {
-    if (!selectedCycles) return;
-    if (finishingRef.current) return;
-    finishingRef.current = true;
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    const planned = totalSeconds(resolved.phases, selectedCycles);
-    const elapsed = (Date.now() - startMsRef.current) / 1000;
-    const remaining = Math.max(0, planned - elapsed);
-    const elapsedMins = elapsedMinutes(planned, remaining);
-    // Completed full cycles + exact elapsed seconds (capped at the planned total) for history.
-    const completedCycles = Math.min(
-      selectedCycles,
-      Math.floor(elapsed / cycleSeconds(resolved.phases)),
-    );
-    const elapsedSeconds = Math.round(Math.min(elapsed, planned));
-    try {
-      await saveMutation.mutateAsync({
-        exerciseName: resolved.exerciseName,
-        durationMinutes: elapsedMins,
-        reflection: "",
-        feelingAfter: null,
-        cycles: completedCycles,
-        durationSeconds: elapsedSeconds,
-      });
-      showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace("/tools/breathing" as Parameters<typeof router.replace>[0]);
-    } catch {
-      finishingRef.current = false;
-      showToast({ title: t("common:feedback.problem"), tone: "error" });
     }
   };
 
