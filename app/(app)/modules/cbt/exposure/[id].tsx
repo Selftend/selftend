@@ -1,12 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  View,
-} from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Modal, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -39,6 +32,7 @@ import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 
 interface SessionFormState {
@@ -108,10 +102,7 @@ function SessionSheet({
       visible={visible}
     >
       <SafeAreaView className="flex-1 bg-background">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          className="flex-1"
-        >
+        <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
           <ScrollView contentContainerClassName="gap-6 p-6 pb-12">
             <View className="gap-2">
               <Text variant="h2">{t("exposure.session.title")}</Text>
