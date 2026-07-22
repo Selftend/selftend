@@ -1,8 +1,9 @@
-import { KeyboardAvoidingView, ScrollView, View } from "react-native";
+import { KeyboardAvoidingView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -40,7 +41,7 @@ export default function SettingsScreen() {
       {/* Keyboard avoidance for the display-name field (edge-to-edge Android
           gets no window resize, so the screen must pad itself). */}
       <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
-        <ScrollView contentContainerClassName="grow p-4">
+        <KeyboardAwareScrollView contentContainerClassName="grow p-4">
           <View className="mx-auto w-full max-w-2xl gap-6">
             <SettingsHero />
 
@@ -68,7 +69,7 @@ export default function SettingsScreen() {
 
             <AccountCard user={user} onSignOut={() => void handleSignOut()} />
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

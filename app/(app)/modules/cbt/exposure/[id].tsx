@@ -17,6 +17,7 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
@@ -103,7 +104,7 @@ function SessionSheet({
     >
       <SafeAreaView className="flex-1 bg-background">
         <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
-          <ScrollView contentContainerClassName="gap-6 p-6 pb-12">
+          <KeyboardAwareScrollView contentContainerClassName="gap-6 p-6 pb-12">
             <View className="gap-2">
               <Text variant="h2">{t("exposure.session.title")}</Text>
               {item ? <Text variant="muted">{item.description}</Text> : null}
@@ -203,7 +204,7 @@ function SessionSheet({
                 </Button>
               </View>
             </View>
-          </ScrollView>
+          </KeyboardAwareScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>

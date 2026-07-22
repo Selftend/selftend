@@ -3,12 +3,12 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
-  ScrollView,
   View,
   type ImageSourcePropType,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
 import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
@@ -57,7 +57,7 @@ export function RichOnboardingShell({
         {/* The starter-routine panel has a name input near the bottom; without
             avoidance the keyboard covers it (edge-to-edge Android especially). */}
         <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
-          <ScrollView contentContainerClassName="mx-auto w-full max-w-2xl gap-8 p-6 pb-12">
+          <KeyboardAwareScrollView contentContainerClassName="mx-auto w-full max-w-2xl gap-8 p-6 pb-12">
             {children}
 
             <View className="gap-3">
@@ -70,7 +70,7 @@ export function RichOnboardingShell({
               ) : null}
               {footerSlot}
             </View>
-          </ScrollView>
+          </KeyboardAwareScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
