@@ -59,6 +59,10 @@ jobs:
       # source-map upload, so production crashes arrive symbolicated. Diagnosing #199
       # without maps meant hand-symbolicating Hermes bytecode - never again.
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      # Fail-safe: sentry-cli fails the Gradle build when invoked without a token, so
+      # if the secret is ever removed/empty, disable the upload instead of breaking
+      # the Play release (empty string is falsy in GitHub expressions).
+      SENTRY_DISABLE_AUTO_UPLOAD: ${{ secrets.SENTRY_AUTH_TOKEN && 'false' || 'true' }}
 
     steps:
       - name: Check out repository
