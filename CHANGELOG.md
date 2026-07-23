@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.0](https://github.com/Selftend/selftend/compare/v0.5.0...v0.6.0) (2026-07-23)
+
+
+### Features
+
+* **auth:** verified Android App Links for email-auth callback handoff ([#205](https://github.com/Selftend/selftend/issues/205)) ([b8e8635](https://github.com/Selftend/selftend/commit/b8e86354dceba9d1b20e8e700cba0a53c22d4275)), closes [#183](https://github.com/Selftend/selftend/issues/183)
+* **landing:** redesign web home page to match new hero design ([#202](https://github.com/Selftend/selftend/issues/202)) ([c26807b](https://github.com/Selftend/selftend/commit/c26807b6f931ae0f21d714482c09995bbe0c7702))
+* **policies:** clear launch-review banner after final legal review ([#200](https://github.com/Selftend/selftend/issues/200)) ([25127e4](https://github.com/Selftend/selftend/commit/25127e4641deb1bf55277a74cb7e513d297a1169)), closes [#198](https://github.com/Selftend/selftend/issues/198)
+
+
+### Bug Fixes
+
+* **sortables:** stop CustomHandle passing SyntheticEvent into runOnUI ([#203](https://github.com/Selftend/selftend/issues/203)) ([d7e1028](https://github.com/Selftend/selftend/commit/d7e1028056b2a6fe9e04e4804789e3dd60473149)), closes [#199](https://github.com/Selftend/selftend/issues/199)
+
 ## [0.5.0](https://github.com/Selftend/selftend/compare/v0.4.2...v0.5.0) (2026-07-22)
 
 
