@@ -251,12 +251,25 @@ these can be verified from the repo.
 Recorded here so they stay decisions, not gaps. Each lists its
 re-evaluation trigger.
 
-- **CAPTCHA on auth endpoints** (Supabase supports Cloudflare Turnstile and
-  hCaptcha): deferred. Trigger: open production release, or observed signup
-  abuse during closed testing. Implementation options when triggered:
-  Supabase's CAPTCHA toggle with Cloudflare Turnstile (server-enforced, all
-  platforms), or an Edge Function proxy verifying Turnstile tokens for web
-  only.
+- **CAPTCHA on auth endpoints**: re-deferred at the Android production
+  go-live decision
+  ([#189](https://github.com/Selftend/selftend/issues/189), 2026-07-23) —
+  no abuse observed in ~6 weeks of publicly reachable auth endpoints, and
+  the Play promotion adds visibility, not new attack surface. Triggers:
+  **observed signup abuse** (spike in unconfirmed `auth.users` rows —
+  baseline 2/32 on 2026-07-23; Supabase auth-email rate-limit or bounce
+  warnings; auth-log/Sentry anomalies showing scripted signups — glance at
+  these during the Before-a-Tester-Wave checks), or **before any
+  deliberate marketing/announcement push** beyond the Play listing.
+  Implementation when triggered (pre-decided, do not re-litigate):
+  Supabase's built-in CAPTCHA toggle with **Cloudflare Turnstile**
+  (server-enforced, all platforms; one provider project-wide). Native uses
+  an own ~100-line WebView component per Cloudflare's official recipe; web
+  uses `@marsidev/react-turnstile`. Full recipe, test keys, and e2e
+  implications:
+  [CAPTCHA research](https://github.com/Selftend/selftend/blob/research/supabase-captcha-options/docs/research/2026-07-23-supabase-captcha-options.md).
+  Enabling adds a new external provider and a credential (Turnstile secret
+  key) — update control-tower's inventory per the architecture rule.
 - **TOTP MFA UI** (factor type already enabled in `supabase/config.toml`):
   deferred. Trigger: post-launch phase, after closed-testing feedback.
 - **HIBP leaked-password check**: enable if/when the project is on a
