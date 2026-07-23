@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "org.vasilyoshev.selftend",
+      "sha256_cert_fingerprints": [
+        "20:3F:6E:79:76:F8:B8:49:1A:68:EF:72:7E:B5:23:CA:4D:F1:B7:D3:18:F9:4C:24:7C:A6:67:AA:F1:57:23:B0"
+      ]
+    }
+  }
+]

@@ -1,21 +1,28 @@
 import {
-  accountDeletionSections,
-  cookiePolicySections,
-  crisisActions,
   crisisActionUrls,
-  crisisSections,
   LEGAL_REVIEW_PENDING,
   policyLastUpdated,
   policyVersion,
-  privacyPolicySections,
-  termsSections,
-  type PolicySection,
 } from "@/src/features/policies/policy-content";
+import bgPolicies from "@/src/i18n/locales/bg/policies.json";
+import enPolicies from "@/src/i18n/locales/en/policies.json";
 
-function assertSectionsShape(name: string, sections: PolicySection[]) {
+interface DisplayedSection {
+  title: string;
+  body: string[];
+}
+
+const locales = [
+  ["en", enPolicies],
+  ["bg", bgPolicies],
+] as const;
+
+const sectionKeys = ["privacy", "terms", "crisis", "accountDeletion", "cookies"] as const;
+
+function assertSectionsShape(name: string, sections: DisplayedSection[]) {
   it(`${name} sections are non-empty with title and body strings`, () => {
     expect(sections.length).toBeGreaterThan(0);
-    sections.forEach((section, idx) => {
+    sections.forEach((section) => {
       expect(typeof section.title).toBe("string");
       expect(section.title.length).toBeGreaterThan(0);
       expect(Array.isArray(section.body)).toBe(true);
@@ -26,6 +33,10 @@ function assertSectionsShape(name: string, sections: PolicySection[]) {
       });
     });
   });
+}
+
+function flatBody(sections: DisplayedSection[]): string {
+  return sections.flatMap((s) => s.body).join(" ");
 }
 
 describe("policy content - metadata", () => {
@@ -41,40 +52,27 @@ describe("policy content - metadata", () => {
   });
 });
 
-describe("policy content - section shapes", () => {
-  assertSectionsShape("privacyPolicy", privacyPolicySections);
-  assertSectionsShape("terms", termsSections);
-  assertSectionsShape("crisis", crisisSections);
-  assertSectionsShape("accountDeletion", accountDeletionSections);
-  assertSectionsShape("cookiePolicy", cookiePolicySections);
+describe.each(locales)("policy content - displayed %s section shapes", (locale, policies) => {
+  sectionKeys.forEach((key) => {
+    assertSectionsShape(`${locale} ${key}`, policies[key].sections);
+  });
 });
 
-describe("policy content - required statements", () => {
+describe.each(locales)("policy content - required statements (%s)", (_locale, policies) => {
   it("privacy policy mentions the privacy contact email", () => {
-    const body = privacyPolicySections.flatMap((s) => s.body).join(" ");
-    expect(body).toContain("privacy@selftend.org");
+    expect(flatBody(policies.privacy.sections)).toContain("privacy@selftend.org");
   });
 
   it("terms restrict eligibility to 18+", () => {
-    const body = termsSections.flatMap((s) => s.body).join(" ");
-    expect(body).toMatch(/18/);
+    expect(flatBody(policies.terms.sections)).toMatch(/18/);
   });
 
   it("crisis sections mention contacting emergency services", () => {
-    const body = crisisSections.flatMap((s) => s.body).join(" ");
-    expect(body.toLowerCase()).toContain("emergency");
+    expect(flatBody(policies.crisis.sections).toLowerCase()).toMatch(/emergency|спешн/);
   });
 });
 
 describe("crisis actions", () => {
-  it("has at least one action with a label and an https url", () => {
-    expect(crisisActions.length).toBeGreaterThan(0);
-    crisisActions.forEach((a) => {
-      expect(a.label.length).toBeGreaterThan(0);
-      expect(a.url).toMatch(/^https:\/\//);
-    });
-  });
-
   it("URL-only entries have stable keys and https URLs", () => {
     expect(crisisActionUrls.length).toBeGreaterThan(0);
     crisisActionUrls.forEach((a) => {
