@@ -8,14 +8,22 @@ The app has public policy routes hosted from the Expo web export:
 - `/crisis` - Crisis guidance
 - `/account-deletion` - Account deletion info
 
-The policy version constants and fallback source text live in [src/features/policies/policy-content.ts](../src/features/policies/policy-content.ts). Displayed policy copy is loaded from the locale files in `src/i18n/locales/{lang}/policies.json`.
+The policy version constants live in [src/features/policies/policy-content.ts](../src/features/policies/policy-content.ts). Policy copy is loaded from the locale files in `src/i18n/locales/{lang}/policies.json` — those files are the single source of the published text.
 
 ## Legal review status
 
-The policy pages ship with a visible "pending legal review" notice
-(`LEGAL_REVIEW_PENDING` in `src/features/policies/policy-content.ts`). This
-is intentional for closed testing. Resolution trigger: obtain legal review
-and clear the flag **before the open production release**.
+Final owner legal review completed 2026-07-23 ([issue #198](https://github.com/Selftend/selftend/issues/198));
+the launch-review notice is cleared (`LEGAL_REVIEW_PENDING = false` in
+`src/features/policies/policy-content.ts`). The flag stays available: set it
+back to `true` to re-show the notice on `/privacy`, `/terms`, and the in-app
+Legal screen if a future revision goes back under review.
+
+Deferred items from the review (open questions, not launch blockers):
+
+- No governing-law/jurisdiction clause in the terms; add one if counsel
+  recommends it.
+- Age attestation stays passive (see "Age floor" below); revisit if a
+  jurisdiction or store policy requires an explicit checkbox.
 
 ## Compliance approach
 
@@ -28,7 +36,9 @@ and clear the flag **before the open production release**.
 ### Age floor
 
 - **Minimum age: 18**
-- Users attest age via checkbox at sign-in
+- Attestation is passive: the terms and privacy policy state the 18+
+  requirement and creating an account constitutes agreement; there is no
+  age checkbox at sign-up (decision recorded 2026-07-23, issue #198)
 - No collection of date of birth (data minimization)
 - Under-18 use is explicitly prohibited in terms and privacy policy
 - No child-directed launch posture; minor support is deferred until legal and safety review
@@ -59,8 +69,9 @@ and clear the flag **before the open production release**.
 ### Data retention
 
 - Active accounts: data retained for duration of account
-- Deleted accounts: all data permanently removed within 30 days
-- No data backups retained beyond 30-day window
+- Deleted accounts: removed from live systems immediately; backups created
+  before deletion are automatically deleted within 90 days (matches the
+  published privacy policy)
 - Session tokens: expire per Supabase defaults, cleared on sign-out
 
 ### International transfers
