@@ -38,6 +38,11 @@ const iosBundleIdentifier = isDevelopmentBuild
   : "org.vasilyoshev.selftend";
 const easProjectId =
   process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? "032dd368-6eae-4a70-bbe5-4ccef2fc06cb";
+// Web origin whose /auth-callback links should open the installed app (verified
+// App Links, issue #183). Falls back to the production origin so a plain
+// `npx expo prebuild` still produces the correct release manifest.
+const publicAppHost = new URL(process.env.EXPO_PUBLIC_PUBLIC_APP_URL ?? "https://selftend.org")
+  .hostname;
 const requiredReleaseEnv = [
   "EXPO_PUBLIC_SUPABASE_URL",
   "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
@@ -108,6 +113,22 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
     googleServicesFile: isDevelopmentBuild
       ? "./google-services.dev.json"
       : "./google-services.json",
+    // Verified App Links (issue #183): email-auth links are plain HTTPS on the
+    // web origin ({{ .SiteURL }}/auth-callback...), so Android hands them to the
+    // installed app only when the origin's /.well-known/assetlinks.json vouches
+    // for this package (public/.well-known/assetlinks.json, served by the web
+    // deploy). Production only: dev builds sign with throwaway debug keys that
+    // assetlinks.json does not list, so verification could never succeed there.
+    intentFilters: isDevelopmentBuild
+      ? undefined
+      : [
+          {
+            autoVerify: true,
+            action: "VIEW",
+            data: [{ scheme: "https", host: publicAppHost, pathPrefix: "/auth-callback" }],
+            category: ["BROWSABLE", "DEFAULT"],
+          },
+        ],
   },
   web: {
     bundler: "metro",
