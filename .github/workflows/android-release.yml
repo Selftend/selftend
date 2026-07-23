@@ -55,12 +55,10 @@ jobs:
       EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
       EXPO_PUBLIC_SUPPORT_EMAIL: ${{ vars.EXPO_PUBLIC_SUPPORT_EMAIL }}
       GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-      # Skip the @sentry/react-native Gradle source-map upload during the release build.
-      # That task runs sentry-cli, which needs a SENTRY_AUTH_TOKEN we don't set in CI yet,
-      # so it fails the build (sentry.gradle gates upload on this var). Runtime Sentry is
-      # unaffected (DSN-gated separately). To re-enable symbolicated crashes later: add a
-      # SENTRY_AUTH_TOKEN secret and delete this line.
-      SENTRY_DISABLE_AUTO_UPLOAD: "true"
+      # Org auth token (sntrys_, CI scopes only) for the @sentry/react-native Gradle
+      # source-map upload, so production crashes arrive symbolicated. Diagnosing #199
+      # without maps meant hand-symbolicating Hermes bytecode - never again.
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
     steps:
       - name: Check out repository
