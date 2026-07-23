@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 
 import { HowItWorksSection } from "./how-it-works-section";
 import { LandingFooter } from "./landing-footer";
-import { LandingHeader } from "./landing-header";
 import { ModulesSection } from "./modules-section";
 import { PrivacySection } from "./privacy-section";
 
@@ -25,7 +24,6 @@ import { PrivacySection } from "./privacy-section";
 export default function LandingScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <LandingHeader />
       <ScrollView contentContainerClassName="grow">
         <View className="mx-auto w-full max-w-4xl gap-16 px-6 pb-12 pt-12 sm:gap-20 sm:pt-20">
           <LandingHero />

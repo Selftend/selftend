@@ -37,24 +37,16 @@ describe("LandingScreen", () => {
     ).toBeTruthy();
   });
 
-  it("links Get started (header and hero) to sign-up", () => {
+  it("links Get started to sign-up", () => {
     renderWithProviders(<LandingScreen />);
 
-    const links = screen.getAllByRole("link", { name: "Get started" });
-    expect(links).toHaveLength(2);
-    for (const link of links) {
-      expect(link.props.href).toBe("/(auth)/sign-up");
-    }
+    expect(screen.getByRole("link", { name: "Get started" }).props.href).toBe("/(auth)/sign-up");
   });
 
-  it("links Sign in (header and hero) to sign-in", () => {
+  it("links Sign in to sign-in", () => {
     renderWithProviders(<LandingScreen />);
 
-    const links = screen.getAllByRole("link", { name: "Sign in" });
-    expect(links).toHaveLength(2);
-    for (const link of links) {
-      expect(link.props.href).toBe("/(auth)/sign-in");
-    }
+    expect(screen.getByRole("link", { name: "Sign in" }).props.href).toBe("/(auth)/sign-in");
   });
 
   it("shows all nine tool pills", () => {
