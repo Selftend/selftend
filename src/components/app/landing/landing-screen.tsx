@@ -38,7 +38,7 @@ export default function LandingScreen() {
 }
 
 /**
- * The nine everyday tools, shown as tinted pills under the hero CTAs. Purely
+ * The eight everyday tools, shown as tinted pills under the hero CTAs. Purely
  * illustrative (not links): the pills preview the app's breadth and its hue
  * system without turning the hero into a nav. Order and hues mirror the
  * signed-in dashboard so the landing page and app read as one product.
@@ -47,7 +47,6 @@ const HERO_TOOLS: { key: string; icon: MaterialIconName; tint: TintToken }[] = [
   { key: "checkIn", icon: "mood", tint: "be" },
   { key: "journal", icon: "edit-note", tint: "ink" },
   { key: "breathing", icon: "air", tint: "aqua" },
-  { key: "mindfulness", icon: "spa", tint: "mist" },
   { key: "meditation", icon: "self-improvement", tint: "iris" },
   { key: "grounding", icon: "anchor", tint: "clay" },
   { key: "gratitude", icon: "favorite", tint: "think" },

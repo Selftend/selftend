@@ -32,7 +32,7 @@ describe("LandingScreen", () => {
 
     expect(
       screen.getByText(
-        "Calm, guided self-help - CBT and ACT modules plus nine everyday tools. No ads, no subscriptions, no streaks.",
+        "Calm, guided self-help - CBT and ACT modules plus eight everyday tools. No ads, no subscriptions, no streaks.",
       ),
     ).toBeTruthy();
   });
@@ -49,14 +49,13 @@ describe("LandingScreen", () => {
     expect(screen.getByRole("link", { name: "Sign in" }).props.href).toBe("/(auth)/sign-in");
   });
 
-  it("shows all nine tool pills", () => {
+  it("shows all eight tool pills", () => {
     renderWithProviders(<LandingScreen />);
 
     for (const name of [
       "Daily check-in",
       "Journal",
       "Breathing",
-      "Mindfulness",
       "Meditation",
       "Grounding",
       "Gratitude log",
