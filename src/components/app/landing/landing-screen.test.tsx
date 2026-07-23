@@ -24,7 +24,7 @@ describe("LandingScreen", () => {
   it("renders the hero headline as the single top-level heading", () => {
     renderWithProviders(<LandingScreen />);
 
-    expect(screen.getByRole("heading", { name: "Calm, guided self-help." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Small tools for heavy days." })).toBeTruthy();
   });
 
   it("shows the hero support line", () => {
@@ -32,7 +32,7 @@ describe("LandingScreen", () => {
 
     expect(
       screen.getByText(
-        "Free, open-source tools for working with thoughts, moods, and habits - no ads, no subscriptions.",
+        "Calm, guided self-help - CBT and ACT modules plus eight everyday tools. No ads, no subscriptions, no streaks.",
       ),
     ).toBeTruthy();
   });
@@ -47,5 +47,22 @@ describe("LandingScreen", () => {
     renderWithProviders(<LandingScreen />);
 
     expect(screen.getByRole("link", { name: "Sign in" }).props.href).toBe("/(auth)/sign-in");
+  });
+
+  it("shows all eight tool pills", () => {
+    renderWithProviders(<LandingScreen />);
+
+    for (const name of [
+      "Daily check-in",
+      "Journal",
+      "Breathing",
+      "Meditation",
+      "Grounding",
+      "Gratitude log",
+      "Sleep",
+      "Habits",
+    ]) {
+      expect(screen.getByText(name)).toBeTruthy();
+    }
   });
 });
