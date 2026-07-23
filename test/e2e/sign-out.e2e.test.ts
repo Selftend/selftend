@@ -18,7 +18,7 @@ test.describe("sign out", () => {
     // Back on landing - the public marketing landing page is shown (not the
     // sign-in form, which now lives at the dedicated /sign-in route).
     await expect(
-      page.getByRole("heading", { name: "Calm, guided self-help.", level: 1 }),
+      page.getByRole("heading", { name: "Small tools for heavy days.", level: 1 }),
     ).toBeVisible({ timeout: 10_000 });
   });
 });
