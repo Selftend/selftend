@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { LEGAL_REVIEW_PENDING } from "@/src/features/policies/policy-content";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 
 export default function LegalScreen() {
@@ -26,12 +27,14 @@ export default function LegalScreen() {
             <Text variant="muted">{t("legal.description")}</Text>
           </View>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("legal.launchReview")}</CardTitle>
-              <CardDescription>{t("legal.launchReviewDescription")}</CardDescription>
-            </CardHeader>
-          </Card>
+          {LEGAL_REVIEW_PENDING ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("legal.launchReview")}</CardTitle>
+                <CardDescription>{t("legal.launchReviewDescription")}</CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
           <Card>
             <CardHeader>
               <CardTitle>{t("legal.productBoundary")}</CardTitle>
