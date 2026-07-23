@@ -56,7 +56,7 @@ test.describe("long-form draft lifecycle", () => {
     await page.goto("/settings");
     await page.getByRole("button", { name: "Sign out", exact: true }).first().click();
     await expect(
-      page.getByRole("heading", { name: "Calm, guided self-help.", level: 1 }),
+      page.getByRole("heading", { name: "Small tools for heavy days.", level: 1 }),
     ).toBeVisible({ timeout: 10_000 });
     await expect.poll(() => readThoughtDraft(page)).toBeNull();
   });

@@ -2,6 +2,7 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
@@ -18,6 +19,9 @@ export function PrivacySection() {
 
   return (
     <View className="items-center gap-6">
+      <View className="h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+        <Icon name="lock" size={20} className="text-primary" />
+      </View>
       <View className="gap-3">
         <Text variant="h2" className="text-center text-2xl sm:text-3xl">
           {t("landingPage.privacyTitle")}
