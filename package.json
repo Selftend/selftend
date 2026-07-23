@@ -43,7 +43,8 @@
     "analytics:onboarding": "node scripts/analytics-report.js onboarding",
     "analytics:engagement": "node scripts/analytics-report.js engagement",
     "prepare": "husky",
-    "android": "expo run:android"
+    "android": "expo run:android",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@expo-google-fonts/noto-sans": "^0.4.2",
@@ -123,6 +124,7 @@
     "husky": "^9.1.7",
     "jest-expo": "~57.0.2",
     "lint-staged": "^17.0.2",
+    "patch-package": "^8.0.1",
     "prettier": "^3.8.3",
     "qrcode-terminal": "^0.12.0",
     "react-test-renderer": "19.2.3",
