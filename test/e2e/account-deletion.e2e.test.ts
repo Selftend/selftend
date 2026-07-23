@@ -77,7 +77,7 @@ test.describe("account deletion", () => {
     // redirect target is "/", which now renders the marketing landing page,
     // not the sign-in form that lives at the dedicated /sign-in route).
     await expect(
-      page.getByRole("heading", { name: "Calm, guided self-help.", level: 1 }),
+      page.getByRole("heading", { name: "Small tools for heavy days.", level: 1 }),
     ).toBeVisible({ timeout: 20_000 });
 
     // 10. Verify the auth record is actually gone.
