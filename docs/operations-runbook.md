@@ -139,6 +139,12 @@ retains the `code` branch, which is also still used by web Google OAuth).
 - For product bugs, ask only for the minimum needed: platform, browser/app version, steps, expected result, actual result, and screenshots only if they do not reveal private content.
 - Move reproducible non-private bugs into GitHub issues. Keep private account, health, security, or deletion details out of public issues.
 - Keep a private support log outside the repo with date received, sender email, category, status, and date closed.
+- On the same weekly cadence, glance at the auth abuse signals: the count of
+  unconfirmed `auth.users` rows in the production Dashboard (baseline 2/32 on
+  2026-07-23; dozens of stale unconfirmed rows = bots), Supabase auth-email
+  rate-limit or bounce warnings, and Sentry/auth-log anomalies suggesting
+  scripted signups. Any of these firing means the CAPTCHA deferral trigger has
+  fired — see [Deferred Security Decisions](#deferred-security-decisions).
 
 ## Privacy And GDPR Requests
 
@@ -258,8 +264,8 @@ re-evaluation trigger.
   the Play promotion adds visibility, not new attack surface. Triggers:
   **observed signup abuse** (spike in unconfirmed `auth.users` rows —
   baseline 2/32 on 2026-07-23; Supabase auth-email rate-limit or bounce
-  warnings; auth-log/Sentry anomalies showing scripted signups — glance at
-  these during the Before-a-Tester-Wave checks), or **before any
+  warnings; auth-log/Sentry anomalies showing scripted signups — checked
+  weekly as part of the [Support Workflow](#support-workflow)), or **before any
   deliberate marketing/announcement push** beyond the Play listing.
   Implementation when triggered (pre-decided, do not re-litigate):
   Supabase's built-in CAPTCHA toggle with **Cloudflare Turnstile**
