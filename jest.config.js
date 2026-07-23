@@ -17,7 +17,7 @@ module.exports = {
     // appending entries to the alternation (56 added standard-navigation) and
     // an anchored replace breaks silently.
     pattern
-      .replace("native-base", "native-base|@rn-primitives")
+      .replace("native-base", "native-base|@rn-primitives|react-native-sortables")
       .replace("@sentry/react-native", "@sentry"),
   ),
   // Coverage is scoped to the .ts logic surface. .tsx screens/components are
