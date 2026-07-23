@@ -16,27 +16,24 @@ app" step. The web flow is unchanged and remains the fallback everywhere else
   `assetlinks.json` does not list, so verification could never succeed there.
 - `public/.well-known/assetlinks.json` — served by the production web deploy
   (Cloudflare Workers static assets; `public/` is copied into `dist/`).
-  Currently lists the **upload key** fingerprint
-  (`20:3F:6E:79:…:23:B0`, extracted from the CI-built AAB).
+  Lists both fingerprints: the **Play App Signing key**
+  (`38:6D:0F:D0:…:DC:CA:23`, what Play-installed builds are signed with) and
+  the **upload key** (`20:3F:6E:79:…:23:B0`, covers side-loaded CI artifacts).
 - `app.config.test.ts` — guards both sides against drift.
 
-## 🔒 OWNER-ONLY — one step required before verification can succeed
+## Fingerprint provenance
 
 Devices install builds re-signed by **Google Play App Signing**, so
-`assetlinks.json` must also list Google's signing certificate (the upload-key
-entry only covers side-loaded CI artifacts):
+`assetlinks.json` must list Google's signing certificate — the upload-key entry
+alone never verifies for Play-installed builds. Both fingerprints were read
+from Play Console → **Selftend** → _Test and release_ → _Setup_ →
+**App integrity** (2026-07-23, via owner-authenticated browser session); the
+upload-key value cross-checked against the one previously extracted from the
+CI-built AAB. The App Signing certificate is only exposed in the Play Console
+UI — there is no Play Developer API endpoint for it, so re-reading it after a
+key rotation needs the console again.
 
-1. Play Console → **Selftend** → _Test and release_ → _Setup_ →
-   **App integrity** → _App signing key certificate_.
-2. Copy the **SHA-256 certificate fingerprint**.
-3. Add it as a second entry in
-   `public/.well-known/assetlinks.json` → `sha256_cert_fingerprints`
-   (keep the upload-key entry), open a PR to `dev`.
-4. The next web production deploy publishes the updated file.
-
-Checked 2026-07-23: the App Signing certificate is only exposed in the Play
-Console UI — there is no Play Developer API endpoint for it, so this step
-cannot be automated with the CI service account.
+The file goes live on the **next web production deploy** (release pipeline).
 
 ## Verifying it works (after the fingerprint lands + next app release)
 
