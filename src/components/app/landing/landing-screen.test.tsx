@@ -24,7 +24,7 @@ describe("LandingScreen", () => {
   it("renders the hero headline as the single top-level heading", () => {
     renderWithProviders(<LandingScreen />);
 
-    expect(screen.getByRole("heading", { name: "Calm, guided self-help." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Small tools for heavy days." })).toBeTruthy();
   });
 
   it("shows the hero support line", () => {
@@ -32,20 +32,46 @@ describe("LandingScreen", () => {
 
     expect(
       screen.getByText(
-        "Free, open-source tools for working with thoughts, moods, and habits - no ads, no subscriptions.",
+        "Calm, guided self-help - CBT and ACT modules plus nine everyday tools. No ads, no subscriptions, no streaks.",
       ),
     ).toBeTruthy();
   });
 
-  it("links Get started to sign-up", () => {
+  it("links Get started (header and hero) to sign-up", () => {
     renderWithProviders(<LandingScreen />);
 
-    expect(screen.getByRole("link", { name: "Get started" }).props.href).toBe("/(auth)/sign-up");
+    const links = screen.getAllByRole("link", { name: "Get started" });
+    expect(links).toHaveLength(2);
+    for (const link of links) {
+      expect(link.props.href).toBe("/(auth)/sign-up");
+    }
   });
 
-  it("links Sign in to sign-in", () => {
+  it("links Sign in (header and hero) to sign-in", () => {
     renderWithProviders(<LandingScreen />);
 
-    expect(screen.getByRole("link", { name: "Sign in" }).props.href).toBe("/(auth)/sign-in");
+    const links = screen.getAllByRole("link", { name: "Sign in" });
+    expect(links).toHaveLength(2);
+    for (const link of links) {
+      expect(link.props.href).toBe("/(auth)/sign-in");
+    }
+  });
+
+  it("shows all nine tool pills", () => {
+    renderWithProviders(<LandingScreen />);
+
+    for (const name of [
+      "Daily check-in",
+      "Journal",
+      "Breathing",
+      "Mindfulness",
+      "Meditation",
+      "Grounding",
+      "Gratitude log",
+      "Sleep",
+      "Habits",
+    ]) {
+      expect(screen.getByText(name)).toBeTruthy();
+    }
   });
 });
