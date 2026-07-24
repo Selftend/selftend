@@ -195,6 +195,9 @@ export function rewriteAuthLinkOrigin(link: string, baseURL: string): string {
 export async function confirmSignupViaMailpit(page: Page, email: string, baseURL: string) {
   const link = await fetchAuthEmailLink(page, email, "signup");
   await page.goto(rewriteAuthLinkOrigin(link, baseURL));
+  // token_hash links no longer verify on load - a scanner-proof gate waits for
+  // a human press before the one-time token is spent.
+  await page.getByRole("button", { name: "Confirm my email", exact: true }).click();
   await expect(page.getByText("You're verified")).toBeVisible({ timeout: 15_000 });
   await page.getByRole("button", { name: "Continue to the app", exact: true }).click();
 }
