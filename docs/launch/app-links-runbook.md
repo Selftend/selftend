@@ -51,8 +51,10 @@ adb shell pm verify-app-links --re-verify org.vasilyoshev.selftend
 ```
 
 End-to-end: request a password reset from the app, open the email on the
-device — the link must open Selftend directly and land on the update-password
-screen.
+device — the link must open Selftend directly, show the "Password reset"
+confirmation card (email links wait for a human press so mail scanners can't
+spend the one-time token), and after pressing "Choose a new password" land on
+the update-password screen.
 
 ## iOS (deferred)
 

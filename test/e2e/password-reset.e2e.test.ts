@@ -98,9 +98,11 @@ test.describe("password reset flow", () => {
       test.info().project.use.baseURL as string,
     );
 
-    // 6. Open the link. AuthCallbackScreen verifies the OTP and - seeing
-    //    type=recovery - routes to /(auth)/update-password.
+    // 6. Open the link. AuthCallbackScreen shows the scanner-proof gate; the
+    //    press verifies the OTP and - seeing type=recovery - routes to
+    //    /(auth)/update-password.
     await page.goto(verifyUrl);
+    await page.getByRole("button", { name: "Choose a new password", exact: true }).click();
 
     // Wait for AuthCallbackScreen to process the token and route to update-password.
     await expect(page.getByText("Reset your password")).toBeVisible({ timeout: 15_000 });

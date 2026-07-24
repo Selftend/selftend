@@ -142,17 +142,22 @@ For each provider address:
 - [ ] Email arrives within ~1–2 min. **Record: Inbox vs Spam vs Never.**
 - [ ] From shows `Selftend <no-reply@selftend.org>` (your chosen From), not a
       Supabase default domain.
-- [ ] The "Confirm email address" link opens and completes signup **on a
-      different browser/device than the one that requested it** (this exercises
-      the `token_hash` cross-device fix). It should succeed, not error.
-- [ ] Link works once; a second click shows an expired/used state, not a crash.
+- [ ] The "Confirm email address" link opens the **"Confirm your email"**
+      confirmation card (email links wait for a human press so mail scanners
+      can't spend the one-time token); pressing **"Confirm my email"**
+      completes signup — do this **on a different browser/device than the one
+      that requested it** (exercises the `token_hash` cross-device fix). It
+      should succeed, not error.
+- [ ] The token works once; opening the link and pressing the button a second
+      time shows an expired/used state, not a crash.
 
 ### C2. Password recovery
 
 - [ ] Trigger "reset password" for each provider address.
 - [ ] Email arrives; **Inbox vs Spam** recorded.
-- [ ] "Choose a new password" link opens the reset flow and lets you set a new
-      password. Confirm you can then sign in with it.
+- [ ] The recovery link opens the **"Password reset"** confirmation card;
+      pressing **"Choose a new password"** opens the reset flow and lets you
+      set a new password. Confirm you can then sign in with it.
 
 ### C3. Email-change confirmation
 

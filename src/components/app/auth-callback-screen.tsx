@@ -85,11 +85,24 @@ export default function AuthCallbackScreen() {
   const processedUrl = useRef<string | null>(null);
   const [failure, setFailure] = useState<CallbackFailure | null>(null);
   const [verified, setVerified] = useState(false);
+  const [confirmedByUser, setConfirmedByUser] = useState(false);
+
+  // Email links (`token_hash`) are one-time use, and mail security scanners
+  // (Microsoft Safe Links and similar) open links in a headless browser that
+  // runs this page's JavaScript - consuming the token before the human ever
+  // clicks. Those links therefore wait for a real button press before the
+  // token is spent; scanners render the page but do not press buttons.
+  // Same-browser redirects (`code` / error params) keep completing on load.
+  const parsedUrl = url ? parseAuthCallbackUrl(url) : null;
+  const needsHumanConfirmation = Boolean(
+    parsedUrl?.tokenHash && !parsedUrl.code && !parsedUrl.errorCode && !parsedUrl.errorDescription,
+  );
+  const readyToComplete = !needsHumanConfirmation || confirmedByUser;
 
   useEffect(() => {
     // One mounted callback screen represents one link attempt. In particular,
     // do not process the sanitized URL emitted after `replaceState` as a second link.
-    if (!hasSupabaseConfig || !url || processedUrl.current !== null) {
+    if (!hasSupabaseConfig || !url || !readyToComplete || processedUrl.current !== null) {
       return;
     }
 
@@ -147,7 +160,7 @@ export default function AuthCallbackScreen() {
     return () => {
       active = false;
     };
-  }, [hasSupabaseConfig, url]);
+  }, [hasSupabaseConfig, url, readyToComplete]);
 
   if (!hasSupabaseConfig) {
     return (
@@ -243,6 +256,35 @@ export default function AuthCallbackScreen() {
             <CardContent>
               <Button onPress={() => router.replace("/(app)")}>
                 <Text>{t("callback.continueButton")}</Text>
+              </Button>
+            </CardContent>
+          </Card>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (needsHumanConfirmation && !confirmedByUser) {
+    // Closed key set: the type param is URL text, so it only ever selects among
+    // our own translation keys - unknown values fall back to the generic pair.
+    const gateKind =
+      parsedUrl?.type === "signup" ||
+      parsedUrl?.type === "recovery" ||
+      parsedUrl?.type === "email_change"
+        ? parsedUrl.type
+        : "generic";
+
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 items-center justify-center gap-6 p-6">
+          <Card className="w-full max-w-sm">
+            <CardHeader>
+              <CardTitle>{t(`callback.gate.${gateKind}Title`)}</CardTitle>
+              <CardDescription>{t("callback.gate.description")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onPress={() => setConfirmedByUser(true)}>
+                <Text>{t(`callback.gate.${gateKind}Button`)}</Text>
               </Button>
             </CardContent>
           </Card>
