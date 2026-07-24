@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1](https://github.com/Selftend/selftend/compare/v0.6.0...v0.6.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* **auth:** add Play App Signing fingerprint to assetlinks.json ([#210](https://github.com/Selftend/selftend/issues/210)) ([ae71558](https://github.com/Selftend/selftend/commit/ae71558fdac68f12c4a5a4f05114b72787fc0d8f))
+* **auth:** gate email-link token use behind a human click to survive mail scanners ([#211](https://github.com/Selftend/selftend/issues/211)) ([4e53a3b](https://github.com/Selftend/selftend/commit/4e53a3bd819ef6872582c49249ed7a35a36cebab))
+
 ## [0.6.0](https://github.com/Selftend/selftend/compare/v0.5.0...v0.6.0) (2026-07-23)
 
 
