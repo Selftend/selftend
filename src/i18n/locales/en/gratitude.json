@@ -1,6 +1,6 @@
 {
   "title": "Gratitude",
-  "description": "Notice small things you appreciated. Save only when it feels useful - no streaks, no pressure.",
+  "description": "Notice small things you appreciated. Save only when it feels useful - no pressure.",
   "tagline": "Three good things from today is enough.",
   "authorEyebrow": "Inspired by positive psychology · Sonja Lyubomirsky & Robert Emmons",
   "newEntry": "New entry",
@@ -10,7 +10,7 @@
   },
   "home": {
     "title": "Gratitude log",
-    "subtitle": "Notice what's good. Write it down. No pressure, no streaks.",
+    "subtitle": "Notice what's good. Write it down. No pressure.",
     "viewAll": "View all"
   },
   "hero": {
