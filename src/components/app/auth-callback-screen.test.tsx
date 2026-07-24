@@ -46,15 +46,30 @@ describe("AuthCallbackScreen (email verified)", () => {
     mockCompleteAuthRedirect.mockResolvedValue("email-verified");
   });
 
+  it("does not consume the one-time token until a human presses the button", async () => {
+    // Mail security scanners (Safe Links etc.) open email links in a headless
+    // browser that runs page JS - anything consumed on load is spent before the
+    // human clicks. The token must only be spent on an explicit press.
+    renderWithProviders(<AuthCallbackScreen />);
+
+    expect(await screen.findByText("Confirm your email")).toBeTruthy();
+    expect(mockCompleteAuthRedirect).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getByText("Confirm my email"));
+    await waitFor(() => expect(mockCompleteAuthRedirect).toHaveBeenCalledTimes(1));
+  });
+
   it("shows the verification-complete card without auto-navigating", async () => {
     renderWithProviders(<AuthCallbackScreen />);
 
+    fireEvent.press(await screen.findByText("Confirm my email"));
     expect(await screen.findByText("You're verified")).toBeTruthy();
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it("does not retry a verified link when URL scrubbing publishes the clean callback URL", async () => {
     const view = renderWithProviders(<AuthCallbackScreen />);
+    fireEvent.press(await screen.findByText("Confirm my email"));
     expect(await screen.findByText("You're verified")).toBeTruthy();
 
     mockUseLinkingURL.mockReturnValue("http://localhost:8081/auth-callback");
@@ -68,6 +83,7 @@ describe("AuthCallbackScreen (email verified)", () => {
   it("enters the app when 'Continue to the app' is pressed", async () => {
     renderWithProviders(<AuthCallbackScreen />);
 
+    fireEvent.press(await screen.findByText("Confirm my email"));
     fireEvent.press(await screen.findByText("Continue to the app"));
     expect(mockReplace).toHaveBeenCalledWith("/(app)");
   });
@@ -114,11 +130,8 @@ describe("AuthCallbackScreen - error mapping", () => {
 
     renderWithProviders(<AuthCallbackScreen />);
 
-    expect(
-      await screen.findByText(
-        "This link has expired or was already used. Links work once and expire after about an hour.",
-      ),
-    ).toBeTruthy();
+    fireEvent.press(await screen.findByText("Choose a new password"));
+    expect(await screen.findByText(/This link has expired or was already used/)).toBeTruthy();
 
     fireEvent.press(screen.getByText("Request a new link"));
     expect(mockReplace).toHaveBeenCalledWith("/(auth)/reset-password");
@@ -133,11 +146,8 @@ describe("AuthCallbackScreen - error mapping", () => {
 
     renderWithProviders(<AuthCallbackScreen />);
 
-    expect(
-      await screen.findByText(
-        "This link has expired or was already used. Links work once and expire after about an hour.",
-      ),
-    ).toBeTruthy();
+    fireEvent.press(await screen.findByText("Confirm my email"));
+    expect(await screen.findByText(/This link has expired or was already used/)).toBeTruthy();
 
     fireEvent.press(screen.getByText("Request a new link"));
     expect(mockReplace).toHaveBeenCalledWith("/(auth)/verify-email");
