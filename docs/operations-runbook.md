@@ -109,9 +109,12 @@ must mirror them by hand - templates are not part of `db push`.
    (same URL Configuration page).
 5. Smoke test after saving: request a password reset from the production site,
    open the email **in a different browser** than the one that requested it, and
-   confirm the link lands on `/auth-callback?token_hash=...&type=recovery` and
-   reaches the "Reset your password" screen. Repeat once for a fresh signup
-   confirmation.
+   confirm the link lands on `/auth-callback?token_hash=...&type=recovery`,
+   shows the **"Password reset" confirmation card** (email links wait for a
+   human press so mail scanners can't spend the one-time token), and — after
+   pressing **"Choose a new password"** — reaches the "Reset your password"
+   screen. Repeat once for a fresh signup confirmation (card button:
+   **"Confirm my email"**).
 
 ### Local development note
 
