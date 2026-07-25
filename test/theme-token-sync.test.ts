@@ -3,13 +3,17 @@ import { join } from "node:path";
 
 import { CARD_COLOR, POPOVER_COLOR, THEME } from "@/lib/theme";
 import { exerciseHue, EXERCISE_HUES } from "@/src/features/mindfulness/exercise-hue";
+import { HUE_NAMES, HUE_TRIPLES, PRIMARY_TRIPLES } from "@/src/lib/design-tokens";
 import { PALETTE, TINTS, type TintName } from "@/src/features/widgets/palette";
 
-// global.css is the single source of truth for the design tokens. Several TS
-// modules mirror those values because LinearGradient / reanimated / SVG /
-// the Android widget renderer cannot read CSS variables. This suite fails the
-// build whenever a mirror drifts from global.css (e.g. a contrast retune that
-// forgets a copy), instead of shipping same-screen two-tone accents.
+// global.css is the single source of truth for the surface tokens, and
+// src/lib/design-tokens.ts is the single TS source for the hue triples (the
+// hand-written global.css mirrors them because NativeWind needs it at build
+// time). Several other TS modules mirror token values because LinearGradient /
+// reanimated / SVG / the Android widget renderer cannot read CSS variables.
+// This suite fails the build whenever any mirror drifts (e.g. a contrast
+// retune that forgets a copy), instead of shipping same-screen two-tone
+// accents.
 
 const ROOT = join(__dirname, "..");
 const globalCss = readFileSync(join(ROOT, "global.css"), "utf8");
@@ -108,6 +112,18 @@ describe("lib/theme.ts mirrors global.css", () => {
     }
   });
 
+  it.each(["light", "dark"] as const)("THEME_VARIABLES %s carries every hue token", (scheme) => {
+    const source = readFileSync(join(ROOT, "lib", "theme.ts"), "utf8");
+    const variablesSection = source.slice(source.indexOf("THEME_VARIABLES"));
+    const blocks = [...variablesSection.matchAll(/vars\(\{([^}]*)\}\)/g)];
+    expect(blocks).toHaveLength(2);
+    const body = scheme === "light" ? blocks[0][1] : blocks[1][1];
+    for (const hue of HUE_NAMES) {
+      // Hue values must come from the TS hue source, never a fresh literal.
+      expect(body).toContain(`"--${hue}": HUE_TRIPLES.${hue}.${scheme}`);
+    }
+  });
+
   it("CARD_COLOR and POPOVER_COLOR match --card / --popover", () => {
     expectHexMatchesHsl(CARD_COLOR.light, css.light["--card"], "CARD_COLOR.light");
     expectHexMatchesHsl(CARD_COLOR.dark, css.dark["--card"], "CARD_COLOR.dark");
@@ -169,6 +185,27 @@ describe("destructive contrast floors (WCAG 1.4.3, 14px text)", () => {
       hslTripleToRgb(css.dark["--background"]),
     );
     expect(contrastRatio(white, darkSurface)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("design-tokens.ts hue source mirrors global.css", () => {
+  it.each(HUE_NAMES)("HUE_TRIPLES.%s matches --%s in both schemes", (hue) => {
+    expect(HUE_TRIPLES[hue]).toEqual({
+      light: css.light[`--${hue}`],
+      dark: css.dark[`--${hue}`],
+    });
+  });
+
+  it("PRIMARY_TRIPLES matches --primary in both schemes", () => {
+    expect(PRIMARY_TRIPLES).toEqual({
+      light: css.light["--primary"],
+      dark: css.dark["--primary"],
+    });
+  });
+
+  it("the retired --chart-* tokens stay deleted", () => {
+    expect(globalCss).not.toMatch(/--chart-/);
+    expect(readFileSync(join(ROOT, "lib", "theme.ts"), "utf8")).not.toMatch(/--chart-|chart[1-5]/);
   });
 });
 
