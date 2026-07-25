@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { CARD_COLOR, POPOVER_COLOR, THEME } from "@/lib/theme";
@@ -249,23 +249,20 @@ describe("widgets/palette.ts mirrors global.css", () => {
   });
 });
 
-describe("mood-line-chart.tsx mirrors global.css", () => {
-  const source = readFileSync(
-    join(ROOT, "src", "components", "app", "mood-line-chart.tsx"),
-    "utf8",
-  );
+describe("chart layer never hardcodes HSL", () => {
+  // Charts reach hue colors only through hueHsl()/hueRamp()/hueGradient() and
+  // neutrals through THEME — a literal hsl(/hsla( in src/components/charts/
+  // is a drift from the token source of truth by definition.
+  const chartsDir = join(ROOT, "src", "components", "charts");
 
-  it("uses the --be token for the line and fill in both schemes", () => {
-    expect(source).toContain(`"hsl(${commaTriple(css.light["--be"])})"`);
-    expect(source).toContain(`"hsl(${commaTriple(css.dark["--be"])})"`);
-    expect(source).toContain(`hsla(${commaTriple(css.light["--be"])},`);
-    expect(source).toContain(`hsla(${commaTriple(css.dark["--be"])},`);
-  });
-
-  it("uses the --border and --muted-foreground tokens for grid and labels", () => {
-    expect(source).toContain(`"hsl(${commaTriple(css.light["--border"])})"`);
-    expect(source).toContain(`"hsl(${commaTriple(css.dark["--border"])})"`);
-    expect(source).toContain(`"hsl(${commaTriple(css.light["--muted-foreground"])})"`);
-    expect(source).toContain(`"hsl(${commaTriple(css.dark["--muted-foreground"])})"`);
+  it("src/components/charts/*.tsx contains no hsl literals", () => {
+    const files = readdirSync(chartsDir).filter(
+      (f) => f.endsWith(".tsx") && !f.endsWith(".test.tsx"),
+    );
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      const source = readFileSync(join(chartsDir, file), "utf8");
+      expect(source).not.toMatch(/hsla?\(/);
+    }
   });
 });

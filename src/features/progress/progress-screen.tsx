@@ -11,7 +11,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { MoodLineChart } from "@/src/components/app/mood-line-chart";
+import { LineChart } from "@/src/components/charts/line-chart";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { dailyIntegerAverages, lastNLocalDateKeys } from "@/src/features/mood/chart-data";
 import { useMoodHistory } from "@/src/features/mood/queries";
@@ -47,10 +47,16 @@ export default function ProgressScreen() {
     }));
   })();
 
-  const chartPoints = chartData.filter((d) => d.score !== null) as {
-    day: string;
-    score: number;
-  }[];
+  const chartPoints = (() => {
+    const days = chartData.filter((d) => d.score !== null) as { day: string; score: number }[];
+    // Days with entries spread evenly across the plot (the previous bespoke
+    // chart's index spacing); every other day carries a label.
+    return days.map((d, i) => ({
+      offset: days.length > 1 ? i / (days.length - 1) : 0,
+      value: d.score,
+      label: d.day || undefined,
+    }));
+  })();
 
   const promptKey = REFLECTION_PROMPTS[new Date().getDay() % REFLECTION_PROMPTS.length];
   const chartWidth = Math.min(width - 48, 400);
@@ -82,7 +88,7 @@ export default function ProgressScreen() {
             </CardHeader>
             <CardContent>
               {chartPoints.length > 0 ? (
-                <MoodLineChart data={chartPoints} width={chartWidth} />
+                <LineChart points={chartPoints} domain={[1, 5]} hue="be" width={chartWidth} />
               ) : (
                 <Text variant="muted">{t("progress.noMoodData")}</Text>
               )}
