@@ -35,7 +35,7 @@ function MoodEntryCardComponent({ entry, resolveEmotion }: MoodEntryCardProps) {
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() => router.push(`/tools/mood-tracker/${entry.id}`)}
-      className="gap-2 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
+      className="gap-2 rounded-3xl bg-card p-4 shadow-lg shadow-[color:hsl(var(--be)/0.25)] active:bg-accent/40"
       role="button"
     >
       <View className="flex-row items-center justify-between gap-3">

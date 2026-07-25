@@ -5,10 +5,19 @@ import { router } from "expo-router";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
 
+interface ScreenBreadcrumbProps {
+  /**
+   * "default" renders muted-on-surface text. "onField" renders white ink for
+   * use on a module-hue field header (ModuleHomeHeader variant="field").
+   */
+  tone?: "default" | "onField";
+}
+
 // The breadcrumb trail rendered as a screen eyebrow (above the title). Hidden when
 // there is no parent to show - a lone current-page crumb just repeats the title.
-export function ScreenBreadcrumb() {
+export function ScreenBreadcrumb({ tone = "default" }: ScreenBreadcrumbProps) {
   const crumbs = useBreadcrumbs();
+  const onField = tone === "onField";
 
   if (crumbs.length < 2) return null;
 
@@ -16,19 +25,39 @@ export function ScreenBreadcrumb() {
     <View className="flex-row flex-wrap items-center gap-2">
       {crumbs.map((crumb, i) => (
         <Fragment key={i}>
-          {i > 0 ? <Text className="text-[11px] text-muted-foreground/50">·</Text> : null}
+          {i > 0 ? (
+            <Text
+              className={
+                onField ? "text-[11px] text-white/60" : "text-[11px] text-muted-foreground/50"
+              }
+            >
+              ·
+            </Text>
+          ) : null}
           {crumb.href ? (
             <Pressable
               accessibilityRole="link"
               hitSlop={4}
               onPress={() => router.push(crumb.href as never)}
             >
-              <Text className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground active:opacity-70">
+              <Text
+                className={
+                  onField
+                    ? "text-[11px] font-semibold uppercase tracking-[0.14em] text-white/[0.88] active:opacity-70"
+                    : "text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground active:opacity-70"
+                }
+              >
                 {crumb.label}
               </Text>
             </Pressable>
           ) : (
-            <Text className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground">
+            <Text
+              className={
+                onField
+                  ? "text-[11px] font-semibold uppercase tracking-[0.14em] text-white"
+                  : "text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground"
+              }
+            >
               {crumb.label}
             </Text>
           )}

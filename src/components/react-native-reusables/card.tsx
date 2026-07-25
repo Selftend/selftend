@@ -15,6 +15,20 @@ const TINT_BG: Record<TintToken, string> = {
   mist: "bg-[hsl(var(--mist)/0.06)] border-[hsl(var(--mist)/0.30)]",
 };
 
+// Hue-tinted elevation for the soft variant (Direction B rooms): shadow color
+// follows the module hue so cards read as lifted room surfaces, not gray boxes.
+const SOFT_SHADOW: Record<TintToken, string> = {
+  primary: "shadow-[color:hsl(var(--primary)/0.25)]",
+  act: "shadow-[color:hsl(var(--act)/0.25)]",
+  be: "shadow-[color:hsl(var(--be)/0.25)]",
+  think: "shadow-[color:hsl(var(--think)/0.25)]",
+  aqua: "shadow-[color:hsl(var(--aqua)/0.25)]",
+  iris: "shadow-[color:hsl(var(--iris)/0.25)]",
+  ink: "shadow-[color:hsl(var(--ink)/0.25)]",
+  clay: "shadow-[color:hsl(var(--clay)/0.25)]",
+  mist: "shadow-[color:hsl(var(--mist)/0.25)]",
+};
+
 const SPINE_BG: Record<TintToken, string> = {
   primary: "bg-primary",
   act: "bg-[hsl(var(--act))]",
@@ -31,15 +45,25 @@ type CardProps = React.ComponentProps<typeof View> &
   React.RefAttributes<View> & {
     spine?: TintToken;
     tint?: TintToken;
+    /**
+     * "default" is the bordered card every surface renders today. "soft" is
+     * the Direction B room card: borderless, larger radius, hue-tinted soft
+     * elevation (pass `tint` for the hue; it colors the shadow instead of the
+     * background). Opt-in — the global default is unchanged.
+     */
+    variant?: "default" | "soft";
   };
 
-function Card({ className, spine, tint, children, ...props }: CardProps) {
+function Card({ className, spine, tint, variant = "default", children, ...props }: CardProps) {
+  const soft = variant === "soft";
   return (
     <TextClassContext.Provider value="text-card-foreground">
       <View
         className={cn(
-          "bg-card border-border relative flex flex-col gap-6 overflow-hidden rounded-xl border py-6 shadow-sm shadow-black/5",
-          tint && TINT_BG[tint],
+          "bg-card relative flex flex-col gap-6 overflow-hidden py-6",
+          soft
+            ? cn("rounded-3xl shadow-lg", tint ? SOFT_SHADOW[tint] : "shadow-black/10")
+            : cn("border-border rounded-xl border shadow-sm shadow-black/5", tint && TINT_BG[tint]),
           className,
         )}
         {...props}

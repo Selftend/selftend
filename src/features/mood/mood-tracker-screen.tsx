@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { View, type LayoutChangeEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
 import { LineChart } from "@/src/components/charts/line-chart";
@@ -37,6 +39,7 @@ import {
   type MoodSummary,
 } from "@/src/features/mood/summaries";
 import { WeekHero } from "@/src/features/mood/mood-week-hero";
+import { roomVariables } from "@/src/lib/module-room";
 import { formatLocalTimestamp, parseLocalNoon, startOfDayDaysAgo } from "@/src/utils/date";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
@@ -49,8 +52,13 @@ const PRESET_DAYS: Record<Exclude<TrendRange, "custom">, number> = {
   "90d": 90,
 };
 
+// Mood is the "be" rose room (spec #233): the whole screen subtree re-pours
+// its surface tokens as low-chroma rose. Static per-scheme styles, computed once.
+const BE_ROOM = roomVariables("be");
+
 export default function MoodTrackerScreen() {
   const { t, i18n } = useTranslation("mood");
+  const { colorScheme } = useColorScheme();
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -146,12 +154,20 @@ export default function MoodTrackerScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={BE_ROOM[colorScheme === "dark" ? "dark" : "light"]}
+      >
         <MoodHistoryList
           logs={history}
           ListHeaderComponent={
-            <View className="gap-6">
+            // The field + sheet escape the list's 16px content padding so the
+            // rose field runs edge to edge; the sheet re-adds the inset for
+            // its cards, and the rows below stay on the list's own padding.
+            <View className="-mx-4 -mt-4">
               <ModuleHomeHeader
+                variant="field"
                 addWidgetCategory="mood"
                 title={t("title")}
                 hue="be"
@@ -165,6 +181,7 @@ export default function MoodTrackerScreen() {
                 ]}
                 meta={
                   <ToolStats
+                    tone="onField"
                     accentClassName="text-be"
                     items={statItems}
                     subline={lastWhen ? t("stats.last", { when: lastWhen }) : t("stats.never")}
@@ -172,71 +189,74 @@ export default function MoodTrackerScreen() {
                   />
                 }
               />
+              <ContentSheet className="px-4">
+                <View className="gap-6">
+                  <TodayCheckInCard summary={daySummary} isToday={isToday} dayLabel={dayLabel} />
 
-              <TodayCheckInCard summary={daySummary} isToday={isToday} dayLabel={dayLabel} />
+                  <View className="gap-3">
+                    <Text variant="h3">{t("week.title")}</Text>
+                    <WeekHero delta={weekDelta} byDay={weekByDay} topEmotions={topEmotions} />
+                  </View>
 
-              <View className="gap-3">
-                <Text variant="h3">{t("week.title")}</Text>
-                <WeekHero delta={weekDelta} byDay={weekByDay} topEmotions={topEmotions} />
-              </View>
-
-              <View className="gap-3">
-                <View className="flex-row flex-wrap items-center justify-between gap-2">
-                  <Text variant="h3">{t("trendControls.title")}</Text>
-                  <SegmentedControl
-                    value={trendRange}
-                    onChange={(next) => {
-                      // Custom is a two-step choice: the picker applies it. Tapping the
-                      // active Custom segment again reopens the picker for adjustment.
-                      if (next === "custom") {
-                        setRangePickerOpen(true);
-                        return;
-                      }
-                      setTrendRange(next);
-                    }}
-                    options={[
-                      { value: "7d", label: t("trendControls.range7") },
-                      { value: "30d", label: t("trendControls.range30") },
-                      { value: "90d", label: t("trendControls.range90") },
-                      { value: "custom", label: t("trendControls.rangeCustom") },
-                    ]}
-                  />
-                </View>
-                {customSpanLabel ? (
-                  <Text variant="muted" className="text-[13px]">
-                    {customSpanLabel}
-                  </Text>
-                ) : null}
-                <DateRangeField
-                  visible={rangePickerOpen}
-                  onClose={() => setRangePickerOpen(false)}
-                  value={customRange}
-                  onChange={(range) => {
-                    setCustomRange(range);
-                    setTrendRange("custom");
-                  }}
-                  minDateKey={firstLogIso ? toLocalDateKey(firstLogIso) : undefined}
-                  maxDateKey={currentDateKey()}
-                />
-                <Card>
-                  <CardContent className="pt-4">
-                    <View onLayout={handleChartLayout}>
-                      {chartData.length > 0 ? (
-                        <LineChart
-                          points={chartData}
-                          domain={[1, 5]}
-                          hue="be"
-                          width={chartContainerWidth}
-                        />
-                      ) : (
-                        <Text variant="muted">{t("trend.empty")}</Text>
-                      )}
+                  <View className="gap-3">
+                    <View className="flex-row flex-wrap items-center justify-between gap-2">
+                      <Text variant="h3">{t("trendControls.title")}</Text>
+                      <SegmentedControl
+                        value={trendRange}
+                        onChange={(next) => {
+                          // Custom is a two-step choice: the picker applies it. Tapping the
+                          // active Custom segment again reopens the picker for adjustment.
+                          if (next === "custom") {
+                            setRangePickerOpen(true);
+                            return;
+                          }
+                          setTrendRange(next);
+                        }}
+                        options={[
+                          { value: "7d", label: t("trendControls.range7") },
+                          { value: "30d", label: t("trendControls.range30") },
+                          { value: "90d", label: t("trendControls.range90") },
+                          { value: "custom", label: t("trendControls.rangeCustom") },
+                        ]}
+                      />
                     </View>
-                  </CardContent>
-                </Card>
-              </View>
+                    {customSpanLabel ? (
+                      <Text variant="muted" className="text-[13px]">
+                        {customSpanLabel}
+                      </Text>
+                    ) : null}
+                    <DateRangeField
+                      visible={rangePickerOpen}
+                      onClose={() => setRangePickerOpen(false)}
+                      value={customRange}
+                      onChange={(range) => {
+                        setCustomRange(range);
+                        setTrendRange("custom");
+                      }}
+                      minDateKey={firstLogIso ? toLocalDateKey(firstLogIso) : undefined}
+                      maxDateKey={currentDateKey()}
+                    />
+                    <Card variant="soft" tint="be">
+                      <CardContent className="pt-4">
+                        <View onLayout={handleChartLayout}>
+                          {chartData.length > 0 ? (
+                            <LineChart
+                              points={chartData}
+                              domain={[1, 5]}
+                              hue="be"
+                              width={chartContainerWidth}
+                            />
+                          ) : (
+                            <Text variant="muted">{t("trend.empty")}</Text>
+                          )}
+                        </View>
+                      </CardContent>
+                    </Card>
+                  </View>
 
-              <Text variant="h3">{t("history.title")}</Text>
+                  <Text variant="h3">{t("history.title")}</Text>
+                </View>
+              </ContentSheet>
             </View>
           }
         />
@@ -263,7 +283,7 @@ function TodayCheckInCard({ summary, isToday, dayLabel }: TodayCheckInCardProps)
       : t("today.completeMany", { count: summary.count, average: summary.average });
 
   return (
-    <Card>
+    <Card variant="soft" tint="be">
       <CardHeader>
         <View className="flex-row items-center gap-2">
           {logged ? <Icon name="check-circle" className="size-5 text-primary" /> : null}

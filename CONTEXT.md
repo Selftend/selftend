@@ -42,6 +42,28 @@ _Avoid_: session, cycle
 
 > Note: there is intentionally no "run" term. A routine has a definition and a status derived per day; there is no separate object representing one day's execution.
 
+### Design language ("Color field")
+
+The app-wide visual direction (decided on the design redesign map, first shipped by the mood workstream).
+
+**Room**:
+A module's screen environment: every neutral surface on that screen re-tinted toward the module's hue. One room per screen; rooms switch at navigation boundaries.
+_Avoid_: theme, skin
+
+**Field**:
+The full-bleed pour of the module hue behind a screen's header, carrying white ink (title, description, stats).
+_Avoid_: banner, hero image
+
+**Sheet**:
+The content surface that rises over the field on a large top radius; the screen's cards sit on it.
+_Avoid_: modal, bottom sheet (the interaction pattern is unrelated)
+
+**Soft card**:
+A borderless card lifted from the sheet by a hue-tinted shadow instead of a border. Opt-in per screen; the bordered card stays the default elsewhere.
+
+**Guest hue**:
+Another module's hue appearing as an accent inside a room (e.g. the act-green mood scale in mood's rose room). Guest hues stay accent-strength and never re-pour surfaces.
+
 **Routine vs. Habit**:
 Selftend keeps both, as distinct features. The line is _who reports completion_: a **routine** step completes when the app sees a real record in its in-app tool (auto-derived, never marked); a **habit** is a behaviour the user marks done themselves (a self-report tick that can stand for anything, including off-app behaviour). If the app can see it, it's a routine; if only the user knows, it's a habit. They coexist in v1; folding habits into routines is a deliberately deferred option, not a v1 goal.
 _Avoid_: treating "routine" and "habit" as synonyms; calling a self-tracked habit a routine.

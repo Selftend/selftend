@@ -195,3 +195,66 @@ describe("ModuleHomeHeader hero mode", () => {
     expect(screen.getByRole("heading", { name: "Cognitive Behavioral Therapy" })).toBeTruthy();
   });
 });
+
+describe("ModuleHomeHeader field variant", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  function renderFieldHeader({ moduleLabel = null }: { moduleLabel?: string | null } = {}) {
+    const onPressInfo = jest.fn();
+    renderWithProviders(
+      <ModuleHomeHeader
+        variant="field"
+        title="Check-in"
+        hue="be"
+        icon="mood"
+        moduleLabel={moduleLabel}
+        description="Log how you're feeling."
+        actions={[
+          { type: "notifications", targetKey: "mood" },
+          { type: "info", onPress: onPressInfo },
+        ]}
+      />,
+    );
+    return { onPressInfo };
+  }
+
+  it("renders the hue field gradient behind the title, description, and actions", () => {
+    renderFieldHeader();
+
+    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
+    expect(screen.getByText("Log how you're feeling.")).toBeTruthy();
+    expect(screen.getByLabelText("Notifications")).toBeTruthy();
+    expect(screen.getByLabelText("About this module")).toBeTruthy();
+  });
+
+  it("keeps action buttons working on the field", () => {
+    const { onPressInfo } = renderFieldHeader();
+
+    fireEvent.press(screen.getByLabelText("About this module"));
+
+    expect(onPressInfo).toHaveBeenCalledTimes(1);
+  });
+
+  it("omits the chip when moduleLabel is null (single title occurrence)", () => {
+    renderFieldHeader({ moduleLabel: null });
+
+    expect(screen.getAllByText("Check-in")).toHaveLength(1);
+  });
+
+  it("renders an on-field chip when moduleLabel is provided", () => {
+    renderFieldHeader({ moduleLabel: "Mood" });
+
+    expect(screen.getByText("Mood")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
+  });
+
+  it("falls back to hero mode when no hue is provided", () => {
+    renderWithProviders(<ModuleHomeHeader variant="field" title="Check-in" description="..." />);
+
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
+  });
+});
