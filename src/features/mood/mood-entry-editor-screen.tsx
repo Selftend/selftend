@@ -312,6 +312,23 @@ export function MoodEntryEditorScreen({
     <View className="flex-1" style={roomStyle}>
       <MobileFormScreen
         contentClassName="mx-auto w-full max-w-2xl gap-6"
+        hero={
+          editMode ? undefined : (
+            // Create mode gets the field treatment: the full-bleed rose field
+            // with the sheet lip rising over it, outside the max-width column.
+            <View>
+              <ModuleHomeHeader
+                variant="field"
+                hue="be"
+                icon="mood"
+                title={tMood("checkin.title")}
+                moduleLabel={tMood("checkin.moduleLabel")}
+                description={tMood("checkin.tagline")}
+              />
+              <ContentSheet />
+            </View>
+          )
+        }
         footer={
           <View className="mx-auto w-full max-w-2xl gap-3">
             {/* The save-failure error lives WITH the pinned Save button: a user
@@ -343,21 +360,7 @@ export function MoodEntryEditorScreen({
             <ScreenHeader title={t("mood.editTitle")} />
             <Text variant="muted">{t("mood.editDescription")}</Text>
           </View>
-        ) : (
-          // Create mode gets the field treatment: full-bleed rose field with the
-          // sheet lip rising over it (the -mx/-mt escape the form's p-6 padding).
-          <View className="-mx-6 -mt-6">
-            <ModuleHomeHeader
-              variant="field"
-              hue="be"
-              icon="mood"
-              title={tMood("checkin.title")}
-              moduleLabel={tMood("checkin.moduleLabel")}
-              description={tMood("checkin.tagline")}
-            />
-            <ContentSheet />
-          </View>
-        )}
+        ) : null}
 
         <CrisisSupportBar />
 
