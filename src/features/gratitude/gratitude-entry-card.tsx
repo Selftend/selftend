@@ -21,7 +21,7 @@ import {
 } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
-import { roomTriples } from "@/src/lib/module-room";
+import { roomCardHsl } from "@/src/lib/module-room";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -30,11 +30,7 @@ const COLLAPSED_PAIRS = 2;
 // Every gratitude surface is the think room (spec #267), so the collapse fade
 // must match the room's tinted card surface, not the neutral CARD_COLOR —
 // LinearGradient can't read the CSS variable bg-card resolves to.
-const THINK_CARD_FADE = (() => {
-  const triples = roomTriples("think");
-  const toHsl = (triple: string) => `hsl(${triple.split(" ").join(", ")})`;
-  return { light: toHsl(triples.light.card), dark: toHsl(triples.dark.card) };
-})();
+const THINK_CARD_FADE = roomCardHsl("think");
 
 export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
   const { t } = useTranslation("gratitude");
