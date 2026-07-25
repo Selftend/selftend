@@ -1,11 +1,11 @@
 import { fieldGradient, roomTriples } from "@/src/lib/module-room";
 
-// Hues that actually ship as rooms. The field recipe holds one S/L formula for
-// every hue, and white ink is only guaranteed on the darker hues — a light hue
-// (think's yellow, act's green) would need its own field recipe before a room
-// can adopt it. When a new module becomes a room, add its hue here; if these
-// floors then fail, tune the recipe (or a per-hue override) first.
-const ROOM_HUES = ["be", "ink"] as const;
+// Hues with a validated room recipe. The field recipe holds one S/L formula
+// whose white ink is only guaranteed on the darker hues — a light hue (think's
+// yellow, act's green) needs a per-hue stop override in FIELD_STOP_OVERRIDES
+// before a room can adopt it. When a new module becomes a room, add its hue
+// here; if these floors then fail, add or tune its override first.
+const ROOM_HUES = ["be", "ink", "think"] as const;
 
 // The Direction B field header paints white ink (title, description at 88%,
 // stats) on a full-bleed module-hue gradient, and the room re-pours the

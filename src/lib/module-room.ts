@@ -78,6 +78,25 @@ export function roomVariables(hue: HueName): Record<ColorSchemeName, ReturnType<
   return { light: toVars("light"), dark: toVars("dark") };
 }
 
+// Per-hue [saturation%, lightness%] field stops for hues the standard recipe
+// can't carry: a light hue (think's yellow) leaves white ink below AA at the
+// formula's lightness, so its room supplies its own S/L instead. The hue
+// degree still comes from the token source of truth, so a palette retune
+// re-tints overridden fields too. Only the schemes a hue overrides are
+// listed — anything absent falls through to the formula. Floors are
+// enforced by test/room-contrast.test.ts; for think, the binding constraint
+// is 88%-white body ink composited over the top stop (≥ 4.5 needs L ≤ ~32%).
+const FIELD_STOP_OVERRIDES: Partial<
+  Record<HueName, Partial<Record<ColorSchemeName, [[number, number], [number, number]]>>>
+> = {
+  think: {
+    light: [
+      [64, 31],
+      [70, 25],
+    ],
+  },
+};
+
 /**
  * The full-bleed field gradient behind a module header, top → bottom stops.
  * Comma-form hsl() strings because LinearGradient cannot read CSS variables
@@ -85,6 +104,10 @@ export function roomVariables(hue: HueName): Record<ColorSchemeName, ReturnType<
  */
 export function fieldGradient(hue: HueName, isDark: boolean): [string, string] {
   const h = hueDegree(hue);
+  const override = FIELD_STOP_OVERRIDES[hue]?.[isDark ? "dark" : "light"];
+  if (override) {
+    return override.map(([s, l]) => `hsl(${h}, ${s}%, ${l}%)`) as [string, string];
+  }
   return isDark
     ? [`hsl(${h}, 34%, 20%)`, `hsl(${h}, 40%, 12%)`]
     : [`hsl(${h}, 50%, 42%)`, `hsl(${h}, 58%, 32%)`];
