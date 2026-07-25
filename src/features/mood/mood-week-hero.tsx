@@ -2,6 +2,7 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
+import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
@@ -52,22 +53,52 @@ export function WeekHero({ delta, byDay, topEmotions }: WeekHeroProps) {
           <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
             {t("week.byDay")}
           </Text>
-          <View className="h-24 flex-row items-end gap-2">
+          <View className="flex-row gap-1">
             {byDay.map((day) => {
-              const heightPct = day.average === null ? 0 : (day.average / 5) * 100;
               const isToday = day.dateKey === todayKey;
+              const date = parseLocalNoon(day.dateKey);
               const letter = new Intl.DateTimeFormat(i18n.language, { weekday: "narrow" }).format(
-                parseLocalNoon(day.dateKey),
+                date,
               );
+              const dayName = new Intl.DateTimeFormat(i18n.language, { weekday: "long" }).format(
+                date,
+              );
+              // Day averages are means of 1-5 scores, so Math.round stays in range;
+              // clamp anyway so a bad value can never index off the emoji map.
+              const score =
+                day.average === null ? null : Math.min(5, Math.max(1, Math.round(day.average)));
               return (
-                <View key={day.dateKey} className="flex-1 items-center gap-1.5">
-                  <View className="h-[70px] w-full justify-end">
-                    <View
-                      className={cn("w-full rounded-md", isToday ? "bg-be" : "bg-be/30")}
-                      style={{ height: `${Math.max(heightPct, day.average === null ? 0 : 6)}%` }}
-                    />
+                <View
+                  key={day.dateKey}
+                  accessible
+                  accessibilityLabel={
+                    score === null
+                      ? t("week.dayNoEntry", { day: dayName })
+                      : t("week.dayScore", {
+                          day: dayName,
+                          score: t(`checkin.scaleLabels.${score}`),
+                        })
+                  }
+                  testID={isToday ? "week-strip-today" : undefined}
+                  className={cn(
+                    "flex-1 items-center gap-1.5 rounded-xl py-1.5",
+                    isToday && "bg-be/10",
+                  )}
+                >
+                  <View className="h-8 items-center justify-center">
+                    {score === null ? (
+                      <View
+                        testID="week-strip-empty-dot"
+                        className="h-2.5 w-2.5 rounded-full border-[1.5px] border-muted-foreground/40"
+                      />
+                    ) : (
+                      <Text className="text-2xl leading-none">{MOOD_EMOJI_BY_SCORE[score]}</Text>
+                    )}
                   </View>
-                  <Text variant="muted" className="text-[11px] font-semibold">
+                  <Text
+                    variant="muted"
+                    className={cn("text-[11px] font-semibold", isToday && "text-be")}
+                  >
                     {letter}
                   </Text>
                 </View>
