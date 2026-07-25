@@ -315,6 +315,11 @@ describe("MoodEntryEditorScreen", () => {
     expect(await screen.findByLabelText("Great")).toBeTruthy();
   });
 
+  it("renders the rose field header in create mode only", async () => {
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+    expect(await screen.findByTestId("module-field-gradient")).toBeTruthy();
+  });
+
   it("completes a linked activity after saving from the activity flow", async () => {
     mockUseLocalSearchParams.mockReturnValue({
       completeActivityId: "activity-1",
