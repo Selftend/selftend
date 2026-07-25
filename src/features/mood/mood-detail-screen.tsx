@@ -108,7 +108,7 @@ export default function MoodDetailScreen() {
                   <Text className="text-4xl">{MOOD_EMOJI_BY_SCORE[entry.moodScore] ?? ""}</Text>
                 </View>
                 <View className="flex-1">
-                  <Text className="text-2xl font-extrabold tracking-tight">
+                  <Text className="font-display text-2xl font-extrabold tracking-tight">
                     {t(`detailWord.${entry.moodScore}`)} · {entry.moodScore}
                   </Text>
                   <Text variant="muted" className="text-sm">

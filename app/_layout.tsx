@@ -10,6 +10,7 @@ import { NotoSans_500Medium } from "@expo-google-fonts/noto-sans/500Medium";
 import { NotoSans_600SemiBold } from "@expo-google-fonts/noto-sans/600SemiBold";
 import { NotoSans_700Bold } from "@expo-google-fonts/noto-sans/700Bold";
 import { NotoSans_800ExtraBold } from "@expo-google-fonts/noto-sans/800ExtraBold";
+import { Nunito_800ExtraBold } from "@expo-google-fonts/nunito/800ExtraBold";
 import { ThemeProvider } from "expo-router";
 import { useFonts } from "expo-font";
 import { PortalHost } from "@rn-primitives/portal";
@@ -44,6 +45,7 @@ export default Sentry.wrap(function RootLayout() {
     NotoSans_600SemiBold,
     NotoSans_700Bold,
     NotoSans_800ExtraBold,
+    Nunito_800ExtraBold,
   });
 
   // Web: paint immediately - expo-font has already injected the @font-face rules, so the

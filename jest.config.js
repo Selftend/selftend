@@ -6,7 +6,18 @@ module.exports = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },
-  testPathIgnorePatterns: ["/node_modules/", "/dist/", "/test/integration/", "/test/e2e/"],
+  // /.claude/ holds agent worktree copies of the repo (already ignored by
+  // .prettierignore and eslint.config.js); without these, jest sweeps their
+  // tests and its haste map resolves __mocks__/ manual mocks (and a second
+  // React copy) from the duplicates.
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "/dist/",
+    "/test/integration/",
+    "/test/e2e/",
+    "<rootDir>/\\.claude/",
+  ],
+  modulePathIgnorePatterns: ["<rootDir>/\\.claude/"],
   // jest-expo's default leaves @rn-primitives untransformed; our UI primitives
   // (Text, Label) depend on it, so widen the allowlist to transform it too.
   // Likewise the default only lists @sentry/react-native, but sentry v8 pulls

@@ -11,6 +11,9 @@ const FONT_FAMILY = {
   semibold: "NotoSans_600SemiBold",
   bold: "NotoSans_700Bold",
   extrabold: "NotoSans_800ExtraBold",
+  // The display face: h1–h2 and hero numerals only (opt in elsewhere with the
+  // font-display class). h3 and below, body, and UI text stay Noto Sans.
+  display: "Nunito_800ExtraBold",
 } as const;
 
 const textVariants = cva(
@@ -29,7 +32,7 @@ const textVariants = cva(
           Platform.select({ web: "scroll-m-20 text-balance" }),
         ),
         h2: cn(
-          "text-3xl font-semibold tracking-tight",
+          "text-3xl font-extrabold tracking-tight",
           Platform.select({ web: "scroll-m-20 first:mt-0" }),
         ),
         h3: cn("text-2xl font-semibold tracking-tight", Platform.select({ web: "scroll-m-20" })),
@@ -79,6 +82,10 @@ function resolveFontFamily(classes: string, variant: TextVariant): string | unde
     return undefined;
   }
 
+  if (classes.includes("font-display") || variant === "h1" || variant === "h2") {
+    return FONT_FAMILY.display;
+  }
+
   if (classes.includes("font-extrabold")) {
     return FONT_FAMILY.extrabold;
   }
@@ -93,10 +100,6 @@ function resolveFontFamily(classes: string, variant: TextVariant): string | unde
 
   if (classes.includes("font-medium")) {
     return FONT_FAMILY.medium;
-  }
-
-  if (variant === "h1") {
-    return FONT_FAMILY.extrabold;
   }
 
   return FONT_FAMILY.regular;
