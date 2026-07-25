@@ -71,6 +71,10 @@ export function WeekHero({ delta, byDay, topEmotions }: WeekHeroProps) {
                 <View
                   key={day.dateKey}
                   accessible
+                  accessibilityRole="image"
+                  // RNW drops the native-only `accessible` prop, and a generic div
+                  // prohibits an accessible name — the img role carries the label on web.
+                  role="img"
                   accessibilityLabel={
                     score === null
                       ? t("week.dayNoEntry", { day: dayName })

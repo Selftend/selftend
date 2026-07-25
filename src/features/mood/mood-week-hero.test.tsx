@@ -70,6 +70,9 @@ describe("WeekHero week strip", () => {
       />,
     );
 
+    // Every cell exposes an image role so the label survives into the web
+    // accessibility tree (RNW drops the native-only `accessible` prop).
+    expect(screen.getAllByRole("image")).toHaveLength(7);
     // Scale words come from checkin.scaleLabels; day names vary with the run date,
     // so match on the score-word suffix rather than a hardcoded weekday.
     expect(screen.getByLabelText(/: Awful$/)).toBeTruthy();
