@@ -17,16 +17,19 @@ const TINT_BG: Record<TintToken, string> = {
 
 // Hue-tinted elevation for the soft variant (Direction B rooms): shadow color
 // follows the module hue so cards read as lifted room surfaces, not gray boxes.
+// Named-color + slash opacity, the same utility shape as the default card's
+// shadow-black/5 (arbitrary shadow-[color:...] values are ambiguous to the
+// Tailwind/NativeWind pipeline).
 const SOFT_SHADOW: Record<TintToken, string> = {
-  primary: "shadow-[color:hsl(var(--primary)/0.25)]",
-  act: "shadow-[color:hsl(var(--act)/0.25)]",
-  be: "shadow-[color:hsl(var(--be)/0.25)]",
-  think: "shadow-[color:hsl(var(--think)/0.25)]",
-  aqua: "shadow-[color:hsl(var(--aqua)/0.25)]",
-  iris: "shadow-[color:hsl(var(--iris)/0.25)]",
-  ink: "shadow-[color:hsl(var(--ink)/0.25)]",
-  clay: "shadow-[color:hsl(var(--clay)/0.25)]",
-  mist: "shadow-[color:hsl(var(--mist)/0.25)]",
+  primary: "shadow-primary/25",
+  act: "shadow-act/25",
+  be: "shadow-be/25",
+  think: "shadow-think/25",
+  aqua: "shadow-aqua/25",
+  iris: "shadow-iris/25",
+  ink: "shadow-ink/25",
+  clay: "shadow-clay/25",
+  mist: "shadow-mist/25",
 };
 
 const SPINE_BG: Record<TintToken, string> = {
