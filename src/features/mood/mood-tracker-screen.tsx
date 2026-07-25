@@ -36,6 +36,7 @@ import {
   getWeekDelta,
   type MoodSummary,
 } from "@/src/features/mood/summaries";
+import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
 import { WeekHero } from "@/src/features/mood/mood-week-hero";
 import { formatLocalTimestamp, parseLocalNoon, startOfDayDaysAgo } from "@/src/utils/date";
 import { useSession } from "@/src/providers/session-provider";
@@ -232,6 +233,15 @@ export default function MoodTrackerScreen() {
                         <Text variant="muted">{t("trend.empty")}</Text>
                       )}
                     </View>
+                  </CardContent>
+                </Card>
+              </View>
+
+              <View className="gap-3">
+                <Text variant="h3">{t("heatmap.title")}</Text>
+                <Card>
+                  <CardContent className="pt-4">
+                    <MoodHeatmap userId={userId} />
                   </CardContent>
                 </Card>
               </View>
