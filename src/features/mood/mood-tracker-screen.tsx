@@ -15,7 +15,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
-import { MoodLineChart } from "@/src/components/app/mood-line-chart";
+import { LineChart } from "@/src/components/charts/line-chart";
 import { SegmentedControl } from "@/src/components/app/segmented-control";
 import { MoodScale } from "@/src/components/app/mood-scale";
 import { ToolStats } from "@/src/components/app/tool-stats";
@@ -81,10 +81,16 @@ export default function MoodTrackerScreen() {
       label: t("stats.avgLabel"),
     },
   ];
-  const chartData = useMemo(
-    () => buildMoodChartData(moodLogs, trendDays, i18n.language),
-    [moodLogs, trendDays, i18n.language],
-  );
+  // Only the first and last day are labelled — interior labels would collide
+  // at the trend windows' densities (matches the previous bespoke chart).
+  const chartData = useMemo(() => {
+    const days = buildMoodChartData(moodLogs, trendDays, i18n.language);
+    return days.map((d, i) => ({
+      offset: d.offset,
+      value: d.score,
+      label: i === 0 || i === days.length - 1 ? d.day : undefined,
+    }));
+  }, [moodLogs, trendDays, i18n.language]);
   const history = moodLogs ?? [];
 
   const handleChartLayout = (e: LayoutChangeEvent) => {
@@ -149,7 +155,12 @@ export default function MoodTrackerScreen() {
                   <CardContent className="pt-4">
                     <View onLayout={handleChartLayout}>
                       {chartData.length > 0 ? (
-                        <MoodLineChart data={chartData} width={chartContainerWidth} />
+                        <LineChart
+                          points={chartData}
+                          domain={[1, 5]}
+                          hue="be"
+                          width={chartContainerWidth}
+                        />
                       ) : (
                         <Text variant="muted">{t("trend.empty")}</Text>
                       )}
