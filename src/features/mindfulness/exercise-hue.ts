@@ -1,25 +1,23 @@
 // Per-exercise accent hue. Class strings are written out in full so NativeWind's
 // compiler can see them (same convention as src/features/home/tool-accent.ts).
-// HSL triples are copied verbatim from global.css and used for LinearGradient and
-// reanimated colour props, which cannot read CSS variables.
+// HSL triples come from the hue source of truth in src/lib/design-tokens.ts and
+// feed LinearGradient and reanimated colour props, which cannot read CSS variables.
 
-import type { TintToken } from "@/src/lib/design-tokens";
+import {
+  HUE_NAMES,
+  HUE_TRIPLES,
+  PRIMARY_TRIPLES,
+  type HueName,
+  type SchemeTriples,
+  type TintToken,
+} from "@/src/lib/design-tokens";
 
-export type ExerciseHue = "mist" | "iris" | "be" | "ink" | "act" | "clay" | "think" | "aqua";
+export type ExerciseHue = HueName;
 
 // Alias for tool-level usage (the hero spans the full tool palette).
 export type ToolHue = ExerciseHue;
 
-export const EXERCISE_HUES: ExerciseHue[] = [
-  "mist",
-  "iris",
-  "be",
-  "ink",
-  "act",
-  "clay",
-  "think",
-  "aqua",
-];
+export const EXERCISE_HUES: ExerciseHue[] = [...HUE_NAMES];
 
 interface HueClasses {
   text: string;
@@ -34,16 +32,18 @@ interface HueDef {
 }
 
 type HslPair = { light: string; dark: string };
-const HUE_HSL: Record<ExerciseHue, HslPair> = {
-  mist: { light: "178, 40%, 40%", dark: "178, 48%, 58%" },
-  iris: { light: "280, 48%, 60%", dark: "280, 58%, 74%" },
-  be: { light: "330, 56%, 47%", dark: "330, 62%, 72%" },
-  ink: { light: "232, 46%, 54%", dark: "232, 56%, 72%" },
-  act: { light: "160, 46%, 38%", dark: "160, 56%, 55%" },
-  clay: { light: "20, 52%, 50%", dark: "20, 60%, 66%" },
-  think: { light: "43, 74%, 52%", dark: "43, 86%, 65%" },
-  aqua: { light: "196, 52%, 36%", dark: "196, 58%, 62%" },
-};
+
+/** "330 56% 47%" (the css/global.css form) → "330, 56%, 47%" (the hsla() builder form). */
+const commaTriple = (spaceTriple: string): string => spaceTriple.split(/\s+/).join(", ");
+
+const commaPair = (triples: SchemeTriples): HslPair => ({
+  light: commaTriple(triples.light),
+  dark: commaTriple(triples.dark),
+});
+
+const HUE_HSL = Object.fromEntries(
+  HUE_NAMES.map((hue) => [hue, commaPair(HUE_TRIPLES[hue])]),
+) as Record<ExerciseHue, HslPair>;
 
 const HUES: Record<ExerciseHue, HueDef> = {
   mist: {
@@ -94,9 +94,39 @@ export function exerciseHue(hue: ExerciseHue): HueDef {
   return HUES[hue] ?? HUES.mist;
 }
 
+// ---------------------------------------------------------------------------
+// Raw-HSL escape hatch
+// ---------------------------------------------------------------------------
+// hueHsl() and hueRamp() are the only sanctioned paths for raw HSL colour
+// strings into SVG, LinearGradient, and reanimated props (which cannot read
+// CSS variables). Never hardcode HSL literals in charts or gradients — these
+// helpers read the hue source of truth in src/lib/design-tokens.ts, which
+// test/theme-token-sync.test.ts keeps in parity with global.css.
+
+/** Hue colour string with alpha for the given scheme, e.g. "hsla(330, 56%, 47%, 0.15)". */
 export function hueHsl(hue: ExerciseHue, isDark: boolean, alpha: number): string {
   const triple = isDark ? exerciseHue(hue).hsl.dark : exerciseHue(hue).hsl.light;
   return `hsla(${triple}, ${alpha})`;
+}
+
+const RAMP_ALPHAS = [0.16, 0.32, 0.52, 0.74, 1] as const;
+
+/**
+ * Five-step sequential single-hue ramp, faintest → fullest, for chart
+ * intensity encodings (heatmap cells, score tones). Steps are alpha tints of
+ * the module hue so they sit correctly on both light and dark surfaces.
+ */
+export function hueRamp(
+  hue: ExerciseHue,
+  isDark: boolean,
+): [string, string, string, string, string] {
+  return RAMP_ALPHAS.map((alpha) => hueHsl(hue, isDark, alpha)) as [
+    string,
+    string,
+    string,
+    string,
+    string,
+  ];
 }
 
 export function hueGradient(hue: ExerciseHue, isDark: boolean): [string, string] {
@@ -117,7 +147,7 @@ export function hueToTint(hue: ToolHue): TintToken {
 // mirror the HUES table above; primary is added here (not in HUES because
 // it isn't an exercise tint).
 const STRIPE_HSL: Record<TintToken, HslPair> = {
-  primary: { light: "262, 62%, 56%", dark: "264, 72%, 72%" },
+  primary: commaPair(PRIMARY_TRIPLES),
   ...HUE_HSL,
 };
 
