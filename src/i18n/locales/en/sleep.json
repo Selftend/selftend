@@ -46,7 +46,9 @@
   },
   "stats": {
     "longest": "Longest",
-    "shortest": "Shortest"
+    "shortest": "Shortest",
+    "last": "Last · {{when}}",
+    "never": "No sleep logged yet"
   },
   "chart": {
     "duration14": "Hours slept · last 14 nights",

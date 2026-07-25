@@ -5,7 +5,7 @@ import { fieldGradient, roomTriples } from "@/src/lib/module-room";
 // (think's yellow, act's green) would need its own field recipe before a room
 // can adopt it. When a new module becomes a room, add its hue here; if these
 // floors then fail, tune the recipe (or a per-hue override) first.
-const ROOM_HUES = ["be"] as const;
+const ROOM_HUES = ["be", "ink"] as const;
 
 // The Direction B field header paints white ink (title, description at 88%,
 // stats) on a full-bleed module-hue gradient, and the room re-pours the

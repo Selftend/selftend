@@ -33,7 +33,7 @@ export function SleepRecentList({ logs }: { logs: SleepLog[] }) {
             when: formatMoodRelativeTime(log.loggedAt, t),
           })}
           onPress={() => router.push({ pathname: "/tools/sleep/[id]", params: { id: log.id } })}
-          className="flex-row items-center gap-4 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
+          className="flex-row items-center gap-4 rounded-3xl bg-card p-4 shadow-lg shadow-ink/25 active:bg-accent/40"
           role="button"
         >
           <View className="flex-1 gap-1">

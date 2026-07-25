@@ -2,17 +2,21 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardHeader } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ToolStats } from "@/src/components/app/tool-stats";
 import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
 import { useSleepLogs, useSleepLogCount } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { roomVariables } from "@/src/lib/module-room";
+import { formatLocalTimestamp } from "@/src/utils/date";
 import { formatDuration, formatHours } from "@/src/features/sleep/format";
 import {
   averageDurationMinutes,
@@ -27,8 +31,13 @@ import { SleepQualityMix } from "@/src/features/sleep/sleep-quality-mix";
 import { SleepWeekdayChart } from "@/src/features/sleep/sleep-weekday-chart";
 import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
 
+// Sleep is the "ink" room (spec #255): the whole screen subtree re-pours its
+// surface tokens as low-chroma ink. Static per-scheme styles, computed once.
+const INK_ROOM = roomVariables("ink");
+
 export default function SleepTrackerScreen() {
   const { t } = useTranslation("sleep");
+  const { colorScheme } = useColorScheme();
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -47,6 +56,13 @@ export default function SleepTrackerScreen() {
   const nights14 = recentNights(allLogs, 14);
   const distribution = qualityDistribution(allLogs, 30);
   const weekly = weekdayAverages(allLogs);
+  // ISO timestamps sort lexically, so the max is the latest log regardless of
+  // the list's own ordering.
+  const lastLoggedAt = allLogs.reduce<string | null>(
+    (latest, log) => (latest === null || log.loggedAt > latest ? log.loggedAt : latest),
+    null,
+  );
+  const lastWhen = lastLoggedAt ? formatLocalTimestamp(lastLoggedAt) : null;
 
   return (
     <>
@@ -55,10 +71,17 @@ export default function SleepTrackerScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={INK_ROOM[colorScheme === "dark" ? "dark" : "light"]}
+      >
         <ScrollView contentContainerClassName="grow p-4">
-          <View className="gap-6">
+          {/* The field + sheet escape the scroll padding so the ink field runs
+              edge to edge; the sheet re-adds the inset for its sections. */}
+          <View className="-mx-4 -mt-4">
             <ModuleHomeHeader
+              variant="field"
               addWidgetCategory="sleep"
               title={t("title")}
               hue="ink"
@@ -72,6 +95,7 @@ export default function SleepTrackerScreen() {
               ]}
               meta={
                 <ToolStats
+                  tone="onField"
                   accentClassName="text-ink"
                   items={[
                     { value: formatHours(sevenDayDuration), label: t("hero.avg") },
@@ -84,68 +108,73 @@ export default function SleepTrackerScreen() {
                       label: "",
                     },
                   ]}
+                  subline={lastWhen ? t("stats.last", { when: lastWhen }) : t("stats.never")}
+                  sublineTone={lastWhen ? "accent" : "muted"}
                 />
               }
             />
+            <ContentSheet className="px-4">
+              <View className="gap-6">
+                <View className="flex-row gap-3">
+                  <Button onPress={() => router.push("/tools/sleep/new")} className="self-start">
+                    <Icon name="bedtime" className="size-4 text-primary-foreground" />
+                    <Text>{t("cta.log")}</Text>
+                  </Button>
+                </View>
 
-            <View className="flex-row gap-3">
-              <Button onPress={() => router.push("/tools/sleep/new")} className="self-start">
-                <Icon name="bedtime" className="size-4 text-primary-foreground" />
-                <Text>{t("cta.log")}</Text>
-              </Button>
-            </View>
+                <View className="gap-3">
+                  <Text variant="h3">{t("sections.trend")}</Text>
+                  <SleepDurationChart nights={nights14} />
+                </View>
 
-            <View className="gap-3">
-              <Text variant="h3">{t("sections.trend")}</Text>
-              <SleepDurationChart nights={nights14} />
-            </View>
+                <View className="gap-3">
+                  <Text variant="h3">{t("sections.stats")}</Text>
+                  <View className="flex-row flex-wrap gap-3">
+                    <StatTile
+                      label={t("summary.sevenDay")}
+                      value={formatHours(sevenDayDuration)}
+                      sub={
+                        sevenDayQuality !== null
+                          ? t("summary.avgQuality", { quality: sevenDayQuality })
+                          : undefined
+                      }
+                    />
+                    <StatTile
+                      label={t("summary.thirtyDay")}
+                      value={formatHours(thirtyDayDuration)}
+                      sub={
+                        thirtyDayQuality !== null
+                          ? t("summary.avgQuality", { quality: thirtyDayQuality })
+                          : undefined
+                      }
+                    />
+                    <StatTile
+                      label={t("stats.longest")}
+                      value={longest !== null ? formatDuration(longest) : "-"}
+                    />
+                    <StatTile
+                      label={t("stats.shortest")}
+                      value={shortest !== null ? formatDuration(shortest) : "-"}
+                    />
+                  </View>
+                </View>
 
-            <View className="gap-3">
-              <Text variant="h3">{t("sections.stats")}</Text>
-              <View className="flex-row flex-wrap gap-3">
-                <StatTile
-                  label={t("summary.sevenDay")}
-                  value={formatHours(sevenDayDuration)}
-                  sub={
-                    sevenDayQuality !== null
-                      ? t("summary.avgQuality", { quality: sevenDayQuality })
-                      : undefined
-                  }
-                />
-                <StatTile
-                  label={t("summary.thirtyDay")}
-                  value={formatHours(thirtyDayDuration)}
-                  sub={
-                    thirtyDayQuality !== null
-                      ? t("summary.avgQuality", { quality: thirtyDayQuality })
-                      : undefined
-                  }
-                />
-                <StatTile
-                  label={t("stats.longest")}
-                  value={longest !== null ? formatDuration(longest) : "-"}
-                />
-                <StatTile
-                  label={t("stats.shortest")}
-                  value={shortest !== null ? formatDuration(shortest) : "-"}
-                />
+                <View className="gap-3">
+                  <Text variant="h3">{t("sections.quality")}</Text>
+                  <SleepQualityMix distribution={distribution} />
+                </View>
+
+                <View className="gap-3">
+                  <Text variant="h3">{t("sections.weekday")}</Text>
+                  <SleepWeekdayChart averages={weekly} />
+                </View>
+
+                <View className="gap-3">
+                  <Text variant="h3">{t("sections.recent")}</Text>
+                  <SleepRecentList logs={allLogs} />
+                </View>
               </View>
-            </View>
-
-            <View className="gap-3">
-              <Text variant="h3">{t("sections.quality")}</Text>
-              <SleepQualityMix distribution={distribution} />
-            </View>
-
-            <View className="gap-3">
-              <Text variant="h3">{t("sections.weekday")}</Text>
-              <SleepWeekdayChart averages={weekly} />
-            </View>
-
-            <View className="gap-3">
-              <Text variant="h3">{t("sections.recent")}</Text>
-              <SleepRecentList logs={allLogs} />
-            </View>
+            </ContentSheet>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -161,7 +190,7 @@ interface StatTileProps {
 
 function StatTile({ label, value, sub }: StatTileProps) {
   return (
-    <Card className="min-w-[150px] flex-1 basis-[150px]">
+    <Card variant="soft" tint="ink" className="min-w-[150px] flex-1 basis-[150px]">
       <CardHeader>
         <Text variant="muted" className="text-xs uppercase tracking-wide">
           {label}
