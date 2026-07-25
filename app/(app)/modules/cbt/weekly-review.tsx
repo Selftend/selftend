@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { MoodLineChart } from "@/src/components/app/mood-line-chart";
+import { LineChart } from "@/src/components/charts/line-chart";
 import { ProgressBar } from "@/src/components/app/progress-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useActivities } from "@/src/features/activities/queries";
@@ -83,10 +83,16 @@ export default function WeeklyReviewScreen() {
     }));
   })();
 
-  const chartPoints = chartData.filter((d) => d.score !== null) as {
-    day: string;
-    score: number;
-  }[];
+  const chartPoints = (() => {
+    const days = chartData.filter((d) => d.score !== null) as { day: string; score: number }[];
+    // Days with entries spread evenly across the plot (the previous bespoke
+    // chart's index spacing); mood stays the be hue here too.
+    return days.map((d, i) => ({
+      offset: days.length > 1 ? i / (days.length - 1) : 0,
+      value: d.score,
+      label: d.day,
+    }));
+  })();
 
   const weekActivities = (() => {
     if (!activities) return { planned: 0, completed: 0 };
@@ -145,7 +151,7 @@ export default function WeeklyReviewScreen() {
             </CardHeader>
             <CardContent>
               {chartPoints.length > 0 ? (
-                <MoodLineChart data={chartPoints} width={chartWidth} />
+                <LineChart points={chartPoints} domain={[1, 5]} hue="be" width={chartWidth} />
               ) : (
                 <Text variant="muted">{t("weeklyReview.noMoodData")}</Text>
               )}
