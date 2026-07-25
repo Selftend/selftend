@@ -2,8 +2,14 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import MoodTrackerScreen from "@/src/features/mood/mood-tracker-screen";
-import { useMoodHistory, useMoodLogCount } from "@/src/features/mood/queries";
+import {
+  useFirstMoodLogDate,
+  useMoodHistory,
+  useMoodLogCount,
+  useMoodScorePoints,
+} from "@/src/features/mood/queries";
 import { currentDateKey } from "@/src/stores/selected-date-store";
+import { startOfDayDaysAgo } from "@/src/utils/date";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -28,8 +34,10 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/mood/queries", () => ({
+  useFirstMoodLogDate: jest.fn(),
   useMoodHistory: jest.fn(),
   useMoodLogCount: jest.fn(),
+  useMoodScorePoints: jest.fn(),
 }));
 
 jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
@@ -38,6 +46,10 @@ jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
 
 const mockUseMoodLogs = useMoodHistory as jest.MockedFunction<typeof useMoodHistory>;
 const mockUseMoodLogCount = useMoodLogCount as jest.MockedFunction<typeof useMoodLogCount>;
+const mockUseMoodScorePoints = useMoodScorePoints as jest.MockedFunction<typeof useMoodScorePoints>;
+const mockUseFirstMoodLogDate = useFirstMoodLogDate as jest.MockedFunction<
+  typeof useFirstMoodLogDate
+>;
 const mockRouter = jest.mocked(router);
 
 describe("MoodTrackerScreen", () => {
@@ -46,6 +58,12 @@ describe("MoodTrackerScreen", () => {
     mockUseMoodLogCount.mockReturnValue({
       data: undefined,
     } as unknown as ReturnType<typeof useMoodLogCount>);
+    mockUseMoodScorePoints.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodScorePoints>);
+    mockUseFirstMoodLogDate.mockReturnValue({
+      data: null,
+    } as unknown as ReturnType<typeof useFirstMoodLogDate>);
   });
 
   it("renders the empty states and a pending Today card when there are no mood logs", () => {
@@ -168,5 +186,53 @@ describe("MoodTrackerScreen", () => {
     fireEvent.press(screen.getByLabelText("OK"));
 
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/new?score=3");
+  });
+
+  it("offers 7d/30d/90d/Custom trend ranges, defaulting to a 30-day window (no 14d)", () => {
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    expect(screen.getByText("7d")).toBeTruthy();
+    expect(screen.getByText("30d")).toBeTruthy();
+    expect(screen.getByText("90d")).toBeTruthy();
+    expect(screen.getByText("Custom")).toBeTruthy();
+    expect(screen.queryByText("14d")).toBeNull();
+    // Default window: the narrow score-points query is asked for the 30-day window.
+    expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
+      "user-1",
+      startOfDayDaysAgo(30).toISOString(),
+      undefined,
+    );
+  });
+
+  it("switches the score-points window when a preset range is tapped", () => {
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    fireEvent.press(screen.getByText("90d"));
+
+    expect(mockUseMoodScorePoints).toHaveBeenLastCalledWith(
+      "user-1",
+      startOfDayDaysAgo(90).toISOString(),
+      undefined,
+    );
+  });
+
+  it("opens the range picker when Custom is tapped", () => {
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    expect(screen.queryByText("Done")).toBeNull();
+    fireEvent.press(screen.getByText("Custom"));
+    expect(screen.getByText("Done")).toBeTruthy();
   });
 });

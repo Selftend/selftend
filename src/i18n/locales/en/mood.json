@@ -131,8 +131,9 @@
   "trendControls": {
     "title": "Mood trend",
     "range7": "7d",
-    "range14": "14d",
-    "range30": "30d"
+    "range30": "30d",
+    "range90": "90d",
+    "rangeCustom": "Custom"
   },
   "detailWord": {
     "1": "Awful",

@@ -102,6 +102,73 @@ export async function saveMoodLog(userId: string, input: MoodInput, moodLogId?: 
   return mapMoodLog(data as MoodLogRow);
 }
 
+export interface MoodScorePoint {
+  loggedAt: string;
+  loggedOffsetMinutes: number;
+  moodScore: number;
+}
+
+interface MoodScorePointRow {
+  logged_at: string;
+  logged_offset_minutes: number | null;
+  mood_score: number;
+}
+
+// PostgREST caps every response (1,000 rows on Supabase's default max-rows), so a
+// single unbounded select would silently truncate long windows to their oldest page.
+const SCORE_POINTS_PAGE = 1000;
+
+/**
+ * Trend-window fetch: only timestamp, offset, and score — never the free-text
+ * columns — paged past the PostgREST response cap, so any range renders with
+ * full daily resolution.
+ */
+export async function listMoodScorePoints(
+  userId: string,
+  fromIso: string,
+  toIso?: string,
+): Promise<MoodScorePoint[]> {
+  const client = requireSupabase();
+  const points: MoodScorePoint[] = [];
+  for (let offset = 0; ; offset += SCORE_POINTS_PAGE) {
+    let query = client
+      .from("mood_logs")
+      .select("logged_at, logged_offset_minutes, mood_score")
+      .eq("user_id", userId)
+      .gte("logged_at", fromIso);
+    if (toIso) query = query.lte("logged_at", toIso);
+    const { data, error } = await query
+      .order("logged_at", { ascending: true })
+      .range(offset, offset + SCORE_POINTS_PAGE - 1);
+
+    if (error) throw error;
+    const rows = data as MoodScorePointRow[];
+    for (const row of rows) {
+      points.push({
+        loggedAt: row.logged_at,
+        loggedOffsetMinutes: row.logged_offset_minutes ?? 0,
+        moodScore: row.mood_score,
+      });
+    }
+    if (rows.length < SCORE_POINTS_PAGE) return points;
+  }
+}
+
+/** Timestamp of the user's earliest log — the lower clamp for custom trend ranges. */
+export async function getFirstMoodLogDate(userId: string): Promise<string | null> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("mood_logs")
+    .select("logged_at")
+    .eq("user_id", userId)
+    .order("logged_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as { logged_at: string } | null)?.logged_at ?? null;
+}
+
 export async function countMoodLogs(userId: string): Promise<number> {
   const client = requireSupabase();
   const { count, error } = await client

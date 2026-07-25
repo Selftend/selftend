@@ -1,4 +1,4 @@
-import { buildMoodChartData } from "@/src/features/mood/chart-data";
+import { buildMoodChartData, buildMoodChartDataForRange } from "@/src/features/mood/chart-data";
 
 function isoAtLocal(daysAgo: number, hour = 12) {
   const date = new Date();
@@ -59,6 +59,50 @@ describe("buildMoodChartData", () => {
     expect(labels).toHaveLength(2);
     expect(labels.every((l) => l.length > 0)).toBe(true);
     expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  it("assigns offsets by real position in an explicit date range", () => {
+    // Fixed 30-day range 2026-03-03..2026-04-01: entries on the first day, day 15, last day.
+    const logs = [
+      { loggedAt: "2026-03-03T09:00:00", moodScore: 4 },
+      { loggedAt: "2026-03-18T12:00:00", moodScore: 3 },
+      { loggedAt: "2026-04-01T20:00:00", moodScore: 5 },
+    ];
+    const pts = buildMoodChartDataForRange(logs, "2026-03-03", "2026-04-01");
+    expect(pts).toHaveLength(3);
+    expect(pts[0].offset).toBeCloseTo(0, 5);
+    expect(pts[1].offset).toBeCloseTo(15 / 29, 5);
+    expect(pts[2].offset).toBeCloseTo(1, 5);
+    expect(pts.map((p) => p.score)).toEqual([4, 3, 5]);
+  });
+
+  it("excludes samples before the range start and after the range end", () => {
+    const logs = [
+      { loggedAt: "2026-03-02T23:00:00", moodScore: 1 },
+      { loggedAt: "2026-03-10T10:00:00", moodScore: 4 },
+      { loggedAt: "2026-04-02T00:30:00", moodScore: 1 },
+    ];
+    const pts = buildMoodChartDataForRange(logs, "2026-03-03", "2026-04-01");
+    expect(pts).toHaveLength(1);
+    expect(pts[0].score).toBe(4);
+  });
+
+  it("averages same-day logs and centers a single-day range at offset 0", () => {
+    const logs = [
+      { loggedAt: "2026-03-10T09:00:00", moodScore: 2 },
+      { loggedAt: "2026-03-10T18:00:00", moodScore: 5 },
+    ];
+    const pts = buildMoodChartDataForRange(logs, "2026-03-10", "2026-03-10");
+    expect(pts).toHaveLength(1);
+    expect(pts[0].score).toBe(3.5);
+    expect(pts[0].offset).toBe(0);
+  });
+
+  it("returns empty for an inverted or empty range", () => {
+    const logs = [{ loggedAt: "2026-03-10T09:00:00", moodScore: 2 }];
+    expect(buildMoodChartDataForRange(logs, "2026-04-01", "2026-03-03")).toEqual([]);
+    expect(buildMoodChartDataForRange([], "2026-03-03", "2026-04-01")).toEqual([]);
+    expect(buildMoodChartDataForRange(undefined, "2026-03-03", "2026-04-01")).toEqual([]);
   });
 
   it("assigns offsets by real position in the window, not by index", () => {
