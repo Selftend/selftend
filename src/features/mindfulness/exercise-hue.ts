@@ -109,7 +109,10 @@ export function hueHsl(hue: ExerciseHue, isDark: boolean, alpha: number): string
   return `hsla(${triple}, ${alpha})`;
 }
 
-const RAMP_ALPHAS = [0.16, 0.32, 0.52, 0.74, 1] as const;
+// Exported so test/hue-ramp-classes.test.ts can hold HUE_RAMP_CLASSES in
+// design-tokens.ts to the same steps (the class table can't import from here —
+// this module imports design-tokens).
+export const RAMP_ALPHAS = [0.16, 0.32, 0.52, 0.74, 1] as const;
 
 /**
  * Five-step sequential single-hue ramp, faintest → fullest, for chart
