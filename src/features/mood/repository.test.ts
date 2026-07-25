@@ -1,7 +1,9 @@
 import {
   countMoodLogs,
+  getFirstMoodLogDate,
   getMoodLog,
   listMoodLogs,
+  listMoodScorePoints,
   saveMoodLog,
 } from "@/src/features/mood/repository";
 import { requireSupabase } from "@/src/lib/supabase";
@@ -316,5 +318,63 @@ describe("mood repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
     await expect(countMoodLogs("user-1")).resolves.toBe(0);
+  });
+
+  it("lists score points selecting only timestamp, offset, and score with no row limit", async () => {
+    const rows = [
+      { logged_at: "2026-07-01T08:00:00.000Z", logged_offset_minutes: 180, mood_score: 4 },
+      { logged_at: "2026-07-02T09:00:00.000Z", logged_offset_minutes: null, mood_score: 2 },
+    ];
+    const order = jest.fn().mockResolvedValue({ data: rows, error: null });
+    const gte = jest.fn(() => ({ order }));
+    const eq = jest.fn(() => ({ gte }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(listMoodScorePoints("user-1", "2026-07-01T00:00:00.000Z")).resolves.toEqual([
+      { loggedAt: "2026-07-01T08:00:00.000Z", loggedOffsetMinutes: 180, moodScore: 4 },
+      { loggedAt: "2026-07-02T09:00:00.000Z", loggedOffsetMinutes: 0, moodScore: 2 },
+    ]);
+    expect(from).toHaveBeenCalledWith("mood_logs");
+    expect(select).toHaveBeenCalledWith("logged_at, logged_offset_minutes, mood_score");
+    expect(eq).toHaveBeenCalledWith("user_id", "user-1");
+    expect(gte).toHaveBeenCalledWith("logged_at", "2026-07-01T00:00:00.000Z");
+    expect(order).toHaveBeenCalledWith("logged_at", { ascending: true });
+  });
+
+  it("bounds score points with lte when an end of window is given", async () => {
+    const order = jest.fn().mockResolvedValue({ data: [], error: null });
+    const lte = jest.fn(() => ({ order }));
+    const gte = jest.fn(() => ({ lte }));
+    const eq = jest.fn(() => ({ gte }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      listMoodScorePoints("user-1", "2026-03-03T00:00:00.000Z", "2026-04-01T23:59:59.999Z"),
+    ).resolves.toEqual([]);
+    expect(gte).toHaveBeenCalledWith("logged_at", "2026-03-03T00:00:00.000Z");
+    expect(lte).toHaveBeenCalledWith("logged_at", "2026-04-01T23:59:59.999Z");
+  });
+
+  it("returns the first mood log timestamp, or null when the user has no logs", async () => {
+    const maybeSingle = jest
+      .fn()
+      .mockResolvedValueOnce({ data: { logged_at: "2026-01-05T10:00:00.000Z" }, error: null })
+      .mockResolvedValueOnce({ data: null, error: null });
+    const limit = jest.fn(() => ({ maybeSingle }));
+    const order = jest.fn(() => ({ limit }));
+    const eq = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(getFirstMoodLogDate("user-1")).resolves.toBe("2026-01-05T10:00:00.000Z");
+    await expect(getFirstMoodLogDate("user-1")).resolves.toBeNull();
+    expect(select).toHaveBeenCalledWith("logged_at");
+    expect(order).toHaveBeenCalledWith("logged_at", { ascending: true });
+    expect(limit).toHaveBeenCalledWith(1);
   });
 });

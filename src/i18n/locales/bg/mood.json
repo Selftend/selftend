@@ -131,8 +131,9 @@
   "trendControls": {
     "title": "Тенденция на настроението",
     "range7": "7д",
-    "range14": "14д",
-    "range30": "30д"
+    "range30": "30д",
+    "range90": "90д",
+    "rangeCustom": "По избор"
   },
   "detailWord": {
     "1": "Ужасно",

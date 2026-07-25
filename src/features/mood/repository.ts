@@ -102,6 +102,59 @@ export async function saveMoodLog(userId: string, input: MoodInput, moodLogId?: 
   return mapMoodLog(data as MoodLogRow);
 }
 
+export interface MoodScorePoint {
+  loggedAt: string;
+  loggedOffsetMinutes: number;
+  moodScore: number;
+}
+
+interface MoodScorePointRow {
+  logged_at: string;
+  logged_offset_minutes: number | null;
+  mood_score: number;
+}
+
+/**
+ * Trend-window fetch: only timestamp, offset, and score — never the free-text
+ * columns — and no row limit, so any range renders with full daily resolution.
+ */
+export async function listMoodScorePoints(
+  userId: string,
+  fromIso: string,
+  toIso?: string,
+): Promise<MoodScorePoint[]> {
+  const client = requireSupabase();
+  let query = client
+    .from("mood_logs")
+    .select("logged_at, logged_offset_minutes, mood_score")
+    .eq("user_id", userId)
+    .gte("logged_at", fromIso);
+  if (toIso) query = query.lte("logged_at", toIso);
+  const { data, error } = await query.order("logged_at", { ascending: true });
+
+  if (error) throw error;
+  return (data as MoodScorePointRow[]).map((row) => ({
+    loggedAt: row.logged_at,
+    loggedOffsetMinutes: row.logged_offset_minutes ?? 0,
+    moodScore: row.mood_score,
+  }));
+}
+
+/** Timestamp of the user's earliest log — the lower clamp for custom trend ranges. */
+export async function getFirstMoodLogDate(userId: string): Promise<string | null> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("mood_logs")
+    .select("logged_at")
+    .eq("user_id", userId)
+    .order("logged_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as { logged_at: string } | null)?.logged_at ?? null;
+}
+
 export async function countMoodLogs(userId: string): Promise<number> {
   const client = requireSupabase();
   const { count, error } = await client

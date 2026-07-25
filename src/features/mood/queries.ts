@@ -3,8 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   countMoodLogs,
   deleteMoodLog,
+  getFirstMoodLogDate,
   getMoodLog,
   listMoodLogs,
+  listMoodScorePoints,
   saveMoodLog,
 } from "@/src/features/mood/repository";
 import type { MoodInput } from "@/src/features/mood/types";
@@ -17,6 +19,9 @@ const moodKeys = {
   history: (userId: string) => ["mood", "history", userId] as const,
   detail: (userId: string, id: string) => ["mood", "detail", userId, id] as const,
   count: (userId: string) => ["mood", "count", userId] as const,
+  scorePoints: (userId: string, fromIso: string, toIso?: string) =>
+    ["mood", "scorePoints", userId, fromIso, toIso ?? ""] as const,
+  firstLogDate: (userId: string) => ["mood", "firstLogDate", userId] as const,
 };
 
 export function useMoodLogs(userId: string | null, limit = 30) {
@@ -39,6 +44,28 @@ export function useMoodHistory(userId: string | null, take: number = MOOD_HISTOR
     queryKey: userId ? moodKeys.history(userId) : ["mood", "history", "anonymous"],
     queryFn: () => listMoodLogs(userId!, MOOD_HISTORY_WINDOW),
     select: (logs) => (take >= MOOD_HISTORY_WINDOW ? logs : logs.slice(0, take)),
+    enabled: Boolean(userId),
+  });
+}
+
+// Trend-window query: only timestamp/offset/score come over the wire and there is
+// no row limit, so the 200-row history cache is not the trend's ceiling. Lives
+// under the "mood" root key, so every save invalidates it with the rest.
+export function useMoodScorePoints(userId: string | null, fromIso: string, toIso?: string) {
+  return useQuery({
+    queryKey: userId
+      ? moodKeys.scorePoints(userId, fromIso, toIso)
+      : ["mood", "scorePoints", "anonymous", fromIso, toIso ?? ""],
+    queryFn: () => listMoodScorePoints(userId!, fromIso, toIso),
+    enabled: Boolean(userId),
+  });
+}
+
+/** Earliest log timestamp — the lower clamp for the custom trend range picker. */
+export function useFirstMoodLogDate(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? moodKeys.firstLogDate(userId) : ["mood", "firstLogDate", "anonymous"],
+    queryFn: () => getFirstMoodLogDate(userId!),
     enabled: Boolean(userId),
   });
 }
