@@ -16,7 +16,7 @@ export function SleepWeekdayChart({ averages }: { averages: (number | null)[] })
   );
 
   return (
-    <Card>
+    <Card variant="soft" tint="ink">
       <CardContent className="gap-3 pt-4 pb-4">
         <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {t("chart.weekdayAvg")}
