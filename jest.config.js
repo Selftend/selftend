@@ -15,9 +15,9 @@ module.exports = {
     "/dist/",
     "/test/integration/",
     "/test/e2e/",
-    "/\\.claude/",
+    "<rootDir>/\\.claude/",
   ],
-  modulePathIgnorePatterns: ["/\\.claude/"],
+  modulePathIgnorePatterns: ["<rootDir>/\\.claude/"],
   // jest-expo's default leaves @rn-primitives untransformed; our UI primitives
   // (Text, Label) depend on it, so widen the allowlist to transform it too.
   // Likewise the default only lists @sentry/react-native, but sentry v8 pulls
