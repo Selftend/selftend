@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -19,11 +20,20 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { useDeleteSleepLog, useSleepLog, useSleepLogs } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { cn } from "@/lib/utils";
+import { roomVariables } from "@/src/lib/module-room";
 import { formatTimestamp } from "@/src/utils/date";
 import { formatDuration } from "@/src/features/sleep/format";
+import { qualityTint } from "@/src/features/sleep/quality-tint";
+
+// The detail screen sits inside sleep's ink room (spec #255): same subtree
+// token re-pour as the landing and editor, so sleep never flips rooms.
+const INK_ROOM = roomVariables("ink");
 
 export default function SleepDetailScreen() {
   const { t } = useTranslation("sleep");
+  const { colorScheme } = useColorScheme();
+  const roomStyle = INK_ROOM[colorScheme === "dark" ? "dark" : "light"];
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const logId = typeof id === "string" ? id : null;
@@ -57,7 +67,7 @@ export default function SleepDetailScreen() {
 
   if (!fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("detail.title")} />
         </View>
@@ -67,7 +77,11 @@ export default function SleepDetailScreen() {
 
   if (!entry) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -81,7 +95,11 @@ export default function SleepDetailScreen() {
   const trimmedNotes = entry.notes.trim();
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
@@ -101,7 +119,7 @@ export default function SleepDetailScreen() {
             </View>
           </View>
 
-          <Card>
+          <Card variant="soft" tint="ink">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.duration")}</CardTitle>
             </CardHeader>
@@ -110,13 +128,31 @@ export default function SleepDetailScreen() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="soft" tint="ink">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.quality")}</CardTitle>
             </CardHeader>
             <CardContent>
               <View className="flex-row items-center gap-3">
-                <Text className="text-4xl font-bold">{entry.quality}</Text>
+                <View
+                  className={cn(
+                    "size-16 items-center justify-center rounded-full",
+                    qualityTint(entry.quality),
+                  )}
+                >
+                  {/* The step-5 fill is the full-strength hue, which brightens in
+                      dark mode — text-primary-foreground carries exactly that
+                      per-scheme ink flip (white on light's deep ink, near-black
+                      on dark's bright ink). Fainter steps keep the default ink. */}
+                  <Text
+                    className={cn(
+                      "text-4xl font-bold",
+                      entry.quality >= 5 && "text-primary-foreground",
+                    )}
+                  >
+                    {entry.quality}
+                  </Text>
+                </View>
                 <Text variant="muted" className="text-base">
                   {t(`quality.${entry.quality}` as Parameters<typeof t>[0])}
                 </Text>
@@ -124,7 +160,7 @@ export default function SleepDetailScreen() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="soft" tint="ink">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.loggedAt")}</CardTitle>
             </CardHeader>
@@ -133,7 +169,7 @@ export default function SleepDetailScreen() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="soft" tint="ink">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.notes")}</CardTitle>
             </CardHeader>
