@@ -89,7 +89,7 @@ function RangeSheet({
   maxDateKey,
   pickerStyles,
 }: RangeSheetProps) {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const [draft, setDraft] = useState<{ start: Dayjs | null; end: Dayjs | null }>(() => ({
     start: value ? dayjs(value.start) : null,
     end: value ? dayjs(value.end) : null,
@@ -116,6 +116,7 @@ function RangeSheet({
       <Pressable className="w-full max-w-[340px] rounded-2xl bg-card p-3" onPress={() => {}}>
         <DateTimePicker
           mode="range"
+          locale={i18n.language}
           startDate={draft.start ?? undefined}
           endDate={draft.end ?? undefined}
           minDate={minDateKey ? dayjs(minDateKey) : undefined}

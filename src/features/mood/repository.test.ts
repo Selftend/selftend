@@ -320,12 +320,13 @@ describe("mood repository", () => {
     await expect(countMoodLogs("user-1")).resolves.toBe(0);
   });
 
-  it("lists score points selecting only timestamp, offset, and score with no row limit", async () => {
+  it("lists score points selecting only timestamp, offset, and score", async () => {
     const rows = [
       { logged_at: "2026-07-01T08:00:00.000Z", logged_offset_minutes: 180, mood_score: 4 },
       { logged_at: "2026-07-02T09:00:00.000Z", logged_offset_minutes: null, mood_score: 2 },
     ];
-    const order = jest.fn().mockResolvedValue({ data: rows, error: null });
+    const range = jest.fn().mockResolvedValue({ data: rows, error: null });
+    const order = jest.fn(() => ({ range }));
     const gte = jest.fn(() => ({ order }));
     const eq = jest.fn(() => ({ gte }));
     const select = jest.fn(() => ({ eq }));
@@ -344,7 +345,8 @@ describe("mood repository", () => {
   });
 
   it("bounds score points with lte when an end of window is given", async () => {
-    const order = jest.fn().mockResolvedValue({ data: [], error: null });
+    const range = jest.fn().mockResolvedValue({ data: [], error: null });
+    const order = jest.fn(() => ({ range }));
     const lte = jest.fn(() => ({ order }));
     const gte = jest.fn(() => ({ lte }));
     const eq = jest.fn(() => ({ gte }));
@@ -357,6 +359,42 @@ describe("mood repository", () => {
     ).resolves.toEqual([]);
     expect(gte).toHaveBeenCalledWith("logged_at", "2026-03-03T00:00:00.000Z");
     expect(lte).toHaveBeenCalledWith("logged_at", "2026-04-01T23:59:59.999Z");
+  });
+
+  it("pages past the PostgREST row cap so long windows never drop the newest rows", async () => {
+    // PostgREST caps any single response (1,000 rows by default), so the repository
+    // must keep fetching pages until a short page, not trust one unbounded select.
+    const fullPage = Array.from({ length: 1000 }, (_, i) => ({
+      logged_at: `2026-01-01T00:00:${String(i % 60).padStart(2, "0")}.000Z`,
+      logged_offset_minutes: 0,
+      mood_score: 3,
+    }));
+    const lastRow = {
+      logged_at: "2026-07-01T08:00:00.000Z",
+      logged_offset_minutes: 0,
+      mood_score: 5,
+    };
+    const range = jest
+      .fn()
+      .mockResolvedValueOnce({ data: fullPage, error: null })
+      .mockResolvedValueOnce({ data: [lastRow], error: null });
+    const order = jest.fn(() => ({ range }));
+    const gte = jest.fn(() => ({ order }));
+    const eq = jest.fn(() => ({ gte }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    const points = await listMoodScorePoints("user-1", "2026-01-01T00:00:00.000Z");
+
+    expect(points).toHaveLength(1001);
+    expect(points[1000]).toEqual({
+      loggedAt: "2026-07-01T08:00:00.000Z",
+      loggedOffsetMinutes: 0,
+      moodScore: 5,
+    });
+    expect(range).toHaveBeenNthCalledWith(1, 0, 999);
+    expect(range).toHaveBeenNthCalledWith(2, 1000, 1999);
   });
 
   it("returns the first mood log timestamp, or null when the user has no logs", async () => {

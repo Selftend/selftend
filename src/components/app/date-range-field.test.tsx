@@ -65,6 +65,9 @@ describe("DateRangeField", () => {
     expect(mockPickerProps.mode).toBe("range");
     expect(asDateKey(mockPickerProps.minDate)).toBe("2026-01-05");
     expect(asDateKey(mockPickerProps.maxDate)).toBe("2026-07-25");
+    // The calendar follows the app language (test harness i18n runs in English),
+    // so month/weekday labels match the surrounding screen.
+    expect(mockPickerProps.locale).toBe("en");
   });
 
   it("applies a picked range as local date keys on Done", () => {
