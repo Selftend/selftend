@@ -112,6 +112,8 @@
     "deltaFlat": "steady vs last week",
     "noComparison": "first week of data",
     "byDay": "Mood by day",
+    "dayScore": "{{day}}: {{score}}",
+    "dayNoEntry": "{{day}}: no entry",
     "feltMost": "Felt most often",
     "noEmotions": "No emotions tagged yet"
   },
