@@ -20,6 +20,10 @@
     "favorites_other": "{{count}} любими",
     "thisWeek": "Тази седмица"
   },
+  "stats": {
+    "last": "Последно · {{when}}",
+    "never": "Все още няма записи"
+  },
   "insights": {
     "title": "Прозрения",
     "frequency": "Колко често записваш",

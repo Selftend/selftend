@@ -21,11 +21,20 @@ import {
 } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { roomTriples } from "@/src/lib/module-room";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { CARD_COLOR } from "@/lib/theme";
 
 const COLLAPSED_PAIRS = 2;
+
+// Every gratitude surface is the think room (spec #267), so the collapse fade
+// must match the room's tinted card surface, not the neutral CARD_COLOR —
+// LinearGradient can't read the CSS variable bg-card resolves to.
+const THINK_CARD_FADE = (() => {
+  const triples = roomTriples("think");
+  const toHsl = (triple: string) => `hsl(${triple.split(" ").join(", ")})`;
+  return { light: toHsl(triples.light.card), dark: toHsl(triples.dark.card) };
+})();
 
 export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
   const { t } = useTranslation("gratitude");
@@ -52,7 +61,7 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
   const isOpen = expanded || !hasMore;
   const visible = isOpen ? answers : answers.slice(0, COLLAPSED_PAIRS);
   const note = entry.note.trim();
-  const fadeColor = colorScheme === "light" ? CARD_COLOR.light : CARD_COLOR.dark;
+  const fadeColor = colorScheme === "light" ? THINK_CARD_FADE.light : THINK_CARD_FADE.dark;
 
   const toggleFavorite = async () => {
     try {
@@ -78,7 +87,7 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
   };
 
   return (
-    <View className="overflow-hidden rounded-2xl border border-border bg-card">
+    <View className="overflow-hidden rounded-3xl bg-card shadow-lg shadow-think/25">
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t(expanded ? "list.collapseEntry" : "list.expandEntry", { when })}
