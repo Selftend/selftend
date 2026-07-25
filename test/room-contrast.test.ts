@@ -1,6 +1,6 @@
 import { fieldGradient, roomTriples } from "@/src/lib/module-room";
 
-// Hues that actually ship as rooms. The field recipe holds one S/L formula
+// Hues with a validated room recipe. The field recipe holds one S/L formula
 // whose white ink is only guaranteed on the darker hues — a light hue (think's
 // yellow, act's green) needs a per-hue stop override in FIELD_STOP_OVERRIDES
 // before a room can adopt it. When a new module becomes a room, add its hue
