@@ -217,11 +217,23 @@ describe("MoodTrackerScreen", () => {
 
     fireEvent.press(screen.getByText("90d"));
 
-    expect(mockUseMoodScorePoints).toHaveBeenLastCalledWith(
+    // (Not "last called": the all-time heatmap query shares this hook.)
+    expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
       "user-1",
       startOfDayDaysAgo(90).toISOString(),
       undefined,
     );
+  });
+
+  it("renders the all-time heatmap section below the trend with its empty state", () => {
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    expect(screen.getByRole("heading", { name: "All time" })).toBeTruthy();
+    expect(screen.getByText("Log a mood to start your map.")).toBeTruthy();
   });
 
   it("opens the range picker when Custom is tapped", () => {

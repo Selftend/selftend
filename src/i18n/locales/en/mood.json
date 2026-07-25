@@ -141,5 +141,10 @@
     "3": "OK",
     "4": "Good",
     "5": "Great"
+  },
+  "heatmap": {
+    "title": "All time",
+    "empty": "Log a mood to start your map.",
+    "calloutNoEntry": "no entry"
   }
 }
