@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { BarChart } from "@/src/components/charts/bar-chart";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ToolStats } from "@/src/components/app/tool-stats";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -352,7 +353,6 @@ interface InsightsSectionProps {
 
 function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: InsightsSectionProps) {
   const { t } = useTranslation("habits");
-  const maxCount = Math.max(1, ...rhythm.map((r) => r.count));
   const hasRhythm = rhythm.some((r) => r.count > 0);
   const hasIdentities = identityRoundUp.length > 0;
   const hasTwoMinute = twoMinuteAdoption.total > 0;
@@ -371,21 +371,18 @@ function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: Insight
             {t("insights.rhythmSubtitle")}
           </Text>
           {hasRhythm ? (
-            <View className="flex-row items-end gap-2">
-              {rhythm.map((bucket) => {
-                const height = bucket.count > 0 ? Math.max(6, (bucket.count / maxCount) * 64) : 2;
-                return (
-                  <View key={bucket.weekday} className="flex-1 items-center gap-1">
-                    <View className="h-16 w-full justify-end">
-                      <View className="w-full rounded-t-md bg-primary/70" style={{ height }} />
-                    </View>
-                    <Text variant="muted" className="text-[10px] leading-3">
-                      {t(`insights.weekday.${bucket.weekday}` as const)}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
+            <BarChart
+              bars={rhythm.map((bucket) => ({
+                key: bucket.weekday,
+                value: bucket.count,
+                label: t(`insights.weekday.${bucket.weekday}` as const),
+              }))}
+              minBarHeight={6}
+              zeroHeight={2}
+              tintClass="bg-primary/70"
+              barClassName="rounded-t-md"
+              labelClassName="leading-3"
+            />
           ) : (
             <Text variant="muted" className="text-sm">
               {t("insights.rhythmEmpty")}

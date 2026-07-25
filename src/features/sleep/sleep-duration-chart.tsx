@@ -1,9 +1,8 @@
-import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { BarChart } from "@/src/components/charts/bar-chart";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { cn } from "@/lib/utils";
 import { qualityTint } from "@/src/features/sleep/quality-tint";
 import type { SleepLog } from "@/src/features/sleep/types";
 
@@ -32,34 +31,18 @@ export function SleepDurationChart({ nights }: { nights: SleepLog[] }) {
             {t("chart.empty")}
           </Text>
         ) : (
-          <View className="flex-row items-end gap-2">
-            {nights.map((n) => {
-              const barHeight = Math.max(
-                4,
-                (Math.min(n.durationMinutes, MAX_MINUTES) / MAX_MINUTES) * BAR_AREA,
-              );
-              return (
-                <View
-                  key={n.id}
-                  className="flex-1 items-center gap-1"
-                  style={{ maxWidth: MAX_BAR_WIDTH }}
-                >
-                  <Text variant="muted" className="text-[10px] font-semibold">
-                    {compactHours(n.durationMinutes)}
-                  </Text>
-                  <View className="w-full justify-end" style={{ height: BAR_AREA }}>
-                    <View
-                      className={cn("w-full rounded-md", qualityTint(n.quality))}
-                      style={{ height: barHeight }}
-                    />
-                  </View>
-                  <Text variant="muted" className="text-[10px]">
-                    {dateFmt.format(new Date(n.loggedAt))}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
+          <BarChart
+            bars={nights.map((n) => ({
+              key: n.id,
+              value: n.durationMinutes,
+              topLabel: compactHours(n.durationMinutes),
+              label: dateFmt.format(new Date(n.loggedAt)),
+              tintClass: qualityTint(n.quality),
+            }))}
+            max={MAX_MINUTES}
+            barAreaHeight={BAR_AREA}
+            maxBarWidth={MAX_BAR_WIDTH}
+          />
         )}
       </CardContent>
     </Card>
