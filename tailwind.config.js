@@ -50,6 +50,12 @@ module.exports = {
         ink: "hsl(var(--ink))",
         clay: "hsl(var(--clay))",
       },
+      fontFamily: {
+        // The Nunito display face; resolveFontFamily in
+        // src/components/react-native-reusables/text.tsx maps h1–h2 and this
+        // class to it on native.
+        display: ["Nunito_800ExtraBold", "sans-serif"],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

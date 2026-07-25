@@ -41,7 +41,7 @@ export function WeekHero({ delta, byDay, topEmotions }: WeekHeroProps) {
             <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
               {t("week.average")}
             </Text>
-            <Text className="text-[40px] font-extrabold leading-[1.1] tracking-tight">
+            <Text className="font-display text-[40px] font-extrabold leading-[1.1] tracking-tight">
               {delta.current === null ? "-" : delta.current.toFixed(1)}
             </Text>
             <Text className={cn("text-[13px] font-semibold", d.tone)}>{d.text}</Text>
