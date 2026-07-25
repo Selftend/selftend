@@ -1,6 +1,8 @@
 import { DarkTheme, DefaultTheme, type Theme } from "expo-router";
 import { vars } from "nativewind";
 
+import { HUE_TRIPLES } from "@/src/lib/design-tokens";
+
 export const THEME = {
   light: {
     background: "hsl(260 28% 96%)",
@@ -23,11 +25,6 @@ export const THEME = {
     input: "hsl(260 14% 87%)",
     ring: "hsl(262 62% 64%)",
     radius: "0.625rem",
-    chart1: "hsl(260 58% 62%)",
-    chart2: "hsl(260 36% 70%)",
-    chart3: "hsl(286 44% 68%)",
-    chart4: "hsl(160 46% 42%)",
-    chart5: "hsl(43 74% 58%)",
   },
   dark: {
     background: "hsl(260 20% 9%)",
@@ -50,11 +47,6 @@ export const THEME = {
     input: "hsl(260 12% 22%)",
     ring: "hsl(264 72% 72%)",
     radius: "0.625rem",
-    chart1: "hsl(264 72% 72%)",
-    chart2: "hsl(260 34% 66%)",
-    chart3: "hsl(286 45% 68%)",
-    chart4: "hsl(160 56% 52%)",
-    chart5: "hsl(43 86% 65%)",
   },
 };
 
@@ -105,11 +97,14 @@ export const THEME_VARIABLES = {
     "--input": "260 14% 87%",
     "--ring": "262 62% 64%",
     "--radius": "0.625rem",
-    "--chart-1": "260 58% 62%",
-    "--chart-2": "260 36% 70%",
-    "--chart-3": "286 44% 68%",
-    "--chart-4": "160 46% 42%",
-    "--chart-5": "43 74% 58%",
+    "--think": HUE_TRIPLES.think.light,
+    "--act": HUE_TRIPLES.act.light,
+    "--be": HUE_TRIPLES.be.light,
+    "--aqua": HUE_TRIPLES.aqua.light,
+    "--mist": HUE_TRIPLES.mist.light,
+    "--iris": HUE_TRIPLES.iris.light,
+    "--ink": HUE_TRIPLES.ink.light,
+    "--clay": HUE_TRIPLES.clay.light,
   }),
   dark: vars({
     "--background": "260 20% 9%",
@@ -132,11 +127,14 @@ export const THEME_VARIABLES = {
     "--input": "260 12% 22%",
     "--ring": "264 72% 72%",
     "--radius": "0.625rem",
-    "--chart-1": "264 72% 72%",
-    "--chart-2": "260 34% 66%",
-    "--chart-3": "286 45% 68%",
-    "--chart-4": "160 56% 52%",
-    "--chart-5": "43 86% 65%",
+    "--think": HUE_TRIPLES.think.dark,
+    "--act": HUE_TRIPLES.act.dark,
+    "--be": HUE_TRIPLES.be.dark,
+    "--aqua": HUE_TRIPLES.aqua.dark,
+    "--mist": HUE_TRIPLES.mist.dark,
+    "--iris": HUE_TRIPLES.iris.dark,
+    "--ink": HUE_TRIPLES.ink.dark,
+    "--clay": HUE_TRIPLES.clay.dark,
   }),
 };
 
