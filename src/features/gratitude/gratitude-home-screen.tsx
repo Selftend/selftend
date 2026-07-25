@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
 
+import { BarChart } from "@/src/components/charts/bar-chart";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ToolStats } from "@/src/components/app/tool-stats";
 import { Badge } from "@/src/components/react-native-reusables/badge";
@@ -22,7 +23,9 @@ import {
 } from "@/src/features/gratitude/insights";
 import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-card";
 import { useGratitudeEntries, useGratitudeEntryCount } from "@/src/features/gratitude/queries";
+import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useAppColorScheme } from "@/src/lib/color-scheme";
 import type { TintToken } from "@/src/lib/design-tokens";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/src/providers/session-provider";
@@ -72,12 +75,8 @@ export default function GratitudeHomeScreen() {
   const thisWeekCount = frequencyBuckets.slice(-7).reduce((sum, bucket) => sum + bucket.count, 0);
 
   const hasFrequency = frequencyBuckets.some((b) => b.count > 0);
-  const maxCount = Math.max(1, ...frequencyBuckets.map((b) => b.count));
   const frequencyData = hasFrequency
-    ? frequencyBuckets.map((b) => ({
-        label: b.label,
-        height: b.count > 0 ? Math.max(6, (b.count / maxCount) * 100) : 2,
-      }))
+    ? frequencyBuckets.map((b) => ({ label: b.label, count: b.count }))
     : null;
 
   const themesWithTints =
@@ -221,13 +220,16 @@ export default function GratitudeHomeScreen() {
 // FrequencyBars
 // ---------------------------------------------------------------------------
 
+const FREQUENCY_BAR_AREA = 64;
+
 interface FrequencyBarsProps {
-  data: { label: string; height: number }[];
+  data: { label: string; count: number }[];
   weekLabel: string;
   title: string;
 }
 
 function FrequencyBars({ data, weekLabel, title }: FrequencyBarsProps) {
+  const scheme = useAppColorScheme();
   return (
     <View>
       <View className="flex-row items-baseline justify-between">
@@ -236,23 +238,16 @@ function FrequencyBars({ data, weekLabel, title }: FrequencyBarsProps) {
           {weekLabel}
         </Text>
       </View>
-      <View className="mt-3.5 flex-row items-end gap-2.5">
-        {data.map((bar, i) => (
-          <View key={i} className="flex-1 items-center gap-1.5">
-            <View className="h-16 w-full justify-end overflow-hidden rounded-t-md">
-              <LinearGradient
-                colors={["hsl(43, 74%, 52%)", "hsla(43, 74%, 52%, 0.5)"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={{ height: `${bar.height}%` as unknown as number, borderRadius: 4 }}
-              />
-            </View>
-            <Text variant="muted" className="text-[10px] font-semibold">
-              {bar.label}
-            </Text>
-          </View>
-        ))}
-      </View>
+      <BarChart
+        bars={data.map((bar) => ({ value: bar.count, label: bar.label }))}
+        barAreaHeight={FREQUENCY_BAR_AREA}
+        minBarHeight={FREQUENCY_BAR_AREA * 0.06}
+        zeroHeight={FREQUENCY_BAR_AREA * 0.02}
+        gradient={tintStripeColors("think", scheme === "dark")}
+        columnClassName="gap-1.5"
+        labelClassName="font-semibold"
+        className="mt-3.5 gap-2.5"
+      />
     </View>
   );
 }
