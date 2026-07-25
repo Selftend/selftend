@@ -16,15 +16,19 @@ import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, toggleButtonStateProps } from "@/src/lib/accessibility";
 import { cn } from "@/lib/utils";
 
-type AddToHomeButtonProps = { size?: number; className?: string } & (
-  { widgetId: string; category?: never } | { category: string; widgetId?: never }
-);
+type AddToHomeButtonProps = {
+  size?: number;
+  className?: string;
+  /** Ink for the trigger icon; override for tinted surfaces (e.g. "text-white/[0.88]" on a field header). */
+  iconClassName?: string;
+} & ({ widgetId: string; category?: never } | { category: string; widgetId?: never });
 
 export function AddToHomeButton({
   widgetId,
   category,
   size = 20,
   className,
+  iconClassName = "text-muted-foreground",
 }: AddToHomeButtonProps) {
   const { t } = useTranslation("navigation");
   const { user } = useSession();
@@ -51,7 +55,7 @@ export function AddToHomeButton({
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
           className={className}
         >
-          <Icon name="add" size={size} className="text-muted-foreground" />
+          <Icon name="add" size={size} className={iconClassName} />
         </Pressable>
       </PopoverTrigger>
       <PopoverContent align="end" side="bottom" className="w-72 p-2">

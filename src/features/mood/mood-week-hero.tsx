@@ -35,7 +35,7 @@ export function WeekHero({ delta, byDay, topEmotions }: WeekHeroProps) {
   const todayKey = byDay[byDay.length - 1]?.dateKey;
 
   return (
-    <Card>
+    <Card variant="soft" tint="be">
       <CardContent className="gap-5 pt-5 pb-5">
         <View className="flex-row items-end justify-between">
           <View>
