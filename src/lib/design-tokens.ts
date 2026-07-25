@@ -41,6 +41,33 @@ export const TINT_TOKENS = [
 
 export type TintToken = (typeof TINT_TOKENS)[number];
 
+// The app-wide 5-step score/quality encoding: background classes at the same
+// alphas as RAMP_ALPHAS in src/features/mindfulness/exercise-hue.ts (hueRamp,
+// which feeds the heatmap) — test/hue-ramp-classes.test.ts enforces the match.
+// Class literals are written out in full so NativeWind compiles them.
+export const HUE_RAMP_CLASSES: Record<HueName, readonly [string, string, string, string, string]> =
+  {
+    mist: ["bg-mist/[0.16]", "bg-mist/[0.32]", "bg-mist/[0.52]", "bg-mist/[0.74]", "bg-mist"],
+    iris: ["bg-iris/[0.16]", "bg-iris/[0.32]", "bg-iris/[0.52]", "bg-iris/[0.74]", "bg-iris"],
+    be: ["bg-be/[0.16]", "bg-be/[0.32]", "bg-be/[0.52]", "bg-be/[0.74]", "bg-be"],
+    ink: ["bg-ink/[0.16]", "bg-ink/[0.32]", "bg-ink/[0.52]", "bg-ink/[0.74]", "bg-ink"],
+    act: ["bg-act/[0.16]", "bg-act/[0.32]", "bg-act/[0.52]", "bg-act/[0.74]", "bg-act"],
+    clay: ["bg-clay/[0.16]", "bg-clay/[0.32]", "bg-clay/[0.52]", "bg-clay/[0.74]", "bg-clay"],
+    think: ["bg-think/[0.16]", "bg-think/[0.32]", "bg-think/[0.52]", "bg-think/[0.74]", "bg-think"],
+    aqua: ["bg-aqua/[0.16]", "bg-aqua/[0.32]", "bg-aqua/[0.52]", "bg-aqua/[0.74]", "bg-aqua"],
+  };
+
+/**
+ * Background class for a 1-5 score/quality step on a hue's ramp, faintest →
+ * fullest. Non-integer or out-of-range steps round and clamp into 1..5 —
+ * callers that instead want a neutral fallback for invalid input handle that
+ * before calling (see mood's scoreToneClass).
+ */
+export function hueRampClass(hue: HueName, step: number): string {
+  const clamped = Math.min(5, Math.max(1, Math.round(step)));
+  return HUE_RAMP_CLASSES[hue][clamped - 1];
+}
+
 export const TINT_TEXT: Record<TintToken, string> = {
   primary: "text-primary",
   act: "text-[hsl(var(--act))]",
