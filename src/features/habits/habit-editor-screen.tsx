@@ -2,6 +2,7 @@ import { router, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, View, type TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -9,7 +10,9 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { colorChipClass } from "@/src/features/habits/habits-home-screen";
@@ -22,6 +25,7 @@ import type {
   HabitInput,
   HabitKind,
 } from "@/src/features/habits/types";
+import { roomVariables } from "@/src/lib/module-room";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import {
@@ -41,6 +45,10 @@ interface HabitEditorScreenProps {
 
 const KIND_OPTIONS: HabitKind[] = ["build", "break"];
 const CADENCE_OPTIONS: HabitCadence[] = ["daily", "weekdays", "custom"];
+
+// The editor lives in habits' act room (spec #277): same subtree token
+// re-pour as the landing, so habits never flips rooms.
+const ACT_ROOM = roomVariables("act");
 
 const EMPTY_INPUT: HabitInput = {
   name: "",
@@ -77,6 +85,8 @@ function habitToInput(habit: Habit): HabitInput {
 
 export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitEditorScreenProps) {
   const { t } = useTranslation("habits");
+  const { colorScheme } = useColorScheme();
+  const roomStyle = ACT_ROOM[colorScheme === "dark" ? "dark" : "light"];
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -186,7 +196,7 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
 
   if (editMode && !fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("form.editTitle")} />
         </View>
@@ -195,260 +205,284 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
   }
 
   return (
-    <MobileFormScreen
-      contentClassName="mx-auto w-full max-w-2xl gap-6"
-      footer={
-        <View className="mx-auto w-full max-w-2xl flex-row gap-3">
-          <View className="flex-1">
-            <Button onPress={goBack} variant="ghost">
-              <Text>{t("cta.cancel")}</Text>
-            </Button>
+    // The room wrapper carries the token re-pour; MobileFormScreen's own
+    // bg-background surfaces re-resolve to the act pour through it.
+    <View testID="habit-editor-room" className="flex-1" style={roomStyle}>
+      <MobileFormScreen
+        contentClassName="mx-auto w-full max-w-2xl gap-6"
+        hero={
+          editMode ? undefined : (
+            // Create mode gets the field treatment: the full-bleed green field
+            // with the sheet lip rising over it, outside the max-width column.
+            <View>
+              <ModuleHomeHeader
+                variant="field"
+                hue="act"
+                icon="task-alt"
+                title={t("form.newTitle")}
+                moduleLabel={null}
+              />
+              <ContentSheet />
+            </View>
+          )
+        }
+        footer={
+          <View className="mx-auto w-full max-w-2xl flex-row gap-3">
+            <View className="flex-1">
+              <Button onPress={goBack} variant="ghost">
+                <Text>{t("cta.cancel")}</Text>
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button disabled={saving || !user} onPress={() => void handleSave()}>
+                {saving ? <ActivityIndicator color="#ffffff" /> : null}
+                <Text>{saving ? t("cta.saving") : t("cta.save")}</Text>
+              </Button>
+            </View>
           </View>
-          <View className="flex-1">
-            <Button disabled={saving || !user} onPress={() => void handleSave()}>
-              {saving ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{saving ? t("cta.saving") : t("cta.save")}</Text>
-            </Button>
+        }
+      >
+        {editMode ? (
+          <View className="gap-2">
+            <ScreenHeader title={t("form.editTitle")} />
           </View>
-        </View>
-      }
-    >
-      <View className="gap-2">
-        <ScreenHeader title={editMode ? t("form.editTitle") : t("form.newTitle")} />
-      </View>
-
-      <View className="gap-2">
-        <Label>{t("form.identityLabel")}</Label>
-        <Input
-          accessibilityLabel={t("form.identityLabel")}
-          onChangeText={(v) => update("identity", v)}
-          placeholder={t("form.identityPlaceholder")}
-          value={input.identity}
-        />
-        <Text variant="muted" className="text-xs">
-          {t("form.identityHelp")}
-        </Text>
-      </View>
-
-      <View className="gap-2">
-        <Label>{t("form.nameLabel")}</Label>
-        <Input
-          ref={nameInputRef}
-          accessibilityLabel={t("form.nameLabel")}
-          maxLength={HABIT_NAME_MAX}
-          onChangeText={(v) => update("name", v)}
-          placeholder={t("form.namePlaceholder")}
-          value={input.name}
-        />
-        {error ? (
-          <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
-            {error}
-          </Text>
         ) : null}
-      </View>
 
-      <View className="gap-2">
-        <Label>{t("form.kindLabel")}</Label>
-        <View
-          accessibilityLabel={t("form.kindLabel")}
-          accessibilityRole="radiogroup"
-          className="flex-row gap-2"
-          role="radiogroup"
-        >
-          <KindChip
-            active={input.kind === "build"}
-            label={t("form.kindBuild")}
-            onPress={() => update("kind", "build" as HabitKind)}
-            rovingProps={kindRoving.getItemProps(0, () => update("kind", "build" as HabitKind))}
-          />
-          <KindChip
-            active={input.kind === "break"}
-            label={t("form.kindBreak")}
-            onPress={() => update("kind", "break" as HabitKind)}
-            rovingProps={kindRoving.getItemProps(1, () => update("kind", "break" as HabitKind))}
-          />
-        </View>
-        <Text variant="muted" className="text-xs">
-          {input.kind === "break" ? t("form.kindBreakHelp") : t("form.kindBuildHelp")}
-        </Text>
-      </View>
-
-      {input.kind === "build" ? (
         <View className="gap-2">
-          <Label>{t("form.twoMinuteLabel")}</Label>
+          <Label>{t("form.identityLabel")}</Label>
           <Input
-            accessibilityLabel={t("form.twoMinuteLabel")}
-            onChangeText={(v) => update("twoMinuteVersion", v)}
-            placeholder={t("form.twoMinutePlaceholder")}
-            value={input.twoMinuteVersion}
+            accessibilityLabel={t("form.identityLabel")}
+            onChangeText={(v) => update("identity", v)}
+            placeholder={t("form.identityPlaceholder")}
+            value={input.identity}
           />
           <Text variant="muted" className="text-xs">
-            {t("form.twoMinuteHelp")}
+            {t("form.identityHelp")}
           </Text>
         </View>
-      ) : (
+
         <View className="gap-2">
-          <Label>{t("form.difficultLabel")}</Label>
+          <Label>{t("form.nameLabel")}</Label>
           <Input
-            accessibilityLabel={t("form.difficultLabel")}
-            onChangeText={(v) => update("twoMinuteVersion", v)}
-            placeholder={t("form.difficultPlaceholder")}
-            value={input.twoMinuteVersion}
+            ref={nameInputRef}
+            accessibilityLabel={t("form.nameLabel")}
+            maxLength={HABIT_NAME_MAX}
+            onChangeText={(v) => update("name", v)}
+            placeholder={t("form.namePlaceholder")}
+            value={input.name}
           />
-          <Text variant="muted" className="text-xs">
-            {t("form.difficultHelp")}
-          </Text>
+          {error ? (
+            <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
+              {error}
+            </Text>
+          ) : null}
         </View>
-      )}
 
-      <View className="gap-2">
-        <Label>{input.kind === "break" ? t("form.invisibleLabel") : t("form.cueLabel")}</Label>
-        <Textarea
-          accessibilityLabel={
-            input.kind === "break" ? t("form.invisibleLabel") : t("form.cueLabel")
-          }
-          onChangeText={(v) => update("cuePlan", v)}
-          placeholder={
-            input.kind === "break" ? t("form.invisiblePlaceholder") : t("form.cuePlaceholder")
-          }
-          value={input.cuePlan}
-        />
-      </View>
-
-      {input.kind === "build" ? (
         <View className="gap-2">
-          <Label>{t("form.stackLabel")}</Label>
-          <Input
-            accessibilityLabel={t("form.stackLabel")}
-            onChangeText={(v) => update("stackAfter", v)}
-            placeholder={t("form.stackPlaceholder")}
-            value={input.stackAfter}
-          />
-        </View>
-      ) : null}
-
-      <View className="gap-2">
-        <Label>
-          {input.kind === "break" ? t("form.unattractiveLabel") : t("form.pairingLabel")}
-        </Label>
-        <Textarea
-          accessibilityLabel={
-            input.kind === "break" ? t("form.unattractiveLabel") : t("form.pairingLabel")
-          }
-          onChangeText={(v) => update("cravingPairing", v)}
-          placeholder={
-            input.kind === "break"
-              ? t("form.unattractivePlaceholder")
-              : t("form.pairingPlaceholder")
-          }
-          value={input.cravingPairing}
-        />
-      </View>
-
-      <View className="gap-2">
-        <Label>
-          {input.kind === "break" ? t("form.unsatisfyingLabel") : t("form.rewardLabel")}
-        </Label>
-        <Input
-          accessibilityLabel={
-            input.kind === "break" ? t("form.unsatisfyingLabel") : t("form.rewardLabel")
-          }
-          onChangeText={(v) => update("rewardNote", v)}
-          placeholder={
-            input.kind === "break" ? t("form.unsatisfyingPlaceholder") : t("form.rewardPlaceholder")
-          }
-          value={input.rewardNote}
-        />
-      </View>
-
-      <View className="gap-2">
-        <Label>{t("form.cadenceLabel")}</Label>
-        <View
-          accessibilityLabel={t("form.cadenceLabel")}
-          accessibilityRole="radiogroup"
-          className="flex-row flex-wrap gap-2"
-          role="radiogroup"
-        >
-          <CadenceChip
-            active={input.cadence === "daily"}
-            label={t("form.cadenceDaily")}
-            onPress={() => update("cadence", "daily" as HabitCadence)}
-            rovingProps={cadenceRoving.getItemProps(0, () =>
-              update("cadence", "daily" as HabitCadence),
-            )}
-          />
-          <CadenceChip
-            active={input.cadence === "weekdays"}
-            label={t("form.cadenceWeekdays")}
-            onPress={() => update("cadence", "weekdays" as HabitCadence)}
-            rovingProps={cadenceRoving.getItemProps(1, () =>
-              update("cadence", "weekdays" as HabitCadence),
-            )}
-          />
-          <CadenceChip
-            active={input.cadence === "custom"}
-            label={t("form.cadenceCustom")}
-            onPress={() => update("cadence", "custom" as HabitCadence)}
-            rovingProps={cadenceRoving.getItemProps(2, () =>
-              update("cadence", "custom" as HabitCadence),
-            )}
-          />
-        </View>
-      </View>
-
-      {input.cadence === "custom" ? (
-        <View className="gap-2">
-          <Label>{t("form.customDaysLabel")}</Label>
-          <View className="flex-row gap-1.5">
-            {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-              <Pressable
-                key={day}
-                accessibilityRole="checkbox"
-                aria-checked={input.customDays.includes(day)}
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => toggleCustomDay(day)}
-                className={cn(
-                  "h-10 flex-1 items-center justify-center rounded-md border",
-                  input.customDays.includes(day)
-                    ? "border-primary bg-primary/15"
-                    : "border-border bg-background",
-                )}
-                role="checkbox"
-                {...spaceKeyActivationProps(() => toggleCustomDay(day))}
-              >
-                <Text className="text-xs font-semibold">{t(`form.weekday.${day}` as const)}</Text>
-              </Pressable>
-            ))}
+          <Label>{t("form.kindLabel")}</Label>
+          <View
+            accessibilityLabel={t("form.kindLabel")}
+            accessibilityRole="radiogroup"
+            className="flex-row gap-2"
+            role="radiogroup"
+          >
+            <KindChip
+              active={input.kind === "build"}
+              label={t("form.kindBuild")}
+              onPress={() => update("kind", "build" as HabitKind)}
+              rovingProps={kindRoving.getItemProps(0, () => update("kind", "build" as HabitKind))}
+            />
+            <KindChip
+              active={input.kind === "break"}
+              label={t("form.kindBreak")}
+              onPress={() => update("kind", "break" as HabitKind)}
+              rovingProps={kindRoving.getItemProps(1, () => update("kind", "break" as HabitKind))}
+            />
           </View>
           <Text variant="muted" className="text-xs">
-            {t("form.customDaysHelp")}
+            {input.kind === "break" ? t("form.kindBreakHelp") : t("form.kindBuildHelp")}
           </Text>
         </View>
-      ) : null}
 
-      <View className="gap-2">
-        <Label>{t("form.colorLabel")}</Label>
-        <View
-          accessibilityLabel={t("form.colorLabel")}
-          accessibilityRole="radiogroup"
-          className="flex-row flex-wrap gap-2"
-          role="radiogroup"
-        >
-          {HABIT_COLORS.map((color, index) => (
-            <ColorChip
-              key={color}
-              active={input.color === color}
-              color={color}
-              label={t(`form.colors.${color}` as const)}
-              onPress={() => update("color", color as HabitColor)}
-              rovingProps={colorRoving.getItemProps(index, () =>
-                update("color", color as HabitColor),
+        {input.kind === "build" ? (
+          <View className="gap-2">
+            <Label>{t("form.twoMinuteLabel")}</Label>
+            <Input
+              accessibilityLabel={t("form.twoMinuteLabel")}
+              onChangeText={(v) => update("twoMinuteVersion", v)}
+              placeholder={t("form.twoMinutePlaceholder")}
+              value={input.twoMinuteVersion}
+            />
+            <Text variant="muted" className="text-xs">
+              {t("form.twoMinuteHelp")}
+            </Text>
+          </View>
+        ) : (
+          <View className="gap-2">
+            <Label>{t("form.difficultLabel")}</Label>
+            <Input
+              accessibilityLabel={t("form.difficultLabel")}
+              onChangeText={(v) => update("twoMinuteVersion", v)}
+              placeholder={t("form.difficultPlaceholder")}
+              value={input.twoMinuteVersion}
+            />
+            <Text variant="muted" className="text-xs">
+              {t("form.difficultHelp")}
+            </Text>
+          </View>
+        )}
+
+        <View className="gap-2">
+          <Label>{input.kind === "break" ? t("form.invisibleLabel") : t("form.cueLabel")}</Label>
+          <Textarea
+            accessibilityLabel={
+              input.kind === "break" ? t("form.invisibleLabel") : t("form.cueLabel")
+            }
+            onChangeText={(v) => update("cuePlan", v)}
+            placeholder={
+              input.kind === "break" ? t("form.invisiblePlaceholder") : t("form.cuePlaceholder")
+            }
+            value={input.cuePlan}
+          />
+        </View>
+
+        {input.kind === "build" ? (
+          <View className="gap-2">
+            <Label>{t("form.stackLabel")}</Label>
+            <Input
+              accessibilityLabel={t("form.stackLabel")}
+              onChangeText={(v) => update("stackAfter", v)}
+              placeholder={t("form.stackPlaceholder")}
+              value={input.stackAfter}
+            />
+          </View>
+        ) : null}
+
+        <View className="gap-2">
+          <Label>
+            {input.kind === "break" ? t("form.unattractiveLabel") : t("form.pairingLabel")}
+          </Label>
+          <Textarea
+            accessibilityLabel={
+              input.kind === "break" ? t("form.unattractiveLabel") : t("form.pairingLabel")
+            }
+            onChangeText={(v) => update("cravingPairing", v)}
+            placeholder={
+              input.kind === "break"
+                ? t("form.unattractivePlaceholder")
+                : t("form.pairingPlaceholder")
+            }
+            value={input.cravingPairing}
+          />
+        </View>
+
+        <View className="gap-2">
+          <Label>
+            {input.kind === "break" ? t("form.unsatisfyingLabel") : t("form.rewardLabel")}
+          </Label>
+          <Input
+            accessibilityLabel={
+              input.kind === "break" ? t("form.unsatisfyingLabel") : t("form.rewardLabel")
+            }
+            onChangeText={(v) => update("rewardNote", v)}
+            placeholder={
+              input.kind === "break"
+                ? t("form.unsatisfyingPlaceholder")
+                : t("form.rewardPlaceholder")
+            }
+            value={input.rewardNote}
+          />
+        </View>
+
+        <View className="gap-2">
+          <Label>{t("form.cadenceLabel")}</Label>
+          <View
+            accessibilityLabel={t("form.cadenceLabel")}
+            accessibilityRole="radiogroup"
+            className="flex-row flex-wrap gap-2"
+            role="radiogroup"
+          >
+            <CadenceChip
+              active={input.cadence === "daily"}
+              label={t("form.cadenceDaily")}
+              onPress={() => update("cadence", "daily" as HabitCadence)}
+              rovingProps={cadenceRoving.getItemProps(0, () =>
+                update("cadence", "daily" as HabitCadence),
               )}
             />
-          ))}
+            <CadenceChip
+              active={input.cadence === "weekdays"}
+              label={t("form.cadenceWeekdays")}
+              onPress={() => update("cadence", "weekdays" as HabitCadence)}
+              rovingProps={cadenceRoving.getItemProps(1, () =>
+                update("cadence", "weekdays" as HabitCadence),
+              )}
+            />
+            <CadenceChip
+              active={input.cadence === "custom"}
+              label={t("form.cadenceCustom")}
+              onPress={() => update("cadence", "custom" as HabitCadence)}
+              rovingProps={cadenceRoving.getItemProps(2, () =>
+                update("cadence", "custom" as HabitCadence),
+              )}
+            />
+          </View>
         </View>
-      </View>
-    </MobileFormScreen>
+
+        {input.cadence === "custom" ? (
+          <View className="gap-2">
+            <Label>{t("form.customDaysLabel")}</Label>
+            <View className="flex-row gap-1.5">
+              {[0, 1, 2, 3, 4, 5, 6].map((day) => (
+                <Pressable
+                  key={day}
+                  accessibilityRole="checkbox"
+                  aria-checked={input.customDays.includes(day)}
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={() => toggleCustomDay(day)}
+                  className={cn(
+                    "h-10 flex-1 items-center justify-center rounded-md border",
+                    input.customDays.includes(day)
+                      ? "border-primary bg-primary/15"
+                      : "border-border bg-background",
+                  )}
+                  role="checkbox"
+                  {...spaceKeyActivationProps(() => toggleCustomDay(day))}
+                >
+                  <Text className="text-xs font-semibold">{t(`form.weekday.${day}` as const)}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text variant="muted" className="text-xs">
+              {t("form.customDaysHelp")}
+            </Text>
+          </View>
+        ) : null}
+
+        <View className="gap-2">
+          <Label>{t("form.colorLabel")}</Label>
+          <View
+            accessibilityLabel={t("form.colorLabel")}
+            accessibilityRole="radiogroup"
+            className="flex-row flex-wrap gap-2"
+            role="radiogroup"
+          >
+            {HABIT_COLORS.map((color, index) => (
+              <ColorChip
+                key={color}
+                active={input.color === color}
+                color={color}
+                label={t(`form.colors.${color}` as const)}
+                onPress={() => update("color", color as HabitColor)}
+                rovingProps={colorRoving.getItemProps(index, () =>
+                  update("color", color as HabitColor),
+                )}
+              />
+            ))}
+          </View>
+        </View>
+      </MobileFormScreen>
+    </View>
   );
 }
 

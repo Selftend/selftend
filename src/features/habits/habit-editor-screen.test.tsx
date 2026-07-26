@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 
 import { HabitEditorScreen } from "@/src/features/habits/habit-editor-screen";
 import { useHabit, useHabits, useSaveHabit } from "@/src/features/habits/queries";
+import type { Habit } from "@/src/features/habits/types";
+import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -42,6 +44,25 @@ const mockUseHabit = useHabit as jest.MockedFunction<typeof useHabit>;
 const mockUseHabits = useHabits as jest.MockedFunction<typeof useHabits>;
 const mockUseSaveHabit = useSaveHabit as jest.MockedFunction<typeof useSaveHabit>;
 
+const existingHabit: Habit = {
+  id: "h-9",
+  userId: "user-1",
+  name: "Morning walk",
+  kind: "build",
+  identity: "",
+  cuePlan: "",
+  stackAfter: "",
+  cravingPairing: "",
+  twoMinuteVersion: "",
+  rewardNote: "",
+  cadence: "daily",
+  customDays: [],
+  color: "primary",
+  archivedAt: null,
+  createdAt: "2026-05-01T08:00:00.000Z",
+  updatedAt: "2026-05-01T08:00:00.000Z",
+};
+
 describe("HabitEditorScreen", () => {
   const saveHabit = jest.fn();
 
@@ -56,6 +77,31 @@ describe("HabitEditorScreen", () => {
       isPending: false,
     } as unknown as ReturnType<typeof useSaveHabit>);
     saveHabit.mockResolvedValue({ id: "h-1" });
+  });
+
+  it("create mode rises out of the act field on the room pour", () => {
+    renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+
+    expect(screen.getByText("New habit")).toBeTruthy();
+    // Create mode rises out of the full-bleed act field (spec #277).
+    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+    // The wrapper carries the act room re-pour; a wrong or missing room fails here.
+    expect(screen.getByTestId("habit-editor-room").props.style).toEqual(roomVariables("act").light);
+  });
+
+  it("edit mode keeps the compact header on the room pour - no field", () => {
+    mockUseHabits.mockReturnValue({ data: [existingHabit] } as unknown as ReturnType<
+      typeof useHabits
+    >);
+
+    renderWithProviders(
+      <HabitEditorScreen fallbackHref="/tools/habits" mode="edit" habitId="h-9" />,
+    );
+
+    expect(screen.getByText("Edit habit")).toBeTruthy();
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
+    expect(screen.getByTestId("habit-editor-room").props.style).toEqual(roomVariables("act").light);
+    expect(screen.getByDisplayValue("Morning walk")).toBeTruthy();
   });
 
   it("creates a habit and routes to its detail page", async () => {
