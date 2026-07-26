@@ -265,4 +265,18 @@ describe("chart layer never hardcodes HSL", () => {
       expect(source).not.toMatch(/hsla?\(/);
     }
   });
+
+  // The breathing pacer built its colors from a hardcoded triple until #310, so
+  // a palette retune skipped the screen's central graphic. Same tripwire as the
+  // chart layer above: the screen's colors now come from pacerColors(), and any
+  // hsl literal returning to the file is drift by the same definition. A future
+  // gradient stop belongs in a helper (fieldGradient/hueHsl), not inline here.
+  it("the breathing session screen contains no hsl literals", () => {
+    const source = readFileSync(
+      join(ROOT, "app", "(app)", "tools", "breathing", "session.tsx"),
+      "utf8",
+    );
+    expect(source).toMatch(/pacerColors/);
+    expect(source).not.toMatch(/hsla?\(/);
+  });
 });

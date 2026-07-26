@@ -31,7 +31,7 @@ import {
   elapsedMinutes,
   cycleSeconds,
 } from "@/src/features/breathing/cycle-math";
-import { PACER_HUE, pacerColors } from "@/src/features/breathing/pacer-colors";
+import { pacerColors } from "@/src/features/breathing/pacer-colors";
 import { scheduleStateAt } from "@/src/features/breathing/schedule";
 import { resolveBuiltin, useResolvedExercise } from "@/src/features/breathing/resolve-exercise";
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
@@ -167,7 +167,7 @@ export default function BreathingSessionScreen() {
   });
 
   const colorScheme = useAppColorScheme();
-  const roomStyle = useRoomStyle(PACER_HUE);
+  const roomStyle = useRoomStyle("aqua");
   const pacer = pacerColors(colorScheme === "dark");
 
   const circleStyle = useAnimatedStyle(() => ({

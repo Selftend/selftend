@@ -6,23 +6,24 @@
 
 import { hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 
-/** The breathing tool's hue - the same one the session screen's room is poured in. */
-export const PACER_HUE: ExerciseHue = "aqua";
+const PACER_HUE: ExerciseHue = "aqua";
 
 export interface PacerColors {
-  /** Inner circle: the disc that scales with the breath. */
+  /** The disc that scales with the breath. */
   innerFill: string;
+  /** Its edge — the line that carries the phase, and the only stop held to a contrast floor. */
   innerBorder: string;
-  /** Outer ring: the constant-size halo the inner circle breathes inside. */
+  /** The constant-size halo the inner disc breathes inside. */
   outerFill: string;
   outerBorder: string;
 }
 
 /**
  * Alpha steps of the aqua token, faintest → fullest. Only innerBorder is a
- * full-strength edge: it is the ring that has to stay legible against the room
- * field, so test/room-contrast.test.ts holds it to WCAG 1.4.11 (3:1). The fills
- * and the outer halo are decorative and deliberately far below that.
+ * full-strength edge: it is the ring that has to stay legible against the
+ * surface behind it, so test/room-contrast.test.ts holds it to WCAG 1.4.11
+ * (3:1). The fills and the outer halo are decorative and deliberately far
+ * below that.
  */
 export function pacerColors(isDark: boolean): PacerColors {
   return {
