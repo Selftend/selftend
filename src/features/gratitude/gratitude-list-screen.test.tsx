@@ -50,6 +50,8 @@ describe("GratitudeListScreen", () => {
     expect(screen.getByText("Gratitude")).toBeTruthy();
     expect(screen.getByText("Nothing here yet")).toBeTruthy();
     expect(screen.getByText("Notice something")).toBeTruthy();
+    // The history list keeps its compact header on the think room pour - no field.
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
   });
 
   it("renders entries as expandable question/answer cards", () => {

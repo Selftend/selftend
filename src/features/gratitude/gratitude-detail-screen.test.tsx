@@ -93,6 +93,11 @@ describe("GratitudeDetailScreen", () => {
     } as unknown as ReturnType<typeof useSetGratitudeEntryStarred>);
   });
 
+  it("keeps the compact header on the room pour - no field gradient", () => {
+    renderWithProviders(<GratitudeDetailScreen />);
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
+  });
+
   it("renders the 1st today question and its answer", () => {
     renderWithProviders(<GratitudeDetailScreen />);
 

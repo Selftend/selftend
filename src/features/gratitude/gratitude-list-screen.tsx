@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
@@ -10,11 +11,18 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-card";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
+import { roomVariables } from "@/src/lib/module-room";
 import { useSession } from "@/src/providers/session-provider";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
+// The history list sits inside gratitude's think room (spec #267): same
+// subtree token re-pour as the landing, so gratitude never flips rooms.
+const THINK_ROOM = roomVariables("think");
+
 export default function GratitudeListScreen() {
   const { t } = useTranslation("gratitude");
+  const { colorScheme } = useColorScheme();
+  const roomStyle = THINK_ROOM[colorScheme === "dark" ? "dark" : "light"];
   const { user } = useSession();
   const { selectedDate } = useSelectedDate();
   const { data: entries } = useGratitudeEntries(user?.id ?? null, 50);
@@ -22,7 +30,11 @@ export default function GratitudeListScreen() {
   const list = (entries ?? []).filter((entry) => toLocalDateKey(entry.loggedAt) === selectedDate);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">

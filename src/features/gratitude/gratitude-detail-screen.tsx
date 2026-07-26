@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
@@ -31,12 +32,19 @@ import {
 } from "@/src/features/gratitude/questions";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { roomVariables } from "@/src/lib/module-room";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatLocalTimestamp } from "@/src/utils/date";
 
+// The detail screen sits inside gratitude's think room (spec #267): same
+// subtree token re-pour as the landing and editor, so gratitude never flips rooms.
+const THINK_ROOM = roomVariables("think");
+
 export default function GratitudeDetailScreen() {
   const { t } = useTranslation("gratitude");
+  const { colorScheme } = useColorScheme();
+  const roomStyle = THINK_ROOM[colorScheme === "dark" ? "dark" : "light"];
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const entryId = typeof id === "string" ? id : null;
@@ -58,7 +66,7 @@ export default function GratitudeDetailScreen() {
 
   if (!fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("detail.title")} />
         </View>
@@ -68,7 +76,11 @@ export default function GratitudeDetailScreen() {
 
   if (!entry) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -115,7 +127,11 @@ export default function GratitudeDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
@@ -157,7 +173,7 @@ export default function GratitudeDetailScreen() {
             ) : null}
           </View>
 
-          <Card>
+          <Card variant="soft" tint="think">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.itemsTitle")}</CardTitle>
               <CardDescription>{t("detail.itemsDescription")}</CardDescription>
@@ -175,7 +191,7 @@ export default function GratitudeDetailScreen() {
           </Card>
 
           {lifeAnswers.length > 0 ? (
-            <Card>
+            <Card variant="soft" tint="think">
               <CardHeader>
                 <CardTitle aria-level={2}>{t("detail.lifeItemsTitle")}</CardTitle>
               </CardHeader>
@@ -193,7 +209,7 @@ export default function GratitudeDetailScreen() {
           ) : null}
 
           {entry.note.trim().length > 0 ? (
-            <Card>
+            <Card variant="soft" tint="think">
               <CardHeader>
                 <CardTitle aria-level={2}>{t("detail.noteTitle")}</CardTitle>
               </CardHeader>
@@ -203,7 +219,7 @@ export default function GratitudeDetailScreen() {
             </Card>
           ) : null}
 
-          <Card>
+          <Card variant="soft" tint="think">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.loggedAt")}</CardTitle>
               <CardDescription>{formatLocalTimestamp(entry.loggedAt)}</CardDescription>
