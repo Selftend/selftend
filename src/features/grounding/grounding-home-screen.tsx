@@ -40,6 +40,14 @@ export default function GroundingHomeScreen() {
     null,
   );
   const lastWhen = lastCompletedAt ? formatLocalTimestamp(lastCompletedAt) : null;
+  // `sessions` is undefined while loading and after a failed fetch with no
+  // cache - only an actually-loaded (possibly empty) history may claim
+  // "no sessions yet", or a returning user's history reads as erased.
+  const subline = lastWhen
+    ? t("grounding.hero.last", { when: lastWhen })
+    : sessions
+      ? t("grounding.hero.never")
+      : undefined;
 
   const roomStyle = useRoomStyle("clay");
 
@@ -76,11 +84,7 @@ export default function GroundingHomeScreen() {
                 <ToolStats
                   tone="onField"
                   accentClassName="text-clay"
-                  subline={
-                    lastWhen
-                      ? t("grounding.hero.last", { when: lastWhen })
-                      : t("grounding.hero.never")
-                  }
+                  subline={subline}
                   sublineTone={lastWhen ? "accent" : "muted"}
                   items={[
                     {
