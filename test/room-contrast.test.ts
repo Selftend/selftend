@@ -5,7 +5,7 @@ import { fieldGradient, roomTriples } from "@/src/lib/module-room";
 // yellow, act's green) needs a per-hue stop override in FIELD_STOP_OVERRIDES
 // before a room can adopt it. When a new module becomes a room, add its hue
 // here; if these floors then fail, add or tune its override first.
-const ROOM_HUES = ["be", "ink", "think", "act"] as const;
+const ROOM_HUES = ["be", "ink", "think", "act", "aqua"] as const;
 
 // The Direction B field header paints white ink (title, description at 88%,
 // stats) on a full-bleed module-hue gradient, and the room re-pours the

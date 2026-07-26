@@ -1317,7 +1317,9 @@
       "patterns_one": "{{count}} pattern",
       "patterns_other": "{{count}} patterns",
       "recentSessions_one": "{{count}} recent session",
-      "recentSessions_other": "{{count}} recent sessions"
+      "recentSessions_other": "{{count}} recent sessions",
+      "last": "Last · {{when}}",
+      "never": "No sessions logged yet"
     },
     "choose": "Choose a pattern",
     "minutes": "{{value}} min",
