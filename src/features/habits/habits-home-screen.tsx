@@ -52,6 +52,10 @@ export default function HabitsHomeScreen() {
   const { data: habits, isLoading: habitsLoading } = useHabits(userId);
   const sinceDate = localDateKey(addDays(new Date(), -30));
   const { data: logs } = useHabitLogs(userId, { sinceDate });
+  // The 30-day window above drives the charts and recent activity; the header
+  // subline needs lifetime history so a tick older than the window doesn't
+  // read as "no ticks yet". Newest-first ordering makes row 0 the latest tick.
+  const { data: latestLogs } = useHabitLogs(userId, { limit: 1 });
   const toggleLog = useToggleHabitLog(userId);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
@@ -89,12 +93,7 @@ export default function HabitsHomeScreen() {
   const weeklyRhythm = getWeeklyRhythm(allLogs, 4, today);
   const identityRoundUp = getIdentityRoundUp(allHabits, allLogs, today);
   const twoMinuteAdoption = getTwoMinuteAdoption(allHabits);
-  // Date keys sort lexically, so the max is the latest tick regardless of the
-  // list's own ordering.
-  const lastTickedOn = allLogs.reduce<string | null>(
-    (latest, log) => (latest === null || log.loggedOn > latest ? log.loggedOn : latest),
-    null,
-  );
+  const lastTickedOn = latestLogs?.[0]?.loggedOn ?? null;
   const lastWhen = lastTickedOn ? formatMoodRelativeTime(`${lastTickedOn}T12:00:00`, t) : null;
 
   function handleToggle(habitId: string) {

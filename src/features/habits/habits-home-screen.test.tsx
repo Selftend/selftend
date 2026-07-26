@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import HabitsHomeScreen from "./habits-home-screen";
 import { useHabitLogs, useHabits, useToggleHabitLog } from "@/src/features/habits/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import { currentDateKey } from "@/src/features/habits/scheduling";
+import { addDays, currentDateKey, localDateKey } from "@/src/features/habits/scheduling";
 import type { HabitLog } from "@/src/features/habits/types";
 import {
   useUpdateShownButtonTours,
@@ -159,6 +159,21 @@ describe("HabitsHomeScreen act room", () => {
     renderWithProviders(<HabitsHomeScreen />);
 
     expect(await screen.findByText("Last tick · Today")).toBeTruthy();
+    expect(screen.queryByText("No ticks yet")).toBeNull();
+  });
+
+  it("derives the subline from lifetime history when the latest tick is older than the 30-day window", async () => {
+    const oldDate = localDateKey(addDays(new Date(), -45));
+    mockUseHabitLogs.mockImplementation(
+      (_userId, options) =>
+        ({
+          data: options?.limit === 1 ? [habitLog({ loggedOn: oldDate })] : [],
+        }) as unknown as ReturnType<typeof useHabitLogs>,
+    );
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    expect(await screen.findByText("Last tick · 45 days ago")).toBeTruthy();
     expect(screen.queryByText("No ticks yet")).toBeNull();
   });
 });
