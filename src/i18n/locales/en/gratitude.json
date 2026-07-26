@@ -20,6 +20,10 @@
     "favorites_other": "{{count}} favorites",
     "thisWeek": "This week"
   },
+  "stats": {
+    "last": "Last · {{when}}",
+    "never": "Nothing logged yet"
+  },
   "insights": {
     "title": "Insights",
     "frequency": "How often you log",

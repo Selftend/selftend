@@ -2,10 +2,12 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { BarChart } from "@/src/components/charts/bar-chart";
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ToolStats } from "@/src/components/app/tool-stats";
 import { Badge } from "@/src/components/react-native-reusables/badge";
@@ -27,14 +29,21 @@ import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useAppColorScheme } from "@/src/lib/color-scheme";
 import type { TintToken } from "@/src/lib/design-tokens";
+import { roomVariables } from "@/src/lib/module-room";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { formatLocalTimestamp } from "@/src/utils/date";
 
 const THEME_TINTS: TintToken[] = ["be", "act", "think", "iris", "ink", "clay"];
 
+// Gratitude is the "think" room (spec #267): the whole screen subtree re-pours
+// its surface tokens as low-chroma gold. Static per-scheme styles, computed once.
+const THINK_ROOM = roomVariables("think");
+
 export default function GratitudeHomeScreen() {
   const { t } = useTranslation("gratitude");
+  const { colorScheme } = useColorScheme();
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { selectedDate } = useSelectedDate();
@@ -73,6 +82,13 @@ export default function GratitudeHomeScreen() {
     [entries],
   );
   const thisWeekCount = frequencyBuckets.slice(-7).reduce((sum, bucket) => sum + bucket.count, 0);
+  // ISO timestamps sort lexically, so the max is the latest entry regardless of
+  // the list's own ordering.
+  const lastLoggedAt = allEntries.reduce<string | null>(
+    (latest, entry) => (latest === null || entry.loggedAt > latest ? entry.loggedAt : latest),
+    null,
+  );
+  const lastWhen = lastLoggedAt ? formatLocalTimestamp(lastLoggedAt) : null;
 
   const hasFrequency = frequencyBuckets.some((b) => b.count > 0);
   const frequencyData = hasFrequency
@@ -96,119 +112,140 @@ export default function GratitudeHomeScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-        <ScrollView contentContainerClassName="grow gap-6 p-4">
-          <ModuleHomeHeader
-            addWidgetCategory="gratitude"
-            hue="think"
-            icon="favorite"
-            moduleLabel={null}
-            title={t("home.title")}
-            tourScope="gratitude"
-            description={t("tagline")}
-            actions={[
-              { type: "notifications", targetKey: "gratitude" },
-              { type: "info", onPress: () => setForceOnboarding(true) },
-            ]}
-            meta={
-              <ToolStats
-                accentClassName="text-think"
-                items={[
-                  {
-                    value: t("hero.entries", { count: totalEntries ?? allEntries.length }),
-                    label: "",
-                  },
-                  { value: t("hero.favorites", { count: favoriteCount }), label: "" },
-                  { value: String(thisWeekCount), label: t("hero.thisWeek") },
-                ]}
-              />
-            }
-          />
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={THINK_ROOM[colorScheme === "dark" ? "dark" : "light"]}
+      >
+        <ScrollView contentContainerClassName="grow p-4">
+          {/* The field + sheet escape the scroll padding so the gold field runs
+              edge to edge; the sheet re-adds the inset for its sections. */}
+          <View className="-mx-4 -mt-4">
+            <ModuleHomeHeader
+              variant="field"
+              addWidgetCategory="gratitude"
+              hue="think"
+              icon="favorite"
+              moduleLabel={null}
+              title={t("home.title")}
+              tourScope="gratitude"
+              description={t("tagline")}
+              actions={[
+                { type: "notifications", targetKey: "gratitude" },
+                { type: "info", onPress: () => setForceOnboarding(true) },
+              ]}
+              meta={
+                <ToolStats
+                  tone="onField"
+                  accentClassName="text-think"
+                  items={[
+                    {
+                      value: t("hero.entries", { count: totalEntries ?? allEntries.length }),
+                      label: "",
+                    },
+                    { value: t("hero.favorites", { count: favoriteCount }), label: "" },
+                    { value: String(thisWeekCount), label: t("hero.thisWeek") },
+                  ]}
+                  subline={lastWhen ? t("stats.last", { when: lastWhen }) : t("stats.never")}
+                  sublineTone={lastWhen ? "accent" : "muted"}
+                />
+              }
+            />
+            <ContentSheet className="px-4">
+              <View className="gap-6">
+                <Button
+                  onPress={() => router.push("/tools/gratitude-log/new")}
+                  className="self-start"
+                >
+                  <Icon name="add" className="size-4 text-primary-foreground" />
+                  <Text>{t("newEntry")}</Text>
+                </Button>
 
-          <Button onPress={() => router.push("/tools/gratitude-log/new")} className="self-start">
-            <Icon name="add" className="size-4 text-primary-foreground" />
-            <Text>{t("newEntry")}</Text>
-          </Button>
+                {/* Featured break card with gradient stripe */}
+                <BreakCard
+                  breakIndex={breakIndex}
+                  onDismiss={() => setBreakIndex((prev) => prev + 1)}
+                />
 
-          {/* Featured break card with gradient stripe */}
-          <BreakCard breakIndex={breakIndex} onDismiss={() => setBreakIndex((prev) => prev + 1)} />
-
-          {/* Insights card */}
-          {hasInsights ? (
-            <View>
-              <Text variant="eyebrow" className="mb-2.5">
-                {t("insights.title")}
-              </Text>
-              <Card className="gap-5 p-5">
-                {frequencyData ? (
-                  <FrequencyBars
-                    data={frequencyData}
-                    weekLabel={t("insights.thisWeek")}
-                    title={t("insights.frequency")}
-                  />
-                ) : null}
-                {themesWithTints ? (
-                  <View className={cn(frequencyData ? "border-t border-border pt-4" : "")}>
-                    <Text className="text-sm font-semibold">{t("insights.themes")}</Text>
-                    <ThemeChips themes={themesWithTints} />
+                {/* Insights card */}
+                {hasInsights ? (
+                  <View>
+                    <Text variant="eyebrow" className="mb-2.5">
+                      {t("insights.title")}
+                    </Text>
+                    <Card variant="soft" tint="think" className="gap-5 p-5">
+                      {frequencyData ? (
+                        <FrequencyBars
+                          data={frequencyData}
+                          weekLabel={t("insights.thisWeek")}
+                          title={t("insights.frequency")}
+                        />
+                      ) : null}
+                      {themesWithTints ? (
+                        <View className={cn(frequencyData ? "border-t border-border pt-4" : "")}>
+                          <Text className="text-sm font-semibold">{t("insights.themes")}</Text>
+                          <ThemeChips themes={themesWithTints} />
+                        </View>
+                      ) : null}
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={t("insights.favorites")}
+                        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                        onPress={() => router.push("/tools/gratitude-log/favorites")}
+                        className={cn(
+                          "flex-row items-center justify-between active:opacity-80",
+                          frequencyData || themesWithTints ? "border-t border-border pt-4" : "",
+                        )}
+                      >
+                        <View className="flex-row items-center gap-3">
+                          <View
+                            accessibilityElementsHidden
+                            importantForAccessibility="no"
+                            className="h-9 w-9 items-center justify-center rounded-[10px] bg-[hsl(var(--think)/0.12)]"
+                          >
+                            <Icon name="star" size={20} className="text-think" />
+                          </View>
+                          <View>
+                            <Text className="text-sm font-semibold">{t("insights.favorites")}</Text>
+                            <Text variant="muted" className="mt-0.5 text-xs">
+                              {t("insights.savedCount", { count: favoriteCount })}
+                            </Text>
+                          </View>
+                        </View>
+                        <Icon name="chevron-right" size={20} className="text-muted-foreground" />
+                      </Pressable>
+                    </Card>
                   </View>
                 ) : null}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t("insights.favorites")}
-                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                  onPress={() => router.push("/tools/gratitude-log/favorites")}
-                  className={cn(
-                    "flex-row items-center justify-between active:opacity-80",
-                    frequencyData || themesWithTints ? "border-t border-border pt-4" : "",
+
+                {/* Recent entries */}
+                <View className="gap-3">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("list.recent")}
+                    </Text>
+                    {recentList.length > 0 ? (
+                      <Pressable
+                        accessibilityRole="link"
+                        onPress={() => router.push("/tools/gratitude-log/entries")}
+                      >
+                        <Text className="text-sm text-primary">{t("home.viewAll")}</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+
+                  {recentList.length === 0 ? (
+                    <Text variant="muted">{t("list.empty.description")}</Text>
+                  ) : (
+                    <View className="gap-3">
+                      {recentList.map((entry) => (
+                        <GratitudeEntryCard key={entry.id} entry={entry} />
+                      ))}
+                    </View>
                   )}
-                >
-                  <View className="flex-row items-center gap-3">
-                    <View
-                      accessibilityElementsHidden
-                      importantForAccessibility="no"
-                      className="h-9 w-9 items-center justify-center rounded-[10px] bg-[hsl(var(--think)/0.12)]"
-                    >
-                      <Icon name="star" size={20} className="text-think" />
-                    </View>
-                    <View>
-                      <Text className="text-sm font-semibold">{t("insights.favorites")}</Text>
-                      <Text variant="muted" className="mt-0.5 text-xs">
-                        {t("insights.savedCount", { count: favoriteCount })}
-                      </Text>
-                    </View>
-                  </View>
-                  <Icon name="chevron-right" size={20} className="text-muted-foreground" />
-                </Pressable>
-              </Card>
-            </View>
-          ) : null}
-
-          {/* Recent entries */}
-          <View className="gap-3">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {t("list.recent")}
-              </Text>
-              {recentList.length > 0 ? (
-                <Pressable
-                  accessibilityRole="link"
-                  onPress={() => router.push("/tools/gratitude-log/entries")}
-                >
-                  <Text className="text-sm text-primary">{t("home.viewAll")}</Text>
-                </Pressable>
-              ) : null}
-            </View>
-
-            {recentList.length === 0 ? (
-              <Text variant="muted">{t("list.empty.description")}</Text>
-            ) : (
-              <View className="gap-3">
-                {recentList.map((entry) => (
-                  <GratitudeEntryCard key={entry.id} entry={entry} />
-                ))}
+                </View>
               </View>
-            )}
+            </ContentSheet>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -304,7 +341,7 @@ function BreakCard({ breakIndex, onDismiss }: BreakCardProps) {
       <Text variant="eyebrow" className="mb-2.5">
         {t("promptEyebrow")}
       </Text>
-      <Card className="relative overflow-hidden px-5 py-4">
+      <Card variant="soft" tint="think" className="relative overflow-hidden px-5 py-4">
         {/* Top-edge think→clay gradient stripe */}
         <LinearGradient
           colors={["hsl(43, 74%, 52%)", "hsl(20, 52%, 50%)"]}

@@ -98,6 +98,17 @@ const FIELD_STOP_OVERRIDES: Partial<
 };
 
 /**
+ * The room's card surface per scheme as comma-form hsl() strings, for native
+ * components (LinearGradient fades) that can't read the CSS variable that
+ * bg-card resolves to inside the room.
+ */
+export function roomCardHsl(hue: HueName): Record<ColorSchemeName, string> {
+  const triples = roomTriples(hue);
+  const toHsl = (triple: string) => `hsl(${triple.split(" ").join(", ")})`;
+  return { light: toHsl(triples.light.card), dark: toHsl(triples.dark.card) };
+}
+
+/**
  * The full-bleed field gradient behind a module header, top → bottom stops.
  * Comma-form hsl() strings because LinearGradient cannot read CSS variables
  * (same escape hatch as hueHsl in src/features/mindfulness/exercise-hue.ts).
