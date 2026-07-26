@@ -3,6 +3,7 @@ import { router } from "expo-router";
 
 import GratitudeFavoritesScreen from "@/src/features/gratitude/gratitude-favorites-screen";
 import { useFavoriteGratitudeEntries } from "@/src/features/gratitude/queries";
+import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -31,11 +32,11 @@ const mockUseFavoriteGratitudeEntries = useFavoriteGratitudeEntries as jest.Mock
 >;
 const mockRouter = jest.mocked(router);
 
-function favoriteEntry(overrides: Partial<Record<string, unknown>> = {}) {
+function favoriteEntry(overrides: Partial<GratitudeEntry> = {}): GratitudeEntry {
   return {
     id: "g-1",
     userId: "user-1",
-    level: "quick",
+    level: 3,
     items: ["Morning walk"],
     note: "",
     loggedAt: "2026-07-20T09:00:00.000Z",
