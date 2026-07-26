@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -15,7 +14,7 @@ import { ToolStats } from "@/src/components/app/tool-stats";
 import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
 import { useSleepLogs, useSleepLogCount } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatLocalTimestamp } from "@/src/utils/date";
 import { formatDuration, formatHours } from "@/src/features/sleep/format";
 import {
@@ -31,13 +30,9 @@ import { SleepQualityMix } from "@/src/features/sleep/sleep-quality-mix";
 import { SleepWeekdayChart } from "@/src/features/sleep/sleep-weekday-chart";
 import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
 
-// Sleep is the "ink" room (spec #255): the whole screen subtree re-pours its
-// surface tokens as low-chroma ink. Static per-scheme styles, computed once.
-const INK_ROOM = roomVariables("ink");
-
 export default function SleepTrackerScreen() {
   const { t } = useTranslation("sleep");
-  const { colorScheme } = useColorScheme();
+  const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -74,7 +69,7 @@ export default function SleepTrackerScreen() {
       <SafeAreaView
         className="flex-1 bg-background"
         edges={["bottom", "left", "right"]}
-        style={INK_ROOM[colorScheme === "dark" ? "dark" : "light"]}
+        style={roomStyle}
       >
         <ScrollView contentContainerClassName="grow p-4">
           {/* The field + sheet escape the scroll padding so the ink field runs

@@ -1,7 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, View } from "react-native";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
@@ -13,12 +12,8 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { useHabit, useHabitLogs, useUpsertHabitLogNote } from "@/src/features/habits/queries";
 import { HABIT_NOTE_MAX } from "@/src/features/habits/schemas";
 import { currentDateKey } from "@/src/features/habits/scheduling";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
-
-// The log-note screen sits inside habits' act room (spec #277): same subtree
-// token re-pour as home and the editor, so habits never flips rooms.
-const ACT_ROOM = roomVariables("act");
 
 interface HabitLogNoteScreenProps {
   habitId: string;
@@ -27,8 +22,7 @@ interface HabitLogNoteScreenProps {
 
 export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreenProps) {
   const { t } = useTranslation("habits");
-  const { colorScheme } = useColorScheme();
-  const roomStyle = ACT_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
 

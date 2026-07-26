@@ -2,7 +2,6 @@ import { router, useLocalSearchParams, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -26,7 +25,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { MoodScale } from "@/src/components/app/mood-scale";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { cn } from "@/lib/utils";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import {
   announceMessage,
   DEFAULT_INTERACTIVE_HIT_SLOP,
@@ -42,10 +41,6 @@ import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
 import { type EmotionDisplay, useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import type { MoodLog } from "@/src/features/mood/types";
 import { useSession } from "@/src/providers/session-provider";
-
-// The editor lives in mood's rose room (spec #233): same subtree token
-// re-pour as the tracker and detail screens, so mood never flips rooms.
-const BE_ROOM = roomVariables("be");
 
 const BODY_CHIP_KEYS = [
   "chestTight",
@@ -120,8 +115,7 @@ export function MoodEntryEditorScreen({
 }: MoodEntryEditorScreenProps) {
   const { t } = useTranslation("cbt");
   const { t: tMood } = useTranslation("mood");
-  const { colorScheme } = useColorScheme();
-  const roomStyle = BE_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("be");
   const { user } = useSession();
   const params = useLocalSearchParams<{
     completeActivityId?: string | string[];

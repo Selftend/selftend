@@ -2,7 +2,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -21,19 +20,14 @@ import { useDeleteSleepLog, useSleepLog, useSleepLogs } from "@/src/features/sle
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatTimestamp } from "@/src/utils/date";
 import { formatDuration } from "@/src/features/sleep/format";
 import { qualityTint } from "@/src/features/sleep/quality-tint";
 
-// The detail screen sits inside sleep's ink room (spec #255): same subtree
-// token re-pour as the landing and editor, so sleep never flips rooms.
-const INK_ROOM = roomVariables("ink");
-
 export default function SleepDetailScreen() {
   const { t } = useTranslation("sleep");
-  const { colorScheme } = useColorScheme();
-  const roomStyle = INK_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const logId = typeof id === "string" ? id : null;

@@ -1,7 +1,6 @@
 import { router } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
@@ -13,17 +12,12 @@ import { useFavoriteGratitudeEntries } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
-
-// Favorites sits inside gratitude's think room (spec #267): same subtree
-// token re-pour as the landing, so gratitude never flips rooms.
-const THINK_ROOM = roomVariables("think");
 
 export default function GratitudeFavoritesScreen() {
   const { t } = useTranslation("gratitude");
-  const { colorScheme } = useColorScheme();
-  const roomStyle = THINK_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const { data: favorites } = useFavoriteGratitudeEntries(user?.id ?? null, 200);
   const favoriteList = favorites ?? [];

@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { BarChart } from "@/src/components/charts/bar-chart";
@@ -35,17 +34,12 @@ import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { parseLocalNoon } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
-// Habits is the "act" room (spec #277): the whole screen subtree re-pours its
-// surface tokens as low-chroma green. Static per-scheme styles, computed once.
-const ACT_ROOM = roomVariables("act");
-
 export default function HabitsHomeScreen() {
   const { t, i18n } = useTranslation("habits");
-  const { colorScheme } = useColorScheme();
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -100,7 +94,7 @@ export default function HabitsHomeScreen() {
     toggleLog.mutate({ habitId, loggedOn: todayStr });
   }
 
-  const roomStyle = ACT_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("act");
 
   if (habitsLoading) {
     return (

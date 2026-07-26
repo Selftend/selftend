@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { ContentSheet } from "@/src/components/app/content-sheet";
@@ -18,18 +17,13 @@ import { countWords } from "@/src/features/journal/word-count";
 import { JournalCard } from "@/src/features/journal/journal-card";
 import { JournalDayCard } from "@/src/features/journal/journal-day-card";
 import { useJournalEntries, useJournalEntryCount } from "@/src/features/journal/queries";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
-
-// Journal is the "ink" room (spec #292): the whole screen subtree re-pours its
-// surface tokens as deep blue. Static per-scheme styles, computed once.
-const INK_ROOM = roomVariables("ink");
 
 export default function JournalListScreen() {
   const { t } = useTranslation("journal");
   const { t: tc } = useTranslation("common");
-  const { colorScheme } = useColorScheme();
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { selectedDate, isToday } = useSelectedDate();
@@ -67,7 +61,7 @@ export default function JournalListScreen() {
   // Stable across renders so memoized JournalCards aren't invalidated by a parent re-render.
   const openEntry = useCallback((id: string) => router.push(`/tools/journal/${id}`), []);
 
-  const roomStyle = INK_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("ink");
 
   return (
     <>

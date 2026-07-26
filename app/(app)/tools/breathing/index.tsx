@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -18,20 +17,15 @@ import { breathingPatterns, breathingSlugs } from "@/src/constants/breathing";
 import { breathingColorClass } from "@/src/features/breathing/exercise-colors";
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import { useLocaleFormats } from "@/src/lib/locale-format";
 import { formatLocalTimestamp } from "@/src/utils/date";
 
-// Breathing is the "aqua" room (spec #305): the whole screen subtree re-pours
-// its surface tokens as teal-blue. Static per-scheme styles, computed once.
-const AQUA_ROOM = roomVariables("aqua");
-
 export default function BreathingScreen() {
   const { t } = useTranslation("cbt");
   const { formatDateTime } = useLocaleFormats();
-  const { colorScheme } = useColorScheme();
   const { user } = useSession();
   const { data: customExercises } = useBreathingExercises(user?.id ?? null);
   const customIds = (customExercises ?? []).map((e) => e.id);
@@ -58,7 +52,7 @@ export default function BreathingScreen() {
     );
   };
 
-  const roomStyle = AQUA_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("aqua");
 
   return (
     <SafeAreaView
