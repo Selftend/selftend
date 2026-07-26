@@ -1217,7 +1217,9 @@
       "techniques_one": "{{count}} техника",
       "techniques_other": "{{count}} техники",
       "takes": "Отнема",
-      "takesValue": "2-3 мин"
+      "takesValue": "2-3 мин",
+      "last": "Последно · {{when}}",
+      "never": "Все още няма сесии"
     },
     "choose": "Избери техника",
     "howTo": "Как се прави",
