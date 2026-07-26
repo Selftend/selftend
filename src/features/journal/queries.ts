@@ -7,6 +7,7 @@ import {
   getJournalEntry,
   listJournalEntries,
   saveJournalEntry,
+  sumJournalWords,
 } from "@/src/features/journal/repository";
 import type { JournalInput } from "@/src/features/journal/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
@@ -17,6 +18,7 @@ const journalKeys = {
   list: (userId: string, limit: number) => ["journal", "list", userId, limit] as const,
   detail: (userId: string, id: string) => ["journal", "detail", userId, id] as const,
   count: (userId: string) => ["journal", "count", userId] as const,
+  wordTotal: (userId: string) => ["journal", "word-total", userId] as const,
   countSince: (userId: string, sinceIso: string) =>
     ["journal", "count-since", userId, sinceIso] as const,
 };
@@ -42,6 +44,14 @@ export function useJournalEntryCount(userId: string | null) {
   return useQuery({
     queryKey: userId ? journalKeys.count(userId) : ["journal", "count", "anonymous"],
     queryFn: () => countJournalEntries(userId!),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useJournalWordTotal(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? journalKeys.wordTotal(userId) : ["journal", "word-total", "anonymous"],
+    queryFn: sumJournalWords,
     enabled: Boolean(userId),
   });
 }
