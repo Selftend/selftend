@@ -36,7 +36,7 @@ export const JournalCard = memo(function JournalCard({ entry, onOpen }: JournalC
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() => onOpen(entry.id)}
     >
-      <Card spine="ink" className="px-5 py-4 gap-0">
+      <Card variant="soft" tint="ink" className="px-5 py-4 gap-0">
         <View className="flex-row items-baseline justify-between gap-3">
           <Text className="flex-1 text-base font-semibold tracking-tight" numberOfLines={1}>
             {title}
