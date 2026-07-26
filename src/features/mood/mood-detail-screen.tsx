@@ -2,7 +2,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -28,18 +27,13 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatLocalTimestamp } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { scoreToneClass } from "@/src/features/mood/score-tone";
-
-// The detail screen sits inside mood's rose room (spec #233): same subtree
-// token re-pour as the tracker, so navigating within mood never flips rooms.
-const BE_ROOM = roomVariables("be");
 
 export default function MoodDetailScreen() {
   const { t } = useTranslation("mood");
   const { t: tCbt } = useTranslation("cbt");
-  const { colorScheme } = useColorScheme();
-  const roomStyle = BE_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("be");
   const { user } = useSession();
   const { resolveEmotion } = useEmotionDisplay();
   const { id } = useLocalSearchParams<{ id: string }>();

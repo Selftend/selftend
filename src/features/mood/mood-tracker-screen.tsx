@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { View, type LayoutChangeEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -40,7 +39,7 @@ import {
 } from "@/src/features/mood/summaries";
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
 import { WeekHero } from "@/src/features/mood/mood-week-hero";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatLocalTimestamp, parseLocalNoon, startOfDayDaysAgo } from "@/src/utils/date";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
@@ -53,13 +52,9 @@ const PRESET_DAYS: Record<Exclude<TrendRange, "custom">, number> = {
   "90d": 90,
 };
 
-// Mood is the "be" rose room (spec #233): the whole screen subtree re-pours
-// its surface tokens as low-chroma rose. Static per-scheme styles, computed once.
-const BE_ROOM = roomVariables("be");
-
 export default function MoodTrackerScreen() {
   const { t, i18n } = useTranslation("mood");
-  const { colorScheme } = useColorScheme();
+  const roomStyle = useRoomStyle("be");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -158,7 +153,7 @@ export default function MoodTrackerScreen() {
       <SafeAreaView
         className="flex-1 bg-background"
         edges={["bottom", "left", "right"]}
-        style={BE_ROOM[colorScheme === "dark" ? "dark" : "light"]}
+        style={roomStyle}
       >
         <MoodHistoryList
           logs={history}

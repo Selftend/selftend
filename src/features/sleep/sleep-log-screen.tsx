@@ -2,7 +2,6 @@ import { router, type Href } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -19,7 +18,7 @@ import { DurationStepper } from "@/src/features/sleep/duration-stepper";
 import { StarRating } from "@/src/features/sleep/star-rating";
 import { useSleepLog, useSleepLogs, useSaveSleepLog } from "@/src/features/sleep/queries";
 import type { SleepLog } from "@/src/features/sleep/types";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
@@ -33,14 +32,9 @@ interface SleepLogScreenProps {
 // Sensible starting point for a new entry so the stepper always shows a value.
 const DEFAULT_DURATION_MINUTES = 450; // 7h 30m
 
-// The editor lives in sleep's ink room (spec #255): same subtree token
-// re-pour as the landing and detail screens, so sleep never flips rooms.
-const INK_ROOM = roomVariables("ink");
-
 export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScreenProps) {
   const { t } = useTranslation("sleep");
-  const { colorScheme } = useColorScheme();
-  const roomStyle = INK_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
 
   const { data: cachedList } = useSleepLogs(mode === "edit" ? (user?.id ?? null) : null, 50);

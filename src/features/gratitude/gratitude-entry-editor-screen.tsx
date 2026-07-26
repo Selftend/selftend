@@ -2,7 +2,6 @@ import { router, type Href } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { ContentSheet } from "@/src/components/app/content-sheet";
@@ -34,7 +33,7 @@ import {
   asQuestionList,
 } from "@/src/features/gratitude/questions";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
@@ -49,18 +48,13 @@ interface GratitudeEntryEditorScreenProps {
 const EMPTY_ITEMS = Array.from({ length: GRATITUDE_ITEM_COUNT }, () => "");
 const EMPTY_LIFE_ITEMS = Array.from({ length: GRATITUDE_LIFE_ITEM_COUNT }, () => "");
 
-// The editor lives in gratitude's think room (spec #267): same subtree token
-// re-pour as the landing, so gratitude never flips rooms.
-const THINK_ROOM = roomVariables("think");
-
 export function GratitudeEntryEditorScreen({
   fallbackHref,
   mode,
   entryId = null,
 }: GratitudeEntryEditorScreenProps) {
   const { t } = useTranslation("gratitude");
-  const { colorScheme } = useColorScheme();
-  const roomStyle = THINK_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
   const editMode = mode === "edit";

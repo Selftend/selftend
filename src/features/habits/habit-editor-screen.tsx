@@ -2,7 +2,6 @@ import { router, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, View, type TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -25,7 +24,7 @@ import type {
   HabitInput,
   HabitKind,
 } from "@/src/features/habits/types";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import {
@@ -45,10 +44,6 @@ interface HabitEditorScreenProps {
 
 const KIND_OPTIONS: HabitKind[] = ["build", "break"];
 const CADENCE_OPTIONS: HabitCadence[] = ["daily", "weekdays", "custom"];
-
-// The editor lives in habits' act room (spec #277): same subtree token
-// re-pour as the landing, so habits never flips rooms.
-const ACT_ROOM = roomVariables("act");
 
 const EMPTY_INPUT: HabitInput = {
   name: "",
@@ -85,8 +80,7 @@ function habitToInput(habit: Habit): HabitInput {
 
 export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitEditorScreenProps) {
   const { t } = useTranslation("habits");
-  const { colorScheme } = useColorScheme();
-  const roomStyle = ACT_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
 

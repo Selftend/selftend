@@ -43,14 +43,9 @@ import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/set
 import { useAppColorScheme } from "@/src/lib/color-scheme";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useSaveBreathingSession } from "@/src/features/breathing/queries";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-
-// Breathing is the "aqua" room (spec #305). Session screens take the pour
-// only — no field header — so the exercise stays the hero (Wave B direction,
-// #301). Static per-scheme styles, computed once.
-const AQUA_ROOM = roomVariables("aqua");
 
 type ScreenPhase = "intro" | "preroll" | "active";
 
@@ -171,7 +166,7 @@ export default function BreathingSessionScreen() {
   });
 
   const colorScheme = useAppColorScheme();
-  const roomStyle = AQUA_ROOM[colorScheme];
+  const roomStyle = useRoomStyle("aqua");
   const aqua = colorScheme === "dark" ? "196, 58%, 62%" : "196, 52%, 45%";
 
   const circleStyle = useAnimatedStyle(() => ({

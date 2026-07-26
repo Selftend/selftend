@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -29,7 +28,7 @@ import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useAppColorScheme } from "@/src/lib/color-scheme";
 import type { TintToken } from "@/src/lib/design-tokens";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
@@ -37,13 +36,9 @@ import { formatLocalTimestamp } from "@/src/utils/date";
 
 const THEME_TINTS: TintToken[] = ["be", "act", "think", "iris", "ink", "clay"];
 
-// Gratitude is the "think" room (spec #267): the whole screen subtree re-pours
-// its surface tokens as low-chroma gold. Static per-scheme styles, computed once.
-const THINK_ROOM = roomVariables("think");
-
 export default function GratitudeHomeScreen() {
   const { t } = useTranslation("gratitude");
-  const { colorScheme } = useColorScheme();
+  const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { selectedDate } = useSelectedDate();
@@ -115,7 +110,7 @@ export default function GratitudeHomeScreen() {
       <SafeAreaView
         className="flex-1 bg-background"
         edges={["bottom", "left", "right"]}
-        style={THINK_ROOM[colorScheme === "dark" ? "dark" : "light"]}
+        style={roomStyle}
       >
         <ScrollView contentContainerClassName="grow p-4">
           {/* The field + sheet escape the scroll padding so the gold field runs

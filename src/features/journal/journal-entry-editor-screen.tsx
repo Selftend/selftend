@@ -2,7 +2,6 @@ import { router, type Href } from "expo-router";
 import { ActivityIndicator, ScrollView, View, type TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -25,14 +24,10 @@ import {
 import { JOURNAL_BODY_MAX, JOURNAL_TITLE_MAX } from "@/src/features/journal/schemas";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-
-// Journal is the "ink" room (spec #292): the editor re-pours its surface
-// tokens as deep blue. Static per-scheme styles, computed once.
-const INK_ROOM = roomVariables("ink");
 
 interface JournalEntryEditorScreenProps {
   fallbackHref: Href;
@@ -46,11 +41,10 @@ export function JournalEntryEditorScreen({
   entryId = null,
 }: JournalEntryEditorScreenProps) {
   const { t } = useTranslation("journal");
-  const { colorScheme } = useColorScheme();
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
   const editMode = mode === "edit";
-  const roomStyle = INK_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("ink");
 
   const { data: cachedList } = useJournalEntries(editMode ? (user?.id ?? null) : null, 50);
   const fromCache = entryId ? (cachedList?.find((entry) => entry.id === entryId) ?? null) : null;

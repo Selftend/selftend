@@ -63,9 +63,11 @@ export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string
 
 /**
  * NativeWind variable overrides that turn a screen subtree into the module's
- * room. Apply to the screen root: `style={roomVariables(hue)[colorScheme]}`
- * (same pattern as THEME_VARIABLES at the app root) — every `bg-background` /
- * `bg-card` / `text-muted-foreground` inside re-resolves to the room pour.
+ * room — every `bg-background` / `bg-card` / `text-muted-foreground` inside
+ * re-resolves to the room pour. Screens consume this via `useRoomStyle(hue)`
+ * in src/lib/use-room-style.ts (which carries the scheme read and the cached
+ * style identity); importing it directly outside src/lib and tests is
+ * lint-restricted.
  */
 export function roomVariables(hue: HueName): Record<ColorSchemeName, ReturnType<typeof vars>> {
   const triples = roomTriples(hue);

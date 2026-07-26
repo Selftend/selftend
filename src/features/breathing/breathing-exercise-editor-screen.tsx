@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { ActivityIndicator, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -42,13 +41,9 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
-
-// Breathing is the "aqua" room (spec #305): the editor re-pours its surface
-// tokens as teal-blue. Static per-scheme styles, computed once.
-const AQUA_ROOM = roomVariables("aqua");
 
 type PhaseKey = "inhaleSeconds" | "holdInSeconds" | "exhaleSeconds" | "holdOutSeconds";
 
@@ -73,7 +68,6 @@ function toInput(e: BreathingExercise): BreathingExerciseInput {
 
 export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: string | null }) {
   const { t } = useTranslation("cbt");
-  const { colorScheme } = useColorScheme();
   const { user } = useSession();
   const userId = user?.id ?? null;
   const showToast = useToastStore((s) => s.showToast);
@@ -171,7 +165,7 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
     }
   };
 
-  const roomStyle = AQUA_ROOM[colorScheme === "dark" ? "dark" : "light"];
+  const roomStyle = useRoomStyle("aqua");
 
   if (editMode && !fromCache && isLoading) {
     return (

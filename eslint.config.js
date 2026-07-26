@@ -79,6 +79,29 @@ module.exports = [
     },
   },
   {
+    // Room wiring goes through the useRoomStyle/useRoomCardHsl hooks - they
+    // carry the scheme read and the cached style identity, so screens can't
+    // drift back to per-file module consts. Tests are exempt: every room
+    // suite imports roomVariables for its pour assertion.
+    files: ["src/features/**/*.tsx", "src/components/**/*.tsx", "app/**/*.tsx"],
+    ignores: ["**/*.test.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/src/lib/module-room",
+              importNames: ["roomVariables", "roomCardHsl"],
+              message:
+                "Use useRoomStyle(hue) / useRoomCardHsl(hue) from @/src/lib/use-room-style - they carry the scheme read and the cached style identity.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // react-native-web 0.21 silently drops the object-form accessibilityState prop,
     // so state set that way never reaches the browser's accessibility tree. The
     // aria-* props (aria-checked/selected/expanded/disabled/busy) map to

@@ -1,7 +1,6 @@
 import { router } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
@@ -16,17 +15,8 @@ import {
   type HabitsLearnCard,
 } from "@/src/features/habits/learn";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { roomVariables } from "@/src/lib/module-room";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { cn } from "@/lib/utils";
-
-// The learn surfaces sit inside habits' act room (spec #277): same subtree
-// token re-pour as home and the editor, so habits never flips rooms.
-const ACT_ROOM = roomVariables("act");
-
-function useActRoomStyle() {
-  const { colorScheme } = useColorScheme();
-  return ACT_ROOM[colorScheme === "dark" ? "dark" : "light"];
-}
 
 interface HabitsLearnDetailProps {
   slug: string;
@@ -34,7 +24,7 @@ interface HabitsLearnDetailProps {
 
 export function HabitsLearnDetailScreen({ slug }: HabitsLearnDetailProps) {
   const { t } = useTranslation("habits");
-  const roomStyle = useActRoomStyle();
+  const roomStyle = useRoomStyle("act");
   const card = findLearnCard(slug);
   if (!card) {
     return <HabitsLearnIndexScreen />;
@@ -128,7 +118,7 @@ function RelatedCards({ activeSlug }: { activeSlug: HabitsLearnCard["slug"] }) {
 
 export function HabitsLearnIndexScreen() {
   const { t } = useTranslation("habits");
-  const roomStyle = useActRoomStyle();
+  const roomStyle = useRoomStyle("act");
 
   return (
     <SafeAreaView

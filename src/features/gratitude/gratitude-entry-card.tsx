@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
-import { useColorScheme } from "nativewind";
 
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -21,21 +20,15 @@ import {
 } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
-import { roomCardHsl } from "@/src/lib/module-room";
+import { useRoomCardHsl } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
 const COLLAPSED_PAIRS = 2;
 
-// Every gratitude surface is the think room (spec #267), so the collapse fade
-// must match the room's tinted card surface, not the neutral CARD_COLOR —
-// LinearGradient can't read the CSS variable bg-card resolves to.
-const THINK_CARD_FADE = roomCardHsl("think");
-
 export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
   const { t } = useTranslation("gratitude");
   const { user } = useSession();
-  const { colorScheme } = useColorScheme();
   const showToast = useToastStore((state) => state.showToast);
 
   const [expanded, setExpanded] = useState(false);
@@ -57,7 +50,7 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
   const isOpen = expanded || !hasMore;
   const visible = isOpen ? answers : answers.slice(0, COLLAPSED_PAIRS);
   const note = entry.note.trim();
-  const fadeColor = colorScheme === "light" ? THINK_CARD_FADE.light : THINK_CARD_FADE.dark;
+  const fadeColor = useRoomCardHsl("think");
 
   const toggleFavorite = async () => {
     try {
