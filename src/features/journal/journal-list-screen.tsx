@@ -2,8 +2,10 @@ import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ToolStats } from "@/src/components/app/tool-stats";
 import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
@@ -16,12 +18,18 @@ import { countWords } from "@/src/features/journal/word-count";
 import { JournalCard } from "@/src/features/journal/journal-card";
 import { JournalDayCard } from "@/src/features/journal/journal-day-card";
 import { useJournalEntries, useJournalEntryCount } from "@/src/features/journal/queries";
+import { roomVariables } from "@/src/lib/module-room";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
+
+// Journal is the "ink" room (spec #292): the whole screen subtree re-pours its
+// surface tokens as deep blue. Static per-scheme styles, computed once.
+const INK_ROOM = roomVariables("ink");
 
 export default function JournalListScreen() {
   const { t } = useTranslation("journal");
   const { t: tc } = useTranslation("common");
+  const { colorScheme } = useColorScheme();
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { selectedDate, isToday } = useSelectedDate();
@@ -59,6 +67,8 @@ export default function JournalListScreen() {
   // Stable across renders so memoized JournalCards aren't invalidated by a parent re-render.
   const openEntry = useCallback((id: string) => router.push(`/tools/journal/${id}`), []);
 
+  const roomStyle = INK_ROOM[colorScheme === "dark" ? "dark" : "light"];
+
   return (
     <>
       <JournalOnboarding
@@ -66,68 +76,85 @@ export default function JournalListScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-        <ScrollView contentContainerClassName="grow gap-6 p-4">
-          <ModuleHomeHeader
-            addWidgetCategory="journal"
-            hue="ink"
-            icon="edit-note"
-            moduleLabel={null}
-            title={t("title")}
-            tourScope="journal"
-            description={t("tagline")}
-            actions={[
-              { type: "notifications", targetKey: "journal" },
-              { type: "info", onPress: () => setForceOnboarding(true) },
-            ]}
-            meta={
-              <ToolStats
-                accentClassName="text-ink"
-                subline={`${t("hero.last")} · ${lastWhen ?? tc("never")}`}
-                sublineTone={lastWhen ? "accent" : "muted"}
-                items={[
-                  {
-                    value: t("hero.entries", { count: totalEntries ?? allEntries.length }),
-                    label: "",
-                  },
-                  { value: t("hero.words", { count: totalWords }), label: "" },
-                ]}
-              />
-            }
-          />
-
-          <Button onPress={() => router.push("/tools/journal/new")} className="self-start">
-            <Icon name="add" className="size-4 text-primary-foreground" />
-            <Text>{t("cta.new")}</Text>
-          </Button>
-
-          {allEntries.length === 0 ? (
-            <EmptyState
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
+        <ScrollView contentContainerClassName="grow p-4">
+          {/* The field + sheet escape the scroll padding so the ink field runs
+              edge to edge; the sheet re-adds the inset for its sections. */}
+          <View className="-mx-4 -mt-4">
+            <ModuleHomeHeader
+              variant="field"
+              addWidgetCategory="journal"
+              hue="ink"
               icon="edit-note"
-              title={t("list.empty.title")}
-              description={t("list.empty.description")}
-              action={{
-                label: t("list.empty.cta"),
-                onPress: () => router.push("/tools/journal/new"),
-              }}
+              moduleLabel={null}
+              title={t("title")}
+              tourScope="journal"
+              description={t("tagline")}
+              actions={[
+                { type: "notifications", targetKey: "journal" },
+                { type: "info", onPress: () => setForceOnboarding(true) },
+              ]}
+              meta={
+                <ToolStats
+                  tone="onField"
+                  accentClassName="text-ink"
+                  subline={`${t("hero.last")} · ${lastWhen ?? tc("never")}`}
+                  sublineTone={lastWhen ? "accent" : "muted"}
+                  items={[
+                    {
+                      value: t("hero.entries", { count: totalEntries ?? allEntries.length }),
+                      label: "",
+                    },
+                    { value: t("hero.words", { count: totalWords }), label: "" },
+                  ]}
+                />
+              }
             />
-          ) : (
-            <>
-              <JournalDayCard entries={allEntries} selectedDate={selectedDate} isToday={isToday} />
-              <View className="gap-3">
-                <View className="flex-row items-center gap-3">
-                  <Text variant="eyebrow">{t("sections.history")}</Text>
-                  <View className="h-px flex-1 bg-border" />
-                  <Text variant="muted" className="text-xs">
-                    {t("hero.entries", { count: allEntries.length })}
-                  </Text>
-                </View>
-                {allEntries.map((entry) => (
-                  <JournalCard key={entry.id} entry={entry} onOpen={openEntry} />
-                ))}
+            <ContentSheet className="px-4">
+              <View className="gap-6">
+                <Button onPress={() => router.push("/tools/journal/new")} className="self-start">
+                  <Icon name="add" className="size-4 text-primary-foreground" />
+                  <Text>{t("cta.new")}</Text>
+                </Button>
+
+                {allEntries.length === 0 ? (
+                  <EmptyState
+                    icon="edit-note"
+                    title={t("list.empty.title")}
+                    description={t("list.empty.description")}
+                    action={{
+                      label: t("list.empty.cta"),
+                      onPress: () => router.push("/tools/journal/new"),
+                    }}
+                  />
+                ) : (
+                  <>
+                    <JournalDayCard
+                      entries={allEntries}
+                      selectedDate={selectedDate}
+                      isToday={isToday}
+                    />
+                    <View className="gap-3">
+                      <View className="flex-row items-center gap-3">
+                        <Text variant="eyebrow">{t("sections.history")}</Text>
+                        <View className="h-px flex-1 bg-border" />
+                        <Text variant="muted" className="text-xs">
+                          {t("hero.entries", { count: allEntries.length })}
+                        </Text>
+                      </View>
+                      {allEntries.map((entry) => (
+                        <JournalCard key={entry.id} entry={entry} onOpen={openEntry} />
+                      ))}
+                    </View>
+                  </>
+                )}
               </View>
-            </>
-          )}
+            </ContentSheet>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </>
