@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { memo, useCallback, useMemo } from "react";
 import { SectionList, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
@@ -9,8 +10,13 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useHabits, useHabitLogs } from "@/src/features/habits/queries";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
+import { roomVariables } from "@/src/lib/module-room";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+
+// The history screen sits inside habits' act room (spec #277): same subtree
+// token re-pour as home and the editor, so habits never flips rooms.
+const ACT_ROOM = roomVariables("act");
 
 // Memoized row so the SectionList only re-renders changed entries (#54 - was nested
 // .map()s in a ScrollView, all 365 capped rows mounting at once on navigation).
@@ -49,6 +55,8 @@ const HabitLogRow = memo(function HabitLogRow({ log, habit }: { log: HabitLog; h
 
 export default function HabitsHistoryScreen() {
   const { t } = useTranslation("habits");
+  const { colorScheme } = useColorScheme();
+  const roomStyle = ACT_ROOM[colorScheme === "dark" ? "dark" : "light"];
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -74,7 +82,11 @@ export default function HabitsHistoryScreen() {
   }, [logs]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
