@@ -79,15 +79,15 @@ export function roomVariables(hue: HueName): Record<ColorSchemeName, ReturnType<
 }
 
 // Per-hue [saturation%, lightness%] field stops for hues the standard recipe
-// can't carry: a light hue (think's yellow, act's green) leaves white ink
-// below AA at the formula's lightness, so its room supplies its own S/L
-// instead. The hue
+// can't carry: a high-luminance hue (think's yellow, act's green, aqua's
+// teal-blue) leaves white ink below AA at the formula's lightness, so its
+// room supplies its own S/L instead. The hue
 // degree still comes from the token source of truth, so a palette retune
 // re-tints overridden fields too. Only the schemes a hue overrides are
 // listed — anything absent falls through to the formula. Floors are
-// enforced by test/room-contrast.test.ts; for think and act, the binding
-// constraint is 88%-white body ink composited over the top stop (≥ 4.5 needs
-// L ≤ ~32% for think, L ≤ ~30% for act's green).
+// enforced by test/room-contrast.test.ts; the binding constraint is
+// 88%-white body ink composited over the top stop (≥ 4.5 needs L ≤ ~32% for
+// think, L ≤ ~30% for act's green, L ≤ ~35% for aqua).
 const FIELD_STOP_OVERRIDES: Partial<
   Record<HueName, Partial<Record<ColorSchemeName, [[number, number], [number, number]]>>>
 > = {
@@ -101,6 +101,12 @@ const FIELD_STOP_OVERRIDES: Partial<
     light: [
       [56, 30],
       [62, 24],
+    ],
+  },
+  aqua: {
+    light: [
+      [56, 34],
+      [62, 26],
     ],
   },
 };

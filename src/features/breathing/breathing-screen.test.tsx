@@ -1,8 +1,10 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import BreathingScreen from "@/app/(app)/tools/breathing/index";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
+import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -120,5 +122,41 @@ describe("Breathing list polish", () => {
   it("shows the empty state for custom exercises", () => {
     renderWithProviders(<BreathingScreen />);
     expect(screen.getByText("You haven't made any yet.")).toBeTruthy();
+  });
+
+  it("renders the aqua room: field header, room pour, and the never-logged subline", () => {
+    renderWithProviders(<BreathingScreen />);
+
+    // Full-bleed aqua field header (Direction B room), not the plain header.
+    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+    // The root carries the aqua room re-pour; a wrong or missing room fails here.
+    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("aqua").light);
+    // No sessions yet → the subline shows the never state.
+    expect(screen.getByText("No sessions logged yet")).toBeTruthy();
+  });
+
+  it("shows the last-session subline when sessions exist", () => {
+    mockUseBreathingSessions.mockReturnValue({
+      data: [
+        {
+          id: "s1",
+          userId: "user-1",
+          exerciseName: "box-breathing",
+          durationMinutes: 2,
+          durationSeconds: 96,
+          cycles: 6,
+          reflection: "",
+          moodAfter: null,
+          feelingAfter: null,
+          completedAt: "2026-05-28T10:00:00Z",
+          createdAt: "2026-05-28T10:00:00Z",
+        },
+      ],
+    } as unknown as ReturnType<typeof useBreathingSessions>);
+
+    renderWithProviders(<BreathingScreen />);
+
+    expect(screen.getByText(/^Last · /)).toBeTruthy();
+    expect(screen.queryByText("No sessions logged yet")).toBeNull();
   });
 });
