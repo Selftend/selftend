@@ -1,7 +1,9 @@
 import { fireEvent, screen } from "@testing-library/react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import BreathingExerciseScreen from "@/app/(app)/tools/breathing/session";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("@/src/lib/accessibility", () => ({
@@ -102,5 +104,15 @@ describe("Breathing cycle runner", () => {
     // The pacer still runs (phase label shows) but steps state without animating.
     expect(screen.getByText("Inhale")).toBeTruthy();
     expect(withTimingSpy).not.toHaveBeenCalled();
+  });
+
+  it("renders the aqua room pour with no field header (session = pour only)", () => {
+    renderWithProviders(<BreathingExerciseScreen />);
+
+    // The root carries the aqua room re-pour; a wrong or missing room fails here.
+    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("aqua").light);
+    // Wave B direction (#301): session screens take the pour only — the
+    // exercise is the hero, no full-bleed field header.
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
   });
 });
