@@ -85,14 +85,29 @@ describe("GroundingHomeScreen", () => {
     expect(router.push).toHaveBeenCalledWith("/tools/grounding/54321");
   });
 
-  it("renders the clay room: field header, room pour, and the never subline", () => {
+  it("renders the clay room: field header and room pour", () => {
     renderWithProviders(<GroundingHomeScreen />);
 
     // Full-bleed clay field header (Direction B room), not the plain header.
     expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the clay room re-pour; a wrong or missing room fails here.
     expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("clay").light);
-    // No sessions yet → the subline shows the neutral never state.
+  });
+
+  it("omits the subline until history has actually loaded", () => {
+    // `data === undefined` means still loading, or a failed fetch with no cache -
+    // claiming "no sessions" there would erase a returning user's real history.
+    renderWithProviders(<GroundingHomeScreen />);
+    expect(screen.queryByText("No sessions logged yet")).toBeNull();
+    expect(screen.queryByText(/^Last · /)).toBeNull();
+  });
+
+  it("shows the never subline once an empty history has loaded", () => {
+    mockUseGroundingSessions.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useGroundingSessions>);
+
+    renderWithProviders(<GroundingHomeScreen />);
     expect(screen.getByText("No sessions logged yet")).toBeTruthy();
   });
 
