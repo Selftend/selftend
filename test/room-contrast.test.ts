@@ -1,3 +1,4 @@
+import { pacerColors } from "@/src/features/breathing/pacer-colors";
 import { fieldGradient, roomTriples } from "@/src/lib/module-room";
 
 // Hues with a validated room recipe. The field recipe holds one S/L formula
@@ -33,9 +34,13 @@ function hslTripleToRgb(triple: string): [number, number, number] {
   return rgb.map((v) => Math.round((v + m) * 255)) as [number, number, number];
 }
 
-/** "hsl(330, 50%, 42%)" (the comma form fieldGradient emits) → rgb. */
+/**
+ * "hsl(330, 50%, 42%)" (the comma form fieldGradient emits) → rgb. Also accepts
+ * the hsla() form hueHsl() emits, but drops the alpha — composite with
+ * compositeOver() when the colour under test is not full-strength.
+ */
 function hslStringToRgb(hsl: string): [number, number, number] {
-  const match = hsl.match(/^hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)$/);
+  const match = hsl.match(/^hsla?\((\d+),\s*(\d+)%,\s*(\d+)%(?:,\s*[\d.]+)?\)$/);
   if (!match) throw new Error(`Unparseable hsl() string: "${hsl}"`);
   return hslTripleToRgb(`${match[1]} ${match[2]}% ${match[3]}%`);
 }
@@ -93,5 +98,21 @@ describe("room surface pairings meet WCAG AA", () => {
       expect(contrastRatio(mutedForeground, background)).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(mutedForeground, card)).toBeGreaterThanOrEqual(4.5);
     }
+  });
+});
+
+describe("the breathing pacer ring reads on the aqua room", () => {
+  // #310 traded the pacer's hardcoded light-mode triple (L 45%) for the aqua
+  // token (L 36%), which is deeper. This floor is why that direction is safe:
+  // the ring is the graphic that carries the breath phase, so WCAG 1.4.11
+  // (non-text contrast, 3:1) applies against the room background it sits on.
+  // The token clears it with room to spare in both schemes; the old literal
+  // only just cleared it in light (3.3:1). The fills and the outer halo are
+  // decorative and deliberately below the floor, so they are not asserted.
+  it.each(["light", "dark"] as const)("the ring clears 3:1 in the %s room", (scheme) => {
+    const background = hslTripleToRgb(roomTriples("aqua")[scheme].background);
+    const ring = hslStringToRgb(pacerColors(scheme === "dark").innerBorder);
+
+    expect(contrastRatio(ring, background)).toBeGreaterThanOrEqual(3);
   });
 });

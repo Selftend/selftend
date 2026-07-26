@@ -31,6 +31,7 @@ import {
   elapsedMinutes,
   cycleSeconds,
 } from "@/src/features/breathing/cycle-math";
+import { PACER_HUE, pacerColors } from "@/src/features/breathing/pacer-colors";
 import { scheduleStateAt } from "@/src/features/breathing/schedule";
 import { resolveBuiltin, useResolvedExercise } from "@/src/features/breathing/resolve-exercise";
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
@@ -166,8 +167,8 @@ export default function BreathingSessionScreen() {
   });
 
   const colorScheme = useAppColorScheme();
-  const roomStyle = useRoomStyle("aqua");
-  const aqua = colorScheme === "dark" ? "196, 58%, 62%" : "196, 52%, 45%";
+  const roomStyle = useRoomStyle(PACER_HUE);
+  const pacer = pacerColors(colorScheme === "dark");
 
   const circleStyle = useAnimatedStyle(() => ({
     width: circleSize.get(),
@@ -175,9 +176,9 @@ export default function BreathingSessionScreen() {
     borderRadius: circleSize.get() / 2,
     // Stays at 1 unless reduced motion steps it per phase in animateForPhase.
     opacity: innerOpacity.get(),
-    backgroundColor: `hsla(${aqua}, 0.22)`,
+    backgroundColor: pacer.innerFill,
     borderWidth: 2,
-    borderColor: `hsl(${aqua})`,
+    borderColor: pacer.innerBorder,
   }));
 
   // The outer ring is a constant size; only the inner circle scales with the breath.
@@ -186,9 +187,9 @@ export default function BreathingSessionScreen() {
     width: OUTER_SIZE,
     height: OUTER_SIZE,
     borderRadius: OUTER_SIZE / 2,
-    backgroundColor: `hsla(${aqua}, 0.1)`,
+    backgroundColor: pacer.outerFill,
     borderWidth: 2,
-    borderColor: `hsla(${aqua}, 0.3)`,
+    borderColor: pacer.outerBorder,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   };
