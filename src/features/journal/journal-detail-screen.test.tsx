@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 
@@ -49,7 +49,7 @@ const entry = {
   updatedAt: "2026-05-24T08:00:00.000Z",
 };
 
-describe("JournalDetailScreen ink room", () => {
+describe("JournalDetailScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseJournalEntries.mockReturnValue({
@@ -85,12 +85,20 @@ describe("JournalDetailScreen ink room", () => {
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/journal/j-1/edit");
   });
 
-  it("opens the delete confirmation", () => {
+  it("deletes the entry and returns to the list after confirming", async () => {
+    const mutateAsync = jest.fn().mockResolvedValue(undefined);
+    mockUseDeleteJournalEntry.mockReturnValue({
+      isPending: false,
+      mutateAsync,
+    } as unknown as ReturnType<typeof useDeleteJournalEntry>);
+
     renderWithProviders(<JournalDetailScreen />);
 
     fireEvent.press(screen.getByText("Delete"));
+    fireEvent.press(screen.getByTestId("confirm-dialog-confirm"));
 
-    expect(screen.getByTestId("confirm-dialog-confirm")).toBeTruthy();
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith("j-1"));
+    expect(mockRouter.replace).toHaveBeenCalledWith("/tools/journal");
   });
 
   it("shows the not-found state on the room pour when the entry is missing", () => {
@@ -101,6 +109,7 @@ describe("JournalDetailScreen ink room", () => {
     const { UNSAFE_getByType } = renderWithProviders(<JournalDetailScreen />);
 
     expect(screen.getByText("We couldn't find that journal entry.")).toBeTruthy();
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("ink").light);
   });
 
@@ -115,6 +124,7 @@ describe("JournalDetailScreen ink room", () => {
 
     const { UNSAFE_getByType } = renderWithProviders(<JournalDetailScreen />);
 
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("ink").light);
   });
 });
