@@ -50,7 +50,11 @@ export default function GroundingHomeScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-4">
           {/* The field + sheet escape the scroll padding so the clay field runs
               edge to edge; the sheet re-adds the inset for its sections. */}
