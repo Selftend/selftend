@@ -2,7 +2,10 @@ import { screen } from "@testing-library/react-native";
 import { Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import GratitudeDetailScreen from "@/src/features/gratitude/gratitude-detail-screen";
+import { roomVariables } from "@/src/lib/module-room";
 import {
   useDeleteGratitudeEntry,
   useGratitudeEntries,
@@ -91,6 +94,13 @@ describe("GratitudeDetailScreen", () => {
       mutateAsync: jest.fn(),
       isPending: false,
     } as unknown as ReturnType<typeof useSetGratitudeEntryStarred>);
+  });
+
+  it("keeps the compact header on the think room pour - no field gradient", () => {
+    const { UNSAFE_getByType } = renderWithProviders(<GratitudeDetailScreen />);
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
+    // The root carries the think room re-pour; a wrong or missing room fails here.
+    expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("think").light);
   });
 
   it("renders the 1st today question and its answer", () => {

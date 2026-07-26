@@ -1,8 +1,11 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import GratitudeListScreen from "@/src/features/gratitude/gratitude-list-screen";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
+import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -50,6 +53,10 @@ describe("GratitudeListScreen", () => {
     expect(screen.getByText("Gratitude")).toBeTruthy();
     expect(screen.getByText("Nothing here yet")).toBeTruthy();
     expect(screen.getByText("Notice something")).toBeTruthy();
+    // The history list keeps its compact header on the think room pour - no field.
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
+    // The root carries the think room re-pour; a wrong or missing room fails here.
+    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("think").light);
   });
 
   it("renders entries as expandable question/answer cards", () => {
