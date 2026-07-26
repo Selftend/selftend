@@ -62,11 +62,15 @@ jobs:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
 
       - name: Set up Supabase CLI
-        # `latest` per research R1: older CLI versions lack the IPv4/Supavisor
-        # pooler handling GitHub runners need.
+        # Pinned, not `latest`: `latest` makes the action resolve the release
+        # through the GitHub API, which got rate-limited and killed two CI jobs
+        # on 2026-07-26 (#264). A concrete version skips that call entirely and
+        # keeps deploys reproducible. Still recent enough for the IPv4/Supavisor
+        # pooler handling GitHub runners need (research R1). Bump deliberately -
+        # test/workflow-supabase-cli-pin.test.ts holds every workflow to one pin.
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
 
       - name: Link production project
         run: supabase link --project-ref "$PRODUCTION_PROJECT_ID"
@@ -120,9 +124,10 @@ jobs:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
 
       - name: Set up Supabase CLI
+        # Pinned, not `latest` - see the migrate-prod job for why (#264).
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
 
       - name: Link production project
         run: supabase link --project-ref "$PRODUCTION_PROJECT_ID"
