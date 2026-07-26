@@ -34,7 +34,7 @@ import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function GratitudeDetailScreen() {
   const { t } = useTranslation("gratitude");
@@ -216,7 +216,9 @@ export default function GratitudeDetailScreen() {
           <Card variant="soft" tint="think">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.loggedAt")}</CardTitle>
-              <CardDescription>{formatLocalTimestamp(entry.loggedAt)}</CardDescription>
+              <CardDescription>
+                {formatAtOffset(entry.loggedAt, entry.loggedOffsetMinutes)}
+              </CardDescription>
             </CardHeader>
           </Card>
         </View>

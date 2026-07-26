@@ -31,8 +31,8 @@ import type { TintToken } from "@/src/lib/design-tokens";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/src/providers/session-provider";
-import { currentDateKey, toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { formatAtOffset } from "@/src/utils/date";
 
 const THEME_TINTS: TintToken[] = ["be", "act", "think", "iris", "ink", "clay"];
 
@@ -57,7 +57,7 @@ export default function GratitudeHomeScreen() {
   // window depends on the current day, so key on todayKey to keep midnight rollover exact.
   const todayKey = currentDateKey();
   const recentList = useMemo(
-    () => allEntries.filter((entry) => toLocalDateKey(entry.loggedAt) === selectedDate).slice(0, 7),
+    () => allEntries.filter((entry) => entry.dayKey === selectedDate).slice(0, 7),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entries, selectedDate],
   );
@@ -79,11 +79,13 @@ export default function GratitudeHomeScreen() {
   const thisWeekCount = frequencyBuckets.slice(-7).reduce((sum, bucket) => sum + bucket.count, 0);
   // ISO timestamps sort lexically, so the max is the latest entry regardless of
   // the list's own ordering.
-  const lastLoggedAt = allEntries.reduce<string | null>(
-    (latest, entry) => (latest === null || entry.loggedAt > latest ? entry.loggedAt : latest),
+  const lastEntry = allEntries.reduce<(typeof allEntries)[number] | null>(
+    (latest, entry) => (latest === null || entry.loggedAt > latest.loggedAt ? entry : latest),
     null,
   );
-  const lastWhen = lastLoggedAt ? formatLocalTimestamp(lastLoggedAt) : null;
+  const lastWhen = lastEntry
+    ? formatAtOffset(lastEntry.loggedAt, lastEntry.loggedOffsetMinutes)
+    : null;
 
   const hasFrequency = frequencyBuckets.some((b) => b.count > 0);
   const frequencyData = hasFrequency

@@ -5,6 +5,7 @@ import { JournalWeekWidget } from "@/src/features/home/widgets/journal-week-widg
 import { useJournalEntries } from "@/src/features/journal/queries";
 import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
@@ -29,6 +30,9 @@ function entry(createdAt: string, body: string) {
     userId: "user-1",
     title: "",
     body,
+    occurredAt: createdAt,
+    occurredOffsetMinutes: null,
+    dayKey: entryDayKey(createdAt, null),
     createdAt,
     updatedAt: createdAt,
   };

@@ -6,6 +6,7 @@ import {
   GRATITUDE_LIFE_ITEM_COUNT,
 } from "@/src/features/gratitude/schemas";
 import type { GratitudeLevel } from "@/src/features/modules/types";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
@@ -21,7 +22,7 @@ interface GratitudeEntryRow {
   item_5?: string | null;
   note: string;
   logged_at: string;
-  logged_offset_minutes?: number;
+  logged_offset_minutes?: number | null;
   created_at: string;
   updated_at: string;
   events: string[] | null;
@@ -59,6 +60,7 @@ function sanitizeLevel(value: number | null): GratitudeLevel {
 }
 
 function mapGratitudeEntry(row: GratitudeEntryRow): GratitudeEntry {
+  const loggedOffsetMinutes = row.logged_offset_minutes ?? null;
   return {
     id: row.id,
     userId: row.user_id,
@@ -69,7 +71,8 @@ function mapGratitudeEntry(row: GratitudeEntryRow): GratitudeEntry {
     ),
     note: row.note,
     loggedAt: row.logged_at,
-    loggedOffsetMinutes: row.logged_offset_minutes ?? 0,
+    loggedOffsetMinutes,
+    dayKey: entryDayKey(row.logged_at, loggedOffsetMinutes),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     events: row.events ?? [],
@@ -188,8 +191,14 @@ export async function saveGratitudeEntry(userId: string, input: GratitudeInput, 
     ...(input.loggedAt
       ? {
           logged_at: input.loggedAt,
+          // `undefined` means the caller never had an opinion (quick-log paths) -
+          // this device, now, is the honest answer. An explicit `null` means the
+          // entry has no captured offset and must keep it, so an unrelated edit
+          // cannot stamp it with wherever the user stands today (#250).
           logged_offset_minutes:
-            input.loggedOffsetMinutes ?? -new Date(input.loggedAt).getTimezoneOffset(),
+            input.loggedOffsetMinutes === undefined
+              ? -new Date(input.loggedAt).getTimezoneOffset()
+              : input.loggedOffsetMinutes,
         }
       : {}),
   };

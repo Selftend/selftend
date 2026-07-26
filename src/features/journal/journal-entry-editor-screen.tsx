@@ -25,7 +25,7 @@ import { JOURNAL_BODY_MAX, JOURNAL_TITLE_MAX } from "@/src/features/journal/sche
 import type { JournalEntry } from "@/src/features/journal/types";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useRoomStyle } from "@/src/lib/use-room-style";
-import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
+import { occurrenceTimeFromDate, type CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -61,7 +61,7 @@ export function JournalEntryEditorScreen({
   const [bodyError, setBodyError] = useState("");
   const bodyInputRef = useRef<TextInput>(null);
   const [occurredAt, setOccurredAt] = useState<string>(() => new Date().toISOString());
-  const [occurredOffsetMinutes, setOccurredOffsetMinutes] = useState(
+  const [occurredOffsetMinutes, setOccurredOffsetMinutes] = useState<CapturedOffsetMinutes>(
     () => occurrenceTimeFromDate().occurredOffsetMinutes,
   );
   const saving = saveMutation.isPending;
@@ -78,10 +78,10 @@ export function JournalEntryEditorScreen({
     setBody(existingEntry.body);
     const restoredOccurredAt = existingEntry.occurredAt ?? existingEntry.createdAt;
     setOccurredAt(restoredOccurredAt);
-    setOccurredOffsetMinutes(
-      existingEntry.occurredOffsetMinutes ??
-        occurrenceTimeFromDate(new Date(restoredOccurredAt)).occurredOffsetMinutes,
-    );
+    // Carry a missing offset through as null rather than deriving one from this
+    // device: an entry whose origin was never recorded must not be re-stamped
+    // with wherever the user happens to be while fixing a typo (#250).
+    setOccurredOffsetMinutes(existingEntry.occurredOffsetMinutes ?? null);
     setError("");
   }, [existingEntry]);
 
@@ -246,10 +246,16 @@ export function JournalEntryEditorScreen({
           <Label>{t("editor.dateLabel")}</Label>
           <DateTimeField
             value={occurredAt}
+            offsetMinutes={occurredOffsetMinutes}
             onChange={(next) => {
-              const occurrence = occurrenceTimeFromDate(new Date(next));
-              setOccurredAt(occurrence.occurredAt);
-              setOccurredOffsetMinutes(occurrence.occurredOffsetMinutes);
+              setOccurredAt(next);
+              // A known offset survives a time correction - the user is restating
+              // when, not where. Only an entry with no captured offset picks one
+              // up here, from the device now doing the restating.
+              setOccurredOffsetMinutes(
+                occurredOffsetMinutes ??
+                  occurrenceTimeFromDate(new Date(next)).occurredOffsetMinutes,
+              );
             }}
             accessibilityLabel={t("editor.dateLabel")}
           />

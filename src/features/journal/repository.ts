@@ -1,4 +1,5 @@
 import type { JournalEntry, JournalInput } from "@/src/features/journal/types";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
@@ -9,19 +10,22 @@ interface JournalEntryRow {
   title: string;
   body: string;
   occurred_at?: string;
-  occurred_offset_minutes?: number;
+  occurred_offset_minutes?: number | null;
   created_at: string;
   updated_at: string;
 }
 
 function mapJournalEntry(row: JournalEntryRow): JournalEntry {
+  const occurredAt = row.occurred_at ?? row.created_at;
+  const occurredOffsetMinutes = row.occurred_offset_minutes ?? null;
   return {
     id: row.id,
     userId: row.user_id,
     title: row.title,
     body: row.body,
-    occurredAt: row.occurred_at ?? row.created_at,
-    occurredOffsetMinutes: row.occurred_offset_minutes ?? 0,
+    occurredAt,
+    occurredOffsetMinutes,
+    dayKey: entryDayKey(occurredAt, occurredOffsetMinutes),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -101,9 +105,14 @@ export async function saveJournalEntry(userId: string, input: JournalInput, entr
     ...((input.occurredAt ?? input.createdAt)
       ? {
           occurred_at: normalizeOccurredAt((input.occurredAt ?? input.createdAt)!),
+          // `undefined` means the caller never had an opinion (quick-log paths) -
+          // this device, now, is the honest answer. An explicit `null` means the
+          // entry has no captured offset and must keep it, so an unrelated edit
+          // cannot stamp it with wherever the user stands today (#250).
           occurred_offset_minutes:
-            input.occurredOffsetMinutes ??
-            -new Date((input.occurredAt ?? input.createdAt)!).getTimezoneOffset(),
+            input.occurredOffsetMinutes === undefined
+              ? -new Date((input.occurredAt ?? input.createdAt)!).getTimezoneOffset()
+              : input.occurredOffsetMinutes,
         }
       : {}),
   };

@@ -7,6 +7,7 @@ import GratitudeListScreen from "@/src/features/gratitude/gratitude-list-screen"
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -75,6 +76,8 @@ describe("GratitudeListScreen", () => {
           starred: false,
           note: "The morning felt steady.",
           loggedAt: "2026-05-24T08:00:00.000Z",
+          loggedOffsetMinutes: null,
+          dayKey: entryDayKey("2026-05-24T08:00:00.000Z", null),
           createdAt: "2026-05-24T08:00:00.000Z",
           updatedAt: "2026-05-24T08:00:00.000Z",
         },
