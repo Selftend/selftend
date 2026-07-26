@@ -2,6 +2,7 @@ import { router, type Href } from "expo-router";
 import { ActivityIndicator, ScrollView, View, type TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -9,8 +10,10 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { announceMessage, politeLiveRegionProps } from "@/src/lib/accessibility";
@@ -22,9 +25,14 @@ import {
 import { JOURNAL_BODY_MAX, JOURNAL_TITLE_MAX } from "@/src/features/journal/schemas";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
+import { roomVariables } from "@/src/lib/module-room";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+
+// Journal is the "ink" room (spec #292): the editor re-pours its surface
+// tokens as deep blue. Static per-scheme styles, computed once.
+const INK_ROOM = roomVariables("ink");
 
 interface JournalEntryEditorScreenProps {
   fallbackHref: Href;
@@ -38,9 +46,11 @@ export function JournalEntryEditorScreen({
   entryId = null,
 }: JournalEntryEditorScreenProps) {
   const { t } = useTranslation("journal");
+  const { colorScheme } = useColorScheme();
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
   const editMode = mode === "edit";
+  const roomStyle = INK_ROOM[colorScheme === "dark" ? "dark" : "light"];
 
   const { data: cachedList } = useJournalEntries(editMode ? (user?.id ?? null) : null, 50);
   const fromCache = entryId ? (cachedList?.find((entry) => entry.id === entryId) ?? null) : null;
@@ -125,7 +135,7 @@ export function JournalEntryEditorScreen({
 
   if (editMode && !fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("editor.editTitle")} />
         </View>
@@ -135,7 +145,11 @@ export function JournalEntryEditorScreen({
 
   if (editMode && !existingEntry) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("editor.editTitle")} />
@@ -146,87 +160,107 @@ export function JournalEntryEditorScreen({
     );
   }
 
-  const heading = editMode ? t("editor.editTitle") : t("editor.createTitle");
-  const description = editMode ? t("editor.editDescription") : t("editor.createDescription");
-
   return (
-    <MobileFormScreen
-      contentClassName="mx-auto w-full max-w-2xl gap-6"
-      footer={
-        <View className="mx-auto w-full max-w-2xl gap-3">
-          {/* The save-failure error lives WITH the pinned Save button: a user
+    // The room wrapper carries the token re-pour; MobileFormScreen's own
+    // bg-background surfaces re-resolve to the ink pour through it.
+    <View className="flex-1" style={roomStyle} testID="journal-editor-room">
+      <MobileFormScreen
+        contentClassName="mx-auto w-full max-w-2xl gap-6"
+        hero={
+          editMode ? undefined : (
+            // Create mode gets the field treatment: the full-bleed ink field
+            // with the sheet lip rising over it, outside the max-width column.
+            <View>
+              <ModuleHomeHeader
+                variant="field"
+                hue="ink"
+                icon="edit-note"
+                title={t("editor.createTitle")}
+                moduleLabel={null}
+                description={t("editor.createDescription")}
+              />
+              <ContentSheet />
+            </View>
+          )
+        }
+        footer={
+          <View className="mx-auto w-full max-w-2xl gap-3">
+            {/* The save-failure error lives WITH the pinned Save button: a user
               saving from the footer while scrolled must see it without hunting
               through the content column. */}
-          {error ? (
-            <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
-              {error}
-            </Text>
-          ) : null}
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button onPress={goBack} variant="ghost">
-                <Text>{t("editor.cancel")}</Text>
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button disabled={saving || !user} onPress={() => void handleSave()}>
-                {saving ? <ActivityIndicator color="#ffffff" /> : null}
-                <Text>{editMode ? t("editor.update") : t("editor.save")}</Text>
-              </Button>
+            {error ? (
+              <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
+                {error}
+              </Text>
+            ) : null}
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <Button onPress={goBack} variant="ghost">
+                  <Text>{t("editor.cancel")}</Text>
+                </Button>
+              </View>
+              <View className="flex-1">
+                <Button disabled={saving || !user} onPress={() => void handleSave()}>
+                  {saving ? <ActivityIndicator color="#ffffff" /> : null}
+                  <Text>{editMode ? t("editor.update") : t("editor.save")}</Text>
+                </Button>
+              </View>
             </View>
           </View>
-        </View>
-      }
-    >
-      <View className="gap-2">
-        <ScreenHeader title={heading} />
-        <Text variant="muted">{description}</Text>
-      </View>
-
-      <View className="gap-2">
-        <Label>{t("editor.titleLabel")}</Label>
-        <Input
-          accessibilityLabel={t("editor.titleLabel")}
-          maxLength={JOURNAL_TITLE_MAX}
-          onChangeText={setTitle}
-          placeholder={t("editor.titlePlaceholder")}
-          value={title}
-        />
-      </View>
-
-      <View className="gap-2">
-        <Label>{t("editor.bodyLabel")}</Label>
-        <Textarea
-          ref={bodyInputRef}
-          accessibilityLabel={t("editor.bodyLabel")}
-          maxLength={JOURNAL_BODY_MAX}
-          onChangeText={(value) => {
-            setBody(value);
-            // The complaint is answered as soon as the user starts typing.
-            if (bodyError) setBodyError("");
-          }}
-          placeholder={t("editor.bodyPlaceholder")}
-          value={body}
-        />
-        {bodyError ? (
-          <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
-            {bodyError}
-          </Text>
+        }
+      >
+        {editMode ? (
+          <View className="gap-2">
+            <ScreenHeader title={t("editor.editTitle")} />
+            <Text variant="muted">{t("editor.editDescription")}</Text>
+          </View>
         ) : null}
-      </View>
 
-      <View className="gap-2">
-        <Label>{t("editor.dateLabel")}</Label>
-        <DateTimeField
-          value={occurredAt}
-          onChange={(next) => {
-            const occurrence = occurrenceTimeFromDate(new Date(next));
-            setOccurredAt(occurrence.occurredAt);
-            setOccurredOffsetMinutes(occurrence.occurredOffsetMinutes);
-          }}
-          accessibilityLabel={t("editor.dateLabel")}
-        />
-      </View>
-    </MobileFormScreen>
+        <View className="gap-2">
+          <Label>{t("editor.titleLabel")}</Label>
+          <Input
+            accessibilityLabel={t("editor.titleLabel")}
+            maxLength={JOURNAL_TITLE_MAX}
+            onChangeText={setTitle}
+            placeholder={t("editor.titlePlaceholder")}
+            value={title}
+          />
+        </View>
+
+        <View className="gap-2">
+          <Label>{t("editor.bodyLabel")}</Label>
+          <Textarea
+            ref={bodyInputRef}
+            accessibilityLabel={t("editor.bodyLabel")}
+            maxLength={JOURNAL_BODY_MAX}
+            onChangeText={(value) => {
+              setBody(value);
+              // The complaint is answered as soon as the user starts typing.
+              if (bodyError) setBodyError("");
+            }}
+            placeholder={t("editor.bodyPlaceholder")}
+            value={body}
+          />
+          {bodyError ? (
+            <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
+              {bodyError}
+            </Text>
+          ) : null}
+        </View>
+
+        <View className="gap-2">
+          <Label>{t("editor.dateLabel")}</Label>
+          <DateTimeField
+            value={occurredAt}
+            onChange={(next) => {
+              const occurrence = occurrenceTimeFromDate(new Date(next));
+              setOccurredAt(occurrence.occurredAt);
+              setOccurredOffsetMinutes(occurrence.occurredOffsetMinutes);
+            }}
+            accessibilityLabel={t("editor.dateLabel")}
+          />
+        </View>
+      </MobileFormScreen>
+    </View>
   );
 }
