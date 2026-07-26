@@ -55,6 +55,31 @@ describe("journal_word_total (integration)", () => {
     expect(Number(total.data)).toBe(6);
   });
 
+  it("trims Unicode whitespace the way String.trim() does, without inflating the count", async () => {
+    // Postgres `\s` matches NBSP / U+2028 / the ideographic space, so trimming with an
+    // ASCII-only set would leave one at the edge for `\s+` to split into an empty element -
+    // two words would count as four. countWords() trims all of them.
+    // Built from code points so the characters survive any editor or encoding round-trip.
+    const nbsp = String.fromCharCode(0x00a0);
+    const lineSeparator = String.fromCharCode(0x2028);
+    const ideographicSpace = String.fromCharCode(0x3000);
+    const bodies = [
+      `${nbsp}hello world${nbsp}`,
+      `${lineSeparator}hello world${lineSeparator}`,
+      `${ideographicSpace}hello world${ideographicSpace}`,
+    ];
+    for (const body of bodies) {
+      const insert = await alice
+        .from("journal_entries")
+        .insert({ user_id: SEED_USERS.alice.id, title: "Pasted", body });
+      expect(insert.error).toBeNull();
+    }
+
+    const total = await alice.rpc("journal_word_total");
+    expect(total.error).toBeNull();
+    expect(Number(total.data)).toBe(6);
+  });
+
   it("counts only the caller's own entries", async () => {
     const mine = await alice.from("journal_entries").insert({
       user_id: SEED_USERS.alice.id,

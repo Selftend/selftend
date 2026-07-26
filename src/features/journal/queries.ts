@@ -48,6 +48,8 @@ export function useJournalEntryCount(userId: string | null) {
   });
 }
 
+// The RPC counts the signed-in user's own entries via auth.uid(), so it takes no argument;
+// `userId` only gates and scopes the cache, exactly as it does for the sibling count hooks.
 export function useJournalWordTotal(userId: string | null) {
   return useQuery({
     queryKey: userId ? journalKeys.wordTotal(userId) : ["journal", "word-total", "anonymous"],
