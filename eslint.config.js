@@ -83,8 +83,8 @@ module.exports = [
     // carry the scheme read and the cached style identity, so screens can't
     // drift back to per-file module consts. Tests are exempt: every room
     // suite imports roomVariables for its pour assertion.
-    files: ["src/features/**/*.tsx", "src/components/**/*.tsx", "app/**/*.tsx"],
-    ignores: ["**/*.test.tsx"],
+    files: ["src/features/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {
       "no-restricted-imports": [
         "error",
