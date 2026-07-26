@@ -14,15 +14,20 @@
 // the token source of truth in src/lib/design-tokens.ts, so a palette retune
 // re-tints every chip.
 
-import { HUE_TRIPLES, PRIMARY_TRIPLES, type TintToken } from "@/src/lib/design-tokens";
+import { TINT_TRIPLES, type TintToken } from "@/src/lib/design-tokens";
 import type { ColorSchemeName } from "@/src/lib/module-room";
 
 export interface ChipTriples {
   /** The chip's surface: a pale (light) / deep (dark) tint of the hue. */
   fill: string;
-  /** The fill's edge. Decorative - state is carried by `ink` and the label. */
+  /**
+   * The fill's resting edge, on a chip whose meaning is already carried in
+   * words. It is a soft tint and does not clear the 3:1 non-text floor against
+   * the room, so anything that encodes *state* by outline alone - a ticked day
+   * cell has no label and no glyph - outlines in `ink` instead.
+   */
   border: string;
-  /** Label and glyph ink on `fill`, and the outline of a selected swatch. */
+  /** Ink on `fill`: labels, glyphs, and any outline that carries state. */
   ink: string;
   /** The hue's published accent, for a swatch that samples the color itself. */
   accent: string;
@@ -37,10 +42,6 @@ const RECIPE: Record<ColorSchemeName, Record<"fill" | "border" | "ink", [number,
   dark: { fill: [30, 24], border: [32, 42], ink: [65, 80] },
 };
 
-function tintTriples(tint: TintToken): Record<ColorSchemeName, string> {
-  return tint === "primary" ? PRIMARY_TRIPLES : HUE_TRIPLES[tint];
-}
-
 /**
  * The leading hue degree of a tint token, e.g. "clay" → 20, "primary" → 262.
  * The light triple is the reference for both schemes: a scheme pair is the
@@ -48,7 +49,7 @@ function tintTriples(tint: TintToken): Record<ColorSchemeName, string> {
  * hue), so a chip stays one color across the theme toggle.
  */
 export function tintDegree(tint: TintToken): number {
-  return Number.parseInt(tintTriples(tint).light, 10);
+  return Number.parseInt(TINT_TRIPLES[tint].light, 10);
 }
 
 /**
@@ -57,7 +58,7 @@ export function tintDegree(tint: TintToken): number {
  */
 export function chipTriples(tint: TintToken): Record<ColorSchemeName, ChipTriples> {
   const h = tintDegree(tint);
-  const accent = tintTriples(tint);
+  const accent = TINT_TRIPLES[tint];
   const stops = (scheme: ColorSchemeName): ChipTriples => ({
     fill: `${h} ${RECIPE[scheme].fill[0]}% ${RECIPE[scheme].fill[1]}%`,
     border: `${h} ${RECIPE[scheme].border[0]}% ${RECIPE[scheme].border[1]}%`,

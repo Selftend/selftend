@@ -56,16 +56,19 @@ describe("the habits feature never hardcodes a raw palette color", () => {
   // Tailwind palette literal is a drift from that by definition.
   const RAW_PALETTE =
     /\b(?:bg|text|border|ring|fill|stroke|from|via|to)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/;
-  const featureDir = join(__dirname);
+  function sourceFiles(dir: string): string[] {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) return sourceFiles(path);
+      return /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name) ? [path] : [];
+    });
+  }
 
-  it("src/features/habits/* uses no Tailwind palette literals", () => {
-    const files = readdirSync(featureDir).filter(
-      (file) => /\.tsx?$/.test(file) && !/\.test\.tsx?$/.test(file),
-    );
+  it("src/features/habits/** uses no Tailwind palette literals", () => {
+    const files = sourceFiles(__dirname);
     expect(files.length).toBeGreaterThan(0);
     for (const file of files) {
-      const source = readFileSync(join(featureDir, file), "utf8");
-      expect(source).not.toMatch(RAW_PALETTE);
+      expect(readFileSync(file, "utf8")).not.toMatch(RAW_PALETTE);
     }
   });
 });

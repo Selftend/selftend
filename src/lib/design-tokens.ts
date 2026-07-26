@@ -41,6 +41,17 @@ export const TINT_TOKENS = [
 
 export type TintToken = (typeof TINT_TOKENS)[number];
 
+/**
+ * Every tint's raw triples in one map, so consumers that accept a TintToken
+ * don't each carry their own `tint === "primary" ? PRIMARY_TRIPLES : ...`
+ * branch (src/features/mindfulness/exercise-hue.ts already spells this shape
+ * out for its stripe colors).
+ */
+export const TINT_TRIPLES: Record<TintToken, SchemeTriples> = {
+  primary: PRIMARY_TRIPLES,
+  ...HUE_TRIPLES,
+};
+
 // The app-wide 5-step score/quality encoding: background classes at the same
 // alphas as RAMP_ALPHAS in src/features/mindfulness/exercise-hue.ts (hueRamp,
 // which feeds the heatmap) — test/hue-ramp-classes.test.ts enforces the match.

@@ -288,7 +288,10 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
   const tickedToday = isTickedOn(logs, habit.id, todayStr);
   const days = lastSevenDays();
   const chip = useHabitChipPalette()[habit.color];
-  const tickedStyle = { backgroundColor: chip.fill, borderColor: chip.border };
+  // Ticked is encoded by color alone on the week strip - no label, no glyph -
+  // so the outline has to be the stop certified against the room (WCAG 1.4.11),
+  // not the soft resting border. The tick box shares it for one silhouette.
+  const tickedStyle = { backgroundColor: chip.fill, borderColor: chip.ink };
 
   return (
     <View className="gap-3 rounded-2xl border border-border bg-card p-4">

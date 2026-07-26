@@ -247,11 +247,12 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
             const scheduled = isScheduledOn(habit, day);
             const isToday = dayStr === todayStr;
             const isFuture = day.getTime() > today.getTime();
-            // Today's primary ring outranks the habit's own border, so a
-            // ticked-today cell takes the fill from the chip and leaves the
-            // border to the class below.
+            // A ticked cell carries no label or glyph, so its outline is the
+            // chip ink - the stop certified against the room surface (WCAG
+            // 1.4.11). Today's primary ring outranks it, so a ticked-today cell
+            // takes only the fill and leaves the border to the class below.
             const tickedStyle = ticked
-              ? { backgroundColor: chip.fill, ...(isToday ? null : { borderColor: chip.border }) }
+              ? { backgroundColor: chip.fill, ...(isToday ? null : { borderColor: chip.ink }) }
               : undefined;
             return (
               <Pressable
