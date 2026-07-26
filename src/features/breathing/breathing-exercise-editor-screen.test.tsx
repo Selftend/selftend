@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 
 import { BreathingExerciseEditorScreen } from "@/src/features/breathing/breathing-exercise-editor-screen";
 import { BREATHING_EXERCISE_COLORS } from "@/src/features/breathing/exercise-types";
+import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 const mockSave = jest.fn().mockResolvedValue({ id: "e-1" });
@@ -53,5 +54,26 @@ describe("BreathingExerciseEditorScreen", () => {
     const checked = screen.getAllByRole("radio", { checked: true });
     expect(checked).toHaveLength(1);
     expect(checked[0]).toBe(radios[2]);
+  });
+
+  it("renders the aqua room with the field header in create mode", () => {
+    renderWithProviders(<BreathingExerciseEditorScreen exerciseId={null} />);
+
+    // The room wrapper carries the aqua re-pour; a wrong or missing room fails here.
+    expect(screen.getByTestId("breathing-editor-room").props.style).toEqual(
+      roomVariables("aqua").light,
+    );
+    // Create mode gets the full-bleed aqua field (Direction B create-editor rule).
+    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+  });
+
+  it("renders the plain aqua pour without a field in edit mode", () => {
+    renderWithProviders(<BreathingExerciseEditorScreen exerciseId="e-1" />);
+
+    expect(screen.getByTestId("breathing-editor-room").props.style).toEqual(
+      roomVariables("aqua").light,
+    );
+    // Edit mode is a plain-pour sub-surface — no field header.
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
   });
 });
