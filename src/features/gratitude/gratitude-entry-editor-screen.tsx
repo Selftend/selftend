@@ -2,9 +2,12 @@ import { router, type Href } from "expo-router";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
@@ -31,6 +34,7 @@ import {
   asQuestionList,
 } from "@/src/features/gratitude/questions";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
+import { roomVariables } from "@/src/lib/module-room";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
@@ -45,12 +49,18 @@ interface GratitudeEntryEditorScreenProps {
 const EMPTY_ITEMS = Array.from({ length: GRATITUDE_ITEM_COUNT }, () => "");
 const EMPTY_LIFE_ITEMS = Array.from({ length: GRATITUDE_LIFE_ITEM_COUNT }, () => "");
 
+// The editor lives in gratitude's think room (spec #267): same subtree token
+// re-pour as the landing, so gratitude never flips rooms.
+const THINK_ROOM = roomVariables("think");
+
 export function GratitudeEntryEditorScreen({
   fallbackHref,
   mode,
   entryId = null,
 }: GratitudeEntryEditorScreenProps) {
   const { t } = useTranslation("gratitude");
+  const { colorScheme } = useColorScheme();
+  const roomStyle = THINK_ROOM[colorScheme === "dark" ? "dark" : "light"];
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
   const editMode = mode === "edit";
@@ -153,7 +163,7 @@ export function GratitudeEntryEditorScreen({
 
   if (editMode && !fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("editor.editTitle")} />
         </View>
@@ -163,7 +173,11 @@ export function GratitudeEntryEditorScreen({
 
   if (editMode && !existingEntry) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("editor.editTitle")} />
@@ -175,92 +189,113 @@ export function GratitudeEntryEditorScreen({
   }
 
   return (
-    <MobileFormScreen
-      contentClassName="mx-auto w-full max-w-2xl gap-6"
-      footer={
-        <View className="mx-auto w-full max-w-2xl flex-row gap-3">
-          <View className="flex-1">
-            <Button onPress={goBack} variant="ghost">
-              <Text>{t("editor.cancel")}</Text>
-            </Button>
+    // The room wrapper carries the token re-pour; MobileFormScreen's own
+    // bg-background surfaces re-resolve to the think pour through it.
+    <View className="flex-1" style={roomStyle}>
+      <MobileFormScreen
+        contentClassName="mx-auto w-full max-w-2xl gap-6"
+        hero={
+          editMode ? undefined : (
+            // Create mode gets the field treatment: the full-bleed gold field
+            // with the sheet lip rising over it, outside the max-width column.
+            <View>
+              <ModuleHomeHeader
+                variant="field"
+                hue="think"
+                icon="favorite"
+                title={t("editor.createTitle")}
+                moduleLabel={null}
+                description={t("editor.createDescription")}
+              />
+              <ContentSheet />
+            </View>
+          )
+        }
+        footer={
+          <View className="mx-auto w-full max-w-2xl flex-row gap-3">
+            <View className="flex-1">
+              <Button onPress={goBack} variant="ghost">
+                <Text>{t("editor.cancel")}</Text>
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button disabled={!canSave} onPress={() => void handleSave()}>
+                {saving ? <ActivityIndicator color="#ffffff" /> : null}
+                <Text>{editMode ? t("editor.update") : t("editor.save")}</Text>
+              </Button>
+            </View>
           </View>
-          <View className="flex-1">
-            <Button disabled={!canSave} onPress={() => void handleSave()}>
-              {saving ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{editMode ? t("editor.update") : t("editor.save")}</Text>
-            </Button>
+        }
+      >
+        {editMode ? (
+          <View className="gap-2">
+            <ScreenHeader title={t("editor.editTitle")} />
+            <Text variant="muted">{t("editor.editDescription")}</Text>
           </View>
+        ) : null}
+
+        <View className="gap-4">
+          <Label>{t("editor.todayItemsLabel")}</Label>
+          {items.map((item, index) => (
+            <View className="gap-2" key={index}>
+              <Label>{todayQuestions[index] ?? ""}</Label>
+              <Input
+                accessibilityLabel={
+                  todayQuestions[index] ?? t("editor.itemLabel", { number: index + 1 })
+                }
+                maxLength={GRATITUDE_ITEM_MAX}
+                onChangeText={(value) => updateItem(index, value)}
+                placeholder={t("editor.itemPlaceholder")}
+                value={item}
+              />
+            </View>
+          ))}
         </View>
-      }
-    >
-      <View className="gap-2">
-        <ScreenHeader title={editMode ? t("editor.editTitle") : t("editor.createTitle")} />
-        <Text variant="muted">
-          {editMode ? t("editor.editDescription") : t("editor.createDescription")}
-        </Text>
-      </View>
 
-      <View className="gap-4">
-        <Label>{t("editor.todayItemsLabel")}</Label>
-        {items.map((item, index) => (
-          <View className="gap-2" key={index}>
-            <Label>{todayQuestions[index] ?? ""}</Label>
-            <Input
-              accessibilityLabel={
-                todayQuestions[index] ?? t("editor.itemLabel", { number: index + 1 })
-              }
-              maxLength={GRATITUDE_ITEM_MAX}
-              onChangeText={(value) => updateItem(index, value)}
-              placeholder={t("editor.itemPlaceholder")}
-              value={item}
-            />
-          </View>
-        ))}
-      </View>
+        <View className="gap-4">
+          <Label>{t("editor.lifeItemsLabel")}</Label>
+          {lifeItems.map((item, index) => (
+            <View className="gap-2" key={index}>
+              <Label>{lifeQuestions[index] ?? ""}</Label>
+              <Input
+                accessibilityLabel={
+                  lifeQuestions[index] ?? t("editor.lifeItemLabel", { number: index + 1 })
+                }
+                maxLength={GRATITUDE_ITEM_MAX}
+                onChangeText={(value) => updateLifeItem(index, value)}
+                placeholder={t("editor.lifeItemPlaceholder")}
+                value={item}
+              />
+            </View>
+          ))}
+        </View>
 
-      <View className="gap-4">
-        <Label>{t("editor.lifeItemsLabel")}</Label>
-        {lifeItems.map((item, index) => (
-          <View className="gap-2" key={index}>
-            <Label>{lifeQuestions[index] ?? ""}</Label>
-            <Input
-              accessibilityLabel={
-                lifeQuestions[index] ?? t("editor.lifeItemLabel", { number: index + 1 })
-              }
-              maxLength={GRATITUDE_ITEM_MAX}
-              onChangeText={(value) => updateLifeItem(index, value)}
-              placeholder={t("editor.lifeItemPlaceholder")}
-              value={item}
-            />
-          </View>
-        ))}
-      </View>
+        <View className="gap-2">
+          <Label>{t("editor.whenLabel")}</Label>
+          <DateTimeField
+            value={loggedAt}
+            onChange={(next) => {
+              const occurrence = occurrenceTimeFromDate(new Date(next));
+              setLoggedAt(occurrence.occurredAt);
+              setLoggedOffsetMinutes(occurrence.occurredOffsetMinutes);
+            }}
+            accessibilityLabel={t("editor.whenLabel")}
+          />
+        </View>
 
-      <View className="gap-2">
-        <Label>{t("editor.whenLabel")}</Label>
-        <DateTimeField
-          value={loggedAt}
-          onChange={(next) => {
-            const occurrence = occurrenceTimeFromDate(new Date(next));
-            setLoggedAt(occurrence.occurredAt);
-            setLoggedOffsetMinutes(occurrence.occurredOffsetMinutes);
-          }}
-          accessibilityLabel={t("editor.whenLabel")}
-        />
-      </View>
+        <View className="gap-2">
+          <Label>{t("editor.noteLabel")}</Label>
+          <Textarea
+            accessibilityLabel={t("editor.noteLabel")}
+            maxLength={GRATITUDE_NOTE_MAX}
+            onChangeText={setNote}
+            placeholder={t("editor.notePlaceholder")}
+            value={note}
+          />
+        </View>
 
-      <View className="gap-2">
-        <Label>{t("editor.noteLabel")}</Label>
-        <Textarea
-          accessibilityLabel={t("editor.noteLabel")}
-          maxLength={GRATITUDE_NOTE_MAX}
-          onChangeText={setNote}
-          placeholder={t("editor.notePlaceholder")}
-          value={note}
-        />
-      </View>
-
-      {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
-    </MobileFormScreen>
+        {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
+      </MobileFormScreen>
+    </View>
   );
 }
