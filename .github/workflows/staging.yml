@@ -60,11 +60,14 @@ jobs:
 
       - name: Set up Supabase CLI
         # Pinned, not `latest`: `latest` makes the action resolve the release
-        # through the GitHub API, which got rate-limited and killed two CI jobs
-        # on 2026-07-26 (#264). A concrete version skips that call entirely and
-        # keeps deploys reproducible. Still recent enough for the IPv4/Supavisor
-        # pooler handling GitHub runners need (research R1). Bump deliberately -
-        # test/workflow-supabase-cli-pin.test.ts holds every workflow to one pin.
+        # through the GitHub releases API, which got rate-limited and killed two
+        # CI jobs on 2026-07-26 (#264). A concrete version skips that call
+        # entirely and keeps deploys reproducible. 2.109.1 is what `latest`
+        # itself resolved to on that date, so research R1 (older CLI versions
+        # lack the IPv4/Supavisor pooler handling GitHub runners need) is not
+        # regressed - this is the same CLI the green runs already used. Bump
+        # deliberately - test/workflow-supabase-cli-pin.test.ts holds every
+        # workflow to one concrete pin.
         uses: supabase/setup-cli@v1
         with:
           version: 2.109.1
