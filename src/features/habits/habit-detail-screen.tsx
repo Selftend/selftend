@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
@@ -22,8 +23,13 @@ import {
 import { addDays, isScheduledOn, isTickedOn, localDateKey } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { spaceKeyActivationProps } from "@/src/lib/accessibility";
+import { roomVariables } from "@/src/lib/module-room";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
+
+// The detail screen sits inside habits' act room (spec #277): same subtree
+// token re-pour as home and the editor, so habits never flips rooms.
+const ACT_ROOM = roomVariables("act");
 
 const CALENDAR_WEEKS = 12;
 
@@ -33,6 +39,8 @@ interface HabitDetailScreenProps {
 
 export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
   const { t } = useTranslation("habits");
+  const { colorScheme } = useColorScheme();
+  const roomStyle = ACT_ROOM[colorScheme === "dark" ? "dark" : "light"];
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -50,7 +58,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("home.title")} />
         </View>
@@ -60,7 +68,11 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
 
   if (!habit) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("home.title")} />
@@ -102,7 +114,11 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
 
   return (
     <>
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow gap-6 p-6">
           <View className="gap-2">
             <ScreenHeader
