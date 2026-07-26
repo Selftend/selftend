@@ -143,6 +143,7 @@ describe("HabitDetailScreen act room", () => {
 
     const { UNSAFE_getByType } = renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("act").light);
   });
 
@@ -155,6 +156,7 @@ describe("HabitDetailScreen act room", () => {
     const { UNSAFE_getByType } = renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
     expect(screen.getByText("We couldn't find that habit.")).toBeTruthy();
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("act").light);
   });
 });
