@@ -1,8 +1,10 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import JournalListScreen from "@/src/features/journal/journal-list-screen";
 import { useJournalEntries } from "@/src/features/journal/queries";
+import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -186,6 +188,33 @@ describe("JournalListScreen", () => {
     // updatedAt max is today (2026-05-28); the index-0 created_at is yesterday.
     expect(screen.getByText("Last · Today")).toBeTruthy();
     expect(screen.queryByText("Last · Yesterday")).toBeNull();
+  });
+
+  it("renders the ink field header with both stats and the subline on the room pour", () => {
+    mockUseJournalEntries.mockReturnValue({
+      data: [
+        {
+          id: "j-1",
+          userId: "user-1",
+          title: "Quiet morning",
+          body: "Five words of journal body.",
+          createdAt: "2026-05-24T08:00:00.000Z",
+          updatedAt: "2026-05-28T11:00:00.000Z",
+        },
+      ],
+    } as unknown as ReturnType<typeof useJournalEntries>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    // Full-bleed ink field header (Direction B room), not the plain header.
+    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+    // The root carries the ink room re-pour; a wrong or missing room fails here.
+    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("ink").light);
+    // The existing two stats + "Last ·" subline ride on-field unchanged. Counts
+    // also appear in the history divider / entry cards, hence getAllByText.
+    expect(screen.getAllByText("1 entry").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("5 words").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Last · Today")).toBeTruthy();
   });
 
   it("routes to /tools/journal/new when the CTA is pressed", () => {
