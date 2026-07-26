@@ -1,14 +1,17 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import HabitsHomeScreen from "./habits-home-screen";
 import { useHabitLogs, useHabits, useToggleHabitLog } from "@/src/features/habits/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { currentDateKey } from "@/src/features/habits/scheduling";
+import type { HabitLog } from "@/src/features/habits/types";
 import {
   useUpdateShownButtonTours,
   useUpdateUserPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
+import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -58,63 +61,112 @@ const mockUseHabitLogs = useHabitLogs as jest.MockedFunction<typeof useHabitLogs
 const mockUseToggleHabitLog = useToggleHabitLog as jest.MockedFunction<typeof useToggleHabitLog>;
 const mockUseSelectedDate = useSelectedDate as jest.MockedFunction<typeof useSelectedDate>;
 
-describe("HabitsHomeScreen tap-to-tick", () => {
-  const toggleMutate = jest.fn();
+const toggleMutate = jest.fn();
 
+function habitLog(overrides: Partial<HabitLog> = {}): HabitLog {
+  return {
+    id: "log-1",
+    userId: "user-1",
+    habitId: "h-1",
+    loggedOn: currentDateKey(),
+    note: "",
+    createdAt: "2026-05-01T08:00:00.000Z",
+    updatedAt: "2026-05-01T08:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function mockDefaults() {
+  mockUseSelectedDate.mockReturnValue({
+    selectedDate: currentDateKey(),
+    isToday: true,
+  });
+
+  mockUseUserPreferences.mockReturnValue({
+    data: { ...defaultUserPreferences, habitsOnboardingCompleted: true },
+    isLoading: false,
+  } as unknown as ReturnType<typeof useUserPreferences>);
+
+  mockUseUpdateUserPreferences.mockReturnValue({
+    isPending: false,
+    mutateAsync: jest.fn(),
+  } as unknown as ReturnType<typeof useUpdateUserPreferences>);
+  mockUseUpdateShownButtonTours.mockReturnValue({
+    isPending: false,
+    mutateAsync: jest.fn(),
+  } as unknown as ReturnType<typeof useUpdateShownButtonTours>);
+
+  mockUseHabits.mockReturnValue({
+    data: [
+      {
+        id: "h-1",
+        userId: "user-1",
+        name: "Read",
+        kind: "build",
+        identity: "I'm a reader",
+        cuePlan: "",
+        stackAfter: "",
+        cravingPairing: "",
+        twoMinuteVersion: "Read one page",
+        rewardNote: "",
+        cadence: "daily",
+        customDays: [],
+        color: "primary",
+        archivedAt: null,
+        createdAt: "2026-05-01T08:00:00.000Z",
+        updatedAt: "2026-05-01T08:00:00.000Z",
+      },
+    ],
+    isLoading: false,
+  } as unknown as ReturnType<typeof useHabits>);
+
+  mockUseHabitLogs.mockReturnValue({
+    data: [],
+  } as unknown as ReturnType<typeof useHabitLogs>);
+
+  mockUseToggleHabitLog.mockReturnValue({
+    isPending: false,
+    mutate: toggleMutate,
+  } as unknown as ReturnType<typeof useToggleHabitLog>);
+}
+
+describe("HabitsHomeScreen act room", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockDefaults();
+  });
 
-    mockUseSelectedDate.mockReturnValue({
-      selectedDate: currentDateKey(),
-      isToday: true,
-    });
+  it("renders the act field header with stats, eyebrow, and empty-state subline on the room pour", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
 
-    mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, habitsOnboardingCompleted: true },
-      isLoading: false,
-    } as unknown as ReturnType<typeof useUserPreferences>);
+    expect(await screen.findByRole("heading", { name: "Habits" })).toBeTruthy();
+    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+    // The root carries the act room re-pour; a wrong or missing room fails here.
+    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("act").light);
+    // Both existing stats and the author credit migrate onto the field.
+    expect(screen.getByText("0/1")).toBeTruthy();
+    expect(screen.getByText("1 active habit")).toBeTruthy();
+    expect(screen.getByText("Inspired by Atomic Habits · James Clear")).toBeTruthy();
+    // Calm muted subline when nothing is ticked - never a shame state.
+    expect(screen.getByText("No ticks yet")).toBeTruthy();
+  });
 
-    mockUseUpdateUserPreferences.mockReturnValue({
-      isPending: false,
-      mutateAsync: jest.fn(),
-    } as unknown as ReturnType<typeof useUpdateUserPreferences>);
-    mockUseUpdateShownButtonTours.mockReturnValue({
-      isPending: false,
-      mutateAsync: jest.fn(),
-    } as unknown as ReturnType<typeof useUpdateShownButtonTours>);
-
-    mockUseHabits.mockReturnValue({
-      data: [
-        {
-          id: "h-1",
-          userId: "user-1",
-          name: "Read",
-          kind: "build",
-          identity: "I'm a reader",
-          cuePlan: "",
-          stackAfter: "",
-          cravingPairing: "",
-          twoMinuteVersion: "Read one page",
-          rewardNote: "",
-          cadence: "daily",
-          customDays: [],
-          color: "primary",
-          archivedAt: null,
-          createdAt: "2026-05-01T08:00:00.000Z",
-          updatedAt: "2026-05-01T08:00:00.000Z",
-        },
-      ],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useHabits>);
-
+  it("shows the relative last-tick subline when a tick exists", async () => {
     mockUseHabitLogs.mockReturnValue({
-      data: [],
+      data: [habitLog()],
     } as unknown as ReturnType<typeof useHabitLogs>);
 
-    mockUseToggleHabitLog.mockReturnValue({
-      isPending: false,
-      mutate: toggleMutate,
-    } as unknown as ReturnType<typeof useToggleHabitLog>);
+    renderWithProviders(<HabitsHomeScreen />);
+
+    expect(await screen.findByText("Last tick · Today")).toBeTruthy();
+    expect(screen.queryByText("No ticks yet")).toBeNull();
+  });
+});
+
+describe("HabitsHomeScreen tap-to-tick", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
   });
 
   it("calls toggleHabitLog with the selected date when the tick is pressed", async () => {
