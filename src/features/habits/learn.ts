@@ -1,4 +1,5 @@
 import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import type { HabitColor } from "@/src/features/habits/types";
 
 type HabitsLearnSlug =
   | "compounding"
@@ -15,7 +16,8 @@ type HabitsLearnSlug =
 export interface HabitsLearnCard {
   slug: HabitsLearnSlug;
   icon: MaterialIconName;
-  tone: "primary" | "be" | "act" | "amber" | "emerald" | "violet" | "rose";
+  /** Resolved through HABIT_COLOR_TINTS, same as a habit's own color. */
+  tone: HabitColor;
 }
 
 /**

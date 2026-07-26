@@ -26,13 +26,6 @@ jest.mock("expo-router", () => ({
   usePathname: () => "/tools/habits/h-1",
 }));
 
-// The screen only needs colorChipClass; stubbing the home-screen module keeps
-// its heavy import graph (onboarding modal → settings queries → supabase
-// client) out of this suite.
-jest.mock("@/src/features/habits/habits-home-screen", () => ({
-  colorChipClass: () => ({ bg: "bg-act/20", border: "border-act/40", text: "text-act" }),
-}));
-
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));

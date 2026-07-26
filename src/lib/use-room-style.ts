@@ -18,7 +18,11 @@ import { roomCardHsl, roomVariables, type ColorSchemeName } from "@/src/lib/modu
 const VARS = new Map<HueName, ReturnType<typeof roomVariables>>();
 const CARD = new Map<HueName, ReturnType<typeof roomCardHsl>>();
 
-function useScheme(): ColorSchemeName {
+/**
+ * The scheme read every hue-derived style shares — nativewind's reader,
+ * normalized to the two names the recipe modules key on.
+ */
+export function useColorSchemeName(): ColorSchemeName {
   const { colorScheme } = useColorScheme();
   return colorScheme === "dark" ? "dark" : "light";
 }
@@ -29,7 +33,7 @@ function useScheme(): ColorSchemeName {
  * memoized subtrees aren't invalidated by parent re-renders.
  */
 export function useRoomStyle(hue: HueName): ReturnType<typeof roomVariables>[ColorSchemeName] {
-  const scheme = useScheme();
+  const scheme = useColorSchemeName();
   let vars = VARS.get(hue);
   if (!vars) {
     vars = roomVariables(hue);
@@ -44,7 +48,7 @@ export function useRoomStyle(hue: HueName): ReturnType<typeof roomVariables>[Col
  * bg-card resolves to inside the room.
  */
 export function useRoomCardHsl(hue: HueName): string {
-  const scheme = useScheme();
+  const scheme = useColorSchemeName();
   let card = CARD.get(hue);
   if (!card) {
     card = roomCardHsl(hue);
