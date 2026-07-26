@@ -43,8 +43,14 @@ import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/set
 import { useAppColorScheme } from "@/src/lib/color-scheme";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useSaveBreathingSession } from "@/src/features/breathing/queries";
+import { roomVariables } from "@/src/lib/module-room";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+
+// Breathing is the "aqua" room (spec #305). Session screens take the pour
+// only — no field header — so the exercise stays the hero (Wave B direction,
+// #301). Static per-scheme styles, computed once.
+const AQUA_ROOM = roomVariables("aqua");
 
 type ScreenPhase = "intro" | "preroll" | "active";
 
@@ -165,6 +171,7 @@ export default function BreathingSessionScreen() {
   });
 
   const colorScheme = useAppColorScheme();
+  const roomStyle = AQUA_ROOM[colorScheme];
   const aqua = colorScheme === "dark" ? "196, 58%, 62%" : "196, 52%, 45%";
 
   const circleStyle = useAnimatedStyle(() => ({
@@ -324,7 +331,7 @@ export default function BreathingSessionScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("breathing.title")} />
         </View>
@@ -334,7 +341,7 @@ export default function BreathingSessionScreen() {
 
   if (!resolved || notFound) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center p-6">
           <Text variant="h2">{t("breathing.notFound")}</Text>
         </View>
@@ -383,7 +390,7 @@ export default function BreathingSessionScreen() {
   const phaseLabelKey = currentPhase ? (`breathing.phases.${currentPhase.label}` as const) : null;
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
