@@ -50,7 +50,7 @@ describe("buildTimeline", () => {
 
   it("appends the recovery-plan item and sorts all items chronologically", () => {
     const sources: RecoverySources = {
-      moodLogs: [{ loggedAt: "2026-06-01T12:00:00.000Z" }],
+      moodLogs: [{ loggedAt: "2026-06-01T12:00:00.000Z", dayKey: "2026-06-01" }],
       goals: [{ createdAt: "2026-04-01T12:00:00.000Z", status: "active" }],
     };
     const result = buildTimeline(sources, { createdAt: "2026-05-01T12:00:00.000Z" });

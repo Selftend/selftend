@@ -1,5 +1,4 @@
 import type { RecoverySources } from "@/src/features/recovery/sources";
-import { toLocalDateKey } from "@/src/stores/selected-date-store";
 
 export interface RecoveryStat {
   key:
@@ -9,7 +8,9 @@ export interface RecoveryStat {
 
 export function computeRecoveryStats(sources: RecoverySources): RecoveryStat[] {
   const { activities, exposureItems, goals, moodLogs, thoughtRecords } = sources;
-  const moodDays = new Set((moodLogs ?? []).map((log) => toLocalDateKey(log.loggedAt)));
+  // Distinct days the user checked in on, counted by the civil day captured with
+  // each log — travel must not merge two days into one or split one into two.
+  const moodDays = new Set((moodLogs ?? []).map((log) => log.dayKey));
 
   return [
     { key: "thoughtRecords", value: thoughtRecords?.length ?? 0 },

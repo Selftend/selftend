@@ -33,7 +33,7 @@ import {
   spaceKeyActivationProps,
 } from "@/src/lib/accessibility";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
-import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
+import { occurrenceTimeFromDate, type CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
 import { parseBodyChips, toggleBodyChip } from "@/src/features/mood/body-sensations";
 import { useCompleteActivity } from "@/src/features/activities/queries";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
@@ -147,7 +147,7 @@ export function MoodEntryEditorScreen({
   const [emotions, setEmotions] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [loggedAt, setLoggedAt] = useState<string>(() => new Date().toISOString());
-  const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState(
+  const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState<CapturedOffsetMinutes>(
     () => occurrenceTimeFromDate().occurredOffsetMinutes,
   );
   const [error, setError] = useState("");
@@ -176,10 +176,10 @@ export function MoodEntryEditorScreen({
     setEmotions(existingEntry.emotions);
     setNotes(existingEntry.notes);
     setLoggedAt(existingEntry.loggedAt);
-    setLoggedOffsetMinutes(
-      existingEntry.loggedOffsetMinutes ??
-        occurrenceTimeFromDate(new Date(existingEntry.loggedAt)).occurredOffsetMinutes,
-    );
+    // Carry a missing offset through as null rather than deriving one from this
+    // device: an entry whose origin was never recorded must not be re-stamped
+    // with wherever the user happens to be while fixing a typo (#250).
+    setLoggedOffsetMinutes(existingEntry.loggedOffsetMinutes);
     setSituation(existingEntry.situation);
     setThoughts(existingEntry.thoughts);
     setBehaviours(existingEntry.behaviours);
@@ -426,10 +426,15 @@ export function MoodEntryEditorScreen({
           <Label>{t("mood.loggedAtLabel")}</Label>
           <DateTimeField
             value={loggedAt}
+            offsetMinutes={loggedOffsetMinutes}
             onChange={(next) => {
-              const occurrence = occurrenceTimeFromDate(new Date(next));
-              setLoggedAt(occurrence.occurredAt);
-              setLoggedOffsetMinutes(occurrence.occurredOffsetMinutes);
+              setLoggedAt(next);
+              // A known offset survives a time correction - the user is restating
+              // when, not where. Only an entry with no captured offset picks one
+              // up here, from the device now doing the restating.
+              setLoggedOffsetMinutes(
+                loggedOffsetMinutes ?? occurrenceTimeFromDate(new Date(next)).occurredOffsetMinutes,
+              );
             }}
             accessibilityLabel={t("mood.loggedAtLabel")}
           />

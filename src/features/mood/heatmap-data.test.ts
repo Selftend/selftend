@@ -3,10 +3,6 @@ import { buildMoodHeatmapWeeks } from "@/src/features/mood/heatmap-data";
 // Fixed "today": Saturday 2026-07-25 (a known date, independent of the run clock).
 const NOW = new Date(2026, 6, 25, 15, 0, 0);
 
-function localIso(dateKey: string, time = "12:00:00") {
-  return new Date(`${dateKey}T${time}`).toISOString();
-}
-
 describe("buildMoodHeatmapWeeks", () => {
   it("returns no weeks without any points", () => {
     expect(buildMoodHeatmapWeeks(undefined, "en", NOW)).toEqual([]);
@@ -16,8 +12,8 @@ describe("buildMoodHeatmapWeeks", () => {
   it("lays out Monday-start week columns from the first entry's week through today", () => {
     const weeks = buildMoodHeatmapWeeks(
       [
-        { loggedAt: localIso("2026-07-01"), moodScore: 4 },
-        { loggedAt: localIso("2026-07-25"), moodScore: 3 },
+        { dayKey: "2026-07-01", moodScore: 4 },
+        { dayKey: "2026-07-25", moodScore: 3 },
       ],
       "en",
       NOW,
@@ -39,9 +35,9 @@ describe("buildMoodHeatmapWeeks", () => {
   it("averages same-day points and rounds to the nearest 1-5 score", () => {
     const weeks = buildMoodHeatmapWeeks(
       [
-        { loggedAt: localIso("2026-07-20", "09:00:00"), moodScore: 4 },
-        { loggedAt: localIso("2026-07-20", "18:00:00"), moodScore: 5 },
-        { loggedAt: localIso("2026-07-21"), moodScore: 2 },
+        { dayKey: "2026-07-20", moodScore: 4 },
+        { dayKey: "2026-07-20", moodScore: 5 },
+        { dayKey: "2026-07-21", moodScore: 2 },
       ],
       "en",
       NOW,
@@ -53,11 +49,7 @@ describe("buildMoodHeatmapWeeks", () => {
   });
 
   it("labels the first week and every week containing the 1st of a month", () => {
-    const weeks = buildMoodHeatmapWeeks(
-      [{ loggedAt: localIso("2026-06-10"), moodScore: 3 }],
-      "en",
-      NOW,
-    );
+    const weeks = buildMoodHeatmapWeeks([{ dayKey: "2026-06-10", moodScore: 3 }], "en", NOW);
 
     // Weeks: Jun 8, 15, 22, 29 (contains Jul 1), Jul 6, 13, 20.
     expect(weeks).toHaveLength(7);
@@ -66,5 +58,23 @@ describe("buildMoodHeatmapWeeks", () => {
     expect(weeks[2].monthLabel).toBeNull();
     expect(weeks[3].monthLabel).toBe("Jul");
     expect(weeks[4].monthLabel).toBeNull();
+  });
+
+  // Log at 08:00 in Tokyo (UTC+9), fly to Los Angeles: it is still the previous
+  // day where you land, so the entry's captured day sits *ahead* of the viewer's
+  // today. Clamping the grid at today would delete it from the heatmap entirely.
+  it("extends past today to cover an entry captured east of the viewer", () => {
+    const weeks = buildMoodHeatmapWeeks(
+      [
+        { dayKey: "2026-07-25", moodScore: 3 },
+        { dayKey: "2026-07-26", moodScore: 5 },
+      ],
+      "en",
+      NOW,
+    );
+
+    const lastWeek = weeks[weeks.length - 1];
+    expect(lastWeek.days[5]).toEqual({ dateKey: "2026-07-25", score: 3 });
+    expect(lastWeek.days[6]).toEqual({ dateKey: "2026-07-26", score: 5 });
   });
 });

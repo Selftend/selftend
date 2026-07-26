@@ -1,49 +1,51 @@
 import { buildMoodChartData, buildMoodChartDataForRange } from "@/src/features/mood/chart-data";
+import { addDaysToKey, localDateKey } from "@/src/utils/date";
 
-function isoAtLocal(daysAgo: number, hour = 12) {
-  const date = new Date();
-  date.setHours(hour, 0, 0, 0);
-  date.setDate(date.getDate() - daysAgo);
-  return date.toISOString();
+// Fixed "today" so the trailing-window tests do not drift with the run clock.
+const NOW = new Date(2026, 6, 25, 15, 0, 0);
+const TODAY = localDateKey(NOW);
+
+function dayKeyAgo(daysAgo: number) {
+  return addDaysToKey(TODAY, -daysAgo);
 }
 
 describe("buildMoodChartData", () => {
   it("returns empty array for undefined or empty input", () => {
-    expect(buildMoodChartData(undefined, 14)).toEqual([]);
-    expect(buildMoodChartData([], 14)).toEqual([]);
+    expect(buildMoodChartData(undefined, 14, "en", NOW)).toEqual([]);
+    expect(buildMoodChartData([], 14, "en", NOW)).toEqual([]);
   });
 
   it("returns empty array when days is non-positive", () => {
-    const logs = [{ loggedAt: isoAtLocal(0), moodScore: 3 }];
-    expect(buildMoodChartData(logs, 0)).toEqual([]);
+    const logs = [{ dayKey: dayKeyAgo(0), moodScore: 3 }];
+    expect(buildMoodChartData(logs, 0, "en", NOW)).toEqual([]);
   });
 
   it("averages same-day logs into a single point", () => {
     const logs = [
-      { loggedAt: isoAtLocal(0, 9), moodScore: 2 },
-      { loggedAt: isoAtLocal(0, 18), moodScore: 4 },
+      { dayKey: dayKeyAgo(0), moodScore: 2 },
+      { dayKey: dayKeyAgo(0), moodScore: 4 },
     ];
-    const points = buildMoodChartData(logs, 7);
+    const points = buildMoodChartData(logs, 7, "en", NOW);
     expect(points).toHaveLength(1);
     expect(points[0].score).toBe(3);
   });
 
   it("orders points chronologically (oldest first)", () => {
     const logs = [
-      { loggedAt: isoAtLocal(0), moodScore: 4 },
-      { loggedAt: isoAtLocal(2), moodScore: 3 },
-      { loggedAt: isoAtLocal(4), moodScore: 5 },
+      { dayKey: dayKeyAgo(0), moodScore: 4 },
+      { dayKey: dayKeyAgo(2), moodScore: 3 },
+      { dayKey: dayKeyAgo(4), moodScore: 5 },
     ];
-    const scores = buildMoodChartData(logs, 7).map((p) => p.score);
+    const scores = buildMoodChartData(logs, 7, "en", NOW).map((p) => p.score);
     expect(scores).toEqual([5, 3, 4]);
   });
 
   it("skips days outside the requested window", () => {
     const logs = [
-      { loggedAt: isoAtLocal(0), moodScore: 4 },
-      { loggedAt: isoAtLocal(30), moodScore: 2 },
+      { dayKey: dayKeyAgo(0), moodScore: 4 },
+      { dayKey: dayKeyAgo(30), moodScore: 2 },
     ];
-    const points = buildMoodChartData(logs, 7);
+    const points = buildMoodChartData(logs, 7, "en", NOW);
     expect(points).toHaveLength(1);
     expect(points[0].score).toBe(4);
   });
@@ -52,10 +54,10 @@ describe("buildMoodChartData", () => {
     // Day 0 and day 7 fall on the same weekday; weekday-name labels would collide, hiding
     // that they are two different days. Locale-aware date labels must stay distinct.
     const logs = [
-      { loggedAt: isoAtLocal(0), moodScore: 3 },
-      { loggedAt: isoAtLocal(7), moodScore: 4 },
+      { dayKey: dayKeyAgo(0), moodScore: 3 },
+      { dayKey: dayKeyAgo(7), moodScore: 4 },
     ];
-    const labels = buildMoodChartData(logs, 14).map((p) => p.day);
+    const labels = buildMoodChartData(logs, 14, "en", NOW).map((p) => p.day);
     expect(labels).toHaveLength(2);
     expect(labels.every((l) => l.length > 0)).toBe(true);
     expect(new Set(labels).size).toBe(labels.length);
@@ -64,9 +66,9 @@ describe("buildMoodChartData", () => {
   it("assigns offsets by real position in an explicit date range", () => {
     // Fixed 30-day range 2026-03-03..2026-04-01: entries on the first day, day 15, last day.
     const logs = [
-      { loggedAt: "2026-03-03T09:00:00", moodScore: 4 },
-      { loggedAt: "2026-03-18T12:00:00", moodScore: 3 },
-      { loggedAt: "2026-04-01T20:00:00", moodScore: 5 },
+      { dayKey: "2026-03-03", moodScore: 4 },
+      { dayKey: "2026-03-18", moodScore: 3 },
+      { dayKey: "2026-04-01", moodScore: 5 },
     ];
     const pts = buildMoodChartDataForRange(logs, "2026-03-03", "2026-04-01");
     expect(pts).toHaveLength(3);
@@ -78,9 +80,9 @@ describe("buildMoodChartData", () => {
 
   it("excludes samples before the range start and after the range end", () => {
     const logs = [
-      { loggedAt: "2026-03-02T23:00:00", moodScore: 1 },
-      { loggedAt: "2026-03-10T10:00:00", moodScore: 4 },
-      { loggedAt: "2026-04-02T00:30:00", moodScore: 1 },
+      { dayKey: "2026-03-02", moodScore: 1 },
+      { dayKey: "2026-03-10", moodScore: 4 },
+      { dayKey: "2026-04-02", moodScore: 1 },
     ];
     const pts = buildMoodChartDataForRange(logs, "2026-03-03", "2026-04-01");
     expect(pts).toHaveLength(1);
@@ -89,8 +91,8 @@ describe("buildMoodChartData", () => {
 
   it("averages same-day logs and centers a single-day range at offset 0", () => {
     const logs = [
-      { loggedAt: "2026-03-10T09:00:00", moodScore: 2 },
-      { loggedAt: "2026-03-10T18:00:00", moodScore: 5 },
+      { dayKey: "2026-03-10", moodScore: 2 },
+      { dayKey: "2026-03-10", moodScore: 5 },
     ];
     const pts = buildMoodChartDataForRange(logs, "2026-03-10", "2026-03-10");
     expect(pts).toHaveLength(1);
@@ -99,7 +101,7 @@ describe("buildMoodChartData", () => {
   });
 
   it("returns empty for an inverted or empty range", () => {
-    const logs = [{ loggedAt: "2026-03-10T09:00:00", moodScore: 2 }];
+    const logs = [{ dayKey: "2026-03-10", moodScore: 2 }];
     expect(buildMoodChartDataForRange(logs, "2026-04-01", "2026-03-03")).toEqual([]);
     expect(buildMoodChartDataForRange([], "2026-03-03", "2026-04-01")).toEqual([]);
     expect(buildMoodChartDataForRange(undefined, "2026-03-03", "2026-04-01")).toEqual([]);
@@ -107,19 +109,29 @@ describe("buildMoodChartData", () => {
 
   it("assigns offsets by real position in the window, not by index", () => {
     // window = 14 days ending today; entries 13 days ago, 1 day ago, today
-    const now = Date.now();
-    const day = 24 * 60 * 60 * 1000;
     const logs = [
-      { loggedAt: new Date(now - 13 * day).toISOString(), moodScore: 4 },
-      { loggedAt: new Date(now - 1 * day).toISOString(), moodScore: 3 },
-      { loggedAt: new Date(now).toISOString(), moodScore: 5 },
+      { dayKey: dayKeyAgo(13), moodScore: 4 },
+      { dayKey: dayKeyAgo(1), moodScore: 3 },
+      { dayKey: dayKeyAgo(0), moodScore: 5 },
     ];
-    const pts = buildMoodChartData(logs, 14);
+    const pts = buildMoodChartData(logs, 14, "en", NOW);
     expect(pts).toHaveLength(3);
     // oldest entry is window start (dayIndex 0), today is dayIndex 13; denominator = 13
     expect(pts[0].offset).toBeCloseTo(0 / 13, 5); // 13 days ago = window start
     expect(pts[2].offset).toBeCloseTo(1, 5); // today
     expect(pts[2].offset - pts[1].offset).toBeCloseTo(1 / 13, 5); // 1-day gap is small
     expect(pts[1].offset - pts[0].offset).toBeGreaterThan(0.8); // 12-day gap is large
+  });
+
+  // The window ends at today OR at a later captured day, so an entry logged east
+  // of the viewer is not clipped off the right-hand edge of the trend.
+  it("extends the trailing window to include a day captured ahead of today", () => {
+    const logs = [
+      { dayKey: dayKeyAgo(0), moodScore: 3 },
+      { dayKey: addDaysToKey(TODAY, 1), moodScore: 5 },
+    ];
+    const pts = buildMoodChartData(logs, 7, "en", NOW);
+    expect(pts.map((p) => p.score)).toEqual([3, 5]);
+    expect(pts[pts.length - 1].offset).toBeCloseTo(1, 5);
   });
 });

@@ -7,14 +7,14 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { MoodScale } from "@/src/components/app/mood-scale";
 import { useMoodLogs } from "@/src/features/mood/queries";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function MoodCheckinWidget({ userId }: { userId: string }) {
   const { t, i18n } = useTranslation("navigation");
   const { selectedDate: todayKey } = useSelectedDate();
   const { data: moodLogs } = useMoodLogs(userId, 30);
 
-  const todayLogs = (moodLogs ?? []).filter((l) => toLocalDateKey(l.loggedAt) === todayKey);
+  const todayLogs = (moodLogs ?? []).filter((l) => l.dayKey === todayKey);
   const moodToday = todayLogs.length > 0 ? todayLogs[0].moodScore : null;
   const lastTime =
     todayLogs.length > 0

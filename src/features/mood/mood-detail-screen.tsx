@@ -25,7 +25,7 @@ import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import { formatAtOffset } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { scoreToneClass } from "@/src/features/mood/score-tone";
@@ -148,7 +148,7 @@ export default function MoodDetailScreen() {
               <CardTitle>{t("detail.loggedAt")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Text>{formatLocalTimestamp(entry.loggedAt)}</Text>
+              <Text>{formatAtOffset(entry.loggedAt, entry.loggedOffsetMinutes)}</Text>
             </CardContent>
           </Card>
 

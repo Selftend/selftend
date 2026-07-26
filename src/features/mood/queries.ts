@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   countMoodLogs,
   deleteMoodLog,
-  getFirstMoodLogDate,
+  getFirstMoodDayKey,
   getMoodLog,
   listMoodLogs,
   listMoodScorePoints,
@@ -61,11 +61,11 @@ export function useMoodScorePoints(userId: string | null, fromIso: string, toIso
   });
 }
 
-/** Earliest log timestamp — the lower clamp for the custom trend range picker. */
-export function useFirstMoodLogDate(userId: string | null) {
+/** Earliest logged civil day — the lower clamp for the custom trend range picker. */
+export function useFirstMoodDayKey(userId: string | null) {
   return useQuery({
     queryKey: userId ? moodKeys.firstLogDate(userId) : ["mood", "firstLogDate", "anonymous"],
-    queryFn: () => getFirstMoodLogDate(userId!),
+    queryFn: () => getFirstMoodDayKey(userId!),
     enabled: Boolean(userId),
   });
 }
