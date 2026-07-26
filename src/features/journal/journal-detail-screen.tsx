@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -24,13 +25,20 @@ import {
   useJournalEntry,
 } from "@/src/features/journal/queries";
 import type { JournalEntry } from "@/src/features/journal/types";
+import { roomVariables } from "@/src/lib/module-room";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatLocalTimestamp } from "@/src/utils/date";
 
+// Journal is the "ink" room (spec #292): the detail screen re-pours its
+// surface tokens as deep blue. Static per-scheme styles, computed once.
+const INK_ROOM = roomVariables("ink");
+
 export default function JournalDetailScreen() {
   const { t, i18n } = useTranslation("journal");
+  const { colorScheme } = useColorScheme();
   const { user } = useSession();
+  const roomStyle = INK_ROOM[colorScheme === "dark" ? "dark" : "light"];
   const { id } = useLocalSearchParams<{ id: string }>();
   const entryId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
@@ -49,7 +57,7 @@ export default function JournalDetailScreen() {
 
   if (!fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("detail.title")} />
         </View>
@@ -59,7 +67,11 @@ export default function JournalDetailScreen() {
 
   if (!entry) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -98,7 +110,11 @@ export default function JournalDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
@@ -119,13 +135,13 @@ export default function JournalDetailScreen() {
             </View>
           </View>
 
-          <Card>
+          <Card variant="soft" tint="ink">
             <CardContent>
               <Text className="text-base leading-6">{entry.body}</Text>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="soft" tint="ink">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.createdAt")}</CardTitle>
               <CardDescription>{createdAtLabel}</CardDescription>
