@@ -2,10 +2,10 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { Badge } from "@/src/components/react-native-reusables/badge";
@@ -76,7 +76,7 @@ export function ModuleHomeHeader({
   variant = "hero",
 }: ModuleHomeHeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
-  const { colorScheme } = useColorScheme();
+  const isDark = useColorSchemeName() === "dark";
 
   const notificationsAction = actions.find(
     (a): a is NotificationsAction => a.type === "notifications",
@@ -126,7 +126,7 @@ export function ModuleHomeHeader({
       <View className="relative overflow-hidden px-5 pb-10 pt-4">
         <LinearGradient
           testID="module-field-gradient"
-          colors={fieldGradient(hue, colorScheme === "dark")}
+          colors={fieldGradient(hue, isDark)}
           start={{ x: 0, y: 0 }}
           end={{ x: 0.08, y: 1 }}
           style={StyleSheet.absoluteFill}

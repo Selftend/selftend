@@ -1,10 +1,10 @@
 // Per-family subpath, not the "@expo/vector-icons" barrel (which bundles all 15 families).
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useColorScheme } from "nativewind";
 import { Platform, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
@@ -30,8 +30,7 @@ export function GetTheAppSection({
   appStoreUrl = appEnv.appStoreUrl,
 }: GetTheAppSectionProps) {
   const { t } = useTranslation("navigation");
-  const { colorScheme } = useColorScheme();
-  const iconColor = colorScheme === "dark" ? "#fafafa" : "#0a0a0a";
+  const iconColor = useColorSchemeName() === "dark" ? "#fafafa" : "#0a0a0a";
 
   // Store referral is a web-only surface: advertising the Android app inside
   // the Android app (or iOS inside iOS) is noise.

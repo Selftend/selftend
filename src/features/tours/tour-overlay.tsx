@@ -9,9 +9,9 @@ import {
   type ViewStyle,
 } from "react-native";
 import { Portal } from "@rn-primitives/portal";
-import { useColorScheme } from "nativewind";
 
 import { Text } from "@/src/components/react-native-reusables/text";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { POPOVER_COLOR } from "@/lib/theme";
 
@@ -53,10 +53,10 @@ export function TourOverlay({
   onDismiss,
   onDismissAll,
 }: TourOverlayProps): React.JSX.Element {
-  const { colorScheme } = useColorScheme();
+  const colorScheme = useColorSchemeName();
   const reduceMotionEnabled = useReduceMotionEnabled();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const cardColor = POPOVER_COLOR[colorScheme ?? "dark"];
+  const cardColor = POPOVER_COLOR[colorScheme];
 
   const spotLeft = targetRect.x - SPOTLIGHT_PADDING;
   const spotTop = targetRect.y - SPOTLIGHT_PADDING;

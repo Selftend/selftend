@@ -2,12 +2,12 @@ import { Link } from "expo-router";
 
 // Per-family subpath, not the "@expo/vector-icons" barrel (which bundles all 15 families).
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useColorScheme } from "nativewind";
 import { Image, Pressable, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { UserMenu } from "@/src/components/app/user-menu";
@@ -25,7 +25,6 @@ interface AppHeaderProps {
 export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
   const { t } = useTranslation("navigation");
   const { session } = useSession();
-  const { colorScheme } = useColorScheme();
   const { width } = useWindowDimensions();
   // Same condition as the sidebar-vs-hamburger switch (AppShell/ProtectedLayout):
   // community links live in the header only where the sidebar does. On mobile
@@ -33,7 +32,7 @@ export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
   // dropdown's social row instead (#92).
   const isDesktop = width >= DESKTOP_BREAKPOINT;
   const isSignedIn = Boolean(session);
-  const iconColor = colorScheme === "dark" ? "#fafafa" : "#0a0a0a";
+  const iconColor = useColorSchemeName() === "dark" ? "#fafafa" : "#0a0a0a";
   const navTargetRef = useTourTargetRef("home-navigation");
 
   return (
