@@ -7,7 +7,6 @@ import { renderWithProviders } from "@/test/render-with-providers";
 // The strip always shows the last 7 LOCAL days ending today; local-noon
 // timestamps keep the derivation deterministic in any timezone.
 const dayKeys = lastNDayKeys(7);
-const noonOn = (dayKey: string) => `${dayKey}T12:00:00`;
 
 const daily: RoutineSchedule = { cadence: "daily", customDays: [] };
 
@@ -18,7 +17,7 @@ describe("RoutineDayStrip", () => {
       <RoutineDayStrip
         steps={[{ toolId: "mood" }]}
         records={{
-          moodLogs: [{ loggedAt: noonOn(dayKeys[5]) }, { loggedAt: noonOn(dayKeys[3]) }],
+          moodLogs: [{ dayKey: dayKeys[5] }, { dayKey: dayKeys[3] }],
         }}
         schedule={daily}
       />,
@@ -33,7 +32,7 @@ describe("RoutineDayStrip", () => {
     renderWithProviders(
       <RoutineDayStrip
         steps={[{ toolId: "mood" }]}
-        records={{ moodLogs: [{ loggedAt: noonOn(dayKeys[5]) }] }}
+        records={{ moodLogs: [{ dayKey: dayKeys[5] }] }}
         schedule={daily}
       />,
     );
@@ -51,7 +50,7 @@ describe("RoutineDayStrip", () => {
     renderWithProviders(
       <RoutineDayStrip
         steps={[{ toolId: "mood" }, { toolId: "journal" }]}
-        records={{ moodLogs: [{ loggedAt: noonOn(dayKeys[6]) }] }}
+        records={{ moodLogs: [{ dayKey: dayKeys[6] }] }}
         schedule={daily}
       />,
     );
@@ -97,7 +96,7 @@ describe("RoutineDayStrip", () => {
     renderWithProviders(
       <RoutineDayStrip
         steps={[{ toolId: "mood" }]}
-        records={{ moodLogs: [{ loggedAt: noonOn(dayKeys[5]) }] }}
+        records={{ moodLogs: [{ dayKey: dayKeys[5] }] }}
         schedule={{ cadence: "on-demand", customDays: [] }}
       />,
     );
