@@ -7,8 +7,9 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
-import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { cn } from "@/lib/utils";
 import { obstacleTagsForStage } from "@/src/features/meditation/obstacles";
 import {
@@ -22,6 +23,7 @@ import type {
   StageNumber,
 } from "@/src/features/meditation/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, toggleButtonStateProps } from "@/src/lib/accessibility";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
@@ -101,28 +103,45 @@ export default function MeditationSessionLogScreen() {
   const showDistraction = currentStage === 4 || currentStage === 6;
   const availableObstacleTags = obstacleTagsForStage(currentStage);
 
-  return (
-    <MobileFormScreen
-      footer={
-        <View className="gap-2">
-          <Button onPress={() => void handleSave(false)} disabled={saveMutation.isPending}>
-            <Text>{t("module.session.save")}</Text>
-          </Button>
-          <Button
-            onPress={() => void handleSave(true)}
-            variant="ghost"
-            disabled={saveMutation.isPending}
-          >
-            <Text>{t("module.session.skip")}</Text>
-          </Button>
-        </View>
-      }
-    >
-      <View className="gap-6">
-        <ScreenHeader title={t("module.session.title")} titleVariant="h2" />
+  const roomStyle = useRoomStyle("iris");
 
+  return (
+    // The room wrapper carries the token re-pour; MobileFormScreen's own
+    // bg-background surfaces re-resolve to the iris pour through it.
+    <View className="flex-1" style={roomStyle} testID="meditation-session-log-room">
+      <MobileFormScreen
+        hero={
+          // The field rides as the screen's hero with the sheet lip rising over
+          // it - the shipped editor pattern (#307). It carries the title, so the
+          // in-content ScreenHeader is gone rather than doubling it up.
+          <View>
+            <ModuleHomeHeader
+              variant="field"
+              hue="iris"
+              icon="self-improvement"
+              title={t("module.session.title")}
+              moduleLabel={null}
+            />
+            <ContentSheet />
+          </View>
+        }
+        footer={
+          <View className="gap-2">
+            <Button onPress={() => void handleSave(false)} disabled={saveMutation.isPending}>
+              <Text>{t("module.session.save")}</Text>
+            </Button>
+            <Button
+              onPress={() => void handleSave(true)}
+              variant="ghost"
+              disabled={saveMutation.isPending}
+            >
+              <Text>{t("module.session.skip")}</Text>
+            </Button>
+          </View>
+        }
+      >
         <View className="gap-4">
-          <Card className="border-primary/30 bg-primary/5">
+          <Card variant="soft" tint="iris">
             <CardContent className="gap-1 pt-6">
               <CardTitle>{t("complete.title")}</CardTitle>
               <Text variant="muted">{t("complete.subtitle", { count: durationMinutes })}</Text>
@@ -345,7 +364,7 @@ export default function MeditationSessionLogScreen() {
             />
           </View>
         </View>
-      </View>
-    </MobileFormScreen>
+      </MobileFormScreen>
+    </View>
   );
 }

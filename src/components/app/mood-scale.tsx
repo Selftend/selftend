@@ -1,12 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useColorScheme } from "nativewind";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { hueHsl } from "@/src/features/mindfulness/exercise-hue";
 import { useRovingFocus } from "@/src/lib/roving-focus";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 interface MoodScaleProps {
   value: number | null;
@@ -53,8 +53,7 @@ export const MOOD_EMOJI_BY_SCORE: Record<number, string> = STEPS.reduce(
 
 export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) {
   const { t } = useTranslation("mood");
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = useColorSchemeName() === "dark";
   const selectedIndex = STEPS.findIndex((step) => step.score === value);
   const roving = useRovingFocus({
     count: STEPS.length,

@@ -200,6 +200,10 @@ export interface WidgetData {
   defusionLogs: { createdAt: string; techniqueUsed: string }[];
   moodLogCount: number | null;
   gratitudeEntryCount: number | null;
+  /** Exact lifetime journal totals, both null until the server counts arrive (#323);
+   *  the journal-week card falls back to its loaded entries while they are. */
+  journalEntryCount: number | null;
+  journalWordTotal: number | null;
   programmes?: Record<
     "cbt" | "act",
     {
