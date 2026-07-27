@@ -169,6 +169,10 @@ export async function updatePassword(newPassword: string) {
 export async function resendVerificationEmail(email: string) {
   const client = requireSupabase();
   const { error } = await client.auth.resend({
+    // `signup` here is NOT the type deprecated on the verifyOtp docs page. `resend` takes a
+    // different, narrower enum - `Extract<EmailOtpType, "signup" | "email_change">` - in which
+    // `email` is not spellable at all, so this call site cannot move even in principle. See
+    // the note in `callback.ts` for why the verify side deliberately stays on `signup` too.
     type: "signup",
     email,
     options: {
