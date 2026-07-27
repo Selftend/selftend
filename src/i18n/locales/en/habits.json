@@ -87,11 +87,11 @@
     "colors": {
       "primary": "Purple",
       "be": "Pink",
-      "act": "Teal",
+      "act": "Green",
       "amber": "Amber",
-      "emerald": "Emerald",
+      "emerald": "Teal",
       "violet": "Violet",
-      "rose": "Rose"
+      "rose": "Clay"
     },
     "weekday": {
       "0": "Sun",

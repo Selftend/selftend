@@ -79,11 +79,20 @@ jobs:
         run: npm ci
 
       - name: Set up Supabase CLI
+        # Pinned, not `latest`: `latest` makes the action resolve the release
+        # through the GitHub releases API, which got rate-limited and killed two
+        # CI jobs on 2026-07-26 (#264) before any test ran. A concrete version
+        # skips that call entirely and keeps CI reproducible. 2.109.1 is what
+        # `latest` itself resolved to on that date, so this pins the behaviour
+        # the green runs already had rather than reverting to an older CLI.
+        # Bump deliberately - test/workflow-supabase-cli-pin.test.ts holds every
+        # workflow to one concrete pin.
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
 
       - name: Start local Supabase
+        id: supabase-start
         # Skip services no test touches (verified: no realtime channels, no
         # edge-function invocations, no image transforms in src/ or test/;
         # studio/meta/logflare/vector are dashboard & telemetry plumbing).
@@ -98,7 +107,13 @@ jobs:
         run: npm run test:integration
 
       - name: Stop local Supabase
-        if: always()
+        # `always()` alone ran this even when CLI setup failed, so `supabase` was
+        # not on PATH and cleanup died with a bare exit 127 that buried the real
+        # error (#264). Checked positively rather than as `!= 'skipped'`: a step
+        # that never ran may report `skipped` or no value at all, so only an
+        # explicit success/failure pair proves it executed. `failure` is included
+        # because a start that ran and failed may still have containers up.
+        if: always() && (steps.supabase-start.outcome == 'success' || steps.supabase-start.outcome == 'failure')
         run: supabase stop
 
   e2e:
@@ -124,11 +139,13 @@ jobs:
         run: npm ci
 
       - name: Set up Supabase CLI
+        # Pinned, not `latest` - see the integration job for why (#264).
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
 
       - name: Start local Supabase
+        id: supabase-start
         # Same exclusions as the integration job (see the comment there).
         run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,postgres-meta,realtime
 
@@ -166,5 +183,6 @@ jobs:
           retention-days: 7
 
       - name: Stop local Supabase
-        if: always()
+        # Guarded, not a bare `always()` - see the integration job for why (#264).
+        if: always() && (steps.supabase-start.outcome == 'success' || steps.supabase-start.outcome == 'failure')
         run: supabase stop
