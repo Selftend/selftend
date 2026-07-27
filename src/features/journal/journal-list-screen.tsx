@@ -16,7 +16,11 @@ import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
 import { countWords } from "@/src/features/journal/word-count";
 import { JournalCard } from "@/src/features/journal/journal-card";
 import { JournalDayCard } from "@/src/features/journal/journal-day-card";
-import { useJournalEntries, useJournalEntryCount } from "@/src/features/journal/queries";
+import {
+  useJournalEntries,
+  useJournalEntryCount,
+  useJournalWordTotal,
+} from "@/src/features/journal/queries";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
@@ -29,9 +33,11 @@ export default function JournalListScreen() {
   const { selectedDate, isToday } = useSelectedDate();
 
   const { data: entries } = useJournalEntries(userId, 50);
-  // Exact lifetime total for the hero - the list is capped at 50, so its length would
-  // freeze the displayed entry count. (Word count stays a recent-entries figure.)
+  // Exact lifetime totals for the hero - the list is capped at 50, so its length and its
+  // body word sum would both freeze once a user passes the cap. Both stats are counted
+  // server-side; the loaded entries only stand in until those numbers arrive.
   const { data: totalEntries } = useJournalEntryCount(userId);
+  const { data: totalWords } = useJournalWordTotal(userId);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
@@ -40,7 +46,7 @@ export default function JournalListScreen() {
   // Memoize the body word-count (up to ~1 MB of text across 50 entries) and the
   // last-activity scan so they don't recompute on every render - notably every
   // parent render. Pure functions of `entries`.
-  const totalWords = useMemo(
+  const loadedWords = useMemo(
     () => allEntries.reduce((sum, entry) => sum + countWords(entry.body), 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entries],
@@ -103,7 +109,7 @@ export default function JournalListScreen() {
                       value: t("hero.entries", { count: totalEntries ?? allEntries.length }),
                       label: "",
                     },
-                    { value: t("hero.words", { count: totalWords }), label: "" },
+                    { value: t("hero.words", { count: totalWords ?? loadedWords }), label: "" },
                   ]}
                 />
               }
