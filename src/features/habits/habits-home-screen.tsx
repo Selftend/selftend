@@ -90,6 +90,14 @@ export default function HabitsHomeScreen() {
   const twoMinuteAdoption = getTwoMinuteAdoption(allHabits);
   const lastTickedOn = latestLogs?.[0]?.loggedOn ?? null;
   const lastWhen = lastTickedOn ? formatMoodRelativeTime(`${lastTickedOn}T12:00:00`, t) : null;
+  // `latestLogs` is undefined while loading and after a failed fetch with no
+  // cache - only an actually-loaded (possibly empty) history may claim "no
+  // ticks yet", or a returning user's history reads as erased.
+  const subline = lastWhen
+    ? t("stats.last", { when: lastWhen })
+    : latestLogs
+      ? t("stats.never")
+      : undefined;
 
   function handleToggle(habitId: string) {
     toggleLog.mutate({ habitId, loggedOn: todayStr });
@@ -143,7 +151,7 @@ export default function HabitsHomeScreen() {
                     { value: `${todayTicked}/${todayHabits.length}`, label: t("hero.today") },
                     { value: t("hero.habits", { count: allHabits.length }), label: "" },
                   ]}
-                  subline={lastWhen ? t("stats.last", { when: lastWhen }) : t("stats.never")}
+                  subline={subline}
                   sublineTone={lastWhen ? "accent" : "muted"}
                 />
               }

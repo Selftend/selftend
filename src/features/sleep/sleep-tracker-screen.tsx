@@ -58,6 +58,14 @@ export default function SleepTrackerScreen() {
     null,
   );
   const lastWhen = lastLog ? formatAtOffset(lastLog.loggedAt, lastLog.loggedOffsetMinutes) : null;
+  // `logs` is undefined while loading and after a failed fetch with no cache -
+  // only an actually-loaded (possibly empty) history may claim "no sleep
+  // logged", or a returning user's history reads as erased.
+  const subline = lastWhen
+    ? t("stats.last", { when: lastWhen })
+    : logs
+      ? t("stats.never")
+      : undefined;
 
   return (
     <>
@@ -103,7 +111,7 @@ export default function SleepTrackerScreen() {
                       label: "",
                     },
                   ]}
-                  subline={lastWhen ? t("stats.last", { when: lastWhen }) : t("stats.never")}
+                  subline={subline}
                   sublineTone={lastWhen ? "accent" : "muted"}
                 />
               }

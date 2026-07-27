@@ -41,6 +41,21 @@ export default function BreathingScreen() {
     null,
   );
   const lastWhen = lastCompletedAt ? formatLocalTimestamp(lastCompletedAt) : null;
+  // `sessions` is undefined while loading and after a failed fetch with no cache.
+  // It also resolves early against the built-in patterns alone, because the query
+  // is enabled before `customExercises` arrives to widen the name filter - so the
+  // early result is not merely incomplete, it is wrong in both directions: a user
+  // whose only history is custom exercises briefly sees an empty list, and a user
+  // whose newest session is a custom exercise briefly sees an older built-in one
+  // billed as their last. So the whole subline waits for the full name set -
+  // unlike the sibling screens, where the guard and `lastWhen` read one query and
+  // a truthy `lastWhen` already implies loaded.
+  const historyLoaded = Boolean(sessions && customExercises);
+  const subline = !historyLoaded
+    ? undefined
+    : lastWhen
+      ? t("breathing.hero.last", { when: lastWhen })
+      : t("breathing.hero.never");
 
   const patternName = (exerciseName: string) => {
     if (breathingSlugs.includes(exerciseName)) {
@@ -85,11 +100,7 @@ export default function BreathingScreen() {
               <ToolStats
                 tone="onField"
                 accentClassName="text-aqua"
-                subline={
-                  lastWhen
-                    ? t("breathing.hero.last", { when: lastWhen })
-                    : t("breathing.hero.never")
-                }
+                subline={subline}
                 sublineTone={lastWhen ? "accent" : "muted"}
                 items={[
                   {

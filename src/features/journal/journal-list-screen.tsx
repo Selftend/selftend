@@ -63,6 +63,10 @@ export default function JournalListScreen() {
     [entries],
   );
   const lastWhen = lastActivityAt ? formatMoodRelativeTime(lastActivityAt, t) : null;
+  // `entries` is undefined while loading and after a failed fetch with no
+  // cache - only an actually-loaded (possibly empty) history may claim
+  // "never", or a returning user's history reads as erased.
+  const subline = entries ? `${t("hero.last")} · ${lastWhen ?? tc("never")}` : undefined;
 
   // Stable across renders so memoized JournalCards aren't invalidated by a parent re-render.
   const openEntry = useCallback((id: string) => router.push(`/tools/journal/${id}`), []);
@@ -102,7 +106,7 @@ export default function JournalListScreen() {
                 <ToolStats
                   tone="onField"
                   accentClassName="text-ink"
-                  subline={`${t("hero.last")} · ${lastWhen ?? tc("never")}`}
+                  subline={subline}
                   sublineTone={lastWhen ? "accent" : "muted"}
                   items={[
                     {
