@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react-native";
 
 import MeditationDailyLifeScreen from "@/src/features/meditation/meditation-daily-life-screen";
 import { useStagePracticeNotes } from "@/src/features/meditation/queries";
-import { roomVariables } from "@/src/lib/module-room";
+import { expectRoomPour } from "@/test/room-pour";
 import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -21,10 +21,6 @@ jest.mock("@/src/features/meditation/queries", () => ({
 }));
 
 jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
-
-// Only the scheme read is mocked; the styling interop the render depends on
-// stays real. See test/color-scheme-mock.ts.
-jest.mock("nativewind", () => require("@/test/color-scheme-mock").nativewindWithMockedScheme());
 
 const mockUseStagePracticeNotes = useStagePracticeNotes as jest.MockedFunction<
   typeof useStagePracticeNotes
@@ -77,9 +73,7 @@ describe("MeditationDailyLifeScreen", () => {
 
     // MobileFormScreen owns its own SafeAreaView, so the pour rides a wrapper
     // view around it - its bg-background surfaces re-resolve through the room.
-    expect(screen.getByTestId("meditation-daily-life-room").props.style).toEqual(
-      roomVariables("iris").light,
-    );
+    expectRoomPour(screen.getByTestId("meditation-daily-life-room"), "iris");
   });
 
   it("renders the dark iris pour when the scheme is dark", () => {
@@ -87,9 +81,7 @@ describe("MeditationDailyLifeScreen", () => {
 
     renderWithProviders(<MeditationDailyLifeScreen />);
 
-    expect(screen.getByTestId("meditation-daily-life-room").props.style).toEqual(
-      roomVariables("iris").dark,
-    );
+    expectRoomPour(screen.getByTestId("meditation-daily-life-room"), "iris", "dark");
   });
 
   it("carries no field - meditation has no immersive surface here", () => {

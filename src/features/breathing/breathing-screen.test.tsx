@@ -5,8 +5,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import BreathingScreen from "@/app/(app)/tools/breathing/index";
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
-import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -141,7 +141,7 @@ describe("Breathing list polish", () => {
     // Full-bleed aqua field header (Direction B room), not the plain header.
     expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the aqua room re-pour; a wrong or missing room fails here.
-    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("aqua").light);
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "aqua");
     // A loaded, empty history → the subline shows the never state.
     expect(screen.getByText("No sessions logged yet")).toBeTruthy();
   });

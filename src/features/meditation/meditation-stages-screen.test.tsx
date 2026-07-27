@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationStagesScreen from "@/src/features/meditation/meditation-stages-screen";
 import { useMeditationProgramState } from "@/src/features/meditation/queries";
-import { roomVariables } from "@/src/lib/module-room";
+import { expectRoomPour } from "@/test/room-pour";
 import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -21,10 +21,6 @@ jest.mock("@/src/features/meditation/queries", () => ({
 }));
 
 jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
-
-// Only the scheme read is mocked; the styling interop the render depends on
-// stays real. See test/color-scheme-mock.ts.
-jest.mock("nativewind", () => require("@/test/color-scheme-mock").nativewindWithMockedScheme());
 
 const mockUseMeditationProgramState = useMeditationProgramState as jest.MockedFunction<
   typeof useMeditationProgramState
@@ -57,7 +53,7 @@ describe("MeditationStagesScreen", () => {
     renderWithProviders(<MeditationStagesScreen />);
 
     // The root carries the iris room re-pour; a wrong or missing room fails here.
-    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("iris").light);
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
   });
 
   it("renders the dark iris pour when the scheme is dark", () => {
@@ -65,7 +61,7 @@ describe("MeditationStagesScreen", () => {
 
     renderWithProviders(<MeditationStagesScreen />);
 
-    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("iris").dark);
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris", "dark");
   });
 
   it("wears iris on the current-stage badge", () => {

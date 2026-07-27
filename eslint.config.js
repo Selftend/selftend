@@ -91,10 +91,13 @@ module.exports = [
   {
     // Room wiring goes through the useRoomStyle/useRoomCardHsl hooks - they
     // carry the scheme read and the cached style identity, so screens can't
-    // drift back to per-file module consts. Tests are exempt: every room
-    // suite imports roomVariables for its pour assertion.
+    // drift back to per-file module consts. Tests used to be exempt so each
+    // room suite could compare against roomVariables(hue)[scheme] - but that
+    // comparison could not fail (a nativewind vars() style has no enumerable
+    // keys, so every hue deep-equalled every other, #389). Suites now assert
+    // through expectRoomPour from @/test/room-pour, so the exemption is gone
+    // and a suite cannot hand-roll the vacuous form again.
     files: ["src/features/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
-    ignores: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {
       "no-restricted-imports": ["error", { paths: [MODULE_ROOM_RESTRICTION] }],
     },

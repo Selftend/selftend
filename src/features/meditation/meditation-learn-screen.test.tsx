@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationLearnScreen from "@/src/features/meditation/meditation-learn-screen";
-import { roomVariables } from "@/src/lib/module-room";
+import { expectRoomPour } from "@/test/room-pour";
 import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -13,10 +13,6 @@ jest.mock("expo-router", () => ({
 }));
 
 jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
-
-// Only the scheme read is mocked; the styling interop the render depends on
-// stays real. See test/color-scheme-mock.ts.
-jest.mock("nativewind", () => require("@/test/color-scheme-mock").nativewindWithMockedScheme());
 
 /** Every rendered view's class list, for asserting on tint utilities. */
 const viewClassNames = () =>
@@ -45,7 +41,7 @@ describe("MeditationLearnScreen", () => {
   it("renders the iris room pour on its root", () => {
     renderWithProviders(<MeditationLearnScreen />);
 
-    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("iris").light);
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
   });
 
   it("renders the dark iris pour when the scheme is dark", () => {
@@ -53,7 +49,7 @@ describe("MeditationLearnScreen", () => {
 
     renderWithProviders(<MeditationLearnScreen />);
 
-    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("iris").dark);
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris", "dark");
   });
 
   it("tints the attention callout card with iris", () => {

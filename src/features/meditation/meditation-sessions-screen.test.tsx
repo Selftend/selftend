@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import MeditationSessionsScreen from "@/src/features/meditation/meditation-sessions-screen";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { roomPour } from "@/test/room-pour";
+import { expectRoomPour } from "@/test/room-pour";
 import { useThemeStore } from "@/src/stores/theme-store";
 
 jest.mock("expo-router", () => ({
@@ -100,22 +100,19 @@ describe("MeditationSessionsScreen", () => {
 
     renderWithProviders(<MeditationSessionsScreen />);
 
-    // The root carries the iris room re-pour; a wrong or missing room fails here
-    // (see test/room-pour.ts for why this is identity, not deep equality).
-    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toBe(roomPour("iris"));
+    // The root carries the iris room re-pour; a wrong or missing room fails here.
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
   });
 
   it("pours the dark iris room when the scheme is dark", () => {
     setSessions([session()]);
-    const lightPour = roomPour("iris");
     setOsScheme("dark");
-    const darkPour = roomPour("iris");
-    // Guards the assertion below against a scheme read that never moved.
-    expect(darkPour).not.toBe(lightPour);
 
     renderWithProviders(<MeditationSessionsScreen />);
 
-    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toBe(darkPour);
+    // Asserting the dark triples by value is its own guard against a scheme read
+    // that never moved: the light pour carries different values and fails here.
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris", "dark");
   });
 
   it("keeps the FlatList as the scroll root", () => {

@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import GratitudeDetailScreen from "@/src/features/gratitude/gratitude-detail-screen";
-import { roomVariables } from "@/src/lib/module-room";
 import {
   useDeleteGratitudeEntry,
   useGratitudeEntries,
@@ -13,6 +12,7 @@ import {
   useSetGratitudeEntryStarred,
 } from "@/src/features/gratitude/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -100,7 +100,7 @@ describe("GratitudeDetailScreen", () => {
     const { UNSAFE_getByType } = renderWithProviders(<GratitudeDetailScreen />);
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the think room re-pour; a wrong or missing room fails here.
-    expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("think").light);
+    expectRoomPour(UNSAFE_getByType(SafeAreaView), "think");
   });
 
   it("renders the 1st today question and its answer", () => {

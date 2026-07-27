@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import MeditationSessionDetailScreen from "@/src/features/meditation/meditation-session-detail-screen";
 import { useMeditationSession } from "@/src/features/meditation/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { roomPour } from "@/test/room-pour";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), canGoBack: jest.fn(() => false) },
@@ -46,7 +46,7 @@ const setSession = (data: unknown, isLoading = false) =>
     typeof useMeditationSession
   >);
 
-const rootStyle = () => screen.UNSAFE_getByType(SafeAreaView).props.style;
+const roomRoot = () => screen.UNSAFE_getByType(SafeAreaView);
 
 describe("MeditationSessionDetailScreen", () => {
   beforeEach(() => {
@@ -66,12 +66,11 @@ describe("MeditationSessionDetailScreen", () => {
   });
 
   it("renders the iris room pour on the content return", () => {
-    // Identity, not deep equality - see test/room-pour.ts.
     setSession(session());
 
     renderWithProviders(<MeditationSessionDetailScreen />);
 
-    expect(rootStyle()).toBe(roomPour("iris"));
+    expectRoomPour(roomRoot(), "iris");
   });
 
   it("keeps the room poured while the session loads", () => {
@@ -81,7 +80,7 @@ describe("MeditationSessionDetailScreen", () => {
 
     // Without this the iris room drops out while the session resolves and snaps
     // in afterwards - the defect the grounding flow shipped and had to fix (#317).
-    expect(rootStyle()).toBe(roomPour("iris"));
+    expectRoomPour(roomRoot(), "iris");
   });
 
   it("keeps the room poured when the session is missing", () => {
@@ -90,6 +89,6 @@ describe("MeditationSessionDetailScreen", () => {
     renderWithProviders(<MeditationSessionDetailScreen />);
 
     expect(screen.getByRole("heading", { name: "Session not found." })).toBeTruthy();
-    expect(rootStyle()).toBe(roomPour("iris"));
+    expectRoomPour(roomRoot(), "iris");
   });
 });
