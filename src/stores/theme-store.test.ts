@@ -4,16 +4,17 @@ import { useThemeStore } from "@/src/stores/theme-store";
 
 const STORAGE_KEY = "selftend:theme";
 
+beforeEach(async () => {
+  await AsyncStorage.clear();
+  // The store is a singleton, so reset both fields between tests.
+  useThemeStore.setState({ preference: "system", hydrated: false });
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 describe("theme store", () => {
-  beforeEach(async () => {
-    await AsyncStorage.clear();
-    useThemeStore.setState({ preference: "system", hydrated: false });
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
   it("defaults to system when nothing is stored", async () => {
     await useThemeStore.getState().hydrate();
 
@@ -55,15 +56,6 @@ describe("theme store", () => {
  * storage was read.
  */
 describe("theme store - a stored value never beats a fresher choice", () => {
-  beforeEach(async () => {
-    await AsyncStorage.clear();
-    useThemeStore.setState({ preference: "system", hydrated: false });
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
   it("marks hydrated when setPreference is called", () => {
     useThemeStore.getState().setPreference("dark");
 
@@ -100,6 +92,17 @@ describe("theme store - a stored value never beats a fresher choice", () => {
     await useThemeStore.getState().hydrate();
 
     expect(useThemeStore.getState().preference).toBe("dark");
+  });
+
+  it("settles on the default when the storage read fails, without rejecting", async () => {
+    jest.spyOn(AsyncStorage, "getItem").mockRejectedValue(new Error("storage unavailable"));
+
+    await expect(useThemeStore.getState().hydrate()).resolves.toBeUndefined();
+
+    // Settled, so later mounts don't re-read — retrying is the repeated-write
+    // behaviour this ticket removes.
+    expect(useThemeStore.getState().hydrated).toBe(true);
+    expect(useThemeStore.getState().preference).toBe("system");
   });
 
   it("discards a read that resolves after a choice landed mid-flight", async () => {

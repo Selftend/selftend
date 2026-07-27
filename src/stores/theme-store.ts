@@ -33,7 +33,16 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   hydrate: async () => {
     if (get().hydrated) return; // already settled — don't re-read
 
-    const stored = await AsyncStorage.getItem(STORAGE_KEY);
+    // A failed read settles on the current preference rather than leaving the
+    // store un-hydrated forever, which would let every later mount re-read —
+    // the repeated-write behaviour this removes. So: no retry, and no rejection
+    // for callers to handle. Mirrors app-lock-store and the CBT intro store.
+    let stored: string | null = null;
+    try {
+      stored = await AsyncStorage.getItem(STORAGE_KEY);
+    } catch {
+      stored = null;
+    }
 
     // The read is not instant, and `setPreference` persists unawaited, so a
     // choice can land while this is in flight. It is the fresher of the two,
@@ -41,11 +50,9 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     if (get().hydrated) return;
 
     // `hydrated` is set even when nothing valid was stored, so a first-run user
-    // is "settled on the default" rather than permanently un-hydrated. A failed
-    // read is therefore not retried by the next call — deliberate: retrying is
-    // the repeated-write behaviour this removes. The fallback is "system" (the
-    // app follows the device), and signed-in users get the account value from
-    // useSettingsSync regardless.
+    // is "settled on the default" rather than permanently un-hydrated. The
+    // fallback is "system" (the app follows the device), and signed-in users
+    // get the account value from useSettingsSync regardless.
     set({ preference: isThemePreference(stored) ? stored : get().preference, hydrated: true });
   },
 }));
