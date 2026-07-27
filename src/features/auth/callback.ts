@@ -6,6 +6,22 @@ import {
 } from "@/src/features/auth/callback-errors";
 import { requireSupabase } from "@/src/lib/supabase";
 
+// Supabase's docs deprecate the `signup` and `magiclink` verifyOtp types in favour of `email`,
+// and we deliberately stay on `signup` anyway (`magiclink` is unused here). Three reasons:
+//
+//  1. `email` is a strictly WIDER lookup, not a rename - GoTrue resolves it against confirmation
+//     OR recovery tokens, then rewrites the type back to `signup`/`magiclink` internally before
+//     it branches. We use `type` for our own client-side decisions (the outcome classified
+//     below, the gate copy key and the "request a new link" route in auth-callback-screen), so
+//     adopting `email` would tell US less about which link just arrived, for no behaviour change.
+//  2. `resend` cannot follow. Its param type excludes `email` outright (see api.ts), so `signup`
+//     stays in this codebase permanently regardless - migrating buys two spellings, not one.
+//  3. The deprecation is documentation-only, and only on the Dart reference page. `EmailOtpType`
+//     in @supabase/auth-js carries no `@deprecated` tag, the server treats every type as
+//     first-class, and no removal timeline has been published.
+//
+// Revisit if a real removal signal appears (an `@deprecated` tag, a changelog entry, or the
+// server rejecting the type). Verified against supabase/auth master, 2026-07-27 - see #355.
 const supportedEmailOtpTypes = new Set<EmailOtpType>([
   "signup",
   "invite",
