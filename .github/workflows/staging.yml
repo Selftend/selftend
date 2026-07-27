@@ -59,11 +59,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Supabase CLI
-        # `latest` per research R1: older CLI versions lack the IPv4/Supavisor
-        # pooler handling GitHub runners need.
+        # Pinned, not `latest`: `latest` makes the action resolve the release
+        # through the GitHub releases API, which got rate-limited and killed two
+        # CI jobs on 2026-07-26 (#264). A concrete version skips that call
+        # entirely and keeps deploys reproducible. 2.109.1 is what `latest`
+        # itself resolved to on that date, so research R1 (older CLI versions
+        # lack the IPv4/Supavisor pooler handling GitHub runners need) is not
+        # regressed - this is the same CLI the green runs already used. Bump
+        # deliberately - test/workflow-supabase-cli-pin.test.ts holds every
+        # workflow to one concrete pin.
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
 
       - name: Link staging project
         run: supabase link --project-ref "$STAGING_PROJECT_ID"
@@ -91,9 +98,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Supabase CLI
+        # Pinned, not `latest` - see the migrate-staging job for why (#264).
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
 
       - name: Link staging project
         run: supabase link --project-ref "$STAGING_PROJECT_ID"

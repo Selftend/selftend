@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import JournalListScreen from "@/src/features/journal/journal-list-screen";
-import { useJournalEntries } from "@/src/features/journal/queries";
+import { useJournalEntries, useJournalWordTotal } from "@/src/features/journal/queries";
 import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -40,6 +40,7 @@ jest.mock("@/src/providers/session-provider", () => ({
 jest.mock("@/src/features/journal/queries", () => ({
   useJournalEntries: jest.fn(),
   useJournalEntryCount: jest.fn(() => ({ data: undefined })),
+  useJournalWordTotal: jest.fn(() => ({ data: undefined })),
 }));
 
 // Pin "now" so groupByPeriod buckets are deterministic.
@@ -52,11 +53,21 @@ afterAll(() => {
 });
 
 const mockUseJournalEntries = useJournalEntries as jest.MockedFunction<typeof useJournalEntries>;
+const mockUseJournalWordTotal = useJournalWordTotal as jest.MockedFunction<
+  typeof useJournalWordTotal
+>;
 const mockRouter = jest.mocked(router);
+
+function mockWordTotal(data: number | undefined) {
+  mockUseJournalWordTotal.mockReturnValue({ data } as unknown as ReturnType<
+    typeof useJournalWordTotal
+  >);
+}
 
 describe("JournalListScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockWordTotal(undefined);
   });
 
   it("renders the empty state when there are no entries", () => {
@@ -215,6 +226,58 @@ describe("JournalListScreen", () => {
     expect(screen.getAllByText("1 entry").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("5 words").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Last · Today")).toBeTruthy();
+  });
+
+  it("shows the exact lifetime word total, not the sum over the capped list", () => {
+    // The list query is capped at 50 entries, so its word sum silently becomes a
+    // "recent 50" figure for heavy writers (#293). The hero must show the server total.
+    mockWordTotal(421);
+    mockUseJournalEntries.mockReturnValue({
+      data: [
+        {
+          id: "j-1",
+          userId: "user-1",
+          title: "Quiet morning",
+          body: "Five words of journal body.",
+          createdAt: "2026-05-24T08:00:00.000Z",
+          updatedAt: "2026-05-24T08:00:00.000Z",
+        },
+        {
+          id: "j-2",
+          userId: "user-1",
+          title: "Quiet evening",
+          body: "Five more words in here.",
+          createdAt: "2026-05-23T08:00:00.000Z",
+          updatedAt: "2026-05-23T08:00:00.000Z",
+        },
+      ],
+    } as unknown as ReturnType<typeof useJournalEntries>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getByText("421 words")).toBeTruthy();
+    // 10 = the capped-list sum; it must not reach the hero.
+    expect(screen.queryByText("10 words")).toBeNull();
+  });
+
+  it("falls back to the loaded-entries word sum until the lifetime total arrives", () => {
+    mockWordTotal(undefined);
+    mockUseJournalEntries.mockReturnValue({
+      data: [
+        {
+          id: "j-1",
+          userId: "user-1",
+          title: "Quiet morning",
+          body: "Five words of journal body.",
+          createdAt: "2026-05-24T08:00:00.000Z",
+          updatedAt: "2026-05-24T08:00:00.000Z",
+        },
+      ],
+    } as unknown as ReturnType<typeof useJournalEntries>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getAllByText("5 words").length).toBeGreaterThanOrEqual(1);
   });
 
   it("routes to /tools/journal/new when the CTA is pressed", () => {

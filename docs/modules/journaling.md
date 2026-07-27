@@ -46,6 +46,8 @@ Table `public.journal_entries`:
 
 Indexed by `(user_id, created_at desc)`. Body is checked non-blank at the DB layer with `length(btrim(body)) > 0`.
 
+Both home hero stats are counted server-side, because the list query is capped at 50 entries and deriving them on the device would silently turn each into a "recent 50" figure once a user passes the cap. The entry count uses an exact PostgREST `head` count; the word count uses the `journal_word_total()` RPC, which sums word counts over the decrypting view and returns a single number. No word count is stored - it is derived per call - and no entry bodies cross the wire for the stat.
+
 ## Privacy and ownership
 
 - Row-level security enabled. Policies allow each authenticated user to `select / insert / update / delete` only rows where `auth.uid() = user_id`. Anon access is denied.
@@ -74,8 +76,9 @@ None. The roadmap explicitly defers any opt-in journaling push reminder. The in-
 ## Tests
 
 - `src/features/journal/schemas.test.ts` - zod validation: empty / whitespace-only body rejected; overlong title / body rejected; valid entry accepted.
-- `src/features/journal/repository.test.ts` - list, get, save (insert + update), delete; trim title/body.
-- `src/features/journal/journal-list-screen.test.tsx` - empty state, populated state with title and preview, "Untitled" fallback, CTA routing.
+- `src/features/journal/repository.test.ts` - list, get, save (insert + update), delete; trim title/body; word-total RPC call, coercion, and error.
+- `src/features/journal/journal-list-screen.test.tsx` - empty state, populated state with title and preview, "Untitled" fallback, CTA routing, lifetime word total with a loaded-entries fallback.
+- `test/integration/journal-word-total.integration.test.ts` - `journal_word_total()` past the 50-entry cap, agreement with `countWords()`, per-user scoping, unauthenticated rejection.
 - `src/features/journal/journal-entry-editor-screen.test.tsx` - create-mode render, save flow, edit-mode prefill from cache.
 
 ## Routes

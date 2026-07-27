@@ -31,10 +31,14 @@ test.describe("edit and delete a habit", () => {
     await expect(todayCell).toBeVisible({ timeout: 10_000 });
     // Assert the cell starts unticked before clicking (aria-checked comes from the
     // aria-checked prop, which react-native-web forwards to the DOM).
-    await expect(todayCell).not.toHaveClass(/bg-primary/, { timeout: 5_000 });
+    await expect(todayCell).not.toBeChecked({ timeout: 5_000 });
     await todayCell.click();
-    // After toggling, the cell's CSS class changes to include the habit colour (bg-primary/20).
-    await expect(todayCell).toHaveClass(/bg-primary/, { timeout: 10_000 });
+    // Assert the SEMANTIC state, not the class. Habit colours are now a token
+    // alias applied as inline style (chip.fill / chip.ink), so no `bg-primary`
+    // class exists to match - and aria-checked is what a screen reader reads
+    // anyway. The visual encoding is covered at unit level in
+    // habits-home-screen.test.tsx via StyleSheet.flatten.
+    await expect(todayCell).toBeChecked({ timeout: 10_000 });
 
     // --- EDIT ---
     await page.getByRole("button", { name: "Edit", exact: true }).click();

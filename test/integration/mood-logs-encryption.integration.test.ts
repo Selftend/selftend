@@ -64,7 +64,9 @@ describe("mood_logs encrypted view (integration)", () => {
       behaviours: BEHAVIOURS,
       bodily_sensations: BODILY,
       linked_strategy: "breathing",
-      logged_offset_minutes: 0,
+      // The insert states no offset, and since #250 that is "unknown" rather than
+      // UTC - a 0 here would be the column claiming a fact the caller never gave.
+      logged_offset_minutes: null,
     });
 
     const id = insert.data!.id as string;
