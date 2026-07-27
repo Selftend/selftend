@@ -37,7 +37,16 @@ const persistOptions = persister
   ? {
       persister,
       maxAge: QUERY_CACHE_MAX_AGE_MS,
-      buster: Constants.expoConfig?.version ?? "0",
+      // Bump whenever the SHAPE of a persisted query's data changes. The app
+      // version alone is not enough: an OTA update, or any build that ships a
+      // shape change without a version bump, restores up to QUERY_CACHE_MAX_AGE_MS
+      // of entries written by the previous code. #250 added `dayKey` to gratitude,
+      // sleep and journal entries, and every new day-scoped equality/range check
+      // silently excludes a restored entry that lacks it - so cached entries and
+      // sleep stats would vanish while offline until a refetch succeeded.
+      // Discarding a stale-shaped cache costs one refetch; keeping it loses data
+      // from the user's view.
+      buster: `${Constants.expoConfig?.version ?? "0"}-shape2`,
       dehydrateOptions: {
         shouldDehydrateQuery: (query: { state: { status: string } }) =>
           query.state.status === "success",

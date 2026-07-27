@@ -5,6 +5,7 @@ import { SleepWidget } from "@/src/features/home/widgets/sleep-widget";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
@@ -31,6 +32,8 @@ function sleepLog(durationMinutes: number, quality: number, loggedAt: string) {
     quality,
     notes: "",
     loggedAt,
+    loggedOffsetMinutes: null,
+    dayKey: entryDayKey(loggedAt, null),
     createdAt: loggedAt,
   };
 }

@@ -10,7 +10,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { useJournalEntries } from "@/src/features/journal/queries";
 import { countWords } from "@/src/features/journal/word-count";
 import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { parseLocalNoon } from "@/src/utils/date";
 
 export function JournalWeekWidget({ userId }: { userId: string }) {
@@ -27,7 +27,7 @@ export function JournalWeekWidget({ userId }: { userId: string }) {
     [entries],
   );
   const dayCount = useMemo(
-    () => all.filter((e) => toLocalDateKey(e.createdAt) === selectedDate).length,
+    () => all.filter((e) => e.dayKey === selectedDate).length,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entries, selectedDate],
   );

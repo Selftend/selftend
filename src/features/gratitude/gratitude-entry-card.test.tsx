@@ -1,3 +1,4 @@
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { fireEvent, screen } from "@testing-library/react-native";
 
 import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-card";
@@ -35,6 +36,8 @@ function makeEntry(overrides: Partial<GratitudeEntry> = {}): GratitudeEntry {
     items: ["laughed", "kind-person", "ttt", "", ""],
     note: "",
     loggedAt: "2026-06-03T08:00:00.000Z",
+    loggedOffsetMinutes: null,
+    dayKey: entryDayKey("2026-06-03T08:00:00.000Z", null),
     createdAt: "2026-06-03T08:00:00.000Z",
     updatedAt: "2026-06-03T08:00:00.000Z",
     events: [],

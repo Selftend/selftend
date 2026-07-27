@@ -21,7 +21,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 import { useRoomStyle } from "@/src/lib/use-room-style";
-import { formatTimestamp } from "@/src/utils/date";
+import { formatAtOffset } from "@/src/utils/date";
 import { formatDuration } from "@/src/features/sleep/format";
 import { qualityTint } from "@/src/features/sleep/quality-tint";
 
@@ -159,7 +159,7 @@ export default function SleepDetailScreen() {
               <CardTitle aria-level={2}>{t("detail.loggedAt")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Text>{formatTimestamp(entry.loggedAt)}</Text>
+              <Text>{formatAtOffset(entry.loggedAt, entry.loggedOffsetMinutes)}</Text>
             </CardContent>
           </Card>
 

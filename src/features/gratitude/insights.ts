@@ -1,5 +1,5 @@
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import { localDateKey } from "@/src/stores/selected-date-store";
+import { dayRangeEndKey, lastNDayKeysEndingAt, parseLocalNoon } from "@/src/utils/date";
 
 interface GratitudeFrequencyBucket {
   id: string;
@@ -57,48 +57,30 @@ function parseDate(value: string) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function startOfDay(value: Date) {
-  const date = new Date(value);
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
-
-function addDays(value: Date, days: number) {
-  const date = new Date(value);
-  date.setDate(date.getDate() + days);
-  return date;
-}
-
-function bucketId(value: Date) {
-  return localDateKey(value);
-}
-
 export function getGratitudeFrequencyBuckets(
   entries: GratitudeEntry[],
   now = new Date(),
   bucketCount = 8,
 ): GratitudeFrequencyBucket[] {
-  const lastStart = startOfDay(now);
-  const starts = Array.from({ length: bucketCount }, (_, index) =>
-    addDays(lastStart, index - bucketCount + 1),
+  // Buckets are civil days, counted by the day each entry was captured on, and
+  // the range ends at today or at a later captured day so an entry logged east
+  // of the viewer still lands in the strip (#250).
+  const endKey = dayRangeEndKey(
+    entries.map((entry) => entry.dayKey),
+    now,
   );
+  const dayKeys = lastNDayKeysEndingAt(bucketCount, endKey);
 
-  const counts = new Map(starts.map((start) => [bucketId(start), 0]));
-  const firstStart = starts[0] ?? lastStart;
+  const counts = new Map(dayKeys.map((key) => [key, 0]));
+  for (const entry of entries) {
+    const current = counts.get(entry.dayKey);
+    if (current !== undefined) counts.set(entry.dayKey, current + 1);
+  }
 
-  entries.forEach((entry) => {
-    const loggedAt = parseDate(entry.loggedAt);
-    if (!loggedAt || loggedAt < firstStart || loggedAt > addDays(lastStart, 1)) return;
-    const key = bucketId(startOfDay(loggedAt));
-    if (counts.has(key)) {
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-  });
-
-  return starts.map((start) => ({
-    id: bucketId(start),
-    label: start.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-    count: counts.get(bucketId(start)) ?? 0,
+  return dayKeys.map((key) => ({
+    id: key,
+    label: parseLocalNoon(key).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    count: counts.get(key) ?? 0,
   }));
 }
 
