@@ -4,10 +4,10 @@ import { Platform, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 type StoreId = "android" | "ios";
 

@@ -5,7 +5,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { Badge } from "@/src/components/react-native-reusables/badge";
@@ -14,6 +13,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { hueToTint, type ToolHue } from "@/src/features/mindfulness/exercise-hue";
 import { fieldGradient } from "@/src/lib/module-room";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 type TuneAction = { type: "tune"; onPress: () => void; accessibilityLabel?: string };
 type NotificationsAction = {

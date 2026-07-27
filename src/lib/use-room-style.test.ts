@@ -17,6 +17,12 @@ const setOsScheme = (scheme: "light" | "dark" | null) => {
   mockUseColorScheme.mockReturnValue(scheme);
 };
 
+afterEach(() => {
+  // These drive the real store, so put it back rather than leaving the next
+  // test to depend on its own setOsScheme call running first.
+  useThemeStore.setState({ preference: "system", hydrated: false });
+});
+
 afterAll(() => {
   mockUseColorScheme.mockRestore();
 });

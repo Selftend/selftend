@@ -7,7 +7,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { UserMenu } from "@/src/components/app/user-menu";
@@ -16,6 +15,7 @@ import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
 import { useSession } from "@/src/providers/session-provider";
 import { useTourTargetRef } from "@/src/features/tours/tour-targets";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 interface AppHeaderProps {
   showHamburger?: boolean;

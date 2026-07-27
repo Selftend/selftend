@@ -92,6 +92,7 @@ export function TourOverlay({
       )}
 
       <View
+        testID="tour-tooltip-card"
         style={{
           position: "absolute",
           ...(flipTooltip ? { bottom: screenHeight - (spotTop - 14) } : { top: tooltipTop }),
