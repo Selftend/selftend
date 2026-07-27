@@ -112,7 +112,7 @@ describe("RoutinesHomeScreen", () => {
     } as unknown as ReturnType<typeof useRoutines>);
     // A mood log today completes r-1's only step; r-2 has no journal entry.
     mockUseRoutineToolRecords.mockReturnValue({
-      moodLogs: [{ loggedAt: `${currentDateKey()}T12:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     });
 
     renderWithProviders(<RoutinesHomeScreen />);
@@ -131,7 +131,7 @@ describe("RoutinesHomeScreen", () => {
     // Mood logged yesterday (day -1) and three days ago (day -3), not today.
     const dayKeys = lastNDayKeys(7);
     mockUseRoutineToolRecords.mockReturnValue({
-      moodLogs: [{ loggedAt: `${dayKeys[5]}T12:00:00` }, { loggedAt: `${dayKeys[3]}T12:00:00` }],
+      moodLogs: [{ dayKey: dayKeys[5] }, { dayKey: dayKeys[3] }],
     });
 
     renderWithProviders(<RoutinesHomeScreen />);
@@ -213,7 +213,7 @@ describe("RoutinesHomeScreen", () => {
     } as unknown as ReturnType<typeof useRoutines>);
     // A manual run: mood logged today on a never-scheduled routine.
     mockUseRoutineToolRecords.mockReturnValue({
-      moodLogs: [{ loggedAt: `${currentDateKey()}T12:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     });
 
     renderWithProviders(<RoutinesHomeScreen />);

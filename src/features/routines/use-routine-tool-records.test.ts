@@ -176,7 +176,7 @@ describe("useRoutineToolRecords", () => {
   });
 
   it("maps each query's data onto the derive-engine record slices", () => {
-    const moodLogs = [{ loggedAt: "2026-07-15T08:00:00.000Z" }];
+    const moodLogs = [{ dayKey: "2026-07-15" }];
     const habitLogs = [{ loggedOn: "2026-07-15" }];
     const defusionLogs = [{ createdAt: "2026-07-15T09:00:00.000Z" }];
     const actionSteps = [{ createdAt: "2026-07-15T10:00:00.000Z", completedAt: null }];
