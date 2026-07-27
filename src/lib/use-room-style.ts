@@ -19,10 +19,17 @@ const VARS = new Map<HueName, ReturnType<typeof roomVariables>>();
 const CARD = new Map<HueName, ReturnType<typeof roomCardHsl>>();
 
 /**
- * The scheme read every hue-derived style shares — nativewind's reader,
- * normalized to the two names the recipe modules key on.
+ * The scheme read the hue-derived recipes share — nativewind's reader,
+ * normalized to the two names roomTriples and chipTriples key on. (A chip is
+ * a one-swatch room, so the chip palette in
+ * src/features/habits/habit-color.ts reads the scheme through here too.)
+ *
+ * Deliberately NOT named `useColorSchemeName` — spec #343 assigns that name to
+ * the store-derived house reader in src/lib/color-scheme.ts, and #344 folds
+ * this helper into it along with the 12 components still calling nativewind's
+ * hook directly. Until that lands, this stays local so the two don't collide.
  */
-export function useColorSchemeName(): ColorSchemeName {
+export function useRoomScheme(): ColorSchemeName {
   const { colorScheme } = useColorScheme();
   return colorScheme === "dark" ? "dark" : "light";
 }
@@ -33,7 +40,7 @@ export function useColorSchemeName(): ColorSchemeName {
  * memoized subtrees aren't invalidated by parent re-renders.
  */
 export function useRoomStyle(hue: HueName): ReturnType<typeof roomVariables>[ColorSchemeName] {
-  const scheme = useColorSchemeName();
+  const scheme = useRoomScheme();
   let vars = VARS.get(hue);
   if (!vars) {
     vars = roomVariables(hue);
@@ -48,7 +55,7 @@ export function useRoomStyle(hue: HueName): ReturnType<typeof roomVariables>[Col
  * bg-card resolves to inside the room.
  */
 export function useRoomCardHsl(hue: HueName): string {
-  const scheme = useColorSchemeName();
+  const scheme = useRoomScheme();
   let card = CARD.get(hue);
   if (!card) {
     card = roomCardHsl(hue);
