@@ -342,16 +342,21 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
 
   "journal-week": (data, { t, dateKey }) => {
     const dayCount = data.journalEntries.filter((e) => e.dayKey === dateKey).length;
-    const words = data.journalEntries.reduce((sum, e) => sum + countWords(e.body), 0);
+    // Lifetime figures, same as the in-app widget and the journal hero: the loaded list is
+    // capped, so summing it only stands in until the server totals arrive (#323).
+    const loadedWords = data.journalEntries.reduce((sum, e) => sum + countWords(e.body), 0);
     return {
       kind: "stats",
       title: t("home.widgets.journalWeek.title"),
       stats: [
         {
-          value: String(data.journalEntries.length),
+          value: String(data.journalEntryCount ?? data.journalEntries.length),
           label: t("home.widgets.journalWeek.entriesLabel"),
         },
-        { value: String(words), label: t("home.widgets.journalWeek.wordsLabel") },
+        {
+          value: String(data.journalWordTotal ?? loadedWords),
+          label: t("home.widgets.journalWeek.wordsLabel"),
+        },
       ],
       primaryCta: { label: t("today.dashboard.write"), path: "/tools/journal/new", icon: "edit" },
       openCta: openCta(t, "/tools/journal"),

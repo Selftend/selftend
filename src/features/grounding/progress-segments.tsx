@@ -1,8 +1,8 @@
 import { View } from "react-native";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 interface ProgressSegmentsProps {
   total: number;
@@ -11,8 +11,7 @@ interface ProgressSegmentsProps {
 }
 
 export function ProgressSegments({ total, current, hue }: ProgressSegmentsProps) {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = useColorSchemeName() === "dark";
   const { t } = useTranslation("cbt");
   return (
     <View
