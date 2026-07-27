@@ -9,17 +9,22 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useMeditationSession } from "@/src/features/meditation/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useLocaleFormats } from "@/src/lib/locale-format";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 
 export default function MeditationSessionDetailScreen() {
   const { t } = useTranslation("meditation");
+  const roomStyle = useRoomStyle("iris");
   const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const params = useLocalSearchParams<{ id: string }>();
   const { data: session, isLoading } = useMeditationSession(user?.id ?? null, params.id ?? null);
 
+  // All three returns take the pour: without it the room drops out while the
+  // session loads and again when it is missing - the defect the grounding flow
+  // shipped and had to fix (#317).
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
+      <SafeAreaView className="flex-1 items-center justify-center bg-background" style={roomStyle}>
         <ActivityIndicator />
       </SafeAreaView>
     );
@@ -27,7 +32,7 @@ export default function MeditationSessionDetailScreen() {
 
   if (!session) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="gap-3 p-6">
           <ScreenHeader title={t("module.sessionDetail.notFound")} titleVariant="h2" />
         </View>
@@ -36,7 +41,11 @@ export default function MeditationSessionDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
