@@ -35,6 +35,8 @@ const empty: WidgetData = {
   defusionLogs: [],
   moodLogCount: null,
   gratitudeEntryCount: null,
+  journalEntryCount: null,
+  journalWordTotal: null,
 };
 
 describe("buildSnapshot v2", () => {
@@ -74,6 +76,36 @@ describe("buildSnapshot v2", () => {
     const p = buildSnapshot(data, ctx).widgets["mood-trend"] as StatTilesCardPayload;
     expect(p.tiles[0].value).toBe("4.0");
     expect(p.tiles[1].value).toBe("57");
+  });
+
+  it("journal-week: lifetime entry/word totals win over the capped list", () => {
+    const data: WidgetData = {
+      ...empty,
+      journalEntries: [
+        { createdAt: "2026-06-05T09:00:00", dayKey: "2026-06-05", body: "alpha beta" },
+        { createdAt: "2026-06-04T09:00:00", dayKey: "2026-06-04", body: "gamma" },
+      ],
+      journalEntryCount: 214,
+      journalWordTotal: 9481,
+    };
+    const p = buildSnapshot(data, ctx).widgets["journal-week"] as StatsCardPayload;
+    expect(p.stats?.[0].value).toBe("214");
+    expect(p.stats?.[1].value).toBe("9481");
+    // The day badge stays scoped to dateKey - only the two stats are lifetime figures.
+    expect(p.today?.badge).toBe('today.dashboard.countToday:{"count":1}');
+  });
+
+  it("journal-week: falls back to the loaded entries until the totals arrive", () => {
+    const data: WidgetData = {
+      ...empty,
+      journalEntries: [
+        { createdAt: "2026-06-05T09:00:00", dayKey: "2026-06-05", body: "alpha beta" },
+        { createdAt: "2026-06-04T09:00:00", dayKey: "2026-06-04", body: "gamma" },
+      ],
+    };
+    const p = buildSnapshot(data, ctx).widgets["journal-week"] as StatsCardPayload;
+    expect(p.stats?.[0].value).toBe("2");
+    expect(p.stats?.[1].value).toBe("3");
   });
 
   it("habits: progress badge, first incomplete with deep link, all-done state", () => {
