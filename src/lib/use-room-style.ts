@@ -10,10 +10,9 @@ import { roomCardHsl, roomVariables, type ColorSchemeName } from "@/src/lib/modu
 // The cache lives here (not in module-room.ts) so the recipe module stays
 // React-free — the node-side test/room-contrast.test.ts imports it.
 //
-// nativewind's useColorScheme is the *reader*; useAppColorScheme is the
-// *driver* (hydrates the theme store and pushes into nativewind) and must
-// stay root-scoped. This is the exact read the swept sites shipped,
-// normalized once.
+// The scheme read below is nativewind's — the exact read the swept sites
+// shipped, normalized once. See useRoomScheme for why it hasn't moved to the
+// house reader yet.
 
 const VARS = new Map<HueName, ReturnType<typeof roomVariables>>();
 const CARD = new Map<HueName, ReturnType<typeof roomCardHsl>>();

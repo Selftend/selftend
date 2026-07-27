@@ -7,7 +7,7 @@ import { Card } from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { TINT_TEXT, type TintToken } from "@/src/lib/design-tokens";
 import { cn } from "@/lib/utils";
 
@@ -66,7 +66,7 @@ function PillarCardRoot({
   onToolPress,
   children,
 }: PillarCardProps) {
-  const isDark = useAppColorScheme() === "dark";
+  const isDark = useColorSchemeName() === "dark";
   return (
     <PillarContext.Provider value={{ tint, onToolPress }}>
       <Card className="relative overflow-hidden px-5 py-4">

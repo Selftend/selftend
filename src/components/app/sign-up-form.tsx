@@ -25,14 +25,14 @@ import {
 import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
 import { signUpSchema, type SignUpSchema } from "@/src/features/auth/schemas";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { useSession } from "@/src/providers/session-provider";
 import { THEME } from "@/lib/theme";
 
 export function SignUpForm() {
   const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
-  const colorScheme = useAppColorScheme();
+  const colorScheme = useColorSchemeName();
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);

@@ -9,7 +9,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { THEME } from "@/lib/theme";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { formatAtOffset, shiftFromOffsetFrame, shiftToOffsetFrame } from "@/src/utils/date";
 
 interface DateTimeFieldProps {
@@ -37,7 +37,7 @@ export function DateTimeField({
   const reduceMotionEnabled = useReduceMotionEnabled();
   const [open, setOpen] = useState(false);
 
-  const scheme = useAppColorScheme();
+  const scheme = useColorSchemeName();
   const defaultStyles = useDefaultStyles(scheme);
   const pickerStyles = useMemo(
     () => ({

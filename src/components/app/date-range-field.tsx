@@ -9,7 +9,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { THEME } from "@/lib/theme";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 export interface DateRange {
   /** Local date key, YYYY-MM-DD, inclusive. */
@@ -42,7 +42,7 @@ export function DateRangeField({
 }: DateRangeFieldProps) {
   const reduceMotionEnabled = useReduceMotionEnabled();
 
-  const scheme = useAppColorScheme();
+  const scheme = useColorSchemeName();
   const defaultStyles = useDefaultStyles(scheme);
   const pickerStyles = useMemo(
     () => ({

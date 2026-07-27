@@ -10,7 +10,7 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { HelpButton } from "@/src/components/app/help-button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import {
   Popover,
   PopoverContent,
@@ -141,7 +141,7 @@ export function ProgramCard({
   onDismissStart,
 }: ProgramCardProps) {
   const { t } = useTranslation(ns);
-  const isDark = useAppColorScheme() === "dark";
+  const isDark = useColorSchemeName() === "dark";
   const [showEarlyAdvanceConfirm, setShowEarlyAdvanceConfirm] = useState(false);
   const triggerRef = useRef<TriggerRef>(null);
 

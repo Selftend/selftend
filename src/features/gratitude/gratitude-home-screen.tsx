@@ -26,7 +26,7 @@ import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-car
 import { useGratitudeEntries, useGratitudeEntryCount } from "@/src/features/gratitude/queries";
 import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import type { TintToken } from "@/src/lib/design-tokens";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { cn } from "@/lib/utils";
@@ -263,7 +263,7 @@ interface FrequencyBarsProps {
 }
 
 function FrequencyBars({ data, weekLabel, title }: FrequencyBarsProps) {
-  const scheme = useAppColorScheme();
+  const scheme = useColorSchemeName();
   return (
     <View>
       <View className="flex-row items-baseline justify-between">
