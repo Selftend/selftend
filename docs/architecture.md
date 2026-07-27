@@ -224,7 +224,7 @@ Direct imports of `i18n.t(...)` are reserved for non-component code (utility fun
 - `lib/theme.ts` also exports `THEME_VARIABLES`, which applies the same token values through NativeWind `vars()` at the root layout so native builds can resolve classes like `bg-background` and `text-foreground`.
 - `tailwind.config.js` mirrors the same tokens for NativeWind classes.
 - `src/lib/color-scheme.ts` resolves the user's preference (light / dark / system) to an active scheme.
-- `src/stores/theme-store.ts` persists the choice.
+- `src/stores/theme-store.ts` persists the choice. It also exposes `hydrated`, which says whether the preference has settled — either read from storage or chosen explicitly. Once it is `true`, `hydrate()` will not re-read storage, and a read already in flight is discarded on return. That ordering is deliberate: an explicit choice, or an account value pulled by `useSettingsSync`, always beats a value loaded from disk.
 
 NativeWind and React Navigation both receive the active scheme from the root layout.
 
