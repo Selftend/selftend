@@ -1,7 +1,7 @@
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Pressable, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, {
   useSharedValue,
@@ -168,7 +168,13 @@ export default function BreathingSessionScreen() {
 
   const colorScheme = useAppColorScheme();
   const roomStyle = useRoomStyle("aqua");
-  const pacer = pacerColors(colorScheme === "dark");
+  // Identity-stable per scheme: the countdown rerenders this screen about once a
+  // second during a session, and `circleStyle`'s worklet captures `pacer`. A fresh
+  // object each render reads as a changed closure dependency, so Reanimated tears
+  // down and restarts the style mapper mid-animation - exactly when the pacer
+  // circle must not stutter.
+  const isDarkScheme = colorScheme === "dark";
+  const pacer = useMemo(() => pacerColors(isDarkScheme), [isDarkScheme]);
 
   const circleStyle = useAnimatedStyle(() => ({
     width: circleSize.get(),
