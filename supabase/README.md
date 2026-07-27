@@ -271,6 +271,7 @@ The following invariants should hold on a fully-migrated project:
 - mood, gratitude, sleep, and journal views expose occurrence-offset metadata; journal occurrence time is separate from its immutable creation timestamp
 - `apply_widget_recommendations()` applies an empty or populated Home layout atomically, and `program_widget_task_status()` returns only lightweight current-goal completion flags
 - `journal_word_total()` returns the caller's exact lifetime journal word count as a single number, so the home hero stat does not truncate to the 50 entries the list query loads
+- `meditation_median_minutes()` returns the caller's exact lifetime median sit length (a `percentile_cont` aggregate, null when they have no sessions), so the meditation hero stat does not truncate to the 200 sessions the list query loads; like the word total it is `stable security invoker`, so the caller's own RLS scopes it, and it stores nothing
 
 The local and remote migration histories include `20260507000000_reminder_consent_timestamp.sql`, which adds `user_preferences.reminder_consent_updated_at` and export coverage for timestamped reminder consent. The 2026-05-07 version is used so the file sorts after the legacy 8-digit `20260506_onboarding_flags.sql` migration.
 

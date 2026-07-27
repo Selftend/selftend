@@ -20,6 +20,7 @@ import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-da
 import { MeditationInsightsCard } from "@/src/features/meditation/meditation-insights-card";
 import { MeditationPracticesSection } from "@/src/features/meditation/meditation-practices-section";
 import {
+  useMeditationMedianMinutes,
   useMeditationProgramState,
   useMeditationSessions,
   useMeditationSessionCount,
@@ -50,6 +51,10 @@ export default function MeditationHomeScreen() {
   // Exact lifetime total for the hero - the list above is capped at 200, so its length
   // would freeze the displayed "sessions" count once a user passes that many.
   const { data: totalSessions } = useMeditationSessionCount(userId);
+  // Exact lifetime median for the hero, same reason: a median taken over the capped list
+  // is a median of the newest 200 sits, which a daily meditator passes in under seven
+  // months - and unlike a rolling window, nothing in the label says so (#337).
+  const { data: serverMedianMinutes } = useMeditationMedianMinutes(userId);
   const sessions = allSessions?.slice(0, 5);
 
   const upsertProgramState = useUpsertMeditationProgramState(userId);
@@ -61,7 +66,12 @@ export default function MeditationHomeScreen() {
   const currentStage = (programState?.currentStage ?? 1) as StageNumber;
   const stage = getStage(currentStage);
   const suggestedDuration = programState?.preferredDurationMinutes ?? 15;
-  const medianMinutes = median((allSessions ?? []).map((s) => s.durationMinutes));
+  // The loaded sessions only stand in until the server median arrives (undefined while
+  // loading); once it does it wins, including a genuine null for "no sessions yet".
+  const medianMinutes =
+    serverMedianMinutes !== undefined
+      ? serverMedianMinutes
+      : median((allSessions ?? []).map((s) => s.durationMinutes));
 
   // "Last sat" derives from the session window the screen already queries; scan
   // for the latest completedAt rather than trusting order (grounding precedent).

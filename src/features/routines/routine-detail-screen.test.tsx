@@ -84,7 +84,7 @@ describe("RoutineDetailScreen", () => {
     } as unknown as ReturnType<typeof useDeleteRoutine>);
     // A mood log today: step 1 done, step 2 (journal) not yet.
     mockUseRoutineToolRecords.mockReturnValue({
-      moodLogs: [{ loggedAt: `${currentDateKey()}T12:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     });
     deleteRoutine.mockResolvedValue(undefined);
   });
