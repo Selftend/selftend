@@ -1,7 +1,9 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import HabitsHomeScreen from "./habits-home-screen";
+import { habitChipColors } from "@/src/features/habits/habit-color";
 import { useHabitLogs, useHabits, useToggleHabitLog } from "@/src/features/habits/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { addDays, currentDateKey, localDateKey } from "@/src/features/habits/scheduling";
@@ -219,5 +221,34 @@ describe("HabitsHomeScreen tap-to-tick", () => {
         loggedOn: pastDate,
       });
     });
+  });
+});
+
+describe("HabitsHomeScreen ticked-state contrast", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+  });
+
+  it("outlines a ticked habit in chip ink, not the soft resting border", async () => {
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog()],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    const tickBox = await screen.findByRole("checkbox", { name: /Ticked today/i });
+    const style = StyleSheet.flatten(tickBox.props.style) as {
+      backgroundColor?: string;
+      borderColor?: string;
+    };
+    const chip = habitChipColors("primary", "light");
+
+    expect(style.backgroundColor).toBe(chip.fill);
+    // The week strip encodes ticked by color alone - no label, no glyph - so
+    // its outline has to be the stop certified against the room surface
+    // (test/chip-contrast.test.ts), not the decorative `border`.
+    expect(style.borderColor).toBe(chip.ink);
+    expect(style.borderColor).not.toBe(chip.border);
   });
 });

@@ -14,7 +14,7 @@ import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { colorChipClass } from "@/src/features/habits/habits-home-screen";
+import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import { useHabit, useHabits, useSaveHabit } from "@/src/features/habits/queries";
 import { HABIT_COLORS, HABIT_NAME_MAX, habitInputSchema } from "@/src/features/habits/schemas";
 import type {
@@ -533,23 +533,30 @@ interface ColorChipProps extends ChipProps {
 }
 
 function ColorChip({ active, color, label, onPress, rovingProps }: ColorChipProps) {
-  const chip = colorChipClass(color);
+  const chip = useHabitChipPalette()[color];
   return (
     <Pressable
       accessibilityRole="radio"
       aria-checked={active}
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={onPress}
-      className={cn(
-        "flex-row items-center gap-2 rounded-full border px-3 py-2",
-        active ? chip.border : "border-border",
-        chip.bg,
-      )}
+      className="flex-row items-center gap-2 rounded-full border px-3 py-2"
+      // Selection rides on the chip ink, the one stop certified against the
+      // room surface - the soft border it replaces is too faint to read as a
+      // state on a pale hue (WCAG 1.4.11).
+      style={{ backgroundColor: chip.fill, borderColor: active ? chip.ink : chip.border }}
       role="radio"
       {...rovingProps}
     >
-      <View className={cn("size-4 rounded-full border", chip.border, chip.bg)} />
-      <Text className={cn("text-xs font-semibold", chip.text)}>{label}</Text>
+      {/* The swatch samples the hue's published accent; its ink ring keeps the
+          edge perceivable for the light hues the accent alone can't carry. */}
+      <View
+        className="size-4 rounded-full border"
+        style={{ backgroundColor: chip.accent, borderColor: chip.ink }}
+      />
+      <Text className="text-xs font-semibold" style={{ color: chip.ink }}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
