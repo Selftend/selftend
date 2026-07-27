@@ -12,6 +12,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HabitsOnboarding } from "@/src/components/app/habits-onboarding-modal";
+import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import { HABITS_LEARN_CARDS } from "@/src/features/habits/learn";
 import {
   getIdentityRoundUp,
@@ -172,7 +173,7 @@ export default function HabitsHomeScreen() {
                 </View>
 
                 {missTwiceRiskHabits.length > 0 ? (
-                  <View className="gap-2 rounded-2xl border border-amber-300/40 bg-amber-100/40 p-4 dark:border-amber-700/40 dark:bg-amber-900/20">
+                  <View className="gap-2 rounded-2xl border border-think/40 bg-think/10 p-4">
                     <Text className="font-semibold">{t("home.neverMissTwiceTitle")}</Text>
                     <Text variant="muted">{t("home.neverMissTwiceBody")}</Text>
                   </View>
@@ -286,7 +287,11 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
   const { t } = useTranslation("habits");
   const tickedToday = isTickedOn(logs, habit.id, todayStr);
   const days = lastSevenDays();
-  const colorClass = colorChipClass(habit.color);
+  const chip = useHabitChipPalette()[habit.color];
+  // Ticked is encoded by color alone on the week strip - no label, no glyph -
+  // so the outline has to be the stop certified against the room (WCAG 1.4.11),
+  // not the soft resting border. The tick box shares it for one silhouette.
+  const tickedStyle = { backgroundColor: chip.fill, borderColor: chip.ink };
 
   return (
     <View className="gap-3 rounded-2xl border border-border bg-card p-4">
@@ -304,13 +309,14 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
           onPress={onToggle}
           className={cn(
             "size-10 items-center justify-center rounded-xl border",
-            tickedToday ? `${colorClass.bg} ${colorClass.border}` : "border-border bg-background",
+            !tickedToday && "border-border bg-background",
           )}
+          style={tickedToday ? tickedStyle : undefined}
           role="checkbox"
           {...spaceKeyActivationProps(onToggle)}
         >
           {tickedToday ? (
-            <Icon name="check" className={`size-5 ${colorClass.text}`} />
+            <Icon name="check" className="size-5" style={{ color: chip.ink }} />
           ) : (
             <Icon name="radio-button-unchecked" className="size-5 text-muted-foreground" />
           )}
@@ -351,12 +357,12 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
                 key={dayStr}
                 className={cn(
                   "h-6 flex-1 rounded-md border",
-                  ticked
-                    ? `${colorClass.bg} ${colorClass.border}`
-                    : scheduled
+                  !ticked &&
+                    (scheduled
                       ? "border-border bg-muted/40"
-                      : "border-dashed border-border bg-background",
+                      : "border-dashed border-border bg-background"),
                 )}
+                style={ticked ? tickedStyle : undefined}
               />
             );
           })}
@@ -469,9 +475,10 @@ interface LearnCardProps {
 
 function LearnCard({ learnIndex, onDismiss }: LearnCardProps) {
   const { t } = useTranslation("habits");
+  const palette = useHabitChipPalette();
   const card = HABITS_LEARN_CARDS[learnIndex % HABITS_LEARN_CARDS.length];
   if (!card) return null;
-  const chip = colorChipClass(card.tone);
+  const chip = palette[card.tone];
   const cardKey = `learn.cards.${card.slug}` as const;
 
   return (
@@ -495,8 +502,11 @@ function LearnCard({ learnIndex, onDismiss }: LearnCardProps) {
           role="button"
         >
           <View className="flex-row items-center justify-between">
-            <View className={cn("size-10 items-center justify-center rounded-xl", chip.bg)}>
-              <Icon name={card.icon} className={cn("size-5", chip.text)} />
+            <View
+              className="size-10 items-center justify-center rounded-xl"
+              style={{ backgroundColor: chip.fill }}
+            >
+              <Icon name={card.icon} className="size-5" style={{ color: chip.ink }} />
             </View>
             <View className="size-5" />
           </View>
@@ -521,46 +531,4 @@ function LearnCard({ learnIndex, onDismiss }: LearnCardProps) {
       </View>
     </View>
   );
-}
-
-interface ColorChip {
-  bg: string;
-  border: string;
-  text: string;
-}
-
-export function colorChipClass(color: Habit["color"]): ColorChip {
-  switch (color) {
-    case "be":
-      return { bg: "bg-be/20", border: "border-be/40", text: "text-be" };
-    case "act":
-      return { bg: "bg-act/20", border: "border-act/40", text: "text-act" };
-    case "amber":
-      return {
-        bg: "bg-amber-200/40 dark:bg-amber-900/30",
-        border: "border-amber-400/40",
-        text: "text-amber-700 dark:text-amber-300",
-      };
-    case "emerald":
-      return {
-        bg: "bg-emerald-200/40 dark:bg-emerald-900/30",
-        border: "border-emerald-400/40",
-        text: "text-emerald-700 dark:text-emerald-300",
-      };
-    case "violet":
-      return {
-        bg: "bg-violet-200/40 dark:bg-violet-900/30",
-        border: "border-violet-400/40",
-        text: "text-violet-700 dark:text-violet-300",
-      };
-    case "rose":
-      return {
-        bg: "bg-rose-200/40 dark:bg-rose-900/30",
-        border: "border-rose-400/40",
-        text: "text-rose-700 dark:text-rose-300",
-      };
-    case "primary":
-    default:
-      return { bg: "bg-primary/20", border: "border-primary/40", text: "text-primary" };
-  }
 }

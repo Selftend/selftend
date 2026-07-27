@@ -20,13 +20,6 @@ jest.mock("expo-router", () => ({
   usePathname: () => "/tools/habits/learn",
 }));
 
-// The screens only need colorChipClass; stubbing the home-screen module keeps
-// its heavy import graph (onboarding modal → settings queries → supabase
-// client) out of this suite.
-jest.mock("@/src/features/habits/habits-home-screen", () => ({
-  colorChipClass: () => ({ bg: "bg-act/20", border: "border-act/40", text: "text-act" }),
-}));
-
 describe("HabitsLearnIndexScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();

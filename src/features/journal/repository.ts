@@ -67,6 +67,18 @@ export async function countJournalEntriesSince(userId: string, sinceIso: string)
   return count ?? 0;
 }
 
+// Exact lifetime word total for the hero stat. Summing bodies client-side would only ever
+// cover the 50 entries the list query loads, so the figure silently truncated for heavy
+// writers; the RPC counts server-side and returns a single number (#293).
+export async function sumJournalWords(): Promise<number> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("journal_word_total");
+
+  if (error) throw error;
+  // PostgREST serialises bigint as a JSON number, but coerce defensively.
+  return Number(data ?? 0);
+}
+
 export async function getJournalEntry(userId: string, id: string) {
   // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
   if (!isValidUuid(id)) return null;

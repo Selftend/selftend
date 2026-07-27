@@ -6,6 +6,7 @@ import type {
   HabitLog,
   HabitCadence,
 } from "@/src/features/habits/types";
+import { toHabitColor } from "@/src/features/habits/schemas";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
@@ -53,7 +54,7 @@ function mapHabit(row: HabitRow): Habit {
     rewardNote: row.reward_note,
     cadence: row.cadence,
     customDays: row.custom_days ?? [],
-    color: row.color,
+    color: toHabitColor(row.color),
     archivedAt: row.archived_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

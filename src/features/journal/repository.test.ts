@@ -5,6 +5,7 @@ import {
   getJournalEntry,
   listJournalEntries,
   saveJournalEntry,
+  sumJournalWords,
 } from "@/src/features/journal/repository";
 import { requireSupabase } from "@/src/lib/supabase";
 
@@ -53,6 +54,35 @@ describe("journal repository", () => {
     expect(eq).toHaveBeenCalledWith("user_id", "user-1");
     expect(order).toHaveBeenCalledWith("occurred_at", { ascending: false });
     expect(limit).toHaveBeenCalledWith(25);
+  });
+
+  it("sums lifetime words through the RPC rather than the capped list", async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: 4210, error: null });
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ rpc, from } as unknown as ReturnType<
+      typeof requireSupabase
+    >);
+
+    await expect(sumJournalWords()).resolves.toBe(4210);
+    expect(rpc).toHaveBeenCalledWith("journal_word_total");
+    // No table read: the point of the RPC is that no bodies cross the wire.
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("coerces a stringified bigint word total and defaults a null to zero", async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: "4210", error: null });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(sumJournalWords()).resolves.toBe(4210);
+
+    rpc.mockResolvedValue({ data: null, error: null });
+    await expect(sumJournalWords()).resolves.toBe(0);
+  });
+
+  it("throws when the word-total RPC errors", async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: null, error: new Error("rpc failed") });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(sumJournalWords()).rejects.toThrow("rpc failed");
   });
 
   it("returns null when getJournalEntry finds no row", async () => {

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { HabitColor } from "@/src/features/habits/types";
+
 export const HABIT_NAME_MAX = 120;
 const HABIT_IDENTITY_MAX = 200;
 export const HABIT_CUE_MAX = 240;
@@ -12,6 +14,22 @@ export const HABIT_NOTE_MAX = 500;
 const HABIT_KINDS = ["build", "break"] as const;
 const HABIT_CADENCES = ["daily", "weekdays", "custom"] as const;
 export const HABIT_COLORS = ["primary", "be", "act", "amber", "emerald", "violet", "rose"] as const;
+
+/**
+ * Coerce a stored `color` to a known alias, falling back to `primary`.
+ *
+ * `20260532_habits.sql` only constrains the column to a 1-32 character string,
+ * and `mapHabit` casts rows without runtime validation, so a row written by an
+ * older build - or by hand - can hold anything. Since #278 the chip palette is
+ * a plain Record keyed by these aliases, so an unknown key reads as
+ * `undefined` and the first `chip.fill` dereference crashes the list, detail
+ * and editor screens. The switch this replaced fell back to `primary`;
+ * normalizing at the repository boundary restores that for every consumer at
+ * once, including ones added later.
+ */
+export function toHabitColor(value: unknown): HabitColor {
+  return HABIT_COLORS.includes(value as HabitColor) ? (value as HabitColor) : "primary";
+}
 
 const trimmedRequired = z
   .string()

@@ -10,7 +10,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { colorChipClass } from "@/src/features/habits/habits-home-screen";
+import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import {
   useArchiveHabit,
   useDeleteHabit,
@@ -231,7 +231,7 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
     return arr;
   })();
 
-  const chip = colorChipClass(habit.color);
+  const chip = useHabitChipPalette()[habit.color];
   const todayStr = localDateKey(today);
 
   return (
@@ -247,6 +247,13 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
             const scheduled = isScheduledOn(habit, day);
             const isToday = dayStr === todayStr;
             const isFuture = day.getTime() > today.getTime();
+            // A ticked cell carries no label or glyph, so its outline is the
+            // chip ink - the stop certified against the room surface (WCAG
+            // 1.4.11). Today's primary ring outranks it, so a ticked-today cell
+            // takes only the fill and leaves the border to the class below.
+            const tickedStyle = ticked
+              ? { backgroundColor: chip.fill, ...(isToday ? null : { borderColor: chip.ink }) }
+              : undefined;
             return (
               <Pressable
                 key={dayStr}
@@ -258,13 +265,13 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
                 onPress={() => onToggleDay(dayStr)}
                 className={cn(
                   "h-5 w-5 rounded-sm border",
-                  ticked
-                    ? `${chip.bg} ${chip.border}`
-                    : scheduled
+                  !ticked &&
+                    (scheduled
                       ? "border-border bg-muted/40"
-                      : "border-dashed border-border bg-background",
+                      : "border-dashed border-border bg-background"),
                   isToday && "border-2 border-primary",
                 )}
+                style={tickedStyle}
                 role="checkbox"
                 {...spaceKeyActivationProps(() => onToggleDay(dayStr))}
               />
