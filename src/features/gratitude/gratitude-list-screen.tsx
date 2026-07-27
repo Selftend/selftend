@@ -12,7 +12,7 @@ import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-car
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function GratitudeListScreen() {
   const { t } = useTranslation("gratitude");
@@ -21,7 +21,7 @@ export default function GratitudeListScreen() {
   const { selectedDate } = useSelectedDate();
   const { data: entries } = useGratitudeEntries(user?.id ?? null, 50);
 
-  const list = (entries ?? []).filter((entry) => toLocalDateKey(entry.loggedAt) === selectedDate);
+  const list = (entries ?? []).filter((entry) => entry.dayKey === selectedDate);
 
   return (
     <SafeAreaView

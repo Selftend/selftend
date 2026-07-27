@@ -37,7 +37,12 @@ The everyday behavior a user is encouraged to attach a routine to ("right after 
 _Avoid_: trigger, cue-field, hook
 
 **Day**:
-The user's local calendar day. Routine status resets at local midnight; a routine is evaluated one day at a time.
+The calendar day an entry belongs to. Which calendar depends on whether the tool records where the user was:
+
+- **Tools that capture an occurrence offset** — mood, gratitude, sleep, journal — use the **civil day at the place the entry was logged**, fixed for the life of the entry. Changing timezone never moves an entry to a different day. The repository resolves it once into a `dayKey` (`YYYY-MM-DD`); surfaces group on that and never convert the timestamp themselves.
+- **Everything else** — routines, habits, ACT, CBT records, breathing, meditation — has no captured offset and uses the **viewer's current local day**. Routine status still resets at local midnight.
+- Where a captured offset is missing (entries predating the column, or written by an older client) the first group falls back to the second. That is a fallback for unknown, never a claim the entry was logged at UTC.
+
 _Avoid_: session, cycle
 
 > Note: there is intentionally no "run" term. A routine has a definition and a status derived per day; there is no separate object representing one day's execution.

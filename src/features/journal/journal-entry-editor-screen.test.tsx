@@ -216,7 +216,9 @@ describe("JournalEntryEditorScreen", () => {
           title: "Yesterday",
           body: "I rested.",
           occurredAt: "2026-05-10T08:00:00.000Z",
-          occurredOffsetMinutes: expect.any(Number),
+          // The fixture entry carries no captured offset, and an edit that does not
+          // touch the time must not invent one (#250).
+          occurredOffsetMinutes: null,
         },
         entryId: "j-9",
       }),

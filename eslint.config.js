@@ -106,8 +106,12 @@ module.exports = [
     // skews daily averages (#250). The viewer-local helpers stay available to the
     // modules with no captured offset (habits, ACT, CBT, breathing, meditation,
     // routines) - they have nothing better to use yet.
-    // gratitude/sleep/journal join this list when they move onto `dayKey` too.
-    files: ["src/features/mood/**/*.{ts,tsx}"],
+    files: [
+      "src/features/mood/**/*.{ts,tsx}",
+      "src/features/gratitude/**/*.{ts,tsx}",
+      "src/features/sleep/**/*.{ts,tsx}",
+      "src/features/journal/**/*.{ts,tsx}",
+    ],
     ignores: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {
       "no-restricted-imports": [
