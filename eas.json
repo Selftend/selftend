@@ -40,7 +40,7 @@
       "android": {
         "serviceAccountKeyPath": ".secrets/google-play-service-account.json",
         "track": "production",
-        "releaseStatus": "draft"
+        "releaseStatus": "completed"
       }
     }
   }

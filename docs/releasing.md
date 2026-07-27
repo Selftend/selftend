@@ -29,21 +29,28 @@ This doc defines the two-branch release flow: how everyday changes land, how a r
 
 3. Once required checks and review clear, it lands as a merge commit on `main`.
 4. release-please reacts to the push: it opens or updates its release PR (version bump + CHANGELOG), the workflow bot-approves it and arms auto-merge, and merging it tags `vX.Y.Z` and publishes a GitHub Release under the `RELEASE_PLEASE_TOKEN` PAT.
-5. The pipeline runs: production database migration, then web + edge functions + Android in parallel. **Web and the database go live automatically. Android does not** — see [The Android publish gate](#the-android-publish-gate).
+5. The pipeline runs: production database migration, then web + edge functions + Android in parallel. **Everything goes live automatically**; Android trails only by Google's review — see [How Android reaches users](#how-android-reaches-users).
 
 **Never squash the promotion PR.** Squashing collapses the per-PR Conventional Commits into one commit and loses the version/CHANGELOG signal. release-please traverses `main`'s full commit graph, so the squash commits carried in by the merge commit are parsed individually; the merge commit's own subject does not need to be conventional. To keep the wrong button unavailable, the repo allows only the two merge methods that are actually used: squash (dev PRs, release PR) and merge commit (promotion and hotfix PRs) — rebase merge is disabled.
 
-## The Android publish gate
+## How Android reaches users
 
-The pipeline uploads the AAB to the Play **production** track as a `draft` release. Play defines that as "the release's APKs are not being served to users": it sits in Play Console reaching nobody.
+The pipeline releases the AAB to the Play **production** track as `completed` — Play's "the release will have no further changes, its APKs are being served to all users".
 
-**A merge to `main` therefore never puts Android bits in front of real users on its own.** To ship, a human opens Play Console → **Production** → **Start rollout to Production**, and chooses the rollout percentage at that moment. The rollout ladder deliberately lives in the console, not in CI.
+**A merge to `main` goes live to every user automatically once Google's review clears.** There is no staged rollout and no human gate; nothing needs pressing.
 
-Note the asymmetry this creates: web and the database ship on merge while Android waits. Keep migrations forward-compatible so the currently-rolled-out Android build keeps working against a migrated database.
+The closed testing tracks (`Groups`, `alpha`) receive the same build in the same pipeline run, so testers are never left behind production.
 
-The closed testing tracks (`Groups`, `alpha`) receive the same build as `completed` in the same pipeline run, so testers are always at or ahead of production users.
+### What this costs, and what to watch
 
-Staged rollout percentages are only available for updates to an existing production release — an app's _first_ production release can only go to full rollout, where the countries list is the only control on reach.
+This is a deliberate trade of safety for throughput, and the consequences should not be rediscovered mid-incident:
+
+- **A bad build reaches 100% of users** before anyone can react. There is no percentage to cap the blast radius and no rollout to halt.
+- **Sentry and Android vitals are the only early warning.** Watch them after a release.
+- **Play has no rollback.** The sole remedy is shipping a higher versionCode forward — see the [Rollback runbook](#rollback-runbook).
+- **Review latency still applies**, so Android trails web and the database by however long Google takes. Keep migrations forward-compatible: the currently-installed Android build must keep working against a migrated database.
+
+If this ever needs dialling back, the two neighbouring `releaseStatus` values in `eas.json` are `inProgress` with a `rollout` fraction (still automatic, but capped and haltable) and `draft` (uploaded, serving nobody, awaiting a human press).
 
 ## Hotfixes
 
@@ -61,7 +68,7 @@ Two speeds: mitigate first, then make the fix permanent. The database is
 **1. Immediate mitigation (minutes):**
 
 - **Web** — redeploy the previous good version to the Cloudflare Worker: either **Cloudflare dash → Workers → `selftend` → Deployments → roll back** to the prior version (instant, no rebuild), or `workflow_dispatch` the `Web production deploy` workflow (`web-deploy.yml`) / re-run `release.yml` on the prior release `tag`.
-- **Android** — Play has no un-release for a versionCode. If the release is still a `draft` (nobody pressed Start rollout yet), simply do not start it — no users are affected. If the rollout has started, in Play Console **halt the rollout** on the **production** track: that stops new users receiving it, but everyone who already updated stays on the bad build, so a fixed build with a higher versionCode is still required. Halt the closed tracks too if testers are affected.
+- **Android** — Play has no un-release for a versionCode, and releases go out at 100% with no staged rollout to halt. If the release is still in **review**, remove it from review in Play Console before it ships. Once it is live, the only remedy is **shipping a fixed build with a higher versionCode forward**; you may also **halt** the release on the production track to stop _new_ users receiving it, but everyone who already updated stays on the bad build. Halt the closed tracks too if testers are affected.
 - **Database** — do nothing schema-wise. For genuine data corruption only: restore from the daily `db-backup.yml` backup (accepts up to ~24h data loss unless Supabase PITR is enabled — recommended).
 
 **2. Permanent fix (hours):**

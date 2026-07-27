@@ -1,21 +1,23 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-// #371 / #372 - a merge to `main` must never put Android bits in front of real
-// users on its own. The pipeline uploads to the Play **production** track with
-// `releaseStatus: "draft"` ("the release's APKs are not being served to users"),
-// and a human presses `Start rollout to Production` in Play Console.
+// #371 / #372 - a merge to `main` releases Android to the Play **production**
+// track as `completed`: live to all users once Google's review clears, with no
+// staged rollout and nothing to press.
 //
-// Two ways that gate could silently disappear: flipping the submit profile back
-// to a testing track, or flipping the release status to `completed` (which
-// serves it to everyone the moment review clears). Both are pinned here.
+// Two ways that could silently break, both pinned here:
+//   - the submit profile being pointed back at a testing track, so releases
+//     quietly stop reaching production at all;
+//   - `releaseStatus` drifting to `draft`, which uploads a release that serves
+//     NOBODY. That failure is silent: CI stays green, the build appears in Play
+//     Console, and users simply never receive it until somebody notices.
 //
-// `draft` is deliberate, not interchangeable with the neighbouring statuses:
-//   - `halted` means "will no longer be served" - it describes a release that
-//     WAS serving and got stopped. That is the kill switch, not a pre-rollout
-//     state, and Play would reject it for a release that never rolled out.
-//   - `inProgress` with a zero rollout is invalid: `userFraction` is documented
-//     as exclusive of 0, so "in progress to nobody" is unsayable.
+// The remaining statuses are deliberate non-choices, recorded so a future
+// reader does not treat them as equivalent:
+//   - `halted` means "will no longer be served" - a release that WAS serving
+//     and got stopped. It is the kill switch, not a release state.
+//   - `inProgress` requires a `rollout` fraction and caps the audience; it is
+//     the dial-back option documented in docs/releasing.md, not the default.
 
 const ROOT = resolve(__dirname, "..");
 
@@ -41,10 +43,10 @@ describe("Android production submit profile (#371)", () => {
     expect(profile?.track).toBe("production");
   });
 
-  it("uploads as a draft so the rollout stays a human action", () => {
-    // If this ever reads "completed", a merge to main ships straight to every
-    // user with no human in the loop. That is the whole point of the gate.
-    expect(profile?.releaseStatus).toBe("draft");
+  it("releases as completed so a merge to main actually reaches users", () => {
+    // `draft` here would upload a release that serves nobody - green CI, build
+    // visible in Play Console, users never get it. Fail loudly instead.
+    expect(profile?.releaseStatus).toBe("completed");
   });
 });
 
@@ -59,9 +61,9 @@ describe("Android release workflow track targeting (#371)", () => {
   });
 
   it("mirrors onto the closed tracks from production, so testers are never behind", () => {
-    // The same versionCode is copied to the closed tracks as `completed` while
-    // production waits on the human - testers stay at or ahead of real users.
-    // Interim arrangement; #374 moves closed-track feeding to `dev`.
+    // The same versionCode is copied to the closed tracks, so the tester group
+    // is never left on an older build than production. Interim arrangement;
+    // #374 moves closed-track feeding to `dev`.
     const mirrors = releaseWorkflow
       .split(/\r?\n/)
       .filter((line) => line.includes("promote-android-track.cjs"));

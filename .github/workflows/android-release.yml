@@ -3,17 +3,21 @@ name: Android Play production release
 # Reusable build+submit invoked by the release orchestrator (release.yml) after
 # migrate-prod. workflow_dispatch is kept as a manual fallback (builds main).
 #
-# The AAB is uploaded to the Play **production** track as a `draft` release -
-# Play's documented meaning is "the release's APKs are not being served to
-# users", so it sits in Play Console reaching nobody until a human presses
-# `Start rollout to Production` and picks the rollout percentage there. That
-# human press is the deliberate publish gate: a merge to `main` must never put
-# bits in front of real users on its own (wayfinder #371, research #372).
+# The AAB is released to the Play **production** track as `completed` - Play's
+# documented meaning is "the release will have no further changes, its APKs are
+# being served to all users". A merge to `main` therefore reaches every user
+# automatically once Google's review clears, with nothing to press
+# (wayfinder #371; the mechanism is research #372).
 #
-# `draft` - not `halted`, which Play defines as "will no longer be served"
-# (i.e. was serving, now stopped - that is the kill switch, not a pre-rollout
-# state), and not `inProgress` with a zero rollout, which is invalid because
-# `userFraction` is exclusive of 0.
+# There is deliberately NO staged rollout and NO human gate. The consequence,
+# recorded so it is not rediscovered during an incident: a bad build reaches
+# 100% of users before anyone can react, Android vitals and Sentry are the only
+# early warning, and Play has no rollback - the sole remedy is shipping a higher
+# versionCode forward. See the rollback runbook in docs/releasing.md.
+#
+# Should this ever need dialling back, the two neighbouring statuses are
+# `inProgress` + a `rollout` fraction (automatic, but capped and haltable) and
+# `draft` (uploaded, serving nobody, awaiting a human press).
 on:
   workflow_call:
     inputs:
@@ -22,7 +26,7 @@ on:
         type: string
         required: true
       submit_to_play:
-        description: Upload the AAB to the Google Play production track as a draft release
+        description: Release the AAB to the Google Play production track (live to all users after review)
         type: boolean
         default: true
       environment:
@@ -32,7 +36,7 @@ on:
   workflow_dispatch:
     inputs:
       submit_to_play:
-        description: Build the AAB and upload it to the Google Play production track as a draft release
+        description: Build the AAB and release it to the Google Play production track (live to all users after review)
         type: boolean
         default: true
 
@@ -194,7 +198,7 @@ jobs:
           mkdir -p .secrets
           printf '%s' "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" > .secrets/google-play-service-account.json
 
-      - name: Upload to Google Play production (draft)
+      - name: Release to Google Play production
         if: ${{ inputs.submit_to_play }}
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -210,12 +214,11 @@ jobs:
       - name: Mirror the release onto the closed testing tracks
         if: ${{ inputs.submit_to_play }}
         run: |
-          # eas submit uploaded the AAB to production as a draft; assign the same
+          # eas submit released the AAB to production; assign the same
           # versionCode to the closed tracks too (Play rejects re-uploading a
           # duplicate versionCode, so we copy the release rather than submit
-          # again). Testers get it immediately as `completed` while production
-          # waits on the human - so testers stay ahead of real users. Uses the
-          # key written above.
+          # again), so testers are never left behind production. Uses the key
+          # written above.
           #
           # INTERIM: feeding the closed tracks from `main` keeps the existing
           # tester group supplied so this change does not strand them. The
@@ -224,15 +227,18 @@ jobs:
           node scripts/promote-android-track.cjs --from production --to Groups
           node scripts/promote-android-track.cjs --from production --to alpha
 
-      - name: Summarise the pending production release
+      - name: Summarise the production release
         if: ${{ inputs.submit_to_play }}
         run: |
           {
-            echo "### Android release uploaded — awaiting a human"
+            echo "### Android released to production — no further action needed"
             echo
-            echo "The AAB is on the Play **production** track as a \`draft\` release, serving **nobody**."
+            echo "The AAB is on the Play **production** track as \`completed\`. It goes live"
+            echo "to **all users** as soon as Google's review clears; nothing to press."
             echo
-            echo "To ship it: Play Console → Production → **Start rollout to Production**."
+            echo "The closed testing tracks (Groups, alpha) have the same build."
             echo
-            echo "The closed testing tracks (Groups, alpha) already have this build."
+            echo "There is no staged rollout, so watch Sentry and Android vitals."
+            echo "Play has no rollback — a bad build is fixed by shipping a higher"
+            echo "versionCode forward. See \`docs/releasing.md\` → Rollback runbook."
           } >> "$GITHUB_STEP_SUMMARY"

@@ -1,6 +1,6 @@
 # Android Closed Testing
 
-> **Status: this milestone is done.** Google Play **production access was approved on 2026-07-27** and v0.6.1 shipped to the production track. The release pipeline now uploads to **production** (as a `draft` awaiting a human rollout) and mirrors the same build onto the closed tracks — see [Branching And Releases](./releasing.md#the-android-publish-gate). This doc is kept for the closed-testing track setup, tester management, and account/policy reference it still documents accurately.
+> **Status: this milestone is done.** Google Play **production access was approved on 2026-07-27** and v0.6.1 shipped to the production track. The release pipeline now releases to **production** automatically and mirrors the same build onto the closed tracks — see [Branching And Releases](./releasing.md#how-android-reaches-users). This doc is kept for the closed-testing track setup, tester management, and account/policy reference it still documents accurately.
 
 The first Google Play milestone should be closed testing, not production. Do not promote to production until policy, safety, device, and support requirements are reviewed.
 
@@ -159,8 +159,8 @@ When manually triggered, it:
 - installs Node `22.23.1`, Java 17, Android API 36, and NDK `27.1.12297006`
 - runs `eas build --platform android --profile production --local --non-interactive`
 - uploads the generated `.aab` as a GitHub Actions artifact
-- uploads the `.aab` to the Google Play **production** track as a `draft` release when `submit_to_play` is enabled — serving nobody until a human presses **Start rollout to Production**
-- mirrors that same versionCode onto the `Groups` and `alpha` closed testing tracks as `completed`, so testers are never behind production
+- releases the `.aab` to the Google Play **production** track as `completed` when `submit_to_play` is enabled — live to all users once Google's review clears, with no staged rollout and nothing to press
+- mirrors that same versionCode onto the `Groups` and `alpha` closed testing tracks, so testers are never behind production
 
 Required GitHub repository variables:
 
