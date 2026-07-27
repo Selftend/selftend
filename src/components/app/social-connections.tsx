@@ -1,9 +1,9 @@
 // Per-family subpath, not the "@expo/vector-icons" barrel (which bundles all 15 families).
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Button } from "@/src/components/react-native-reusables/button";
-import { useColorScheme } from "nativewind";
 import { View } from "react-native";
 import type { ComponentProps } from "react";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 type SocialConnection = {
   id: string;
@@ -17,8 +17,7 @@ type SocialConnectionsProps = {
 };
 
 export function SocialConnections({ connections }: SocialConnectionsProps) {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = useColorSchemeName() === "dark";
 
   return (
     <View className="flex-row gap-1">
