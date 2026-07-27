@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react-native";
 import { View } from "react-native";
 
-import { roomVariables } from "@/src/lib/module-room";
+import { expectRoomPour, roomPour } from "@/test/room-pour";
 
 import { MeditationPracticesSection } from "./meditation-practices-section";
 
@@ -43,14 +43,14 @@ describe("MeditationPracticesSection", () => {
 
   it("re-pours with the iris room it renders inside on home", () => {
     render(
-      <View testID="iris-room" style={roomVariables("iris").light}>
+      <View testID="iris-room" style={roomPour("iris")}>
         <MeditationPracticesSection initialPractice="body-scan" />
       </View>,
     );
 
     // The section has no pour of its own - it inherits the room the meditation
     // home screen pours around it.
-    expect(screen.getByTestId("iris-room").props.style).toEqual(roomVariables("iris").light);
+    expectRoomPour(screen.getByTestId("iris-room"), "iris");
     // And it re-pours for free only while its surfaces stay on the room's
     // tokens; a hardcoded surface here would silently opt out of every room.
     const card = screen

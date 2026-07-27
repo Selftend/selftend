@@ -14,8 +14,8 @@ import {
 } from "@/src/features/habits/queries";
 import { currentDateKey } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
-import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -125,7 +125,7 @@ describe("HabitDetailScreen act room", () => {
     expect(screen.getByText("I'm a reader")).toBeTruthy();
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the act room re-pour; a wrong or missing room fails here.
-    expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("act").light);
+    expectRoomPour(UNSAFE_getByType(SafeAreaView), "act");
   });
 
   it("pours the act room on the loading state", () => {
@@ -137,7 +137,7 @@ describe("HabitDetailScreen act room", () => {
     const { UNSAFE_getByType } = renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
-    expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("act").light);
+    expectRoomPour(UNSAFE_getByType(SafeAreaView), "act");
   });
 
   it("pours the act room on the not-found state", () => {
@@ -150,7 +150,7 @@ describe("HabitDetailScreen act room", () => {
 
     expect(screen.getByText("We couldn't find that habit.")).toBeTruthy();
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
-    expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("act").light);
+    expectRoomPour(UNSAFE_getByType(SafeAreaView), "act");
   });
 });
 
