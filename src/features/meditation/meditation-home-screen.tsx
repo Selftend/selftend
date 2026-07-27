@@ -4,9 +4,10 @@ import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ToolStats } from "@/src/components/app/tool-stats";
 import { MeditationInfo } from "@/src/components/app/meditation-info-modal";
@@ -32,10 +33,13 @@ import {} from "@/src/features/modules/types";
 import { useSession } from "@/src/providers/session-provider";
 import { parseHHmm } from "@/src/utils/time";
 import { useLocaleFormats } from "@/src/lib/locale-format";
+import { useRoomStyle } from "@/src/lib/use-room-style";
+import { formatLocalTimestamp } from "@/src/utils/date";
 
 export default function MeditationHomeScreen() {
   const { t } = useTranslation("meditation");
   const { formatDateTime } = useLocaleFormats();
+  const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { practice } = useLocalSearchParams<{ practice?: string }>();
@@ -58,6 +62,22 @@ export default function MeditationHomeScreen() {
   const stage = getStage(currentStage);
   const suggestedDuration = programState?.preferredDurationMinutes ?? 15;
   const medianMinutes = median((allSessions ?? []).map((s) => s.durationMinutes));
+
+  // "Last sat" derives from the session window the screen already queries; scan
+  // for the latest completedAt rather than trusting order (grounding precedent).
+  const lastCompletedAt = (allSessions ?? []).reduce<string | null>(
+    (latest, s) => (latest === null || s.completedAt > latest ? s.completedAt : latest),
+    null,
+  );
+  const lastWhen = lastCompletedAt ? formatLocalTimestamp(lastCompletedAt) : null;
+  // `allSessions` is undefined while loading and after a failed fetch with no
+  // cache - only an actually-loaded (possibly empty) history may claim "no
+  // sessions yet", or a returning user's history reads as erased (#320).
+  const subline = lastWhen
+    ? t("hero.last", { when: lastWhen })
+    : allSessions
+      ? t("hero.never")
+      : undefined;
 
   async function handleOnboardingComplete(result: MeditationOnboardingResult) {
     if (!preferences || !userId) return;
@@ -88,7 +108,9 @@ export default function MeditationHomeScreen() {
 
   if (prefsLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
+      // The loading return takes the pour too, or the iris room drops out while
+      // preferences resolve and snaps in afterwards (the grounding lesson).
+      <SafeAreaView className="flex-1 items-center justify-center bg-background" style={roomStyle}>
         <ActivityIndicator />
       </SafeAreaView>
     );
@@ -108,128 +130,132 @@ export default function MeditationHomeScreen() {
         onComplete={(result) => void handleOnboardingComplete(result)}
         onDismiss={forceWizard ? () => setForceWizard(false) : undefined}
       />
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-4">
-          <View className="gap-6">
-            <View className="gap-2">
-              <ModuleHomeHeader
-                addWidgetCategory="meditation"
-                title={t("module.home.title")}
-                hue="iris"
-                icon="self-improvement"
-                moduleLabel={null}
-                tourScope="meditation"
-                description={t("module.home.subtitle")}
-                actions={[
-                  { type: "tune", onPress: () => setForceWizard(true) },
-                  { type: "notifications", targetKey: "meditation" },
-                  { type: "info", onPress: () => setForceInfo(true) },
-                ]}
-                meta={
-                  <ToolStats
-                    accentClassName="text-iris"
-                    credit={t("authorEyebrow")}
-                    items={[
-                      { value: `${t("hero.stage")} ${stage.number}`, label: "" },
-                      {
-                        value: t("hero.sessions", {
-                          count: totalSessions ?? (allSessions ?? []).length,
-                        }),
-                        label: "",
-                      },
-                      {
-                        value:
-                          medianMinutes !== null
-                            ? t("hero.minutes", { count: medianMinutes })
-                            : "-",
-                        label: t("hero.median"),
-                      },
-                    ]}
+          {/* The field + sheet escape the scroll padding so the iris field runs
+              edge to edge; the sheet re-adds the inset for its sections. */}
+          <View className="-mx-4 -mt-4">
+            <ModuleHomeHeader
+              variant="field"
+              addWidgetCategory="meditation"
+              title={t("module.home.title")}
+              hue="iris"
+              icon="self-improvement"
+              moduleLabel={null}
+              tourScope="meditation"
+              description={t("module.home.subtitle")}
+              actions={[
+                { type: "tune", onPress: () => setForceWizard(true) },
+                { type: "notifications", targetKey: "meditation" },
+                { type: "info", onPress: () => setForceInfo(true) },
+              ]}
+              meta={
+                <ToolStats
+                  tone="onField"
+                  accentClassName="text-iris"
+                  credit={t("authorEyebrow")}
+                  subline={subline}
+                  sublineTone={lastWhen ? "accent" : "muted"}
+                  items={[
+                    { value: `${t("hero.stage")} ${stage.number}`, label: "" },
+                    {
+                      value: t("hero.sessions", {
+                        count: totalSessions ?? (allSessions ?? []).length,
+                      }),
+                      label: "",
+                    },
+                    {
+                      value:
+                        medianMinutes !== null ? t("hero.minutes", { count: medianMinutes }) : "-",
+                      label: t("hero.median"),
+                    },
+                  ]}
+                />
+              }
+            />
+
+            <ContentSheet className="px-4">
+              <View className="gap-6">
+                <Card variant="soft" tint="iris">
+                  <CardContent className="gap-3 pt-6">
+                    <CardTitle aria-level={2}>{t("module.home.todayCard")}</CardTitle>
+                    <TimerWidget initialDuration={suggestedDuration} />
+                  </CardContent>
+                </Card>
+
+                <View className="flex-row flex-wrap gap-3">
+                  <NavCallout
+                    label={t("module.home.openStages")}
+                    onPress={() => router.push("/tools/meditation/stages")}
                   />
-                }
-              />
-            </View>
+                  <NavCallout
+                    label={t("module.home.openLearn")}
+                    onPress={() => router.push("/tools/meditation/learn")}
+                  />
+                </View>
 
-            <Card className="border-primary/30">
-              <CardContent className="gap-3 pt-6">
-                <CardTitle aria-level={2}>{t("module.home.todayCard")}</CardTitle>
-                <TimerWidget initialDuration={suggestedDuration} />
-              </CardContent>
-            </Card>
+                <MeditationPracticesSection initialPractice={practice} />
 
-            <View className="flex-row flex-wrap gap-3">
-              <Button
-                variant="outline"
-                className="flex-1 min-w-[160px]"
-                onPress={() => router.push("/tools/meditation/stages")}
-              >
-                <Text>{t("module.home.openStages")}</Text>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 min-w-[160px]"
-                onPress={() => router.push("/tools/meditation/learn")}
-              >
-                <Text>{t("module.home.openLearn")}</Text>
-              </Button>
-            </View>
+                {currentStage === 10 ? <MeditationDailyLifeCard /> : null}
 
-            <MeditationPracticesSection initialPractice={practice} />
+                <View className="gap-3">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("module.home.recentTitle")}
+                    </Text>
+                    {sessions && sessions.length > 0 ? (
+                      <Pressable
+                        accessibilityRole="link"
+                        onPress={() => router.push("/tools/meditation/sessions")}
+                      >
+                        <Text className="text-sm text-iris">{t("module.home.viewHistory")}</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                  {!sessions || sessions.length === 0 ? (
+                    <Text variant="muted">{t("module.home.noSessions")}</Text>
+                  ) : (
+                    <View className="gap-2">
+                      {sessions.map((s) => (
+                        <Pressable
+                          key={s.id}
+                          accessibilityRole="button"
+                          onPress={() =>
+                            router.push({
+                              pathname: "/tools/meditation/sessions/[id]",
+                              params: { id: s.id },
+                            })
+                          }
+                          className="flex-row items-center justify-between rounded-lg border border-border bg-card p-3 active:bg-accent/40"
+                        >
+                          <View className="gap-0.5">
+                            <Text className="font-semibold">
+                              {t("module.sessions.durationLabel", { count: s.durationMinutes })}
+                            </Text>
+                            <Text variant="muted" className="text-xs">
+                              {formatDateTime(s.completedAt)}
+                            </Text>
+                          </View>
+                          <View className="rounded-full bg-iris/10 px-2 py-0.5">
+                            <Text className="text-xs font-semibold text-iris">
+                              {t("module.sessions.stageBadge", { stage: s.stageAtSession })}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+                </View>
 
-            {currentStage === 10 ? <MeditationDailyLifeCard /> : null}
-
-            <View className="gap-3">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("module.home.recentTitle")}
-                </Text>
-                {sessions && sessions.length > 0 ? (
-                  <Pressable
-                    accessibilityRole="link"
-                    onPress={() => router.push("/tools/meditation/sessions")}
-                  >
-                    <Text className="text-sm text-primary">{t("module.home.viewHistory")}</Text>
-                  </Pressable>
+                {allSessions && allSessions.length > 0 ? (
+                  <MeditationInsightsCard sessions={allSessions} />
                 ) : null}
               </View>
-              {!sessions || sessions.length === 0 ? (
-                <Text variant="muted">{t("module.home.noSessions")}</Text>
-              ) : (
-                <View className="gap-2">
-                  {sessions.map((s) => (
-                    <Pressable
-                      key={s.id}
-                      accessibilityRole="button"
-                      onPress={() =>
-                        router.push({
-                          pathname: "/tools/meditation/sessions/[id]",
-                          params: { id: s.id },
-                        })
-                      }
-                      className="flex-row items-center justify-between rounded-lg border border-border bg-card p-3 active:bg-accent/40"
-                    >
-                      <View className="gap-0.5">
-                        <Text className="font-semibold">
-                          {t("module.sessions.durationLabel", { count: s.durationMinutes })}
-                        </Text>
-                        <Text variant="muted" className="text-xs">
-                          {formatDateTime(s.completedAt)}
-                        </Text>
-                      </View>
-                      <View className="rounded-full bg-primary/10 px-2 py-0.5">
-                        <Text className="text-xs font-semibold text-primary">
-                          {t("module.sessions.stageBadge", { stage: s.stageAtSession })}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  ))}
-                </View>
-              )}
-            </View>
-
-            {allSessions && allSessions.length > 0 ? (
-              <MeditationInsightsCard sessions={allSessions} />
-            ) : null}
+            </ContentSheet>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -239,4 +265,29 @@ export default function MeditationHomeScreen() {
 
 function addModule<T extends string>(modules: T[], key: T): T[] {
   return modules.includes(key) ? modules : [...modules, key];
+}
+
+/**
+ * The stages / learn callouts. They were bordered outline buttons before the
+ * room; inside it they read as soft room residents like every other card on the
+ * screen. Navigation, not a form control, so the iris accent applies here -
+ * `primary` stays reserved for interactive control states.
+ */
+function NavCallout({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      className="min-w-[160px] flex-1 active:opacity-80"
+    >
+      <Card
+        variant="soft"
+        tint="iris"
+        className="flex-row items-center justify-between gap-3 px-4 py-4"
+      >
+        <Text className="flex-1 text-sm font-semibold">{label}</Text>
+        <Icon name="chevron-right" size={20} className="text-iris" />
+      </Card>
+    </Pressable>
+  );
 }

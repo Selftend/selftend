@@ -101,7 +101,9 @@
     "sessions_other": "{{count}} сесии",
     "median": "Медиана",
     "minutes_one": "{{count}} мин",
-    "minutes_other": "{{count}} мин"
+    "minutes_other": "{{count}} мин",
+    "last": "Последно · {{when}}",
+    "never": "Все още няма сесии"
   },
   "module": {
     "home": {

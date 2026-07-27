@@ -19,7 +19,9 @@
     "sessions_other": "{{count}} sessions",
     "median": "Median",
     "minutes_one": "{{count}} min",
-    "minutes_other": "{{count}} min"
+    "minutes_other": "{{count}} min",
+    "last": "Last · {{when}}",
+    "never": "No sessions logged yet"
   },
   "module": {
     "home": {
