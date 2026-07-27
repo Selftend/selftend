@@ -12,7 +12,7 @@ import Svg, {
 } from "react-native-svg";
 
 import { THEME } from "@/lib/theme";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { hueGradient, hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 
 export interface LineChartPoint {
@@ -39,7 +39,7 @@ const PADDING = { top: 16, right: 16, bottom: 32, left: 24 };
 const DENSE_POINT_LIMIT = 31;
 
 export function LineChart({ points, domain, hue, height = 160, width = 300 }: LineChartProps) {
-  const scheme = useAppColorScheme();
+  const scheme = useColorSchemeName();
   const gradientId = useId();
   if (points.length === 0) return null;
 

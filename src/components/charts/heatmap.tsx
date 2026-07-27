@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { THEME } from "@/lib/theme";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 export interface HeatmapCellDatum {
   key: string;
@@ -37,7 +37,7 @@ const CELL_GAP = 3;
  * semantics come from the caller.
  */
 export function Heatmap({ columns, cellSize = 12, selectedKey, onCellPress }: HeatmapProps) {
-  const scheme = useAppColorScheme();
+  const scheme = useColorSchemeName();
   const scrollRef = useRef<ScrollView>(null);
   if (columns.length === 0) return null;
 
