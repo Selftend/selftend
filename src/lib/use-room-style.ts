@@ -1,6 +1,5 @@
-import { useColorScheme } from "nativewind";
-
 import type { HueName } from "@/src/lib/design-tokens";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { roomCardHsl, roomVariables, type ColorSchemeName } from "@/src/lib/module-room";
 
 // The one sanctioned way for a screen to wear its module's room. The call
@@ -10,28 +9,12 @@ import { roomCardHsl, roomVariables, type ColorSchemeName } from "@/src/lib/modu
 // The cache lives here (not in module-room.ts) so the recipe module stays
 // React-free — the node-side test/room-contrast.test.ts imports it.
 //
-// The scheme read below is nativewind's — the exact read the swept sites
-// shipped, normalized once. See useRoomScheme for why it hasn't moved to the
-// house reader yet.
+// The scheme comes from useColorSchemeName, the house reader. (A chip is a
+// one-swatch room, so the chip palette in src/features/habits/habit-color.ts
+// reads the scheme through the same reader.)
 
 const VARS = new Map<HueName, ReturnType<typeof roomVariables>>();
 const CARD = new Map<HueName, ReturnType<typeof roomCardHsl>>();
-
-/**
- * The scheme read the hue-derived recipes share — nativewind's reader,
- * normalized to the two names roomTriples and chipTriples key on. (A chip is
- * a one-swatch room, so the chip palette in
- * src/features/habits/habit-color.ts reads the scheme through here too.)
- *
- * Deliberately NOT named `useColorSchemeName`: that name belongs to the
- * store-derived house reader in src/lib/color-scheme.ts. #344 folds this
- * helper into that reader, along with the components still calling
- * nativewind's hook directly. Until #344 lands, this stays local.
- */
-export function useRoomScheme(): ColorSchemeName {
-  const { colorScheme } = useColorScheme();
-  return colorScheme === "dark" ? "dark" : "light";
-}
 
 /**
  * The current scheme's room pour for a module hue — apply to the screen
@@ -39,7 +22,7 @@ export function useRoomScheme(): ColorSchemeName {
  * memoized subtrees aren't invalidated by parent re-renders.
  */
 export function useRoomStyle(hue: HueName): ReturnType<typeof roomVariables>[ColorSchemeName] {
-  const scheme = useRoomScheme();
+  const scheme = useColorSchemeName();
   let vars = VARS.get(hue);
   if (!vars) {
     vars = roomVariables(hue);
@@ -54,7 +37,7 @@ export function useRoomStyle(hue: HueName): ReturnType<typeof roomVariables>[Col
  * bg-card resolves to inside the room.
  */
 export function useRoomCardHsl(hue: HueName): string {
-  const scheme = useRoomScheme();
+  const scheme = useColorSchemeName();
   let card = CARD.get(hue);
   if (!card) {
     card = roomCardHsl(hue);

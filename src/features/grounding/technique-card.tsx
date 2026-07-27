@@ -1,5 +1,4 @@
 import { Pressable, View } from "react-native";
-import { useColorScheme } from "nativewind";
 
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -8,6 +7,7 @@ import { HueIconBadge } from "@/src/features/grounding/hue-icon-badge";
 import { hueHsl } from "@/src/features/mindfulness/exercise-hue";
 import type { GroundingTechnique } from "@/src/constants/grounding";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 interface TechniqueCardProps {
   technique: GroundingTechnique;
@@ -20,8 +20,7 @@ interface TechniqueCardProps {
 // Senses techniques show a multi-hue dot grid (matching the per-sense colours);
 // guided techniques show a single hue icon tile.
 function SenseDots({ technique }: { technique: GroundingTechnique }) {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = useColorSchemeName() === "dark";
   return (
     <View
       style={{

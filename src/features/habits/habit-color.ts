@@ -13,7 +13,7 @@ import type { HabitColor } from "@/src/features/habits/types";
 import type { TintToken } from "@/src/lib/design-tokens";
 import { chipHsl, type ChipColors } from "@/src/lib/hue-chip";
 import type { ColorSchemeName } from "@/src/lib/module-room";
-import { useRoomScheme } from "@/src/lib/use-room-style";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 export const HABIT_COLOR_TINTS: Record<HabitColor, TintToken> = {
   primary: "primary",
@@ -50,5 +50,5 @@ export function habitChipColors(color: HabitColor, scheme: ColorSchemeName): Chi
  * forbid a per-color hook there. Identity-stable per scheme.
  */
 export function useHabitChipPalette(): Record<HabitColor, ChipColors> {
-  return PALETTE[useRoomScheme()];
+  return PALETTE[useColorSchemeName()];
 }
