@@ -170,6 +170,38 @@ describe("Breathing list polish", () => {
     expect(screen.queryByText("No sessions logged yet")).toBeNull();
   });
 
+  it("omits the last-session subline while the custom exercises are still loading", () => {
+    // The nonempty half of the same race. The built-in-only result is not merely
+    // incomplete — it can be *wrong*: if this user's newest session is a custom
+    // exercise, the built-in session below is older, and billing it as "Last"
+    // shows a time that is about to change. Nothing is better than stale.
+    mockUseBreathingSessions.mockReturnValue({
+      data: [
+        {
+          id: "s1",
+          userId: "user-1",
+          exerciseName: "box-breathing",
+          durationMinutes: 2,
+          durationSeconds: 96,
+          cycles: 6,
+          reflection: "",
+          moodAfter: null,
+          feelingAfter: null,
+          completedAt: "2026-05-28T10:00:00Z",
+          createdAt: "2026-05-28T10:00:00Z",
+        },
+      ],
+    } as unknown as ReturnType<typeof useBreathingSessions>);
+    mockUseBreathingExercises.mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useBreathingExercises>);
+
+    renderWithProviders(<BreathingScreen />);
+
+    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText("No sessions logged yet")).toBeNull();
+  });
+
   it("shows the last-session subline when sessions exist", () => {
     mockUseBreathingSessions.mockReturnValue({
       data: [
