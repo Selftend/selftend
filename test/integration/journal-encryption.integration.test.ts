@@ -55,7 +55,9 @@ describe("journal_entries encrypted view (integration)", () => {
     expect(insert.data?.created_at).toEqual(expect.any(String));
     expect(insert.data?.updated_at).toEqual(expect.any(String));
     expect(insert.data?.occurred_at).toEqual(expect.any(String));
-    expect(insert.data?.occurred_offset_minutes).toBe(0);
+    // The insert states no offset, and since #250 that is "unknown" rather than
+    // UTC - a 0 here would be the column claiming a fact the caller never gave.
+    expect(insert.data?.occurred_offset_minutes).toBeNull();
 
     const id = insert.data!.id as string;
 
