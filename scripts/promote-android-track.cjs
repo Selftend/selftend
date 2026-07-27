@@ -3,11 +3,16 @@
  * `eas submit` the same build to two tracks; instead we read the source track's
  * active versionCode(s) and assign them to the target track as a completed release.
  *
- * Used by the Android release workflow to publish one build to both the Groups and
- * Alpha closed-testing tracks. Node 18+ only (global fetch / crypto).
+ * Used by the Android release workflow to copy the build it uploaded to the
+ * production track onto the Groups and Alpha closed-testing tracks, so testers
+ * receive it (as `completed`) while the production release is still a `draft`
+ * waiting on a human to start its rollout. Node 18+ only (global fetch / crypto).
+ *
+ * Reads draft releases fine: a draft appears in the track's `releases` array with
+ * its versionCodes, it is simply not served to users.
  *
  * Usage:
- *   node scripts/promote-android-track.cjs --from Groups --to alpha
+ *   node scripts/promote-android-track.cjs --from production --to alpha
  * Options (with defaults):
  *   --from Groups   source track to copy the release from
  *   --to alpha      target track to publish the same versionCode to

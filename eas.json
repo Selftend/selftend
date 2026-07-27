@@ -35,6 +35,13 @@
         "track": "Groups",
         "releaseStatus": "completed"
       }
+    },
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": ".secrets/google-play-service-account.json",
+        "track": "production",
+        "releaseStatus": "draft"
+      }
     }
   }
 }

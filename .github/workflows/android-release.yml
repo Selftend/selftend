@@ -1,7 +1,19 @@
-name: Android Play closed testing release
+name: Android Play production release
 
 # Reusable build+submit invoked by the release orchestrator (release.yml) after
 # migrate-prod. workflow_dispatch is kept as a manual fallback (builds main).
+#
+# The AAB is uploaded to the Play **production** track as a `draft` release -
+# Play's documented meaning is "the release's APKs are not being served to
+# users", so it sits in Play Console reaching nobody until a human presses
+# `Start rollout to Production` and picks the rollout percentage there. That
+# human press is the deliberate publish gate: a merge to `main` must never put
+# bits in front of real users on its own (wayfinder #371, research #372).
+#
+# `draft` - not `halted`, which Play defines as "will no longer be served"
+# (i.e. was serving, now stopped - that is the kill switch, not a pre-rollout
+# state), and not `inProgress` with a zero rollout, which is invalid because
+# `userFraction` is exclusive of 0.
 on:
   workflow_call:
     inputs:
@@ -10,7 +22,7 @@ on:
         type: string
         required: true
       submit_to_play:
-        description: Release the AAB to the Google Play closed testing (alpha) track
+        description: Upload the AAB to the Google Play production track as a draft release
         type: boolean
         default: true
       environment:
@@ -20,7 +32,7 @@ on:
   workflow_dispatch:
     inputs:
       submit_to_play:
-        description: Build the AAB and release it to the Google Play closed testing (alpha) track
+        description: Build the AAB and upload it to the Google Play production track as a draft release
         type: boolean
         default: true
 
@@ -182,7 +194,7 @@ jobs:
           mkdir -p .secrets
           printf '%s' "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" > .secrets/google-play-service-account.json
 
-      - name: Release to Google Play closed testing
+      - name: Upload to Google Play production (draft)
         if: ${{ inputs.submit_to_play }}
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -193,12 +205,34 @@ jobs:
             exit 1
           fi
 
-          npm exec --yes eas-cli -- submit --platform android --profile closed --path "$aab_path" --non-interactive
+          npm exec --yes eas-cli -- submit --platform android --profile production --path "$aab_path" --non-interactive
 
-      - name: Mirror the release onto the Alpha track
+      - name: Mirror the release onto the closed testing tracks
         if: ${{ inputs.submit_to_play }}
         run: |
-          # eas submit uploaded the AAB to Groups; assign the same versionCode to
-          # Alpha too (Play rejects re-uploading a duplicate versionCode, so we copy
-          # the release rather than submit again). Uses the key written above.
-          node scripts/promote-android-track.cjs --from Groups --to alpha
+          # eas submit uploaded the AAB to production as a draft; assign the same
+          # versionCode to the closed tracks too (Play rejects re-uploading a
+          # duplicate versionCode, so we copy the release rather than submit
+          # again). Testers get it immediately as `completed` while production
+          # waits on the human - so testers stay ahead of real users. Uses the
+          # key written above.
+          #
+          # INTERIM: feeding the closed tracks from `main` keeps the existing
+          # tester group supplied so this change does not strand them. The
+          # decided end state is for `dev` to feed these tracks instead - see
+          # wayfinder #374, which owns that design and will replace this step.
+          node scripts/promote-android-track.cjs --from production --to Groups
+          node scripts/promote-android-track.cjs --from production --to alpha
+
+      - name: Summarise the pending production release
+        if: ${{ inputs.submit_to_play }}
+        run: |
+          {
+            echo "### Android release uploaded — awaiting a human"
+            echo
+            echo "The AAB is on the Play **production** track as a \`draft\` release, serving **nobody**."
+            echo
+            echo "To ship it: Play Console → Production → **Start rollout to Production**."
+            echo
+            echo "The closed testing tracks (Groups, alpha) already have this build."
+          } >> "$GITHUB_STEP_SUMMARY"
