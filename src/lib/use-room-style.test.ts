@@ -16,7 +16,7 @@ const mockUseColorScheme = useColorScheme as jest.MockedFunction<typeof useColor
 const setScheme = (scheme: "light" | "dark" | undefined) =>
   mockUseColorScheme.mockReturnValue({ colorScheme: scheme } as ReturnType<typeof useColorScheme>);
 
-const ROOM_HUES = ["be", "ink", "think", "act", "aqua"] as const;
+const ROOM_HUES = ["be", "ink", "think", "act", "aqua", "clay", "iris"] as const;
 
 describe("useRoomStyle", () => {
   it.each(ROOM_HUES)("returns the %s pour for the active scheme", (hue) => {

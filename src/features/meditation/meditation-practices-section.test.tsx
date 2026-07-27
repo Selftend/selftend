@@ -1,6 +1,8 @@
 import { render, screen, fireEvent } from "@testing-library/react-native";
+import { View } from "react-native";
 
 import { MeditationPracticesSection } from "./meditation-practices-section";
+import { roomVariables } from "@/src/lib/module-room";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (k: string) => k }),
@@ -36,5 +38,23 @@ describe("MeditationPracticesSection", () => {
   it("ignores an unknown initialPractice and stays collapsed", () => {
     render(<MeditationPracticesSection initialPractice="mindful-walking" />);
     expect(screen.queryByText("practices.body-scan.title")).toBeNull();
+  });
+
+  it("re-pours with the iris room it renders inside", () => {
+    render(
+      <View testID="iris-room" style={roomVariables("iris").light}>
+        <MeditationPracticesSection initialPractice="body-scan" />
+      </View>,
+    );
+
+    // Positive room-pour assertion: the section owns no hue of its own, so the
+    // pour on the meditation home root is what its cards paint against. They
+    // reach iris only through room-owned surface tokens - a literal or a
+    // hardcoded neutral here would leave grey boxes floating in the room.
+    expect(screen.getByTestId("iris-room").props.style).toEqual(roomVariables("iris").light);
+    const card = screen.getByRole("button", { name: /practices\.body-scan\.title/ });
+    const className = card.props.className as string;
+    expect(className).toContain("bg-card");
+    expect(className).not.toMatch(/bg-(white|black|\[)/);
   });
 });
