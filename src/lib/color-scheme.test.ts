@@ -1,11 +1,17 @@
 /**
- * Tests for useAppColorScheme.
+ * Tests for the colour-scheme seam, split along its two responsibilities.
  *
- * Key behaviors under test:
+ * `useColorSchemeName` is the READER — pure, callable anywhere, any number of
+ * times. Key behaviors under test:
+ * - It returns the resolved scheme ("system" falls back to the OS)
+ * - It never returns undefined
+ * - It performs no writes and no hydrate
+ *
+ * `useColorSchemeDriver` is the DRIVER — called once, at the app root. Key
+ * behaviors under test:
  * - On web: nativewind.colorScheme.set receives the RESOLVED value
  * - On native: nativewind.colorScheme.set receives the RAW PREFERENCE (so
  *   "system" clears any prior Appearance override)
- * - The hook always returns the resolved scheme
  * - hydrate() is called on mount
  *
  * Source reads: `useColorScheme` from react-native (NOT nativewind).
@@ -21,7 +27,7 @@ import { Platform } from "react-native";
 
 import { colorScheme as nwColorScheme } from "nativewind";
 import { useThemeStore } from "@/src/stores/theme-store";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeDriver, useColorSchemeName } from "@/src/lib/color-scheme";
 
 // ---------------------------------------------------------------------------
 // Mock nativewind - only colorScheme.set is used by the source
@@ -54,8 +60,93 @@ function setupStore(preference: "light" | "dark" | "system") {
 }
 
 // ---------------------------------------------------------------------------
+// Reader
+// ---------------------------------------------------------------------------
 
-describe("useAppColorScheme - web (Platform.OS = web)", () => {
+describe("useColorSchemeName - the reader", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockHydrate.mockResolvedValue(undefined);
+    Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
+  });
+
+  it("returns the resolved scheme (explicit preference wins)", () => {
+    setupStore("light");
+    mockUseColorScheme.mockReturnValue("dark");
+
+    const { result } = renderHook(() => useColorSchemeName());
+
+    expect(result.current).toBe("light");
+  });
+
+  it("returns dark when OS is dark and preference is system", () => {
+    setupStore("system");
+    mockUseColorScheme.mockReturnValue("dark");
+
+    const { result } = renderHook(() => useColorSchemeName());
+
+    expect(result.current).toBe("dark");
+  });
+
+  it("returns light when OS is light and preference is system", () => {
+    setupStore("system");
+    mockUseColorScheme.mockReturnValue("light");
+
+    const { result } = renderHook(() => useColorSchemeName());
+
+    expect(result.current).toBe("light");
+  });
+
+  it("returns light when OS returns null (falsy) and preference is system", () => {
+    setupStore("system");
+    mockUseColorScheme.mockReturnValue(null);
+
+    const { result } = renderHook(() => useColorSchemeName());
+
+    // Source: `useColorScheme() === "dark" ? "dark" : "light"` - null → "light"
+    expect(result.current).toBe("light");
+  });
+
+  it("never returns undefined, whatever the OS hook reports", () => {
+    for (const osScheme of ["dark", "light", null, undefined] as const) {
+      for (const preference of ["light", "dark", "system"] as const) {
+        setupStore(preference);
+        mockUseColorScheme.mockReturnValue(osScheme);
+
+        const { result } = renderHook(() => useColorSchemeName());
+
+        expect(result.current).toMatch(/^(light|dark)$/);
+      }
+    }
+  });
+
+  it("performs no writes and no hydrate", () => {
+    setupStore("system");
+    mockUseColorScheme.mockReturnValue("dark");
+
+    renderHook(() => useColorSchemeName());
+
+    expect(mockNwSet).not.toHaveBeenCalled();
+    expect(mockHydrate).not.toHaveBeenCalled();
+  });
+
+  it("performs no writes and no hydrate on web either", () => {
+    Object.defineProperty(Platform, "OS", { configurable: true, value: "web" });
+    setupStore("dark");
+    mockUseColorScheme.mockReturnValue("light");
+
+    renderHook(() => useColorSchemeName());
+
+    expect(mockNwSet).not.toHaveBeenCalled();
+    expect(mockHydrate).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Driver
+// ---------------------------------------------------------------------------
+
+describe("useColorSchemeDriver - web (Platform.OS = web)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockHydrate.mockResolvedValue(undefined);
@@ -70,7 +161,7 @@ describe("useAppColorScheme - web (Platform.OS = web)", () => {
     setupStore("system");
     mockUseColorScheme.mockReturnValue("dark");
 
-    renderHook(() => useAppColorScheme());
+    renderHook(() => useColorSchemeDriver());
 
     expect(mockNwSet).toHaveBeenCalledWith("dark");
   });
@@ -79,7 +170,7 @@ describe("useAppColorScheme - web (Platform.OS = web)", () => {
     setupStore("system");
     mockUseColorScheme.mockReturnValue("light");
 
-    renderHook(() => useAppColorScheme());
+    renderHook(() => useColorSchemeDriver());
 
     expect(mockNwSet).toHaveBeenCalledWith("light");
   });
@@ -88,31 +179,22 @@ describe("useAppColorScheme - web (Platform.OS = web)", () => {
     setupStore("dark");
     mockUseColorScheme.mockReturnValue("light");
 
-    renderHook(() => useAppColorScheme());
+    renderHook(() => useColorSchemeDriver());
 
     expect(mockNwSet).toHaveBeenCalledWith("dark");
-  });
-
-  it("returns the resolved color scheme", () => {
-    setupStore("system");
-    mockUseColorScheme.mockReturnValue("dark");
-
-    const { result } = renderHook(() => useAppColorScheme());
-
-    expect(result.current).toBe("dark");
   });
 
   it("calls hydrate on mount", () => {
     setupStore("system");
     mockUseColorScheme.mockReturnValue("light");
 
-    renderHook(() => useAppColorScheme());
+    renderHook(() => useColorSchemeDriver());
 
     expect(mockHydrate).toHaveBeenCalled();
   });
 });
 
-describe("useAppColorScheme - native (Platform.OS = ios)", () => {
+describe("useColorSchemeDriver - native (Platform.OS = ios)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockHydrate.mockResolvedValue(undefined);
@@ -123,7 +205,7 @@ describe("useAppColorScheme - native (Platform.OS = ios)", () => {
     setupStore("system");
     mockUseColorScheme.mockReturnValue("dark");
 
-    renderHook(() => useAppColorScheme());
+    renderHook(() => useColorSchemeDriver());
 
     // Source: `nwColorScheme.set(Platform.OS === "web" ? resolved : preference)`
     expect(mockNwSet).toHaveBeenCalledWith("system");
@@ -133,7 +215,7 @@ describe("useAppColorScheme - native (Platform.OS = ios)", () => {
     setupStore("dark");
     mockUseColorScheme.mockReturnValue("light");
 
-    renderHook(() => useAppColorScheme());
+    renderHook(() => useColorSchemeDriver());
 
     expect(mockNwSet).toHaveBeenCalledWith("dark");
   });
@@ -142,36 +224,17 @@ describe("useAppColorScheme - native (Platform.OS = ios)", () => {
     setupStore("light");
     mockUseColorScheme.mockReturnValue("dark");
 
-    renderHook(() => useAppColorScheme());
+    renderHook(() => useColorSchemeDriver());
 
     expect(mockNwSet).toHaveBeenCalledWith("light");
   });
 
-  it("returns the resolved scheme (explicit preference wins)", () => {
-    setupStore("light");
+  it("calls hydrate on mount", () => {
+    setupStore("dark");
     mockUseColorScheme.mockReturnValue("dark");
 
-    const { result } = renderHook(() => useAppColorScheme());
+    renderHook(() => useColorSchemeDriver());
 
-    expect(result.current).toBe("light");
-  });
-
-  it("returns dark when OS is dark and preference is system", () => {
-    setupStore("system");
-    mockUseColorScheme.mockReturnValue("dark");
-
-    const { result } = renderHook(() => useAppColorScheme());
-
-    expect(result.current).toBe("dark");
-  });
-
-  it("returns light when OS returns null (falsy) and preference is system", () => {
-    setupStore("system");
-    mockUseColorScheme.mockReturnValue(null);
-
-    const { result } = renderHook(() => useAppColorScheme());
-
-    // Source: `useColorScheme() === "dark" ? "dark" : "light"` - null → "light"
-    expect(result.current).toBe("light");
+    expect(mockHydrate).toHaveBeenCalled();
   });
 });

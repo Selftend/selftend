@@ -25,7 +25,7 @@ import { AppErrorBoundary } from "@/src/components/app/app-error-boundary";
 import { AppToast } from "@/src/components/app/app-toast";
 import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner";
 import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt-card";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeDriver, useColorSchemeName } from "@/src/lib/color-scheme";
 import { AppProviders } from "@/src/providers/app-providers";
 import { NAV_THEME, THEME_VARIABLES } from "@/lib/theme";
 import { initSentry } from "@/src/lib/sentry";
@@ -38,7 +38,11 @@ initSentry();
 SplashScreen.preventAutoHideAsync();
 
 export default Sentry.wrap(function RootLayout() {
-  const colorScheme = useAppColorScheme();
+  // The app's single driver: it hydrates the stored preference and pushes it
+  // into NativeWind. It sits above the `if (!ready)` bail-out below so it keeps
+  // running while the splash is up.
+  useColorSchemeDriver();
+  const colorScheme = useColorSchemeName();
   const [fontsLoaded, fontError] = useFonts({
     NotoSans_400Regular,
     NotoSans_500Medium,

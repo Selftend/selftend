@@ -61,7 +61,7 @@ export default function ProtectedLayout() {
 
   useEffect(() => {
     // Read the device-local app-lock preference. Swallow storage-read failures so a
-    // rejected hydrate isn't an unhandled rejection (mirrors useAppColorScheme).
+    // rejected hydrate isn't an unhandled rejection (mirrors useColorSchemeDriver).
     void hydrateAppLock().catch(() => {});
   }, [hydrateAppLock]);
 

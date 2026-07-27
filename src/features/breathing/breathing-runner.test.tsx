@@ -33,7 +33,7 @@ jest.mock("@/src/features/breathing/exercises-queries", () => ({
   useBreathingExercises: () => ({ data: [] }),
 }));
 
-jest.mock("@/src/lib/color-scheme", () => ({ useAppColorScheme: () => "light" }));
+jest.mock("@/src/lib/color-scheme", () => ({ useColorSchemeName: () => "light" }));
 
 jest.mock("@/src/features/settings/queries", () => ({
   // breathSoundId "none" => no spoken intro, so Start goes straight to the active screen.

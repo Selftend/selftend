@@ -8,7 +8,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { buildMoodHeatmapWeeks } from "@/src/features/mood/heatmap-data";
 import { useMoodScorePoints } from "@/src/features/mood/queries";
 import { hueRamp } from "@/src/features/mindfulness/exercise-hue";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { parseLocalNoon } from "@/src/utils/date";
 
 // All time, literally: a fixed epoch keeps the query key stable while the
@@ -26,7 +26,7 @@ interface MoodHeatmapProps {
  */
 export function MoodHeatmap({ userId }: MoodHeatmapProps) {
   const { t, i18n } = useTranslation("mood");
-  const scheme = useAppColorScheme();
+  const scheme = useColorSchemeName();
   const { data: scorePoints } = useMoodScorePoints(userId, ALL_TIME_FROM_ISO);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 

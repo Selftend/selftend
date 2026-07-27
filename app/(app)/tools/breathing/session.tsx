@@ -41,7 +41,7 @@ import { breathSoundLookup } from "@/src/constants/breathing-sounds";
 import { playIntroCue, useBreathingAudio } from "@/src/features/breathing/use-breathing-audio";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useSaveBreathingSession } from "@/src/features/breathing/queries";
 import { useRoomStyle } from "@/src/lib/use-room-style";
@@ -166,7 +166,7 @@ export default function BreathingSessionScreen() {
     ambientVolume,
   });
 
-  const colorScheme = useAppColorScheme();
+  const colorScheme = useColorSchemeName();
   const roomStyle = useRoomStyle("aqua");
   // Identity-stable per scheme: the countdown rerenders this screen about once a
   // second during a session, and `circleStyle`'s worklet captures `pacer`. A fresh
