@@ -111,6 +111,14 @@ const FIELD_STOP_OVERRIDES: Partial<
       [62, 26],
     ],
   },
+  // The gentlest tune: only the top stop misses the floor (4.47 vs 4.5), so
+  // the bottom pair deliberately restates the formula's [58, 32].
+  clay: {
+    light: [
+      [52, 40],
+      [58, 32],
+    ],
+  },
 };
 
 /**

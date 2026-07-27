@@ -9,6 +9,7 @@ import {
   useJournalEntry,
   useJournalEntryCount,
   useJournalEntryCountSince,
+  useJournalWordTotal,
   useSaveJournalEntry,
 } from "@/src/features/journal/queries";
 import { createTestQueryClient } from "@/test/render-with-providers";
@@ -23,6 +24,7 @@ jest.mock("@/src/features/journal/repository", () => ({
   getJournalEntry: jest.fn(),
   listJournalEntries: jest.fn(),
   saveJournalEntry: jest.fn(),
+  sumJournalWords: jest.fn(),
 }));
 
 function wrap(client: QueryClient) {
@@ -45,6 +47,7 @@ beforeEach(() => {
 const singleIdHooks = [
   ["useJournalEntries", useJournalEntries, repo.listJournalEntries],
   ["useJournalEntryCount", useJournalEntryCount, repo.countJournalEntries],
+  ["useJournalWordTotal", useJournalWordTotal, repo.sumJournalWords],
 ] as const;
 
 describe.each(singleIdHooks)("%s enabled gate", (_name, useHook, repoFn) => {

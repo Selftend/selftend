@@ -1,3 +1,4 @@
+import { pacerColors } from "@/src/features/breathing/pacer-colors";
 import { fieldGradient, roomTriples } from "@/src/lib/module-room";
 
 // Hues with a validated room recipe. The field recipe holds one S/L formula
@@ -5,7 +6,7 @@ import { fieldGradient, roomTriples } from "@/src/lib/module-room";
 // yellow, act's green) needs a per-hue stop override in FIELD_STOP_OVERRIDES
 // before a room can adopt it. When a new module becomes a room, add its hue
 // here; if these floors then fail, add or tune its override first.
-const ROOM_HUES = ["be", "ink", "think", "act", "aqua"] as const;
+const ROOM_HUES = ["be", "ink", "think", "act", "aqua", "clay"] as const;
 
 // The Direction B field header paints white ink (title, description at 88%,
 // stats) on a full-bleed module-hue gradient, and the room re-pours the
@@ -33,10 +34,19 @@ function hslTripleToRgb(triple: string): [number, number, number] {
   return rgb.map((v) => Math.round((v + m) * 255)) as [number, number, number];
 }
 
-/** "hsl(330, 50%, 42%)" (the comma form fieldGradient emits) → rgb. */
+/**
+ * "hsl(330, 50%, 42%)" (the comma form fieldGradient emits) → rgb. The hsla()
+ * form hueHsl() emits is accepted only at full strength: rgb alone can't carry
+ * a translucent colour, and silently dropping the alpha would hand back a
+ * confidently wrong ratio. Composite translucent stops with compositeOver()
+ * against what is actually behind them first.
+ */
 function hslStringToRgb(hsl: string): [number, number, number] {
-  const match = hsl.match(/^hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)$/);
+  const match = hsl.match(/^hsla?\((\d+),\s*(\d+)%,\s*(\d+)%(?:,\s*([\d.]+))?\)$/);
   if (!match) throw new Error(`Unparseable hsl() string: "${hsl}"`);
+  if (match[4] !== undefined && Number(match[4]) !== 1) {
+    throw new Error(`Translucent colour needs compositing, not parsing: "${hsl}"`);
+  }
   return hslTripleToRgb(`${match[1]} ${match[2]}% ${match[3]}%`);
 }
 
@@ -93,5 +103,26 @@ describe("room surface pairings meet WCAG AA", () => {
       expect(contrastRatio(mutedForeground, background)).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(mutedForeground, card)).toBeGreaterThanOrEqual(4.5);
     }
+  });
+});
+
+describe("the breathing pacer ring reads on the aqua room", () => {
+  // The inner circle's edge is the graphic carrying the breath phase, so WCAG
+  // 1.4.11 (non-text contrast, 3:1) applies to it. It is never drawn on the
+  // room background directly — it breathes inside the outer halo, whose aqua
+  // fill at 0.1 sits over that background — so the comparison composites the
+  // halo first. #310 swapped the pacer's hardcoded light triple (L 45%) for the
+  // aqua token (L 36%); this floor is what keeps that swap, and any later
+  // retune, from pushing the ring below legibility. It is a floor only:
+  // "too heavy on the pale field" is an aesthetic call a lower bound can't
+  // make, and was settled by looking at the rendered circle, not here. The
+  // fills and the halo's own edge are decorative and deliberately below it.
+  it.each(["light", "dark"] as const)("the ring clears 3:1 in the %s room", (scheme) => {
+    const isDark = scheme === "dark";
+    const background = hslTripleToRgb(roomTriples("aqua")[scheme].background);
+    const ring = hslStringToRgb(pacerColors(isDark).innerBorder);
+    const halo = compositeOver(ring, 0.1, background);
+
+    expect(contrastRatio(ring, halo)).toBeGreaterThanOrEqual(3);
   });
 });
