@@ -19,7 +19,7 @@ import {
   useSetGratitudeEntryStarred,
 } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { formatRelativeDayKey } from "@/src/features/mood/relative-time";
 import { useRoomCardHsl } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -45,7 +45,8 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
     ...gratitudeAnswers(entry.lifeItems, lifeQuestions),
   ];
 
-  const when = formatMoodRelativeTime(entry.loggedAt, t);
+  // Labelled in the captured day frame, matching the dayKey these cards group by.
+  const when = formatRelativeDayKey(entry.dayKey, t);
   const hasMore = answers.length > COLLAPSED_PAIRS;
   const isOpen = expanded || !hasMore;
   const visible = isOpen ? answers : answers.slice(0, COLLAPSED_PAIRS);

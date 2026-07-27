@@ -1,4 +1,4 @@
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { formatMoodRelativeTime, formatRelativeDayKey } from "@/src/features/mood/relative-time";
 
 // A minimal TFunction stand-in that echoes the key (+ count) so assertions read clearly.
 const t = ((key: string, opts?: { count?: number }) =>
@@ -28,5 +28,24 @@ describe("formatMoodRelativeTime", () => {
     expect(formatMoodRelativeTime("2026-05-20T08:00:00.000Z", t, now)).toBe(
       "relativeTime.daysAgo:4",
     );
+  });
+});
+
+describe("formatRelativeDayKey", () => {
+  const t = ((key: string, opts?: { count?: number }) =>
+    opts?.count === undefined ? key : `${key}:${opts.count}`) as unknown as Parameters<
+    typeof formatRelativeDayKey
+  >[1];
+
+  it("labels the captured day, not the viewer's day for that instant", () => {
+    expect(formatRelativeDayKey("2026-05-24", t, "2026-05-24")).toBe("relativeTime.today");
+    expect(formatRelativeDayKey("2026-05-23", t, "2026-05-24")).toBe("relativeTime.yesterday");
+    expect(formatRelativeDayKey("2026-05-20", t, "2026-05-24")).toBe("relativeTime.daysAgo:4");
+  });
+
+  // Flying east-to-west can leave an entry keyed a day ahead of where you land;
+  // clamping to "today" keeps the label calm rather than showing a negative count.
+  it("treats a captured day ahead of today as today", () => {
+    expect(formatRelativeDayKey("2026-05-25", t, "2026-05-24")).toBe("relativeTime.today");
   });
 });
