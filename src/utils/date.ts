@@ -139,7 +139,20 @@ export function formatAtOffset(
  * captured frame. `shiftToOffsetFrame`/`shiftFromOffsetFrame` are inverses.
  */
 export function shiftToOffsetFrame(value: Date, offsetMinutes: number): Date {
-  return new Date(value.getTime() + (offsetMinutes + value.getTimezoneOffset()) * 60_000);
+  // Two passes, because the device offset has to be read at the SHIFTED instant,
+  // not the source one. The shift can cross a device-zone DST boundary, and then
+  // the source offset is the wrong one: under America/New_York, shifting
+  // 2026-03-08T06:30:00Z (EST, -300) into offset 0 lands at 11:30Z, which is
+  // already EDT (-240), so a single pass displays 07:30 instead of 06:30 and
+  // `shiftFromOffsetFrame` no longer inverts it. The second pass re-resolves
+  // against the instant we actually land on.
+  //
+  // The inverse needs no such pass: its input is already in the device frame, so
+  // its own offset is the one to use.
+  const firstPass = new Date(
+    value.getTime() + (offsetMinutes + value.getTimezoneOffset()) * 60_000,
+  );
+  return new Date(value.getTime() + (offsetMinutes + firstPass.getTimezoneOffset()) * 60_000);
 }
 
 export function shiftFromOffsetFrame(displayed: Date, offsetMinutes: number): Date {
