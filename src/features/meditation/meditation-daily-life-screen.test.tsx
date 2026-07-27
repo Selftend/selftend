@@ -1,9 +1,9 @@
 import { screen } from "@testing-library/react-native";
-import { useColorScheme } from "nativewind";
 
 import MeditationDailyLifeScreen from "@/src/features/meditation/meditation-daily-life-screen";
 import { useStagePracticeNotes } from "@/src/features/meditation/queries";
 import { roomVariables } from "@/src/lib/module-room";
+import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -22,18 +22,9 @@ jest.mock("@/src/features/meditation/queries", () => ({
 
 jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
 
-// Everything else in nativewind stays real (the styling interop the whole
-// render depends on); only the scheme read is steerable, so the pour can be
-// asserted in dark as well as light.
-jest.mock("nativewind", () => ({
-  ...jest.requireActual("nativewind"),
-  useColorScheme: jest.fn(() => ({ colorScheme: "light" })),
-}));
-
-const mockUseColorScheme = useColorScheme as jest.MockedFunction<typeof useColorScheme>;
-
-const setScheme = (scheme: "light" | "dark") =>
-  mockUseColorScheme.mockReturnValue({ colorScheme: scheme } as ReturnType<typeof useColorScheme>);
+// Only the scheme read is mocked; the styling interop the render depends on
+// stays real. See test/color-scheme-mock.ts.
+jest.mock("nativewind", () => require("@/test/color-scheme-mock").nativewindWithMockedScheme());
 
 const mockUseStagePracticeNotes = useStagePracticeNotes as jest.MockedFunction<
   typeof useStagePracticeNotes

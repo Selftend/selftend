@@ -1,10 +1,10 @@
 import { screen } from "@testing-library/react-native";
-import { useColorScheme } from "nativewind";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationLearnScreen from "@/src/features/meditation/meditation-learn-screen";
 import { roomVariables } from "@/src/lib/module-room";
+import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -14,21 +14,12 @@ jest.mock("expo-router", () => ({
 
 jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
 
-// Everything else in nativewind stays real (the styling interop the whole
-// render depends on); only the scheme read is steerable, so the pour can be
-// asserted in dark as well as light.
-jest.mock("nativewind", () => ({
-  ...jest.requireActual("nativewind"),
-  useColorScheme: jest.fn(() => ({ colorScheme: "light" })),
-}));
-
-const mockUseColorScheme = useColorScheme as jest.MockedFunction<typeof useColorScheme>;
-
-const setScheme = (scheme: "light" | "dark") =>
-  mockUseColorScheme.mockReturnValue({ colorScheme: scheme } as ReturnType<typeof useColorScheme>);
+// Only the scheme read is mocked; the styling interop the render depends on
+// stays real. See test/color-scheme-mock.ts.
+jest.mock("nativewind", () => require("@/test/color-scheme-mock").nativewindWithMockedScheme());
 
 /** Every rendered view's class list, for asserting on tint utilities. */
-const classNames = () =>
+const viewClassNames = () =>
   screen
     .UNSAFE_getAllByType(View)
     .map((node) => String(node.props.className ?? ""))
@@ -68,9 +59,14 @@ describe("MeditationLearnScreen", () => {
   it("tints the attention callout card with iris", () => {
     renderWithProviders(<MeditationLearnScreen />);
 
-    // One card converts - the `primary`-tinted attention callout.
-    expect(classNames().filter((c) => c.includes("hsl(var(--iris)/0.06)"))).toHaveLength(1);
-    expect(classNames().some((c) => c.includes("bg-primary/5"))).toBe(false);
+    // One card converts - the `primary`-tinted attention callout. Matched on
+    // the hue variable rather than Card's exact alpha literals, so a tint
+    // retune doesn't break the assertion.
+    expect(viewClassNames().filter((c) => c.includes("var(--iris)"))).toHaveLength(1);
+    // The callout's former `primary` tint is gone from the screen.
+    expect(
+      viewClassNames().some((c) => c.includes("bg-primary/5") || c.includes("border-primary/30")),
+    ).toBe(false);
   });
 
   it("keeps the `be` and `act` cards as untouched guests", () => {
@@ -78,7 +74,7 @@ describe("MeditationLearnScreen", () => {
 
     // Cross-module colour references. The room does not repaint a guest, the
     // same way grounding left its per-technique hues alone.
-    expect(classNames().filter((c) => c.includes("border-be/30 bg-be/5"))).toHaveLength(1);
-    expect(classNames().filter((c) => c.includes("border-act/30 bg-act/5"))).toHaveLength(1);
+    expect(viewClassNames().filter((c) => c.includes("border-be/30 bg-be/5"))).toHaveLength(1);
+    expect(viewClassNames().filter((c) => c.includes("border-act/30 bg-act/5"))).toHaveLength(1);
   });
 });

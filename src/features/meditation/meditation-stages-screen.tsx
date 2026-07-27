@@ -100,11 +100,12 @@ export default function MeditationStagesScreen() {
                         </View>
                         {s.number === currentStage ? (
                           // Decorative "you are here" marker, so it takes the
-                          // room hue - the same iris badge home already wears.
+                          // room hue - the same tinted-chip shape (hue ink on a
+                          // faint hue wash) home's stage badge already wears.
                           // The filled circle and the row border above stay on
                           // `primary`: they are the selected-row control state,
-                          // and `primary` is the only tint with a certified
-                          // foreground pairing for ink on a solid fill.
+                          // and a solid iris fill has no certified ink pairing
+                          // (white on it is 3.8:1, under AA).
                           <View className="rounded-full bg-iris/15 px-2 py-0.5">
                             <Text className="text-[10px] font-semibold uppercase tracking-wider text-iris">
                               {t("module.stages.currentStageBadge")}

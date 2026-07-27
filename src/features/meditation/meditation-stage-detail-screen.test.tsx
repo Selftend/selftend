@@ -1,11 +1,11 @@
 import { screen } from "@testing-library/react-native";
-import { useColorScheme } from "nativewind";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationStageDetailScreen from "@/src/features/meditation/meditation-stage-detail-screen";
 import { useMeditationProgramState } from "@/src/features/meditation/queries";
 import { roomVariables } from "@/src/lib/module-room";
+import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -25,25 +25,16 @@ jest.mock("@/src/features/meditation/queries", () => ({
 
 jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
 
-// Everything else in nativewind stays real (the styling interop the whole
-// render depends on); only the scheme read is steerable, so the pour can be
-// asserted in dark as well as light.
-jest.mock("nativewind", () => ({
-  ...jest.requireActual("nativewind"),
-  useColorScheme: jest.fn(() => ({ colorScheme: "light" })),
-}));
-
-const mockUseColorScheme = useColorScheme as jest.MockedFunction<typeof useColorScheme>;
-
-const setScheme = (scheme: "light" | "dark") =>
-  mockUseColorScheme.mockReturnValue({ colorScheme: scheme } as ReturnType<typeof useColorScheme>);
+// Only the scheme read is mocked; the styling interop the render depends on
+// stays real. See test/color-scheme-mock.ts.
+jest.mock("nativewind", () => require("@/test/color-scheme-mock").nativewindWithMockedScheme());
 
 const mockUseMeditationProgramState = useMeditationProgramState as jest.MockedFunction<
   typeof useMeditationProgramState
 >;
 
 /** Every rendered view's class list, for asserting on tint utilities. */
-const classNames = () =>
+const viewClassNames = () =>
   screen
     .UNSAFE_getAllByType(View)
     .map((node) => String(node.props.className ?? ""))
@@ -88,9 +79,14 @@ describe("MeditationStageDetailScreen", () => {
     renderWithProviders(<MeditationStageDetailScreen />);
 
     // Exactly one card wears the iris tint - the mastery callout, converted
-    // from `primary` because it is decorative, not a control state.
-    expect(classNames().filter((c) => c.includes("hsl(var(--iris)/0.06)"))).toHaveLength(1);
-    expect(classNames().filter((c) => c.includes("hsl(var(--iris)/0.30)"))).toHaveLength(1);
-    expect(classNames().some((c) => c.includes("bg-primary/5"))).toBe(false);
+    // from `primary` because it is decorative, not a control state. Matched on
+    // the hue variable rather than Card's exact alpha literals, so a tint
+    // retune doesn't break the assertion.
+    expect(viewClassNames().filter((c) => c.includes("var(--iris)"))).toHaveLength(1);
+    // The callout's former `primary` tint is gone. The switch button keeps its
+    // own `primary` fill - that is a control state, not a room accent.
+    expect(
+      viewClassNames().some((c) => c.includes("bg-primary/5") || c.includes("border-primary/30")),
+    ).toBe(false);
   });
 });
