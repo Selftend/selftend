@@ -81,6 +81,21 @@ describe("JournalListScreen", () => {
     expect(screen.getByRole("heading", { name: "Journal" })).toBeTruthy();
     expect(screen.getByText("Nothing here yet")).toBeTruthy();
     expect(screen.getByText("Start writing")).toBeTruthy();
+    // A loaded, empty history may claim the never state.
+    expect(screen.getByText("Last · never")).toBeTruthy();
+  });
+
+  it("omits the subline until the entries query has actually loaded", () => {
+    // `data === undefined` means still loading, or a failed fetch with no cache -
+    // claiming "never" there would erase a returning user's real history.
+    mockUseJournalEntries.mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useJournalEntries>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.queryByText("Last · never")).toBeNull();
+    expect(screen.queryByText(/^Last · /)).toBeNull();
   });
 
   it("renders entries with title and preview", () => {

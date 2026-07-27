@@ -125,14 +125,26 @@ describe("Breathing list polish", () => {
   });
 
   it("renders the aqua room: field header, room pour, and the never-logged subline", () => {
+    mockUseBreathingSessions.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useBreathingSessions>);
+
     renderWithProviders(<BreathingScreen />);
 
     // Full-bleed aqua field header (Direction B room), not the plain header.
     expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the aqua room re-pour; a wrong or missing room fails here.
     expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("aqua").light);
-    // No sessions yet → the subline shows the never state.
+    // A loaded, empty history → the subline shows the never state.
     expect(screen.getByText("No sessions logged yet")).toBeTruthy();
+  });
+
+  it("omits the subline until history has actually loaded", () => {
+    // `data === undefined` means still loading, or a failed fetch with no cache -
+    // claiming "no sessions" there would erase a returning user's real history.
+    renderWithProviders(<BreathingScreen />);
+    expect(screen.queryByText("No sessions logged yet")).toBeNull();
+    expect(screen.queryByText(/^Last · /)).toBeNull();
   });
 
   it("shows the last-session subline when sessions exist", () => {

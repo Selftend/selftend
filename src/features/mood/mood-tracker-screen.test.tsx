@@ -88,6 +88,21 @@ describe("MoodTrackerScreen", () => {
     expect(screen.getByText("first week of data")).toBeTruthy();
     expect(screen.getByText("Mood by day")).toBeTruthy();
     expect(screen.getByText("No emotions tagged yet")).toBeTruthy();
+    // A loaded, empty history may claim the never state.
+    expect(screen.getByText("No check-ins yet")).toBeTruthy();
+  });
+
+  it("omits the subline until the history query has actually loaded", () => {
+    // `data === undefined` means still loading, or a failed fetch with no cache -
+    // claiming "no check-ins" there would erase a returning user's real history.
+    mockUseMoodLogs.mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    expect(screen.queryByText("No check-ins yet")).toBeNull();
+    expect(screen.queryByText(/^Last · /)).toBeNull();
   });
 
   it("renders the completed Today card with score when a single entry was logged today", () => {

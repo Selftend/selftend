@@ -80,6 +80,19 @@ describe("SleepTrackerScreen", () => {
     expect(screen.queryByText("No sleep logged yet")).toBeNull();
   });
 
+  it("omits the subline until the logs query has actually loaded", () => {
+    // `data === undefined` means still loading, or a failed fetch with no cache -
+    // claiming "no sleep logged" there would erase a returning user's real history.
+    mockUseSleepLogs.mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useSleepLogs>);
+
+    renderWithProviders(<SleepTrackerScreen />);
+
+    expect(screen.queryByText("No sleep logged yet")).toBeNull();
+    expect(screen.queryByText(/^Last · /)).toBeNull();
+  });
+
   it("routes to the new sleep log screen from the CTA", () => {
     mockUseSleepLogs.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useSleepLogs>);
 

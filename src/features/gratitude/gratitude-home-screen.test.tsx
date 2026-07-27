@@ -92,6 +92,19 @@ describe("GratitudeHomeScreen", () => {
     expect(screen.queryByText("Nothing logged yet")).toBeNull();
   });
 
+  it("omits the subline until the entries query has actually loaded", () => {
+    // `data === undefined` means still loading, or a failed fetch with no cache -
+    // claiming "nothing logged" there would erase a returning user's real history.
+    mockUseGratitudeEntries.mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useGratitudeEntries>);
+
+    renderWithProviders(<GratitudeHomeScreen />);
+
+    expect(screen.queryByText("Nothing logged yet")).toBeNull();
+    expect(screen.queryByText(/^Last · /)).toBeNull();
+  });
+
   it("routes to the new entry screen from the CTA", () => {
     mockUseGratitudeEntries.mockReturnValue({
       data: [],

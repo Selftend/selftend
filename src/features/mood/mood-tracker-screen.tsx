@@ -92,6 +92,14 @@ export default function MoodTrackerScreen() {
   const thisWeekCount = sevenDay.count;
   const lastLog = (moodLogs ?? [])[0] ?? null; // listMoodLogs returns newest-first
   const lastWhen = lastLog ? formatAtOffset(lastLog.loggedAt, lastLog.loggedOffsetMinutes) : null;
+  // `moodLogs` is undefined while loading and after a failed fetch with no
+  // cache - only an actually-loaded (possibly empty) history may claim "no
+  // check-ins", or a returning user's history reads as erased.
+  const subline = lastWhen
+    ? t("stats.last", { when: lastWhen })
+    : moodLogs
+      ? t("stats.never")
+      : undefined;
 
   const statItems = [
     { value: String(totalCount ?? moodLogs?.length ?? 0), label: t("stats.checkinsLabel") },
@@ -180,7 +188,7 @@ export default function MoodTrackerScreen() {
                     tone="onField"
                     accentClassName="text-be"
                     items={statItems}
-                    subline={lastWhen ? t("stats.last", { when: lastWhen }) : t("stats.never")}
+                    subline={subline}
                     sublineTone={lastWhen ? "accent" : "muted"}
                   />
                 }

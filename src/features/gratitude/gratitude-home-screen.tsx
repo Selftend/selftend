@@ -86,6 +86,14 @@ export default function GratitudeHomeScreen() {
   const lastWhen = lastEntry
     ? formatAtOffset(lastEntry.loggedAt, lastEntry.loggedOffsetMinutes)
     : null;
+  // `entries` is undefined while loading and after a failed fetch with no
+  // cache - only an actually-loaded (possibly empty) history may claim
+  // "nothing logged yet", or a returning user's history reads as erased.
+  const subline = lastWhen
+    ? t("stats.last", { when: lastWhen })
+    : entries
+      ? t("stats.never")
+      : undefined;
 
   const hasFrequency = frequencyBuckets.some((b) => b.count > 0);
   const frequencyData = hasFrequency
@@ -143,7 +151,7 @@ export default function GratitudeHomeScreen() {
                     { value: t("hero.favorites", { count: favoriteCount }), label: "" },
                     { value: String(thisWeekCount), label: t("hero.thisWeek") },
                   ]}
-                  subline={lastWhen ? t("stats.last", { when: lastWhen }) : t("stats.never")}
+                  subline={subline}
                   sublineTone={lastWhen ? "accent" : "muted"}
                 />
               }

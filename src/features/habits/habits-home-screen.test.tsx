@@ -178,6 +178,23 @@ describe("HabitsHomeScreen act room", () => {
     expect(await screen.findByText("Last tick · 45 days ago")).toBeTruthy();
     expect(screen.queryByText("No ticks yet")).toBeNull();
   });
+
+  it("omits the subline until the lifetime tick query has actually loaded", async () => {
+    // `data === undefined` means still loading, or a failed fetch with no cache -
+    // claiming "no ticks yet" there would erase a returning user's real history.
+    mockUseHabitLogs.mockImplementation(
+      (_userId, options) =>
+        ({
+          data: options?.limit === 1 ? undefined : [],
+        }) as unknown as ReturnType<typeof useHabitLogs>,
+    );
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    expect(await screen.findByRole("heading", { name: "Habits" })).toBeTruthy();
+    expect(screen.queryByText("No ticks yet")).toBeNull();
+    expect(screen.queryByText(/^Last tick · /)).toBeNull();
+  });
 });
 
 describe("HabitsHomeScreen tap-to-tick", () => {

@@ -41,6 +41,14 @@ export default function BreathingScreen() {
     null,
   );
   const lastWhen = lastCompletedAt ? formatLocalTimestamp(lastCompletedAt) : null;
+  // `sessions` is undefined while loading and after a failed fetch with no
+  // cache - only an actually-loaded (possibly empty) history may claim
+  // "no sessions yet", or a returning user's history reads as erased.
+  const subline = lastWhen
+    ? t("breathing.hero.last", { when: lastWhen })
+    : sessions
+      ? t("breathing.hero.never")
+      : undefined;
 
   const patternName = (exerciseName: string) => {
     if (breathingSlugs.includes(exerciseName)) {
@@ -85,11 +93,7 @@ export default function BreathingScreen() {
               <ToolStats
                 tone="onField"
                 accentClassName="text-aqua"
-                subline={
-                  lastWhen
-                    ? t("breathing.hero.last", { when: lastWhen })
-                    : t("breathing.hero.never")
-                }
+                subline={subline}
                 sublineTone={lastWhen ? "accent" : "muted"}
                 items={[
                   {
