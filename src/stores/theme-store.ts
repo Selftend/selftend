@@ -30,17 +30,23 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     void AsyncStorage.setItem(STORAGE_KEY, preference).catch(() => {});
   },
   hydrate: async () => {
+    // Already settled - a re-read could only report something staler.
     if (get().hydrated) return;
     const stored = await AsyncStorage.getItem(STORAGE_KEY);
     // Re-check after the await: a choice may have landed mid-read, and it is the
-    // fresher value. Dropping the read here is what closes the race structurally,
+    // fresher value. Discarding the read here is what closes the race structurally,
     // however many consumers call hydrate().
     if (get().hydrated) return;
-    // Settle whatever the read reported - a first-run user with nothing stored (or
-    // garbage stored) is "settled on the default", not permanently un-hydrated.
-    // Deliberately no retry logic: that is the repeated-write behaviour being removed.
-    // The fallback is "system" (follow the device), and signed-in users get the
-    // account value from useSettingsSync regardless.
+    // Settle whatever the read reported - a user with nothing stored (or garbage
+    // stored) is "settled on the default", not permanently un-hydrated. The default
+    // is "system", so the app follows the device, and signed-in users get the account
+    // value from useSettingsSync regardless.
+    //
+    // A read that *rejects* is the one case left unsettled, deliberately. Unlike
+    // app-lock-store - which must flip `hydrated` from a catch because AppLockGate
+    // blocks render until it does - nothing gates on the theme having settled, so a
+    // catch here would buy nothing. Re-reading on the next mount instead would put
+    // back the very read-then-overwrite behaviour these two guards exist to remove.
     set({ preference: isThemePreference(stored) ? stored : get().preference, hydrated: true });
   },
 }));
