@@ -39,8 +39,10 @@ export function MeditationDailyLifeCard() {
 
   const recent = (notes ?? []).slice(0, MAX_RECENT);
 
+  // `be` is a deliberate guest in the iris room: the daily-life practice is the
+  // mood module's hue showing up here, and softening it keeps that guest status.
   return (
-    <Card className="border-be/30 bg-be/5">
+    <Card variant="soft" tint="be">
       <CardContent className="gap-3 pt-6">
         <CardTitle aria-level={2}>{t("module.dailyLife.title")}</CardTitle>
         <Text variant="muted" className="text-sm">
@@ -74,7 +76,7 @@ export function MeditationDailyLifeCard() {
                 accessibilityRole="link"
                 onPress={() => router.push("/tools/meditation/daily-life")}
               >
-                <Text className="text-sm text-primary">{t("module.dailyLife.viewAll")}</Text>
+                <Text className="text-sm text-iris">{t("module.dailyLife.viewAll")}</Text>
               </Pressable>
             ) : null}
           </View>
