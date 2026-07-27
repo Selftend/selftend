@@ -203,3 +203,31 @@ describe("offset frame shifts", () => {
     expect(shifted.getDate()).toBe(13);
   });
 });
+
+// jest.config.js pins TZ to Asia/Kolkata, which has no DST - so the round-trip
+// above cannot expose an offset resolved at the wrong instant. Re-pin to a DST
+// zone for this block only.
+describe("shiftToOffsetFrame across a device-zone DST boundary", () => {
+  const originalTz = process.env.TZ;
+  beforeAll(() => {
+    process.env.TZ = "America/New_York";
+  });
+  afterAll(() => {
+    process.env.TZ = originalTz;
+  });
+
+  // 2026-03-08 is US spring-forward. 06:30Z is still EST (-300); shifting into
+  // offset 0 lands at 11:30Z, which is already EDT (-240).
+  const springForward = new Date("2026-03-08T06:30:00.000Z");
+
+  it("displays the captured wall clock, not one shifted by the DST delta", () => {
+    const shifted = shiftToOffsetFrame(springForward, 0);
+    expect(shifted.getHours()).toBe(6);
+    expect(shifted.getMinutes()).toBe(30);
+  });
+
+  it("stays the inverse of shiftFromOffsetFrame across the boundary", () => {
+    const shifted = shiftToOffsetFrame(springForward, 0);
+    expect(shiftFromOffsetFrame(shifted, 0).toISOString()).toBe(springForward.toISOString());
+  });
+});

@@ -185,9 +185,15 @@ export async function listMoodScorePoints(
  * Resolved from that row's own captured offset so the picker cannot refuse a day
  * the user actually has an entry on.
  */
+// Captured offsets span -840..+840 minutes, so two rows can sit up to 28 hours
+// apart in UTC and still land on the same civil day - and a LATER instant can
+// belong to an EARLIER day. Any row more than this far past the earliest instant
+// has a shifted time past that row's own, so it cannot start an earlier day.
+const OFFSET_SPAN_MS = 2 * 840 * 60_000;
+
 export async function getFirstMoodDayKey(userId: string): Promise<string | null> {
   const client = requireSupabase();
-  const { data, error } = await client
+  const earliest = await client
     .from("mood_logs")
     .select("logged_at, logged_offset_minutes")
     .eq("user_id", userId)
@@ -195,9 +201,34 @@ export async function getFirstMoodDayKey(userId: string): Promise<string | null>
     .limit(1)
     .maybeSingle();
 
+  if (earliest.error) throw earliest.error;
+  const first = earliest.data as {
+    logged_at: string;
+    logged_offset_minutes: number | null;
+  } | null;
+  if (!first) return null;
+
+  // The earliest UTC instant is not necessarily the earliest civil day: a 15:30Z
+  // log at +09:00 is Jan 2, while a later 16:00Z log at -08:00 is Jan 1. Taking
+  // the first row's key alone made the picker refuse a day the user has an entry
+  // on, so scan the window where an earlier day is still arithmetically possible.
+  const windowEnd = new Date(new Date(first.logged_at).getTime() + OFFSET_SPAN_MS).toISOString();
+  const { data, error } = await client
+    .from("mood_logs")
+    .select("logged_at, logged_offset_minutes")
+    .eq("user_id", userId)
+    .lte("logged_at", windowEnd);
+
   if (error) throw error;
-  const row = data as { logged_at: string; logged_offset_minutes: number | null } | null;
-  return row ? entryDayKey(row.logged_at, row.logged_offset_minutes ?? null) : null;
+  const rows = (data ?? []) as { logged_at: string; logged_offset_minutes: number | null }[];
+
+  let earliestKey = entryDayKey(first.logged_at, first.logged_offset_minutes ?? null);
+  for (const row of rows) {
+    // Day keys are YYYY-MM-DD, so lexical comparison is chronological.
+    const key = entryDayKey(row.logged_at, row.logged_offset_minutes ?? null);
+    if (key < earliestKey) earliestKey = key;
+  }
+  return earliestKey;
 }
 
 export async function countMoodLogs(userId: string): Promise<number> {
