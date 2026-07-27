@@ -12,10 +12,12 @@ import {
   useMeditationProgramState,
   useUpsertMeditationProgramState,
 } from "@/src/features/meditation/queries";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function MeditationStageDetailScreen() {
   const { t } = useTranslation("meditation");
+  const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const params = useLocalSearchParams<{ n: string }>();
@@ -32,7 +34,11 @@ export default function MeditationStageDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <ScreenHeader title={t(stage.titleKey)} titleVariant="h2" />
@@ -58,7 +64,9 @@ export default function MeditationStageDetailScreen() {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/30 bg-primary/5">
+          {/* The one callout on the screen. Decorative emphasis, so it takes
+              the room hue through the tint token layer rather than `primary`. */}
+          <Card tint="iris">
             <CardContent className="gap-2 pt-6">
               <CardTitle>{t("module.stages.masteryLabel")}</CardTitle>
               <Text variant="muted">{t(stage.masteryKey)}</Text>
