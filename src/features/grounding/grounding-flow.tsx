@@ -10,6 +10,7 @@ import { GroundingDone } from "@/src/features/grounding/grounding-done";
 import { GroundingIntro } from "@/src/features/grounding/grounding-intro";
 import { GroundingSession } from "@/src/features/grounding/grounding-session";
 import { useSaveGroundingSession } from "@/src/features/grounding/queries";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -25,6 +26,12 @@ export function GroundingFlow({ slug }: { slug: string }) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [stepIndex, setStepIndex] = useState(0);
   const saveMutation = useSaveGroundingSession(user?.id ?? null);
+  // Grounding is the "clay" room (spec #315). Each phase component owns its
+  // own SafeAreaView, so the pour lives on a wrapper here: their
+  // bg-background surfaces re-resolve to clay through it. No field header —
+  // a session screen keeps the exercise as the hero (Wave B direction #301),
+  // and the per-technique hue guests (glow, buttons, badges) sit on top.
+  const roomStyle = useRoomStyle("clay");
 
   // Declared before the not-found early return below so the hook call is unconditional.
   const handleSave = useSingleFlight(async () => {
@@ -45,11 +52,13 @@ export function GroundingFlow({ slug }: { slug: string }) {
 
   if (!technique) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center p-6">
-          <Text variant="h2">{t("grounding.notFound")}</Text>
-        </View>
-      </SafeAreaView>
+      <View className="flex-1" style={roomStyle} testID="grounding-flow-room">
+        <SafeAreaView className="flex-1 bg-background">
+          <View className="flex-1 justify-center p-6">
+            <Text variant="h2">{t("grounding.notFound")}</Text>
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
@@ -78,42 +87,50 @@ export function GroundingFlow({ slug }: { slug: string }) {
     setPhase("intro");
   };
 
-  if (phase === "intro") {
-    return (
-      <GroundingIntro
-        technique={technique}
-        title={title}
-        description={t(`grounding.techniques.${technique.slug}.shortDescription`)}
-        steps={stepsText}
-        onStart={() => {
-          setStepIndex(0);
-          setPhase("active");
-        }}
-      />
-    );
-  }
+  const phaseContent = () => {
+    if (phase === "intro") {
+      return (
+        <GroundingIntro
+          technique={technique}
+          title={title}
+          description={t(`grounding.techniques.${technique.slug}.shortDescription`)}
+          steps={stepsText}
+          onStart={() => {
+            setStepIndex(0);
+            setPhase("active");
+          }}
+        />
+      );
+    }
 
-  if (phase === "active") {
+    if (phase === "active") {
+      return (
+        <GroundingSession
+          technique={technique}
+          techniqueTitle={title}
+          stepText={stepsText[stepIndex]}
+          stepLabel={stepLabels[stepIndex] ?? ""}
+          stepIndex={stepIndex}
+          total={total}
+          isLast={stepIndex === total - 1}
+          onNext={handleNext}
+          onExit={handleExit}
+        />
+      );
+    }
+
     return (
-      <GroundingSession
-        technique={technique}
-        techniqueTitle={title}
-        stepText={stepsText[stepIndex]}
-        stepLabel={stepLabels[stepIndex] ?? ""}
-        stepIndex={stepIndex}
-        total={total}
-        isLast={stepIndex === total - 1}
-        onNext={handleNext}
-        onExit={handleExit}
+      <GroundingDone
+        hue={technique.hue}
+        saving={saveMutation.isPending}
+        onSave={() => void handleSave()}
       />
     );
-  }
+  };
 
   return (
-    <GroundingDone
-      hue={technique.hue}
-      saving={saveMutation.isPending}
-      onSave={() => void handleSave()}
-    />
+    <View className="flex-1" style={roomStyle} testID="grounding-flow-room">
+      {phaseContent()}
+    </View>
   );
 }

@@ -1217,7 +1217,9 @@
       "techniques_one": "{{count}} technique",
       "techniques_other": "{{count}} techniques",
       "takes": "Takes",
-      "takesValue": "2-3 min"
+      "takesValue": "2-3 min",
+      "last": "Last · {{when}}",
+      "never": "No sessions logged yet"
     },
     "choose": "Choose a technique",
     "howTo": "How to do it",
