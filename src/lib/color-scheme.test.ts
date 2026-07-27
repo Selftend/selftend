@@ -238,3 +238,76 @@ describe("useColorSchemeDriver - native (Platform.OS = ios)", () => {
     expect(mockHydrate).toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Root-only guard (#360)
+// ---------------------------------------------------------------------------
+
+describe("useColorSchemeDriver - the root-only guard", () => {
+  let warn: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockHydrate.mockResolvedValue(undefined);
+    Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
+    setupStore("system");
+    mockUseColorScheme.mockReturnValue("light");
+    warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warn.mockRestore();
+  });
+
+  it("stays silent for the single root driver", () => {
+    const only = renderHook(() => useColorSchemeDriver());
+
+    expect(warn).not.toHaveBeenCalled();
+
+    only.unmount();
+  });
+
+  it("warns when a second driver mounts alongside the first", () => {
+    const first = renderHook(() => useColorSchemeDriver());
+    const second = renderHook(() => useColorSchemeDriver());
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain("app/_layout.tsx");
+
+    second.unmount();
+    first.unmount();
+  });
+
+  it("does not accumulate across remounts of the single driver", () => {
+    // The failure this guards against: counting mounts without decrementing on
+    // unmount, so the root driver's own remount cycles trip the warning.
+    for (let i = 0; i < 3; i += 1) {
+      renderHook(() => useColorSchemeDriver()).unmount();
+    }
+
+    const afterRemounts = renderHook(() => useColorSchemeDriver());
+
+    expect(warn).not.toHaveBeenCalled();
+
+    afterRemounts.unmount();
+  });
+
+  it("is silent outside __DEV__ even with two drivers mounted", () => {
+    // React Native declares __DEV__ as a bare global, not a property of
+    // globalThis, so flipping it for this test needs the widened view.
+    const globals = globalThis as unknown as { __DEV__: boolean };
+    const dev = globals.__DEV__;
+    globals.__DEV__ = false;
+    try {
+      const first = renderHook(() => useColorSchemeDriver());
+      const second = renderHook(() => useColorSchemeDriver());
+
+      expect(warn).not.toHaveBeenCalled();
+
+      second.unmount();
+      first.unmount();
+    } finally {
+      globals.__DEV__ = dev;
+    }
+  });
+});
