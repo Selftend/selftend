@@ -1,7 +1,7 @@
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Pressable, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, {
   useSharedValue,
@@ -31,6 +31,7 @@ import {
   elapsedMinutes,
   cycleSeconds,
 } from "@/src/features/breathing/cycle-math";
+import { pacerColors } from "@/src/features/breathing/pacer-colors";
 import { scheduleStateAt } from "@/src/features/breathing/schedule";
 import { resolveBuiltin, useResolvedExercise } from "@/src/features/breathing/resolve-exercise";
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
@@ -167,7 +168,13 @@ export default function BreathingSessionScreen() {
 
   const colorScheme = useAppColorScheme();
   const roomStyle = useRoomStyle("aqua");
-  const aqua = colorScheme === "dark" ? "196, 58%, 62%" : "196, 52%, 45%";
+  // Identity-stable per scheme: the countdown rerenders this screen about once a
+  // second during a session, and `circleStyle`'s worklet captures `pacer`. A fresh
+  // object each render reads as a changed closure dependency, so Reanimated tears
+  // down and restarts the style mapper mid-animation - exactly when the pacer
+  // circle must not stutter.
+  const isDarkScheme = colorScheme === "dark";
+  const pacer = useMemo(() => pacerColors(isDarkScheme), [isDarkScheme]);
 
   const circleStyle = useAnimatedStyle(() => ({
     width: circleSize.get(),
@@ -175,9 +182,9 @@ export default function BreathingSessionScreen() {
     borderRadius: circleSize.get() / 2,
     // Stays at 1 unless reduced motion steps it per phase in animateForPhase.
     opacity: innerOpacity.get(),
-    backgroundColor: `hsla(${aqua}, 0.22)`,
+    backgroundColor: pacer.innerFill,
     borderWidth: 2,
-    borderColor: `hsl(${aqua})`,
+    borderColor: pacer.innerBorder,
   }));
 
   // The outer ring is a constant size; only the inner circle scales with the breath.
@@ -186,9 +193,9 @@ export default function BreathingSessionScreen() {
     width: OUTER_SIZE,
     height: OUTER_SIZE,
     borderRadius: OUTER_SIZE / 2,
-    backgroundColor: `hsla(${aqua}, 0.1)`,
+    backgroundColor: pacer.outerFill,
     borderWidth: 2,
-    borderColor: `hsla(${aqua}, 0.3)`,
+    borderColor: pacer.outerBorder,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   };
