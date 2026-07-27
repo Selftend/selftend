@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationHomeScreen from "@/src/features/meditation/meditation-home-screen";
 import {
+  useMeditationMedianMinutes,
   useMeditationProgramState,
   useMeditationSessionCount,
   useMeditationSessions,
@@ -29,6 +30,7 @@ jest.mock("@/src/features/meditation/queries", () => ({
   useMeditationProgramState: jest.fn(),
   useMeditationSessions: jest.fn(),
   useMeditationSessionCount: jest.fn(),
+  useMeditationMedianMinutes: jest.fn(),
   useUpsertMeditationProgramState: jest.fn(() => ({ mutateAsync: jest.fn(), isPending: false })),
   useStagePracticeNotes: jest.fn(() => ({ data: undefined })),
   useSaveStagePracticeNote: jest.fn(() => ({ mutateAsync: jest.fn(), isPending: false })),
@@ -64,6 +66,9 @@ const mockUseMeditationSessionCount = useMeditationSessionCount as jest.MockedFu
 const mockUseMeditationProgramState = useMeditationProgramState as jest.MockedFunction<
   typeof useMeditationProgramState
 >;
+const mockUseMeditationMedianMinutes = useMeditationMedianMinutes as jest.MockedFunction<
+  typeof useMeditationMedianMinutes
+>;
 
 const session = (overrides: Record<string, unknown> = {}) => ({
   id: "s1",
@@ -82,6 +87,11 @@ const setSessions = (data: unknown) =>
     typeof useMeditationSessions
   >);
 
+const setServerMedian = (data: number | null | undefined) =>
+  mockUseMeditationMedianMinutes.mockReturnValue({ data } as unknown as ReturnType<
+    typeof useMeditationMedianMinutes
+  >);
+
 describe("MeditationHomeScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -95,6 +105,7 @@ describe("MeditationHomeScreen", () => {
     mockUseMeditationSessionCount.mockReturnValue({ data: undefined } as unknown as ReturnType<
       typeof useMeditationSessionCount
     >);
+    setServerMedian(undefined);
     setSessions(undefined);
   });
 
@@ -114,6 +125,47 @@ describe("MeditationHomeScreen", () => {
     expect(screen.getByText("2 sessions")).toBeTruthy();
     // Median of a 20 and a 10 minute sit.
     expect(screen.getByText("15 min")).toBeTruthy();
+    expect(screen.getByText("Median")).toBeTruthy();
+  });
+
+  it("shows the lifetime median, not the median of the newest 200 sits", () => {
+    // A daily meditator passes the 200-session list cap in under seven months. Here the
+    // newest 200 sits alternate 4 and 6 minutes, so a median taken over the capped list
+    // is 5; the user's real history is dominated by longer earlier sits, so the lifetime
+    // median is 25. Nothing in the "Median" label says "recent" (#337).
+    // The two durations are chosen so that 5 appears nowhere else on screen - the recent
+    // rows below render their own "{{count}} min" labels.
+    setSessions(
+      Array.from({ length: 200 }, (_, i) =>
+        session({ id: `recent-${i}`, durationMinutes: i % 2 === 0 ? 4 : 6 }),
+      ),
+    );
+    setServerMedian(25);
+
+    renderWithProviders(<MeditationHomeScreen />);
+
+    expect(screen.getByText("25 min")).toBeTruthy();
+    // The capped-list median, which is what the screen used to show.
+    expect(screen.queryByText("5 min")).toBeNull();
+  });
+
+  it("falls back to the loaded sits until the server median arrives", () => {
+    setSessions([session({ durationMinutes: 20 }), session({ id: "s2", durationMinutes: 10 })]);
+    setServerMedian(undefined);
+
+    renderWithProviders(<MeditationHomeScreen />);
+
+    expect(screen.getByText("15 min")).toBeTruthy();
+  });
+
+  it("renders a dash when the server reports no sits to take a median of", () => {
+    // Null is "no sessions at all", which is not a zero-minute median.
+    setSessions([]);
+    setServerMedian(null);
+
+    renderWithProviders(<MeditationHomeScreen />);
+
+    expect(screen.getByText("-")).toBeTruthy();
     expect(screen.getByText("Median")).toBeTruthy();
   });
 

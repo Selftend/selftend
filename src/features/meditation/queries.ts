@@ -6,6 +6,7 @@ import {
   getMeditationSession,
   listMeditationSessions,
   listStagePracticeNotes,
+  medianMeditationMinutes,
   saveMeditationSession,
   saveStagePracticeNote,
   upsertMeditationProgramState,
@@ -22,6 +23,7 @@ const meditationKeys = {
   detail: (userId: string, sessionId: string) =>
     ["meditation", "detail", userId, sessionId] as const,
   count: (userId: string) => ["meditation", "count", userId] as const,
+  medianMinutes: (userId: string) => ["meditation", "median-minutes", userId] as const,
   programState: (userId: string) => ["meditation", "programState", userId] as const,
   notes: (userId: string, stage?: number) =>
     ["meditation", "notes", userId, stage ?? "all"] as const,
@@ -47,6 +49,19 @@ export function useMeditationSessionCount(userId: string | null) {
   });
 }
 
+// The RPC takes the median over the signed-in user's own sessions via auth.uid(), so it
+// takes no argument; `userId` only gates and scopes the cache, exactly as it does for the
+// sibling count hook.
+export function useMeditationMedianMinutes(userId: string | null) {
+  return useQuery({
+    queryKey: userId
+      ? meditationKeys.medianMinutes(userId)
+      : ["meditation", "median-minutes", "anonymous"],
+    queryFn: medianMeditationMinutes,
+    enabled: Boolean(userId),
+  });
+}
+
 export function useMeditationSession(userId: string | null, sessionId: string | null) {
   return useQuery({
     queryKey:
@@ -65,8 +80,10 @@ export function useSaveMeditationSession(userId: string | null) {
     onSuccess: async () => {
       requestReminderPrompt("meditation");
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: meditationKeys.list(userId) });
-      await queryClient.invalidateQueries({ queryKey: meditationKeys.programState(userId) });
+      // Invalidate the whole meditation prefix rather than the list alone: logging a sit
+      // moves the server-derived session count and median too, and invalidating only
+      // `list` left both stale until a remount (#337).
+      await queryClient.invalidateQueries({ queryKey: meditationKeys.all });
     },
   });
 }
