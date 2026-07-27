@@ -4,8 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import GroundingHomeScreen from "@/src/features/grounding/grounding-home-screen";
 import { useGroundingSessions } from "@/src/features/grounding/queries";
-import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -91,7 +91,7 @@ describe("GroundingHomeScreen", () => {
     // Full-bleed clay field header (Direction B room), not the plain header.
     expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the clay room re-pour; a wrong or missing room fails here.
-    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("clay").light);
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "clay");
   });
 
   it("omits the subline until history has actually loaded", () => {

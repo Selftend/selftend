@@ -8,8 +8,8 @@ import {
   HabitsLearnIndexScreen,
 } from "@/src/features/habits/habits-learn-screen";
 import { HABITS_LEARN_CARDS } from "@/src/features/habits/learn";
-import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -33,7 +33,7 @@ describe("HabitsLearnIndexScreen", () => {
     expect(screen.getAllByRole("button")).toHaveLength(HABITS_LEARN_CARDS.length);
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the act room re-pour; a wrong or missing room fails here.
-    expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("act").light);
+    expectRoomPour(UNSAFE_getByType(SafeAreaView), "act");
   });
 
   it("navigates to the article when a card is pressed", () => {
@@ -61,14 +61,14 @@ describe("HabitsLearnDetailScreen", () => {
     expect(screen.getByRole("heading", { name: "The two-minute rule" })).toBeTruthy();
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the act room re-pour; a wrong or missing room fails here.
-    expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("act").light);
+    expectRoomPour(UNSAFE_getByType(SafeAreaView), "act");
   });
 
   it("falls back to the index for an unknown slug, still on the room pour", () => {
     const { UNSAFE_getByType } = renderWithProviders(<HabitsLearnDetailScreen slug="nope" />);
 
     expect(screen.getByRole("heading", { name: "Atomic Habits - core ideas" })).toBeTruthy();
-    expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("act").light);
+    expectRoomPour(UNSAFE_getByType(SafeAreaView), "act");
   });
 
   it("navigates to a related card and back to habits", () => {

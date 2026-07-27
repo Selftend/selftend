@@ -8,8 +8,8 @@ import {
   useMeditationSessions,
 } from "@/src/features/meditation/queries";
 import { useUserPreferences } from "@/src/features/settings/queries";
-import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -123,7 +123,7 @@ describe("MeditationHomeScreen", () => {
     // Full-bleed iris field header (Direction B room), not the plain header.
     expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the iris room re-pour; a wrong or missing room fails here.
-    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("iris").light);
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
   });
 
   it("wears iris on the stage badge and the history link", () => {
@@ -147,7 +147,7 @@ describe("MeditationHomeScreen", () => {
 
     // Without this the iris room drops out while preferences resolve and snaps
     // in afterwards - the defect grounding shipped and had to fix.
-    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("iris").light);
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
   });
 

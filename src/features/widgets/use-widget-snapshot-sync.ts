@@ -8,7 +8,11 @@ import { useSleepLogs } from "@/src/features/sleep/queries";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { useActivities } from "@/src/features/activities/queries";
 import { useGratitudeEntries, useGratitudeEntryCount } from "@/src/features/gratitude/queries";
-import { useJournalEntries } from "@/src/features/journal/queries";
+import {
+  useJournalEntries,
+  useJournalEntryCount,
+  useJournalWordTotal,
+} from "@/src/features/journal/queries";
 import { useGroundingSessions } from "@/src/features/grounding/queries";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
 import {
@@ -61,6 +65,10 @@ export function useWidgetSnapshotSync(
   const defusionLogs = useDefusionLogs(widgetUserId, 30).data;
   const moodLogCount = useMoodLogCount(widgetUserId).data;
   const gratitudeEntryCount = useGratitudeEntryCount(widgetUserId).data;
+  // The journal-week card's two stats are lifetime figures, so they need the same exact
+  // server counts the in-app widget and the journal hero use rather than the capped list (#323).
+  const journalEntryCount = useJournalEntryCount(widgetUserId).data;
+  const journalWordTotal = useJournalWordTotal(widgetUserId).data;
   const cbtTaskStatuses = useProgramWidgetTaskStatus({
     userId: widgetUserId ?? "",
     module: "cbt",
@@ -91,6 +99,8 @@ export function useWidgetSnapshotSync(
       defusionLogs: defusionLogs ?? [],
       moodLogCount: moodLogCount ?? null,
       gratitudeEntryCount: gratitudeEntryCount ?? null,
+      journalEntryCount: journalEntryCount ?? null,
+      journalWordTotal: journalWordTotal ?? null,
       programmes: {
         cbt: {
           startedAt: preferences?.cbtProgramStartedAt ?? null,
@@ -120,6 +130,8 @@ export function useWidgetSnapshotSync(
       defusionLogs,
       moodLogCount,
       gratitudeEntryCount,
+      journalEntryCount,
+      journalWordTotal,
       preferences?.cbtProgramStartedAt,
       preferences?.cbtProgramCompletedAt,
       preferences?.cbtProgramPhaseIndex,

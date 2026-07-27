@@ -27,6 +27,8 @@ const empty = {
   defusionLogs: [],
   moodLogCount: null,
   gratitudeEntryCount: null,
+  journalEntryCount: null,
+  journalWordTotal: null,
 };
 const args = { widgetName: "SelftendCard", width: 320, height: 180 };
 
