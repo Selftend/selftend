@@ -178,7 +178,12 @@ export interface Snapshot {
 export interface WidgetData {
   /** `dayKey` is the civil day captured at logging time; see #250. */
   moodLogs: { loggedAt: string; dayKey: string; moodScore: number }[];
-  sleepLogs: { loggedAt: string; durationMinutes: number; quality: number | null }[];
+  sleepLogs: {
+    loggedAt: string;
+    dayKey: string;
+    durationMinutes: number;
+    quality: number | null;
+  }[];
   meditationSessions: { completedAt: string; durationMinutes: number }[];
   activities: {
     id: string;
@@ -186,8 +191,8 @@ export interface WidgetData {
     scheduledAt: string | null;
     completedAt: string | null;
   }[];
-  gratitudeEntries: { loggedAt: string; items: string[] }[];
-  journalEntries: { createdAt: string; body: string }[];
+  gratitudeEntries: { loggedAt: string; dayKey: string; items: string[] }[];
+  journalEntries: { createdAt: string; dayKey: string; body: string }[];
   groundingSessions: { completedAt: string; durationMinutes: number }[];
   breathingSessions: { completedAt: string }[];
   committedActions: { id: string; title: string; updatedAt: string }[];

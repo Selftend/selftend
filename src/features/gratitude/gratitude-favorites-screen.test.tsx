@@ -1,3 +1,4 @@
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
@@ -43,6 +44,8 @@ function favoriteEntry(overrides: Partial<GratitudeEntry> = {}): GratitudeEntry 
     items: ["Morning walk"],
     note: "",
     loggedAt: "2026-07-20T09:00:00.000Z",
+    loggedOffsetMinutes: null,
+    dayKey: entryDayKey("2026-07-20T09:00:00.000Z", null),
     createdAt: "2026-07-20T09:00:00.000Z",
     updatedAt: "2026-07-20T09:00:00.000Z",
     events: [],

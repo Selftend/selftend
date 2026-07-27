@@ -179,7 +179,7 @@ export function MoodEntryEditorScreen({
     // Carry a missing offset through as null rather than deriving one from this
     // device: an entry whose origin was never recorded must not be re-stamped
     // with wherever the user happens to be while fixing a typo (#250).
-    setLoggedOffsetMinutes(existingEntry.loggedOffsetMinutes);
+    setLoggedOffsetMinutes(existingEntry.loggedOffsetMinutes ?? null);
     setSituation(existingEntry.situation);
     setThoughts(existingEntry.thoughts);
     setBehaviours(existingEntry.behaviours);

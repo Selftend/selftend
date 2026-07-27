@@ -27,7 +27,7 @@ import type { JournalEntry } from "@/src/features/journal/types";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function JournalDetailScreen() {
   const { t, i18n } = useTranslation("journal");
@@ -81,15 +81,9 @@ export default function JournalDetailScreen() {
   const trimmedTitle = entry.title.trim();
   const heading = trimmedTitle.length > 0 ? trimmedTitle : t("detail.title");
 
-  let createdAtLabel: string;
-  try {
-    createdAtLabel = new Intl.DateTimeFormat(i18n.language, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(occurredAt));
-  } catch {
-    createdAtLabel = formatLocalTimestamp(occurredAt);
-  }
+  // Rendered in the frame it was captured in, so the time matches the civil day
+  // the entry is filed under everywhere else (#250).
+  const createdAtLabel = formatAtOffset(occurredAt, entry.occurredOffsetMinutes, i18n.language);
 
   const confirmDelete = async () => {
     setDeleteError("");

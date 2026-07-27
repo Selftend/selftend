@@ -3,6 +3,7 @@ import { router } from "expo-router";
 
 import { JournalDayCard } from "@/src/features/journal/journal-day-card";
 import { toLocalDateKey } from "@/src/stores/selected-date-store";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -12,7 +13,17 @@ jest.mock("expo-router", () => ({
 const mockRouter = jest.mocked(router);
 
 function entry(id: string, createdAt: string, title: string, body: string) {
-  return { id, userId: "user-1", title, body, createdAt, updatedAt: createdAt };
+  return {
+    id,
+    userId: "user-1",
+    title,
+    body,
+    occurredAt: createdAt,
+    occurredOffsetMinutes: null,
+    dayKey: entryDayKey(createdAt, null),
+    createdAt,
+    updatedAt: createdAt,
+  };
 }
 
 describe("JournalDayCard", () => {

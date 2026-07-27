@@ -35,7 +35,7 @@ import {
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
-import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
+import { occurrenceTimeFromDate, type CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -73,7 +73,7 @@ export function GratitudeEntryEditorScreen({
   const [lifeItems, setLifeItems] = useState<string[]>(EMPTY_LIFE_ITEMS);
   const [note, setNote] = useState("");
   const [loggedAt, setLoggedAt] = useState(() => new Date().toISOString());
-  const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState(
+  const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState<CapturedOffsetMinutes>(
     () => occurrenceTimeFromDate().occurredOffsetMinutes,
   );
 
@@ -96,10 +96,10 @@ export function GratitudeEntryEditorScreen({
     ]);
     setNote(existingEntry.note);
     setLoggedAt(existingEntry.loggedAt);
-    setLoggedOffsetMinutes(
-      existingEntry.loggedOffsetMinutes ??
-        occurrenceTimeFromDate(new Date(existingEntry.loggedAt)).occurredOffsetMinutes,
-    );
+    // Carry a missing offset through as null rather than deriving one from this
+    // device: an entry whose origin was never recorded must not be re-stamped
+    // with wherever the user happens to be while fixing a typo (#250).
+    setLoggedOffsetMinutes(existingEntry.loggedOffsetMinutes ?? null);
     setLifeItems([
       existingEntry.lifeItems[0] ?? "",
       existingEntry.lifeItems[1] ?? "",
@@ -268,10 +268,15 @@ export function GratitudeEntryEditorScreen({
           <Label>{t("editor.whenLabel")}</Label>
           <DateTimeField
             value={loggedAt}
+            offsetMinutes={loggedOffsetMinutes}
             onChange={(next) => {
-              const occurrence = occurrenceTimeFromDate(new Date(next));
-              setLoggedAt(occurrence.occurredAt);
-              setLoggedOffsetMinutes(occurrence.occurredOffsetMinutes);
+              setLoggedAt(next);
+              // A known offset survives a time correction - the user is restating
+              // when, not where. Only an entry with no captured offset picks one
+              // up here, from the device now doing the restating.
+              setLoggedOffsetMinutes(
+                loggedOffsetMinutes ?? occurrenceTimeFromDate(new Date(next)).occurredOffsetMinutes,
+              );
             }}
             accessibilityLabel={t("editor.whenLabel")}
           />

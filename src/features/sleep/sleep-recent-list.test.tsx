@@ -2,6 +2,7 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -19,6 +20,8 @@ function sleepLog(i: number) {
     quality: 3,
     notes: "",
     loggedAt,
+    loggedOffsetMinutes: null,
+    dayKey: entryDayKey(loggedAt, null),
     createdAt: loggedAt,
   };
 }

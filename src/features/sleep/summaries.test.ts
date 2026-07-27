@@ -8,6 +8,7 @@ import {
   weekdayAverages,
 } from "@/src/features/sleep/summaries";
 import { toLocalDateKey } from "@/src/utils/date";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 
 function daysAgo(days: number, hour = 12) {
   const d = new Date();
@@ -17,7 +18,15 @@ function daysAgo(days: number, hour = 12) {
 }
 
 function log(durationMinutes: number, quality: number, loggedAt: string) {
-  return { id: `l-${loggedAt}-${durationMinutes}`, durationMinutes, quality, loggedAt };
+  return {
+    id: `l-${loggedAt}-${durationMinutes}`,
+    durationMinutes,
+    quality,
+    loggedAt,
+    // No captured offset: the day key falls back to the viewer's local day, the
+    // frame `daysAgo` builds these timestamps in.
+    dayKey: entryDayKey(loggedAt, null),
+  };
 }
 
 describe("averageDurationMinutes", () => {
@@ -90,7 +99,7 @@ describe("weekdayAverages", () => {
 describe("loggedOnDate", () => {
   it("matches a log on the given local date key", () => {
     const today = daysAgo(0);
-    expect(loggedOnDate([{ loggedAt: today }], toLocalDateKey(today))).toBe(true);
-    expect(loggedOnDate([{ loggedAt: daysAgo(5) }], "1999-01-01")).toBe(false);
+    expect(loggedOnDate([{ dayKey: entryDayKey(today, null) }], toLocalDateKey(today))).toBe(true);
+    expect(loggedOnDate([{ dayKey: entryDayKey(daysAgo(5), null) }], "1999-01-01")).toBe(false);
   });
 });

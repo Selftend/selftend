@@ -12,7 +12,6 @@ import { useMoodHistory } from "@/src/features/mood/queries";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
-import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import { roundTo1 as roundedTenth } from "@/src/utils/number";
 
 export interface TopDistortion {
@@ -259,17 +258,12 @@ export function useCbtInsights(userId: string | null): CbtInsights {
     // self-care logs so the trend stays comparable across tools.
     const windowStart = recentLogs[recentLogs.length - 1]?.logDate ?? "";
     const windowEnd = recentLogs[0]?.logDate ?? "";
-    const inWindow = (loggedAt: string) => {
-      const day = toLocalDateKey(loggedAt);
-      return day >= windowStart && day <= windowEnd;
-    };
+    const inWindow = (dayKey: string) => dayKey >= windowStart && dayKey <= windowEnd;
     const sleepDurations = (sleepLogs ?? [])
-      .filter((s) => inWindow(s.loggedAt))
+      .filter((s) => inWindow(s.dayKey))
       .map((s) => s.durationMinutes / 60);
     const gratitudeDayKeys = new Set(
-      (gratitudeEntries ?? [])
-        .filter((g) => inWindow(g.loggedAt))
-        .map((g) => toLocalDateKey(g.loggedAt)),
+      (gratitudeEntries ?? []).filter((g) => inWindow(g.dayKey)).map((g) => g.dayKey),
     );
 
     return {

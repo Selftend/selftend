@@ -231,9 +231,7 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
   },
 
   "gratitude-latest": (data, { t, dateKey }) => {
-    const todayCount = data.gratitudeEntries.filter(
-      (e) => toLocalDateKey(e.loggedAt) === dateKey,
-    ).length;
+    const todayCount = data.gratitudeEntries.filter((e) => e.dayKey === dateKey).length;
     const recentItems = data.gratitudeEntries.reduce((sum, e) => sum + answeredCount(e.items), 0);
     return {
       kind: "stats",
@@ -314,8 +312,7 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
   "sleep-latest": (data, { t, dateKey }) => {
     const avgDuration = averageDurationMinutes(data.sleepLogs, 7);
     const qualityLogs = data.sleepLogs.filter(
-      (l): l is { loggedAt: string; durationMinutes: number; quality: number } =>
-        l.quality !== null,
+      (l): l is (typeof data.sleepLogs)[number] & { quality: number } => l.quality !== null,
     );
     const avgQuality = averageQuality(qualityLogs, 7);
     return {
@@ -344,9 +341,7 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
   },
 
   "journal-week": (data, { t, dateKey }) => {
-    const dayCount = data.journalEntries.filter(
-      (e) => toLocalDateKey(e.createdAt) === dateKey,
-    ).length;
+    const dayCount = data.journalEntries.filter((e) => e.dayKey === dateKey).length;
     const words = data.journalEntries.reduce((sum, e) => sum + countWords(e.body), 0);
     return {
       kind: "stats",

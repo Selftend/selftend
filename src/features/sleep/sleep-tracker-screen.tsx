@@ -15,7 +15,7 @@ import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
 import { useSleepLogs, useSleepLogCount } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useRoomStyle } from "@/src/lib/use-room-style";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import { formatAtOffset } from "@/src/utils/date";
 import { formatDuration, formatHours } from "@/src/features/sleep/format";
 import {
   averageDurationMinutes,
@@ -53,11 +53,11 @@ export default function SleepTrackerScreen() {
   const weekly = weekdayAverages(allLogs);
   // ISO timestamps sort lexically, so the max is the latest log regardless of
   // the list's own ordering.
-  const lastLoggedAt = allLogs.reduce<string | null>(
-    (latest, log) => (latest === null || log.loggedAt > latest ? log.loggedAt : latest),
+  const lastLog = allLogs.reduce<(typeof allLogs)[number] | null>(
+    (latest, log) => (latest === null || log.loggedAt > latest.loggedAt ? log : latest),
     null,
   );
-  const lastWhen = lastLoggedAt ? formatLocalTimestamp(lastLoggedAt) : null;
+  const lastWhen = lastLog ? formatAtOffset(lastLog.loggedAt, lastLog.loggedOffsetMinutes) : null;
 
   return (
     <>
