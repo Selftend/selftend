@@ -224,8 +224,8 @@ Direct imports of `i18n.t(...)` are reserved for non-component code (utility fun
 - `lib/theme.ts` also exports `THEME_VARIABLES`, which applies the same token values through NativeWind `vars()` at the root layout so native builds can resolve classes like `bg-background` and `text-foreground`.
 - `tailwind.config.js` mirrors the same tokens for NativeWind classes.
 - `src/lib/color-scheme.ts` resolves the user's preference (light / dark / system) to an active scheme. It exports two hooks with distinct jobs:
-  - `useColorSchemeName()` is the house reader — pure, always `"light"` or `"dark"`, no effects or storage access. Any component may call it, as often as it likes. This is the answer to "how do I read the colour scheme here?".
-  - `useColorSchemeDriver()` owns the side effects (hydrating the stored preference, pushing it into NativeWind) and is called exactly once, in `app/_layout.tsx`. It returns `void` on purpose, so there is never a reason to call it anywhere else.
+  - `useColorSchemeName()` is the house reader — pure, always `"light"` or `"dark"`, no effects or storage access. Any component may call it, as often as it likes.
+  - `useColorSchemeDriver()` owns the side effects (hydrating the stored preference, pushing it into NativeWind), returns `void`, and is called exactly once, in `app/_layout.tsx`.
 - `src/stores/theme-store.ts` persists the choice.
 
 NativeWind and React Navigation both receive the active scheme from the root layout.

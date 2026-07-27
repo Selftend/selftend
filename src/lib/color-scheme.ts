@@ -34,14 +34,13 @@ export function useColorSchemeName(): ResolvedColorScheme {
 export function useColorSchemeDriver(): void {
   const preference = useThemeStore((s) => s.preference);
   const hydrate = useThemeStore((s) => s.hydrate);
+  // Through the reader, so the resolution rule lives in exactly one place.
+  const resolved = useColorSchemeName();
 
   useEffect(() => {
     // Swallow storage-read failures so a rejected hydrate isn't an unhandled rejection.
     void hydrate().catch(() => {});
   }, [hydrate]);
-
-  const systemColorScheme: ResolvedColorScheme = useColorScheme() === "dark" ? "dark" : "light";
-  const resolved: ResolvedColorScheme = preference === "system" ? systemColorScheme : preference;
 
   // Native takes `preference` so "system" clears the Appearance override that
   // would otherwise pin useColorScheme above to the previous explicit choice.

@@ -23,10 +23,10 @@ const CARD = new Map<HueName, ReturnType<typeof roomCardHsl>>();
  * a one-swatch room, so the chip palette in
  * src/features/habits/habit-color.ts reads the scheme through here too.)
  *
- * Deliberately NOT named `useColorSchemeName` — spec #343 assigns that name to
- * the store-derived house reader in src/lib/color-scheme.ts, and #344 folds
- * this helper into it along with the 12 components still calling nativewind's
- * hook directly. Until that lands, this stays local so the two don't collide.
+ * Deliberately NOT named `useColorSchemeName`: that name belongs to the
+ * store-derived house reader in src/lib/color-scheme.ts. #344 folds this
+ * helper into that reader, along with the components still calling
+ * nativewind's hook directly. Until #344 lands, this stays local.
  */
 export function useRoomScheme(): ColorSchemeName {
   const { colorScheme } = useColorScheme();
