@@ -4,6 +4,7 @@ import {
   getMeditationSession,
   listMeditationSessions,
   listStagePracticeNotes,
+  medianMeditationMinutes,
   saveMeditationSession,
   saveStagePracticeNote,
   upsertMeditationProgramState,
@@ -168,6 +169,49 @@ describe("meditation repository - countMeditationSessions", () => {
     const select = jest.fn(() => ({ eq: eqUser }));
     mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
     await expect(countMeditationSessions("u1")).rejects.toMatchObject({ code: "42P01" });
+  });
+});
+
+describe("meditation repository - medianMeditationMinutes", () => {
+  it("takes the median through the RPC rather than the capped list", async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: 25, error: null });
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ rpc, from } as unknown as ReturnType<
+      typeof requireSupabase
+    >);
+
+    await expect(medianMeditationMinutes()).resolves.toBe(25);
+    expect(rpc).toHaveBeenCalledWith("meditation_median_minutes");
+    // No table read: the point of the RPC is that no session rows cross the wire, so a
+    // 200-row cap cannot creep back in.
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("rounds a half-minute median up, the way the client-side median() did", async () => {
+    // percentile_cont interpolates an even-count median, so 20 and 25 minute sits give
+    // 22.5. Math.round takes that to 23; Postgres round(double precision) would break the
+    // tie to even and say 22, which is why the rounding stays on this side.
+    const rpc = jest.fn().mockResolvedValue({ data: 22.5, error: null });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(medianMeditationMinutes()).resolves.toBe(23);
+  });
+
+  it("coerces a stringified numeric and keeps null distinct from zero", async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: "17.5", error: null });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(medianMeditationMinutes()).resolves.toBe(18);
+
+    // No sessions at all is null, not a zero-minute median - the hero renders a dash.
+    rpc.mockResolvedValue({ data: null, error: null });
+    await expect(medianMeditationMinutes()).resolves.toBeNull();
+  });
+
+  it("throws when the median RPC errors", async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: null, error: new Error("rpc failed") });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(medianMeditationMinutes()).rejects.toThrow("rpc failed");
   });
 });
 

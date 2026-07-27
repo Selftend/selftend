@@ -127,6 +127,25 @@ export async function countMeditationSessions(userId: string): Promise<number> {
   return count ?? 0;
 }
 
+// Exact lifetime median sit length for the hero stat. Taking the median client-side only
+// ever covered the 200 sessions the list query loads, so it silently truncated for daily
+// meditators; the RPC computes the percentile server-side and returns a single number (#337).
+// Takes no argument: the RPC scopes itself to auth.uid() under the caller's own RLS.
+//
+// Rounding lives here rather than in SQL so the value matches what the client-side
+// `median()` produced for the same data - Math.round breaks a `.5` tie upward, Postgres
+// `round(double precision)` breaks it to even.
+export async function medianMeditationMinutes(): Promise<number | null> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("meditation_median_minutes");
+
+  if (error) throw error;
+  // Null means the user has no sessions at all, which is not the same as a zero-minute
+  // median - the hero renders a dash for it.
+  if (data === null || data === undefined) return null;
+  return Math.round(Number(data));
+}
+
 export async function getMeditationSession(userId: string, sessionId: string) {
   // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
   if (!isValidUuid(sessionId)) return null;
