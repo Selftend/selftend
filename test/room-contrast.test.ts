@@ -1,4 +1,5 @@
 import { pacerColors } from "@/src/features/breathing/pacer-colors";
+import { HUE_TRIPLES } from "@/src/lib/design-tokens";
 import { fieldGradient, roomTriples } from "@/src/lib/module-room";
 
 // Hues with a validated room recipe. The field recipe holds one S/L formula
@@ -103,6 +104,39 @@ describe("room surface pairings meet WCAG AA", () => {
       expect(contrastRatio(mutedForeground, background)).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(mutedForeground, card)).toBeGreaterThanOrEqual(4.5);
     }
+  });
+});
+
+// The third pairing, and the one the two suites above were silent about until
+// #368: accent ink on the room surfaces the same hue pours. Seven rooms shipped
+// `text-<hue>` on `bg-background` / `bg-card` through that hole — `think` at
+// 1.90:1 since the CBT room, plus iris 3.33, clay 3.48 and act 3.68, all in
+// light mode. The published accent is tuned for the neutral app surface; on a
+// pale tint of itself it has nowhere near AA's 4.5. `accent-ink` in roomTriples
+// is the certified value (`text-accent-ink`), and this suite is what makes the
+// eighth room's absence of it a build failure rather than a launch.
+describe("accent ink meets WCAG AA on the room surfaces its own hue pours", () => {
+  it.each(ROOM_HUES)("%s accent ink passes on the room background and card", (hue) => {
+    for (const scheme of ["light", "dark"] as const) {
+      const room = roomTriples(hue)[scheme];
+      const accentInk = hslTripleToRgb(room["accent-ink"]);
+
+      expect(contrastRatio(accentInk, hslTripleToRgb(room.background))).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(accentInk, hslTripleToRgb(room.card))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  // A floor alone can be satisfied by throwing the colour away — near-black ink
+  // clears 4.5 in every room and reads as no hue at all. These pin the shape the
+  // floor is meant to be met *with*: the room's own hue, darkened.
+  it.each(ROOM_HUES)("%s light accent ink is the published accent, darkened", (hue) => {
+    // "43 74% 52%" → the same hue and saturation at the certified lightness.
+    const [degree, saturation] = HUE_TRIPLES[hue].light.split(" ");
+    expect(roomTriples(hue).light["accent-ink"]).toBe(`${degree} ${saturation} 28%`);
+  });
+
+  it.each(ROOM_HUES)("%s dark accent ink is the published accent untouched", (hue) => {
+    expect(roomTriples(hue).dark["accent-ink"]).toBe(HUE_TRIPLES[hue].dark);
   });
 });
 

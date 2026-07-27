@@ -12,6 +12,10 @@
     --popover-foreground: 258 22% 15%;
     --primary: 262 62% 56%;
     --primary-foreground: 0 0% 100%;
+    /* Outside a module room there is no hue, so accent ink is the app accent.
+       A room re-pours this per hue (src/lib/module-room.ts). Kept equal to
+       --primary by test/theme-token-sync.test.ts. */
+    --accent-ink: 262 62% 56%;
     --secondary: 260 8% 92%;
     --secondary-foreground: 260 12% 24%;
     --muted: 260 14% 95%;
@@ -43,6 +47,7 @@
     --popover-foreground: 260 30% 96%;
     --primary: 264 72% 72%;
     --primary-foreground: 260 22% 12%;
+    --accent-ink: 264 72% 72%;
     --secondary: 260 8% 22%;
     --secondary-foreground: 260 24% 92%;
     --muted: 260 12% 18%;

@@ -66,6 +66,10 @@ _Avoid_: modal, bottom sheet (the interaction pattern is unrelated)
 **Soft card**:
 A borderless card lifted from the sheet by a hue-tinted shadow instead of a border. Opt-in per screen; the bordered card stays the default elsewhere.
 
+**Accent ink**:
+A module hue used as _text_ rather than as a surface or a swatch. A hue's published accent (`--think`, `text-think`) is tuned to sit on the neutral app surface; on the pale tint of itself a room pours it is not legible (`think` was 1.90:1 against its own room). So a room re-pours `accent-ink`: the same hue and saturation, darkened until it clears WCAG AA on the room's `background` and `card`. Small text in a hue uses `text-accent-ink`; `text-<hue>` remains correct for icons, large numerals, and anything decorative.
+_Avoid_: accent-foreground (that is ink on the `accent` _surface_, a different pairing).
+
 **Guest hue**:
 Another module's hue appearing as an accent inside a room (e.g. the act-green mood scale in mood's rose room). Guest hues stay accent-strength and never re-pour surfaces.
 

@@ -188,6 +188,27 @@ describe("destructive contrast floors (WCAG 1.4.3, 14px text)", () => {
   });
 });
 
+describe("the room-less accent ink fallback", () => {
+  // `--accent-ink` is a room token: src/lib/module-room.ts re-pours it per hue
+  // so `text-accent-ink` resolves to that room's hue, darkened to clear AA on
+  // the surfaces the room pours (#368). Outside a room there is no hue, so the
+  // :root value keeps the class from resolving to an undefined variable — the
+  // app accent is what an accent means there. Per-hue floors live in
+  // test/room-contrast.test.ts; these two cover the fallback the rooms don't.
+  it.each(["light", "dark"] as const)("mirrors --primary in the %s block", (scheme) => {
+    expect(css[scheme]["--accent-ink"]).toBe(css[scheme]["--primary"]);
+  });
+
+  it.each(["light", "dark"] as const)("clears AA on the neutral surfaces in %s", (scheme) => {
+    const ink = hslTripleToRgb(css[scheme]["--accent-ink"]);
+
+    expect(contrastRatio(ink, hslTripleToRgb(css[scheme]["--background"]))).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    expect(contrastRatio(ink, hslTripleToRgb(css[scheme]["--card"]))).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 describe("design-tokens.ts hue source mirrors global.css", () => {
   it.each(HUE_NAMES)("HUE_TRIPLES.%s matches --%s in both schemes", (hue) => {
     expect(HUE_TRIPLES[hue]).toEqual({

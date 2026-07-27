@@ -33,6 +33,12 @@ module.exports = {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+        // The room's hue as legible ink (#368) — `text-accent-ink` inside a
+        // module room re-resolves to that room's hue darkened to clear WCAG AA
+        // on the surfaces it pours (src/lib/module-room.ts). NOT ink on
+        // `--accent`; that is `accent-foreground`. Outside a room it falls back
+        // to the app accent, `--primary`.
+        "accent-ink": "hsl(var(--accent-ink))",
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
