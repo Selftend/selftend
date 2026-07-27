@@ -9,9 +9,10 @@ import { roomCardHsl, roomVariables, type ColorSchemeName } from "@/src/lib/modu
 // The cache lives here (not in module-room.ts) so the recipe module stays
 // React-free — the node-side test/room-contrast.test.ts imports it.
 //
-// The scheme comes from useColorSchemeName, the house reader. (A chip is a
-// one-swatch room, so the chip palette in src/features/habits/habit-color.ts
-// reads the scheme through the same reader.)
+// The scheme comes from useColorSchemeName, the house reader — never from the
+// driver, which is root-only and enforced as such by
+// test/color-scheme-driver.test.ts. (A chip is a one-swatch room, so the chip
+// palette in src/features/habits/habit-color.ts reads through the same reader.)
 
 const VARS = new Map<HueName, ReturnType<typeof roomVariables>>();
 const CARD = new Map<HueName, ReturnType<typeof roomCardHsl>>();
