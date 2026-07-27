@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import BreathingScreen from "@/app/(app)/tools/breathing/index";
+import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
 import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -27,7 +28,7 @@ jest.mock("@/src/features/breathing/queries", () => ({
 }));
 
 jest.mock("@/src/features/breathing/exercises-queries", () => ({
-  useBreathingExercises: () => ({ data: [] }),
+  useBreathingExercises: jest.fn(),
 }));
 
 jest.mock("@/src/components/app/help-sheet", () => ({
@@ -47,6 +48,9 @@ jest.mock("@/src/features/settings/queries", () => ({
 const mockUseBreathingSessions = useBreathingSessions as jest.MockedFunction<
   typeof useBreathingSessions
 >;
+const mockUseBreathingExercises = useBreathingExercises as jest.MockedFunction<
+  typeof useBreathingExercises
+>;
 
 describe("Breathing list polish", () => {
   beforeEach(() => {
@@ -54,6 +58,9 @@ describe("Breathing list polish", () => {
     mockUseBreathingSessions.mockReturnValue({
       data: undefined,
     } as unknown as ReturnType<typeof useBreathingSessions>);
+    mockUseBreathingExercises.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useBreathingExercises>);
   });
 
   it("renders the header title", () => {
@@ -145,6 +152,22 @@ describe("Breathing list polish", () => {
     renderWithProviders(<BreathingScreen />);
     expect(screen.queryByText("No sessions logged yet")).toBeNull();
     expect(screen.queryByText(/^Last · /)).toBeNull();
+  });
+
+  it("omits the subline while the custom exercises are still loading", () => {
+    // The sessions query is enabled before `customExercises` arrives, so it first
+    // resolves against the built-in patterns alone. A user whose only history is
+    // custom exercises would otherwise see a loaded-but-empty list read as "never".
+    mockUseBreathingSessions.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useBreathingSessions>);
+    mockUseBreathingExercises.mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useBreathingExercises>);
+
+    renderWithProviders(<BreathingScreen />);
+
+    expect(screen.queryByText("No sessions logged yet")).toBeNull();
   });
 
   it("shows the last-session subline when sessions exist", () => {

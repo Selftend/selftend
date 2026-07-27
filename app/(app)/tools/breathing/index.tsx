@@ -41,12 +41,16 @@ export default function BreathingScreen() {
     null,
   );
   const lastWhen = lastCompletedAt ? formatLocalTimestamp(lastCompletedAt) : null;
-  // `sessions` is undefined while loading and after a failed fetch with no
-  // cache - only an actually-loaded (possibly empty) history may claim
-  // "no sessions yet", or a returning user's history reads as erased.
+  // `sessions` is undefined while loading and after a failed fetch with no cache.
+  // It also resolves early against the built-in patterns alone, because the query
+  // is enabled before `customExercises` arrives to widen the name filter - so a
+  // user whose only history is custom exercises would briefly see a loaded-but-
+  // empty list. Only a history loaded over the full name set may claim "no
+  // sessions yet", or a returning user's history reads as erased.
+  const historyLoaded = Boolean(sessions && customExercises);
   const subline = lastWhen
     ? t("breathing.hero.last", { when: lastWhen })
-    : sessions
+    : historyLoaded
       ? t("breathing.hero.never")
       : undefined;
 
