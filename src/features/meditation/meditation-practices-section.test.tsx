@@ -1,4 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react-native";
+import { View } from "react-native";
+
+import { roomVariables } from "@/src/lib/module-room";
 
 import { MeditationPracticesSection } from "./meditation-practices-section";
 
@@ -36,5 +39,26 @@ describe("MeditationPracticesSection", () => {
   it("ignores an unknown initialPractice and stays collapsed", () => {
     render(<MeditationPracticesSection initialPractice="mindful-walking" />);
     expect(screen.queryByText("practices.body-scan.title")).toBeNull();
+  });
+
+  it("joins the iris room it renders inside on the meditation home", () => {
+    render(
+      <View style={roomVariables("iris").light} testID="meditation-home-room">
+        <MeditationPracticesSection initialPractice="body-scan" />
+      </View>,
+    );
+
+    expect(screen.getByTestId("meditation-home-room").props.style).toEqual(
+      roomVariables("iris").light,
+    );
+    // The practice cards are hand-rolled Pressables, deliberately left as they
+    // are: they take the room only because they paint the `bg-card` token the
+    // pour rewrites. A hardcoded surface here would sit out of the room.
+    const cardClasses = screen
+      .getAllByRole("button")
+      .map((node) => (node.props.className as string | undefined) ?? "")
+      .filter((className) => className.includes("rounded-2xl"));
+    expect(cardClasses.length).toBeGreaterThan(0);
+    for (const className of cardClasses) expect(className).toContain("bg-card");
   });
 });

@@ -24,7 +24,7 @@ export function MeditationInsightsCard({ sessions }: Props) {
   const insights = computeMeditationInsights(sessions);
 
   return (
-    <Card>
+    <Card variant="soft" tint="iris">
       <CardContent className="gap-3 pt-6">
         <CardTitle aria-level={2}>{t("module.insights.title")}</CardTitle>
         <Text variant="muted" className="text-sm">

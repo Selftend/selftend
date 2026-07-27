@@ -40,7 +40,10 @@ export function MeditationDailyLifeCard() {
   const recent = (notes ?? []).slice(0, MAX_RECENT);
 
   return (
-    <Card className="border-be/30 bg-be/5">
+    // A soft room resident, but `be` stays its guest hue - the daily-life
+    // practice is a cross-module colour reference, so the wash and the tinted
+    // elevation keep pointing at `be` rather than converting to iris.
+    <Card variant="soft" tint="be" className="bg-be/5">
       <CardContent className="gap-3 pt-6">
         <CardTitle aria-level={2}>{t("module.dailyLife.title")}</CardTitle>
         <Text variant="muted" className="text-sm">
@@ -74,7 +77,7 @@ export function MeditationDailyLifeCard() {
                 accessibilityRole="link"
                 onPress={() => router.push("/tools/meditation/daily-life")}
               >
-                <Text className="text-sm text-primary">{t("module.dailyLife.viewAll")}</Text>
+                <Text className="text-sm text-iris">{t("module.dailyLife.viewAll")}</Text>
               </Pressable>
             ) : null}
           </View>
