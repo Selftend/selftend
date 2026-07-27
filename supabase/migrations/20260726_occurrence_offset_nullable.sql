@@ -29,6 +29,18 @@ alter table public.journal_entries_data
 
 -- The existing `between -840 and 840` checks stay: a CHECK is satisfied by null,
 -- so they keep constraining real values without blocking "unknown".
+--
+-- The `set_*_updated_at` BEFORE-UPDATE triggers are disabled across the backfill.
+-- Without that, this housekeeping UPDATE stamps `updated_at` with the deployment
+-- time on every row it touches, and `updated_at` is read as genuine user activity
+-- - journal-list-screen.tsx surfaces max(updatedAt) as "Last journaled", so every
+-- affected user would appear to have journaled the moment this shipped. Clearing a
+-- defaulted offset is not an edit, so it must not look like one.
+-- `mood_logs_data` carries no such trigger, so its backfill needs no guard.
+alter table public.gratitude_entries_data disable trigger set_gratitude_entries_updated_at;
+alter table public.sleep_logs_data disable trigger set_sleep_logs_updated_at;
+alter table public.journal_entries_data disable trigger set_journal_entries_updated_at;
+
 update public.mood_logs_data set logged_offset_minutes = null
  where logged_offset_minutes = 0;
 update public.gratitude_entries_data set logged_offset_minutes = null
@@ -37,6 +49,10 @@ update public.sleep_logs_data set logged_offset_minutes = null
  where logged_offset_minutes = 0;
 update public.journal_entries_data set occurred_offset_minutes = null
  where occurred_offset_minutes = 0;
+
+alter table public.gratitude_entries_data enable trigger set_gratitude_entries_updated_at;
+alter table public.sleep_logs_data enable trigger set_sleep_logs_updated_at;
+alter table public.journal_entries_data enable trigger set_journal_entries_updated_at;
 
 -- Null is now a legitimate offset meaning "not captured". The occurrence
 -- timestamp itself is still required.
