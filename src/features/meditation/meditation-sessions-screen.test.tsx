@@ -6,20 +6,26 @@ import MeditationSessionsScreen from "@/src/features/meditation/meditation-sessi
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { roomPour } from "@/test/room-pour";
+import { useThemeStore } from "@/src/stores/theme-store";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), canGoBack: jest.fn(() => false) },
   usePathname: () => "/tools/meditation/sessions",
 }));
 
-// Only the scheme read is faked - the rest of nativewind (vars, the className
-// interop the whole screen renders through) stays real.
-// `mock`-prefixed so babel-plugin-jest-hoist allows the factory to close over it.
-let mockScheme: "light" | "dark" = "light";
-jest.mock("nativewind", () => ({
-  ...jest.requireActual("nativewind"),
-  useColorScheme: () => ({ colorScheme: mockScheme }),
-}));
+// The room reads the scheme through the house reader (useColorSchemeName, #344),
+// which resolves the theme store's preference against the OS - so the scheme is
+// driven from both ends here rather than by stubbing nativewind's hook.
+// nativewind itself stays real: the whole screen renders through its className
+// interop, and roomVariables builds the pour through its vars().
+// Matches the idiom in src/lib/use-room-style.test.ts.
+const mockUseColorScheme = jest.spyOn(require("react-native"), "useColorScheme");
+
+/** Drive the scheme the way the app does: preference "system", OS decides. */
+const setOsScheme = (scheme: "light" | "dark") => {
+  useThemeStore.setState({ preference: "system", hydrated: true });
+  mockUseColorScheme.mockReturnValue(scheme);
+};
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
@@ -52,8 +58,18 @@ const setSessions = (data: unknown) =>
 describe("MeditationSessionsScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockScheme = "light";
+    setOsScheme("light");
     setSessions(undefined);
+  });
+
+  afterEach(() => {
+    // This drives the real store, so put it back rather than leaving the next
+    // test to depend on its own setOsScheme call running first.
+    useThemeStore.setState({ preference: "system", hydrated: false });
+  });
+
+  afterAll(() => {
+    mockUseColorScheme.mockRestore();
   });
 
   it("renders the history header and the empty state", () => {
@@ -92,7 +108,7 @@ describe("MeditationSessionsScreen", () => {
   it("pours the dark iris room when the scheme is dark", () => {
     setSessions([session()]);
     const lightPour = roomPour("iris");
-    mockScheme = "dark";
+    setOsScheme("dark");
     const darkPour = roomPour("iris");
     // Guards the assertion below against a scheme read that never moved.
     expect(darkPour).not.toBe(lightPour);

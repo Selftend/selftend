@@ -19,5 +19,11 @@ import { useRoomStyle } from "@/src/lib/use-room-style";
  * New room work should reach for this helper, not copy the old idiom.
  */
 export function roomPour(hue: HueName) {
-  return renderHook(() => useRoomStyle(hue)).result.current;
+  // Unmounted before returning: the hook subscribes to the theme store that the
+  // house reader resolves against, and a suite that moves the scheme between
+  // pours would otherwise re-render this stray tree outside act().
+  const { result, unmount } = renderHook(() => useRoomStyle(hue));
+  const style = result.current;
+  unmount();
+  return style;
 }
