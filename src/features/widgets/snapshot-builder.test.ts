@@ -52,9 +52,9 @@ describe("buildSnapshot v2", () => {
     const data: WidgetData = {
       ...empty,
       moodLogs: [
-        { loggedAt: "2026-06-05T11:00:00", moodScore: 4 },
-        { loggedAt: "2026-06-05T09:00:00", moodScore: 2 },
-        { loggedAt: "2026-06-04T09:00:00", moodScore: 1 },
+        { loggedAt: "2026-06-05T11:00:00", dayKey: "2026-06-05", moodScore: 4 },
+        { loggedAt: "2026-06-05T09:00:00", dayKey: "2026-06-05", moodScore: 2 },
+        { loggedAt: "2026-06-04T09:00:00", dayKey: "2026-06-04", moodScore: 1 },
       ],
     };
     const p = buildSnapshot(data, ctx).widgets["mood-checkin"] as MoodCheckinCardPayload;
@@ -68,7 +68,7 @@ describe("buildSnapshot v2", () => {
   it("mood-trend: 7-day average and lifetime count (falls back to list length)", () => {
     const data: WidgetData = {
       ...empty,
-      moodLogs: [{ loggedAt: "2026-06-05T09:00:00", moodScore: 4 }],
+      moodLogs: [{ loggedAt: "2026-06-05T09:00:00", dayKey: "2026-06-05", moodScore: 4 }],
       moodLogCount: 57,
     };
     const p = buildSnapshot(data, ctx).widgets["mood-trend"] as StatTilesCardPayload;

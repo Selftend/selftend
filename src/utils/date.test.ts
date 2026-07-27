@@ -1,9 +1,17 @@
 import {
+  addDaysToKey,
   calendarDayDiff,
+  dayKeyDiff,
+  dayRangeEndKey,
+  formatAtOffset,
   formatTimestamp,
   lastNDayKeys,
+  lastNDayKeysEndingAt,
   localDateKey,
+  maxDayKey,
   parseLocalNoon,
+  shiftFromOffsetFrame,
+  shiftToOffsetFrame,
 } from "@/src/utils/date";
 
 describe("formatTimestamp", () => {
@@ -102,5 +110,124 @@ describe("parseLocalNoon", () => {
     expect(d.getFullYear()).toBe(2026);
     expect(d.getMonth() + 1).toBe(5);
     expect(d.getDate()).toBe(24);
+  });
+});
+
+describe("day-key arithmetic", () => {
+  it("steps forward and back across month and year boundaries", () => {
+    expect(addDaysToKey("2026-05-31", 1)).toBe("2026-06-01");
+    expect(addDaysToKey("2026-06-01", -1)).toBe("2026-05-31");
+    expect(addDaysToKey("2026-12-31", 1)).toBe("2027-01-01");
+    expect(addDaysToKey("2026-03-01", -1)).toBe("2026-02-28");
+    expect(addDaysToKey("2024-03-01", -1)).toBe("2024-02-29"); // leap year
+    expect(addDaysToKey("2026-05-24", 0)).toBe("2026-05-24");
+  });
+
+  it("measures signed whole days between keys", () => {
+    expect(dayKeyDiff("2026-05-24", "2026-05-31")).toBe(7);
+    expect(dayKeyDiff("2026-05-31", "2026-05-24")).toBe(-7);
+    expect(dayKeyDiff("2026-05-24", "2026-05-24")).toBe(0);
+  });
+
+  it("returns `count` keys ending on the given day, oldest first", () => {
+    expect(lastNDayKeysEndingAt(3, "2026-06-01")).toEqual([
+      "2026-05-30",
+      "2026-05-31",
+      "2026-06-01",
+    ]);
+    expect(lastNDayKeysEndingAt(1, "2026-06-01")).toEqual(["2026-06-01"]);
+  });
+
+  it("takes the later of two keys", () => {
+    expect(maxDayKey("2026-05-31", "2026-06-01")).toBe("2026-06-01");
+    expect(maxDayKey("2026-06-01", "2026-05-31")).toBe("2026-06-01");
+    expect(maxDayKey("2026-06-01", "2026-06-01")).toBe("2026-06-01");
+  });
+
+  describe("dayRangeEndKey", () => {
+    const now = new Date(2026, 4, 31, 12, 0, 0);
+
+    it("is today when every entry is in the past", () => {
+      expect(dayRangeEndKey(["2026-05-20", "2026-05-30"], now)).toBe("2026-05-31");
+      expect(dayRangeEndKey([], now)).toBe("2026-05-31");
+    });
+
+    // Log in Tokyo, land in Los Angeles while it is still the previous day there:
+    // the entry's captured day is ahead of the viewer's today and must still be
+    // covered, or it vanishes from every chart and strip (#250).
+    it("extends past today to cover an entry captured further east", () => {
+      expect(dayRangeEndKey(["2026-05-30", "2026-06-01"], now)).toBe("2026-06-01");
+    });
+  });
+});
+
+describe("formatAtOffset", () => {
+  // 14:30 UTC is 23:30 in Tokyo (+540). Reading it in any other zone must still
+  // show 23:30, so the time agrees with the civil day it is filed under.
+  it("renders at the captured offset, not the viewer's zone", () => {
+    const formatted = formatAtOffset("2026-07-13T14:30:00.000Z", 540, "en");
+    expect(formatted).toContain("11:30 PM");
+    expect(formatted).toContain("Jul 13");
+  });
+
+  it("honours a half-hour captured offset", () => {
+    expect(formatAtOffset("2026-07-13T19:00:00.000Z", 330, "en")).toContain("12:30 AM");
+  });
+
+  it("falls back to the viewer's zone when no offset was captured", () => {
+    // TZ is pinned to Asia/Kolkata (+05:30): 19:00 UTC reads as 00:30 the next day.
+    const formatted = formatAtOffset("2026-07-13T19:00:00.000Z", null, "en");
+    expect(formatted).toContain("12:30 AM");
+    expect(formatted).toContain("Jul 14");
+  });
+
+  it("returns the input unchanged when it is not a date", () => {
+    expect(formatAtOffset("nope", 120, "en")).toBe("nope");
+  });
+});
+
+describe("offset frame shifts", () => {
+  it("round-trips an instant through a captured frame", () => {
+    const instant = new Date("2026-07-13T14:30:00.000Z");
+    for (const offset of [540, 330, 0, -420]) {
+      const shifted = shiftToOffsetFrame(instant, offset);
+      expect(shiftFromOffsetFrame(shifted, offset).toISOString()).toBe(instant.toISOString());
+    }
+  });
+
+  it("makes the device-local wall clock read as the captured frame's", () => {
+    // 14:30 UTC at +540 is 23:30; the shifted Date reads 23:30 in local getters.
+    const shifted = shiftToOffsetFrame(new Date("2026-07-13T14:30:00.000Z"), 540);
+    expect(shifted.getHours()).toBe(23);
+    expect(shifted.getMinutes()).toBe(30);
+    expect(shifted.getDate()).toBe(13);
+  });
+});
+
+// jest.config.js pins TZ to Asia/Kolkata, which has no DST - so the round-trip
+// above cannot expose an offset resolved at the wrong instant. Re-pin to a DST
+// zone for this block only.
+describe("shiftToOffsetFrame across a device-zone DST boundary", () => {
+  const originalTz = process.env.TZ;
+  beforeAll(() => {
+    process.env.TZ = "America/New_York";
+  });
+  afterAll(() => {
+    process.env.TZ = originalTz;
+  });
+
+  // 2026-03-08 is US spring-forward. 06:30Z is still EST (-300); shifting into
+  // offset 0 lands at 11:30Z, which is already EDT (-240).
+  const springForward = new Date("2026-03-08T06:30:00.000Z");
+
+  it("displays the captured wall clock, not one shifted by the DST delta", () => {
+    const shifted = shiftToOffsetFrame(springForward, 0);
+    expect(shifted.getHours()).toBe(6);
+    expect(shifted.getMinutes()).toBe(30);
+  });
+
+  it("stays the inverse of shiftFromOffsetFrame across the boundary", () => {
+    const shifted = shiftToOffsetFrame(springForward, 0);
+    expect(shiftFromOffsetFrame(shifted, 0).toISOString()).toBe(springForward.toISOString());
   });
 });

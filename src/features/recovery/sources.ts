@@ -13,7 +13,11 @@ export interface RecoverySources {
   beliefs?: readonly { createdAt: string }[];
   hierarchies?: readonly { createdAt: string }[];
   exposureItems?: readonly { completedAt: string | null }[];
-  moodLogs?: readonly { loggedAt: string }[];
+  /**
+   * `loggedAt` orders the timeline; `dayKey` (the civil day captured at logging
+   * time) is what day-counting stats group on — see #250.
+   */
+  moodLogs?: readonly { loggedAt: string; dayKey: string }[];
   worries?: readonly { createdAt: string }[];
   mindfulnessSessions?: readonly { completedAt: string | null }[];
   tasks?: readonly { createdAt: string }[];

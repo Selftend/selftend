@@ -1,7 +1,8 @@
-import { localDateKey } from "@/src/stores/selected-date-store";
+import { addDaysToKey, dayRangeEndKey, parseLocalNoon } from "@/src/utils/date";
 
+/** Points arrive pre-bucketed: `dayKey` is the civil day captured at logging time. */
 interface MoodSample {
-  loggedAt: string;
+  dayKey: string;
   moodScore: number;
 }
 
@@ -18,18 +19,20 @@ export interface HeatmapWeek {
   monthLabel: string | null;
 }
 
-/** Local midnight of the Monday on or before the given date. */
-function mondayOf(date: Date): Date {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return d;
+/** The day key of the Monday on or before the given day key. */
+function mondayKeyOf(dateKey: string): string {
+  const day = parseLocalNoon(dateKey);
+  return addDaysToKey(dateKey, -((day.getDay() + 6) % 7));
 }
 
 /**
  * GitHub-style weeks-as-columns grid of rounded day-average scores, from the
  * week of the earliest point through the current week. Days before the first
- * entry or after today are null slots (rendered as nothing — never a shame
- * state); in-range days without an entry carry a null score.
+ * entry or after the last day in range are null slots (rendered as nothing —
+ * never a shame state); in-range days without an entry carry a null score.
+ *
+ * The grid is a pure calendar sequence; only membership depends on the captured
+ * civil day each point was logged on.
  */
 export function buildMoodHeatmapWeeks(
   points: MoodSample[] | undefined,
@@ -41,37 +44,36 @@ export function buildMoodHeatmapWeeks(
   }
 
   const buckets = new Map<string, { sum: number; count: number }>();
-  let earliest: Date | null = null;
+  let firstKey: string | null = null;
   for (const point of points) {
-    const logged = new Date(point.loggedAt);
-    const localDay = new Date(logged.getFullYear(), logged.getMonth(), logged.getDate());
-    if (earliest === null || localDay.getTime() < earliest.getTime()) earliest = localDay;
-    const key = localDateKey(localDay);
-    const bucket = buckets.get(key);
+    if (firstKey === null || point.dayKey < firstKey) firstKey = point.dayKey;
+    const bucket = buckets.get(point.dayKey);
     if (bucket) {
       bucket.sum += point.moodScore;
       bucket.count += 1;
     } else {
-      buckets.set(key, { sum: point.moodScore, count: 1 });
+      buckets.set(point.dayKey, { sum: point.moodScore, count: 1 });
     }
   }
 
-  const firstKey = localDateKey(earliest!);
-  const todayKey = localDateKey(now);
+  // Ends at today, or at a later day the user already holds an entry on: fly
+  // east-to-west and you land holding a "tomorrow" entry, which a hard clamp at
+  // today would erase from the grid entirely (#250).
+  const lastKey = dayRangeEndKey(buckets.keys(), now);
   const monthFmt = new Intl.DateTimeFormat(lang, { month: "short" });
 
   const weeks: HeatmapWeek[] = [];
-  const cursor = mondayOf(earliest!);
-  const end = mondayOf(now);
-  while (cursor.getTime() <= end.getTime()) {
+  let cursorKey = mondayKeyOf(firstKey!);
+  const endKey = mondayKeyOf(lastKey);
+  while (cursorKey <= endKey) {
     const days: (HeatmapDay | null)[] = [];
-    let monthLabel: string | null = weeks.length === 0 ? monthFmt.format(earliest!) : null;
+    let monthLabel: string | null =
+      weeks.length === 0 ? monthFmt.format(parseLocalNoon(firstKey!)) : null;
     for (let i = 0; i < 7; i++) {
-      const day = new Date(cursor);
-      day.setDate(cursor.getDate() + i);
-      const key = localDateKey(day);
-      if (day.getDate() === 1 && weeks.length > 0) monthLabel = monthFmt.format(day);
-      if (key < firstKey || key > todayKey) {
+      const key = addDaysToKey(cursorKey, i);
+      if (key.endsWith("-01") && weeks.length > 0)
+        monthLabel = monthFmt.format(parseLocalNoon(key));
+      if (key < firstKey! || key > lastKey) {
         days.push(null);
         continue;
       }
@@ -83,7 +85,7 @@ export function buildMoodHeatmapWeeks(
       days.push({ dateKey: key, score });
     }
     weeks.push({ days, monthLabel });
-    cursor.setDate(cursor.getDate() + 7);
+    cursorKey = addDaysToKey(cursorKey, 7);
   }
 
   return weeks;

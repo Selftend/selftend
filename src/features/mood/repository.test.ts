@@ -1,6 +1,6 @@
 import {
   countMoodLogs,
-  getFirstMoodLogDate,
+  getFirstMoodDayKey,
   getMoodLog,
   listMoodLogs,
   listMoodScorePoints,
@@ -52,7 +52,8 @@ describe("mood repository", () => {
         notes: "Feeling alright",
         linkedStrategy: null,
         loggedAt: "2026-05-10T08:00:00.000Z",
-        loggedOffsetMinutes: 0,
+        loggedOffsetMinutes: null,
+        dayKey: "2026-05-10",
         createdAt: "2026-05-10T08:00:01.000Z",
         situation: "",
         thoughts: "",
@@ -123,7 +124,8 @@ describe("mood repository", () => {
       notes: "Low day",
       linkedStrategy: "thoughts",
       loggedAt: "2026-05-10T08:00:00.000Z",
-      loggedOffsetMinutes: 0,
+      loggedOffsetMinutes: null,
+      dayKey: "2026-05-10",
       createdAt: "2026-05-10T08:00:01.000Z",
       situation: "Email",
       thoughts: "",
@@ -276,7 +278,8 @@ describe("mood repository", () => {
       notes: "Better after lunch",
       linkedStrategy: "thoughts",
       loggedAt: "2026-05-10T08:00:00.000Z",
-      loggedOffsetMinutes: 0,
+      loggedOffsetMinutes: null,
+      dayKey: "2026-05-10",
       createdAt: "2026-05-10T08:00:01.000Z",
       situation: "",
       thoughts: "All good",
@@ -334,13 +337,23 @@ describe("mood repository", () => {
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
     await expect(listMoodScorePoints("user-1", "2026-07-01T00:00:00.000Z")).resolves.toEqual([
-      { loggedAt: "2026-07-01T08:00:00.000Z", loggedOffsetMinutes: 180, moodScore: 4 },
-      { loggedAt: "2026-07-02T09:00:00.000Z", loggedOffsetMinutes: 0, moodScore: 2 },
+      {
+        loggedAt: "2026-07-01T08:00:00.000Z",
+        loggedOffsetMinutes: 180,
+        dayKey: "2026-07-01",
+        moodScore: 4,
+      },
+      {
+        loggedAt: "2026-07-02T09:00:00.000Z",
+        loggedOffsetMinutes: null,
+        dayKey: "2026-07-02",
+        moodScore: 2,
+      },
     ]);
     expect(from).toHaveBeenCalledWith("mood_logs");
     expect(select).toHaveBeenCalledWith("logged_at, logged_offset_minutes, mood_score");
     expect(eq).toHaveBeenCalledWith("user_id", "user-1");
-    expect(gte).toHaveBeenCalledWith("logged_at", "2026-07-01T00:00:00.000Z");
+    expect(gte).toHaveBeenCalledWith("logged_at", "2026-06-30T00:00:00.000Z");
     expect(order).toHaveBeenCalledWith("logged_at", { ascending: true });
   });
 
@@ -357,8 +370,8 @@ describe("mood repository", () => {
     await expect(
       listMoodScorePoints("user-1", "2026-03-03T00:00:00.000Z", "2026-04-01T23:59:59.999Z"),
     ).resolves.toEqual([]);
-    expect(gte).toHaveBeenCalledWith("logged_at", "2026-03-03T00:00:00.000Z");
-    expect(lte).toHaveBeenCalledWith("logged_at", "2026-04-01T23:59:59.999Z");
+    expect(gte).toHaveBeenCalledWith("logged_at", "2026-03-02T00:00:00.000Z");
+    expect(lte).toHaveBeenCalledWith("logged_at", "2026-04-02T23:59:59.999Z");
   });
 
   it("pages past the PostgREST row cap so long windows never drop the newest rows", async () => {
@@ -390,29 +403,55 @@ describe("mood repository", () => {
     expect(points).toHaveLength(1001);
     expect(points[1000]).toEqual({
       loggedAt: "2026-07-01T08:00:00.000Z",
+      // An explicitly stored 0 now means a genuine UTC capture, not "unknown".
       loggedOffsetMinutes: 0,
+      dayKey: "2026-07-01",
       moodScore: 5,
     });
     expect(range).toHaveBeenNthCalledWith(1, 0, 999);
     expect(range).toHaveBeenNthCalledWith(2, 1000, 1999);
   });
 
-  it("returns the first mood log timestamp, or null when the user has no logs", async () => {
-    const maybeSingle = jest
-      .fn()
-      .mockResolvedValueOnce({ data: { logged_at: "2026-01-05T10:00:00.000Z" }, error: null })
-      .mockResolvedValueOnce({ data: null, error: null });
+  // getFirstMoodDayKey issues TWO queries: the earliest instant, then the window
+  // in which an earlier civil day is still arithmetically possible.
+  function mockFirstDayKeyQueries(
+    firstRow: { logged_at: string; logged_offset_minutes: number | null } | null,
+    windowRows: { logged_at: string; logged_offset_minutes: number | null }[] = [],
+  ) {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: firstRow, error: null });
     const limit = jest.fn(() => ({ maybeSingle }));
     const order = jest.fn(() => ({ limit }));
-    const eq = jest.fn(() => ({ order }));
+    const lte = jest.fn().mockResolvedValue({ data: windowRows, error: null });
+    const eq = jest.fn(() => ({ order, lte }));
     const select = jest.fn(() => ({ eq }));
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+    return { select, order, limit, lte };
+  }
 
-    await expect(getFirstMoodLogDate("user-1")).resolves.toBe("2026-01-05T10:00:00.000Z");
-    await expect(getFirstMoodLogDate("user-1")).resolves.toBeNull();
-    expect(select).toHaveBeenCalledWith("logged_at");
+  it("returns the first mood log's civil day, or null when the user has no logs", async () => {
+    const first = { logged_at: "2026-01-05T10:00:00.000Z", logged_offset_minutes: 180 };
+    const { select, order, limit } = mockFirstDayKeyQueries(first, [first]);
+
+    // 10:00Z at +180 is 13:00 on the 5th - the day the user actually logged it.
+    await expect(getFirstMoodDayKey("user-1")).resolves.toBe("2026-01-05");
+    expect(select).toHaveBeenCalledWith("logged_at, logged_offset_minutes");
     expect(order).toHaveBeenCalledWith("logged_at", { ascending: true });
     expect(limit).toHaveBeenCalledWith(1);
+
+    mockFirstDayKeyQueries(null);
+    await expect(getFirstMoodDayKey("user-1")).resolves.toBeNull();
+  });
+
+  it("prefers a later instant whose captured offset puts it on an earlier civil day", async () => {
+    // 15:30Z at +09:00 is Jan 2 local; the LATER 16:00Z at -08:00 is Jan 1 local.
+    // Reading only the earliest instant made the picker refuse the real Jan 1.
+    const first = { logged_at: "2026-01-01T15:30:00.000Z", logged_offset_minutes: 540 };
+    const later = { logged_at: "2026-01-01T16:00:00.000Z", logged_offset_minutes: -480 };
+    const { lte } = mockFirstDayKeyQueries(first, [first, later]);
+
+    await expect(getFirstMoodDayKey("user-1")).resolves.toBe("2026-01-01");
+    // Window end is the earliest instant + the full 28h offset span.
+    expect(lte).toHaveBeenCalledWith("logged_at", "2026-01-02T19:30:00.000Z");
   });
 });

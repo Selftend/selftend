@@ -1,4 +1,4 @@
-import { parseLocalNoon, startOfDayDaysAgo, toLocalDateKey } from "@/src/utils/date";
+import { addDaysToKey, maxDayKey, toLocalDateKey } from "@/src/utils/date";
 import { roundTo1 } from "@/src/utils/number";
 import {
   averageDurationMinutes,
@@ -160,7 +160,7 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
 
   "mood-checkin": (data, { t, locale, dateKey }) => {
     const todayLogs = data.moodLogs
-      .filter((m) => toLocalDateKey(m.loggedAt) === dateKey)
+      .filter((m) => m.dayKey === dateKey)
       .sort((a, b) => (a.loggedAt < b.loggedAt ? 1 : -1));
     const emptyPrompt = t("home.widgets.moodCheckin.emptyPrompt");
     let summary = emptyPrompt;
@@ -182,7 +182,7 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
   },
 
   "mood-trend": (data, { t, dateKey }) => {
-    const last7 = sinceDays(data.moodLogs, (m) => m.loggedAt, 7, dateKey);
+    const last7 = sinceDayKeys(data.moodLogs, (m) => m.dayKey, 7, dateKey);
     const avg = last7.length
       ? roundTo1(last7.reduce((s, m) => s + m.moodScore, 0) / last7.length)
       : null;
@@ -590,7 +590,22 @@ export function buildSignedOutSnapshot(ctx: {
 
 // --- helpers ---
 
-function sinceDays<T>(rows: T[], at: (r: T) => string, days: number, dateKey: string): T[] {
-  const cutoff = startOfDayDaysAgo(days, parseLocalNoon(dateKey));
-  return rows.filter((r) => new Date(at(r)) >= cutoff);
+/**
+ * `sinceDays` for entities that carry a captured civil day: the window is walked
+ * in day keys so it lines up with how those entries are bucketed everywhere else
+ * (#250). The end extends past `dateKey` if the user holds a later-keyed entry,
+ * so travelling west cannot drop today's check-in out of the widget.
+ */
+function sinceDayKeys<T>(
+  rows: T[],
+  dayKeyOf: (r: T) => string,
+  days: number,
+  dateKey: string,
+): T[] {
+  const endKey = rows.map(dayKeyOf).reduce(maxDayKey, dateKey);
+  const startKey = addDaysToKey(endKey, -(days - 1));
+  return rows.filter((r) => {
+    const key = dayKeyOf(r);
+    return key >= startKey && key <= endKey;
+  });
 }

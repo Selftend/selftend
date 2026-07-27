@@ -3,13 +3,14 @@ import { router } from "expo-router";
 
 import MoodTrackerScreen from "@/src/features/mood/mood-tracker-screen";
 import {
-  useFirstMoodLogDate,
+  useFirstMoodDayKey,
   useMoodHistory,
   useMoodLogCount,
   useMoodScorePoints,
 } from "@/src/features/mood/queries";
 import { currentDateKey } from "@/src/stores/selected-date-store";
 import { startOfDayDaysAgo } from "@/src/utils/date";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -34,7 +35,7 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/mood/queries", () => ({
-  useFirstMoodLogDate: jest.fn(),
+  useFirstMoodDayKey: jest.fn(),
   useMoodHistory: jest.fn(),
   useMoodLogCount: jest.fn(),
   useMoodScorePoints: jest.fn(),
@@ -47,8 +48,8 @@ jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
 const mockUseMoodLogs = useMoodHistory as jest.MockedFunction<typeof useMoodHistory>;
 const mockUseMoodLogCount = useMoodLogCount as jest.MockedFunction<typeof useMoodLogCount>;
 const mockUseMoodScorePoints = useMoodScorePoints as jest.MockedFunction<typeof useMoodScorePoints>;
-const mockUseFirstMoodLogDate = useFirstMoodLogDate as jest.MockedFunction<
-  typeof useFirstMoodLogDate
+const mockUseFirstMoodLogDate = useFirstMoodDayKey as jest.MockedFunction<
+  typeof useFirstMoodDayKey
 >;
 const mockRouter = jest.mocked(router);
 
@@ -63,7 +64,7 @@ describe("MoodTrackerScreen", () => {
     } as unknown as ReturnType<typeof useMoodScorePoints>);
     mockUseFirstMoodLogDate.mockReturnValue({
       data: null,
-    } as unknown as ReturnType<typeof useFirstMoodLogDate>);
+    } as unknown as ReturnType<typeof useFirstMoodDayKey>);
   });
 
   it("renders the empty states and a pending Today card when there are no mood logs", () => {
@@ -103,6 +104,8 @@ describe("MoodTrackerScreen", () => {
           notes: "Felt steadier after a walk",
           linkedStrategy: null,
           loggedAt,
+          loggedOffsetMinutes: null,
+          dayKey: entryDayKey(loggedAt, null),
           createdAt: loggedAt,
         },
       ],
@@ -138,6 +141,8 @@ describe("MoodTrackerScreen", () => {
           notes: "",
           linkedStrategy: null,
           loggedAt: evening,
+          loggedOffsetMinutes: null,
+          dayKey: entryDayKey(evening, null),
           createdAt: evening,
         },
         {
@@ -148,6 +153,8 @@ describe("MoodTrackerScreen", () => {
           notes: "",
           linkedStrategy: null,
           loggedAt: morning,
+          loggedOffsetMinutes: null,
+          dayKey: entryDayKey(morning, null),
           createdAt: morning,
         },
       ],

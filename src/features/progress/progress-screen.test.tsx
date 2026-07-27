@@ -3,6 +3,7 @@ import { screen } from "@testing-library/react-native";
 import ProgressScreen from "@/src/features/progress/progress-screen";
 import { useMoodScorePoints } from "@/src/features/mood/queries";
 import { startOfDayDaysAgo } from "@/src/utils/date";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -26,7 +27,14 @@ describe("ProgressScreen", () => {
     const noon = new Date();
     noon.setHours(12, 0, 0, 0);
     mockUseMoodScorePoints.mockReturnValue({
-      data: [{ loggedAt: noon.toISOString(), loggedOffsetMinutes: 0, moodScore: 4 }],
+      data: [
+        {
+          loggedAt: noon.toISOString(),
+          loggedOffsetMinutes: null,
+          dayKey: entryDayKey(noon.toISOString(), null),
+          moodScore: 4,
+        },
+      ],
       isLoading: false,
     } as unknown as ReturnType<typeof useMoodScorePoints>);
 

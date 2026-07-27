@@ -24,7 +24,7 @@ import { DateRangeField, type DateRange } from "@/src/components/app/date-range-
 import { MoodHistoryList } from "@/src/features/mood/mood-history-list";
 import { buildMoodChartData, buildMoodChartDataForRange } from "@/src/features/mood/chart-data";
 import {
-  useFirstMoodLogDate,
+  useFirstMoodDayKey,
   useMoodHistory,
   useMoodLogCount,
   useMoodScorePoints,
@@ -40,9 +40,9 @@ import {
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
 import { WeekHero } from "@/src/features/mood/mood-week-hero";
 import { useRoomStyle } from "@/src/lib/use-room-style";
-import { formatLocalTimestamp, parseLocalNoon, startOfDayDaysAgo } from "@/src/utils/date";
+import { formatAtOffset, parseLocalNoon, startOfDayDaysAgo } from "@/src/utils/date";
 import { useSession } from "@/src/providers/session-provider";
-import { currentDateKey, toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 type TrendRange = "7d" | "30d" | "90d" | "custom";
 
@@ -91,7 +91,7 @@ export default function MoodTrackerScreen() {
   const { data: totalCount } = useMoodLogCount(userId);
   const thisWeekCount = sevenDay.count;
   const lastLog = (moodLogs ?? [])[0] ?? null; // listMoodLogs returns newest-first
-  const lastWhen = lastLog ? formatLocalTimestamp(lastLog.loggedAt) : null;
+  const lastWhen = lastLog ? formatAtOffset(lastLog.loggedAt, lastLog.loggedOffsetMinutes) : null;
 
   const statItems = [
     { value: String(totalCount ?? moodLogs?.length ?? 0), label: t("stats.checkinsLabel") },
@@ -112,7 +112,7 @@ export default function MoodTrackerScreen() {
     ? new Date(`${customRange.end}T23:59:59.999`).toISOString()
     : undefined;
   const { data: scorePoints } = useMoodScorePoints(userId, windowFromIso, windowToIso);
-  const { data: firstLogIso } = useFirstMoodLogDate(userId);
+  const { data: firstLogDayKey } = useFirstMoodDayKey(userId);
 
   // Only the first and last day are labelled — interior labels would collide
   // at the trend windows' densities (matches the previous bespoke chart).
@@ -229,7 +229,7 @@ export default function MoodTrackerScreen() {
                         setCustomRange(range);
                         setTrendRange("custom");
                       }}
-                      minDateKey={firstLogIso ? toLocalDateKey(firstLogIso) : undefined}
+                      minDateKey={firstLogDayKey ?? undefined}
                       maxDateKey={currentDateKey()}
                     />
                     <Card variant="soft" tint="be">

@@ -124,7 +124,7 @@ export function useCbtInsights(userId: string | null): CbtInsights {
 
     const moodScoresByDate = new Map<string, number[]>();
     for (const moodLog of moodLogs) {
-      const logDate = toLocalDateKey(moodLog.loggedAt);
+      const logDate = moodLog.dayKey;
       // Push into the existing bucket instead of spreading a fresh copy each iteration (O(n)
       // total, not O(n^2)).
       const bucket = moodScoresByDate.get(logDate);

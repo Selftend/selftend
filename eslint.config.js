@@ -14,6 +14,16 @@ const assetExtensions = [
   ".woff2",
 ];
 
+// Shared so the day-key block below can re-state it: flat config resolves
+// `no-restricted-imports` last-wins per file, so a later block that omitted this
+// would quietly un-restrict module-room for the files it matches.
+const MODULE_ROOM_RESTRICTION = {
+  name: "@/src/lib/module-room",
+  importNames: ["roomVariables", "roomCardHsl"],
+  message:
+    "Use useRoomStyle(hue) / useRoomCardHsl(hue) from @/src/lib/use-room-style - they carry the scheme read and the cached style identity.",
+};
+
 module.exports = [
   ...expoConfig,
   {
@@ -86,16 +96,31 @@ module.exports = [
     files: ["src/features/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
     ignores: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {
+      "no-restricted-imports": ["error", { paths: [MODULE_ROOM_RESTRICTION] }],
+    },
+  },
+  {
+    // mood/gratitude/sleep/journal entries carry a `dayKey`: the civil day captured
+    // when the entry was logged, resolved once in the repository. Bucketing one of
+    // them by the VIEWER's day instead moves entries between days after travel and
+    // skews daily averages (#250). The viewer-local helpers stay available to the
+    // modules with no captured offset (habits, ACT, CBT, breathing, meditation,
+    // routines) - they have nothing better to use yet.
+    // gratitude/sleep/journal join this list when they move onto `dayKey` too.
+    files: ["src/features/mood/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
       "no-restricted-imports": [
         "error",
         {
           paths: [
-            {
-              name: "@/src/lib/module-room",
-              importNames: ["roomVariables", "roomCardHsl"],
+            MODULE_ROOM_RESTRICTION,
+            ...["@/src/utils/date", "@/src/stores/selected-date-store"].map((name) => ({
+              name,
+              importNames: ["toLocalDateKey", "localDateKey"],
               message:
-                "Use useRoomStyle(hue) / useRoomCardHsl(hue) from @/src/lib/use-room-style - they carry the scheme read and the cached style identity.",
-            },
+                "Group by the entry's `dayKey` (the civil day captured at logging time) instead. Bucketing by the viewer's local day moves entries after travel - see #250.",
+            })),
           ],
         },
       ],

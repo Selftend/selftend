@@ -176,7 +176,8 @@ export interface Snapshot {
 }
 
 export interface WidgetData {
-  moodLogs: { loggedAt: string; moodScore: number }[];
+  /** `dayKey` is the civil day captured at logging time; see #250. */
+  moodLogs: { loggedAt: string; dayKey: string; moodScore: number }[];
   sleepLogs: { loggedAt: string; durationMinutes: number; quality: number | null }[];
   meditationSessions: { completedAt: string; durationMinutes: number }[];
   activities: {

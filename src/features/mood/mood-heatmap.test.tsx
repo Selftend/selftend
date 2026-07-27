@@ -2,6 +2,7 @@ import { fireEvent, screen } from "@testing-library/react-native";
 
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
 import { useMoodScorePoints } from "@/src/features/mood/queries";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("@/src/features/mood/queries", () => ({
@@ -19,7 +20,13 @@ function isoDaysAgo(daysAgo: number, hour = 12) {
 
 function mockPoints(points: { loggedAt: string; moodScore: number }[]) {
   mockUseMoodScorePoints.mockReturnValue({
-    data: points.map((p) => ({ ...p, loggedOffsetMinutes: 0 })),
+    // No captured offset: the day key falls back to the viewer's local day, which
+    // is the frame `isoDaysAgo` builds these timestamps in.
+    data: points.map((p) => ({
+      ...p,
+      loggedOffsetMinutes: null,
+      dayKey: entryDayKey(p.loggedAt, null),
+    })),
   } as unknown as ReturnType<typeof useMoodScorePoints>);
 }
 

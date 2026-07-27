@@ -15,7 +15,7 @@ import { ProgressBar } from "@/src/components/app/progress-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useActivities } from "@/src/features/activities/queries";
 import { useGoals, useMilestones } from "@/src/features/goals/queries";
-import { dailyIntegerAverages, lastNLocalDateKeys } from "@/src/features/mood/chart-data";
+import { dailyIntegerAverages, lastNMoodDayKeys } from "@/src/features/mood/chart-data";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -71,7 +71,7 @@ export default function WeeklyReviewScreen() {
   const { data: goals, isLoading: goalsLoading } = useGoals(user?.id ?? null);
   const { data: thoughtRecords, isLoading: recordsLoading } = useThoughtRecords(user?.id ?? null);
 
-  const weekDates = lastNLocalDateKeys(7);
+  const weekDates = lastNMoodDayKeys(moodLogs, 7);
 
   const chartData = (() => {
     if (!moodLogs) return [];
