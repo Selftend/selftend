@@ -439,23 +439,36 @@ const COMPONENTS_APP_SITES: AllowedSite[] = [
 // ---------------------------------------------------------------------------
 
 /**
- * The sidebar's per-tool accents. One consumer,
- * src/components/app/sidebar-nav.tsx, which paints the glyph `accent.icon` when
- * the row is active and `text-muted-foreground` when it is not - so unlike the
- * widget-tint map below, this tint *is* a state indicator and owes 1.4.11's
- * 3:1. It clears it on the only surface it reaches: `bg-<hue>/10` over the
- * sidebar's `bg-card`. Active is also carried by the chip fill, by the ink
- * label, and by `aria-current="page"`, so colour is not the sole channel.
+ * The per-tool accents. Two consumers, and they reach the same surface:
+ *
+ *   src/components/app/sidebar-nav.tsx paints the glyph `accent.icon` when the
+ *   row is active and `text-muted-foreground` when it is not - so unlike the
+ *   widget-tint map below, this tint *is* a state indicator and owes 1.4.11's
+ *   3:1. Active is also carried by the chip fill, by the ink label and by
+ *   `aria-current="page"`, so colour is not the sole channel.
+ *
+ *   src/features/tools/tools-screen.tsx paints it unconditionally on the hub
+ *   tile's glyph, beside the tool's name - static branding, no state, the
+ *   weaker claim of the two.
+ *
+ * The figures below are the stricter reading, and one set covers both: each
+ * stacks `chip` (`bg-<hue>/10`) over a `bg-card` surface - the sidebar's own
+ * background, the hub tile's `bg-card`. The hub reached this map in #421,
+ * having until then carried a hardcoded copy that painted six tools in two
+ * colours; its tiles used to tint at /15, which is *lower* contrast (be 4.22,
+ * act 3.31), so adopting the map's /10 chip raised every one of them.
+ *
+ * A third consumer on a darker surface would have to be re-measured.
  */
 const SIDEBAR_ACCENT = (hue: string, ratio: string): Omit<AllowedSite, "snippet"> => ({
   file: `${HOME_DIR}/tool-accent.ts`,
   reason: "icon",
   evidence:
-    `Sidebar nav glyph (size-6), ${hue} accent on bg-${hue}/10 over bg-card: ` +
-    `${ratio}:1 light, above 1.4.11's 3:1. Active state is duplicated by the ` +
-    `chip fill, the ink label and aria-current="page", so the tint is not the ` +
-    `only channel. This is the map's sole consumer - a second one on a darker ` +
-    `surface would have to be re-measured.`,
+    `Nav and tools-hub glyph (size-6), ${hue} accent on bg-${hue}/10 over ` +
+    `bg-card: ${ratio}:1 light, above 1.4.11's 3:1. Both consumers pair the ` +
+    `glyph with the tool's name in text, and the sidebar duplicates its active ` +
+    `state in the chip fill, the ink label and aria-current="page", so the ` +
+    `tint is never the only channel.`,
 });
 
 /**
@@ -726,10 +739,11 @@ describe("act and home are not rooms", () => {
 // ---------------------------------------------------------------------------
 //
 // The fourteen small feature areas left over once #403's sweeps had landed -
-// mostly one to three sites each, so this is breadth rather than depth. Four of
-// them (gratitude, grounding, habits, journal) hold nothing at all now and are
-// listed anyway, so that a new site there has to be classified rather than
-// merely counted.
+// mostly one to three sites each, so this is breadth rather than depth. Five of
+// them (gratitude, grounding, habits, journal, tools) hold nothing at all now
+// and are listed anyway, so that a new site there has to be classified rather
+// than merely counted. `tools` emptied last, in #421, when the hub stopped
+// carrying its own hue map and read src/features/home/tool-accent.ts instead.
 //
 // Three things came out of classifying them, and none was a contrast number:
 //
@@ -956,27 +970,14 @@ const ALLOWED_TAIL: AllowedSite[] = [
       "the tint, not assumed from be's 4.86 on a plain surface.",
   },
 
-  // --- src/features/tools: three tiles, one identical line ------------------
-  {
-    file: "src/features/tools/tools-screen.tsx",
-    snippet: `iconColor: "text-be",`,
-    reason: "icon",
-    evidence:
-      "Mood tile. 24px glyph on bg-be/15 inside a bg-card tile: 4.22:1. The tile's name and stat " +
-      "are separate text; the hue only tints the glyph.",
-  },
-  {
-    file: "src/features/tools/tools-screen.tsx",
-    snippet: `iconColor: "text-be",`,
-    reason: "icon",
-    evidence: "Grounding tile. Same treatment and surface as the mood tile: 4.22:1.",
-  },
-  {
-    file: "src/features/tools/tools-screen.tsx",
-    snippet: `iconColor: "text-be",`,
-    reason: "icon",
-    evidence: "Sleep tile. Same treatment and surface as the mood tile: 4.22:1.",
-  },
+  // src/features/tools held three tiles here until #421 - `iconColor:
+  // "text-be"` three times over, from a hardcoded hue map that contradicted
+  // src/features/home/tool-accent.ts and painted the hub's six tools in two
+  // colours. The screen now reads that map, so it names no hue of its own and
+  // has nothing left to classify; its glyphs are covered by the SIDEBAR_ACCENT
+  // rows above, which is where the hues actually live. The directory stays in
+  // TAIL_DIRS so a new literal there has to be classified rather than merely
+  // counted.
 
   // --- src/features/cbt: shared-tool pills ----------------------------------
   {
