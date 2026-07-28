@@ -332,7 +332,7 @@ function StatusPill({
   t: ReturnType<typeof useTranslation<"act">>["t"];
 }) {
   const classes: Record<ActionStatus, string> = {
-    active: "bg-act/15 text-act",
+    active: "bg-act/15 text-act-ink",
     completed: "bg-green-500/15 text-green-700 dark:text-green-400",
     abandoned: "bg-muted text-muted-foreground",
   };

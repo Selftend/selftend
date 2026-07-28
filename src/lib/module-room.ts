@@ -14,7 +14,7 @@
 
 import { vars } from "nativewind";
 
-import { HUE_TRIPLES, type HueName } from "@/src/lib/design-tokens";
+import { HUE_INK_TRIPLES, HUE_TRIPLES, type HueName } from "@/src/lib/design-tokens";
 
 export type ColorSchemeName = "light" | "dark";
 
@@ -23,9 +23,22 @@ export function hueDegree(hue: HueName): number {
   return Number.parseInt(HUE_TRIPLES[hue].light, 10);
 }
 
+// The accent ink a room pours (#368) is the hue's ink from the token source,
+// not a second recipe: `text-think` on the think room's background is 1.90:1,
+// well under half of AA's 4.5, and the fix — same hue and saturation, fixed
+// lightness — is the same one the room-less `text-<hue>-ink` needs (#403).
+// HUE_INK_TRIPLES holds it once, so the two cannot drift apart; why 28%, and
+// why dark keeps the published accent, are documented there. Room-surface
+// floors are enforced by test/room-contrast.test.ts.
+
 /**
  * Space-separated HSL triples for the surface tokens a room re-pours,
  * keyed by CSS variable name (without the leading `--`).
+ *
+ * `accent-ink` is the odd one out: it is not a surface but the room hue itself,
+ * darkened until it can carry small text on the surfaces above
+ * (`text-accent-ink` — see HUE_INK_TRIPLES). Do not read it as ink on `accent`;
+ * that pairing is `accent-foreground`.
  */
 export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string, string>> {
   const h = hueDegree(hue);
@@ -41,6 +54,7 @@ export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string
       "muted-foreground": `${h} 8% 40%`,
       accent: `${h} 28% 92%`,
       "accent-foreground": `${h} 28% 25%`,
+      "accent-ink": HUE_INK_TRIPLES[hue].light,
       border: `${h} 15% 88%`,
       input: `${h} 15% 88%`,
     },
@@ -55,6 +69,7 @@ export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string
       "muted-foreground": `${h} 10% 68%`,
       accent: `${h} 14% 24%`,
       "accent-foreground": `${h} 24% 93%`,
+      "accent-ink": HUE_INK_TRIPLES[hue].dark,
       border: `${h} 10% 24%`,
       input: `${h} 10% 22%`,
     },

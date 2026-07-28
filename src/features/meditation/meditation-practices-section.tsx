@@ -90,7 +90,15 @@ export function MeditationPracticesSection({ initialPractice }: MeditationPracti
                             hue.classes.chipBg,
                           )}
                         >
-                          <Text className={cn("text-[10px] font-bold", hue.classes.text)}>
+                          {/*
+                            Accent ink, not the accent (#403): a 10px numeral
+                            on `chipBg`, a `bg-<hue>/15` tint of its own hue.
+                            Practices carry guest hues (mist, be, ink) as well
+                            as the room's iris, so this must be the hue-keyed
+                            ink — `text-accent-ink` would repaint all four as
+                            the room's accent.
+                          */}
+                          <Text className={cn("text-[10px] font-bold", hue.classes.ink)}>
                             {String(i + 1).padStart(2, "0")}
                           </Text>
                         </View>

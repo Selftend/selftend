@@ -68,8 +68,10 @@ describe("MeditationStagesScreen", () => {
     renderWithProviders(<MeditationStagesScreen />);
 
     // Decorative accent, so it follows the room hue - `primary` stays reserved
-    // for interactive control states.
-    expect(screen.getByText("Where you are").props.className).toContain("text-iris");
+    // for interactive control states. It is small uppercase text, so the hue
+    // arrives as `accent-ink` (iris darkened to clear AA, #368) rather than the
+    // published `text-iris`, which is 3.33:1 on the surfaces iris pours.
+    expect(screen.getByText("Where you are").props.className).toContain("text-accent-ink");
   });
 
   it("keeps the `be` milestone chips as untouched guests", () => {
@@ -80,5 +82,8 @@ describe("MeditationStagesScreen", () => {
     const milestone = screen.getByText("Milestone One - Continuous attention to the breath");
     expect(milestone.props.className).toContain("text-be");
     expect(milestone.props.className).not.toContain("text-iris");
+    // `accent-ink` is the room's hue, so sweeping the guest onto it would
+    // repaint `be` as iris just as surely as `text-iris` would (#368).
+    expect(milestone.props.className).not.toContain("text-accent-ink");
   });
 });

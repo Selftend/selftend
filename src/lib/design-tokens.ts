@@ -27,6 +27,50 @@ export const HUE_TRIPLES: Record<HueName, SchemeTriples> = {
 
 export const PRIMARY_TRIPLES: SchemeTriples = { light: "262 62% 56%", dark: "264 72% 72%" };
 
+// The lightness a hue becomes legible *ink* at (#368, #403). A hue's published
+// accent above is tuned as a colour — it paints `bg-<hue>` fills, borders,
+// chips, field gradients, the pacer ring — not as text, and four of the eight
+// carry too much luminance to hold small text in light mode: `think` is 1.88:1
+// on the app background, under half of AA's 4.5, plus `iris` 3.42, `clay` 3.51
+// and `act` 3.64. Fixing the lightness while keeping the hue's own degree and
+// saturation darkens the accent rather than replacing it, so the ink still
+// reads as that hue. Darkening the accents themselves is the move NOT taken:
+// they carry the product's visual identity, and repainting every hue surface to
+// fix its text would be a brand change wearing an accessibility hat.
+//
+// 28% is the binding number, and it binds on both surfaces a hue's ink can land
+// on: `think` clears 5.45 on the app background and 5.51 on its own room's
+// background; at 32% both fall under 4.5. Floors live in
+// test/theme-token-sync.test.ts (the neutral app surface, `text-<hue>-ink`) and
+// test/room-contrast.test.ts (the room surfaces, `text-accent-ink`).
+//
+// Dark mode keeps the published accent untouched: it already clears 5.81:1 at
+// worst there, so a dark-mode darkening would be a visual change buying nothing.
+export const HUE_INK_LIGHTNESS = 28;
+
+function inkTriples(hue: HueName): SchemeTriples {
+  const match = HUE_TRIPLES[hue].light.match(/^(\d+)\s+(\d+)%\s+\d+%$/);
+  if (!match) throw new Error(`Unparseable hue triple for "${hue}": ${HUE_TRIPLES[hue].light}`);
+  return {
+    light: `${match[1]} ${match[2]}% ${HUE_INK_LIGHTNESS}%`,
+    dark: HUE_TRIPLES[hue].dark,
+  };
+}
+
+/**
+ * Every hue as ink that clears WCAG AA for small text on the neutral app
+ * surface — `text-<hue>-ink`, the room-less counterpart of the room-poured
+ * `text-accent-ink`. A module room re-pours `--accent-ink` from these same
+ * values (src/lib/module-room.ts), so inside a room the two are the same colour
+ * by construction rather than by coincidence.
+ *
+ * `text-<hue>` remains correct for icons, large numerals and anything
+ * decorative — this is the small-text token, not a replacement for the accent.
+ */
+export const HUE_INK_TRIPLES: Record<HueName, SchemeTriples> = Object.fromEntries(
+  HUE_NAMES.map((hue) => [hue, inkTriples(hue)]),
+) as Record<HueName, SchemeTriples>;
+
 export const TINT_TOKENS = [
   "primary",
   "act",

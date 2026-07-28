@@ -38,7 +38,7 @@ const SessionRow = memo(function SessionRow({ session }: { session: MeditationSe
           </Text>
         </View>
         <View className="rounded-full bg-iris/10 px-2 py-0.5">
-          <Text className="text-xs font-semibold text-iris">
+          <Text className="text-xs font-semibold text-accent-ink">
             {t("module.sessions.stageBadge", { stage: session.stageAtSession })}
           </Text>
         </View>

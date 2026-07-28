@@ -251,7 +251,7 @@ export default function ActUrgeSurfScreen() {
           <View className="gap-4">
             <Card className="border-act/30 bg-act/5">
               <CardHeader>
-                <CardTitle className="text-act">
+                <CardTitle className="text-act-ink">
                   {t("act:expansion.urgeSurf.observeTitle")}
                 </CardTitle>
               </CardHeader>
@@ -305,7 +305,7 @@ export default function ActUrgeSurfScreen() {
                       )}
                       {...actedOnRoving.getItemProps(index, () => setUrgeActedOn(val))}
                     >
-                      <Text className={cn("text-center font-semibold", selected && "text-act")}>
+                      <Text className={cn("text-center font-semibold", selected && "text-act-ink")}>
                         {val
                           ? t("act:expansion.urgeSurf.actedOnYes")
                           : t("act:expansion.urgeSurf.actedOnNo")}
