@@ -35,12 +35,33 @@ const sampleMapped = {
   category: "pleasure",
   paceCategory: null,
   scheduledAt: "2026-05-16T09:00:00.000Z",
+  scheduledOffsetMinutes: null,
+  scheduledDayKey: "2026-05-16",
   completedAt: null,
+  completedOffsetMinutes: null,
+  completedDayKey: null,
   moodBefore: 3,
   moodAfter: null,
   notes: "park loop",
   createdAt: "2026-05-15T08:00:00.000Z",
   updatedAt: "2026-05-15T08:00:00.000Z",
+};
+
+// The jest runner pins TZ to Asia/Kolkata (+05:30), so "the viewer's day" is fixed.
+// 19:00Z on the 15th is 00:30 on the 16th in Kolkata but midday on the 15th at UTC-7 -
+// one instant that lands on two different civil days.
+const ACROSS_MIDNIGHT_AT = "2026-05-15T19:00:00.000Z";
+const CAPTURED_DAY = "2026-05-15";
+const VIEWER_DAY = "2026-05-16";
+const UTC_MINUS_7 = -420;
+
+const listOne = (row: Record<string, unknown>) => {
+  const limit = jest.fn().mockResolvedValue({ data: [row], error: null });
+  const order = jest.fn(() => ({ limit }));
+  const eq = jest.fn(() => ({ order }));
+  const select = jest.fn(() => ({ eq }));
+  const from = jest.fn(() => ({ select }));
+  mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 };
 
 describe("activities repository", () => {
@@ -79,7 +100,13 @@ describe("activities repository", () => {
     expect(not).toHaveBeenCalledWith("completed_at", "is", null);
     expect(order).toHaveBeenCalledWith("completed_at", { ascending: false });
     expect(limit).toHaveBeenCalledWith(250);
-    expect(result).toEqual([{ ...sampleMapped, completedAt: "2026-05-16T10:00:00.000Z" }]);
+    expect(result).toEqual([
+      {
+        ...sampleMapped,
+        completedAt: "2026-05-16T10:00:00.000Z",
+        completedDayKey: "2026-05-16",
+      },
+    ]);
   });
 
   it("throws when listRecentCompletedActivities query errors", async () => {
@@ -122,6 +149,7 @@ describe("activities repository", () => {
       category: "pleasure",
       paceCategory: null,
       scheduledAt: "2026-05-16T09:00:00.000Z",
+      scheduledOffsetMinutes: 330,
       moodBefore: 3,
       notes: "  park loop  ",
     });
@@ -132,6 +160,7 @@ describe("activities repository", () => {
       category: "pleasure",
       pace_category: null,
       scheduled_at: "2026-05-16T09:00:00.000Z",
+      scheduled_offset_minutes: 330,
       mood_before: 3,
       notes: "park loop",
     });
@@ -153,6 +182,7 @@ describe("activities repository", () => {
         category: "mastery",
         paceCategory: null,
         scheduledAt: null,
+        scheduledOffsetMinutes: null,
         moodBefore: null,
         notes: "",
       },
@@ -165,6 +195,9 @@ describe("activities repository", () => {
       category: "mastery",
       pace_category: null,
       scheduled_at: null,
+      // Cleared together: an edit that drops the schedule must not leave the row
+      // asserting the civil day it used to mean (#330).
+      scheduled_offset_minutes: null,
       mood_before: null,
       notes: "",
     });
@@ -193,5 +226,113 @@ describe("activities repository", () => {
     expect(payload.completed_at.length).toBeGreaterThan(0);
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
     expect(eqId).toHaveBeenCalledWith("id", "a-1");
+  });
+  // Both defects in #330, one per column. The activity is bucketed by the day it
+  // was captured on, not the day its instant falls on for whoever is looking.
+  describe("captured civil days", () => {
+    it("buckets a COMPLETED activity to its captured day, not the viewer's", async () => {
+      listOne({
+        ...sampleRow,
+        completed_at: ACROSS_MIDNIGHT_AT,
+        completed_offset_minutes: UTC_MINUS_7, // finished at midday somewhere at UTC-7
+      });
+
+      const [activity] = await listActivities("user-1");
+      expect(activity.completedOffsetMinutes).toBe(UTC_MINUS_7);
+      expect(activity.completedDayKey).toBe(CAPTURED_DAY);
+      // The instant alone would have filed it under the viewer's tomorrow.
+      expect(activity.completedDayKey).not.toBe(VIEWER_DAY);
+    });
+
+    it("buckets a SCHEDULED activity to the day it was planned for, not the viewer's", async () => {
+      // "Tuesday 7pm" picked at UTC-7 stays Tuesday after the user flies to Kolkata,
+      // where the same instant is already Wednesday (owner decision, 2026-07-28).
+      listOne({
+        ...sampleRow,
+        scheduled_at: ACROSS_MIDNIGHT_AT,
+        scheduled_offset_minutes: UTC_MINUS_7,
+      });
+
+      const [activity] = await listActivities("user-1");
+      expect(activity.scheduledOffsetMinutes).toBe(UTC_MINUS_7);
+      expect(activity.scheduledDayKey).toBe(CAPTURED_DAY);
+      expect(activity.scheduledDayKey).not.toBe(VIEWER_DAY);
+      // The instant itself is untouched - it still orders the list and renders the
+      // time of day (schedule-format.ts:12-15 stands).
+      expect(activity.scheduledAt).toBe(ACROSS_MIDNIGHT_AT);
+    });
+
+    it("falls back to the viewer's day when no offset was captured", async () => {
+      // Same instants, offsets absent: null means "unknown", never "UTC" (#250), so
+      // the activity renders exactly where it always has rather than moving.
+      listOne({
+        ...sampleRow,
+        scheduled_at: ACROSS_MIDNIGHT_AT,
+        scheduled_offset_minutes: null,
+        completed_at: ACROSS_MIDNIGHT_AT,
+        completed_offset_minutes: null,
+      });
+
+      const [activity] = await listActivities("user-1");
+      expect(activity.scheduledOffsetMinutes).toBeNull();
+      expect(activity.completedOffsetMinutes).toBeNull();
+      expect(activity.scheduledDayKey).toBe(VIEWER_DAY);
+      expect(activity.completedDayKey).toBe(VIEWER_DAY);
+    });
+
+    it("treats columns absent from an older response as uncaptured", async () => {
+      listOne({ ...sampleRow, scheduled_at: ACROSS_MIDNIGHT_AT, completed_at: ACROSS_MIDNIGHT_AT });
+
+      const [activity] = await listActivities("user-1");
+      expect(activity.scheduledOffsetMinutes).toBeNull();
+      expect(activity.completedOffsetMinutes).toBeNull();
+      expect(activity.scheduledDayKey).toBe(VIEWER_DAY);
+      expect(activity.completedDayKey).toBe(VIEWER_DAY);
+    });
+
+    it("leaves both day keys null when there is no timestamp to place", async () => {
+      // "Not scheduled" and "not done" are facts of their own. Resolving them to a
+      // day would silently file every open activity under today.
+      listOne({ ...sampleRow, scheduled_at: null, completed_at: null });
+
+      const [activity] = await listActivities("user-1");
+      expect(activity.scheduledDayKey).toBeNull();
+      expect(activity.completedDayKey).toBeNull();
+    });
+
+    it("resolves each column with its OWN offset", async () => {
+      // A plan made at UTC-7 and completed after flying to Kolkata: two captures,
+      // two days. One shared offset would collapse them onto the same day.
+      listOne({
+        ...sampleRow,
+        scheduled_at: ACROSS_MIDNIGHT_AT,
+        scheduled_offset_minutes: UTC_MINUS_7,
+        completed_at: ACROSS_MIDNIGHT_AT,
+        completed_offset_minutes: 330,
+      });
+
+      const [activity] = await listActivities("user-1");
+      expect(activity.scheduledDayKey).toBe(CAPTURED_DAY);
+      expect(activity.completedDayKey).toBe(VIEWER_DAY);
+    });
+  });
+
+  it("sends the completion instant and its offset from one reading of the clock", async () => {
+    const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ update }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await completeActivity("user-1", "a-1", 4);
+
+    const payload = (update.mock.calls as unknown as [Record<string, unknown>][])[0][0];
+    // The pair has to describe the same moment: the offset must be the one in force
+    // at the instant sent, not whatever a second clock reading would have produced.
+    const sent = new Date(payload.completed_at as string);
+    expect(Number.isNaN(sent.getTime())).toBe(false);
+    expect(payload.completed_offset_minutes).toBe(-sent.getTimezoneOffset());
   });
 });

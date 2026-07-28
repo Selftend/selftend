@@ -53,9 +53,22 @@ export const atOrAfter = (iso: string | null | undefined, since: number) =>
 const countSince = (items: { createdAt: string }[], since: number) =>
   items.filter((item) => atOrAfter(item.createdAt, since)).length;
 
-// True (1) if a qualifying event occurred on the given YYYY-MM-DD; else 0.
+/**
+ * True (1) if a qualifying event occurred on the given YYYY-MM-DD; else 0.
+ *
+ * Buckets a UTC timestamp through the VIEWER's current timezone, so it is only
+ * correct while the underlying table stores no occurrence offset - thought
+ * records, activities and meditation, the modules still queued behind #330. The
+ * server twin (`program_widget_task_status`) keeps the matching legs on the same
+ * viewer-local window on purpose, so the widget and this screen agree; both
+ * graduate together when a module's offset column lands (#414).
+ */
 const didOnDate = (timestamps: (string | null | undefined)[], date: string) =>
   timestamps.some((ts) => typeof ts === "string" && toLocalDateKey(ts) === date) ? 1 : 0;
+
+/** For tools that captured the civil day at logging time - compare, never convert. */
+const didOnCapturedDay = (items: { dayKey: string }[], date: string) =>
+  items.some((item) => item.dayKey === date) ? 1 : 0;
 
 // ── Task const definitions ──────────────────────────────────────────────────
 
@@ -85,17 +98,17 @@ const DAILY_NOTICING: ProgramTaskDef = {
   key: "dailyNoticing",
   labelKey: "program.tasks.dailyNoticing",
   route: "/tools/mood-tracker/new",
+  // Mood carries the civil day captured when the log was written (#250), so read
+  // it rather than re-bucketing loggedAt through wherever the viewer is standing.
   signal: ({ moodLogs, selectedDate }) => ({
-    current: didOnDate(
-      moodLogs
-        .filter(
-          (m) =>
-            m.situation.trim() ||
-            m.thoughts.trim() ||
-            m.behaviours.trim() ||
-            m.bodilySensations.trim(),
-        )
-        .map((m) => m.loggedAt),
+    current: didOnCapturedDay(
+      moodLogs.filter(
+        (m) =>
+          m.situation.trim() ||
+          m.thoughts.trim() ||
+          m.behaviours.trim() ||
+          m.bodilySensations.trim(),
+      ),
       selectedDate,
     ),
     target: 1,
@@ -150,10 +163,9 @@ const ACTIVITY_DAILY: ProgramTaskDef = {
   labelKey: "program.tasks.activityDaily",
   route: "/modules/cbt/activities",
   signal: ({ activities, selectedDate }) => ({
-    current: didOnDate(
-      activities.map((a) => a.completedAt),
-      selectedDate,
-    ),
+    // Captured completion day - compare directly. Bucketing completedAt by the
+    // viewer would move a tick off the day the activities screen files it on (#330).
+    current: activities.some((a) => a.completedDayKey === selectedDate) ? 1 : 0,
     target: 1,
   }),
 };

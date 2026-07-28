@@ -16,6 +16,7 @@ import {
 import { buildThoughtRecordSteps } from "@/src/features/cbt/thought-record-steps";
 import { useThoughtRecordIntroDismissed } from "@/src/features/cbt/use-thought-record-intro-dismissed";
 import { useWizardDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
+import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
@@ -80,9 +81,13 @@ export function useThoughtRecordEditor() {
     form,
     onSave: (values) => {
       setSubmitError("");
+      // One Date, so the instant and the offset describe the same moment:
+      // `occurrenceTimeFromDate` resolves the offset AT that instant, which is
+      // what makes the pair survive a DST change instead of pairing an instant
+      // with an offset that was never in force at it (#330).
       const input = buildThoughtRecordInput(values, {
         recordId,
-        createdAt: loggedAtForSelectedDate(selectedDate),
+        occurrence: occurrenceTimeFromDate(new Date(loggedAtForSelectedDate(selectedDate))),
       });
       return saveMutation.mutateAsync({ input, recordId: recordId ?? undefined });
     },

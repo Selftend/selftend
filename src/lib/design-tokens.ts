@@ -123,14 +123,53 @@ export function hueRampClass(hue: HueName, step: number): string {
   return HUE_RAMP_CLASSES[hue][clamped - 1];
 }
 
+/**
+ * A tint used as TEXT. Every hue resolves to its ink (#403), never the published
+ * accent — this map feeds `Text`'s `tint` prop, and a `tint` on a text component
+ * is by definition text.
+ *
+ * It used to hold the raw accents as arbitrary values (`text-[hsl(var(--act))]`),
+ * which failed AA on ~78 sites including the signed-out landing page, where nine
+ * of ten hue labels measured below 4.5:1 — `think` at 1.80. Every label sits on a
+ * tint of its own hue, so even `be`, `aqua` and `ink`, which clear the floor on a
+ * plain surface, failed there (4.40 / 4.44 / 4.45).
+ *
+ * The arbitrary-value form is also why nothing caught it: the static gates match
+ * `text-<hue>`, and `text-[` is not that. Written as plain classes now, so the
+ * gates can see this map at all (#421).
+ *
+ * `primary` is not a hue and has no ink; it measures 4.41:1 on `bg-primary/10`
+ * and is tracked separately (#421 §3).
+ */
 export const TINT_TEXT: Record<TintToken, string> = {
   primary: "text-primary",
-  act: "text-[hsl(var(--act))]",
-  be: "text-[hsl(var(--be))]",
-  think: "text-[hsl(var(--think))]",
-  aqua: "text-[hsl(var(--aqua))]",
-  iris: "text-[hsl(var(--iris))]",
-  ink: "text-[hsl(var(--ink))]",
-  clay: "text-[hsl(var(--clay))]",
-  mist: "text-[hsl(var(--mist))]",
+  act: "text-act-ink",
+  be: "text-be-ink",
+  think: "text-think-ink",
+  aqua: "text-aqua-ink",
+  iris: "text-iris-ink",
+  ink: "text-ink-ink",
+  clay: "text-clay-ink",
+  mist: "text-mist-ink",
+};
+
+/**
+ * A tint used as a NON-TEXT mark: icons, rules, dots. WCAG 1.4.11's 3:1 floor
+ * rather than 1.4.3's 4.5:1, which the published accents clear, and the accent is
+ * what carries the module's identity — darkening an icon to ink reads as disabled.
+ *
+ * Reach for this only where the mark carries no text. If it renders a glyph beside
+ * a label, the label takes `TINT_TEXT` and the glyph takes this, which is the
+ * split #411 established for the other shared colour maps.
+ */
+export const TINT_ACCENT: Record<TintToken, string> = {
+  primary: "text-primary",
+  act: "text-act",
+  be: "text-be",
+  think: "text-think",
+  aqua: "text-aqua",
+  iris: "text-iris",
+  ink: "text-ink",
+  clay: "text-clay",
+  mist: "text-mist",
 };

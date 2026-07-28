@@ -10,6 +10,25 @@ export function localDateKey(d: Date): string {
 }
 
 /**
+ * The viewer's IANA time-zone name (`"Europe/Sofia"`), for the server aggregates
+ * that have to bucket rows into the same civil days `entryDayKey`/`localDateKey`
+ * produce here. A zone name rather than a `getTimezoneOffset()` reading, because
+ * only the name lets the server resolve each row's offset at that row's own
+ * instant — a single current offset misbuckets everything across a DST boundary.
+ *
+ * `"UTC"` if the runtime has no zone to report. That is a degraded answer, not a
+ * wrong one: it only affects rows whose own offset was never captured, and those
+ * rows already have no better truth than the viewer's frame.
+ */
+export function deviceTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
+/**
  * The LOCAL civil date an ISO timestamp falls on, as `YYYY-MM-DD`. Use this to
  * decide which day an entry belongs to, so it matches the date the user sees.
  */

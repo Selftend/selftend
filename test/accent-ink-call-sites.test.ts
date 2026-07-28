@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { groundingTechniques } from "@/src/constants/grounding";
 import { exerciseHue, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 import { MEDITATION_PRACTICES } from "@/src/features/meditation/practices";
-import { HUE_NAMES } from "@/src/lib/design-tokens";
+import { HUE_NAMES, TINT_ACCENT, TINT_TEXT } from "@/src/lib/design-tokens";
 import { sourceFiles, stripComments } from "@/test/source-scan";
 
 // The call-site half of the accent-ink work (#368/#403/#412).
@@ -55,6 +55,9 @@ import { sourceFiles, stripComments } from "@/test/source-scan";
 
 const ROOT = join(__dirname, "..");
 
+/** Where the accent classes are defined; its shape is asserted, not swept. */
+const TOKENS_FILE = "src/lib/design-tokens.ts";
+
 const ACT_DIR = "src/features/act";
 const HOME_DIR = "src/features/home";
 
@@ -73,16 +76,32 @@ const CLASSIFIED_AREAS = [ACT_DIR, HOME_DIR, "src/components/app", "app"] as con
 const ROOMLESS_AREAS = [ACT_DIR, HOME_DIR] as const;
 
 /**
- * A bare hue accent used as a color: `text-act`, but not `text-act-ink` and not
- * `text-accent-ink`. The trailing guard rejects any further word character or
- * hyphen, which is what keeps `text-act-ink` out - `\b` would not, since the
- * hyphen in `act-ink` is itself a word boundary.
+ * A bare hue accent used as a color, in EITHER form the codebase writes it:
+ *
+ *   text-act                    the plain class
+ *   text-[hsl(var(--act))]      the arbitrary-value class
+ *
+ * but not `text-act-ink` and not `text-accent-ink`. The trailing guard rejects
+ * any further word character or hyphen, which is what keeps `text-act-ink` out -
+ * `\b` would not, since the hyphen in `act-ink` is itself a word boundary.
+ *
+ * The second alternative is not decoration. `TINT_TEXT` used to hold the raw
+ * accents in exactly that form, and because `text-` is followed by `[` rather
+ * than a hue name, the original pattern never matched: ~78 sites - including the
+ * signed-out landing page, where nine of ten labels measured below AA - were
+ * absent from the census, absent from the allowlist, and unable to make the
+ * ratchet grow, while every suite passed (#421). A gate that cannot see a whole
+ * spelling of the thing it gates is not a gate.
  *
  * Runs against `stripComments` output, which keeps string literals (class names
  * live inside them) and blanks prose, so a class named in a comment is not a
  * finding.
  */
-const BARE_HUE = new RegExp(String.raw`text-(${HUE_NAMES.join("|")})(?![\w-])`, "g");
+const HUE_ALT = HUE_NAMES.join("|");
+const BARE_HUE = new RegExp(
+  String.raw`text-(?:(${HUE_ALT})(?![\w-])|\[hsl\(var\(--(${HUE_ALT})\)\)\])`,
+  "g",
+);
 
 /** Room ink, which the room-less areas must never use - see rule 2 above. */
 const ROOM_INK = /text-accent-ink(?![\w-])/g;
@@ -615,7 +634,7 @@ const HOME_SITES: AllowedSite[] = [
       "misses it; the accompanying accentBgClass keeps the two in step.",
   },
   {
-    ...WIDGET_HEADER("habits-widget", "act", "3.52", "directions-run"),
+    ...WIDGET_HEADER("activities-widget", "act", "3.52", "directions-run"),
     snippet: `<Icon name="directions-run" className="size-5 text-act" />`,
   },
   {
@@ -1119,11 +1138,64 @@ describe("no bare accent survives outside a classified area", () => {
   it("holds none anywhere else", () => {
     const stray = findingsIn(BARE_HUE, sourceFiles(ROOT, { dirs: ["app", "src"] }))
       .filter((finding) => !CLASSIFIED.some((dir) => finding.file.startsWith(`${dir}/`)))
+      // design-tokens.ts DEFINES the accent classes; TINT_ACCENT necessarily
+      // names all eight. Its shape is asserted directly below instead, the way
+      // the driver gate excludes the module that defines the driver.
+      .filter((finding) => finding.file !== TOKENS_FILE)
       .map((finding) => `${finding.file}:${finding.line} ${finding.snippet}`);
 
     // Classify the area it landed in - add its directory above and enumerate
     // its sites - rather than deleting the line from this list.
     expect(stray).toEqual([]);
+  });
+
+  it("lets design-tokens.ts through for TINT_ACCENT's eight entries and nothing more", () => {
+    // The exclusion above is by FILE, which on its own is not a gate: a THIRD map
+    // in this file writing hue text - in either spelling - rides through it in
+    // silence, and the shape assertions below only ever look at the two maps that
+    // exist today. That is #421's hole re-opened one file over, so pin the whole
+    // set instead. A new bare-hue line here now has to be justified by editing
+    // this list, which is the point.
+    const inTokens = findingsIn(BARE_HUE, sourceFiles(ROOT, { dirs: ["app", "src"] }))
+      .filter((finding) => finding.file === TOKENS_FILE)
+      .map((finding) => finding.snippet.trim())
+      .sort();
+
+    expect(inTokens).toEqual([...HUE_NAMES].map((hue) => `${hue}: "text-${hue}",`).sort());
+  });
+});
+
+describe("the tint maps keep text and marks apart (#421)", () => {
+  // The blind spot that made this necessary: TINT_TEXT held the raw accents as
+  // arbitrary values, feeding ~78 sites through `Text`'s `tint` prop - the
+  // signed-out landing page among them, where nine of ten labels measured below
+  // AA. Excluding the defining file from the sweep above would re-open exactly
+  // that hole, so the two maps are asserted by shape here rather than trusted.
+
+  it("TINT_TEXT resolves every hue to its ink, never to the accent", () => {
+    for (const hue of HUE_NAMES) {
+      expect(TINT_TEXT[hue]).toBe(`text-${hue}-ink`);
+    }
+  });
+
+  it("TINT_ACCENT resolves every hue to the published accent", () => {
+    for (const hue of HUE_NAMES) {
+      expect(TINT_ACCENT[hue]).toBe(`text-${hue}`);
+    }
+  });
+
+  it("neither map writes a hue as an arbitrary value", () => {
+    // The spelling the gates could not see. Plain classes only, so a future
+    // reader of either map is also readable by the scan.
+    const written = [...Object.values(TINT_TEXT), ...Object.values(TINT_ACCENT)];
+
+    expect(written.filter((cls) => cls.includes("hsl(var("))).toEqual([]);
+  });
+
+  it("primary is the only tint with no ink, and is tracked separately", () => {
+    // `primary` is not a hue; it measures 4.41:1 on bg-primary/10 and is #421 §3.
+    expect(TINT_TEXT.primary).toBe("text-primary");
+    expect(TINT_ACCENT.primary).toBe("text-primary");
   });
 });
 

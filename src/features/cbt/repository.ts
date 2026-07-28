@@ -3,6 +3,7 @@ import type {
   ThoughtRecord,
   ThoughtRecordInput,
 } from "@/src/features/cbt/types";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { trimAndFilterEmpty } from "@/src/lib/strings";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
@@ -21,11 +22,14 @@ interface ThoughtRecordRow {
   emotion_intensity_after: number | null;
   outcome_notes: string | null;
   created_at: string;
+  // Optional: absent from a response served before the column existed.
+  created_offset_minutes?: number | null;
   updated_at: string;
   archived_at: string | null;
 }
 
 function mapThoughtRecord(row: ThoughtRecordRow): ThoughtRecord {
+  const createdOffsetMinutes = row.created_offset_minutes ?? null;
   return {
     id: row.id,
     userId: row.user_id,
@@ -40,6 +44,8 @@ function mapThoughtRecord(row: ThoughtRecordRow): ThoughtRecord {
     emotionIntensityAfter: row.emotion_intensity_after,
     outcomeNotes: row.outcome_notes ?? "",
     createdAt: row.created_at,
+    createdOffsetMinutes,
+    dayKey: entryDayKey(row.created_at, createdOffsetMinutes),
     updatedAt: row.updated_at,
     archivedAt: row.archived_at,
   };
@@ -117,11 +123,18 @@ export async function saveThoughtRecord(
     outcome_notes: input.outcomeNotes.trim(),
   };
 
+  // Create mode sends the creation instant and its offset together, or neither:
+  // they describe one moment, and a server-defaulted `created_at` paired with a
+  // device offset is two readings of two different clocks (at 23:59 that is a
+  // whole day apart). An edit sends neither, so the stored pair survives it (#330).
+  const occurrence =
+    input.createdAt && input.createdOffsetMinutes !== undefined
+      ? { created_at: input.createdAt, created_offset_minutes: input.createdOffsetMinutes }
+      : {};
+
   const query = recordId
     ? client.from("thought_records").update(payload).eq("user_id", userId).eq("id", recordId)
-    : client
-        .from("thought_records")
-        .insert({ ...payload, ...(input.createdAt ? { created_at: input.createdAt } : {}) });
+    : client.from("thought_records").insert({ ...payload, ...occurrence });
 
   const { data, error } = await query.select("*").maybeSingle();
 
