@@ -14,7 +14,7 @@
 
 import { vars } from "nativewind";
 
-import { HUE_TRIPLES, type HueName } from "@/src/lib/design-tokens";
+import { HUE_INK_TRIPLES, HUE_TRIPLES, type HueName } from "@/src/lib/design-tokens";
 
 export type ColorSchemeName = "light" | "dark";
 
@@ -23,41 +23,22 @@ export function hueDegree(hue: HueName): number {
   return Number.parseInt(HUE_TRIPLES[hue].light, 10);
 }
 
-/** The saturation percentage of a module hue's light accent, e.g. "be" → 56. */
-function hueSaturation(hue: HueName): number {
-  const saturation = HUE_TRIPLES[hue].light.match(/\s(\d+)%/)?.[1];
-  if (!saturation)
-    throw new Error(`Unparseable hue triple for "${hue}": ${HUE_TRIPLES[hue].light}`);
-  return Number(saturation);
-}
-
-// The lightness the accent ink is fixed to in a light room (#368). A hue's
-// published accent is tuned to sit on the neutral app surface, not on the pale
-// tint of itself a room pours: `text-think` on the think room's background is
-// 1.90:1, well under half of AA's 4.5. Fixing the ink's lightness while keeping
-// the hue's own degree and saturation is the same move hue-chip.ts makes for
-// chip ink, and the same one roomTriples already makes for `foreground` - it
-// darkens the accent rather than replacing it, so a room's ink still reads as
-// that room's colour.
-//
-// 28% is the binding number: the least darkening that clears 4.5 on both room
-// surfaces for every hue with headroom to spare. `think` binds it (its 74%
-// saturation carries the most luminance of the seven) at 5.51 on background and
-// 5.95 on card; at 32% it would fall to 4.43 and fail. Floors are enforced by
-// test/room-contrast.test.ts.
-//
-// Dark rooms keep the published accent untouched: it already clears 5.87:1 at
-// worst there, so a dark-mode darkening would be a visual change buying nothing.
-const ACCENT_INK_LIGHTNESS = 28;
+// The accent ink a room pours (#368) is the hue's ink from the token source,
+// not a second recipe: `text-think` on the think room's background is 1.90:1,
+// well under half of AA's 4.5, and the fix — same hue and saturation, fixed
+// lightness — is the same one the room-less `text-<hue>-ink` needs (#403).
+// HUE_INK_TRIPLES holds it once, so the two cannot drift apart; why 28%, and
+// why dark keeps the published accent, are documented there. Room-surface
+// floors are enforced by test/room-contrast.test.ts.
 
 /**
  * Space-separated HSL triples for the surface tokens a room re-pours,
  * keyed by CSS variable name (without the leading `--`).
  *
  * `accent-ink` is the odd one out: it is not a surface but the room hue itself,
- * darkened until it can carry small text on the surfaces above (`text-accent-ink`
- * — see ACCENT_INK_LIGHTNESS). Do not read it as ink on `accent`; that pairing is
- * `accent-foreground`.
+ * darkened until it can carry small text on the surfaces above
+ * (`text-accent-ink` — see HUE_INK_TRIPLES). Do not read it as ink on `accent`;
+ * that pairing is `accent-foreground`.
  */
 export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string, string>> {
   const h = hueDegree(hue);
@@ -73,7 +54,7 @@ export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string
       "muted-foreground": `${h} 8% 40%`,
       accent: `${h} 28% 92%`,
       "accent-foreground": `${h} 28% 25%`,
-      "accent-ink": `${h} ${hueSaturation(hue)}% ${ACCENT_INK_LIGHTNESS}%`,
+      "accent-ink": HUE_INK_TRIPLES[hue].light,
       border: `${h} 15% 88%`,
       input: `${h} 15% 88%`,
     },
@@ -88,7 +69,7 @@ export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string
       "muted-foreground": `${h} 10% 68%`,
       accent: `${h} 14% 24%`,
       "accent-foreground": `${h} 24% 93%`,
-      "accent-ink": HUE_TRIPLES[hue].dark,
+      "accent-ink": HUE_INK_TRIPLES[hue].dark,
       border: `${h} 10% 24%`,
       input: `${h} 10% 22%`,
     },

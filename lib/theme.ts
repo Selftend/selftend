@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, type Theme } from "expo-router";
 import { vars } from "nativewind";
 
-import { HUE_TRIPLES } from "@/src/lib/design-tokens";
+import { HUE_INK_TRIPLES, HUE_TRIPLES } from "@/src/lib/design-tokens";
 
 export const THEME = {
   light: {
@@ -106,6 +106,14 @@ export const THEME_VARIABLES = {
     "--iris": HUE_TRIPLES.iris.light,
     "--ink": HUE_TRIPLES.ink.light,
     "--clay": HUE_TRIPLES.clay.light,
+    "--think-ink": HUE_INK_TRIPLES.think.light,
+    "--act-ink": HUE_INK_TRIPLES.act.light,
+    "--be-ink": HUE_INK_TRIPLES.be.light,
+    "--aqua-ink": HUE_INK_TRIPLES.aqua.light,
+    "--mist-ink": HUE_INK_TRIPLES.mist.light,
+    "--iris-ink": HUE_INK_TRIPLES.iris.light,
+    "--ink-ink": HUE_INK_TRIPLES.ink.light,
+    "--clay-ink": HUE_INK_TRIPLES.clay.light,
   }),
   dark: vars({
     "--background": "260 20% 9%",
@@ -137,6 +145,14 @@ export const THEME_VARIABLES = {
     "--iris": HUE_TRIPLES.iris.dark,
     "--ink": HUE_TRIPLES.ink.dark,
     "--clay": HUE_TRIPLES.clay.dark,
+    "--think-ink": HUE_INK_TRIPLES.think.dark,
+    "--act-ink": HUE_INK_TRIPLES.act.dark,
+    "--be-ink": HUE_INK_TRIPLES.be.dark,
+    "--aqua-ink": HUE_INK_TRIPLES.aqua.dark,
+    "--mist-ink": HUE_INK_TRIPLES.mist.dark,
+    "--iris-ink": HUE_INK_TRIPLES.iris.dark,
+    "--ink-ink": HUE_INK_TRIPLES.ink.dark,
+    "--clay-ink": HUE_INK_TRIPLES.clay.dark,
   }),
 };
 

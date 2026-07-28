@@ -93,7 +93,7 @@ export default function ActExpansionListScreen() {
                     </View>
                     {log.intensityBefore !== null && log.intensityAfter !== null ? (
                       <View className="items-end gap-1">
-                        <Text className="text-sm font-bold text-act">
+                        <Text className="text-sm font-bold text-act-ink">
                           {log.intensityBefore} → {log.intensityAfter}
                         </Text>
                       </View>

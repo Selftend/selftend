@@ -111,10 +111,16 @@ describe("room surface pairings meet WCAG AA", () => {
 // #368: accent ink on the room surfaces the same hue pours. Seven rooms shipped
 // `text-<hue>` on `bg-background` / `bg-card` through that hole — `think` at
 // 1.90:1 since the CBT room, plus iris 3.33, clay 3.48 and act 3.68, all in
-// light mode. The published accent is tuned for the neutral app surface; on a
-// pale tint of itself it has nowhere near AA's 4.5. `accent-ink` in roomTriples
-// is the certified value (`text-accent-ink`), and this suite is what makes the
+// light mode. The published accent is tuned as a colour, not as ink, and has
+// nowhere near AA's 4.5 on a pale tint of itself. `accent-ink` in roomTriples is
+// the certified value (`text-accent-ink`), and this suite is what makes the
 // eighth room's absence of it a build failure rather than a launch.
+//
+// This was first read as a room-surface problem. It is not: the same four hues
+// fail within 0.05 of these numbers on the *neutral app surface* too (#403), so
+// the room only reproduces a gap the accent already had. The room-less half is
+// `text-<hue>-ink`, floored in test/theme-token-sync.test.ts; both halves read
+// the same HUE_INK_TRIPLES.
 describe("accent ink meets WCAG AA on the room surfaces its own hue pours", () => {
   it.each(ROOM_HUES)("%s accent ink passes on the room background and card", (hue) => {
     for (const scheme of ["light", "dark"] as const) {
