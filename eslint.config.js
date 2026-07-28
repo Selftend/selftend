@@ -103,17 +103,20 @@ module.exports = [
     },
   },
   {
-    // mood/gratitude/sleep/journal entries carry a `dayKey`: the civil day captured
-    // when the entry was logged, resolved once in the repository. Bucketing one of
-    // them by the VIEWER's day instead moves entries between days after travel and
-    // skews daily averages (#250). The viewer-local helpers stay available to the
-    // modules with no captured offset (habits, ACT, CBT, breathing, meditation,
-    // routines) - they have nothing better to use yet.
+    // These modules' entries carry a `dayKey`: the civil day captured when the entry
+    // was logged, resolved once in the repository. Bucketing one of them by the
+    // VIEWER's day instead moves entries between days after travel and skews daily
+    // averages (#250). Breathing and grounding joined via the shared
+    // mindfulness_sessions offset (#330). The viewer-local helpers stay available to
+    // the modules with no captured offset (habits, ACT, CBT, meditation, routines) -
+    // they have nothing better to use yet.
     files: [
       "src/features/mood/**/*.{ts,tsx}",
       "src/features/gratitude/**/*.{ts,tsx}",
       "src/features/sleep/**/*.{ts,tsx}",
       "src/features/journal/**/*.{ts,tsx}",
+      "src/features/breathing/**/*.{ts,tsx}",
+      "src/features/grounding/**/*.{ts,tsx}",
     ],
     ignores: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { useLocaleFormats } from "@/src/lib/locale-format";
 
 export function BreathingWidget({ userId }: { userId: string }) {
@@ -16,7 +16,9 @@ export function BreathingWidget({ userId }: { userId: string }) {
   const { data: sessions } = useBreathingSessions(userId);
 
   const { selectedDate: todayKey } = useSelectedDate();
-  const todaySessions = sessions?.filter((s) => toLocalDateKey(s.completedAt) === todayKey) ?? [];
+  // `dayKey` is the civil day the session was finished on - compare, never re-bucket,
+  // so a session logged before flying east stays on the day it happened (#330).
+  const todaySessions = sessions?.filter((s) => s.dayKey === todayKey) ?? [];
   const doneToday = todaySessions.length > 0;
   const lastSession = sessions?.at(0);
 

@@ -208,7 +208,8 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
     const sorted = [...data.breathingSessions].sort((a, b) =>
       a.completedAt < b.completedAt ? 1 : -1,
     );
-    const doneToday = sorted.some((s) => toLocalDateKey(s.completedAt) === dateKey);
+    // Breathing sessions carry a captured dayKey - compare directly, no bucketing (#330).
+    const doneToday = sorted.some((s) => s.dayKey === dateKey);
     const last = sorted[0];
     return {
       kind: "breathing",

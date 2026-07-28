@@ -3,6 +3,7 @@ import { CARD_IDS } from "@/src/features/widgets/snapshot-types";
 import { CARD_REPLICAS } from "@/src/features/widgets/cards/card-registry";
 import type {
   WidgetData,
+  BreathingCardPayload,
   MoodCheckinCardPayload,
   StatTilesCardPayload,
   HabitsCardPayload,
@@ -76,6 +77,25 @@ describe("buildSnapshot v2", () => {
     const p = buildSnapshot(data, ctx).widgets["mood-trend"] as StatTilesCardPayload;
     expect(p.tiles[0].value).toBe("4.0");
     expect(p.tiles[1].value).toBe("57");
+  });
+
+  it("breathing-suggested: the done badge follows the captured day, not the instant", () => {
+    // Finished at 23:40 local somewhere at UTC+12 - the same instant is still the 4th
+    // in UTC, and would have been for any viewer west of the session (#330).
+    const data: WidgetData = {
+      ...empty,
+      breathingSessions: [{ completedAt: "2026-06-04T11:40:00.000Z", dayKey: "2026-06-05" }],
+    };
+    const p = buildSnapshot(data, ctx).widgets["breathing-suggested"] as BreathingCardPayload;
+    expect(p.today?.badge).toBe("today.dashboard.doneToday");
+
+    const otherDay: WidgetData = {
+      ...empty,
+      breathingSessions: [{ completedAt: "2026-06-04T11:40:00.000Z", dayKey: "2026-06-04" }],
+    };
+    expect(
+      (buildSnapshot(otherDay, ctx).widgets["breathing-suggested"] as BreathingCardPayload).today,
+    ).toBeNull();
   });
 
   it("journal-week: lifetime entry/word totals win over the capped list", () => {

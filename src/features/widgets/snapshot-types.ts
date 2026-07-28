@@ -193,8 +193,8 @@ export interface WidgetData {
   }[];
   gratitudeEntries: { loggedAt: string; dayKey: string; items: string[] }[];
   journalEntries: { createdAt: string; dayKey: string; body: string }[];
-  groundingSessions: { completedAt: string; durationMinutes: number }[];
-  breathingSessions: { completedAt: string }[];
+  groundingSessions: { completedAt: string; dayKey: string; durationMinutes: number }[];
+  breathingSessions: { completedAt: string; dayKey: string }[];
   committedActions: { id: string; title: string; updatedAt: string }[];
   actionSteps: { actionId: string; isCompleted: boolean }[];
   defusionLogs: { createdAt: string; techniqueUsed: string }[];

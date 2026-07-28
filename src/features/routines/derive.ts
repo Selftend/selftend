@@ -80,11 +80,10 @@ export interface RoutineToolRecords {
   thoughtRecords?: readonly { createdAt: string }[];
   /**
    * Breathing AND grounding sessions share this table; they are told apart by
-   * exerciseName (see stepDoneOnDate). completedAt is a UTC timestamp with no
-   * device-offset column, so it buckets via the device's current timezone -
-   * the same trade-off ACT's engine already makes.
+   * exerciseName (see stepDoneOnDate). One captured offset on the shared table
+   * gives both tools a dayKey, so neither re-buckets by the viewer's day (#330).
    */
-  mindfulnessSessions?: readonly { exerciseName: string; completedAt: string | null }[];
+  mindfulnessSessions?: readonly { exerciseName: string; dayKey: string }[];
   meditationSessions?: readonly { completedAt: string | null }[];
   /** HabitLog.loggedOn is already a local civil date key (YYYY-MM-DD). */
   habitLogs?: readonly { loggedOn: string }[];
@@ -186,16 +185,16 @@ export function stepDoneOnDate(
       return onCapturedDay(records.sleepLogs, dayKey);
     case "cbt":
       return onDay(records.thoughtRecords, (r) => r.createdAt, dayKey);
+    // Breathing and grounding share mindfulness_sessions and so share its captured
+    // dayKey; only the exercise_name split differs (#330).
     case "breathing":
-      return onDay(
+      return onCapturedDay(
         (records.mindfulnessSessions ?? []).filter((s) => !isGroundingSession(s.exerciseName)),
-        (s) => s.completedAt,
         dayKey,
       );
     case "grounding":
-      return onDay(
+      return onCapturedDay(
         (records.mindfulnessSessions ?? []).filter((s) => isGroundingSession(s.exerciseName)),
-        (s) => s.completedAt,
         dayKey,
       );
     case "meditation":

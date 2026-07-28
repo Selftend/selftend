@@ -23,8 +23,56 @@ const sampleRow = {
   created_at: "2026-05-15T08:00:00.000Z",
 };
 
+// The jest runner pins TZ to Asia/Kolkata (+05:30), so "the viewer's day" is fixed.
+// 19:00Z on the 15th is 00:30 on the 16th in Kolkata but midday on the 15th at
+// UTC-7 - one instant that lands on two different civil days.
+const ACROSS_MIDNIGHT_AT = "2026-05-15T19:00:00.000Z";
+const CAPTURED_DAY = "2026-05-15";
+const VIEWER_DAY = "2026-05-16";
+
+const listOne = (row: Record<string, unknown>) => {
+  const limit = jest.fn().mockResolvedValue({ data: [row], error: null });
+  const order = jest.fn(() => ({ limit }));
+  const eq = jest.fn(() => ({ order }));
+  const select = jest.fn(() => ({ eq }));
+  const from = jest.fn(() => ({ select }));
+  mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+};
+
 describe("mindfulness repository", () => {
   beforeEach(() => jest.clearAllMocks());
+
+  it("buckets a session to its captured day, not the viewer's", async () => {
+    listOne({
+      ...sampleRow,
+      completed_at: ACROSS_MIDNIGHT_AT,
+      completed_offset_minutes: -420, // finished at midday somewhere at UTC-7
+    });
+
+    const [session] = await listMindfulnessSessions("user-1");
+    expect(session.completedOffsetMinutes).toBe(-420);
+    expect(session.dayKey).toBe(CAPTURED_DAY);
+    // The instant alone would have filed it under the viewer's tomorrow.
+    expect(session.dayKey).not.toBe(VIEWER_DAY);
+  });
+
+  it("falls back to the viewer's day when no offset was captured", async () => {
+    // Same instant, offset absent: null means "unknown", never "UTC" (#250), so the
+    // session renders exactly where it always has rather than moving.
+    listOne({ ...sampleRow, completed_at: ACROSS_MIDNIGHT_AT, completed_offset_minutes: null });
+
+    const [session] = await listMindfulnessSessions("user-1");
+    expect(session.completedOffsetMinutes).toBeNull();
+    expect(session.dayKey).toBe(VIEWER_DAY);
+  });
+
+  it("treats a column absent from an older response as uncaptured", async () => {
+    listOne({ ...sampleRow, completed_at: ACROSS_MIDNIGHT_AT });
+
+    const [session] = await listMindfulnessSessions("user-1");
+    expect(session.completedOffsetMinutes).toBeNull();
+    expect(session.dayKey).toBe(VIEWER_DAY);
+  });
 
   it("lists sessions newest-first with limit", async () => {
     const limit = jest.fn().mockResolvedValue({ data: [sampleRow], error: null });
@@ -76,7 +124,31 @@ describe("mindfulness repository", () => {
       mood_after: null,
       cycles: null,
       duration_seconds: null,
+      completed_at: expect.any(String),
+      completed_offset_minutes: expect.any(Number),
     });
+  });
+
+  it("sends the completion instant and its offset from one reading of the clock", async () => {
+    const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
+    const select = jest.fn(() => ({ single }));
+    const insert = jest.fn(() => ({ select }));
+    const from = jest.fn(() => ({ insert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await saveMindfulnessSession("user-1", {
+      exerciseName: "box-breathing",
+      durationMinutes: 4,
+      reflection: "",
+      feelingAfter: null,
+    });
+
+    const payload = (insert.mock.calls as unknown as [Record<string, unknown>][])[0][0];
+    // The pair has to describe the same moment: the offset must be the one in force
+    // at the instant sent, not whatever a second clock reading would have produced.
+    const sent = new Date(payload.completed_at as string);
+    expect(Number.isNaN(sent.getTime())).toBe(false);
+    expect(payload.completed_offset_minutes).toBe(-sent.getTimezoneOffset());
   });
 
   it("null-coerces missing feelingAfter", async () => {
