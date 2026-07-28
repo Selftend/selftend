@@ -1,6 +1,7 @@
-import type { SleepInput, SleepLog } from "@/src/features/sleep/types";
+import type { SleepInput, SleepLog, SleepStats } from "@/src/features/sleep/types";
 import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
+import { roundTo1 } from "@/src/utils/number";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
@@ -54,6 +55,76 @@ export async function countSleepLogs(userId: string): Promise<number> {
 
   if (error) throw error;
   return count ?? 0;
+}
+
+interface SleepStatsRow {
+  avg_duration_minutes_7: number | string | null;
+  avg_quality_7: number | string | null;
+  avg_duration_minutes_30: number | string | null;
+  avg_quality_30: number | string | null;
+  quality_counts_30: (number | string | null)[] | null;
+  longest_minutes: number | string | null;
+  shortest_minutes: number | string | null;
+  weekday_avg_minutes: (number | string | null)[] | null;
+}
+
+// `numeric` crosses the wire as a string often enough to be worth normalising once.
+function toNumber(value: number | string | null | undefined): number | null {
+  if (value === null || value === undefined) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function round(value: number | string | null | undefined): number | null {
+  const n = toNumber(value);
+  return n === null ? null : Math.round(n);
+}
+
+// Exact summary stats for the tracker. Computing them on the device only ever covered the
+// 50 logs the list query loads, so the lifetime figures (longest, shortest, the weekday
+// averages) truncated the moment a user passed 50 nights, and the 7- and 30-day windows
+// truncated as soon as more than 50 logs fell inside them (#256).
+//
+// The RPC scopes itself to auth.uid() under the caller's own RLS, so it takes no user id.
+// It does take the viewer's time zone: sleep is bucketed by the civil day captured with
+// each log (#250), and the server needs the viewer's frame both to resolve rows whose
+// offset was never captured and to know which day "today" is when closing the window -
+// exactly the two things `entryDayKey` and `dayRangeEndKey` use the device for.
+//
+// Rounding lives here rather than in SQL so these values match what `summaries.ts`
+// produced for the same data: `Math.round` breaks a `.5` tie upward, while Postgres
+// `round()` breaks it to even for `double precision` and away from zero for `numeric`.
+export async function sleepStats(timeZone: string): Promise<SleepStats | null> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .rpc("sleep_stats", { p_time_zone: timeZone })
+    .maybeSingle<SleepStatsRow>();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  return {
+    sevenDayDurationMinutes: round(data.avg_duration_minutes_7),
+    sevenDayQuality: roundTo1Or(data.avg_quality_7),
+    thirtyDayDurationMinutes: round(data.avg_duration_minutes_30),
+    thirtyDayQuality: roundTo1Or(data.avg_quality_30),
+    // Defensive lengths: the function always returns dense arrays, but a summary that
+    // silently renders four quality bars would be worse than one that renders five zeros.
+    qualityDistribution30: fixedLength(data.quality_counts_30, 5).map((v) => toNumber(v) ?? 0),
+    longestMinutes: toNumber(data.longest_minutes),
+    shortestMinutes: toNumber(data.shortest_minutes),
+    weekdayAverageMinutes: fixedLength(data.weekday_avg_minutes, 7).map(round),
+  };
+}
+
+function roundTo1Or(value: number | string | null | undefined): number | null {
+  const n = toNumber(value);
+  return n === null ? null : roundTo1(n);
+}
+
+function fixedLength<T>(values: T[] | null | undefined, length: number): (T | null)[] {
+  const source = values ?? [];
+  return Array.from({ length }, (_, i) => source[i] ?? null);
 }
 
 export async function getSleepLog(userId: string, id: string) {
