@@ -8,6 +8,8 @@ import {
   HUE_INK_TRIPLES,
   HUE_NAMES,
   HUE_TRIPLES,
+  PRIMARY_INK_LIGHTNESS,
+  PRIMARY_INK_TRIPLES,
   PRIMARY_TRIPLES,
 } from "@/src/lib/design-tokens";
 import { roomTriples } from "@/src/lib/module-room";
@@ -285,6 +287,107 @@ describe("hue ink meets WCAG AA on the neutral app surface", () => {
         }
       }
     }
+  });
+});
+
+// The `primary` half of the same problem (#421 §3). #403 gave all eight hues an
+// ink and stopped there, because `primary` is not a hue: it has no HUE_NAMES
+// entry, no room pours it, and every gate is spelled `text-<hue>`. So the tint
+// with the widest reach in the app kept writing its raw accent as text — the
+// sidebar's "Beta" chip, `text-primary` at 10px/600 on `bg-primary/15` over the
+// sidebar's card, 4.41:1 light and 4.22:1 dark, on all 20 captured screens.
+// This suite is `--primary-ink`'s floor, and it is deliberately the *same* set
+// of surfaces the hue block above checks, so the new token is certified by the
+// rule the eight were certified by rather than by one written to fit it.
+describe("primary ink meets WCAG AA on the neutral app surface", () => {
+  it("--primary-ink mirrors PRIMARY_INK_TRIPLES in both schemes", () => {
+    expect({ light: css.light["--primary-ink"], dark: css.dark["--primary-ink"] }).toEqual(
+      PRIMARY_INK_TRIPLES,
+    );
+  });
+
+  it.each(["light", "dark"] as const)("primary ink passes on the %s background and card", (s) => {
+    const ink = hslTripleToRgb(css[s]["--primary-ink"]);
+
+    expect(contrastRatio(ink, hslTripleToRgb(css[s]["--background"]))).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(ink, hslTripleToRgb(css[s]["--card"]))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // The pairing that actually failed. Primary text almost never lands on a bare
+  // surface: it sits on a wash of primary — the `bg-primary/15` Beta chip and
+  // `/modules` mark, the `bg-primary/10` ready banner, the `bg-primary/5`
+  // program container — and a wash of the accent pulls the surface toward the
+  // ink, costing contrast rather than adding it. Same alphas as the hue block.
+  it.each(["light", "dark"] as const)("primary ink passes on washes of the accent in %s", (s) => {
+    const ink = hslTripleToRgb(css[s]["--primary-ink"]);
+    const wash = hslTripleToRgb(css[s]["--primary"]);
+
+    for (const base of ["--background", "--card"] as const) {
+      for (const alpha of [0.05, 0.1, 0.15] as const) {
+        const surface = compositeOver(wash, alpha, hslTripleToRgb(css[s][base]));
+
+        expect(contrastRatio(ink, surface)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  // One level deeper than the hue floor goes, and the reason dark ink is 80%
+  // rather than 76%: #421 measured the Beta chip at 3.89 light / 3.54 dark
+  // where it sits *inside* a primary-tinted card, which the single-wash floor
+  // above cannot see. Every alpha the app tints primary with, stacked on every
+  // other, on both neutral bases — the worst is `/15` on `/15` (8.00 light,
+  // 4.71 dark). A future lightness retune that clears the floor above while
+  // re-breaking the nested case fails here instead of shipping.
+  it.each(["light", "dark"] as const)("primary ink passes on a wash of a wash in %s", (s) => {
+    const ink = hslTripleToRgb(css[s]["--primary-ink"]);
+    const wash = hslTripleToRgb(css[s]["--primary"]);
+    const alphas = [0.05, 0.1, 0.12, 0.15] as const;
+
+    for (const base of ["--background", "--card"] as const) {
+      for (const outer of alphas) {
+        const card = compositeOver(wash, outer, hslTripleToRgb(css[s][base]));
+        for (const inner of alphas) {
+          expect(contrastRatio(ink, compositeOver(wash, inner, card))).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    }
+  });
+
+  // As with the hues: a floor alone can be met by throwing the colour away.
+  // Primary ink must stay the brand violet, which means degree and saturation
+  // untouched and only lightness moved.
+  it.each(["light", "dark"] as const)(
+    "primary %s ink keeps the accent's hue and saturation",
+    (s) => {
+      const [degree, saturation] = PRIMARY_TRIPLES[s].split(" ");
+
+      expect(PRIMARY_INK_TRIPLES[s]).toBe(`${degree} ${saturation} ${PRIMARY_INK_LIGHTNESS[s]}%`);
+    },
+  );
+
+  it("light ink darkens to the same depth as the eight hue inks", () => {
+    expect(PRIMARY_INK_LIGHTNESS.light).toBe(HUE_INK_LIGHTNESS);
+  });
+
+  // The one place primary parts company with the hues, asserted rather than
+  // left as a comment. `--<hue>-ink` in dark is the published accent untouched
+  // because every hue already clears AA there; primary does not (4.22 on the
+  // Beta chip), so its dark ink is *lighter* than its accent. If a future
+  // primary retune ever made the raw accent pass, this is where to re-open the
+  // question — the assertion should be revisited, not deleted.
+  it("dark ink is lighter than the accent, unlike every hue ink", () => {
+    expect(PRIMARY_INK_LIGHTNESS.dark).toBeGreaterThan(72);
+
+    for (const hue of HUE_NAMES) {
+      expect(HUE_INK_TRIPLES[hue].dark).toBe(HUE_TRIPLES[hue].dark);
+    }
+
+    const rawOnChip = compositeOver(
+      hslTripleToRgb(css.dark["--primary"]),
+      0.15,
+      hslTripleToRgb(css.dark["--card"]),
+    );
+    expect(contrastRatio(hslTripleToRgb(css.dark["--primary"]), rawOnChip)).toBeLessThan(4.5);
   });
 });
 
