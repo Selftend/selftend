@@ -135,6 +135,56 @@ describe("export_user_data() (integration)", () => {
     expect(typeof data.exportDate).toBe("string");
   });
 
+  // Every migration that adds an exportable column redeclares this whole
+  // function, and the last one to apply wins outright - so a declaration copied
+  // from a stale parent drops another module's columns back out of the export
+  // with no conflict, no error and no failing test. It happened: #423 and #424
+  // each carried their own offsets and neither carried the other's, and because
+  // the only assertion on activityLogs above is `Array.isArray`, dev shipped an
+  // export with both activity offsets missing.
+  //
+  // So assert the columns, not the shape. This is the narrow guard for the
+  // occurrence offsets specifically; #429 tracks the general one that derives
+  // the expected column set from the live schema instead of listing it here.
+  it("carries every captured occurrence offset, not just the rows", async () => {
+    const admin = createServiceClient();
+    const { data: activity, error: insertError } = await admin
+      .from("activity_logs")
+      .insert({
+        user_id: SEED_USERS.bob.id,
+        activity_name: "Export offset probe",
+        category: "pleasure",
+        scheduled_at: "2026-05-15T19:00:00.000Z",
+        scheduled_offset_minutes: -420,
+        completed_at: "2026-05-15T21:00:00.000Z",
+        completed_offset_minutes: -420,
+      })
+      .select("id")
+      .single();
+    if (insertError) throw insertError;
+
+    try {
+      const { data, error } = await bob.rpc("export_user_data");
+      expect(error).toBeNull();
+
+      const exported = (data.activityLogs as { id: string }[]).find((a) => a.id === activity!.id);
+      expect(exported).toBeDefined();
+      // Without these the export hands back the instants with no way to
+      // reconstruct which civil day either the completion or the plan belonged
+      // to - the one fact #330 exists to record.
+      expect(exported).toHaveProperty("completed_offset_minutes", -420);
+      expect(exported).toHaveProperty("scheduled_offset_minutes", -420);
+
+      // The other half of the same pair, so a future redeclaration copied from
+      // an activities-only parent fails here too rather than silently.
+      const records = data.thoughtRecords as Record<string, unknown>[];
+      expect(records.length).toBeGreaterThan(0);
+      expect(records[0]).toHaveProperty("created_offset_minutes");
+    } finally {
+      await admin.from("activity_logs").delete().eq("id", activity!.id);
+    }
+  });
+
   it("never leaks another user's data", async () => {
     const { data, error } = await bob.rpc("export_user_data");
     expect(error).toBeNull();
