@@ -151,7 +151,7 @@ const buttonTextVariants = cva(
       },
     },
     compoundVariants: [
-      { variant: "tinted", tint: "primary", className: "text-primary" },
+      { variant: "tinted", tint: "primary", className: "text-primary-ink" },
       { variant: "tinted", tint: "act", className: "text-act-ink" },
       { variant: "tinted", tint: "be", className: "text-be-ink" },
       { variant: "tinted", tint: "think", className: "text-think-ink" },

@@ -42,15 +42,16 @@ interface TintClasses {
    * On that stack every hue fails AA, which is why passing hues take ink too:
    * `ink` 4.28, `aqua` 4.27, `be` 4.22, down to `think` at 1.76.
    *
-   * `primary` and `destructive` keep their accent — neither has an `-ink`
-   * token and neither is a `text-<hue>` site. Both are near misses on their
-   * own /10 tint (4.39 and 4.03) and belong to a separate ticket.
+   * `primary` now has an ink of its own (#421 §3) and takes it here like the
+   * hues: it was the 4.39 near miss this comment used to defer, and the config
+   * screen's selected row is exactly that surface. `destructive` still keeps
+   * its accent — no `-ink` token, 4.03 on its own /10 tint, its own ticket.
    */
   ink: string;
 }
 
 const TINT_CLASSES: Record<WidgetTint, TintClasses> = {
-  primary: { chip: "bg-primary/10", icon: "text-primary", ink: "text-primary" },
+  primary: { chip: "bg-primary/10", icon: "text-primary", ink: "text-primary-ink" },
   act: { chip: "bg-act/10", icon: "text-act", ink: "text-act-ink" },
   be: { chip: "bg-be/10", icon: "text-be", ink: "text-be-ink" },
   aqua: { chip: "bg-aqua/10", icon: "text-aqua", ink: "text-aqua-ink" },
