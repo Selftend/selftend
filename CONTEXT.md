@@ -39,8 +39,9 @@ _Avoid_: trigger, cue-field, hook
 **Day**:
 The calendar day an entry belongs to. Which calendar depends on whether the tool records where the user was:
 
-- **Tools that capture an occurrence offset** — mood, gratitude, sleep, journal, breathing, grounding — use the **civil day at the place the entry was logged**, fixed for the life of the entry. Changing timezone never moves an entry to a different day. The repository resolves it once into a `dayKey` (`YYYY-MM-DD`); surfaces group on that and never convert the timestamp themselves. Breathing and grounding share one table and so share one offset column.
-- **Everything else** — routines, habits, ACT, CBT records, meditation — has no captured offset and uses the **viewer's current local day**. Routine status still resets at local midnight.
+- **Tools that capture an occurrence offset** — mood, gratitude, sleep, journal, meditation, breathing, grounding — use the **civil day at the place the entry was logged**, fixed for the life of the entry. Changing timezone never moves an entry to a different day. The repository resolves it once into a `dayKey` (`YYYY-MM-DD`); surfaces group on that and never convert the timestamp themselves. Breathing and grounding share one table and so share one offset column.
+- **Habits** reach the same answer by a shorter route: `habit_logs.logged_on` stores the resolved civil date itself, so there is no timestamp to convert and no missing-offset case.
+- **Everything else** — ACT, CBT records — has no captured offset and uses the **viewer's current local day**. Routines deliberately keep a viewer-local day axis whatever their steps use: a routine has no dated record to freeze, and its job is "today, where you are standing". Routine status resets at local midnight.
 - Where a captured offset is missing (entries predating the column, or written by an older client) the first group falls back to the second. That is a fallback for unknown, never a claim the entry was logged at UTC.
 
 _Avoid_: session, cycle
@@ -65,6 +66,20 @@ _Avoid_: modal, bottom sheet (the interaction pattern is unrelated)
 
 **Soft card**:
 A borderless card lifted from the sheet by a hue-tinted shadow instead of a border. Opt-in per screen; the bordered card stays the default elsewhere.
+
+**Accent ink**:
+A module hue used as _text_ rather than as a surface or a swatch. A hue's published accent (`--think`, `text-think`) is tuned as a _colour_ — it paints fills, borders, chips and gradients — and four of the eight carry too much luminance to hold small text in light mode, on any pale surface: `think` is 1.90:1 on its own room's background and 1.88:1 on the neutral app background, with `iris`, `clay` and `act` also under AA on both. So a hue gets a second, darkened value for text: the same hue and saturation at lightness 28%, certified against the surfaces it lands on. Which class carries it depends on where the text stands:
+
+| context                                          | class                                    |
+| ------------------------------------------------ | ---------------------------------------- |
+| Small text in a hue, inside that hue's room      | `text-accent-ink` (the room re-pours it) |
+| Small text in a hue, on the neutral app surface  | `text-<hue>-ink`                         |
+| Icons, large numerals, decorative marks, borders | `text-<hue>` (unchanged)                 |
+
+Both classes resolve to the same colour inside a room — one source, `HUE_INK_TRIPLES`. The distinction matters because `accent-ink` is room-poured: outside a room it falls back to `--primary`, so using it on a room-less screen changes the hue rather than the contrast.
+
+A module's directory name does not tell you its room: `src/features/act/` is room-less (the `act` room is worn by `src/features/habits/`), so `text-accent-ink` there would render violet. `test/accent-ink-call-sites.test.ts` enforces both halves of the rule for that module — the third row's exemptions are enumerated with a reason each, and room ink is banned outright. Other directories are not yet covered; add one only after classifying its sites.
+_Avoid_: accent-foreground (that is ink on the `accent` _surface_, a different pairing).
 
 **Guest hue**:
 Another module's hue appearing as an accent inside a room (e.g. the act-green mood scale in mood's rose room). Guest hues stay accent-strength and never re-pour surfaces.

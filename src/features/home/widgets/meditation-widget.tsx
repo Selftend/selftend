@@ -8,7 +8,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function MeditationWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
@@ -16,7 +16,7 @@ export function MeditationWidget({ userId }: { userId: string }) {
 
   const { selectedDate: todayKey } = useSelectedDate();
   const all = sessions ?? [];
-  const doneToday = all.some((s) => toLocalDateKey(s.completedAt) === todayKey);
+  const doneToday = all.some((s) => s.dayKey === todayKey);
   const totalMinutes = all.reduce((sum, s) => sum + s.durationMinutes, 0);
 
   return (

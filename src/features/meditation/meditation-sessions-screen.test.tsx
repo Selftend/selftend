@@ -142,7 +142,10 @@ describe("MeditationSessionsScreen", () => {
     // Room accents follow the module hue; `primary` stays reserved for
     // interactive control states.
     const badge = screen.getByText("Stage 2");
-    expect(badge.props.className).toContain("text-iris");
+    // Small text, so the hue arrives as `accent-ink` (#368): the published
+    // `text-iris` is 3.72:1 on the room card this badge's wash sits over, and
+    // the wash only pulls it further under AA.
+    expect(badge.props.className).toContain("text-accent-ink");
     // The fill converts with the ink - a half-reverted badge fails here.
     const ancestorClasses = [];
     for (let node = badge.parent; node; node = node.parent) {

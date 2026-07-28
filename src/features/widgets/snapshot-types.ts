@@ -184,7 +184,7 @@ export interface WidgetData {
     durationMinutes: number;
     quality: number | null;
   }[];
-  meditationSessions: { completedAt: string; durationMinutes: number }[];
+  meditationSessions: { completedAt: string; dayKey: string; durationMinutes: number }[];
   activities: {
     id: string;
     activityName: string;

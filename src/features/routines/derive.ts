@@ -84,7 +84,8 @@ export interface RoutineToolRecords {
    * gives both tools a dayKey, so neither re-buckets by the viewer's day (#330).
    */
   mindfulnessSessions?: readonly { exerciseName: string; dayKey: string }[];
-  meditationSessions?: readonly { completedAt: string | null }[];
+  /** Meditation captured its civil day in #330 - compare, never re-bucket. */
+  meditationSessions?: readonly { dayKey: string }[];
   /** HabitLog.loggedOn is already a local civil date key (YYYY-MM-DD). */
   habitLogs?: readonly { loggedOn: string }[];
   /**
@@ -139,7 +140,7 @@ export interface RoutineDayView {
 /**
  * For tools with no captured occurrence day: bucket a UTC timestamp through the
  * viewer's current timezone. Correct only while the tool stores no offset - the
- * remaining five modules in #330. Never use this for a module that already
+ * modules still waiting on #330. Never use this for a module that already
  * carries `dayKey`, or the engine will re-bucket an entry the owning module has
  * already placed, and the two surfaces will disagree about which day it was.
  */
@@ -198,7 +199,8 @@ export function stepDoneOnDate(
         dayKey,
       );
     case "meditation":
-      return onDay(records.meditationSessions, (s) => s.completedAt, dayKey);
+      // Meditation joined the captured-day group in #330 - same rule as above.
+      return onCapturedDay(records.meditationSessions, dayKey);
     case "habits":
       // loggedOn is already a civil date key - compare directly, no bucketing.
       return (records.habitLogs ?? []).some((l) => l.loggedOn === dayKey);

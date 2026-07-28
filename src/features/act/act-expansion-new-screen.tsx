@@ -246,7 +246,7 @@ export default function ActExpansionNewScreen() {
                       )}
                       {...struggleRoving.getItemProps(index, () => setStruggleSwitchOn(isOn))}
                     >
-                      <Text className={cn("font-semibold", selected && "text-act")}>
+                      <Text className={cn("font-semibold", selected && "text-act-ink")}>
                         {t(
                           isOn
                             ? "act:expansion.struggleSwitchOn"
@@ -288,7 +288,7 @@ export default function ActExpansionNewScreen() {
                         )}
                         {...discomfortRoving.getItemProps(index, () => setDiscomfortType(type))}
                       >
-                        <Text className={cn("font-semibold", selected && "text-act")}>
+                        <Text className={cn("font-semibold", selected && "text-act-ink")}>
                           {t(`act:expansion.${type}`)}
                         </Text>
                       </Pressable>
@@ -331,7 +331,7 @@ export default function ActExpansionNewScreen() {
                     {...techniqueRoving.getItemProps(index, () => setTechniqueUsed(tech))}
                   >
                     <View className="gap-1">
-                      <Text className={cn("font-semibold", selected && "text-act")}>
+                      <Text className={cn("font-semibold", selected && "text-act-ink")}>
                         {t(`act:expansion.techniques.${tech}`)}
                       </Text>
                       <Text variant="muted" className="text-xs leading-snug">
@@ -347,7 +347,7 @@ export default function ActExpansionNewScreen() {
             {techniqueUsed === "fourStepExpansion" ? (
               <Card className="border-act/30 bg-act/5">
                 <CardHeader>
-                  <CardTitle className="text-act">
+                  <CardTitle className="text-act-ink">
                     {t("act:expansion.fourStepGuide.title")}
                   </CardTitle>
                 </CardHeader>
@@ -355,7 +355,7 @@ export default function ActExpansionNewScreen() {
                   <View className="gap-4">
                     {(["step1", "step2", "step3", "step4"] as const).map((s) => (
                       <View key={s} className="gap-1">
-                        <Text className="font-semibold text-act">
+                        <Text className="font-semibold text-act-ink">
                           {t(`act:expansion.fourStepGuide.${s}Title`)}
                         </Text>
                         <Text variant="muted" className="text-sm leading-snug">
@@ -392,7 +392,7 @@ export default function ActExpansionNewScreen() {
             {intensityBefore !== null && intensityAfter !== null ? (
               <Card className="border-act/30 bg-act/5">
                 <CardContent className="pt-4">
-                  <Text className="text-center font-semibold text-act">
+                  <Text className="text-center font-semibold text-act-ink">
                     {intensityAfter < intensityBefore
                       ? t("act:expansion.intensityDrop", {
                           before: intensityBefore,

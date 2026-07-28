@@ -99,7 +99,7 @@ export default function SleepTrackerScreen() {
               meta={
                 <ToolStats
                   tone="onField"
-                  accentClassName="text-ink"
+                  accentClassName="text-accent-ink"
                   items={[
                     { value: formatHours(sevenDayDuration), label: t("hero.avg") },
                     {

@@ -147,6 +147,32 @@ describe("buildSnapshot v2", () => {
     expect(p.today?.first?.path).toBe("/modules/cbt/activities/b");
   });
 
+  it("meditation: the done badge follows the captured day, not the raw instant", () => {
+    // 19:00 UTC on the 5th: the sit was on the 5th where it happened (dayKey),
+    // but the raw instant buckets to the 6th for a viewer east of them. The
+    // badge must follow the captured day - the card's own date axis - or "Done
+    // today" goes dark on a sit the user has already done (#330). The second
+    // case is the inverse: a sit captured on the 4th must not badge the 5th.
+    const data: WidgetData = {
+      ...empty,
+      meditationSessions: [
+        { completedAt: "2026-06-05T19:00:00.000Z", dayKey: "2026-06-05", durationMinutes: 20 },
+      ],
+    };
+    const p = buildSnapshot(data, ctx).widgets["meditation-pick"] as StatsCardPayload;
+    expect(p.today?.badge).toBe("today.dashboard.doneToday");
+
+    const otherDay: WidgetData = {
+      ...empty,
+      meditationSessions: [
+        { completedAt: "2026-06-05T01:00:00.000Z", dayKey: "2026-06-04", durationMinutes: 20 },
+      ],
+    };
+    expect(
+      (buildSnapshot(otherDay, ctx).widgets["meditation-pick"] as StatsCardPayload).today,
+    ).toBeNull();
+  });
+
   it("grounding: null stats + empty text when no sessions", () => {
     const p = buildSnapshot(empty, ctx).widgets["grounding-log"] as StatsCardPayload;
     expect(p.stats).toBeNull();

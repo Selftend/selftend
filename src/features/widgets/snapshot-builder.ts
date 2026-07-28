@@ -256,9 +256,7 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
   },
 
   "meditation-pick": (data, { t, dateKey }) => {
-    const doneToday = data.meditationSessions.some(
-      (s) => toLocalDateKey(s.completedAt) === dateKey,
-    );
+    const doneToday = data.meditationSessions.some((s) => s.dayKey === dateKey);
     const minutes = data.meditationSessions.reduce((sum, s) => sum + s.durationMinutes, 0);
     return {
       kind: "stats",
