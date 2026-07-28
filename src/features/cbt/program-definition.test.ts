@@ -1,4 +1,7 @@
+import type { ActivityLog } from "@/src/features/activities/types";
 import { CBT_PROGRAM, type ProgramSignalData } from "@/src/features/cbt/program-definition";
+import type { ThoughtRecord } from "@/src/features/cbt/types";
+import type { MeditationSession } from "@/src/features/meditation/types";
 import type { MoodLog } from "@/src/features/mood/types";
 import { toLocalDateKey } from "@/src/utils/date";
 
@@ -126,5 +129,147 @@ describe("dailyNoticing buckets by the captured civil day", () => {
     });
     expect(signal([legacy], VIEWER_DAY)).toBe(1);
     expect(signal([legacy], CAPTURED_DAY)).toBe(0);
+  });
+});
+
+// The three legs #425 graduates. Each mirrors the dailyNoticing suite above, and
+// each has a SERVER twin in 20260803000000 that must answer the same way - the
+// integration suite holds that end.
+//
+// The same instant throughout: 01:00 on the 12th in Tokyo (UTC+9), i.e. 16:00Z on
+// the 11th. The runner sits at UTC+5:30, so converting it through the VIEWER's
+// zone lands on the 11th - a different civil day from the one it happened on.
+const OCCURRED_AT = "2026-05-11T16:00:00.000Z";
+const TOKYO_OFFSET_MINUTES = 540;
+const CAPTURED = "2026-05-12";
+const VIEWER = "2026-05-11";
+
+describe("the captured day and the viewer's day genuinely differ", () => {
+  it("or every suite below proves nothing", () => {
+    expect(toLocalDateKey(OCCURRED_AT)).toBe(VIEWER);
+    expect(toLocalDateKey(OCCURRED_AT)).not.toBe(CAPTURED);
+  });
+});
+
+describe("thoughtRecordDaily buckets by the captured civil day", () => {
+  const task = CBT_PROGRAM[2].dailyPractice!;
+
+  const record = (overrides: Partial<ThoughtRecord>): ThoughtRecord => ({
+    id: "t1",
+    userId: "user-1",
+    situation: "Missed the deadline",
+    nats: [],
+    emotions: [],
+    emotionIntensityBefore: null,
+    distortions: [],
+    evidenceFor: [],
+    evidenceAgainst: [],
+    balancedThought: "",
+    emotionIntensityAfter: null,
+    outcomeNotes: "",
+    createdAt: OCCURRED_AT,
+    createdOffsetMinutes: TOKYO_OFFSET_MINUTES,
+    dayKey: CAPTURED,
+    updatedAt: OCCURRED_AT,
+    archivedAt: null,
+    ...overrides,
+  });
+
+  const signal = (thoughtRecords: ThoughtRecord[], selectedDate: string) =>
+    task.signal({ selectedDate, thoughtRecords, since: 0 } as ProgramSignalData).current;
+
+  it("counts the record on the day it was written, not the day the viewer is standing in", () => {
+    const records = [record({})];
+    expect(signal(records, CAPTURED)).toBe(1);
+    expect(signal(records, VIEWER)).toBe(0);
+  });
+
+  it("falls back to the viewer's day when no offset was captured", () => {
+    const legacy = [record({ createdOffsetMinutes: null, dayKey: toLocalDateKey(OCCURRED_AT) })];
+    expect(signal(legacy, VIEWER)).toBe(1);
+    expect(signal(legacy, CAPTURED)).toBe(0);
+  });
+
+  it("is not done on a day with no record at all", () => {
+    expect(signal([], CAPTURED)).toBe(0);
+  });
+});
+
+describe("activityDaily buckets by the captured completion day", () => {
+  const task = CBT_PROGRAM[3].dailyPractice!;
+
+  const activity = (overrides: Partial<ActivityLog>): ActivityLog => ({
+    id: "a1",
+    userId: "user-1",
+    activityName: "Walk",
+    category: "pleasure",
+    paceCategory: null,
+    scheduledAt: null,
+    scheduledOffsetMinutes: null,
+    scheduledDayKey: null,
+    completedAt: OCCURRED_AT,
+    completedOffsetMinutes: TOKYO_OFFSET_MINUTES,
+    completedDayKey: CAPTURED,
+    moodBefore: null,
+    moodAfter: null,
+    notes: "",
+    createdAt: OCCURRED_AT,
+    updatedAt: OCCURRED_AT,
+    ...overrides,
+  });
+
+  const signal = (activities: ActivityLog[], selectedDate: string) =>
+    task.signal({ selectedDate, activities, since: 0 } as ProgramSignalData).current;
+
+  it("counts the activity on the day it was completed, not the viewer's day", () => {
+    const activities = [activity({})];
+    expect(signal(activities, CAPTURED)).toBe(1);
+    expect(signal(activities, VIEWER)).toBe(0);
+  });
+
+  it("ignores an activity that is still open", () => {
+    const open = [
+      activity({ completedAt: null, completedOffsetMinutes: null, completedDayKey: null }),
+    ];
+    expect(signal(open, CAPTURED)).toBe(0);
+    expect(signal(open, VIEWER)).toBe(0);
+  });
+});
+
+describe("calmingDaily buckets by the captured civil day", () => {
+  const task = CBT_PROGRAM[4].dailyPractice!;
+
+  const session = (overrides: Partial<MeditationSession>): MeditationSession => ({
+    id: "s1",
+    userId: "user-1",
+    stageAtSession: 1,
+    durationMinutes: 10,
+    completedAt: OCCURRED_AT,
+    completedOffsetMinutes: TOKYO_OFFSET_MINUTES,
+    dayKey: CAPTURED,
+    createdAt: OCCURRED_AT,
+    mindWanderingEpisodes: null,
+    dullnessLevel: null,
+    distractionLevel: null,
+    obstacleTags: [],
+    reflection: "",
+    moodAfter: null,
+    techniqueUsed: null,
+    ...overrides,
+  });
+
+  const signal = (meditationSessions: MeditationSession[], selectedDate: string) =>
+    task.signal({ selectedDate, meditationSessions, since: 0 } as ProgramSignalData).current;
+
+  it("counts the sit on the day it happened, not the day the viewer is standing in", () => {
+    const sessions = [session({})];
+    expect(signal(sessions, CAPTURED)).toBe(1);
+    expect(signal(sessions, VIEWER)).toBe(0);
+  });
+
+  it("falls back to the viewer's day when no offset was captured", () => {
+    const legacy = [session({ completedOffsetMinutes: null, dayKey: toLocalDateKey(OCCURRED_AT) })];
+    expect(signal(legacy, VIEWER)).toBe(1);
+    expect(signal(legacy, CAPTURED)).toBe(0);
   });
 });
