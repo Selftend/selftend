@@ -132,7 +132,14 @@ begin
     nats_enc                 = app.encrypt_text(coalesce(new.nats, '[]'::jsonb)::text),
     created_at               = new.created_at,
     created_offset_minutes   = new.created_offset_minutes
-   where id = old.id;   -- set_thought_records_updated_at BEFORE-UPDATE trigger refreshes updated_at
+   where id = old.id   -- set_thought_records_updated_at BEFORE-UPDATE trigger refreshes updated_at
+   -- ...which is why the fresh timestamps have to be read back out (20260662):
+   -- the trigger stamps `updated_at` on the _data row, but NEW still carries the
+   -- pre-edit value, and NEW is what PostgREST returns to `.update().select()`.
+   -- Dropping this clause would make an edited record report its old
+   -- `updated_at` until a separate fetch landed - and the history list sorts and
+   -- labels by `updated_at`, so that is user-visible.
+   returning updated_at, created_at into new.updated_at, new.created_at;
   return new;
 end; $$;
 

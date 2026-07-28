@@ -166,6 +166,46 @@ describe("cbt thought_records (integration)", () => {
       expect(insert.data?.created_offset_minutes).toBe(0);
     });
 
+    // Redeclaring thought_records_upd to carry the new column is the moment the
+    // `returning ... into` clause from 20260662 is easiest to drop by accident.
+    // Without it the UPDATE writer hands PostgREST a NEW that still holds the
+    // pre-edit updated_at, and the history list - which sorts and labels by it -
+    // shows the stale value until a separate fetch lands.
+    it("returns the freshly stamped updated_at from an edit", async () => {
+      const created = await alice
+        .from("thought_records")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseRecord,
+          created_at: "2026-05-15T19:00:00.000Z",
+          created_offset_minutes: -420,
+        })
+        .select("id, updated_at")
+        .single();
+      expect(created.error).toBeNull();
+
+      const updated = await alice
+        .from("thought_records")
+        .update({ situation: "Edited" })
+        .eq("user_id", SEED_USERS.alice.id)
+        .eq("id", created.data!.id)
+        .select("updated_at")
+        .single();
+
+      expect(updated.error).toBeNull();
+      expect(updated.data?.updated_at).not.toBe(created.data?.updated_at);
+
+      // ...and the value handed back is the one that actually persisted, not a
+      // timestamp the writer invented on its way out.
+      const read = await alice
+        .from("thought_records")
+        .select("updated_at")
+        .eq("id", created.data!.id)
+        .single();
+      expect(read.error).toBeNull();
+      expect(read.data?.updated_at).toBe(updated.data?.updated_at);
+    });
+
     it("preserves the captured offset across an unrelated edit", async () => {
       const created = await alice
         .from("thought_records")
