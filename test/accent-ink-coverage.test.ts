@@ -13,7 +13,9 @@ import { sourceFiles, stripComments } from "@/test/source-scan";
 //
 // test/accent-ink-call-sites.test.ts is the real gate: it enumerates every
 // survivor in a fully-classified area with its measured contrast and the reason
-// it may stay, keyed on the source line. Today that is `src/features/act`.
+// it may stay, keyed on the source line. Today that is `src/features/act` and
+// `src/features/home` - the latter classified 25 sites and swept the other 2,
+// which is why the app-wide total is 92 rather than the 94 above.
 //
 // This suite is deliberately weaker, and says so. It cannot tell a safe survivor
 // from an unsafe one; it only refuses to let an area GROW. That stops the ninth
@@ -48,13 +50,12 @@ function areaOf(file: string): string {
 /**
  * Survivors per area, measured 2026-07-28 once every #403 sweep had landed.
  *
- * `src/features/act` is absent on purpose: it is fully classified in
- * test/accent-ink-call-sites.test.ts, which asserts its exact set. Listing it
- * here as well would let a site be added there and merely counted rather than
- * classified.
+ * `src/features/act` and `src/features/home` are absent on purpose: both are
+ * fully classified in test/accent-ink-call-sites.test.ts, which asserts their
+ * exact sets. Listing them here as well would let a site be added there and
+ * merely counted rather than classified.
  */
 const BUDGET: Readonly<Record<string, number>> = {
-  "src/features/home": 27,
   "src/components/app": 13,
   "src/features/mindfulness": 8,
   "src/features/settings": 5,
@@ -73,8 +74,8 @@ const BUDGET: Readonly<Record<string, number>> = {
   "src/features/gratitude": 1,
 };
 
-/** The area whose survivors are enumerated in the real gate instead. */
-const FULLY_CLASSIFIED = "src/features/act";
+/** The areas whose survivors are enumerated in the real gate instead. */
+const FULLY_CLASSIFIED = new Set(["src/features/act", "src/features/home"]);
 
 function survivorsByArea(): Map<string, number> {
   const counts = new Map<string, number>();
@@ -107,7 +108,7 @@ describe("unclassified accent-ink survivors never grow (#412)", () => {
 
   it("no area exceeds its recorded survivor count", () => {
     const grown = [...counts.entries()]
-      .filter(([area]) => area !== FULLY_CLASSIFIED)
+      .filter(([area]) => !FULLY_CLASSIFIED.has(area))
       .filter(([area, count]) => count > (BUDGET[area] ?? 0))
       .map(([area, count]) => `${area}: ${count} > ${BUDGET[area] ?? 0}`);
 
@@ -119,7 +120,7 @@ describe("unclassified accent-ink survivors never grow (#412)", () => {
 
   it("no area appears that the budget has never seen", () => {
     const unknown = [...counts.keys()]
-      .filter((area) => area !== FULLY_CLASSIFIED)
+      .filter((area) => !FULLY_CLASSIFIED.has(area))
       .filter((area) => !(area in BUDGET));
 
     expect(unknown).toEqual([]);

@@ -124,8 +124,15 @@ function OptionRow({
               name={added ? "check" : "add"}
               className={cn("size-3.5", added ? "text-muted-foreground" : tint.icon)}
             />
+            {/*
+              Accent ink, not the accent (#403/#412): this is 12px text sitting
+              on `tint.chip`, the same `bg-<tint>/10` stack as WidgetCardHeader's
+              module label, where every hue falls under AA. The glyph beside it
+              keeps `tint.icon`; it is decorative and the label says the same
+              thing in words.
+            */}
             <Text
-              className={cn("text-xs font-semibold", added ? "text-muted-foreground" : tint.icon)}
+              className={cn("text-xs font-semibold", added ? "text-muted-foreground" : tint.ink)}
             >
               {added ? t("home.added") : t("today.dashboard.addToolButton")}
             </Text>
