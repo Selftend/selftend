@@ -1155,7 +1155,7 @@ describe("no bare accent survives outside a classified area", () => {
     expect(stray).toEqual([]);
   });
 
-  it("lets design-tokens.ts through for TINT_ACCENT's eight entries and nothing more", () => {
+  it("lets design-tokens.ts through for TINT_ACCENT's bare accents and nothing more", () => {
     // The exclusion above is by FILE, which on its own is not a gate: a THIRD map
     // in this file writing hue text - in either spelling - rides through it in
     // silence, and the shape assertions below only ever look at the two maps that
@@ -1267,7 +1267,8 @@ describe("no TINT_ACCENT consumer paints a mark on a wash the floor never measur
 
   const consumers = sourceFiles(ROOT, { dirs: ["app", "src"] }).filter(
     (file) =>
-      file !== TOKENS_FILE && /\bTINT_ACCENT\b/.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
+      file !== TOKENS_FILE &&
+      /\bTINT_ACCENT\b/.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
   );
 
   /** Distinct `file@alpha` washes, which is the granularity a map paints at. */
