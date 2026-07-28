@@ -201,21 +201,31 @@ const SIDEBAR_ACCENT = (hue: string, ratio: string): Omit<AllowedSite, "snippet"
 });
 
 /**
- * The widget tints. Seven consumers, and not one of them lets this tint carry
- * state or information: every site is a module identity glyph sitting beside
- * that module's own name in text, and `<Icon>` is `aria-hidden` by default
+ * The widget tints. The bare accent this row classifies is the map's `icon`
+ * field, and its five consumers are all the same thing: a module identity glyph
+ * sitting beside that module's own name in text. None of them lets the tint
+ * carry state or information, and `<Icon>` is `aria-hidden` by default
  * (src/components/react-native-reusables/icon.tsx), so assistive tech never
  * reaches it either. That puts these outside 1.4.11, which exempts graphics
  * that are decorative rather than "required to understand the content".
  *
- * They are classified `decorative` and not `icon` on purpose, because on two of
- * the seven consumers the number does *not* clear 3:1 - the config screen's
- * selected row stacks the chip on `bg-primary/10`, and the add-widget preview
- * block nests a chip inside a chip. Calling these `icon` would assert a floor
- * they do not meet.
+ * The map's other two consumers paint *text* in the tint - WidgetCardHeader's
+ * module label and add-widget-modal's add button - and neither is covered by
+ * this row. Both take the map's `ink` field instead, so neither reaches the
+ * bare accent at all. That split is the point: a consumer that wants this tint
+ * as text does not get to borrow the decorative exemption.
+ *
+ * The `icon` sites are classified `decorative` and not `icon` on purpose,
+ * because on two of the five the number does *not* clear 3:1 - the config
+ * screen's selected row stacks the chip on `bg-primary/10`, and the add-widget
+ * preview block nests a chip inside a chip. Calling these `icon` would assert a
+ * floor they do not meet.
  *
  * **The row is invalidated by any consumer that makes this tint mean
- * something.** That is the change this comment exists to catch.
+ * something, or that paints it as text.** That is the change this comment
+ * exists to catch - and because the gate below only sees the literal class
+ * names in widget-tint.ts, not the call sites that spread them, catching it is
+ * a review job, not a regex one.
  */
 const WIDGET_TINT = (hue: string, best: string, worst: string): Omit<AllowedSite, "snippet"> => ({
   file: `${HOME_DIR}/widget-tint.ts`,

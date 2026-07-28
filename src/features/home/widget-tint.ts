@@ -7,9 +7,12 @@ interface TintClasses {
    * The published accent — icons and decorative marks. Not legible as small
    * text.
    *
-   * Every consumer paints the same thing: a module identity glyph inside a
-   * `chip`, immediately beside that module's own name in text. None of them
-   * lets the tint carry state or information, and `<Icon>` is `aria-hidden`, so
+   * Every consumer of *this* field paints the same thing: a module identity
+   * glyph inside a `chip`, immediately beside that module's own name in text.
+   * (The two sites where the tint is the colour of text take `ink` instead -
+   * WidgetCardHeader's module label and add-widget-modal's add button.) None of
+   * them lets the tint carry state or information, and `<Icon>` is
+   * `aria-hidden`, so
    * these are decorative graphics under WCAG 1.4.11 rather than graphics
    * "required to understand the content". That is what the row below rests on —
    * not the ratio, which varies a lot by consumer. Measured light-mode figures,
@@ -30,10 +33,11 @@ interface TintClasses {
    */
   icon: string;
   /**
-   * The same tint as small-text ink (#403). Six of this map's seven consumer
-   * sites paint an `<Icon>` and keep `icon`; only WidgetCardHeader's module
-   * label is text, and it sits inside `chip` — so the ink it needs is measured
-   * against `bg-<tint>/10` of its own hue, not the bare app surface.
+   * The same tint as small-text ink (#403). Five of this map's seven consumer
+   * sites paint an `<Icon>` and keep `icon`; the two that are text take this -
+   * WidgetCardHeader's module label and the add-widget modal's add button. Both
+   * sit inside `chip`, so the ink they need is measured against `bg-<tint>/10`
+   * of their own hue, not the bare app surface.
    *
    * On that stack every hue fails AA, which is why passing hues take ink too:
    * `ink` 4.28, `aqua` 4.27, `be` 4.22, down to `think` at 1.76.
