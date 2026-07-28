@@ -123,15 +123,25 @@ describe("stepDoneOnDate", () => {
 
   it("activities count only completion - a scheduled-but-open activity stays open", () => {
     const records: RoutineToolRecords = {
-      activityLogs: [{ completedAt: null }, { completedAt: onDayTs }],
+      activityLogs: [{ completedDayKey: null }, { completedDayKey: DAY }],
     };
     expect(stepDoneOnDate("activities", records, DAY)).toBe(true);
-    expect(stepDoneOnDate("activities", { activityLogs: [{ completedAt: null }] }, DAY)).toBe(
+    expect(stepDoneOnDate("activities", { activityLogs: [{ completedDayKey: null }] }, DAY)).toBe(
       false,
     );
-    expect(stepDoneOnDate("activities", { activityLogs: [{ completedAt: prevDayTs }] }, DAY)).toBe(
-      false,
-    );
+    expect(
+      stepDoneOnDate("activities", { activityLogs: [{ completedDayKey: PREV_DAY }] }, DAY),
+    ).toBe(false);
+  });
+
+  it("activities read the captured completion day, never the viewer's", () => {
+    // An activity finished at 23:30 in Tokyo carries completedDayKey 2026-07-15 even
+    // though its UTC instant falls on the 14th for a London viewer. The engine has to
+    // agree with the activities screen about which day that was (#330).
+    const captured: RoutineToolRecords = { activityLogs: [{ completedDayKey: DAY }] };
+    expect(stepDoneOnDate("activities", captured, DAY)).toBe(true);
+    expect(stepDoneOnDate("activities", captured, PREV_DAY)).toBe(false);
+    expect(stepDoneOnDate("activities", captured, NEXT_DAY)).toBe(false);
   });
 
   it("exposure reads the session's completedAt", () => {

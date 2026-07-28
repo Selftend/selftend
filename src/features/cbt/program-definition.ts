@@ -150,10 +150,9 @@ const ACTIVITY_DAILY: ProgramTaskDef = {
   labelKey: "program.tasks.activityDaily",
   route: "/modules/cbt/activities",
   signal: ({ activities, selectedDate }) => ({
-    current: didOnDate(
-      activities.map((a) => a.completedAt),
-      selectedDate,
-    ),
+    // Captured completion day - compare directly. Bucketing completedAt by the
+    // viewer would move a tick off the day the activities screen files it on (#330).
+    current: activities.some((a) => a.completedDayKey === selectedDate) ? 1 : 0,
     target: 1,
   }),
 };

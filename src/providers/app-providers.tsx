@@ -57,7 +57,11 @@ const persistOptions = persister
       // change takes its own bump - shape3 went out with the meditation change,
       // so reusing it here would leave anyone who updated between the two with a
       // cache the new equality checks cannot read.
-      buster: `${Constants.expoConfig?.version ?? "0"}-shape4`,
+      // shape5: and again for CBT activities, which gained BOTH a scheduledDayKey
+      // and a completedDayKey. A restored pre-shape5 activity has neither, so the
+      // day-bucketing on the activities list and the Home card would read every
+      // plan as unscheduled while offline.
+      buster: `${Constants.expoConfig?.version ?? "0"}-shape5`,
       dehydrateOptions: {
         shouldDehydrateQuery: (query: { state: { status: string } }) =>
           query.state.status === "success",

@@ -17,7 +17,10 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { lifeDomains, type LifeDomain } from "@/src/constants/life-domains";
 import { useActivity, useSaveActivity } from "@/src/features/activities/queries";
 import { activityFormSchema, type ActivityFormSchema } from "@/src/features/activities/schemas";
-import { isoToScheduleInput, scheduleInputToIso } from "@/src/features/activities/schedule-format";
+import {
+  isoToScheduleInput,
+  scheduleInputToOccurrence,
+} from "@/src/features/activities/schedule-format";
 import type { PACECategory } from "@/src/features/activities/types";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
@@ -107,9 +110,11 @@ export default function NewActivityScreen() {
 
   const submitForm = handleSubmit(async (values) => {
     setDraftValues(values);
-    // Normalize the free-text "YYYY-MM-DD HH:MM" (local) to an ISO instant before saving.
-    const scheduledIso = scheduleInputToIso(values.scheduledAt);
-    if (values.scheduledAt && scheduledIso === null) {
+    // Normalize the free-text "YYYY-MM-DD HH:MM" (local) to an ISO instant plus the
+    // offset in force at it, from one parse - the instant orders the list, the offset
+    // records which civil day the user meant (#330).
+    const scheduled = scheduleInputToOccurrence(values.scheduledAt);
+    if (values.scheduledAt && scheduled === null) {
       showToast({
         title: t("common:feedback.problem"),
         description: t("activities.scheduledAtInvalid"),
@@ -119,7 +124,11 @@ export default function NewActivityScreen() {
     }
     try {
       const saved = await saveMutation.mutateAsync({
-        input: { ...values, scheduledAt: scheduledIso },
+        input: {
+          ...values,
+          scheduledAt: scheduled?.scheduledAt ?? null,
+          scheduledOffsetMinutes: scheduled?.scheduledOffsetMinutes ?? null,
+        },
         activityId: activityId ?? undefined,
       });
       resetDraft();
