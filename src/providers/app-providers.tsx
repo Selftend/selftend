@@ -57,7 +57,11 @@ const persistOptions = persister
       // change takes its own bump - shape3 went out with the meditation change,
       // so reusing it here would leave anyone who updated between the two with a
       // cache the new equality checks cannot read.
-      buster: `${Constants.expoConfig?.version ?? "0"}-shape4`,
+      // shape5: and again for CBT thought records, which gained `dayKey` from
+      // `created_offset_minutes`. A restored record written before this build
+      // has none, so the history screen's day filter and the routine engine's
+      // cbt step both read it as belonging to no day at all.
+      buster: `${Constants.expoConfig?.version ?? "0"}-shape5`,
       dehydrateOptions: {
         shouldDehydrateQuery: (query: { state: { status: string } }) =>
           query.state.status === "success",
