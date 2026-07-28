@@ -7,17 +7,29 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useActivities } from "@/src/features/activities/queries";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
-export function HabitsWidget({ userId }: { userId: string }) {
+/**
+ * CBT behavioural-activation activities scheduled for the day. Named `HabitsWidget`
+ * until #330: it reads no habit data at all, only `activity_logs.scheduled_at`, and
+ * its per-item link goes to /modules/cbt/activities.
+ *
+ * Deliberately NOT renamed with it: the registry id `habits-today` (a storage key in
+ * `widget_preferences.widget_id` - renaming it would orphan every user's row), and
+ * `WIDGET_META`'s `toolKey`, tint and title copy, which decide where the widget is
+ * offered and what the user reads. Those are placement and product copy, not
+ * description, so they are left for a deliberate product change rather than folded
+ * into a data-correctness fix.
+ */
+export function ActivitiesWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
   const { data: activities } = useActivities(userId);
 
   const { selectedDate: todayKey } = useSelectedDate();
-  const scheduledToday =
-    activities?.filter(
-      (a) => a.scheduledAt != null && toLocalDateKey(a.scheduledAt) === todayKey,
-    ) ?? [];
+  // `scheduledDayKey` is the civil day the activity was PLANNED for, captured when it
+  // was planned - compare, never re-bucket, so a plan made before flying east stays on
+  // the day it was meant for (#330).
+  const scheduledToday = activities?.filter((a) => a.scheduledDayKey === todayKey) ?? [];
   const completedToday = scheduledToday.filter((a) => a.completedAt !== null);
   const firstIncomplete = scheduledToday.find((a) => !a.completedAt) ?? null;
 

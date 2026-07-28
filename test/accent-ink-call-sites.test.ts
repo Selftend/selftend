@@ -621,7 +621,7 @@ const HOME_SITES: AllowedSite[] = [
       "misses it; the accompanying accentBgClass keeps the two in step.",
   },
   {
-    ...WIDGET_HEADER("habits-widget", "act", "3.52", "directions-run"),
+    ...WIDGET_HEADER("activities-widget", "act", "3.52", "directions-run"),
     snippet: `<Icon name="directions-run" className="size-5 text-act" />`,
   },
   {
