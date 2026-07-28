@@ -262,6 +262,30 @@ describe("hue ink meets WCAG AA on the neutral app surface", () => {
     expect(roomTriples(hue).light["accent-ink"]).toBe(HUE_INK_TRIPLES[hue].light);
     expect(roomTriples(hue).dark["accent-ink"]).toBe(HUE_INK_TRIPLES[hue].dark);
   });
+
+  // The floor above measures the ink on *bare* neutral surfaces, which is the
+  // easy case. Off-room hue text almost never lands there: it sits on a wash of
+  // its own hue — the `bg-<hue>/5` pillar card, the `bg-<hue>/10` ready banner,
+  // the `bg-<hue>/15` nav badge — and a wash of the hue pulls the surface toward
+  // the ink, costing contrast rather than adding it. That is the pairing the
+  // published accent failed worst on (`text-think` on `bg-think/5` is 1.82:1),
+  // and a bare-surface floor alone would certify an ink that still fails there.
+  const TINT_ALPHAS = [0.05, 0.1, 0.15] as const;
+
+  it.each(HUE_NAMES)("%s ink passes on washes of its own hue", (hue) => {
+    for (const scheme of ["light", "dark"] as const) {
+      const ink = hslTripleToRgb(css[scheme][`--${hue}-ink`]);
+      const wash = hslTripleToRgb(css[scheme][`--${hue}`]);
+
+      for (const base of ["--background", "--card"] as const) {
+        for (const alpha of TINT_ALPHAS) {
+          const surface = compositeOver(wash, alpha, hslTripleToRgb(css[scheme][base]));
+
+          expect(contrastRatio(ink, surface)).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    }
+  });
 });
 
 describe("design-tokens.ts hue source mirrors global.css", () => {

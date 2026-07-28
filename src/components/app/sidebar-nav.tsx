@@ -220,7 +220,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
               <Text
                 className={cn(
                   "text-[10px] font-semibold uppercase tracking-wider",
-                  isLive ? "text-act" : isBeta ? "text-primary" : "text-muted-foreground",
+                  isLive ? "text-act-ink" : isBeta ? "text-primary" : "text-muted-foreground",
                 )}
               >
                 {badgeLabel}
