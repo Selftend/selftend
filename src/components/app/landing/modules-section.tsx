@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { TINT_TEXT } from "@/src/lib/design-tokens";
+import { TINT_ACCENT, TINT_TEXT } from "@/src/lib/design-tokens";
 import { cn } from "@/lib/utils";
 
 /**
@@ -58,7 +58,8 @@ function ModuleCard({
   return (
     <View className={cn("flex-1 gap-3 rounded-2xl border p-7", CARD_TINT[tint])}>
       <View className="flex-row items-center gap-2.5">
-        <Icon name={icon} size={22} className={tintText} />
+        {/* Glyph keeps the accent; the kicker beside it takes the ink. */}
+        <Icon name={icon} size={22} className={TINT_ACCENT[tint]} />
         <Text className={cn("text-xs font-bold uppercase tracking-[0.14em]", tintText)}>
           {kicker}
         </Text>
