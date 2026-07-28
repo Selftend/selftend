@@ -127,24 +127,7 @@ module.exports = [
       "src/features/activities/**/*.{ts,tsx}",
       "src/features/cbt/**/*.{ts,tsx}",
     ],
-    ignores: [
-      "**/*.test.ts",
-      "**/*.test.tsx",
-      // The only file under src/features/cbt still bucketing by the viewer, and
-      // deliberately so: the CBT programme checklist has a SERVER twin
-      // (`program_widget_task_status`, 20260730120000) that drives the home
-      // widget, and the two must agree or the widget and the screen disagree
-      // about whether today's practice is done. That RPC still buckets
-      // `thoughtRecordDaily` viewer-locally, so moving this leg onto `dayKey`
-      // alone would introduce exactly that drift.
-      //
-      // This is the same lockstep meditation is already held in: its offset
-      // column landed in 20260729 and both its legs stayed viewer-local. The
-      // client and server legs graduate together, per module, in #425 - and
-      // `didOnDate` still serves the activities and meditation legs here
-      // regardless. Delete this entry when the last leg graduates.
-      "src/features/cbt/program-definition.ts",
-    ],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {
       "no-restricted-imports": [
         "error",

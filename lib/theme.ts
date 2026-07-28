@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, type Theme } from "expo-router";
 import { vars } from "nativewind";
 
-import { HUE_INK_TRIPLES, HUE_TRIPLES } from "@/src/lib/design-tokens";
+import { HUE_INK_TRIPLES, HUE_TRIPLES, PRIMARY_INK_TRIPLES } from "@/src/lib/design-tokens";
 
 export const THEME = {
   light: {
@@ -85,6 +85,7 @@ export const THEME_VARIABLES = {
     "--popover-foreground": "258 22% 15%",
     "--primary": "262 62% 56%",
     "--primary-foreground": "0 0% 100%",
+    "--primary-ink": PRIMARY_INK_TRIPLES.light,
     "--accent-ink": "262 62% 56%",
     "--secondary": "260 8% 92%",
     "--secondary-foreground": "260 12% 24%",
@@ -124,6 +125,7 @@ export const THEME_VARIABLES = {
     "--popover-foreground": "260 30% 96%",
     "--primary": "264 72% 72%",
     "--primary-foreground": "260 22% 12%",
+    "--primary-ink": PRIMARY_INK_TRIPLES.dark,
     "--accent-ink": "264 72% 72%",
     "--secondary": "260 8% 22%",
     "--secondary-foreground": "260 24% 92%",

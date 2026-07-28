@@ -17,6 +17,12 @@ module.exports = {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
         },
+        // The app accent as small-text ink (#421) — `text-primary-ink`, the
+        // `primary` counterpart of the `text-<hue>-ink` block below. Registered
+        // flat rather than as `primary.ink` so it reads like `accent-ink` and
+        // the other ink tokens; both spellings would compile the same class.
+        // NOT `primary-foreground`, which is ink *on* `--primary` (white).
+        "primary-ink": "hsl(var(--primary-ink))",
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
