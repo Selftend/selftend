@@ -8,13 +8,12 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useMeditationSession } from "@/src/features/meditation/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatAtOffset } from "@/src/utils/date";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 
 export default function MeditationSessionDetailScreen() {
   const { t } = useTranslation("meditation");
   const roomStyle = useRoomStyle("iris");
-  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const params = useLocalSearchParams<{ id: string }>();
   const { data: session, isLoading } = useMeditationSession(user?.id ?? null, params.id ?? null);
@@ -52,7 +51,7 @@ export default function MeditationSessionDetailScreen() {
             <ScreenHeader title={t("module.sessionDetail.title")} />
             <Text variant="muted">
               {t("module.sessionDetail.completedAt", {
-                date: formatDateTime(session.completedAt),
+                date: formatAtOffset(session.completedAt, session.completedOffsetMinutes),
               })}
             </Text>
           </View>

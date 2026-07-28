@@ -20,12 +20,11 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
-import { useLocaleFormats } from "@/src/lib/locale-format";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import type { MindfulnessSession } from "@/src/features/mindfulness/types";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function BreathingScreen() {
   const { t } = useTranslation("cbt");
-  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { data: customExercises } = useBreathingExercises(user?.id ?? null);
   const customIds = (customExercises ?? []).map((e) => e.id);
@@ -36,11 +35,15 @@ export default function BreathingScreen() {
 
   // Sessions are a recent window; scan for the latest completedAt rather than
   // trusting order, mirroring the sleep tracker's last-logged derivation.
-  const lastCompletedAt = (sessions ?? []).reduce<string | null>(
-    (latest, s) => (latest === null || s.completedAt > latest ? s.completedAt : latest),
+  // The whole session is kept, not just the instant: the label renders in the
+  // frame the session was captured in (#433 §3).
+  const lastSession = (sessions ?? []).reduce<MindfulnessSession | null>(
+    (latest, s) => (latest === null || s.completedAt > latest.completedAt ? s : latest),
     null,
   );
-  const lastWhen = lastCompletedAt ? formatLocalTimestamp(lastCompletedAt) : null;
+  const lastWhen = lastSession
+    ? formatAtOffset(lastSession.completedAt, lastSession.completedOffsetMinutes)
+    : null;
   // `sessions` is undefined while loading and after a failed fetch with no cache.
   // It also resolves early against the built-in patterns alone, because the query
   // is enabled before `customExercises` arrives to widen the name filter - so the
@@ -238,7 +241,7 @@ export default function BreathingScreen() {
                           {s.cycles != null ? t("breathing.cycles", { count: s.cycles }) : ""}
                         </Text>
                         <Text variant="muted" className="text-xs">
-                          {formatDateTime(s.completedAt)}
+                          {formatAtOffset(s.completedAt, s.completedOffsetMinutes)}
                         </Text>
                       </View>
                     </Card>
