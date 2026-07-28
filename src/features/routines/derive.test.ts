@@ -30,7 +30,7 @@ describe("stepDoneOnDate", () => {
       journalEntries: [{ dayKey: DAY }],
       gratitudeEntries: [{ dayKey: PREV_DAY }],
       sleepLogs: [{ dayKey: NEXT_DAY }],
-      thoughtRecords: [{ createdAt: onDayTs }],
+      thoughtRecords: [{ dayKey: DAY }],
     };
 
     expect(stepDoneOnDate("mood", records, DAY)).toBe(true);
@@ -56,14 +56,29 @@ describe("stepDoneOnDate", () => {
   });
 
   it("still buckets by the local midnight boundary for tools with no captured day", () => {
-    // cbt has no occurrence offset yet (#330), so it converts through the
-    // viewer's timezone. Just-before counts, just-after does not.
-    const records: RoutineToolRecords = { thoughtRecords: [{ createdAt: lateOnDayTs }] };
-    expect(stepDoneOnDate("cbt", records, DAY)).toBe(true);
+    // Exposure sessions have no occurrence offset (they are outside #330's scope),
+    // so they convert through the viewer's timezone. Just-before the local midnight
+    // boundary counts, just-after does not. This test used activities as its
+    // example until activities gained a captured day of their own - the boundary
+    // behaviour it guards belongs to whichever tools are still timestamp-bucketed.
+    const records: RoutineToolRecords = { exposureSessions: [{ completedAt: lateOnDayTs }] };
+    expect(stepDoneOnDate("exposure", records, DAY)).toBe(true);
 
-    const after: RoutineToolRecords = { thoughtRecords: [{ createdAt: nextDayTs }] };
-    expect(stepDoneOnDate("cbt", after, DAY)).toBe(false);
-    expect(stepDoneOnDate("cbt", after, NEXT_DAY)).toBe(true);
+    const after: RoutineToolRecords = { exposureSessions: [{ completedAt: nextDayTs }] };
+    expect(stepDoneOnDate("exposure", after, DAY)).toBe(false);
+    expect(stepDoneOnDate("exposure", after, NEXT_DAY)).toBe(true);
+  });
+
+  it("cbt reads the captured day verbatim, never the viewer's", () => {
+    // A thought record written at 06:00 Monday in Tokyo carries dayKey
+    // 2026-07-15 while its UTC instant (21:00 Sunday) buckets to the 14th
+    // anywhere west of it. The engine must agree with the CBT history screen
+    // rather than re-deriving the day from the timestamp (#330).
+    const captured: RoutineToolRecords = { thoughtRecords: [{ dayKey: DAY }] };
+
+    expect(stepDoneOnDate("cbt", captured, DAY)).toBe(true);
+    expect(stepDoneOnDate("cbt", captured, PREV_DAY)).toBe(false);
+    expect(stepDoneOnDate("cbt", captured, NEXT_DAY)).toBe(false);
   });
 
   it("a grounding session does not complete a breathing step, and vice versa", () => {
@@ -123,15 +138,25 @@ describe("stepDoneOnDate", () => {
 
   it("activities count only completion - a scheduled-but-open activity stays open", () => {
     const records: RoutineToolRecords = {
-      activityLogs: [{ completedAt: null }, { completedAt: onDayTs }],
+      activityLogs: [{ completedDayKey: null }, { completedDayKey: DAY }],
     };
     expect(stepDoneOnDate("activities", records, DAY)).toBe(true);
-    expect(stepDoneOnDate("activities", { activityLogs: [{ completedAt: null }] }, DAY)).toBe(
+    expect(stepDoneOnDate("activities", { activityLogs: [{ completedDayKey: null }] }, DAY)).toBe(
       false,
     );
-    expect(stepDoneOnDate("activities", { activityLogs: [{ completedAt: prevDayTs }] }, DAY)).toBe(
-      false,
-    );
+    expect(
+      stepDoneOnDate("activities", { activityLogs: [{ completedDayKey: PREV_DAY }] }, DAY),
+    ).toBe(false);
+  });
+
+  it("activities read the captured completion day, never the viewer's", () => {
+    // An activity finished at 23:30 in Tokyo carries completedDayKey 2026-07-15 even
+    // though its UTC instant falls on the 14th for a London viewer. The engine has to
+    // agree with the activities screen about which day that was (#330).
+    const captured: RoutineToolRecords = { activityLogs: [{ completedDayKey: DAY }] };
+    expect(stepDoneOnDate("activities", captured, DAY)).toBe(true);
+    expect(stepDoneOnDate("activities", captured, PREV_DAY)).toBe(false);
+    expect(stepDoneOnDate("activities", captured, NEXT_DAY)).toBe(false);
   });
 
   it("exposure reads the session's completedAt", () => {

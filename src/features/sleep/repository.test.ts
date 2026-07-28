@@ -4,6 +4,7 @@ import {
   getSleepLog,
   listSleepLogs,
   saveSleepLog,
+  sleepStats,
 } from "@/src/features/sleep/repository";
 import { requireSupabase } from "@/src/lib/supabase";
 
@@ -135,5 +136,138 @@ describe("sleep repository", () => {
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
     await expect(countSleepLogs("user-1")).resolves.toBe(0);
+  });
+});
+
+describe("sleep repository - sleepStats", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  function mockRpc(row: unknown) {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
+    const rpc = jest.fn(() => ({ maybeSingle }));
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ rpc, from } as unknown as ReturnType<
+      typeof requireSupabase
+    >);
+    return { rpc, from };
+  }
+
+  const fullRow = {
+    avg_duration_minutes_7: 420,
+    avg_quality_7: 4,
+    avg_duration_minutes_30: 471.4285714285714286,
+    avg_quality_30: 3.7142857142857143,
+    quality_counts_30: [0, 30, 0, 0, 40],
+    longest_minutes: 600,
+    shortest_minutes: 300,
+    weekday_avg_minutes: [500, 450, null, null, null, 480, 500],
+  };
+
+  it("takes the summary through the RPC rather than the capped list", async () => {
+    const { rpc, from } = mockRpc(fullRow);
+
+    const stats = await sleepStats("Europe/Sofia");
+
+    expect(rpc).toHaveBeenCalledWith("sleep_stats", { p_time_zone: "Europe/Sofia" });
+    // No table read: the point of the RPC is that no sleep rows cross the wire, so a
+    // 50-row cap cannot creep back into any of these figures.
+    expect(from).not.toHaveBeenCalled();
+    expect(stats).toEqual({
+      sevenDayDurationMinutes: 420,
+      sevenDayQuality: 4,
+      thirtyDayDurationMinutes: 471,
+      thirtyDayQuality: 3.7,
+      qualityDistribution30: [0, 30, 0, 0, 40],
+      longestMinutes: 600,
+      shortestMinutes: 300,
+      weekdayAverageMinutes: [500, 450, null, null, null, 480, 500],
+    });
+  });
+
+  it("rounds a half-minute average up, the way the client-side summaries did", async () => {
+    // 450 and 451 minutes average to 450.5. Math.round takes that to 451, matching
+    // averageDurationMinutes(); Postgres round(double precision) would break the tie to
+    // even and say 450, which is why the rounding stays on this side.
+    mockRpc({ ...fullRow, avg_duration_minutes_7: 450.5, weekday_avg_minutes: [450.5] });
+
+    const stats = await sleepStats("UTC");
+
+    expect(stats?.sevenDayDurationMinutes).toBe(451);
+    expect(stats?.weekdayAverageMinutes[0]).toBe(451);
+  });
+
+  it("rounds quality to one decimal, the way averageQuality() did", async () => {
+    mockRpc({ ...fullRow, avg_quality_7: 3.7142857142857143, avg_quality_30: 4.25 });
+
+    const stats = await sleepStats("UTC");
+
+    expect(stats?.sevenDayQuality).toBe(3.7);
+    expect(stats?.thirtyDayQuality).toBe(4.3);
+  });
+
+  it("coerces stringified numerics - `numeric` crosses the wire as a string", async () => {
+    mockRpc({
+      ...fullRow,
+      avg_duration_minutes_7: "471.4285714285714286",
+      avg_quality_7: "3.7142857142857143",
+      quality_counts_30: ["1", "2", "3", "4", "5"],
+      weekday_avg_minutes: ["450.5", null, null, null, null, null, null],
+    });
+
+    const stats = await sleepStats("UTC");
+
+    expect(stats?.sevenDayDurationMinutes).toBe(471);
+    expect(stats?.sevenDayQuality).toBe(3.7);
+    expect(stats?.qualityDistribution30).toEqual([1, 2, 3, 4, 5]);
+    expect(stats?.weekdayAverageMinutes[0]).toBe(451);
+  });
+
+  it("keeps an empty window null rather than calling it zero", async () => {
+    // A user with no nights in the window has no average, which is not a zero-hour
+    // night - the screen renders the shared "-" placeholder for it.
+    mockRpc({
+      avg_duration_minutes_7: null,
+      avg_quality_7: null,
+      avg_duration_minutes_30: null,
+      avg_quality_30: null,
+      quality_counts_30: [0, 0, 0, 0, 0],
+      longest_minutes: null,
+      shortest_minutes: null,
+      weekday_avg_minutes: [null, null, null, null, null, null, null],
+    });
+
+    const stats = await sleepStats("UTC");
+
+    expect(stats?.sevenDayDurationMinutes).toBeNull();
+    expect(stats?.thirtyDayQuality).toBeNull();
+    expect(stats?.longestMinutes).toBeNull();
+    expect(stats?.weekdayAverageMinutes).toEqual([null, null, null, null, null, null, null]);
+    // Counts are genuinely zero, though - nobody logged a quality-3 night.
+    expect(stats?.qualityDistribution30).toEqual([0, 0, 0, 0, 0]);
+  });
+
+  it("pads short arrays so the charts always get the shape they render", async () => {
+    // The function always returns dense arrays; a summary that silently drew four
+    // quality bars would be worse than one that drew five, the fifth empty.
+    mockRpc({ ...fullRow, quality_counts_30: [7], weekday_avg_minutes: null });
+
+    const stats = await sleepStats("UTC");
+
+    expect(stats?.qualityDistribution30).toEqual([7, 0, 0, 0, 0]);
+    expect(stats?.weekdayAverageMinutes).toHaveLength(7);
+    expect(stats?.weekdayAverageMinutes.every((v) => v === null)).toBe(true);
+  });
+
+  it("throws when the stats RPC errors", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: new Error("rpc failed") });
+    const rpc = jest.fn(() => ({ maybeSingle }));
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(sleepStats("UTC")).rejects.toThrow("rpc failed");
+  });
+
+  it("returns null when the RPC yields no row, so the screen keeps its fallback", async () => {
+    mockRpc(null);
+    await expect(sleepStats("UTC")).resolves.toBeNull();
   });
 });

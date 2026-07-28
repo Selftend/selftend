@@ -6,7 +6,7 @@ import type {
   BreathingCardPayload,
   MoodCheckinCardPayload,
   StatTilesCardPayload,
-  HabitsCardPayload,
+  ActivitiesCardPayload,
   StatsCardPayload,
   CommittedActionsCardPayload,
   ProgrammeCardPayload,
@@ -41,9 +41,9 @@ const empty: WidgetData = {
 };
 
 describe("buildSnapshot v2", () => {
-  it("stamps schemaVersion 2 and builds every card with its registry kind", () => {
+  it("stamps schemaVersion 3 and builds every card with its registry kind", () => {
     const snap = buildSnapshot(empty, ctx);
-    expect(snap.schemaVersion).toBe(2);
+    expect(snap.schemaVersion).toBe(3);
     for (const id of CARD_IDS) {
       expect(snap.widgets[id]).toBeDefined();
       expect(snap.widgets[id].kind).toBe(CARD_REPLICAS[id].kind);
@@ -128,7 +128,8 @@ describe("buildSnapshot v2", () => {
     expect(p.stats?.[1].value).toBe("3");
   });
 
-  it("habits: progress badge, first incomplete with deep link, all-done state", () => {
+  // `habits-today` is the registry id only - the card is scheduled CBT activities.
+  it("activities: progress badge, first incomplete with deep link, all-done state", () => {
     const data: WidgetData = {
       ...empty,
       activities: [
@@ -136,15 +137,55 @@ describe("buildSnapshot v2", () => {
           id: "a",
           activityName: "Walk",
           scheduledAt: "2026-06-05T08:00:00",
+          scheduledDayKey: "2026-06-05",
           completedAt: "2026-06-05T09:00:00",
+          completedDayKey: "2026-06-05",
         },
-        { id: "b", activityName: "Read", scheduledAt: "2026-06-05T08:00:00", completedAt: null },
+        {
+          id: "b",
+          activityName: "Read",
+          scheduledAt: "2026-06-05T08:00:00",
+          scheduledDayKey: "2026-06-05",
+          completedAt: null,
+          completedDayKey: null,
+        },
       ],
     };
-    const p = buildSnapshot(data, ctx).widgets["habits-today"] as HabitsCardPayload;
+    const p = buildSnapshot(data, ctx).widgets["habits-today"] as ActivitiesCardPayload;
     expect(p.today?.badge).toContain("1");
     expect(p.today?.first?.name).toBe("Read");
     expect(p.today?.first?.path).toBe("/modules/cbt/activities/b");
+  });
+
+  it("activities: the day comes from the captured plan, not the scheduled instant", () => {
+    // Planned for 19:00 on the 5th at UTC-7; that instant is already the 6th in UTC
+    // and would be for any viewer east of the plan. The card renders the 5th (#330).
+    const planned = (scheduledDayKey: string): WidgetData => ({
+      ...empty,
+      activities: [
+        {
+          id: "a",
+          activityName: "Walk",
+          scheduledAt: "2026-06-06T02:00:00.000Z",
+          scheduledDayKey,
+          completedAt: null,
+          completedDayKey: null,
+        },
+      ],
+    });
+
+    const onDay = buildSnapshot(planned("2026-06-05"), ctx).widgets[
+      "habits-today"
+    ] as ActivitiesCardPayload;
+    expect(onDay.today?.scheduled).toBe(1);
+    expect(onDay.today?.first?.name).toBe("Walk");
+
+    // The same instant captured on the following day belongs to that day instead.
+    const otherDay = buildSnapshot(planned("2026-06-06"), ctx).widgets[
+      "habits-today"
+    ] as ActivitiesCardPayload;
+    expect(otherDay.today?.scheduled).toBe(0);
+    expect(otherDay.today?.first).toBeNull();
   });
 
   it("meditation: the done badge follows the captured day, not the raw instant", () => {
@@ -253,7 +294,7 @@ describe("buildSignedOutSnapshot v2", () => {
       dateKey: "2026-06-05",
       appThemePref: "system",
     });
-    expect(snap.schemaVersion).toBe(2);
+    expect(snap.schemaVersion).toBe(3);
     expect(snap.auth).toBe("signed-out");
     expect(snap.widgets).toEqual({});
     expect(snap.signedOutCard?.cta).toBe("home.widgets.launcher.signedOutCta");

@@ -133,31 +133,33 @@ describe("buildThoughtRecordInput", () => {
     outcomeNotes: "  calmer  ",
   };
 
-  it("attaches createdAt in create mode (recordId null)", () => {
-    const result = buildThoughtRecordInput(values, {
-      recordId: null,
-      createdAt: "2026-07-10T12:00:00.000Z",
-    });
+  const occurrence = { occurredAt: "2026-07-10T12:00:00.000Z", occurredOffsetMinutes: 540 };
+
+  it("attaches the whole occurrence in create mode (recordId null)", () => {
+    const result = buildThoughtRecordInput(values, { recordId: null, occurrence });
     expect(result.createdAt).toBe("2026-07-10T12:00:00.000Z");
+    // The offset is what fixes the record's civil day, so it must travel with
+    // the instant rather than being left for the server to guess (#330).
+    expect(result.createdOffsetMinutes).toBe(540);
   });
 
-  it("does NOT attach createdAt in edit mode", () => {
-    const result = buildThoughtRecordInput(values, {
-      recordId: "abc",
-      createdAt: "2026-07-10T12:00:00.000Z",
-    });
+  it("does NOT attach the occurrence in edit mode", () => {
+    const result = buildThoughtRecordInput(values, { recordId: "abc", occurrence });
     expect("createdAt" in result).toBe(false);
+    // Omitting the offset on an edit is what stops a record's captured day being
+    // re-stamped to wherever the user happens to be when they reopen it.
+    expect("createdOffsetMinutes" in result).toBe(false);
   });
 
   it("cleans both evidence lists and trims outcome notes", () => {
-    const result = buildThoughtRecordInput(values, { recordId: "abc", createdAt: "x" });
+    const result = buildThoughtRecordInput(values, { recordId: "abc", occurrence });
     expect(result.evidenceFor).toEqual(["keep"]);
     expect(result.evidenceAgainst).toEqual(["against"]);
     expect(result.outcomeNotes).toBe("calmer");
   });
 
   it("passes other fields through unchanged", () => {
-    const result = buildThoughtRecordInput(values, { recordId: "abc", createdAt: "x" });
+    const result = buildThoughtRecordInput(values, { recordId: "abc", occurrence });
     expect(result.situation).toBe("at work");
   });
 });

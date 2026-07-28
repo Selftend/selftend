@@ -99,7 +99,10 @@ export default function WeeklyReviewScreen() {
     const weekStart = weekDates[0];
     const weekEnd = weekDates[6];
     const inRange = activities.filter((a) => {
-      const date = toLocalDateKey(a.scheduledAt ?? a.createdAt);
+      // A scheduled activity uses the captured day it was planned for (#330); an
+      // unscheduled one still falls back to createdAt, an audit stamp with no
+      // occurrence offset to capture.
+      const date = a.scheduledDayKey ?? toLocalDateKey(a.createdAt);
       return date >= weekStart && date <= weekEnd;
     });
     return {

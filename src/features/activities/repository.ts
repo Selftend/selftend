@@ -1,4 +1,5 @@
 import type { ActivityInput, ActivityLog } from "@/src/features/activities/types";
+import { entryDayKey, occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 
@@ -9,7 +10,11 @@ interface ActivityLogRow {
   category: string;
   pace_category: string | null;
   scheduled_at: string | null;
+  // Optional so a response from before the columns existed maps to "uncaptured"
+  // rather than undefined.
+  scheduled_offset_minutes?: number | null;
   completed_at: string | null;
+  completed_offset_minutes?: number | null;
   mood_before: number | null;
   mood_after: number | null;
   notes: string;
@@ -18,6 +23,8 @@ interface ActivityLogRow {
 }
 
 function mapActivity(row: ActivityLogRow): ActivityLog {
+  const scheduledOffsetMinutes = row.scheduled_offset_minutes ?? null;
+  const completedOffsetMinutes = row.completed_offset_minutes ?? null;
   return {
     id: row.id,
     userId: row.user_id,
@@ -25,7 +32,19 @@ function mapActivity(row: ActivityLogRow): ActivityLog {
     category: row.category as ActivityLog["category"],
     paceCategory: row.pace_category as ActivityLog["paceCategory"],
     scheduledAt: row.scheduled_at,
+    scheduledOffsetMinutes,
+    // Both day keys are resolved once, here, so no surface ever converts a
+    // timestamp itself. Null timestamp -> null key: "no plan" and "not done" are
+    // distinct from "on some day", and a caller that treats them as a day would
+    // otherwise silently get today's (#330).
+    scheduledDayKey: row.scheduled_at
+      ? entryDayKey(row.scheduled_at, scheduledOffsetMinutes)
+      : null,
     completedAt: row.completed_at,
+    completedOffsetMinutes,
+    completedDayKey: row.completed_at
+      ? entryDayKey(row.completed_at, completedOffsetMinutes)
+      : null,
     moodBefore: row.mood_before,
     moodAfter: row.mood_after,
     notes: row.notes,
@@ -90,6 +109,9 @@ export async function saveActivity(userId: string, input: ActivityInput, activit
     category: input.category,
     pace_category: input.paceCategory ?? null,
     scheduled_at: input.scheduledAt ?? null,
+    // Sent together, always - including as an explicit null when the schedule is
+    // cleared, so an edited activity never keeps the civil day it used to mean.
+    scheduled_offset_minutes: input.scheduledOffsetMinutes ?? null,
     mood_before: input.moodBefore ?? null,
     notes: input.notes.trim(),
   };
@@ -112,10 +134,15 @@ export async function completeActivity(
   moodAfter: number | null,
 ) {
   const client = requireSupabase();
+  // One reading of the clock, so the instant and the offset describe the same moment.
+  // Deriving them from two `new Date()` calls can straddle a DST change and pair an
+  // instant with an offset that was never in force at it (#330).
+  const occurrence = occurrenceTimeFromDate();
   const { data, error } = await client
     .from("activity_logs")
     .update({
-      completed_at: new Date().toISOString(),
+      completed_at: occurrence.occurredAt,
+      completed_offset_minutes: occurrence.occurredOffsetMinutes,
       mood_after: moodAfter ?? null,
     })
     .eq("user_id", userId)
