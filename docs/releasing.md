@@ -61,6 +61,25 @@ The trade is throughput against blast radius, and the consequences should not be
 
 The neighbouring `releaseStatus` values in `eas.json` are `completed` (live to everyone, the intended end state) and `draft` (uploaded, serving nobody, awaiting a human press). `halted` is the kill switch for a rollout already under way, not a release mode.
 
+### How testers stay ahead (closed tracks)
+
+Two mechanisms, floor and ceiling (#374):
+
+- **Floor — every production release mirrors onto `Groups` + `alpha`** in the same pipeline run, so the testing tracks always hold at least the bits users have. This is permanent, not scaffolding.
+- **Ceiling — dispatch `Android Play closed-testing release (dev)`** (`android-testing-release.yml`) to build `dev` and release it to `Groups` (mirrored onto `alpha`), putting testers **ahead** of production. Manual dispatch, deliberately: a per-merge trigger would burn ~90-minute builds that mostly cancel each other, and a nightly one pays the same on idle days. Dispatch when `dev` holds something worth testers' attention.
+
+versionCode needs no management: every build draws from one remote counter, so a new dev build always outnumbers the newest production release and Play serves testers the dev build immediately.
+
+**The precondition:** testing builds ship with the **production backend** (testers keep their real accounts), and `dev` may carry migrations production has not run. The workflow's preflight lists every unpromoted migration; if the build's client code depends on one of them, promote first and dispatch after the release. Pointing testing builds at staging (severs testers from their accounts — one package id, one backend per device) and a second package id (a second Play app to operate) were considered and rejected at the current tester scale.
+
+### The migration forward-compatibility rule
+
+Stated once, load-bearing twice (release latency and rollback both depend on it):
+
+> **Every migration in a release must keep the previous app version working.** Expand, don't break: add columns/functions alongside what the live client reads, default new RPC parameters so old signatures still resolve, and remove the old shape only in a _later_ release, once no supported client reads it.
+
+Why: the database migrates **first** and unconditionally, Android trails by Google's review latency, and users trail further by auto-update lag — a halted rollout leaves people on the old client _indefinitely_. The old client talking to the new schema is therefore the normal state of the world after every release, not an edge case. (Precedent: `program_widget_task_status` kept its three-argument path callable, with an integration test per leg, while the four-argument replacement shipped.)
+
 ## Hotfixes
 
 For an urgent production fix, branch `hotfix/*` off `main`, use a `fix:` Conventional Commit, and open a **merge-commit** PR straight into `main` through the normal checks. release-please cuts a patch release from it, and the full release pipeline (migrate → deploys) runs. A back-merge returns the fix and the version bump to `dev` after the release.
@@ -73,6 +92,16 @@ On every `release: published`, `back-merge.yml` opens a **`main → dev` sync PR
 
 Two speeds: mitigate first, then make the fix permanent. The database is
 **forward-only** — never roll schema back under a live app.
+
+**0. Detection — what tells you a release is bad:**
+
+- **Sentry** is the alarm: the release-tagged issue alert is live and fires on
+  new crash groups from a fresh release. It is the only signal fast enough to
+  beat a rollout.
+- **Android vitals** (Play Console → Quality) confirm hours-to-days later;
+  store reviews trail further. Neither is a first alert.
+- After every release, watch Sentry until the rollout is bumped to 100% — the
+  bump is the deliberate human act that says "the release looked clean".
 
 **1. Immediate mitigation (minutes):**
 

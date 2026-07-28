@@ -1,0 +1,98 @@
+name: Android Play closed-testing release (dev)
+
+# The dev half of the release topology (#374): build `dev` and release it to
+# the closed testing tracks (Groups, mirrored onto alpha), so the recruited
+# tester group runs AHEAD of production between releases instead of holding the
+# identical bits real users already have.
+#
+# Manual dispatch, deliberately:
+#   - not per-merge: the local EAS build runs ~90 minutes and dev merges many
+#     times a day - most runs would cancel each other under the shared
+#     concurrency group and the rest would burn build time nobody asked for;
+#   - not nightly: an idle day still costs a full build to ship bits nobody is
+#     waiting to test.
+# Dispatch it when dev holds something worth testers' attention.
+#
+# versionCode: every build draws from one remote counter (eas.json
+# appVersionSource: remote), so a new dev build always outnumbers the newest
+# production release and Play immediately serves testers the dev build. Between
+# a production release and the next dispatch, the testing tracks hold the
+# production versionCode (mirrored by android-release.yml) - the same bits
+# users have, never older. Nothing needs to maintain an ordering invariant;
+# the shared counter is the invariant.
+#
+# THE PRECONDITION (why the preflight job exists): testers keep their real
+# accounts, so this build ships with the PRODUCTION backend - and dev may carry
+# migrations production has not run yet. A dev client that depends on an
+# unpromoted migration will misbehave against the production schema, and that
+# failure is a false signal (the promotion carries the migration). The
+# preflight FAILS the run when such migrations exist, listing them - it is a
+# gate, not a warning, because a warning on a fire-and-forget dispatch reaches
+# nobody before the build submits (review finding on #450). After reviewing
+# the list, re-dispatch with the acknowledgement box ticked to assert the
+# client does not depend on them; promote first if it does.
+# Rejected alternatives, recorded so they are not re-derived: pointing testing
+# builds at the staging backend severs testers from their real accounts and
+# data mid-use (one package id = one backend per device), and a second package
+# id is a second Play app to operate. Revisit only if the tester group grows
+# past hand-coordination or promotions become infrequent.
+
+on:
+  workflow_dispatch:
+    inputs:
+      acknowledge_unpromoted_migrations:
+        description: I reviewed the migrations dev carries beyond main; this build's client code depends on none of them
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: List migrations production does not have
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out dev with main
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: Gate on migrations production does not have
+        env:
+          ACKNOWLEDGED: ${{ inputs.acknowledge_unpromoted_migrations }}
+        run: |
+          new_migrations="$(git diff --name-only --diff-filter=A origin/main..HEAD -- supabase/migrations/ || true)"
+          if [ -z "$new_migrations" ]; then
+            echo "No unpromoted migrations - dev's client is schema-compatible with production." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "### dev carries migrations production has not run"
+            echo
+            echo "This testing build ships with the PRODUCTION backend. If the client"
+            echo "code in this build depends on any migration below, promote dev to"
+            echo "main first and dispatch again after the release."
+            echo
+            echo '```'
+            echo "$new_migrations"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$ACKNOWLEDGED" = "true" ]; then
+            echo "Acknowledged at dispatch: the operator asserts the client depends on none of these." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "::error::dev carries migrations production has not run (see the job summary). Review the list; if this build client code depends on none of them, re-dispatch with the acknowledgement input ticked. Otherwise promote dev to main first."
+          exit 1
+
+  release-closed-testing:
+    name: Build dev and release to closed testing
+    needs: preflight
+    uses: ./.github/workflows/android-release.yml
+    with:
+      ref: dev
+      submit_profile: closed
+      environment: production
+    secrets: inherit
