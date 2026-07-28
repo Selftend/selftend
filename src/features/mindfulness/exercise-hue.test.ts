@@ -16,6 +16,7 @@ describe("exercise-hue", () => {
   it("exposes Tailwind classes for aqua", () => {
     expect(exerciseHue("aqua").classes).toEqual({
       text: "text-aqua",
+      ink: "text-aqua-ink",
       chipBg: "bg-aqua/15",
       border: "border-aqua/30",
       fill: "bg-aqua",
@@ -37,6 +38,9 @@ describe("exercise-hue", () => {
     for (const hue of EXERCISE_HUES) {
       const def = exerciseHue(hue);
       expect(def.classes.text).toBe(`text-${hue}`);
+      // Every hue carries its ink twin, so a text consumer never has to reach
+      // for `text` and land under AA (#403).
+      expect(def.classes.ink).toBe(`text-${hue}-ink`);
       expect(def.classes.fill).toBe(`bg-${hue}`);
       expect(def.hsl.light).toMatch(/^\d+, \d+%, \d+%$/);
       expect(def.hsl.dark).toMatch(/^\d+, \d+%, \d+%$/);
