@@ -130,7 +130,27 @@ describe("export_user_data covers the live schema", () => {
 
   const columnWithheld = (table: string, column: string) =>
     rules.columns.some(([t, c]) => t.test(table) && c.test(column));
-  const tableWithheld = (table: string) => rules.tables.some(([t]) => t.test(table));
+
+  /**
+   * A table rule alone is not enough to withhold an encryption base table:
+   * the README's `*_data` entry says "exported through its decrypting view",
+   * and this VERIFIES that claim per table rather than taking the name as
+   * proof (review finding on #449). A `foo_data` is justified only when the
+   * `foo` view exists live, the export reads it, and every base-only column
+   * is `*_enc` ciphertext - so a future user-owned table that merely NAMES
+   * itself `*_data`, or a plaintext field added only to a base table and
+   * never surfaced in its view, both fail loudly instead of being exempt.
+   */
+  const dataTwinJustified = (table: string): boolean => {
+    if (!table.endsWith("_data")) return true;
+    const twin = table.slice(0, -"_data".length);
+    const twinColumns = live.get(twin);
+    if (!twinColumns || !reads.has(twin)) return false;
+    const baseOnly = [...(live.get(table) ?? [])].filter((c) => !twinColumns.has(c));
+    return baseOnly.every((c) => c.endsWith("_enc"));
+  };
+  const tableWithheld = (table: string) =>
+    rules.tables.some(([t]) => t.test(table)) && dataTwinJustified(table);
 
   it("parses a plausible amount of everything (guards the parsers, not the export)", () => {
     // Any of these collapsing to ~zero would make the diffs below vacuously
@@ -173,8 +193,21 @@ describe("export_user_data covers the live schema", () => {
       if (!reads.has(table) && !tableWithheld(table)) uncovered.push(table);
     }
     // A user-owned table the export never touches - the gap class this suite
-    // exists for (breathing_exercises sat in it for months).
+    // exists for (breathing_exercises sat in it for months). A `*_data` name
+    // appears here when its decrypting twin is missing, unread, or leaking
+    // plaintext columns the view never surfaces - see dataTwinJustified.
     expect(uncovered.sort()).toEqual([]);
+  });
+
+  it("verifies every withheld encryption base table against its decrypting twin", () => {
+    // Direct assertion (not only via the uncovered-tables diff) so a broken
+    // twin is named even if some other rule would have caught the table.
+    const dataTables = [...live.keys()].filter(
+      (table) => table.endsWith("_data") && live.get(table)!.has("user_id"),
+    );
+    expect(dataTables.length).toBeGreaterThan(20); // parser guard
+    const unjustified = dataTables.filter((table) => !dataTwinJustified(table));
+    expect(unjustified.sort()).toEqual([]);
   });
 
   it("keeps every withheld entry matching something real (the allowlist cannot rot)", () => {

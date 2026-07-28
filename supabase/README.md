@@ -441,6 +441,6 @@ Column rules (`table.column`, `*` wildcards allowed):
 
 Whole tables (no dot):
 
-| withheld | why                                                                                                                     |
-| -------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `*_data` | Field-encryption base twins - the export reads each one's decrypting view, which carries the same facts in usable form. |
+| withheld | why                                                                                                                                                                                                                                                                                                          |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `*_data` | Field-encryption base twins. Not taken on the name: the completeness suite verifies, per table, that the decrypting view exists, the export reads it, and every base-only column is `*_enc` ciphertext - a table merely named `*_data`, or a plaintext base column the view never surfaces, fails the suite. |
