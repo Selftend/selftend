@@ -1,7 +1,7 @@
 import { stripComments, stripCommentsAndStrings } from "@/test/source-scan";
 
 // The scanner behind the repo-wide static gates (test/accent-ink-call-sites.test.ts,
-// test/accent-ink-coverage.test.ts, test/color-scheme-driver.test.ts). Those
+// test/color-scheme-driver.test.ts). Those
 // suites fail CI on a pattern appearing in source, so a scanner that mis-parses
 // is not a cosmetic problem: it either hides a real finding or invents a fake
 // one. The template-literal cases below are the ones that actually bit (#412).

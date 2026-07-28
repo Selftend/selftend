@@ -122,7 +122,16 @@ const HUES: Record<ExerciseHue, HueDef> = {
   },
   think: {
     classes: {
-      text: "text-think",
+      // `text` is ink, not the accent (#412), the same call widget-tint.ts made
+      // for its own think row. This one is not hypothetical: the 5-4-3-2-1
+      // grounding technique's fourth step carries `hue: "think"`
+      // (src/constants/grounding.ts), and grounding-session.tsx paints the
+      // *step* hue - not the technique's - into HueIconBadge. So the accent
+      // renders as a 48px glyph on a bg-think/14 badge at 1.72:1 in light mode,
+      // under 1.4.11's 3:1. The badge is decorative and aria-hidden, so it is
+      // technically exempt; a mark nobody can make out is still a defect. Ink
+      // reads 4.97 there and is identical to the accent in dark mode.
+      text: "text-think-ink",
       ink: "text-think-ink",
       chipBg: "bg-think/15",
       border: "border-think/30",
