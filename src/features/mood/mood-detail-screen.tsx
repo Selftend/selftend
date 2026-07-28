@@ -21,7 +21,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import { useDeleteMoodLog, useMoodLog, useMoodLogs } from "@/src/features/mood/queries";
 import type { MoodLog } from "@/src/features/mood/types";
-import { formatRelativeTime } from "@/src/utils/relative-time";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -94,7 +94,8 @@ export default function MoodDetailScreen() {
     );
   }
 
-  const when = formatRelativeTime(entry.loggedAt, t);
+  // Same frame as the card that was tapped: the captured day, not the viewer's.
+  const when = formatRelativeDayKey(entry.dayKey, t);
   const trimmedNotes = entry.notes.trim();
 
   return (
