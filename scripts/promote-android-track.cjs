@@ -116,6 +116,31 @@ async function main() {
     )?.name;
     console.log(`Source track "${FROM}" → versionCode ${versionCode}${name ? ` ("${name}")` : ""}`);
 
+    // Cross-profile guard (#450 review): a production run and a dev
+    // closed-testing run hold independent concurrency groups, so the slower
+    // one can arrive here carrying an OLDER versionCode than the target
+    // already serves (production reserved 101, closed testing reserved and
+    // published 102 first). Play would accept the PUT and hand testers a
+    // downgrade. Never overwrite a target holding a same-or-higher code -
+    // skipping is success, the newer release stays.
+    const target = await req(
+      `${API}/${PKG}/edits/${edit.id}/tracks/${encodeURIComponent(TO)}`,
+      token,
+    ).catch(() => ({ releases: [] }));
+    const targetMax = (target.releases || [])
+      .flatMap((r) => r.versionCodes || [])
+      .map(Number)
+      .filter(Boolean)
+      .reduce((a, b) => Math.max(a, b), 0);
+    if (targetMax >= Number(versionCode)) {
+      console.log(
+        `Track "${TO}" already holds versionCode ${targetMax} >= ${versionCode}; ` +
+          `leaving the newer release in place (no downgrade).`,
+      );
+      await req(`${API}/${PKG}/edits/${edit.id}`, token, { method: "DELETE" }).catch(() => {});
+      return;
+    }
+
     const release = { status: "completed", versionCodes: [versionCode], ...(name ? { name } : {}) };
     await req(`${API}/${PKG}/edits/${edit.id}/tracks/${encodeURIComponent(TO)}`, token, {
       method: "PUT",

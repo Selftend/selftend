@@ -147,11 +147,24 @@ describe("dev-driven closed testing feed (#374)", () => {
     expect(testingWorkflow).not.toContain("schedule:");
   });
 
-  it("warns about migrations production has not run", () => {
+  it("gates on migrations production has not run", () => {
     // The precondition that keeps a dev client honest against the production
-    // backend: the preflight diffs supabase/migrations against main and warns.
+    // backend: the preflight diffs supabase/migrations against main and FAILS
+    // unless the dispatch explicitly acknowledged the list - a warning on a
+    // fire-and-forget dispatch reaches nobody before the build submits.
     expect(testingWorkflow).toContain("supabase/migrations");
-    expect(testingWorkflow).toContain("::warning::");
+    expect(testingWorkflow).toContain("acknowledge_unpromoted_migrations");
+    expect(testingWorkflow).toContain("::error::");
+    expect(testingWorkflow).not.toContain("::warning::");
+  });
+
+  it("never downgrades a target track when mirroring", () => {
+    // Independent per-profile concurrency means a slower production run can
+    // mirror an OLDER versionCode over a newer tester release; the promote
+    // script refuses (review finding on #450).
+    const promote = readFileSync(resolve(ROOT, "scripts/promote-android-track.cjs"), "utf8");
+    expect(promote).toContain("targetMax >= Number(versionCode)");
+    expect(promote).toContain("no downgrade");
   });
 
   it("targets the Groups track with a status that serves testers", () => {
