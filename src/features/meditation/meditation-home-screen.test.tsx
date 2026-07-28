@@ -78,6 +78,7 @@ const session = (overrides: Record<string, unknown> = {}) => ({
   // stage badge stay distinguishable by text.
   stageAtSession: 2,
   completedAt: "2026-05-28T10:00:00Z",
+  completedOffsetMinutes: null,
   createdAt: "2026-05-28T10:00:00Z",
   ...overrides,
 });
@@ -236,12 +237,14 @@ describe("MeditationHomeScreen", () => {
   it("derives the subline from the latest session, not the list order", () => {
     setSessions([
       session({ id: "older", completedAt: "2026-05-20T10:00:00Z" }),
-      session({ id: "newest", completedAt: "2026-06-02T10:00:00Z" }),
+      // Captured at UTC-11, where this instant is still June 1 - the subline
+      // must date the sit by the captured frame, not the viewer's (#433 §3).
+      session({ id: "newest", completedAt: "2026-06-02T10:00:00Z", completedOffsetMinutes: -660 }),
     ]);
 
     renderWithProviders(<MeditationHomeScreen />);
 
     const subline = screen.getByText(/^Last · /).props.children as string;
-    expect(subline).toContain(new Date("2026-06-02T10:00:00Z").toLocaleString("en"));
+    expect(subline).toContain("Jun 1, 2026");
   });
 });

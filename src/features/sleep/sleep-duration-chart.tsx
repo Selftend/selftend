@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Text } from "@/src/components/react-native-reusables/text";
 import { qualityTint } from "@/src/features/sleep/quality-tint";
 import type { SleepLog } from "@/src/features/sleep/types";
+import { parseLocalNoon } from "@/src/utils/date";
 
 const MAX_MINUTES = 10 * 60; // bars cap at 10h
 const BAR_AREA = 80;
@@ -36,7 +37,9 @@ export function SleepDurationChart({ nights }: { nights: SleepLog[] }) {
               key: n.id,
               value: n.durationMinutes,
               topLabel: compactHours(n.durationMinutes),
-              label: dateFmt.format(new Date(n.loggedAt)),
+              // The bar IS the night's civil day, so its date comes from dayKey -
+              // formatting the instant dates the bar by the viewer's zone (#433 §2).
+              label: dateFmt.format(parseLocalNoon(n.dayKey)),
               tintClass: qualityTint(n.quality),
             }))}
             max={MAX_MINUTES}

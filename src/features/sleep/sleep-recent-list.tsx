@@ -7,7 +7,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { formatDuration } from "@/src/features/sleep/format";
-import { formatRelativeTime } from "@/src/utils/relative-time";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import type { SleepLog } from "@/src/features/sleep/types";
 
 const COLLAPSED = 8;
@@ -30,7 +30,7 @@ export function SleepRecentList({ logs }: { logs: SleepLog[] }) {
           key={log.id}
           accessibilityRole="button"
           accessibilityLabel={t("recent.viewEntry", {
-            when: formatRelativeTime(log.loggedAt, t),
+            when: formatRelativeDayKey(log.dayKey, t),
           })}
           onPress={() => router.push({ pathname: "/tools/sleep/[id]", params: { id: log.id } })}
           className="flex-row items-center gap-4 rounded-3xl bg-card p-4 shadow-lg shadow-ink/25 active:bg-accent/40"
@@ -40,7 +40,8 @@ export function SleepRecentList({ logs }: { logs: SleepLog[] }) {
             <View className="flex-row items-center justify-between gap-2">
               <Text className="text-base font-semibold">{formatDuration(log.durationMinutes)}</Text>
               <Text variant="muted" className="text-xs">
-                {formatRelativeTime(log.loggedAt, t)}
+                {/* The summary block above groups by dayKey; label in the same frame (#433 §2). */}
+                {formatRelativeDayKey(log.dayKey, t)}
               </Text>
             </View>
             <Text variant="muted" className="text-sm">

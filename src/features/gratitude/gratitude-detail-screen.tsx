@@ -30,7 +30,7 @@ import {
   gratitudeAnswers,
 } from "@/src/features/gratitude/questions";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import { formatRelativeTime } from "@/src/utils/relative-time";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -85,7 +85,8 @@ export default function GratitudeDetailScreen() {
     );
   }
 
-  const when = formatRelativeTime(entry.loggedAt, t);
+  // Same frame as the card in the list: the captured day, not the viewer's.
+  const when = formatRelativeDayKey(entry.dayKey, t);
 
   const todayQuestions = asQuestionList(t(GRATITUDE_TODAY_QUESTIONS_KEY, { returnObjects: true }));
   const lifeQuestions = asQuestionList(t(GRATITUDE_LIFE_QUESTIONS_KEY, { returnObjects: true }));

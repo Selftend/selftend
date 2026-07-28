@@ -17,14 +17,23 @@ function relativeLabel(dayDiff: number, t: TFunction) {
   return t("relativeTime.daysAgo", { ns: "common", count: dayDiff });
 }
 
-export function formatRelativeTime(loggedAt: string, t: TFunction, now: Date = new Date()) {
-  return relativeLabel(calendarDayDiff(new Date(loggedAt), now), t);
+/**
+ * Recency of ACTIVITY — server-set instants (`updatedAt`) that carry no captured
+ * offset, where "how recently did I touch this" is genuinely a question about
+ * the viewer's frame. The name is deliberately not "time": an ENTRY is never
+ * labelled with this. Entries carry a captured civil day; label them with
+ * `formatRelativeDayKey`, or a day-key-grouped list files a card under
+ * YESTERDAY whose own label reads "Today" (#433 §2). The captured-offset
+ * features lint-ban this import; the exemptions name their variable and why.
+ */
+export function formatRelativeActivity(activeAt: string, t: TFunction, now: Date = new Date()) {
+  return relativeLabel(calendarDayDiff(new Date(activeAt), now), t);
 }
 
 /**
  * The same relative label, computed in the CAPTURED day frame.
  *
- * `formatRelativeTime` derives its day from the raw instant in the viewer's
+ * `formatRelativeActivity` derives its day from the raw instant in the viewer's
  * current timezone. Any surface that GROUPS by `dayKey` must label by it too, or
  * the two disagree after travel: a Tokyo entry captured just after midnight sits
  * under London's "Today" heading while its own row reads "Yesterday" (#250).
