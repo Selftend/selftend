@@ -43,6 +43,10 @@ const MOCK_ENTRY = {
   notes: "Felt steadier after a walk",
   linkedStrategy: null,
   loggedAt: new Date("2026-05-10T08:00:00.000Z").toISOString(),
+  // Captured one civil day EARLIER than the instant's viewer-local day, so the
+  // relative-time assertion below can tell the two frames apart (#433 §2).
+  loggedOffsetMinutes: -660,
+  dayKey: "2026-05-09",
   createdAt: new Date("2026-05-10T08:00:00.000Z").toISOString(),
   situation: "",
   thoughts: "",
@@ -92,8 +96,10 @@ describe("MoodDetailScreen", () => {
 
     // Hero strip: "Good · 4" (detailWord.4 + moodScore)
     expect(screen.getByText("Good · 4")).toBeTruthy();
-    // Relative time: 2026-05-10 is 21 days before 2026-05-31
-    expect(screen.getByText("21 days ago")).toBeTruthy();
+    // Relative time follows the CAPTURED day (2026-05-09, 22 days before the
+    // frozen 2026-05-31), not the instant's viewer-local day (2026-05-10, which
+    // would read "21 days ago").
+    expect(screen.getByText("22 days ago")).toBeTruthy();
   });
 
   it("renders Edit and Delete buttons in the hero strip", () => {

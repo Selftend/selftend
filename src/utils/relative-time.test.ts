@@ -2,32 +2,36 @@ import { createInstance } from "i18next";
 
 import enCommon from "@/src/i18n/locales/en/common.json";
 import enSleep from "@/src/i18n/locales/en/sleep.json";
-import { formatRelativeDayKey, formatRelativeTime } from "@/src/utils/relative-time";
+import { formatRelativeActivity, formatRelativeDayKey } from "@/src/utils/relative-time";
 
 // A minimal TFunction stand-in that echoes the key (+ count) so assertions read clearly.
 const t = ((key: string, opts?: { count?: number }) =>
   opts?.count === undefined ? key : `${key}:${opts.count}`) as unknown as Parameters<
-  typeof formatRelativeTime
+  typeof formatRelativeActivity
 >[1];
 
-describe("formatRelativeTime", () => {
+describe("formatRelativeActivity", () => {
   const now = new Date("2026-05-24T12:00:00.000Z");
 
   it("returns today for a log earlier the same local day", () => {
-    expect(formatRelativeTime("2026-05-24T01:00:00.000Z", t, now)).toBe("relativeTime.today");
+    expect(formatRelativeActivity("2026-05-24T01:00:00.000Z", t, now)).toBe("relativeTime.today");
   });
 
   it("treats a future log as today (non-negative day diff)", () => {
-    expect(formatRelativeTime("2026-05-25T01:00:00.000Z", t, now)).toBe("relativeTime.today");
+    expect(formatRelativeActivity("2026-05-25T01:00:00.000Z", t, now)).toBe("relativeTime.today");
   });
 
   it("returns yesterday for exactly one local day earlier", () => {
     // Use midday UTC to avoid local-timezone ambiguity at day boundaries
-    expect(formatRelativeTime("2026-05-23T12:00:00.000Z", t, now)).toBe("relativeTime.yesterday");
+    expect(formatRelativeActivity("2026-05-23T12:00:00.000Z", t, now)).toBe(
+      "relativeTime.yesterday",
+    );
   });
 
   it("returns daysAgo with the day count for older logs", () => {
-    expect(formatRelativeTime("2026-05-20T08:00:00.000Z", t, now)).toBe("relativeTime.daysAgo:4");
+    expect(formatRelativeActivity("2026-05-20T08:00:00.000Z", t, now)).toBe(
+      "relativeTime.daysAgo:4",
+    );
   });
 });
 
@@ -72,16 +76,16 @@ describe("reading the shared keys through a feature-bound t", () => {
   it("resolves common keys from a t bound to the sleep namespace", () => {
     const sleepT = instance.getFixedT("en", "sleep");
 
-    expect(formatRelativeTime("2026-05-24T01:00:00.000Z", sleepT, now)).toBe("Today");
-    expect(formatRelativeTime("2026-05-23T12:00:00.000Z", sleepT, now)).toBe("Yesterday");
-    expect(formatRelativeTime("2026-05-20T08:00:00.000Z", sleepT, now)).toBe("4 days ago");
+    expect(formatRelativeActivity("2026-05-24T01:00:00.000Z", sleepT, now)).toBe("Today");
+    expect(formatRelativeActivity("2026-05-23T12:00:00.000Z", sleepT, now)).toBe("Yesterday");
+    expect(formatRelativeActivity("2026-05-20T08:00:00.000Z", sleepT, now)).toBe("4 days ago");
     expect(formatRelativeDayKey("2026-05-23", sleepT, "2026-05-24")).toBe("Yesterday");
   });
 
   it("pluralises the single-day case", () => {
     const sleepT = instance.getFixedT("en", "sleep");
 
-    expect(formatRelativeTime("2026-05-22T12:00:00.000Z", sleepT, now)).toBe("2 days ago");
+    expect(formatRelativeActivity("2026-05-22T12:00:00.000Z", sleepT, now)).toBe("2 days ago");
     // A count of 1 renders as "Yesterday", never as daysAgo, so assert the _one plural
     // form directly - otherwise it could rot unnoticed in a language where it is reachable.
     expect(sleepT("relativeTime.daysAgo", { ns: "common", count: 1 })).toBe("1 day ago");

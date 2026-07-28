@@ -12,7 +12,7 @@ import { EmptyState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { formatRelativeTime } from "@/src/utils/relative-time";
+import { formatRelativeActivity } from "@/src/utils/relative-time";
 import { countWords } from "@/src/features/journal/word-count";
 import { JournalCard } from "@/src/features/journal/journal-card";
 import { JournalDayCard } from "@/src/features/journal/journal-day-card";
@@ -62,7 +62,10 @@ export default function JournalListScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entries],
   );
-  const lastWhen = lastActivityAt ? formatRelativeTime(lastActivityAt, t) : null;
+  // Activity recency, not an entry label: updatedAt is server-set and carries no
+  // captured offset, so the viewer's frame is the only frame it has. Entries
+  // themselves label from dayKey (journal-card).
+  const lastWhen = lastActivityAt ? formatRelativeActivity(lastActivityAt, t) : null;
   // `entries` is undefined while loading and after a failed fetch with no
   // cache - only an actually-loaded (possibly empty) history may claim
   // "never", or a returning user's history reads as erased.

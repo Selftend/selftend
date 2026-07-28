@@ -69,7 +69,11 @@ function mapGratitudeEntry(row: GratitudeEntryRow): GratitudeEntry {
       [row.item_1, row.item_2, row.item_3, row.item_4 ?? "", row.item_5 ?? ""],
       GRATITUDE_ITEM_COUNT,
     ),
-    note: row.note,
+    // `note_enc` went nullable with encryption and the view accepts an insert
+    // that omits it. The app never writes one, but a hand-rolled PostgREST
+    // insert can, and a null here took both gratitude screens down to the error
+    // boundary (#433 §4) - so the read path refuses to carry the null forward.
+    note: row.note ?? "",
     loggedAt: row.logged_at,
     loggedOffsetMinutes,
     dayKey: entryDayKey(row.logged_at, loggedOffsetMinutes),
