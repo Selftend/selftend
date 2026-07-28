@@ -24,6 +24,107 @@ const MODULE_ROOM_RESTRICTION = {
     "Use useRoomStyle(hue) / useRoomCardHsl(hue) from @/src/lib/use-room-style - they carry the scheme read and the cached style identity.",
 };
 
+// The features whose entries carry a captured civil day (`dayKey`) and, for
+// timestamps, a captured offset (#250, #330). Every route from one of these to
+// the VIEWER's day is guarded - the import-layer and syntax-layer halves below.
+// The breathing SCREEN lives under app/, which is how its viewer-local
+// timestamps escaped a feature-dir-only guard until #433.
+const CAPTURED_FRAME_FILES = [
+  "src/features/mood/**/*.{ts,tsx}",
+  "src/features/gratitude/**/*.{ts,tsx}",
+  "src/features/sleep/**/*.{ts,tsx}",
+  "src/features/journal/**/*.{ts,tsx}",
+  "src/features/meditation/**/*.{ts,tsx}",
+  "src/features/breathing/**/*.{ts,tsx}",
+  "src/features/grounding/**/*.{ts,tsx}",
+  "src/features/activities/**/*.{ts,tsx}",
+  "src/features/cbt/**/*.{ts,tsx}",
+  "app/(app)/tools/breathing/**/*.{ts,tsx}",
+];
+
+// Import-layer half of the captured-frame guard. `allow` names an import a
+// specific file keeps ON PURPOSE - each exemption block below states its
+// reason, because the exemption is the documentation.
+function capturedFrameImportPaths(allow = []) {
+  const dayNames = ["toLocalDateKey", "localDateKey", "calendarDayDiff"].filter(
+    (n) => !allow.includes(n),
+  );
+  const clockNames = ["formatTimestamp", "formatLocalTimestamp"].filter((n) => !allow.includes(n));
+  const activityNames = ["formatRelativeActivity"].filter((n) => !allow.includes(n));
+  return [
+    MODULE_ROOM_RESTRICTION,
+    ...(dayNames.length
+      ? ["@/src/utils/date", "@/src/stores/selected-date-store"].map((name) => ({
+          name,
+          importNames: dayNames,
+          message:
+            "Group by the entry's `dayKey` (the civil day captured at logging time) instead. Bucketing by the viewer's local day moves entries after travel - see #250 and #330.",
+        }))
+      : []),
+    ...(clockNames.length
+      ? [
+          {
+            name: "@/src/utils/date",
+            importNames: clockNames,
+            message:
+              "Render an occurrence timestamp with formatAtOffset(value, offsetMinutes) so it reads in the frame it was captured in (#433 §3). Server-set updatedAt labels are the one sanctioned viewer-local use - exempt the file below the guard block and say why.",
+          },
+        ]
+      : []),
+    ...(activityNames.length
+      ? [
+          {
+            name: "@/src/utils/relative-time",
+            importNames: activityNames,
+            message:
+              "An entry is never labelled by activity recency: label from its captured dayKey with formatRelativeDayKey, or a day-key-grouped list files a card under YESTERDAY whose own label reads 'Today' (#433 §2). formatRelativeActivity is only for server-set instants that HAVE no captured frame - exempt the file and say why.",
+          },
+        ]
+      : []),
+  ];
+}
+
+// Shared by every no-restricted-syntax block: the rule is last-wins per file,
+// so a captured-frame block that omitted this selector would quietly
+// un-restrict accessibilityState for the files it matches.
+const ACCESSIBILITY_STATE_RESTRICTION = {
+  selector: "JSXAttribute[name.name='accessibilityState']",
+  message:
+    "accessibilityState is dropped by react-native-web; use the equivalent aria-* prop (aria-checked/aria-selected/aria-expanded/aria-disabled/aria-busy) instead.",
+};
+
+// Syntax-layer half of the captured-frame guard. Selector-based because two of
+// the viewer-day routes never appear in an import: formatDate/formatDateTime
+// arrive destructured from the useLocaleFormats() hook, and a raw Intl
+// formatter (or toLocale*) applied to `new Date(instant)` imports nothing.
+// #433 §2 found exactly this blind spot - a day-key-grouped surface labelling
+// viewer-locally with every gate green.
+function capturedFrameSyntaxRestrictions(allow = []) {
+  return [
+    {
+      key: "localeFormats",
+      selector: "CallExpression[callee.name=/^(formatDate|formatDateTime)$/]",
+      message:
+        "In a captured-offset feature, render an occurrence timestamp with formatAtOffset(value, offsetMinutes) so it reads in the frame it was captured in (#433 §3). Server-set updatedAt labels are the one sanctioned use - exempt the file below the guard block and say why.",
+    },
+    {
+      key: "intlOnInstant",
+      selector: "CallExpression[callee.property.name='format'] > NewExpression[callee.name='Date']",
+      message:
+        "Formatting `new Date(instant)` dates the value by the viewer's zone. Date a civil day via parseLocalNoon(dayKey), or render a timestamp with formatAtOffset (#433 §2).",
+    },
+    {
+      key: "toLocaleOnInstant",
+      selector:
+        "CallExpression[callee.property.name=/^toLocale(Date|Time)?String$/][callee.object.type='NewExpression']",
+      message:
+        "`new Date(instant).toLocale*String()` dates the value by the viewer's zone. Date a civil day via parseLocalNoon(dayKey), or render a timestamp with formatAtOffset (#433 §2).",
+    },
+  ]
+    .filter((r) => !allow.includes(r.key))
+    .map(({ selector, message }) => ({ selector, message }));
+}
+
 module.exports = [
   ...expoConfig,
   {
@@ -116,33 +217,35 @@ module.exports = [
     // (#330 owner decision). Habits are already correct by a different route:
     // `habit_logs.logged_on` stores the resolved civil date, so no timestamp is
     // ever converted.
-    files: [
-      "src/features/mood/**/*.{ts,tsx}",
-      "src/features/gratitude/**/*.{ts,tsx}",
-      "src/features/sleep/**/*.{ts,tsx}",
-      "src/features/journal/**/*.{ts,tsx}",
-      "src/features/meditation/**/*.{ts,tsx}",
-      "src/features/breathing/**/*.{ts,tsx}",
-      "src/features/grounding/**/*.{ts,tsx}",
-      "src/features/activities/**/*.{ts,tsx}",
-      "src/features/cbt/**/*.{ts,tsx}",
-    ],
+    files: CAPTURED_FRAME_FILES,
     ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-imports": ["error", { paths: capturedFrameImportPaths() }],
+    },
+  },
+  {
+    // journal's hero subline is recency of ACTIVITY - server-set updatedAt,
+    // chosen over created_at because created_at is user-backdatable - and an
+    // update carries no captured offset, so the viewer's frame is the only
+    // frame it has. Entries themselves label from dayKey (journal-card).
+    files: ["src/features/journal/journal-list-screen.tsx"],
     rules: {
       "no-restricted-imports": [
         "error",
-        {
-          paths: [
-            MODULE_ROOM_RESTRICTION,
-            ...["@/src/utils/date", "@/src/stores/selected-date-store"].map((name) => ({
-              name,
-              importNames: ["toLocalDateKey", "localDateKey"],
-              message:
-                "Group by the entry's `dayKey` (the civil day captured at logging time) instead. Bucketing by the viewer's local day moves entries after travel - see #250 and #330.",
-            })),
-          ],
-        },
+        { paths: capturedFrameImportPaths(["formatRelativeActivity"]) },
       ],
+    },
+  },
+  {
+    // Both sites render a record's server-set updatedAt ("last edited"), which
+    // has no captured offset. A thought record's OCCURRENCE day is its
+    // created_offset_minutes, and that is not what these labels show.
+    files: [
+      "src/features/cbt/cbt-history-screen.tsx",
+      "src/features/cbt/thought-record-detail-screen.tsx",
+    ],
+    rules: {
+      "no-restricted-imports": ["error", { paths: capturedFrameImportPaths(["formatTimestamp"]) }],
     },
   },
   {
@@ -155,13 +258,36 @@ module.exports = [
     files: ["**/*.tsx"],
     ignores: ["src/components/react-native-reusables/**"],
     rules: {
+      "no-restricted-syntax": ["error", ACCESSIBILITY_STATE_RESTRICTION],
+    },
+  },
+  {
+    // Syntax-layer captured-frame guard (see capturedFrameSyntaxRestrictions).
+    // Sits AFTER the accessibilityState block: no-restricted-syntax is also
+    // last-wins per file, so this block re-states that selector too.
+    files: CAPTURED_FRAME_FILES,
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
       "no-restricted-syntax": [
         "error",
-        {
-          selector: "JSXAttribute[name.name='accessibilityState']",
-          message:
-            "accessibilityState is dropped by react-native-web; use the equivalent aria-* prop (aria-checked/aria-selected/aria-expanded/aria-disabled/aria-busy) instead.",
-        },
+        ACCESSIBILITY_STATE_RESTRICTION,
+        ...capturedFrameSyntaxRestrictions(),
+      ],
+    },
+  },
+  {
+    // meditation daily-life notes are edited documents, not occurrences: their
+    // only displayed timestamp is server-set updatedAt, which carries no
+    // captured offset, so the viewer's frame is the only frame it has.
+    files: [
+      "src/features/meditation/meditation-daily-life-screen.tsx",
+      "src/features/meditation/meditation-daily-life-card.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ACCESSIBILITY_STATE_RESTRICTION,
+        ...capturedFrameSyntaxRestrictions(["localeFormats"]),
       ],
     },
   },
