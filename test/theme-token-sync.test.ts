@@ -3,7 +3,14 @@ import { join } from "node:path";
 
 import { CARD_COLOR, POPOVER_COLOR, THEME } from "@/lib/theme";
 import { exerciseHue, EXERCISE_HUES } from "@/src/features/mindfulness/exercise-hue";
-import { HUE_NAMES, HUE_TRIPLES, PRIMARY_TRIPLES } from "@/src/lib/design-tokens";
+import {
+  HUE_INK_LIGHTNESS,
+  HUE_INK_TRIPLES,
+  HUE_NAMES,
+  HUE_TRIPLES,
+  PRIMARY_TRIPLES,
+} from "@/src/lib/design-tokens";
+import { roomTriples } from "@/src/lib/module-room";
 import { PALETTE, TINTS, type TintName } from "@/src/features/widgets/palette";
 
 // global.css is the single source of truth for the surface tokens, and
@@ -206,6 +213,54 @@ describe("the room-less accent ink fallback", () => {
       4.5,
     );
     expect(contrastRatio(ink, hslTripleToRgb(css[scheme]["--card"]))).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+// The room-less half of the accent-ink problem (#403). #368 certified accent
+// ink on the surfaces a *room* pours and left the neutral app surface alone —
+// on the assumption, written into test/room-contrast.test.ts, that "the
+// published accent is tuned for the neutral app surface". It is not: `think` is
+// 1.88:1 on `--background`, `iris` 3.42, `clay` 3.51 and `act` 3.64, within 0.05
+// of their in-room numbers. Most `text-<hue>` sites are room-less (only eight
+// modules wear a room), and `text-accent-ink` cannot serve them — outside a room
+// it resolves to `--primary`, so it would change the colour, not the contrast.
+// `text-<hue>-ink` is the token for those sites, and this suite is its floor.
+describe("hue ink meets WCAG AA on the neutral app surface", () => {
+  it.each(HUE_NAMES)("--%s-ink mirrors HUE_INK_TRIPLES in both schemes", (hue) => {
+    expect({ light: css.light[`--${hue}-ink`], dark: css.dark[`--${hue}-ink`] }).toEqual(
+      HUE_INK_TRIPLES[hue],
+    );
+  });
+
+  it.each(HUE_NAMES)("%s ink passes on the app background and card", (hue) => {
+    for (const scheme of ["light", "dark"] as const) {
+      const ink = hslTripleToRgb(css[scheme][`--${hue}-ink`]);
+
+      expect(
+        contrastRatio(ink, hslTripleToRgb(css[scheme]["--background"])),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(ink, hslTripleToRgb(css[scheme]["--card"]))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  // As in test/room-contrast.test.ts: a floor alone can be met by throwing the
+  // colour away — near-black ink clears 4.5 against anything and reads as no hue
+  // at all. These pin the shape the floor is meant to be met *with*.
+  it.each(HUE_NAMES)("%s light ink is the published accent, darkened", (hue) => {
+    const [degree, saturation] = HUE_TRIPLES[hue].light.split(" ");
+
+    expect(HUE_INK_TRIPLES[hue].light).toBe(`${degree} ${saturation} ${HUE_INK_LIGHTNESS}%`);
+  });
+
+  it.each(HUE_NAMES)("%s dark ink is the published accent untouched", (hue) => {
+    expect(HUE_INK_TRIPLES[hue].dark).toBe(HUE_TRIPLES[hue].dark);
+  });
+
+  // The room pour and the room-less token are the same colour by construction
+  // (both read HUE_INK_TRIPLES), not by two recipes that happen to agree today.
+  it.each(HUE_NAMES)("%s ink is the value its room pours as --accent-ink", (hue) => {
+    expect(roomTriples(hue).light["accent-ink"]).toBe(HUE_INK_TRIPLES[hue].light);
+    expect(roomTriples(hue).dark["accent-ink"]).toBe(HUE_INK_TRIPLES[hue].dark);
   });
 });
 

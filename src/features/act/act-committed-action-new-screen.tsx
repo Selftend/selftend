@@ -166,7 +166,7 @@ export default function ActCommittedActionNewScreen() {
                     )}
                     {...domainRoving.getItemProps(index, () => setLifeDomain(domain))}
                   >
-                    <Text className={cn("font-semibold", selected && "text-act")}>
+                    <Text className={cn("font-semibold", selected && "text-act-ink")}>
                       {t(`act:values.${domain}`)}
                     </Text>
                   </Pressable>

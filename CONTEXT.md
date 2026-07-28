@@ -67,7 +67,15 @@ _Avoid_: modal, bottom sheet (the interaction pattern is unrelated)
 A borderless card lifted from the sheet by a hue-tinted shadow instead of a border. Opt-in per screen; the bordered card stays the default elsewhere.
 
 **Accent ink**:
-A module hue used as _text_ rather than as a surface or a swatch. A hue's published accent (`--think`, `text-think`) is tuned to sit on the neutral app surface; on the pale tint of itself a room pours it is not legible (`think` was 1.90:1 against its own room). So a room re-pours `accent-ink`: the same hue and saturation, darkened until it clears WCAG AA on the room's `background` and `card`. Small text in a hue uses `text-accent-ink`; `text-<hue>` remains correct for icons, large numerals, and anything decorative.
+A module hue used as _text_ rather than as a surface or a swatch. A hue's published accent (`--think`, `text-think`) is tuned as a _colour_ — it paints fills, borders, chips and gradients — and four of the eight carry too much luminance to hold small text in light mode, on any pale surface: `think` is 1.90:1 on its own room's background and 1.88:1 on the neutral app background, with `iris`, `clay` and `act` also under AA on both. So a hue gets a second, darkened value for text: the same hue and saturation at lightness 28%, certified against the surfaces it lands on. Which class carries it depends on where the text stands:
+
+| context                                          | class                                    |
+| ------------------------------------------------ | ---------------------------------------- |
+| Small text in a hue, inside that hue's room      | `text-accent-ink` (the room re-pours it) |
+| Small text in a hue, on the neutral app surface  | `text-<hue>-ink`                         |
+| Icons, large numerals, decorative marks, borders | `text-<hue>` (unchanged)                 |
+
+Both classes resolve to the same colour inside a room — one source, `HUE_INK_TRIPLES`. The distinction matters because `accent-ink` is room-poured: outside a room it falls back to `--primary`, so using it on a room-less screen changes the hue rather than the contrast.
 _Avoid_: accent-foreground (that is ink on the `accent` _surface_, a different pairing).
 
 **Guest hue**:

@@ -36,6 +36,19 @@
     --iris: 280 48% 60%;
     --ink: 232 46% 54%;
     --clay: 20 52% 50%;
+    /* Each hue as small-text ink on the neutral app surface (#403) — the
+       accent's own degree and saturation at lightness 28%. `--accent-ink`
+       above is the room-poured counterpart; both come from HUE_INK_TRIPLES in
+       src/lib/design-tokens.ts, mirrored here because NativeWind needs the CSS
+       at build time. Kept in sync and above AA by test/theme-token-sync.test.ts. */
+    --think-ink: 43 74% 28%;
+    --act-ink: 160 46% 28%;
+    --be-ink: 330 56% 28%;
+    --aqua-ink: 196 52% 28%;
+    --mist-ink: 178 40% 28%;
+    --iris-ink: 280 48% 28%;
+    --ink-ink: 232 46% 28%;
+    --clay-ink: 20 52% 28%;
   }
 
   .dark {
@@ -67,6 +80,17 @@
     --iris: 280 58% 74%;
     --ink: 232 56% 72%;
     --clay: 20 60% 66%;
+    /* Dark ink is the published accent untouched — it already clears 5.81:1 at
+       worst on the dark surfaces, so darkening would buy nothing. Equal to the
+       accents above by test/theme-token-sync.test.ts. */
+    --think-ink: 43 86% 65%;
+    --act-ink: 160 56% 55%;
+    --be-ink: 330 62% 72%;
+    --aqua-ink: 196 58% 62%;
+    --mist-ink: 178 48% 58%;
+    --iris-ink: 280 58% 74%;
+    --ink-ink: 232 56% 72%;
+    --clay-ink: 20 60% 66%;
   }
 }
 
