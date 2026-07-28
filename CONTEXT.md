@@ -76,6 +76,8 @@ A module hue used as _text_ rather than as a surface or a swatch. A hue's publis
 | Icons, large numerals, decorative marks, borders | `text-<hue>` (unchanged)                 |
 
 Both classes resolve to the same colour inside a room — one source, `HUE_INK_TRIPLES`. The distinction matters because `accent-ink` is room-poured: outside a room it falls back to `--primary`, so using it on a room-less screen changes the hue rather than the contrast.
+
+A module's directory name does not tell you its room: `src/features/act/` is room-less (the `act` room is worn by `src/features/habits/`), so `text-accent-ink` there would render violet. `test/accent-ink-call-sites.test.ts` enforces both halves of the rule for that module — the third row's exemptions are enumerated with a reason each, and room ink is banned outright. Other directories are not yet covered; add one only after classifying its sites.
 _Avoid_: accent-foreground (that is ink on the `accent` _surface_, a different pairing).
 
 **Guest hue**:
