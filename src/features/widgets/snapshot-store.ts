@@ -13,7 +13,11 @@ import type { Snapshot } from "@/src/features/widgets/snapshot-types";
 // Storing only derived/aggregate display data (plus short titles) is intentional so no sensitive
 // user content is exposed at the OS storage layer or in Android widget rendering.
 export const SNAPSHOT_KEY = "selftend.widgets.snapshot.v1";
-const SCHEMA_VERSION = 2;
+// v3: the `habits-today` payload's discriminant changed from "habits" to
+// "activities" (#330). A stale v2 snapshot would still parse but no card would match
+// its kind, so the widget would render blank until the next sync - bumping discards it
+// outright instead, which is what this version exists for.
+const SCHEMA_VERSION = 3;
 
 export async function writeSnapshot(snapshot: Snapshot): Promise<void> {
   await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot));

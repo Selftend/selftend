@@ -11,6 +11,12 @@
   "or": "or",
   "orContinueWithEmail": "or continue with email",
   "never": "never",
+  "relativeTime": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago"
+  },
   "draft": {
     "discardAction": "Discard draft",
     "discardTitle": "Discard this draft?",

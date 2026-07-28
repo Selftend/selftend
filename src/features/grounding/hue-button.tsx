@@ -1,10 +1,10 @@
 import { ActivityIndicator, Pressable } from "react-native";
-import { useColorScheme } from "nativewind";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 // Hues bright enough in light mode that white text fails contrast — use dark text.
 // In dark mode every hue is pastel, so dark text is always used.
@@ -29,8 +29,7 @@ interface HueButtonProps {
 
 // Solid hue-filled primary CTA with theme-aware foreground for accessible contrast.
 export function HueButton({ hue, label, onPress, icon, disabled, loading }: HueButtonProps) {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = useColorSchemeName() === "dark";
   const fg = foreground(hue, isDark);
   const blocked = Boolean(disabled || loading);
   return (

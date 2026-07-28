@@ -1,9 +1,9 @@
 import { View } from "react-native";
-import { useColorScheme } from "nativewind";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { exerciseHue, hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 import { cn } from "@/lib/utils";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 interface HueIconBadgeProps {
   icon: MaterialIconName;
@@ -32,8 +32,7 @@ export function iconSizeClass(iconSize: number): string {
 // home card (square 50/24), intro hero (square 64/32), session center (circle 108/48),
 // done (circle 96/46).
 export function HueIconBadge({ icon, hue, size, iconSize, shape = "square" }: HueIconBadgeProps) {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = useColorSchemeName() === "dark";
   return (
     <View
       style={{

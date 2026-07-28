@@ -9,6 +9,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { cn } from "@/lib/utils";
 import { STAGES } from "@/src/features/meditation/stages";
 import { useMeditationProgramState } from "@/src/features/meditation/queries";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 
 const PHASE_HEADERS: {
@@ -30,12 +31,17 @@ const MILESTONE_AFTER: Record<number, string> = {
 
 export default function MeditationStagesScreen() {
   const { t } = useTranslation("meditation");
+  const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
   const { data: programState } = useMeditationProgramState(user?.id ?? null);
   const currentStage = programState?.currentStage ?? 1;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
@@ -93,8 +99,15 @@ export default function MeditationStagesScreen() {
                           </Text>
                         </View>
                         {s.number === currentStage ? (
-                          <View className="rounded-full bg-primary/15 px-2 py-0.5">
-                            <Text className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                          // Decorative "you are here" marker, so it takes the
+                          // room hue - the same tinted-chip shape (hue ink on a
+                          // faint hue wash) home's stage badge already wears.
+                          // The filled circle and the row border above stay on
+                          // `primary`: they are the selected-row control state,
+                          // and a solid iris fill has no certified ink pairing
+                          // (white on it is 3.8:1, under AA).
+                          <View className="rounded-full bg-iris/15 px-2 py-0.5">
+                            <Text className="text-[10px] font-semibold uppercase tracking-wider text-accent-ink">
                               {t("module.stages.currentStageBadge")}
                             </Text>
                           </View>
@@ -104,7 +117,15 @@ export default function MeditationStagesScreen() {
                   </Pressable>
                   {milestoneKey ? (
                     <View className="rounded-md border border-dashed border-be/40 bg-be/5 p-3">
-                      <Text className="text-xs font-semibold text-be">{t(milestoneKey)}</Text>
+                      {/*
+                        Hue-keyed ink, not the accent and not `text-accent-ink`
+                        (#412): `be` is a guest hue in the iris room, so the
+                        room's accent ink would repaint this milestone iris.
+                        The published accent reads 4.41:1 as 12px text on
+                        `bg-be/5` over the iris room background - be clears AA
+                        on a plain surface, not through a tint of itself.
+                      */}
+                      <Text className="text-xs font-semibold text-be-ink">{t(milestoneKey)}</Text>
                     </View>
                   ) : null}
                 </View>

@@ -59,6 +59,7 @@ describe("deriveCbtProgram", () => {
         moodLogs: fourDays.map((d, i) => ({
           id: `m${i}`,
           loggedAt: `${d}T08:00:00Z`,
+          dayKey: d,
           situation: "x",
           thoughts: "",
           behaviours: "",
@@ -162,6 +163,7 @@ describe("deriveCbtProgram", () => {
           {
             id: "m1",
             loggedAt: `${selected}T10:00:00Z`,
+            dayKey: selected,
             situation: "Work stress",
             thoughts: "",
             behaviours: "",
@@ -181,6 +183,7 @@ describe("deriveCbtProgram", () => {
           {
             id: "m2",
             loggedAt: "2026-05-08T10:00:00Z",
+            dayKey: "2026-05-08",
             situation: "Work stress",
             thoughts: "",
             behaviours: "",

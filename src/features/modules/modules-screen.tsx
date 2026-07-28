@@ -21,6 +21,14 @@ interface ModuleTile {
   footerKey: "inDesign" | "onRoadmap" | null;
   containerClass: string;
   markClass: string;
+  /**
+   * Fill + text colour for the "soon" pill, which only renders when `badgeKey`
+   * is set. Carry the ink token rather than the published accent (#412): the
+   * pill is 10px text on a `bg-<hue>/15` tint of its own hue, where the accent
+   * reads 3.31:1. Two tiles below set this while leaving `badgeKey` null, so
+   * the colour is inert today - which is exactly why it has to be right before
+   * someone flips the badge on.
+   */
   badgeClass: string;
 }
 
@@ -35,7 +43,7 @@ const MODULES: ModuleTile[] = [
     footerKey: null,
     containerClass: "border-primary/30",
     markClass: "bg-primary/15 border-primary/30",
-    badgeClass: "bg-act/15 text-act",
+    badgeClass: "bg-act/15 text-act-ink",
   },
   {
     key: "act",
@@ -47,7 +55,7 @@ const MODULES: ModuleTile[] = [
     footerKey: null,
     containerClass: "border-act/30",
     markClass: "bg-act/15 border-act/30",
-    badgeClass: "bg-act/15 text-act",
+    badgeClass: "bg-act/15 text-act-ink",
   },
   {
     key: "dbt",
@@ -63,10 +71,18 @@ const MODULES: ModuleTile[] = [
   },
 ];
 
+// The abbreviation inside the mark is `text-sm font-bold` — 14px, under WCAG's
+// 18.66px bold large-text threshold — so it needs the small-text floor on the
+// `bg-<hue>/15` mark it sits in. This screen pours no room, so the room-less
+// `text-<hue>-ink` is the token that keeps each module its own colour (#403).
 const MARK_TEXT_CLASS: Record<ModuleKey, string> = {
-  cbt: "text-primary",
-  act: "text-act",
-  dbt: "text-be",
+  // `cbt` was the one entry still on a raw accent, and only because `primary`
+  // had no ink to move to (#421 §3): "CBT" at 14px/700 on its `bg-primary/15`
+  // mark over `bg-card` reads 4.41:1, the same figure as the sidebar's Beta
+  // chip. It now takes `text-primary-ink` like the two hues beside it.
+  cbt: "text-primary-ink",
+  act: "text-act-ink",
+  dbt: "text-be-ink",
 };
 
 export default function ModulesScreen() {

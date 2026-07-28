@@ -6,6 +6,15 @@ import { useThemeStore } from "@/src/stores/theme-store";
 
 type ResolvedColorScheme = "light" | "dark";
 
+// Exactly one driver may be mounted at a time. A second one re-runs the hydrate
+// and the NativeWind push against the same store, which is how the previous
+// thirteen-site drift made a fresh theme choice flaky (#304, #343).
+//
+// test/color-scheme-driver.test.ts is the build-time guard - it fails CI if
+// anything but app/_layout.tsx imports the driver. This counter is the runtime
+// one, so a contributor sees it on a branch they have not pushed yet.
+let mountedDrivers = 0;
+
 /**
  * The house reader: "what colour scheme are we in?"
  *
@@ -36,6 +45,22 @@ export function useColorSchemeDriver(): void {
   const hydrate = useThemeStore((s) => s.hydrate);
   // Through the reader, so the resolution rule lives in exactly one place.
   const resolved = useColorSchemeName();
+
+  // Counts mounts, not renders, and decrements on unmount - so remounting the
+  // single root driver never accumulates, while two concurrent drivers do.
+  useEffect(() => {
+    mountedDrivers += 1;
+    if (__DEV__ && mountedDrivers > 1) {
+      console.warn(
+        `useColorSchemeDriver is mounted ${mountedDrivers} times. It must be called exactly ` +
+          "once, at the app root (app/_layout.tsx). Extra drivers re-run hydrate and can " +
+          "clobber a fresh theme choice - read the scheme with useColorSchemeName instead.",
+      );
+    }
+    return () => {
+      mountedDrivers -= 1;
+    };
+  }, []);
 
   useEffect(() => {
     // Swallow storage-read failures so a rejected hydrate isn't an unhandled rejection.

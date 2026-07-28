@@ -1,7 +1,7 @@
 import { TextClassContext } from "@/src/components/react-native-reusables/text";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { cn } from "@/lib/utils";
-import type { TintToken } from "@/src/lib/design-tokens";
+import { TINT_ACCENT, type TintToken } from "@/src/lib/design-tokens";
 import { Slot } from "@rn-primitives/slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Platform, View } from "react-native";
@@ -85,15 +85,15 @@ const badgeTextVariants = cva("text-xs font-medium", {
     },
   },
   compoundVariants: [
-    { variant: "tint", tint: "primary", className: "text-primary" },
-    { variant: "tint", tint: "act", className: "text-[hsl(var(--act))]" },
-    { variant: "tint", tint: "be", className: "text-[hsl(var(--be))]" },
-    { variant: "tint", tint: "think", className: "text-[hsl(var(--think))]" },
-    { variant: "tint", tint: "aqua", className: "text-[hsl(var(--aqua))]" },
-    { variant: "tint", tint: "iris", className: "text-[hsl(var(--iris))]" },
-    { variant: "tint", tint: "ink", className: "text-[hsl(var(--ink))]" },
-    { variant: "tint", tint: "clay", className: "text-[hsl(var(--clay))]" },
-    { variant: "tint", tint: "mist", className: "text-[hsl(var(--mist))]" },
+    { variant: "tint", tint: "primary", className: "text-primary-ink" },
+    { variant: "tint", tint: "act", className: "text-act-ink" },
+    { variant: "tint", tint: "be", className: "text-be-ink" },
+    { variant: "tint", tint: "think", className: "text-think-ink" },
+    { variant: "tint", tint: "aqua", className: "text-aqua-ink" },
+    { variant: "tint", tint: "iris", className: "text-iris-ink" },
+    { variant: "tint", tint: "ink", className: "text-ink-ink" },
+    { variant: "tint", tint: "clay", className: "text-clay-ink" },
+    { variant: "tint", tint: "mist", className: "text-mist-ink" },
   ],
   defaultVariants: {
     variant: "default",
@@ -112,7 +112,13 @@ function Badge({ className, variant, tint, icon, asChild, children, ...props }: 
   return (
     <TextClassContext.Provider value={badgeTextVariants({ variant, tint })}>
       <Component className={cn(badgeVariants({ variant, tint }), className)} {...props}>
-        {icon ? <Icon name={icon} size={14} /> : null}
+        {/* The provider above carries the label's INK, and `Icon` reads the same
+            TextClassContext - so without this the glyph is darkened too, which
+            is the "enabled icon reading as disabled" that the text/mark split
+            exists to avoid. Marks keep the published accent (#421). */}
+        {icon ? (
+          <Icon name={icon} size={14} className={tint ? TINT_ACCENT[tint] : undefined} />
+        ) : null}
         {children}
       </Component>
     </TextClassContext.Provider>

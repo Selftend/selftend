@@ -10,7 +10,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { firstAnswer } from "@/src/features/gratitude/questions";
 import { useFavoriteGratitudeEntries } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { formatRelativeTime } from "@/src/utils/relative-time";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
@@ -56,7 +56,7 @@ export default function GratitudeFavoritesScreen() {
 
 function FavoriteEntryRow({ entry }: { entry: GratitudeEntry }) {
   const { t } = useTranslation("gratitude");
-  const when = formatMoodRelativeTime(entry.loggedAt, t);
+  const when = formatRelativeTime(entry.loggedAt, t);
   const firstItem = firstAnswer(entry.items) ?? t("list.fallbackItem");
 
   return (

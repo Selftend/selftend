@@ -4,10 +4,12 @@ import {
   getMeditationSession,
   listMeditationSessions,
   listStagePracticeNotes,
+  medianMeditationMinutes,
   saveMeditationSession,
   saveStagePracticeNote,
   upsertMeditationProgramState,
 } from "@/src/features/meditation/repository";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
@@ -22,7 +24,182 @@ function buildClient(builders: Record<string, unknown>) {
   >;
 }
 
+// The runner's timezone is pinned to Asia/Kolkata (+05:30) in jest.config.js, so a
+// captured offset of +09:00 or -08:00 genuinely disagrees with the viewer's day.
+const VIEWER_OFFSET_MINUTES = 330;
+const TOKYO_OFFSET_MINUTES = 540;
+const LOS_ANGELES_OFFSET_MINUTES = -480;
+
+describe("meditation repository - the captured day (#330)", () => {
+  async function readOneSession(row: Record<string, unknown>) {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
+    const eqId = jest.fn(() => ({ maybeSingle }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
+    return getMeditationSession("u1", VALID_UUID);
+  }
+
+  it("files a sit on the day it was on where the user sat, not where they now stand", async () => {
+    // 15:30 UTC is 00:30 on the 16th in Tokyo - the sit happened on the 16th and
+    // must stay there. A viewer in Kolkata sees 21:00 on the 15th, which is
+    // where this session used to land.
+    const session = await readOneSession(
+      sessionRow({
+        completed_at: "2026-07-15T15:30:00.000Z",
+        completed_offset_minutes: TOKYO_OFFSET_MINUTES,
+      }),
+    );
+
+    expect(session?.dayKey).toBe("2026-07-16");
+    expect(session?.completedOffsetMinutes).toBe(TOKYO_OFFSET_MINUTES);
+  });
+
+  it("moves the day backwards too, when the sit was west of the viewer", async () => {
+    // 02:00 UTC is 18:00 the previous day in Los Angeles; Kolkata reads 07:30 on
+    // the 15th. Same instant, and the captured day is the 14th.
+    const session = await readOneSession(
+      sessionRow({
+        completed_at: "2026-07-15T02:00:00.000Z",
+        completed_offset_minutes: LOS_ANGELES_OFFSET_MINUTES,
+      }),
+    );
+
+    expect(session?.dayKey).toBe("2026-07-14");
+  });
+
+  it("falls back to the viewer's local day when no offset was captured", async () => {
+    // Rows predating the column, and writes from older clients. Null is
+    // "unknown", never a claim of UTC - the fallback puts these exactly where
+    // they have always rendered: 15:30 UTC is 21:00 on the 15th in Kolkata.
+    const session = await readOneSession(sessionRow({ completed_at: "2026-07-15T15:30:00.000Z" }));
+
+    expect(session?.completedOffsetMinutes).toBeNull();
+    expect(session?.dayKey).toBe("2026-07-15");
+  });
+});
+
 describe("meditation repository - saveMeditationSession", () => {
+  it("sends the completion instant and its offset from one reading of the clock", async () => {
+    // completed_at used to be left to the server default. Pairing a
+    // server-stamped instant with a device offset is two clocks: at 23:59 they
+    // disagree about the day, which is the one thing the offset is for (#330).
+    jest.useFakeTimers({ now: new Date("2026-07-15T18:29:00.000Z") });
+    try {
+      const single = jest.fn().mockResolvedValue({ data: sessionRow(), error: null });
+      const select = jest.fn(() => ({ single }));
+      let sent: Record<string, unknown> = {};
+      const insert = jest.fn((values: Record<string, unknown>) => {
+        sent = values;
+        return { select };
+      });
+      mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { insert } }));
+
+      await saveMeditationSession("u1", { stageAtSession: 3, durationMinutes: 15 });
+
+      const payload = sent as {
+        completed_at: string;
+        completed_offset_minutes: number;
+      };
+      expect(payload.completed_at).toBe("2026-07-15T18:29:00.000Z");
+      expect(payload.completed_offset_minutes).toBe(VIEWER_OFFSET_MINUTES);
+      // 18:29 UTC is 23:59 in Kolkata: still the 15th where the user sat, and
+      // the 16th to anyone reading the raw instant an hour east of them. The
+      // pair the writer sends has to resolve to the former.
+      expect(entryDayKey(payload.completed_at, payload.completed_offset_minutes)).toBe(
+        "2026-07-15",
+      );
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("records when the sit ended, not when the reflection form was saved", async () => {
+    // The timer stops, the post-sit form opens, and the mutation does not fire
+    // until the user saves. Those are different instants and can straddle
+    // midnight: a sit that ended 23:50 on the 15th, saved 00:20 on the 16th,
+    // used to be stamped with the save. That now lands permanently, because the
+    // stored instant/offset pair *is* the civil day the widgets and routines
+    // read (#330).
+    jest.useFakeTimers({ now: new Date("2026-07-15T18:50:00.000Z") }); // 00:20 on the 16th in Kolkata
+    try {
+      const single = jest.fn().mockResolvedValue({ data: sessionRow(), error: null });
+      const select = jest.fn(() => ({ single }));
+      let sent: Record<string, unknown> = {};
+      const insert = jest.fn((values: Record<string, unknown>) => {
+        sent = values;
+        return { select };
+      });
+      mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { insert } }));
+
+      await saveMeditationSession("u1", {
+        stageAtSession: 3,
+        durationMinutes: 15,
+        occurredAt: {
+          occurredAt: "2026-07-15T18:20:00.000Z", // 23:50 on the 15th in Kolkata
+          occurredOffsetMinutes: VIEWER_OFFSET_MINUTES,
+        },
+      });
+
+      const payload = sent as { completed_at: string; completed_offset_minutes: number };
+      expect(payload.completed_at).toBe("2026-07-15T18:20:00.000Z");
+      expect(entryDayKey(payload.completed_at, payload.completed_offset_minutes)).toBe(
+        "2026-07-15",
+      );
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("falls back to the clock when the caller has no sit-end instant", async () => {
+    // Callers without an earlier instant - anything that is not the timer
+    // handover - must keep the old behaviour rather than send a null through.
+    jest.useFakeTimers({ now: new Date("2026-07-15T18:29:00.000Z") });
+    try {
+      const single = jest.fn().mockResolvedValue({ data: sessionRow(), error: null });
+      const select = jest.fn(() => ({ single }));
+      let sent: Record<string, unknown> = {};
+      const insert = jest.fn((values: Record<string, unknown>) => {
+        sent = values;
+        return { select };
+      });
+      mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { insert } }));
+
+      await saveMeditationSession("u1", {
+        stageAtSession: 3,
+        durationMinutes: 15,
+        occurredAt: null,
+      });
+
+      expect((sent as { completed_at: string }).completed_at).toBe("2026-07-15T18:29:00.000Z");
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("rejects a sit-end instant in the future", async () => {
+    // The pair arrives as route params, so a deep link can supply anything.
+    jest.useFakeTimers({ now: new Date("2026-07-15T18:29:00.000Z") });
+    try {
+      const insert = jest.fn();
+      mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { insert } }));
+
+      await expect(
+        saveMeditationSession("u1", {
+          stageAtSession: 3,
+          durationMinutes: 15,
+          occurredAt: {
+            occurredAt: "2026-07-16T18:29:00.000Z",
+            occurredOffsetMinutes: VIEWER_OFFSET_MINUTES,
+          },
+        }),
+      ).rejects.toThrow(/future/i);
+      expect(insert).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it("trims reflection text and writes stage-aware fields", async () => {
     const row = {
       id: "s1",
@@ -59,6 +236,10 @@ describe("meditation repository - saveMeditationSession", () => {
       user_id: "u1",
       stage_at_session: 3,
       duration_minutes: 15,
+      // Pinned to the clock by the occurrence test above; here they only have to
+      // be present, so this assertion stays about the stage-aware fields.
+      completed_at: expect.any(String),
+      completed_offset_minutes: expect.any(Number),
       mind_wandering_episodes: 2,
       dullness_level: null,
       distraction_level: null,
@@ -168,6 +349,49 @@ describe("meditation repository - countMeditationSessions", () => {
     const select = jest.fn(() => ({ eq: eqUser }));
     mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
     await expect(countMeditationSessions("u1")).rejects.toMatchObject({ code: "42P01" });
+  });
+});
+
+describe("meditation repository - medianMeditationMinutes", () => {
+  it("takes the median through the RPC rather than the capped list", async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: 25, error: null });
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ rpc, from } as unknown as ReturnType<
+      typeof requireSupabase
+    >);
+
+    await expect(medianMeditationMinutes()).resolves.toBe(25);
+    expect(rpc).toHaveBeenCalledWith("meditation_median_minutes");
+    // No table read: the point of the RPC is that no session rows cross the wire, so a
+    // 200-row cap cannot creep back in.
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("rounds a half-minute median up, the way the client-side median() did", async () => {
+    // percentile_cont interpolates an even-count median, so 20 and 25 minute sits give
+    // 22.5. Math.round takes that to 23; Postgres round(double precision) would break the
+    // tie to even and say 22, which is why the rounding stays on this side.
+    const rpc = jest.fn().mockResolvedValue({ data: 22.5, error: null });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(medianMeditationMinutes()).resolves.toBe(23);
+  });
+
+  it("coerces a stringified numeric and keeps null distinct from zero", async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: "17.5", error: null });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+    await expect(medianMeditationMinutes()).resolves.toBe(18);
+
+    // No sessions at all is null, not a zero-minute median - the hero renders a dash.
+    rpc.mockResolvedValue({ data: null, error: null });
+    await expect(medianMeditationMinutes()).resolves.toBeNull();
+  });
+
+  it("throws when the median RPC errors", async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: null, error: new Error("rpc failed") });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(medianMeditationMinutes()).rejects.toThrow("rpc failed");
   });
 });
 

@@ -67,12 +67,6 @@
       "start": "Got it"
     }
   },
-  "relativeTime": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo_one": "{{count}} day ago",
-    "daysAgo_other": "{{count}} days ago"
-  },
   "day": {
     "today": "Today",
     "empty": "Nothing written on {{date}}",

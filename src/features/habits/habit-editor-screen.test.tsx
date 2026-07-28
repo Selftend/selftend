@@ -5,8 +5,8 @@ import type { ReactNode } from "react";
 import { HabitEditorScreen } from "@/src/features/habits/habit-editor-screen";
 import { useHabit, useHabits, useSaveHabit } from "@/src/features/habits/queries";
 import type { Habit } from "@/src/features/habits/types";
-import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -86,7 +86,7 @@ describe("HabitEditorScreen", () => {
     // Create mode rises out of the full-bleed act field (spec #277).
     expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The wrapper carries the act room re-pour; a wrong or missing room fails here.
-    expect(screen.getByTestId("habit-editor-room").props.style).toEqual(roomVariables("act").light);
+    expectRoomPour(screen.getByTestId("habit-editor-room"), "act");
   });
 
   it("edit mode keeps the compact header on the room pour - no field", () => {
@@ -100,7 +100,7 @@ describe("HabitEditorScreen", () => {
 
     expect(screen.getByText("Edit habit")).toBeTruthy();
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
-    expect(screen.getByTestId("habit-editor-room").props.style).toEqual(roomVariables("act").light);
+    expectRoomPour(screen.getByTestId("habit-editor-room"), "act");
     expect(screen.getByDisplayValue("Morning walk")).toBeTruthy();
   });
 

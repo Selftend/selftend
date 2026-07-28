@@ -46,7 +46,29 @@ const persistOptions = persister
       // sleep stats would vanish while offline until a refetch succeeded.
       // Discarding a stale-shaped cache costs one refetch; keeping it loses data
       // from the user's view.
-      buster: `${Constants.expoConfig?.version ?? "0"}-shape2`,
+      //
+      // shape3: #330 does the same to meditation sessions. A restored session
+      // written before this build has no `dayKey`, and the widget and routine
+      // completion checks compare it directly - `undefined === "2026-07-15"` is
+      // false, so a sit the user finished reads as not done while offline or
+      // until a refetch lands.
+      // shape4: and again for breathing and grounding, which share
+      // mindfulness_sessions and so gained `dayKey` together. Each shipped shape
+      // change takes its own bump - shape3 went out with the meditation change,
+      // so reusing it here would leave anyone who updated between the two with a
+      // cache the new equality checks cannot read.
+      // shape5: and again for CBT thought records, which gained `dayKey` from
+      // `created_offset_minutes`. A restored record written before this build
+      // has none, so the history screen's day filter and the routine engine's
+      // cbt step both read it as belonging to no day at all.
+      // shape6: and again for CBT activities, which gained BOTH a
+      // scheduledDayKey and a completedDayKey. A restored pre-shape6 activity
+      // has neither, so the day-bucketing on the activities list and the Home
+      // card would read every plan as unscheduled while offline. Its own bump
+      // rather than sharing shape5: thought records shipped first, so anyone who
+      // updated between the two holds a shape5 cache that already satisfies the
+      // buster but predates these two keys.
+      buster: `${Constants.expoConfig?.version ?? "0"}-shape6`,
       dehydrateOptions: {
         shouldDehydrateQuery: (query: { state: { status: string } }) =>
           query.state.status === "success",

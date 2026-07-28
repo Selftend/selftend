@@ -65,7 +65,9 @@ const TINT_CLASSES: Record<
     manageActive: "-mr-1 size-8 items-center justify-center rounded-full active:bg-act/10",
     phaseTitle: "text-act",
     readyBanner: "rounded-lg border border-act/40 bg-act/10 px-4 py-3",
-    readyText: "text-sm font-medium text-act",
+    // Small text on an `act/10` wash, and the card renders off-room (act home,
+    // cbt home), so this is `text-act-ink` rather than `text-accent-ink` (#403).
+    readyText: "text-sm font-medium text-act-ink",
     taskRowDone:
       "flex-row items-center gap-3 rounded-lg border border-[hsl(var(--act)/0.25)] bg-[hsl(var(--act)/0.10)] p-3 active:bg-accent/40",
     taskRowDoneIcon: "size-5 text-act",
@@ -82,7 +84,10 @@ const TINT_CLASSES: Record<
     manageActive: "-mr-1 size-8 items-center justify-center rounded-full active:bg-primary/10",
     phaseTitle: "text-primary",
     readyBanner: "rounded-lg border border-primary/40 bg-primary/10 px-4 py-3",
-    readyText: "text-sm font-medium text-primary",
+    // The `act` twin above took ink in #403; this one could not until `primary`
+    // had an ink (#421 §3). Same shape, same argument: 14px on a `primary/10`
+    // wash inside a `primary/5` container, 4.13:1 light with the raw accent.
+    readyText: "text-sm font-medium text-primary-ink",
     taskRowDone:
       "flex-row items-center gap-3 rounded-lg border border-[hsl(var(--primary)/0.25)] bg-[hsl(var(--primary)/0.10)] p-3 active:bg-accent/40",
     taskRowDoneIcon: "size-5 text-primary",

@@ -91,26 +91,41 @@ module.exports = [
   {
     // Room wiring goes through the useRoomStyle/useRoomCardHsl hooks - they
     // carry the scheme read and the cached style identity, so screens can't
-    // drift back to per-file module consts. Tests are exempt: every room
-    // suite imports roomVariables for its pour assertion.
+    // drift back to per-file module consts. Tests used to be exempt so each
+    // room suite could compare against roomVariables(hue)[scheme] - but that
+    // comparison could not fail (a nativewind vars() style has no enumerable
+    // keys, so every hue deep-equalled every other, #389). Suites now assert
+    // through expectRoomPour from @/test/room-pour, so the exemption is gone
+    // and a suite cannot hand-roll the vacuous form again.
     files: ["src/features/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
-    ignores: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {
       "no-restricted-imports": ["error", { paths: [MODULE_ROOM_RESTRICTION] }],
     },
   },
   {
-    // mood/gratitude/sleep/journal entries carry a `dayKey`: the civil day captured
-    // when the entry was logged, resolved once in the repository. Bucketing one of
-    // them by the VIEWER's day instead moves entries between days after travel and
-    // skews daily averages (#250). The viewer-local helpers stay available to the
-    // modules with no captured offset (habits, ACT, CBT, breathing, meditation,
-    // routines) - they have nothing better to use yet.
+    // mood/gratitude/sleep/journal (#250), meditation, breathing/grounding via the
+    // shared mindfulness_sessions offset, and CBT thought records and activities
+    // (#330) all carry a captured civil day, resolved once in the repository.
+    // Bucketing one of them by the VIEWER's day instead moves entries between days
+    // after travel and skews daily averages. Activities carry TWO such days -
+    // `completedDayKey` for when it was done, `scheduledDayKey` for the day it was
+    // planned for - so neither the completion nor the plan may be re-derived from
+    // its timestamp here. The viewer-local helpers stay available to ACT, which has
+    // no captured offset and is deliberately out of #330's scope until it grows a
+    // history surface, and to routines, whose day axis is deliberately viewer-local
+    // (#330 owner decision). Habits are already correct by a different route:
+    // `habit_logs.logged_on` stores the resolved civil date, so no timestamp is
+    // ever converted.
     files: [
       "src/features/mood/**/*.{ts,tsx}",
       "src/features/gratitude/**/*.{ts,tsx}",
       "src/features/sleep/**/*.{ts,tsx}",
       "src/features/journal/**/*.{ts,tsx}",
+      "src/features/meditation/**/*.{ts,tsx}",
+      "src/features/breathing/**/*.{ts,tsx}",
+      "src/features/grounding/**/*.{ts,tsx}",
+      "src/features/activities/**/*.{ts,tsx}",
+      "src/features/cbt/**/*.{ts,tsx}",
     ],
     ignores: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {
@@ -123,7 +138,7 @@ module.exports = [
               name,
               importNames: ["toLocalDateKey", "localDateKey"],
               message:
-                "Group by the entry's `dayKey` (the civil day captured at logging time) instead. Bucketing by the viewer's local day moves entries after travel - see #250.",
+                "Group by the entry's `dayKey` (the civil day captured at logging time) instead. Bucketing by the viewer's local day moves entries after travel - see #250 and #330.",
             })),
           ],
         },

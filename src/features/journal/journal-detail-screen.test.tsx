@@ -8,8 +8,8 @@ import {
   useJournalEntries,
   useJournalEntry,
 } from "@/src/features/journal/queries";
-import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -74,7 +74,7 @@ describe("JournalDetailScreen", () => {
     // Detail is a plain-pour surface: room yes, field no.
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the ink room re-pour; a wrong or missing room fails here.
-    expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("ink").light);
+    expectRoomPour(UNSAFE_getByType(SafeAreaView), "ink");
   });
 
   it("routes to the edit screen", () => {
@@ -110,7 +110,7 @@ describe("JournalDetailScreen", () => {
 
     expect(screen.getByText("We couldn't find that journal entry.")).toBeTruthy();
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
-    expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("ink").light);
+    expectRoomPour(UNSAFE_getByType(SafeAreaView), "ink");
   });
 
   it("shows the loading state on the room pour while fetching", () => {
@@ -125,6 +125,6 @@ describe("JournalDetailScreen", () => {
     const { UNSAFE_getByType } = renderWithProviders(<JournalDetailScreen />);
 
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
-    expect(UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("ink").light);
+    expectRoomPour(UNSAFE_getByType(SafeAreaView), "ink");
   });
 });

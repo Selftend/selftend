@@ -15,8 +15,20 @@ import type { CardViewProps } from "@/src/features/widgets/cards/shortcut-card";
 
 const nothing = <FlexWidget style={{ width: 0, height: 0 }} />;
 
-export function HabitsCard({ payload, icon, tint, width, height, theme, opacity }: CardViewProps) {
-  if (payload.kind !== "habits") return nothing;
+/**
+ * Renders the scheduled-activities payload. Named `HabitsCard` until #330: the card
+ * carries CBT behavioural-activation activities, not habits.
+ */
+export function ActivitiesCard({
+  payload,
+  icon,
+  tint,
+  width,
+  height,
+  theme,
+  opacity,
+}: CardViewProps) {
+  if (payload.kind !== "activities") return nothing;
   const c = PALETTE[theme];
   const expanded = sizeTier(width, height) === "expanded";
   const today = payload.today;

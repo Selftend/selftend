@@ -96,7 +96,7 @@ describe("ContinueRoutineSheet", () => {
   it("lists the whole ordered step list with the next open step highlighted", () => {
     // Journal (step 1) is done; mood (step 2) is the next open step.
     const records: RoutineToolRecords = {
-      journalEntries: [{ occurredAt: `${currentDateKey()}T08:00:00`, createdAt: "" }],
+      journalEntries: [{ dayKey: currentDateKey() }],
     };
     renderSheet([
       view(makeRoutine("r-1", "Morning reset", ["journal", "mood", "gratitude"]), records),
@@ -114,7 +114,7 @@ describe("ContinueRoutineSheet", () => {
 
   it("routes the Do-next-step CTA to the next open step's tool and closes", () => {
     const records: RoutineToolRecords = {
-      journalEntries: [{ occurredAt: `${currentDateKey()}T08:00:00`, createdAt: "" }],
+      journalEntries: [{ dayKey: currentDateKey() }],
     };
     const onClose = renderSheet([
       view(makeRoutine("r-1", "Morning reset", ["journal", "mood"]), records),
@@ -141,7 +141,7 @@ describe("ContinueRoutineSheet", () => {
   it("starts on the first open routine and switches via the chip row", () => {
     // r-1 is fully complete; r-2 and r-3 are open, so the sheet starts on r-2.
     const records: RoutineToolRecords = {
-      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     };
     renderSheet([
       view(makeRoutine("r-1", "Check-in only", ["mood"]), records),
@@ -164,7 +164,7 @@ describe("ContinueRoutineSheet", () => {
   it("starts on the in-progress routine, not the first open one", () => {
     // r-1 is untouched; r-2 has its mood step done (1/2 in progress).
     const records: RoutineToolRecords = {
-      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     };
     renderSheet([
       view(makeRoutine("r-1", "Morning reset", ["journal"]), records),
@@ -198,7 +198,7 @@ describe("ContinueRoutineSheet", () => {
 
   it("offers the routine's reminder on completion and writes only on accept", async () => {
     const records: RoutineToolRecords = {
-      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     };
     const onClose = renderSheet([view(makeRoutine("r-1", "Morning reset", ["mood"]), records)]);
 
@@ -223,7 +223,7 @@ describe("ContinueRoutineSheet", () => {
 
   it("never writes reminder fields on decline", () => {
     const records: RoutineToolRecords = {
-      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     };
     const onClose = renderSheet([view(makeRoutine("r-1", "Morning reset", ["mood"]), records)]);
 
@@ -235,7 +235,7 @@ describe("ContinueRoutineSheet", () => {
 
   it("skips the offer for an on-demand routine: only the plain Close (#102)", () => {
     const records: RoutineToolRecords = {
-      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     };
     renderSheet([view(makeRoutine("r-1", "Morning reset", ["mood"], false, "on-demand"), records)]);
 
@@ -249,7 +249,7 @@ describe("ContinueRoutineSheet", () => {
 
   it("skips the offer when the routine already has its reminder set", () => {
     const records: RoutineToolRecords = {
-      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     };
     renderSheet([view(makeRoutine("r-1", "Morning reset", ["mood"], true), records)]);
 

@@ -91,12 +91,6 @@
   "feedback": {
     "deleted": "Записът на настроението е изтрит"
   },
-  "relativeTime": {
-    "today": "Днес",
-    "yesterday": "Вчера",
-    "daysAgo_one": "преди {{count}} ден",
-    "daysAgo_other": "преди {{count}} дни"
-  },
   "stats": {
     "checkinsLabel": "записи",
     "thisWeekLabel": "тази седмица",

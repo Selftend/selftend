@@ -13,41 +13,13 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { LoadingState } from "@/src/components/app/screen-state";
+import { groupActivities } from "@/src/features/activities/grouping";
 import { useActivities } from "@/src/features/activities/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { currentDateKey, toLocalDateKey } from "@/src/stores/selected-date-store";
 import type { ActivityLog } from "@/src/features/activities/types";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
-
-function groupActivities(activities: ActivityLog[]) {
-  const todayStr = currentDateKey();
-
-  const today: ActivityLog[] = [];
-  const upcoming: ActivityLog[] = [];
-  const completed: ActivityLog[] = [];
-
-  for (const a of activities) {
-    if (a.completedAt) {
-      completed.push(a);
-    } else if (a.scheduledAt) {
-      const dateStr = toLocalDateKey(a.scheduledAt);
-      // YYYY-MM-DD compares lexicographically = chronologically. Only FUTURE days are
-      // "upcoming"; today AND overdue (past, still uncompleted) surface under Today so a
-      // missed activity isn't mislabeled as upcoming and hidden from the user.
-      if (dateStr > todayStr) {
-        upcoming.push(a);
-      } else {
-        today.push(a);
-      }
-    } else {
-      upcoming.push(a);
-    }
-  }
-
-  return { today, upcoming, completed };
-}
 
 export default function ActivitiesScreen() {
   const { t } = useTranslation("cbt");

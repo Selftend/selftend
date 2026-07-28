@@ -1,8 +1,8 @@
 import { StyleSheet, View } from "react-native";
-import { useColorScheme } from "nativewind";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 
 import { hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 interface GlowBackdropProps {
   hue: ExerciseHue;
@@ -16,8 +16,7 @@ const GLOW = 440;
 // cannot affect layout. Rendered as an SVG radial gradient for a soft falloff on web
 // and native.
 export function GlowBackdrop({ hue }: GlowBackdropProps) {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = useColorSchemeName() === "dark";
   const color = hueHsl(hue, isDark, 1);
   const gradientId = `grounding-glow-${hue}`;
 

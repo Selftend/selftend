@@ -12,10 +12,12 @@ import {
 // timezone, which is also how toLocalDateKey buckets - so these tests are
 // deterministic in any TZ without re-testing the shared date utilities.
 const DAY = "2026-07-15";
+const NEXT_DAY = "2026-07-16";
+const PREV_DAY = "2026-07-14";
 const onDayTs = `${DAY}T14:30:00`;
 const lateOnDayTs = `${DAY}T23:59:59`;
-const nextDayTs = "2026-07-16T00:00:01";
-const prevDayTs = "2026-07-14T23:59:59";
+const nextDayTs = `${NEXT_DAY}T00:00:01`;
+const prevDayTs = `${PREV_DAY}T23:59:59`;
 
 const steps = (...toolIds: SteppableToolId[]) => toolIds.map((toolId) => ({ toolId }));
 
@@ -24,11 +26,11 @@ const groundingSlug = groundingSlugs[0];
 describe("stepDoneOnDate", () => {
   it("matches each dated-log tool's record on the day and rejects other days", () => {
     const records: RoutineToolRecords = {
-      moodLogs: [{ loggedAt: onDayTs }],
-      journalEntries: [{ occurredAt: onDayTs, createdAt: prevDayTs }],
-      gratitudeEntries: [{ loggedAt: prevDayTs }],
-      sleepLogs: [{ loggedAt: nextDayTs }],
-      thoughtRecords: [{ createdAt: onDayTs }],
+      moodLogs: [{ dayKey: DAY }],
+      journalEntries: [{ dayKey: DAY }],
+      gratitudeEntries: [{ dayKey: PREV_DAY }],
+      sleepLogs: [{ dayKey: NEXT_DAY }],
+      thoughtRecords: [{ dayKey: DAY }],
     };
 
     expect(stepDoneOnDate("mood", records, DAY)).toBe(true);
@@ -38,25 +40,50 @@ describe("stepDoneOnDate", () => {
     expect(stepDoneOnDate("sleep", records, DAY)).toBe(false);
   });
 
-  it("buckets by the local midnight boundary: just-before counts, just-after does not", () => {
-    const records: RoutineToolRecords = { moodLogs: [{ loggedAt: lateOnDayTs }] };
-    expect(stepDoneOnDate("mood", records, DAY)).toBe(true);
+  // The captured-day modules (#250) and the timestamp-bucketed ones (#330) are
+  // two different day models on purpose, so each needs its own boundary test.
 
-    const after: RoutineToolRecords = { moodLogs: [{ loggedAt: nextDayTs }] };
-    expect(stepDoneOnDate("mood", after, DAY)).toBe(false);
-    expect(stepDoneOnDate("mood", after, "2026-07-16")).toBe(true);
+  it("reads the captured day verbatim, even when it disagrees with the timestamp", () => {
+    // The bug this fixes: an entry logged at 23:30 in Tokyo carries dayKey
+    // 2026-07-15, but its UTC instant buckets to the 14th for a viewer in
+    // London. The mood screen filed it under the 15th; the routine engine used
+    // to file the same entry under the 14th. The captured day is the answer.
+    const captured: RoutineToolRecords = { moodLogs: [{ dayKey: DAY }] };
+
+    expect(stepDoneOnDate("mood", captured, DAY)).toBe(true);
+    expect(stepDoneOnDate("mood", captured, PREV_DAY)).toBe(false);
+    expect(stepDoneOnDate("mood", captured, NEXT_DAY)).toBe(false);
   });
 
-  it("journal entries without occurredAt fall back to createdAt", () => {
-    const records: RoutineToolRecords = {
-      journalEntries: [{ occurredAt: null, createdAt: onDayTs }],
-    };
-    expect(stepDoneOnDate("journal", records, DAY)).toBe(true);
+  it("still buckets by the local midnight boundary for tools with no captured day", () => {
+    // Exposure sessions have no occurrence offset (they are outside #330's scope),
+    // so they convert through the viewer's timezone. Just-before the local midnight
+    // boundary counts, just-after does not. This test used activities as its
+    // example until activities gained a captured day of their own - the boundary
+    // behaviour it guards belongs to whichever tools are still timestamp-bucketed.
+    const records: RoutineToolRecords = { exposureSessions: [{ completedAt: lateOnDayTs }] };
+    expect(stepDoneOnDate("exposure", records, DAY)).toBe(true);
+
+    const after: RoutineToolRecords = { exposureSessions: [{ completedAt: nextDayTs }] };
+    expect(stepDoneOnDate("exposure", after, DAY)).toBe(false);
+    expect(stepDoneOnDate("exposure", after, NEXT_DAY)).toBe(true);
+  });
+
+  it("cbt reads the captured day verbatim, never the viewer's", () => {
+    // A thought record written at 06:00 Monday in Tokyo carries dayKey
+    // 2026-07-15 while its UTC instant (21:00 Sunday) buckets to the 14th
+    // anywhere west of it. The engine must agree with the CBT history screen
+    // rather than re-deriving the day from the timestamp (#330).
+    const captured: RoutineToolRecords = { thoughtRecords: [{ dayKey: DAY }] };
+
+    expect(stepDoneOnDate("cbt", captured, DAY)).toBe(true);
+    expect(stepDoneOnDate("cbt", captured, PREV_DAY)).toBe(false);
+    expect(stepDoneOnDate("cbt", captured, NEXT_DAY)).toBe(false);
   });
 
   it("a grounding session does not complete a breathing step, and vice versa", () => {
     const groundingOnly: RoutineToolRecords = {
-      mindfulnessSessions: [{ exerciseName: groundingSlug, completedAt: onDayTs }],
+      mindfulnessSessions: [{ exerciseName: groundingSlug, dayKey: DAY }],
     };
     expect(stepDoneOnDate("grounding", groundingOnly, DAY)).toBe(true);
     expect(stepDoneOnDate("breathing", groundingOnly, DAY)).toBe(false);
@@ -65,22 +92,43 @@ describe("stepDoneOnDate", () => {
     // breathing: grounding is the closed slug set, everything else breathes.
     const breathingOnly: RoutineToolRecords = {
       mindfulnessSessions: [
-        { exerciseName: "box-breathing", completedAt: onDayTs },
-        { exerciseName: "custom-user-exercise-id", completedAt: onDayTs },
+        { exerciseName: "box-breathing", dayKey: DAY },
+        { exerciseName: "custom-user-exercise-id", dayKey: DAY },
       ],
     };
     expect(stepDoneOnDate("breathing", breathingOnly, DAY)).toBe(true);
     expect(stepDoneOnDate("grounding", breathingOnly, DAY)).toBe(false);
   });
 
-  it("meditation reads completedAt and ignores incomplete sessions", () => {
-    const records: RoutineToolRecords = {
-      meditationSessions: [{ completedAt: null }, { completedAt: onDayTs }],
+  it("reads the captured day for breathing and grounding, sharing one offset column", () => {
+    // Both tools live in mindfulness_sessions, so one captured offset settles both
+    // (#330). A session finished at 23:30 in Tokyo carries dayKey 2026-07-15 even
+    // though its UTC instant falls on the 14th for a London viewer.
+    const captured: RoutineToolRecords = {
+      mindfulnessSessions: [
+        { exerciseName: "box-breathing", dayKey: DAY },
+        { exerciseName: groundingSlug, dayKey: DAY },
+      ],
     };
+
+    for (const toolId of ["breathing", "grounding"] as const) {
+      expect(stepDoneOnDate(toolId, captured, DAY)).toBe(true);
+      expect(stepDoneOnDate(toolId, captured, PREV_DAY)).toBe(false);
+      expect(stepDoneOnDate(toolId, captured, NEXT_DAY)).toBe(false);
+    }
+  });
+
+  it("meditation reads the captured day verbatim, never the viewer's", () => {
+    // A sit finished at 23:30 in Tokyo carries dayKey 2026-07-15 while its UTC
+    // instant buckets to the 14th anywhere west of it. The engine must file it
+    // on the 15th - where the meditation screen files it - whatever the viewer's
+    // timezone says (#330).
+    const records: RoutineToolRecords = { meditationSessions: [{ dayKey: DAY }] };
+
     expect(stepDoneOnDate("meditation", records, DAY)).toBe(true);
-    expect(stepDoneOnDate("meditation", { meditationSessions: [{ completedAt: null }] }, DAY)).toBe(
-      false,
-    );
+    expect(stepDoneOnDate("meditation", records, PREV_DAY)).toBe(false);
+    expect(stepDoneOnDate("meditation", records, NEXT_DAY)).toBe(false);
+    expect(stepDoneOnDate("meditation", { meditationSessions: [] }, DAY)).toBe(false);
   });
 
   it("habits compare the loggedOn date key directly", () => {
@@ -90,15 +138,25 @@ describe("stepDoneOnDate", () => {
 
   it("activities count only completion - a scheduled-but-open activity stays open", () => {
     const records: RoutineToolRecords = {
-      activityLogs: [{ completedAt: null }, { completedAt: onDayTs }],
+      activityLogs: [{ completedDayKey: null }, { completedDayKey: DAY }],
     };
     expect(stepDoneOnDate("activities", records, DAY)).toBe(true);
-    expect(stepDoneOnDate("activities", { activityLogs: [{ completedAt: null }] }, DAY)).toBe(
+    expect(stepDoneOnDate("activities", { activityLogs: [{ completedDayKey: null }] }, DAY)).toBe(
       false,
     );
-    expect(stepDoneOnDate("activities", { activityLogs: [{ completedAt: prevDayTs }] }, DAY)).toBe(
-      false,
-    );
+    expect(
+      stepDoneOnDate("activities", { activityLogs: [{ completedDayKey: PREV_DAY }] }, DAY),
+    ).toBe(false);
+  });
+
+  it("activities read the captured completion day, never the viewer's", () => {
+    // An activity finished at 23:30 in Tokyo carries completedDayKey 2026-07-15 even
+    // though its UTC instant falls on the 14th for a London viewer. The engine has to
+    // agree with the activities screen about which day that was (#330).
+    const captured: RoutineToolRecords = { activityLogs: [{ completedDayKey: DAY }] };
+    expect(stepDoneOnDate("activities", captured, DAY)).toBe(true);
+    expect(stepDoneOnDate("activities", captured, PREV_DAY)).toBe(false);
+    expect(stepDoneOnDate("activities", captured, NEXT_DAY)).toBe(false);
   });
 
   it("exposure reads the session's completedAt", () => {
@@ -214,11 +272,7 @@ describe("deriveRoutine", () => {
   });
 
   it("some steps done derives in_progress and points at the first open step", () => {
-    const view = deriveRoutine(
-      threeSteps,
-      { journalEntries: [{ occurredAt: onDayTs, createdAt: onDayTs }] },
-      DAY,
-    );
+    const view = deriveRoutine(threeSteps, { journalEntries: [{ dayKey: DAY }] }, DAY);
     expect(view.status).toBe("in_progress");
     expect(view.doneCount).toBe(1);
     expect(view.steps.map((s) => s.done)).toEqual([false, true, false]);
@@ -229,9 +283,9 @@ describe("deriveRoutine", () => {
     const view = deriveRoutine(
       threeSteps,
       {
-        moodLogs: [{ loggedAt: onDayTs }],
-        journalEntries: [{ occurredAt: lateOnDayTs, createdAt: prevDayTs }],
-        meditationSessions: [{ completedAt: onDayTs }],
+        moodLogs: [{ dayKey: DAY }],
+        journalEntries: [{ dayKey: DAY }],
+        meditationSessions: [{ dayKey: DAY }],
       },
       DAY,
     );
@@ -241,7 +295,7 @@ describe("deriveRoutine", () => {
   });
 
   it("an empty routine is not_started, never a hollow complete", () => {
-    const view = deriveRoutine([], { moodLogs: [{ loggedAt: onDayTs }] }, DAY);
+    const view = deriveRoutine([], { moodLogs: [{ dayKey: DAY }] }, DAY);
     expect(view.status).toBe("not_started");
     expect(view.totalCount).toBe(0);
     expect(view.nextStep).toBeNull();
@@ -250,9 +304,7 @@ describe("deriveRoutine", () => {
   it("a single-step routine flips straight from not_started to complete", () => {
     const single = steps("sleep");
     expect(deriveRoutine(single, {}, DAY).status).toBe("not_started");
-    expect(deriveRoutine(single, { sleepLogs: [{ loggedAt: onDayTs }] }, DAY).status).toBe(
-      "complete",
-    );
+    expect(deriveRoutine(single, { sleepLogs: [{ dayKey: DAY }] }, DAY).status).toBe("complete");
   });
 });
 
@@ -271,7 +323,7 @@ describe("deriveRoutineStrip", () => {
     // Mood logged on days -3 and -1 relative to DAY; every other day is open.
     const strip = deriveRoutineStrip(
       steps("mood"),
-      { moodLogs: [{ loggedAt: "2026-07-14T08:00:00" }, { loggedAt: "2026-07-12T21:15:00" }] },
+      { moodLogs: [{ dayKey: "2026-07-14" }, { dayKey: "2026-07-12" }] },
       weekKeys,
     );
 
@@ -283,16 +335,14 @@ describe("deriveRoutineStrip", () => {
   });
 
   it("a partially-done day stays open on a multi-step routine", () => {
-    const strip = deriveRoutineStrip(
-      steps("mood", "journal"),
-      { moodLogs: [{ loggedAt: onDayTs }] },
-      [DAY],
-    );
+    const strip = deriveRoutineStrip(steps("mood", "journal"), { moodLogs: [{ dayKey: DAY }] }, [
+      DAY,
+    ]);
     expect(strip).toEqual([{ dayKey: DAY, complete: false }]);
   });
 
   it("an empty routine never fills a day (no hollow complete)", () => {
-    const strip = deriveRoutineStrip([], { moodLogs: [{ loggedAt: onDayTs }] }, [DAY]);
+    const strip = deriveRoutineStrip([], { moodLogs: [{ dayKey: DAY }] }, [DAY]);
     expect(strip).toEqual([{ dayKey: DAY, complete: false }]);
   });
 });

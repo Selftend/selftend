@@ -7,8 +7,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import GratitudeFavoritesScreen from "@/src/features/gratitude/gratitude-favorites-screen";
 import { useFavoriteGratitudeEntries } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import { roomVariables } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -73,7 +73,7 @@ describe("GratitudeFavoritesScreen", () => {
     expect(screen.getByRole("heading", { name: "Favorite moments" })).toBeTruthy();
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the think room re-pour; a wrong or missing room fails here.
-    expect(screen.UNSAFE_getByType(SafeAreaView).props.style).toEqual(roomVariables("think").light);
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "think");
   });
 
   it("routes to the entry detail when a favorite row is pressed", () => {

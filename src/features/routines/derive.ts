@@ -67,28 +67,35 @@ export function isSteppableToolId(value: string): value is SteppableToolId {
  * absent means "no records fetched", which derives the same as none existing.
  */
 export interface RoutineToolRecords {
-  moodLogs?: readonly { loggedAt: string }[];
-  /** Older journal entries predate occurredAt; they bucket by createdAt. */
-  journalEntries?: readonly { occurredAt?: string | null; createdAt: string }[];
-  gratitudeEntries?: readonly { loggedAt: string }[];
-  sleepLogs?: readonly { loggedAt: string }[];
-  thoughtRecords?: readonly { createdAt: string }[];
+  /**
+   * The four #250 modules carry a captured `dayKey` — the civil day where the
+   * entry was logged — so they are compared directly, never re-bucketed. Passing
+   * a timestamp here instead would let the routine engine file an entry under a
+   * different day than the owning module's own screen does.
+   */
+  moodLogs?: readonly { dayKey: string }[];
+  journalEntries?: readonly { dayKey: string }[];
+  gratitudeEntries?: readonly { dayKey: string }[];
+  sleepLogs?: readonly { dayKey: string }[];
+  /** Thought records captured their civil day in #330 - compare, never re-bucket. */
+  thoughtRecords?: readonly { dayKey: string }[];
   /**
    * Breathing AND grounding sessions share this table; they are told apart by
-   * exerciseName (see stepDoneOnDate). completedAt is a UTC timestamp with no
-   * device-offset column, so it buckets via the device's current timezone -
-   * the same trade-off ACT's engine already makes.
+   * exerciseName (see stepDoneOnDate). One captured offset on the shared table
+   * gives both tools a dayKey, so neither re-buckets by the viewer's day (#330).
    */
-  mindfulnessSessions?: readonly { exerciseName: string; completedAt: string | null }[];
-  meditationSessions?: readonly { completedAt: string | null }[];
+  mindfulnessSessions?: readonly { exerciseName: string; dayKey: string }[];
+  /** Meditation captured its civil day in #330 - compare, never re-bucket. */
+  meditationSessions?: readonly { dayKey: string }[];
   /** HabitLog.loggedOn is already a local civil date key (YYYY-MM-DD). */
   habitLogs?: readonly { loggedOn: string }[];
   /**
    * Behavioral activation (CBT Activities): only completion counts - an
-   * activity can be created/scheduled days before it is done, so createdAt
-   * would celebrate planning, not doing. completedAt is null until then.
+   * activity can be created/scheduled days before it is done, so the planned day
+   * would celebrate planning, not doing. `completedDayKey` is the captured civil
+   * day it was DONE on, and is null until then (#330).
    */
-  activityLogs?: readonly { completedAt: string | null }[];
+  activityLogs?: readonly { completedDayKey: string | null }[];
   /** ExposureSession.completedAt is set at save time (non-null in practice). */
   exposureSessions?: readonly { completedAt: string | null }[];
   defusionLogs?: readonly { createdAt: string }[];
@@ -132,6 +139,13 @@ export interface RoutineDayView {
   nextStep: RoutineStepDayView | null;
 }
 
+/**
+ * For tools with no captured occurrence day: bucket a UTC timestamp through the
+ * viewer's current timezone. Correct only while the tool stores no offset - the
+ * modules still waiting on #330. Never use this for a module that already
+ * carries `dayKey`, or the engine will re-bucket an entry the owning module has
+ * already placed, and the two surfaces will disagree about which day it was.
+ */
 const onDay = <T>(
   items: readonly T[] | undefined,
   pick: (item: T) => string | null | undefined,
@@ -141,6 +155,10 @@ const onDay = <T>(
     const ts = pick(item);
     return typeof ts === "string" && ts.length > 0 && toLocalDateKey(ts) === dayKey;
   });
+
+/** For tools that captured the civil day at logging time - compare, never convert. */
+const onCapturedDay = (items: readonly { dayKey: string }[] | undefined, dayKey: string): boolean =>
+  (items ?? []).some((item) => item.dayKey === dayKey);
 
 // Grounding is the closed set of technique slugs; every other mindfulness
 // session is a breathing session (built-in breathing slugs plus user-defined
@@ -158,36 +176,41 @@ export function stepDoneOnDate(
   dayKey: string,
 ): boolean {
   switch (toolId) {
+    // The four #250 modules carry a captured dayKey - compare directly, no
+    // bucketing, so the routine engine agrees with the module's own screen.
     case "mood":
-      return onDay(records.moodLogs, (r) => r.loggedAt, dayKey);
+      return onCapturedDay(records.moodLogs, dayKey);
     case "journal":
-      return onDay(records.journalEntries, (r) => r.occurredAt ?? r.createdAt, dayKey);
+      return onCapturedDay(records.journalEntries, dayKey);
     case "gratitude":
-      return onDay(records.gratitudeEntries, (r) => r.loggedAt, dayKey);
+      return onCapturedDay(records.gratitudeEntries, dayKey);
     case "sleep":
-      return onDay(records.sleepLogs, (r) => r.loggedAt, dayKey);
+      return onCapturedDay(records.sleepLogs, dayKey);
     case "cbt":
-      return onDay(records.thoughtRecords, (r) => r.createdAt, dayKey);
+      return onCapturedDay(records.thoughtRecords, dayKey);
+    // Breathing and grounding share mindfulness_sessions and so share its captured
+    // dayKey; only the exercise_name split differs (#330).
     case "breathing":
-      return onDay(
+      return onCapturedDay(
         (records.mindfulnessSessions ?? []).filter((s) => !isGroundingSession(s.exerciseName)),
-        (s) => s.completedAt,
         dayKey,
       );
     case "grounding":
-      return onDay(
+      return onCapturedDay(
         (records.mindfulnessSessions ?? []).filter((s) => isGroundingSession(s.exerciseName)),
-        (s) => s.completedAt,
         dayKey,
       );
     case "meditation":
-      return onDay(records.meditationSessions, (s) => s.completedAt, dayKey);
+      // Meditation joined the captured-day group in #330 - same rule as above.
+      return onCapturedDay(records.meditationSessions, dayKey);
     case "habits":
       // loggedOn is already a civil date key - compare directly, no bucketing.
       return (records.habitLogs ?? []).some((l) => l.loggedOn === dayKey);
     case "activities":
-      // Completion only: a scheduled-but-not-done activity stays open.
-      return onDay(records.activityLogs, (a) => a.completedAt, dayKey);
+      // Completion only: a scheduled-but-not-done activity stays open, so its null
+      // completedDayKey can never match a real day key. Captured day - compare,
+      // never re-bucket, or the engine and the activities screen disagree (#330).
+      return (records.activityLogs ?? []).some((a) => a.completedDayKey === dayKey);
     case "exposure":
       return onDay(records.exposureSessions, (s) => s.completedAt, dayKey);
     case "defusion":

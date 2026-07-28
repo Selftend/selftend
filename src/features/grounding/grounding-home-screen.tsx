@@ -83,7 +83,7 @@ export default function GroundingHomeScreen() {
               meta={
                 <ToolStats
                   tone="onField"
-                  accentClassName="text-clay"
+                  accentClassName="text-accent-ink"
                   subline={subline}
                   sublineTone={lastWhen ? "accent" : "muted"}
                   items={[

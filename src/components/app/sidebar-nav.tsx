@@ -205,8 +205,15 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
             name={item.icon}
             className={cn("size-6", active ? accent.icon : "text-muted-foreground")}
           />
+          {/*
+            Accent ink, not the accent (#403): the label is 14px text, and an
+            active row paints `accent.chip` behind it, so this lands on
+            `bg-<hue>/10` of its own hue where all eight hues fail AA (`think`
+            1.76, `be` 4.22). The icon above keeps the accent — it is
+            decorative, duplicated by this label.
+          */}
           <Text
-            className={cn("flex-1 text-sm font-medium", active ? accent.icon : "text-foreground")}
+            className={cn("flex-1 text-sm font-medium", active ? accent.ink : "text-foreground")}
           >
             {label}
           </Text>
@@ -217,10 +224,18 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
                 isLive ? "bg-act/15" : isBeta ? "bg-primary/15" : "bg-muted",
               )}
             >
+              {/*
+                The chip #421 §3 was filed about, and the widest-reach text site
+                in the app: the sidebar renders on all 20 captured screens. 10px
+                uppercase on `bg-primary/15` over the sidebar's card, where the
+                raw accent reads 4.41:1 light and 4.22:1 dark. `primary` has an
+                ink of its own now, so it takes it the way `badgeLive` beside it
+                already takes `text-act-ink`.
+              */}
               <Text
                 className={cn(
                   "text-[10px] font-semibold uppercase tracking-wider",
-                  isLive ? "text-act" : isBeta ? "text-primary" : "text-muted-foreground",
+                  isLive ? "text-act-ink" : isBeta ? "text-primary-ink" : "text-muted-foreground",
                 )}
               >
                 {badgeLabel}
