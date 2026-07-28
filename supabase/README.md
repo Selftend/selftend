@@ -405,3 +405,42 @@ migration raises if any shadow existed at its point in history, and
 the wrapper pattern. Whenever you add a user-data column or
 table, add it to this function in the same migration (GDPR export
 completeness).
+
+**Copy from the newest declaration on `dev`, not from the one you were reading
+when you started.** Every redeclaration is a full-body last-writer-wins over
+every other one, and two in-flight migrations touch different files, so git
+reports no conflict - on 2026-07-28 `dev` shipped an export missing two
+activity columns exactly this way (#429). Two gates now police it:
+`test/export-user-data-monotonic.test.ts` (the winning declaration must read
+every column any declaration ever read - no database, runs in `verify`) and
+`test/integration/export-user-data-completeness.integration.test.ts` (every
+column of every table the export covers is either exported or named below -
+live schema, runs in `integration`).
+
+### What the export deliberately withholds
+
+The rule (#429, decided 2026-07-28): **a column is exported unless it is
+caller scoping, a credential or secret, server bookkeeping, or internal
+plumbing** - and every withheld column is listed here with its reason. "It is
+app state" is not a reason: a theme, a chosen sound, an onboarding step or a
+program phase is data the user provided or generated. This table is parsed by
+the completeness integration test, so a new withheld column must be added here
+(with a reason) or the suite fails.
+
+Column rules (`table.column`, `*` wildcards allowed):
+
+| withheld                             | why                                                                                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `*.user_id`                          | Caller scoping - the export is already scoped to `auth.uid()`; repeating it on every row adds nothing.                   |
+| `*.last_*_reminder_key*`             | Server bookkeeping for reminder dedupe (the trailing `*` covers the plural `last_routine_reminder_keys`), not user data. |
+| `profiles.avatar_storage_path`       | Internal storage plumbing; `avatar_url` is the usable form of the same fact.                                             |
+| `web_push_subscriptions.p256dh`      | Push encryption secret - a credential, and useless outside the issuing browser.                                          |
+| `web_push_subscriptions.auth`        | Push encryption secret - same.                                                                                           |
+| `web_push_subscriptions.id`          | Internal row identity for a credential row; the endpoint is the meaningful identifier and IS exported.                   |
+| `device_push_tokens.expo_push_token` | Device push credential.                                                                                                  |
+
+Whole tables (no dot):
+
+| withheld | why                                                                                                                     |
+| -------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `*_data` | Field-encryption base twins - the export reads each one's decrypting view, which carries the same facts in usable form. |

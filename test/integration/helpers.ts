@@ -3,7 +3,13 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 // Local Supabase CLI uses deterministic keys derived from the default JWT secret,
 // so they're identical on every developer machine and in CI. Hardcoding avoids
 // any env-loading complexity in the test runner.
-export const LOCAL_SUPABASE_URL = "http://127.0.0.1:54321";
+//
+// The URL alone is overridable: on Windows, 54321 can sit inside a Hyper-V
+// excluded port range, in which case the stack publishes no ports and the only
+// way in is a forwarder on some other port (e.g. `socat` or a
+// `docker run -p 51555:8000 alpine/socat … supabase_kong_selftend:8000`).
+// CI and normal machines never set this.
+export const LOCAL_SUPABASE_URL = process.env.SUPABASE_TEST_URL ?? "http://127.0.0.1:54321";
 export const LOCAL_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
 const LOCAL_SERVICE_ROLE_KEY =
