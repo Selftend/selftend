@@ -75,8 +75,13 @@ async function req(url, token, init = {}) {
   });
   const text = await res.text();
   const body = text ? JSON.parse(text) : {};
-  if (!res.ok)
-    throw new Error(`${init.method || "GET"} ${url} → ${res.status}: ${JSON.stringify(body)}`);
+  if (!res.ok) {
+    const err = new Error(
+      `${init.method || "GET"} ${url} → ${res.status}: ${JSON.stringify(body)}`,
+    );
+    err.status = res.status;
+    throw err;
+  }
   return body;
 }
 
@@ -126,7 +131,14 @@ async function main() {
     const target = await req(
       `${API}/${PKG}/edits/${edit.id}/tracks/${encodeURIComponent(TO)}`,
       token,
-    ).catch(() => ({ releases: [] }));
+    ).catch((err) => {
+      // Fail closed (#453 review): only "track absent" may read as empty. Any
+      // other failure - a transient 5xx, a rate limit - would silently skip the
+      // downgrade guard below and let an older versionCode overwrite a newer
+      // tester release. Abort instead; the outer catch deletes the edit.
+      if (err && err.status === 404) return { releases: [] };
+      throw err;
+    });
     const targetMax = (target.releases || [])
       .flatMap((r) => r.versionCodes || [])
       .map(Number)

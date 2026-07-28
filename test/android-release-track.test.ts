@@ -167,6 +167,15 @@ describe("dev-driven closed testing feed (#374)", () => {
     expect(promote).toContain("no downgrade");
   });
 
+  it("fails closed when the target track cannot be read", () => {
+    // A transient failure reading the target used to be swallowed into "empty
+    // track", which bypasses the downgrade guard entirely (review finding on
+    // #453). Only a 404 - track genuinely absent - may read as empty.
+    const promote = readFileSync(resolve(ROOT, "scripts/promote-android-track.cjs"), "utf8");
+    expect(promote).toContain("err.status === 404");
+    expect(promote).toContain("err.status = res.status");
+  });
+
   it("targets the Groups track with a status that serves testers", () => {
     const closed = easJson.submit?.closed?.android;
     expect(closed?.track).toBe("Groups");
