@@ -58,7 +58,17 @@ export const atOrAfter = (iso: string | null | undefined, since: number) =>
 export const countSince = (items: { createdAt: string }[], since: number) =>
   items.filter((item) => atOrAfter(item.createdAt, since)).length;
 
-// 1 if a qualifying event happened on the selected local day, else 0.
+/**
+ * 1 if a qualifying event happened on the selected local day, else 0.
+ *
+ * Every ACT daily practice is bucketed through the VIEWER's current timezone,
+ * because no ACT table captures an occurrence offset yet - the largest slice
+ * still queued behind #330. That means an entry can move days after travel; it
+ * is recorded rather than hidden because the server twin
+ * (`program_widget_task_status`) deliberately keeps the same ACT legs
+ * viewer-local, so the widget and this screen at least agree. Both graduate
+ * together when the ACT offset columns land (#414).
+ */
 const didOnDate = (timestamps: (string | null | undefined)[], date: string) =>
   timestamps.some((ts) => typeof ts === "string" && toLocalDateKey(ts) === date) ? 1 : 0;
 
