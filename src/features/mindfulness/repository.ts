@@ -85,6 +85,27 @@ export async function countMindfulnessSessionsByNames(
   return count ?? 0;
 }
 
+// Exact count of every session that is NOT one of the given exercise types. Breathing
+// counts by exclusion because it is an open set - built-in patterns plus user-defined
+// exercises, whose sessions carry the custom exercise's id as their name - while
+// grounding is the closed slug set. src/features/routines/derive.ts classifies the
+// shared table the same way: not grounding means breathing.
+export async function countMindfulnessSessionsExcludingNames(
+  userId: string,
+  excludedNames: string[],
+): Promise<number> {
+  const client = requireSupabase();
+  const quoted = excludedNames.map((name) => `"${name}"`).join(",");
+  const { count, error } = await client
+    .from("mindfulness_sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .not("exercise_name", "in", `(${quoted})`);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function saveMindfulnessSession(userId: string, input: MindfulnessSessionInput) {
   const client = requireSupabase();
   // One reading of the clock, so the instant and the offset describe the same moment.
