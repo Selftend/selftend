@@ -20,7 +20,21 @@ export type ToolHue = ExerciseHue;
 export const EXERCISE_HUES: ExerciseHue[] = [...HUE_NAMES];
 
 interface HueClasses {
+  /** The published accent as a foreground colour — icons and decorative glyphs. */
   text: string;
+  /**
+   * The same hue as small-text ink (#403). `text` stays the accent because its
+   * main consumer, HueIconBadge, paints an icon; the one text consumer
+   * (meditation's practice step numerals) renders 10px inside `chipBg`, a
+   * `bg-<hue>/15` tint of the same hue, where every hue fails AA — 3.15 for
+   * `mist`, 3.14 for `iris`, 1.84 for `think`. Ink clears 5.33 at worst.
+   *
+   * This map is app-wide despite living under features/mindfulness, and it is
+   * hue-parameterised, so a practice can carry a guest hue into another
+   * module's room. `text-<hue>-ink` is the right token for exactly that:
+   * `text-accent-ink` would repaint a guest hue as the host room's accent.
+   */
+  ink: string;
   chipBg: string;
   border: string;
   fill: string;
@@ -47,32 +61,69 @@ const HUE_HSL = Object.fromEntries(
 
 const HUES: Record<ExerciseHue, HueDef> = {
   mist: {
-    classes: { text: "text-mist", chipBg: "bg-mist/15", border: "border-mist/30", fill: "bg-mist" },
+    classes: {
+      text: "text-mist",
+      ink: "text-mist-ink",
+      chipBg: "bg-mist/15",
+      border: "border-mist/30",
+      fill: "bg-mist",
+    },
     hsl: HUE_HSL.mist,
   },
   iris: {
-    classes: { text: "text-iris", chipBg: "bg-iris/15", border: "border-iris/30", fill: "bg-iris" },
+    classes: {
+      text: "text-iris",
+      ink: "text-iris-ink",
+      chipBg: "bg-iris/15",
+      border: "border-iris/30",
+      fill: "bg-iris",
+    },
     hsl: HUE_HSL.iris,
   },
   be: {
-    classes: { text: "text-be", chipBg: "bg-be/15", border: "border-be/30", fill: "bg-be" },
+    classes: {
+      text: "text-be",
+      ink: "text-be-ink",
+      chipBg: "bg-be/15",
+      border: "border-be/30",
+      fill: "bg-be",
+    },
     hsl: HUE_HSL.be,
   },
   ink: {
-    classes: { text: "text-ink", chipBg: "bg-ink/15", border: "border-ink/30", fill: "bg-ink" },
+    classes: {
+      text: "text-ink",
+      ink: "text-ink-ink",
+      chipBg: "bg-ink/15",
+      border: "border-ink/30",
+      fill: "bg-ink",
+    },
     hsl: HUE_HSL.ink,
   },
   act: {
-    classes: { text: "text-act", chipBg: "bg-act/15", border: "border-act/30", fill: "bg-act" },
+    classes: {
+      text: "text-act",
+      ink: "text-act-ink",
+      chipBg: "bg-act/15",
+      border: "border-act/30",
+      fill: "bg-act",
+    },
     hsl: HUE_HSL.act,
   },
   clay: {
-    classes: { text: "text-clay", chipBg: "bg-clay/15", border: "border-clay/30", fill: "bg-clay" },
+    classes: {
+      text: "text-clay",
+      ink: "text-clay-ink",
+      chipBg: "bg-clay/15",
+      border: "border-clay/30",
+      fill: "bg-clay",
+    },
     hsl: HUE_HSL.clay,
   },
   think: {
     classes: {
       text: "text-think",
+      ink: "text-think-ink",
       chipBg: "bg-think/15",
       border: "border-think/30",
       fill: "bg-think",
@@ -82,6 +133,7 @@ const HUES: Record<ExerciseHue, HueDef> = {
   aqua: {
     classes: {
       text: "text-aqua",
+      ink: "text-aqua-ink",
       chipBg: "bg-aqua/15",
       border: "border-aqua/30",
       fill: "bg-aqua",

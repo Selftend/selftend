@@ -205,8 +205,15 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
             name={item.icon}
             className={cn("size-6", active ? accent.icon : "text-muted-foreground")}
           />
+          {/*
+            Accent ink, not the accent (#403): the label is 14px text, and an
+            active row paints `accent.chip` behind it, so this lands on
+            `bg-<hue>/10` of its own hue where all eight hues fail AA (`think`
+            1.76, `be` 4.22). The icon above keeps the accent — it is
+            decorative, duplicated by this label.
+          */}
           <Text
-            className={cn("flex-1 text-sm font-medium", active ? accent.icon : "text-foreground")}
+            className={cn("flex-1 text-sm font-medium", active ? accent.ink : "text-foreground")}
           >
             {label}
           </Text>
