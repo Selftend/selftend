@@ -69,15 +69,33 @@ describe("the tools hub takes its hues from tool-accent.ts", () => {
   it("renders each tile's chip and glyph in that tool's own hue", () => {
     const { UNSAFE_root } = renderWithProviders(<ToolsScreen />);
 
-    const classNames = UNSAFE_root.findAll((node) => typeof node.props?.className === "string").map(
-      (node) => node.props.className as string,
+    // Scoped to each TILE, not to the screen. A whole-tree search cannot fail
+    // for a tool whose hue another tool also carries: `journal` and `sleep` both
+    // take `ink`, so sending journal back to the violet fallback still finds
+    // `bg-ink/10` - on the sleep tile - and passes. Journal is one of the tools
+    // #421 actually reported wrong, so the assertion has to localise or it
+    // cannot see the defect it was written for.
+    // `typeof node.type === "string"` keeps only the host element: a Pressable
+    // renders through several composite layers that all carry the same props,
+    // so without it each tile matches three times over.
+    const tiles = UNSAFE_root.findAll(
+      (node) =>
+        typeof node.type === "string" &&
+        node.props?.accessibilityRole === "button" &&
+        typeof node.props?.className === "string" &&
+        node.props.className.includes("basis-[260px]"),
     );
+    expect(tiles).toHaveLength(TOOLS.length);
 
-    for (const tool of TOOLS) {
+    TOOLS.forEach((tool, index) => {
       const accent = toolAccent(tool.key);
+      const classNames = tiles[index]
+        .findAll((node) => typeof node.props?.className === "string")
+        .map((node) => node.props.className as string);
+
       expect(classNames).toContainEqual(expect.stringContaining(accent.chip));
       expect(classNames.some((name) => name.split(/\s+/).includes(accent.icon))).toBe(true);
-    }
+    });
   });
 
   it("shows more than the two colours it used to", () => {
