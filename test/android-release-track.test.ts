@@ -158,18 +158,142 @@ describe("dev-driven closed testing feed (#374)", () => {
     expect(testingWorkflow).not.toContain("::warning::");
   });
 
-  it("never downgrades a target track when mirroring", () => {
-    // Independent per-profile concurrency means a slower production run can
-    // mirror an OLDER versionCode over a newer tester release; the promote
-    // script refuses (review finding on #450).
-    const promote = readFileSync(resolve(ROOT, "scripts/promote-android-track.cjs"), "utf8");
-    expect(promote).toContain("targetMax >= Number(versionCode)");
-    expect(promote).toContain("no downgrade");
-  });
+  // The mirror script's guards are exercised for real below (see "the mirror
+  // script, driven against a mocked Play API") - a source-substring pin cannot
+  // tell a working guard from a bypassed one (#453 review).
 
   it("targets the Groups track with a status that serves testers", () => {
     const closed = easJson.submit?.closed?.android;
     expect(closed?.track).toBe("Groups");
     expect(closed?.releaseStatus).toBe("completed");
+  });
+});
+
+// #450 / #453 - the mirror script mutates Play tracks, so its two guards are
+// proven by driving main() against a mocked Play API, not by scanning source:
+//   - no-downgrade: a target already serving a same-or-higher versionCode is
+//     left alone (#450);
+//   - fail-closed: a non-404 failure reading the target aborts the promotion
+//     outright - treating it as "empty track" would skip the guard above and
+//     overwrite a newer tester release (#453).
+describe("the mirror script, driven against a mocked Play API", () => {
+  const nodeCrypto = require("node:crypto") as typeof import("node:crypto");
+  const fs = require("fs") as typeof import("fs");
+
+  // A real (throwaway) RSA key: makeJwt signs with crypto.createSign, so the
+  // service-account stub must carry a parseable private key.
+  const { privateKey } = nodeCrypto.generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" },
+  });
+
+  type FetchCall = { method: string; url: string };
+  let calls: FetchCall[];
+  let targetTrackResponse: { status: number; body?: unknown };
+  const originalFetch = global.fetch;
+
+  const json = (body: unknown, status = 200) =>
+    ({
+      ok: status >= 200 && status < 300,
+      status,
+      text: async () => JSON.stringify(body),
+      json: async () => body, // the token request reads .json() directly
+    }) as Response;
+
+  beforeEach(() => {
+    calls = [];
+    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+    jest.spyOn(fs, "readFileSync").mockImplementation((path) => {
+      if (String(path).includes("google-play-service-account")) {
+        return JSON.stringify({ client_email: "ci@test", private_key: privateKey });
+      }
+      throw new Error(`unexpected read: ${String(path)}`);
+    });
+    global.fetch = jest.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      const u = String(url);
+      const method = init?.method ?? "GET";
+      calls.push({ method, url: u });
+      if (u.includes("oauth2.googleapis.com/token")) return json({ access_token: "tok" });
+      if (method === "POST" && u.endsWith("/edits")) return json({ id: "edit-1" });
+      if (method === "GET" && u.includes("/tracks/Groups"))
+        return json({ releases: [{ versionCodes: ["100"], name: "1.0.0" }] });
+      if (method === "GET" && u.includes("/tracks/alpha"))
+        return json(targetTrackResponse.body ?? {}, targetTrackResponse.status);
+      if (method === "PUT" && u.includes("/tracks/alpha")) return json({});
+      if (method === "POST" && u.endsWith(":commit")) return json({});
+      if (method === "DELETE") return json({});
+      throw new Error(`unexpected fetch: ${method} ${u}`);
+    }) as unknown as typeof fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    jest.restoreAllMocks();
+  });
+
+  // The script is evaluated from source with its externals passed in, rather
+  // than require()d: jest's transform chain balks at the .cjs file, and the
+  // simulated app runtime carries a patched URLSearchParams the Node CLI can't
+  // use. The wrapper is exactly Node's own CJS shape - same code, same require
+  // (so the fs spies apply), test-controlled fetch. The evaluated string is the
+  // repo's own checked-in script, byte-for-byte - the same trust require() has;
+  // nothing external is interpolated into it.
+  const scriptSource = readFileSync(resolve(ROOT, "scripts/promote-android-track.cjs"), "utf8");
+  const runMain = () => {
+    const mod = { exports: {} as { main?: () => Promise<void> } };
+
+    const wrapper = new Function(
+      "require",
+      "module",
+      "exports",
+      "fetch",
+      "URLSearchParams",
+      scriptSource,
+    );
+    const delegatingFetch = (...args: Parameters<typeof fetch>) => global.fetch(...args);
+
+    const { URLSearchParams: NodeURLSearchParams } =
+      require("node:url") as typeof import("node:url");
+    wrapper(require, mod, mod.exports, delegatingFetch, NodeURLSearchParams);
+    if (!mod.exports.main) throw new Error("script did not export main()");
+    return mod.exports.main();
+  };
+  const putCalls = () => calls.filter((c) => c.method === "PUT");
+  const deleteCalls = () => calls.filter((c) => c.method === "DELETE");
+
+  it("mirrors through an absent target track (404 reads as empty)", async () => {
+    targetTrackResponse = { status: 404, body: { error: "not found" } };
+
+    await runMain();
+
+    expect(putCalls()).toHaveLength(1);
+    expect(calls.some((c) => c.method === "POST" && c.url.endsWith(":commit"))).toBe(true);
+  });
+
+  it("aborts without writing when the target track read fails transiently", async () => {
+    // The #453 finding: a 500 swallowed into "empty track" would sail past the
+    // downgrade guard and PUT an older versionCode over a newer tester release.
+    targetTrackResponse = { status: 500, body: { error: "backend" } };
+
+    await expect(runMain()).rejects.toThrow(/500/);
+
+    expect(putCalls()).toHaveLength(0);
+    expect(deleteCalls()).toHaveLength(1); // the edit is cleaned up, not committed
+  });
+
+  it("leaves a target already serving a same-or-higher versionCode untouched", async () => {
+    // The #450 finding: per-profile concurrency means the slower pipeline can
+    // arrive carrying the older build.
+    targetTrackResponse = {
+      status: 200,
+      body: { releases: [{ versionCodes: ["101"], name: "1.0.1" }] },
+    };
+
+    await runMain();
+
+    expect(putCalls()).toHaveLength(0);
+    expect(deleteCalls()).toHaveLength(1); // skipping is success: edit deleted, no commit
+    expect(calls.some((c) => c.method === "POST" && c.url.endsWith(":commit"))).toBe(false);
   });
 });
