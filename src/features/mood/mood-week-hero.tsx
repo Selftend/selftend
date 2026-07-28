@@ -18,8 +18,15 @@ interface WeekHeroProps {
 
 function deltaCopy(delta: WeekDelta, t: TFunction) {
   if (delta.delta === null) return { text: t("week.noComparison"), tone: "text-muted-foreground" };
+  // `act-ink`, not `accent-ink` (#403): this card renders inside the mood
+  // module, so the room pours `be` — `accent-ink` would repaint the improvement
+  // pink and collapse it into the "down" case it exists to contrast with. The
+  // hue-explicit token keeps the green and fixes the contrast: published
+  // `text-act` is 3.95:1 on the be room's card, under AA for this 13px line,
+  // while act's own ink clears 6.43:1. The down case was never affected —
+  // `text-destructive` is 5.10:1 on the same surface — so only the up arm moves.
   if (delta.delta > 0)
-    return { text: t("week.deltaUp", { delta: delta.delta.toFixed(1) }), tone: "text-act" };
+    return { text: t("week.deltaUp", { delta: delta.delta.toFixed(1) }), tone: "text-act-ink" };
   if (delta.delta < 0)
     return {
       text: t("week.deltaDown", { delta: Math.abs(delta.delta).toFixed(1) }),

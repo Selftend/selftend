@@ -118,4 +118,37 @@ describe("WeekHero week strip", () => {
     expect(screen.getByText("Mood by day")).toBeTruthy();
     expect(screen.getByText("No emotions tagged yet")).toBeTruthy();
   });
+
+  it("paints a rising delta in act's own ink, not the published accent", () => {
+    renderWithProviders(
+      <WeekHero
+        delta={{ current: 3.4, previous: 3.0, delta: 0.4 }}
+        byDay={weekOf([3, 3, 3, 3, 3, 3, 4])}
+        topEmotions={[]}
+      />,
+    );
+
+    // This card renders in the be room, so `accent-ink` would pour pink here and
+    // erase the up/down colour split; act's hue-explicit ink keeps the green and
+    // clears AA - 3.95:1 → 6.43:1 on the be room's card (#403).
+    const className = String(screen.getByText("▲ 0.4 vs last week").props.className);
+    expect(className.split(/\s+/)).toContain("text-act-ink");
+    // Token-wise, not substring-wise: "text-act-ink" contains "text-act".
+    expect(className.split(/\s+/)).not.toContain("text-act");
+  });
+
+  it("leaves a falling delta on the destructive token, which already clears AA", () => {
+    renderWithProviders(
+      <WeekHero
+        delta={{ current: 3.0, previous: 3.4, delta: -0.4 }}
+        byDay={weekOf([4, 3, 3, 3, 3, 3, 3])}
+        topEmotions={[]}
+      />,
+    );
+
+    // 5.10:1 on the same surface, so the up arm moving to ink is not a reason to
+    // touch this one - the pair was asymmetric, only the green was below AA.
+    const className = String(screen.getByText("▼ 0.4 vs last week").props.className);
+    expect(className.split(/\s+/)).toContain("text-destructive");
+  });
 });

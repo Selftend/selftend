@@ -1,6 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import GratitudeHomeScreen from "@/src/features/gratitude/gratitude-home-screen";
 import { useGratitudeEntries, useGratitudeEntryCount } from "@/src/features/gratitude/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -103,6 +104,21 @@ describe("GratitudeHomeScreen", () => {
 
     expect(screen.queryByText("Nothing logged yet")).toBeNull();
     expect(screen.queryByText(/^Last · /)).toBeNull();
+  });
+
+  it("darkens the favorites star to accent ink, which think needs even as an icon", () => {
+    mockUseGratitudeEntries.mockReturnValue({
+      data: [gratitudeEntry({ starred: true })],
+    } as unknown as ReturnType<typeof useGratitudeEntries>);
+
+    renderWithProviders(<GratitudeHomeScreen />);
+
+    // Published `text-think` is 1.88:1 on the think/0.12 tile behind this glyph -
+    // under even 1.4.11's 3:1 for non-text, which the other seven hues clear. The
+    // room's accent ink is the same hue at 5.47:1 (#368, #403).
+    const stars = screen.UNSAFE_getAllByType(Icon).filter((icon) => icon.props.name === "star");
+    expect(stars).toHaveLength(1);
+    expect(String(stars[0]?.props.className).split(/\s+/)).toContain("text-accent-ink");
   });
 
   it("routes to the new entry screen from the CTA", () => {
