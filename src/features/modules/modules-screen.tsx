@@ -63,10 +63,14 @@ const MODULES: ModuleTile[] = [
   },
 ];
 
+// The abbreviation inside the mark is `text-sm font-bold` — 14px, under WCAG's
+// 18.66px bold large-text threshold — so it needs the small-text floor on the
+// `bg-<hue>/15` mark it sits in. This screen pours no room, so the room-less
+// `text-<hue>-ink` is the token that keeps each module its own colour (#403).
 const MARK_TEXT_CLASS: Record<ModuleKey, string> = {
   cbt: "text-primary",
-  act: "text-act",
-  dbt: "text-be",
+  act: "text-act-ink",
+  dbt: "text-be-ink",
 };
 
 export default function ModulesScreen() {
