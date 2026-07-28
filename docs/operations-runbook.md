@@ -9,6 +9,17 @@ This runbook defines the minimum operational process for support, privacy reques
 - Security reports: `security@selftend.org`
 - Public security policy: [.github/SECURITY.md](../.github/SECURITY.md)
 
+## Release incidents (bad production release)
+
+The halt-and-hotfix runbook lives with the release docs, not here — one home,
+kept next to the pipeline it describes:
+[Rollback runbook](./releasing.md#rollback-runbook) (detection → halt → ship
+forward) and [Hotfixes](./releasing.md#hotfixes) for the fast path to `main`.
+The one rule that protects every release:
+[the migration forward-compatibility rule](./releasing.md#the-migration-forward-compatibility-rule).
+Detection is Sentry's release-tagged alert; Play vitals and reviews trail by
+hours to days.
+
 ## Field Encryption Key Management
 
 User-entered records are encrypted at rest using a symmetric key stored as a **Supabase Vault secret** named `app_field_encryption_key`. The Vault root key is held outside the database, so a leaked DB dump cannot be read without this secret.
