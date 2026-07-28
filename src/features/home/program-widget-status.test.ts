@@ -20,6 +20,12 @@ describe("program widget status", () => {
     ).toBeGreaterThanOrEqual(23 * 60 * 60 * 1000);
   });
 
+  // The captured-day legs of the RPC need the viewer's day as a key, not only as
+  // a pair of instants - a range scan cannot consume a day key (#414).
+  it("names the viewer's current day alongside its boundaries", () => {
+    expect(currentLocalDayRange(new Date(2026, 6, 13, 15, 30)).key).toBe("2026-07-13");
+  });
+
   it("maps the small RPC response without fetching histories", async () => {
     const rpc = jest.fn().mockResolvedValue({
       data: [{ task_key: "setGoals", done: true }],
@@ -28,12 +34,18 @@ describe("program widget status", () => {
     mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
 
     await expect(
-      getProgramWidgetTaskStatus("cbt", "2026-07-12T21:00:00.000Z", "2026-07-13T21:00:00.000Z"),
+      getProgramWidgetTaskStatus(
+        "cbt",
+        "2026-07-12T21:00:00.000Z",
+        "2026-07-13T21:00:00.000Z",
+        "2026-07-13",
+      ),
     ).resolves.toEqual([{ taskKey: "setGoals", done: true }]);
     expect(rpc).toHaveBeenCalledWith("program_widget_task_status", {
       p_module: "cbt",
       p_day_start: "2026-07-12T21:00:00.000Z",
       p_day_end: "2026-07-13T21:00:00.000Z",
+      p_day_key: "2026-07-13",
     });
   });
 
@@ -41,7 +53,9 @@ describe("program widget status", () => {
     const rpc = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
     mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(getProgramWidgetTaskStatus("act", "start", "end")).rejects.toMatchObject({
+    await expect(
+      getProgramWidgetTaskStatus("act", "start", "end", "2026-07-13"),
+    ).rejects.toMatchObject({
       code: "42501",
     });
   });
