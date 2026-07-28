@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
+import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -24,6 +25,12 @@ import { useSession } from "@/src/providers/session-provider";
 import { formatLocalTimestamp } from "@/src/utils/date";
 
 export default function GroundingHomeScreen() {
+  // PROTOTYPE (#444): scroll position feeding the field parallax.
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -63,11 +70,16 @@ export default function GroundingHomeScreen() {
         edges={["bottom", "left", "right"]}
         style={roomStyle}
       >
-        <ScrollView contentContainerClassName="grow p-4">
+        <Animated.ScrollView
+          contentContainerClassName="grow p-4"
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+        >
           {/* The field + sheet escape the scroll padding so the clay field runs
               edge to edge; the sheet re-adds the inset for its sections. */}
           <View className="-mx-4 -mt-4">
             <ModuleHomeHeader
+              fieldParallax={scrollY}
               variant="field"
               addWidgetCategory="grounding"
               title={t("grounding.title")}
@@ -146,7 +158,7 @@ export default function GroundingHomeScreen() {
               </View>
             </ContentSheet>
           </View>
-        </ScrollView>
+        </Animated.ScrollView>
       </SafeAreaView>
     </>
   );
