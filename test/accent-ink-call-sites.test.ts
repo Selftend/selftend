@@ -1147,6 +1147,21 @@ describe("no bare accent survives outside a classified area", () => {
     // its sites - rather than deleting the line from this list.
     expect(stray).toEqual([]);
   });
+
+  it("lets design-tokens.ts through for TINT_ACCENT's eight entries and nothing more", () => {
+    // The exclusion above is by FILE, which on its own is not a gate: a THIRD map
+    // in this file writing hue text - in either spelling - rides through it in
+    // silence, and the shape assertions below only ever look at the two maps that
+    // exist today. That is #421's hole re-opened one file over, so pin the whole
+    // set instead. A new bare-hue line here now has to be justified by editing
+    // this list, which is the point.
+    const inTokens = findingsIn(BARE_HUE, sourceFiles(ROOT, { dirs: ["app", "src"] }))
+      .filter((finding) => finding.file === TOKENS_FILE)
+      .map((finding) => finding.snippet.trim())
+      .sort();
+
+    expect(inTokens).toEqual([...HUE_NAMES].map((hue) => `${hue}: "text-${hue}",`).sort());
+  });
 });
 
 describe("the tint maps keep text and marks apart (#421)", () => {
@@ -1177,7 +1192,7 @@ describe("the tint maps keep text and marks apart (#421)", () => {
   });
 
   it("primary is the only tint with no ink, and is tracked separately", () => {
-    // `primary` is not a hue; it measures 4.41:1 on bg-primary/10 and is #422.
+    // `primary` is not a hue; it measures 4.41:1 on bg-primary/10 and is #421 §3.
     expect(TINT_TEXT.primary).toBe("text-primary");
     expect(TINT_ACCENT.primary).toBe("text-primary");
   });
