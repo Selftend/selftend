@@ -211,9 +211,50 @@ export const TINT_TEXT: Record<TintToken, string> = {
 };
 
 /**
+ * The washes a TINT_ACCENT mark is actually painted on, faintest → densest.
+ * Every one is a tint of the mark's *own* hue, which is the pairing that costs a
+ * mark its contrast: the wash pulls the surface toward the very colour the glyph
+ * is drawn in. Each alpha is here because a consumer paints it —
+ *
+ *   0.05  src/components/app/landing/modules-section.tsx   CARD_TINT
+ *   0.07  src/components/app/landing/landing-screen.tsx    PILL_TINT
+ *   0.10  src/components/app/pillar-card.tsx               TOOL_ICON_BG
+ *   0.10  src/components/react-native-reusables/badge.tsx  badgeVariants tint
+ *
+ * — and contrast falls monotonically as the wash thickens, so 0.10 is the
+ * binding case of the three. A denser wash under a glyph would invalidate the
+ * floor below without touching it, so test/accent-ink-call-sites.test.ts fails
+ * the build if a TINT_ACCENT consumer paints one.
+ */
+export const MARK_WASH_ALPHAS = [0.05, 0.07, 0.1] as const;
+
+/**
  * A tint used as a NON-TEXT mark: icons, rules, dots. WCAG 1.4.11's 3:1 floor
- * rather than 1.4.3's 4.5:1, which the published accents clear, and the accent is
- * what carries the module's identity — darkening an icon to ink reads as disabled.
+ * rather than 1.4.3's 4.5:1, because the accent is what carries the module's
+ * identity — darkening a mark to ink reads as disabled.
+ *
+ * This map used to justify itself with "which the published accents clear". That
+ * premise was asserted, never computed, and it is false. Rendered on the
+ * signed-out landing page, `think`'s glyph measures 1.80:1 (#433). `think` is a
+ * light gold whose accent is already 1.88 on the *bare* app background, before
+ * any wash — there is no surface in the product where it reads as a mark, so it
+ * is the one tint whose mark is its ink. Dark mode is unaffected either way:
+ * `--think-ink` IS the published accent there, by construction.
+ *
+ * The premise is a derivation now rather than a claim. For every tint,
+ * test/theme-token-sync.test.ts measures the accent on every MARK_WASH_ALPHAS
+ * wash over both neutral surfaces and, for the hues, the room its own hue pours,
+ * in both schemes — then asserts this map holds the accent exactly where that
+ * worst case clears 3.0 and the ink where it does not. Light worst cases:
+ *
+ *   comfortable  primary 4.38 · aqua 4.27 · ink 4.17 · be 4.13
+ *   thin         act 3.24 · clay 3.12 · mist 3.09 · iris 3.00
+ *   below floor  think 1.76 → text-think-ink
+ *
+ * `iris` clears by 0.0023, on the iris room's own background at /0.10. That is a
+ * pass and it is not a comfortable one; the derivation is what keeps it honest,
+ * so a retune costing iris any luminance moves it to ink and fails the build
+ * rather than shipping a mark nobody re-measured.
  *
  * Reach for this only where the mark carries no text. If it renders a glyph beside
  * a label, the label takes `TINT_TEXT` and the glyph takes this, which is the
@@ -223,7 +264,7 @@ export const TINT_ACCENT: Record<TintToken, string> = {
   primary: "text-primary",
   act: "text-act",
   be: "text-be",
-  think: "text-think",
+  think: "text-think-ink",
   aqua: "text-aqua",
   iris: "text-iris",
   ink: "text-ink",
