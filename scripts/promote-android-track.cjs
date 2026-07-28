@@ -168,7 +168,14 @@ async function main() {
   }
 }
 
-main().catch((e) => {
-  console.error("PROMOTE FAILED:", e.message);
-  process.exit(1);
-});
+/* Exported for the behavioral test in test/android-release-track.test.ts, which
+ * drives main() against a mocked fetch to prove the fail-closed guard actually
+ * aborts (no PUT) on a non-404 target-track read. Running as a CLI is unchanged. */
+if (require.main === module) {
+  main().catch((e) => {
+    console.error("PROMOTE FAILED:", e.message);
+    process.exit(1);
+  });
+}
+
+module.exports = { main };
