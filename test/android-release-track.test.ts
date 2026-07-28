@@ -57,15 +57,21 @@ describe("Android production submit profile (#371)", () => {
     expect(["inProgress", "completed"]).toContain(profile?.releaseStatus);
   });
 
-  it("caps the rollout while in inProgress, at a fraction that reaches someone", () => {
-    // `inProgress` without a rollout is not a valid Play release, and a rollout
-    // of 0 serves nobody - the same silent failure as `draft`, just spelled
-    // differently. Both fail here.
-    if (profile?.releaseStatus !== "inProgress") return;
-
-    expect(typeof profile.rollout).toBe("number");
-    expect(profile.rollout).toBeGreaterThan(0);
-    expect(profile.rollout).toBeLessThanOrEqual(1);
+  it("ships the exact capped rollout this pipeline currently runs", () => {
+    // Pinned EXACTLY, not as a range, and with no early return for the other
+    // status - both would make this vacuous the moment the policy drifted.
+    //
+    // The cap is a policy, not an implementation detail: `docs/releasing.md`
+    // ("Getting from 20% to everyone"), the workflow header and the job summary
+    // all state it, and the rollback runbook tells an operator to halt a 20%
+    // rollout as the first mitigation. A config-only edit that removed the cap
+    // would leave CI green while four places described a rollout that no longer
+    // existed - and an operator would reach for a halt that does nothing.
+    //
+    // Flipping to `completed` is a deliberate change with a documented exit.
+    // Edit this expectation and those four places in the same commit.
+    expect(profile?.releaseStatus).toBe("inProgress");
+    expect(profile?.rollout).toBe(0.2);
   });
 });
 

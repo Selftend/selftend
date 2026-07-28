@@ -77,7 +77,13 @@ Two speeds: mitigate first, then make the fix permanent. The database is
 **1. Immediate mitigation (minutes):**
 
 - **Web** — redeploy the previous good version to the Cloudflare Worker: either **Cloudflare dash → Workers → `selftend` → Deployments → roll back** to the prior version (instant, no rebuild), or `workflow_dispatch` the `Web production deploy` workflow (`web-deploy.yml`) / re-run `release.yml` on the prior release `tag`.
-- **Android** — Play has no un-release for a versionCode, and releases go out at 100% with no staged rollout to halt. If the release is still in **review**, remove it from review in Play Console before it ships. Once it is live, the only remedy is **shipping a fixed build with a higher versionCode forward**; you may also **halt** the release on the production track to stop _new_ users receiving it, but everyone who already updated stays on the bad build. Halt the closed tracks too if testers are affected.
+- **Android** — releases go out as a **staged rollout** (currently 20%, see `eas.json`), so there _is_ something to stop. In order:
+  1. **Still in review?** Remove it from review in Play Console before it reaches anyone.
+  2. **Already rolling out? Halt the rollout on the production track first.** This is the fastest mitigation and it caps the damage at whoever has already updated — do it before anything else. Halt the closed tracks too if testers are affected.
+  3. **Then ship forward.** Play has no un-release for a versionCode: everyone who already updated stays on the bad build until a **higher versionCode** supersedes it.
+
+  Halting also freezes the rollout for the good case — if you halt and then decide the build is fine, you resume or bump it in Play Console rather than re-releasing. Once `releaseStatus` becomes `completed` (see [How Android reaches users](#how-android-reaches-users)), step 2 stops capping anything: the build is already at 100% and halting only stops _new_ installs.
+
 - **Database** — do nothing schema-wise. For genuine data corruption only: restore from the daily `db-backup.yml` backup (accepts up to ~24h data loss unless Supabase PITR is enabled — recommended).
 
 **2. Permanent fix (hours):**
