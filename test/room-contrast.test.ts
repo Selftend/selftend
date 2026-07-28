@@ -140,6 +140,38 @@ describe("accent ink meets WCAG AA on the room surfaces its own hue pours", () =
   });
 });
 
+// The fourth pairing, and the one #368's table did not reach: the room hue used
+// as ink on a *tint of itself*. Rooms are full of these - a selected chip is
+// `bg-<hue>/10` with `text-<hue>` on it, sometimes nested inside a `bg-<hue>/
+// [0.06]` box, and each tint darkens the surface the same accent has to carry.
+// #368 measured the bare surfaces and found four failing hues; through a single
+// /10 chip the published accent fails for *all seven*, `be` and `ink` included
+// (4.12 and 4.16 on the room background). That is why mood - a "passing" be room
+// - still had a 3.81:1 chip label. Accent ink clears every one of these with
+// headroom (worst case 5.00), so the floor holds at AA without a per-pairing
+// exception.
+describe("accent ink meets WCAG AA on tints of the room's own hue", () => {
+  it.each(ROOM_HUES)("%s accent ink passes on a chip fill of its own hue", (hue) => {
+    for (const scheme of ["light", "dark"] as const) {
+      const room = roomTriples(hue)[scheme];
+      const accent = hslTripleToRgb(HUE_TRIPLES[hue][scheme]);
+      const accentInk = hslTripleToRgb(room["accent-ink"]);
+
+      for (const surface of ["background", "card"] as const) {
+        const base = hslTripleToRgb(room[surface]);
+        // `bg-<hue>/10` — the selected-chip fill.
+        const chip = compositeOver(accent, 0.1, base);
+        // ...and that chip nested in a `bg-<hue>/[0.06]` panel, which mood's
+        // "go deeper" body chips actually do.
+        const nested = compositeOver(accent, 0.1, compositeOver(accent, 0.06, base));
+
+        expect(contrastRatio(accentInk, chip)).toBeGreaterThanOrEqual(4.5);
+        expect(contrastRatio(accentInk, nested)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+});
+
 describe("the breathing pacer ring reads on the aqua room", () => {
   // The inner circle's edge is the graphic carrying the breath phase, so WCAG
   // 1.4.11 (non-text contrast, 3:1) applies to it. It is never drawn on the
