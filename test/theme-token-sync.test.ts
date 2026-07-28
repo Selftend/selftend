@@ -8,9 +8,13 @@ import {
   HUE_INK_TRIPLES,
   HUE_NAMES,
   HUE_TRIPLES,
+  MARK_WASH_ALPHAS,
   PRIMARY_INK_LIGHTNESS,
   PRIMARY_INK_TRIPLES,
   PRIMARY_TRIPLES,
+  TINT_ACCENT,
+  TINT_TOKENS,
+  type TintToken,
 } from "@/src/lib/design-tokens";
 import { roomTriples } from "@/src/lib/module-room";
 import { PALETTE, TINTS, type TintName } from "@/src/features/widgets/palette";
@@ -388,6 +392,117 @@ describe("primary ink meets WCAG AA on the neutral app surface", () => {
       hslTripleToRgb(css.dark["--card"]),
     );
     expect(contrastRatio(hslTripleToRgb(css.dark["--primary"]), rawOnChip)).toBeLessThan(4.5);
+  });
+});
+
+// The mark half of the same problem (#433). TINT_TEXT was swept to ink in #422
+// and TINT_ACCENT was left holding the raw accent, on a docstring that said
+// 1.4.11's 3:1 floor was met "which the published accents clear". Nothing ever
+// computed that. Rendered, `think`'s glyph is 1.80:1 on the signed-out landing
+// page — and 1.88 on the *bare* app background, so no wash was ever going to
+// rescue it. Three gates in this workstream were green while that shipped,
+// because all three checked spelling (`text-<hue>` vs `text-<hue>-ink`) and none
+// checked luminance.
+//
+// So this suite does not encode the answer; it recomputes it. For every tint it
+// measures the published accent on every wash a mark is actually painted on, and
+// asserts TINT_ACCENT holds the accent exactly where that clears 3.0 and the ink
+// where it does not. `think` is the only tint the measurement sends to ink today
+// — but if a palette retune costs `iris` any luminance it will be the next, with
+// no docstring to edit and no judgement call to make.
+//
+// It is `it.each` per tint deliberately: a suite that scanned all nine and
+// asserted one aggregate could pass while a single tint regressed, which is the
+// hole #428 shipped through (journal and sleep share a hue, so a journal
+// regression hid behind sleep). A failure here names the tint that caused it.
+describe("a tint used as a mark clears WCAG 1.4.11 on the washes it lands on", () => {
+  const MARK_FLOOR = 3;
+
+  /**
+   * Every surface a TINT_ACCENT glyph is painted on, for one tint and scheme: a
+   * MARK_WASH_ALPHAS wash of the tint's own hue over each neutral app surface,
+   * plus — for the eight hues, which are the tints a module room can pour — the
+   * same washes over that room's own background and card. `primary` is not a hue
+   * and no room pours it, so it contributes the neutral pair only.
+   *
+   * The bare surfaces are included as the alpha-0 case: `think` fails there
+   * before any wash is applied, and a wash-only sweep would understate why.
+   */
+  function markSurfaces(tint: TintToken, scheme: "light" | "dark") {
+    const bases: [string, string][] = [
+      ["app background", css[scheme]["--background"]],
+      ["app card", css[scheme]["--card"]],
+    ];
+    if (tint !== "primary") {
+      const room = roomTriples(tint)[scheme];
+      bases.push(["room background", room.background], ["room card", room.card]);
+    }
+
+    const accent = hslTripleToRgb(css[scheme][`--${tint}`]);
+    return bases.flatMap(([name, triple]) => {
+      const base = hslTripleToRgb(triple);
+      return [
+        { where: `${scheme} ${name} bare`, surface: base },
+        ...MARK_WASH_ALPHAS.map((alpha) => ({
+          where: `${scheme} ${name} /${alpha}`,
+          surface: compositeOver(accent, alpha, base),
+        })),
+      ];
+    });
+  }
+
+  /** The worst ratio `colour` scores across every surface the tint's marks reach. */
+  function worstMarkRatio(tint: TintToken, token: (scheme: "light" | "dark") => string) {
+    let worst = { ratio: Infinity, where: "" };
+    for (const scheme of ["light", "dark"] as const) {
+      const mark = hslTripleToRgb(css[scheme][token(scheme)]);
+      for (const { where, surface } of markSurfaces(tint, scheme)) {
+        const ratio = contrastRatio(mark, surface);
+        if (ratio < worst.ratio) worst = { ratio, where };
+      }
+    }
+    return worst;
+  }
+
+  it.each(TINT_TOKENS)("TINT_ACCENT.%s is the accent iff the accent clears the floor", (tint) => {
+    const accent = worstMarkRatio(tint, () => `--${tint}`);
+    const expected = accent.ratio >= MARK_FLOOR ? `text-${tint}` : `text-${tint}-ink`;
+
+    // The measurement rides along in the compared object, so a failure reports
+    // which surface moved rather than only that the string differs.
+    const measured = { worst: accent.ratio.toFixed(2), at: accent.where };
+    expect({ ...measured, class: TINT_ACCENT[tint] }).toEqual({ ...measured, class: expected });
+  });
+
+  // The derivation above says the map agrees with the measurement. This says the
+  // measurement is good enough to ship: whichever colour the map landed on has
+  // to clear the floor itself. Without it, a tint whose accent AND ink both
+  // failed would still satisfy the rule above by picking the ink.
+  it.each(TINT_TOKENS)("whatever TINT_ACCENT.%s resolves to clears 3:1 everywhere", (tint) => {
+    const chosen = TINT_ACCENT[tint] === `text-${tint}` ? `--${tint}` : `--${tint}-ink`;
+    const worst = worstMarkRatio(tint, () => chosen);
+
+    expect({ at: worst.where, clears: worst.ratio >= MARK_FLOOR }).toEqual({
+      at: worst.where,
+      clears: true,
+    });
+  });
+
+  // `think` is the reason this suite exists, pinned as its own case so that a
+  // future retune which "fixes" think by lightening the app background — rather
+  // than by giving the mark an ink — has to come through here.
+  it("think is the tint the measurement sends to ink, and it fails even bare", () => {
+    const bare = contrastRatio(
+      hslTripleToRgb(css.light["--think"]),
+      hslTripleToRgb(css.light["--background"]),
+    );
+
+    expect(bare).toBeLessThan(MARK_FLOOR);
+    expect(TINT_ACCENT.think).toBe("text-think-ink");
+
+    // Dark is untouched by the swap: `--think-ink` is the published accent there,
+    // so the mark renders in exactly the colour it did before.
+    expect(css.dark["--think-ink"]).toBe(css.dark["--think"]);
   });
 });
 
