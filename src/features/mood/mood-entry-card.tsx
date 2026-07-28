@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import type { MoodLog } from "@/src/features/mood/types";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { formatRelativeTime } from "@/src/utils/relative-time";
 import type { EmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { scoreToneClass } from "@/src/features/mood/score-tone";
 
@@ -23,7 +23,7 @@ interface MoodEntryCardProps {
 function MoodEntryCardComponent({ entry, resolveEmotion }: MoodEntryCardProps) {
   const { t } = useTranslation("mood");
 
-  const when = formatMoodRelativeTime(entry.loggedAt, t);
+  const when = formatRelativeTime(entry.loggedAt, t);
   const emotionDisplays = entry.emotions.slice(0, 3).map(resolveEmotion);
   const remainingEmotions = Math.max(0, entry.emotions.length - emotionDisplays.length);
   const trimmedNotes = entry.notes.trim();

@@ -67,12 +67,6 @@
       "start": "Разбрах"
     }
   },
-  "relativeTime": {
-    "today": "Днес",
-    "yesterday": "Вчера",
-    "daysAgo_one": "Преди {{count}} ден",
-    "daysAgo_other": "Преди {{count}} дни"
-  },
   "day": {
     "today": "Днес",
     "empty": "Нищо записано на {{date}}",

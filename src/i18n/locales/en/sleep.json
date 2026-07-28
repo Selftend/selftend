@@ -111,11 +111,5 @@
   },
   "feedback": {
     "deleted": "Sleep entry deleted"
-  },
-  "relativeTime": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo_one": "{{count}} day ago",
-    "daysAgo_other": "{{count}} days ago"
   }
 }

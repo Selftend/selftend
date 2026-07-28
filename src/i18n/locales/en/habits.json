@@ -211,12 +211,6 @@
       "6": "Sat"
     }
   },
-  "relativeTime": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo_one": "{{count}} day ago",
-    "daysAgo_other": "{{count}} days ago"
-  },
   "learn": {
     "sectionLabel": "From the book",
     "dismiss": "Next card",

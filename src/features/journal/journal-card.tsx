@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { Card } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { formatRelativeDayKey } from "@/src/features/mood/relative-time";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { countWords } from "@/src/features/journal/word-count";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";

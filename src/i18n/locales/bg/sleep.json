@@ -111,11 +111,5 @@
   },
   "feedback": {
     "deleted": "Записът за сън е изтрит"
-  },
-  "relativeTime": {
-    "today": "Днес",
-    "yesterday": "Вчера",
-    "daysAgo_one": "Преди {{count}} ден",
-    "daysAgo_other": "Преди {{count}} дни"
   }
 }

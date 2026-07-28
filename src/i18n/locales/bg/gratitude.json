@@ -143,12 +143,6 @@
       "description": "Отвори запис и го отбележи като любим, когато искаш да се връщаш към него."
     }
   },
-  "relativeTime": {
-    "today": "Днес",
-    "yesterday": "Вчера",
-    "daysAgo_one": "Преди {{count}} ден",
-    "daysAgo_other": "Преди {{count}} дни"
-  },
   "breaks": {
     "dismiss": "Следваща карта",
     "categories": {
