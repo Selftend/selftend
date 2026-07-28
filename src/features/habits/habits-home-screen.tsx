@@ -31,7 +31,7 @@ import {
   localDateKey,
 } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
-import { formatRelativeTime } from "@/src/utils/relative-time";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { parseLocalNoon } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
@@ -89,7 +89,9 @@ export default function HabitsHomeScreen() {
   const identityRoundUp = getIdentityRoundUp(allHabits, allLogs, today);
   const twoMinuteAdoption = getTwoMinuteAdoption(allHabits);
   const lastTickedOn = latestLogs?.[0]?.loggedOn ?? null;
-  const lastWhen = lastTickedOn ? formatRelativeTime(`${lastTickedOn}T12:00:00`, t) : null;
+  // `loggedOn` IS the civil day - label from it directly instead of faking a
+  // noon instant to reuse the activity formatter.
+  const lastWhen = lastTickedOn ? formatRelativeDayKey(lastTickedOn, t) : null;
   // `latestLogs` is undefined while loading and after a failed fetch with no
   // cache - only an actually-loaded (possibly empty) history may claim "no
   // ticks yet", or a returning user's history reads as erased.
@@ -266,7 +268,7 @@ export default function HabitsHomeScreen() {
                               ) : null}
                             </View>
                             <Text variant="muted" className="text-xs">
-                              {formatRelativeTime(`${log.loggedOn}T12:00:00`, t)}
+                              {formatRelativeDayKey(log.loggedOn, t)}
                             </Text>
                           </Pressable>
                         );

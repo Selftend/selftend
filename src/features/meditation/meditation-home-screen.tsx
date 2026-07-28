@@ -28,18 +28,16 @@ import {
 } from "@/src/features/meditation/queries";
 import { median } from "@/src/features/meditation/median";
 import { getStage } from "@/src/features/meditation/stages";
-import type { StageNumber } from "@/src/features/meditation/types";
+import type { MeditationSession, StageNumber } from "@/src/features/meditation/types";
 import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/settings/queries";
 import {} from "@/src/features/modules/types";
 import { useSession } from "@/src/providers/session-provider";
 import { parseHHmm } from "@/src/utils/time";
-import { useLocaleFormats } from "@/src/lib/locale-format";
 import { useRoomStyle } from "@/src/lib/use-room-style";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function MeditationHomeScreen() {
   const { t } = useTranslation("meditation");
-  const { formatDateTime } = useLocaleFormats();
   const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -75,11 +73,15 @@ export default function MeditationHomeScreen() {
 
   // "Last sat" derives from the session window the screen already queries; scan
   // for the latest completedAt rather than trusting order (grounding precedent).
-  const lastCompletedAt = (allSessions ?? []).reduce<string | null>(
-    (latest, s) => (latest === null || s.completedAt > latest ? s.completedAt : latest),
+  // The whole session is kept, not just the instant, because the label renders
+  // in the frame the sit was captured in (#433 §3).
+  const lastSession = (allSessions ?? []).reduce<MeditationSession | null>(
+    (latest, s) => (latest === null || s.completedAt > latest.completedAt ? s : latest),
     null,
   );
-  const lastWhen = lastCompletedAt ? formatLocalTimestamp(lastCompletedAt) : null;
+  const lastWhen = lastSession
+    ? formatAtOffset(lastSession.completedAt, lastSession.completedOffsetMinutes)
+    : null;
   // `allSessions` is undefined while loading and after a failed fetch with no
   // cache - only an actually-loaded (possibly empty) history may claim "no
   // sessions yet", or a returning user's history reads as erased (#320).
@@ -249,7 +251,7 @@ export default function MeditationHomeScreen() {
                               {t("module.sessions.durationLabel", { count: s.durationMinutes })}
                             </Text>
                             <Text variant="muted" className="text-xs">
-                              {formatDateTime(s.completedAt)}
+                              {formatAtOffset(s.completedAt, s.completedOffsetMinutes)}
                             </Text>
                           </View>
                           <View className="rounded-full bg-iris/10 px-2 py-0.5">

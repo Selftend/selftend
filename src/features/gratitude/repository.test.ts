@@ -482,7 +482,10 @@ describe("gratitude repository", () => {
       life_item_2: null,
       life_item_3: null,
       starred: null,
-      note: "n",
+      // A hand-rolled PostgREST insert can omit note entirely (note_enc is
+      // nullable since encryption); the read path must not carry the null
+      // forward, or one such row error-boundaries both gratitude screens (#433 §4).
+      note: null,
       logged_at: "2026-05-15T08:00:00.000Z",
       created_at: "2026-05-15T08:00:00.000Z",
       updated_at: "2026-05-15T08:00:00.000Z",
@@ -506,7 +509,7 @@ describe("gratitude repository", () => {
       hiddenGood: "",
       lifeItems: ["", "", ""],
       starred: false,
-      note: "n",
+      note: "",
       loggedAt: "2026-05-15T08:00:00.000Z",
       loggedOffsetMinutes: null,
       dayKey: "2026-05-15",

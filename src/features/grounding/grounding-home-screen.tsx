@@ -21,7 +21,8 @@ import { groundingTechniques } from "@/src/constants/grounding";
 import { useGroundingSessions } from "@/src/features/grounding/queries";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import type { MindfulnessSession } from "@/src/features/mindfulness/types";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function GroundingHomeScreen() {
   const { t } = useTranslation("cbt");
@@ -35,11 +36,15 @@ export default function GroundingHomeScreen() {
   // "Last grounded" derives from the recent window the screen already queries;
   // scan for the latest completedAt rather than trusting order (breathing
   // home precedent).
-  const lastCompletedAt = (sessions ?? []).reduce<string | null>(
-    (latest, s) => (latest === null || s.completedAt > latest ? s.completedAt : latest),
+  // The whole session is kept, not just the instant: the label renders in the
+  // frame the session was captured in (#433 §3).
+  const lastSession = (sessions ?? []).reduce<MindfulnessSession | null>(
+    (latest, s) => (latest === null || s.completedAt > latest.completedAt ? s : latest),
     null,
   );
-  const lastWhen = lastCompletedAt ? formatLocalTimestamp(lastCompletedAt) : null;
+  const lastWhen = lastSession
+    ? formatAtOffset(lastSession.completedAt, lastSession.completedOffsetMinutes)
+    : null;
   // `sessions` is undefined while loading and after a failed fetch with no
   // cache - only an actually-loaded (possibly empty) history may claim
   // "no sessions yet", or a returning user's history reads as erased.
