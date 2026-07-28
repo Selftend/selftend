@@ -8,7 +8,11 @@ import type {
   StagePracticeNote,
   TmiTechnique,
 } from "@/src/features/meditation/types";
-import { entryDayKey, occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
+import {
+  entryDayKey,
+  occurrenceTimeFromDate,
+  validateOccurrenceTime,
+} from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
@@ -173,8 +177,17 @@ export async function saveMeditationSession(userId: string, input: MeditationSes
   // used to be left to the server default, but a server-defaulted instant paired
   // with a device offset is two different clocks - at 23:59 they disagree about
   // the day, which is the exact thing the offset exists to pin down (#330).
-  // Meditation has no back-date picker: a sit is always logged as it ends.
-  const occurrence = occurrenceTimeFromDate();
+  //
+  // The caller supplies the instant when it knows one. Meditation has no
+  // back-date picker, but it does have a gap: the timer stops, and the sit is
+  // only saved once the reflection form is submitted, which can be much later
+  // and on the other side of midnight. Reading the clock here would record the
+  // save, and since the offset is now the authoritative civil day, it would
+  // record it permanently. Falling back to now is right only for callers with
+  // no earlier instant to offer.
+  const occurrence = input.occurredAt
+    ? validateOccurrenceTime(input.occurredAt)
+    : occurrenceTimeFromDate();
   const { data, error } = await client
     .from("meditation_sessions")
     .insert({

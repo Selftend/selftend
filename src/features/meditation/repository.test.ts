@@ -114,6 +114,92 @@ describe("meditation repository - saveMeditationSession", () => {
     }
   });
 
+  it("records when the sit ended, not when the reflection form was saved", async () => {
+    // The timer stops, the post-sit form opens, and the mutation does not fire
+    // until the user saves. Those are different instants and can straddle
+    // midnight: a sit that ended 23:50 on the 15th, saved 00:20 on the 16th,
+    // used to be stamped with the save. That now lands permanently, because the
+    // stored instant/offset pair *is* the civil day the widgets and routines
+    // read (#330).
+    jest.useFakeTimers({ now: new Date("2026-07-15T18:50:00.000Z") }); // 00:20 on the 16th in Kolkata
+    try {
+      const single = jest.fn().mockResolvedValue({ data: sessionRow(), error: null });
+      const select = jest.fn(() => ({ single }));
+      let sent: Record<string, unknown> = {};
+      const insert = jest.fn((values: Record<string, unknown>) => {
+        sent = values;
+        return { select };
+      });
+      mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { insert } }));
+
+      await saveMeditationSession("u1", {
+        stageAtSession: 3,
+        durationMinutes: 15,
+        occurredAt: {
+          occurredAt: "2026-07-15T18:20:00.000Z", // 23:50 on the 15th in Kolkata
+          occurredOffsetMinutes: VIEWER_OFFSET_MINUTES,
+        },
+      });
+
+      const payload = sent as { completed_at: string; completed_offset_minutes: number };
+      expect(payload.completed_at).toBe("2026-07-15T18:20:00.000Z");
+      expect(entryDayKey(payload.completed_at, payload.completed_offset_minutes)).toBe(
+        "2026-07-15",
+      );
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("falls back to the clock when the caller has no sit-end instant", async () => {
+    // Callers without an earlier instant - anything that is not the timer
+    // handover - must keep the old behaviour rather than send a null through.
+    jest.useFakeTimers({ now: new Date("2026-07-15T18:29:00.000Z") });
+    try {
+      const single = jest.fn().mockResolvedValue({ data: sessionRow(), error: null });
+      const select = jest.fn(() => ({ single }));
+      let sent: Record<string, unknown> = {};
+      const insert = jest.fn((values: Record<string, unknown>) => {
+        sent = values;
+        return { select };
+      });
+      mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { insert } }));
+
+      await saveMeditationSession("u1", {
+        stageAtSession: 3,
+        durationMinutes: 15,
+        occurredAt: null,
+      });
+
+      expect((sent as { completed_at: string }).completed_at).toBe("2026-07-15T18:29:00.000Z");
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("rejects a sit-end instant in the future", async () => {
+    // The pair arrives as route params, so a deep link can supply anything.
+    jest.useFakeTimers({ now: new Date("2026-07-15T18:29:00.000Z") });
+    try {
+      const insert = jest.fn();
+      mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { insert } }));
+
+      await expect(
+        saveMeditationSession("u1", {
+          stageAtSession: 3,
+          durationMinutes: 15,
+          occurredAt: {
+            occurredAt: "2026-07-16T18:29:00.000Z",
+            occurredOffsetMinutes: VIEWER_OFFSET_MINUTES,
+          },
+        }),
+      ).rejects.toThrow(/future/i);
+      expect(insert).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it("trims reflection text and writes stage-aware fields", async () => {
     const row = {
       id: "s1",
