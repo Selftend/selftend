@@ -1,6 +1,7 @@
 import {
   currentLocalDayRange,
   getProgramWidgetTaskStatus,
+  programWidgetStatusKey,
 } from "@/src/features/home/program-widget-status";
 import { requireSupabase } from "@/src/lib/supabase";
 
@@ -24,6 +25,43 @@ describe("program widget status", () => {
   // a pair of instants - a range scan cannot consume a day key (#414).
   it("names the viewer's current day alongside its boundaries", () => {
     expect(currentLocalDayRange(new Date(2026, 6, 13, 15, 30)).key).toBe("2026-07-13");
+  });
+
+  // The cache key has to carry every input the RPC reads, not just the day key.
+  // Codex caught this on #419: the bounds move independently of the key, so a
+  // key of `key` alone lets TanStack serve one timezone's answer for another's.
+  it("separates two timezones that share a calendar date", () => {
+    const tokyo = {
+      key: "2026-07-13",
+      start: "2026-07-12T15:00:00.000Z",
+      end: "2026-07-13T15:00:00.000Z",
+    };
+    const london = {
+      key: "2026-07-13",
+      start: "2026-07-13T00:00:00.000Z",
+      end: "2026-07-14T00:00:00.000Z",
+    };
+
+    expect(tokyo.key).toBe(london.key);
+    expect(programWidgetStatusKey("u1", "act", tokyo)).not.toEqual(
+      programWidgetStatusKey("u1", "act", london),
+    );
+  });
+
+  it("reuses the key when nothing about the day moved", () => {
+    const range = {
+      key: "2026-07-13",
+      start: "2026-07-13T00:00:00.000Z",
+      end: "2026-07-14T00:00:00.000Z",
+    };
+
+    expect(programWidgetStatusKey("u1", "act", range)).toEqual(
+      programWidgetStatusKey("u1", "act", range),
+    );
+    // Module and user still separate entries.
+    expect(programWidgetStatusKey("u1", "act", range)).not.toEqual(
+      programWidgetStatusKey("u1", "cbt", range),
+    );
   });
 
   it("maps the small RPC response without fetching histories", async () => {

@@ -47,6 +47,24 @@ export async function getProgramWidgetTaskStatus(
   }));
 }
 
+/**
+ * The cache key, carrying EVERY input the RPC reads - the day key and both
+ * bounds, not the day key alone.
+ *
+ * They move independently. Fly Tokyo to London on the same calendar date and
+ * `key` is unchanged while `start` and `end` shift by nine hours; the RPC still
+ * uses those bounds for every task whose tool has no captured offset, so a key
+ * of `key` alone serves Tokyo's answer for London's day. Extracted so that
+ * invariant is testable without rendering the hook.
+ */
+export function programWidgetStatusKey(
+  userId: string,
+  module: "cbt" | "act",
+  dayRange: { key: string; start: string; end: string },
+) {
+  return ["program-widget-status", userId, module, dayRange.key, dayRange.start, dayRange.end];
+}
+
 export function useProgramWidgetTaskStatus({
   userId,
   module,
@@ -58,7 +76,7 @@ export function useProgramWidgetTaskStatus({
 }) {
   const dayRange = currentLocalDayRange();
   return useQuery({
-    queryKey: ["program-widget-status", userId, module, dayRange.key],
+    queryKey: programWidgetStatusKey(userId, module, dayRange),
     queryFn: () => getProgramWidgetTaskStatus(module, dayRange.start, dayRange.end, dayRange.key),
     enabled,
   });
