@@ -82,15 +82,21 @@ So a hue gets a second, darkened value for text: the same hue and saturation at 
 | ------------------------------------------------ | ----------------------------------------------- |
 | Small text in a hue, inside that hue's room      | `text-accent-ink` — in-room only                |
 | Small text in a hue, anywhere at all             | `text-<hue>-ink` — names its hue, so it travels |
-| Icons, large numerals, decorative marks, borders | `text-<hue>` (unchanged)                        |
+| Icons, large numerals, decorative marks, borders | `text-<hue>` — but see the mark floor below     |
 
 The two are not interchangeable in both directions. `text-<hue>-ink` names the hue it wants and is therefore correct everywhere, in a room or out of one. `text-accent-ink` asks the _room_ for a hue, so it is only meaningful where a room is pouring one: outside a room it falls back to `--primary` and renders violet, changing the hue rather than the contrast — silently, since it still looks like a deliberate colour. Inside a room both resolve to the same value from one source, `HUE_INK_TRIPLES`.
 
 A module's directory name does not tell you its room: `src/features/act/` is room-less (the `act` room is worn by `src/features/habits/`), so `text-accent-ink` there would render violet.
 
-A shared colour map has to split the two uses rather than pick one: `TINT_TEXT` resolves every hue to its ink and `TINT_ACCENT` to the published accent, so a label and the glyph beside it can take the same tint and still get different values — an icon darkened to ink reads as disabled.
+A shared colour map has to split the two uses rather than pick one: `TINT_TEXT` resolves every tint to its ink and `TINT_ACCENT` to its mark colour, so a label and the glyph beside it can take the same tint and still get different values — an icon darkened to ink reads as disabled.
+
+**The mark floor: a non-text mark owes 3:1, and that is measured too.** An icon, rule or dot is WCAG 1.4.11 rather than 1.4.3, so it needs 3:1 rather than 4.5:1 — a weaker floor, not no floor, and the same rule applies to it: never record that an accent clears it without saying on what. `TINT_ACCENT` spent three PRs justifying itself with the claim that the published accents clear 3:1. Nothing computed the claim, and it is false: `think` is a light gold measuring **1.88:1 on the bare app background**, before any tint is laid under it, so there is no surface in the product where it reads as a mark. `think` is therefore the one tint whose _mark_ is its ink — the only hue for which `TINT_ACCENT` and `TINT_TEXT` agree in light mode, as they already did for every hue in dark, where `--<hue>-ink` **is** the published accent. The other seven clear the floor on every wash a mark lands on, but four of them thinly (`act` 3.24, `clay` 3.12, `mist` 3.09, `iris` **3.00**), so which tint gets which is derived from the tokens in `test/theme-token-sync.test.ts` per tint rather than written down — a palette retune that costs `iris` any luminance moves it to ink and fails the build instead of shipping.
+
+`primary` is not a hue — no room pours it and every gate was spelled `text-<hue>` — which is exactly why it kept writing its raw accent as text long after the eight were swept. It has an ink of its own now (`text-primary-ink`), on the same 28% recipe in light; dark is the one place it parts company with the hues, lifting to 80% because the raw dark accent genuinely fails there (#421 §3).
 
 `test/accent-ink-call-sites.test.ts` gates this across all of `app/` and `src/`, not per module: a bare `text-<hue>` is a build failure unless it sits in a classified area and is enumerated there with a measured contrast figure, and room ink is banned outright in areas that are not rooms. Write a hue as an arbitrary value (`text-[hsl(var(--think))]`) and the gate is blind to it — that spelling hid ~78 sites from every check while the suites stayed green (#421), so the tint maps are additionally asserted by shape.
+
+Two habits keep these gates honest, both learned by shipping past them. **Gate per hue, not per sweep**: a suite that scans everything and asserts one aggregate stays green while a single hue regresses — journal and sleep share a hue, so a journal regression hid behind sleep (#428). Every floor here is `it.each` per hue or per tint, so a failure names the one that caused it. And **a floor must measure the surface, not the spelling**: three green gates checked `text-<hue>` against `text-<hue>-ink` and none checked luminance, which is how a 1.80:1 glyph reached the signed-out landing page (#433).
 _Avoid_: accent-foreground (that is ink on the `accent` _surface_, a different pairing).
 
 **Guest hue**:
