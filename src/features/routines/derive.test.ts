@@ -85,14 +85,17 @@ describe("stepDoneOnDate", () => {
     expect(stepDoneOnDate("grounding", breathingOnly, DAY)).toBe(false);
   });
 
-  it("meditation reads completedAt and ignores incomplete sessions", () => {
-    const records: RoutineToolRecords = {
-      meditationSessions: [{ completedAt: null }, { completedAt: onDayTs }],
-    };
+  it("meditation reads the captured day verbatim, never the viewer's", () => {
+    // A sit finished at 23:30 in Tokyo carries dayKey 2026-07-15 while its UTC
+    // instant buckets to the 14th anywhere west of it. The engine must file it
+    // on the 15th - where the meditation screen files it - whatever the viewer's
+    // timezone says (#330).
+    const records: RoutineToolRecords = { meditationSessions: [{ dayKey: DAY }] };
+
     expect(stepDoneOnDate("meditation", records, DAY)).toBe(true);
-    expect(stepDoneOnDate("meditation", { meditationSessions: [{ completedAt: null }] }, DAY)).toBe(
-      false,
-    );
+    expect(stepDoneOnDate("meditation", records, PREV_DAY)).toBe(false);
+    expect(stepDoneOnDate("meditation", records, NEXT_DAY)).toBe(false);
+    expect(stepDoneOnDate("meditation", { meditationSessions: [] }, DAY)).toBe(false);
   });
 
   it("habits compare the loggedOn date key directly", () => {
@@ -239,7 +242,7 @@ describe("deriveRoutine", () => {
       {
         moodLogs: [{ dayKey: DAY }],
         journalEntries: [{ dayKey: DAY }],
-        meditationSessions: [{ completedAt: onDayTs }],
+        meditationSessions: [{ dayKey: DAY }],
       },
       DAY,
     );

@@ -1,3 +1,5 @@
+import type { CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
+
 export type StageNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 export type DullnessLevel = "none" | "subtle" | "strong";
@@ -42,6 +44,14 @@ export interface MeditationSession {
   stageAtSession: StageNumber;
   durationMinutes: number;
   completedAt: string;
+  /** Minutes east of UTC where the sit was logged; null on rows predating #330. */
+  completedOffsetMinutes: CapturedOffsetMinutes;
+  /**
+   * The civil day this sit belongs to (`YYYY-MM-DD`), resolved once in the
+   * repository. Day-scoped surfaces group on this and never convert
+   * `completedAt` themselves — see the lint guard in eslint.config.js (#330).
+   */
+  dayKey: string;
   createdAt: string;
   mindWanderingEpisodes: number | null;
   dullnessLevel: DullnessLevel | null;

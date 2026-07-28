@@ -8,6 +8,7 @@ import type {
   StagePracticeNote,
   TmiTechnique,
 } from "@/src/features/meditation/types";
+import { entryDayKey, occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
@@ -18,6 +19,7 @@ interface MeditationSessionRow {
   stage_at_session: number;
   duration_minutes: number;
   completed_at: string;
+  completed_offset_minutes?: number | null;
   created_at: string;
   mind_wandering_episodes: number | null;
   dullness_level: string | null;
@@ -58,12 +60,15 @@ function clampStage(value: number | null | undefined): StageNumber {
 }
 
 function mapSession(row: MeditationSessionRow): MeditationSession {
+  const completedOffsetMinutes = row.completed_offset_minutes ?? null;
   return {
     id: row.id,
     userId: row.user_id,
     stageAtSession: clampStage(row.stage_at_session),
     durationMinutes: row.duration_minutes,
     completedAt: row.completed_at,
+    completedOffsetMinutes,
+    dayKey: entryDayKey(row.completed_at, completedOffsetMinutes),
     createdAt: row.created_at,
     mindWanderingEpisodes: row.mind_wandering_episodes,
     dullnessLevel: (row.dullness_level as MeditationSession["dullnessLevel"]) ?? null,
@@ -164,12 +169,20 @@ export async function getMeditationSession(userId: string, sessionId: string) {
 
 export async function saveMeditationSession(userId: string, input: MeditationSessionInput) {
   const client = requireSupabase();
+  // The instant AND the offset come from one reading of the clock. `completed_at`
+  // used to be left to the server default, but a server-defaulted instant paired
+  // with a device offset is two different clocks - at 23:59 they disagree about
+  // the day, which is the exact thing the offset exists to pin down (#330).
+  // Meditation has no back-date picker: a sit is always logged as it ends.
+  const occurrence = occurrenceTimeFromDate();
   const { data, error } = await client
     .from("meditation_sessions")
     .insert({
       user_id: userId,
       stage_at_session: input.stageAtSession,
       duration_minutes: input.durationMinutes,
+      completed_at: occurrence.occurredAt,
+      completed_offset_minutes: occurrence.occurredOffsetMinutes,
       mind_wandering_episodes: input.mindWanderingEpisodes ?? null,
       dullness_level: input.dullnessLevel ?? null,
       distraction_level: input.distractionLevel ?? null,

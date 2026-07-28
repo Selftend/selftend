@@ -9,6 +9,7 @@ import {
   saveStagePracticeNote,
   upsertMeditationProgramState,
 } from "@/src/features/meditation/repository";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
@@ -23,7 +24,96 @@ function buildClient(builders: Record<string, unknown>) {
   >;
 }
 
+// The runner's timezone is pinned to Asia/Kolkata (+05:30) in jest.config.js, so a
+// captured offset of +09:00 or -08:00 genuinely disagrees with the viewer's day.
+const VIEWER_OFFSET_MINUTES = 330;
+const TOKYO_OFFSET_MINUTES = 540;
+const LOS_ANGELES_OFFSET_MINUTES = -480;
+
+describe("meditation repository - the captured day (#330)", () => {
+  async function readOneSession(row: Record<string, unknown>) {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
+    const eqId = jest.fn(() => ({ maybeSingle }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
+    return getMeditationSession("u1", VALID_UUID);
+  }
+
+  it("files a sit on the day it was on where the user sat, not where they now stand", async () => {
+    // 15:30 UTC is 00:30 on the 16th in Tokyo - the sit happened on the 16th and
+    // must stay there. A viewer in Kolkata sees 21:00 on the 15th, which is
+    // where this session used to land.
+    const session = await readOneSession(
+      sessionRow({
+        completed_at: "2026-07-15T15:30:00.000Z",
+        completed_offset_minutes: TOKYO_OFFSET_MINUTES,
+      }),
+    );
+
+    expect(session?.dayKey).toBe("2026-07-16");
+    expect(session?.completedOffsetMinutes).toBe(TOKYO_OFFSET_MINUTES);
+  });
+
+  it("moves the day backwards too, when the sit was west of the viewer", async () => {
+    // 02:00 UTC is 18:00 the previous day in Los Angeles; Kolkata reads 07:30 on
+    // the 15th. Same instant, and the captured day is the 14th.
+    const session = await readOneSession(
+      sessionRow({
+        completed_at: "2026-07-15T02:00:00.000Z",
+        completed_offset_minutes: LOS_ANGELES_OFFSET_MINUTES,
+      }),
+    );
+
+    expect(session?.dayKey).toBe("2026-07-14");
+  });
+
+  it("falls back to the viewer's local day when no offset was captured", async () => {
+    // Rows predating the column, and writes from older clients. Null is
+    // "unknown", never a claim of UTC - the fallback puts these exactly where
+    // they have always rendered: 15:30 UTC is 21:00 on the 15th in Kolkata.
+    const session = await readOneSession(sessionRow({ completed_at: "2026-07-15T15:30:00.000Z" }));
+
+    expect(session?.completedOffsetMinutes).toBeNull();
+    expect(session?.dayKey).toBe("2026-07-15");
+  });
+});
+
 describe("meditation repository - saveMeditationSession", () => {
+  it("sends the completion instant and its offset from one reading of the clock", async () => {
+    // completed_at used to be left to the server default. Pairing a
+    // server-stamped instant with a device offset is two clocks: at 23:59 they
+    // disagree about the day, which is the one thing the offset is for (#330).
+    jest.useFakeTimers({ now: new Date("2026-07-15T18:29:00.000Z") });
+    try {
+      const single = jest.fn().mockResolvedValue({ data: sessionRow(), error: null });
+      const select = jest.fn(() => ({ single }));
+      let sent: Record<string, unknown> = {};
+      const insert = jest.fn((values: Record<string, unknown>) => {
+        sent = values;
+        return { select };
+      });
+      mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { insert } }));
+
+      await saveMeditationSession("u1", { stageAtSession: 3, durationMinutes: 15 });
+
+      const payload = sent as {
+        completed_at: string;
+        completed_offset_minutes: number;
+      };
+      expect(payload.completed_at).toBe("2026-07-15T18:29:00.000Z");
+      expect(payload.completed_offset_minutes).toBe(VIEWER_OFFSET_MINUTES);
+      // 18:29 UTC is 23:59 in Kolkata: still the 15th where the user sat, and
+      // the 16th to anyone reading the raw instant an hour east of them. The
+      // pair the writer sends has to resolve to the former.
+      expect(entryDayKey(payload.completed_at, payload.completed_offset_minutes)).toBe(
+        "2026-07-15",
+      );
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it("trims reflection text and writes stage-aware fields", async () => {
     const row = {
       id: "s1",
@@ -60,6 +150,10 @@ describe("meditation repository - saveMeditationSession", () => {
       user_id: "u1",
       stage_at_session: 3,
       duration_minutes: 15,
+      // Pinned to the clock by the occurrence test above; here they only have to
+      // be present, so this assertion stays about the stage-aware fields.
+      completed_at: expect.any(String),
+      completed_offset_minutes: expect.any(Number),
       mind_wandering_episodes: 2,
       dullness_level: null,
       distraction_level: null,
