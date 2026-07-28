@@ -339,7 +339,7 @@ export default function ActDefusionNewScreen() {
                     {...techniqueRoving.getItemProps(index, () => setTechniqueUsed(tech))}
                   >
                     <View className="gap-1">
-                      <Text className={cn("font-semibold", selected && "text-act")}>
+                      <Text className={cn("font-semibold", selected && "text-act-ink")}>
                         {t(`act:defusion.techniques.${tech}`)}
                       </Text>
                       <Text variant="muted" className="text-xs leading-snug">
@@ -387,7 +387,7 @@ export default function ActDefusionNewScreen() {
             {fusionLevelBefore !== null && fusionLevelAfter !== null ? (
               <Card className="border-act/30 bg-act/5">
                 <CardContent className="pt-4">
-                  <Text className="text-center font-semibold text-act">
+                  <Text className="text-center font-semibold text-act-ink">
                     {fusionLevelAfter < fusionLevelBefore
                       ? t("act:defusion.fusionDrop", {
                           before: fusionLevelBefore,

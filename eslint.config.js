@@ -103,17 +103,24 @@ module.exports = [
     },
   },
   {
-    // mood/gratitude/sleep/journal entries carry a `dayKey`: the civil day captured
-    // when the entry was logged, resolved once in the repository. Bucketing one of
-    // them by the VIEWER's day instead moves entries between days after travel and
-    // skews daily averages (#250). The viewer-local helpers stay available to the
-    // modules with no captured offset (habits, ACT, CBT, breathing, meditation,
-    // routines) - they have nothing better to use yet.
+    // mood/gratitude/sleep/journal (#250), meditation, and breathing/grounding via
+    // the shared mindfulness_sessions offset (#330) all carry a `dayKey`: the civil
+    // day captured when the entry was logged, resolved once in the repository.
+    // Bucketing one of them by the VIEWER's day instead moves entries between days
+    // after travel and skews daily averages. The viewer-local helpers stay available
+    // to the modules with no captured offset (ACT, CBT) - they have nothing better
+    // to use yet - and to routines, whose day axis is deliberately viewer-local
+    // (#330 owner decision). Habits are already correct by a different route:
+    // `habit_logs.logged_on` stores the resolved civil date, so no timestamp is ever
+    // converted.
     files: [
       "src/features/mood/**/*.{ts,tsx}",
       "src/features/gratitude/**/*.{ts,tsx}",
       "src/features/sleep/**/*.{ts,tsx}",
       "src/features/journal/**/*.{ts,tsx}",
+      "src/features/meditation/**/*.{ts,tsx}",
+      "src/features/breathing/**/*.{ts,tsx}",
+      "src/features/grounding/**/*.{ts,tsx}",
     ],
     ignores: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {
@@ -126,7 +133,7 @@ module.exports = [
               name,
               importNames: ["toLocalDateKey", "localDateKey"],
               message:
-                "Group by the entry's `dayKey` (the civil day captured at logging time) instead. Bucketing by the viewer's local day moves entries after travel - see #250.",
+                "Group by the entry's `dayKey` (the civil day captured at logging time) instead. Bucketing by the viewer's local day moves entries after travel - see #250 and #330.",
             })),
           ],
         },

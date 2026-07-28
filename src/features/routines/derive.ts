@@ -80,12 +80,12 @@ export interface RoutineToolRecords {
   thoughtRecords?: readonly { createdAt: string }[];
   /**
    * Breathing AND grounding sessions share this table; they are told apart by
-   * exerciseName (see stepDoneOnDate). completedAt is a UTC timestamp with no
-   * device-offset column, so it buckets via the device's current timezone -
-   * the same trade-off ACT's engine already makes.
+   * exerciseName (see stepDoneOnDate). One captured offset on the shared table
+   * gives both tools a dayKey, so neither re-buckets by the viewer's day (#330).
    */
-  mindfulnessSessions?: readonly { exerciseName: string; completedAt: string | null }[];
-  meditationSessions?: readonly { completedAt: string | null }[];
+  mindfulnessSessions?: readonly { exerciseName: string; dayKey: string }[];
+  /** Meditation captured its civil day in #330 - compare, never re-bucket. */
+  meditationSessions?: readonly { dayKey: string }[];
   /** HabitLog.loggedOn is already a local civil date key (YYYY-MM-DD). */
   habitLogs?: readonly { loggedOn: string }[];
   /**
@@ -140,7 +140,7 @@ export interface RoutineDayView {
 /**
  * For tools with no captured occurrence day: bucket a UTC timestamp through the
  * viewer's current timezone. Correct only while the tool stores no offset - the
- * remaining five modules in #330. Never use this for a module that already
+ * modules still waiting on #330. Never use this for a module that already
  * carries `dayKey`, or the engine will re-bucket an entry the owning module has
  * already placed, and the two surfaces will disagree about which day it was.
  */
@@ -186,20 +186,21 @@ export function stepDoneOnDate(
       return onCapturedDay(records.sleepLogs, dayKey);
     case "cbt":
       return onDay(records.thoughtRecords, (r) => r.createdAt, dayKey);
+    // Breathing and grounding share mindfulness_sessions and so share its captured
+    // dayKey; only the exercise_name split differs (#330).
     case "breathing":
-      return onDay(
+      return onCapturedDay(
         (records.mindfulnessSessions ?? []).filter((s) => !isGroundingSession(s.exerciseName)),
-        (s) => s.completedAt,
         dayKey,
       );
     case "grounding":
-      return onDay(
+      return onCapturedDay(
         (records.mindfulnessSessions ?? []).filter((s) => isGroundingSession(s.exerciseName)),
-        (s) => s.completedAt,
         dayKey,
       );
     case "meditation":
-      return onDay(records.meditationSessions, (s) => s.completedAt, dayKey);
+      // Meditation joined the captured-day group in #330 - same rule as above.
+      return onCapturedDay(records.meditationSessions, dayKey);
     case "habits":
       // loggedOn is already a civil date key - compare directly, no bucketing.
       return (records.habitLogs ?? []).some((l) => l.loggedOn === dayKey);

@@ -65,7 +65,9 @@ const TINT_CLASSES: Record<
     manageActive: "-mr-1 size-8 items-center justify-center rounded-full active:bg-act/10",
     phaseTitle: "text-act",
     readyBanner: "rounded-lg border border-act/40 bg-act/10 px-4 py-3",
-    readyText: "text-sm font-medium text-act",
+    // Small text on an `act/10` wash, and the card renders off-room (act home,
+    // cbt home), so this is `text-act-ink` rather than `text-accent-ink` (#403).
+    readyText: "text-sm font-medium text-act-ink",
     taskRowDone:
       "flex-row items-center gap-3 rounded-lg border border-[hsl(var(--act)/0.25)] bg-[hsl(var(--act)/0.10)] p-3 active:bg-accent/40",
     taskRowDoneIcon: "size-5 text-act",

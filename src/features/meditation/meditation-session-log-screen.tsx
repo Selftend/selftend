@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -23,10 +23,31 @@ import type {
   StageNumber,
 } from "@/src/features/meditation/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, toggleButtonStateProps } from "@/src/lib/accessibility";
+import { validateOccurrenceTime, type OccurrenceTime } from "@/src/lib/occurrence-time";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
+
+/**
+ * The sit-end instant from the route, or null to let the repository read the
+ * clock at save time.
+ *
+ * Route params are strings from an untrusted-ish edge - a deep link can supply
+ * anything - so the pair is validated rather than parsed optimistically. An
+ * unusable value degrades to the old behaviour instead of throwing on a screen
+ * the user reached by finishing a sit.
+ */
+function safeOccurrence(endedAt?: string, endedOffset?: string): OccurrenceTime | null {
+  if (!endedAt || endedOffset === undefined) return null;
+  const occurredOffsetMinutes = Number(endedOffset);
+  if (!Number.isInteger(occurredOffsetMinutes)) return null;
+  try {
+    return validateOccurrenceTime({ occurredAt: endedAt, occurredOffsetMinutes });
+  } catch {
+    return null;
+  }
+}
 
 const DULLNESS_OPTIONS: DullnessLevel[] = ["none", "subtle", "strong"];
 const DISTRACTION_OPTIONS: DistractionLevel[] = ["none", "subtle", "gross"];
@@ -37,8 +58,17 @@ export default function MeditationSessionLogScreen() {
   const { t } = useTranslation("meditation");
   const { user } = useSession();
   const userId = user?.id ?? null;
-  const params = useLocalSearchParams<{ duration?: string }>();
+  const params = useLocalSearchParams<{
+    duration?: string;
+    endedAt?: string;
+    endedOffset?: string;
+  }>();
   const durationMinutes = Math.max(1, Number(params.duration) || 15);
+  // When the sit ended, handed over by the timer. This form can sit open for a
+  // long time - across midnight, in the worst case - so the save must not be
+  // what decides the civil day (#330). A malformed or absent pair falls back to
+  // the save instant, which is what every pre-#330 row already recorded.
+  const occurredRef = useRef(safeOccurrence(params.endedAt, params.endedOffset));
 
   const { data: programState } = useMeditationProgramState(userId);
   const saveMutation = useSaveMeditationSession(userId);
@@ -84,6 +114,7 @@ export default function MeditationSessionLogScreen() {
       await saveMutation.mutateAsync({
         stageAtSession: currentStage,
         durationMinutes,
+        occurredAt: occurredRef.current,
         techniqueUsed: null,
         reflection: skipReflection ? "" : reflection,
         moodAfter: skipReflection ? null : moodAfter,

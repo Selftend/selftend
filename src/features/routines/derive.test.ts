@@ -68,7 +68,7 @@ describe("stepDoneOnDate", () => {
 
   it("a grounding session does not complete a breathing step, and vice versa", () => {
     const groundingOnly: RoutineToolRecords = {
-      mindfulnessSessions: [{ exerciseName: groundingSlug, completedAt: onDayTs }],
+      mindfulnessSessions: [{ exerciseName: groundingSlug, dayKey: DAY }],
     };
     expect(stepDoneOnDate("grounding", groundingOnly, DAY)).toBe(true);
     expect(stepDoneOnDate("breathing", groundingOnly, DAY)).toBe(false);
@@ -77,22 +77,43 @@ describe("stepDoneOnDate", () => {
     // breathing: grounding is the closed slug set, everything else breathes.
     const breathingOnly: RoutineToolRecords = {
       mindfulnessSessions: [
-        { exerciseName: "box-breathing", completedAt: onDayTs },
-        { exerciseName: "custom-user-exercise-id", completedAt: onDayTs },
+        { exerciseName: "box-breathing", dayKey: DAY },
+        { exerciseName: "custom-user-exercise-id", dayKey: DAY },
       ],
     };
     expect(stepDoneOnDate("breathing", breathingOnly, DAY)).toBe(true);
     expect(stepDoneOnDate("grounding", breathingOnly, DAY)).toBe(false);
   });
 
-  it("meditation reads completedAt and ignores incomplete sessions", () => {
-    const records: RoutineToolRecords = {
-      meditationSessions: [{ completedAt: null }, { completedAt: onDayTs }],
+  it("reads the captured day for breathing and grounding, sharing one offset column", () => {
+    // Both tools live in mindfulness_sessions, so one captured offset settles both
+    // (#330). A session finished at 23:30 in Tokyo carries dayKey 2026-07-15 even
+    // though its UTC instant falls on the 14th for a London viewer.
+    const captured: RoutineToolRecords = {
+      mindfulnessSessions: [
+        { exerciseName: "box-breathing", dayKey: DAY },
+        { exerciseName: groundingSlug, dayKey: DAY },
+      ],
     };
+
+    for (const toolId of ["breathing", "grounding"] as const) {
+      expect(stepDoneOnDate(toolId, captured, DAY)).toBe(true);
+      expect(stepDoneOnDate(toolId, captured, PREV_DAY)).toBe(false);
+      expect(stepDoneOnDate(toolId, captured, NEXT_DAY)).toBe(false);
+    }
+  });
+
+  it("meditation reads the captured day verbatim, never the viewer's", () => {
+    // A sit finished at 23:30 in Tokyo carries dayKey 2026-07-15 while its UTC
+    // instant buckets to the 14th anywhere west of it. The engine must file it
+    // on the 15th - where the meditation screen files it - whatever the viewer's
+    // timezone says (#330).
+    const records: RoutineToolRecords = { meditationSessions: [{ dayKey: DAY }] };
+
     expect(stepDoneOnDate("meditation", records, DAY)).toBe(true);
-    expect(stepDoneOnDate("meditation", { meditationSessions: [{ completedAt: null }] }, DAY)).toBe(
-      false,
-    );
+    expect(stepDoneOnDate("meditation", records, PREV_DAY)).toBe(false);
+    expect(stepDoneOnDate("meditation", records, NEXT_DAY)).toBe(false);
+    expect(stepDoneOnDate("meditation", { meditationSessions: [] }, DAY)).toBe(false);
   });
 
   it("habits compare the loggedOn date key directly", () => {
@@ -239,7 +260,7 @@ describe("deriveRoutine", () => {
       {
         moodLogs: [{ dayKey: DAY }],
         journalEntries: [{ dayKey: DAY }],
-        meditationSessions: [{ completedAt: onDayTs }],
+        meditationSessions: [{ dayKey: DAY }],
       },
       DAY,
     );
