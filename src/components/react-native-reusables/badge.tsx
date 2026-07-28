@@ -1,7 +1,7 @@
 import { TextClassContext } from "@/src/components/react-native-reusables/text";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { cn } from "@/lib/utils";
-import type { TintToken } from "@/src/lib/design-tokens";
+import { TINT_ACCENT, type TintToken } from "@/src/lib/design-tokens";
 import { Slot } from "@rn-primitives/slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Platform, View } from "react-native";
@@ -112,7 +112,13 @@ function Badge({ className, variant, tint, icon, asChild, children, ...props }: 
   return (
     <TextClassContext.Provider value={badgeTextVariants({ variant, tint })}>
       <Component className={cn(badgeVariants({ variant, tint }), className)} {...props}>
-        {icon ? <Icon name={icon} size={14} /> : null}
+        {/* The provider above carries the label's INK, and `Icon` reads the same
+            TextClassContext - so without this the glyph is darkened too, which
+            is the "enabled icon reading as disabled" that the text/mark split
+            exists to avoid. Marks keep the published accent (#421). */}
+        {icon ? (
+          <Icon name={icon} size={14} className={tint ? TINT_ACCENT[tint] : undefined} />
+        ) : null}
         {children}
       </Component>
     </TextClassContext.Provider>
