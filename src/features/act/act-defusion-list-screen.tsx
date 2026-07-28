@@ -13,7 +13,7 @@ import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import { formatTimestamp } from "@/src/utils/date";
 
 export default function ActDefusionListScreen() {
   const { t } = useTranslation("act");
@@ -73,7 +73,7 @@ export default function ActDefusionListScreen() {
                         {t(`defusion.techniques.${log.techniqueUsed}`)}
                       </Text>
                       <Text variant="muted" className="text-xs">
-                        {formatLocalTimestamp(log.createdAt)}
+                        {formatTimestamp(log.createdAt)}
                       </Text>
                     </View>
                     {log.fusionLevelBefore !== null && log.fusionLevelAfter !== null ? (

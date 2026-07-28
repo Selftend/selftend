@@ -13,6 +13,10 @@ jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));
 
+jest.mock("@/src/features/breathing/queries", () => ({
+  useBreathingSessionCount: () => ({ data: 0 }),
+}));
+
 jest.mock("@/src/features/gratitude/queries", () => ({
   useGratitudeEntryCount: () => ({ data: 0 }),
 }));
@@ -27,6 +31,10 @@ jest.mock("@/src/features/habits/queries", () => ({
 
 jest.mock("@/src/features/journal/queries", () => ({
   useJournalEntryCount: () => ({ data: 0 }),
+}));
+
+jest.mock("@/src/features/meditation/queries", () => ({
+  useMeditationSessionCount: () => ({ data: 0 }),
 }));
 
 jest.mock("@/src/features/mood/queries", () => ({
@@ -100,10 +108,12 @@ describe("the tools hub takes its hues from tool-accent.ts", () => {
 
   it("shows more than the two colours it used to", () => {
     // The defect stated as the user saw it. Journal and sleep legitimately
-    // share `ink`, so six tools are five hues - the point is that it is not two.
+    // share `ink`, so eight tools are seven hues - the point is that it is
+    // not two. (Breathing brought aqua and meditation iris when the hub
+    // caught up with the drawer's tool list.)
     const hues = new Set(TOOLS.map((tool) => toolAccent(tool.key).chip));
 
-    expect(hues.size).toBe(5);
+    expect(hues.size).toBe(7);
   });
 
   it("leaves the tile names on the neutral foreground", () => {

@@ -121,12 +121,6 @@ export function formatTimestamp(value: string): string {
   }).format(new Date(value));
 }
 
-export function formatLocalTimestamp(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(i18n.language || undefined);
-}
-
 /**
  * An entry's timestamp rendered at the UTC offset captured with it, so it reads
  * as the time the user actually logged it — and agrees with the civil day it is
