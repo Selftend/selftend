@@ -3,21 +3,31 @@ name: Android Play production release
 # Reusable build+submit invoked by the release orchestrator (release.yml) after
 # migrate-prod. workflow_dispatch is kept as a manual fallback (builds main).
 #
-# The AAB is released to the Play **production** track as `completed` - Play's
-# documented meaning is "the release will have no further changes, its APKs are
-# being served to all users". A merge to `main` therefore reaches every user
-# automatically once Google's review clears, with nothing to press
+# The AAB is released to the Play **production** track as `inProgress` with a
+# `rollout` fraction (see eas.json) - automatic, but served to a capped share of
+# users rather than all of them. A merge to `main` starts reaching users once
+# Google's review clears, with nothing to press for it to begin
 # (wayfinder #371; the mechanism is research #372).
 #
-# There is deliberately NO staged rollout and NO human gate. The consequence,
-# recorded so it is not rediscovered during an incident: a bad build reaches
-# 100% of users before anyone can react, Android vitals and Sentry are the only
-# early warning, and Play has no rollback - the sole remedy is shipping a higher
-# versionCode forward. See the rollback runbook in docs/releasing.md.
+# The cap is for the first releases under this pipeline. `completed` - live to
+# everyone - is the intended end state per #371, which decided against a human
+# gate. test/android-release-track.test.ts pins whichever mode is current.
 #
-# Should this ever need dialling back, the two neighbouring statuses are
-# `inProgress` + a `rollout` fraction (automatic, but capped and haltable) and
-# `draft` (uploaded, serving nobody, awaiting a human press).
+# What the cap does NOT do is climb by itself. The remaining users get the build
+# only when someone bumps the rollout in Play Console or a later release
+# supersedes it. That is the one human step left in the pipeline, and it is
+# deliberate rather than an oversight.
+#
+# The consequences, recorded so they are not rediscovered during an incident: a
+# bad build reaches the rollout share before anyone can react (100% once this is
+# `completed`), Android vitals and Sentry are the only early warning, and Play
+# has no rollback - halting stops NEW users receiving it while everyone already
+# updated stays put, so the real remedy is shipping a higher versionCode
+# forward. See the rollback runbook in docs/releasing.md.
+#
+# The neighbouring statuses are `completed` (live to everyone) and `draft`
+# (uploaded, serving nobody, awaiting a human press). `halted` is the kill
+# switch for a rollout under way, not a release mode.
 on:
   workflow_call:
     inputs:
@@ -26,7 +36,7 @@ on:
         type: string
         required: true
       submit_to_play:
-        description: Release the AAB to the Google Play production track (live to all users after review)
+        description: Release the AAB to the Google Play production track (capped rollout, live after review)
         type: boolean
         default: true
       environment:
@@ -36,7 +46,7 @@ on:
   workflow_dispatch:
     inputs:
       submit_to_play:
-        description: Build the AAB and release it to the Google Play production track (live to all users after review)
+        description: Build the AAB and release it to the Google Play production track (capped rollout, live after review)
         type: boolean
         default: true
 
@@ -231,14 +241,19 @@ jobs:
         if: ${{ inputs.submit_to_play }}
         run: |
           {
-            echo "### Android released to production — no further action needed"
+            echo "### Android released to production — capped rollout, one action left"
             echo
-            echo "The AAB is on the Play **production** track as \`completed\`. It goes live"
-            echo "to **all users** as soon as Google's review clears; nothing to press."
+            echo "The AAB is on the Play **production** track as \`inProgress\`. It starts"
+            echo "reaching users as soon as Google's review clears; nothing to press for"
+            echo "that. See \`eas.json\` for the current rollout fraction."
             echo
             echo "The closed testing tracks (Groups, alpha) have the same build."
             echo
-            echo "There is no staged rollout, so watch Sentry and Android vitals."
-            echo "Play has no rollback — a bad build is fixed by shipping a higher"
-            echo "versionCode forward. See \`docs/releasing.md\` → Rollback runbook."
+            echo "**The rollout does not climb by itself.** The remaining users get this"
+            echo "build only when someone bumps the rollout in Play Console or a later"
+            echo "release supersedes it. Watch Sentry and Android vitals first."
+            echo
+            echo "Play has no rollback — halting stops NEW users receiving it, but anyone"
+            echo "already updated stays on the build. A bad release is fixed by shipping a"
+            echo "higher versionCode forward. See \`docs/releasing.md\` → Rollback runbook."
           } >> "$GITHUB_STEP_SUMMARY"

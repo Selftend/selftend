@@ -35,22 +35,31 @@ This doc defines the two-branch release flow: how everyday changes land, how a r
 
 ## How Android reaches users
 
-The pipeline releases the AAB to the Play **production** track as `completed` — Play's "the release will have no further changes, its APKs are being served to all users".
+The pipeline releases the AAB to the Play **production** track as `inProgress` with a **`rollout` of 0.2** — automatic, but served to 20% of users rather than all of them.
 
-**A merge to `main` goes live to every user automatically once Google's review clears.** There is no staged rollout and no human gate; nothing needs pressing.
+**A merge to `main` goes live automatically once Google's review clears.** There is no human gate on the release itself; nothing needs pressing for it to start reaching users.
 
 The closed testing tracks (`Groups`, `alpha`) receive the same build in the same pipeline run, so testers are never left behind production.
 
+### Getting from 20% to everyone
+
+A capped rollout does **not** climb on its own. The remaining 80% get the build one of two ways, and this is the one piece of the pipeline that still needs a person:
+
+- **Bump the rollout in Play Console** once Sentry and Android vitals look clean — the fastest path, and the one to use when a release is worth watching.
+- **Ship the next release**, which supersedes it. If `releaseStatus` is set back to `completed` first, that next release goes to 100% directly.
+
+The cap was introduced deliberately for the first release under this pipeline (72 commits, 12 migrations — the largest since v0.6.1). **The intended end state is `completed`**, per the decision on #371 that there should be no human gate. Flip `eas.json`'s production profile back once a release has been through cleanly, and update `test/android-release-track.test.ts` in the same change — it pins whichever mode is current.
+
 ### What this costs, and what to watch
 
-This is a deliberate trade of safety for throughput, and the consequences should not be rediscovered mid-incident:
+The trade is throughput against blast radius, and the consequences should not be rediscovered mid-incident:
 
-- **A bad build reaches 100% of users** before anyone can react. There is no percentage to cap the blast radius and no rollout to halt.
+- **A bad build reaches 20% of users** before anyone reacts — capped, not prevented. At `completed` it is 100%.
 - **Sentry and Android vitals are the only early warning.** Watch them after a release.
-- **Play has no rollback.** The sole remedy is shipping a higher versionCode forward — see the [Rollback runbook](#rollback-runbook).
-- **Review latency still applies**, so Android trails web and the database by however long Google takes. Keep migrations forward-compatible: the currently-installed Android build must keep working against a migrated database.
+- **Play has no rollback.** You can **halt** a rollout so no _further_ users receive the build, but everyone already updated stays on it. The only real remedy is shipping a higher versionCode forward — see the [Rollback runbook](#rollback-runbook).
+- **Review latency still applies**, so Android trails web and the database by however long Google takes. Keep migrations forward-compatible: the currently-installed Android build must keep working against a migrated database. (Verified for the 0.6.1 client across the 12 migrations in the first release — `program_widget_task_status` dropped its three-argument signature, and the four-argument replacement defaults the new parameter, with an integration test per leg that omits it.)
 
-If this ever needs dialling back, the two neighbouring `releaseStatus` values in `eas.json` are `inProgress` with a `rollout` fraction (still automatic, but capped and haltable) and `draft` (uploaded, serving nobody, awaiting a human press).
+The neighbouring `releaseStatus` values in `eas.json` are `completed` (live to everyone, the intended end state) and `draft` (uploaded, serving nobody, awaiting a human press). `halted` is the kill switch for a rollout already under way, not a release mode.
 
 ## Hotfixes
 
