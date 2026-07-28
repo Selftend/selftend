@@ -76,7 +76,11 @@ const MODULES: ModuleTile[] = [
 // `bg-<hue>/15` mark it sits in. This screen pours no room, so the room-less
 // `text-<hue>-ink` is the token that keeps each module its own colour (#403).
 const MARK_TEXT_CLASS: Record<ModuleKey, string> = {
-  cbt: "text-primary",
+  // `cbt` was the one entry still on a raw accent, and only because `primary`
+  // had no ink to move to (#421 §3): "CBT" at 14px/700 on its `bg-primary/15`
+  // mark over `bg-card` reads 4.41:1, the same figure as the sidebar's Beta
+  // chip. It now takes `text-primary-ink` like the two hues beside it.
+  cbt: "text-primary-ink",
   act: "text-act-ink",
   dbt: "text-be-ink",
 };

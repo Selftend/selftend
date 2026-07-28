@@ -1,6 +1,5 @@
 import type { Href } from "expo-router";
 
-import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import type { ActivityLog } from "@/src/features/activities/types";
 import type { CoreBelief } from "@/src/features/beliefs/types";
 import type { ThoughtRecord } from "@/src/features/cbt/types";
@@ -56,17 +55,17 @@ const countSince = (items: { createdAt: string }[], since: number) =>
 /**
  * True (1) if a qualifying event occurred on the given YYYY-MM-DD; else 0.
  *
- * Buckets a UTC timestamp through the VIEWER's current timezone, so it is only
- * correct while the underlying table stores no occurrence offset - thought
- * records, activities and meditation, the modules still queued behind #330. The
- * server twin (`program_widget_task_status`) keeps the matching legs on the same
- * viewer-local window on purpose, so the widget and this screen agree; both
- * graduate together when a module's offset column lands (#414).
+ * Every daily-practice leg on this screen now compares a civil day captured at
+ * logging time rather than re-deriving one from a timestamp through wherever the
+ * viewer happens to be standing. `dayKey` is resolved once in each module's
+ * repository via `entryDayKey`, whose null-offset fallback is the viewer's local
+ * day - so rows logged before the offset columns landed still render exactly
+ * where they always have.
+ *
+ * The server twin (`program_widget_task_status`) buckets the same four legs the
+ * same way as of 20260803000000, so the Home widget and this screen cannot
+ * disagree about whether today's practice is done (#425, following #414).
  */
-const didOnDate = (timestamps: (string | null | undefined)[], date: string) =>
-  timestamps.some((ts) => typeof ts === "string" && toLocalDateKey(ts) === date) ? 1 : 0;
-
-/** For tools that captured the civil day at logging time - compare, never convert. */
 const didOnCapturedDay = (items: { dayKey: string }[], date: string) =>
   items.some((item) => item.dayKey === date) ? 1 : 0;
 
@@ -136,11 +135,10 @@ const THOUGHT_RECORD_DAILY: ProgramTaskDef = {
   key: "thoughtRecordDaily",
   labelKey: "program.tasks.thoughtRecordDaily",
   route: "/modules/cbt/new",
+  // Thought records carry the civil day they were written on (#423), so read it
+  // rather than re-bucketing createdAt through wherever the viewer is standing.
   signal: ({ thoughtRecords, selectedDate }) => ({
-    current: didOnDate(
-      thoughtRecords.map((r) => r.createdAt),
-      selectedDate,
-    ),
+    current: didOnCapturedDay(thoughtRecords, selectedDate),
     target: 1,
   }),
 };
@@ -209,11 +207,10 @@ const CALMING_DAILY: ProgramTaskDef = {
   key: "calmingDaily",
   labelKey: "program.tasks.calmingDaily",
   route: "/tools/meditation",
+  // Meditation carries the civil day the sit happened on (#416), so read it
+  // rather than re-bucketing completedAt through wherever the viewer is standing.
   signal: ({ meditationSessions, selectedDate }) => ({
-    current: didOnDate(
-      meditationSessions.map((s) => s.completedAt),
-      selectedDate,
-    ),
+    current: didOnCapturedDay(meditationSessions, selectedDate),
     target: 1,
   }),
 };

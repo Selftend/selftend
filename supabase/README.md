@@ -248,9 +248,42 @@ If `db push` is blocked by a migration-history mismatch, inspect the active proj
 npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_profile_avatar_repair.sql
 ```
 
+## Migration versions
+
+A migration's **version** is the leading run of digits in its filename, not the filename itself. `20260731130000_thought_records_occurrence_offset.sql` is version `20260731130000`; the rest of the name is a label the CLI ignores. Two rules govern it, and they pull in opposite directions if you only know one of them.
+
+**Two files may not share a version.** Versions key `supabase_migrations.schema_migrations`, so two files whose leading digits match are one version, and the second to apply dies with:
+
+```
+ERROR: duplicate key value violates unique constraint "schema_migrations_pkey"
+DETAIL: Key (version)=(20260730) already exists.
+```
+
+That surfaces only once CI starts Supabase — `verify` stays green and the diff looks fine — and it bit twice in one afternoon (#414, #256) as soon as parallel work started landing migrations on the same day.
+
+**No version may be a prefix of another version.** This is the one the obvious fix for the first rule walks straight into: date a second same-day migration `YYYYMMDDHHMMSS` while its sibling keeps the bare `YYYYMMDD`, and you have created it. `db push` walks the local files and the remote history as two sorted lists in a single pass, expecting them to agree on order — but the local list is sorted by **filename** and the remote by **version**, and those disagree exactly when one version extends another, because every digit sorts before the `_` that ends the shorter one:
+
+```
+20260730120000_program_widget_day_key.sql     <- '1' (0x31)
+20260730_mindfulness_occurrence_offset.sql    <- '_' (0x5f)
+```
+
+The file for `20260730120000` sorts first; the remote history puts `20260730` first. The walk finds a local version larger than the remote one it is looking for, decides the remote version is missing locally, and aborts — while both files sit there, present and unrenamed:
+
+```
+Remote migration versions not found in local migrations directory.
+supabase migration repair --status reverted 20260728 20260730
+```
+
+Two properties make this worth memorising. It is **invisible until the shorter version has been applied somewhere**, so CI cannot see it: `db reset` builds from an empty database and never compares histories. And it **does not recover on its own** — once both versions are applied, every later push fails the same way, so the first push that succeeds is the one that wedges the database. It broke every staging run from `0c664ec` (#419) until #432.
+
+**So: use `YYYYMMDDHHMMSS` for anything new, and keep one width.** Fourteen digits are collision-proof, and if every new version is the same width none can be a prefix of another. The historic 8-digit versions are frozen where they are — renaming an already-applied migration is what breaks history in the first place — so when a new file would extend one of them, move the **new** file to a free date instead. Early versions are sequence numbers rather than real dates (`20260664` has no 64th day), so read the digits as an ordering key, not a calendar.
+
+[test/migration-conventions.test.ts](../test/migration-conventions.test.ts) fails the build on a shared version, on a prefix pair, on any filename-order/version-order disagreement, and on a file with no leading digits.
+
 ## Linked project status
 
-The active linked project is kept aligned with the checked-in migration history by running `npm run db:push:prod` (`supabase db push --linked`) after new migrations land. Migration versions are 8-digit sequence numbers (`202605NN`), not dates; keep them uniform so `db push` matching does not break (a 14-digit version sharing a prefix with an 8-digit one trips the CLI matcher).
+The active linked project is kept aligned with the checked-in migration history by running `npm run db:push:prod` (`supabase db push --linked`) after new migrations land.
 
 The following invariants should hold on a fully-migrated project:
 
