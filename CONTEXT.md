@@ -45,7 +45,7 @@ The calendar day an entry belongs to. Which calendar depends on whether the tool
 - **Routines are viewer-local by decision, and stay that way.** A routine has no dated record to freeze — there is no run object — and its job is "today, where you are standing"; freezing the axis would hand someone who has travelled a checklist for a day they have not lived, or mark one complete before they wake. Steps still read each tool's own day model, so the two models coexist on purpose rather than by omission. Routine status resets at local midnight.
 - **ACT is deliberately deferred, not pending.** Nine tables and roughly 60% of the workstream's remaining cost, against a symptom of a single wrong day, visible only around travel and self-correcting the next day: every ACT surface is a same-day list, and `useSelectedDate()` returns today with deliberately no global selected-date state, so there is no history or calendar on which a mis-filed entry stays visible. It returns only if ACT grows one.
 - Both of those are owner decisions of 2026-07-28, recorded on [#330](https://github.com/Selftend/selftend/issues/330#issuecomment-5100789560).
-- Where a captured offset is missing (entries predating the column, or written by an older client) the first group falls back to the second. That is a fallback for unknown, never a claim the entry was logged at UTC.
+- Where a captured offset is missing (entries predating the column, or written by an older client) the first group falls back to the **viewer's current local day**. That is a fallback for unknown, never a claim the entry was logged at UTC.
 - This holds server-side too: `public.occurrence_day_key` is the SQL twin of `entryDayKey`, so an RPC that answers "done today" resolves the same day the screens do rather than range-scanning the viewer's window (#414).
 
 _Avoid_: session, cycle
@@ -78,13 +78,13 @@ A contrast ratio is only ever true of a **named pair**, so never record that a h
 
 So a hue gets a second, darkened value for text: the same hue and saturation at lightness 28%, certified against the surfaces it lands on. Which class carries it depends on where the text stands:
 
-| context                                          | class                                    |
-| ------------------------------------------------ | ---------------------------------------- |
-| Small text in a hue, inside that hue's room      | `text-accent-ink` (the room re-pours it) |
-| Small text in a hue, on the neutral app surface  | `text-<hue>-ink`                         |
-| Icons, large numerals, decorative marks, borders | `text-<hue>` (unchanged)                 |
+| context                                          | class                                           |
+| ------------------------------------------------ | ----------------------------------------------- |
+| Small text in a hue, inside that hue's room      | `text-accent-ink` — in-room only                |
+| Small text in a hue, anywhere at all             | `text-<hue>-ink` — names its hue, so it travels |
+| Icons, large numerals, decorative marks, borders | `text-<hue>` (unchanged)                        |
 
-Both classes resolve to the same colour inside a room — one source, `HUE_INK_TRIPLES`. The distinction matters because `accent-ink` is room-poured: outside a room it falls back to `--primary`, so using it on a room-less screen changes the hue rather than the contrast.
+The two are not interchangeable in both directions. `text-<hue>-ink` names the hue it wants and is therefore correct everywhere, in a room or out of one. `text-accent-ink` asks the _room_ for a hue, so it is only meaningful where a room is pouring one: outside a room it falls back to `--primary` and renders violet, changing the hue rather than the contrast — silently, since it still looks like a deliberate colour. Inside a room both resolve to the same value from one source, `HUE_INK_TRIPLES`.
 
 A module's directory name does not tell you its room: `src/features/act/` is room-less (the `act` room is worn by `src/features/habits/`), so `text-accent-ink` there would render violet.
 
