@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
-import { useColorScheme } from "nativewind";
 
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -20,17 +19,16 @@ import {
   useSetGratitudeEntryStarred,
 } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
+import { useRoomCardHsl } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { CARD_COLOR } from "@/lib/theme";
 
 const COLLAPSED_PAIRS = 2;
 
 export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
   const { t } = useTranslation("gratitude");
   const { user } = useSession();
-  const { colorScheme } = useColorScheme();
   const showToast = useToastStore((state) => state.showToast);
 
   const [expanded, setExpanded] = useState(false);
@@ -47,12 +45,13 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
     ...gratitudeAnswers(entry.lifeItems, lifeQuestions),
   ];
 
-  const when = formatMoodRelativeTime(entry.loggedAt, t);
+  // Labelled in the captured day frame, matching the dayKey these cards group by.
+  const when = formatRelativeDayKey(entry.dayKey, t);
   const hasMore = answers.length > COLLAPSED_PAIRS;
   const isOpen = expanded || !hasMore;
   const visible = isOpen ? answers : answers.slice(0, COLLAPSED_PAIRS);
   const note = entry.note.trim();
-  const fadeColor = colorScheme === "light" ? CARD_COLOR.light : CARD_COLOR.dark;
+  const fadeColor = useRoomCardHsl("think");
 
   const toggleFavorite = async () => {
     try {
@@ -78,7 +77,7 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
   };
 
   return (
-    <View className="overflow-hidden rounded-2xl border border-border bg-card">
+    <View className="overflow-hidden rounded-3xl bg-card shadow-lg shadow-think/25">
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t(expanded ? "list.collapseEntry" : "list.expandEntry", { when })}
@@ -93,7 +92,14 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
           <Text variant="muted" className="text-xs">
             {when}
           </Text>
-          {entry.starred ? <Icon name="star" size={16} className="text-think" /> : null}
+          {/*
+            The only thing that says this entry is starred - no accessible name
+            carries it - so WCAG 1.4.11's 3:1 applies. `text-think` is 2.05:1 on
+            the think room's card, so this icon takes accent ink (5.95:1) even
+            though icons normally keep the published accent (#368). think is the
+            one hue where the non-text exemption cannot save it.
+          */}
+          {entry.starred ? <Icon name="star" size={16} className="text-accent-ink" /> : null}
         </View>
 
         <View className="relative">

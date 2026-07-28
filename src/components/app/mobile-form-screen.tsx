@@ -10,9 +10,21 @@ import { useWebKeyboardInset } from "@/src/lib/use-web-keyboard-inset";
 interface MobileFormScreenProps extends PropsWithChildren {
   contentClassName?: string;
   footer?: ReactNode;
+  /**
+   * Full-bleed header rendered inside the scroll view but OUTSIDE the padded
+   * content column, so it can span the whole screen width even when
+   * `contentClassName` caps the form at a max width (e.g. a module-hue field
+   * header). Without it the layout is unchanged.
+   */
+  hero?: ReactNode;
 }
 
-export function MobileFormScreen({ children, contentClassName, footer }: MobileFormScreenProps) {
+export function MobileFormScreen({
+  children,
+  contentClassName,
+  footer,
+  hero,
+}: MobileFormScreenProps) {
   // KeyboardAvoidingView renders as a plain View on web; the visual-viewport
   // inset pads the footer/content above the on-screen keyboard there.
   const keyboardInset = useWebKeyboardInset();
@@ -25,11 +37,18 @@ export function MobileFormScreen({ children, contentClassName, footer }: MobileF
         style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
       >
         <KeyboardAwareScrollView
-          contentContainerClassName={cn("grow p-6", contentClassName)}
+          contentContainerClassName={hero ? "grow" : cn("grow p-6", contentClassName)}
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
         >
-          {children}
+          {hero ? (
+            <>
+              {hero}
+              <View className={cn("grow p-6", contentClassName)}>{children}</View>
+            </>
+          ) : (
+            children
+          )}
         </KeyboardAwareScrollView>
         {footer ? <View className="border-t border-border bg-background p-4">{footer}</View> : null}
       </KeyboardAvoidingView>

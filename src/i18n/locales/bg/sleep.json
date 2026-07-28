@@ -46,7 +46,9 @@
   },
   "stats": {
     "longest": "Най-дълъг",
-    "shortest": "Най-кратък"
+    "shortest": "Най-кратък",
+    "last": "Последно · {{when}}",
+    "never": "Все още няма записи за сън"
   },
   "chart": {
     "duration14": "Часове сън · последните 14 нощи",
@@ -109,11 +111,5 @@
   },
   "feedback": {
     "deleted": "Записът за сън е изтрит"
-  },
-  "relativeTime": {
-    "today": "Днес",
-    "yesterday": "Вчера",
-    "daysAgo_one": "Преди {{count}} ден",
-    "daysAgo_other": "Преди {{count}} дни"
   }
 }

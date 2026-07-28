@@ -4,12 +4,15 @@ import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { BarChart } from "@/src/components/charts/bar-chart";
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ToolStats } from "@/src/components/app/tool-stats";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HabitsOnboarding } from "@/src/components/app/habits-onboarding-modal";
+import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import { HABITS_LEARN_CARDS } from "@/src/features/habits/learn";
 import {
   getIdentityRoundUp,
@@ -28,10 +31,11 @@ import {
   localDateKey,
 } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { parseLocalNoon } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -43,6 +47,10 @@ export default function HabitsHomeScreen() {
   const { data: habits, isLoading: habitsLoading } = useHabits(userId);
   const sinceDate = localDateKey(addDays(new Date(), -30));
   const { data: logs } = useHabitLogs(userId, { sinceDate });
+  // The 30-day window above drives the charts and recent activity; the header
+  // subline needs lifetime history so a tick older than the window doesn't
+  // read as "no ticks yet". Newest-first ordering makes row 0 the latest tick.
+  const { data: latestLogs } = useHabitLogs(userId, { limit: 1 });
   const toggleLog = useToggleHabitLog(userId);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
@@ -80,14 +88,28 @@ export default function HabitsHomeScreen() {
   const weeklyRhythm = getWeeklyRhythm(allLogs, 4, today);
   const identityRoundUp = getIdentityRoundUp(allHabits, allLogs, today);
   const twoMinuteAdoption = getTwoMinuteAdoption(allHabits);
+  const lastTickedOn = latestLogs?.[0]?.loggedOn ?? null;
+  // `loggedOn` IS the civil day - label from it directly instead of faking a
+  // noon instant to reuse the activity formatter.
+  const lastWhen = lastTickedOn ? formatRelativeDayKey(lastTickedOn, t) : null;
+  // `latestLogs` is undefined while loading and after a failed fetch with no
+  // cache - only an actually-loaded (possibly empty) history may claim "no
+  // ticks yet", or a returning user's history reads as erased.
+  const subline = lastWhen
+    ? t("stats.last", { when: lastWhen })
+    : latestLogs
+      ? t("stats.never")
+      : undefined;
 
   function handleToggle(habitId: string) {
     toggleLog.mutate({ habitId, loggedOn: todayStr });
   }
 
+  const roomStyle = useRoomStyle("act");
+
   if (habitsLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
+      <SafeAreaView className="flex-1 items-center justify-center bg-background" style={roomStyle}>
         <ActivityIndicator />
       </SafeAreaView>
     );
@@ -100,151 +122,162 @@ export default function HabitsHomeScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-4">
-          <View className="gap-6">
-            <View className="gap-2">
-              <ModuleHomeHeader
-                addWidgetCategory="habits"
-                title={t("home.title")}
-                hue="act"
-                icon="task-alt"
-                moduleLabel={null}
-                tourScope="habits"
-                description={t("home.subtitle")}
-                actions={[
-                  { type: "notifications", targetKey: "habits" },
-                  { type: "info", onPress: () => setForceOnboarding(true) },
-                ]}
-                meta={
-                  <ToolStats
-                    accentClassName="text-act"
-                    credit={t("authorEyebrow")}
-                    items={[
-                      { value: `${todayTicked}/${todayHabits.length}`, label: t("hero.today") },
-                      { value: t("hero.habits", { count: allHabits.length }), label: "" },
-                    ]}
-                  />
-                }
-              />
-            </View>
-
-            {identities.length > 0 ? (
-              <View className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
-                <Text className="text-sm">
-                  {t("home.identityBannerPrefix")}{" "}
-                  <Text className="font-semibold">
-                    {identities[today.getDate() % identities.length]}
-                  </Text>
-                </Text>
-              </View>
-            ) : null}
-
-            <View className="flex-row flex-wrap gap-2">
-              <Button onPress={() => router.push("/tools/habits/new")} className="self-start">
-                <Icon name="add" className="size-4 text-primary-foreground" />
-                <Text>{t("cta.newHabit")}</Text>
-              </Button>
-              <Button variant="ghost" onPress={() => router.push("/tools/habits/history")}>
-                <Icon name="history" className="size-4" />
-                <Text>{t("cta.viewHistory")}</Text>
-              </Button>
-            </View>
-
-            {missTwiceRiskHabits.length > 0 ? (
-              <View className="gap-2 rounded-2xl border border-amber-300/40 bg-amber-100/40 p-4 dark:border-amber-700/40 dark:bg-amber-900/20">
-                <Text className="font-semibold">{t("home.neverMissTwiceTitle")}</Text>
-                <Text variant="muted">{t("home.neverMissTwiceBody")}</Text>
-              </View>
-            ) : null}
-
-            <View className="gap-3">
-              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {isToday ? t("home.todayHeading") : dayLabel}
-              </Text>
-
-              {allHabits.length === 0 ? (
-                <View className="gap-2 rounded-2xl border border-border bg-card p-5">
-                  <Text className="text-base font-semibold">{t("home.noHabitsTitle")}</Text>
-                  <Text variant="muted">{t("home.noHabitsBody")}</Text>
-                </View>
-              ) : todayHabits.length === 0 ? (
-                <Text variant="muted">{t("home.todayEmpty")}</Text>
-              ) : (
-                <View className="gap-3">
-                  {todayHabits.map((habit) => (
-                    <HabitRow
-                      key={habit.id}
-                      habit={habit}
-                      logs={allLogs}
-                      todayStr={todayStr}
-                      onToggle={() => handleToggle(habit.id)}
-                      onOpen={() =>
-                        router.push({
-                          pathname: "/tools/habits/[id]",
-                          params: { id: habit.id },
-                        })
-                      }
-                    />
-                  ))}
-                </View>
-              )}
-            </View>
-
-            <LearnCard
-              learnIndex={learnIndex}
-              onDismiss={() => setLearnIndex((prev) => prev + 1)}
+          {/* The field + sheet escape the scroll padding so the green field runs
+              edge to edge; the sheet re-adds the inset for its sections. */}
+          <View className="-mx-4 -mt-4">
+            <ModuleHomeHeader
+              variant="field"
+              addWidgetCategory="habits"
+              title={t("home.title")}
+              hue="act"
+              icon="task-alt"
+              moduleLabel={null}
+              tourScope="habits"
+              description={t("home.subtitle")}
+              actions={[
+                { type: "notifications", targetKey: "habits" },
+                { type: "info", onPress: () => setForceOnboarding(true) },
+              ]}
+              meta={
+                <ToolStats
+                  tone="onField"
+                  accentClassName="text-accent-ink"
+                  credit={t("authorEyebrow")}
+                  items={[
+                    { value: `${todayTicked}/${todayHabits.length}`, label: t("hero.today") },
+                    { value: t("hero.habits", { count: allHabits.length }), label: "" },
+                  ]}
+                  subline={subline}
+                  sublineTone={lastWhen ? "accent" : "muted"}
+                />
+              }
             />
+            <ContentSheet className="px-4">
+              <View className="gap-6">
+                {identities.length > 0 ? (
+                  <View className="rounded-2xl border border-act/30 bg-act/5 p-4">
+                    <Text className="text-sm">
+                      {t("home.identityBannerPrefix")}{" "}
+                      <Text className="font-semibold">
+                        {identities[today.getDate() % identities.length]}
+                      </Text>
+                    </Text>
+                  </View>
+                ) : null}
 
-            {allHabits.length > 0 ? (
-              <InsightsSection
-                rhythm={weeklyRhythm}
-                identityRoundUp={identityRoundUp}
-                twoMinuteAdoption={twoMinuteAdoption}
-              />
-            ) : null}
-
-            <View className="gap-3">
-              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {t("home.recentActivity")}
-              </Text>
-              {recentLogs.length === 0 ? (
-                <Text variant="muted">{t("home.recentEmpty")}</Text>
-              ) : (
-                <View className="gap-2">
-                  {recentLogs.map((log) => {
-                    const habit = allHabits.find((h) => h.id === log.habitId);
-                    if (!habit) return null;
-                    return (
-                      <Pressable
-                        key={log.id}
-                        accessibilityRole="button"
-                        onPress={() =>
-                          router.push({
-                            pathname: "/tools/habits/[id]",
-                            params: { id: habit.id },
-                          })
-                        }
-                        className="flex-row items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 active:bg-accent/40"
-                        role="button"
-                      >
-                        <View className="flex-1">
-                          <Text className="text-sm font-semibold">{habit.name}</Text>
-                          {habit.identity ? (
-                            <Text variant="muted" className="text-xs">
-                              {habit.identity}
-                            </Text>
-                          ) : null}
-                        </View>
-                        <Text variant="muted" className="text-xs">
-                          {formatMoodRelativeTime(`${log.loggedOn}T12:00:00`, t)}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
+                <View className="flex-row flex-wrap gap-2">
+                  <Button onPress={() => router.push("/tools/habits/new")} className="self-start">
+                    <Icon name="add" className="size-4 text-primary-foreground" />
+                    <Text>{t("cta.newHabit")}</Text>
+                  </Button>
+                  <Button variant="ghost" onPress={() => router.push("/tools/habits/history")}>
+                    <Icon name="history" className="size-4" />
+                    <Text>{t("cta.viewHistory")}</Text>
+                  </Button>
                 </View>
-              )}
-            </View>
+
+                {missTwiceRiskHabits.length > 0 ? (
+                  <View className="gap-2 rounded-2xl border border-think/40 bg-think/10 p-4">
+                    <Text className="font-semibold">{t("home.neverMissTwiceTitle")}</Text>
+                    <Text variant="muted">{t("home.neverMissTwiceBody")}</Text>
+                  </View>
+                ) : null}
+
+                <View className="gap-3">
+                  <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    {isToday ? t("home.todayHeading") : dayLabel}
+                  </Text>
+
+                  {allHabits.length === 0 ? (
+                    <View className="gap-2 rounded-2xl border border-border bg-card p-5">
+                      <Text className="text-base font-semibold">{t("home.noHabitsTitle")}</Text>
+                      <Text variant="muted">{t("home.noHabitsBody")}</Text>
+                    </View>
+                  ) : todayHabits.length === 0 ? (
+                    <Text variant="muted">{t("home.todayEmpty")}</Text>
+                  ) : (
+                    <View className="gap-3">
+                      {todayHabits.map((habit) => (
+                        <HabitRow
+                          key={habit.id}
+                          habit={habit}
+                          logs={allLogs}
+                          todayStr={todayStr}
+                          onToggle={() => handleToggle(habit.id)}
+                          onOpen={() =>
+                            router.push({
+                              pathname: "/tools/habits/[id]",
+                              params: { id: habit.id },
+                            })
+                          }
+                        />
+                      ))}
+                    </View>
+                  )}
+                </View>
+
+                <LearnCard
+                  learnIndex={learnIndex}
+                  onDismiss={() => setLearnIndex((prev) => prev + 1)}
+                />
+
+                {allHabits.length > 0 ? (
+                  <InsightsSection
+                    rhythm={weeklyRhythm}
+                    identityRoundUp={identityRoundUp}
+                    twoMinuteAdoption={twoMinuteAdoption}
+                  />
+                ) : null}
+
+                <View className="gap-3">
+                  <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t("home.recentActivity")}
+                  </Text>
+                  {recentLogs.length === 0 ? (
+                    <Text variant="muted">{t("home.recentEmpty")}</Text>
+                  ) : (
+                    <View className="gap-2">
+                      {recentLogs.map((log) => {
+                        const habit = allHabits.find((h) => h.id === log.habitId);
+                        if (!habit) return null;
+                        return (
+                          <Pressable
+                            key={log.id}
+                            accessibilityRole="button"
+                            onPress={() =>
+                              router.push({
+                                pathname: "/tools/habits/[id]",
+                                params: { id: habit.id },
+                              })
+                            }
+                            className="flex-row items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 active:bg-accent/40"
+                            role="button"
+                          >
+                            <View className="flex-1">
+                              <Text className="text-sm font-semibold">{habit.name}</Text>
+                              {habit.identity ? (
+                                <Text variant="muted" className="text-xs">
+                                  {habit.identity}
+                                </Text>
+                              ) : null}
+                            </View>
+                            <Text variant="muted" className="text-xs">
+                              {formatRelativeDayKey(log.loggedOn, t)}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              </View>
+            </ContentSheet>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -264,7 +297,11 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
   const { t } = useTranslation("habits");
   const tickedToday = isTickedOn(logs, habit.id, todayStr);
   const days = lastSevenDays();
-  const colorClass = colorChipClass(habit.color);
+  const chip = useHabitChipPalette()[habit.color];
+  // Ticked is encoded by color alone on the week strip - no label, no glyph -
+  // so the outline has to be the stop certified against the room (WCAG 1.4.11),
+  // not the soft resting border. The tick box shares it for one silhouette.
+  const tickedStyle = { backgroundColor: chip.fill, borderColor: chip.ink };
 
   return (
     <View className="gap-3 rounded-2xl border border-border bg-card p-4">
@@ -282,13 +319,14 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
           onPress={onToggle}
           className={cn(
             "size-10 items-center justify-center rounded-xl border",
-            tickedToday ? `${colorClass.bg} ${colorClass.border}` : "border-border bg-background",
+            !tickedToday && "border-border bg-background",
           )}
+          style={tickedToday ? tickedStyle : undefined}
           role="checkbox"
           {...spaceKeyActivationProps(onToggle)}
         >
           {tickedToday ? (
-            <Icon name="check" className={`size-5 ${colorClass.text}`} />
+            <Icon name="check" className="size-5" style={{ color: chip.ink }} />
           ) : (
             <Icon name="radio-button-unchecked" className="size-5 text-muted-foreground" />
           )}
@@ -329,12 +367,12 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
                 key={dayStr}
                 className={cn(
                   "h-6 flex-1 rounded-md border",
-                  ticked
-                    ? `${colorClass.bg} ${colorClass.border}`
-                    : scheduled
+                  !ticked &&
+                    (scheduled
                       ? "border-border bg-muted/40"
-                      : "border-dashed border-border bg-background",
+                      : "border-dashed border-border bg-background"),
                 )}
+                style={ticked ? tickedStyle : undefined}
               />
             );
           })}
@@ -352,7 +390,6 @@ interface InsightsSectionProps {
 
 function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: InsightsSectionProps) {
   const { t } = useTranslation("habits");
-  const maxCount = Math.max(1, ...rhythm.map((r) => r.count));
   const hasRhythm = rhythm.some((r) => r.count > 0);
   const hasIdentities = identityRoundUp.length > 0;
   const hasTwoMinute = twoMinuteAdoption.total > 0;
@@ -371,21 +408,18 @@ function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: Insight
             {t("insights.rhythmSubtitle")}
           </Text>
           {hasRhythm ? (
-            <View className="flex-row items-end gap-2">
-              {rhythm.map((bucket) => {
-                const height = bucket.count > 0 ? Math.max(6, (bucket.count / maxCount) * 64) : 2;
-                return (
-                  <View key={bucket.weekday} className="flex-1 items-center gap-1">
-                    <View className="h-16 w-full justify-end">
-                      <View className="w-full rounded-t-md bg-primary/70" style={{ height }} />
-                    </View>
-                    <Text variant="muted" className="text-[10px] leading-3">
-                      {t(`insights.weekday.${bucket.weekday}` as const)}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
+            <BarChart
+              bars={rhythm.map((bucket) => ({
+                key: bucket.weekday,
+                value: bucket.count,
+                label: t(`insights.weekday.${bucket.weekday}` as const),
+              }))}
+              minBarHeight={6}
+              zeroHeight={2}
+              tintClass="bg-act/70"
+              barClassName="rounded-t-md"
+              labelClassName="leading-3"
+            />
           ) : (
             <Text variant="muted" className="text-sm">
               {t("insights.rhythmEmpty")}
@@ -421,7 +455,7 @@ function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: Insight
             <View className="gap-1.5">
               <View className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <View
-                  className="h-full rounded-full bg-primary/70"
+                  className="h-full rounded-full bg-act/70"
                   style={{ width: `${adoptionPct}%` }}
                 />
               </View>
@@ -451,9 +485,10 @@ interface LearnCardProps {
 
 function LearnCard({ learnIndex, onDismiss }: LearnCardProps) {
   const { t } = useTranslation("habits");
+  const palette = useHabitChipPalette();
   const card = HABITS_LEARN_CARDS[learnIndex % HABITS_LEARN_CARDS.length];
   if (!card) return null;
-  const chip = colorChipClass(card.tone);
+  const chip = palette[card.tone];
   const cardKey = `learn.cards.${card.slug}` as const;
 
   return (
@@ -477,8 +512,11 @@ function LearnCard({ learnIndex, onDismiss }: LearnCardProps) {
           role="button"
         >
           <View className="flex-row items-center justify-between">
-            <View className={cn("size-10 items-center justify-center rounded-xl", chip.bg)}>
-              <Icon name={card.icon} className={cn("size-5", chip.text)} />
+            <View
+              className="size-10 items-center justify-center rounded-xl"
+              style={{ backgroundColor: chip.fill }}
+            >
+              <Icon name={card.icon} className="size-5" style={{ color: chip.ink }} />
             </View>
             <View className="size-5" />
           </View>
@@ -503,46 +541,4 @@ function LearnCard({ learnIndex, onDismiss }: LearnCardProps) {
       </View>
     </View>
   );
-}
-
-interface ColorChip {
-  bg: string;
-  border: string;
-  text: string;
-}
-
-export function colorChipClass(color: Habit["color"]): ColorChip {
-  switch (color) {
-    case "be":
-      return { bg: "bg-be/20", border: "border-be/40", text: "text-be" };
-    case "act":
-      return { bg: "bg-act/20", border: "border-act/40", text: "text-act" };
-    case "amber":
-      return {
-        bg: "bg-amber-200/40 dark:bg-amber-900/30",
-        border: "border-amber-400/40",
-        text: "text-amber-700 dark:text-amber-300",
-      };
-    case "emerald":
-      return {
-        bg: "bg-emerald-200/40 dark:bg-emerald-900/30",
-        border: "border-emerald-400/40",
-        text: "text-emerald-700 dark:text-emerald-300",
-      };
-    case "violet":
-      return {
-        bg: "bg-violet-200/40 dark:bg-violet-900/30",
-        border: "border-violet-400/40",
-        text: "text-violet-700 dark:text-violet-300",
-      };
-    case "rose":
-      return {
-        bg: "bg-rose-200/40 dark:bg-rose-900/30",
-        border: "border-rose-400/40",
-        text: "text-rose-700 dark:text-rose-300",
-      };
-    case "primary":
-    default:
-      return { bg: "bg-primary/20", border: "border-primary/40", text: "text-primary" };
-  }
 }

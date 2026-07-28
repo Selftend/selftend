@@ -21,9 +21,10 @@ export function loggedAtForSelectedDate(selectedDate: string): string {
 }
 
 /**
- * Compatibility hook for day-scoped screens while occurrence-time fields are
- * migrated. There is deliberately no global selected-date state: Home and module
- * dashboards always describe the device's current local day.
+ * The day a screen is describing. There is deliberately no global selected-date
+ * state: Home and module dashboards always describe the device's current local
+ * day, which is the right frame for "what am I looking at now" even though
+ * entries themselves are filed under the civil day they were captured on (#250).
  */
 export function useSelectedDate() {
   return { selectedDate: currentDateKey(), isToday: true };

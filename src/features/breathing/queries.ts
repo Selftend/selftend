@@ -1,15 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  countMindfulnessSessionsExcludingNames,
   listMindfulnessSessionsByNames,
   saveMindfulnessSession,
 } from "@/src/features/mindfulness/repository";
 import type { MindfulnessSessionInput } from "@/src/features/mindfulness/types";
 import { breathingSlugs } from "@/src/constants/breathing";
+import { groundingSlugs } from "@/src/constants/grounding";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const breathingKeys = {
   list: (userId: string) => ["breathing", "list", userId] as const,
+  count: (userId: string) => ["breathing", "count", userId] as const,
 };
 
 export function useBreathingSessions(userId: string | null, limit = 30, customIds: string[] = []) {
@@ -19,6 +22,18 @@ export function useBreathingSessions(userId: string | null, limit = 30, customId
       ? [...breathingKeys.list(userId), limit, customIds.join(",")]
       : ["breathing", "list", "anonymous"],
     queryFn: () => listMindfulnessSessionsByNames(userId!, names, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+// Counts by exclusion - everything in mindfulness_sessions that is not grounding is a
+// breathing session (src/features/routines/derive.ts draws the same line). Counting by
+// inclusion over breathingSlugs would drop custom exercises, whose sessions carry the
+// custom exercise's id as their name.
+export function useBreathingSessionCount(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? breathingKeys.count(userId) : ["breathing", "count", "anonymous"],
+    queryFn: () => countMindfulnessSessionsExcludingNames(userId!, [...groundingSlugs]),
     enabled: Boolean(userId),
   });
 }

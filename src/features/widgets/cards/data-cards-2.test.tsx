@@ -1,13 +1,13 @@
-import { HabitsCard } from "@/src/features/widgets/cards/habits-card";
+import { ActivitiesCard } from "@/src/features/widgets/cards/activities-card";
 import { CommittedActionsCard } from "@/src/features/widgets/cards/committed-actions-card";
 import { DefusionCard } from "@/src/features/widgets/cards/defusion-card";
 import { widgetTree, texts, clickPaths } from "@/src/features/widgets/cards/widget-tree-helper";
 
 const base = { width: 320, height: 180, theme: "light" as const, opacity: 1 };
 
-describe("HabitsCard", () => {
+describe("ActivitiesCard", () => {
   const payload = {
-    kind: "habits" as const,
+    kind: "activities" as const,
     title: "Habits",
     hintText: "Plan a habit to build momentum.",
     allDoneText: "All done for today!",
@@ -21,7 +21,7 @@ describe("HabitsCard", () => {
   };
   it("renders progress pill, first incomplete row with deep link, and CTAs", () => {
     const tree = widgetTree(
-      <HabitsCard payload={payload} icon="directions-run" tint="act" {...base} />,
+      <ActivitiesCard payload={payload} icon="directions-run" tint="act" {...base} />,
     );
     expect(texts(tree)).toContain("Morning walk");
     expect(texts(tree)).toContain("1/3");
@@ -33,7 +33,7 @@ describe("HabitsCard", () => {
   });
   it("all-done shows allDoneText; stale/no-schedule shows hint", () => {
     const done = widgetTree(
-      <HabitsCard
+      <ActivitiesCard
         payload={{ ...payload, today: { badge: "3/3", first: null, scheduled: 3 } }}
         icon="directions-run"
         tint="act"
@@ -42,7 +42,7 @@ describe("HabitsCard", () => {
     );
     expect(texts(done)).toContain("All done for today!");
     const stale = widgetTree(
-      <HabitsCard
+      <ActivitiesCard
         payload={{ ...payload, today: null }}
         icon="directions-run"
         tint="act"

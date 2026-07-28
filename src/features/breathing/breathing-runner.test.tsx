@@ -1,8 +1,10 @@
 import { fireEvent, screen } from "@testing-library/react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import BreathingExerciseScreen from "@/app/(app)/tools/breathing/session";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("@/src/lib/accessibility", () => ({
   ...jest.requireActual("@/src/lib/accessibility"),
@@ -31,7 +33,7 @@ jest.mock("@/src/features/breathing/exercises-queries", () => ({
   useBreathingExercises: () => ({ data: [] }),
 }));
 
-jest.mock("@/src/lib/color-scheme", () => ({ useAppColorScheme: () => "light" }));
+jest.mock("@/src/lib/color-scheme", () => ({ useColorSchemeName: () => "light" }));
 
 jest.mock("@/src/features/settings/queries", () => ({
   // breathSoundId "none" => no spoken intro, so Start goes straight to the active screen.
@@ -102,5 +104,15 @@ describe("Breathing cycle runner", () => {
     // The pacer still runs (phase label shows) but steps state without animating.
     expect(screen.getByText("Inhale")).toBeTruthy();
     expect(withTimingSpy).not.toHaveBeenCalled();
+  });
+
+  it("renders the aqua room pour with no field header (session = pour only)", () => {
+    renderWithProviders(<BreathingExerciseScreen />);
+
+    // The root carries the aqua room re-pour; a wrong or missing room fails here.
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "aqua");
+    // Wave B direction (#301): session screens take the pour only — the
+    // exercise is the hero, no full-bleed field header.
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
   });
 });

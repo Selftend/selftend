@@ -1,28 +1,40 @@
 // Per-exercise accent hue. Class strings are written out in full so NativeWind's
 // compiler can see them (same convention as src/features/home/tool-accent.ts).
-// HSL triples are copied verbatim from global.css and used for LinearGradient and
-// reanimated colour props, which cannot read CSS variables.
+// HSL triples come from the hue source of truth in src/lib/design-tokens.ts and
+// feed LinearGradient and reanimated colour props, which cannot read CSS variables.
 
-import type { TintToken } from "@/src/lib/design-tokens";
+import {
+  HUE_NAMES,
+  HUE_TRIPLES,
+  PRIMARY_TRIPLES,
+  type HueName,
+  type SchemeTriples,
+  type TintToken,
+} from "@/src/lib/design-tokens";
 
-export type ExerciseHue = "mist" | "iris" | "be" | "ink" | "act" | "clay" | "think" | "aqua";
+export type ExerciseHue = HueName;
 
 // Alias for tool-level usage (the hero spans the full tool palette).
 export type ToolHue = ExerciseHue;
 
-export const EXERCISE_HUES: ExerciseHue[] = [
-  "mist",
-  "iris",
-  "be",
-  "ink",
-  "act",
-  "clay",
-  "think",
-  "aqua",
-];
+export const EXERCISE_HUES: ExerciseHue[] = [...HUE_NAMES];
 
 interface HueClasses {
+  /** The published accent as a foreground colour — icons and decorative glyphs. */
   text: string;
+  /**
+   * The same hue as small-text ink (#403). `text` stays the accent because its
+   * main consumer, HueIconBadge, paints an icon; the one text consumer
+   * (meditation's practice step numerals) renders 10px inside `chipBg`, a
+   * `bg-<hue>/15` tint of the same hue, where every hue fails AA — 3.15 for
+   * `mist`, 3.14 for `iris`, 1.84 for `think`. Ink clears 5.33 at worst.
+   *
+   * This map is app-wide despite living under features/mindfulness, and it is
+   * hue-parameterised, so a practice can carry a guest hue into another
+   * module's room. `text-<hue>-ink` is the right token for exactly that:
+   * `text-accent-ink` would repaint a guest hue as the host room's accent.
+   */
+  ink: string;
   chipBg: string;
   border: string;
   fill: string;
@@ -34,45 +46,93 @@ interface HueDef {
 }
 
 type HslPair = { light: string; dark: string };
-const HUE_HSL: Record<ExerciseHue, HslPair> = {
-  mist: { light: "178, 40%, 40%", dark: "178, 48%, 58%" },
-  iris: { light: "280, 48%, 60%", dark: "280, 58%, 74%" },
-  be: { light: "330, 56%, 47%", dark: "330, 62%, 72%" },
-  ink: { light: "232, 46%, 54%", dark: "232, 56%, 72%" },
-  act: { light: "160, 46%, 38%", dark: "160, 56%, 55%" },
-  clay: { light: "20, 52%, 50%", dark: "20, 60%, 66%" },
-  think: { light: "43, 74%, 52%", dark: "43, 86%, 65%" },
-  aqua: { light: "196, 52%, 36%", dark: "196, 58%, 62%" },
-};
+
+/** "330 56% 47%" (the css/global.css form) → "330, 56%, 47%" (the hsla() builder form). */
+const commaTriple = (spaceTriple: string): string => spaceTriple.split(/\s+/).join(", ");
+
+const commaPair = (triples: SchemeTriples): HslPair => ({
+  light: commaTriple(triples.light),
+  dark: commaTriple(triples.dark),
+});
+
+const HUE_HSL = Object.fromEntries(
+  HUE_NAMES.map((hue) => [hue, commaPair(HUE_TRIPLES[hue])]),
+) as Record<ExerciseHue, HslPair>;
 
 const HUES: Record<ExerciseHue, HueDef> = {
   mist: {
-    classes: { text: "text-mist", chipBg: "bg-mist/15", border: "border-mist/30", fill: "bg-mist" },
+    classes: {
+      text: "text-mist",
+      ink: "text-mist-ink",
+      chipBg: "bg-mist/15",
+      border: "border-mist/30",
+      fill: "bg-mist",
+    },
     hsl: HUE_HSL.mist,
   },
   iris: {
-    classes: { text: "text-iris", chipBg: "bg-iris/15", border: "border-iris/30", fill: "bg-iris" },
+    classes: {
+      text: "text-iris",
+      ink: "text-iris-ink",
+      chipBg: "bg-iris/15",
+      border: "border-iris/30",
+      fill: "bg-iris",
+    },
     hsl: HUE_HSL.iris,
   },
   be: {
-    classes: { text: "text-be", chipBg: "bg-be/15", border: "border-be/30", fill: "bg-be" },
+    classes: {
+      text: "text-be",
+      ink: "text-be-ink",
+      chipBg: "bg-be/15",
+      border: "border-be/30",
+      fill: "bg-be",
+    },
     hsl: HUE_HSL.be,
   },
   ink: {
-    classes: { text: "text-ink", chipBg: "bg-ink/15", border: "border-ink/30", fill: "bg-ink" },
+    classes: {
+      text: "text-ink",
+      ink: "text-ink-ink",
+      chipBg: "bg-ink/15",
+      border: "border-ink/30",
+      fill: "bg-ink",
+    },
     hsl: HUE_HSL.ink,
   },
   act: {
-    classes: { text: "text-act", chipBg: "bg-act/15", border: "border-act/30", fill: "bg-act" },
+    classes: {
+      text: "text-act",
+      ink: "text-act-ink",
+      chipBg: "bg-act/15",
+      border: "border-act/30",
+      fill: "bg-act",
+    },
     hsl: HUE_HSL.act,
   },
   clay: {
-    classes: { text: "text-clay", chipBg: "bg-clay/15", border: "border-clay/30", fill: "bg-clay" },
+    classes: {
+      text: "text-clay",
+      ink: "text-clay-ink",
+      chipBg: "bg-clay/15",
+      border: "border-clay/30",
+      fill: "bg-clay",
+    },
     hsl: HUE_HSL.clay,
   },
   think: {
     classes: {
-      text: "text-think",
+      // `text` is ink, not the accent (#412), the same call widget-tint.ts made
+      // for its own think row. This one is not hypothetical: the 5-4-3-2-1
+      // grounding technique's fourth step carries `hue: "think"`
+      // (src/constants/grounding.ts), and grounding-session.tsx paints the
+      // *step* hue - not the technique's - into HueIconBadge. So the accent
+      // renders as a 48px glyph on a bg-think/14 badge at 1.72:1 in light mode,
+      // under 1.4.11's 3:1. The badge is decorative and aria-hidden, so it is
+      // technically exempt; a mark nobody can make out is still a defect. Ink
+      // reads 4.97 there and is identical to the accent in dark mode.
+      text: "text-think-ink",
+      ink: "text-think-ink",
       chipBg: "bg-think/15",
       border: "border-think/30",
       fill: "bg-think",
@@ -82,6 +142,7 @@ const HUES: Record<ExerciseHue, HueDef> = {
   aqua: {
     classes: {
       text: "text-aqua",
+      ink: "text-aqua-ink",
       chipBg: "bg-aqua/15",
       border: "border-aqua/30",
       fill: "bg-aqua",
@@ -94,9 +155,42 @@ export function exerciseHue(hue: ExerciseHue): HueDef {
   return HUES[hue] ?? HUES.mist;
 }
 
+// ---------------------------------------------------------------------------
+// Raw-HSL escape hatch
+// ---------------------------------------------------------------------------
+// hueHsl() and hueRamp() are the only sanctioned paths for raw HSL colour
+// strings into SVG, LinearGradient, and reanimated props (which cannot read
+// CSS variables). Never hardcode HSL literals in charts or gradients — these
+// helpers read the hue source of truth in src/lib/design-tokens.ts, which
+// test/theme-token-sync.test.ts keeps in parity with global.css.
+
+/** Hue colour string with alpha for the given scheme, e.g. "hsla(330, 56%, 47%, 0.15)". */
 export function hueHsl(hue: ExerciseHue, isDark: boolean, alpha: number): string {
   const triple = isDark ? exerciseHue(hue).hsl.dark : exerciseHue(hue).hsl.light;
   return `hsla(${triple}, ${alpha})`;
+}
+
+// Exported so test/hue-ramp-classes.test.ts can hold HUE_RAMP_CLASSES in
+// design-tokens.ts to the same steps (the class table can't import from here —
+// this module imports design-tokens).
+export const RAMP_ALPHAS = [0.16, 0.32, 0.52, 0.74, 1] as const;
+
+/**
+ * Five-step sequential single-hue ramp, faintest → fullest, for chart
+ * intensity encodings (heatmap cells, score tones). Steps are alpha tints of
+ * the module hue so they sit correctly on both light and dark surfaces.
+ */
+export function hueRamp(
+  hue: ExerciseHue,
+  isDark: boolean,
+): [string, string, string, string, string] {
+  return RAMP_ALPHAS.map((alpha) => hueHsl(hue, isDark, alpha)) as [
+    string,
+    string,
+    string,
+    string,
+    string,
+  ];
 }
 
 export function hueGradient(hue: ExerciseHue, isDark: boolean): [string, string] {
@@ -117,7 +211,7 @@ export function hueToTint(hue: ToolHue): TintToken {
 // mirror the HUES table above; primary is added here (not in HUES because
 // it isn't an exercise tint).
 const STRIPE_HSL: Record<TintToken, HslPair> = {
-  primary: { light: "262, 62%, 56%", dark: "264, 72%, 72%" },
+  primary: commaPair(PRIMARY_TRIPLES),
   ...HUE_HSL,
 };
 

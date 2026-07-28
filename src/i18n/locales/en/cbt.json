@@ -1217,7 +1217,9 @@
       "techniques_one": "{{count}} technique",
       "techniques_other": "{{count}} techniques",
       "takes": "Takes",
-      "takesValue": "2-3 min"
+      "takesValue": "2-3 min",
+      "last": "Last · {{when}}",
+      "never": "No sessions logged yet"
     },
     "choose": "Choose a technique",
     "howTo": "How to do it",
@@ -1317,7 +1319,9 @@
       "patterns_one": "{{count}} pattern",
       "patterns_other": "{{count}} patterns",
       "recentSessions_one": "{{count}} recent session",
-      "recentSessions_other": "{{count}} recent sessions"
+      "recentSessions_other": "{{count}} recent sessions",
+      "last": "Last · {{when}}",
+      "never": "No sessions logged yet"
     },
     "choose": "Choose a pattern",
     "minutes": "{{value}} min",

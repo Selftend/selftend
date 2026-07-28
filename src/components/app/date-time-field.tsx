@@ -9,21 +9,35 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { THEME } from "@/lib/theme";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { formatAtOffset, shiftFromOffsetFrame, shiftToOffsetFrame } from "@/src/utils/date";
 
 interface DateTimeFieldProps {
   value: string; // ISO string
   onChange: (iso: string) => void;
   accessibilityLabel?: string;
+  /**
+   * Edit in the frame this occurrence was captured in, rather than the device's.
+   * Reading a Tokyo entry in London, the field shows the 23:30 it was logged at —
+   * matching the label and day heading around it — and a correction moves the
+   * instant without dragging the entry into another civil day (#250). `null` or
+   * omitted (offset never captured) keeps the device's frame.
+   */
+  offsetMinutes?: number | null;
 }
 
-export function DateTimeField({ value, onChange, accessibilityLabel }: DateTimeFieldProps) {
+export function DateTimeField({
+  value,
+  onChange,
+  accessibilityLabel,
+  offsetMinutes = null,
+}: DateTimeFieldProps) {
   const { i18n } = useTranslation("navigation");
   const { t } = useTranslation("common");
   const reduceMotionEnabled = useReduceMotionEnabled();
   const [open, setOpen] = useState(false);
 
-  const scheme = useAppColorScheme();
+  const scheme = useColorSchemeName();
   const defaultStyles = useDefaultStyles(scheme);
   const pickerStyles = useMemo(
     () => ({
@@ -35,23 +49,33 @@ export function DateTimeField({ value, onChange, accessibilityLabel }: DateTimeF
     [defaultStyles, scheme],
   );
 
+  // The picker only speaks the device's frame, so a captured offset is applied by
+  // shifting the instant into that frame on the way in, and back out in onChange.
+  // With no captured offset every shift below is the identity.
+  const framedOffset =
+    offsetMinutes !== null && Number.isFinite(offsetMinutes) ? offsetMinutes : null;
+
   // Guard against an empty/malformed ISO reaching the picker (the `value: string`
   // contract doesn't guarantee validity) - fall back to "now".
   const parsedDate = useMemo(() => {
-    const d = dayjs(value);
-    return d.isValid() ? d : dayjs();
-  }, [value]);
+    const parsed = dayjs(value);
+    const base = parsed.isValid() ? parsed.toDate() : new Date();
+    return dayjs(framedOffset === null ? base : shiftToOffsetFrame(base, framedOffset));
+  }, [value, framedOffset]);
+
+  // "Now" in the same frame, so the future-date clamp means what the user sees.
+  const maxDate = useMemo(() => {
+    const now = new Date();
+    return dayjs(framedOffset === null ? now : shiftToOffsetFrame(now, framedOffset));
+  }, [framedOffset]);
 
   const display = useMemo(() => {
     try {
-      return new Intl.DateTimeFormat(i18n.language, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(new Date(value));
+      return formatAtOffset(value, framedOffset, i18n.language);
     } catch {
       return value;
     }
-  }, [value, i18n.language]);
+  }, [value, framedOffset, i18n.language]);
 
   return (
     <>
@@ -84,14 +108,21 @@ export function DateTimeField({ value, onChange, accessibilityLabel }: DateTimeF
             <DateTimePicker
               mode="single"
               date={parsedDate}
-              maxDate={dayjs()}
+              maxDate={maxDate}
               timePicker={true}
               onChange={({ date }) => {
                 if (!date) return;
                 const next = dayjs(date);
                 if (!next.isValid()) return;
-                const now = dayjs();
-                onChange((next.isAfter(now) ? now : next).toISOString());
+                // Clamp inside the display frame, then shift the result back to a
+                // real instant.
+                const picked = (next.isAfter(maxDate) ? maxDate : next).toDate();
+                onChange(
+                  (framedOffset === null
+                    ? picked
+                    : shiftFromOffsetFrame(picked, framedOffset)
+                  ).toISOString(),
+                );
               }}
               styles={pickerStyles}
               components={{

@@ -17,8 +17,12 @@ interface SharedToolsRowProps {
 export function SharedToolsRow({ tools, tint, onOpenInfo }: SharedToolsRowProps) {
   const { t } = useTranslation(["navigation", "cbt"]);
 
+  // Pill glyphs are decorative — the tool's name sits right beside them — so
+  // `act` (3.95:1) and `be` (5.26:1) keep the published accent. `think` reads
+  // 2.03:1 on `bg-card` and cannot be seen as think at all, so it takes the
+  // room-less ink instead; this row renders on the neutral surface (#403).
   const PILL_ICON_CLASS: Record<Pillar, string> = {
-    think: "text-think",
+    think: "text-think-ink",
     act: "text-act",
     be: "text-be",
   };

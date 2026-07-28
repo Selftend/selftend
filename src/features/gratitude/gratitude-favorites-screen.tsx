@@ -10,18 +10,24 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { firstAnswer } from "@/src/features/gratitude/questions";
 import { useFavoriteGratitudeEntries } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function GratitudeFavoritesScreen() {
   const { t } = useTranslation("gratitude");
+  const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const { data: favorites } = useFavoriteGratitudeEntries(user?.id ?? null, 200);
   const favoriteList = favorites ?? [];
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
@@ -50,7 +56,7 @@ export default function GratitudeFavoritesScreen() {
 
 function FavoriteEntryRow({ entry }: { entry: GratitudeEntry }) {
   const { t } = useTranslation("gratitude");
-  const when = formatMoodRelativeTime(entry.loggedAt, t);
+  const when = formatRelativeDayKey(entry.dayKey, t);
   const firstItem = firstAnswer(entry.items) ?? t("list.fallbackItem");
 
   return (
@@ -64,7 +70,7 @@ function FavoriteEntryRow({ entry }: { entry: GratitudeEntry }) {
           params: { id: entry.id },
         })
       }
-      className="gap-2 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
+      className="gap-2 rounded-3xl bg-card p-4 shadow-lg shadow-think/25 active:bg-accent/40"
       role="button"
     >
       <View className="flex-row items-center justify-between gap-3">

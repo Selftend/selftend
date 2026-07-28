@@ -1,6 +1,6 @@
 {
   "title": "Gratitude",
-  "description": "Notice small things you appreciated. Save only when it feels useful - no streaks, no pressure.",
+  "description": "Notice small things you appreciated. Save only when it feels useful - no pressure.",
   "tagline": "Three good things from today is enough.",
   "authorEyebrow": "Inspired by positive psychology · Sonja Lyubomirsky & Robert Emmons",
   "newEntry": "New entry",
@@ -10,7 +10,7 @@
   },
   "home": {
     "title": "Gratitude log",
-    "subtitle": "Notice what's good. Write it down. No pressure, no streaks.",
+    "subtitle": "Notice what's good. Write it down. No pressure.",
     "viewAll": "View all"
   },
   "hero": {
@@ -19,6 +19,10 @@
     "favorites_one": "{{count}} favorite",
     "favorites_other": "{{count}} favorites",
     "thisWeek": "This week"
+  },
+  "stats": {
+    "last": "Last · {{when}}",
+    "never": "Nothing logged yet"
   },
   "insights": {
     "title": "Insights",
@@ -138,12 +142,6 @@
       "title": "No favorites yet",
       "description": "Open an entry and mark it as a favorite when it feels worth returning to."
     }
-  },
-  "relativeTime": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo_one": "{{count}} day ago",
-    "daysAgo_other": "{{count}} days ago"
   },
   "breaks": {
     "dismiss": "Next card",

@@ -9,13 +9,13 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import type { MeditationSession } from "@/src/features/meditation/types";
 import { useSession } from "@/src/providers/session-provider";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatAtOffset } from "@/src/utils/date";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 
 // Memoized row so the FlatList only re-renders changed items, and navigation stays
 // keyed to the session id (#97 - was a .map() inside a ScrollView, all 100 rows mounted).
 const SessionRow = memo(function SessionRow({ session }: { session: MeditationSession }) {
   const { t } = useTranslation("meditation");
-  const { formatDateTime } = useLocaleFormats();
   const onPress = useCallback(
     () => router.push({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } }),
     [session.id],
@@ -33,11 +33,11 @@ const SessionRow = memo(function SessionRow({ session }: { session: MeditationSe
             {t("module.sessions.durationLabel", { count: session.durationMinutes })}
           </Text>
           <Text variant="muted" className="text-xs">
-            {formatDateTime(session.completedAt)}
+            {formatAtOffset(session.completedAt, session.completedOffsetMinutes)}
           </Text>
         </View>
-        <View className="rounded-full bg-primary/10 px-2 py-0.5">
-          <Text className="text-xs font-semibold text-primary">
+        <View className="rounded-full bg-iris/10 px-2 py-0.5">
+          <Text className="text-xs font-semibold text-accent-ink">
             {t("module.sessions.stageBadge", { stage: session.stageAtSession })}
           </Text>
         </View>
@@ -53,11 +53,19 @@ const SessionRow = memo(function SessionRow({ session }: { session: MeditationSe
 
 export default function MeditationSessionsScreen() {
   const { t } = useTranslation("meditation");
+  const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
   const { data: sessions } = useMeditationSessions(user?.id ?? null, 100);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    // The pour rides the SafeAreaView so the FlatList stays the scroll root and
+    // the memoized rows keep recycling (#97) - roomStyle is identity-stable per
+    // (hue, scheme), so it never invalidates them either.
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <FlatList
         data={sessions ?? []}
         keyExtractor={(item) => item.id}

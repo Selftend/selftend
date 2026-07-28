@@ -260,14 +260,56 @@ describe("useCbtInsights - exerciseMoodLift", () => {
     ];
     const moodLogs = [
       // exercise days (01, 02, 05, 07): mood 8, 7, 9, 6 → avg = 7.5
-      { id: "m1", userId: "u1", loggedAt: "2026-05-01T08:00:00Z", moodScore: 8 },
-      { id: "m2", userId: "u1", loggedAt: "2026-05-02T08:00:00Z", moodScore: 7 },
-      { id: "m5", userId: "u1", loggedAt: "2026-05-05T08:00:00Z", moodScore: 9 },
-      { id: "m7", userId: "u1", loggedAt: "2026-05-07T08:00:00Z", moodScore: 6 },
+      {
+        id: "m1",
+        userId: "u1",
+        loggedAt: "2026-05-01T08:00:00Z",
+        dayKey: "2026-05-01",
+        moodScore: 8,
+      },
+      {
+        id: "m2",
+        userId: "u1",
+        loggedAt: "2026-05-02T08:00:00Z",
+        dayKey: "2026-05-02",
+        moodScore: 7,
+      },
+      {
+        id: "m5",
+        userId: "u1",
+        loggedAt: "2026-05-05T08:00:00Z",
+        dayKey: "2026-05-05",
+        moodScore: 9,
+      },
+      {
+        id: "m7",
+        userId: "u1",
+        loggedAt: "2026-05-07T08:00:00Z",
+        dayKey: "2026-05-07",
+        moodScore: 6,
+      },
       // non-exercise days (03, 04, 06): mood 4, 5, 3 → avg = 4
-      { id: "m3", userId: "u1", loggedAt: "2026-05-03T08:00:00Z", moodScore: 4 },
-      { id: "m4", userId: "u1", loggedAt: "2026-05-04T08:00:00Z", moodScore: 5 },
-      { id: "m6", userId: "u1", loggedAt: "2026-05-06T08:00:00Z", moodScore: 3 },
+      {
+        id: "m3",
+        userId: "u1",
+        loggedAt: "2026-05-03T08:00:00Z",
+        dayKey: "2026-05-03",
+        moodScore: 4,
+      },
+      {
+        id: "m4",
+        userId: "u1",
+        loggedAt: "2026-05-04T08:00:00Z",
+        dayKey: "2026-05-04",
+        moodScore: 5,
+      },
+      {
+        id: "m6",
+        userId: "u1",
+        loggedAt: "2026-05-06T08:00:00Z",
+        dayKey: "2026-05-06",
+        moodScore: 3,
+      },
     ];
 
     mockUseSelfCareLogs.mockReturnValue({ data: selfCareLogs } as unknown as ReturnType<
@@ -600,6 +642,7 @@ describe("useCbtInsights - selfCareTrend", () => {
           id: "g1",
           userId: "u1",
           loggedAt: "2026-05-03T08:00:00Z",
+          dayKey: "2026-05-03",
           entry: "grateful 1",
           isFavorite: false,
           createdAt: "2026-05-03T00:00:00Z",
@@ -609,6 +652,7 @@ describe("useCbtInsights - selfCareTrend", () => {
           id: "g2",
           userId: "u1",
           loggedAt: "2026-05-05T08:00:00Z",
+          dayKey: "2026-05-05",
           entry: "grateful 2",
           isFavorite: false,
           createdAt: "2026-05-05T00:00:00Z",
@@ -618,6 +662,7 @@ describe("useCbtInsights - selfCareTrend", () => {
           id: "g3",
           userId: "u1",
           loggedAt: "2026-04-30T08:00:00Z",
+          dayKey: "2026-04-30",
           entry: "outside window",
           isFavorite: false,
           createdAt: "2026-04-30T00:00:00Z",
@@ -648,6 +693,7 @@ describe("useCbtInsights - selfCareTrend", () => {
           quality: 8,
           notes: "",
           loggedAt: "2026-05-02T07:00:00Z",
+          dayKey: "2026-05-02",
           createdAt: "2026-05-02T00:00:00Z",
         },
         {
@@ -657,6 +703,7 @@ describe("useCbtInsights - selfCareTrend", () => {
           quality: 7,
           notes: "",
           loggedAt: "2026-05-04T07:00:00Z",
+          dayKey: "2026-05-04",
           createdAt: "2026-05-04T00:00:00Z",
         },
       ],

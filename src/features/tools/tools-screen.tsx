@@ -6,10 +6,13 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { cn } from "@/lib/utils";
+import { useBreathingSessionCount } from "@/src/features/breathing/queries";
 import { useGratitudeEntryCount } from "@/src/features/gratitude/queries";
 import { useGroundingSessionCount } from "@/src/features/grounding/queries";
 import { useHabits } from "@/src/features/habits/queries";
+import { toolAccent } from "@/src/features/home/tool-accent";
 import { useJournalEntryCount } from "@/src/features/journal/queries";
+import { useMeditationSessionCount } from "@/src/features/meditation/queries";
 import { useMoodLogs, useMoodLogCount } from "@/src/features/mood/queries";
 import { getMoodSummary } from "@/src/features/mood/summaries";
 import { useSleepLogCount } from "@/src/features/sleep/queries";
@@ -17,24 +20,34 @@ import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface ToolTile {
-  key: "mood" | "gratitude" | "journal" | "grounding" | "sleep" | "habits";
+  /**
+   * Doubles as the tool's id in src/features/home/tool-accent.ts, which is where
+   * this hub's hues come from. A key with no entry there falls back to violet
+   * and still renders, so tools-screen.test.tsx pins every one of these to a
+   * real entry (#421).
+   */
+  key:
+    | "mood"
+    | "gratitude"
+    | "journal"
+    | "breathing"
+    | "grounding"
+    | "meditation"
+    | "sleep"
+    | "habits";
   href: Href;
   icon: MaterialIconName;
   nameKey: string;
   subKey: string;
-  iconBg: string;
-  iconColor: string;
 }
 
-const TOOLS: ToolTile[] = [
+export const TOOLS: ToolTile[] = [
   {
     key: "mood",
     href: "/tools/mood-tracker",
     icon: "mood",
     nameKey: "today.tools.moodTracker",
     subKey: "today.tools.moodTrackerSub",
-    iconBg: "bg-be/15",
-    iconColor: "text-be",
   },
   {
     key: "journal",
@@ -42,8 +55,13 @@ const TOOLS: ToolTile[] = [
     icon: "edit-note",
     nameKey: "today.tools.journal",
     subKey: "today.tools.journalSub",
-    iconBg: "bg-primary/15",
-    iconColor: "text-primary",
+  },
+  {
+    key: "breathing",
+    href: "/tools/breathing",
+    icon: "air",
+    nameKey: "today.tools.breathing",
+    subKey: "today.tools.breathingSub",
   },
   {
     key: "gratitude",
@@ -51,8 +69,6 @@ const TOOLS: ToolTile[] = [
     icon: "favorite",
     nameKey: "today.tools.gratitudeLog",
     subKey: "today.tools.gratitudeLogSub",
-    iconBg: "bg-primary/15",
-    iconColor: "text-primary",
   },
   {
     key: "grounding",
@@ -60,8 +76,13 @@ const TOOLS: ToolTile[] = [
     icon: "anchor",
     nameKey: "today.tools.grounding",
     subKey: "today.tools.groundingSub",
-    iconBg: "bg-be/15",
-    iconColor: "text-be",
+  },
+  {
+    key: "meditation",
+    href: "/tools/meditation",
+    icon: "self-improvement",
+    nameKey: "today.tools.meditation",
+    subKey: "today.tools.meditationSub",
   },
   {
     key: "sleep",
@@ -69,8 +90,6 @@ const TOOLS: ToolTile[] = [
     icon: "bedtime",
     nameKey: "today.tools.sleep",
     subKey: "today.tools.sleepSub",
-    iconBg: "bg-be/15",
-    iconColor: "text-be",
   },
   {
     key: "habits",
@@ -78,8 +97,6 @@ const TOOLS: ToolTile[] = [
     icon: "task-alt",
     nameKey: "today.tools.habits",
     subKey: "today.tools.habitsSub",
-    iconBg: "bg-primary/15",
-    iconColor: "text-primary",
   },
 ];
 
@@ -94,8 +111,10 @@ export default function ToolsScreen() {
   const moodCount = useMoodLogCount(user?.id ?? null).data ?? 0;
   const moodAverage = getMoodSummary(moodLogs, 7).average;
   const journalCount = useJournalEntryCount(user?.id ?? null).data ?? 0;
+  const breathingCount = useBreathingSessionCount(user?.id ?? null).data ?? 0;
   const gratitudeCount = useGratitudeEntryCount(user?.id ?? null).data ?? 0;
   const groundingCount = useGroundingSessionCount(user?.id ?? null).data ?? 0;
+  const meditationCount = useMeditationSessionCount(user?.id ?? null).data ?? 0;
   const sleepCount = useSleepLogCount(user?.id ?? null).data ?? 0;
   const habitCount = habits?.length ?? 0;
 
@@ -110,12 +129,18 @@ export default function ToolsScreen() {
       case "journal":
         if (journalCount === 0) return t("tools.stats.journalNoData");
         return t("tools.stats.journalEntries", { count: journalCount });
+      case "breathing":
+        if (breathingCount === 0) return t("tools.stats.breathingNoData");
+        return t("tools.stats.breathingSessions", { count: breathingCount });
       case "gratitude":
         if (gratitudeCount === 0) return t("tools.stats.gratitudeNoData");
         return t("tools.stats.gratitudeEntries", { count: gratitudeCount });
       case "grounding":
         if (groundingCount === 0) return t("tools.stats.groundingNoData");
         return t("tools.stats.groundingSessions", { count: groundingCount });
+      case "meditation":
+        if (meditationCount === 0) return t("tools.stats.meditationNoData");
+        return t("tools.stats.meditationSessions", { count: meditationCount });
       case "sleep":
         if (sleepCount === 0) return t("tools.stats.sleepNoData");
         return t("tools.stats.sleepLogs", { count: sleepCount });
@@ -156,6 +181,7 @@ function ToolCard({ tool, stat }: ToolCardProps) {
   const { t } = useTranslation("navigation");
   const name = t(tool.nameKey);
   const subtitle = t(tool.subKey);
+  const accent = toolAccent(tool.key);
   return (
     <Pressable
       accessibilityHint={subtitle}
@@ -166,11 +192,27 @@ function ToolCard({ tool, stat }: ToolCardProps) {
       className="min-w-[260px] flex-1 basis-[260px] flex-row items-center gap-4 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
       role="button"
     >
-      <View className={cn("size-12 items-center justify-center rounded-xl", tool.iconBg)}>
-        <Icon name={tool.icon} className={cn("size-6", tool.iconColor)} />
+      {/*
+        The accent, not the ink (#421): this glyph is static branding beside the
+        tool's own name, and it lands on the same `bg-<hue>/10` over `bg-card`
+        stack the sidebar paints — ink 4.62, be 4.55, act 3.52, clay 3.39 in
+        light, all clear of 1.4.11's 3:1, and higher in dark. `gratitude` already
+        carries `think-ink` in the map's `icon` field because raw `think` reads
+        1.90 here; darkening the rest to ink would buy no contrast and read as
+        disabled.
+      */}
+      <View className={cn("size-12 items-center justify-center rounded-xl", accent.chip)}>
+        <Icon name={tool.icon} className={cn("size-6", accent.icon)} />
       </View>
       <View className="flex-1 gap-0.5">
         <View className="flex-row items-center gap-2">
+          {/*
+            The tile name stays on the neutral foreground rather than taking
+            `accent.ink`. The sidebar inks its label only while a row is active,
+            where the tint carries state; a hub tile has no active state, so
+            hueing every name here would be decoration bought at the price of
+            six different text colours on one screen.
+          */}
           <Text className="text-base font-semibold">{name}</Text>
         </View>
         <Text variant="muted" className="text-xs">

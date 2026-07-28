@@ -1,9 +1,11 @@
 import {
+  HABIT_COLORS,
   HABIT_CUE_MAX,
   HABIT_NAME_MAX,
   HABIT_NOTE_MAX,
   habitInputSchema,
   habitLogNoteSchema,
+  toHabitColor,
 } from "@/src/features/habits/schemas";
 
 const baseInput = {
@@ -82,5 +84,24 @@ describe("habitLogNoteSchema", () => {
     expect(habitLogNoteSchema.safeParse({ note: "x".repeat(HABIT_NOTE_MAX + 1) }).success).toBe(
       false,
     );
+  });
+});
+
+describe("toHabitColor", () => {
+  it("passes through every known alias", () => {
+    for (const color of HABIT_COLORS) {
+      expect(toHabitColor(color)).toBe(color);
+    }
+  });
+
+  // The column is only a 1-32 char string in 20260532_habits.sql, and mapHabit
+  // casts rows without validation. Since #278 an unknown alias would read as
+  // `undefined` out of the chip palette and crash on the first `chip.fill`.
+  it("falls back to primary for a color the palette does not know", () => {
+    expect(toHabitColor("neon-pink")).toBe("primary");
+    expect(toHabitColor("")).toBe("primary");
+    expect(toHabitColor(null)).toBe("primary");
+    expect(toHabitColor(undefined)).toBe("primary");
+    expect(toHabitColor(42)).toBe("primary");
   });
 });

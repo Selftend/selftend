@@ -1,6 +1,5 @@
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
@@ -10,6 +9,7 @@ import { HueButton } from "@/src/features/grounding/hue-button";
 import { HueIconBadge } from "@/src/features/grounding/hue-icon-badge";
 import { hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 import type { GroundingTechnique } from "@/src/constants/grounding";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 interface GroundingIntroProps {
   technique: GroundingTechnique;
@@ -20,8 +20,7 @@ interface GroundingIntroProps {
 }
 
 function StepNumber({ n, hue }: { n: number; hue: ExerciseHue }) {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = useColorSchemeName() === "dark";
   return (
     <View
       style={{

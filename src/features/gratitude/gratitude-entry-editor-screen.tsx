@@ -4,7 +4,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
@@ -31,8 +33,9 @@ import {
   asQuestionList,
 } from "@/src/features/gratitude/questions";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
-import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
+import { occurrenceTimeFromDate, type CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -51,6 +54,7 @@ export function GratitudeEntryEditorScreen({
   entryId = null,
 }: GratitudeEntryEditorScreenProps) {
   const { t } = useTranslation("gratitude");
+  const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
   const editMode = mode === "edit";
@@ -69,7 +73,7 @@ export function GratitudeEntryEditorScreen({
   const [lifeItems, setLifeItems] = useState<string[]>(EMPTY_LIFE_ITEMS);
   const [note, setNote] = useState("");
   const [loggedAt, setLoggedAt] = useState(() => new Date().toISOString());
-  const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState(
+  const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState<CapturedOffsetMinutes>(
     () => occurrenceTimeFromDate().occurredOffsetMinutes,
   );
 
@@ -92,10 +96,10 @@ export function GratitudeEntryEditorScreen({
     ]);
     setNote(existingEntry.note);
     setLoggedAt(existingEntry.loggedAt);
-    setLoggedOffsetMinutes(
-      existingEntry.loggedOffsetMinutes ??
-        occurrenceTimeFromDate(new Date(existingEntry.loggedAt)).occurredOffsetMinutes,
-    );
+    // Carry a missing offset through as null rather than deriving one from this
+    // device: an entry whose origin was never recorded must not be re-stamped
+    // with wherever the user happens to be while fixing a typo (#250).
+    setLoggedOffsetMinutes(existingEntry.loggedOffsetMinutes ?? null);
     setLifeItems([
       existingEntry.lifeItems[0] ?? "",
       existingEntry.lifeItems[1] ?? "",
@@ -153,7 +157,7 @@ export function GratitudeEntryEditorScreen({
 
   if (editMode && !fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("editor.editTitle")} />
         </View>
@@ -163,7 +167,11 @@ export function GratitudeEntryEditorScreen({
 
   if (editMode && !existingEntry) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("editor.editTitle")} />
@@ -175,92 +183,118 @@ export function GratitudeEntryEditorScreen({
   }
 
   return (
-    <MobileFormScreen
-      contentClassName="mx-auto w-full max-w-2xl gap-6"
-      footer={
-        <View className="mx-auto w-full max-w-2xl flex-row gap-3">
-          <View className="flex-1">
-            <Button onPress={goBack} variant="ghost">
-              <Text>{t("editor.cancel")}</Text>
-            </Button>
+    // The room wrapper carries the token re-pour; MobileFormScreen's own
+    // bg-background surfaces re-resolve to the think pour through it.
+    <View className="flex-1" style={roomStyle}>
+      <MobileFormScreen
+        contentClassName="mx-auto w-full max-w-2xl gap-6"
+        hero={
+          editMode ? undefined : (
+            // Create mode gets the field treatment: the full-bleed gold field
+            // with the sheet lip rising over it, outside the max-width column.
+            <View>
+              <ModuleHomeHeader
+                variant="field"
+                hue="think"
+                icon="favorite"
+                title={t("editor.createTitle")}
+                moduleLabel={null}
+                description={t("editor.createDescription")}
+              />
+              <ContentSheet />
+            </View>
+          )
+        }
+        footer={
+          <View className="mx-auto w-full max-w-2xl flex-row gap-3">
+            <View className="flex-1">
+              <Button onPress={goBack} variant="ghost">
+                <Text>{t("editor.cancel")}</Text>
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button disabled={!canSave} onPress={() => void handleSave()}>
+                {saving ? <ActivityIndicator color="#ffffff" /> : null}
+                <Text>{editMode ? t("editor.update") : t("editor.save")}</Text>
+              </Button>
+            </View>
           </View>
-          <View className="flex-1">
-            <Button disabled={!canSave} onPress={() => void handleSave()}>
-              {saving ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{editMode ? t("editor.update") : t("editor.save")}</Text>
-            </Button>
+        }
+      >
+        {editMode ? (
+          <View className="gap-2">
+            <ScreenHeader title={t("editor.editTitle")} />
+            <Text variant="muted">{t("editor.editDescription")}</Text>
           </View>
+        ) : null}
+
+        <View className="gap-4">
+          <Label>{t("editor.todayItemsLabel")}</Label>
+          {items.map((item, index) => (
+            <View className="gap-2" key={index}>
+              <Label>{todayQuestions[index] ?? ""}</Label>
+              <Input
+                accessibilityLabel={
+                  todayQuestions[index] ?? t("editor.itemLabel", { number: index + 1 })
+                }
+                maxLength={GRATITUDE_ITEM_MAX}
+                onChangeText={(value) => updateItem(index, value)}
+                placeholder={t("editor.itemPlaceholder")}
+                value={item}
+              />
+            </View>
+          ))}
         </View>
-      }
-    >
-      <View className="gap-2">
-        <ScreenHeader title={editMode ? t("editor.editTitle") : t("editor.createTitle")} />
-        <Text variant="muted">
-          {editMode ? t("editor.editDescription") : t("editor.createDescription")}
-        </Text>
-      </View>
 
-      <View className="gap-4">
-        <Label>{t("editor.todayItemsLabel")}</Label>
-        {items.map((item, index) => (
-          <View className="gap-2" key={index}>
-            <Label>{todayQuestions[index] ?? ""}</Label>
-            <Input
-              accessibilityLabel={
-                todayQuestions[index] ?? t("editor.itemLabel", { number: index + 1 })
-              }
-              maxLength={GRATITUDE_ITEM_MAX}
-              onChangeText={(value) => updateItem(index, value)}
-              placeholder={t("editor.itemPlaceholder")}
-              value={item}
-            />
-          </View>
-        ))}
-      </View>
+        <View className="gap-4">
+          <Label>{t("editor.lifeItemsLabel")}</Label>
+          {lifeItems.map((item, index) => (
+            <View className="gap-2" key={index}>
+              <Label>{lifeQuestions[index] ?? ""}</Label>
+              <Input
+                accessibilityLabel={
+                  lifeQuestions[index] ?? t("editor.lifeItemLabel", { number: index + 1 })
+                }
+                maxLength={GRATITUDE_ITEM_MAX}
+                onChangeText={(value) => updateLifeItem(index, value)}
+                placeholder={t("editor.lifeItemPlaceholder")}
+                value={item}
+              />
+            </View>
+          ))}
+        </View>
 
-      <View className="gap-4">
-        <Label>{t("editor.lifeItemsLabel")}</Label>
-        {lifeItems.map((item, index) => (
-          <View className="gap-2" key={index}>
-            <Label>{lifeQuestions[index] ?? ""}</Label>
-            <Input
-              accessibilityLabel={
-                lifeQuestions[index] ?? t("editor.lifeItemLabel", { number: index + 1 })
-              }
-              maxLength={GRATITUDE_ITEM_MAX}
-              onChangeText={(value) => updateLifeItem(index, value)}
-              placeholder={t("editor.lifeItemPlaceholder")}
-              value={item}
-            />
-          </View>
-        ))}
-      </View>
+        <View className="gap-2">
+          <Label>{t("editor.whenLabel")}</Label>
+          <DateTimeField
+            value={loggedAt}
+            offsetMinutes={loggedOffsetMinutes}
+            onChange={(next) => {
+              setLoggedAt(next);
+              // A known offset survives a time correction - the user is restating
+              // when, not where. Only an entry with no captured offset picks one
+              // up here, from the device now doing the restating.
+              setLoggedOffsetMinutes(
+                loggedOffsetMinutes ?? occurrenceTimeFromDate(new Date(next)).occurredOffsetMinutes,
+              );
+            }}
+            accessibilityLabel={t("editor.whenLabel")}
+          />
+        </View>
 
-      <View className="gap-2">
-        <Label>{t("editor.whenLabel")}</Label>
-        <DateTimeField
-          value={loggedAt}
-          onChange={(next) => {
-            const occurrence = occurrenceTimeFromDate(new Date(next));
-            setLoggedAt(occurrence.occurredAt);
-            setLoggedOffsetMinutes(occurrence.occurredOffsetMinutes);
-          }}
-          accessibilityLabel={t("editor.whenLabel")}
-        />
-      </View>
+        <View className="gap-2">
+          <Label>{t("editor.noteLabel")}</Label>
+          <Textarea
+            accessibilityLabel={t("editor.noteLabel")}
+            maxLength={GRATITUDE_NOTE_MAX}
+            onChangeText={setNote}
+            placeholder={t("editor.notePlaceholder")}
+            value={note}
+          />
+        </View>
 
-      <View className="gap-2">
-        <Label>{t("editor.noteLabel")}</Label>
-        <Textarea
-          accessibilityLabel={t("editor.noteLabel")}
-          maxLength={GRATITUDE_NOTE_MAX}
-          onChangeText={setNote}
-          placeholder={t("editor.notePlaceholder")}
-          value={note}
-        />
-      </View>
-
-      {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
-    </MobileFormScreen>
+        {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
+      </MobileFormScreen>
+    </View>
   );
 }

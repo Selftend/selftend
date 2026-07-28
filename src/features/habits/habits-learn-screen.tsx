@@ -8,14 +8,14 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { colorChipClass } from "@/src/features/habits/habits-home-screen";
+import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import {
   findLearnCard,
   HABITS_LEARN_CARDS,
   type HabitsLearnCard,
 } from "@/src/features/habits/learn";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { cn } from "@/lib/utils";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 
 interface HabitsLearnDetailProps {
   slug: string;
@@ -23,16 +23,22 @@ interface HabitsLearnDetailProps {
 
 export function HabitsLearnDetailScreen({ slug }: HabitsLearnDetailProps) {
   const { t } = useTranslation("habits");
+  const roomStyle = useRoomStyle("act");
+  const palette = useHabitChipPalette();
   const card = findLearnCard(slug);
   if (!card) {
     return <HabitsLearnIndexScreen />;
   }
 
-  const chip = colorChipClass(card.tone);
+  const chip = palette[card.tone];
   const cardKey = `learn.cards.${card.slug}` as const;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow gap-6 p-6">
         <View className="gap-2">
           <ScreenHeader title={t(`${cardKey}.title` as Parameters<typeof t>[0])} />
@@ -40,8 +46,11 @@ export function HabitsLearnDetailScreen({ slug }: HabitsLearnDetailProps) {
         </View>
 
         <View className="items-center">
-          <View className={cn("size-20 items-center justify-center rounded-3xl", chip.bg)}>
-            <Icon name={card.icon} className={cn("size-10", chip.text)} />
+          <View
+            className="size-20 items-center justify-center rounded-3xl"
+            style={{ backgroundColor: chip.fill }}
+          >
+            <Icon name={card.icon} className="size-10" style={{ color: chip.ink }} />
           </View>
         </View>
 
@@ -64,6 +73,7 @@ export function HabitsLearnDetailScreen({ slug }: HabitsLearnDetailProps) {
 
 function RelatedCards({ activeSlug }: { activeSlug: HabitsLearnCard["slug"] }) {
   const { t } = useTranslation("habits");
+  const palette = useHabitChipPalette();
   const others = HABITS_LEARN_CARDS.filter((card) => card.slug !== activeSlug);
 
   return (
@@ -73,7 +83,7 @@ function RelatedCards({ activeSlug }: { activeSlug: HabitsLearnCard["slug"] }) {
       </Text>
       <View className="gap-2">
         {others.map((card) => {
-          const chip = colorChipClass(card.tone);
+          const chip = palette[card.tone];
           const cardKey = `learn.cards.${card.slug}` as const;
           return (
             <Pressable
@@ -90,8 +100,11 @@ function RelatedCards({ activeSlug }: { activeSlug: HabitsLearnCard["slug"] }) {
               className="flex-row items-center gap-3 rounded-2xl border border-border bg-card p-3 active:bg-accent/40"
               role="button"
             >
-              <View className={cn("size-10 items-center justify-center rounded-xl", chip.bg)}>
-                <Icon name={card.icon} className={cn("size-5", chip.text)} />
+              <View
+                className="size-10 items-center justify-center rounded-xl"
+                style={{ backgroundColor: chip.fill }}
+              >
+                <Icon name={card.icon} className="size-5" style={{ color: chip.ink }} />
               </View>
               <View className="flex-1 gap-0.5">
                 <Text className="text-sm font-semibold">
@@ -112,9 +125,15 @@ function RelatedCards({ activeSlug }: { activeSlug: HabitsLearnCard["slug"] }) {
 
 export function HabitsLearnIndexScreen() {
   const { t } = useTranslation("habits");
+  const roomStyle = useRoomStyle("act");
+  const palette = useHabitChipPalette();
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow gap-6 p-6">
         <View className="gap-2">
           <ScreenHeader title={t("learn.indexTitle")} />
@@ -123,7 +142,7 @@ export function HabitsLearnIndexScreen() {
 
         <View className="gap-2">
           {HABITS_LEARN_CARDS.map((card) => {
-            const chip = colorChipClass(card.tone);
+            const chip = palette[card.tone];
             const cardKey = `learn.cards.${card.slug}` as const;
             return (
               <Pressable
@@ -140,8 +159,11 @@ export function HabitsLearnIndexScreen() {
                 className="flex-row items-center gap-3 rounded-2xl border border-border bg-card p-3 active:bg-accent/40"
                 role="button"
               >
-                <View className={cn("size-10 items-center justify-center rounded-xl", chip.bg)}>
-                  <Icon name={card.icon} className={cn("size-5", chip.text)} />
+                <View
+                  className="size-10 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: chip.fill }}
+                >
+                  <Icon name={card.icon} className="size-5" style={{ color: chip.ink }} />
                 </View>
                 <View className="flex-1 gap-0.5">
                   <Text className="text-sm font-semibold">

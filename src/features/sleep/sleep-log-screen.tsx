@@ -8,7 +8,9 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
@@ -16,8 +18,9 @@ import { DurationStepper } from "@/src/features/sleep/duration-stepper";
 import { StarRating } from "@/src/features/sleep/star-rating";
 import { useSleepLog, useSleepLogs, useSaveSleepLog } from "@/src/features/sleep/queries";
 import type { SleepLog } from "@/src/features/sleep/types";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
-import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
+import { occurrenceTimeFromDate, type CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
 
 interface SleepLogScreenProps {
@@ -31,6 +34,7 @@ const DEFAULT_DURATION_MINUTES = 450; // 7h 30m
 
 export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScreenProps) {
   const { t } = useTranslation("sleep");
+  const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
 
   const { data: cachedList } = useSleepLogs(mode === "edit" ? (user?.id ?? null) : null, 50);
@@ -48,7 +52,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
   const [quality, setQuality] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [loggedAt, setLoggedAt] = useState(() => new Date().toISOString());
-  const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState(
+  const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState<CapturedOffsetMinutes>(
     () => occurrenceTimeFromDate().occurredOffsetMinutes,
   );
   const [error, setError] = useState("");
@@ -67,10 +71,10 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
     setQuality(existingLog.quality);
     setNotes(existingLog.notes);
     setLoggedAt(existingLog.loggedAt);
-    setLoggedOffsetMinutes(
-      existingLog.loggedOffsetMinutes ??
-        occurrenceTimeFromDate(new Date(existingLog.loggedAt)).occurredOffsetMinutes,
-    );
+    // Carry a missing offset through as null rather than deriving one from this
+    // device: an entry whose origin was never recorded must not be re-stamped
+    // with wherever the user happens to be while fixing a typo (#250).
+    setLoggedOffsetMinutes(existingLog.loggedOffsetMinutes ?? null);
     setError("");
   }, [existingLog]);
 
@@ -112,7 +116,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
 
   if (editMode && !fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("log.editTitle")} />
         </View>
@@ -122,7 +126,11 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
 
   if (editMode && !existingLog) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("log.editTitle")} />
@@ -134,69 +142,97 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
   }
 
   return (
-    <MobileFormScreen
-      contentClassName="mx-auto w-full max-w-2xl gap-6"
-      footer={
-        <View className="mx-auto w-full max-w-2xl flex-row gap-3">
-          <View className="flex-1">
-            <Button onPress={goBack} variant="ghost">
-              <Text>{t("log.cancel")}</Text>
-            </Button>
+    // The room wrapper carries the token re-pour; MobileFormScreen's own
+    // bg-background surfaces re-resolve to the ink pour through it.
+    <View className="flex-1" style={roomStyle}>
+      <MobileFormScreen
+        contentClassName="mx-auto w-full max-w-2xl gap-6"
+        hero={
+          editMode ? undefined : (
+            // Create mode gets the field treatment: the full-bleed ink field
+            // with the sheet lip rising over it, outside the max-width column.
+            <View>
+              <ModuleHomeHeader
+                variant="field"
+                hue="ink"
+                icon="bedtime"
+                title={t("log.title")}
+                moduleLabel={null}
+                description={t("log.description")}
+              />
+              <ContentSheet />
+            </View>
+          )
+        }
+        footer={
+          <View className="mx-auto w-full max-w-2xl flex-row gap-3">
+            <View className="flex-1">
+              <Button onPress={goBack} variant="ghost">
+                <Text>{t("log.cancel")}</Text>
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button disabled={saving || !user} onPress={() => void handleSave()}>
+                {saving ? <ActivityIndicator color="#ffffff" /> : null}
+                <Text>{editMode ? t("log.update") : t("log.save")}</Text>
+              </Button>
+            </View>
           </View>
-          <View className="flex-1">
-            <Button disabled={saving || !user} onPress={() => void handleSave()}>
-              {saving ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{editMode ? t("log.update") : t("log.save")}</Text>
-            </Button>
+        }
+      >
+        {editMode ? (
+          <View className="gap-2">
+            <ScreenHeader title={t("log.editTitle")} />
+            <Text variant="muted">{t("log.editDescription")}</Text>
           </View>
+        ) : null}
+
+        <View className="gap-3">
+          <Label>{t("log.durationLabel")}</Label>
+          <DurationStepper
+            value={durationMinutes ?? DEFAULT_DURATION_MINUTES}
+            onChange={setDurationMinutes}
+          />
         </View>
-      }
-    >
-      <View className="gap-2">
-        <ScreenHeader title={editMode ? t("log.editTitle") : t("log.title")} />
-        <Text variant="muted">{editMode ? t("log.editDescription") : t("log.description")}</Text>
-      </View>
 
-      <View className="gap-3">
-        <Label>{t("log.durationLabel")}</Label>
-        <DurationStepper
-          value={durationMinutes ?? DEFAULT_DURATION_MINUTES}
-          onChange={setDurationMinutes}
-        />
-      </View>
+        <View className="gap-3">
+          <Label>{t("log.qualityLabel")}</Label>
+          <Text variant="muted" className="text-sm">
+            {t("log.qualityHint")}
+          </Text>
+          <StarRating value={quality} onChange={setQuality} />
+        </View>
 
-      <View className="gap-3">
-        <Label>{t("log.qualityLabel")}</Label>
-        <Text variant="muted" className="text-sm">
-          {t("log.qualityHint")}
-        </Text>
-        <StarRating value={quality} onChange={setQuality} />
-      </View>
+        <View className="gap-2">
+          <Label>{t("log.whenLabel")}</Label>
+          <DateTimeField
+            value={loggedAt}
+            offsetMinutes={loggedOffsetMinutes}
+            onChange={(next) => {
+              setLoggedAt(next);
+              // A known offset survives a time correction - the user is restating
+              // when, not where. Only an entry with no captured offset picks one
+              // up here, from the device now doing the restating.
+              setLoggedOffsetMinutes(
+                loggedOffsetMinutes ?? occurrenceTimeFromDate(new Date(next)).occurredOffsetMinutes,
+              );
+            }}
+            accessibilityLabel={t("log.whenLabel")}
+          />
+        </View>
 
-      <View className="gap-2">
-        <Label>{t("log.whenLabel")}</Label>
-        <DateTimeField
-          value={loggedAt}
-          onChange={(next) => {
-            const occurrence = occurrenceTimeFromDate(new Date(next));
-            setLoggedAt(occurrence.occurredAt);
-            setLoggedOffsetMinutes(occurrence.occurredOffsetMinutes);
-          }}
-          accessibilityLabel={t("log.whenLabel")}
-        />
-      </View>
+        <View className="gap-2">
+          <Label>{t("log.notesLabel")}</Label>
+          <Textarea
+            accessibilityLabel={t("log.notesLabel")}
+            onChangeText={setNotes}
+            placeholder={t("log.notesPlaceholder")}
+            value={notes}
+          />
+        </View>
 
-      <View className="gap-2">
-        <Label>{t("log.notesLabel")}</Label>
-        <Textarea
-          accessibilityLabel={t("log.notesLabel")}
-          onChangeText={setNotes}
-          placeholder={t("log.notesPlaceholder")}
-          value={notes}
-        />
-      </View>
-
-      {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
-    </MobileFormScreen>
+        {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
+      </MobileFormScreen>
+    </View>
   );
 }

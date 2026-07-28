@@ -103,6 +103,7 @@ const allCompleteData = {
   moodLogs: DAYS.map((d, i) => ({
     id: `m${i}`,
     loggedAt: `${d}T08:00:00Z`,
+    dayKey: d,
     situation: "x",
     thoughts: "",
     behaviours: "",

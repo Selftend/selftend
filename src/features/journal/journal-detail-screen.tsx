@@ -17,20 +17,22 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import {
   useDeleteJournalEntry,
   useJournalEntries,
   useJournalEntry,
 } from "@/src/features/journal/queries";
 import type { JournalEntry } from "@/src/features/journal/types";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function JournalDetailScreen() {
   const { t, i18n } = useTranslation("journal");
   const { user } = useSession();
+  const roomStyle = useRoomStyle("ink");
   const { id } = useLocalSearchParams<{ id: string }>();
   const entryId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
@@ -49,7 +51,7 @@ export default function JournalDetailScreen() {
 
   if (!fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("detail.title")} />
         </View>
@@ -59,7 +61,11 @@ export default function JournalDetailScreen() {
 
   if (!entry) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -71,19 +77,14 @@ export default function JournalDetailScreen() {
   }
 
   const occurredAt = entry.occurredAt ?? entry.createdAt;
-  const when = formatMoodRelativeTime(occurredAt, t);
+  // Same frame as the card in the list: the captured day, not the viewer's.
+  const when = formatRelativeDayKey(entry.dayKey, t);
   const trimmedTitle = entry.title.trim();
   const heading = trimmedTitle.length > 0 ? trimmedTitle : t("detail.title");
 
-  let createdAtLabel: string;
-  try {
-    createdAtLabel = new Intl.DateTimeFormat(i18n.language, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(occurredAt));
-  } catch {
-    createdAtLabel = formatLocalTimestamp(occurredAt);
-  }
+  // Rendered in the frame it was captured in, so the time matches the civil day
+  // the entry is filed under everywhere else (#250).
+  const createdAtLabel = formatAtOffset(occurredAt, entry.occurredOffsetMinutes, i18n.language);
 
   const confirmDelete = async () => {
     setDeleteError("");
@@ -98,7 +99,11 @@ export default function JournalDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
@@ -119,13 +124,13 @@ export default function JournalDetailScreen() {
             </View>
           </View>
 
-          <Card>
+          <Card variant="soft" tint="ink">
             <CardContent>
               <Text className="text-base leading-6">{entry.body}</Text>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="soft" tint="ink">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.createdAt")}</CardTitle>
               <CardDescription>{createdAtLabel}</CardDescription>

@@ -10,7 +10,6 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { JournalCard } from "@/src/features/journal/journal-card";
 import { countWords } from "@/src/features/journal/word-count";
 import type { JournalEntry } from "@/src/features/journal/types";
-import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import { parseLocalNoon } from "@/src/utils/date";
 
 interface JournalDayCardProps {
@@ -23,7 +22,7 @@ export function JournalDayCard({ entries, selectedDate, isToday }: JournalDayCar
   const { t, i18n } = useTranslation("journal");
 
   const dayEntries = useMemo(
-    () => entries.filter((e) => toLocalDateKey(e.occurredAt ?? e.createdAt) === selectedDate),
+    () => entries.filter((e) => e.dayKey === selectedDate),
     [entries, selectedDate],
   );
   const dayLabel = useMemo(
@@ -41,7 +40,7 @@ export function JournalDayCard({ entries, selectedDate, isToday }: JournalDayCar
   const openEntry = useCallback((id: string) => router.push(`/tools/journal/${id}`), []);
 
   return (
-    <Card>
+    <Card variant="soft" tint="ink">
       <CardContent className="gap-3">
         <View className="flex-row items-baseline justify-between gap-3">
           <Text className="text-base font-semibold">{title}</Text>

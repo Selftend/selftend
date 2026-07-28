@@ -10,12 +10,12 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { MoodLineChart } from "@/src/components/app/mood-line-chart";
+import { LineChart } from "@/src/components/charts/line-chart";
 import { ProgressBar } from "@/src/components/app/progress-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useActivities } from "@/src/features/activities/queries";
 import { useGoals, useMilestones } from "@/src/features/goals/queries";
-import { dailyIntegerAverages, lastNLocalDateKeys } from "@/src/features/mood/chart-data";
+import { dailyIntegerAverages, lastNMoodDayKeys } from "@/src/features/mood/chart-data";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -71,7 +71,7 @@ export default function WeeklyReviewScreen() {
   const { data: goals, isLoading: goalsLoading } = useGoals(user?.id ?? null);
   const { data: thoughtRecords, isLoading: recordsLoading } = useThoughtRecords(user?.id ?? null);
 
-  const weekDates = lastNLocalDateKeys(7);
+  const weekDates = lastNMoodDayKeys(moodLogs, 7);
 
   const chartData = (() => {
     if (!moodLogs) return [];
@@ -83,17 +83,26 @@ export default function WeeklyReviewScreen() {
     }));
   })();
 
-  const chartPoints = chartData.filter((d) => d.score !== null) as {
-    day: string;
-    score: number;
-  }[];
+  const chartPoints = (() => {
+    const days = chartData.filter((d) => d.score !== null) as { day: string; score: number }[];
+    // Days with entries spread evenly across the plot (the previous bespoke
+    // chart's index spacing); mood stays the be hue here too.
+    return days.map((d, i) => ({
+      offset: days.length > 1 ? i / (days.length - 1) : 0,
+      value: d.score,
+      label: d.day,
+    }));
+  })();
 
   const weekActivities = (() => {
     if (!activities) return { planned: 0, completed: 0 };
     const weekStart = weekDates[0];
     const weekEnd = weekDates[6];
     const inRange = activities.filter((a) => {
-      const date = toLocalDateKey(a.scheduledAt ?? a.createdAt);
+      // A scheduled activity uses the captured day it was planned for (#330); an
+      // unscheduled one still falls back to createdAt, an audit stamp with no
+      // occurrence offset to capture.
+      const date = a.scheduledDayKey ?? toLocalDateKey(a.createdAt);
       return date >= weekStart && date <= weekEnd;
     });
     return {
@@ -145,7 +154,7 @@ export default function WeeklyReviewScreen() {
             </CardHeader>
             <CardContent>
               {chartPoints.length > 0 ? (
-                <MoodLineChart data={chartPoints} width={chartWidth} />
+                <LineChart points={chartPoints} domain={[1, 5]} hue="be" width={chartWidth} />
               ) : (
                 <Text variant="muted">{t("weeklyReview.noMoodData")}</Text>
               )}

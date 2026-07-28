@@ -2,6 +2,7 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
+import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
@@ -17,8 +18,15 @@ interface WeekHeroProps {
 
 function deltaCopy(delta: WeekDelta, t: TFunction) {
   if (delta.delta === null) return { text: t("week.noComparison"), tone: "text-muted-foreground" };
+  // `act-ink`, not `accent-ink` (#403): this card renders inside the mood
+  // module, so the room pours `be` — `accent-ink` would repaint the improvement
+  // pink and collapse it into the "down" case it exists to contrast with. The
+  // hue-explicit token keeps the green and fixes the contrast: published
+  // `text-act` is 3.95:1 on the be room's card, under AA for this 13px line,
+  // while act's own ink clears 6.43:1. The down case was never affected —
+  // `text-destructive` is 5.10:1 on the same surface — so only the up arm moves.
   if (delta.delta > 0)
-    return { text: t("week.deltaUp", { delta: delta.delta.toFixed(1) }), tone: "text-act" };
+    return { text: t("week.deltaUp", { delta: delta.delta.toFixed(1) }), tone: "text-act-ink" };
   if (delta.delta < 0)
     return {
       text: t("week.deltaDown", { delta: Math.abs(delta.delta).toFixed(1) }),
@@ -34,14 +42,14 @@ export function WeekHero({ delta, byDay, topEmotions }: WeekHeroProps) {
   const todayKey = byDay[byDay.length - 1]?.dateKey;
 
   return (
-    <Card>
+    <Card variant="soft" tint="be">
       <CardContent className="gap-5 pt-5 pb-5">
         <View className="flex-row items-end justify-between">
           <View>
             <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
               {t("week.average")}
             </Text>
-            <Text className="text-[40px] font-extrabold leading-[1.1] tracking-tight">
+            <Text className="font-display text-[40px] font-extrabold leading-[1.1] tracking-tight">
               {delta.current === null ? "-" : delta.current.toFixed(1)}
             </Text>
             <Text className={cn("text-[13px] font-semibold", d.tone)}>{d.text}</Text>
@@ -52,22 +60,56 @@ export function WeekHero({ delta, byDay, topEmotions }: WeekHeroProps) {
           <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
             {t("week.byDay")}
           </Text>
-          <View className="h-24 flex-row items-end gap-2">
+          <View className="flex-row gap-1">
             {byDay.map((day) => {
-              const heightPct = day.average === null ? 0 : (day.average / 5) * 100;
               const isToday = day.dateKey === todayKey;
+              const date = parseLocalNoon(day.dateKey);
               const letter = new Intl.DateTimeFormat(i18n.language, { weekday: "narrow" }).format(
-                parseLocalNoon(day.dateKey),
+                date,
               );
+              const dayName = new Intl.DateTimeFormat(i18n.language, { weekday: "long" }).format(
+                date,
+              );
+              // Day averages are means of 1-5 scores, so Math.round stays in range;
+              // clamp anyway so a bad value can never index off the emoji map.
+              const score =
+                day.average === null ? null : Math.min(5, Math.max(1, Math.round(day.average)));
               return (
-                <View key={day.dateKey} className="flex-1 items-center gap-1.5">
-                  <View className="h-[70px] w-full justify-end">
-                    <View
-                      className={cn("w-full rounded-md", isToday ? "bg-be" : "bg-be/30")}
-                      style={{ height: `${Math.max(heightPct, day.average === null ? 0 : 6)}%` }}
-                    />
+                <View
+                  key={day.dateKey}
+                  accessible
+                  accessibilityRole="image"
+                  // RNW drops the native-only `accessible` prop, and a generic div
+                  // prohibits an accessible name — the img role carries the label on web.
+                  role="img"
+                  accessibilityLabel={
+                    score === null
+                      ? t("week.dayNoEntry", { day: dayName })
+                      : t("week.dayScore", {
+                          day: dayName,
+                          score: t(`checkin.scaleLabels.${score}`),
+                        })
+                  }
+                  testID={isToday ? "week-strip-today" : undefined}
+                  className={cn(
+                    "flex-1 items-center gap-1.5 rounded-xl py-1.5",
+                    isToday && "bg-be/10",
+                  )}
+                >
+                  <View className="h-8 items-center justify-center">
+                    {score === null ? (
+                      <View
+                        testID="week-strip-empty-dot"
+                        className="h-2.5 w-2.5 rounded-full border-[1.5px] border-muted-foreground/40"
+                      />
+                    ) : (
+                      <Text className="text-2xl leading-none">{MOOD_EMOJI_BY_SCORE[score]}</Text>
+                    )}
                   </View>
-                  <Text variant="muted" className="text-[11px] font-semibold">
+                  <Text
+                    variant="muted"
+                    className={cn("text-[11px] font-semibold", isToday && "text-be")}
+                  >
                     {letter}
                   </Text>
                 </View>

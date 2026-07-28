@@ -1,9 +1,13 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import GratitudeListScreen from "@/src/features/gratitude/gratitude-list-screen";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -50,6 +54,10 @@ describe("GratitudeListScreen", () => {
     expect(screen.getByText("Gratitude")).toBeTruthy();
     expect(screen.getByText("Nothing here yet")).toBeTruthy();
     expect(screen.getByText("Notice something")).toBeTruthy();
+    // The history list keeps its compact header on the think room pour - no field.
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
+    // The root carries the think room re-pour; a wrong or missing room fails here.
+    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "think");
   });
 
   it("renders entries as expandable question/answer cards", () => {
@@ -68,6 +76,8 @@ describe("GratitudeListScreen", () => {
           starred: false,
           note: "The morning felt steady.",
           loggedAt: "2026-05-24T08:00:00.000Z",
+          loggedOffsetMinutes: null,
+          dayKey: entryDayKey("2026-05-24T08:00:00.000Z", null),
           createdAt: "2026-05-24T08:00:00.000Z",
           updatedAt: "2026-05-24T08:00:00.000Z",
         },

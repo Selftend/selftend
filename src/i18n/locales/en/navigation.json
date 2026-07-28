@@ -108,8 +108,12 @@
       "gratitudeLogSub": "Notice the small wins",
       "journal": "Journal",
       "journalSub": "Private free-text reflection",
+      "breathing": "Breathing",
+      "breathingSub": "Calm your nervous system",
       "grounding": "Grounding",
       "groundingSub": "Anchor to the present",
+      "meditation": "Meditation",
+      "meditationSub": "Train steady attention",
       "sleep": "Sleep tracker",
       "sleepSub": "Log and review your sleep",
       "habits": "Habit tracking",
@@ -358,7 +362,7 @@
     "title": "Insights",
     "description": "A quiet place to notice mood patterns and reflect on what may be helping.",
     "moodTrend": "Mood trend",
-    "moodTrendDescription": "Daily average over the last 14 days.",
+    "moodTrendDescription": "Daily average over the last 30 days.",
     "noMoodData": "Log a mood to start your trend.",
     "activityTitle": "Last 30 days",
     "activityDescription": "How often you checked in across the shared tools.",
@@ -385,12 +389,18 @@
       "journalEntries_one": "{{count}} entry",
       "journalEntries_other": "{{count}} entries",
       "journalNoData": "No entries yet",
+      "breathingSessions_one": "{{count}} session",
+      "breathingSessions_other": "{{count}} sessions",
+      "breathingNoData": "No sessions yet",
       "gratitudeEntries_one": "{{count}} gratitude entry",
       "gratitudeEntries_other": "{{count}} gratitude entries",
       "gratitudeNoData": "No gratitude entries yet",
       "groundingSessions_one": "{{count}} session",
       "groundingSessions_other": "{{count}} sessions",
       "groundingNoData": "No sessions yet",
+      "meditationSessions_one": "{{count}} session",
+      "meditationSessions_other": "{{count}} sessions",
+      "meditationNoData": "No sessions yet",
       "sleepLogs_one": "{{count}} log",
       "sleepLogs_other": "{{count}} logs",
       "sleepNoData": "No logs yet",
@@ -425,12 +435,18 @@
     }
   },
   "homeTour": {
-    "dates": { "description": "Browse previous days to see what you logged.", "dismiss": "Got it" },
+    "dates": {
+      "description": "Browse previous days to see what you logged.",
+      "dismiss": "Got it"
+    },
     "edit": {
       "description": "Arrange the dashboard your way - add, remove and reorder widgets.",
       "dismiss": "Got it"
     },
-    "navigation": { "description": "Find all Modules and Tools here.", "dismiss": "Got it" }
+    "navigation": {
+      "description": "Find all Modules and Tools here.",
+      "dismiss": "Got it"
+    }
   },
   "breadcrumb": {
     "session": "Session",

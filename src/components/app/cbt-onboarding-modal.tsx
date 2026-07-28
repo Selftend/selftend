@@ -86,7 +86,7 @@ export function CbtOnboarding({
               resizeMode="contain"
               accessibilityLabel={t("onboarding.intro.thinkTitle")}
             />
-            <CardTitle className="text-center text-think">
+            <CardTitle className="text-center text-think-ink">
               {t("onboarding.intro.thinkTitle")}
             </CardTitle>
             <Text variant="muted" className="text-center">
@@ -103,7 +103,9 @@ export function CbtOnboarding({
               resizeMode="contain"
               accessibilityLabel={t("onboarding.intro.actTitle")}
             />
-            <CardTitle className="text-center text-act">{t("onboarding.intro.actTitle")}</CardTitle>
+            <CardTitle className="text-center text-act-ink">
+              {t("onboarding.intro.actTitle")}
+            </CardTitle>
             <Text variant="muted" className="text-center">
               {t("onboarding.intro.actBody")}
             </Text>
@@ -118,7 +120,9 @@ export function CbtOnboarding({
               resizeMode="contain"
               accessibilityLabel={t("onboarding.intro.beTitle")}
             />
-            <CardTitle className="text-center text-be">{t("onboarding.intro.beTitle")}</CardTitle>
+            <CardTitle className="text-center text-be-ink">
+              {t("onboarding.intro.beTitle")}
+            </CardTitle>
             <Text variant="muted" className="text-center">
               {t("onboarding.intro.beBody")}
             </Text>

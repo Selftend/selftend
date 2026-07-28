@@ -1,3 +1,5 @@
+import type { CapturedOffsetMinutes, OccurrenceTime } from "@/src/lib/occurrence-time";
+
 export type StageNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 export type DullnessLevel = "none" | "subtle" | "strong";
@@ -42,6 +44,14 @@ export interface MeditationSession {
   stageAtSession: StageNumber;
   durationMinutes: number;
   completedAt: string;
+  /** Minutes east of UTC where the sit was logged; null on rows predating #330. */
+  completedOffsetMinutes: CapturedOffsetMinutes;
+  /**
+   * The civil day this sit belongs to (`YYYY-MM-DD`), resolved once in the
+   * repository. Day-scoped surfaces group on this and never convert
+   * `completedAt` themselves — see the lint guard in eslint.config.js (#330).
+   */
+  dayKey: string;
   createdAt: string;
   mindWanderingEpisodes: number | null;
   dullnessLevel: DullnessLevel | null;
@@ -62,6 +72,14 @@ export interface MeditationSessionInput {
   reflection?: string;
   moodAfter?: number | null;
   techniqueUsed?: TmiTechnique | null;
+  /**
+   * When the sit ended, if the caller knows. The reflection form is saved some
+   * time after the timer stops - possibly on the next civil day - so the save
+   * instant is the wrong thing to persist as the occurrence (#330). Omitted or
+   * null means "use the clock now", which is right for callers with no earlier
+   * instant to offer.
+   */
+  occurredAt?: OccurrenceTime | null;
 }
 
 export interface MeditationProgramState {

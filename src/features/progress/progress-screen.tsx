@@ -11,11 +11,14 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { MoodLineChart } from "@/src/components/app/mood-line-chart";
+import { LineChart } from "@/src/components/charts/line-chart";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { dailyIntegerAverages, lastNLocalDateKeys } from "@/src/features/mood/chart-data";
-import { useMoodHistory } from "@/src/features/mood/queries";
+import { buildMoodChartData } from "@/src/features/mood/chart-data";
+import { useMoodScorePoints } from "@/src/features/mood/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { startOfDayDaysAgo } from "@/src/utils/date";
+
+const TREND_DAYS = 30;
 
 const REFLECTION_PROMPTS = [
   "progress.prompt1",
@@ -24,33 +27,28 @@ const REFLECTION_PROMPTS = [
   "progress.prompt4",
 ] as const;
 
-function getDayLabel(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString(undefined, { day: "numeric", month: "numeric" });
-}
-
 export default function ProgressScreen() {
-  const { t } = useTranslation("navigation");
+  const { t, i18n } = useTranslation("navigation");
   const { user } = useSession();
   const { width } = useWindowDimensions();
 
-  const { data: moodLogs, isLoading } = useMoodHistory(user?.id ?? null, 60);
+  // Fixed 30-day window over the narrow score-points query (timestamp/offset/score
+  // only) — the same daily-resolution path as the mood screen's trend, sans controls.
+  const { data: scorePoints, isLoading } = useMoodScorePoints(
+    user?.id ?? null,
+    startOfDayDaysAgo(TREND_DAYS).toISOString(),
+  );
 
-  const last14Dates = lastNLocalDateKeys(14);
-
-  const chartData = (() => {
-    if (!moodLogs) return [];
-    const averages = dailyIntegerAverages(moodLogs, last14Dates);
-    return last14Dates.map((date, i) => ({
-      day: i % 2 === 0 ? getDayLabel(date) : "",
-      score: averages[i],
+  const chartPoints = (() => {
+    const days = buildMoodChartData(scorePoints, TREND_DAYS, i18n.language);
+    // Only the first and last day are labelled — interior labels would collide
+    // at this window's density (mirrors the mood screen's trend).
+    return days.map((d, i) => ({
+      offset: d.offset,
+      value: d.score,
+      label: i === 0 || i === days.length - 1 ? d.day : undefined,
     }));
   })();
-
-  const chartPoints = chartData.filter((d) => d.score !== null) as {
-    day: string;
-    score: number;
-  }[];
 
   const promptKey = REFLECTION_PROMPTS[new Date().getDay() % REFLECTION_PROMPTS.length];
   const chartWidth = Math.min(width - 48, 400);
@@ -82,7 +80,7 @@ export default function ProgressScreen() {
             </CardHeader>
             <CardContent>
               {chartPoints.length > 0 ? (
-                <MoodLineChart data={chartPoints} width={chartWidth} />
+                <LineChart points={chartPoints} domain={[1, 5]} hue="be" width={chartWidth} />
               ) : (
                 <Text variant="muted">{t("progress.noMoodData")}</Text>
               )}

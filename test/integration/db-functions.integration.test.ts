@@ -40,6 +40,9 @@ async function ensureBobHasSeedThoughtRecords() {
   if (error) throw error;
 }
 
+/** A fixed instant for export probes, with a real (non-UTC) captured offset. */
+const OCCURRED = "2026-05-15T19:00:00.000Z";
+
 describe("export_user_data() (integration)", () => {
   let bob: SupabaseClient;
 
@@ -133,6 +136,137 @@ describe("export_user_data() (integration)", () => {
       expect(data.preferences).toHaveProperty(`${target}_reminder_timezone`);
     }
     expect(typeof data.exportDate).toBe("string");
+  });
+
+  // Every migration that adds an exportable column redeclares this whole
+  // function, and the last one to apply wins outright - so a declaration copied
+  // from a stale parent drops another module's columns back out of the export
+  // with no conflict, no error and no failing test. It happened: #423 and #424
+  // each carried their own offsets and neither carried the other's, and because
+  // the only assertion on activityLogs above is `Array.isArray`, dev shipped an
+  // export with both activity offsets missing.
+  //
+  // So assert the columns, not the shape. This is the narrow guard for the
+  // occurrence offsets specifically; #429 tracks the general one that derives
+  // the expected column set from the live schema instead of listing it here.
+  it("carries every captured occurrence offset, not just the rows", async () => {
+    const admin = createServiceClient();
+    const { data: activity, error: insertError } = await admin
+      .from("activity_logs")
+      .insert({
+        user_id: SEED_USERS.bob.id,
+        activity_name: "Export offset probe",
+        category: "pleasure",
+        scheduled_at: "2026-05-15T19:00:00.000Z",
+        scheduled_offset_minutes: -420,
+        completed_at: "2026-05-15T21:00:00.000Z",
+        completed_offset_minutes: -420,
+      })
+      .select("id")
+      .single();
+    if (insertError) throw insertError;
+
+    try {
+      const { data, error } = await bob.rpc("export_user_data");
+      expect(error).toBeNull();
+
+      const exported = (data.activityLogs as { id: string }[]).find((a) => a.id === activity!.id);
+      expect(exported).toBeDefined();
+      // Without these the export hands back the instants with no way to
+      // reconstruct which civil day either the completion or the plan belonged
+      // to - the one fact #330 exists to record.
+      expect(exported).toHaveProperty("completed_offset_minutes", -420);
+      expect(exported).toHaveProperty("scheduled_offset_minutes", -420);
+
+      // The other half of the same pair, so a future redeclaration copied from
+      // an activities-only parent fails here too rather than silently.
+      const records = data.thoughtRecords as Record<string, unknown>[];
+      expect(records.length).toBeGreaterThan(0);
+      expect(records[0]).toHaveProperty("created_offset_minutes");
+    } finally {
+      await admin.from("activity_logs").delete().eq("id", activity!.id);
+    }
+  });
+
+  // The columns #429's audit found had NEVER been exported by any declaration -
+  // so unlike the offsets above, no gate could have caught them by comparing one
+  // declaration against another. Each row here is a column of the user's own
+  // data that the export silently omitted.
+  //
+  // `occurred_at` is the one that matters most: it is the date the user CHOSE
+  // when back-dating a journal entry, which is the whole reason journal has an
+  // occurrence concept separate from every other tool.
+  it.each([
+    [
+      "journalEntries",
+      "journal_entries",
+      { title: "Export probe", body: "b", occurred_at: OCCURRED, occurred_offset_minutes: -420 },
+      ["occurred_at", "occurred_offset_minutes"],
+    ],
+    [
+      "moodLogs",
+      "mood_logs",
+      { mood_score: 3, logged_at: OCCURRED, logged_offset_minutes: -420 },
+      ["logged_offset_minutes"],
+    ],
+    [
+      "sleepLogs",
+      "sleep_logs",
+      { duration_minutes: 420, quality: 3, logged_at: OCCURRED, logged_offset_minutes: -420 },
+      ["logged_offset_minutes"],
+    ],
+    [
+      "gratitudeEntries",
+      "gratitude_entries",
+      { item_1: "probe", logged_at: OCCURRED, logged_offset_minutes: -420 },
+      ["logged_offset_minutes"],
+    ],
+    [
+      "mindfulnessSessions",
+      "mindfulness_sessions",
+      {
+        exercise_name: "box-breathing",
+        duration_minutes: 5,
+        completed_at: OCCURRED,
+        feeling_after: "calmer",
+        cycles: 6,
+        duration_seconds: 300,
+      },
+      ["feeling_after", "cycles", "duration_seconds"],
+    ],
+  ])("exports %s' own columns, not a subset of them", async (key, table, row, columns) => {
+    const admin = createServiceClient();
+    const { data: inserted, error: insertError } = await admin
+      .from(table)
+      .insert({ user_id: SEED_USERS.bob.id, ...row })
+      .select("id")
+      .single();
+    if (insertError) throw insertError;
+
+    try {
+      const { data, error } = await bob.rpc("export_user_data");
+      expect(error).toBeNull();
+
+      const exported = (data[key] as { id: string }[]).find((r) => r.id === inserted!.id);
+      expect(exported).toBeDefined();
+      for (const column of columns) {
+        expect(exported).toHaveProperty(column);
+      }
+    } finally {
+      await admin.from(table).delete().eq("id", inserted!.id);
+    }
+  });
+
+  it("exports the profile the user set, not just the address they signed up with", async () => {
+    const { data, error } = await bob.rpc("export_user_data");
+    expect(error).toBeNull();
+
+    // `avatar_storage_path` stays out on purpose - internal storage plumbing,
+    // where `avatar_url` is the usable form. Everything else here is a value the
+    // user chose and the export used to drop.
+    for (const column of ["display_name", "avatar_url", "avatar_source", "avatar_updated_at"]) {
+      expect(data.profile).toHaveProperty(column);
+    }
   });
 
   it("never leaks another user's data", async () => {

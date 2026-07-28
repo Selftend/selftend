@@ -1,4 +1,5 @@
 import type { MindfulnessSession, MindfulnessSessionInput } from "@/src/features/mindfulness/types";
+import { entryDayKey, occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
@@ -11,12 +12,14 @@ interface MindfulnessSessionRow {
   mood_after: number | null;
   feeling_after: string | null;
   completed_at: string;
+  completed_offset_minutes?: number | null;
   created_at: string;
   cycles: number | null;
   duration_seconds: number | null;
 }
 
 function mapSession(row: MindfulnessSessionRow): MindfulnessSession {
+  const completedOffsetMinutes = row.completed_offset_minutes ?? null;
   return {
     id: row.id,
     userId: row.user_id,
@@ -26,6 +29,8 @@ function mapSession(row: MindfulnessSessionRow): MindfulnessSession {
     moodAfter: row.mood_after,
     feelingAfter: row.feeling_after,
     completedAt: row.completed_at,
+    completedOffsetMinutes,
+    dayKey: entryDayKey(row.completed_at, completedOffsetMinutes),
     createdAt: row.created_at,
     cycles: row.cycles ?? null,
     durationSeconds: row.duration_seconds ?? null,
@@ -80,8 +85,34 @@ export async function countMindfulnessSessionsByNames(
   return count ?? 0;
 }
 
+// Exact count of every session that is NOT one of the given exercise types. Breathing
+// counts by exclusion because it is an open set - built-in patterns plus user-defined
+// exercises, whose sessions carry the custom exercise's id as their name - while
+// grounding is the closed slug set. src/features/routines/derive.ts classifies the
+// shared table the same way: not grounding means breathing.
+export async function countMindfulnessSessionsExcludingNames(
+  userId: string,
+  excludedNames: string[],
+): Promise<number> {
+  const client = requireSupabase();
+  const quoted = excludedNames.map((name) => `"${name}"`).join(",");
+  const { count, error } = await client
+    .from("mindfulness_sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .not("exercise_name", "in", `(${quoted})`);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function saveMindfulnessSession(userId: string, input: MindfulnessSessionInput) {
   const client = requireSupabase();
+  // One reading of the clock, so the instant and the offset describe the same moment.
+  // Deriving them from two `new Date()` calls can straddle a DST change and pair an
+  // instant with an offset that was never in force at it. `completed_at` used to be
+  // left to the server default; sending it is what makes the offset meaningful (#330).
+  const occurrence = occurrenceTimeFromDate();
   const { data, error } = await client
     .from("mindfulness_sessions")
     .insert({
@@ -93,6 +124,8 @@ export async function saveMindfulnessSession(userId: string, input: MindfulnessS
       mood_after: null,
       cycles: input.cycles ?? null,
       duration_seconds: input.durationSeconds ?? null,
+      completed_at: occurrence.occurredAt,
+      completed_offset_minutes: occurrence.occurredOffsetMinutes,
     })
     .select("*")
     .single();

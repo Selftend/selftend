@@ -3,6 +3,7 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
 import {
+  useMeditationMedianMinutes,
   useMeditationProgramState,
   useMeditationSession,
   useMeditationSessionCount,
@@ -24,6 +25,7 @@ jest.mock("@/src/features/meditation/repository", () => ({
   getMeditationSession: jest.fn(),
   listMeditationSessions: jest.fn(),
   listStagePracticeNotes: jest.fn(),
+  medianMeditationMinutes: jest.fn(),
   saveMeditationSession: jest.fn(),
   saveStagePracticeNote: jest.fn(),
   upsertMeditationProgramState: jest.fn(),
@@ -50,6 +52,7 @@ beforeEach(() => {
 const listHooks = [
   ["useMeditationSessions", useMeditationSessions, repo.listMeditationSessions],
   ["useMeditationSessionCount", useMeditationSessionCount, repo.countMeditationSessions],
+  ["useMeditationMedianMinutes", useMeditationMedianMinutes, repo.medianMeditationMinutes],
   ["useMeditationProgramState", useMeditationProgramState, repo.getMeditationProgramState],
   ["useStagePracticeNotes", useStagePracticeNotes, repo.listStagePracticeNotes],
 ] as const;
@@ -124,22 +127,44 @@ describe("useMeditationSession enabled gate", () => {
 
 // ---------------------------------------------------------------------------
 // useSaveMeditationSession: onSuccess guard `if (!userId) return;`. Real user
-// runs mutationFn and invalidates the list + program-state keys; null user
+// runs mutationFn and invalidates every meditation-derived cache; null user
 // short-circuits before any invalidation.
 // ---------------------------------------------------------------------------
 describe("useSaveMeditationSession onSuccess guard", () => {
-  it("invalidates the list and program-state keys for a real user", async () => {
+  it("invalidates every server-derived meditation cache for a real user", async () => {
     (repo.saveMeditationSession as jest.Mock).mockResolvedValue({ id: "m1" });
     const client = createTestQueryClient();
-    const spy = jest.spyOn(client, "invalidateQueries");
+    // Seed each cache a logged sit moves. The count and the median are computed on the
+    // server, so a stale entry is not self-correcting - invalidating only the list left
+    // both showing pre-session figures until a remount (#337).
+    const seeded = [
+      ["meditation", "list", "u1", 200],
+      ["meditation", "count", "u1"],
+      ["meditation", "median-minutes", "u1"],
+      ["meditation", "programState", "u1"],
+    ];
+    for (const key of seeded) client.setQueryData(key, 1);
     const { result } = renderHook(() => useSaveMeditationSession("u1"), { wrapper: wrap(client) });
 
     await result.current.mutateAsync({} as never);
 
     expect(repo.saveMeditationSession).toHaveBeenCalledWith("u1", {});
-    const queryKeys = spy.mock.calls.map((c) => (c[0] as { queryKey?: unknown }).queryKey);
-    expect(queryKeys).toContainEqual(["meditation", "list", "u1"]);
-    expect(queryKeys).toContainEqual(["meditation", "programState", "u1"]);
+    for (const key of seeded) {
+      expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+    }
+  });
+
+  it("keeps the invalidation inside the meditation prefix", async () => {
+    (repo.saveMeditationSession as jest.Mock).mockResolvedValue({ id: "m1" });
+    const client = createTestQueryClient();
+    client.setQueryData(["journal", "count", "u1"], 1);
+    const { result } = renderHook(() => useSaveMeditationSession("u1"), { wrapper: wrap(client) });
+
+    await result.current.mutateAsync({} as never);
+
+    // Broadening to the module prefix is the journal precedent (`journalKeys.all`); it
+    // must not widen past this module's own caches.
+    expect(client.getQueryState(["journal", "count", "u1"])?.isInvalidated).toBe(false);
   });
 
   it("skips invalidation when userId is null", async () => {

@@ -1,3 +1,4 @@
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import {
   getFavoriteGratitudeEntries,
   getGratitudeFrequencyBuckets,
@@ -13,6 +14,7 @@ function entry(partial: Partial<GratitudeEntry>): GratitudeEntry {
     items: [],
     note: "",
     loggedAt: "2026-05-15T08:00:00.000Z",
+    loggedOffsetMinutes: null,
     createdAt: "2026-05-15T08:00:00.000Z",
     updatedAt: "2026-05-15T08:00:00.000Z",
     events: [],
@@ -22,6 +24,9 @@ function entry(partial: Partial<GratitudeEntry>): GratitudeEntry {
     lifeItems: [],
     starred: false,
     ...partial,
+    // Derived after the spread: a fixture that overrides loggedAt must get the
+    // day key that goes with it, unless it states one explicitly.
+    dayKey: partial.dayKey ?? entryDayKey(partial.loggedAt ?? "2026-05-15T08:00:00.000Z", null),
   };
 }
 

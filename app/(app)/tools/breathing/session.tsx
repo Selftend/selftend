@@ -1,7 +1,7 @@
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Pressable, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, {
   useSharedValue,
@@ -31,6 +31,7 @@ import {
   elapsedMinutes,
   cycleSeconds,
 } from "@/src/features/breathing/cycle-math";
+import { pacerColors } from "@/src/features/breathing/pacer-colors";
 import { scheduleStateAt } from "@/src/features/breathing/schedule";
 import { resolveBuiltin, useResolvedExercise } from "@/src/features/breathing/resolve-exercise";
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
@@ -40,9 +41,10 @@ import { breathSoundLookup } from "@/src/constants/breathing-sounds";
 import { playIntroCue, useBreathingAudio } from "@/src/features/breathing/use-breathing-audio";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useSaveBreathingSession } from "@/src/features/breathing/queries";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -164,8 +166,15 @@ export default function BreathingSessionScreen() {
     ambientVolume,
   });
 
-  const colorScheme = useAppColorScheme();
-  const aqua = colorScheme === "dark" ? "196, 58%, 62%" : "196, 52%, 45%";
+  const colorScheme = useColorSchemeName();
+  const roomStyle = useRoomStyle("aqua");
+  // Identity-stable per scheme: the countdown rerenders this screen about once a
+  // second during a session, and `circleStyle`'s worklet captures `pacer`. A fresh
+  // object each render reads as a changed closure dependency, so Reanimated tears
+  // down and restarts the style mapper mid-animation - exactly when the pacer
+  // circle must not stutter.
+  const isDarkScheme = colorScheme === "dark";
+  const pacer = useMemo(() => pacerColors(isDarkScheme), [isDarkScheme]);
 
   const circleStyle = useAnimatedStyle(() => ({
     width: circleSize.get(),
@@ -173,9 +182,9 @@ export default function BreathingSessionScreen() {
     borderRadius: circleSize.get() / 2,
     // Stays at 1 unless reduced motion steps it per phase in animateForPhase.
     opacity: innerOpacity.get(),
-    backgroundColor: `hsla(${aqua}, 0.22)`,
+    backgroundColor: pacer.innerFill,
     borderWidth: 2,
-    borderColor: `hsl(${aqua})`,
+    borderColor: pacer.innerBorder,
   }));
 
   // The outer ring is a constant size; only the inner circle scales with the breath.
@@ -184,9 +193,9 @@ export default function BreathingSessionScreen() {
     width: OUTER_SIZE,
     height: OUTER_SIZE,
     borderRadius: OUTER_SIZE / 2,
-    backgroundColor: `hsla(${aqua}, 0.1)`,
+    backgroundColor: pacer.outerFill,
     borderWidth: 2,
-    borderColor: `hsla(${aqua}, 0.3)`,
+    borderColor: pacer.outerBorder,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   };
@@ -324,7 +333,7 @@ export default function BreathingSessionScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("breathing.title")} />
         </View>
@@ -334,7 +343,7 @@ export default function BreathingSessionScreen() {
 
   if (!resolved || notFound) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center p-6">
           <Text variant="h2">{t("breathing.notFound")}</Text>
         </View>
@@ -383,7 +392,7 @@ export default function BreathingSessionScreen() {
   const phaseLabelKey = currentPhase ? (`breathing.phases.${currentPhase.label}` as const) : null;
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">

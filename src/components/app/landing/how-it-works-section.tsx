@@ -5,7 +5,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 
 /**
  * "How it works" in three numbered cards. The copy is the anti-pressure
- * pitch (no intake quiz, no expiry, no streak to protect), so the layout
+ * pitch (no intake quiz, no expiry), so the layout
  * stays deliberately flat: same card chrome for all three, big quiet
  * numbers instead of icons or imagery.
  */

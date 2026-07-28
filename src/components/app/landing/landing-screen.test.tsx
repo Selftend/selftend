@@ -32,7 +32,7 @@ describe("LandingScreen", () => {
 
     expect(
       screen.getByText(
-        "Calm, guided self-help - CBT and ACT modules plus eight everyday tools. No ads, no subscriptions, no streaks.",
+        "Calm, guided self-help - CBT and ACT modules plus eight everyday tools. No ads, no subscriptions.",
       ),
     ).toBeTruthy();
   });

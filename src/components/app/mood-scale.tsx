@@ -4,7 +4,9 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
+import { hueHsl } from "@/src/features/mindfulness/exercise-hue";
 import { useRovingFocus } from "@/src/lib/roving-focus";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 interface MoodScaleProps {
   value: number | null;
@@ -51,6 +53,7 @@ export const MOOD_EMOJI_BY_SCORE: Record<number, string> = STEPS.reduce(
 
 export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) {
   const { t } = useTranslation("mood");
+  const isDark = useColorSchemeName() === "dark";
   const selectedIndex = STEPS.findIndex((step) => step.score === value);
   const roving = useRovingFocus({
     count: STEPS.length,
@@ -81,12 +84,12 @@ export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) 
             className={cn(
               "flex-1 items-center overflow-hidden rounded-2xl border",
               compact ? "px-1 py-2" : "px-1.5 py-3.5",
-              selected ? "border-2 border-[hsl(var(--act))]" : "border-border bg-card",
+              selected ? "border-2 border-act" : "border-border bg-card",
             )}
           >
             {selected ? (
               <LinearGradient
-                colors={["hsla(160, 46%, 38%, 0.10)", "hsla(160, 46%, 38%, 0.04)"]}
+                colors={[hueHsl("act", isDark, 0.1), hueHsl("act", isDark, 0.04)]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
                 style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}

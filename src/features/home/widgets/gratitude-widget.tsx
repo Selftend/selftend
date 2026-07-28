@@ -10,7 +10,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { useGratitudeEntries, useGratitudeEntryCount } from "@/src/features/gratitude/queries";
 import { answeredCount } from "@/src/features/gratitude/questions";
 import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function GratitudeWidget({ userId }: { userId: string }) {
   const { t } = useTranslation("navigation");
@@ -23,7 +23,7 @@ export function GratitudeWidget({ userId }: { userId: string }) {
   const { selectedDate: todayKey } = useSelectedDate();
   const all = entries ?? [];
   const todayEntries = useMemo(
-    () => all.filter((e) => toLocalDateKey(e.loggedAt) === todayKey),
+    () => all.filter((e) => e.dayKey === todayKey),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entries, todayKey],
   );
@@ -40,8 +40,12 @@ export function GratitudeWidget({ userId }: { userId: string }) {
       <CardContent className="gap-3 pt-4 pb-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
+            {/* Header glyphs elsewhere on this hub keep `text-<hue>` — they are
+                decorative next to the title, and every other hue clears the 3:1
+                graphics floor on its own /10 chip. `think` reads 1.90:1 there,
+                so the glyph does not carry the hue it exists to carry (#403). */}
             <View className="size-8 items-center justify-center rounded-lg bg-think/10">
-              <Icon name="favorite" className="size-5 text-think" />
+              <Icon name="favorite" className="size-5 text-think-ink" />
             </View>
             <Text className="text-sm font-semibold">{t("plan.wizard.toolGratitude")}</Text>
           </View>

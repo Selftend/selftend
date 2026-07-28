@@ -10,7 +10,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { colorChipClass } from "@/src/features/habits/habits-home-screen";
+import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import {
   useArchiveHabit,
   useDeleteHabit,
@@ -22,6 +22,7 @@ import {
 import { addDays, isScheduledOn, isTickedOn, localDateKey } from "@/src/features/habits/scheduling";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { spaceKeyActivationProps } from "@/src/lib/accessibility";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,7 @@ interface HabitDetailScreenProps {
 
 export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
   const { t } = useTranslation("habits");
+  const roomStyle = useRoomStyle("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -50,7 +52,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("home.title")} />
         </View>
@@ -60,7 +62,11 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
 
   if (!habit) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("home.title")} />
@@ -102,7 +108,11 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
 
   return (
     <>
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow gap-6 p-6">
           <View className="gap-2">
             <ScreenHeader
@@ -221,7 +231,7 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
     return arr;
   })();
 
-  const chip = colorChipClass(habit.color);
+  const chip = useHabitChipPalette()[habit.color];
   const todayStr = localDateKey(today);
 
   return (
@@ -237,6 +247,13 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
             const scheduled = isScheduledOn(habit, day);
             const isToday = dayStr === todayStr;
             const isFuture = day.getTime() > today.getTime();
+            // A ticked cell carries no label or glyph, so its outline is the
+            // chip ink - the stop certified against the room surface (WCAG
+            // 1.4.11). Today's primary ring outranks it, so a ticked-today cell
+            // takes only the fill and leaves the border to the class below.
+            const tickedStyle = ticked
+              ? { backgroundColor: chip.fill, ...(isToday ? null : { borderColor: chip.ink }) }
+              : undefined;
             return (
               <Pressable
                 key={dayStr}
@@ -248,13 +265,13 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
                 onPress={() => onToggleDay(dayStr)}
                 className={cn(
                   "h-5 w-5 rounded-sm border",
-                  ticked
-                    ? `${chip.bg} ${chip.border}`
-                    : scheduled
+                  !ticked &&
+                    (scheduled
                       ? "border-border bg-muted/40"
-                      : "border-dashed border-border bg-background",
+                      : "border-dashed border-border bg-background"),
                   isToday && "border-2 border-primary",
                 )}
+                style={tickedStyle}
                 role="checkbox"
                 {...spaceKeyActivationProps(() => onToggleDay(dayStr))}
               />

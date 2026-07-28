@@ -93,7 +93,7 @@ export default function ActValuesScreen() {
                       {rating !== null ? (
                         <View className="mt-1 flex-row items-center gap-1">
                           <AlignmentBar rating={rating} />
-                          <Text className="text-xs text-act">
+                          <Text className="text-xs text-act-ink">
                             {t("values.alignmentLabel", { rating })}
                           </Text>
                         </View>

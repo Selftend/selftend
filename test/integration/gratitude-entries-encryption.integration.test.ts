@@ -77,7 +77,9 @@ describe("gratitude_entries encrypted view (integration)", () => {
       note: NOTE,
       level: 2,
       starred: true,
-      logged_offset_minutes: 0,
+      // The insert states no offset, and since #250 that is "unknown" rather than
+      // UTC - a 0 here would be the column claiming a fact the caller never gave.
+      logged_offset_minutes: null,
     });
 
     const id = insert.data!.id as string;

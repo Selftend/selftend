@@ -4,10 +4,12 @@ import type { PropsWithChildren } from "react";
 
 import {
   useDeleteMoodLog,
+  useFirstMoodDayKey,
   useMoodHistory,
   useMoodLog,
   useMoodLogCount,
   useMoodLogs,
+  useMoodScorePoints,
   useSaveMoodLog,
 } from "@/src/features/mood/queries";
 import * as repo from "@/src/features/mood/repository";
@@ -20,8 +22,10 @@ import { createTestQueryClient } from "@/test/render-with-providers";
 jest.mock("@/src/features/mood/repository", () => ({
   countMoodLogs: jest.fn(),
   deleteMoodLog: jest.fn(),
+  getFirstMoodDayKey: jest.fn(),
   getMoodLog: jest.fn(),
   listMoodLogs: jest.fn(),
+  listMoodScorePoints: jest.fn(),
   saveMoodLog: jest.fn(),
 }));
 
@@ -37,7 +41,9 @@ beforeEach(() => {
   (repo.countMoodLogs as jest.Mock).mockResolvedValue(0);
   (repo.deleteMoodLog as jest.Mock).mockResolvedValue(undefined);
   (repo.getMoodLog as jest.Mock).mockResolvedValue(null);
+  (repo.getFirstMoodDayKey as jest.Mock).mockResolvedValue(null);
   (repo.listMoodLogs as jest.Mock).mockResolvedValue([]);
+  (repo.listMoodScorePoints as jest.Mock).mockResolvedValue([]);
   (repo.saveMoodLog as jest.Mock).mockResolvedValue({ id: "m1" });
 });
 
@@ -108,6 +114,61 @@ describe("useMoodHistory", () => {
     const client = createTestQueryClient();
     const { result } = renderHook(() => useMoodHistory("u1", 2), { wrapper: wrap(client) });
     await waitFor(() => expect(result.current.data).toEqual(rows.slice(0, 2)));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useMoodScorePoints / useFirstMoodDayKey: the trend's narrow window query and
+// its custom-range lower clamp. Both live under the "mood" root key so a save
+// invalidates them alongside the history cache.
+// ---------------------------------------------------------------------------
+describe("useMoodScorePoints", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useMoodScorePoints(null, "2026-07-01T00:00:00.000Z"), {
+      wrapper: wrap(client),
+    });
+    expect(repo.listMoodScorePoints).not.toHaveBeenCalled();
+  });
+
+  it("passes the window bounds through to the repository", async () => {
+    const client = createTestQueryClient();
+    renderHook(
+      () => useMoodScorePoints("u1", "2026-03-03T00:00:00.000Z", "2026-04-01T23:59:59.999Z"),
+      { wrapper: wrap(client) },
+    );
+    await waitFor(() =>
+      expect(repo.listMoodScorePoints).toHaveBeenCalledWith(
+        "u1",
+        "2026-03-03T00:00:00.000Z",
+        "2026-04-01T23:59:59.999Z",
+      ),
+    );
+  });
+
+  it("caches under the mood root key so saves invalidate it", async () => {
+    const client = createTestQueryClient();
+    renderHook(() => useMoodScorePoints("u1", "2026-07-01T00:00:00.000Z"), {
+      wrapper: wrap(client),
+    });
+    await waitFor(() => expect(repo.listMoodScorePoints).toHaveBeenCalled());
+    expect(client.getQueryCache().findAll({ queryKey: ["mood"] }).length).toBeGreaterThan(0);
+  });
+});
+
+describe("useFirstMoodDayKey", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useFirstMoodDayKey(null), { wrapper: wrap(client) });
+    expect(repo.getFirstMoodDayKey).not.toHaveBeenCalled();
+  });
+
+  it("fetches the first log date for a real user", async () => {
+    (repo.getFirstMoodDayKey as jest.Mock).mockResolvedValue("2026-01-05T10:00:00.000Z");
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => useFirstMoodDayKey("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(result.current.data).toBe("2026-01-05T10:00:00.000Z"));
+    expect(repo.getFirstMoodDayKey).toHaveBeenCalledWith("u1");
   });
 });
 

@@ -9,6 +9,7 @@ import {
   useSaveJournalEntry,
 } from "@/src/features/journal/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -70,6 +71,47 @@ describe("JournalEntryEditorScreen", () => {
     expect(screen.getByLabelText("Title (optional)")).toBeTruthy();
     expect(screen.getByLabelText("Body")).toBeTruthy();
     expect(screen.getByText("Save")).toBeTruthy();
+  });
+
+  it("renders the ink field header in create mode on the room pour", () => {
+    mockUseSaveJournalEntry.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useSaveJournalEntry>);
+
+    renderWithProviders(<JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />);
+
+    // Create mode gets the full-bleed ink field with the sheet lip.
+    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+    // The room wrapper carries the ink re-pour; a wrong or missing room fails here.
+    expectRoomPour(screen.getByTestId("journal-editor-room"), "ink");
+  });
+
+  it("keeps the compact header (no field) on the room pour in edit mode", () => {
+    mockUseSaveJournalEntry.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useSaveJournalEntry>);
+    mockUseJournalEntries.mockReturnValue({
+      data: [
+        {
+          id: "j-1",
+          userId: "user-1",
+          title: "Quiet morning",
+          body: "Walked outside.",
+          createdAt: "2026-05-24T08:00:00.000Z",
+          updatedAt: "2026-05-24T08:00:00.000Z",
+        },
+      ],
+    } as unknown as ReturnType<typeof useJournalEntries>);
+
+    renderWithProviders(
+      <JournalEntryEditorScreen fallbackHref="/tools/journal" mode="edit" entryId="j-1" />,
+    );
+
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
+    expect(screen.getByText("Edit journal entry")).toBeTruthy();
+    expectRoomPour(screen.getByTestId("journal-editor-room"), "ink");
   });
 
   it("saves a new entry when body is provided", async () => {
@@ -170,7 +212,9 @@ describe("JournalEntryEditorScreen", () => {
           title: "Yesterday",
           body: "I rested.",
           occurredAt: "2026-05-10T08:00:00.000Z",
-          occurredOffsetMinutes: expect.any(Number),
+          // The fixture entry carries no captured offset, and an edit that does not
+          // touch the time must not invent one (#250).
+          occurredOffsetMinutes: null,
         },
         entryId: "j-9",
       }),

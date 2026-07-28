@@ -9,6 +9,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useHabits, useHabitLogs } from "@/src/features/habits/queries";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
@@ -49,6 +50,7 @@ const HabitLogRow = memo(function HabitLogRow({ log, habit }: { log: HabitLog; h
 
 export default function HabitsHistoryScreen() {
   const { t } = useTranslation("habits");
+  const roomStyle = useRoomStyle("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -74,7 +76,11 @@ export default function HabitsHistoryScreen() {
   }, [logs]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}

@@ -2,6 +2,7 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -19,6 +20,8 @@ function sleepLog(i: number) {
     quality: 3,
     notes: "",
     loggedAt,
+    loggedOffsetMinutes: null,
+    dayKey: entryDayKey(loggedAt, null),
     createdAt: loggedAt,
   };
 }
@@ -50,5 +53,29 @@ describe("SleepRecentList", () => {
       pathname: "/tools/sleep/[id]",
       params: { id: "s-0" },
     });
+  });
+
+  it("labels a row by its captured day, not the viewer's day for that instant", () => {
+    // Frozen viewer clock: the instant below is "today" in the viewer's zone,
+    // but the night was captured at UTC-11 where it was still the previous
+    // civil day - the row must read "Yesterday" to agree with the summary
+    // block above it, which groups on dayKey (#433 §2).
+    jest.useFakeTimers({ now: new Date("2026-05-31T12:00:00Z"), doNotFake: ["performance"] });
+    try {
+      const loggedAt = "2026-05-31T01:00:00Z";
+      const log = {
+        ...sleepLog(0),
+        loggedAt,
+        loggedOffsetMinutes: -660,
+        dayKey: entryDayKey(loggedAt, -660),
+      };
+      expect(log.dayKey).toBe("2026-05-30");
+
+      renderWithProviders(<SleepRecentList logs={[log]} />);
+      expect(screen.getByText("Yesterday")).toBeTruthy();
+      expect(screen.queryByText("Today")).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

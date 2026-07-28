@@ -21,17 +21,19 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import { useDeleteMoodLog, useMoodLog, useMoodLogs } from "@/src/features/mood/queries";
 import type { MoodLog } from "@/src/features/mood/types";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import { formatAtOffset } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { scoreToneClass } from "@/src/features/mood/score-tone";
 
 export default function MoodDetailScreen() {
   const { t } = useTranslation("mood");
   const { t: tCbt } = useTranslation("cbt");
+  const roomStyle = useRoomStyle("be");
   const { user } = useSession();
   const { resolveEmotion } = useEmotionDisplay();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -67,7 +69,7 @@ export default function MoodDetailScreen() {
 
   if (!fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("detail.title")} />
         </View>
@@ -77,7 +79,11 @@ export default function MoodDetailScreen() {
 
   if (!entry) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -88,16 +94,21 @@ export default function MoodDetailScreen() {
     );
   }
 
-  const when = formatMoodRelativeTime(entry.loggedAt, t);
+  // Same frame as the card that was tapped: the captured day, not the viewer's.
+  const when = formatRelativeDayKey(entry.dayKey, t);
   const trimmedNotes = entry.notes.trim();
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
             <ScreenBreadcrumb />
-            <Card>
+            <Card variant="soft" tint="be">
               <CardContent className="flex-row items-center gap-4 pt-5 pb-5">
                 <View
                   className={cn(
@@ -108,7 +119,7 @@ export default function MoodDetailScreen() {
                   <Text className="text-4xl">{MOOD_EMOJI_BY_SCORE[entry.moodScore] ?? ""}</Text>
                 </View>
                 <View className="flex-1">
-                  <Text className="text-2xl font-extrabold tracking-tight">
+                  <Text className="font-display text-2xl font-extrabold tracking-tight">
                     {t(`detailWord.${entry.moodScore}`)} · {entry.moodScore}
                   </Text>
                   <Text variant="muted" className="text-sm">
@@ -133,16 +144,16 @@ export default function MoodDetailScreen() {
             </Card>
           </View>
 
-          <Card>
+          <Card variant="soft" tint="be">
             <CardHeader>
               <CardTitle>{t("detail.loggedAt")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Text>{formatLocalTimestamp(entry.loggedAt)}</Text>
+              <Text>{formatAtOffset(entry.loggedAt, entry.loggedOffsetMinutes)}</Text>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="soft" tint="be">
             <CardHeader>
               <CardTitle>{t("detail.emotions")}</CardTitle>
             </CardHeader>
@@ -166,7 +177,7 @@ export default function MoodDetailScreen() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="soft" tint="be">
             <CardHeader>
               <CardTitle>{t("detail.notes")}</CardTitle>
             </CardHeader>
@@ -187,7 +198,7 @@ export default function MoodDetailScreen() {
           ]
             .filter((box) => box.value.length > 0)
             .map((box) => (
-              <Card key={box.title}>
+              <Card key={box.title} variant="soft" tint="be">
                 <CardHeader>
                   <CardTitle>{box.title}</CardTitle>
                 </CardHeader>
@@ -198,7 +209,7 @@ export default function MoodDetailScreen() {
             ))}
 
           {entry.linkedStrategy ? (
-            <Card>
+            <Card variant="soft" tint="be">
               <CardHeader>
                 <CardTitle>{t("detail.linkedStrategy")}</CardTitle>
               </CardHeader>

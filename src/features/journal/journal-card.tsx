@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { Card } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { countWords } from "@/src/features/journal/word-count";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
@@ -24,7 +24,8 @@ interface JournalCardProps {
 
 export const JournalCard = memo(function JournalCard({ entry, onOpen }: JournalCardProps) {
   const { t } = useTranslation("journal");
-  const when = formatMoodRelativeTime(entry.occurredAt ?? entry.createdAt, t);
+  // Labelled in the captured day frame, matching the dayKey these cards group by.
+  const when = formatRelativeDayKey(entry.dayKey, t);
   const title = entry.title.trim().length > 0 ? entry.title.trim() : t("list.untitled");
   const preview = firstLine(entry.body);
   const words = countWords(entry.body);
@@ -36,7 +37,7 @@ export const JournalCard = memo(function JournalCard({ entry, onOpen }: JournalC
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() => onOpen(entry.id)}
     >
-      <Card spine="ink" className="px-5 py-4 gap-0">
+      <Card variant="soft" tint="ink" className="px-5 py-4 gap-0">
         <View className="flex-row items-baseline justify-between gap-3">
           <Text className="flex-1 text-base font-semibold tracking-tight" numberOfLines={1}>
             {title}

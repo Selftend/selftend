@@ -8,7 +8,9 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { totalSeconds, formatClock } from "@/src/features/breathing/cycle-math";
@@ -39,6 +41,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 
@@ -162,9 +165,11 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
     }
   };
 
+  const roomStyle = useRoomStyle("aqua");
+
   if (editMode && !fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("breathing.builder.editTitle")} />
         </View>
@@ -175,168 +180,189 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
   const saving = saveMutation.isPending;
 
   return (
-    <MobileFormScreen
-      contentClassName="gap-6"
-      footer={
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <Button onPress={goBack} variant="ghost">
-              <Text>{t("breathing.builder.cancel")}</Text>
-            </Button>
-          </View>
-          <View className="flex-1">
-            <Button disabled={saving || !user} onPress={() => void handleSave()}>
-              {saving ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{saving ? t("breathing.builder.saving") : t("breathing.builder.save")}</Text>
-            </Button>
-          </View>
-        </View>
-      }
-    >
-      <ScreenHeader
-        title={editMode ? t("breathing.builder.editTitle") : t("breathing.builder.newTitle")}
-      />
-
-      <View className="gap-2">
-        <Label>{t("breathing.builder.nameLabel")}</Label>
-        <Input
-          accessibilityLabel={t("breathing.builder.nameLabel")}
-          maxLength={BREATHING_NAME_MAX}
-          onChangeText={(v) => update("name", v)}
-          placeholder={t("breathing.builder.namePlaceholder")}
-          value={input.name}
-        />
-      </View>
-
-      <View className="gap-3">
-        <Label>{t("breathing.builder.patternLabel")}</Label>
-        <View className="flex-row gap-2">
-          {PHASE_FIELDS.map((f) => (
-            <View
-              key={f.key}
-              className="flex-1 items-center gap-1.5 rounded-xl border border-border p-2"
-            >
-              <Text className="text-xs font-semibold">{t(f.labelKey)}</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${t(f.labelKey)} +`}
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => stepPhase(f.key, PHASE_STEP)}
-              >
-                <Text className="text-base text-aqua">▲</Text>
-              </Pressable>
-              <Text className="tabular-nums text-sm font-semibold">{input[f.key].toFixed(1)}s</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${t(f.labelKey)} −`}
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => stepPhase(f.key, -PHASE_STEP)}
-              >
-                <Text className="text-base text-aqua">▼</Text>
-              </Pressable>
+    // The room wrapper carries the token re-pour; MobileFormScreen's own
+    // bg-background surfaces re-resolve to the aqua pour through it.
+    <View className="flex-1" style={roomStyle} testID="breathing-editor-room">
+      <MobileFormScreen
+        contentClassName="gap-6"
+        hero={
+          editMode ? undefined : (
+            // Create mode gets the field treatment: the full-bleed aqua field
+            // with the sheet lip rising over it (title only — no description
+            // key exists, matching the habits create editor).
+            <View>
+              <ModuleHomeHeader
+                variant="field"
+                hue="aqua"
+                icon="air"
+                title={t("breathing.builder.newTitle")}
+                moduleLabel={null}
+              />
+              <ContentSheet />
             </View>
-          ))}
-        </View>
-      </View>
-
-      <View className="gap-2">
-        <Label>{t("breathing.builder.suggestedLabel")}</Label>
-        <View className="flex-row flex-wrap gap-2">
-          {SUGGESTED_PATTERNS.map((p) => (
-            <Pressable
-              key={p.key}
-              accessibilityRole="button"
-              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={() =>
-                setInput((prev) => ({
-                  ...prev,
-                  inhaleSeconds: p.inhaleSeconds,
-                  holdInSeconds: p.holdInSeconds,
-                  exhaleSeconds: p.exhaleSeconds,
-                  holdOutSeconds: p.holdOutSeconds,
-                }))
-              }
-              className="rounded-full border border-border bg-background px-3 py-1.5"
-              role="button"
-            >
-              <Text className="text-xs font-semibold tabular-nums">
-                {p.inhaleSeconds}-{p.holdInSeconds}-{p.exhaleSeconds}-{p.holdOutSeconds}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
-      <View className="gap-3">
-        <Label>{t("breathing.builder.cyclesLabel")}</Label>
-        <View className="flex-row items-center justify-center gap-6">
-          <Button
-            variant="outline"
-            accessibilityLabel={t("breathing.decreaseCycles")}
-            onPress={() => update("cycles", Math.max(CYCLES_MIN, input.cycles - 1))}
-          >
-            <Text className="text-lg">−</Text>
-          </Button>
-          <View className="items-center">
-            <Text className="text-3xl font-bold tabular-nums">
-              {t("breathing.cycles", { count: input.cycles })}
-            </Text>
-            <Text variant="muted" className="text-sm tabular-nums">
-              {t("breathing.totalTimeLabel")} · {cycleTime}
-            </Text>
+          )
+        }
+        footer={
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Button onPress={goBack} variant="ghost">
+                <Text>{t("breathing.builder.cancel")}</Text>
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button disabled={saving || !user} onPress={() => void handleSave()}>
+                {saving ? <ActivityIndicator color="#ffffff" /> : null}
+                <Text>{saving ? t("breathing.builder.saving") : t("breathing.builder.save")}</Text>
+              </Button>
+            </View>
           </View>
-          <Button
-            variant="outline"
-            accessibilityLabel={t("breathing.increaseCycles")}
-            onPress={() => update("cycles", Math.min(CYCLES_MAX, input.cycles + 1))}
-          >
-            <Text className="text-lg">+</Text>
-          </Button>
-        </View>
-      </View>
+        }
+      >
+        {editMode ? <ScreenHeader title={t("breathing.builder.editTitle")} /> : null}
 
-      <View className="gap-2">
-        <Label>{t("breathing.builder.colorLabel")}</Label>
-        <View
-          accessibilityLabel={t("breathing.builder.colorLabel")}
-          accessibilityRole="radiogroup"
-          className="flex-row flex-wrap gap-2"
-          role="radiogroup"
-        >
-          {BREATHING_EXERCISE_COLORS.map((color, index) => {
-            const chip = breathingColorClass(color);
-            const active = input.color === color;
-            const onPress = () => update("color", color as BreathingExerciseColor);
-            return (
-              <Pressable
-                key={color}
-                accessibilityRole="radio"
-                aria-checked={active}
-                accessibilityLabel={t(`breathing.builder.colors.${color}` as const)}
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={onPress}
-                className={cn(
-                  "size-9 items-center justify-center rounded-full border",
-                  chip.bg,
-                  active ? chip.border : "border-border",
-                )}
-                role="radio"
-                {...colorRoving.getItemProps(index, onPress)}
+        <View className="gap-2">
+          <Label>{t("breathing.builder.nameLabel")}</Label>
+          <Input
+            accessibilityLabel={t("breathing.builder.nameLabel")}
+            maxLength={BREATHING_NAME_MAX}
+            onChangeText={(v) => update("name", v)}
+            placeholder={t("breathing.builder.namePlaceholder")}
+            value={input.name}
+          />
+        </View>
+
+        <View className="gap-3">
+          <Label>{t("breathing.builder.patternLabel")}</Label>
+          <View className="flex-row gap-2">
+            {PHASE_FIELDS.map((f) => (
+              <View
+                key={f.key}
+                className="flex-1 items-center gap-1.5 rounded-xl border border-border p-2"
               >
-                <View className={cn("size-4 rounded-full border", chip.border, chip.bg)} />
-              </Pressable>
-            );
-          })}
+                <Text className="text-xs font-semibold">{t(f.labelKey)}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t(f.labelKey)} +`}
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={() => stepPhase(f.key, PHASE_STEP)}
+                >
+                  <Text className="text-base text-aqua">▲</Text>
+                </Pressable>
+                <Text className="tabular-nums text-sm font-semibold">
+                  {input[f.key].toFixed(1)}s
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t(f.labelKey)} −`}
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={() => stepPhase(f.key, -PHASE_STEP)}
+                >
+                  <Text className="text-base text-aqua">▼</Text>
+                </Pressable>
+              </View>
+            ))}
+          </View>
         </View>
-      </View>
 
-      {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
+        <View className="gap-2">
+          <Label>{t("breathing.builder.suggestedLabel")}</Label>
+          <View className="flex-row flex-wrap gap-2">
+            {SUGGESTED_PATTERNS.map((p) => (
+              <Pressable
+                key={p.key}
+                accessibilityRole="button"
+                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                onPress={() =>
+                  setInput((prev) => ({
+                    ...prev,
+                    inhaleSeconds: p.inhaleSeconds,
+                    holdInSeconds: p.holdInSeconds,
+                    exhaleSeconds: p.exhaleSeconds,
+                    holdOutSeconds: p.holdOutSeconds,
+                  }))
+                }
+                className="rounded-full border border-border bg-background px-3 py-1.5"
+                role="button"
+              >
+                <Text className="text-xs font-semibold tabular-nums">
+                  {p.inhaleSeconds}-{p.holdInSeconds}-{p.exhaleSeconds}-{p.holdOutSeconds}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
 
-      {editMode ? (
-        <Button onPress={() => void handleDelete()} variant="ghost">
-          <Text className="text-destructive">{t("breathing.builder.delete")}</Text>
-        </Button>
-      ) : null}
-    </MobileFormScreen>
+        <View className="gap-3">
+          <Label>{t("breathing.builder.cyclesLabel")}</Label>
+          <View className="flex-row items-center justify-center gap-6">
+            <Button
+              variant="outline"
+              accessibilityLabel={t("breathing.decreaseCycles")}
+              onPress={() => update("cycles", Math.max(CYCLES_MIN, input.cycles - 1))}
+            >
+              <Text className="text-lg">−</Text>
+            </Button>
+            <View className="items-center">
+              <Text className="text-3xl font-bold tabular-nums">
+                {t("breathing.cycles", { count: input.cycles })}
+              </Text>
+              <Text variant="muted" className="text-sm tabular-nums">
+                {t("breathing.totalTimeLabel")} · {cycleTime}
+              </Text>
+            </View>
+            <Button
+              variant="outline"
+              accessibilityLabel={t("breathing.increaseCycles")}
+              onPress={() => update("cycles", Math.min(CYCLES_MAX, input.cycles + 1))}
+            >
+              <Text className="text-lg">+</Text>
+            </Button>
+          </View>
+        </View>
+
+        <View className="gap-2">
+          <Label>{t("breathing.builder.colorLabel")}</Label>
+          <View
+            accessibilityLabel={t("breathing.builder.colorLabel")}
+            accessibilityRole="radiogroup"
+            className="flex-row flex-wrap gap-2"
+            role="radiogroup"
+          >
+            {BREATHING_EXERCISE_COLORS.map((color, index) => {
+              const chip = breathingColorClass(color);
+              const active = input.color === color;
+              const onPress = () => update("color", color as BreathingExerciseColor);
+              return (
+                <Pressable
+                  key={color}
+                  accessibilityRole="radio"
+                  aria-checked={active}
+                  accessibilityLabel={t(`breathing.builder.colors.${color}` as const)}
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={onPress}
+                  className={cn(
+                    "size-9 items-center justify-center rounded-full border",
+                    chip.bg,
+                    active ? chip.border : "border-border",
+                  )}
+                  role="radio"
+                  {...colorRoving.getItemProps(index, onPress)}
+                >
+                  <View className={cn("size-4 rounded-full border", chip.border, chip.bg)} />
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
+
+        {editMode ? (
+          <Button onPress={() => void handleDelete()} variant="ghost">
+            <Text className="text-destructive">{t("breathing.builder.delete")}</Text>
+          </Button>
+        ) : null}
+      </MobileFormScreen>
+    </View>
   );
 }

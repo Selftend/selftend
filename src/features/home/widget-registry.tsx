@@ -6,7 +6,7 @@ import { MoodTrendWidget } from "@/src/features/home/widgets/mood-trend-widget";
 import { BreathingWidget } from "@/src/features/home/widgets/breathing-widget";
 import { MeditationWidget } from "@/src/features/home/widgets/meditation-widget";
 import { GratitudeWidget } from "@/src/features/home/widgets/gratitude-widget";
-import { HabitsWidget } from "@/src/features/home/widgets/habits-widget";
+import { ActivitiesWidget } from "@/src/features/home/widgets/activities-widget";
 import { SelfCareWidget } from "@/src/features/home/widgets/self-care-widget";
 import { SleepWidget } from "@/src/features/home/widgets/sleep-widget";
 import { CbtDistortionGuideWidget } from "@/src/features/home/widgets/cbt-distortion-guide-widget";
@@ -48,7 +48,7 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "breathing-suggested": BreathingWidget,
   "gratitude-latest": GratitudeWidget,
   "meditation-pick": MeditationWidget,
-  "habits-today": HabitsWidget,
+  "habits-today": ActivitiesWidget,
   "self-care": SelfCareWidget,
   "cbt-open-record": CbtOpenRecordWidget,
   "act-drop-anchor": ActDropAnchorWidget,

@@ -10,19 +10,25 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-card";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function GratitudeListScreen() {
   const { t } = useTranslation("gratitude");
+  const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const { selectedDate } = useSelectedDate();
   const { data: entries } = useGratitudeEntries(user?.id ?? null, 50);
 
-  const list = (entries ?? []).filter((entry) => toLocalDateKey(entry.loggedAt) === selectedDate);
+  const list = (entries ?? []).filter((entry) => entry.dayKey === selectedDate);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">

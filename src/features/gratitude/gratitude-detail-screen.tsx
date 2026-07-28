@@ -30,13 +30,15 @@ import {
   gratitudeAnswers,
 } from "@/src/features/gratitude/questions";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { formatLocalTimestamp } from "@/src/utils/date";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function GratitudeDetailScreen() {
   const { t } = useTranslation("gratitude");
+  const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const entryId = typeof id === "string" ? id : null;
@@ -58,7 +60,7 @@ export default function GratitudeDetailScreen() {
 
   if (!fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <View className="flex-1 justify-center">
           <LoadingState title={t("detail.title")} />
         </View>
@@ -68,7 +70,11 @@ export default function GratitudeDetailScreen() {
 
   if (!entry) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -79,7 +85,8 @@ export default function GratitudeDetailScreen() {
     );
   }
 
-  const when = formatMoodRelativeTime(entry.loggedAt, t);
+  // Same frame as the card in the list: the captured day, not the viewer's.
+  const when = formatRelativeDayKey(entry.dayKey, t);
 
   const todayQuestions = asQuestionList(t(GRATITUDE_TODAY_QUESTIONS_KEY, { returnObjects: true }));
   const lifeQuestions = asQuestionList(t(GRATITUDE_LIFE_QUESTIONS_KEY, { returnObjects: true }));
@@ -115,7 +122,11 @@ export default function GratitudeDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={["bottom", "left", "right"]}
+      style={roomStyle}
+    >
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
@@ -157,7 +168,7 @@ export default function GratitudeDetailScreen() {
             ) : null}
           </View>
 
-          <Card>
+          <Card variant="soft" tint="think">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.itemsTitle")}</CardTitle>
               <CardDescription>{t("detail.itemsDescription")}</CardDescription>
@@ -175,7 +186,7 @@ export default function GratitudeDetailScreen() {
           </Card>
 
           {lifeAnswers.length > 0 ? (
-            <Card>
+            <Card variant="soft" tint="think">
               <CardHeader>
                 <CardTitle aria-level={2}>{t("detail.lifeItemsTitle")}</CardTitle>
               </CardHeader>
@@ -193,7 +204,7 @@ export default function GratitudeDetailScreen() {
           ) : null}
 
           {entry.note.trim().length > 0 ? (
-            <Card>
+            <Card variant="soft" tint="think">
               <CardHeader>
                 <CardTitle aria-level={2}>{t("detail.noteTitle")}</CardTitle>
               </CardHeader>
@@ -203,10 +214,12 @@ export default function GratitudeDetailScreen() {
             </Card>
           ) : null}
 
-          <Card>
+          <Card variant="soft" tint="think">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.loggedAt")}</CardTitle>
-              <CardDescription>{formatLocalTimestamp(entry.loggedAt)}</CardDescription>
+              <CardDescription>
+                {formatAtOffset(entry.loggedAt, entry.loggedOffsetMinutes)}
+              </CardDescription>
             </CardHeader>
           </Card>
         </View>

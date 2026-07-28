@@ -1,6 +1,5 @@
 import type { Href } from "expo-router";
 
-import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import type { ActivityLog } from "@/src/features/activities/types";
 import type { CoreBelief } from "@/src/features/beliefs/types";
 import type { ThoughtRecord } from "@/src/features/cbt/types";
@@ -53,9 +52,22 @@ export const atOrAfter = (iso: string | null | undefined, since: number) =>
 const countSince = (items: { createdAt: string }[], since: number) =>
   items.filter((item) => atOrAfter(item.createdAt, since)).length;
 
-// True (1) if a qualifying event occurred on the given YYYY-MM-DD; else 0.
-const didOnDate = (timestamps: (string | null | undefined)[], date: string) =>
-  timestamps.some((ts) => typeof ts === "string" && toLocalDateKey(ts) === date) ? 1 : 0;
+/**
+ * True (1) if a qualifying event occurred on the given YYYY-MM-DD; else 0.
+ *
+ * Every daily-practice leg on this screen now compares a civil day captured at
+ * logging time rather than re-deriving one from a timestamp through wherever the
+ * viewer happens to be standing. `dayKey` is resolved once in each module's
+ * repository via `entryDayKey`, whose null-offset fallback is the viewer's local
+ * day - so rows logged before the offset columns landed still render exactly
+ * where they always have.
+ *
+ * The server twin (`program_widget_task_status`) buckets the same four legs the
+ * same way as of 20260803000000, so the Home widget and this screen cannot
+ * disagree about whether today's practice is done (#425, following #414).
+ */
+const didOnCapturedDay = (items: { dayKey: string }[], date: string) =>
+  items.some((item) => item.dayKey === date) ? 1 : 0;
 
 // ── Task const definitions ──────────────────────────────────────────────────
 
@@ -85,17 +97,17 @@ const DAILY_NOTICING: ProgramTaskDef = {
   key: "dailyNoticing",
   labelKey: "program.tasks.dailyNoticing",
   route: "/tools/mood-tracker/new",
+  // Mood carries the civil day captured when the log was written (#250), so read
+  // it rather than re-bucketing loggedAt through wherever the viewer is standing.
   signal: ({ moodLogs, selectedDate }) => ({
-    current: didOnDate(
-      moodLogs
-        .filter(
-          (m) =>
-            m.situation.trim() ||
-            m.thoughts.trim() ||
-            m.behaviours.trim() ||
-            m.bodilySensations.trim(),
-        )
-        .map((m) => m.loggedAt),
+    current: didOnCapturedDay(
+      moodLogs.filter(
+        (m) =>
+          m.situation.trim() ||
+          m.thoughts.trim() ||
+          m.behaviours.trim() ||
+          m.bodilySensations.trim(),
+      ),
       selectedDate,
     ),
     target: 1,
@@ -123,11 +135,10 @@ const THOUGHT_RECORD_DAILY: ProgramTaskDef = {
   key: "thoughtRecordDaily",
   labelKey: "program.tasks.thoughtRecordDaily",
   route: "/modules/cbt/new",
+  // Thought records carry the civil day they were written on (#423), so read it
+  // rather than re-bucketing createdAt through wherever the viewer is standing.
   signal: ({ thoughtRecords, selectedDate }) => ({
-    current: didOnDate(
-      thoughtRecords.map((r) => r.createdAt),
-      selectedDate,
-    ),
+    current: didOnCapturedDay(thoughtRecords, selectedDate),
     target: 1,
   }),
 };
@@ -150,10 +161,9 @@ const ACTIVITY_DAILY: ProgramTaskDef = {
   labelKey: "program.tasks.activityDaily",
   route: "/modules/cbt/activities",
   signal: ({ activities, selectedDate }) => ({
-    current: didOnDate(
-      activities.map((a) => a.completedAt),
-      selectedDate,
-    ),
+    // Captured completion day - compare directly. Bucketing completedAt by the
+    // viewer would move a tick off the day the activities screen files it on (#330).
+    current: activities.some((a) => a.completedDayKey === selectedDate) ? 1 : 0,
     target: 1,
   }),
 };
@@ -197,11 +207,10 @@ const CALMING_DAILY: ProgramTaskDef = {
   key: "calmingDaily",
   labelKey: "program.tasks.calmingDaily",
   route: "/tools/meditation",
+  // Meditation carries the civil day the sit happened on (#416), so read it
+  // rather than re-bucketing completedAt through wherever the viewer is standing.
   signal: ({ meditationSessions, selectedDate }) => ({
-    current: didOnDate(
-      meditationSessions.map((s) => s.completedAt),
-      selectedDate,
-    ),
+    current: didOnCapturedDay(meditationSessions, selectedDate),
     target: 1,
   }),
 };

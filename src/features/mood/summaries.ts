@@ -1,6 +1,5 @@
-import { toLocalDateKey, localDateKey } from "@/src/stores/selected-date-store";
 import type { MoodLog } from "@/src/features/mood/types";
-import { calendarDayDiff, startOfDayDaysAgo } from "@/src/utils/date";
+import { addDaysToKey, dayKeyDiff, dayRangeEndKey, lastNDayKeysEndingAt } from "@/src/utils/date";
 import { roundTo1 as round1 } from "@/src/utils/number";
 
 export interface MoodSummary {
@@ -8,23 +7,38 @@ export interface MoodSummary {
   count: number;
 }
 
+/**
+ * Every aggregation here groups on `dayKey` — the civil day captured when the
+ * entry was logged, resolved once in the repository — never on `loggedAt`.
+ * Windows are walked in day keys for the same reason: bucketing by captured day
+ * while measuring the window in elapsed time let a log count toward the 7-day
+ * average while sitting outside the 7 columns drawn right above it (#250).
+ */
 interface MoodSample {
-  loggedAt: string;
+  dayKey: string;
   moodScore: number;
 }
 
-export function getMoodSummary(logs: MoodSample[] | undefined, days: number): MoodSummary {
+function scoresInKeyRange(logs: MoodSample[], startKey: string, endKey: string): number[] {
+  return logs
+    .filter((log) => log.dayKey >= startKey && log.dayKey <= endKey)
+    .map((log) => log.moodScore);
+}
+
+export function getMoodSummary(
+  logs: MoodSample[] | undefined,
+  days: number,
+  now: Date = new Date(),
+): MoodSummary {
   if (!logs || logs.length === 0) {
     return { average: null, count: 0 };
   }
 
-  const start = startOfDayDaysAgo(days);
-
-  const scores = logs
-    .filter((log) => new Date(log.loggedAt).getTime() >= start.getTime())
-    .map((log) => log.moodScore);
-
-  return summarizeScores(scores);
+  const endKey = dayRangeEndKey(
+    logs.map((log) => log.dayKey),
+    now,
+  );
+  return summarizeScores(scoresInKeyRange(logs, addDaysToKey(endKey, -(days - 1)), endKey));
 }
 
 /** Summary for a single `YYYY-MM-DD` day, used to scope the screen to the date bar. */
@@ -33,11 +47,7 @@ export function getDayMoodSummary(logs: MoodSample[] | undefined, dateKey: strin
     return { average: null, count: 0 };
   }
 
-  const scores = logs
-    .filter((log) => toLocalDateKey(log.loggedAt) === dateKey)
-    .map((log) => log.moodScore);
-
-  return summarizeScores(scores);
+  return summarizeScores(scoresInKeyRange(logs, dateKey, dateKey));
 }
 
 // ── New aggregation helpers ────────────────────────────────────────────────
@@ -61,51 +71,40 @@ export function getDailyAverages(
   days = 7,
   now: Date = new Date(),
 ): DayAverage[] {
-  const start = startOfDayDaysAgo(days, now);
+  const list = logs ?? [];
+  const endKey = dayRangeEndKey(
+    list.map((log) => log.dayKey),
+    now,
+  );
 
   const buckets = new Map<string, { sum: number; count: number }>();
-  for (const log of logs ?? []) {
-    const logged = new Date(log.loggedAt);
-    if (logged.getTime() < start.getTime()) continue;
-    const key = localDateKey(logged);
-    const b = buckets.get(key);
+  for (const log of list) {
+    const b = buckets.get(log.dayKey);
     if (b) {
       b.sum += log.moodScore;
       b.count += 1;
     } else {
-      buckets.set(key, { sum: log.moodScore, count: 1 });
+      buckets.set(log.dayKey, { sum: log.moodScore, count: 1 });
     }
   }
 
-  const out: DayAverage[] = [];
-  for (let i = 0; i < days; i++) {
-    const day = new Date(start);
-    day.setDate(start.getDate() + i);
-    const b = buckets.get(localDateKey(day));
-    out.push({ dateKey: localDateKey(day), average: b ? round1(b.sum / b.count) : null });
-  }
-  return out;
+  return lastNDayKeysEndingAt(days, endKey).map((dateKey) => {
+    const b = buckets.get(dateKey);
+    return { dateKey, average: b ? round1(b.sum / b.count) : null };
+  });
 }
 
 function averageInDayWindow(
   logs: MoodSample[],
   oldestDaysAgo: number,
   newestDaysAgo: number,
-  now: Date,
+  endKey: string,
 ): number | null {
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - oldestDaysAgo);
-  const end = new Date(now);
-  end.setHours(23, 59, 59, 999);
-  end.setDate(end.getDate() - newestDaysAgo);
-
-  const scores = logs
-    .filter((l) => {
-      const t = new Date(l.loggedAt).getTime();
-      return t >= start.getTime() && t <= end.getTime();
-    })
-    .map((l) => l.moodScore);
+  const scores = scoresInKeyRange(
+    logs,
+    addDaysToKey(endKey, -oldestDaysAgo),
+    addDaysToKey(endKey, -newestDaysAgo),
+  );
   if (scores.length === 0) return null;
   return round1(scores.reduce((s, v) => s + v, 0) / scores.length);
 }
@@ -119,8 +118,12 @@ export interface WeekDelta {
 /** This week's average (days 0-6) vs the prior week (days 7-13). */
 export function getWeekDelta(logs: MoodSample[] | undefined, now: Date = new Date()): WeekDelta {
   const list = logs ?? [];
-  const current = averageInDayWindow(list, 6, 0, now);
-  const previous = averageInDayWindow(list, 13, 7, now);
+  const endKey = dayRangeEndKey(
+    list.map((log) => log.dayKey),
+    now,
+  );
+  const current = averageInDayWindow(list, 6, 0, endKey);
+  const previous = averageInDayWindow(list, 13, 7, endKey);
   const delta = current !== null && previous !== null ? round1(current - previous) : null;
   return { current, previous, delta };
 }
@@ -158,8 +161,10 @@ interface HistoryGroup {
 
 const GROUP_ORDER: HistoryGroupKey[] = ["today", "yesterday", "thisWeek", "older"];
 
-function groupKeyFor(loggedAt: string, now: Date): HistoryGroupKey {
-  const dayDiff = calendarDayDiff(new Date(loggedAt), now);
+function groupKeyFor(dayKey: string, todayKey: string): HistoryGroupKey {
+  // A day key ahead of today (logged east, read west) still reads as "today" —
+  // it is the user's most recent entry, not a future one.
+  const dayDiff = dayKeyDiff(dayKey, todayKey);
   if (dayDiff <= 0) return "today";
   if (dayDiff === 1) return "yesterday";
   if (dayDiff <= 6) return "thisWeek";
@@ -171,9 +176,10 @@ export function groupLogsByDate(
   logs: MoodLog[] | undefined,
   now: Date = new Date(),
 ): HistoryGroup[] {
+  const todayKey = dayRangeEndKey([], now);
   const byKey = new Map<HistoryGroupKey, MoodLog[]>();
   for (const log of logs ?? []) {
-    const key = groupKeyFor(log.loggedAt, now);
+    const key = groupKeyFor(log.dayKey, todayKey);
     const arr = byKey.get(key);
     if (arr) arr.push(log);
     else byKey.set(key, [log]);

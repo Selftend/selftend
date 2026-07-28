@@ -27,6 +27,8 @@ const empty = {
   defusionLogs: [],
   moodLogCount: null,
   gratitudeEntryCount: null,
+  journalEntryCount: null,
+  journalWordTotal: null,
 };
 const args = { widgetName: "SelftendCard", width: 320, height: 180 };
 
@@ -51,7 +53,10 @@ describe("renderWidget v2", () => {
 
   it("strips date-scoped data from a stale snapshot", () => {
     const stale = buildSnapshot(
-      { ...empty, moodLogs: [{ loggedAt: "2020-01-01T09:00:00", moodScore: 5 }] },
+      {
+        ...empty,
+        moodLogs: [{ loggedAt: "2020-01-01T09:00:00", dayKey: "2020-01-01", moodScore: 5 }],
+      },
       { ...freshCtx, dateKey: "2020-01-01" },
     );
     const el = renderWidget({

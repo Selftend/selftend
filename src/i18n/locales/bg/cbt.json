@@ -1217,7 +1217,9 @@
       "techniques_one": "{{count}} техника",
       "techniques_other": "{{count}} техники",
       "takes": "Отнема",
-      "takesValue": "2-3 мин"
+      "takesValue": "2-3 мин",
+      "last": "Последно · {{when}}",
+      "never": "Все още няма сесии"
     },
     "choose": "Избери техника",
     "howTo": "Как се прави",
@@ -1309,7 +1311,9 @@
       "patterns_one": "{{count}} модел",
       "patterns_other": "{{count}} модела",
       "recentSessions_one": "{{count}} скорошна сесия",
-      "recentSessions_other": "{{count}} скорошни сесии"
+      "recentSessions_other": "{{count}} скорошни сесии",
+      "last": "Последно · {{when}}",
+      "never": "Все още няма сесии"
     },
     "choose": "Избери модел",
     "minutes": "{{value}} мин",

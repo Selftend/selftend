@@ -142,16 +142,16 @@ Sign in via the app's email/password form (`signInWithPassword` in `src/features
 
 Pick the path that matches how long you need the user:
 
-| Lifetime                           | How                                                                                                                                                      | Notes                                                                                                                                               |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Persistent (back after `db:reset`) | Add a block to `supabase/seed.sql` mirroring alice's pattern: `auth.users` + `auth.identities` + `profiles` + `user_preferences`                         | Use a fresh UUID and a unique email. Also update `SEED_USERS` in `test/integration/helpers.ts` if you want integration tests to reach the new user. |
-| One-off, throwaway                 | Studio UI at `http://localhost:54323` → **Authentication → Users → Add user**                                                                            | Fastest. Gone on next `db:reset`.                                                                                                                   |
-| One-off via signup flow            | Just sign up in the app                                                                                                                                  | Local Auth has auto-confirm so the user is immediately usable. Gone on `db:reset`.                                                                  |
-| Programmatic / scripted            | Service-role admin API: `client.auth.admin.createUser({ email, password, email_confirm: true })` - see `ensureSeedUser` in `test/integration/helpers.ts` | Works against the local stack via the deterministic CLI service-role key.                                                                           |
+| Lifetime                           | How                                                                                                                                                      | Notes                                                                                                                                                                                                             |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Persistent (back after `db:reset`) | Add a block to `supabase/seed.sql` mirroring alice's pattern: `auth.users` + `auth.identities` + `profiles` + `user_preferences`                         | Use a fresh UUID and a unique email. Also update `SEED_USERS` in `test/integration/helpers.ts` if you want integration tests to reach the new user.                                                               |
+| One-off, throwaway                 | Studio UI at `http://localhost:54323` → **Authentication → Users → Add user**                                                                            | Fastest. Gone on next `db:reset`.                                                                                                                                                                                 |
+| One-off via signup flow            | Sign up in the app, then confirm the email from Mailpit                                                                                                  | Local Auth requires confirmation (`enable_confirmations = true` in `config.toml`), matching production - so signup issues **no session** until you open the link at `http://localhost:54324`. Gone on `db:reset`. |
+| Programmatic / scripted            | Service-role admin API: `client.auth.admin.createUser({ email, password, email_confirm: true })` - see `ensureSeedUser` in `test/integration/helpers.ts` | Works against the local stack via the deterministic CLI service-role key.                                                                                                                                         |
 
 ### Inspecting auth emails
 
-Local Supabase routes all auth emails (password reset, signup confirmation) to **Mailpit** at `http://localhost:54324`. Use it to grab links during password-reset testing without configuring real SMTP.
+Local Supabase routes all auth emails (password reset, signup confirmation) to **Mailpit** at `http://localhost:54324`. Use it to grab links without configuring real SMTP - both to finish a password reset and to confirm a freshly signed-up user, which local Auth requires before it will issue a session.
 
 ### Optional: Google OAuth against the local stack
 
@@ -248,9 +248,42 @@ If `db push` is blocked by a migration-history mismatch, inspect the active proj
 npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_profile_avatar_repair.sql
 ```
 
+## Migration versions
+
+A migration's **version** is the leading run of digits in its filename, not the filename itself. `20260731130000_thought_records_occurrence_offset.sql` is version `20260731130000`; the rest of the name is a label the CLI ignores. Two rules govern it, and they pull in opposite directions if you only know one of them.
+
+**Two files may not share a version.** Versions key `supabase_migrations.schema_migrations`, so two files whose leading digits match are one version, and the second to apply dies with:
+
+```
+ERROR: duplicate key value violates unique constraint "schema_migrations_pkey"
+DETAIL: Key (version)=(20260730) already exists.
+```
+
+That surfaces only once CI starts Supabase — `verify` stays green and the diff looks fine — and it bit twice in one afternoon (#414, #256) as soon as parallel work started landing migrations on the same day.
+
+**No version may be a prefix of another version.** This is the one the obvious fix for the first rule walks straight into: date a second same-day migration `YYYYMMDDHHMMSS` while its sibling keeps the bare `YYYYMMDD`, and you have created it. `db push` walks the local files and the remote history as two sorted lists in a single pass, expecting them to agree on order — but the local list is sorted by **filename** and the remote by **version**, and those disagree exactly when one version extends another, because every digit sorts before the `_` that ends the shorter one:
+
+```
+20260730120000_program_widget_day_key.sql     <- '1' (0x31)
+20260730_mindfulness_occurrence_offset.sql    <- '_' (0x5f)
+```
+
+The file for `20260730120000` sorts first; the remote history puts `20260730` first. The walk finds a local version larger than the remote one it is looking for, decides the remote version is missing locally, and aborts — while both files sit there, present and unrenamed:
+
+```
+Remote migration versions not found in local migrations directory.
+supabase migration repair --status reverted 20260728 20260730
+```
+
+Two properties make this worth memorising. It is **invisible until the shorter version has been applied somewhere**, so CI cannot see it: `db reset` builds from an empty database and never compares histories. And it **does not recover on its own** — once both versions are applied, every later push fails the same way, so the first push that succeeds is the one that wedges the database. It broke every staging run from `0c664ec` (#419) until #432.
+
+**So: use `YYYYMMDDHHMMSS` for anything new, and keep one width.** Fourteen digits are collision-proof, and if every new version is the same width none can be a prefix of another. The historic 8-digit versions are frozen where they are — renaming an already-applied migration is what breaks history in the first place — so when a new file would extend one of them, move the **new** file to a free date instead. Early versions are sequence numbers rather than real dates (`20260664` has no 64th day), so read the digits as an ordering key, not a calendar.
+
+[test/migration-conventions.test.ts](../test/migration-conventions.test.ts) fails the build on a shared version, on a prefix pair, on any filename-order/version-order disagreement, and on a file with no leading digits.
+
 ## Linked project status
 
-The active linked project is kept aligned with the checked-in migration history by running `npm run db:push:prod` (`supabase db push --linked`) after new migrations land. Migration versions are 8-digit sequence numbers (`202605NN`), not dates; keep them uniform so `db push` matching does not break (a 14-digit version sharing a prefix with an 8-digit one trips the CLI matcher).
+The active linked project is kept aligned with the checked-in migration history by running `npm run db:push:prod` (`supabase db push --linked`) after new migrations land.
 
 The following invariants should hold on a fully-migrated project:
 
@@ -270,6 +303,9 @@ The following invariants should hold on a fully-migrated project:
 - `activity_logs`, `mood_logs`, `self_care_logs`, and the rest of the per-module strategy tables exist with owner-scoped RLS policies
 - mood, gratitude, sleep, and journal views expose occurrence-offset metadata; journal occurrence time is separate from its immutable creation timestamp
 - `apply_widget_recommendations()` applies an empty or populated Home layout atomically, and `program_widget_task_status()` returns only lightweight current-goal completion flags
+- `journal_word_total()` returns the caller's exact lifetime journal word count as a single number, so the home hero stat does not truncate to the 50 entries the list query loads
+- `meditation_median_minutes()` returns the caller's exact lifetime median sit length (a `percentile_cont` aggregate, null when they have no sessions), so the meditation hero stat does not truncate to the 200 sessions the list query loads; like the word total it is `stable security invoker`, so the caller's own RLS scopes it, and it stores nothing
+- `sleep_stats(p_time_zone)` returns one row of the sleep tracker's summary figures - the 7- and 30-day duration and quality averages, the 30-day quality mix, the lifetime longest and shortest night, and the seven Monday-first weekday averages - so none of them truncate to the 50 logs the list query loads. Same `stable security invoker` shape as the two above, and it stores nothing. It takes the viewer's IANA time zone because sleep is bucketed by the civil day captured with each log: the zone resolves rows whose offset was never captured and fixes which day closes the window. Averages come back exact, unrounded, so the client can round them the way it always has
 
 The local and remote migration histories include `20260507000000_reminder_consent_timestamp.sql`, which adds `user_preferences.reminder_consent_updated_at` and export coverage for timestamped reminder consent. The 2026-05-07 version is used so the file sorts after the legacy 8-digit `20260506_onboarding_flags.sql` migration.
 
@@ -369,3 +405,42 @@ migration raises if any shadow existed at its point in history, and
 the wrapper pattern. Whenever you add a user-data column or
 table, add it to this function in the same migration (GDPR export
 completeness).
+
+**Copy from the newest declaration on `dev`, not from the one you were reading
+when you started.** Every redeclaration is a full-body last-writer-wins over
+every other one, and two in-flight migrations touch different files, so git
+reports no conflict - on 2026-07-28 `dev` shipped an export missing two
+activity columns exactly this way (#429). Two gates now police it:
+`test/export-user-data-monotonic.test.ts` (the winning declaration must read
+every column any declaration ever read - no database, runs in `verify`) and
+`test/integration/export-user-data-completeness.integration.test.ts` (every
+column of every table the export covers is either exported or named below -
+live schema, runs in `integration`).
+
+### What the export deliberately withholds
+
+The rule (#429, decided 2026-07-28): **a column is exported unless it is
+caller scoping, a credential or secret, server bookkeeping, or internal
+plumbing** - and every withheld column is listed here with its reason. "It is
+app state" is not a reason: a theme, a chosen sound, an onboarding step or a
+program phase is data the user provided or generated. This table is parsed by
+the completeness integration test, so a new withheld column must be added here
+(with a reason) or the suite fails.
+
+Column rules (`table.column`, `*` wildcards allowed):
+
+| withheld                             | why                                                                                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `*.user_id`                          | Caller scoping - the export is already scoped to `auth.uid()`; repeating it on every row adds nothing.                   |
+| `*.last_*_reminder_key*`             | Server bookkeeping for reminder dedupe (the trailing `*` covers the plural `last_routine_reminder_keys`), not user data. |
+| `profiles.avatar_storage_path`       | Internal storage plumbing; `avatar_url` is the usable form of the same fact.                                             |
+| `web_push_subscriptions.p256dh`      | Push encryption secret - a credential, and useless outside the issuing browser.                                          |
+| `web_push_subscriptions.auth`        | Push encryption secret - same.                                                                                           |
+| `web_push_subscriptions.id`          | Internal row identity for a credential row; the endpoint is the meaningful identifier and IS exported.                   |
+| `device_push_tokens.expo_push_token` | Device push credential.                                                                                                  |
+
+Whole tables (no dot):
+
+| withheld | why                                                                                                                                                                                                                                                                                                          |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `*_data` | Field-encryption base twins. Not taken on the name: the completeness suite verifies, per table, that the decrypting view exists, the export reads it, and every base-only column is `*_enc` ciphertext - a table merely named `*_data`, or a plaintext base column the view never surfaces, fails the suite. |

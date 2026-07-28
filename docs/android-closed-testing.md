@@ -1,5 +1,9 @@
 # Android Closed Testing
 
+> **Status: this milestone is done.** Google Play **production access was approved on 2026-07-27** and v0.6.1 shipped to the production track. The release pipeline now releases to **production** automatically and mirrors the same build onto the closed tracks — see [Branching And Releases](./releasing.md#how-android-reaches-users). This doc is kept for the closed-testing track setup, tester management, and account/policy reference it still documents accurately.
+>
+> **How the closed tracks are fed (#374):** every production release mirrors onto `Groups` + `alpha` (the floor — testers are never behind users), and dispatching the `Android Play closed-testing release (dev)` workflow builds `dev` onto `Groups`/`alpha` to put testers ahead between releases — see [How testers stay ahead](./releasing.md#how-testers-stay-ahead-closed-tracks), including its unpromoted-migrations precondition.
+
 The first Google Play milestone should be closed testing, not production. Do not promote to production until policy, safety, device, and support requirements are reviewed.
 
 The first Android closed-test build uses the maintainer-hosted Supabase project. Local-only mode, Google Drive sync, and custom-backend runtime switching are future privacy features, not blockers for closed testing.
@@ -149,7 +153,7 @@ Closed-testing releases go through Google review before testers can install, unl
 
 ## Manual GitHub Actions release
 
-`.github/workflows/android-release.yml` defines `Android Play closed testing release`.
+`.github/workflows/android-release.yml` defines `Android Play production release`.
 
 When manually triggered, it:
 
@@ -157,7 +161,8 @@ When manually triggered, it:
 - installs Node `22.23.1`, Java 17, Android API 36, and NDK `27.1.12297006`
 - runs `eas build --platform android --profile production --local --non-interactive`
 - uploads the generated `.aab` as a GitHub Actions artifact
-- releases the `.aab` to the Google Play closed testing (alpha) track when `submit_to_play` is enabled
+- releases the `.aab` to the Google Play **production** track as `completed` when `submit_to_play` is enabled — live to all users once Google's review clears, with no staged rollout and nothing to press
+- mirrors that same versionCode onto the `Groups` and `alpha` closed testing tracks, so testers are never behind production
 
 Required GitHub repository variables:
 

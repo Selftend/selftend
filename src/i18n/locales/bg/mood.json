@@ -91,12 +91,6 @@
   "feedback": {
     "deleted": "Записът на настроението е изтрит"
   },
-  "relativeTime": {
-    "today": "Днес",
-    "yesterday": "Вчера",
-    "daysAgo_one": "преди {{count}} ден",
-    "daysAgo_other": "преди {{count}} дни"
-  },
   "stats": {
     "checkinsLabel": "записи",
     "thisWeekLabel": "тази седмица",
@@ -112,6 +106,8 @@
     "deltaFlat": "без промяна спрямо мин. седмица",
     "noComparison": "първа седмица с данни",
     "byDay": "Настроение по дни",
+    "dayScore": "{{day}}: {{score}}",
+    "dayNoEntry": "{{day}}: без запис",
     "feltMost": "Най-често усещано",
     "noEmotions": "Все още няма отбелязани емоции"
   },
@@ -129,8 +125,9 @@
   "trendControls": {
     "title": "Тенденция на настроението",
     "range7": "7д",
-    "range14": "14д",
-    "range30": "30д"
+    "range30": "30д",
+    "range90": "90д",
+    "rangeCustom": "По избор"
   },
   "detailWord": {
     "1": "Ужасно",
@@ -138,5 +135,10 @@
     "3": "ОК",
     "4": "Добре",
     "5": "Чудесно"
+  },
+  "heatmap": {
+    "title": "За цялото време",
+    "empty": "Запиши настроение, за да започне картата ти.",
+    "calloutNoEntry": "без запис"
   }
 }

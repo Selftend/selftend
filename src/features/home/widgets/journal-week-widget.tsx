@@ -7,27 +7,37 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useJournalEntries } from "@/src/features/journal/queries";
+import {
+  useJournalEntries,
+  useJournalEntryCount,
+  useJournalWordTotal,
+} from "@/src/features/journal/queries";
 import { countWords } from "@/src/features/journal/word-count";
 import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { parseLocalNoon } from "@/src/utils/date";
 
 export function JournalWeekWidget({ userId }: { userId: string }) {
   const { t, i18n } = useTranslation("navigation");
   const { data: entries } = useJournalEntries(userId);
+  // Exact lifetime totals, matching the journal hero - the list query is capped at 50, so
+  // its length and its body word sum both freeze there once a user passes the cap, and the
+  // two Home surfaces then visibly disagree with the journal screen (#323). The loaded
+  // entries only stand in until the server-counted numbers arrive.
+  const { data: totalEntries } = useJournalEntryCount(userId);
+  const { data: totalWords } = useJournalWordTotal(userId);
   const { selectedDate, isToday } = useSelectedDate();
 
   const all = entries ?? [];
   // Memoize the per-body word count (up to ~50 full journal bodies) so it isn't recomputed
   // on every Home re-render; pure function of `entries`.
-  const totalWords = useMemo(
+  const loadedWords = useMemo(
     () => all.reduce((sum, e) => sum + countWords(e.body), 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entries],
   );
   const dayCount = useMemo(
-    () => all.filter((e) => toLocalDateKey(e.createdAt) === selectedDate).length,
+    () => all.filter((e) => e.dayKey === selectedDate).length,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entries, selectedDate],
   );
@@ -64,8 +74,14 @@ export function JournalWeekWidget({ userId }: { userId: string }) {
 
         <TwoStatBody
           stats={[
-            { value: all.length, label: t("home.widgets.journalWeek.entriesLabel") },
-            { value: totalWords, label: t("home.widgets.journalWeek.wordsLabel") },
+            {
+              value: totalEntries ?? all.length,
+              label: t("home.widgets.journalWeek.entriesLabel"),
+            },
+            {
+              value: totalWords ?? loadedWords,
+              label: t("home.widgets.journalWeek.wordsLabel"),
+            },
           ]}
         />
 

@@ -18,9 +18,13 @@
     "habits_other": "{{count}} active habits",
     "today": "Today"
   },
+  "stats": {
+    "last": "Last tick · {{when}}",
+    "never": "No ticks yet"
+  },
   "home": {
     "title": "Habits",
-    "subtitle": "Small habits, repeated. Tap to tick - no streaks, no shame.",
+    "subtitle": "Small habits, repeated. Tap to tick - no shame.",
     "identityBannerPrefix": "You're becoming someone who",
     "todayHeading": "Today",
     "todayEmpty": "No habits scheduled for today.",
@@ -83,11 +87,11 @@
     "colors": {
       "primary": "Purple",
       "be": "Pink",
-      "act": "Teal",
+      "act": "Green",
       "amber": "Amber",
-      "emerald": "Emerald",
+      "emerald": "Teal",
       "violet": "Violet",
-      "rose": "Rose"
+      "rose": "Clay"
     },
     "weekday": {
       "0": "Sun",
@@ -206,12 +210,6 @@
       "5": "Fri",
       "6": "Sat"
     }
-  },
-  "relativeTime": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo_one": "{{count}} day ago",
-    "daysAgo_other": "{{count}} days ago"
   },
   "learn": {
     "sectionLabel": "From the book",

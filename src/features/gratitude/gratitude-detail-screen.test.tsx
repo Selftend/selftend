@@ -2,6 +2,8 @@ import { screen } from "@testing-library/react-native";
 import { Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import GratitudeDetailScreen from "@/src/features/gratitude/gratitude-detail-screen";
 import {
   useDeleteGratitudeEntry,
@@ -10,6 +12,7 @@ import {
   useSetGratitudeEntryStarred,
 } from "@/src/features/gratitude/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { expectRoomPour } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -91,6 +94,13 @@ describe("GratitudeDetailScreen", () => {
       mutateAsync: jest.fn(),
       isPending: false,
     } as unknown as ReturnType<typeof useSetGratitudeEntryStarred>);
+  });
+
+  it("keeps the compact header on the think room pour - no field gradient", () => {
+    const { UNSAFE_getByType } = renderWithProviders(<GratitudeDetailScreen />);
+    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
+    // The root carries the think room re-pour; a wrong or missing room fails here.
+    expectRoomPour(UNSAFE_getByType(SafeAreaView), "think");
   });
 
   it("renders the 1st today question and its answer", () => {

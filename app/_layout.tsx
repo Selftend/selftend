@@ -10,6 +10,7 @@ import { NotoSans_500Medium } from "@expo-google-fonts/noto-sans/500Medium";
 import { NotoSans_600SemiBold } from "@expo-google-fonts/noto-sans/600SemiBold";
 import { NotoSans_700Bold } from "@expo-google-fonts/noto-sans/700Bold";
 import { NotoSans_800ExtraBold } from "@expo-google-fonts/noto-sans/800ExtraBold";
+import { Nunito_800ExtraBold } from "@expo-google-fonts/nunito/800ExtraBold";
 import { ThemeProvider } from "expo-router";
 import { useFonts } from "expo-font";
 import { PortalHost } from "@rn-primitives/portal";
@@ -24,7 +25,7 @@ import { AppErrorBoundary } from "@/src/components/app/app-error-boundary";
 import { AppToast } from "@/src/components/app/app-toast";
 import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner";
 import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt-card";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
+import { useColorSchemeDriver, useColorSchemeName } from "@/src/lib/color-scheme";
 import { AppProviders } from "@/src/providers/app-providers";
 import { NAV_THEME, THEME_VARIABLES } from "@/lib/theme";
 import { initSentry } from "@/src/lib/sentry";
@@ -37,13 +38,18 @@ initSentry();
 SplashScreen.preventAutoHideAsync();
 
 export default Sentry.wrap(function RootLayout() {
-  const colorScheme = useAppColorScheme();
+  // The app's single driver: it hydrates the stored preference and pushes it
+  // into NativeWind. It sits above the `if (!ready)` bail-out below so it keeps
+  // running while the splash is up.
+  useColorSchemeDriver();
+  const colorScheme = useColorSchemeName();
   const [fontsLoaded, fontError] = useFonts({
     NotoSans_400Regular,
     NotoSans_500Medium,
     NotoSans_600SemiBold,
     NotoSans_700Bold,
     NotoSans_800ExtraBold,
+    Nunito_800ExtraBold,
   });
 
   // Web: paint immediately - expo-font has already injected the @font-face rules, so the

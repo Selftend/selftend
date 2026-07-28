@@ -1,3 +1,13 @@
+// Day-scoped logic falls back to the VIEWER's local day whenever an entry has no
+// captured UTC offset (#250), so the runner's timezone is load-bearing: unpinned,
+// a fallback test passes on a UTC+3 laptop and fails on UTC CI. Asia/Kolkata is
+// deliberately non-UTC *and* non-whole-hour - under plain UTC the fallback and the
+// captured-offset paths collapse into the same answer and the tests would pass
+// against a broken implementation, and a whole-hour zone hides 30-minute
+// arithmetic bugs. Set here rather than in test/setup.js so it lands before the
+// workers spawn and before anything touches Date.
+process.env.TZ = "Asia/Kolkata";
+
 const expoPreset = require("jest-expo/jest-preset");
 
 module.exports = {
@@ -6,7 +16,18 @@ module.exports = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },
-  testPathIgnorePatterns: ["/node_modules/", "/dist/", "/test/integration/", "/test/e2e/"],
+  // /.claude/ holds agent worktree copies of the repo (already ignored by
+  // .prettierignore and eslint.config.js); without these, jest sweeps their
+  // tests and its haste map resolves __mocks__/ manual mocks (and a second
+  // React copy) from the duplicates.
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "/dist/",
+    "/test/integration/",
+    "/test/e2e/",
+    "<rootDir>/\\.claude/",
+  ],
+  modulePathIgnorePatterns: ["<rootDir>/\\.claude/"],
   // jest-expo's default leaves @rn-primitives untransformed; our UI primitives
   // (Text, Label) depend on it, so widen the allowlist to transform it too.
   // Likewise the default only lists @sentry/react-native, but sentry v8 pulls

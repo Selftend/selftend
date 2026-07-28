@@ -1,12 +1,20 @@
-import { startOfDayDaysAgo, toLocalDateKey } from "@/src/utils/date";
+import { addDaysToKey, dayRangeEndKey, parseLocalNoon } from "@/src/utils/date";
 import { roundTo1 } from "@/src/utils/number";
 
-type DurationLog = { durationMinutes: number; loggedAt: string };
-type QualityLog = { quality: number; loggedAt: string };
+type DurationLog = { durationMinutes: number; dayKey: string };
+type QualityLog = { quality: number; dayKey: string };
 
-function withinDays<T extends { loggedAt: string }>(logs: T[], days: number): T[] {
-  const cutoff = startOfDayDaysAgo(days).getTime();
-  return logs.filter((l) => new Date(l.loggedAt).getTime() >= cutoff);
+// Walked in day keys, matching how sleep logs are bucketed everywhere else: a
+// window measured in elapsed time disagrees with captured-day buckets exactly
+// when the user has travelled (#250). The end extends past today if a later day
+// was captured, so a night logged east of here still counts.
+function withinDays<T extends { dayKey: string }>(logs: T[], days: number, now = new Date()): T[] {
+  const endKey = dayRangeEndKey(
+    logs.map((l) => l.dayKey),
+    now,
+  );
+  const startKey = addDaysToKey(endKey, -(days - 1));
+  return logs.filter((l) => l.dayKey >= startKey && l.dayKey <= endKey);
 }
 
 export function averageDurationMinutes(logs: DurationLog[], days: number): number | null {
@@ -59,7 +67,9 @@ export function weekdayAverages(logs: DurationLog[]): (number | null)[] {
   const sums = Array<number>(7).fill(0);
   const counts = Array<number>(7).fill(0);
   for (const l of logs) {
-    const jsDay = new Date(l.loggedAt).getDay(); // 0=Sun..6=Sat
+    // The weekday of the day it was captured on, not of the viewer's reading of
+    // that instant - otherwise travel silently moves a night into another column.
+    const jsDay = parseLocalNoon(l.dayKey).getDay(); // 0=Sun..6=Sat
     const idx = (jsDay + 6) % 7; // 0=Mon..6=Sun
     sums[idx] += l.durationMinutes;
     counts[idx] += 1;
@@ -67,6 +77,6 @@ export function weekdayAverages(logs: DurationLog[]): (number | null)[] {
   return sums.map((sum, i) => (counts[i] === 0 ? null : Math.round(sum / counts[i])));
 }
 
-export function loggedOnDate(logs: { loggedAt: string }[], dateKey: string): boolean {
-  return logs.some((l) => toLocalDateKey(l.loggedAt) === dateKey);
+export function loggedOnDate(logs: { dayKey: string }[], dateKey: string): boolean {
+  return logs.some((l) => l.dayKey === dateKey);
 }

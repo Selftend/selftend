@@ -227,7 +227,14 @@ export function UserMenu() {
                 <Icon name="feedback" className="size-4" />
                 <Text>{t("userMenu.sendFeedback")}</Text>
               </Button>
-              <Button variant="outline" size="sm" className="flex-1" onPress={onSignOut}>
+              {/*
+                `grow basis-auto`, not `flex-1`: flex-1's zero basis lets this button
+                "fit" whatever sliver the first two leave on the line, so it never
+                wraps - Bulgarian's longer labels crushed it to ~32px with its text
+                overlapping the feedback button. An auto basis wraps it to its own
+                full-width line instead when the row runs out.
+              */}
+              <Button variant="outline" size="sm" className="grow basis-auto" onPress={onSignOut}>
                 <Icon name="logout" className="size-4" />
                 <Text>{t("userMenu.signOut")}</Text>
               </Button>

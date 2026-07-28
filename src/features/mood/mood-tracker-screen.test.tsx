@@ -2,8 +2,15 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import MoodTrackerScreen from "@/src/features/mood/mood-tracker-screen";
-import { useMoodHistory, useMoodLogCount } from "@/src/features/mood/queries";
+import {
+  useFirstMoodDayKey,
+  useMoodHistory,
+  useMoodLogCount,
+  useMoodScorePoints,
+} from "@/src/features/mood/queries";
 import { currentDateKey } from "@/src/stores/selected-date-store";
+import { startOfDayDaysAgo } from "@/src/utils/date";
+import { entryDayKey } from "@/src/lib/occurrence-time";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -28,8 +35,10 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/mood/queries", () => ({
+  useFirstMoodDayKey: jest.fn(),
   useMoodHistory: jest.fn(),
   useMoodLogCount: jest.fn(),
+  useMoodScorePoints: jest.fn(),
 }));
 
 jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
@@ -38,6 +47,10 @@ jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
 
 const mockUseMoodLogs = useMoodHistory as jest.MockedFunction<typeof useMoodHistory>;
 const mockUseMoodLogCount = useMoodLogCount as jest.MockedFunction<typeof useMoodLogCount>;
+const mockUseMoodScorePoints = useMoodScorePoints as jest.MockedFunction<typeof useMoodScorePoints>;
+const mockUseFirstMoodLogDate = useFirstMoodDayKey as jest.MockedFunction<
+  typeof useFirstMoodDayKey
+>;
 const mockRouter = jest.mocked(router);
 
 describe("MoodTrackerScreen", () => {
@@ -46,6 +59,12 @@ describe("MoodTrackerScreen", () => {
     mockUseMoodLogCount.mockReturnValue({
       data: undefined,
     } as unknown as ReturnType<typeof useMoodLogCount>);
+    mockUseMoodScorePoints.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodScorePoints>);
+    mockUseFirstMoodLogDate.mockReturnValue({
+      data: null,
+    } as unknown as ReturnType<typeof useFirstMoodDayKey>);
   });
 
   it("renders the empty states and a pending Today card when there are no mood logs", () => {
@@ -55,8 +74,9 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    // Hero renders title in chip + heading; use heading role for uniqueness.
+    // Field header renders the title as the h1 heading over the hue gradient.
     expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
+    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     expect(screen.getByText("How are you feeling right now?")).toBeTruthy();
     expect(screen.getByLabelText("Awful")).toBeTruthy();
     expect(screen.getByText("Log a mood to start your trend.")).toBeTruthy();
@@ -68,6 +88,21 @@ describe("MoodTrackerScreen", () => {
     expect(screen.getByText("first week of data")).toBeTruthy();
     expect(screen.getByText("Mood by day")).toBeTruthy();
     expect(screen.getByText("No emotions tagged yet")).toBeTruthy();
+    // A loaded, empty history may claim the never state.
+    expect(screen.getByText("No check-ins yet")).toBeTruthy();
+  });
+
+  it("omits the subline until the history query has actually loaded", () => {
+    // `data === undefined` means still loading, or a failed fetch with no cache -
+    // claiming "no check-ins" there would erase a returning user's real history.
+    mockUseMoodLogs.mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    expect(screen.queryByText("No check-ins yet")).toBeNull();
+    expect(screen.queryByText(/^Last · /)).toBeNull();
   });
 
   it("renders the completed Today card with score when a single entry was logged today", () => {
@@ -84,6 +119,8 @@ describe("MoodTrackerScreen", () => {
           notes: "Felt steadier after a walk",
           linkedStrategy: null,
           loggedAt,
+          loggedOffsetMinutes: null,
+          dayKey: entryDayKey(loggedAt, null),
           createdAt: loggedAt,
         },
       ],
@@ -119,6 +156,8 @@ describe("MoodTrackerScreen", () => {
           notes: "",
           linkedStrategy: null,
           loggedAt: evening,
+          loggedOffsetMinutes: null,
+          dayKey: entryDayKey(evening, null),
           createdAt: evening,
         },
         {
@@ -129,6 +168,8 @@ describe("MoodTrackerScreen", () => {
           notes: "",
           linkedStrategy: null,
           loggedAt: morning,
+          loggedOffsetMinutes: null,
+          dayKey: entryDayKey(morning, null),
           createdAt: morning,
         },
       ],
@@ -168,5 +209,65 @@ describe("MoodTrackerScreen", () => {
     fireEvent.press(screen.getByLabelText("OK"));
 
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/new?score=3");
+  });
+
+  it("offers 7d/30d/90d/Custom trend ranges, defaulting to a 30-day window (no 14d)", () => {
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    expect(screen.getByText("7d")).toBeTruthy();
+    expect(screen.getByText("30d")).toBeTruthy();
+    expect(screen.getByText("90d")).toBeTruthy();
+    expect(screen.getByText("Custom")).toBeTruthy();
+    expect(screen.queryByText("14d")).toBeNull();
+    // Default window: the narrow score-points query is asked for the 30-day window.
+    expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
+      "user-1",
+      startOfDayDaysAgo(30).toISOString(),
+      undefined,
+    );
+  });
+
+  it("switches the score-points window when a preset range is tapped", () => {
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    fireEvent.press(screen.getByText("90d"));
+
+    // (Not "last called": the all-time heatmap query shares this hook.)
+    expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
+      "user-1",
+      startOfDayDaysAgo(90).toISOString(),
+      undefined,
+    );
+  });
+
+  it("renders the all-time heatmap section below the trend with its empty state", () => {
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    expect(screen.getByRole("heading", { name: "All time" })).toBeTruthy();
+    expect(screen.getByText("Log a mood to start your map.")).toBeTruthy();
+  });
+
+  it("opens the range picker when Custom is tapped", () => {
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    expect(screen.queryByText("Done")).toBeNull();
+    fireEvent.press(screen.getByText("Custom"));
+    expect(screen.getByText("Done")).toBeTruthy();
   });
 });

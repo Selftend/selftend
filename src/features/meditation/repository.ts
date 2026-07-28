@@ -8,6 +8,11 @@ import type {
   StagePracticeNote,
   TmiTechnique,
 } from "@/src/features/meditation/types";
+import {
+  entryDayKey,
+  occurrenceTimeFromDate,
+  validateOccurrenceTime,
+} from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
@@ -18,6 +23,7 @@ interface MeditationSessionRow {
   stage_at_session: number;
   duration_minutes: number;
   completed_at: string;
+  completed_offset_minutes?: number | null;
   created_at: string;
   mind_wandering_episodes: number | null;
   dullness_level: string | null;
@@ -58,12 +64,15 @@ function clampStage(value: number | null | undefined): StageNumber {
 }
 
 function mapSession(row: MeditationSessionRow): MeditationSession {
+  const completedOffsetMinutes = row.completed_offset_minutes ?? null;
   return {
     id: row.id,
     userId: row.user_id,
     stageAtSession: clampStage(row.stage_at_session),
     durationMinutes: row.duration_minutes,
     completedAt: row.completed_at,
+    completedOffsetMinutes,
+    dayKey: entryDayKey(row.completed_at, completedOffsetMinutes),
     createdAt: row.created_at,
     mindWanderingEpisodes: row.mind_wandering_episodes,
     dullnessLevel: (row.dullness_level as MeditationSession["dullnessLevel"]) ?? null,
@@ -127,6 +136,25 @@ export async function countMeditationSessions(userId: string): Promise<number> {
   return count ?? 0;
 }
 
+// Exact lifetime median sit length for the hero stat. Taking the median client-side only
+// ever covered the 200 sessions the list query loads, so it silently truncated for daily
+// meditators; the RPC computes the percentile server-side and returns a single number (#337).
+// Takes no argument: the RPC scopes itself to auth.uid() under the caller's own RLS.
+//
+// Rounding lives here rather than in SQL so the value matches what the client-side
+// `median()` produced for the same data - Math.round breaks a `.5` tie upward, Postgres
+// `round(double precision)` breaks it to even.
+export async function medianMeditationMinutes(): Promise<number | null> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("meditation_median_minutes");
+
+  if (error) throw error;
+  // Null means the user has no sessions at all, which is not the same as a zero-minute
+  // median - the hero renders a dash for it.
+  if (data === null || data === undefined) return null;
+  return Math.round(Number(data));
+}
+
 export async function getMeditationSession(userId: string, sessionId: string) {
   // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
   if (!isValidUuid(sessionId)) return null;
@@ -145,12 +173,29 @@ export async function getMeditationSession(userId: string, sessionId: string) {
 
 export async function saveMeditationSession(userId: string, input: MeditationSessionInput) {
   const client = requireSupabase();
+  // The instant AND the offset come from one reading of the clock. `completed_at`
+  // used to be left to the server default, but a server-defaulted instant paired
+  // with a device offset is two different clocks - at 23:59 they disagree about
+  // the day, which is the exact thing the offset exists to pin down (#330).
+  //
+  // The caller supplies the instant when it knows one. Meditation has no
+  // back-date picker, but it does have a gap: the timer stops, and the sit is
+  // only saved once the reflection form is submitted, which can be much later
+  // and on the other side of midnight. Reading the clock here would record the
+  // save, and since the offset is now the authoritative civil day, it would
+  // record it permanently. Falling back to now is right only for callers with
+  // no earlier instant to offer.
+  const occurrence = input.occurredAt
+    ? validateOccurrenceTime(input.occurredAt)
+    : occurrenceTimeFromDate();
   const { data, error } = await client
     .from("meditation_sessions")
     .insert({
       user_id: userId,
       stage_at_session: input.stageAtSession,
       duration_minutes: input.durationMinutes,
+      completed_at: occurrence.occurredAt,
+      completed_offset_minutes: occurrence.occurredOffsetMinutes,
       mind_wandering_episodes: input.mindWanderingEpisodes ?? null,
       dullness_level: input.dullnessLevel ?? null,
       distraction_level: input.distractionLevel ?? null,

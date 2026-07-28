@@ -145,6 +145,96 @@ describe("mindfulness mindfulness_sessions (integration)", () => {
     ]);
   });
 
+  // Breathing and grounding share this table, so one offset column settles both (#330).
+  describe("completed_offset_minutes", () => {
+    it("round-trips an explicit offset through the view", async () => {
+      const insert = await alice
+        .from("mindfulness_sessions")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseSession,
+          completed_at: "2026-05-15T19:00:00.000Z",
+          completed_offset_minutes: -420,
+        })
+        .select("*")
+        .single();
+
+      expect(insert.error).toBeNull();
+      expect(insert.data?.completed_offset_minutes).toBe(-420);
+
+      // Read it back rather than trusting the INSERT response: the value has to have
+      // survived the encrypted-view writer, not just been echoed out of NEW. There is
+      // no UPDATE policy on mindfulness_sessions_data, so a supplemental UPDATE from
+      // the occurrence trigger would have matched zero rows and left this null.
+      const read = await alice
+        .from("mindfulness_sessions")
+        .select("completed_offset_minutes")
+        .eq("id", insert.data!.id)
+        .single();
+      expect(read.error).toBeNull();
+      expect(read.data?.completed_offset_minutes).toBe(-420);
+    });
+
+    it("records an omitted offset as unknown rather than UTC", async () => {
+      const insert = await alice
+        .from("mindfulness_sessions")
+        .insert({ user_id: SEED_USERS.alice.id, ...baseSession })
+        .select("completed_offset_minutes, completed_at")
+        .single();
+
+      expect(insert.error).toBeNull();
+      // A 0 here would be the column claiming a fact the caller never gave (#250).
+      expect(insert.data?.completed_offset_minutes).toBeNull();
+      // completed_at is still server-defaulted for clients that omit it, and the
+      // occurrence trigger must run late enough to see that default.
+      expect(insert.data?.completed_at).toEqual(expect.any(String));
+    });
+
+    it("accepts an explicit zero offset from a caller genuinely at UTC", async () => {
+      const insert = await alice
+        .from("mindfulness_sessions")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseSession,
+          completed_at: "2026-05-15T19:00:00.000Z",
+          completed_offset_minutes: 0,
+        })
+        .select("completed_offset_minutes")
+        .single();
+
+      expect(insert.error).toBeNull();
+      expect(insert.data?.completed_offset_minutes).toBe(0);
+    });
+
+    it("rejects an out-of-range offset", async () => {
+      const insert = await alice
+        .from("mindfulness_sessions")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseSession,
+          completed_at: "2026-05-15T19:00:00.000Z",
+          completed_offset_minutes: 900,
+        })
+        .select("id");
+
+      expect(insert.error).not.toBeNull();
+    });
+
+    it("rejects a completion time in the future", async () => {
+      const insert = await alice
+        .from("mindfulness_sessions")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseSession,
+          completed_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          completed_offset_minutes: 0,
+        })
+        .select("id");
+
+      expect(insert.error).not.toBeNull();
+    });
+  });
+
   it("scopes select by RLS so another user cannot read", async () => {
     const created = await alice
       .from("mindfulness_sessions")

@@ -52,8 +52,13 @@ export interface StatsCardPayload {
   today: { badge: string } | null;
 }
 
-export interface HabitsCardPayload {
-  kind: "habits";
+/**
+ * Scheduled CBT behavioural-activation activities for the day. Named "habits" until
+ * #330 - the registry id `habits-today` keeps that name because it is a storage key,
+ * but nothing here reads habit data.
+ */
+export interface ActivitiesCardPayload {
+  kind: "activities";
   title: string;
   hintText: string;
   allDoneText: string;
@@ -117,7 +122,7 @@ export type CardPayload =
   | StatTilesCardPayload
   | BreathingCardPayload
   | StatsCardPayload
-  | HabitsCardPayload
+  | ActivitiesCardPayload
   | CommittedActionsCardPayload
   | DefusionCardPayload
   | ShortcutCardPayload
@@ -165,7 +170,7 @@ export type CardId = (typeof CARD_IDS)[number];
 export type WidgetPayload = CardPayload;
 
 export interface Snapshot {
-  schemaVersion: 2;
+  schemaVersion: 3;
   locale: string;
   generatedAt: string;
   dateKey: string;
@@ -176,24 +181,38 @@ export interface Snapshot {
 }
 
 export interface WidgetData {
-  moodLogs: { loggedAt: string; moodScore: number }[];
-  sleepLogs: { loggedAt: string; durationMinutes: number; quality: number | null }[];
-  meditationSessions: { completedAt: string; durationMinutes: number }[];
+  /** `dayKey` is the civil day captured at logging time; see #250. */
+  moodLogs: { loggedAt: string; dayKey: string; moodScore: number }[];
+  sleepLogs: {
+    loggedAt: string;
+    dayKey: string;
+    durationMinutes: number;
+    quality: number | null;
+  }[];
+  meditationSessions: { completedAt: string; dayKey: string; durationMinutes: number }[];
   activities: {
     id: string;
     activityName: string;
     scheduledAt: string | null;
+    /** Civil day the activity was planned for; null when nothing is scheduled (#330). */
+    scheduledDayKey: string | null;
     completedAt: string | null;
+    /** Civil day it was completed on; null while still open (#330). */
+    completedDayKey: string | null;
   }[];
-  gratitudeEntries: { loggedAt: string; items: string[] }[];
-  journalEntries: { createdAt: string; body: string }[];
-  groundingSessions: { completedAt: string; durationMinutes: number }[];
-  breathingSessions: { completedAt: string }[];
+  gratitudeEntries: { loggedAt: string; dayKey: string; items: string[] }[];
+  journalEntries: { createdAt: string; dayKey: string; body: string }[];
+  groundingSessions: { completedAt: string; dayKey: string; durationMinutes: number }[];
+  breathingSessions: { completedAt: string; dayKey: string }[];
   committedActions: { id: string; title: string; updatedAt: string }[];
   actionSteps: { actionId: string; isCompleted: boolean }[];
   defusionLogs: { createdAt: string; techniqueUsed: string }[];
   moodLogCount: number | null;
   gratitudeEntryCount: number | null;
+  /** Exact lifetime journal totals, both null until the server counts arrive (#323);
+   *  the journal-week card falls back to its loaded entries while they are. */
+  journalEntryCount: number | null;
+  journalWordTotal: number | null;
   programmes?: Record<
     "cbt" | "act",
     {

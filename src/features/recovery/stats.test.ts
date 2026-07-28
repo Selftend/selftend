@@ -51,9 +51,9 @@ describe("computeRecoveryStats", () => {
   it("de-dupes mood logs by local date key so same-day logs count once", () => {
     const sources: RecoverySources = {
       moodLogs: [
-        { loggedAt: "2026-05-01T12:00:00.000Z" },
-        { loggedAt: "2026-05-01T12:00:00.000Z" },
-        { loggedAt: "2026-06-15T12:00:00.000Z" },
+        { loggedAt: "2026-05-01T12:00:00.000Z", dayKey: "2026-05-01" },
+        { loggedAt: "2026-05-01T12:00:00.000Z", dayKey: "2026-05-01" },
+        { loggedAt: "2026-06-15T12:00:00.000Z", dayKey: "2026-06-15" },
       ],
     };
     // Three logs across two distinct days -> two mood days.

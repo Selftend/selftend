@@ -208,12 +208,39 @@ The web build uses `web.output = "single"` in [app.config.ts](../app.config.ts).
 
 ## Production Headers
 
-[public/\_headers](../public/_headers) contains the security headers (Cloudflare Workers static assets applies this file natively; it is copied into `dist/` by the export). Keep the Content Security Policy restrictive, but allow avatar images from:
+[public/\_headers](../public/_headers) contains the security **and caching** headers (Cloudflare Workers static assets applies this file natively; it is copied into `dist/` by the export). Keep the Content Security Policy restrictive, but allow avatar images from:
 
 - `https://*.supabase.co` for private Storage signed URLs
 - `https://*.googleusercontent.com` for Google OAuth profile photos
 
 If profile photo upload or Google photo restore reports success in production but the image does not render, verify the deployed `img-src` directive first.
+
+### Caching
+
+Two directories hold content-hashed build output, and both are cached for a year as `immutable`:
+
+| Path              | Holds                           |
+| ----------------- | ------------------------------- |
+| `/assets/*`       | fonts and images                |
+| `/_expo/static/*` | the entry JS bundle and the CSS |
+
+Expo's web export fingerprints these filenames with an MD5 of their contents, so a changed file is always a changed URL and a cached copy can never go stale. **Both paths must be listed** — `/assets/*` does not cover `/_expo/static/*`, and a missing rule there is expensive but invisible: the entry bundle and stylesheet quietly fall back to Cloudflare's default `max-age=0, must-revalidate` and cost a revalidation round-trip on every page load (issue #393).
+
+The HTML shell is deliberately left to that default. Do not add a rule for it:
+
+- `/index.html` is never served — Cloudflare 307s it to `/` — so a rule on that path matches nothing.
+- A rule on `/` would cover only the root, not the SPA fallback that serves the same shell for every client route (`/journal`, `/settings/...`).
+
+`max-age=0, must-revalidate` is already the correct behaviour for the shell, so a partial rule would buy nothing and mislead the next reader. [web-headers.test.ts](../web-headers.test.ts) pins this shape.
+
+Verify against a deployed Worker with `curl -I`. This machine's DNS resolver can lag behind the Cloudflare records, so pin the IP:
+
+```bash
+curl -sI --resolve staging.selftend.org:443:<cloudflare-ip> \
+  https://staging.selftend.org/_expo/static/js/web/index-<hash>.js
+```
+
+Caching rules only apply when the deploy is **assets-only**. Both `wrangler.toml` and `wrangler.staging.toml` are assets-only (no `main` script) and pin `wranglerVersion: "4"`; a Worker with a `main` script ignores `_headers` entirely.
 
 ### CSP `'unsafe-inline'` note
 

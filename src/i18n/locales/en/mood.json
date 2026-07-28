@@ -91,12 +91,6 @@
   "feedback": {
     "deleted": "Mood entry deleted"
   },
-  "relativeTime": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo_one": "{{count}} day ago",
-    "daysAgo_other": "{{count}} days ago"
-  },
   "stats": {
     "checkinsLabel": "check-ins",
     "thisWeekLabel": "this week",
@@ -112,6 +106,8 @@
     "deltaFlat": "steady vs last week",
     "noComparison": "first week of data",
     "byDay": "Mood by day",
+    "dayScore": "{{day}}: {{score}}",
+    "dayNoEntry": "{{day}}: no entry",
     "feltMost": "Felt most often",
     "noEmotions": "No emotions tagged yet"
   },
@@ -129,8 +125,9 @@
   "trendControls": {
     "title": "Mood trend",
     "range7": "7d",
-    "range14": "14d",
-    "range30": "30d"
+    "range30": "30d",
+    "range90": "90d",
+    "rangeCustom": "Custom"
   },
   "detailWord": {
     "1": "Awful",
@@ -138,5 +135,10 @@
     "3": "OK",
     "4": "Good",
     "5": "Great"
+  },
+  "heatmap": {
+    "title": "All time",
+    "empty": "Log a mood to start your map.",
+    "calloutNoEntry": "no entry"
   }
 }

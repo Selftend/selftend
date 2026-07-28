@@ -7,8 +7,8 @@ import { Card } from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
-import { useAppColorScheme } from "@/src/lib/color-scheme";
-import { TINT_TEXT, type TintToken } from "@/src/lib/design-tokens";
+import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { TINT_ACCENT, TINT_TEXT, type TintToken } from "@/src/lib/design-tokens";
 import { cn } from "@/lib/utils";
 
 interface PillarCardProps {
@@ -66,7 +66,7 @@ function PillarCardRoot({
   onToolPress,
   children,
 }: PillarCardProps) {
-  const isDark = useAppColorScheme() === "dark";
+  const isDark = useColorSchemeName() === "dark";
   return (
     <PillarContext.Provider value={{ tint, onToolPress }}>
       <Card className="relative overflow-hidden px-5 py-4">
@@ -125,7 +125,9 @@ function PillarTool({ toolKey, icon, name, desc }: PillarToolProps) {
       <View
         className={cn("mb-1 h-8 w-8 items-center justify-center rounded-lg", TOOL_ICON_BG[tint])}
       >
-        <Icon name={icon} size={18} className={TINT_TEXT[tint]} />
+        {/* Glyph, not text: keeps the published accent (1.4.11's 3:1), while the
+            tool name below it is neutral foreground. */}
+        <Icon name={icon} size={18} className={TINT_ACCENT[tint]} />
       </View>
       <Text className="text-[13.5px] font-semibold leading-tight">{name}</Text>
       <Text className="mt-1 text-[11.5px] leading-snug text-muted-foreground">{desc}</Text>
