@@ -1176,9 +1176,19 @@ describe("the tint maps keep text and marks apart (#421)", () => {
     expect(written.filter((cls) => cls.includes("hsl(var("))).toEqual([]);
   });
 
-  it("primary is the only tint with no ink, and is tracked separately", () => {
-    // `primary` is not a hue; it measures 4.41:1 on bg-primary/10 and is #422.
-    expect(TINT_TEXT.primary).toBe("text-primary");
+  it("primary is not a hue, but it is still text, so it takes ink too", () => {
+    // This assertion used to read `TINT_TEXT.primary === "text-primary"`, with
+    // a note that primary was the only tint with no ink and was tracked
+    // separately. It has one now (#421 §3): `primary` is absent from HUE_NAMES
+    // and no room pours it, which is why every `text-<hue>` gate in this file
+    // passed straight over the Beta chip while it rendered at 4.41:1 light and
+    // 4.22:1 dark on all 20 captured screens. Not a hue is not the same as not
+    // text, so the text/mark split applies here exactly as it does to the eight.
+    expect(TINT_TEXT.primary).toBe("text-primary-ink");
+
+    // The accent half is unchanged and must stay so: `text-primary` is still
+    // right for icons and decoration, and darkening those would read as
+    // disabled. Only the text map moved.
     expect(TINT_ACCENT.primary).toBe("text-primary");
   });
 });

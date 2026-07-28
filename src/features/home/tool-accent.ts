@@ -30,15 +30,17 @@ interface ToolAccent {
    * hues fail AA: the best is `ink` at 4.28:1, and `be`/`aqua`, which clear
    * 4.86 on the bare app background, drop to 4.22 and 4.27.
    *
-   * `primary` keeps `text-primary`: there is no `--primary-ink`, and it is not
-   * a `text-<hue>` site. It measures 4.39:1 on `bg-primary/10` — a near miss
-   * that is out of #403's scope but worth its own ticket.
+   * `primary` used to be the exception here, on the grounds that there was no
+   * `--primary-ink` and that it is not a `text-<hue>` site. The first half is
+   * no longer true (#421 §3 added the token, for the Beta chip this same
+   * sidebar paints on all 20 screens) and the second was never the point — not
+   * a hue is not the same as not text. It takes ink now like the eight.
    */
   ink: string;
 }
 
 const TOOL_ACCENT: Record<string, ToolAccent> = {
-  "module-cbt": { chip: "bg-primary/10", icon: "text-primary", ink: "text-primary" },
+  "module-cbt": { chip: "bg-primary/10", icon: "text-primary", ink: "text-primary-ink" },
   "module-act": { chip: "bg-act/10", icon: "text-act", ink: "text-act-ink" },
   mood: { chip: "bg-be/10", icon: "text-be", ink: "text-be-ink" },
   "self-care": { chip: "bg-be/10", icon: "text-be", ink: "text-be-ink" },
@@ -58,7 +60,7 @@ const TOOL_ACCENT: Record<string, ToolAccent> = {
 const DEFAULT_TOOL_ACCENT: ToolAccent = {
   chip: "bg-primary/10",
   icon: "text-primary",
-  ink: "text-primary",
+  ink: "text-primary-ink",
 };
 
 export function toolAccent(toolId: string): ToolAccent {

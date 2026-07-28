@@ -27,6 +27,13 @@ export const HUE_TRIPLES: Record<HueName, SchemeTriples> = {
 
 export const PRIMARY_TRIPLES: SchemeTriples = { light: "262 62% 56%", dark: "264 72% 72%" };
 
+/** "262 62% 56%" + 28 → "262 62% 28%". Degree and saturation are the hue's identity. */
+function withLightness(triple: string, lightness: number): string {
+  const match = triple.match(/^(\d+)\s+(\d+)%\s+\d+%$/);
+  if (!match) throw new Error(`Unparseable triple: "${triple}"`);
+  return `${match[1]} ${match[2]}% ${lightness}%`;
+}
+
 // The lightness a hue becomes legible *ink* at (#368, #403). A hue's published
 // accent above is tuned as a colour — it paints `bg-<hue>` fills, borders,
 // chips, field gradients, the pacer ring — not as text, and four of the eight
@@ -49,10 +56,8 @@ export const PRIMARY_TRIPLES: SchemeTriples = { light: "262 62% 56%", dark: "264
 export const HUE_INK_LIGHTNESS = 28;
 
 function inkTriples(hue: HueName): SchemeTriples {
-  const match = HUE_TRIPLES[hue].light.match(/^(\d+)\s+(\d+)%\s+\d+%$/);
-  if (!match) throw new Error(`Unparseable hue triple for "${hue}": ${HUE_TRIPLES[hue].light}`);
   return {
-    light: `${match[1]} ${match[2]}% ${HUE_INK_LIGHTNESS}%`,
+    light: withLightness(HUE_TRIPLES[hue].light, HUE_INK_LIGHTNESS),
     dark: HUE_TRIPLES[hue].dark,
   };
 }
@@ -70,6 +75,56 @@ function inkTriples(hue: HueName): SchemeTriples {
 export const HUE_INK_TRIPLES: Record<HueName, SchemeTriples> = Object.fromEntries(
   HUE_NAMES.map((hue) => [hue, inkTriples(hue)]),
 ) as Record<HueName, SchemeTriples>;
+
+// `primary` is not a hue — no HUE_NAMES entry, no room pours it, and every gate
+// above is spelled `text-<hue>`, so #403's sweep passed straight over it and
+// #421 left it as the one tint with no ink. It needs one for the same reason
+// the hues did, and on more screens than any of them: the "Beta" chip in the
+// sidebar is `text-primary` at 10px/600 on `bg-primary/15` over the sidebar's
+// card — 4.41:1 light, 4.22:1 dark — and the sidebar is on all 20 captured
+// screens. `/modules` paints "CBT" the same way at 14px/700 (4.41), and a chip
+// nested in a primary-tinted card drops to 3.89 light / 3.54 dark (#421 §3).
+//
+// Light takes HUE_INK_LIGHTNESS unchanged: same recipe, same 28%, so violet ink
+// sits at the same depth as the eight hue inks beside it and still reads as the
+// brand colour rather than as near-black. It clears 9.63:1 on the worst surface
+// the hue floor checks and 8.00:1 on the deepest tint stack the app can build.
+//
+// **Dark is where primary differs from every hue, and the difference is real.**
+// The rule above — "dark ink is the published accent untouched, it already
+// clears 5.81 at worst" — is a measurement, and it is false for primary: on
+// `bg-primary/15` over the dark card the raw accent is 4.22, below AA, which is
+// the dark half of the same Beta chip. So dark ink lifts lightness instead of
+// dropping it, 72% → 80%, keeping degree and saturation exactly as the light
+// recipe keeps them. 80% is the binding number and what binds it is the nested
+// case: 76% would clear the floor the hues are held to (5.03) while leaving the
+// badge-on-a-tinted-card at 4.33, still failing the surface #421 reported. At
+// 80% every stack the app's tint alphas can build one level deep clears 4.5
+// (4.71 at worst, `/15` on `/15`). Floors live in test/theme-token-sync.test.ts.
+export const PRIMARY_INK_LIGHTNESS: Record<keyof SchemeTriples, number> = {
+  light: HUE_INK_LIGHTNESS,
+  dark: 80,
+};
+
+/**
+ * The app accent as ink that clears WCAG AA for small text — `text-primary-ink`,
+ * the `primary` counterpart of `text-<hue>-ink`.
+ *
+ * `text-primary` remains correct for icons, large numerals and anything
+ * decorative, exactly as `text-<hue>` does; TINT_ACCENT still resolves `primary`
+ * to it. This is the small-text token, not a replacement for the accent, and it
+ * deliberately does not touch `--primary` itself — that would repaint every
+ * violet fill, border and button in the product to fix its text.
+ *
+ * Not to be confused with `--accent-ink`, which is the *room-poured* ink and
+ * falls back to the raw `--primary` outside a room (test/theme-token-sync.test.ts
+ * pins that). Room-less `text-accent-ink` is a separate call-site question that
+ * #403's gates already police; this token is for sites that name `primary`.
+ */
+export const PRIMARY_INK_TRIPLES: SchemeTriples = {
+  light: withLightness(PRIMARY_TRIPLES.light, PRIMARY_INK_LIGHTNESS.light),
+  dark: withLightness(PRIMARY_TRIPLES.dark, PRIMARY_INK_LIGHTNESS.dark),
+};
 
 export const TINT_TOKENS = [
   "primary",
@@ -138,11 +193,13 @@ export function hueRampClass(hue: HueName, step: number): string {
  * `text-<hue>`, and `text-[` is not that. Written as plain classes now, so the
  * gates can see this map at all (#421).
  *
- * `primary` is not a hue and has no ink; it measures 4.41:1 on `bg-primary/10`
- * and is tracked separately (#422).
+ * `primary` is not a hue, but it does now have an ink of its own
+ * (PRIMARY_INK_TRIPLES above, #421 §3). It was the last tint here still writing
+ * a raw accent as text: 4.41:1 on the sidebar's Beta chip, 3.89 where that chip
+ * sits on a primary-tinted card, and 4.22 / 3.54 for the same two in dark.
  */
 export const TINT_TEXT: Record<TintToken, string> = {
-  primary: "text-primary",
+  primary: "text-primary-ink",
   act: "text-act-ink",
   be: "text-be-ink",
   think: "text-think-ink",
