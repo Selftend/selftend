@@ -67,6 +67,20 @@ _Avoid_: modal, bottom sheet (the interaction pattern is unrelated)
 **Soft card**:
 A borderless card lifted from the sheet by a hue-tinted shadow instead of a border. Opt-in per screen; the bordered card stays the default elsewhere.
 
+**Accent ink**:
+A module hue used as _text_ rather than as a surface or a swatch. A hue's published accent (`--think`, `text-think`) is tuned as a _colour_ — it paints fills, borders, chips and gradients — and four of the eight carry too much luminance to hold small text in light mode, on any pale surface: `think` is 1.90:1 on its own room's background and 1.88:1 on the neutral app background, with `iris`, `clay` and `act` also under AA on both. So a hue gets a second, darkened value for text: the same hue and saturation at lightness 28%, certified against the surfaces it lands on. Which class carries it depends on where the text stands:
+
+| context                                          | class                                    |
+| ------------------------------------------------ | ---------------------------------------- |
+| Small text in a hue, inside that hue's room      | `text-accent-ink` (the room re-pours it) |
+| Small text in a hue, on the neutral app surface  | `text-<hue>-ink`                         |
+| Icons, large numerals, decorative marks, borders | `text-<hue>` (unchanged)                 |
+
+Both classes resolve to the same colour inside a room — one source, `HUE_INK_TRIPLES`. The distinction matters because `accent-ink` is room-poured: outside a room it falls back to `--primary`, so using it on a room-less screen changes the hue rather than the contrast.
+
+A module's directory name does not tell you its room: `src/features/act/` is room-less (the `act` room is worn by `src/features/habits/`), so `text-accent-ink` there would render violet. `test/accent-ink-call-sites.test.ts` enforces both halves of the rule for that module — the third row's exemptions are enumerated with a reason each, and room ink is banned outright. Other directories are not yet covered; add one only after classifying its sites.
+_Avoid_: accent-foreground (that is ink on the `accent` _surface_, a different pairing).
+
 **Guest hue**:
 Another module's hue appearing as an accent inside a room (e.g. the act-green mood scale in mood's rose room). Guest hues stay accent-strength and never re-pour surfaces.
 

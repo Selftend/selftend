@@ -51,7 +51,7 @@ export default function ActDropAnchorScreen() {
           <View className="gap-4">
             <Card className="border-act/30 bg-act/5">
               <CardHeader>
-                <CardTitle className="text-act">A</CardTitle>
+                <CardTitle className="text-act-ink">A</CardTitle>
               </CardHeader>
               <CardContent>
                 <Text className="text-sm leading-relaxed text-muted-foreground">
@@ -62,7 +62,7 @@ export default function ActDropAnchorScreen() {
 
             <Card className="border-act/30 bg-act/5">
               <CardHeader>
-                <CardTitle className="text-act">C</CardTitle>
+                <CardTitle className="text-act-ink">C</CardTitle>
               </CardHeader>
               <CardContent>
                 <Text className="text-sm leading-relaxed text-muted-foreground">
@@ -73,7 +73,7 @@ export default function ActDropAnchorScreen() {
 
             <Card className="border-act/30 bg-act/5">
               <CardHeader>
-                <CardTitle className="text-act">E</CardTitle>
+                <CardTitle className="text-act-ink">E</CardTitle>
               </CardHeader>
               <CardContent>
                 <Text className="text-sm leading-relaxed text-muted-foreground">

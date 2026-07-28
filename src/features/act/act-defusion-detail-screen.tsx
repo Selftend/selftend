@@ -124,7 +124,7 @@ export default function ActDefusionDetailScreen() {
               </CardHeader>
               {log.fusionLevelBefore !== null ? (
                 <CardContent>
-                  <Text className="font-semibold text-act">
+                  <Text className="font-semibold text-act-ink">
                     {log.fusionLevelAfter < log.fusionLevelBefore
                       ? t("defusion.fusionDrop", {
                           before: log.fusionLevelBefore,

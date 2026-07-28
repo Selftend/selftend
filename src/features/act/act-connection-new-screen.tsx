@@ -169,7 +169,7 @@ export default function ActConnectionNewScreen() {
                     {...techniqueRoving.getItemProps(index, () => setTechnique(tech))}
                   >
                     <View className="gap-1">
-                      <Text className={cn("font-semibold", selected && "text-act")}>
+                      <Text className={cn("font-semibold", selected && "text-act-ink")}>
                         {t(`act:connection.techniques.${tech}`)}
                       </Text>
                       <Text variant="muted" className="text-xs leading-snug">
@@ -189,7 +189,7 @@ export default function ActConnectionNewScreen() {
             {technique === "noticeFiveThings" ? (
               <Card className="border-act/30 bg-act/5">
                 <CardHeader>
-                  <CardTitle className="text-act">
+                  <CardTitle className="text-act-ink">
                     {t("act:connection.noticeFiveGuide.title")}
                   </CardTitle>
                 </CardHeader>
@@ -235,7 +235,7 @@ export default function ActConnectionNewScreen() {
             {technique === "tenDeepBreaths" ? (
               <Card className="border-act/30 bg-act/5">
                 <CardHeader>
-                  <CardTitle className="text-act">
+                  <CardTitle className="text-act-ink">
                     {t("act:observingSelf.tenBreathsGuide.title")}
                   </CardTitle>
                 </CardHeader>

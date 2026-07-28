@@ -1,5 +1,7 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { sourceFiles, stripCommentsAndStrings } from "@/test/source-scan";
 
 // One driver, at the root. `useColorSchemeName` is the reader every component
 // may call; `useColorSchemeDriver` owns the side effects (hydrate + the
@@ -15,99 +17,16 @@ import { join, relative, sep } from "node:path";
 // mount counter that warns under __DEV__ when two mount concurrently.
 
 const ROOT = join(__dirname, "..");
-const SCANNED_DIRS = ["app", "src"];
-const SOURCE_EXTENSIONS = [".ts", ".tsx"];
 
 /** Where the driver is defined - it necessarily names itself. */
-const DEFINITION = join("src", "lib", "color-scheme.ts");
+const DEFINITION = "src/lib/color-scheme.ts";
 
 /** The one file allowed to import it. */
-const ROOT_LAYOUT = join("app", "_layout.tsx");
+const ROOT_LAYOUT = "app/_layout.tsx";
 
-function sourceFiles(dir: string): string[] {
-  return readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((entry) => {
-    const rel = join(dir, entry.name);
-    if (entry.isDirectory()) return sourceFiles(rel);
-    if (!SOURCE_EXTENSIONS.some((ext) => entry.name.endsWith(ext))) return [];
-    // Tests legitimately import the driver to exercise it.
-    if (/\.test\.tsx?$/.test(entry.name)) return [];
-    if (rel === DEFINITION) return [];
-    return [rel];
-  });
-}
-
-/**
- * Blanks out comments and string literals, so prose that merely *names* the
- * driver is never mistaken for code that uses it. Without this, a line like
- * `// never call useColorSchemeDriver()` would fail CI and report a driver that
- * does not exist - a guard that cries wolf is a guard people delete.
- *
- * Template literals are scanned rather than skipped, so a real call inside a
- * `${...}` interpolation is still seen. Characters are replaced with spaces so
- * that offsets, and therefore any future line reporting, stay accurate.
- */
-export function stripCommentsAndStrings(source: string): string {
-  const out = source.split("");
-  const blank = (from: number, to: number) => {
-    for (let k = from; k < to; k += 1) if (out[k] !== "\n") out[k] = " ";
-  };
-
-  let i = 0;
-  // Stack of open template literals, so `${}` interpolations stay scanned.
-  const templates: number[] = [];
-
-  while (i < source.length) {
-    const two = source.slice(i, i + 2);
-
-    if (two === "//") {
-      const end = source.indexOf("\n", i);
-      blank(i, end === -1 ? source.length : end);
-      i = end === -1 ? source.length : end;
-    } else if (two === "/*") {
-      const end = source.indexOf("*/", i + 2);
-      const stop = end === -1 ? source.length : end + 2;
-      blank(i, stop);
-      i = stop;
-    } else if (source[i] === '"' || source[i] === "'") {
-      const quote = source[i];
-      let j = i + 1;
-      while (j < source.length && source[j] !== quote) {
-        if (source[j] === "\\") j += 1;
-        if (source[j] === "\n") break;
-        j += 1;
-      }
-      blank(i, Math.min(j + 1, source.length));
-      i = j + 1;
-    } else if (source[i] === "`") {
-      templates.push(i);
-      out[i] = " ";
-      i += 1;
-      // Blank the literal text but keep scanning; `${` re-enters normal code.
-      while (i < source.length) {
-        if (source[i] === "\\") {
-          blank(i, i + 2);
-          i += 2;
-        } else if (source.slice(i, i + 2) === "${") {
-          blank(i, i + 2);
-          i += 2;
-          break;
-        } else if (source[i] === "`") {
-          templates.pop();
-          out[i] = " ";
-          i += 1;
-          break;
-        } else {
-          blank(i, i + 1);
-          i += 1;
-        }
-      }
-    } else {
-      i += 1;
-    }
-  }
-
-  return out.join("");
-}
+// Tests legitimately import the driver to exercise it, so they are excluded
+// along with the defining module itself.
+const scanned = (): string[] => sourceFiles(ROOT, { dirs: ["app", "src"], exclude: [DEFINITION] });
 
 /**
  * A named import of `useColorSchemeDriver`. Bounded by `[^}]` so it cannot span
@@ -126,7 +45,7 @@ function code(file: string): string {
 }
 
 describe("useColorSchemeDriver stays root-only", () => {
-  const files = SCANNED_DIRS.flatMap(sourceFiles);
+  const files = scanned();
 
   it("scans a plausible number of source files", () => {
     // Guards the suite itself: a broken walk would find nothing and pass vacuously.
@@ -136,15 +55,13 @@ describe("useColorSchemeDriver stays root-only", () => {
   it("is imported by app/_layout.tsx and nothing else", () => {
     const importers = files.filter((file) => NAMED_IMPORT.test(code(file)));
 
-    expect(importers.map((f) => f.split(sep).join("/"))).toEqual([
-      ROOT_LAYOUT.split(sep).join("/"),
-    ]);
+    expect(importers).toEqual([ROOT_LAYOUT]);
   });
 
   it("is called from app/_layout.tsx and nowhere else", () => {
     const callers = files.filter((file) => CALL_SITE.test(code(file)));
 
-    expect(callers.map((f) => f.split(sep).join("/"))).toEqual([ROOT_LAYOUT.split(sep).join("/")]);
+    expect(callers).toEqual([ROOT_LAYOUT]);
   });
 
   it("does not mistake prose for a caller", () => {
@@ -190,6 +107,6 @@ describe("useColorSchemeDriver stays root-only", () => {
   it("finds the root layout where it expects to", () => {
     // If the root layout is ever moved or renamed, the two assertions above
     // would go green on an empty list rather than pointing at the new file.
-    expect(files).toContain(relative(ROOT, join(ROOT, ROOT_LAYOUT)));
+    expect(files).toContain(ROOT_LAYOUT);
   });
 });
