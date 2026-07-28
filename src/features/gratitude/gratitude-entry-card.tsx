@@ -92,7 +92,14 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
           <Text variant="muted" className="text-xs">
             {when}
           </Text>
-          {entry.starred ? <Icon name="star" size={16} className="text-think" /> : null}
+          {/*
+            The only thing that says this entry is starred - no accessible name
+            carries it - so WCAG 1.4.11's 3:1 applies. `text-think` is 2.05:1 on
+            the think room's card, so this icon takes accent ink (5.95:1) even
+            though icons normally keep the published accent (#368). think is the
+            one hue where the non-text exemption cannot save it.
+          */}
+          {entry.starred ? <Icon name="star" size={16} className="text-accent-ink" /> : null}
         </View>
 
         <View className="relative">
