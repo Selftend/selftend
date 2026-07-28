@@ -139,7 +139,7 @@ export function hueRampClass(hue: HueName, step: number): string {
  * gates can see this map at all (#421).
  *
  * `primary` is not a hue and has no ink; it measures 4.41:1 on `bg-primary/10`
- * and is tracked separately (#422).
+ * and is tracked separately (#421 §3).
  */
 export const TINT_TEXT: Record<TintToken, string> = {
   primary: "text-primary",
