@@ -22,4 +22,39 @@ describe("migration conventions", () => {
 
     expect(offenders).toEqual([]);
   });
+
+  it("no two migrations share a version prefix", () => {
+    // Supabase keys `supabase_migrations.schema_migrations` on the leading
+    // numeric run, NOT the filename. Two files dated the same day are therefore
+    // ONE version, and the second to apply dies with
+    //
+    //   ERROR: duplicate key value violates unique constraint
+    //   "schema_migrations_pkey" - Key (version)=(20260730) already exists
+    //
+    // which surfaces only when CI starts Supabase: `verify` is green, the diff
+    // looks fine, and the two files were written days apart by people who each
+    // saw a free date. It bit twice in one afternoon once parallel work started
+    // landing migrations on the same day (#414, #256).
+    //
+    // Timestamped versions (YYYYMMDDHHMMSS) are collision-proof and already used
+    // in this directory; plain YYYYMMDD is only safe while one migration a day
+    // lands. Prefer the long form for anything new.
+    const versions = readdirSync(MIGRATIONS_DIR)
+      .filter((f) => f.endsWith(".sql"))
+      .map((f) => ({ file: f, version: /^(\d+)/.exec(f)?.[1] ?? "" }));
+
+    const unversioned = versions.filter((v) => v.version === "").map((v) => v.file);
+    expect(unversioned).toEqual([]);
+
+    const seen = new Map<string, string[]>();
+    for (const { file, version } of versions) {
+      seen.set(version, [...(seen.get(version) ?? []), file]);
+    }
+    const collisions = [...seen.entries()]
+      .filter(([, files]) => files.length > 1)
+      .map(([version, files]) => `${version}: ${files.join(", ")}`);
+
+    // Rename the newer file to a timestamped version rather than deleting it.
+    expect(collisions).toEqual([]);
+  });
 });

@@ -43,6 +43,7 @@ The calendar day an entry belongs to. Which calendar depends on whether the tool
 - **Habits** reach the same answer by a shorter route: `habit_logs.logged_on` stores the resolved civil date itself, so there is no timestamp to convert and no missing-offset case.
 - **Everything else** — ACT, CBT activities — has no captured offset and uses the **viewer's current local day**. ACT is deliberately out of scope until it grows a history or calendar surface (#330 owner decision); every ACT surface is a same-day list today. Routines deliberately keep a viewer-local day axis whatever their steps use: a routine has no dated record to freeze, and its job is "today, where you are standing". Routine status resets at local midnight.
 - Where a captured offset is missing (entries predating the column, or written by an older client) the first group falls back to the second. That is a fallback for unknown, never a claim the entry was logged at UTC.
+- This holds server-side too: `public.occurrence_day_key` is the SQL twin of `entryDayKey`, so an RPC that answers "done today" resolves the same day the screens do rather than range-scanning the viewer's window (#414).
 
 _Avoid_: session, cycle
 

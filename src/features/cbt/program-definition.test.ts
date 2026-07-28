@@ -1,4 +1,6 @@
-import { CBT_PROGRAM } from "@/src/features/cbt/program-definition";
+import { CBT_PROGRAM, type ProgramSignalData } from "@/src/features/cbt/program-definition";
+import type { MoodLog } from "@/src/features/mood/types";
+import { toLocalDateKey } from "@/src/utils/date";
 
 describe("CBT_PROGRAM", () => {
   it("has 5 ordered workbook-arc phases", () => {
@@ -59,5 +61,70 @@ describe("CBT_PROGRAM", () => {
         expect(typeof task.signal).toBe("function");
       }
     }
+  });
+});
+
+describe("dailyNoticing buckets by the captured civil day", () => {
+  const dailyNoticing = CBT_PROGRAM[0].dailyPractice!;
+
+  const moodLog = (overrides: Partial<MoodLog>): MoodLog => ({
+    id: "m1",
+    userId: "user-1",
+    moodScore: 3,
+    emotions: [],
+    notes: "",
+    linkedStrategy: null,
+    loggedAt: "2026-05-11T16:00:00.000Z",
+    loggedOffsetMinutes: null,
+    dayKey: "2026-05-11",
+    createdAt: "2026-05-11T16:00:00.000Z",
+    situation: "Work stress",
+    thoughts: "",
+    behaviours: "",
+    bodilySensations: "",
+    ...overrides,
+  });
+
+  const signal = (moodLogs: MoodLog[], selectedDate: string) =>
+    dailyNoticing.signal({ selectedDate, moodLogs, since: 0 } as ProgramSignalData).current;
+
+  // Logged at 01:00 on the 12th in Tokyo (UTC+9), i.e. 16:00Z on the 11th. The
+  // test runner sits at UTC+5:30, so converting that instant through the VIEWER's
+  // zone lands on the 11th - a different day from the one the entry was logged on.
+  const LOGGED_AT = "2026-05-11T16:00:00.000Z";
+  const CAPTURED_DAY = "2026-05-12";
+  const VIEWER_DAY = "2026-05-11";
+
+  it("the two days genuinely differ, or the rest of this suite proves nothing", () => {
+    expect(toLocalDateKey(LOGGED_AT)).toBe(VIEWER_DAY);
+    expect(toLocalDateKey(LOGGED_AT)).not.toBe(CAPTURED_DAY);
+  });
+
+  it("counts the log on the day it was logged, not the day the viewer is standing in", () => {
+    const logs = [moodLog({ loggedAt: LOGGED_AT, loggedOffsetMinutes: 540, dayKey: CAPTURED_DAY })];
+    expect(signal(logs, CAPTURED_DAY)).toBe(1);
+    expect(signal(logs, VIEWER_DAY)).toBe(0);
+  });
+
+  it("still requires a noticing-grade entry, not merely a mood score", () => {
+    const blank = moodLog({
+      loggedAt: LOGGED_AT,
+      loggedOffsetMinutes: 540,
+      dayKey: CAPTURED_DAY,
+      situation: "  ",
+    });
+    expect(signal([blank], CAPTURED_DAY)).toBe(0);
+  });
+
+  it("falls back to the viewer's day when no offset was captured", () => {
+    // The repository resolves dayKey through entryDayKey, which for a null offset
+    // is the viewer's local day - exactly where such rows have always rendered.
+    const legacy = moodLog({
+      loggedAt: LOGGED_AT,
+      loggedOffsetMinutes: null,
+      dayKey: toLocalDateKey(LOGGED_AT),
+    });
+    expect(signal([legacy], VIEWER_DAY)).toBe(1);
+    expect(signal([legacy], CAPTURED_DAY)).toBe(0);
   });
 });
