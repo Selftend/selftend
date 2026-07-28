@@ -8,6 +8,8 @@ function makeSession(overrides: Partial<MeditationSession>): MeditationSession {
     stageAtSession: 1,
     durationMinutes: 15,
     completedAt: "2026-05-15T08:00:00.000Z",
+    completedOffsetMinutes: null,
+    dayKey: "2026-05-15",
     createdAt: "2026-05-15T08:00:00.000Z",
     mindWanderingEpisodes: null,
     dullnessLevel: null,

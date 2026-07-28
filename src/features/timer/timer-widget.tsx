@@ -23,6 +23,7 @@ import {
 } from "@/src/features/timer/storage";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { occurrenceTimeFromDate, type OccurrenceTime } from "@/src/lib/occurrence-time";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { playOneShot } from "@/src/lib/native-audio";
 
@@ -298,6 +299,18 @@ export function TimerWidget({
   // Captured at start() so the per-second tick reads stable values.
   const sessionTotalSecondsRef = useRef(0);
   const intervalSecondsRef = useRef(0);
+  /**
+   * When the sit ended, captured at the moment it ended rather than when the
+   * reflection form is eventually saved (#330).
+   *
+   * The two are not the same instant and can be hours apart: the timer reaching
+   * zero leaves the widget in `completed`, and the user taps "Log sit" whenever
+   * they surface. Reading the clock at save time is what put a 23:50 sit on the
+   * next day if the form sat open past midnight - and because the offset is now
+   * persisted as the authoritative civil day, that lands permanently instead of
+   * re-bucketing later.
+   */
+  const endedAtRef = useRef<OccurrenceTime | null>(null);
 
   useEffect(() => {
     if (hasUserSelectedDurationRef.current) return;
@@ -345,6 +358,8 @@ export function TimerWidget({
         setSecondsLeft((prev) => {
           if (prev <= 1) {
             if (intervalRef.current) clearInterval(intervalRef.current);
+            // The sit ends here, not when the reflection form is saved (#330).
+            endedAtRef.current = occurrenceTimeFromDate();
             setTimerState("completed");
             playSound(bellSound);
             return 0;
@@ -408,8 +423,26 @@ export function TimerWidget({
     setSecondsLeft(durationMinutes * 60);
     router.push({
       pathname: "/tools/meditation/session/log",
-      params: { duration: String(elapsedMinutes) },
+      params: { duration: String(elapsedMinutes), ...endedNowParams() },
     });
+  }
+
+  /**
+   * The sit-end occurrence as route params. `finishEarly` ends the sit as it
+   * navigates, so it captures now; the completed path ended earlier and reuses
+   * what the tick recorded.
+   */
+  function endedNowParams() {
+    const ended = occurrenceTimeFromDate();
+    return { endedAt: ended.occurredAt, endedOffset: String(ended.occurredOffsetMinutes) };
+  }
+
+  function endedAtParams() {
+    const ended = endedAtRef.current;
+    // No recorded end means the widget was never run to completion in this
+    // mount - treat it as ending now rather than inventing an instant.
+    if (!ended) return endedNowParams();
+    return { endedAt: ended.occurredAt, endedOffset: String(ended.occurredOffsetMinutes) };
   }
 
   return (
@@ -472,7 +505,7 @@ export function TimerWidget({
               onPress={() =>
                 router.push({
                   pathname: "/tools/meditation/session/log",
-                  params: { duration: String(durationMinutes) },
+                  params: { duration: String(durationMinutes), ...endedAtParams() },
                 })
               }
               className="flex-1"
