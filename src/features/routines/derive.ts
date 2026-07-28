@@ -77,7 +77,8 @@ export interface RoutineToolRecords {
   journalEntries?: readonly { dayKey: string }[];
   gratitudeEntries?: readonly { dayKey: string }[];
   sleepLogs?: readonly { dayKey: string }[];
-  thoughtRecords?: readonly { createdAt: string }[];
+  /** Thought records captured their civil day in #330 - compare, never re-bucket. */
+  thoughtRecords?: readonly { dayKey: string }[];
   /**
    * Breathing AND grounding sessions share this table; they are told apart by
    * exerciseName (see stepDoneOnDate). One captured offset on the shared table
@@ -185,7 +186,7 @@ export function stepDoneOnDate(
     case "sleep":
       return onCapturedDay(records.sleepLogs, dayKey);
     case "cbt":
-      return onDay(records.thoughtRecords, (r) => r.createdAt, dayKey);
+      return onCapturedDay(records.thoughtRecords, dayKey);
     // Breathing and grounding share mindfulness_sessions and so share its captured
     // dayKey; only the exercise_name split differs (#330).
     case "breathing":

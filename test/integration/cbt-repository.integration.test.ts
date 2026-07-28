@@ -98,6 +98,131 @@ describe("cbt thought_records (integration)", () => {
     expect(updated.data?.nats).toEqual(nats);
   });
 
+  // The captured civil day a thought record was written on (#330).
+  describe("created_offset_minutes", () => {
+    const baseRecord = {
+      situation: "Offset test",
+      nats: [{ text: "thought", beliefRating: null, isHotThought: true }],
+      emotions: [],
+      distortions: [],
+      balanced_thought: "balanced",
+    };
+
+    it("round-trips an explicit offset through the encrypted view", async () => {
+      const insert = await alice
+        .from("thought_records")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseRecord,
+          created_at: "2026-05-15T19:00:00.000Z",
+          created_offset_minutes: -420,
+        })
+        .select("*")
+        .single();
+
+      expect(insert.error).toBeNull();
+      expect(insert.data?.created_offset_minutes).toBe(-420);
+
+      // Read it back rather than trusting the INSERT response: the value has to
+      // have survived the encrypted-view writer, not just been echoed out of NEW.
+      const read = await alice
+        .from("thought_records")
+        .select("created_offset_minutes")
+        .eq("id", insert.data!.id)
+        .single();
+      expect(read.error).toBeNull();
+      expect(read.data?.created_offset_minutes).toBe(-420);
+    });
+
+    it("records an omitted offset as unknown rather than UTC", async () => {
+      const insert = await alice
+        .from("thought_records")
+        .insert({ user_id: SEED_USERS.alice.id, ...baseRecord })
+        .select("created_offset_minutes, created_at")
+        .single();
+
+      expect(insert.error).toBeNull();
+      // A 0 here would be the column claiming a fact the caller never gave (#250).
+      expect(insert.data?.created_offset_minutes).toBeNull();
+      // created_at is still server-defaulted for clients that omit it, and the
+      // zz_ occurrence trigger must sort late enough to see that default rather
+      // than rejecting the insert as "Occurrence time is required".
+      expect(insert.data?.created_at).toEqual(expect.any(String));
+    });
+
+    it("accepts an explicit zero offset from a caller genuinely at UTC", async () => {
+      const insert = await alice
+        .from("thought_records")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseRecord,
+          created_at: "2026-05-15T19:00:00.000Z",
+          created_offset_minutes: 0,
+        })
+        .select("created_offset_minutes")
+        .single();
+
+      expect(insert.error).toBeNull();
+      expect(insert.data?.created_offset_minutes).toBe(0);
+    });
+
+    it("preserves the captured offset across an unrelated edit", async () => {
+      const created = await alice
+        .from("thought_records")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseRecord,
+          created_at: "2026-05-15T19:00:00.000Z",
+          created_offset_minutes: -420,
+        })
+        .select("id")
+        .single();
+      expect(created.error).toBeNull();
+
+      // Editing the text - or archiving - must never re-stamp the record's civil
+      // day. The UPDATE writer carries the stored value through NEW unchanged.
+      const updated = await alice
+        .from("thought_records")
+        .update({ situation: "Reread in another timezone" })
+        .eq("user_id", SEED_USERS.alice.id)
+        .eq("id", created.data!.id)
+        .select("created_offset_minutes, created_at")
+        .single();
+
+      expect(updated.error).toBeNull();
+      expect(updated.data?.created_offset_minutes).toBe(-420);
+      expect(updated.data?.created_at).toBe("2026-05-15T19:00:00+00:00");
+    });
+
+    it("rejects an out-of-range offset", async () => {
+      const insert = await alice
+        .from("thought_records")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseRecord,
+          created_at: "2026-05-15T19:00:00.000Z",
+          created_offset_minutes: 900,
+        })
+        .select("id");
+
+      expect(insert.error).not.toBeNull();
+    });
+
+    it("rejects a creation time in the future", async () => {
+      const insert = await alice
+        .from("thought_records")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseRecord,
+          created_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          created_offset_minutes: 0,
+        })
+        .select("id");
+
+      expect(insert.error).not.toBeNull();
+    });
+  });
+
   it("archiving hides the record from the active list", async () => {
     const created = await alice
       .from("thought_records")

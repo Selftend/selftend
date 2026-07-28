@@ -16,6 +16,8 @@ function makeRecord(nats: NegativeAutomaticThought[], balancedThought = "balance
     emotionIntensityAfter: null,
     outcomeNotes: "",
     createdAt: "2026-01-01T00:00:00.000Z",
+    createdOffsetMinutes: 0,
+    dayKey: "2026-01-01",
     updatedAt: "2026-01-01T00:00:00.000Z",
     archivedAt: null,
   };

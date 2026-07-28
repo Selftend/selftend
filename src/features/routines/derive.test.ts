@@ -30,7 +30,7 @@ describe("stepDoneOnDate", () => {
       journalEntries: [{ dayKey: DAY }],
       gratitudeEntries: [{ dayKey: PREV_DAY }],
       sleepLogs: [{ dayKey: NEXT_DAY }],
-      thoughtRecords: [{ createdAt: onDayTs }],
+      thoughtRecords: [{ dayKey: DAY }],
     };
 
     expect(stepDoneOnDate("mood", records, DAY)).toBe(true);
@@ -56,14 +56,27 @@ describe("stepDoneOnDate", () => {
   });
 
   it("still buckets by the local midnight boundary for tools with no captured day", () => {
-    // cbt has no occurrence offset yet (#330), so it converts through the
-    // viewer's timezone. Just-before counts, just-after does not.
-    const records: RoutineToolRecords = { thoughtRecords: [{ createdAt: lateOnDayTs }] };
-    expect(stepDoneOnDate("cbt", records, DAY)).toBe(true);
+    // Activities have no occurrence offset yet (#330 leaves them to their own
+    // PR), so they convert through the viewer's timezone. Just-before the local
+    // midnight boundary counts, just-after does not.
+    const records: RoutineToolRecords = { activityLogs: [{ completedAt: lateOnDayTs }] };
+    expect(stepDoneOnDate("activities", records, DAY)).toBe(true);
 
-    const after: RoutineToolRecords = { thoughtRecords: [{ createdAt: nextDayTs }] };
-    expect(stepDoneOnDate("cbt", after, DAY)).toBe(false);
-    expect(stepDoneOnDate("cbt", after, NEXT_DAY)).toBe(true);
+    const after: RoutineToolRecords = { activityLogs: [{ completedAt: nextDayTs }] };
+    expect(stepDoneOnDate("activities", after, DAY)).toBe(false);
+    expect(stepDoneOnDate("activities", after, NEXT_DAY)).toBe(true);
+  });
+
+  it("cbt reads the captured day verbatim, never the viewer's", () => {
+    // A thought record written at 06:00 Monday in Tokyo carries dayKey
+    // 2026-07-15 while its UTC instant (21:00 Sunday) buckets to the 14th
+    // anywhere west of it. The engine must agree with the CBT history screen
+    // rather than re-deriving the day from the timestamp (#330).
+    const captured: RoutineToolRecords = { thoughtRecords: [{ dayKey: DAY }] };
+
+    expect(stepDoneOnDate("cbt", captured, DAY)).toBe(true);
+    expect(stepDoneOnDate("cbt", captured, PREV_DAY)).toBe(false);
+    expect(stepDoneOnDate("cbt", captured, NEXT_DAY)).toBe(false);
   });
 
   it("a grounding session does not complete a breathing step, and vice versa", () => {

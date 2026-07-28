@@ -103,16 +103,16 @@ module.exports = [
     },
   },
   {
-    // mood/gratitude/sleep/journal (#250), meditation, and breathing/grounding via
-    // the shared mindfulness_sessions offset (#330) all carry a `dayKey`: the civil
-    // day captured when the entry was logged, resolved once in the repository.
-    // Bucketing one of them by the VIEWER's day instead moves entries between days
-    // after travel and skews daily averages. The viewer-local helpers stay available
-    // to the modules with no captured offset (ACT, CBT) - they have nothing better
-    // to use yet - and to routines, whose day axis is deliberately viewer-local
-    // (#330 owner decision). Habits are already correct by a different route:
-    // `habit_logs.logged_on` stores the resolved civil date, so no timestamp is ever
-    // converted.
+    // mood/gratitude/sleep/journal (#250), meditation, breathing/grounding via the
+    // shared mindfulness_sessions offset, and CBT thought records (#330) all carry
+    // a `dayKey`: the civil day captured when the entry was logged, resolved once
+    // in the repository. Bucketing one of them by the VIEWER's day instead moves
+    // entries between days after travel and skews daily averages. The viewer-local
+    // helpers stay available to ACT, which has no captured offset and is
+    // deliberately out of #330's scope until it grows a history surface, and to
+    // routines, whose day axis is deliberately viewer-local (#330 owner decision).
+    // Habits are already correct by a different route: `habit_logs.logged_on`
+    // stores the resolved civil date, so no timestamp is ever converted.
     files: [
       "src/features/mood/**/*.{ts,tsx}",
       "src/features/gratitude/**/*.{ts,tsx}",
@@ -121,8 +121,18 @@ module.exports = [
       "src/features/meditation/**/*.{ts,tsx}",
       "src/features/breathing/**/*.{ts,tsx}",
       "src/features/grounding/**/*.{ts,tsx}",
+      "src/features/cbt/**/*.{ts,tsx}",
     ],
-    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    ignores: [
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      // Temporary, and the only file under src/features/cbt still bucketing by the
+      // viewer. Its `didOnDate` also serves the activities and meditation legs of
+      // the CBT programme checklist, and it is being edited by #414 right now, so
+      // moving its thoughtRecordDaily leg onto `dayKey` belongs in that change
+      // rather than in a conflicting edit here. Delete this entry once it lands.
+      "src/features/cbt/program-definition.ts",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",

@@ -1,5 +1,6 @@
 import type { ThoughtRecordFormSchema } from "@/src/features/cbt/schemas";
 import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
+import type { OccurrenceTime } from "@/src/lib/occurrence-time";
 
 export const defaultValues: ThoughtRecordFormSchema = {
   situation: "",
@@ -70,17 +71,26 @@ export function hasAnyThought(nats: NegativeAutomaticThought[]): boolean {
 }
 
 // Sanitizes the raw form values into the save input: trims evidence lists and
-// outcome notes, and attaches `createdAt` ONLY in create mode (recordId null),
-// so editing never overwrites the original timestamp.
+// outcome notes, and attaches the occurrence ONLY in create mode (recordId
+// null), so editing never overwrites the original timestamp - nor the captured
+// offset that fixes the record's civil day (#330). The instant and the offset
+// travel together, from one `occurrenceTimeFromDate` call: they describe one
+// moment, so they can never be sourced from two separate clock readings.
 export function buildThoughtRecordInput(
   values: ThoughtRecordFormSchema,
-  { recordId, createdAt }: { recordId: string | null; createdAt: string },
-): ThoughtRecordFormSchema & { createdAt?: string } {
+  { recordId, occurrence }: { recordId: string | null; occurrence: OccurrenceTime },
+): ThoughtRecordFormSchema & { createdAt?: string; createdOffsetMinutes?: number } {
   const input: ThoughtRecordFormSchema = {
     ...values,
     evidenceAgainst: cleanList(values.evidenceAgainst),
     evidenceFor: cleanList(values.evidenceFor),
     outcomeNotes: values.outcomeNotes.trim(),
   };
-  return !recordId ? { ...input, createdAt } : input;
+  return !recordId
+    ? {
+        ...input,
+        createdAt: occurrence.occurredAt,
+        createdOffsetMinutes: occurrence.occurredOffsetMinutes,
+      }
+    : input;
 }
