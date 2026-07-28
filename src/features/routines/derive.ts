@@ -67,11 +67,16 @@ export function isSteppableToolId(value: string): value is SteppableToolId {
  * absent means "no records fetched", which derives the same as none existing.
  */
 export interface RoutineToolRecords {
-  moodLogs?: readonly { loggedAt: string }[];
-  /** Older journal entries predate occurredAt; they bucket by createdAt. */
-  journalEntries?: readonly { occurredAt?: string | null; createdAt: string }[];
-  gratitudeEntries?: readonly { loggedAt: string }[];
-  sleepLogs?: readonly { loggedAt: string }[];
+  /**
+   * The four #250 modules carry a captured `dayKey` — the civil day where the
+   * entry was logged — so they are compared directly, never re-bucketed. Passing
+   * a timestamp here instead would let the routine engine file an entry under a
+   * different day than the owning module's own screen does.
+   */
+  moodLogs?: readonly { dayKey: string }[];
+  journalEntries?: readonly { dayKey: string }[];
+  gratitudeEntries?: readonly { dayKey: string }[];
+  sleepLogs?: readonly { dayKey: string }[];
   thoughtRecords?: readonly { createdAt: string }[];
   /**
    * Breathing AND grounding sessions share this table; they are told apart by
@@ -132,6 +137,13 @@ export interface RoutineDayView {
   nextStep: RoutineStepDayView | null;
 }
 
+/**
+ * For tools with no captured occurrence day: bucket a UTC timestamp through the
+ * viewer's current timezone. Correct only while the tool stores no offset - the
+ * remaining five modules in #330. Never use this for a module that already
+ * carries `dayKey`, or the engine will re-bucket an entry the owning module has
+ * already placed, and the two surfaces will disagree about which day it was.
+ */
 const onDay = <T>(
   items: readonly T[] | undefined,
   pick: (item: T) => string | null | undefined,
@@ -141,6 +153,10 @@ const onDay = <T>(
     const ts = pick(item);
     return typeof ts === "string" && ts.length > 0 && toLocalDateKey(ts) === dayKey;
   });
+
+/** For tools that captured the civil day at logging time - compare, never convert. */
+const onCapturedDay = (items: readonly { dayKey: string }[] | undefined, dayKey: string): boolean =>
+  (items ?? []).some((item) => item.dayKey === dayKey);
 
 // Grounding is the closed set of technique slugs; every other mindfulness
 // session is a breathing session (built-in breathing slugs plus user-defined
@@ -158,14 +174,16 @@ export function stepDoneOnDate(
   dayKey: string,
 ): boolean {
   switch (toolId) {
+    // The four #250 modules carry a captured dayKey - compare directly, no
+    // bucketing, so the routine engine agrees with the module's own screen.
     case "mood":
-      return onDay(records.moodLogs, (r) => r.loggedAt, dayKey);
+      return onCapturedDay(records.moodLogs, dayKey);
     case "journal":
-      return onDay(records.journalEntries, (r) => r.occurredAt ?? r.createdAt, dayKey);
+      return onCapturedDay(records.journalEntries, dayKey);
     case "gratitude":
-      return onDay(records.gratitudeEntries, (r) => r.loggedAt, dayKey);
+      return onCapturedDay(records.gratitudeEntries, dayKey);
     case "sleep":
-      return onDay(records.sleepLogs, (r) => r.loggedAt, dayKey);
+      return onCapturedDay(records.sleepLogs, dayKey);
     case "cbt":
       return onDay(records.thoughtRecords, (r) => r.createdAt, dayKey);
     case "breathing":

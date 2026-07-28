@@ -101,7 +101,7 @@ describe("RoutineFab", () => {
   it("renders nothing while all steps are complete today", () => {
     setRoutines([makeRoutine("r-1", "Morning reset", ["mood"])]);
     mockUseRoutineToolRecords.mockReturnValue({
-      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     });
 
     renderWithProviders(<RoutineFab />);
@@ -119,7 +119,7 @@ describe("RoutineFab", () => {
       makeRoutine("r-2", "Evening wind-down", ["mood"]),
     ]);
     mockUseRoutineToolRecords.mockReturnValue({
-      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     });
 
     renderWithProviders(<RoutineFab />);
@@ -138,7 +138,7 @@ describe("RoutineFab", () => {
       makeRoutine("r-2", "Evening wind-down", ["journal", "gratitude"]),
     ]);
     mockUseRoutineToolRecords.mockReturnValue({
-      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     });
 
     renderWithProviders(<RoutineFab />);
@@ -187,8 +187,8 @@ describe("RoutineFab", () => {
 
     // The last routine standing carries no suffix.
     mockUseRoutineToolRecords.mockReturnValue({
-      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
-      gratitudeEntries: [{ loggedAt: `${currentDateKey()}T09:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
+      gratitudeEntries: [{ dayKey: currentDateKey() }],
     });
     screen.rerender(<RoutineFab />);
     expect(screen.getByText("0/1")).toBeTruthy();
@@ -203,7 +203,7 @@ describe("RoutineFab", () => {
       makeRoutine("r-2", "Evening wind-down", ["mood", "gratitude"]),
     ]);
     mockUseRoutineToolRecords.mockReturnValue({
-      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     });
 
     renderWithProviders(<RoutineFab />);
@@ -345,7 +345,7 @@ describe("RoutineFab", () => {
 
     function completeTheOnlyStep() {
       mockUseRoutineToolRecords.mockReturnValue({
-        moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+        moodLogs: [{ dayKey: currentDateKey() }],
       });
     }
 
@@ -409,17 +409,15 @@ describe("RoutineFab", () => {
         makeRoutine("r-2", "Evening wind-down", ["journal"]),
       ]);
       mockUseRoutineToolRecords.mockReturnValue({
-        moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+        moodLogs: [{ dayKey: currentDateKey() }],
       });
 
       renderWithProviders(<RoutineFab />);
       expect(screen.getByLabelText(/Evening wind-down/)).toBeTruthy();
 
       mockUseRoutineToolRecords.mockReturnValue({
-        moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
-        journalEntries: [
-          { occurredAt: `${currentDateKey()}T09:00:00`, createdAt: `${currentDateKey()}T09:00:00` },
-        ],
+        moodLogs: [{ dayKey: currentDateKey() }],
+        journalEntries: [{ dayKey: currentDateKey() }],
       });
       screen.rerender(<RoutineFab />);
 

@@ -87,7 +87,7 @@ describe("RoutinesWidget", () => {
     ]);
     // A mood log today completes r-1's only step; r-2 stays fully open.
     mockUseRoutineToolRecords.mockReturnValue({
-      moodLogs: [{ loggedAt: `${currentDateKey()}T12:00:00` }],
+      moodLogs: [{ dayKey: currentDateKey() }],
     });
 
     renderWithProviders(<RoutinesWidget userId="user-1" />);
@@ -159,7 +159,7 @@ describe("RoutinesWidget", () => {
         makeRoutine("r-2", "Reset kit", ["journal"], { cadence: "on-demand" }),
       ]);
       mockUseRoutineToolRecords.mockReturnValue({
-        moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
+        moodLogs: [{ dayKey: currentDateKey() }],
       });
 
       renderWithProviders(<RoutinesWidget userId="user-1" />);
@@ -177,8 +177,8 @@ describe("RoutinesWidget", () => {
       makeRoutine("r-2", "Evening wind-down", ["journal"]),
     ]);
     mockUseRoutineToolRecords.mockReturnValue({
-      moodLogs: [{ loggedAt: `${currentDateKey()}T08:00:00` }],
-      journalEntries: [{ occurredAt: `${currentDateKey()}T21:00:00`, createdAt: "" }],
+      moodLogs: [{ dayKey: currentDateKey() }],
+      journalEntries: [{ dayKey: currentDateKey() }],
     });
 
     renderWithProviders(<RoutinesWidget userId="user-1" />);

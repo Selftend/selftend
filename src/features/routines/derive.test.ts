@@ -12,10 +12,12 @@ import {
 // timezone, which is also how toLocalDateKey buckets - so these tests are
 // deterministic in any TZ without re-testing the shared date utilities.
 const DAY = "2026-07-15";
+const NEXT_DAY = "2026-07-16";
+const PREV_DAY = "2026-07-14";
 const onDayTs = `${DAY}T14:30:00`;
 const lateOnDayTs = `${DAY}T23:59:59`;
-const nextDayTs = "2026-07-16T00:00:01";
-const prevDayTs = "2026-07-14T23:59:59";
+const nextDayTs = `${NEXT_DAY}T00:00:01`;
+const prevDayTs = `${PREV_DAY}T23:59:59`;
 
 const steps = (...toolIds: SteppableToolId[]) => toolIds.map((toolId) => ({ toolId }));
 
@@ -24,10 +26,10 @@ const groundingSlug = groundingSlugs[0];
 describe("stepDoneOnDate", () => {
   it("matches each dated-log tool's record on the day and rejects other days", () => {
     const records: RoutineToolRecords = {
-      moodLogs: [{ loggedAt: onDayTs }],
-      journalEntries: [{ occurredAt: onDayTs, createdAt: prevDayTs }],
-      gratitudeEntries: [{ loggedAt: prevDayTs }],
-      sleepLogs: [{ loggedAt: nextDayTs }],
+      moodLogs: [{ dayKey: DAY }],
+      journalEntries: [{ dayKey: DAY }],
+      gratitudeEntries: [{ dayKey: PREV_DAY }],
+      sleepLogs: [{ dayKey: NEXT_DAY }],
       thoughtRecords: [{ createdAt: onDayTs }],
     };
 
@@ -38,20 +40,30 @@ describe("stepDoneOnDate", () => {
     expect(stepDoneOnDate("sleep", records, DAY)).toBe(false);
   });
 
-  it("buckets by the local midnight boundary: just-before counts, just-after does not", () => {
-    const records: RoutineToolRecords = { moodLogs: [{ loggedAt: lateOnDayTs }] };
-    expect(stepDoneOnDate("mood", records, DAY)).toBe(true);
+  // The captured-day modules (#250) and the timestamp-bucketed ones (#330) are
+  // two different day models on purpose, so each needs its own boundary test.
 
-    const after: RoutineToolRecords = { moodLogs: [{ loggedAt: nextDayTs }] };
-    expect(stepDoneOnDate("mood", after, DAY)).toBe(false);
-    expect(stepDoneOnDate("mood", after, "2026-07-16")).toBe(true);
+  it("reads the captured day verbatim, even when it disagrees with the timestamp", () => {
+    // The bug this fixes: an entry logged at 23:30 in Tokyo carries dayKey
+    // 2026-07-15, but its UTC instant buckets to the 14th for a viewer in
+    // London. The mood screen filed it under the 15th; the routine engine used
+    // to file the same entry under the 14th. The captured day is the answer.
+    const captured: RoutineToolRecords = { moodLogs: [{ dayKey: DAY }] };
+
+    expect(stepDoneOnDate("mood", captured, DAY)).toBe(true);
+    expect(stepDoneOnDate("mood", captured, PREV_DAY)).toBe(false);
+    expect(stepDoneOnDate("mood", captured, NEXT_DAY)).toBe(false);
   });
 
-  it("journal entries without occurredAt fall back to createdAt", () => {
-    const records: RoutineToolRecords = {
-      journalEntries: [{ occurredAt: null, createdAt: onDayTs }],
-    };
-    expect(stepDoneOnDate("journal", records, DAY)).toBe(true);
+  it("still buckets by the local midnight boundary for tools with no captured day", () => {
+    // cbt has no occurrence offset yet (#330), so it converts through the
+    // viewer's timezone. Just-before counts, just-after does not.
+    const records: RoutineToolRecords = { thoughtRecords: [{ createdAt: lateOnDayTs }] };
+    expect(stepDoneOnDate("cbt", records, DAY)).toBe(true);
+
+    const after: RoutineToolRecords = { thoughtRecords: [{ createdAt: nextDayTs }] };
+    expect(stepDoneOnDate("cbt", after, DAY)).toBe(false);
+    expect(stepDoneOnDate("cbt", after, NEXT_DAY)).toBe(true);
   });
 
   it("a grounding session does not complete a breathing step, and vice versa", () => {
@@ -214,11 +226,7 @@ describe("deriveRoutine", () => {
   });
 
   it("some steps done derives in_progress and points at the first open step", () => {
-    const view = deriveRoutine(
-      threeSteps,
-      { journalEntries: [{ occurredAt: onDayTs, createdAt: onDayTs }] },
-      DAY,
-    );
+    const view = deriveRoutine(threeSteps, { journalEntries: [{ dayKey: DAY }] }, DAY);
     expect(view.status).toBe("in_progress");
     expect(view.doneCount).toBe(1);
     expect(view.steps.map((s) => s.done)).toEqual([false, true, false]);
@@ -229,8 +237,8 @@ describe("deriveRoutine", () => {
     const view = deriveRoutine(
       threeSteps,
       {
-        moodLogs: [{ loggedAt: onDayTs }],
-        journalEntries: [{ occurredAt: lateOnDayTs, createdAt: prevDayTs }],
+        moodLogs: [{ dayKey: DAY }],
+        journalEntries: [{ dayKey: DAY }],
         meditationSessions: [{ completedAt: onDayTs }],
       },
       DAY,
@@ -241,7 +249,7 @@ describe("deriveRoutine", () => {
   });
 
   it("an empty routine is not_started, never a hollow complete", () => {
-    const view = deriveRoutine([], { moodLogs: [{ loggedAt: onDayTs }] }, DAY);
+    const view = deriveRoutine([], { moodLogs: [{ dayKey: DAY }] }, DAY);
     expect(view.status).toBe("not_started");
     expect(view.totalCount).toBe(0);
     expect(view.nextStep).toBeNull();
@@ -250,9 +258,7 @@ describe("deriveRoutine", () => {
   it("a single-step routine flips straight from not_started to complete", () => {
     const single = steps("sleep");
     expect(deriveRoutine(single, {}, DAY).status).toBe("not_started");
-    expect(deriveRoutine(single, { sleepLogs: [{ loggedAt: onDayTs }] }, DAY).status).toBe(
-      "complete",
-    );
+    expect(deriveRoutine(single, { sleepLogs: [{ dayKey: DAY }] }, DAY).status).toBe("complete");
   });
 });
 
@@ -271,7 +277,7 @@ describe("deriveRoutineStrip", () => {
     // Mood logged on days -3 and -1 relative to DAY; every other day is open.
     const strip = deriveRoutineStrip(
       steps("mood"),
-      { moodLogs: [{ loggedAt: "2026-07-14T08:00:00" }, { loggedAt: "2026-07-12T21:15:00" }] },
+      { moodLogs: [{ dayKey: "2026-07-14" }, { dayKey: "2026-07-12" }] },
       weekKeys,
     );
 
@@ -283,16 +289,14 @@ describe("deriveRoutineStrip", () => {
   });
 
   it("a partially-done day stays open on a multi-step routine", () => {
-    const strip = deriveRoutineStrip(
-      steps("mood", "journal"),
-      { moodLogs: [{ loggedAt: onDayTs }] },
-      [DAY],
-    );
+    const strip = deriveRoutineStrip(steps("mood", "journal"), { moodLogs: [{ dayKey: DAY }] }, [
+      DAY,
+    ]);
     expect(strip).toEqual([{ dayKey: DAY, complete: false }]);
   });
 
   it("an empty routine never fills a day (no hollow complete)", () => {
-    const strip = deriveRoutineStrip([], { moodLogs: [{ loggedAt: onDayTs }] }, [DAY]);
+    const strip = deriveRoutineStrip([], { moodLogs: [{ dayKey: DAY }] }, [DAY]);
     expect(strip).toEqual([{ dayKey: DAY, complete: false }]);
   });
 });
