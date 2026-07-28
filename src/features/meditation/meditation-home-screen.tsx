@@ -166,7 +166,7 @@ export default function MeditationHomeScreen() {
               meta={
                 <ToolStats
                   tone="onField"
-                  accentClassName="text-iris"
+                  accentClassName="text-accent-ink"
                   credit={t("authorEyebrow")}
                   subline={subline}
                   sublineTone={lastWhen ? "accent" : "muted"}

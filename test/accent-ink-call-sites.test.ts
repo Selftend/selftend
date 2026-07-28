@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { groundingTechniques } from "@/src/constants/grounding";
+import { exerciseHue, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
+import { MEDITATION_PRACTICES } from "@/src/features/meditation/practices";
 import { HUE_NAMES } from "@/src/lib/design-tokens";
 import { sourceFiles, stripComments } from "@/test/source-scan";
 
@@ -16,7 +19,7 @@ import { sourceFiles, stripComments } from "@/test/source-scan";
 //    (act is 3.64:1 on `--background`). #406 swept 29 such sites in act alone.
 //
 // 2. **Whether an area is a room decides which ink is even legal**, and the
-//    four areas here answer that differently:
+//    areas here answer that differently:
 //
 //    - `src/features/act` and `src/features/home` are not rooms. `act`'s room
 //      is `src/features/habits/` (see the header of test/chip-contrast.test.ts:
@@ -32,16 +35,23 @@ import { sourceFiles, stripComments } from "@/test/source-scan";
 //      surface its actual callers give it.
 //    - `app/` is mixed: the two breathing routes do call `useRoomStyle`, so
 //      room ink is legitimate there and only there.
+//    - The module tail contains real rooms - habits wears act, meditation wears
+//      iris - so room ink is legitimate in those too.
 //
-//    That is why the room-ink assertions below are scoped to the areas whose
-//    premise has been checked, rather than swept across everything.
+//    That is why the room-ink assertions below are scoped to ROOMLESS_AREAS,
+//    whose premise the suite checks rather than trusts, instead of being swept
+//    across everything.
 //
 // Every surviving occurrence in a classified area is enumerated in ALLOWED with
 // the surface it actually sits on and the contrast it measures there, keyed on
 // the source line so that editing the line forces the judgement to be re-read.
-// Adding an area here means classifying its sites first, then deleting its row
-// from test/accent-ink-coverage.test.ts - the ratchet that holds every
-// not-yet-classified area at its current count.
+//
+// With the module tail classified (#412), every area is now enumerated here and
+// test/accent-ink-coverage.test.ts - the counting ratchet that held the
+// unclassified areas at their current size - is gone. Its one surviving
+// guarantee moved here: `no bare accent survives outside a classified area`
+// below, which is what stops a new `text-<hue>` appearing somewhere this file
+// never looks (src/lib, src/components/ui, src/providers).
 
 const ROOT = join(__dirname, "..");
 
@@ -78,9 +88,14 @@ const BARE_HUE = new RegExp(String.raw`text-(${HUE_NAMES.join("|")})(?![\w-])`, 
 const ROOM_INK = /text-accent-ink(?![\w-])/g;
 
 /**
- * Why a site is allowed to keep the raw accent. These five are the whole
+ * Why a site is allowed to keep the raw accent. These four are the whole
  * vocabulary; a site that fits none of them is not classified, it is swept to
  * `text-<hue>-ink`.
+ *
+ * There is deliberately no "it is never rendered" reason. A dead class is not
+ * an accessibility argument, it is a bet that the code path stays dead - see
+ * the note above COMPONENTS_APP_SITES for the one place that bet was taken and
+ * then withdrawn.
  */
 type Reason =
   /**
@@ -92,25 +107,21 @@ type Reason =
   /**
    * Pure decoration under WCAG 1.4.3 and outside 1.4.11 entirely: conveys
    * nothing, has no function, and so has no floor to clear. The strongest
-   * claim of the five and the easiest to make dishonestly - it has to be true
+   * claim of the four and the easiest to make dishonestly - it has to be true
    * that a user who never sees the mark loses nothing.
    */
   | "decorative"
   /** >=24px regular or >=18.66px bold, so 3:1 applies and this hue clears it. */
   | "large-text"
   /**
-   * `be`, `ink` or `aqua` clearing 4.5:1 as small text - and only on a plain
-   * surface. Every hue including these three fails on a `bg-<hue>/10` tint of
-   * itself, so this is a claim about a surface, never about a hue.
+   * The hue clears 1.4.3's 4.5:1 *on the surface this site actually sits on*.
+   * Usually that means one of `be`, `ink` or `aqua` on a plain surface; where
+   * it is a tint instead, the evidence says so and quotes the number measured
+   * through the whole stack. There is no such thing as a hue that passes on
+   * its own - `be` reads 4.86 on the app background, 4.55 on a `bg-be/10` chip
+   * over a room card, and 4.22 on the same chip over the app background.
    */
-  | "passing-hue"
-  /**
-   * The class never reaches a rendered element on any code path, so there is no
-   * surface to measure it against. Only honest when the dead path is asserted
-   * somewhere - an `inert` row whose premise goes unchecked is indistinguishable
-   * from an unexamined one.
-   */
-  | "inert";
+  | "passing-hue";
 
 interface AllowedSite {
   file: string;
@@ -244,19 +255,15 @@ const ACT_SITES: AllowedSite[] = [
 //
 //   neutral `--background`  260 28% 96% light / 260 20% 9% dark
 //   neutral `--card`        260 28% 99% light / 260 16% 16% dark
+// The breathing route's `accentClassName` used to be classified here as an
+// `inert` raw accent - dead because `tone="onField"` never reads the prop, and
+// left alone on the grounds that "fixing" a dead string reads as a fix. The
+// module-tail work (#412) took the opposite and better line: it swept all nine
+// dead accents onto ink tokens and added the app-wide assertion below that
+// every `accentClassName` literal *is* an ink token. That makes the value safe
+// whether or not the prop is ever read, instead of safe only while it is not,
+// so the exemption is gone rather than merely re-keyed.
 const COMPONENTS_APP_SITES: AllowedSite[] = [
-  {
-    file: "app/(app)/tools/breathing/index.tsx",
-    snippet: `accentClassName="text-aqua"`,
-    reason: "inert",
-    evidence:
-      'Passed with `tone="onField"` (line 101), the branch that renders white ' +
-      "ink on the aqua field and never reads `accentClassName` - so this class " +
-      "paints nothing. No surface to measure. Left as-is rather than swept: " +
-      "changing it would be a no-op that reads as a fix. If the prop is ever " +
-      "made live for onField, the premise test below fails and this row must be " +
-      "re-judged against the field gradient, not the room surface.",
-  },
   {
     file: "app/(app)/tools/breathing/index.tsx",
     snippet: `<Icon name="air" className="size-6 text-aqua" />`,
@@ -684,16 +691,11 @@ describe("classified areas keep the raw hue accent only where it is evidenced", 
     // and quietly widen the gate. Evidence has to cite a ratio, which is the
     // one part a copy-paste of a neighbouring entry tends to drop.
     //
-    // `inert` is the one reason exempt from the ratio, and only because it is
-    // the one reason that denies there is a surface at all - a dead class path
-    // has nothing to measure. That exemption is why an `inert` row has to have
-    // its premise asserted somewhere (see the ToolStats tests below); without
-    // that it would be the one way into this allowlist with no number and no
-    // check.
+    // No exemptions. There was briefly one, for an `inert` reason that claimed
+    // a site had no surface to measure; dropping that reason closed the only
+    // way into this list without a number.
     const unjustified = ALLOWED.filter(
-      (site) =>
-        site.evidence.trim().length < 40 ||
-        (site.reason !== "inert" && !CITES_RATIO.test(site.evidence)),
+      (site) => site.evidence.trim().length < 40 || !CITES_RATIO.test(site.evidence),
     ).map(key);
 
     expect(unjustified).toEqual([]);
@@ -716,6 +718,450 @@ describe("act and home are not rooms", () => {
       /\buseRoomStyle\b/.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
     );
     expect(roomed).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The module tail (#412)
+// ---------------------------------------------------------------------------
+//
+// The fourteen small feature areas left over once #403's sweeps had landed -
+// mostly one to three sites each, so this is breadth rather than depth. Four of
+// them (gratitude, grounding, habits, journal) hold nothing at all now and are
+// listed anyway, so that a new site there has to be classified rather than
+// merely counted.
+//
+// Three things came out of classifying them, and none was a contrast number:
+//
+// 1. **Nine sites were inert**, and inert in a way that read as endorsement.
+//    Seven passed a raw accent to `ToolStats`' `accentClassName` under
+//    `tone="onField"`, where the prop is ignored outright and every value
+//    renders white on the hue field; two set a `badgeClass` on module tiles
+//    whose `badgeKey` is null, so the pill never renders. Nothing was visibly
+//    wrong, and `accentClassName="text-think"` sat there looking like evidence
+//    that `think` is a usable text colour when it reads 1.88:1. All nine now
+//    carry the ink token they would need the moment anyone flipped the switch -
+//    a change with no rendering effect at all, which is the point.
+//
+// 2. **Two sites genuinely failed** and were swept rather than classified: a
+//    12px milestone in `be` on `bg-be/5` over the iris room (4.41), and the
+//    selected 14px row in the breathing sounds sheet in `aqua` on `bg-aqua/10`
+//    (4.27). Both are the trap #412 names - a passing hue stops passing on a
+//    tint of itself.
+//
+// 3. **`mood` was never four sites.** The fourth was a comment *about* accent
+//    ink, surfaced by a template-literal mis-parse in test/source-scan.ts that
+//    stopped a `//` being read as a comment. Fixed there, with the parsing
+//    pinned down in test/source-scan.test.ts.
+//
+// Contrast figures below are the raw published accent against each site's real
+// backdrop, computed with the helper math in test/chip-contrast.test.ts. Light
+// is the binding scheme throughout; dark is never the constraint for these.
+// Room surfaces are the re-poured `--background` / `--card` from
+// src/lib/module-room.ts, which is why the same `bg-be/10` chip reads 4.55 in
+// mood's own room and 4.22 on the neutral app background.
+
+/** Every area of the tail, including the four that now hold no sites. */
+const TAIL_DIRS = [
+  "src/features/breathing",
+  "src/features/cbt",
+  "src/features/gratitude",
+  "src/features/grounding",
+  "src/features/habits",
+  "src/features/journal",
+  "src/features/meditation",
+  "src/features/mindfulness",
+  "src/features/modules",
+  "src/features/mood",
+  "src/features/security",
+  "src/features/settings",
+  "src/features/sleep",
+  "src/features/tools",
+];
+
+/**
+ * Tail areas where no file calls `useRoomStyle`, so `--accent-ink` is never
+ * poured and `text-accent-ink` would resolve to `--primary` - violet text in a
+ * module that is not violet. Same trap as rule 2 for the ACT module above; the
+ * suite checks the premise rather than trusting it.
+ */
+const ROOMLESS_TAIL_DIRS = [
+  "src/features/cbt",
+  "src/features/mindfulness",
+  "src/features/modules",
+  "src/features/security",
+  "src/features/settings",
+  "src/features/tools",
+];
+
+const HUE_MAP = "src/features/mindfulness/exercise-hue.ts";
+const SETTINGS = "src/features/settings/components";
+const BREATHING = "src/features/breathing";
+
+/**
+ * The shared hue map's `text` member, which every entry below shares. It is the
+ * *accent* member of a record that also carries `ink` - and `ink` is what the
+ * two consumers use for actual text (meditation-practices-section renders its
+ * step numerals in `hue.classes.ink`). `classes.text` itself reaches exactly
+ * two call sites, both aria-hidden `<Icon>` glyphs paired with a text label:
+ *
+ *   HueIconBadge (grounding intro/session/done) - a 32-48px glyph on a 0.14
+ *   tint of its own hue over the app background, in a container its own doc
+ *   calls decorative.
+ *
+ *   meditation-practices-section - a 20px glyph on `bg-<hue>/15` over `bg-card`.
+ *
+ * Four of the eight land under 1.4.11's 3:1 on the badge (iris 2.95, clay 3.01,
+ * mist 2.96, act 3.12). They stay because the glyph is decoration under 1.4.3:
+ * `<Icon>` is `aria-hidden` + `accessibilityElementsHidden` by default, and
+ * every one of the three badge sites repeats the glyph's meaning in adjacent
+ * text (technique title, step counter, done heading). That is the exemption -
+ * not the number.
+ */
+const HUE_MAP_ICON = "shared hue map, consumed only by aria-hidden <Icon> glyphs";
+
+const ALLOWED_TAIL: AllowedSite[] = [
+  // --- src/features/mindfulness: the shared hue map -------------------------
+  {
+    file: HUE_MAP,
+    snippet: `text: "text-mist",`,
+    reason: "decorative",
+    evidence: `${HUE_MAP_ICON}. Reached by the breath-awareness practice (3.15:1 on bg-mist/15 over bg-card) and, as a practice hue, by the meditation badge (2.96:1 on bg-mist/14 over the app background). The badge figure is under 1.4.11's 3:1, so this is decorative rather than icon - exempt, not passing.`,
+  },
+  {
+    file: HUE_MAP,
+    snippet: `text: "text-iris",`,
+    reason: "decorative",
+    evidence: `${HUE_MAP_ICON}. The only hue reaching both consumers - body-scan practice (3.14:1 on bg-iris/15 over bg-card) and the 5-4-3-2-1 grounding technique (2.94:1 on bg-iris/14 over the app background). The badge figure is under 1.4.11's 3:1, so this is decorative rather than icon - exempt, not passing.`,
+  },
+  {
+    file: HUE_MAP,
+    snippet: `text: "text-be",`,
+    reason: "icon",
+    evidence: `${HUE_MAP_ICON}. Reached by the loving-kindness practice: 4.22:1 on bg-be/15 over bg-card.`,
+  },
+  {
+    file: HUE_MAP,
+    snippet: `text: "text-ink",`,
+    reason: "icon",
+    evidence: `${HUE_MAP_ICON}. Reached by the observing-thoughts practice: 4.31:1 on bg-ink/15 over bg-card.`,
+  },
+  {
+    file: HUE_MAP,
+    snippet: `text: "text-act",`,
+    reason: "icon",
+    evidence: `${HUE_MAP_ICON}. Unreachable today: act is neither a grounding technique hue (iris/aqua/clay) nor a practice hue (mist/iris/be/ink). Kept because the map is a total record over HUE_NAMES; it would read 3.12:1 on the badge.`,
+  },
+  {
+    file: HUE_MAP,
+    snippet: `text: "text-clay",`,
+    reason: "icon",
+    evidence: `${HUE_MAP_ICON}. Reached by the body-scan grounding technique: 3.01:1 on the badge.`,
+  },
+  // `think` has no row here any more: its `text` member is the ink token, so
+  // there is no bare accent left to classify. The entry that used to sit here
+  // called it "unreachable today, and the one entry that must stay that way",
+  // and that was wrong on the first half - the 5-4-3-2-1 technique's fourth
+  // step is `hue: "think"`, and grounding-session.tsx passes the step hue, not
+  // the technique's, into HueIconBadge. It was rendering at 1.72:1.
+  {
+    file: HUE_MAP,
+    snippet: `text: "text-aqua",`,
+    reason: "icon",
+    evidence: `${HUE_MAP_ICON}. Reached by the cold-water grounding technique: 4.05:1 on the badge.`,
+  },
+
+  // --- src/features/settings: section-card badges ---------------------------
+  {
+    file: `${SETTINGS}/account-card.tsx`,
+    snippet: `iconClassName="text-clay"`,
+    reason: "icon",
+    evidence:
+      "20px glyph in a 36px badge, bg-[hsl(var(--clay)/0.10)] over the bg-card section: 3.39:1. " +
+      "The badge wrapper is accessibilityElementsHidden and the section title sits beside it.",
+  },
+  {
+    file: `${SETTINGS}/onboarding-card.tsx`,
+    snippet: `iconClassName="text-iris"`,
+    reason: "icon",
+    evidence:
+      "20px glyph on bg-[hsl(var(--iris)/0.10)] over bg-card: 3.32:1. Badge is a11y-hidden.",
+  },
+  {
+    file: `${SETTINGS}/reminders-card.tsx`,
+    snippet: `iconClassName="text-be"`,
+    reason: "icon",
+    evidence: "20px glyph on bg-[hsl(var(--be)/0.10)] over bg-card: 4.55:1. Badge is a11y-hidden.",
+  },
+  {
+    file: `${SETTINGS}/security-section.tsx`,
+    snippet: `iconClassName="text-iris"`,
+    reason: "icon",
+    evidence:
+      "20px glyph on bg-[hsl(var(--iris)/0.10)] over bg-card: 3.32:1. Badge is a11y-hidden.",
+  },
+  {
+    file: `${SETTINGS}/support-card.tsx`,
+    snippet: `iconClassName="text-aqua"`,
+    reason: "icon",
+    evidence:
+      "20px glyph on bg-[hsl(var(--aqua)/0.10)] over bg-card: 4.61:1. Badge is a11y-hidden.",
+  },
+
+  // --- src/features/breathing ----------------------------------------------
+  {
+    file: `${BREATHING}/breathing-exercise-editor-screen.tsx`,
+    snippet: `<Text className="text-base text-aqua">▲</Text>`,
+    reason: "passing-hue",
+    evidence:
+      "16px stepper glyph on the aqua room background - the screen is useRoomStyle('aqua'), so " +
+      "its bg-background re-resolves to the room pour: 4.86:1, clearing 1.4.3 as text and not " +
+      "relying on the non-text floor. The wrapping Pressable carries its own accessibilityLabel " +
+      "('<phase> +'), so the glyph is not the accessible name.",
+  },
+  {
+    file: `${BREATHING}/breathing-exercise-editor-screen.tsx`,
+    snippet: `<Text className="text-base text-aqua">▼</Text>`,
+    reason: "passing-hue",
+    evidence: "Decrement twin of the site above: 4.86:1 on the aqua room background.",
+  },
+  {
+    file: `${BREATHING}/sounds-sheet.tsx`,
+    snippet: `{active ? <Icon name="check" className="size-4 text-aqua" /> : null}`,
+    reason: "icon",
+    evidence:
+      "16px check glyph on bg-aqua/10 over the sheet's bg-background: 4.27:1, clearing 1.4.11. " +
+      "Selection is carried by accessibilityRole='radio' + aria-checked and by the label's " +
+      "font-semibold, so the tint is not the only channel. The label beside it is real text and " +
+      "took the ink token instead (#412) - the same 4.27 that passes here fails 1.4.3 there.",
+  },
+
+  // --- src/features/mood ----------------------------------------------------
+  {
+    file: "src/features/mood/mood-week-hero.tsx",
+    snippet: `className={cn("text-[11px] font-semibold", isToday && "text-be")}`,
+    reason: "passing-hue",
+    evidence:
+      "11px weekday letter for today, on a bg-be/10 cell inside the hero card. WeekHero renders " +
+      "only from mood-tracker-screen, which is useRoomStyle('be'), and its Card is variant='soft' " +
+      "(the tint colours the shadow, not the fill) - so the backdrop is the be room's card: " +
+      "4.55:1. The same chip over the neutral app background would be 4.22 and would fail.",
+  },
+  {
+    file: "src/features/mood/mood-week-hero.tsx",
+    snippet: `<Text className="text-[13px] text-be">`,
+    reason: "passing-hue",
+    evidence:
+      "13px emotion chip label on bg-be/10 over the same be room card: 4.55:1. Measured through " +
+      "the tint, not assumed from be's 4.86 on a plain surface.",
+  },
+
+  // --- src/features/tools: three tiles, one identical line ------------------
+  {
+    file: "src/features/tools/tools-screen.tsx",
+    snippet: `iconColor: "text-be",`,
+    reason: "icon",
+    evidence:
+      "Mood tile. 24px glyph on bg-be/15 inside a bg-card tile: 4.22:1. The tile's name and stat " +
+      "are separate text; the hue only tints the glyph.",
+  },
+  {
+    file: "src/features/tools/tools-screen.tsx",
+    snippet: `iconColor: "text-be",`,
+    reason: "icon",
+    evidence: "Grounding tile. Same treatment and surface as the mood tile: 4.22:1.",
+  },
+  {
+    file: "src/features/tools/tools-screen.tsx",
+    snippet: `iconColor: "text-be",`,
+    reason: "icon",
+    evidence: "Sleep tile. Same treatment and surface as the mood tile: 4.22:1.",
+  },
+
+  // --- src/features/cbt: shared-tool pills ----------------------------------
+  {
+    file: "src/features/cbt/cbt-home/shared-tools-row.tsx",
+    snippet: `act: "text-act",`,
+    reason: "icon",
+    evidence:
+      "13px pill glyph on bg-card: 3.95:1. Decorative - the tool's name sits beside it. This map's " +
+      "third entry already takes the ink token because think reads 2.03:1 here.",
+  },
+  {
+    file: "src/features/cbt/cbt-home/shared-tools-row.tsx",
+    snippet: `be: "text-be",`,
+    reason: "icon",
+    evidence: "13px pill glyph on bg-card: 5.26:1, which would clear 1.4.3 too.",
+  },
+
+  // --- src/features/security: the lock gate ---------------------------------
+  {
+    file: "src/features/security/app-lock-gate.tsx",
+    snippet: `<Icon name="lock" size={36} className="text-iris" />`,
+    reason: "icon",
+    evidence:
+      "Privacy cover shown when the app leaves the foreground. 36px glyph on " +
+      "bg-[hsl(var(--iris)/0.12)] over bg-background: 3.01:1. The whole cover is " +
+      "accessibilityElementsHidden, so the glyph carries nothing to assistive tech.",
+  },
+  {
+    file: "src/features/security/app-lock-gate.tsx",
+    snippet: `<Icon name="lock" size={36} className="text-iris" />`,
+    reason: "icon",
+    evidence:
+      "The locked screen itself, same glyph and surface: 3.01:1. Its badge wrapper is " +
+      "accessibilityElementsHidden and lock.title/lock.description carry the meaning as text.",
+  },
+
+  // --- one-site areas -------------------------------------------------------
+  {
+    file: "src/features/meditation/meditation-home-screen.tsx",
+    snippet: `<Icon name="chevron-right" size={20} className="text-iris" />`,
+    reason: "icon",
+    evidence:
+      "20px affordance chevron on the iris room card - Card variant='soft' is a plain bg-card, " +
+      "the tint only colours its shadow: 3.72:1. The row's label and its Pressable role carry the " +
+      "meaning; the chevron repeats it.",
+  },
+  {
+    file: "src/features/modules/dbt-module-screen.tsx",
+    snippet: `<Icon name="anchor" className="size-7 text-be" />`,
+    reason: "icon",
+    evidence:
+      "28px glyph on bg-be/15 inside a bg-be/5 card over the app background: 3.95:1. " +
+      "dbt.statusTitle and dbt.statusBody sit beside it as text.",
+  },
+  {
+    file: "src/features/sleep/star-rating.tsx",
+    snippet: `className={filled ? "text-ink" : "text-muted-foreground"}`,
+    reason: "icon",
+    evidence:
+      "32px star on the ink room background (sleep-log-screen is useRoomStyle('ink')): 4.71:1. " +
+      "Filled and empty differ by glyph - star vs star-outline - and each Pressable carries " +
+      "accessibilityRole='radio' with aria-checked, so the fill colour is not the only channel.",
+  },
+];
+
+/**
+ * Every `accentClassName` literal in the app. `ToolStats` renders it at 13px
+ * and 11px, so it must be an ink token: `text-accent-ink` inside a room of that
+ * hue, `text-<hue>-ink` anywhere else. The prop's own doc says so, and seven
+ * call sites disagreed with it in silence because `tone="onField"` ignores the
+ * value entirely (#412).
+ */
+const ACCENT_PROP = /accentClassName=\{?"([^"]*)"/g;
+const INK_TOKEN = new RegExp(String.raw`^text-(accent|${HUE_NAMES.join("|")})-ink$`);
+
+describe("the module tail keeps the raw hue accent only where it is justified (#412)", () => {
+  it("has exactly the classified set of bare text-<hue> sites", () => {
+    const found = findings(BARE_HUE, TAIL_DIRS);
+
+    expect(found.map(key).sort()).toEqual(ALLOWED_TAIL.map(key).sort());
+  });
+
+  it("gives every classified site a measured contrast figure", () => {
+    // A reason without a number is the thing #412 exists to stop: "judged safe
+    // by whoever swept the area" with the reasoning left unwritten.
+    const unevidenced = ALLOWED_TAIL.filter((site) => !/\d\.\d{2}:1/.test(site.evidence)).map(key);
+
+    expect(unevidenced).toEqual([]);
+  });
+
+  it("never reaches for room ink in the areas that are not rooms", () => {
+    expect(findings(ROOM_INK, ROOMLESS_TAIL_DIRS)).toEqual([]);
+  });
+
+  it("has no useRoomStyle call in those areas to justify room ink", () => {
+    // The premise of the assertion above. If one of these areas becomes a room,
+    // revisit that test rather than deleting it.
+    const roomed = sourceFiles(ROOT, { dirs: ROOMLESS_TAIL_DIRS }).filter((file) =>
+      /\buseRoomStyle\b/.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
+    );
+
+    expect(roomed).toEqual([]);
+  });
+
+  it("passes only ink tokens to ToolStats' accentClassName, app-wide", () => {
+    const wrong = sourceFiles(ROOT, { dirs: ["app", "src"] }).flatMap((file) => {
+      const stripped = stripComments(readFileSync(join(ROOT, file), "utf8"));
+      return [...stripped.matchAll(ACCENT_PROP)]
+        .map((match) => match[1])
+        .filter((value) => !INK_TOKEN.test(value))
+        .map((value) => `${file}: ${value}`);
+    });
+
+    expect(wrong).toEqual([]);
+  });
+});
+
+describe("no bare accent survives outside a classified area", () => {
+  // Inherited from test/accent-ink-coverage.test.ts, which this replaces. That
+  // suite counted survivors per area and refused to let any area grow; once
+  // every area was classified its budget emptied and the counting had nothing
+  // left to say. This is the one guarantee that outlived it, and it is the
+  // stronger half: the areas enumerated above are asserted exactly, and
+  // everywhere else must hold none at all.
+  //
+  // Without it, `text-<hue>` could reappear somewhere neither gate looks -
+  // src/lib, src/components/ui, src/providers, src/hooks - and both suites
+  // would still be green.
+  const CLASSIFIED = [...CLASSIFIED_AREAS, ...TAIL_DIRS];
+
+  it("finds bare accents where it expects them, so the filter is not vacuous", () => {
+    // If the scan itself broke, the assertion below would pass by finding
+    // nothing anywhere rather than nothing *outside* the classified areas.
+    expect(
+      findingsIn(BARE_HUE, sourceFiles(ROOT, { dirs: ["app", "src"] })).length,
+    ).toBeGreaterThan(30);
+  });
+
+  it("holds none anywhere else", () => {
+    const stray = findingsIn(BARE_HUE, sourceFiles(ROOT, { dirs: ["app", "src"] }))
+      .filter((finding) => !CLASSIFIED.some((dir) => finding.file.startsWith(`${dir}/`)))
+      .map((finding) => `${finding.file}:${finding.line} ${finding.snippet}`);
+
+    // Classify the area it landed in - add its directory above and enumerate
+    // its sites - rather than deleting the line from this list.
+    expect(stray).toEqual([]);
+  });
+});
+
+describe("the shared hue map is reached only by the hues it was measured against", () => {
+  // The hue map is total over HUE_NAMES, but only some of those hues are ever
+  // *selected* by configuration, and each classification above is a statement
+  // about the surfaces its hue actually lands on. Nothing tied those statements
+  // to the config, so a new practice or technique could pick a hue whose entry
+  // says "unreachable" and no test would notice - the allowlist is keyed on the
+  // map's source lines, which such a change does not touch.
+  //
+  // This is also the assertion that would have caught the `think` defect: the
+  // fourth step of 5-4-3-2-1 has always been `hue: "think"`, and
+  // grounding-session.tsx paints the *step* hue rather than the technique's, so
+  // the entry claiming think was unreachable was wrong the day it was written.
+  const reachable = new Set<ExerciseHue>([
+    ...groundingTechniques.map((technique) => technique.hue),
+    ...groundingTechniques.flatMap((technique) => technique.steps.map((step) => step.hue)),
+    ...MEDITATION_PRACTICES.map((practice) => practice.hue),
+  ]);
+
+  it("selects exactly the hues these classifications cover", () => {
+    // `act` is the only hue no config selects, which is what its entry claims.
+    // Adding a hue here means re-reading that hue's row against the badge and
+    // the practice chip before changing this list.
+    expect([...reachable].sort()).toEqual(["aqua", "be", "clay", "ink", "iris", "mist", "think"]);
+  });
+
+  it("never reaches a bare accent that fails the decorative reading outright", () => {
+    // Every reachable hue paints HueIconBadge, whose glyph is aria-hidden and
+    // sits beside the technique or practice name - decorative, so 1.4.11 does
+    // not bind. `think` is excluded anyway because a 1.72:1 mark is invisible
+    // rather than merely exempt, and it is the one hue whose `text` member is
+    // the ink token for that reason.
+    const bareAccent = [...reachable].filter(
+      (hue) => !exerciseHue(hue).classes.text.endsWith("-ink"),
+    );
+
+    expect(bareAccent).not.toContain("think");
   });
 });
 
@@ -743,15 +1189,18 @@ describe("the onboarding modals mount outside every room", () => {
 });
 
 describe("the ToolStats accent is dead at every call site", () => {
-  // The premise the `inert` row above rests on, checked at the call sites
-  // rather than only in the component. src/components/app/tool-stats.test.tsx
-  // proves that the `onField` branch never reads `accentClassName`; that alone
-  // is not enough, because it says nothing about which tone the call sites
-  // actually pass. Flip the breathing route to `tone="default"` and that unit
-  // test still passes, the allowlist key still matches (the accentClassName
-  // line is untouched), and `app` is no longer in the coverage ratchet - so
-  // without this assertion the raw `text-aqua` would quietly come alive as
-  // small text on the aqua field with nothing failing.
+  // The premise behind the claim, made throughout this file and #412's notes,
+  // that `accentClassName` is dead at every call site: it is dead only because
+  // all eight callers pass `tone="onField"`, the one branch that ignores the
+  // prop. src/components/app/tool-stats.test.tsx proves the branch ignores it;
+  // nothing proved which tone the callers pass.
+  //
+  // The ink-token rule below already makes every value safe if the prop wakes
+  // up, so this is no longer what stops a raw accent going live. It is here to
+  // keep the *stated reason* true: several comments explain a sweep by saying
+  // the prop is never read, and that sentence quietly stops being a fact the
+  // day a screen passes a different tone. Then it should be re-read, which is
+  // what a failure here forces.
   const callers = sourceFiles(ROOT, { dirs: ["app", "src"] })
     .map((file) => ({ file, source: stripComments(readFileSync(join(ROOT, file), "utf8")) }))
     .filter(({ source }) => source.includes("<ToolStats"))

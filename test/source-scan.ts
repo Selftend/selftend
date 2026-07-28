@@ -50,12 +50,49 @@ export function sourceFiles(root: string, options: SourceFileOptions): string[] 
  * rest of the line - silently hiding whatever followed it.
  *
  * Template literals are scanned rather than skipped, so code inside a `${...}`
- * interpolation is always visible.
+ * interpolation is always visible. The interpolation is tracked on a stack
+ * rather than simply broken out of: without it the template's *closing*
+ * backtick reads as an opening one, and everything up to the next backtick in
+ * the file is swallowed as template body. That mis-parse hid nothing, but it
+ * un-hid prose - a `//` comment inside the swallowed span stopped being
+ * recognised as a comment, so a class name merely *named* in a comment
+ * surfaced as a finding (`src/features/mood/mood-entry-editor-screen.tsx`
+ * reported its own "not `text-be`" note as a `text-be` call site, #412).
+ * Braces are counted so object literals and nested templates inside an
+ * interpolation do not close it early.
  */
 function scan(source: string, blankStrings: boolean): string {
   const out = source.split("");
   const blank = (from: number, to: number) => {
     for (let k = from; k < to; k += 1) if (out[k] !== "\n") out[k] = " ";
+  };
+
+  /** Open `${...}` interpolations, innermost last, each holding its brace depth. */
+  const interpolations: number[] = [];
+
+  /**
+   * Consumes template body from `i` until the template closes or an
+   * interpolation opens, returning the new index.
+   */
+  const consumeTemplateBody = (from: number): number => {
+    let k = from;
+    while (k < source.length) {
+      if (source[k] === "\\") {
+        if (blankStrings) blank(k, k + 2);
+        k += 2;
+      } else if (source.slice(k, k + 2) === "${") {
+        if (blankStrings) blank(k, k + 2);
+        interpolations.push(0);
+        return k + 2; // Interpolated code is scanned normally.
+      } else if (source[k] === "`") {
+        if (blankStrings) out[k] = " ";
+        return k + 1;
+      } else {
+        if (blankStrings) blank(k, k + 1);
+        k += 1;
+      }
+    }
+    return k;
   };
 
   let i = 0;
@@ -85,23 +122,17 @@ function scan(source: string, blankStrings: boolean): string {
       i = stop;
     } else if (source[i] === "`") {
       if (blankStrings) out[i] = " ";
+      i = consumeTemplateBody(i + 1);
+    } else if (source[i] === "{" && interpolations.length > 0) {
+      interpolations[interpolations.length - 1] += 1;
       i += 1;
-      while (i < source.length) {
-        if (source[i] === "\\") {
-          if (blankStrings) blank(i, i + 2);
-          i += 2;
-        } else if (source.slice(i, i + 2) === "${") {
-          if (blankStrings) blank(i, i + 2);
-          i += 2;
-          break; // Interpolated code is scanned normally.
-        } else if (source[i] === "`") {
-          if (blankStrings) out[i] = " ";
-          i += 1;
-          break;
-        } else {
-          if (blankStrings) blank(i, i + 1);
-          i += 1;
-        }
+    } else if (source[i] === "}" && interpolations.length > 0) {
+      if (interpolations[interpolations.length - 1] === 0) {
+        interpolations.pop();
+        i = consumeTemplateBody(i + 1); // Back into the template this closed.
+      } else {
+        interpolations[interpolations.length - 1] -= 1;
+        i += 1;
       }
     } else {
       i += 1;

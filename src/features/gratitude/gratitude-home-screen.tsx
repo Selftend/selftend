@@ -142,7 +142,7 @@ export default function GratitudeHomeScreen() {
               meta={
                 <ToolStats
                   tone="onField"
-                  accentClassName="text-think"
+                  accentClassName="text-accent-ink"
                   items={[
                     {
                       value: t("hero.entries", { count: totalEntries ?? allEntries.length }),
