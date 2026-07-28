@@ -11,7 +11,12 @@ interface ToolStatItem {
 
 interface ToolStatsProps {
   items: ToolStatItem[];
-  /** Tailwind text-color class for the bold values, e.g. "text-be". Must be a literal used elsewhere. */
+  /**
+   * Tailwind text-color class for the bold values. These are small text, so pass
+   * the ink token, not the published accent: `text-accent-ink` inside a room of
+   * that hue, `text-<hue>-ink` (e.g. "text-be-ink") anywhere else (#403). Must be
+   * a literal used elsewhere. Ignored entirely when `tone="onField"`.
+   */
   accentClassName: string;
   /** Optional data line under the stats (e.g. "LAST · 5/31/2026"). Uppercase, accent-tinted. */
   subline?: string;

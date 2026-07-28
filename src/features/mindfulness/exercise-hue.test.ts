@@ -16,6 +16,7 @@ describe("exercise-hue", () => {
   it("exposes Tailwind classes for aqua", () => {
     expect(exerciseHue("aqua").classes).toEqual({
       text: "text-aqua",
+      ink: "text-aqua-ink",
       chipBg: "bg-aqua/15",
       border: "border-aqua/30",
       fill: "bg-aqua",
@@ -36,7 +37,17 @@ describe("exercise-hue", () => {
   it("exposes a definition for every hue", () => {
     for (const hue of EXERCISE_HUES) {
       const def = exerciseHue(hue);
-      expect(def.classes.text).toBe(`text-${hue}`);
+      // `think` is the single exception, and deliberately so (#412): its accent
+      // reads 1.72:1 as a glyph on a bg-think/14 badge in light mode, and that
+      // badge is reachable - the 5-4-3-2-1 grounding technique's fourth step
+      // carries `hue: "think"` and grounding-session.tsx paints the step hue.
+      // So `text` holds the ink token there, which reads 4.97 on the same
+      // surface. Asserted as an exception rather than relaxed to a wildcard, so
+      // that a second hue joining it has to be argued for here.
+      expect(def.classes.text).toBe(hue === "think" ? "text-think-ink" : `text-${hue}`);
+      // Every hue carries its ink twin, so a text consumer never has to reach
+      // for `text` and land under AA (#403).
+      expect(def.classes.ink).toBe(`text-${hue}-ink`);
       expect(def.classes.fill).toBe(`bg-${hue}`);
       expect(def.hsl.light).toMatch(/^\d+, \d+%, \d+%$/);
       expect(def.hsl.dark).toMatch(/^\d+, \d+%, \d+%$/);

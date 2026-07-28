@@ -27,8 +27,14 @@ export function WidgetCardHeader({
           {title}
         </Text>
       </View>
+      {/*
+        Accent ink, not the accent (#403): the module label is 10px text on
+        `c.chip`, a `bg-<tint>/10` tint of its own hue, where every hue falls
+        under AA — `ink` 4.28 and `be` 4.22 at best, `think` 1.76 at worst.
+        The icon above keeps `c.icon`; it is decorative.
+      */}
       <View className={cn("rounded-full px-2 py-0.5", c.chip)}>
-        <Text className={cn("text-[10px] font-semibold uppercase tracking-wider", c.icon)}>
+        <Text className={cn("text-[10px] font-semibold uppercase tracking-wider", c.ink)}>
           {moduleLabel}
         </Text>
       </View>

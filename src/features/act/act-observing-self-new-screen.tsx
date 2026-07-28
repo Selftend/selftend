@@ -178,7 +178,7 @@ export default function ActObservingSelfNewScreen() {
                     {...techniqueRoving.getItemProps(index, () => setTechniqueUsed(tech))}
                   >
                     <View className="gap-1">
-                      <Text className={cn("font-semibold", selected && "text-act")}>
+                      <Text className={cn("font-semibold", selected && "text-act-ink")}>
                         {t(`act:observingSelf.techniques.${tech}`)}
                       </Text>
                       <Text variant="muted" className="text-xs leading-snug">
@@ -196,7 +196,9 @@ export default function ActObservingSelfNewScreen() {
         {step === "exercise" ? (
           <Card className="border-act/30 bg-act/5">
             <CardHeader>
-              <CardTitle className="text-act">{t(`act:observingSelf.${guideKey}.title`)}</CardTitle>
+              <CardTitle className="text-act-ink">
+                {t(`act:observingSelf.${guideKey}.title`)}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {techniqueUsed === "tenDeepBreaths" ? (

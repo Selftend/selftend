@@ -534,7 +534,12 @@ export function MoodEntryEditorScreen({
                           <Text
                             className={cn(
                               "text-[13px]",
-                              selected ? "text-be font-medium" : "text-foreground",
+                              // Accent ink, not `text-be` (#368): the selected chip stacks
+                              // be/10 on the be/[0.06] "go deeper" box on the room
+                              // background, and the published accent reads 3.81:1 through
+                              // that stack - be clears AA on the bare room surfaces, not
+                              // through two tints of itself.
+                              selected ? "text-accent-ink font-medium" : "text-foreground",
                             )}
                           >
                             {label}

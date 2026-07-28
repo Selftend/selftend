@@ -1,4 +1,5 @@
 import { pacerColors } from "@/src/features/breathing/pacer-colors";
+import { HUE_TRIPLES } from "@/src/lib/design-tokens";
 import { fieldGradient, roomTriples } from "@/src/lib/module-room";
 
 // Hues with a validated room recipe. The field recipe holds one S/L formula
@@ -102,6 +103,77 @@ describe("room surface pairings meet WCAG AA", () => {
       expect(contrastRatio(foreground, card)).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(mutedForeground, background)).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(mutedForeground, card)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+
+// The third pairing, and the one the two suites above were silent about until
+// #368: accent ink on the room surfaces the same hue pours. Seven rooms shipped
+// `text-<hue>` on `bg-background` / `bg-card` through that hole — `think` at
+// 1.90:1 since the CBT room, plus iris 3.33, clay 3.48 and act 3.68, all in
+// light mode. The published accent is tuned as a colour, not as ink, and has
+// nowhere near AA's 4.5 on a pale tint of itself. `accent-ink` in roomTriples is
+// the certified value (`text-accent-ink`), and this suite is what makes the
+// eighth room's absence of it a build failure rather than a launch.
+//
+// This was first read as a room-surface problem. It is not: the same four hues
+// fail within 0.05 of these numbers on the *neutral app surface* too (#403), so
+// the room only reproduces a gap the accent already had. The room-less half is
+// `text-<hue>-ink`, floored in test/theme-token-sync.test.ts; both halves read
+// the same HUE_INK_TRIPLES.
+describe("accent ink meets WCAG AA on the room surfaces its own hue pours", () => {
+  it.each(ROOM_HUES)("%s accent ink passes on the room background and card", (hue) => {
+    for (const scheme of ["light", "dark"] as const) {
+      const room = roomTriples(hue)[scheme];
+      const accentInk = hslTripleToRgb(room["accent-ink"]);
+
+      expect(contrastRatio(accentInk, hslTripleToRgb(room.background))).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(accentInk, hslTripleToRgb(room.card))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  // A floor alone can be satisfied by throwing the colour away — near-black ink
+  // clears 4.5 in every room and reads as no hue at all. These pin the shape the
+  // floor is meant to be met *with*: the room's own hue, darkened.
+  it.each(ROOM_HUES)("%s light accent ink is the published accent, darkened", (hue) => {
+    // "43 74% 52%" → the same hue and saturation at the certified lightness.
+    const [degree, saturation] = HUE_TRIPLES[hue].light.split(" ");
+    expect(roomTriples(hue).light["accent-ink"]).toBe(`${degree} ${saturation} 28%`);
+  });
+
+  it.each(ROOM_HUES)("%s dark accent ink is the published accent untouched", (hue) => {
+    expect(roomTriples(hue).dark["accent-ink"]).toBe(HUE_TRIPLES[hue].dark);
+  });
+});
+
+// The fourth pairing, and the one #368's table did not reach: the room hue used
+// as ink on a *tint of itself*. Rooms are full of these - a selected chip is
+// `bg-<hue>/10` with `text-<hue>` on it, sometimes nested inside a `bg-<hue>/
+// [0.06]` box, and each tint darkens the surface the same accent has to carry.
+// #368 measured the bare surfaces and found four failing hues; through a single
+// /10 chip the published accent fails for *all seven*, `be` and `ink` included
+// (4.12 and 4.16 on the room background). That is why mood - a "passing" be room
+// - still had a 3.81:1 chip label. Accent ink clears every one of these with
+// headroom (worst case 5.00), so the floor holds at AA without a per-pairing
+// exception.
+describe("accent ink meets WCAG AA on tints of the room's own hue", () => {
+  it.each(ROOM_HUES)("%s accent ink passes on a chip fill of its own hue", (hue) => {
+    for (const scheme of ["light", "dark"] as const) {
+      const room = roomTriples(hue)[scheme];
+      const accent = hslTripleToRgb(HUE_TRIPLES[hue][scheme]);
+      const accentInk = hslTripleToRgb(room["accent-ink"]);
+
+      for (const surface of ["background", "card"] as const) {
+        const base = hslTripleToRgb(room[surface]);
+        // `bg-<hue>/10` — the selected-chip fill.
+        const chip = compositeOver(accent, 0.1, base);
+        // ...and that chip nested in a `bg-<hue>/[0.06]` panel, which mood's
+        // "go deeper" body chips actually do.
+        const nested = compositeOver(accent, 0.1, compositeOver(accent, 0.06, base));
+
+        expect(contrastRatio(accentInk, chip)).toBeGreaterThanOrEqual(4.5);
+        expect(contrastRatio(accentInk, nested)).toBeGreaterThanOrEqual(4.5);
+      }
     }
   });
 });
