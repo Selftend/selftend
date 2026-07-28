@@ -208,7 +208,18 @@ export default function GratitudeHomeScreen() {
                             importantForAccessibility="no"
                             className="h-9 w-9 items-center justify-center rounded-[10px] bg-[hsl(var(--think)/0.12)]"
                           >
-                            <Icon name="star" size={20} className="text-think" />
+                            {/*
+                              A redundant affordance — the row's own title and
+                              the pressable's label both say "Favorites" — so
+                              1.4.11 would exempt it as decoration. It takes
+                              accent ink anyway: at 1.88:1 on this think/0.12
+                              tile the glyph reads as absent rather than
+                              decorative, and its twin in gratitude-entry-card
+                              is already darkened for that reason (#368). think
+                              is the one hue where the non-text exemption cannot
+                              save it. 5.47:1 here, same hue.
+                            */}
+                            <Icon name="star" size={20} className="text-accent-ink" />
                           </View>
                           <View>
                             <Text className="text-sm font-semibold">{t("insights.favorites")}</Text>
