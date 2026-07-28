@@ -6,7 +6,7 @@ import { MoodCheckinCard } from "@/src/features/widgets/cards/mood-checkin-card"
 import { StatTilesCard } from "@/src/features/widgets/cards/stat-tiles-card";
 import { BreathingCard } from "@/src/features/widgets/cards/breathing-card";
 import { StatsCard } from "@/src/features/widgets/cards/stats-card";
-import { HabitsCard } from "@/src/features/widgets/cards/habits-card";
+import { ActivitiesCard } from "@/src/features/widgets/cards/activities-card";
 import { CommittedActionsCard } from "@/src/features/widgets/cards/committed-actions-card";
 import { DefusionCard } from "@/src/features/widgets/cards/defusion-card";
 import { ProgrammeCard } from "@/src/features/widgets/cards/programme-card";
@@ -59,11 +59,13 @@ export const CARD_REPLICAS: Record<CardId, CardReplicaEntry> = {
   },
   "gratitude-latest": stats("favorite", "think"),
   "meditation-pick": stats("self-improvement", "iris"),
+  // Registry id kept: it is a storage key in widget_preferences.widget_id. The card
+  // itself is scheduled CBT activities, not habits (#330).
   "habits-today": {
-    kind: "habits",
+    kind: "activities",
     icon: "directions-run",
     tint: "act",
-    Component: HabitsCard,
+    Component: ActivitiesCard,
   },
   "self-care": shortcut("spa"),
   "cbt-open-record": shortcut("psychology"),

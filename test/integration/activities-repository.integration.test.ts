@@ -41,6 +41,157 @@ describe("activities activity_logs (integration)", () => {
     expect(insert.data?.created_at).toEqual(expect.any(String));
   });
 
+  // Two captured civil days on one table, for two different reasons (#330).
+  describe("occurrence offsets", () => {
+    it("round-trips both offsets through the encrypted view", async () => {
+      const insert = await alice
+        .from("activity_logs")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseActivity,
+          scheduled_at: "2026-05-15T19:00:00.000Z",
+          scheduled_offset_minutes: -420,
+          completed_at: "2026-05-15T19:00:00.000Z",
+          completed_offset_minutes: 330,
+        })
+        .select("*")
+        .single();
+
+      expect(insert.error).toBeNull();
+      expect(insert.data?.scheduled_offset_minutes).toBe(-420);
+      expect(insert.data?.completed_offset_minutes).toBe(330);
+
+      // Read back rather than trusting the INSERT response: the values have to have
+      // survived the encrypted-view writer, not just been echoed out of NEW.
+      const read = await alice
+        .from("activity_logs")
+        .select("scheduled_offset_minutes, completed_offset_minutes")
+        .eq("id", insert.data!.id)
+        .single();
+      expect(read.error).toBeNull();
+      expect(read.data?.scheduled_offset_minutes).toBe(-420);
+      expect(read.data?.completed_offset_minutes).toBe(330);
+    });
+
+    it("records omitted offsets as unknown rather than UTC", async () => {
+      const insert = await alice
+        .from("activity_logs")
+        .insert({ user_id: SEED_USERS.alice.id, ...baseActivity })
+        .select("scheduled_offset_minutes, completed_offset_minutes")
+        .single();
+
+      expect(insert.error).toBeNull();
+      // A 0 here would be the column claiming a fact the caller never gave (#250).
+      expect(insert.data?.scheduled_offset_minutes).toBeNull();
+      expect(insert.data?.completed_offset_minutes).toBeNull();
+    });
+
+    it("accepts an explicit zero offset from a caller genuinely at UTC", async () => {
+      const insert = await alice
+        .from("activity_logs")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseActivity,
+          completed_at: "2026-05-15T19:00:00.000Z",
+          completed_offset_minutes: 0,
+          scheduled_offset_minutes: 0,
+        })
+        .select("scheduled_offset_minutes, completed_offset_minutes")
+        .single();
+
+      expect(insert.error).toBeNull();
+      expect(insert.data?.completed_offset_minutes).toBe(0);
+      expect(insert.data?.scheduled_offset_minutes).toBe(0);
+    });
+
+    it("carries both offsets through an UPDATE", async () => {
+      // completeActivity stamps completed_at on UPDATE, not INSERT, so the offset has
+      // to survive the _upd writer too.
+      const created = await alice
+        .from("activity_logs")
+        .insert({ user_id: SEED_USERS.alice.id, ...baseActivity })
+        .select("id")
+        .single();
+      expect(created.error).toBeNull();
+
+      const updated = await alice
+        .from("activity_logs")
+        .update({
+          completed_at: "2026-05-15T19:00:00.000Z",
+          completed_offset_minutes: -420,
+          scheduled_at: "2026-05-15T19:00:00.000Z",
+          scheduled_offset_minutes: -420,
+        })
+        .eq("id", created.data!.id)
+        .select("scheduled_offset_minutes, completed_offset_minutes")
+        .single();
+
+      expect(updated.error).toBeNull();
+      expect(updated.data?.completed_offset_minutes).toBe(-420);
+      expect(updated.data?.scheduled_offset_minutes).toBe(-420);
+    });
+
+    it("accepts a scheduled_at in the FUTURE - a plan is not an occurrence", async () => {
+      // validate_occurrence_time rejects future instants, which is why scheduled_at
+      // must not be routed through it. This is the whole point of the second column.
+      const insert = await alice
+        .from("activity_logs")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseActivity,
+          scheduled_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          scheduled_offset_minutes: -420,
+        })
+        .select("scheduled_offset_minutes")
+        .single();
+
+      expect(insert.error).toBeNull();
+      expect(insert.data?.scheduled_offset_minutes).toBe(-420);
+    });
+
+    it("rejects a completed_at in the future", async () => {
+      const insert = await alice
+        .from("activity_logs")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseActivity,
+          completed_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          completed_offset_minutes: 0,
+        })
+        .select("id");
+
+      expect(insert.error).not.toBeNull();
+    });
+
+    it("rejects an out-of-range completed offset", async () => {
+      const insert = await alice
+        .from("activity_logs")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseActivity,
+          completed_at: "2026-05-15T19:00:00.000Z",
+          completed_offset_minutes: 900,
+        })
+        .select("id");
+
+      expect(insert.error).not.toBeNull();
+    });
+
+    it("rejects an out-of-range scheduled offset", async () => {
+      const insert = await alice
+        .from("activity_logs")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          ...baseActivity,
+          scheduled_at: "2026-05-15T19:00:00.000Z",
+          scheduled_offset_minutes: -900,
+        })
+        .select("id");
+
+      expect(insert.error).not.toBeNull();
+    });
+  });
+
   it("rejects an invalid category via the check constraint", async () => {
     const result = await alice
       .from("activity_logs")

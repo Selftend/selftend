@@ -91,10 +91,11 @@ export interface RoutineToolRecords {
   habitLogs?: readonly { loggedOn: string }[];
   /**
    * Behavioral activation (CBT Activities): only completion counts - an
-   * activity can be created/scheduled days before it is done, so createdAt
-   * would celebrate planning, not doing. completedAt is null until then.
+   * activity can be created/scheduled days before it is done, so the planned day
+   * would celebrate planning, not doing. `completedDayKey` is the captured civil
+   * day it was DONE on, and is null until then (#330).
    */
-  activityLogs?: readonly { completedAt: string | null }[];
+  activityLogs?: readonly { completedDayKey: string | null }[];
   /** ExposureSession.completedAt is set at save time (non-null in practice). */
   exposureSessions?: readonly { completedAt: string | null }[];
   defusionLogs?: readonly { createdAt: string }[];
@@ -206,8 +207,10 @@ export function stepDoneOnDate(
       // loggedOn is already a civil date key - compare directly, no bucketing.
       return (records.habitLogs ?? []).some((l) => l.loggedOn === dayKey);
     case "activities":
-      // Completion only: a scheduled-but-not-done activity stays open.
-      return onDay(records.activityLogs, (a) => a.completedAt, dayKey);
+      // Completion only: a scheduled-but-not-done activity stays open, so its null
+      // completedDayKey can never match a real day key. Captured day - compare,
+      // never re-bucket, or the engine and the activities screen disagree (#330).
+      return (records.activityLogs ?? []).some((a) => a.completedDayKey === dayKey);
     case "exposure":
       return onDay(records.exposureSessions, (s) => s.completedAt, dayKey);
     case "defusion":
