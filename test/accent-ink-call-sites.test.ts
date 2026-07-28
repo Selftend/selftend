@@ -15,13 +15,26 @@ import { sourceFiles, stripComments } from "@/test/source-scan";
 //    accent is tuned for fills, borders and icons, and fails AA as text
 //    (act is 3.64:1 on `--background`). #406 swept 29 such sites in act alone.
 //
-// 2. **The ACT module is not the act room.** `act`'s room is
-//    `src/features/habits/` (see the header of test/chip-contrast.test.ts:
-//    "Every habit screen wears the act room"). No file under
-//    `src/features/act/`, and no route under `app/(app)/modules/act/`, calls
-//    `useRoomStyle`. So `--accent-ink` is never poured here and resolves to
-//    `--primary`: `text-accent-ink` in this module renders violet text on a
-//    green screen. The correct off-room class is `text-act-ink`.
+// 2. **Whether an area is a room decides which ink is even legal**, and the
+//    four areas here answer that differently:
+//
+//    - `src/features/act` and `src/features/home` are not rooms. `act`'s room
+//      is `src/features/habits/` (see the header of test/chip-contrast.test.ts:
+//      "Every habit screen wears the act room"), and the home hub is not a room
+//      at all - it shows every module's hue side by side, so there is no single
+//      hue to pour. No file under either calls `useRoomStyle`, which the
+//      assertions below check rather than trust. So `--accent-ink` is never
+//      poured and resolves to `--primary`: `text-accent-ink` in either area
+//      renders violet text on a green card, and the correct off-room class is
+//      `text-<hue>-ink`.
+//    - `src/components/app` renders both inside and outside rooms, so neither
+//      class is right for all of its call sites - each one is judged on the
+//      surface its actual callers give it.
+//    - `app/` is mixed: the two breathing routes do call `useRoomStyle`, so
+//      room ink is legitimate there and only there.
+//
+//    That is why the room-ink assertions below are scoped to the areas whose
+//    premise has been checked, rather than swept across everything.
 //
 // Every surviving occurrence in a classified area is enumerated in ALLOWED with
 // the surface it actually sits on and the contrast it measures there, keyed on
@@ -33,12 +46,21 @@ import { sourceFiles, stripComments } from "@/test/source-scan";
 const ROOT = join(__dirname, "..");
 
 const ACT_DIR = "src/features/act";
+const HOME_DIR = "src/features/home";
 
 /**
  * The areas whose survivors are fully enumerated below. `app` is the whole
- * route tree; the three do not overlap, so no file is scanned twice.
+ * route tree; the four do not overlap, so no file is scanned twice.
  */
-const CLASSIFIED_AREAS = [ACT_DIR, "src/components/app", "app"] as const;
+const CLASSIFIED_AREAS = [ACT_DIR, HOME_DIR, "src/components/app", "app"] as const;
+
+/**
+ * The subset of those that contain no room at all, and so may never use
+ * `text-accent-ink`. `src/components/app` and `app/` are deliberately absent:
+ * the shared components render from inside rooms as well as outside, and the
+ * two breathing routes under `app/` are rooms. See rule 2 above.
+ */
+const ROOMLESS_AREAS = [ACT_DIR, HOME_DIR] as const;
 
 /**
  * A bare hue accent used as a color: `text-act`, but not `text-act-ink` and not
@@ -52,20 +74,42 @@ const CLASSIFIED_AREAS = [ACT_DIR, "src/components/app", "app"] as const;
  */
 const BARE_HUE = new RegExp(String.raw`text-(${HUE_NAMES.join("|")})(?![\w-])`, "g");
 
-/** Room ink, which the ACT module must never use - see rule 2 above. */
+/** Room ink, which the room-less areas must never use - see rule 2 above. */
 const ROOM_INK = /text-accent-ink(?![\w-])/g;
 
-/** Why a site is allowed to keep the raw accent. */
+/**
+ * Why a site is allowed to keep the raw accent. These five are the whole
+ * vocabulary; a site that fits none of them is not classified, it is swept to
+ * `text-<hue>-ink`.
+ */
 type Reason =
-  /** Non-text glyph: WCAG 1.4.11 floor of 3:1, not 1.4.3's 4.5:1. */
+  /**
+   * Non-text glyph carrying information: WCAG 1.4.11's floor of 3:1, not
+   * 1.4.3's 4.5:1, *and* colour must not be the only channel the information
+   * travels on.
+   */
   | "icon"
-  /** Pure decoration under WCAG 1.4.3: conveys nothing, has no function. */
+  /**
+   * Pure decoration under WCAG 1.4.3 and outside 1.4.11 entirely: conveys
+   * nothing, has no function, and so has no floor to clear. The strongest
+   * claim of the five and the easiest to make dishonestly - it has to be true
+   * that a user who never sees the mark loses nothing.
+   */
   | "decorative"
-  /** >=24px regular or >=18.66px bold, so 1.4.3's large-text floor of 3:1 applies. */
+  /** >=24px regular or >=18.66px bold, so 3:1 applies and this hue clears it. */
   | "large-text"
-  /** A hue that clears 4.5:1 as small text on the surface this site sits on. */
+  /**
+   * `be`, `ink` or `aqua` clearing 4.5:1 as small text - and only on a plain
+   * surface. Every hue including these three fails on a `bg-<hue>/10` tint of
+   * itself, so this is a claim about a surface, never about a hue.
+   */
   | "passing-hue"
-  /** The class never reaches a rendered element on any code path. */
+  /**
+   * The class never reaches a rendered element on any code path, so there is no
+   * surface to measure it against. Only honest when the dead path is asserted
+   * somewhere - an `inert` row whose premise goes unchecked is indistinguishable
+   * from an unexamined one.
+   */
   | "inert";
 
 interface AllowedSite {
@@ -89,6 +133,7 @@ interface AllowedSite {
 //
 // Both clear 1.4.11's 3:1. Neither clears 1.4.3's 4.5:1 - which is why every
 // site below has to earn its exemption on grounds other than the number.
+// ---------------------------------------------------------------------------
 const ACT_SITES: AllowedSite[] = [
   {
     file: `${ACT_DIR}/act-choice-point-new-screen.tsx`,
@@ -359,7 +404,227 @@ const COMPONENTS_APP_SITES: AllowedSite[] = [
   },
 ];
 
-const ALLOWED: AllowedSite[] = [...ACT_SITES, ...COMPONENTS_APP_SITES];
+// ---------------------------------------------------------------------------
+// src/features/home (#412)
+//
+// All 27 survivors here were the same shape: an `<Icon>` glyph inside a
+// `bg-<hue>/10` chip of its own hue. That surface is the trap #412 names -
+// tinting a surface with a hue costs that hue's own contrast on it, so "be
+// passes" is never a fact about `be`. Measured with the helper math in
+// test/room-contrast.test.ts (`compositeOver` then `contrastRatio`); light mode
+// binds everywhere, dark is 4.93:1 at worst.
+//
+//   accent on `bg-<hue>/10` over ...   worst      best
+//   `--card` (widget cards, sidebar)   iris 3.32  ink 4.62
+//   `--popover` (add-to-home popover)  iris 3.32  ink 4.62
+//   `--background` (config screen)     iris 3.08  ink 4.28
+//   `bg-primary/10` (selected row)     iris 2.72  ink 3.77
+//   chip nested in chip (preview)      iris 2.79  ink 3.80
+//
+// Two sites did not survive the measurement and were swept rather than
+// classified, so they are deliberately absent below:
+//
+//   tool-accent.ts  `gratitude` -> icon: "text-think-ink"   was 1.90:1
+//   widget-tint.ts  `think`     -> icon: "text-think-ink"   was 1.90:1
+//
+// `text-accent-ink` was never an option for either: the home hub is not a room
+// (asserted below), so it would have resolved to violet.
+// ---------------------------------------------------------------------------
+
+/**
+ * The sidebar's per-tool accents. One consumer,
+ * src/components/app/sidebar-nav.tsx, which paints the glyph `accent.icon` when
+ * the row is active and `text-muted-foreground` when it is not - so unlike the
+ * widget-tint map below, this tint *is* a state indicator and owes 1.4.11's
+ * 3:1. It clears it on the only surface it reaches: `bg-<hue>/10` over the
+ * sidebar's `bg-card`. Active is also carried by the chip fill, by the ink
+ * label, and by `aria-current="page"`, so colour is not the sole channel.
+ */
+const SIDEBAR_ACCENT = (hue: string, ratio: string): Omit<AllowedSite, "snippet"> => ({
+  file: `${HOME_DIR}/tool-accent.ts`,
+  reason: "icon",
+  evidence:
+    `Sidebar nav glyph (size-6), ${hue} accent on bg-${hue}/10 over bg-card: ` +
+    `${ratio}:1 light, above 1.4.11's 3:1. Active state is duplicated by the ` +
+    `chip fill, the ink label and aria-current="page", so the tint is not the ` +
+    `only channel. This is the map's sole consumer - a second one on a darker ` +
+    `surface would have to be re-measured.`,
+});
+
+/**
+ * The widget tints. The bare accent this row classifies is the map's `icon`
+ * field, and its five consumers are all the same thing: a module identity glyph
+ * sitting beside that module's own name in text. None of them lets the tint
+ * carry state or information, and `<Icon>` is `aria-hidden` by default
+ * (src/components/react-native-reusables/icon.tsx), so assistive tech never
+ * reaches it either. That puts these outside 1.4.11, which exempts graphics
+ * that are decorative rather than "required to understand the content".
+ *
+ * The map's other two consumers paint *text* in the tint - WidgetCardHeader's
+ * module label and add-widget-modal's add button - and neither is covered by
+ * this row. Both take the map's `ink` field instead, so neither reaches the
+ * bare accent at all. That split is the point: a consumer that wants this tint
+ * as text does not get to borrow the decorative exemption.
+ *
+ * The `icon` sites are classified `decorative` and not `icon` on purpose,
+ * because on two of the five the number does *not* clear 3:1 - the config
+ * screen's selected row stacks the chip on `bg-primary/10`, and the add-widget
+ * preview block nests a chip inside a chip. Calling these `icon` would assert a
+ * floor they do not meet.
+ *
+ * **The row is invalidated by any consumer that makes this tint mean
+ * something, or that paints it as text.** That is the change this comment
+ * exists to catch - and because the gate below only sees the literal class
+ * names in widget-tint.ts, not the call sites that spread them, catching it is
+ * a review job, not a regex one.
+ */
+const WIDGET_TINT = (hue: string, best: string, worst: string): Omit<AllowedSite, "snippet"> => ({
+  file: `${HOME_DIR}/widget-tint.ts`,
+  reason: "decorative",
+  evidence:
+    `Module identity glyph in a bg-${hue}/10 chip, always beside that module's ` +
+    `name in text, and aria-hidden - a user who never sees it loses nothing. ` +
+    `${hue} accent on its own /10 chip measures ${best}:1 over bg-card and ` +
+    `${worst}:1 at worst (the config screen's selected row, chip over ` +
+    `bg-primary/10). The low end is below 1.4.11's 3:1, which is why this is ` +
+    `decorative rather than icon: it is exempt, not passing.`,
+});
+
+/**
+ * A widget card's own header glyph. One surface each - the chip over the
+ * `Card`'s `bg-card` - and every one of them clears 3:1 there, so these take
+ * the stronger `icon` reading rather than leaning on decoration.
+ */
+const WIDGET_HEADER = (
+  widget: string,
+  hue: string,
+  ratio: string,
+  glyph: string,
+): Omit<AllowedSite, "snippet"> => ({
+  file: `${HOME_DIR}/widgets/${widget}.tsx`,
+  reason: "icon",
+  evidence:
+    `${glyph} glyph (size-5) in a bg-${hue}/10 chip over bg-card: ${ratio}:1 ` +
+    `light, clear of 1.4.11's 3:1 (dark is higher). Static branding beside the ` +
+    `widget title - it encodes no state, and the title names the module, so ` +
+    `colour carries nothing on its own.`,
+});
+
+const HOME_SITES: AllowedSite[] = [
+  // --- tool-accent.ts: the sidebar's per-tool accents -----------------------
+  {
+    ...SIDEBAR_ACCENT("act", "3.52"),
+    snippet: `"module-act": { chip: "bg-act/10", icon: "text-act", ink: "text-act-ink" },`,
+  },
+  {
+    ...SIDEBAR_ACCENT("be", "4.55"),
+    snippet: `mood: { chip: "bg-be/10", icon: "text-be", ink: "text-be-ink" },`,
+  },
+  {
+    ...SIDEBAR_ACCENT("be", "4.55"),
+    snippet: `"self-care": { chip: "bg-be/10", icon: "text-be", ink: "text-be-ink" },`,
+  },
+  {
+    ...SIDEBAR_ACCENT("act", "3.52"),
+    snippet: `habits: { chip: "bg-act/10", icon: "text-act", ink: "text-act-ink" },`,
+  },
+  {
+    ...SIDEBAR_ACCENT("aqua", "4.61"),
+    snippet: `breathing: { chip: "bg-aqua/10", icon: "text-aqua", ink: "text-aqua-ink" },`,
+  },
+  {
+    ...SIDEBAR_ACCENT("iris", "3.32"),
+    snippet: `meditation: { chip: "bg-iris/10", icon: "text-iris", ink: "text-iris-ink" },`,
+  },
+  {
+    ...SIDEBAR_ACCENT("ink", "4.62"),
+    snippet: `journal: { chip: "bg-ink/10", icon: "text-ink", ink: "text-ink-ink" },`,
+  },
+  {
+    ...SIDEBAR_ACCENT("ink", "4.62"),
+    snippet: `sleep: { chip: "bg-ink/10", icon: "text-ink", ink: "text-ink-ink" },`,
+  },
+  {
+    ...SIDEBAR_ACCENT("clay", "3.39"),
+    snippet: `grounding: { chip: "bg-clay/10", icon: "text-clay", ink: "text-clay-ink" },`,
+  },
+
+  // --- widget-tint.ts: the widget identity tints ----------------------------
+  {
+    ...WIDGET_TINT("act", "3.52", "2.87"),
+    snippet: `act: { chip: "bg-act/10", icon: "text-act", ink: "text-act-ink" },`,
+  },
+  {
+    ...WIDGET_TINT("be", "4.55", "3.71"),
+    snippet: `be: { chip: "bg-be/10", icon: "text-be", ink: "text-be-ink" },`,
+  },
+  {
+    ...WIDGET_TINT("aqua", "4.61", "3.76"),
+    snippet: `aqua: { chip: "bg-aqua/10", icon: "text-aqua", ink: "text-aqua-ink" },`,
+  },
+  {
+    ...WIDGET_TINT("mist", "3.33", "2.72"),
+    snippet: `mist: { chip: "bg-mist/10", icon: "text-mist", ink: "text-mist-ink" },`,
+  },
+  {
+    ...WIDGET_TINT("iris", "3.32", "2.72"),
+    snippet: `iris: { chip: "bg-iris/10", icon: "text-iris", ink: "text-iris-ink" },`,
+  },
+  {
+    ...WIDGET_TINT("ink", "4.62", "3.77"),
+    snippet: `ink: { chip: "bg-ink/10", icon: "text-ink", ink: "text-ink-ink" },`,
+  },
+  {
+    ...WIDGET_TINT("clay", "3.39", "2.77"),
+    snippet: `clay: { chip: "bg-clay/10", icon: "text-clay", ink: "text-clay-ink" },`,
+  },
+
+  // --- widgets/: one header glyph each --------------------------------------
+  {
+    ...WIDGET_HEADER("breathing-widget", "aqua", "4.61", "air"),
+    snippet: `<Icon name="air" className="size-5 text-aqua" />`,
+  },
+  {
+    ...WIDGET_HEADER("grounding-log-widget", "clay", "3.39", "history"),
+    snippet: `accentTextClass="text-clay"`,
+    evidence:
+      "history glyph (size-5) in a bg-clay/10 chip over bg-card: 3.39:1 light, " +
+      "clear of 1.4.11's 3:1. The prop is named accentTextClass but its one use " +
+      "in session-log-widget.tsx is `<Icon className={`size-5 ${accentTextClass}`} />` " +
+      "- a glyph, not text. If it ever reaches a <Text>, 4.5:1 applies and clay " +
+      "misses it; the accompanying accentBgClass keeps the two in step.",
+  },
+  {
+    ...WIDGET_HEADER("habits-widget", "act", "3.52", "directions-run"),
+    snippet: `<Icon name="directions-run" className="size-5 text-act" />`,
+  },
+  {
+    ...WIDGET_HEADER("journal-week-widget", "ink", "4.62", "edit-note"),
+    snippet: `<Icon name="edit-note" className="size-5 text-ink" />`,
+  },
+  {
+    ...WIDGET_HEADER("meditation-widget", "iris", "3.32", "self-improvement"),
+    snippet: `<Icon name="self-improvement" className="size-5 text-iris" />`,
+  },
+  {
+    ...WIDGET_HEADER("mood-checkin-widget", "be", "4.55", "mood"),
+    snippet: `<Icon name="mood" className="size-5 text-be" />`,
+  },
+  {
+    ...WIDGET_HEADER("mood-trend-widget", "be", "4.55", "show-chart"),
+    snippet: `<Icon name="show-chart" className="size-5 text-be" />`,
+  },
+  {
+    ...WIDGET_HEADER("routines-widget", "iris", "3.32", "repeat"),
+    snippet: `<Icon name="repeat" className="size-5 text-iris" />`,
+  },
+  {
+    ...WIDGET_HEADER("sleep-widget", "ink", "4.62", "bedtime"),
+    snippet: `<Icon name="bedtime" className="size-5 text-ink" />`,
+  },
+];
+
+const ALLOWED: AllowedSite[] = [...ACT_SITES, ...HOME_SITES, ...COMPONENTS_APP_SITES];
 
 /**
  * Collapses runs of whitespace so that re-indentation (a nesting change above
@@ -390,6 +655,17 @@ function findings(pattern: RegExp, dirs: readonly string[]): Finding[] {
   return findingsIn(pattern, sourceFiles(ROOT, { dirs: [...dirs] }));
 }
 
+/**
+ * A measured contrast figure, in either notation this file uses: `3.95:1`, or
+ * `3.45 light / 8.66 dark` where the scheme is named instead of the `:1`.
+ *
+ * Deliberately not a bare `\d\.\d\d`. The evidence strings are thick with WCAG
+ * references - 1.4.11, 1.4.3 - and a looser pattern would let "clears 1.4.11's
+ * 3:1" stand in for a measurement, which is exactly the copy-paste this test
+ * exists to catch.
+ */
+const CITES_RATIO = /\d\.\d\d:1|\d\.\d\d (?:light|dark)/;
+
 /** `file::snippet`, the identity the allowlist is keyed on. */
 const key = (site: { file: string; snippet: string }): string => `${site.file}::${site.snippet}`;
 
@@ -403,26 +679,40 @@ describe("classified areas keep the raw hue accent only where it is evidenced", 
   });
 
   it("gives every allowed site a reason and measured evidence", () => {
-    // Guards the allowlist against a row added with an empty justification -
-    // the whole point of #412 is that the judgement is written down.
-    const thin = ALLOWED.filter((site) => site.evidence.trim().length < 40).map(key);
-    expect(thin).toEqual([]);
+    // The allowlist is only worth what its justifications are worth: an entry
+    // added with an empty reason would otherwise pass the set comparison above
+    // and quietly widen the gate. Evidence has to cite a ratio, which is the
+    // one part a copy-paste of a neighbouring entry tends to drop.
+    //
+    // `inert` is the one reason exempt from the ratio, and only because it is
+    // the one reason that denies there is a surface at all - a dead class path
+    // has nothing to measure. That exemption is why an `inert` row has to have
+    // its premise asserted somewhere (see the ToolStats tests below); without
+    // that it would be the one way into this allowlist with no number and no
+    // check.
+    const unjustified = ALLOWED.filter(
+      (site) =>
+        site.evidence.trim().length < 40 ||
+        (site.reason !== "inert" && !CITES_RATIO.test(site.evidence)),
+    ).map(key);
+
+    expect(unjustified).toEqual([]);
   });
 });
 
-describe("src/features/act is not the act room", () => {
-  it("never reaches for room ink, because this module is not a room", () => {
+describe("act and home are not rooms", () => {
+  it("never reaches for room ink, because neither area is a room", () => {
     // `text-accent-ink` resolves to `--primary` outside a room: violet text in a
-    // green module. The off-room class is `text-act-ink`. This is the single
+    // green module. The off-room class is `text-<hue>-ink`. This is the single
     // assertion most likely to catch a well-meaning future sweep.
-    expect(findings(ROOM_INK, [ACT_DIR])).toEqual([]);
+    expect(findings(ROOM_INK, ROOMLESS_AREAS)).toEqual([]);
   });
 
   it("has no useRoomStyle call to justify room ink", () => {
-    // The premise of the assertion above, checked rather than trusted - if this
-    // module ever does become a room, that test needs to be revisited, not
-    // deleted.
-    const roomed = sourceFiles(ROOT, { dirs: [ACT_DIR] }).filter((file) =>
+    // The premise of the assertion above, checked rather than trusted - if
+    // either area ever does become a room, that test needs to be revisited,
+    // not deleted.
+    const roomed = sourceFiles(ROOT, { dirs: [...ROOMLESS_AREAS] }).filter((file) =>
       /\buseRoomStyle\b/.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
     );
     expect(roomed).toEqual([]);
@@ -449,5 +739,41 @@ describe("the onboarding modals mount outside every room", () => {
     // pour crosses a Modal on native (React context) but not on web (the RNW
     // Modal portals to document.body, escaping the inline CSS variables).
     expect(findingsIn(ROOM_INK, shellUsers)).toEqual([]);
+  });
+});
+
+describe("the ToolStats accent is dead at every call site", () => {
+  // The premise the `inert` row above rests on, checked at the call sites
+  // rather than only in the component. src/components/app/tool-stats.test.tsx
+  // proves that the `onField` branch never reads `accentClassName`; that alone
+  // is not enough, because it says nothing about which tone the call sites
+  // actually pass. Flip the breathing route to `tone="default"` and that unit
+  // test still passes, the allowlist key still matches (the accentClassName
+  // line is untouched), and `app` is no longer in the coverage ratchet - so
+  // without this assertion the raw `text-aqua` would quietly come alive as
+  // small text on the aqua field with nothing failing.
+  const callers = sourceFiles(ROOT, { dirs: ["app", "src"] })
+    .map((file) => ({ file, source: stripComments(readFileSync(join(ROOT, file), "utf8")) }))
+    .filter(({ source }) => source.includes("<ToolStats"))
+    .map(({ file, source }) => ({
+      file,
+      rendered: source.split("<ToolStats").length - 1,
+      onField: source.split(`tone="onField"`).length - 1,
+    }));
+
+  it("finds the call sites it is meant to police", () => {
+    // A rename would empty this list and make the assertion below vacuous.
+    const total = callers.reduce((sum, c) => sum + c.rendered, 0);
+    expect(total).toBe(8);
+  });
+
+  it("passes tone='onField' at every one of them", () => {
+    // Counted per file rather than parsed: a ToolStats that takes any other
+    // tone - or a computed one - leaves the two counts unequal here.
+    const mismatched = callers
+      .filter((c) => c.rendered !== c.onField)
+      .map((c) => `${c.file}: ${c.rendered} rendered, ${c.onField} on the field`);
+
+    expect(mismatched).toEqual([]);
   });
 });

@@ -14,7 +14,9 @@ import { sourceFiles, stripComments } from "@/test/source-scan";
 // test/accent-ink-call-sites.test.ts is the real gate: it enumerates every
 // survivor in a fully-classified area with its measured contrast and the reason
 // it may stay, keyed on the source line. Today those are the areas in
-// FULLY_CLASSIFIED below: `src/features/act`, `src/components/app` and `app`.
+// FULLY_CLASSIFIED below: `src/features/act`, `src/features/home`,
+// `src/components/app` and `app`. Home classified 25 sites and swept the other
+// 2, which is why the app-wide total is 92 rather than the 94 above.
 //
 // This suite is deliberately weaker, and says so. It cannot tell a safe survivor
 // from an unsafe one; it only refuses to let an area GROW. That stops the ninth
@@ -55,7 +57,6 @@ function areaOf(file: string): string {
  * than classified.
  */
 const BUDGET: Readonly<Record<string, number>> = {
-  "src/features/home": 27,
   "src/features/mindfulness": 8,
   "src/features/settings": 5,
   "src/features/breathing": 4,
@@ -75,6 +76,7 @@ const BUDGET: Readonly<Record<string, number>> = {
 /** The areas whose survivors are enumerated in the real gate instead. */
 const FULLY_CLASSIFIED: ReadonlySet<string> = new Set([
   "src/features/act",
+  "src/features/home",
   "src/components/app",
   "app",
 ]);
