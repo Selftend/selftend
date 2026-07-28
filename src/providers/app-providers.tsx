@@ -52,7 +52,12 @@ const persistOptions = persister
       // completion checks compare it directly - `undefined === "2026-07-15"` is
       // false, so a sit the user finished reads as not done while offline or
       // until a refetch lands.
-      buster: `${Constants.expoConfig?.version ?? "0"}-shape3`,
+      // shape4: and again for breathing and grounding, which share
+      // mindfulness_sessions and so gained `dayKey` together. Each shipped shape
+      // change takes its own bump - shape3 went out with the meditation change,
+      // so reusing it here would leave anyone who updated between the two with a
+      // cache the new equality checks cannot read.
+      buster: `${Constants.expoConfig?.version ?? "0"}-shape4`,
       dehydrateOptions: {
         shouldDehydrateQuery: (query: { state: { status: string } }) =>
           query.state.status === "success",
