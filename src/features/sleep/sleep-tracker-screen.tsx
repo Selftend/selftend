@@ -12,7 +12,7 @@ import { ContentSheet } from "@/src/components/app/content-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ToolStats } from "@/src/components/app/tool-stats";
 import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
-import { useSleepLogs, useSleepLogCount } from "@/src/features/sleep/queries";
+import { useSleepLogs, useSleepLogCount, useSleepStats } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatAtOffset } from "@/src/utils/date";
@@ -40,17 +40,33 @@ export default function SleepTrackerScreen() {
   // Exact lifetime total for the hero - the list above is capped at 50, so its length
   // would freeze the displayed "nights" count once a user passes that many logs.
   const { data: totalNights } = useSleepLogCount(userId);
+  // Every summary below used to be computed from that same capped list, so each was
+  // really a "newest 50 logs" figure sitting next to an exact lifetime night count: the
+  // longest/shortest night and the weekday averages truncated past 50 logs, and the 7-
+  // and 30-day windows truncated once more than 50 logs fell inside them (#256).
+  const { data: stats } = useSleepStats(userId);
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
   const allLogs = logs ?? [];
-  const sevenDayDuration = averageDurationMinutes(allLogs, 7);
-  const thirtyDayDuration = averageDurationMinutes(allLogs, 30);
-  const sevenDayQuality = averageQuality(allLogs, 7);
-  const thirtyDayQuality = averageQuality(allLogs, 30);
-  const { longest, shortest } = extremes(allLogs);
+  // The loaded logs stand in only until the server stats arrive (`undefined` while
+  // loading); once they do they win, including a genuine null for "no nights in that
+  // window", which is not the same as a zero-hour average.
+  const sevenDayDuration = stats
+    ? stats.sevenDayDurationMinutes
+    : averageDurationMinutes(allLogs, 7);
+  const thirtyDayDuration = stats
+    ? stats.thirtyDayDurationMinutes
+    : averageDurationMinutes(allLogs, 30);
+  const sevenDayQuality = stats ? stats.sevenDayQuality : averageQuality(allLogs, 7);
+  const thirtyDayQuality = stats ? stats.thirtyDayQuality : averageQuality(allLogs, 30);
+  const { longest, shortest } = stats
+    ? { longest: stats.longestMinutes, shortest: stats.shortestMinutes }
+    : extremes(allLogs);
+  const distribution = stats ? stats.qualityDistribution30 : qualityDistribution(allLogs, 30);
+  const weekly = stats ? stats.weekdayAverageMinutes : weekdayAverages(allLogs);
+  // Left on the capped list deliberately: the chart draws the newest 14 nights, which the
+  // 50-log query always covers, so there is nothing here for a server aggregate to fix.
   const nights14 = recentNights(allLogs, 14);
-  const distribution = qualityDistribution(allLogs, 30);
-  const weekly = weekdayAverages(allLogs);
   // ISO timestamps sort lexically, so the max is the latest log regardless of
   // the list's own ordering.
   const lastLog = allLogs.reduce<(typeof allLogs)[number] | null>(

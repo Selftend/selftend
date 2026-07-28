@@ -104,15 +104,18 @@ module.exports = [
   },
   {
     // mood/gratitude/sleep/journal (#250), meditation, breathing/grounding via the
-    // shared mindfulness_sessions offset, and CBT thought records (#330) all carry
-    // a `dayKey`: the civil day captured when the entry was logged, resolved once
-    // in the repository. Bucketing one of them by the VIEWER's day instead moves
-    // entries between days after travel and skews daily averages. The viewer-local
-    // helpers stay available to ACT, which has no captured offset and is
-    // deliberately out of #330's scope until it grows a history surface, and to
-    // routines, whose day axis is deliberately viewer-local (#330 owner decision).
-    // Habits are already correct by a different route: `habit_logs.logged_on`
-    // stores the resolved civil date, so no timestamp is ever converted.
+    // shared mindfulness_sessions offset, and CBT thought records and activities
+    // (#330) all carry a captured civil day, resolved once in the repository.
+    // Bucketing one of them by the VIEWER's day instead moves entries between days
+    // after travel and skews daily averages. Activities carry TWO such days -
+    // `completedDayKey` for when it was done, `scheduledDayKey` for the day it was
+    // planned for - so neither the completion nor the plan may be re-derived from
+    // its timestamp here. The viewer-local helpers stay available to ACT, which has
+    // no captured offset and is deliberately out of #330's scope until it grows a
+    // history surface, and to routines, whose day axis is deliberately viewer-local
+    // (#330 owner decision). Habits are already correct by a different route:
+    // `habit_logs.logged_on` stores the resolved civil date, so no timestamp is
+    // ever converted.
     files: [
       "src/features/mood/**/*.{ts,tsx}",
       "src/features/gratitude/**/*.{ts,tsx}",
@@ -121,6 +124,7 @@ module.exports = [
       "src/features/meditation/**/*.{ts,tsx}",
       "src/features/breathing/**/*.{ts,tsx}",
       "src/features/grounding/**/*.{ts,tsx}",
+      "src/features/activities/**/*.{ts,tsx}",
       "src/features/cbt/**/*.{ts,tsx}",
     ],
     ignores: [
