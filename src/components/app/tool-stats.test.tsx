@@ -68,6 +68,35 @@ describe("ToolStats", () => {
     expect(className).toContain("text-be");
   });
 
+  // The premise of the `inert` classification in test/accent-ink-call-sites.test.ts
+  // (#412). Every ToolStats call site app-wide passes tone="onField", and that
+  // branch paints white ink on the hue field without ever reading
+  // accentClassName - so the raw `text-<hue>` those call sites pass is dead
+  // string, and "fixing" it would be a silent no-op. If this branch is ever made
+  // to honour the prop, this test fails and those call sites become real accent
+  // text that has to be re-judged against the field gradient.
+  it("ignores accentClassName entirely when tone is 'onField'", () => {
+    const { getByText, queryAllByText, UNSAFE_root } = render(
+      <ToolStats
+        tone="onField"
+        accentClassName="text-be"
+        items={[{ value: "12", label: "entries" }]}
+        subline="LAST · 5/31/2026"
+      />,
+    );
+
+    expect(getByText("12")).toBeTruthy();
+    expect(queryAllByText(/entries/).length).toBeGreaterThan(0);
+
+    const withAccent = UNSAFE_root.findAll(
+      (node) => typeof node.props?.className === "string",
+    ).filter((node) => (node.props.className as string).includes("text-be"));
+    expect(withAccent).toEqual([]);
+
+    // ...and the value really is the white field treatment instead.
+    expect(getByText("12").props.className as string).toContain("text-white");
+  });
+
   it("renders the optional inspired-by credit", () => {
     const { getByText } = render(
       <ToolStats

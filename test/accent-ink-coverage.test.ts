@@ -13,7 +13,8 @@ import { sourceFiles, stripComments } from "@/test/source-scan";
 //
 // test/accent-ink-call-sites.test.ts is the real gate: it enumerates every
 // survivor in a fully-classified area with its measured contrast and the reason
-// it may stay, keyed on the source line. Today that is `src/features/act`.
+// it may stay, keyed on the source line. Today those are the areas in
+// FULLY_CLASSIFIED below: `src/features/act`, `src/components/app` and `app`.
 //
 // This suite is deliberately weaker, and says so. It cannot tell a safe survivor
 // from an unsafe one; it only refuses to let an area GROW. That stops the ninth
@@ -48,14 +49,13 @@ function areaOf(file: string): string {
 /**
  * Survivors per area, measured 2026-07-28 once every #403 sweep had landed.
  *
- * `src/features/act` is absent on purpose: it is fully classified in
- * test/accent-ink-call-sites.test.ts, which asserts its exact set. Listing it
- * here as well would let a site be added there and merely counted rather than
- * classified.
+ * The areas in FULLY_CLASSIFIED are absent on purpose: they are classified in
+ * test/accent-ink-call-sites.test.ts, which asserts their exact sets. Listing
+ * one here as well would let a site be added there and merely counted rather
+ * than classified.
  */
 const BUDGET: Readonly<Record<string, number>> = {
   "src/features/home": 27,
-  "src/components/app": 13,
   "src/features/mindfulness": 8,
   "src/features/settings": 5,
   "src/features/breathing": 4,
@@ -66,15 +66,18 @@ const BUDGET: Readonly<Record<string, number>> = {
   "src/features/sleep": 2,
   "src/features/security": 2,
   "src/features/cbt": 2,
-  app: 2,
   "src/features/journal": 1,
   "src/features/habits": 1,
   "src/features/grounding": 1,
   "src/features/gratitude": 1,
 };
 
-/** The area whose survivors are enumerated in the real gate instead. */
-const FULLY_CLASSIFIED = "src/features/act";
+/** The areas whose survivors are enumerated in the real gate instead. */
+const FULLY_CLASSIFIED: ReadonlySet<string> = new Set([
+  "src/features/act",
+  "src/components/app",
+  "app",
+]);
 
 function survivorsByArea(): Map<string, number> {
   const counts = new Map<string, number>();
@@ -107,7 +110,7 @@ describe("unclassified accent-ink survivors never grow (#412)", () => {
 
   it("no area exceeds its recorded survivor count", () => {
     const grown = [...counts.entries()]
-      .filter(([area]) => area !== FULLY_CLASSIFIED)
+      .filter(([area]) => !FULLY_CLASSIFIED.has(area))
       .filter(([area, count]) => count > (BUDGET[area] ?? 0))
       .map(([area, count]) => `${area}: ${count} > ${BUDGET[area] ?? 0}`);
 
@@ -119,7 +122,7 @@ describe("unclassified accent-ink survivors never grow (#412)", () => {
 
   it("no area appears that the budget has never seen", () => {
     const unknown = [...counts.keys()]
-      .filter((area) => area !== FULLY_CLASSIFIED)
+      .filter((area) => !FULLY_CLASSIFIED.has(area))
       .filter((area) => !(area in BUDGET));
 
     expect(unknown).toEqual([]);
