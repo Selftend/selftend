@@ -86,7 +86,9 @@ function withheldRules(): WithheldRules {
   expect(sectionStart).toBeGreaterThan(-1);
   const section = readme.slice(sectionStart, readme.indexOf("\n## ", sectionStart));
   const rules: WithheldRules = { columns: [], tables: [] };
-  for (const match of section.matchAll(/^\| `([a-z0-9_.*]+)` \|/gim)) {
+  // \s+ before the closing pipe, not a single space: prettier pads table
+  // cells to align the columns, and CI runs on the prettified file.
+  for (const match of section.matchAll(/^\| `([a-z0-9_.*]+)`\s+\|/gim)) {
     const entry = match[1];
     if (entry.includes(".")) {
       const [table, column] = entry.split(".");
