@@ -7,12 +7,16 @@
 -- carried `activity_logs.completed_offset_minutes` / `scheduled_offset_minutes`,
 -- and neither carried both.
 --
--- The last one to apply wins outright. Filename order decides that, and
--- `20260731120000_activity_occurrence_offsets.sql` sorts BEFORE
--- `20260731_thought_records_occurrence_offset.sql` - every digit sorts before the
--- `_` of the short form, so the timestamped name that fixed the version collision
--- also moved activities earlier. The thought-record declaration therefore lands
--- last and the two activity columns fall straight back out of the export.
+-- The last one to apply wins outright. Filename order decides that, and when
+-- this was written the thought-record migration was still named
+-- `20260731_thought_records_occurrence_offset.sql`, so
+-- `20260731120000_activity_occurrence_offsets.sql` sorted BEFORE it - every digit
+-- sorts before the `_` of the short form, so the timestamped name that fixed the
+-- version collision also moved activities earlier. The thought-record
+-- declaration therefore landed last and the two activity columns fell straight
+-- back out of the export. (#432 has since renamed the short form to
+-- `20260731130000_...`; the relative order of the two is unchanged, so this
+-- file is still the one that has to carry the union.)
 --
 -- Measured on a database with both applied in filename order: the resulting
 -- function matched `created_offset_minutes`, did NOT match
@@ -21,10 +25,9 @@
 -- not hypothetical - a user exporting their data gets activity rows with no way
 -- to reconstruct which civil day either the completion or the plan belonged to.
 --
--- This file is the union: `20260731_thought_records`'s declaration with the two
--- activityLogs lines added, and nothing else changed. `20260801000000` is a later
--- DAY on purpose - any `20260731HHMMSS` name would sort before the short form and
--- reintroduce the same problem.
+-- This file is the union: the thought-record declaration with the two
+-- activityLogs lines added, and nothing else changed. It must stay LAST of the
+-- `export_user_data` redeclarations, which is what its later day buys it.
 --
 -- Nothing asserts export completeness column-by-column, which is why neither PR's
 -- CI noticed. #429 tracks the gate; until it exists, every migration that touches
