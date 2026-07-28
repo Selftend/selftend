@@ -248,9 +248,24 @@ If `db push` is blocked by a migration-history mismatch, inspect the active proj
 npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_profile_avatar_repair.sql
 ```
 
+## Migration versions
+
+A migration's **version** is the leading run of digits in its filename, not the filename itself. `20260730_mindfulness_occurrence_offset.sql` is version `20260730`; the rest of the name is a label the CLI ignores. Versions key `supabase_migrations.schema_migrations`, so two files whose leading digits match are **one version**, and the second to apply dies with:
+
+```
+ERROR: duplicate key value violates unique constraint "schema_migrations_pkey"
+DETAIL: Key (version)=(20260730) already exists.
+```
+
+That failure surfaces only once CI starts Supabase — `verify` stays green and the diff looks fine — and it bit twice in one afternoon (#414, #256) as soon as parallel work started landing migrations on the same day.
+
+**Use `YYYYMMDDHHMMSS` for anything new.** Fourteen digits are collision-proof and already common in this directory (`20260730120000_program_widget_day_key.sql`). The bare 8-digit form is only safe while at most one migration lands per day, which is no longer a safe assumption. Historic versions are a hybrid — early ones are sequence numbers rather than real dates (`20260664` has no 64th day) — so read the digits as an ordering key, not a calendar.
+
+[test/migration-conventions.test.ts](../test/migration-conventions.test.ts) fails the build on any collision, and on any file with no leading digits. If it fires, rename the **newer** file to a timestamped version rather than deleting it.
+
 ## Linked project status
 
-The active linked project is kept aligned with the checked-in migration history by running `npm run db:push:prod` (`supabase db push --linked`) after new migrations land. Migration versions are 8-digit sequence numbers (`202605NN`), not dates; keep them uniform so `db push` matching does not break (a 14-digit version sharing a prefix with an 8-digit one trips the CLI matcher).
+The active linked project is kept aligned with the checked-in migration history by running `npm run db:push:prod` (`supabase db push --linked`) after new migrations land.
 
 The following invariants should hold on a fully-migrated project:
 

@@ -40,8 +40,11 @@ _Avoid_: trigger, cue-field, hook
 The calendar day an entry belongs to. Which calendar depends on whether the tool records where the user was:
 
 - **Tools that capture an occurrence offset** — mood, gratitude, sleep, journal, meditation, breathing, grounding — use the **civil day at the place the entry was logged**, fixed for the life of the entry. Changing timezone never moves an entry to a different day. The repository resolves it once into a `dayKey` (`YYYY-MM-DD`); surfaces group on that and never convert the timestamp themselves. Breathing and grounding share one table and so share one offset column.
-- **Habits** reach the same answer by a shorter route: `habit_logs.logged_on` stores the resolved civil date itself, so there is no timestamp to convert and no missing-offset case.
-- **Everything else** — ACT, CBT records — has no captured offset and uses the **viewer's current local day**. Routines deliberately keep a viewer-local day axis whatever their steps use: a routine has no dated record to freeze, and its job is "today, where you are standing". Routine status resets at local midnight.
+- **Habits** reach the same answer by a shorter route, and a stronger model: `habit_logs.logged_on` stores the resolved civil date itself, and a unique index on `(habit_id, logged_on)` makes that date the tick's identity. Nothing is converted at read time, so unlike an offset this model has no "unknown" case to fall back from.
+- **Everything else** — ACT, CBT records — has no captured offset and uses the **viewer's current local day**.
+- **Routines are viewer-local by decision, and stay that way.** A routine has no dated record to freeze — there is no run object — and its job is "today, where you are standing"; freezing the axis would hand someone who has travelled a checklist for a day they have not lived, or mark one complete before they wake. Steps still read each tool's own day model, so the two models coexist on purpose rather than by omission. Routine status resets at local midnight.
+- **ACT is deliberately deferred, not pending.** Nine tables and roughly 60% of the workstream's remaining cost, against a symptom of a single wrong day, visible only around travel and self-correcting the next day: every ACT surface is a same-day list, and `useSelectedDate()` returns today with deliberately no global selected-date state, so there is no history or calendar on which a mis-filed entry stays visible. It returns only if ACT grows one.
+- Both of those are owner decisions of 2026-07-28, recorded on [#330](https://github.com/Selftend/selftend/issues/330#issuecomment-5100789560).
 - Where a captured offset is missing (entries predating the column, or written by an older client) the first group falls back to the second. That is a fallback for unknown, never a claim the entry was logged at UTC.
 - This holds server-side too: `public.occurrence_day_key` is the SQL twin of `entryDayKey`, so an RPC that answers "done today" resolves the same day the screens do rather than range-scanning the viewer's window (#414).
 
@@ -69,7 +72,11 @@ _Avoid_: modal, bottom sheet (the interaction pattern is unrelated)
 A borderless card lifted from the sheet by a hue-tinted shadow instead of a border. Opt-in per screen; the bordered card stays the default elsewhere.
 
 **Accent ink**:
-A module hue used as _text_ rather than as a surface or a swatch. A hue's published accent (`--think`, `text-think`) is tuned as a _colour_ — it paints fills, borders, chips and gradients — and four of the eight carry too much luminance to hold small text in light mode, on any pale surface: `think` is 1.90:1 on its own room's background and 1.88:1 on the neutral app background, with `iris`, `clay` and `act` also under AA on both. So a hue gets a second, darkened value for text: the same hue and saturation at lightness 28%, certified against the surfaces it lands on. Which class carries it depends on where the text stands:
+A module hue used as _text_ rather than as a surface or a swatch. A hue's published accent (`--think`, `text-think`) is tuned as a _colour_ — it paints fills, borders, chips and gradients — and carries too much luminance for small text in light mode.
+
+A contrast ratio is only ever true of a **named pair**, so never record that a hue "passes" without saying on what. On the neutral app background, five of the eight are already under AA: `think` 1.88:1 (1.90:1 on its own room's background), `iris` 3.42, `mist` 3.43, `clay` 3.51, `act` 3.64. The other three pass **there and on `--card`, and nowhere tighter** — `be` 4.86, `aqua` 4.86, `ink` 4.87 on the background. Put any of them on a `bg-<hue>/10` tint of its own hue, which is what a hue-labelled chip or row actually sits on, and **all eight fail**: `be` 4.22, `aqua` 4.27, `ink` 4.28, the rest lower. There is no surface on which the published accent is safe for small text.
+
+So a hue gets a second, darkened value for text: the same hue and saturation at lightness 28%, certified against the surfaces it lands on. Which class carries it depends on where the text stands:
 
 | context                                          | class                                    |
 | ------------------------------------------------ | ---------------------------------------- |
@@ -79,7 +86,11 @@ A module hue used as _text_ rather than as a surface or a swatch. A hue's publis
 
 Both classes resolve to the same colour inside a room — one source, `HUE_INK_TRIPLES`. The distinction matters because `accent-ink` is room-poured: outside a room it falls back to `--primary`, so using it on a room-less screen changes the hue rather than the contrast.
 
-A module's directory name does not tell you its room: `src/features/act/` is room-less (the `act` room is worn by `src/features/habits/`), so `text-accent-ink` there would render violet. `test/accent-ink-call-sites.test.ts` enforces both halves of the rule for that module — the third row's exemptions are enumerated with a reason each, and room ink is banned outright. Other directories are not yet covered; add one only after classifying its sites.
+A module's directory name does not tell you its room: `src/features/act/` is room-less (the `act` room is worn by `src/features/habits/`), so `text-accent-ink` there would render violet.
+
+A shared colour map has to split the two uses rather than pick one: `TINT_TEXT` resolves every hue to its ink and `TINT_ACCENT` to the published accent, so a label and the glyph beside it can take the same tint and still get different values — an icon darkened to ink reads as disabled.
+
+`test/accent-ink-call-sites.test.ts` gates this across all of `app/` and `src/`, not per module: a bare `text-<hue>` is a build failure unless it sits in a classified area and is enumerated there with a measured contrast figure, and room ink is banned outright in areas that are not rooms. Write a hue as an arbitrary value (`text-[hsl(var(--think))]`) and the gate is blind to it — that spelling hid ~78 sites from every check while the suites stayed green (#421), so the tint maps are additionally asserted by shape.
 _Avoid_: accent-foreground (that is ink on the `accent` _surface_, a different pairing).
 
 **Guest hue**:
