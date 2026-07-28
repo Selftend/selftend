@@ -75,27 +75,88 @@ describe("Android production submit profile (#371)", () => {
   });
 });
 
-describe("Android release workflow track targeting (#371)", () => {
-  it("submits using the production profile, not a testing profile", () => {
+describe("Android release workflow track targeting (#371, #374)", () => {
+  it("submits with the submit_profile input, defaulting to production", () => {
+    // The submit is parameterized for the dev testing feed (#374). What must
+    // not drift: the parameter is the one the inputs declare, and every
+    // resolution of it falls back to production - so the release orchestrator,
+    // which passes no submit_profile, keeps releasing to production.
     const submitLine = releaseWorkflow
       .split(/\r?\n/)
       .find((line) => line.includes("eas-cli -- submit"));
 
     expect(submitLine).toBeDefined();
-    expect(submitLine).toContain("--profile production");
+    expect(submitLine).toContain('--profile "$SUBMIT_PROFILE"');
+    const resolutions = releaseWorkflow.match(/inputs\.submit_profile \|\| 'production'/g) ?? [];
+    expect(resolutions.length).toBeGreaterThanOrEqual(3); // submit, mirror, summary
   });
 
-  it("mirrors onto the closed tracks from production, so testers are never behind", () => {
-    // The same versionCode is copied to the closed tracks, so the tester group
-    // is never left on an older build than production. Interim arrangement;
-    // #374 moves closed-track feeding to `dev`.
+  it("keeps the release orchestrator on the production profile", () => {
+    // release.yml invoking the reusable workflow with submit_profile: closed
+    // would silently retarget every production release at the testing tracks -
+    // the exact failure the original hardcoded assertion existed to catch.
+    const orchestrator = readFileSync(resolve(ROOT, ".github/workflows/release.yml"), "utf8");
+    expect(orchestrator).toContain("android-release.yml");
+    expect(orchestrator).not.toContain("submit_profile");
+  });
+
+  it("mirrors both channels downstream, so testers are never behind", () => {
+    // production run: production -> Groups and production -> alpha (the FLOOR:
+    // after every release the testing tracks hold at least what users have).
+    // closed run: Groups -> alpha (eas already released to Groups).
     const mirrors = releaseWorkflow
       .split(/\r?\n/)
       .filter((line) => line.includes("promote-android-track.cjs"));
 
-    expect(mirrors.length).toBeGreaterThan(0);
-    for (const line of mirrors) {
-      expect(line).toContain("--from production");
-    }
+    expect(mirrors.some((l) => l.includes("--from production") && l.includes("--to Groups"))).toBe(
+      true,
+    );
+    expect(mirrors.some((l) => l.includes("--from production") && l.includes("--to alpha"))).toBe(
+      true,
+    );
+    expect(mirrors.some((l) => l.includes("--from Groups") && l.includes("--to alpha"))).toBe(true);
+  });
+
+  it("scopes build concurrency per submit profile", () => {
+    // A shared concurrency group with cancel-in-progress would let a dev
+    // testing dispatch cancel an in-flight production release build.
+    expect(releaseWorkflow).toContain(
+      "group: android-release-${{ inputs.submit_profile || 'production' }}",
+    );
+  });
+});
+
+describe("dev-driven closed testing feed (#374)", () => {
+  const testingWorkflow = readFileSync(
+    resolve(ROOT, ".github/workflows/android-testing-release.yml"),
+    "utf8",
+  );
+
+  it("builds dev and submits with the closed profile", () => {
+    expect(testingWorkflow).toContain("ref: dev");
+    expect(testingWorkflow).toContain("submit_profile: closed");
+    expect(testingWorkflow).toContain("android-release.yml");
+  });
+
+  it("is manual-only - no push or schedule trigger", () => {
+    // A per-merge or nightly trigger would burn ~90-minute builds nobody asked
+    // for (#374 decided manual dispatch); this pins that the trigger surface
+    // stays dispatch-only.
+    expect(testingWorkflow).toContain("workflow_dispatch");
+    expect(testingWorkflow).not.toMatch(/\n\s+push:/);
+    expect(testingWorkflow).not.toContain("schedule:");
+  });
+
+  it("warns about migrations production has not run", () => {
+    // The precondition that keeps a dev client honest against the production
+    // backend: the preflight diffs supabase/migrations against main and warns.
+    expect(testingWorkflow).toContain("supabase/migrations");
+    expect(testingWorkflow).toContain("::warning::");
+  });
+
+  it("targets the Groups track with a status that serves testers", () => {
+    const closed = easJson.submit?.closed?.android;
+    expect(closed?.track).toBe("Groups");
+    expect(closed?.releaseStatus).toBe("completed");
   });
 });

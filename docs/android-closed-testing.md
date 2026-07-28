@@ -1,6 +1,8 @@
 # Android Closed Testing
 
 > **Status: this milestone is done.** Google Play **production access was approved on 2026-07-27** and v0.6.1 shipped to the production track. The release pipeline now releases to **production** automatically and mirrors the same build onto the closed tracks — see [Branching And Releases](./releasing.md#how-android-reaches-users). This doc is kept for the closed-testing track setup, tester management, and account/policy reference it still documents accurately.
+>
+> **How the closed tracks are fed (#374):** every production release mirrors onto `Groups` + `alpha` (the floor — testers are never behind users), and dispatching the `Android Play closed-testing release (dev)` workflow builds `dev` onto `Groups`/`alpha` to put testers ahead between releases — see [How testers stay ahead](./releasing.md#how-testers-stay-ahead-closed-tracks), including its unpromoted-migrations precondition.
 
 The first Google Play milestone should be closed testing, not production. Do not promote to production until policy, safety, device, and support requirements are reviewed.
 
