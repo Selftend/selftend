@@ -150,7 +150,7 @@ export default function BreathingScreen() {
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                     onPress={() => router.push("/tools/breathing/new")}
                   >
-                    <Text className="text-sm font-semibold text-aqua">
+                    <Text className="text-sm font-semibold text-accent-ink">
                       {t("breathing.newExercise")}
                     </Text>
                   </Pressable>
@@ -227,7 +227,7 @@ export default function BreathingScreen() {
                         <Text className="flex-1 text-[15px] font-semibold tracking-tight">
                           {patternName(s.exerciseName)}
                         </Text>
-                        <Text className="text-sm font-semibold tabular-nums text-aqua">
+                        <Text className="text-sm font-semibold tabular-nums text-accent-ink">
                           {s.durationSeconds != null
                             ? formatClock(s.durationSeconds)
                             : t("breathing.minutes", { value: s.durationMinutes })}
