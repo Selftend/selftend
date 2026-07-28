@@ -107,7 +107,7 @@ export default function MeditationStagesScreen() {
                           // and a solid iris fill has no certified ink pairing
                           // (white on it is 3.8:1, under AA).
                           <View className="rounded-full bg-iris/15 px-2 py-0.5">
-                            <Text className="text-[10px] font-semibold uppercase tracking-wider text-iris">
+                            <Text className="text-[10px] font-semibold uppercase tracking-wider text-accent-ink">
                               {t("module.stages.currentStageBadge")}
                             </Text>
                           </View>

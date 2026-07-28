@@ -212,7 +212,9 @@ export default function MeditationHomeScreen() {
                         accessibilityRole="link"
                         onPress={() => router.push("/tools/meditation/sessions")}
                       >
-                        <Text className="text-sm text-iris">{t("module.home.viewHistory")}</Text>
+                        <Text className="text-sm text-accent-ink">
+                          {t("module.home.viewHistory")}
+                        </Text>
                       </Pressable>
                     ) : null}
                   </View>
@@ -241,7 +243,7 @@ export default function MeditationHomeScreen() {
                             </Text>
                           </View>
                           <View className="rounded-full bg-iris/10 px-2 py-0.5">
-                            <Text className="text-xs font-semibold text-iris">
+                            <Text className="text-xs font-semibold text-accent-ink">
                               {t("module.sessions.stageBadge", { stage: s.stageAtSession })}
                             </Text>
                           </View>

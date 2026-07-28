@@ -132,9 +132,12 @@ describe("MeditationHomeScreen", () => {
     renderWithProviders(<MeditationHomeScreen />);
 
     // Room accents follow the module hue; `primary` stays reserved for
-    // interactive control states (buttons, selected chips).
-    expect(screen.getByText("Stage 2").props.className).toContain("text-iris");
-    expect(screen.getByText("All sessions").props.className).toContain("text-iris");
+    // interactive control states (buttons, selected chips). The hue reaches
+    // small text as `accent-ink` - the room's own iris darkened until it clears
+    // AA on the surfaces iris pours (#368). Published `text-iris` is 3.33:1
+    // there, so asserting it here would pin an illegible pairing.
+    expect(screen.getByText("Stage 2").props.className).toContain("text-accent-ink");
+    expect(screen.getByText("All sessions").props.className).toContain("text-accent-ink");
   });
 
   it("keeps the room poured on the loading return", () => {
