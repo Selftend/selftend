@@ -70,16 +70,32 @@ test("every t() string-literal key resolves in the en locale", () => {
         missing.push(`${path.relative(ROOT, file)}: ${ns}:${key}`);
       }
     }
-    if (fileNamespaces.length === 0) continue;
-    for (const match of source.matchAll(/[^\w.]t\(\s*"([^"]+)"/g)) {
+    // The optional second capture is the literal options object, if the call has one, so
+    // an explicit `t("key", { ns: "common" })` is checked against the namespace it names
+    // rather than the file's. Shared helpers that take a caller's `t` rely on that
+    // override (see src/utils/relative-time.ts), and they have no useTranslation() of
+    // their own for the file-level inference below to find.
+    for (const match of source.matchAll(/[^\w.]t\(\s*"([^"]+)"\s*(?:,\s*\{([^}]*)\})?/g)) {
       const key = match[1];
-      if (key.includes(":")) {
-        const [ns, bare] = key.split(":");
+      const explicitNs = match[2]?.match(/\bns:\s*"([^"]+)"/)?.[1];
+      // An explicit `{ ns: "..." }` names a namespace outright, so an unknown one is a
+      // typo rather than something this scan cannot see - `{ ns: "commmon" }` renders
+      // i18next's missing-key fallback at runtime. The `namespaces.has` guard below is
+      // for the `"ns:key"` spelling, where a colon in the key is not necessarily a
+      // namespace; it must not swallow this case, or the branch that exists to check
+      // shared helpers passes them all.
+      if (explicitNs && !namespaces.has(explicitNs)) {
+        missing.push(`${path.relative(ROOT, file)}: unknown namespace "${explicitNs}" for ${key}`);
+        continue;
+      }
+      if (key.includes(":") || explicitNs) {
+        const [ns, bare] = key.includes(":") ? key.split(":") : [explicitNs as string, key];
         if (namespaces.has(ns) && !hasKey(namespaces, ns, bare)) {
           missing.push(`${path.relative(ROOT, file)}: ${ns}:${bare}`);
         }
         continue;
       }
+      if (fileNamespaces.length === 0) continue;
       if (!fileNamespaces.some((ns) => hasKey(namespaces, ns, key))) {
         missing.push(`${path.relative(ROOT, file)}: [${fileNamespaces.join(",")}] ${key}`);
       }

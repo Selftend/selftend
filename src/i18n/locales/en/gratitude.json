@@ -143,12 +143,6 @@
       "description": "Open an entry and mark it as a favorite when it feels worth returning to."
     }
   },
-  "relativeTime": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo_one": "{{count}} day ago",
-    "daysAgo_other": "{{count}} days ago"
-  },
   "breaks": {
     "dismiss": "Next card",
     "categories": {

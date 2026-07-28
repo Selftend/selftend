@@ -11,6 +11,12 @@
   "or": "или",
   "orContinueWithEmail": "или продължи с имейл",
   "never": "никога",
+  "relativeTime": {
+    "today": "Днес",
+    "yesterday": "Вчера",
+    "daysAgo_one": "Преди {{count}} ден",
+    "daysAgo_other": "Преди {{count}} дни"
+  },
   "draft": {
     "discardAction": "Изхвърли черновата",
     "discardTitle": "Да се изхвърли ли тази чернова?",

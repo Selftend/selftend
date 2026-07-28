@@ -17,7 +17,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { formatMoodRelativeTime } from "@/src/features/mood/relative-time";
+import { formatRelativeTime } from "@/src/utils/relative-time";
 import {
   useDeleteJournalEntry,
   useJournalEntries,
@@ -77,7 +77,7 @@ export default function JournalDetailScreen() {
   }
 
   const occurredAt = entry.occurredAt ?? entry.createdAt;
-  const when = formatMoodRelativeTime(occurredAt, t);
+  const when = formatRelativeTime(occurredAt, t);
   const trimmedTitle = entry.title.trim();
   const heading = trimmedTitle.length > 0 ? trimmedTitle : t("detail.title");
 

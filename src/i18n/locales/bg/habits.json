@@ -211,12 +211,6 @@
       "6": "Съб"
     }
   },
-  "relativeTime": {
-    "today": "Днес",
-    "yesterday": "Вчера",
-    "daysAgo_one": "преди {{count}} ден",
-    "daysAgo_other": "преди {{count}} дни"
-  },
   "learn": {
     "sectionLabel": "От книгата",
     "dismiss": "Следваща карта",
