@@ -1,3 +1,5 @@
+import type { CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
+
 function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
@@ -46,4 +48,55 @@ export function scheduleInputToOccurrence(text: string | null): ScheduleOccurren
     // Resolved at the scheduled instant, not at "now" - see above.
     scheduledOffsetMinutes: -d.getTimezoneOffset(),
   };
+}
+
+/** What an already-saved activity holds for its schedule, as far as this decision cares. */
+export interface StoredSchedule {
+  scheduledAt: string | null;
+  scheduledOffsetMinutes: CapturedOffsetMinutes;
+}
+
+/** A resolved schedule to save. The offset is nullable here because a carried-through one may be. */
+export interface ResolvedSchedule {
+  scheduledAt: string;
+  scheduledOffsetMinutes: CapturedOffsetMinutes;
+}
+
+/**
+ * Decide what to store for the schedule field on save.
+ *
+ * Re-parsing the field every time is right for a NEW plan and wrong for an EDIT.
+ * The field was rendered from the stored instant through `isoToScheduleInput`,
+ * which formats in the viewer's CURRENT zone - so parsing that text back
+ * captures the offset in force where the editor now stands, not where the plan
+ * was made. Schedule "Tuesday 19:00" in Tokyo, fly to London, change only the
+ * notes, and the instant survives the round trip while the offset is silently
+ * replaced, moving `scheduledDayKey` onto a different civil day. That is exactly
+ * the travel case the captured offset exists to prevent (#330), so an unrelated
+ * edit must not trigger it.
+ *
+ * When the text still renders identically to the stored instant, nothing about
+ * the plan's time was touched and the stored pair is carried through unchanged -
+ * including a null offset, which stays null rather than being back-filled from
+ * wherever the editor happens to be. A null means "never captured" and guessing
+ * it is the mistake 20260726 had to undo.
+ *
+ * Any real change to the text re-parses, which is correct: the user is picking a
+ * new time, here, now.
+ */
+export function resolveScheduleOccurrence(
+  text: string | null,
+  stored: StoredSchedule | null | undefined,
+): ResolvedSchedule | null {
+  if (
+    stored?.scheduledAt &&
+    text != null &&
+    text.trim() === isoToScheduleInput(stored.scheduledAt)
+  ) {
+    return {
+      scheduledAt: stored.scheduledAt,
+      scheduledOffsetMinutes: stored.scheduledOffsetMinutes,
+    };
+  }
+  return scheduleInputToOccurrence(text);
 }

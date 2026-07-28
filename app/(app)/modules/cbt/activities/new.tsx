@@ -19,7 +19,7 @@ import { useActivity, useSaveActivity } from "@/src/features/activities/queries"
 import { activityFormSchema, type ActivityFormSchema } from "@/src/features/activities/schemas";
 import {
   isoToScheduleInput,
-  scheduleInputToOccurrence,
+  resolveScheduleOccurrence,
 } from "@/src/features/activities/schedule-format";
 import type { PACECategory } from "@/src/features/activities/types";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
@@ -112,8 +112,10 @@ export default function NewActivityScreen() {
     setDraftValues(values);
     // Normalize the free-text "YYYY-MM-DD HH:MM" (local) to an ISO instant plus the
     // offset in force at it, from one parse - the instant orders the list, the offset
-    // records which civil day the user meant (#330).
-    const scheduled = scheduleInputToOccurrence(values.scheduledAt);
+    // records which civil day the user meant (#330). On an edit that left the field
+    // alone, the stored pair is carried through instead of being re-derived from the
+    // editor's current zone, which would move the plan's civil day after travel.
+    const scheduled = resolveScheduleOccurrence(values.scheduledAt, existing);
     if (values.scheduledAt && scheduled === null) {
       showToast({
         title: t("common:feedback.problem"),
