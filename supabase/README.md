@@ -250,18 +250,36 @@ npm exec supabase -- db query --linked -f supabase/migrations/20260503121000_pro
 
 ## Migration versions
 
-A migration's **version** is the leading run of digits in its filename, not the filename itself. `20260730_mindfulness_occurrence_offset.sql` is version `20260730`; the rest of the name is a label the CLI ignores. Versions key `supabase_migrations.schema_migrations`, so two files whose leading digits match are **one version**, and the second to apply dies with:
+A migration's **version** is the leading run of digits in its filename, not the filename itself. `20260731130000_thought_records_occurrence_offset.sql` is version `20260731130000`; the rest of the name is a label the CLI ignores. Two rules govern it, and they pull in opposite directions if you only know one of them.
+
+**Two files may not share a version.** Versions key `supabase_migrations.schema_migrations`, so two files whose leading digits match are one version, and the second to apply dies with:
 
 ```
 ERROR: duplicate key value violates unique constraint "schema_migrations_pkey"
 DETAIL: Key (version)=(20260730) already exists.
 ```
 
-That failure surfaces only once CI starts Supabase — `verify` stays green and the diff looks fine — and it bit twice in one afternoon (#414, #256) as soon as parallel work started landing migrations on the same day.
+That surfaces only once CI starts Supabase — `verify` stays green and the diff looks fine — and it bit twice in one afternoon (#414, #256) as soon as parallel work started landing migrations on the same day.
 
-**Use `YYYYMMDDHHMMSS` for anything new.** Fourteen digits are collision-proof and already common in this directory (`20260730120000_program_widget_day_key.sql`). The bare 8-digit form is only safe while at most one migration lands per day, which is no longer a safe assumption. Historic versions are a hybrid — early ones are sequence numbers rather than real dates (`20260664` has no 64th day) — so read the digits as an ordering key, not a calendar.
+**No version may be a prefix of another version.** This is the one the obvious fix for the first rule walks straight into: date a second same-day migration `YYYYMMDDHHMMSS` while its sibling keeps the bare `YYYYMMDD`, and you have created it. `db push` walks the local files and the remote history as two sorted lists in a single pass, expecting them to agree on order — but the local list is sorted by **filename** and the remote by **version**, and those disagree exactly when one version extends another, because every digit sorts before the `_` that ends the shorter one:
 
-[test/migration-conventions.test.ts](../test/migration-conventions.test.ts) fails the build on any collision, and on any file with no leading digits. If it fires, rename the **newer** file to a timestamped version rather than deleting it.
+```
+20260730120000_program_widget_day_key.sql     <- '1' (0x31)
+20260730_mindfulness_occurrence_offset.sql    <- '_' (0x5f)
+```
+
+The file for `20260730120000` sorts first; the remote history puts `20260730` first. The walk finds a local version larger than the remote one it is looking for, decides the remote version is missing locally, and aborts — while both files sit there, present and unrenamed:
+
+```
+Remote migration versions not found in local migrations directory.
+supabase migration repair --status reverted 20260728 20260730
+```
+
+Two properties make this worth memorising. It is **invisible until the shorter version has been applied somewhere**, so CI cannot see it: `db reset` builds from an empty database and never compares histories. And it **does not recover on its own** — once both versions are applied, every later push fails the same way, so the first push that succeeds is the one that wedges the database. It broke every staging run from `0c664ec` (#419) until #432.
+
+**So: use `YYYYMMDDHHMMSS` for anything new, and keep one width.** Fourteen digits are collision-proof, and if every new version is the same width none can be a prefix of another. The historic 8-digit versions are frozen where they are — renaming an already-applied migration is what breaks history in the first place — so when a new file would extend one of them, move the **new** file to a free date instead. Early versions are sequence numbers rather than real dates (`20260664` has no 64th day), so read the digits as an ordering key, not a calendar.
+
+[test/migration-conventions.test.ts](../test/migration-conventions.test.ts) fails the build on a shared version, on a prefix pair, on any filename-order/version-order disagreement, and on a file with no leading digits.
 
 ## Linked project status
 
@@ -287,6 +305,7 @@ The following invariants should hold on a fully-migrated project:
 - `apply_widget_recommendations()` applies an empty or populated Home layout atomically, and `program_widget_task_status()` returns only lightweight current-goal completion flags
 - `journal_word_total()` returns the caller's exact lifetime journal word count as a single number, so the home hero stat does not truncate to the 50 entries the list query loads
 - `meditation_median_minutes()` returns the caller's exact lifetime median sit length (a `percentile_cont` aggregate, null when they have no sessions), so the meditation hero stat does not truncate to the 200 sessions the list query loads; like the word total it is `stable security invoker`, so the caller's own RLS scopes it, and it stores nothing
+- `sleep_stats(p_time_zone)` returns one row of the sleep tracker's summary figures - the 7- and 30-day duration and quality averages, the 30-day quality mix, the lifetime longest and shortest night, and the seven Monday-first weekday averages - so none of them truncate to the 50 logs the list query loads. Same `stable security invoker` shape as the two above, and it stores nothing. It takes the viewer's IANA time zone because sleep is bucketed by the civil day captured with each log: the zone resolves rows whose offset was never captured and fixes which day closes the window. Averages come back exact, unrounded, so the client can round them the way it always has
 
 The local and remote migration histories include `20260507000000_reminder_consent_timestamp.sql`, which adds `user_preferences.reminder_consent_updated_at` and export coverage for timestamped reminder consent. The 2026-05-07 version is used so the file sorts after the legacy 8-digit `20260506_onboarding_flags.sql` migration.
 

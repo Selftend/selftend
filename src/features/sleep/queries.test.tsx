@@ -8,9 +8,11 @@ import {
   useSleepLog,
   useSleepLogCount,
   useSleepLogs,
+  useSleepStats,
 } from "@/src/features/sleep/queries";
 import * as repo from "@/src/features/sleep/repository";
 import { createTestQueryClient } from "@/test/render-with-providers";
+import { deviceTimeZone } from "@/src/utils/date";
 
 // Automock of the repository re-export barrel does not reliably yield callable
 // mock fns for every named export, so use the explicit-factory pattern already
@@ -21,6 +23,7 @@ jest.mock("@/src/features/sleep/repository", () => ({
   getSleepLog: jest.fn(),
   listSleepLogs: jest.fn(),
   saveSleepLog: jest.fn(),
+  sleepStats: jest.fn(),
 }));
 
 function wrap(client: QueryClient) {
@@ -43,6 +46,7 @@ beforeEach(() => {
 const singleIdHooks = [
   ["useSleepLogs", useSleepLogs, repo.listSleepLogs],
   ["useSleepLogCount", useSleepLogCount, repo.countSleepLogs],
+  ["useSleepStats", useSleepStats, repo.sleepStats],
 ] as const;
 
 describe.each(singleIdHooks)("%s enabled gate", (_name, useHook, repoFn) => {
@@ -87,6 +91,36 @@ describe("useSleepLogCount", () => {
 
     expect(repo.countSleepLogs).toHaveBeenCalledWith("u1");
     expect(result.current.data).toBe(7);
+  });
+});
+
+describe("useSleepStats", () => {
+  it("passes the viewer's time zone to the repository", async () => {
+    // The RPC scopes itself to auth.uid(), so there is no user id to send; the time zone
+    // is what the server cannot work out on its own (#256).
+    (repo.sleepStats as jest.Mock).mockResolvedValue({ longestMinutes: 600 });
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => useSleepStats("u1"), { wrapper: wrap(client) });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(repo.sleepStats).toHaveBeenCalledWith(deviceTimeZone());
+    expect(result.current.data).toEqual({ longestMinutes: 600 });
+  });
+
+  it("caches per time zone, so travelling is a different query and not a stale one", async () => {
+    // The zone decides which civil day each night falls in, so two zones are genuinely
+    // different data. Keying on the user alone would serve the departure zone's summary
+    // after landing.
+    (repo.sleepStats as jest.Mock).mockResolvedValue(null);
+    const client = createTestQueryClient();
+    renderHook(() => useSleepStats("u1"), { wrapper: wrap(client) });
+
+    await waitFor(() => expect(repo.sleepStats).toHaveBeenCalled());
+
+    expect(
+      client.getQueryCache().find({ queryKey: ["sleep", "stats", "u1", deviceTimeZone()] }),
+    ).toBeDefined();
   });
 });
 

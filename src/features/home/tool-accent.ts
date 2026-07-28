@@ -1,6 +1,12 @@
 // Single source of truth for per-tool accent colours. Each tool/module maps to a
 // calm hue from the shared token palette (think/act/be + aqua/mist/iris/ink/clay).
 // Class strings are written out in full so NativeWind's compiler can see them.
+//
+// Consumers: src/components/app/sidebar-nav.tsx (chip + icon + ink) and
+// src/features/tools/tools-screen.tsx (chip + icon). The hub carried its own
+// hardcoded map until #421 — six tools in two colours, so a tool that was gold
+// in the nav was violet in the hub. "Single source of truth" is only true while
+// nothing copies this.
 
 interface ToolAccent {
   chip: string;
@@ -8,21 +14,29 @@ interface ToolAccent {
    * The published accent — icons, borders, decorative marks. Not legible as
    * small text.
    *
-   * This map's one consumer (src/components/app/sidebar-nav.tsx) swaps the nav
-   * glyph between this and `text-muted-foreground` with the row's active state,
-   * so the glyph is a state indicator and owes WCAG 1.4.11's 3:1 — it cannot
-   * fall back on the decorative exemption the way a purely ornamental glyph
-   * can. The surface is `chip` (`bg-<hue>/10`) over the sidebar's `bg-card`,
-   * where light mode binds: `ink` 4.62, `aqua` 4.61, `be` 4.55, `act` 3.52,
+   * Both consumers put this on a glyph inside `chip`, and both stack `chip`
+   * (`bg-<hue>/10`) over a `bg-card` surface, so one set of figures covers
+   * them: light mode binds at `ink` 4.62, `aqua` 4.61, `be` 4.55, `act` 3.52,
    * `clay` 3.39, `iris` 3.32 — and `think` 1.90, which is why `gratitude`
    * carries ink in both fields. Measured in test/accent-ink-call-sites.test.ts
    * (#412).
+   *
+   * The floor those figures have to clear comes from the stricter consumer.
+   * src/components/app/sidebar-nav.tsx swaps the nav glyph between this and
+   * `text-muted-foreground` with the row's active state, so there the glyph is
+   * a state indicator and owes WCAG 1.4.11's 3:1 — it cannot fall back on the
+   * decorative exemption the way a purely ornamental glyph can.
+   * src/features/tools/tools-screen.tsx paints it unconditionally as static
+   * branding beside the tool's name, which is the weaker claim; it clears 3:1
+   * anyway. A third consumer on a darker surface would have to be re-measured.
    */
   icon: string;
   /**
-   * The same hue as small-text ink (#403). Split out from `icon` because this
-   * map's one consumer paints both: the sidebar's icon (decorative, keeps
-   * `icon`) and its nav label (14px text, takes `ink`).
+   * The same hue as small-text ink (#403). Split out from `icon` because the
+   * sidebar paints both: its icon (decorative, keeps `icon`) and its nav label
+   * (14px text, takes `ink`). The tools hub reaches only `chip` and `icon` —
+   * its tile names stay on the neutral foreground, so it has no hue text to
+   * ink.
    *
    * Every entry uses ink, passing hues included, because the label is only
    * tinted while the row is active — and an active row also paints `chip`, so
@@ -30,15 +44,17 @@ interface ToolAccent {
    * hues fail AA: the best is `ink` at 4.28:1, and `be`/`aqua`, which clear
    * 4.86 on the bare app background, drop to 4.22 and 4.27.
    *
-   * `primary` keeps `text-primary`: there is no `--primary-ink`, and it is not
-   * a `text-<hue>` site. It measures 4.39:1 on `bg-primary/10` — a near miss
-   * that is out of #403's scope but worth its own ticket.
+   * `primary` used to be the exception here, on the grounds that there was no
+   * `--primary-ink` and that it is not a `text-<hue>` site. The first half is
+   * no longer true (#421 §3 added the token, for the Beta chip this same
+   * sidebar paints on all 20 screens) and the second was never the point — not
+   * a hue is not the same as not text. It takes ink now like the eight.
    */
   ink: string;
 }
 
 const TOOL_ACCENT: Record<string, ToolAccent> = {
-  "module-cbt": { chip: "bg-primary/10", icon: "text-primary", ink: "text-primary" },
+  "module-cbt": { chip: "bg-primary/10", icon: "text-primary", ink: "text-primary-ink" },
   "module-act": { chip: "bg-act/10", icon: "text-act", ink: "text-act-ink" },
   mood: { chip: "bg-be/10", icon: "text-be", ink: "text-be-ink" },
   "self-care": { chip: "bg-be/10", icon: "text-be", ink: "text-be-ink" },
@@ -58,7 +74,7 @@ const TOOL_ACCENT: Record<string, ToolAccent> = {
 const DEFAULT_TOOL_ACCENT: ToolAccent = {
   chip: "bg-primary/10",
   icon: "text-primary",
-  ink: "text-primary",
+  ink: "text-primary-ink",
 };
 
 export function toolAccent(toolId: string): ToolAccent {

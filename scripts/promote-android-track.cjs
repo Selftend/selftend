@@ -3,11 +3,23 @@
  * `eas submit` the same build to two tracks; instead we read the source track's
  * active versionCode(s) and assign them to the target track as a completed release.
  *
- * Used by the Android release workflow to publish one build to both the Groups and
- * Alpha closed-testing tracks. Node 18+ only (global fetch / crypto).
+ * Used by the Android release workflow to copy the build it released to the
+ * production track onto the Groups and Alpha closed-testing tracks, so testers
+ * are never left behind production. Node 18+ only (global fetch / crypto).
+ *
+ * The production release is `completed`, NOT a draft: a merge to `main` reaches
+ * every user automatically once Google's review clears, with nothing to press
+ * (see docs/releasing.md -> "How Android reaches users"). This script gates
+ * nothing; it only mirrors the same versionCode onto the closed tracks.
+ *
+ * The source release may still be in Google's review when this runs. We read the
+ * track's `releases` array, which carries the versionCodes whether or not they
+ * are being served yet - so an in-review release is expected to read back fine.
+ * If that ever proves wrong, this step is where it surfaces: the mirror fails and
+ * testers are left behind production while production itself ships regardless.
  *
  * Usage:
- *   node scripts/promote-android-track.cjs --from Groups --to alpha
+ *   node scripts/promote-android-track.cjs --from production --to alpha
  * Options (with defaults):
  *   --from Groups   source track to copy the release from
  *   --to alpha      target track to publish the same versionCode to

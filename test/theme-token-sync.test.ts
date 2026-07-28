@@ -8,7 +8,13 @@ import {
   HUE_INK_TRIPLES,
   HUE_NAMES,
   HUE_TRIPLES,
+  MARK_WASH_ALPHAS,
+  PRIMARY_INK_LIGHTNESS,
+  PRIMARY_INK_TRIPLES,
   PRIMARY_TRIPLES,
+  TINT_ACCENT,
+  TINT_TOKENS,
+  type TintToken,
 } from "@/src/lib/design-tokens";
 import { roomTriples } from "@/src/lib/module-room";
 import { PALETTE, TINTS, type TintName } from "@/src/features/widgets/palette";
@@ -285,6 +291,218 @@ describe("hue ink meets WCAG AA on the neutral app surface", () => {
         }
       }
     }
+  });
+});
+
+// The `primary` half of the same problem (#421 §3). #403 gave all eight hues an
+// ink and stopped there, because `primary` is not a hue: it has no HUE_NAMES
+// entry, no room pours it, and every gate is spelled `text-<hue>`. So the tint
+// with the widest reach in the app kept writing its raw accent as text — the
+// sidebar's "Beta" chip, `text-primary` at 10px/600 on `bg-primary/15` over the
+// sidebar's card, 4.41:1 light and 4.22:1 dark, on all 20 captured screens.
+// This suite is `--primary-ink`'s floor, and it is deliberately the *same* set
+// of surfaces the hue block above checks, so the new token is certified by the
+// rule the eight were certified by rather than by one written to fit it.
+describe("primary ink meets WCAG AA on the neutral app surface", () => {
+  it("--primary-ink mirrors PRIMARY_INK_TRIPLES in both schemes", () => {
+    expect({ light: css.light["--primary-ink"], dark: css.dark["--primary-ink"] }).toEqual(
+      PRIMARY_INK_TRIPLES,
+    );
+  });
+
+  it.each(["light", "dark"] as const)("primary ink passes on the %s background and card", (s) => {
+    const ink = hslTripleToRgb(css[s]["--primary-ink"]);
+
+    expect(contrastRatio(ink, hslTripleToRgb(css[s]["--background"]))).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(ink, hslTripleToRgb(css[s]["--card"]))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // The pairing that actually failed. Primary text almost never lands on a bare
+  // surface: it sits on a wash of primary — the `bg-primary/15` Beta chip and
+  // `/modules` mark, the `bg-primary/10` ready banner, the `bg-primary/5`
+  // program container — and a wash of the accent pulls the surface toward the
+  // ink, costing contrast rather than adding it. Same alphas as the hue block.
+  it.each(["light", "dark"] as const)("primary ink passes on washes of the accent in %s", (s) => {
+    const ink = hslTripleToRgb(css[s]["--primary-ink"]);
+    const wash = hslTripleToRgb(css[s]["--primary"]);
+
+    for (const base of ["--background", "--card"] as const) {
+      for (const alpha of [0.05, 0.1, 0.15] as const) {
+        const surface = compositeOver(wash, alpha, hslTripleToRgb(css[s][base]));
+
+        expect(contrastRatio(ink, surface)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  // One level deeper than the hue floor goes, and the reason dark ink is 80%
+  // rather than 76%: #421 measured the Beta chip at 3.89 light / 3.54 dark
+  // where it sits *inside* a primary-tinted card, which the single-wash floor
+  // above cannot see. Every alpha the app tints primary with, stacked on every
+  // other, on both neutral bases — the worst is `/15` on `/15` (8.00 light,
+  // 4.71 dark). A future lightness retune that clears the floor above while
+  // re-breaking the nested case fails here instead of shipping.
+  it.each(["light", "dark"] as const)("primary ink passes on a wash of a wash in %s", (s) => {
+    const ink = hslTripleToRgb(css[s]["--primary-ink"]);
+    const wash = hslTripleToRgb(css[s]["--primary"]);
+    const alphas = [0.05, 0.1, 0.12, 0.15] as const;
+
+    for (const base of ["--background", "--card"] as const) {
+      for (const outer of alphas) {
+        const card = compositeOver(wash, outer, hslTripleToRgb(css[s][base]));
+        for (const inner of alphas) {
+          expect(contrastRatio(ink, compositeOver(wash, inner, card))).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    }
+  });
+
+  // As with the hues: a floor alone can be met by throwing the colour away.
+  // Primary ink must stay the brand violet, which means degree and saturation
+  // untouched and only lightness moved.
+  it.each(["light", "dark"] as const)(
+    "primary %s ink keeps the accent's hue and saturation",
+    (s) => {
+      const [degree, saturation] = PRIMARY_TRIPLES[s].split(" ");
+
+      expect(PRIMARY_INK_TRIPLES[s]).toBe(`${degree} ${saturation} ${PRIMARY_INK_LIGHTNESS[s]}%`);
+    },
+  );
+
+  it("light ink darkens to the same depth as the eight hue inks", () => {
+    expect(PRIMARY_INK_LIGHTNESS.light).toBe(HUE_INK_LIGHTNESS);
+  });
+
+  // The one place primary parts company with the hues, asserted rather than
+  // left as a comment. `--<hue>-ink` in dark is the published accent untouched
+  // because every hue already clears AA there; primary does not (4.22 on the
+  // Beta chip), so its dark ink is *lighter* than its accent. If a future
+  // primary retune ever made the raw accent pass, this is where to re-open the
+  // question — the assertion should be revisited, not deleted.
+  it("dark ink is lighter than the accent, unlike every hue ink", () => {
+    expect(PRIMARY_INK_LIGHTNESS.dark).toBeGreaterThan(72);
+
+    for (const hue of HUE_NAMES) {
+      expect(HUE_INK_TRIPLES[hue].dark).toBe(HUE_TRIPLES[hue].dark);
+    }
+
+    const rawOnChip = compositeOver(
+      hslTripleToRgb(css.dark["--primary"]),
+      0.15,
+      hslTripleToRgb(css.dark["--card"]),
+    );
+    expect(contrastRatio(hslTripleToRgb(css.dark["--primary"]), rawOnChip)).toBeLessThan(4.5);
+  });
+});
+
+// The mark half of the same problem (#433). TINT_TEXT was swept to ink in #422
+// and TINT_ACCENT was left holding the raw accent, on a docstring that said
+// 1.4.11's 3:1 floor was met "which the published accents clear". Nothing ever
+// computed that. Rendered, `think`'s glyph is 1.80:1 on the signed-out landing
+// page — and 1.88 on the *bare* app background, so no wash was ever going to
+// rescue it. Three gates in this workstream were green while that shipped,
+// because all three checked spelling (`text-<hue>` vs `text-<hue>-ink`) and none
+// checked luminance.
+//
+// So this suite does not encode the answer; it recomputes it. For every tint it
+// measures the published accent on every wash a mark is actually painted on, and
+// asserts TINT_ACCENT holds the accent exactly where that clears 3.0 and the ink
+// where it does not. `think` is the only tint the measurement sends to ink today
+// — but if a palette retune costs `iris` any luminance it will be the next, with
+// no docstring to edit and no judgement call to make.
+//
+// It is `it.each` per tint deliberately: a suite that scanned all nine and
+// asserted one aggregate could pass while a single tint regressed, which is the
+// hole #428 shipped through (journal and sleep share a hue, so a journal
+// regression hid behind sleep). A failure here names the tint that caused it.
+describe("a tint used as a mark clears WCAG 1.4.11 on the washes it lands on", () => {
+  const MARK_FLOOR = 3;
+
+  /**
+   * Every surface a TINT_ACCENT glyph is painted on, for one tint and scheme: a
+   * MARK_WASH_ALPHAS wash of the tint's own hue over each neutral app surface,
+   * plus — for the eight hues, which are the tints a module room can pour — the
+   * same washes over that room's own background and card. `primary` is not a hue
+   * and no room pours it, so it contributes the neutral pair only.
+   *
+   * The bare surfaces are included as the alpha-0 case: `think` fails there
+   * before any wash is applied, and a wash-only sweep would understate why.
+   */
+  function markSurfaces(tint: TintToken, scheme: "light" | "dark") {
+    const bases: [string, string][] = [
+      ["app background", css[scheme]["--background"]],
+      ["app card", css[scheme]["--card"]],
+    ];
+    if (tint !== "primary") {
+      const room = roomTriples(tint)[scheme];
+      bases.push(["room background", room.background], ["room card", room.card]);
+    }
+
+    const accent = hslTripleToRgb(css[scheme][`--${tint}`]);
+    return bases.flatMap(([name, triple]) => {
+      const base = hslTripleToRgb(triple);
+      return [
+        { where: `${scheme} ${name} bare`, surface: base },
+        ...MARK_WASH_ALPHAS.map((alpha) => ({
+          where: `${scheme} ${name} /${alpha}`,
+          surface: compositeOver(accent, alpha, base),
+        })),
+      ];
+    });
+  }
+
+  /** The worst ratio `colour` scores across every surface the tint's marks reach. */
+  function worstMarkRatio(tint: TintToken, token: (scheme: "light" | "dark") => string) {
+    let worst = { ratio: Infinity, where: "" };
+    for (const scheme of ["light", "dark"] as const) {
+      const mark = hslTripleToRgb(css[scheme][token(scheme)]);
+      for (const { where, surface } of markSurfaces(tint, scheme)) {
+        const ratio = contrastRatio(mark, surface);
+        if (ratio < worst.ratio) worst = { ratio, where };
+      }
+    }
+    return worst;
+  }
+
+  it.each(TINT_TOKENS)("TINT_ACCENT.%s is the accent iff the accent clears the floor", (tint) => {
+    const accent = worstMarkRatio(tint, () => `--${tint}`);
+    const expected = accent.ratio >= MARK_FLOOR ? `text-${tint}` : `text-${tint}-ink`;
+
+    // The measurement rides along in the compared object, so a failure reports
+    // which surface moved rather than only that the string differs.
+    const measured = { worst: accent.ratio.toFixed(2), at: accent.where };
+    expect({ ...measured, class: TINT_ACCENT[tint] }).toEqual({ ...measured, class: expected });
+  });
+
+  // The derivation above says the map agrees with the measurement. This says the
+  // measurement is good enough to ship: whichever colour the map landed on has
+  // to clear the floor itself. Without it, a tint whose accent AND ink both
+  // failed would still satisfy the rule above by picking the ink.
+  it.each(TINT_TOKENS)("whatever TINT_ACCENT.%s resolves to clears 3:1 everywhere", (tint) => {
+    const chosen = TINT_ACCENT[tint] === `text-${tint}` ? `--${tint}` : `--${tint}-ink`;
+    const worst = worstMarkRatio(tint, () => chosen);
+
+    expect({ at: worst.where, clears: worst.ratio >= MARK_FLOOR }).toEqual({
+      at: worst.where,
+      clears: true,
+    });
+  });
+
+  // `think` is the reason this suite exists, pinned as its own case so that a
+  // future retune which "fixes" think by lightening the app background — rather
+  // than by giving the mark an ink — has to come through here.
+  it("think is the tint the measurement sends to ink, and it fails even bare", () => {
+    const bare = contrastRatio(
+      hslTripleToRgb(css.light["--think"]),
+      hslTripleToRgb(css.light["--background"]),
+    );
+
+    expect(bare).toBeLessThan(MARK_FLOOR);
+    expect(TINT_ACCENT.think).toBe("text-think-ink");
+
+    // Dark is untouched by the swap: `--think-ink` is the published accent there,
+    // so the mark renders in exactly the colour it did before.
+    expect(css.dark["--think-ink"]).toBe(css.dark["--think"]);
   });
 });
 

@@ -4,7 +4,13 @@ import { join } from "node:path";
 import { groundingTechniques } from "@/src/constants/grounding";
 import { exerciseHue, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 import { MEDITATION_PRACTICES } from "@/src/features/meditation/practices";
-import { HUE_NAMES, TINT_ACCENT, TINT_TEXT } from "@/src/lib/design-tokens";
+import {
+  HUE_NAMES,
+  MARK_WASH_ALPHAS,
+  TINT_ACCENT,
+  TINT_TEXT,
+  TINT_TOKENS,
+} from "@/src/lib/design-tokens";
 import { sourceFiles, stripComments } from "@/test/source-scan";
 
 // The call-site half of the accent-ink work (#368/#403/#412).
@@ -458,23 +464,36 @@ const COMPONENTS_APP_SITES: AllowedSite[] = [
 // ---------------------------------------------------------------------------
 
 /**
- * The sidebar's per-tool accents. One consumer,
- * src/components/app/sidebar-nav.tsx, which paints the glyph `accent.icon` when
- * the row is active and `text-muted-foreground` when it is not - so unlike the
- * widget-tint map below, this tint *is* a state indicator and owes 1.4.11's
- * 3:1. It clears it on the only surface it reaches: `bg-<hue>/10` over the
- * sidebar's `bg-card`. Active is also carried by the chip fill, by the ink
- * label, and by `aria-current="page"`, so colour is not the sole channel.
+ * The per-tool accents. Two consumers, and they reach the same surface:
+ *
+ *   src/components/app/sidebar-nav.tsx paints the glyph `accent.icon` when the
+ *   row is active and `text-muted-foreground` when it is not - so unlike the
+ *   widget-tint map below, this tint *is* a state indicator and owes 1.4.11's
+ *   3:1. Active is also carried by the chip fill, by the ink label and by
+ *   `aria-current="page"`, so colour is not the sole channel.
+ *
+ *   src/features/tools/tools-screen.tsx paints it unconditionally on the hub
+ *   tile's glyph, beside the tool's name - static branding, no state, the
+ *   weaker claim of the two.
+ *
+ * The figures below are the stricter reading, and one set covers both: each
+ * stacks `chip` (`bg-<hue>/10`) over a `bg-card` surface - the sidebar's own
+ * background, the hub tile's `bg-card`. The hub reached this map in #421,
+ * having until then carried a hardcoded copy that painted six tools in two
+ * colours; its tiles used to tint at /15, which is *lower* contrast (be 4.22,
+ * act 3.31), so adopting the map's /10 chip raised every one of them.
+ *
+ * A third consumer on a darker surface would have to be re-measured.
  */
 const SIDEBAR_ACCENT = (hue: string, ratio: string): Omit<AllowedSite, "snippet"> => ({
   file: `${HOME_DIR}/tool-accent.ts`,
   reason: "icon",
   evidence:
-    `Sidebar nav glyph (size-6), ${hue} accent on bg-${hue}/10 over bg-card: ` +
-    `${ratio}:1 light, above 1.4.11's 3:1. Active state is duplicated by the ` +
-    `chip fill, the ink label and aria-current="page", so the tint is not the ` +
-    `only channel. This is the map's sole consumer - a second one on a darker ` +
-    `surface would have to be re-measured.`,
+    `Nav and tools-hub glyph (size-6), ${hue} accent on bg-${hue}/10 over ` +
+    `bg-card: ${ratio}:1 light, above 1.4.11's 3:1. Both consumers pair the ` +
+    `glyph with the tool's name in text, and the sidebar duplicates its active ` +
+    `state in the chip fill, the ink label and aria-current="page", so the ` +
+    `tint is never the only channel.`,
 });
 
 /**
@@ -621,7 +640,7 @@ const HOME_SITES: AllowedSite[] = [
       "misses it; the accompanying accentBgClass keeps the two in step.",
   },
   {
-    ...WIDGET_HEADER("habits-widget", "act", "3.52", "directions-run"),
+    ...WIDGET_HEADER("activities-widget", "act", "3.52", "directions-run"),
     snippet: `<Icon name="directions-run" className="size-5 text-act" />`,
   },
   {
@@ -745,10 +764,11 @@ describe("act and home are not rooms", () => {
 // ---------------------------------------------------------------------------
 //
 // The fourteen small feature areas left over once #403's sweeps had landed -
-// mostly one to three sites each, so this is breadth rather than depth. Four of
-// them (gratitude, grounding, habits, journal) hold nothing at all now and are
-// listed anyway, so that a new site there has to be classified rather than
-// merely counted.
+// mostly one to three sites each, so this is breadth rather than depth. Five of
+// them (gratitude, grounding, habits, journal, tools) hold nothing at all now
+// and are listed anyway, so that a new site there has to be classified rather
+// than merely counted. `tools` emptied last, in #421, when the hub stopped
+// carrying its own hue map and read src/features/home/tool-accent.ts instead.
 //
 // Three things came out of classifying them, and none was a contrast number:
 //
@@ -975,27 +995,14 @@ const ALLOWED_TAIL: AllowedSite[] = [
       "the tint, not assumed from be's 4.86 on a plain surface.",
   },
 
-  // --- src/features/tools: three tiles, one identical line ------------------
-  {
-    file: "src/features/tools/tools-screen.tsx",
-    snippet: `iconColor: "text-be",`,
-    reason: "icon",
-    evidence:
-      "Mood tile. 24px glyph on bg-be/15 inside a bg-card tile: 4.22:1. The tile's name and stat " +
-      "are separate text; the hue only tints the glyph.",
-  },
-  {
-    file: "src/features/tools/tools-screen.tsx",
-    snippet: `iconColor: "text-be",`,
-    reason: "icon",
-    evidence: "Grounding tile. Same treatment and surface as the mood tile: 4.22:1.",
-  },
-  {
-    file: "src/features/tools/tools-screen.tsx",
-    snippet: `iconColor: "text-be",`,
-    reason: "icon",
-    evidence: "Sleep tile. Same treatment and surface as the mood tile: 4.22:1.",
-  },
+  // src/features/tools held three tiles here until #421 - `iconColor:
+  // "text-be"` three times over, from a hardcoded hue map that contradicted
+  // src/features/home/tool-accent.ts and painted the hub's six tools in two
+  // colours. The screen now reads that map, so it names no hue of its own and
+  // has nothing left to classify; its glyphs are covered by the SIDEBAR_ACCENT
+  // rows above, which is where the hues actually live. The directory stays in
+  // TAIL_DIRS so a new literal there has to be classified rather than merely
+  // counted.
 
   // --- src/features/cbt: shared-tool pills ----------------------------------
   {
@@ -1147,6 +1154,33 @@ describe("no bare accent survives outside a classified area", () => {
     // its sites - rather than deleting the line from this list.
     expect(stray).toEqual([]);
   });
+
+  it("lets design-tokens.ts through for TINT_ACCENT's bare accents and nothing more", () => {
+    // The exclusion above is by FILE, which on its own is not a gate: a THIRD map
+    // in this file writing hue text - in either spelling - rides through it in
+    // silence, and the shape assertions below only ever look at the two maps that
+    // exist today. That is #421's hole re-opened one file over, so pin the whole
+    // set instead. A new bare-hue line here now has to be justified by editing
+    // this list, which is the point.
+    const inTokens = findingsIn(BARE_HUE, sourceFiles(ROOT, { dirs: ["app", "src"] }))
+      .filter((finding) => finding.file === TOKENS_FILE)
+      .map((finding) => finding.snippet.trim())
+      .sort();
+
+    // This used to expect all eight hues. It no longer can: #433 measured
+    // `think`'s glyph at 1.80:1 as rendered, so TINT_ACCENT.think is
+    // `text-think-ink` and writes no bare hue here at all. The expectation is
+    // derived from the map rather than restated with `think` deleted, so the day
+    // a measurement moves a second hue to ink this keeps passing without an
+    // edit — while a THIRD map, or a hue moving back to a bare accent, still
+    // fails until it is justified. Which hues may hold a bare accent is decided
+    // by luminance in test/theme-token-sync.test.ts, never here.
+    const expected = HUE_NAMES.filter((hue) => TINT_ACCENT[hue] === `text-${hue}`)
+      .map((hue) => `${hue}: "text-${hue}",`)
+      .sort();
+
+    expect(inTokens).toEqual(expected);
+  });
 });
 
 describe("the tint maps keep text and marks apart (#421)", () => {
@@ -1162,9 +1196,19 @@ describe("the tint maps keep text and marks apart (#421)", () => {
     }
   });
 
-  it("TINT_ACCENT resolves every hue to the published accent", () => {
+  it("TINT_ACCENT holds the published accent for every hue that can carry it", () => {
+    // This asserted `text-<hue>` for all eight, on TINT_ACCENT's docstring claim
+    // that 1.4.11's 3:1 floor was met "which the published accents clear".
+    // Nothing computed that claim, and #433 measured it false as rendered:
+    // `think`'s glyph is 1.80:1 on the signed-out landing page and 1.88 on the
+    // bare app background, so it never had a surface to be a mark on.
+    //
+    // The assertion is not being relaxed to fit the code. The *decision* moved
+    // to test/theme-token-sync.test.ts, which recomputes each tint's worst mark
+    // surface from the tokens and derives accent-vs-ink there; this is a pin of
+    // today's answer, so a silent flip fails in two places rather than one.
     for (const hue of HUE_NAMES) {
-      expect(TINT_ACCENT[hue]).toBe(`text-${hue}`);
+      expect(TINT_ACCENT[hue]).toBe(hue === "think" ? "text-think-ink" : `text-${hue}`);
     }
   });
 
@@ -1176,10 +1220,154 @@ describe("the tint maps keep text and marks apart (#421)", () => {
     expect(written.filter((cls) => cls.includes("hsl(var("))).toEqual([]);
   });
 
-  it("primary is the only tint with no ink, and is tracked separately", () => {
-    // `primary` is not a hue; it measures 4.41:1 on bg-primary/10 and is #422.
-    expect(TINT_TEXT.primary).toBe("text-primary");
+  it("primary is not a hue, but it is still text, so it takes ink too", () => {
+    // This assertion used to read `TINT_TEXT.primary === "text-primary"`, with
+    // a note that primary was the only tint with no ink and was tracked
+    // separately. It has one now (#421 §3): `primary` is absent from HUE_NAMES
+    // and no room pours it, which is why every `text-<hue>` gate in this file
+    // passed straight over the Beta chip while it rendered at 4.41:1 light and
+    // 4.22:1 dark on all 20 captured screens. Not a hue is not the same as not
+    // text, so the text/mark split applies here exactly as it does to the eight.
+    expect(TINT_TEXT.primary).toBe("text-primary-ink");
+
+    // The accent half is unchanged and must stay so: `text-primary` is still
+    // right for icons and decoration, and darkening those would read as
+    // disabled. Only the text map moved.
     expect(TINT_ACCENT.primary).toBe("text-primary");
+  });
+});
+
+// The mark floor in test/theme-token-sync.test.ts measures every tint on
+// MARK_WASH_ALPHAS and nothing else. That set is only the truth because the
+// files painting a TINT_ACCENT glyph happen to wash at 0.05 / 0.07 / 0.10 — an
+// assumption the floor cannot check about itself. A fifth consumer, or a denser
+// wash under an existing glyph, leaves that suite green while the glyph goes
+// illegible, which is the exact shape of the hole #433 came through: every gate
+// in this workstream checked spelling, none checked the surface.
+//
+// So the consumer list is DERIVED here (every non-test file under app/ and src/
+// that names TINT_ACCENT) rather than typed out, and every tint wash any of them
+// paints has to be classified by what sits on it. A new wash fails until someone
+// says which — and if the answer is "a mark", MARK_WASH_ALPHAS has to grow and
+// the floor re-measures it.
+describe("no TINT_ACCENT consumer paints a mark on a wash the floor never measured", () => {
+  const TINT_ALT = TINT_TOKENS.join("|");
+
+  /**
+   * A `bg-` wash of a tint, in all three spellings the app writes:
+   * `bg-primary/10` (Tailwind percent), `bg-primary/[0.07]` (arbitrary alpha)
+   * and `bg-[hsl(var(--act)/0.07)]` (the hue form, which has no `bg-<hue>`
+   * utility). Deliberately `bg-` only: a glyph sits on the fill, not the border,
+   * and `border-<hue>/0.35` is not a surface anything is read against.
+   */
+  const TINT_WASH = new RegExp(
+    String.raw`bg-(?:(?:${TINT_ALT})/(?:\[([0-9.]+)\]|(\d+))|\[hsl\(var\(--(?:${TINT_ALT})\)/([0-9.]+)\)\])`,
+    "g",
+  );
+
+  const consumers = sourceFiles(ROOT, { dirs: ["app", "src"] }).filter(
+    (file) =>
+      file !== TOKENS_FILE &&
+      /\bTINT_ACCENT\b/.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
+  );
+
+  /** Distinct `file@alpha` washes, which is the granularity a map paints at. */
+  function scanWashes(): string[] {
+    const seen = new Set<string>();
+    for (const file of consumers) {
+      const source = stripComments(readFileSync(join(ROOT, file), "utf8"));
+      for (const [, bracket, percent, hue] of source.matchAll(TINT_WASH)) {
+        const alpha = bracket ? Number(bracket) : percent ? Number(percent) / 100 : Number(hue);
+        seen.add(`${file}@${alpha}`);
+      }
+    }
+    return [...seen].sort();
+  }
+
+  /**
+   * Every tint wash the consumers paint, and what is read against it. Only
+   * `mark` entries constrain MARK_WASH_ALPHAS — `text` washes are floored at
+   * 4.5:1 by the hue-ink suite's own (denser) wash set, and `fill` washes carry
+   * neither because no TINT_ACCENT glyph is painted on them.
+   */
+  const CLASSIFIED_WASHES: { file: string; alpha: number; carries: string; why: string }[] = [
+    {
+      file: "src/components/app/landing/landing-screen.tsx",
+      alpha: 0.07,
+      carries: "mark",
+      why: "PILL_TINT, the hero pill: a size-17 TINT_ACCENT glyph beside a TINT_TEXT label. The 1.80:1 #433 measured is this surface.",
+    },
+    {
+      file: "src/components/app/landing/modules-section.tsx",
+      alpha: 0.05,
+      carries: "mark",
+      why: "CARD_TINT, the module card: a size-22 TINT_ACCENT glyph beside a TINT_TEXT kicker.",
+    },
+    {
+      file: "src/components/app/pillar-card.tsx",
+      alpha: 0.1,
+      carries: "mark",
+      why: "TOOL_ICON_BG, the 8x8 tile a size-18 TINT_ACCENT glyph is centred in. Also LETTER_BG's primary row, which is text, and floored as such.",
+    },
+    {
+      file: "src/components/app/pillar-card.tsx",
+      alpha: 0.12,
+      carries: "text",
+      why: "LETTER_BG's eight hue rows, which carry a 26px letter in TINT_TEXT and no mark. Covered by the /0.15 wash case of the hue-ink floor.",
+    },
+    {
+      file: "src/components/react-native-reusables/badge.tsx",
+      alpha: 0.1,
+      carries: "mark",
+      why: "badgeVariants' tint fill: a size-14 TINT_ACCENT glyph beside the ink label.",
+    },
+    {
+      file: "src/components/react-native-reusables/badge.tsx",
+      alpha: 0.9,
+      carries: "fill",
+      why: "the `default` variant's solid primary hover fill. `tint` is undefined there, so badge.tsx paints no TINT_ACCENT glyph on it.",
+    },
+  ];
+
+  it("finds the washes it expects, so the scan is not vacuous", () => {
+    // If the regex broke, every assertion below would pass by finding nothing.
+    expect(consumers.length).toBeGreaterThanOrEqual(4);
+    expect(scanWashes()).toContain("src/components/app/landing/landing-screen.tsx@0.07");
+  });
+
+  it("classifies every tint wash its consumers paint", () => {
+    // A wash appearing here unclassified is the thing to fix by adding a row
+    // above with what reads against it - not by widening the regex past it.
+    expect(scanWashes()).toEqual(
+      [...CLASSIFIED_WASHES].map((wash) => `${wash.file}@${wash.alpha}`).sort(),
+    );
+  });
+
+  it("measures every wash that carries a mark", () => {
+    const unmeasured = CLASSIFIED_WASHES.filter(
+      (wash) => wash.carries === "mark" && !MARK_WASH_ALPHAS.includes(wash.alpha as never),
+    ).map((wash) => `${wash.file}@${wash.alpha}`);
+
+    expect(unmeasured).toEqual([]);
+  });
+
+  it("keeps MARK_WASH_ALPHAS to alphas a mark is actually painted on", () => {
+    // The other direction: an alpha nobody paints is a floor measuring fiction,
+    // and it hides that the real surfaces went unchecked.
+    const painted = new Set(
+      CLASSIFIED_WASHES.filter((wash) => wash.carries === "mark").map((wash) => wash.alpha),
+    );
+
+    expect([...MARK_WASH_ALPHAS].sort()).toEqual([...painted].sort());
+  });
+
+  it("gives every classified wash a reason naming what reads against it", () => {
+    for (const wash of CLASSIFIED_WASHES) {
+      expect({ at: `${wash.file}@${wash.alpha}`, explained: wash.why.length > 40 }).toEqual({
+        at: `${wash.file}@${wash.alpha}`,
+        explained: true,
+      });
+    }
   });
 });
 

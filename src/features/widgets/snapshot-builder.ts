@@ -1,4 +1,4 @@
-import { addDaysToKey, maxDayKey, toLocalDateKey } from "@/src/utils/date";
+import { addDaysToKey, maxDayKey } from "@/src/utils/date";
 import { roundTo1 } from "@/src/utils/number";
 import {
   averageDurationMinutes,
@@ -278,14 +278,16 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
     };
   },
 
+  // Scheduled CBT behavioural-activation activities, not habits - the id stays
+  // `habits-today` only because it is a storage key in widget_preferences (#330).
   "habits-today": (data, { t, dateKey }) => {
-    const scheduled = data.activities.filter(
-      (a) => a.scheduledAt != null && toLocalDateKey(a.scheduledAt) === dateKey,
-    );
+    // Activities carry a captured scheduledDayKey - the civil day the user planned
+    // for - so compare directly and never re-bucket by the viewer's day (#330).
+    const scheduled = data.activities.filter((a) => a.scheduledDayKey === dateKey);
     const done = scheduled.filter((a) => a.completedAt !== null).length;
     const first = scheduled.find((a) => !a.completedAt) ?? null;
     return {
-      kind: "habits",
+      kind: "activities",
       title: t("plan.wizard.toolHabits"),
       hintText: t("today.dashboard.habitsHint"),
       allDoneText: t("today.dashboard.habitsAllDone"),
@@ -558,7 +560,7 @@ export function buildSnapshot(data: WidgetData, ctx: BuildContext): Snapshot {
   // Non-null: CARD_BUILDERS is populated for every CardId by the assignments above.
   for (const id of CARD_IDS) widgets[id] = CARD_BUILDERS[id]!(data, ctx);
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     locale: ctx.locale,
     generatedAt: new Date().toISOString(),
     dateKey: ctx.dateKey,
@@ -576,7 +578,7 @@ export function buildSignedOutSnapshot(ctx: {
   appThemePref: AppThemePref;
 }): Snapshot {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     locale: ctx.locale,
     generatedAt: new Date().toISOString(),
     dateKey: ctx.dateKey,

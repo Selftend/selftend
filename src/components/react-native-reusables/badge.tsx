@@ -85,7 +85,7 @@ const badgeTextVariants = cva("text-xs font-medium", {
     },
   },
   compoundVariants: [
-    { variant: "tint", tint: "primary", className: "text-primary" },
+    { variant: "tint", tint: "primary", className: "text-primary-ink" },
     { variant: "tint", tint: "act", className: "text-act-ink" },
     { variant: "tint", tint: "be", className: "text-be-ink" },
     { variant: "tint", tint: "think", className: "text-think-ink" },

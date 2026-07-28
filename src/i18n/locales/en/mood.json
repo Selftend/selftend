@@ -91,12 +91,6 @@
   "feedback": {
     "deleted": "Mood entry deleted"
   },
-  "relativeTime": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo_one": "{{count}} day ago",
-    "daysAgo_other": "{{count}} days ago"
-  },
   "stats": {
     "checkinsLabel": "check-ins",
     "thisWeekLabel": "this week",

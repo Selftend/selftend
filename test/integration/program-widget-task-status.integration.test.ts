@@ -3,7 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   SEED_USERS,
   createServiceClient,
+  deleteAllActivityLogsForUser,
   deleteAllMoodLogsForUser,
+  deleteAllThoughtRecordsForUser,
   deleteAllValuesProfileForUser,
   signInAs,
 } from "./helpers";
@@ -42,9 +44,22 @@ describe("program_widget_task_status (integration)", () => {
     originalPreferences = preferences.data!;
   });
 
-  beforeEach(async () => {
+  // Every table the CBT legs below read. Meditation has no shared helper, so it
+  // is cleared here directly.
+  const clearModuleData = async () => {
     await deleteAllValuesProfileForUser(SEED_USERS.alice.id);
     await deleteAllMoodLogsForUser(SEED_USERS.alice.id);
+    await deleteAllThoughtRecordsForUser(SEED_USERS.alice.id);
+    await deleteAllActivityLogsForUser(SEED_USERS.alice.id);
+    const sits = await admin
+      .from("meditation_sessions")
+      .delete()
+      .eq("user_id", SEED_USERS.alice.id);
+    expect(sits.error).toBeNull();
+  };
+
+  beforeEach(async () => {
+    await clearModuleData();
     const enrollment = await admin
       .from("user_preferences")
       .update({
@@ -57,8 +72,7 @@ describe("program_widget_task_status (integration)", () => {
   });
 
   afterAll(async () => {
-    await deleteAllValuesProfileForUser(SEED_USERS.alice.id);
-    await deleteAllMoodLogsForUser(SEED_USERS.alice.id);
+    await clearModuleData();
     await admin
       .from("user_preferences")
       .update(originalPreferences)
@@ -152,6 +166,189 @@ describe("program_widget_task_status (integration)", () => {
         p_day_key: "12 May 2026",
       });
       expect(status.error?.message).toContain("Invalid day key");
+    });
+  });
+
+  // ── The three legs #425 graduates ────────────────────────────────────────
+  //
+  // Each reads the same Tokyo instant as dailyNoticing above, so the captured
+  // day and the viewer's day disagree, and each asserts all three answers: the
+  // captured day, the null-offset fallback, and the legacy three-argument call
+  // that must keep its old viewer-local behaviour. The client twins are held to
+  // the same three answers in src/features/cbt/program-definition.test.ts - a
+  // module whose two halves disagree is the defect this PR exists to prevent.
+
+  /** Moves alice to the programme phase whose task list contains `taskKey`. */
+  const enterPhase = async (phaseIndex: number) => {
+    const moved = await admin
+      .from("user_preferences")
+      .update({ cbt_program_phase_index: phaseIndex })
+      .eq("user_id", SEED_USERS.alice.id);
+    expect(moved.error).toBeNull();
+  };
+
+  const taskDone = async (
+    taskKey: string,
+    window: { start: string; end: string },
+    dayKey?: string,
+  ) => {
+    const status = await alice.rpc("program_widget_task_status", {
+      p_module: "cbt",
+      p_day_start: window.start,
+      p_day_end: window.end,
+      ...(dayKey === undefined ? {} : { p_day_key: dayKey }),
+    });
+    expect(status.error).toBeNull();
+    const row = (status.data as { task_key: string; done: boolean }[]).find(
+      (r) => r.task_key === taskKey,
+    );
+    expect(row).toBeDefined();
+    return row!.done;
+  };
+
+  describe("thoughtRecordDaily buckets by the captured civil day", () => {
+    beforeEach(async () => {
+      await enterPhase(2);
+    });
+
+    const writeRecord = async (offsetMinutes: number | null) => {
+      const insert = await alice.from("thought_records").insert({
+        user_id: SEED_USERS.alice.id,
+        situation: "Missed the deadline",
+        nats: [{ text: "I always fail", beliefRating: 70, isHotThought: true }],
+        emotions: ["Anxious"],
+        distortions: [],
+        balanced_thought: "One deadline is not a pattern",
+        created_at: LOGGED_AT,
+        created_offset_minutes: offsetMinutes,
+      });
+      expect(insert.error).toBeNull();
+    };
+
+    it("counts the record on the captured day and not on the viewer's day", async () => {
+      await writeRecord(TOKYO_OFFSET_MINUTES);
+
+      await expect(taskDone("thoughtRecordDaily", CAPTURED_DAY_WINDOW, CAPTURED_DAY)).resolves.toBe(
+        true,
+      );
+      await expect(taskDone("thoughtRecordDaily", VIEWER_DAY_WINDOW, VIEWER_DAY)).resolves.toBe(
+        false,
+      );
+    });
+
+    it("falls back to the viewer's day when no offset was captured", async () => {
+      await writeRecord(null);
+
+      await expect(taskDone("thoughtRecordDaily", VIEWER_DAY_WINDOW, VIEWER_DAY)).resolves.toBe(
+        true,
+      );
+      await expect(taskDone("thoughtRecordDaily", CAPTURED_DAY_WINDOW, CAPTURED_DAY)).resolves.toBe(
+        false,
+      );
+    });
+
+    it("still buckets by the viewer's window for a client that sends no day key", async () => {
+      await writeRecord(TOKYO_OFFSET_MINUTES);
+
+      await expect(taskDone("thoughtRecordDaily", VIEWER_DAY_WINDOW)).resolves.toBe(true);
+      await expect(taskDone("thoughtRecordDaily", CAPTURED_DAY_WINDOW)).resolves.toBe(false);
+    });
+  });
+
+  describe("activityDaily buckets by the captured completion day", () => {
+    beforeEach(async () => {
+      await enterPhase(3);
+    });
+
+    const completeActivity = async (offsetMinutes: number | null) => {
+      const insert = await alice.from("activity_logs").insert({
+        user_id: SEED_USERS.alice.id,
+        activity_name: "Morning walk",
+        category: "pleasure",
+        completed_at: LOGGED_AT,
+        completed_offset_minutes: offsetMinutes,
+      });
+      expect(insert.error).toBeNull();
+    };
+
+    it("counts the activity on the captured day and not on the viewer's day", async () => {
+      await completeActivity(TOKYO_OFFSET_MINUTES);
+
+      await expect(taskDone("activityDaily", CAPTURED_DAY_WINDOW, CAPTURED_DAY)).resolves.toBe(
+        true,
+      );
+      await expect(taskDone("activityDaily", VIEWER_DAY_WINDOW, VIEWER_DAY)).resolves.toBe(false);
+    });
+
+    it("falls back to the viewer's day when no offset was captured", async () => {
+      await completeActivity(null);
+
+      await expect(taskDone("activityDaily", VIEWER_DAY_WINDOW, VIEWER_DAY)).resolves.toBe(true);
+      await expect(taskDone("activityDaily", CAPTURED_DAY_WINDOW, CAPTURED_DAY)).resolves.toBe(
+        false,
+      );
+    });
+
+    it("ignores an activity that is still open", async () => {
+      const open = await alice.from("activity_logs").insert({
+        user_id: SEED_USERS.alice.id,
+        activity_name: "Call a friend",
+        category: "pleasure",
+        scheduled_at: LOGGED_AT,
+        scheduled_offset_minutes: TOKYO_OFFSET_MINUTES,
+      });
+      expect(open.error).toBeNull();
+
+      await expect(taskDone("activityDaily", CAPTURED_DAY_WINDOW, CAPTURED_DAY)).resolves.toBe(
+        false,
+      );
+      await expect(taskDone("activityDaily", VIEWER_DAY_WINDOW, VIEWER_DAY)).resolves.toBe(false);
+    });
+
+    it("still buckets by the viewer's window for a client that sends no day key", async () => {
+      await completeActivity(TOKYO_OFFSET_MINUTES);
+
+      await expect(taskDone("activityDaily", VIEWER_DAY_WINDOW)).resolves.toBe(true);
+      await expect(taskDone("activityDaily", CAPTURED_DAY_WINDOW)).resolves.toBe(false);
+    });
+  });
+
+  describe("calmingDaily buckets by the captured civil day", () => {
+    beforeEach(async () => {
+      await enterPhase(4);
+    });
+
+    const sit = async (offsetMinutes: number | null) => {
+      const insert = await alice.from("meditation_sessions").insert({
+        user_id: SEED_USERS.alice.id,
+        duration_minutes: 10,
+        completed_at: LOGGED_AT,
+        completed_offset_minutes: offsetMinutes,
+      });
+      expect(insert.error).toBeNull();
+    };
+
+    it("counts the sit on the captured day and not on the viewer's day", async () => {
+      await sit(TOKYO_OFFSET_MINUTES);
+
+      await expect(taskDone("calmingDaily", CAPTURED_DAY_WINDOW, CAPTURED_DAY)).resolves.toBe(true);
+      await expect(taskDone("calmingDaily", VIEWER_DAY_WINDOW, VIEWER_DAY)).resolves.toBe(false);
+    });
+
+    it("falls back to the viewer's day when no offset was captured", async () => {
+      await sit(null);
+
+      await expect(taskDone("calmingDaily", VIEWER_DAY_WINDOW, VIEWER_DAY)).resolves.toBe(true);
+      await expect(taskDone("calmingDaily", CAPTURED_DAY_WINDOW, CAPTURED_DAY)).resolves.toBe(
+        false,
+      );
+    });
+
+    it("still buckets by the viewer's window for a client that sends no day key", async () => {
+      await sit(TOKYO_OFFSET_MINUTES);
+
+      await expect(taskDone("calmingDaily", VIEWER_DAY_WINDOW)).resolves.toBe(true);
+      await expect(taskDone("calmingDaily", CAPTURED_DAY_WINDOW)).resolves.toBe(false);
     });
   });
 });

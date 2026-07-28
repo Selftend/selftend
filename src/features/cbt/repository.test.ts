@@ -51,6 +51,22 @@ const NULL_ROW = {
   outcome_notes: null,
 };
 
+// The jest runner pins TZ to Asia/Kolkata (+05:30), so "the viewer's day" is
+// fixed. 19:00Z on the 15th is already 00:30 on the 16th here, but midday on the
+// 15th at UTC-7 - one instant that lands on two different civil days.
+const ACROSS_MIDNIGHT_AT = "2026-05-15T19:00:00.000Z";
+const CAPTURED_DAY = "2026-05-15";
+const VIEWER_DAY = "2026-05-16";
+
+const listOne = (row: Record<string, unknown>) => {
+  const limit = jest.fn().mockResolvedValue({ data: [row], error: null });
+  const order = jest.fn(() => ({ limit }));
+  const isArchived = jest.fn(() => ({ order }));
+  const eqUser = jest.fn(() => ({ is: isArchived }));
+  const select = jest.fn(() => ({ eq: eqUser }));
+  mockRequireSupabase.mockReturnValue(buildClient({ thought_records: { select } }));
+};
+
 const INPUT: ThoughtRecordInput = {
   situation: "  stuck in traffic  ",
   nats: [{ text: "I'll be late", beliefRating: 80, isHotThought: true }],
@@ -147,6 +163,8 @@ describe("cbt repository - listThoughtRecords", () => {
       emotionIntensityAfter: 30,
       outcomeNotes: "felt calmer",
       createdAt: FULL_ROW.created_at,
+      createdOffsetMinutes: null,
+      dayKey: "2026-05-10",
       updatedAt: FULL_ROW.updated_at,
       archivedAt: null,
     });
@@ -162,6 +180,40 @@ describe("cbt repository - listThoughtRecords", () => {
       emotionIntensityAfter: null,
       outcomeNotes: "",
     });
+  });
+
+  it("buckets a record to its captured day, not the viewer's", async () => {
+    // The defect: this record was written at midday somewhere at UTC-7 on the
+    // 15th. Converting its instant through the viewer's timezone files it under
+    // the 16th - a day the user had not lived when they wrote it (#330).
+    listOne({
+      ...FULL_ROW,
+      created_at: ACROSS_MIDNIGHT_AT,
+      created_offset_minutes: -420,
+    });
+
+    const [record] = await listThoughtRecords("u1");
+    expect(record.createdOffsetMinutes).toBe(-420);
+    expect(record.dayKey).toBe(CAPTURED_DAY);
+    expect(record.dayKey).not.toBe(VIEWER_DAY);
+  });
+
+  it("falls back to the viewer's day when no offset was captured", async () => {
+    // Same instant, offset absent: null means "unknown", never "UTC" (#250), so
+    // the record renders exactly where it always has rather than moving.
+    listOne({ ...FULL_ROW, created_at: ACROSS_MIDNIGHT_AT, created_offset_minutes: null });
+
+    const [record] = await listThoughtRecords("u1");
+    expect(record.createdOffsetMinutes).toBeNull();
+    expect(record.dayKey).toBe(VIEWER_DAY);
+  });
+
+  it("treats a column absent from an older response as uncaptured", async () => {
+    listOne({ ...FULL_ROW, created_at: ACROSS_MIDNIGHT_AT });
+
+    const [record] = await listThoughtRecords("u1");
+    expect(record.createdOffsetMinutes).toBeNull();
+    expect(record.dayKey).toBe(VIEWER_DAY);
   });
 
   it("throws when the list query errors", async () => {
@@ -252,10 +304,36 @@ describe("cbt repository - saveThoughtRecord", () => {
       outcome_notes: "felt calmer",
     });
     expect(payload).not.toHaveProperty("created_at");
+    // Neither half alone: a server-defaulted instant with no offset records
+    // "unknown", which is truthful. An offset with no instant would not be.
+    expect(payload).not.toHaveProperty("created_offset_minutes");
     expect(result).toMatchObject({ id: FULL_ROW.id });
   });
 
-  it("includes created_at in the insert payload when provided", async () => {
+  it("includes the instant AND its offset in the insert payload when provided", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: FULL_ROW, error: null });
+    const select = jest.fn(() => ({ maybeSingle }));
+    const insert = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue(buildClient({ thought_records: { insert } }));
+
+    await saveThoughtRecord("u1", {
+      ...INPUT,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      createdOffsetMinutes: 540,
+    });
+
+    const payload = (insert.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(payload).toMatchObject({
+      created_at: "2026-01-01T00:00:00.000Z",
+      created_offset_minutes: 540,
+    });
+  });
+
+  it("sends neither half when the offset is missing", async () => {
+    // A half-pair would let a device offset be attached to a server-defaulted
+    // instant. At 23:59 those are two different clocks, a whole day apart, and
+    // the resulting civil day would be permanently wrong rather than merely
+    // unknown (#330).
     const maybeSingle = jest.fn().mockResolvedValue({ data: FULL_ROW, error: null });
     const select = jest.fn(() => ({ maybeSingle }));
     const insert = jest.fn(() => ({ select }));
@@ -264,7 +342,29 @@ describe("cbt repository - saveThoughtRecord", () => {
     await saveThoughtRecord("u1", { ...INPUT, createdAt: "2026-01-01T00:00:00.000Z" });
 
     const payload = (insert.mock.calls[0] as unknown as [Record<string, unknown>])[0];
-    expect(payload).toMatchObject({ created_at: "2026-01-01T00:00:00.000Z" });
+    expect(payload).not.toHaveProperty("created_at");
+    expect(payload).not.toHaveProperty("created_offset_minutes");
+  });
+
+  it("never re-stamps the captured day when editing an existing record", async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({ data: FULL_ROW, error: null });
+    const select = jest.fn(() => ({ maybeSingle }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ thought_records: { update } }));
+
+    await saveThoughtRecord(
+      "u1",
+      { ...INPUT, createdAt: "2026-01-01T00:00:00.000Z", createdOffsetMinutes: 540 },
+      "record-1",
+    );
+
+    // The stored pair has to survive an edit made anywhere else in the world:
+    // the record's day is where the thought was caught, not where it was reread.
+    const payload = (update.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(payload).not.toHaveProperty("created_at");
+    expect(payload).not.toHaveProperty("created_offset_minutes");
   });
 
   it("updates the scoped row when a recordId is given", async () => {

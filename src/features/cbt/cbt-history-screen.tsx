@@ -11,7 +11,7 @@ import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
 import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 function getRecordTitle(
   record: { nats: NegativeAutomaticThought[]; situation: string },
@@ -26,9 +26,9 @@ export default function CbtHistoryScreen() {
   const { user } = useSession();
   const { selectedDate } = useSelectedDate();
   const { data, isLoading } = useThoughtRecords(user?.id ?? null);
-  const records = (data ?? []).filter(
-    (record) => toLocalDateKey(record.createdAt) === selectedDate,
-  );
+  // `dayKey` is the civil day the record was written on - compare, never
+  // re-bucket, so a record caught before flying east stays on its own day (#330).
+  const records = (data ?? []).filter((record) => record.dayKey === selectedDate);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
