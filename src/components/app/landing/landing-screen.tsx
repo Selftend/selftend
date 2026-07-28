@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LinkButton } from "@/src/components/app/link-button";
-import { TINT_TEXT, type TintToken } from "@/src/lib/design-tokens";
+import { TINT_ACCENT, TINT_TEXT, type TintToken } from "@/src/lib/design-tokens";
 import { cn } from "@/lib/utils";
 
 import { HowItWorksSection } from "./how-it-works-section";
@@ -100,7 +100,8 @@ function LandingHero() {
               PILL_TINT[tint],
             )}
           >
-            <Icon name={icon} size={17} className={TINT_TEXT[tint]} />
+            {/* Glyph keeps the accent; the label beside it takes the ink. */}
+            <Icon name={icon} size={17} className={TINT_ACCENT[tint]} />
             <Text className={cn("text-[13.5px] font-semibold", TINT_TEXT[tint])}>
               {t(`landingPage.tools.${key}`)}
             </Text>
