@@ -6,11 +6,13 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { cn } from "@/lib/utils";
+import { useBreathingSessionCount } from "@/src/features/breathing/queries";
 import { useGratitudeEntryCount } from "@/src/features/gratitude/queries";
 import { useGroundingSessionCount } from "@/src/features/grounding/queries";
 import { useHabits } from "@/src/features/habits/queries";
 import { toolAccent } from "@/src/features/home/tool-accent";
 import { useJournalEntryCount } from "@/src/features/journal/queries";
+import { useMeditationSessionCount } from "@/src/features/meditation/queries";
 import { useMoodLogs, useMoodLogCount } from "@/src/features/mood/queries";
 import { getMoodSummary } from "@/src/features/mood/summaries";
 import { useSleepLogCount } from "@/src/features/sleep/queries";
@@ -24,7 +26,15 @@ interface ToolTile {
    * and still renders, so tools-screen.test.tsx pins every one of these to a
    * real entry (#421).
    */
-  key: "mood" | "gratitude" | "journal" | "grounding" | "sleep" | "habits";
+  key:
+    | "mood"
+    | "gratitude"
+    | "journal"
+    | "breathing"
+    | "grounding"
+    | "meditation"
+    | "sleep"
+    | "habits";
   href: Href;
   icon: MaterialIconName;
   nameKey: string;
@@ -47,6 +57,13 @@ export const TOOLS: ToolTile[] = [
     subKey: "today.tools.journalSub",
   },
   {
+    key: "breathing",
+    href: "/tools/breathing",
+    icon: "air",
+    nameKey: "today.tools.breathing",
+    subKey: "today.tools.breathingSub",
+  },
+  {
     key: "gratitude",
     href: "/tools/gratitude-log",
     icon: "favorite",
@@ -59,6 +76,13 @@ export const TOOLS: ToolTile[] = [
     icon: "anchor",
     nameKey: "today.tools.grounding",
     subKey: "today.tools.groundingSub",
+  },
+  {
+    key: "meditation",
+    href: "/tools/meditation",
+    icon: "self-improvement",
+    nameKey: "today.tools.meditation",
+    subKey: "today.tools.meditationSub",
   },
   {
     key: "sleep",
@@ -87,8 +111,10 @@ export default function ToolsScreen() {
   const moodCount = useMoodLogCount(user?.id ?? null).data ?? 0;
   const moodAverage = getMoodSummary(moodLogs, 7).average;
   const journalCount = useJournalEntryCount(user?.id ?? null).data ?? 0;
+  const breathingCount = useBreathingSessionCount(user?.id ?? null).data ?? 0;
   const gratitudeCount = useGratitudeEntryCount(user?.id ?? null).data ?? 0;
   const groundingCount = useGroundingSessionCount(user?.id ?? null).data ?? 0;
+  const meditationCount = useMeditationSessionCount(user?.id ?? null).data ?? 0;
   const sleepCount = useSleepLogCount(user?.id ?? null).data ?? 0;
   const habitCount = habits?.length ?? 0;
 
@@ -103,12 +129,18 @@ export default function ToolsScreen() {
       case "journal":
         if (journalCount === 0) return t("tools.stats.journalNoData");
         return t("tools.stats.journalEntries", { count: journalCount });
+      case "breathing":
+        if (breathingCount === 0) return t("tools.stats.breathingNoData");
+        return t("tools.stats.breathingSessions", { count: breathingCount });
       case "gratitude":
         if (gratitudeCount === 0) return t("tools.stats.gratitudeNoData");
         return t("tools.stats.gratitudeEntries", { count: gratitudeCount });
       case "grounding":
         if (groundingCount === 0) return t("tools.stats.groundingNoData");
         return t("tools.stats.groundingSessions", { count: groundingCount });
+      case "meditation":
+        if (meditationCount === 0) return t("tools.stats.meditationNoData");
+        return t("tools.stats.meditationSessions", { count: meditationCount });
       case "sleep":
         if (sleepCount === 0) return t("tools.stats.sleepNoData");
         return t("tools.stats.sleepLogs", { count: sleepCount });

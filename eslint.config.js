@@ -49,7 +49,7 @@ function capturedFrameImportPaths(allow = []) {
   const dayNames = ["toLocalDateKey", "localDateKey", "calendarDayDiff"].filter(
     (n) => !allow.includes(n),
   );
-  const clockNames = ["formatTimestamp", "formatLocalTimestamp"].filter((n) => !allow.includes(n));
+  const clockNames = ["formatTimestamp"].filter((n) => !allow.includes(n));
   const activityNames = ["formatRelativeActivity"].filter((n) => !allow.includes(n));
   return [
     MODULE_ROOM_RESTRICTION,
