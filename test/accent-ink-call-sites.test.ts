@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { groundingTechniques } from "@/src/constants/grounding";
-import { exerciseHue } from "@/src/features/mindfulness/exercise-hue";
+import { exerciseHue, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 import { MEDITATION_PRACTICES } from "@/src/features/meditation/practices";
 import { HUE_NAMES } from "@/src/lib/design-tokens";
 import { sourceFiles, stripComments } from "@/test/source-scan";
@@ -1138,7 +1138,7 @@ describe("the shared hue map is reached only by the hues it was measured against
   // fourth step of 5-4-3-2-1 has always been `hue: "think"`, and
   // grounding-session.tsx paints the *step* hue rather than the technique's, so
   // the entry claiming think was unreachable was wrong the day it was written.
-  const reachable = new Set<string>([
+  const reachable = new Set<ExerciseHue>([
     ...groundingTechniques.map((technique) => technique.hue),
     ...groundingTechniques.flatMap((technique) => technique.steps.map((step) => step.hue)),
     ...MEDITATION_PRACTICES.map((practice) => practice.hue),
