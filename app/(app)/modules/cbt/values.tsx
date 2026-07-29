@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -19,6 +18,7 @@ import { personalValuesList } from "@/src/constants/personal-values-list";
 import { useValuesProfile, useSaveValuesProfile } from "@/src/features/values/queries";
 import type { PersonalValue, ValueTier } from "@/src/features/values/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
+import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -95,7 +95,7 @@ export default function ValuesScreen() {
     try {
       await saveMutation.mutateAsync({ personalValues: selections, priorityValues: priorities });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.back();
+      backWithFallback("/modules/cbt");
     } catch {
       showToast({
         title: t("common:feedback.problem"),

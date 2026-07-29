@@ -17,7 +17,7 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { SubmitButtonContent } from "@/src/components/app/submit-button-content";
-import { sendPasswordResetEmail } from "@/src/features/auth/api";
+import { EMAIL_RATE_LIMITED_ERROR, sendPasswordResetEmail } from "@/src/features/auth/api";
 import { forgotPasswordSchema, type ForgotPasswordSchema } from "@/src/features/auth/schemas";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -42,7 +42,13 @@ export function ForgotPasswordForm() {
       await sendPasswordResetEmail(email);
       setSentTo(email);
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : t("forgotPassword.error"));
+      // Raw Supabase strings ("email rate limit exceeded") must never reach the
+      // user - every branch maps to translated copy.
+      if (error instanceof Error && error.message === EMAIL_RATE_LIMITED_ERROR) {
+        setSubmitError(t("forgotPassword.rateLimited"));
+      } else {
+        setSubmitError(t("forgotPassword.error"));
+      }
     }
   });
 

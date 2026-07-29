@@ -1,4 +1,5 @@
-import { ScrollView, useWindowDimensions, View } from "react-native";
+import { useState } from "react";
+import { type LayoutChangeEvent, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -30,7 +31,10 @@ const REFLECTION_PROMPTS = [
 export default function ProgressScreen() {
   const { t, i18n } = useTranslation("navigation");
   const { user } = useSession();
-  const { width } = useWindowDimensions();
+  // Measured from the card's content box (mirrors the mood screen's trend) so
+  // the chart tracks the card at every viewport - a window-derived width both
+  // clipped the newest days at mobile widths and underfilled wide cards.
+  const [chartContainerWidth, setChartContainerWidth] = useState(300);
 
   // Fixed 30-day window over the narrow score-points query (timestamp/offset/score
   // only) — the same daily-resolution path as the mood screen's trend, sans controls.
@@ -51,7 +55,10 @@ export default function ProgressScreen() {
   })();
 
   const promptKey = REFLECTION_PROMPTS[new Date().getDay() % REFLECTION_PROMPTS.length];
-  const chartWidth = Math.min(width - 48, 400);
+
+  const handleChartLayout = (e: LayoutChangeEvent) => {
+    setChartContainerWidth(e.nativeEvent.layout.width);
+  };
 
   if (isLoading) {
     return (
@@ -79,11 +86,18 @@ export default function ProgressScreen() {
               <CardDescription>{t("progress.moodTrendDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
-              {chartPoints.length > 0 ? (
-                <LineChart points={chartPoints} domain={[1, 5]} hue="be" width={chartWidth} />
-              ) : (
-                <Text variant="muted">{t("progress.noMoodData")}</Text>
-              )}
+              <View onLayout={handleChartLayout} testID="mood-trend-layout">
+                {chartPoints.length > 0 ? (
+                  <LineChart
+                    points={chartPoints}
+                    domain={[1, 5]}
+                    hue="be"
+                    width={chartContainerWidth}
+                  />
+                ) : (
+                  <Text variant="muted">{t("progress.noMoodData")}</Text>
+                )}
+              </View>
             </CardContent>
           </Card>
 

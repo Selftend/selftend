@@ -4,8 +4,10 @@ import * as WebBrowser from "expo-web-browser";
 
 import {
   EMAIL_ALREADY_EXISTS_ERROR,
+  EMAIL_RATE_LIMITED_ERROR,
   INVALID_CREDENTIALS_ERROR,
   LEAKED_PASSWORD_ERROR,
+  SESSION_MISSING_ERROR,
   getNativeAuthRedirectUrl,
   getPasswordResetRedirectUrl,
   getWebAuthRedirectUrl,
@@ -378,6 +380,24 @@ describe("sendPasswordResetEmail", () => {
 
     await expect(sendPasswordResetEmail("a@b.co")).rejects.toBe(error);
   });
+
+  it("maps a 429 to EMAIL_RATE_LIMITED_ERROR", async () => {
+    const error = Object.assign(new Error("email rate limit exceeded"), { status: 429 });
+    const reset = jest.fn().mockResolvedValue({ error });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ resetPasswordForEmail: reset }));
+
+    await expect(sendPasswordResetEmail("a@b.co")).rejects.toThrow(EMAIL_RATE_LIMITED_ERROR);
+  });
+
+  it("maps the over_email_send_rate_limit code to EMAIL_RATE_LIMITED_ERROR", async () => {
+    const error = Object.assign(new Error("email rate limit exceeded"), {
+      code: "over_email_send_rate_limit",
+    });
+    const reset = jest.fn().mockResolvedValue({ error });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ resetPasswordForEmail: reset }));
+
+    await expect(sendPasswordResetEmail("a@b.co")).rejects.toThrow(EMAIL_RATE_LIMITED_ERROR);
+  });
 });
 
 describe("updatePassword", () => {
@@ -410,6 +430,15 @@ describe("updatePassword", () => {
     mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser }));
 
     await expect(updatePassword("newpw")).rejects.toBe(error);
+  });
+
+  it("maps a missing recovery session to SESSION_MISSING_ERROR", async () => {
+    const error = new Error("Auth session missing!");
+    error.name = "AuthSessionMissingError";
+    const updateUser = jest.fn().mockResolvedValue({ error });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser }));
+
+    await expect(updatePassword("newpw")).rejects.toThrow(SESSION_MISSING_ERROR);
   });
 });
 

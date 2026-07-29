@@ -114,7 +114,10 @@ test.describe("edit and archive a thought record", () => {
     // --- ARCHIVE (no delete affordance in UI) ---
     // The thought-record detail screen exposes "Edit record" and "Archive" buttons.
     // There is NO delete button; archive is the only removal action available.
+    // Archive asks for confirmation first (#474) - the first tap only opens the dialog.
     await page.getByRole("button", { name: "Archive", exact: true }).click();
+    await expect(page.getByText("Archive this record")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("confirm-dialog-confirm").click();
 
     // After archive, redirected to /modules/cbt/history.
     await expect(page).toHaveURL(/\/modules\/cbt\/history/, { timeout: 15_000 });

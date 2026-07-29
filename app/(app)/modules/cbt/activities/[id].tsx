@@ -15,6 +15,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { useActivity } from "@/src/features/activities/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function ActivityDetailScreen() {
   const { t } = useTranslation("cbt");
@@ -70,7 +71,11 @@ export default function ActivityDetailScreen() {
             <Card>
               <CardHeader>
                 <CardTitle>{t("activities.scheduledAt")}</CardTitle>
-                <CardDescription>{activity.scheduledAt}</CardDescription>
+                {/* Rendered in the frame the plan was made in (captured offset,
+                    #330), not as the raw stored UTC instant. */}
+                <CardDescription>
+                  {formatAtOffset(activity.scheduledAt, activity.scheduledOffsetMinutes)}
+                </CardDescription>
               </CardHeader>
             </Card>
           ) : null}

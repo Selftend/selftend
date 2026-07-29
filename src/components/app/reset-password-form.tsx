@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { useState } from "react";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -17,12 +17,19 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { SubmitButtonContent } from "@/src/components/app/submit-button-content";
-import { updatePassword, LEAKED_PASSWORD_ERROR } from "@/src/features/auth/api";
+import {
+  updatePassword,
+  LEAKED_PASSWORD_ERROR,
+  SESSION_MISSING_ERROR,
+} from "@/src/features/auth/api";
 import { resetPasswordSchema, type ResetPasswordSchema } from "@/src/features/auth/schemas";
+import { useSession } from "@/src/providers/session-provider";
 
 export function ResetPasswordForm() {
   const { t } = useTranslation("auth");
+  const { session, status } = useSession();
   const [submitError, setSubmitError] = useState("");
+  const [sessionLost, setSessionLost] = useState(false);
   const {
     control,
     formState: { errors, isSubmitting },
@@ -40,11 +47,45 @@ export function ResetPasswordForm() {
     } catch (error) {
       if (error instanceof Error && error.message === LEAKED_PASSWORD_ERROR) {
         setSubmitError(t("validation.passwordBreached"));
+      } else if (error instanceof Error && error.message === SESSION_MISSING_ERROR) {
+        setSessionLost(true);
       } else {
-        setSubmitError(error instanceof Error ? error.message : t("resetPassword.error"));
+        // Never surface the raw Supabase message - map everything unmatched to
+        // the generic translated copy.
+        setSubmitError(t("resetPassword.error"));
       }
     }
   });
+
+  // The recovery session is established by the auth callback before it routes
+  // here; wait for the session read so a valid link doesn't flash the
+  // expired-link card.
+  if (status === "loading") {
+    return (
+      <View className="items-center py-8">
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  // No recovery session (expired/invalid reset link, or direct navigation) -
+  // the update would fail with "Auth session missing!", so offer a new reset
+  // email instead of the form.
+  if (!session || sessionLost) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle aria-level={1}>{t("resetPassword.expiredTitle")}</CardTitle>
+          <CardDescription>{t("resetPassword.expiredSubtitle")}</CardDescription>
+        </CardHeader>
+        <CardContent className="gap-4">
+          <Button onPress={() => router.replace("/(auth)/reset-password")}>
+            <Text>{t("resetPassword.requestNewLink")}</Text>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

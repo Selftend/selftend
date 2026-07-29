@@ -5,6 +5,7 @@ import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { scheduleReminder } from "@/src/lib/notifications";
 import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
+import { useToastStore } from "@/src/stores/toast-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -115,6 +116,38 @@ describe("ReminderPromptCard", () => {
       expect(screen.queryByText("Set reminder")).toBeNull();
     });
     expect(mockScheduleReminder).not.toHaveBeenCalled();
+  });
+
+  it("shows translated copy, not the raw reason slug, when scheduling fails", async () => {
+    setPreferences();
+    const mutateAsync = setUpdateMutation();
+    mockScheduleReminder.mockResolvedValue({ enabled: false, reason: "timeout" } as Awaited<
+      ReturnType<typeof scheduleReminder>
+    >);
+    const showToastSpy = jest.spyOn(useToastStore.getState(), "showToast");
+
+    renderWithProviders(<ReminderPromptCard />);
+    requestPrompt("mood");
+
+    fireEvent.press(await screen.findByText("Set reminder"));
+
+    try {
+      await waitFor(() => {
+        expect(showToastSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tone: "error",
+            description:
+              "Couldn't reach this browser's notification service. Reminders may not work here.",
+          }),
+        );
+      });
+      // The failed accept must not store consent or enable the reminder.
+      expect(mutateAsync).not.toHaveBeenCalledWith(
+        expect.objectContaining({ moodRemindersEnabled: true }),
+      );
+    } finally {
+      showToastSpy.mockRestore();
+    }
   });
 
   it("schedules the reminder and stores consent on accept", async () => {
