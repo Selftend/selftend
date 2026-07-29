@@ -243,6 +243,39 @@ describe("Reminder notifications", () => {
     expect(mockUpsertWebPushSubscription).toHaveBeenCalledTimes(2);
   });
 
+  it("resolves with a timeout failure when pushManager.subscribe never settles", async () => {
+    jest.useFakeTimers();
+    try {
+      setPlatformOS("web");
+      const { pushManager } = createWebPushMocks();
+      // A blocked/unreachable push service: subscribe hangs forever (#473).
+      pushManager.subscribe.mockReturnValue(new Promise(() => {}));
+
+      const resultPromise = scheduleReminder("cbt", 19, 0, "user-1");
+      await jest.advanceTimersByTimeAsync(20_000);
+
+      await expect(resultPromise).resolves.toEqual({ enabled: false, reason: "timeout" });
+      expect(mockUpsertWebPushSubscription).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("does not time out a subscribe that settles in time", async () => {
+    jest.useFakeTimers();
+    try {
+      setPlatformOS("web");
+      createWebPushMocks();
+
+      const resultPromise = scheduleReminder("cbt", 19, 0, "user-1");
+      await jest.advanceTimersByTimeAsync(0);
+
+      await expect(resultPromise).resolves.toEqual({ enabled: true });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it("returns permission denied when the browser denies notifications", async () => {
     setPlatformOS("web");
     const { notification } = createWebPushMocks();
