@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
 
 interface ScreenBreadcrumbProps {
@@ -26,8 +25,12 @@ export function ScreenBreadcrumb({ tone = "default" }: ScreenBreadcrumbProps) {
   if (crumbs.length < 2) return null;
 
   // Wherever a breadcrumb trail renders, a back affordance rides with it
-  // (#495): previous page when there is history, else the nearest ancestor
-  // crumb - the crumb links themselves stay the direct way to any ancestor.
+  // (#495). It is STRUCTURAL - always one step up the trail, Material's "Up",
+  // not history (owner decision, 2026-07-29): the arrow sits inside the crumb
+  // row so it reads as part of the trail, browser/system back already covers
+  // history on every platform, and a deterministic single hop can never
+  // bounce the way history-back does. `replace`, not `push`: climbing the
+  // hierarchy shouldn't stack another history entry to climb back out of.
   const parentHref = [...crumbs].reverse().find((crumb) => crumb.href)?.href ?? "/";
 
   return (
@@ -36,7 +39,7 @@ export function ScreenBreadcrumb({ tone = "default" }: ScreenBreadcrumbProps) {
         accessibilityLabel={t("breadcrumb.back")}
         accessibilityRole="button"
         hitSlop={8}
-        onPress={() => backWithFallback(parentHref)}
+        onPress={() => router.replace(parentHref as never)}
         className="active:opacity-70"
       >
         <Icon
