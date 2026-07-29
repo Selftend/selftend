@@ -51,7 +51,7 @@ describe("VerifyEmailBanner", () => {
       email: "person@example.com",
       app_metadata: { provider: "email" },
     };
-    mutateAsync.mockResolvedValue(undefined);
+    mutateAsync.mockResolvedValue({ ...defaultUserPreferences, emailVerified: true });
     mockUseUpdateUserPreferences.mockReturnValue({
       isPending: false,
       mutate: jest.fn(),
@@ -123,6 +123,23 @@ describe("VerifyEmailBanner", () => {
 
     expect(mockVerifyEmailCode).toHaveBeenCalledWith("person@example.com", "123456");
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ emailVerified: true }));
+  });
+
+  it("surfaces an error when the flag write silently no-ops (#504)", async () => {
+    // A database that predates the email_verified migration: the write's
+    // missing-column retry drops the flag, the mutation resolves, and the row
+    // comes back with emailVerified still false. The banner must say
+    // something rather than nag silently while every code entry "works".
+    mutateAsync.mockResolvedValue({ ...defaultUserPreferences, emailVerified: false });
+
+    renderWithProviders(<VerifyEmailBanner />);
+    await act(async () => fireEvent.press(screen.getByText("Send code")));
+    fireEvent.changeText(screen.getByLabelText("Verification code"), "123456");
+    await act(async () => fireEvent.press(screen.getByText("Verify")));
+
+    await waitFor(() =>
+      expect(screen.getByText("Couldn't verify the code. Please try again.")).toBeTruthy(),
+    );
   });
 
   it("shows the invalid-code copy for a wrong or expired code", async () => {

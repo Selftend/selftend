@@ -81,7 +81,17 @@ export function VerifyEmailBanner() {
     setBusy("verifying");
     try {
       await verifyEmailCode(email, code.trim());
-      await updatePreferences.mutateAsync({ emailVerified: true });
+      const updated = await updatePreferences.mutateAsync({ emailVerified: true });
+      // On a database that predates the email_verified migration, the write's
+      // missing-column retry silently drops the flag: the mutation "succeeds",
+      // the banner stays, and every code entry looks like it did nothing
+      // (#504). The returned row is the truth - if the flag didn't stick,
+      // say so instead of nagging silently. On migrated databases the flag
+      // flip unmounts the banner and this branch never runs.
+      if (!updated?.emailVerified) {
+        setError(t("verifyBanner.verifyError"));
+        return;
+      }
       // No state reset needed: the flag flip unmounts the banner.
     } catch (verifyError) {
       const message = verifyError instanceof Error ? verifyError.message : "";
