@@ -25,7 +25,7 @@ export function Fab({ icon, label, accessibilityLabel, onPress, testID }: FabPro
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={onPress}
       testID={testID}
-      className="flex-row items-center gap-2 rounded-full bg-primary px-4 py-3 shadow-lg active:opacity-90"
+      className="flex-row items-center gap-2 rounded-full bg-primary px-4 py-3 shadow-lg dark:shadow-none active:opacity-90"
     >
       <Icon name={icon} className="size-5 text-primary-foreground" />
       {label ? (

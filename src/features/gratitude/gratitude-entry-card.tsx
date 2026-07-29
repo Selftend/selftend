@@ -77,7 +77,7 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
   };
 
   return (
-    <View className="overflow-hidden rounded-3xl bg-card shadow-lg shadow-think/25">
+    <View className="overflow-hidden rounded-3xl bg-card shadow-lg shadow-think/25 dark:shadow-none">
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t(expanded ? "list.collapseEntry" : "list.expandEntry", { when })}

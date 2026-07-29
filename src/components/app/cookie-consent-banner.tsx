@@ -33,7 +33,7 @@ export function CookieConsentBanner() {
   }
 
   return (
-    <View className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background p-4 shadow-lg">
+    <View className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background p-4 shadow-lg dark:shadow-none">
       <View className="mx-auto w-full max-w-2xl gap-3">
         <Text className="text-sm">{t("cookieConsent.banner")}</Text>
         <View className="flex-row flex-wrap gap-2">
