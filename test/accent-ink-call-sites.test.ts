@@ -84,18 +84,16 @@ const CLASSIFIED_AREAS = [ACT_DIR, HOME_DIR, "src/components/app", "app"] as con
 const ROOMLESS_AREAS = [ACT_DIR, HOME_DIR] as const;
 
 /**
- * The Wave-C exception (#493): the act and cbt module homes became rooms - the
- * act home wears the act room, the cbt home wears think - so exactly these two
- * files may call `useRoomStyle` and use room ink. Every *other* file in their
- * directories stays off-room, which is why the room-less assertions exclude
- * these files instead of dropping the directories wholesale: dropping the dirs
- * would stop the suite seeing a `text-accent-ink` added to any of the twenty
- * screens around them that still resolve it to `--primary`.
+ * The Wave-C exception (#493): the act module home became a room - it wears
+ * the act room - so exactly that file may call `useRoomStyle` and use room
+ * ink. Every *other* file in its directory stays off-room, which is why the
+ * room-less assertions exclude this file instead of dropping the directory
+ * wholesale: dropping the dir would stop the suite seeing a `text-accent-ink`
+ * added to any of the twenty screens around it that still resolve it to
+ * `--primary`. The cbt home briefly sat here too; #500 un-roomed it (its
+ * field pours from primary and the default violet surfaces ARE its room).
  */
-const ROOMED_HOMES = [
-  "src/features/act/act-home-screen.tsx",
-  "src/features/cbt/cbt-home-screen.tsx",
-] as const;
+const ROOMED_HOMES = ["src/features/act/act-home-screen.tsx"] as const;
 
 /**
  * A bare hue accent used as a color, in EITHER form the codebase writes it:
@@ -841,9 +839,9 @@ const TAIL_DIRS = [
 ];
 
 /**
- * Tail areas where no file calls `useRoomStyle` - `cbt` excepted at file level:
- * its home screen wears the think room since Wave C (#493), see ROOMED_HOMES.
- * Everywhere else in these areas `--accent-ink` is never poured and
+ * Tail areas where no file calls `useRoomStyle`. (The cbt home briefly wore
+ * the think room in Wave C; #500 un-roomed it, so cbt is fully room-less
+ * again.) In these areas `--accent-ink` is never poured and
  * `text-accent-ink` would resolve to `--primary` - violet text in a module
  * that is not violet. Same trap as rule 2 for the ACT module above; the suite
  * checks the premise rather than trusting it.
@@ -1118,8 +1116,9 @@ describe("the module tail keeps the raw hue accent only where it is justified (#
   });
 
   it("never reaches for room ink in the areas that are not rooms", () => {
-    // ROOMED_HOMES carves the cbt home out of the scan: it wears the think
-    // room since Wave C (#493), so room ink is legitimate in that one file.
+    // ROOMED_HOMES excludes nothing under these dirs today (the act home
+    // lives outside the tail), but stays wired so a future roomed home in
+    // the tail is a one-line entry, not a rediscovery of this scan.
     expect(findings(ROOM_INK, ROOMLESS_TAIL_DIRS, ROOMED_HOMES)).toEqual([]);
   });
 

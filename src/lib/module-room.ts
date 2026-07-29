@@ -14,7 +14,12 @@
 
 import { vars } from "nativewind";
 
-import { HUE_INK_TRIPLES, HUE_TRIPLES, type HueName } from "@/src/lib/design-tokens";
+import {
+  HUE_INK_TRIPLES,
+  HUE_TRIPLES,
+  PRIMARY_TRIPLES,
+  type HueName,
+} from "@/src/lib/design-tokens";
 
 export type ColorSchemeName = "light" | "dark";
 
@@ -148,12 +153,29 @@ export function roomCardHsl(hue: HueName): Record<ColorSchemeName, string> {
 }
 
 /**
+ * A hue a field header can be poured from: any module hue, or the app's
+ * primary violet. `"primary"` exists for the CBT home (#500, owner decision):
+ * its field matches the sidebar's CBT accent, and since the app's default
+ * surfaces are already the violet family, the screen wears no room at all -
+ * the default theme IS the violet room in practice.
+ */
+export type FieldHue = HueName | "primary";
+
+/**
  * The full-bleed field gradient behind a module header, top → bottom stops.
  * Comma-form hsl() strings because LinearGradient cannot read CSS variables
  * (same escape hatch as hueHsl in src/features/mindfulness/exercise-hue.ts).
  */
-export function fieldGradient(hue: HueName, isDark: boolean): [string, string] {
-  const h = hueDegree(hue);
+export function fieldGradient(hue: FieldHue, isDark: boolean): [string, string] {
+  const h = hue === "primary" ? Number.parseInt(PRIMARY_TRIPLES.light, 10) : hueDegree(hue);
+  if (hue === "primary") {
+    // The standard formula, like iris (violet's neighbour) - no override
+    // needed; test/room-contrast.test.ts holds the primary field to the same
+    // AA floors as every hue field.
+    return isDark
+      ? [`hsl(${h}, 34%, 20%)`, `hsl(${h}, 40%, 12%)`]
+      : [`hsl(${h}, 50%, 42%)`, `hsl(${h}, 58%, 32%)`];
+  }
   const override = FIELD_STOP_OVERRIDES[hue]?.[isDark ? "dark" : "light"];
   if (override) {
     return override.map(([s, l]) => `hsl(${h}, ${s}%, ${l}%)`) as [string, string];

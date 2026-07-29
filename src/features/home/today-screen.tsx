@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
+import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import Sortable from "react-native-sortables";
 import { Circle, Svg } from "react-native-svg";
 
@@ -291,7 +292,7 @@ export default function HomeScreen() {
         className="flex-1"
         onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
       >
-        <Animated.ScrollView
+        <AnimatedScrollView
           ref={scrollableRef}
           contentContainerStyle={{ padding: PADDING }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
@@ -411,7 +412,7 @@ export default function HomeScreen() {
               }}
             />
           ) : null}
-        </Animated.ScrollView>
+        </AnimatedScrollView>
       </View>
 
       <AddWidgetModal
