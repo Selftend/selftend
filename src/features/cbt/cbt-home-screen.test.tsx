@@ -12,6 +12,9 @@ import {
   useUpdateUserPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
+import { processColor } from "react-native";
+
+import { fieldGradient } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -228,7 +231,14 @@ describe("CbtHomeScreen onboarding", () => {
     renderWithProviders(<CbtHomeScreen />);
 
     expect(screen.getByText("Cognitive Behavioral Therapy")).toBeTruthy();
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+    // Not just "some gradient": the pour must be the primary violet (#500,
+    // matching the sidebar's CBT accent), so a hue swap back to think fails
+    // here rather than in a review screenshot. Tests render the light scheme;
+    // LinearGradient normalizes its colors through processColor, so the
+    // expectation goes through the same normalization.
+    expect(screen.getByTestId("module-field-gradient").props.colors).toEqual(
+      fieldGradient("primary", false).map((stop) => processColor(stop)),
+    );
     expect(screen.queryByText(/inspired by/i)).toBeNull();
   });
 
