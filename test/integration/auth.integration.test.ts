@@ -67,11 +67,12 @@ describe("auth: signUp (integration)", () => {
     }
   });
 
-  // Local Auth runs with `enable_confirmations = true` (supabase/config.toml), mirroring
-  // production: signup creates the row but withholds the session until the emailed link is
-  // opened. The old title here claimed local auto-confirm signs the user straight in - that
-  // stopped being true in d8c7afd and the assertions never checked it either way.
-  it("creates a user but withholds the session until the email is confirmed", async () => {
+  // Local Auth runs with `enable_confirmations = false` (supabase/config.toml),
+  // mirroring the #489 target state: signup autoconfirms and hands the session
+  // over immediately - mailbox ownership is proven later by the app's own
+  // verification layer (user_preferences.email_verified + the verify banner),
+  // not by GoTrue's email_confirmed_at, which this mode stamps at signup.
+  it("creates a user and returns a session immediately (autoconfirm, #489)", async () => {
     const client = freshClient();
     const { data, error } = await client.auth.signUp({
       email: newEmail,
@@ -80,13 +81,13 @@ describe("auth: signUp (integration)", () => {
 
     expect(error).toBeNull();
     expect(data.user?.email).toBe(newEmail);
-    expect(data.session).toBeNull();
+    expect(data.session).not.toBeNull();
 
     const admin = createServiceClient();
     const list = await admin.auth.admin.listUsers();
     const found = list.data?.users.find((u) => u.email === newEmail);
     expect(found).toBeDefined();
-    expect(found?.email_confirmed_at).toBeFalsy();
+    expect(found?.email_confirmed_at).toBeTruthy();
   });
 });
 

@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 
 import { completeAuthRedirect } from "@/src/features/auth/callback";
+import { updateUserPreferences } from "@/src/features/settings/repository";
 import { appEnv } from "@/src/lib/env";
 import { requireSupabase } from "@/src/lib/supabase";
 
@@ -200,6 +201,60 @@ export async function resendVerificationEmail(email: string) {
   if (error) {
     throw error;
   }
+}
+
+// The verify-email banner's send half (#489): a signInWithOtp email carrying a
+// 6-digit code (and a token_hash link fallback - see supabase/templates/
+// magic_link.html). shouldCreateUser:false because the caller is already a
+// signed-in account holder; a typo'd address must bounce, not mint a user.
+export async function sendVerificationCode(email: string) {
+  const client = requireSupabase();
+  const { error } = await client.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: getDefaultAuthRedirectUrl(),
+    },
+  });
+  if (error) {
+    if (isEmailRateLimitError(error)) {
+      throw new Error(EMAIL_RATE_LIMITED_ERROR);
+    }
+    throw error;
+  }
+}
+
+export const INVALID_VERIFICATION_CODE_ERROR = "INVALID_VERIFICATION_CODE";
+
+// The banner's verify half: exchanges the emailed code. `email` (not the
+// deprecated `magiclink`) is the one spelling GoTrue resolves against every
+// email token kind - see the type notes in callback.ts. Success replaces the
+// current session with the OTP-minted one for the same user, which is fine.
+export async function verifyEmailCode(email: string, code: string) {
+  const client = requireSupabase();
+  const { error } = await client.auth.verifyOtp({ email, token: code, type: "email" });
+  if (error) {
+    if ((error as SupabaseAuthError).code === "otp_expired") {
+      throw new Error(INVALID_VERIFICATION_CODE_ERROR);
+    }
+    throw error;
+  }
+}
+
+// Completing ANY emailed auth artifact - confirmation link, recovery link,
+// OTP link - proves the holder controls the mailbox, so the auth callback
+// stamps the app's verified flag (#489) as a side effect. This is the path
+// that covers environments on the default Supabase templates (no visible
+// code in the email, link only). Fire-and-forget from callers: a failure
+// only means the banner stays until the next proof.
+export async function markEmailVerifiedFromCallback() {
+  const client = requireSupabase();
+  const { data } = await client.auth.getUser();
+  const user = data.user;
+  if (!user || user.app_metadata?.provider !== "email") {
+    return;
+  }
+  await updateUserPreferences(user.id, { emailVerified: true });
 }
 
 export async function signOut() {
