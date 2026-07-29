@@ -97,11 +97,20 @@ export async function signInWithPassword(email: string, password: string) {
 export const EMAIL_ALREADY_EXISTS_ERROR = "EMAIL_ALREADY_EXISTS";
 export const LEAKED_PASSWORD_ERROR = "LEAKED_PASSWORD";
 export const INVALID_CREDENTIALS_ERROR = "INVALID_CREDENTIALS";
+export const EMAIL_RATE_LIMITED_ERROR = "EMAIL_RATE_LIMITED";
+export const SESSION_MISSING_ERROR = "SESSION_MISSING";
 
 type SupabaseAuthError = Error & {
   code?: string;
+  status?: number;
   weakPassword?: { reasons?: string[] };
 };
+
+function isEmailRateLimitError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const e = error as SupabaseAuthError;
+  return e.status === 429 || e.code === "over_email_send_rate_limit";
+}
 
 function isLeakedPasswordError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
@@ -151,6 +160,9 @@ export async function sendPasswordResetEmail(email: string) {
     redirectTo: getPasswordResetRedirectUrl(),
   });
   if (error) {
+    if (isEmailRateLimitError(error)) {
+      throw new Error(EMAIL_RATE_LIMITED_ERROR);
+    }
     throw error;
   }
 }
@@ -161,6 +173,12 @@ export async function updatePassword(newPassword: string) {
   if (error) {
     if (isLeakedPasswordError(error)) {
       throw new Error(LEAKED_PASSWORD_ERROR);
+    }
+    // Submitting without a recovery session (expired or reused reset link, or
+    // direct navigation to /update-password) - the form shows its expired-link
+    // state rather than the raw "Auth session missing!" string.
+    if (error.name === "AuthSessionMissingError") {
+      throw new Error(SESSION_MISSING_ERROR);
     }
     throw error;
   }
