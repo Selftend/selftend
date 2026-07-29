@@ -1,6 +1,8 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
+import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
+import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -31,6 +33,12 @@ import { SleepWeekdayChart } from "@/src/features/sleep/sleep-weekday-chart";
 import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
 
 export default function SleepTrackerScreen() {
+  // Scroll position feeding the field parallax (#492).
+  const scrollY = useSharedValue(0);
+  const onFieldScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+
   const { t } = useTranslation("sleep");
   const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
@@ -95,12 +103,17 @@ export default function SleepTrackerScreen() {
         edges={["bottom", "left", "right"]}
         style={roomStyle}
       >
-        <ScrollView contentContainerClassName="grow p-4">
+        <AnimatedScrollView
+          contentContainerClassName="grow p-4"
+          onScroll={onFieldScroll}
+          scrollEventThrottle={16}
+        >
           {/* The field + sheet escape the scroll padding so the ink field runs
               edge to edge; the sheet re-adds the inset for its sections. */}
           <View className="-mx-4 -mt-4">
             <ModuleHomeHeader
               variant="field"
+              fieldParallax={scrollY}
               addWidgetCategory="sleep"
               title={t("title")}
               hue="ink"
@@ -195,7 +208,7 @@ export default function SleepTrackerScreen() {
               </View>
             </ContentSheet>
           </View>
-        </ScrollView>
+        </AnimatedScrollView>
       </SafeAreaView>
     </>
   );

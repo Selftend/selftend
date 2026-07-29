@@ -1,6 +1,8 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
+import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
+import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -37,6 +39,12 @@ import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatAtOffset } from "@/src/utils/date";
 
 export default function MeditationHomeScreen() {
+  // Scroll position feeding the field parallax (#492).
+  const scrollY = useSharedValue(0);
+  const onFieldScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+
   const { t } = useTranslation("meditation");
   const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
@@ -147,12 +155,17 @@ export default function MeditationHomeScreen() {
         edges={["bottom", "left", "right"]}
         style={roomStyle}
       >
-        <ScrollView contentContainerClassName="grow p-4">
+        <AnimatedScrollView
+          contentContainerClassName="grow p-4"
+          onScroll={onFieldScroll}
+          scrollEventThrottle={16}
+        >
           {/* The field + sheet escape the scroll padding so the iris field runs
               edge to edge; the sheet re-adds the inset for its sections. */}
           <View className="-mx-4 -mt-4">
             <ModuleHomeHeader
               variant="field"
+              fieldParallax={scrollY}
               addWidgetCategory="meditation"
               title={t("module.home.title")}
               hue="iris"
@@ -169,7 +182,6 @@ export default function MeditationHomeScreen() {
                 <ToolStats
                   tone="onField"
                   accentClassName="text-accent-ink"
-                  credit={t("authorEyebrow")}
                   subline={subline}
                   sublineTone={lastWhen ? "accent" : "muted"}
                   items={[
@@ -271,7 +283,7 @@ export default function MeditationHomeScreen() {
               </View>
             </ContentSheet>
           </View>
-        </ScrollView>
+        </AnimatedScrollView>
       </SafeAreaView>
     </>
   );

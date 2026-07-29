@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { View } from "react-native";
-import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -16,6 +15,7 @@ import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
+import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { useThoughtRecordEditor } from "@/src/features/cbt/use-thought-record-editor";
 import { BalancedThoughtStep } from "@/src/features/cbt/steps/balanced-thought-step";
 import { DistortionsStep } from "@/src/features/cbt/steps/distortions-step";
@@ -138,7 +138,10 @@ export default function ThoughtRecordEditorScreen() {
         onConfirm={() => {
           wizard.clearDraft();
           setDiscardOpen(false);
-          router.back();
+          // Deep-linked/refreshed pages have no back stack - router.back()
+          // alone no-ops there and the discarded form just sits on screen,
+          // reading as if discard failed (#475).
+          backWithFallback("/modules/cbt");
         }}
       />
     </WizardScreen>

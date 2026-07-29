@@ -26,8 +26,6 @@ interface ToolStatsProps {
    * they don't read as alarming.
    */
   sublineTone?: "accent" | "muted";
-  /** Optional "Inspired by ..." credit, rendered as the last line under the stats. */
-  credit?: string;
   /**
    * "default" renders the inline accent-on-surface row. "onField" renders the
    * Direction B field treatment for a module-hue field header: display-face
@@ -42,7 +40,6 @@ export function ToolStats({
   accentClassName,
   subline,
   sublineTone = "accent",
-  credit,
   tone = "default",
 }: ToolStatsProps) {
   if (tone === "onField") {
@@ -69,7 +66,6 @@ export function ToolStats({
             </Text>
           )
         ) : null}
-        {credit ? <Text className="text-[11px] text-white/[0.88]">{credit}</Text> : null}
       </View>
     );
   }
@@ -92,11 +88,6 @@ export function ToolStats({
             {subline}
           </Text>
         )
-      ) : null}
-      {credit ? (
-        <Text variant="eyebrow" tint="primary" className="mt-0.5">
-          {credit}
-        </Text>
       ) : null}
     </View>
   );

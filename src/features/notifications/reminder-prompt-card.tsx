@@ -97,7 +97,13 @@ export function ReminderPromptCard() {
     try {
       const result = await scheduleReminder(activeTarget as ReminderTarget, hour, minute, userId);
       if (!result.enabled) {
-        showToast({ title: t("feedback.problem"), description: result.reason, tone: "error" });
+        // Same mapping as the notifications screen: the raw reason slug never
+        // reaches the user.
+        showToast({
+          title: t("feedback.problem"),
+          description: t(`saveErrors.${result.reason}`),
+          tone: "error",
+        });
         return;
       }
       const patch: Partial<UserPreferences> = {
@@ -114,12 +120,9 @@ export function ReminderPromptCard() {
       await persistPreferences(patch);
       showToast({ title: t("feedback.saved"), description: t(target.labelKey), tone: "success" });
       setActiveTarget(null);
-    } catch (error) {
-      showToast({
-        title: t("feedback.problem"),
-        description: error instanceof Error ? error.message : undefined,
-        tone: "error",
-      });
+    } catch {
+      // The thrown message is a backend/internal string - translated copy only.
+      showToast({ title: t("feedback.problem"), tone: "error" });
     } finally {
       setSaving(false);
     }
@@ -136,7 +139,7 @@ export function ReminderPromptCard() {
       className="absolute inset-x-0 z-[70] items-center px-4"
       style={{ bottom: insets.bottom + 16 }}
     >
-      <Card className="w-full max-w-xl shadow-md">
+      <Card className="w-full max-w-xl shadow-md dark:shadow-none">
         <CardHeader className="gap-1">
           <View className="flex-row items-center gap-3">
             <View className="size-9 items-center justify-center rounded-lg bg-muted">

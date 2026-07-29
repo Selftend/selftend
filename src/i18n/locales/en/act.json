@@ -1,13 +1,12 @@
 {
   "module": {
-    "label": "ACT",
-    "authorEyebrow": "Inspired by The Happiness Trap · Russ Harris"
+    "label": "ACT"
   },
   "alsoTry": "Also try",
   "home": {
     "title": "ACT",
     "fullTitle": "Acceptance & Commitment Therapy",
-    "subtitle": "Inspired by The Happiness Trap by Russ Harris",
+    "subtitle": "Skills for psychological flexibility - acting on your values even when difficult thoughts and feelings are present.",
     "description": "Skills that build psychological flexibility - the ability to act on your values even when difficult thoughts and feelings are present.",
     "frameworkTitle": "The framework",
     "frameworkDescription": "Four pillars that build psychological flexibility.",
@@ -45,8 +44,7 @@
     "skip": "Skip for now",
     "back": "Back",
     "info": {
-      "gotIt": "Got it",
-      "attribution": "This module is inspired by The Happiness Trap by Russ Harris."
+      "gotIt": "Got it"
     },
     "welcome": {
       "title": "Acceptance and Commitment Therapy",

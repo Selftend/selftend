@@ -76,18 +76,23 @@ function compositeOver(
 const WHITE: [number, number, number] = [255, 255, 255];
 
 describe("field header ink meets WCAG AA on the hue field", () => {
-  it.each(ROOM_HUES)("white title and 88%-white body pass on the %s field", (hue) => {
-    for (const isDark of [false, true]) {
-      for (const stop of fieldGradient(hue, isDark)) {
-        const field = hslStringToRgb(stop);
-        // Title / stat values: solid white.
-        expect(contrastRatio(WHITE, field)).toBeGreaterThanOrEqual(4.5);
-        // Description, stat labels, breadcrumb, subline: text-white/[0.88].
-        const body = compositeOver(WHITE, 0.88, field);
-        expect(contrastRatio(body, field)).toBeGreaterThanOrEqual(4.5);
+  // "primary" is the CBT home's violet field (#500) - not a room hue, but it
+  // paints the same white ink, so it holds to the same floors.
+  it.each([...ROOM_HUES, "primary"] as const)(
+    "white title and 88%-white body pass on the %s field",
+    (hue) => {
+      for (const isDark of [false, true]) {
+        for (const stop of fieldGradient(hue, isDark)) {
+          const field = hslStringToRgb(stop);
+          // Title / stat values: solid white.
+          expect(contrastRatio(WHITE, field)).toBeGreaterThanOrEqual(4.5);
+          // Description, stat labels, breadcrumb, subline: text-white/[0.88].
+          const body = compositeOver(WHITE, 0.88, field);
+          expect(contrastRatio(body, field)).toBeGreaterThanOrEqual(4.5);
+        }
       }
-    }
-  });
+    },
+  );
 });
 
 describe("room surface pairings meet WCAG AA", () => {

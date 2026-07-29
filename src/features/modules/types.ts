@@ -107,6 +107,11 @@ export interface UserPreferences {
   ambientVolume: number;
   lastBreathingPatternId: string | null;
   breathingCycles: number | null;
+  // The app's own mailbox-ownership flag (#489). Under mailer_autoconfirm,
+  // auth's email_confirmed_at is stamped at signup and proves nothing; this
+  // is set after an OTP code entry or an emailed-link round trip. Advisory -
+  // it gates only the verify banner, never access.
+  emailVerified: boolean;
 }
 
 export const defaultUserPreferences: UserPreferences = {
@@ -199,6 +204,7 @@ export const defaultUserPreferences: UserPreferences = {
   ambientVolume: 0.5,
   lastBreathingPatternId: null,
   breathingCycles: null,
+  emailVerified: false,
 };
 
 const VALID_MODULES: ModuleKey[] = ["cbt", "meditation", "gratitude", "act"];

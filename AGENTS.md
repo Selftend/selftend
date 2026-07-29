@@ -76,6 +76,13 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Safety and crisis guidance should be visible, calm, and clearly separate from the app's self-help features.
 - The product currently targets all ages, so call out any child-safety, moderation, or legal-review burden you notice.
 
+## Email deliverability rule
+
+- When testing against a live Supabase environment (staging or production), never trigger auth or transactional emails to non-deliverable addresses — bounces damage the project's sender reputation, and Supabase warned about a high bounce rate on staging (2026-07-29).
+- If a test needs a fresh account, either sign up with a real deliverable mailbox (e.g. a plus-tagged address) or create the user entirely via SQL through the Management API, inserted pre-confirmed — the public signup itself sends the confirmation email, so it is never a safe step for a non-deliverable address. Avoid resend/recover flows against SQL-created accounts.
+- Delete throwaway test accounts when done (`DELETE FROM auth.users WHERE email = '...'` via the Management API) so nothing emails them later.
+- Flows whose success path inherently sends email (verification, password reset) are verified against deliverable mailboxes only, or left untested with the gap recorded.
+
 ## Working with reference repos
 
 - `../ifme` is a reference for contributor operations, community process, openness, and mental-health product framing.

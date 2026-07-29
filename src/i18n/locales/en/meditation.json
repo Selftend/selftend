@@ -1,5 +1,4 @@
 {
-  "authorEyebrow": "Inspired by The Mind Illuminated · Culadasa",
   "duration": {
     "minutes": "{{count}} min"
   },
@@ -218,7 +217,7 @@
     "title": "The mind can be trained.",
     "subtitle": "Ten stages. One breath at a time.",
     "heroAlt": "Meditation path",
-    "heroBody": "This module follows The Mind Illuminated - a structured path through ten distinct stages, from establishing a daily habit to deep meditative mastery.",
+    "heroBody": "This module follows a structured path through ten distinct stages, from establishing a daily habit to deep meditative mastery.",
     "circlesAlt": "Attention and awareness",
     "conceptsTitle": "Two modes of knowing",
     "attentionTitle": "Attention",
@@ -229,14 +228,13 @@
     "patience": "Patience, not force - you can't pull a sapling to make it grow.",
     "intention": "Intention, not willpower - clear intentions, repeated daily, do the work.",
     "everySit": "Every sit counts - even a restless sit is practice.",
-    "attribution": "Based on The Mind Illuminated by Culadasa (John Yates, Ph.D.)",
     "dismiss": "Got it"
   },
   "onboarding": {
     "welcome": {
       "title": "The path to awakening",
       "subtitle": "Ten stages, four milestones - a practice, not a finish line.",
-      "body": "The Mind Illuminated organizes meditative training as a sequence of ten distinct stages. The path is not linear: a single sit can move between stages, and a hard day can drop you back. That's normal.",
+      "body": "The training is organized as a sequence of ten distinct stages. The path is not linear: a single sit can move between stages, and a hard day can drop you back. That's normal.",
       "continue": "Begin"
     },
     "attention": {

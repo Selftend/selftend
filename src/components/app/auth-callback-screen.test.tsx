@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import * as Linking from "expo-linking";
 
 import AuthCallbackScreen from "./auth-callback-screen";
+import { markEmailVerifiedFromCallback } from "@/src/features/auth/api";
 import { completeAuthRedirect } from "@/src/features/auth/callback";
 import { AuthCallbackError } from "@/src/features/auth/callback-errors";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -27,15 +28,25 @@ jest.mock("@/src/features/auth/callback", () => ({
   completeAuthRedirect: jest.fn(),
 }));
 
+// The verified-flag stamp (#489) touches the network; keep it a spy.
+jest.mock("@/src/features/auth/api", () => ({
+  ...jest.requireActual("@/src/features/auth/api"),
+  markEmailVerifiedFromCallback: jest.fn(),
+}));
+
 const mockUseLinkingURL = Linking.useLinkingURL as jest.MockedFunction<
   typeof Linking.useLinkingURL
 >;
 const mockCompleteAuthRedirect = completeAuthRedirect as jest.MockedFunction<
   typeof completeAuthRedirect
 >;
+const mockMarkEmailVerified = markEmailVerifiedFromCallback as jest.MockedFunction<
+  typeof markEmailVerifiedFromCallback
+>;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockMarkEmailVerified.mockResolvedValue(undefined);
 });
 
 describe("AuthCallbackScreen (email verified)", () => {
@@ -65,6 +76,24 @@ describe("AuthCallbackScreen (email verified)", () => {
     fireEvent.press(await screen.findByText("Confirm my email"));
     expect(await screen.findByText("You're verified")).toBeTruthy();
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("stamps the app's verified flag after a completed link (#489)", async () => {
+    // Any consumed emailed artifact proves mailbox access; the callback marks
+    // user_preferences.email_verified so the banner clears without a code.
+    renderWithProviders(<AuthCallbackScreen />);
+
+    fireEvent.press(await screen.findByText("Confirm my email"));
+    await waitFor(() => expect(mockMarkEmailVerified).toHaveBeenCalledTimes(1));
+  });
+
+  it("does not stamp the flag when the link fails", async () => {
+    mockCompleteAuthRedirect.mockRejectedValue(new AuthCallbackError("expired_or_used"));
+    renderWithProviders(<AuthCallbackScreen />);
+
+    fireEvent.press(await screen.findByText("Confirm my email"));
+    expect(await screen.findByText(/This link has expired or was already used/)).toBeTruthy();
+    expect(mockMarkEmailVerified).not.toHaveBeenCalled();
   });
 
   it("does not retry a verified link when URL scrubbing publishes the clean callback URL", async () => {

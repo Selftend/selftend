@@ -1,6 +1,8 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, View } from "react-native";
+import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
+import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -24,6 +26,12 @@ import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 import { formatAtOffset } from "@/src/utils/date";
 
 export default function BreathingScreen() {
+  // Scroll position feeding the field parallax (#492).
+  const scrollY = useSharedValue(0);
+  const onFieldScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { data: customExercises } = useBreathingExercises(user?.id ?? null);
@@ -78,12 +86,17 @@ export default function BreathingScreen() {
       edges={["bottom", "left", "right"]}
       style={roomStyle}
     >
-      <ScrollView contentContainerClassName="grow p-4">
+      <AnimatedScrollView
+        contentContainerClassName="grow p-4"
+        onScroll={onFieldScroll}
+        scrollEventThrottle={16}
+      >
         {/* The field + sheet escape the scroll padding so the aqua field runs
             edge to edge; the sheet re-adds the inset for its sections. */}
         <View className="-mx-4 -mt-4">
           <ModuleHomeHeader
             variant="field"
+            fieldParallax={scrollY}
             addWidgetCategory="breathing"
             hue="aqua"
             icon="air"
@@ -251,7 +264,7 @@ export default function BreathingScreen() {
             </View>
           </ContentSheet>
         </View>
-      </ScrollView>
+      </AnimatedScrollView>
     </SafeAreaView>
   );
 }

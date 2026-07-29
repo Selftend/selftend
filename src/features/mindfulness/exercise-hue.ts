@@ -203,7 +203,7 @@ export function hueGradient(hue: ExerciseHue, isDark: boolean): [string, string]
  * with the same name. This identity function makes the relationship explicit
  * and type-checks the subset constraint at compile time.
  */
-export function hueToTint(hue: ToolHue): TintToken {
+export function hueToTint(hue: ToolHue | "primary"): TintToken {
   return hue;
 }
 

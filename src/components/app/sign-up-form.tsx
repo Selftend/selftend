@@ -60,9 +60,17 @@ export function SignUpForm() {
   const onSubmit = handleSubmit(async ({ name, email, password }) => {
     try {
       setSubmitError("");
-      await signUpWithPassword(email, password, name);
+      const { session } = await signUpWithPassword(email, password, name);
       recordSuccess();
-      router.replace({ pathname: "/(auth)/verify-email", params: { email } });
+      // Autoconfirm environments (#489) return a session right away: straight
+      // into the app, where the verify banner takes over. A confirmation-mode
+      // environment returns none - the legacy verify-email screen still covers
+      // that until every environment is flipped.
+      if (session) {
+        router.replace("/(app)");
+      } else {
+        router.replace({ pathname: "/(auth)/verify-email", params: { email } });
+      }
     } catch (error) {
       recordFailure(error);
       if (error instanceof Error && error.message === EMAIL_ALREADY_EXISTS_ERROR) {

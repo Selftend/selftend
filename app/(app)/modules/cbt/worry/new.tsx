@@ -73,29 +73,36 @@ export default function NewWorryScreen() {
   const evidenceAgainstField = useStringListField(form, "evidenceAgainst");
   const actionStepsField = useStringListField(form, "actionSteps");
 
-  const submitForm = handleSubmit(async (values) => {
-    try {
-      const sanitized: WorryEntryFormSchema = {
-        ...values,
-        evidenceFor: values.evidenceFor.filter((s) => s.trim().length > 0),
-        evidenceAgainst: values.evidenceAgainst.filter((s) => s.trim().length > 0),
-        actionSteps: values.actionSteps.filter((s) => s.trim().length > 0),
-        probabilityEstimate:
-          values.worryCategory === "hypothetical" ? values.probabilityEstimate : null,
-        copingStatement: values.worryCategory === "hypothetical" ? values.copingStatement : "",
-      };
-      await saveMutation.mutateAsync(
-        entryId
-          ? { input: sanitized, entryId }
-          : { input: { ...sanitized, createdAt: loggedAtForSelectedDate(selectedDate) } },
-      );
-      showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace("/modules/cbt/worry" as Parameters<typeof router.replace>[0]);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : t("worry.saveError");
-      showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
-    }
-  });
+  const submitForm = handleSubmit(
+    async (values) => {
+      try {
+        const sanitized: WorryEntryFormSchema = {
+          ...values,
+          evidenceFor: values.evidenceFor.filter((s) => s.trim().length > 0),
+          evidenceAgainst: values.evidenceAgainst.filter((s) => s.trim().length > 0),
+          actionSteps: values.actionSteps.filter((s) => s.trim().length > 0),
+          probabilityEstimate:
+            values.worryCategory === "hypothetical" ? values.probabilityEstimate : null,
+          copingStatement: values.worryCategory === "hypothetical" ? values.copingStatement : "",
+        };
+        await saveMutation.mutateAsync(
+          entryId
+            ? { input: sanitized, entryId }
+            : { input: { ...sanitized, createdAt: loggedAtForSelectedDate(selectedDate) } },
+        );
+        showToast({ title: t("common:feedback.saved"), tone: "success" });
+        router.replace("/modules/cbt/worry" as Parameters<typeof router.replace>[0]);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : t("worry.saveError");
+        showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
+      }
+    },
+    () => {
+      // Without this handler a failed validation was a complete no-op: no
+      // toast, no navigation, no network - Save just looked dead (#476).
+      showToast({ title: t("common:feedback.problem"), tone: "error" });
+    },
+  );
   // RHF's handleSubmit does not block re-entrant calls (isSubmitting is React state that
   // hasn't re-rendered between two rapid presses), so guard against double-press inserts.
   const handleSave = useSingleFlight(submitForm);

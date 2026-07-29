@@ -98,6 +98,13 @@ must mirror them by hand - templates are not part of `db push`.
    | Reset password | `Reset your Selftend password`        | `{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&type=recovery`     |
    | Change email   | `Confirm your new email for Selftend` | `{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&type=email_change` |
    | Invite user    | `You're invited to Selftend`          | `{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&type=invite`       |
+   | Magic Link     | `Your Selftend verification code`     | `{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&type=email`        |
+
+   The Magic Link template is the verify-banner's OTP email (#489): its body
+   leads with the `{{ .Token }}` 6-digit code (the primary path - the user
+   types it into the banner) and carries the link only as a fallback. Note its
+   link type is `email`, not `magiclink` - `email` is the spelling the app
+   callback accepts.
 
    Never use `{{ .RedirectTo }}` as the link base: native clients send the app
    scheme (`selftend://auth-callback`) as `redirect_to`, and GoTrue's Go
@@ -107,7 +114,7 @@ must mirror them by hand - templates are not part of `db push`.
    the link works from every client and email app.
 
    Body files: `confirmation.html`, `recovery.html`, `email_change.html`,
-   `invite.html` in `supabase/templates/`. (Invite matters
+   `invite.html`, `magic_link.html` in `supabase/templates/`. (Invite matters
    even without an invite UI: admin-API invitations from the Dashboard would
    otherwise send the default PKCE `?code=` link, which breaks cross-browser.)
 
@@ -126,6 +133,27 @@ must mirror them by hand - templates are not part of `db push`.
    pressing **"Choose a new password"** — reaches the "Reset your password"
    screen. Repeat once for a fresh signup confirmation (card button:
    **"Confirm my email"**).
+
+### Autoconfirm flip (#489 release step - owner action, one-time)
+
+Sign-in-without-verification ships dark until production auth config flips.
+When the release that carries `user_preferences.email_verified` (migration
+`20260805000000`) goes to production, in the same session:
+
+1. Dashboard → Authentication → Sign In / Up → email: turn **"Confirm email"
+   OFF** (`mailer_autoconfirm: true` via the Management API does the same).
+2. Run the one-time confirm-backfill so any still-unconfirmed account can
+   sign in (SQL via the Management API):
+   `update auth.users set email_confirmed_at = now() where email_confirmed_at is null and email is not null;`
+3. Paste the Magic Link template (table above) so the banner's code emails
+   render the code (safe to do earlier - the template is inert until the
+   banner sends).
+
+Until the flip, nothing changes for prod users: GoTrue still refuses
+unconfirmed sign-ins, signup still returns no session, and the app's legacy
+verify-email screen still covers that path. The flip is safe to do late but
+must not be done **before** the release is live, or new signups would land in
+an app build that still walls on `email_confirmed_at`.
 
 ### Local development note
 
