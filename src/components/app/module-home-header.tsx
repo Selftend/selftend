@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
+import { AccessibilityInfo, Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
@@ -57,11 +58,45 @@ interface ModuleHomeHeaderProps {
    */
   variant?: "hero" | "field";
   /**
+   * The owning scroll view's contentOffset.y. When set in field mode, the
+   * field gradient translates at a fraction of scroll speed so the sheet
+   * rises over a background that lags it (Wave-C parallax, 0.4x - #492).
+   * The gradient is oversized upward so the lag never exposes an edge.
+   * Ignored under reduce-motion.
+   */
+  fieldParallax?: SharedValue<number>;
+  /**
    * No longer used: per-page button coach marks were removed (only the home dashboard
    * keeps first-run tips now). Kept as an accepted prop so the module screens that
    * already pass it don't need to change; safe to drop in a future cleanup pass.
    */
   tourScope?: string;
+}
+
+const PARALLAX_FACTOR = 0.4; // gradient net speed = 1 - factor = 0.6x scroll
+const PARALLAX_OVERDRAW = 160; // px the gradient extends beyond the field's top
+
+// RN-core reduce-motion read (reanimated's useReducedMotion is absent from the
+// jest mock; AccessibilityInfo works on native AND web, where it reads the
+// prefers-reduced-motion media query).
+function useReduceMotionPreference() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    let live = true;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((value) => {
+        if (live) setReduced(Boolean(value));
+      })
+      .catch(() => {});
+    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", (value) =>
+      setReduced(Boolean(value)),
+    );
+    return () => {
+      live = false;
+      subscription?.remove();
+    };
+  }, []);
+  return reduced;
 }
 
 export function ModuleHomeHeader({
@@ -74,6 +109,7 @@ export function ModuleHomeHeader({
   moduleLabel,
   addWidgetCategory,
   variant = "hero",
+  fieldParallax,
 }: ModuleHomeHeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const isDark = useColorSchemeName() === "dark";
@@ -91,6 +127,15 @@ export function ModuleHomeHeader({
   }
 
   const fieldMode = variant === "field" && hue != null;
+
+  // A reduced-motion preference pins the gradient still (#492).
+  const reducedMotion = useReduceMotionPreference();
+  const parallaxStyle = useAnimatedStyle(() => {
+    if (fieldParallax === undefined || reducedMotion) return { transform: [{ translateY: 0 }] };
+    // Only downward scroll parallaxes; overscroll bounce keeps the gradient pinned.
+    const y = Math.max(0, fieldParallax.value);
+    return { transform: [{ translateY: Math.min(y * PARALLAX_FACTOR, PARALLAX_OVERDRAW) }] };
+  });
   const heroMode = hue != null && icon != null;
 
   const actionsRow =
@@ -124,14 +169,19 @@ export function ModuleHomeHeader({
   if (fieldMode) {
     return (
       <View className="relative overflow-hidden px-5 pb-10 pt-4">
-        <LinearGradient
-          testID="module-field-gradient"
-          colors={fieldGradient(hue, isDark)}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0.08, y: 1 }}
-          style={StyleSheet.absoluteFill}
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { top: -PARALLAX_OVERDRAW }, parallaxStyle]}
           pointerEvents="none"
-        />
+        >
+          <LinearGradient
+            testID="module-field-gradient"
+            colors={fieldGradient(hue, isDark)}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.08, y: 1 }}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
+        </Animated.View>
         {notificationsModal}
         <View className="flex-row items-center gap-2">
           <View className="flex-1">

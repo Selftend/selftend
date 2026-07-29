@@ -37,11 +37,6 @@ export function ActInfo({
       ctaAlwaysCompletes
       onComplete={onComplete}
       onDismiss={onDismiss}
-      footerSlot={
-        <Text className="text-center text-xs text-muted-foreground">
-          {t("onboarding.info.attribution")}
-        </Text>
-      }
     >
       <View className="items-center gap-3">
         <Text variant="h2" className="text-center">

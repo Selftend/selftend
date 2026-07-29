@@ -126,10 +126,11 @@ describe("ActHomeScreen", () => {
     expect(router.push as jest.Mock).toHaveBeenCalledWith("/modules/act/choice-point");
   });
 
-  it("renders the author eyebrow below the header with primary tint", () => {
+  it("renders the act field header with no book credit (#493, #494)", () => {
     renderWithProviders(<ActHomeScreen />);
 
-    expect(screen.getByText("Inspired by The Happiness Trap · Russ Harris")).toBeTruthy();
+    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+    expect(screen.queryByText(/Inspired by/)).toBeNull();
   });
 
   it("renders recent defusion logs empty state when no logs exist", () => {
