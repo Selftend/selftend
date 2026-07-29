@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { View } from "react-native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -12,9 +12,11 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
+import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { useCoreBelief, useSaveCoreBelief } from "@/src/features/beliefs/queries";
 import { coreBeliefFormSchema, type CoreBeliefFormSchema } from "@/src/features/beliefs/schemas";
 import { useWizardDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
@@ -36,6 +38,8 @@ const defaultValues: CoreBeliefFormSchema = {
 
 export default function NewBeliefScreen() {
   const { t } = useTranslation("cbt");
+  const { t: tc } = useTranslation("common");
+  const [discardOpen, setDiscardOpen] = useState(false);
   const { beliefId: rawBeliefId } = useLocalSearchParams<{ beliefId?: string }>();
   const beliefId = typeof rawBeliefId === "string" && rawBeliefId.length > 0 ? rawBeliefId : null;
   const draftMode = beliefId ? "edit" : "create";
@@ -179,6 +183,8 @@ export default function NewBeliefScreen() {
       primaryLabel={wizard.isLastStep ? t("beliefs.save") : t("beliefs.continue")}
       pendingLabel={t("beliefs.saving")}
       backLabel={t("beliefs.back")}
+      discardLabel={tc("draft.discardAction")}
+      onDiscard={() => setDiscardOpen(true)}
       isPending={wizard.isPending}
     >
       {wizard.stepIndex === 0 ? (
@@ -327,6 +333,23 @@ export default function NewBeliefScreen() {
           </Card>
         </View>
       ) : null}
+
+      {/* Parity with the thought-record wizard (#457 broad pass): without this,
+          a persisted belief draft (PHI) had no user-facing way to be cleared. */}
+      <ConfirmDialog
+        visible={discardOpen}
+        isPending={false}
+        title={tc("draft.discardTitle")}
+        message={tc("draft.discardMessage")}
+        confirmLabel={tc("draft.discardConfirm")}
+        cancelLabel={tc("cancel")}
+        onCancel={() => setDiscardOpen(false)}
+        onConfirm={() => {
+          wizard.clearDraft();
+          setDiscardOpen(false);
+          backWithFallback("/modules/cbt/beliefs");
+        }}
+      />
     </WizardScreen>
   );
 }
