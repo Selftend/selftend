@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { markEmailVerifiedFromCallback } from "@/src/features/auth/api";
 import { completeAuthRedirect, parseAuthCallbackUrl } from "@/src/features/auth/callback";
 import {
   isAuthCallbackError,
@@ -115,6 +116,11 @@ export default function AuthCallbackScreen() {
         if (!active) {
           return;
         }
+
+        // A completed emailed link proves mailbox access - stamp the app's
+        // verified flag (#489). Fire-and-forget: routing must not wait on it,
+        // and a failure only leaves the banner up until the next proof.
+        void markEmailVerifiedFromCallback().catch(() => {});
 
         scrubAuthUrlFromHistory();
 

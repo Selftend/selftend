@@ -188,24 +188,41 @@ export function rewriteAuthLinkOrigin(link: string, baseURL: string): string {
   return `${origin}${url.pathname}${url.search}${url.hash}`;
 }
 
-// Completes local email verification for a freshly signed-up user by opening the
-// emailed token_hash link in THIS page. The app callback verifies the OTP
-// (establishing a session) and shows the verified card; clicking through lands
-// in the authenticated app - exactly the real user journey.
-export async function confirmSignupViaMailpit(page: Page, email: string, baseURL: string) {
-  const link = await fetchAuthEmailLink(page, email, "signup");
-  await page.goto(rewriteAuthLinkOrigin(link, baseURL));
-  // token_hash links no longer verify on load - a scanner-proof gate waits for
-  // a human press before the one-time token is spent.
-  await page.getByRole("button", { name: "Confirm my email", exact: true }).click();
-  await expect(page.getByText("You're verified")).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("button", { name: "Continue to the app", exact: true }).click();
-}
+// (confirmSignupViaMailpit used to live here: under autoconfirm (#489) the
+// local stack never sends signup-confirmation emails, so that journey has no
+// local trigger any more. The verify-banner code path replaced it.)
 
 // Finds the most recent password-RECOVERY email in Mailpit for `email` and
 // returns its `...auth-callback?token_hash=...&type=recovery` link.
 export async function fetchRecoveryLink(page: Page, email: string): Promise<string> {
   return fetchAuthEmailLink(page, email, "recovery");
+}
+
+// Pulls the 6-digit verification code out of the verify-banner's OTP email
+// (supabase/templates/magic_link.html renders `{{ .Token }}` as a bare 6-digit
+// number). Polls like fetchAuthEmailLink: the email arrives a beat after the
+// banner's send.
+export async function fetchVerificationCodeViaMailpit(page: Page, email: string): Promise<string> {
+  const target = email.toLowerCase();
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const listRes = await page.request.get(`${MAILPIT_URL}/api/v1/messages?limit=50`);
+    if (listRes.ok()) {
+      const { messages = [] } = (await listRes.json()) as { messages?: MailpitMessageSummary[] };
+      const match = messages.find((m) => m.To?.some((to) => to.Address?.toLowerCase() === target));
+      if (match) {
+        const msgRes = await page.request.get(`${MAILPIT_URL}/api/v1/message/${match.ID}`);
+        const body = (await msgRes.json()) as { HTML?: string; Text?: string };
+        const code = `${body.Text ?? ""}\n${body.HTML ?? ""}`.match(/\b(\d{6})\b/);
+        if (code) return code[1];
+      }
+    }
+    await page.waitForTimeout(500);
+  }
+  throw new Error(
+    `No Mailpit email with a 6-digit verification code found for ${email}. The local stack may` +
+      ` be running templates from before supabase/templates/magic_link.html existed (restart` +
+      ` with db:stop + db:start).`,
+  );
 }
 
 // Removes a user via service role admin API. Used for sign-up tests that

@@ -1,5 +1,6 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { TextInput } from "react-native";
+import { router } from "expo-router";
 
 import { SignUpForm } from "./sign-up-form";
 import { signUpWithPassword, LEAKED_PASSWORD_ERROR } from "@/src/features/auth/api";
@@ -48,6 +49,35 @@ describe("SignUpForm", () => {
         "This password appears in known data breaches. Please pick a different one.",
       ),
     ).toBeTruthy();
+  });
+
+  it("routes straight into the app when signup returns a session (autoconfirm, #489)", async () => {
+    mockSignUp.mockResolvedValue({ session: { access_token: "t" }, user: { id: "u1" } } as Awaited<
+      ReturnType<typeof signUpWithPassword>
+    >);
+    renderWithProviders(<SignUpForm />);
+    fillForm();
+    fireEvent.press(screen.getByText("Sign up"));
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/(app)"));
+  });
+
+  it("falls back to the verify-email screen when signup returns no session", async () => {
+    // A confirmation-mode environment (prod until its flip) returns a null
+    // session - the legacy interstitial still owns that path.
+    mockSignUp.mockResolvedValue({ session: null, user: { id: "u1" } } as Awaited<
+      ReturnType<typeof signUpWithPassword>
+    >);
+    renderWithProviders(<SignUpForm />);
+    fillForm();
+    fireEvent.press(screen.getByText("Sign up"));
+
+    await waitFor(() =>
+      expect(router.replace).toHaveBeenCalledWith({
+        pathname: "/(auth)/verify-email",
+        params: { email: "person@example.com" },
+      }),
+    );
   });
 
   it("gives every input an accessible name", () => {

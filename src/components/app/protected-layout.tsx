@@ -1,10 +1,11 @@
-import { Redirect, Stack, usePathname } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import { ActivityIndicator, Platform, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { OfflineBanner } from "@/src/components/app/offline-banner";
+import { VerifyEmailBanner } from "@/src/components/app/verify-email-banner";
 import { RoutineFab } from "@/src/components/app/routine-fab";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -94,9 +95,11 @@ export default function ProtectedLayout() {
     return <AuthLandingScreen />;
   }
 
-  if (!user?.email_confirmed_at) {
-    return <Redirect href="/(auth)/verify-email" />;
-  }
+  // No verification wall here any more (#489): under mailer_autoconfirm every
+  // session arrives confirmed, and mailbox ownership is handled by the
+  // VerifyEmailBanner below - sign-in is never blocked on it. Pre-flip
+  // environments can't mint an unconfirmed session at all (GoTrue rejects
+  // the sign-in), so nothing slips through while configs differ.
 
   // A failed preferences fetch WITH nothing cached leaves the acceptance state
   // UNKNOWN — gating on it would re-prompt users who already accepted (#164:
@@ -157,6 +160,7 @@ export default function ProtectedLayout() {
         {isDesktop ? <SidebarNav /> : null}
         <View className="flex-1">
           <OfflineBanner />
+          <VerifyEmailBanner />
           <Stack
             screenOptions={{
               headerShown: false,

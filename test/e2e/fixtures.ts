@@ -234,6 +234,11 @@ export const NORMALIZED_GATE_PREFS = {
   policy_version_accepted: policyVersion,
   reminder_consent: false,
   reminder_consent_updated_at: "2026-01-01T00:00:00.000Z",
+  // Pooled users count as verified or the #489 banner pins itself to the top
+  // of every spec. The banner's own journey lives in sign-up-onboarding
+  // (plain @playwright/test, fresh user), which this normalization never
+  // touches.
+  email_verified: true,
 } as const;
 
 // Per-test normalization: guarantee the consent + onboarding gates never fire.

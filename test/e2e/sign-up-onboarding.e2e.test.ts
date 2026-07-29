@@ -1,13 +1,14 @@
-// STALENESS WARNING: the confirmation step expects the token_hash email links
-// from supabase/templates/. A Supabase stack started before those templates
-// existed (templates load only at `supabase start`, not on db:reset) or a stale
-// dist-e2e export / reused foreign server (E2E_REUSE_EXISTING_SERVER=1) sends
-// old-format links and fails this spec - restart the stack and rebuild the
-// export before debugging anything else.
+// STALENESS WARNING: the verification step expects the OTP-code email from
+// supabase/templates/magic_link.html. A Supabase stack started before that
+// template existed (templates load only at `supabase start`, not on db:reset)
+// or a stale dist-e2e export / reused foreign server
+// (E2E_REUSE_EXISTING_SERVER=1) sends the default link-only email and fails
+// this spec - restart the stack and rebuild the export before debugging
+// anything else.
 
 import { expect, test } from "@playwright/test";
 
-import { confirmSignupViaMailpit, deleteUserByEmail, dismissCookieBanner } from "./helpers";
+import { deleteUserByEmail, dismissCookieBanner, fetchVerificationCodeViaMailpit } from "./helpers";
 
 test.describe("sign-up + onboarding + first record", () => {
   const email = `signup-e2e-${Date.now()}@test.local`;
@@ -32,16 +33,10 @@ test.describe("sign-up + onboarding + first record", () => {
     await pwInputs.nth(1).fill(password);
     await page.getByRole("button", { name: "Sign up", exact: true }).click();
 
-    // Sign-up routes the user to /verify-email.
-    await expect(page.getByText("Verify your email")).toBeVisible({ timeout: 15_000 });
-
-    // Email confirmations are enabled locally. The confirmation email carries a
-    // direct token_hash link into the app callback (see supabase/templates/);
-    // opening it verifies the address AND establishes the session, then the
-    // "Continue to the app" button lands us in the authenticated app - the real
-    // user journey, no separate sign-in needed.
-    await confirmSignupViaMailpit(page, email, test.info().project.use.baseURL as string);
-    await dismissCookieBanner(page);
+    // Autoconfirm (#489): sign-up returns a session immediately and routes
+    // straight into the app - no interstitial, no confirmation email. Mailbox
+    // ownership is proven later through the verify banner, exercised at the
+    // end of this journey.
 
     // First-time user must accept consent before anything else.
     // Handle the consent gate manually so the wizard is left for us to walk below.
@@ -151,5 +146,27 @@ test.describe("sign-up + onboarding + first record", () => {
     // Detail page renders the saved values.
     await expect(page.getByText(situation)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(balancedThought)).toBeVisible();
+
+    // Finally, the verify banner (#489): it has been pinned at the top since
+    // sign-in, and the full send-code -> enter-code round trip clears it.
+    await expect(page.getByText("Verify your email to secure your account.")).toBeVisible();
+    await page.getByRole("button", { name: "Send code", exact: true }).click();
+    await expect(page.getByText("We emailed you a 6-digit code.")).toBeVisible({
+      timeout: 15_000,
+    });
+
+    const code = await fetchVerificationCodeViaMailpit(page, email);
+    await page.getByLabel("Verification code").fill(code);
+    await page.getByRole("button", { name: "Verify", exact: true }).click();
+
+    // Verified: the banner unmounts and stays gone across a reload (the flag
+    // is persisted, not component state).
+    await expect(page.getByText("Verify your email to secure your account.")).toBeHidden({
+      timeout: 15_000,
+    });
+    await page.reload();
+    await dismissCookieBanner(page);
+    await expect(page.getByText(situation)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Verify your email to secure your account.")).toBeHidden();
   });
 });
