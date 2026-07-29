@@ -482,7 +482,8 @@
     "onboarding": "Onboarding",
     "edit": "Edit",
     "log": "Log",
-    "favorites": "Favorites"
+    "favorites": "Favorites",
+    "back": "Back"
   },
   "modulesPage": {
     "title": "Modules",
