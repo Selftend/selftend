@@ -1,4 +1,5 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
+import { Svg } from "react-native-svg";
 
 import ProgressScreen from "@/src/features/progress/progress-screen";
 import { useMoodScorePoints } from "@/src/features/mood/queries";
@@ -50,6 +51,31 @@ describe("ProgressScreen", () => {
     expect(screen.queryByText("90d")).toBeNull();
     expect(screen.queryByText("Custom")).toBeNull();
     expect(screen.queryByText("Log a mood to start your trend.")).toBeNull();
+  });
+
+  it("sizes the chart to the card's measured content box, not the window", () => {
+    const noon = new Date();
+    noon.setHours(12, 0, 0, 0);
+    mockUseMoodScorePoints.mockReturnValue({
+      data: [
+        {
+          loggedAt: noon.toISOString(),
+          loggedOffsetMinutes: null,
+          dayKey: entryDayKey(noon.toISOString(), null),
+          moodScore: 4,
+        },
+      ],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useMoodScorePoints>);
+
+    renderWithProviders(<ProgressScreen />);
+
+    fireEvent(screen.getByTestId("mood-trend-layout"), "layout", {
+      nativeEvent: { layout: { x: 0, y: 0, width: 294, height: 160 } },
+    });
+
+    const chartSvg = screen.UNSAFE_getByType(Svg);
+    expect(chartSvg.props.width).toBe(294);
   });
 
   it("shows the empty state when the window has no points", () => {
