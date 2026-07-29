@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
+import { appEnv } from "@/src/lib/env";
+import { AppState, Platform } from "react-native";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 
 import { useUpdateAvailability } from "@/src/lib/use-update-availability";
@@ -97,6 +98,86 @@ describe("useUpdateAvailability", () => {
     mockRunningVersion.mockReturnValue(null);
     renderHook(() => useUpdateAvailability());
     // No version to compare against means no fetch at all.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(mockFetchDocument).not.toHaveBeenCalled();
+  });
+});
+
+// Native branch (#517 Codex P2): the grace window must gate the offer, and a
+// foregrounding app must get a fresh chance once the window has passed - a
+// process alive for days cannot be stuck with its first answer.
+describe("useUpdateAvailability (native)", () => {
+  const HOUR = 60 * 60 * 1000;
+  let nativeSpy: jest.ReplaceProperty<typeof Platform.OS> | undefined;
+  let playStoreUrl: string;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    await AsyncStorage.clear();
+    platformSpy?.restore();
+    nativeSpy = jest.replaceProperty(Platform, "OS", "android");
+    playStoreUrl = appEnv.playStoreUrl;
+    appEnv.playStoreUrl = "https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend";
+    mockRunningVersion.mockReturnValue("0.8.0");
+  });
+
+  afterEach(() => {
+    appEnv.playStoreUrl = playStoreUrl;
+    nativeSpy?.restore();
+    platformSpy = jest.replaceProperty(Platform, "OS", "web");
+  });
+
+  it("stays quiet inside the 24h grace window, offers beyond it", async () => {
+    mockFetchDocument.mockResolvedValue({
+      version: "0.9.0",
+      publishedAt: new Date(Date.now() - 23 * HOUR).toISOString(),
+    });
+    const inside = renderHook(() => useUpdateAvailability());
+    await waitFor(() => expect(mockFetchDocument).toHaveBeenCalled());
+    expect(inside.result.current.available).toBe(false);
+    inside.unmount();
+
+    mockFetchDocument.mockResolvedValue({
+      version: "0.9.0",
+      publishedAt: new Date(Date.now() - 25 * HOUR).toISOString(),
+    });
+    const beyond = renderHook(() => useUpdateAvailability());
+    await waitFor(() => expect(beyond.result.current.available).toBe(true));
+  });
+
+  it("re-checks on return to foreground once the throttle allows", async () => {
+    // First check lands inside the grace window: no offer. The app then comes
+    // back to the foreground past the 6h throttle, by which time the release
+    // has aged out of the grace window - the recheck must offer it.
+    const listeners: ((state: string) => void)[] = [];
+    const addSpy = jest.spyOn(AppState, "addEventListener").mockImplementation((_type, handler) => {
+      listeners.push(handler as (state: string) => void);
+      return { remove: jest.fn() } as never;
+    });
+    const nowSpy = jest.spyOn(Date, "now");
+    const t0 = 1_800_000_000_000;
+    nowSpy.mockReturnValue(t0);
+    mockFetchDocument.mockResolvedValue({
+      version: "0.9.0",
+      publishedAt: new Date(t0 - 20 * HOUR).toISOString(),
+    });
+
+    const { result } = renderHook(() => useUpdateAvailability());
+    await waitFor(() => expect(mockFetchDocument).toHaveBeenCalledTimes(1));
+    expect(result.current.available).toBe(false);
+
+    // 7h later the app foregrounds: throttle open, release now 27h old.
+    nowSpy.mockReturnValue(t0 + 7 * HOUR);
+    act(() => listeners.forEach((l) => l("active")));
+    await waitFor(() => expect(result.current.available).toBe(true));
+
+    nowSpy.mockRestore();
+    addSpy.mockRestore();
+  });
+
+  it("never offers when the Play URL is unset", async () => {
+    appEnv.playStoreUrl = "";
+    renderHook(() => useUpdateAvailability());
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(mockFetchDocument).not.toHaveBeenCalled();
   });

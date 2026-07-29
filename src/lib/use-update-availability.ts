@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Linking, Platform } from "react-native";
+import { AppState, Linking, Platform } from "react-native";
 
 import { appEnv } from "@/src/lib/env";
 import {
@@ -68,14 +68,25 @@ export function useUpdateAvailability(): UpdateAvailability {
     // effect (react-hooks/set-state-in-effect); an update offer is in no
     // hurry anyway.
     const startup = setTimeout(() => void check(), 0);
-    // The focus re-check is a browser-only nicety. React Native defines a
-    // `window` global without DOM event methods, so feature-detect the
-    // listener itself rather than trusting the platform check alone.
-    if (
-      Platform.OS !== "web" ||
-      typeof window === "undefined" ||
-      typeof window.addEventListener !== "function"
-    ) {
+    // Re-check on return-to-foreground, else a long-lived process that first
+    // checked inside the 24h grace window would never offer at all (Codex P2
+    // on the PR). Web listens to window focus; native to AppState "active".
+    // Both funnel through check(), whose 6h throttle keeps this quiet.
+    if (Platform.OS !== "web") {
+      const subscription = AppState.addEventListener("change", (state) => {
+        if (state === "active") void check();
+      });
+      return () => {
+        clearTimeout(startup);
+        // Optional-chained: older RN versions and the jest preset answer
+        // addEventListener with undefined.
+        subscription?.remove?.();
+      };
+    }
+    // React Native defines a `window` global without DOM event methods, so
+    // feature-detect the listener itself rather than trusting the platform
+    // check alone.
+    if (typeof window === "undefined" || typeof window.addEventListener !== "function") {
       return () => clearTimeout(startup);
     }
     const onFocus = () => void check();
