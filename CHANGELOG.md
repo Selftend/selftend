@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.8.0](https://github.com/Selftend/selftend/compare/v0.7.0...v0.8.0) (2026-07-29)
+
+
+### Features
+
+* **auth:** sign in without verification, verify banner owns mailbox proof ([#499](https://github.com/Selftend/selftend/issues/499)) ([3020fc2](https://github.com/Selftend/selftend/commit/3020fc2b5597623b87408642385afeda551459a5))
+* **design:** field parallax, CBT/ACT room headers, book-reference scrub ([#498](https://github.com/Selftend/selftend/issues/498)) ([eed75ac](https://github.com/Selftend/selftend/commit/eed75ac8830b85268298b14b04b1ed7798db4859))
+* **nav:** back button in the breadcrumb row ([#497](https://github.com/Selftend/selftend/issues/497)) ([68a921f](https://github.com/Selftend/selftend/commit/68a921f372cd7d645e3282ecd4ffd5c9516fa7b0))
+
+
+### Bug Fixes
+
+* **a11y:** human labels for the gratitude favorites breadcrumb and habit tick days ([#485](https://github.com/Selftend/selftend/issues/485)) ([ee1a3dc](https://github.com/Selftend/selftend/commit/ee1a3dcbe3f4a3426c3ce45004ee72d7202e0f3a))
+* **auth:** map raw Supabase errors to translated copy on reset- and update-password ([#470](https://github.com/Selftend/selftend/issues/470)) ([#478](https://github.com/Selftend/selftend/issues/478)) ([daecb1c](https://github.com/Selftend/selftend/commit/daecb1ccc47fdf49d0073d2755cf9816716bcc6a))
+* **auth:** the verify banner says so when the flag write no-ops ([#505](https://github.com/Selftend/selftend/issues/505)) ([7f3b32a](https://github.com/Selftend/selftend/commit/7f3b32afe5ef77cfacf0b265326db4f818e6c641)), closes [#504](https://github.com/Selftend/selftend/issues/504)
+* **cbt:** confirm before archiving a thought record ([#481](https://github.com/Selftend/selftend/issues/481)) ([00cdf07](https://github.com/Selftend/selftend/commit/00cdf0729ab1667a8457ef278d7b6dd906d42870))
+* **cbt:** fall back to the CBT index when back has no history ([#475](https://github.com/Selftend/selftend/issues/475)) ([#482](https://github.com/Selftend/selftend/issues/482)) ([8cce4aa](https://github.com/Selftend/selftend/commit/8cce4aa3587fa1ceb427c2b16fedcec6be4ed735))
+* **cbt:** give the beliefs wizard a Discard draft affordance ([#486](https://github.com/Selftend/selftend/issues/486)) ([f59f37c](https://github.com/Selftend/selftend/commit/f59f37c6ddbd0628b9609f75ae2c38696ec88d6f))
+* **cbt:** show the activity schedule in its captured frame, not raw UTC ISO ([#477](https://github.com/Selftend/selftend/issues/477)) ([#483](https://github.com/Selftend/selftend/issues/483)) ([61d8a99](https://github.com/Selftend/selftend/commit/61d8a995cf7f09c093288d124151ba17a77f0f3b))
+* **cbt:** unfreeze the beliefs and worry forms on web ([#476](https://github.com/Selftend/selftend/issues/476)) ([#484](https://github.com/Selftend/selftend/issues/484)) ([92de186](https://github.com/Selftend/selftend/commit/92de1862df9a7e70927b551ef5963cc88f853260))
+* **design:** restore home padding, pour the CBT field violet ([#503](https://github.com/Selftend/selftend/issues/503)) ([0e32c0e](https://github.com/Selftend/selftend/commit/0e32c0e911b32f545d74ad99738885454709fea5))
+* **insights:** size the mood-trend chart to its card, not the window ([#472](https://github.com/Selftend/selftend/issues/472)) ([#479](https://github.com/Selftend/selftend/issues/479)) ([5132eea](https://github.com/Selftend/selftend/commit/5132eea77909590f87ab32e8f488428f80c4465c))
+* **notifications:** reminder save gets an in-flight state, a subscription timeout, and translated errors ([#480](https://github.com/Selftend/selftend/issues/480)) ([e05f6af](https://github.com/Selftend/selftend/commit/e05f6afb9261f478ff9c76273b4f52c8ada58f10))
+* **ui:** drop shadows on the dark theme, close the account menu on route change ([#496](https://github.com/Selftend/selftend/issues/496)) ([64766f0](https://github.com/Selftend/selftend/commit/64766f03dd19a072edd803641cffca60aee6009f))
+
 ## [0.7.0](https://github.com/Selftend/selftend/compare/v0.6.1...v0.7.0) (2026-07-28)
 
 
