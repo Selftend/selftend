@@ -24,6 +24,11 @@ export const userText = (max = 2000, options: UserTextOptions = {}) => {
   return withMin.max(max, options.maxMessage).transform((value) => sanitizeUserText(value).trim());
 };
 
-const nonEmptyTrimmedString = (max = 2000) => userText(max, { min: 1 });
-
-export const trimmedStringList = (max = 2000) => z.array(nonEmptyTrimmedString(max));
+/**
+ * A list the user edits row by row. Blank rows are legitimate WHILE EDITING -
+ * the screens append "" for a fresh row and filter blanks out at save - so
+ * items are bounded and sanitized but not required non-empty. Requiring
+ * non-empty here made every step-gate trigger and submit fail silently the
+ * moment an empty row existed on screen (#476).
+ */
+export const editableStringList = (max = 2000) => z.array(userText(max));

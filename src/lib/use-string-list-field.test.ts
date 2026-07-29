@@ -7,7 +7,7 @@ type Form = { items: string[] };
 
 // Drives the hook against a real RHF form. isDirty is read during render so RHF's
 // formState proxy subscribes and re-renders reflect it.
-function setup(initial: string[], opts?: { keepAtLeastOne?: boolean; shouldDirty?: boolean }) {
+function setup(initial: string[], opts?: { keepAtLeastOne?: boolean }) {
   return renderHook(() => {
     const form = useForm<Form>({ defaultValues: { items: initial } });
     const field = useStringListField(form, "items", opts);
@@ -53,18 +53,23 @@ describe("useStringListField", () => {
     expect(result.current.form.getValues("items")).toEqual([""]);
   });
 
-  // recovery form passes shouldDirty so unsaved edits flip the dirty guard.
-  it("marks the form dirty on write when shouldDirty is set", () => {
-    const { result } = setup(["a"], { shouldDirty: true });
+  // A list edit IS a user edit: every write flips the dirty guard, so a
+  // wizard's draft-restore can't clobber what the user just typed (#476).
+  it("marks the form dirty on every write", () => {
+    const { result } = setup(["a"]);
     expect(result.current.isDirty).toBe(false);
     act(() => result.current.field.append());
     expect(result.current.isDirty).toBe(true);
   });
 
-  // worry/beliefs: default writes must NOT dirty the form (matches the original inline setValue).
-  it("does not mark the form dirty on write by default", () => {
+  // The rows are not registered inputs; items must still track writes through
+  // the useWatch subscription (render-time form.watch() reads were memoized
+  // away under the React Compiler - #476).
+  it("items reflects a write on the next render", () => {
     const { result } = setup(["a"]);
+    act(() => result.current.field.update(0, "edited"));
+    expect(result.current.field.items).toEqual(["edited"]);
     act(() => result.current.field.append());
-    expect(result.current.isDirty).toBe(false);
+    expect(result.current.field.items).toEqual(["edited", ""]);
   });
 });
