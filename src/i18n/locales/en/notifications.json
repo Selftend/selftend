@@ -125,5 +125,14 @@
     "description": "A gentle nudge for {{label}} around this time each day. You can change or turn it off anytime.",
     "accept": "Set reminder",
     "decline": "No thanks"
+  },
+  "saveErrors": {
+    "missing-user": "You need to be signed in to set up reminders.",
+    "missing-vapid-key": "Reminders aren't configured for this app build.",
+    "permission-denied": "Notifications are blocked for this site in your browser settings.",
+    "service-worker-unavailable": "Couldn't set up reminders on this browser.",
+    "subscription-failed": "Couldn't set up reminders on this browser.",
+    "timeout": "Couldn't reach this browser's notification service. Reminders may not work here.",
+    "unsupported": "This browser doesn't support reminders."
   }
 }

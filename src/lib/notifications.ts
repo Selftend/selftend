@@ -22,16 +22,41 @@ const WEB_PUSH_WORKER_PATH = "/selftend-push-worker.js";
 type NotificationsModule = typeof import("expo-notifications");
 let notificationsModule: NotificationsModule | null = null;
 
-type ReminderScheduleFailureReason =
+export type ReminderScheduleFailureReason =
   | "missing-user"
   | "missing-vapid-key"
   | "permission-denied"
   | "service-worker-unavailable"
   | "subscription-failed"
+  | "timeout"
   | "unsupported";
 
-type ReminderScheduleResult =
+export type ReminderScheduleResult =
   { enabled: true } | { enabled: false; reason: ReminderScheduleFailureReason };
+
+// `pushManager.subscribe()` with a valid VAPID key can hang forever when the
+// browser's push service is blocked or unreachable (Brave-style configs,
+// corporate networks, offline) - verified during the #473 sweep. Without a
+// deadline the reminder save never resolves and the user gets zero feedback.
+const WEB_PUSH_SUBSCRIBE_TIMEOUT_MS = 20_000;
+
+class WebPushTimeoutError extends Error {}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new WebPushTimeoutError("web push timed out")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error instanceof Error ? error : new Error(String(error)));
+      },
+    );
+  });
+}
 
 function getNativeNotifications() {
   if (Platform.OS === "web") {
@@ -228,15 +253,25 @@ async function ensureWebPushSubscription(userId?: string | null): Promise<Remind
     return { enabled: false, reason: "service-worker-unavailable" };
   }
 
+  const { serviceWorker } = globals;
+
   try {
-    const registration = await globals.serviceWorker.ready;
-    const existingSubscription = await registration.pushManager.getSubscription();
-    const subscription =
-      existingSubscription ??
-      (await registration.pushManager.subscribe({
-        applicationServerKey: urlBase64ToUint8Array(appEnv.webPushVapidPublicKey),
-        userVisibleOnly: true,
-      }));
+    // The permission prompt above is deliberately NOT under this deadline (it
+    // legitimately waits on the user); the ready/subscribe chain is.
+    const subscription = await withTimeout(
+      (async () => {
+        const registration = await serviceWorker.ready;
+        const existingSubscription = await registration.pushManager.getSubscription();
+        return (
+          existingSubscription ??
+          (await registration.pushManager.subscribe({
+            applicationServerKey: urlBase64ToUint8Array(appEnv.webPushVapidPublicKey),
+            userVisibleOnly: true,
+          }))
+        );
+      })(),
+      WEB_PUSH_SUBSCRIBE_TIMEOUT_MS,
+    );
     const payload = getSubscriptionJson(subscription);
 
     if (!payload) {
@@ -245,8 +280,11 @@ async function ensureWebPushSubscription(userId?: string | null): Promise<Remind
 
     await upsertWebPushSubscription(userId, payload);
     return { enabled: true };
-  } catch {
-    return { enabled: false, reason: "subscription-failed" };
+  } catch (error) {
+    return {
+      enabled: false,
+      reason: error instanceof WebPushTimeoutError ? "timeout" : "subscription-failed",
+    };
   }
 }
 

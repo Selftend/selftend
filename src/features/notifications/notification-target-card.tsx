@@ -26,6 +26,7 @@ import {
   cancelReminder,
   getReminderTimeZone,
   scheduleReminder,
+  type ReminderScheduleFailureReason,
   type ReminderTarget,
 } from "@/src/lib/notifications";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -69,6 +70,11 @@ export function NotificationTargetCard({
   const [enabled, setEnabled] = useState(initialEnabled);
   const [time, setTime] = useState<TimeOfDay>({ hour: initialHour, minute: initialMinute });
   const [errorMessage, setErrorMessage] = useState("");
+  // Local in-flight flag rather than updatePreferences.isPending: the slow part
+  // of a save is scheduleReminder (browser permission prompt + push
+  // subscription), which runs BEFORE the mutation - isPending alone leaves the
+  // button live and silent exactly while the save can hang (#473).
+  const [isSaving, setIsSaving] = useState(false);
 
   // Re-sync the local controls whenever the server-backed values change
   // (render-time adjustment).
@@ -90,10 +96,22 @@ export function NotificationTargetCard({
   const masterDisabled = !globalEnabled || isPlaceholder;
   const controlsDisabled = masterDisabled || !enabled;
 
+  function scheduleFailureMessage(reason: ReminderScheduleFailureReason) {
+    // Every reason slug has a translated entry; the raw slug never reaches the UI.
+    return t(`saveErrors.${reason}`);
+  }
+
   async function handleSave() {
-    if (!userId || isPlaceholder || !target.enabledField) return;
+    if (isSaving) return;
+    if (!userId || isPlaceholder || !target.enabledField) {
+      // Nothing can be saved in this state (signed out, or a placeholder
+      // target) - say so instead of silently ignoring the tap.
+      showToast({ title: t("feedback.problem"), tone: "error" });
+      return;
+    }
     const enabledField = target.enabledField;
 
+    setIsSaving(true);
     setErrorMessage("");
 
     const { hour, minute } = clampTime(time);
@@ -116,9 +134,9 @@ export function NotificationTargetCard({
             patch[enabledField] = false;
             setEnabled(false);
             await updatePreferences.mutateAsync(patch);
-            const message = t("feedback.problem");
+            const message = scheduleFailureMessage(result.reason);
             setErrorMessage(message);
-            showToast({ title: message, description: result.reason, tone: "error" });
+            showToast({ title: t("feedback.problem"), description: message, tone: "error" });
             return;
           }
           reminderConsent = true;
@@ -138,10 +156,14 @@ export function NotificationTargetCard({
         description: t(target.labelKey),
         tone: "success",
       });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t("feedback.problem");
+    } catch {
+      // The thrown message is a backend/internal string - show translated copy
+      // only (i18n rule).
+      const message = t("feedback.problem");
       setErrorMessage(message);
-      showToast({ title: t("feedback.problem"), description: message, tone: "error" });
+      showToast({ title: message, tone: "error" });
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -202,12 +224,9 @@ export function NotificationTargetCard({
                   accessibilityLabel={t("time.label")}
                 />
               </View>
-              <Button
-                disabled={masterDisabled || updatePreferences.isPending}
-                onPress={() => void handleSave()}
-              >
-                {updatePreferences.isPending ? <ActivityIndicator color="#ffffff" /> : null}
-                <Text>{updatePreferences.isPending ? t("actions.saving") : t("actions.save")}</Text>
+              <Button disabled={masterDisabled || isSaving} onPress={() => void handleSave()}>
+                {isSaving ? <ActivityIndicator color="#ffffff" /> : null}
+                <Text>{isSaving ? t("actions.saving") : t("actions.save")}</Text>
               </Button>
               {errorMessage ? (
                 <Text className="text-sm text-destructive">{errorMessage}</Text>
