@@ -54,13 +54,13 @@ describe("ScreenBreadcrumb", () => {
       { label: "Entry" },
     ]);
     const { getByLabelText } = render(<ScreenBreadcrumb />);
-    fireEvent.press(getByLabelText("Back"));
+    fireEvent.press(getByLabelText("Go back"));
     expect(mockBackWithFallback).toHaveBeenCalledWith("/tools/gratitude-log");
   });
 
   it("hides the back button along with a hidden trail", () => {
     mockUseBreadcrumbs.mockReturnValue([{ label: "Home" }]);
     const { queryByLabelText } = render(<ScreenBreadcrumb />);
-    expect(queryByLabelText("Back")).toBeNull();
+    expect(queryByLabelText("Go back")).toBeNull();
   });
 });
