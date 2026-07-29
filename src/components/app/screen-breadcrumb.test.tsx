@@ -2,16 +2,13 @@ import { fireEvent, render } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
-import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
 import i18n from "@/src/i18n";
 
-jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
+jest.mock("expo-router", () => ({ router: { push: jest.fn(), replace: jest.fn() } }));
 jest.mock("@/src/lib/use-breadcrumbs", () => ({ useBreadcrumbs: jest.fn() }));
-jest.mock("@/src/lib/back-with-fallback", () => ({ backWithFallback: jest.fn() }));
 
 const mockUseBreadcrumbs = useBreadcrumbs as jest.MockedFunction<typeof useBreadcrumbs>;
-const mockBackWithFallback = jest.mocked(backWithFallback);
 
 beforeAll(async () => {
   await i18n.changeLanguage("en");
@@ -45,9 +42,11 @@ describe("ScreenBreadcrumb", () => {
     expect(router.push).toHaveBeenCalledWith("/tools");
   });
 
-  // #495: every breadcrumb trail carries a back affordance - previous page
-  // when history exists, nearest ancestor crumb as the deep-link fallback.
-  it("renders a back button that backs out with the deepest ancestor as fallback", () => {
+  // #495, revised on owner decision (2026-07-29): the back affordance is
+  // STRUCTURAL - always one step up the trail (Material's "Up"), never
+  // history. Browser/system back covers history on every platform; this
+  // arrow's job is the deterministic single hop the trail promises.
+  it("renders a back button that climbs to the deepest ancestor crumb", () => {
     mockUseBreadcrumbs.mockReturnValue([
       { label: "Tools", href: "/tools" },
       { label: "Gratitude log", href: "/tools/gratitude-log" },
@@ -55,7 +54,7 @@ describe("ScreenBreadcrumb", () => {
     ]);
     const { getByLabelText } = render(<ScreenBreadcrumb />);
     fireEvent.press(getByLabelText("Go back"));
-    expect(mockBackWithFallback).toHaveBeenCalledWith("/tools/gratitude-log");
+    expect(router.replace).toHaveBeenCalledWith("/tools/gratitude-log");
   });
 
   it("hides the back button along with a hidden trail", () => {

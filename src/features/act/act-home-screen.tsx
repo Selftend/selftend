@@ -1,7 +1,5 @@
 import { router, type Href } from "expo-router";
-import { Pressable, View } from "react-native";
-import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
-import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -120,11 +118,6 @@ const PILLARS: PillarDef[] = [
 
 export default function ActHomeScreen() {
   const roomStyle = useRoomStyle("act");
-  // Scroll position feeding the field parallax (#492).
-  const scrollY = useSharedValue(0);
-  const onFieldScroll = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
-  });
   const { t } = useTranslation("act");
   const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
@@ -174,18 +167,13 @@ export default function ActHomeScreen() {
         edges={["bottom", "left", "right"]}
         style={roomStyle}
       >
-        <AnimatedScrollView
-          contentContainerClassName="grow p-4"
-          onScroll={onFieldScroll}
-          scrollEventThrottle={16}
-        >
+        <ScrollView contentContainerClassName="grow p-4">
           {/* The field + sheet escape the scroll padding so the act field runs
               edge to edge (Wave C homes-get-fields, #493); the sheet re-adds
               the inset for its sections. */}
           <View className="-mx-4 -mt-4">
             <ModuleHomeHeader
               variant="field"
-              fieldParallax={scrollY}
               addWidgetCategory="act"
               hue="act"
               icon="explore"
@@ -317,7 +305,7 @@ export default function ActHomeScreen() {
               </View>
             </ContentSheet>
           </View>
-        </AnimatedScrollView>
+        </ScrollView>
       </SafeAreaView>
     </>
   );

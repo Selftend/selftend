@@ -1,8 +1,6 @@
 import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { View } from "react-native";
-import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
-import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -28,12 +26,6 @@ import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function JournalListScreen() {
-  // Scroll position feeding the field parallax (#492).
-  const scrollY = useSharedValue(0);
-  const onFieldScroll = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
-  });
-
   const { t } = useTranslation("journal");
   const { t: tc } = useTranslation("common");
   const { user } = useSession();
@@ -96,17 +88,12 @@ export default function JournalListScreen() {
         edges={["bottom", "left", "right"]}
         style={roomStyle}
       >
-        <AnimatedScrollView
-          contentContainerClassName="grow p-4"
-          onScroll={onFieldScroll}
-          scrollEventThrottle={16}
-        >
+        <ScrollView contentContainerClassName="grow p-4">
           {/* The field + sheet escape the scroll padding so the ink field runs
               edge to edge; the sheet re-adds the inset for its sections. */}
           <View className="-mx-4 -mt-4">
             <ModuleHomeHeader
               variant="field"
-              fieldParallax={scrollY}
               addWidgetCategory="journal"
               hue="ink"
               icon="edit-note"
@@ -175,7 +162,7 @@ export default function JournalListScreen() {
               </View>
             </ContentSheet>
           </View>
-        </AnimatedScrollView>
+        </ScrollView>
       </SafeAreaView>
     </>
   );

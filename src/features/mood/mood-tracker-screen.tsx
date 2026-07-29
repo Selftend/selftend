@@ -1,12 +1,6 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import {
-  View,
-  type LayoutChangeEvent,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from "react-native";
-import { useSharedValue } from "react-native-reanimated";
+import { View, type LayoutChangeEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -59,13 +53,6 @@ const PRESET_DAYS: Record<Exclude<TrendRange, "custom">, number> = {
 };
 
 export default function MoodTrackerScreen() {
-  // Scroll position feeding the field parallax (#492). The SectionList is a
-  // plain RN list, so a JS-thread handler writes the shared value; the header
-  // consumes it on the UI thread.
-  const scrollY = useSharedValue(0);
-  const onFieldScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollY.value = event.nativeEvent.contentOffset.y;
-  };
   const { t, i18n } = useTranslation("mood");
   const roomStyle = useRoomStyle("be");
   const { user } = useSession();
@@ -178,7 +165,6 @@ export default function MoodTrackerScreen() {
       >
         <MoodHistoryList
           logs={history}
-          onScroll={onFieldScroll}
           ListHeaderComponent={
             // The field + sheet escape the list's 16px content padding so the
             // rose field runs edge to edge; the sheet re-adds the inset for
@@ -186,7 +172,6 @@ export default function MoodTrackerScreen() {
             <View className="-mx-4 -mt-4">
               <ModuleHomeHeader
                 variant="field"
-                fieldParallax={scrollY}
                 addWidgetCategory="mood"
                 title={t("title")}
                 hue="be"
