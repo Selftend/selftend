@@ -68,7 +68,11 @@ const persistOptions = persister
       // rather than sharing shape5: thought records shipped first, so anyone who
       // updated between the two holds a shape5 cache that already satisfies the
       // buster but predates these two keys.
-      buster: `${Constants.expoConfig?.version ?? "0"}-shape6`,
+      // shape7: user preferences gained emailVerified (#489). A restored
+      // pre-shape7 preferences row lacks the key, the banner reads undefined
+      // as unverified, and an offline verified user cannot clear it until a
+      // refetch lands - so the stale cache is discarded instead.
+      buster: `${Constants.expoConfig?.version ?? "0"}-shape7`,
       dehydrateOptions: {
         shouldDehydrateQuery: (query: { state: { status: string } }) =>
           query.state.status === "success",

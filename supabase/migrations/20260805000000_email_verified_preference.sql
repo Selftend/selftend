@@ -8,10 +8,11 @@
 --
 -- Backfill: every auth user confirmed before this migration verified their
 -- mailbox under the old wall (email link) or arrived via OAuth (provider-
--- verified), so their preference rows start true. Users without a
--- preferences row get one on their next preferences write (upsert), where
--- the column defaults false - correct, because a row-less confirmed user
--- can only exist pre-flip, and the flip's release step confirms everyone.
+-- verified), so they start true. Upsert, not update: a confirmed user who
+-- left before consent/onboarding created a preferences row would otherwise
+-- come back to a fresh default-false row and be asked to verify again
+-- (Codex P2 on the PR). The inserted row carries defaults everywhere else,
+-- which the app treats exactly like no row at all.
 --
 -- export_user_data is redeclared with the one new column added to the main
 -- preferences projection. Rebuilt from 20260804000000, the newest
@@ -23,11 +24,11 @@
 alter table public.user_preferences
   add column email_verified boolean not null default false;
 
-update public.user_preferences up
-set email_verified = true
+insert into public.user_preferences (user_id, email_verified)
+select u.id, true
 from auth.users u
-where up.user_id = u.id
-  and u.email_confirmed_at is not null;
+where u.email_confirmed_at is not null
+on conflict (user_id) do update set email_verified = true;
 
 
 create or replace function public.export_user_data()
