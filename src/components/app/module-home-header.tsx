@@ -73,8 +73,21 @@ interface ModuleHomeHeaderProps {
   tourScope?: string;
 }
 
-const PARALLAX_FACTOR = 0.4; // gradient net speed = 1 - factor = 0.6x scroll
-const PARALLAX_OVERDRAW = 160; // px the gradient extends beyond the field's top
+export const PARALLAX_FACTOR = 0.4; // gradient net speed = 1 - factor = 0.6x scroll
+export const PARALLAX_OVERDRAW = 160; // px the gradient extends beyond the field's top
+
+/**
+ * The field-gradient translation for a given scroll offset (#492), extracted
+ * so the maths is testable outside the reanimated worklet: 0.4x the scroll,
+ * never negative (overscroll bounce keeps the gradient pinned), capped at the
+ * overdraw so the gradient's pre-extended top edge is never outrun, and 0
+ * outright under a reduced-motion preference.
+ */
+export function fieldParallaxTranslateY(scrollY: number, reducedMotion: boolean): number {
+  "worklet";
+  if (reducedMotion) return 0;
+  return Math.min(Math.max(0, scrollY) * PARALLAX_FACTOR, PARALLAX_OVERDRAW);
+}
 
 // RN-core reduce-motion read (reanimated's useReducedMotion is absent from the
 // jest mock; AccessibilityInfo works on native AND web, where it reads the
@@ -131,10 +144,10 @@ export function ModuleHomeHeader({
   // A reduced-motion preference pins the gradient still (#492).
   const reducedMotion = useReduceMotionPreference();
   const parallaxStyle = useAnimatedStyle(() => {
-    if (fieldParallax === undefined || reducedMotion) return { transform: [{ translateY: 0 }] };
-    // Only downward scroll parallaxes; overscroll bounce keeps the gradient pinned.
-    const y = Math.max(0, fieldParallax.value);
-    return { transform: [{ translateY: Math.min(y * PARALLAX_FACTOR, PARALLAX_OVERDRAW) }] };
+    if (fieldParallax === undefined) return { transform: [{ translateY: 0 }] };
+    return {
+      transform: [{ translateY: fieldParallaxTranslateY(fieldParallax.value, reducedMotion) }],
+    };
   });
   const heroMode = hue != null && icon != null;
 
