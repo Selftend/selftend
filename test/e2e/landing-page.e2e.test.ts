@@ -50,3 +50,36 @@ test.describe("landing page (signed out)", () => {
     });
   });
 });
+
+// The Android mobile-web download bar (#388 section 4): UA-gated, public
+// routes only, forever-dismissible. Desktop must never see it; an Android
+// browser sees it until dismissed, and the dismissal survives a reload.
+test.describe("Android download bar", () => {
+  test("desktop UA never sees the bar", async ({ page }) => {
+    await page.goto("/");
+    await dismissCookieBanner(page);
+    await expect(page.getByText("Selftend is on Google Play.")).toHaveCount(0);
+  });
+
+  test.describe("Android UA", () => {
+    test.use({
+      userAgent:
+        "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36",
+    });
+
+    test("shows the bar on the landing and dismissal survives reload", async ({ page }) => {
+      await page.goto("/");
+      await dismissCookieBanner(page);
+      await expect(page.getByText("Selftend is on Google Play.")).toBeVisible({
+        timeout: 10_000,
+      });
+
+      await page.getByRole("button", { name: "Dismiss", exact: true }).last().click();
+      await expect(page.getByText("Selftend is on Google Play.")).toBeHidden();
+
+      await page.reload();
+      await dismissCookieBanner(page);
+      await expect(page.getByText("Selftend is on Google Play.")).toHaveCount(0);
+    });
+  });
+});

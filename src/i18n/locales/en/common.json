@@ -37,5 +37,16 @@
     "description": "Selftend is for guided self-help when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders.",
     "openCrisis": "Open crisis guidance",
     "barLabel": "Not for emergencies · Crisis resources"
+  },
+  "updateBanner": {
+    "message": "A newer version of Selftend is available.",
+    "actionWeb": "Refresh",
+    "actionNative": "Open Google Play",
+    "dismiss": "Dismiss"
+  },
+  "downloadBar": {
+    "message": "Selftend is on Google Play.",
+    "action": "Get the app",
+    "dismiss": "Dismiss"
   }
 }

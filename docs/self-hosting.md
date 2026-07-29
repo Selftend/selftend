@@ -108,7 +108,7 @@ EXPO_PUBLIC_DISCORD_URL=<your-discord-invite-url>
 
 Error monitoring (Sentry): leave `EXPO_PUBLIC_SENTRY_DSN` unset to disable crash reporting entirely, or set it to a DSN from your own Sentry organization or a self-hosted GlitchTip instance (GlitchTip is Sentry-protocol-compatible). The maintainer's hosted build uses Sentry SaaS; self-hosters are not required to use it.
 
-Store links (web only): `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` are shown on web surfaces. Leave either empty until the corresponding app listing is published; an empty value shows a "Coming soon" chip instead of a link.
+Store links: `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` are shown on web surfaces; the Play URL additionally drives the Android mobile-web download bar and the native update offer. Leave both empty on a self-hosted fork - your build is not on our listings. Empty means the "Coming soon" chip, no download bar, and no native update offer; the web update banner still works because it reads `/version.json` from your own origin (write it in your deploy step, or skip it and the check stays silent).
 
 Discord: `EXPO_PUBLIC_DISCORD_URL` defaults in code to the maintainer's community server. Set it to your own invite URL, or set it to an empty string to hide all Discord UI - this is the documented self-hoster affordance for running without a Discord community.
 

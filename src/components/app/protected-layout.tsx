@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { OfflineBanner } from "@/src/components/app/offline-banner";
 import { VerifyEmailBanner } from "@/src/components/app/verify-email-banner";
+import { UpdateBanner } from "@/src/components/app/update-banner";
 import { RoutineFab } from "@/src/components/app/routine-fab";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -161,6 +162,7 @@ export default function ProtectedLayout() {
         <View className="flex-1">
           <OfflineBanner />
           <VerifyEmailBanner />
+          <UpdateBanner />
           <Stack
             screenOptions={{
               headerShown: false,

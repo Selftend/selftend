@@ -28,5 +28,10 @@
 /selftend-push-worker.js
   Cache-Control: no-cache
 
+# The update surface's version document (#388): must never be cached stale or
+# the "new version available" offer lags a whole cache lifetime behind.
+/version.json
+  Cache-Control: no-cache
+
 /manifest.webmanifest
   Content-Type: application/manifest+json
