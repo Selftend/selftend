@@ -1094,7 +1094,8 @@
     "archiveError": "Unable to archive the record.",
     "expandedTitle": "Additional reflection",
     "expandedDescription": "This record includes optional evidence or intensity notes.",
-    "intensityShift": "Intensity {{before}} -> {{after}} (shift {{shift}})."
+    "intensityShift": "Intensity {{before}} -> {{after}} (shift {{shift}}).",
+    "archiveConfirmMessage": "The record will be removed from your history. This can't be undone in the app."
   },
   "emotions": {
     "groupDifficult": "Difficult feelings",
