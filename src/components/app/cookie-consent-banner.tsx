@@ -74,7 +74,7 @@ function CookiePreferencesPanel({ onDone }: CookiePreferencesPanelProps) {
   };
 
   return (
-    <View className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background p-4 shadow-lg">
+    <View className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background p-4 shadow-lg dark:shadow-none">
       <View className="mx-auto w-full max-w-2xl">
         <Card>
           <CardHeader>
