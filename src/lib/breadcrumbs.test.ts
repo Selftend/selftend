@@ -11,6 +11,7 @@ const LABELS: Record<string, string> = {
   "breadcrumb.entry": "Entry",
   "sidebar.gratitudeLog": "Gratitude log",
   "breadcrumb.history": "History",
+  "breadcrumb.favorites": "Favorites",
   "sidebar.routines": "Routines",
   "breadcrumb.edit": "Edit",
 };
@@ -43,6 +44,14 @@ describe("computeBreadcrumbs", () => {
   it("labels the gratitude entries list as History, not a generic entry", () => {
     const crumbs = computeBreadcrumbs("/tools/gratitude-log/entries", t);
     expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "History"]);
+    expect(crumbs[2].href).toBeUndefined();
+  });
+
+  // #468 sweep: the favorites page fell through to the dynamic-segment branch
+  // and read "Tools · Gratitude log · Entry".
+  it("labels the gratitude favorites page as Favorites, not a generic entry", () => {
+    const crumbs = computeBreadcrumbs("/tools/gratitude-log/favorites", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "Favorites"]);
     expect(crumbs[2].href).toBeUndefined();
   });
 });

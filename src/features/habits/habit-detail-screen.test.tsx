@@ -203,11 +203,20 @@ describe("HabitDetailScreen behavior", () => {
     mockDefaults();
   });
 
-  it("toggles a calendar day tick for today", () => {
+  it("toggles a calendar day tick for today (announced as a human date, not the raw key)", () => {
     renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
     const today = currentDateKey();
-    fireEvent.press(screen.getByRole("checkbox", { name: today }));
+    // The accessible name is the formatted date - screen readers should never
+    // hear the raw "YYYY-MM-DD" day key.
+    const todayLabel = new Intl.DateTimeFormat("en", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(new Date());
+    expect(screen.queryByRole("checkbox", { name: today })).toBeNull();
+    fireEvent.press(screen.getByRole("checkbox", { name: todayLabel }));
 
     expect(toggleMutate).toHaveBeenCalledWith({ habitId: "h-1", loggedOn: today });
   });

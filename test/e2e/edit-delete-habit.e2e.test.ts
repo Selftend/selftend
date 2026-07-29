@@ -24,10 +24,16 @@ test.describe("edit and delete a habit", () => {
     await expect(page).toHaveURL(/\/tools\/habits\/[^/]+$/, { timeout: 15_000 });
 
     // --- TOGGLE TODAY'S COMPLETION ---
-    // The calendar strip shows today's day cell. Today's cell has accessibilityLabel = today's
-    // date string (YYYY-MM-DD), role="checkbox", and starts unticked. Click it to tick.
-    const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
-    const todayCell = page.getByRole("checkbox", { name: todayStr, exact: true });
+    // The calendar strip shows today's day cell. Its accessible name is the
+    // locale-formatted date (screen readers no longer hear the raw YYYY-MM-DD
+    // key - #468), role="checkbox", and it starts unticked. Click it to tick.
+    const todayLabel = new Intl.DateTimeFormat("en", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(new Date());
+    const todayCell = page.getByRole("checkbox", { name: todayLabel, exact: true });
     await expect(todayCell).toBeVisible({ timeout: 10_000 });
     // Assert the cell starts unticked before clicking (aria-checked comes from the
     // aria-checked prop, which react-native-web forwards to the DOM).
