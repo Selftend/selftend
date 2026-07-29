@@ -10,6 +10,7 @@ import {
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
+import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import Sortable from "react-native-sortables";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
@@ -222,7 +223,7 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
             </Pressable>
           </View>
 
-          <Animated.ScrollView ref={scrollableRef} contentContainerClassName="p-4 gap-2 pb-8">
+          <AnimatedScrollView ref={scrollableRef} contentContainerClassName="p-4 gap-2 pb-8">
             {isLoading ? (
               <View className="items-center py-8">
                 <ActivityIndicator />
@@ -250,7 +251,7 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
               <Icon name="add" className="size-4" />
               <Text>{t("emotions.manage.addButton")}</Text>
             </Button>
-          </Animated.ScrollView>
+          </AnimatedScrollView>
         </View>
 
         {editorState ? (

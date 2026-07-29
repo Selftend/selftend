@@ -1,6 +1,7 @@
 import { router, type Href } from "expo-router";
 import { Pressable, View } from "react-native";
 import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
+import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -173,7 +174,7 @@ export default function ActHomeScreen() {
         edges={["bottom", "left", "right"]}
         style={roomStyle}
       >
-        <Animated.ScrollView
+        <AnimatedScrollView
           contentContainerClassName="grow p-4"
           onScroll={onFieldScroll}
           scrollEventThrottle={16}
@@ -316,7 +317,7 @@ export default function ActHomeScreen() {
               </View>
             </ContentSheet>
           </View>
-        </Animated.ScrollView>
+        </AnimatedScrollView>
       </SafeAreaView>
     </>
   );

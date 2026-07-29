@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { Pressable, View } from "react-native";
 import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
+import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,7 +9,6 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ContentSheet } from "@/src/components/app/content-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { useGoals } from "@/src/features/goals/queries";
@@ -31,7 +31,6 @@ import { RecentThoughtRecord } from "@/src/features/cbt/cbt-home/recent-thought-
 
 export default function CbtHomeScreen() {
   const { t } = useTranslation("cbt");
-  const roomStyle = useRoomStyle("think");
   // Scroll position feeding the field parallax (#492).
   const scrollY = useSharedValue(0);
   const onFieldScroll = useAnimatedScrollHandler((event) => {
@@ -93,25 +92,24 @@ export default function CbtHomeScreen() {
         visible={forceOnboarding}
       />
       <AdvancedToolInfoModals active={activeToolInfo} onClose={() => setActiveToolInfo(null)} />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
-        <Animated.ScrollView
+      {/* No room pour (#500, owner decision): the CBT home wears the app's
+          default violet surfaces - the default theme IS the violet room - and
+          its field matches the sidebar's CBT accent via the primary pour. */}
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+        <AnimatedScrollView
           contentContainerClassName="grow p-4"
           onScroll={onFieldScroll}
           scrollEventThrottle={16}
         >
-          {/* The field + sheet escape the scroll padding so the think field
-              runs edge to edge (Wave C homes-get-fields, #493); the sheet
-              re-adds the inset for its sections. */}
+          {/* The field + sheet escape the scroll padding so the violet field
+              runs edge to edge (Wave C homes-get-fields, #493/#500); the
+              sheet re-adds the inset for its sections. */}
           <View className="-mx-4 -mt-4">
             <ModuleHomeHeader
               variant="field"
               fieldParallax={scrollY}
               addWidgetCategory="cbt"
-              hue="think"
+              hue="primary"
               icon="psychology"
               moduleLabel={t("common:beta")}
               title={t("fullTitle")}
@@ -172,7 +170,7 @@ export default function CbtHomeScreen() {
               </View>
             </ContentSheet>
           </View>
-        </Animated.ScrollView>
+        </AnimatedScrollView>
       </SafeAreaView>
     </>
   );

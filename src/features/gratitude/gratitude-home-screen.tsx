@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
+import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
@@ -129,7 +130,7 @@ export default function GratitudeHomeScreen() {
         edges={["bottom", "left", "right"]}
         style={roomStyle}
       >
-        <Animated.ScrollView
+        <AnimatedScrollView
           contentContainerClassName="grow p-4"
           onScroll={onFieldScroll}
           scrollEventThrottle={16}
@@ -275,7 +276,7 @@ export default function GratitudeHomeScreen() {
               </View>
             </ContentSheet>
           </View>
-        </Animated.ScrollView>
+        </AnimatedScrollView>
       </SafeAreaView>
     </>
   );

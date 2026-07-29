@@ -219,7 +219,7 @@ describe("CbtHomeScreen onboarding", () => {
     expect(screen.getByText("Be")).toBeTruthy();
   });
 
-  it("renders full title on the think field with no book credit (#493, #494)", () => {
+  it("renders full title on the primary-violet field with no book credit (#493, #494, #500)", () => {
     mockUseUserPreferences.mockReturnValue({
       data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
       isLoading: false,

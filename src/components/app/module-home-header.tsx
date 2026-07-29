@@ -41,7 +41,8 @@ const buttonStyle: ViewStyle = {
 interface ModuleHomeHeaderProps {
   title: string;
   actions?: readonly HeaderAction[];
-  hue?: ToolHue;
+  /** The field/chip hue. `"primary"` pours the field from the app violet (#500). */
+  hue?: ToolHue | "primary";
   icon?: MaterialIconName;
   description?: string;
   meta?: ReactNode;
