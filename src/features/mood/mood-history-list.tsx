@@ -1,5 +1,5 @@
 import { useMemo, type ReactElement } from "react";
-import { SectionList, View } from "react-native";
+import { SectionList, View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -14,9 +14,11 @@ interface MoodHistoryListProps {
   // SectionList can be the scroll root (a SectionList nested in a ScrollView can't
   // virtualize). Off-screen rows are now recycled instead of all mounting at once.
   ListHeaderComponent?: ReactElement;
+  /** Forwarded to the SectionList so the screen can feed the field parallax (#492). */
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }
 
-export function MoodHistoryList({ logs, ListHeaderComponent }: MoodHistoryListProps) {
+export function MoodHistoryList({ logs, ListHeaderComponent, onScroll }: MoodHistoryListProps) {
   const { t } = useTranslation("mood");
   // One emotion-preferences query + one lookup map for the whole list (was one per card).
   const { resolveEmotion } = useEmotionDisplay();
@@ -36,6 +38,8 @@ export function MoodHistoryList({ logs, ListHeaderComponent }: MoodHistoryListPr
       sections={sections}
       keyExtractor={(item) => item.id}
       ListHeaderComponent={ListHeaderComponent}
+      onScroll={onScroll}
+      scrollEventThrottle={16}
       ListEmptyComponent={<Text variant="muted">{t("history.empty")}</Text>}
       // SectionList is NOT cssInterop-registered by NativeWind (only ScrollView,
       // FlatList, and VirtualizedList are), so `contentContainerClassName` is

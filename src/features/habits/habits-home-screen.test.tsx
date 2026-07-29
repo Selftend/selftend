@@ -138,7 +138,7 @@ describe("HabitsHomeScreen act room", () => {
     mockDefaults();
   });
 
-  it("renders the act field header with stats, eyebrow, and empty-state subline on the room pour", async () => {
+  it("renders the act field header with stats, and empty-state subline on the room pour", async () => {
     renderWithProviders(<HabitsHomeScreen />);
 
     expect(await screen.findByRole("heading", { name: "Habits" })).toBeTruthy();
@@ -148,7 +148,8 @@ describe("HabitsHomeScreen act room", () => {
     // Both existing stats and the author credit migrate onto the field.
     expect(screen.getByText("0/1")).toBeTruthy();
     expect(screen.getByText("1 active habit")).toBeTruthy();
-    expect(screen.getByText("Inspired by Atomic Habits · James Clear")).toBeTruthy();
+    // Book credits were scrubbed app-wide (#494).
+    expect(screen.queryByText(/Inspired by/)).toBeNull();
     // Calm muted subline when nothing is ticked - never a shame state.
     expect(screen.getByText("No ticks yet")).toBeTruthy();
   });

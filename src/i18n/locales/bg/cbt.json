@@ -3,7 +3,6 @@
     "label": "КПТ"
   },
   "fullTitle": "Когнитивно-поведенческа терапия",
-  "authorEyebrow": "Вдъхновено от CBT Toolbox на Сет Гилихан · The Think CBT Workbook",
   "home": {
     "title": "КПТ",
     "description": "Фокусирана КПТ секция, изградена около записи на мисли, осъзнаване на изкривявания и спокоен преглед.",
@@ -639,7 +638,6 @@
       "tableRow3Condition": "Депресия",
       "tableRow3Feature": "Негативен филтър",
       "tableRow3Focus": "Поведенческа активация и когнитивно преструктуриране",
-      "attribution": "Тази секция е вдъхновена от Cognitive Behavioral Therapy Made Simple от Сет Дж. Гилихан PhD.",
       "continue": "Разбрах"
     }
   },
@@ -1213,7 +1211,6 @@
   "grounding": {
     "title": "Заземяване",
     "description": "Бързи техники за закрепване в настоящия момент, когато тревожността или стресът се засили.",
-    "authorEyebrow": "Вдъхновено от толерантността към стрес в DBT · Марша Линехан",
     "hero": {
       "techniques_one": "{{count}} техника",
       "techniques_other": "{{count}} техники",
