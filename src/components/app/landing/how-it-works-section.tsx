@@ -30,7 +30,7 @@ export function HowItWorksSection() {
         {steps.map((step) => (
           <View
             key={step.n}
-            className="flex-1 gap-2 rounded-xl border border-border bg-card p-5 shadow-sm shadow-black/5"
+            className="flex-1 gap-2 rounded-xl border border-border bg-card p-5 shadow-sm shadow-black/5 dark:shadow-none"
           >
             <Text className="text-2xl font-extrabold tracking-tight text-primary/45">{step.n}</Text>
             <Text className="text-[15.5px] font-semibold">{step.title}</Text>

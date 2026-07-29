@@ -64,9 +64,17 @@ function Card({ className, spine, tint, variant = "default", children, ...props 
       <View
         className={cn(
           "bg-card relative flex flex-col gap-6 overflow-hidden py-6",
+          // Dark elevation comes from the surface color alone: drop shadows on
+          // dark read as smudges against the near-black background (#488).
           soft
-            ? cn("rounded-3xl shadow-lg", tint ? SOFT_SHADOW[tint] : "shadow-black/10")
-            : cn("border-border rounded-xl border shadow-sm shadow-black/5", tint && TINT_BG[tint]),
+            ? cn(
+                "rounded-3xl shadow-lg dark:shadow-none",
+                tint ? SOFT_SHADOW[tint] : "shadow-black/10",
+              )
+            : cn(
+                "border-border rounded-xl border shadow-sm shadow-black/5 dark:shadow-none",
+                tint && TINT_BG[tint],
+              ),
           className,
         )}
         {...props}

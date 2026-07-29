@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, usePathname } from "expo-router";
 import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import * as React from "react";
 import { Pressable, View } from "react-native";
@@ -38,6 +38,17 @@ const THEME_ICONS: Record<ThemePreference, MaterialIconName> = {
 export function UserMenu() {
   const { t } = useTranslation("navigation");
   const popoverTriggerRef = React.useRef<TriggerRef>(null);
+  // The menu lives in the header, which persists across routes - navigating
+  // via a sidebar/breadcrumb link left it hanging open over the new screen
+  // (#491). Any route change dismisses it.
+  const pathname = usePathname();
+  const prevPathname = React.useRef(pathname);
+  React.useEffect(() => {
+    if (prevPathname.current !== pathname) {
+      prevPathname.current = pathname;
+      popoverTriggerRef.current?.close();
+    }
+  }, [pathname]);
   const { session, user } = useSession();
   const isSignedIn = Boolean(session);
   const { data: profile } = useUserProfile(user);

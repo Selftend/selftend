@@ -29,8 +29,9 @@ describe("HabitsLearnIndexScreen", () => {
     const { UNSAFE_getByType } = renderWithProviders(<HabitsLearnIndexScreen />);
 
     expect(screen.getByRole("heading", { name: "Habit building - core ideas" })).toBeTruthy();
-    // One card row per entry in the source-of-truth list.
-    expect(screen.getAllByRole("button")).toHaveLength(HABITS_LEARN_CARDS.length);
+    // One card row per entry in the source-of-truth list, plus the breadcrumb
+    // back button (#495).
+    expect(screen.getAllByRole("button")).toHaveLength(HABITS_LEARN_CARDS.length + 1);
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the act room re-pour; a wrong or missing room fails here.
     expectRoomPour(UNSAFE_getByType(SafeAreaView), "act");

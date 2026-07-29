@@ -482,7 +482,8 @@
     "onboarding": "Въвеждане",
     "edit": "Редактиране",
     "log": "Запис",
-    "favorites": "Любими"
+    "favorites": "Любими",
+    "back": "Върни се"
   },
   "modulesPage": {
     "title": "Модули",

@@ -57,7 +57,7 @@ export function AppToast() {
         onPress={dismissToast}
         role="button"
       >
-        <Card className={cn("gap-0 py-4 shadow-md", toneClasses[toast.tone])}>
+        <Card className={cn("gap-0 py-4 shadow-md dark:shadow-none", toneClasses[toast.tone])}>
           <CardHeader className="gap-1 px-4">
             <CardTitle>{toast.title}</CardTitle>
             {toast.description ? <CardDescription>{toast.description}</CardDescription> : null}

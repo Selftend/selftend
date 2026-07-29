@@ -7,8 +7,10 @@ import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+let mockPathname = "/";
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
+  usePathname: () => mockPathname,
 }));
 
 // The native overlay warns when react-test-renderer is not attached to a real iOS
@@ -49,10 +51,25 @@ const originalDiscordUrl = appEnv.discordUrl;
 afterEach(() => {
   Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
   appEnv.discordUrl = originalDiscordUrl;
+  mockPathname = "/";
   jest.clearAllMocks();
 });
 
 describe("UserMenu", () => {
+  // The header (and this menu) persists across routes: navigating from a
+  // sidebar link used to leave the open menu hanging over the new screen (#491).
+  it("closes when the route changes", () => {
+    const { rerender } = renderWithProviders(<UserMenu />);
+
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+    expect(screen.getByText("Send feedback")).toBeTruthy();
+
+    mockPathname = "/routines";
+    rerender(<UserMenu />);
+
+    expect(screen.queryByText("Send feedback")).toBeNull();
+  });
+
   it("routes to the support page from Send feedback", () => {
     renderWithProviders(<UserMenu />);
 
