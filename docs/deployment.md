@@ -167,7 +167,9 @@ EXPO_PUBLIC_APP_STORE_URL
 EXPO_PUBLIC_DISCORD_URL
 ```
 
-`EXPO_PUBLIC_GITHUB_REPO_URL` is optional in app code because a default exists, but setting it in GitHub keeps the release environment explicit. `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` default to empty (showing a "Coming soon" chip), and `EXPO_PUBLIC_DISCORD_URL` defaults to the maintainer's Discord invite; set it to an empty string to hide all Discord UI.
+`EXPO_PUBLIC_GITHUB_REPO_URL` is optional in app code because a default exists, but setting it in GitHub keeps the release environment explicit. `EXPO_PUBLIC_PLAY_STORE_URL` is set to the live Play listing in the production and staging environments (and as a repo variable for the Android build); besides the store chip it also powers the Android mobile-web download bar and the native update offer. `EXPO_PUBLIC_APP_STORE_URL` stays empty until iOS ships ("Coming soon" chip). `EXPO_PUBLIC_DISCORD_URL` defaults to the maintainer's Discord invite; set it to an empty string to hide all Discord UI.
+
+Every web deploy also writes `dist/version.json` (`{version, publishedAt}` from `package.json`) after the export step, served with `Cache-Control: no-cache` via `public/_headers`. The app compares it against its running version: web offers a refresh, Android offers the Play listing once the document is older than a 24h grace window (Play review/CDN lag). All offers are quiet banners, dismissible per version.
 
 Required GitHub secrets (per Environment — `production` and `staging`):
 

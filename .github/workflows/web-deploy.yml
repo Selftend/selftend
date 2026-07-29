@@ -96,6 +96,14 @@ jobs:
       - name: Export web app
         run: npm run export:web
 
+      - name: Write version document
+        # The update surface's source of truth (#388 spec section 2): the
+        # deployed app version plus when it went out. publishedAt gates the
+        # native update offer behind a 24h grace window for Play review/CDN.
+        run: |
+          node -e "const v = require('./package.json').version; require('fs').writeFileSync('dist/version.json', JSON.stringify({ version: v, publishedAt: new Date().toISOString() }))"
+          cat dist/version.json
+
       - name: Mark staging as noindex
         # Staging is public but unlisted (decision #16): a dist-level _headers
         # file APPENDS X-Robots-Tag only on staging deploys - appended, never

@@ -37,5 +37,16 @@
     "description": "Selftend е за насочена самопомощ, когато има време и безопасност за размисъл. Това не е спешна подкрепа и не се наблюдава от кризисни специалисти.",
     "openCrisis": "Отвори кризисните насоки",
     "barLabel": "Не е за спешни случаи · Кризисни ресурси"
+  },
+  "updateBanner": {
+    "message": "Налична е по-нова версия на Selftend.",
+    "actionWeb": "Обнови",
+    "actionNative": "Отвори Google Play",
+    "dismiss": "Затвори"
+  },
+  "downloadBar": {
+    "message": "Selftend е в Google Play.",
+    "action": "Изтегли приложението",
+    "dismiss": "Затвори"
   }
 }
