@@ -1,5 +1,4 @@
 {
-  "authorEyebrow": "Inspired by Atomic Habits · James Clear",
   "cta": {
     "newHabit": "New habit",
     "addNote": "Add note",
@@ -29,7 +28,7 @@
     "todayHeading": "Today",
     "todayEmpty": "No habits scheduled for today.",
     "noHabitsTitle": "Start with one two-minute habit",
-    "noHabitsBody": "Atomic Habits suggests scaling new behaviors under two minutes. Pick something small - the goal is to cast a vote for the kind of person you want to become.",
+    "noHabitsBody": "Start with a version that takes under two minutes. Pick something small - the goal is to cast a vote for the kind of person you want to become.",
     "recentActivity": "Recent activity",
     "recentEmpty": "Ticks you make will appear here.",
     "weekStripLabel": "Last 7 days",
@@ -149,7 +148,7 @@
     "back": "Back",
     "welcome": {
       "title": "Small habits, remarkable results",
-      "subtitle": "Influenced by James Clear's Atomic Habits.",
+      "subtitle": "Small habits, built to stick.",
       "compoundingTitle": "The 1% compounding effect",
       "compoundingBody": "Improving by 1% a day compounds to ~37× better in a year. Drifting 1% worse a day collapses toward zero. Small consistent actions - not heroic effort - move the curve.",
       "systemsTitle": "Systems over goals",
@@ -212,10 +211,10 @@
     }
   },
   "learn": {
-    "sectionLabel": "From the book",
+    "sectionLabel": "Core ideas",
     "dismiss": "Next card",
     "openHint": "Read more",
-    "indexTitle": "Atomic Habits - core ideas",
+    "indexTitle": "Habit building - core ideas",
     "indexSubtitle": "Ten short cards covering the framework. Read them in any order.",
     "backToHabits": "Back to habits",
     "cards": {

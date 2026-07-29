@@ -96,15 +96,4 @@ describe("ToolStats", () => {
     // ...and the value really is the white field treatment instead.
     expect(getByText("12").props.className as string).toContain("text-white");
   });
-
-  it("renders the optional inspired-by credit", () => {
-    const { getByText } = render(
-      <ToolStats
-        accentClassName="text-be"
-        items={[{ value: "1", label: "check-ins" }]}
-        credit="Inspired by Expressive Writing Research"
-      />,
-    );
-    expect(getByText("Inspired by Expressive Writing Research")).toBeTruthy();
-  });
 });

@@ -98,9 +98,6 @@ export function MeditationInfo({ visible, onComplete, onDismiss }: MeditationInf
             <Button onPress={onDismiss ?? onComplete}>
               <Text>{t("info.dismiss")}</Text>
             </Button>
-            <Text className="text-center text-xs text-muted-foreground">
-              {t("info.attribution")}
-            </Text>
           </View>
         </ScrollView>
       </SafeAreaView>
