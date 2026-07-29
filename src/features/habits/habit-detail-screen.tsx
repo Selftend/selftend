@@ -216,7 +216,17 @@ interface CalendarStripProps {
 }
 
 function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) {
-  const { t } = useTranslation("habits");
+  const { t, i18n } = useTranslation("habits");
+  // Screen readers were hearing the raw day key ("2026-07-29"); announce a
+  // human date instead. Habit days are viewer-local civil dates by design
+  // (logged_on stores the resolved date), so formatting `day` directly is the
+  // correct frame here.
+  const dayLabelFormat = new Intl.DateTimeFormat(i18n.language || undefined, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
   const totalDays = weeks * 7;
   const today = (() => {
     const d = new Date();
@@ -257,7 +267,7 @@ function CalendarStrip({ habit, logs, weeks, onToggleDay }: CalendarStripProps) 
             return (
               <Pressable
                 key={dayStr}
-                accessibilityLabel={dayStr}
+                accessibilityLabel={dayLabelFormat.format(day)}
                 accessibilityRole="checkbox"
                 aria-checked={ticked}
                 disabled={isFuture}
