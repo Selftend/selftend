@@ -36,9 +36,12 @@ describe("coreBeliefFormSchema", () => {
     ).toBe(false);
   });
 
-  it("rejects empty strings inside array fields", () => {
+  // Blank rows are legitimate while editing (the wizard defaults to [""] and
+  // Add item appends ""); the save path filters them out. Rejecting them made
+  // Continue silently refuse to advance whenever an empty row existed (#476).
+  it("accepts blank rows inside array fields", () => {
     expect(coreBeliefFormSchema.safeParse({ ...base, triggeringSituations: [""] }).success).toBe(
-      false,
+      true,
     );
   });
 });

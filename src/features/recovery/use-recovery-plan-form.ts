@@ -52,11 +52,9 @@ export function useRecoveryPlanForm({
   const strategyIntegrationNotes = useWatch({ control, name: "strategyIntegrationNotes" });
 
   const recoveryKeysField = useStringListField(form, "recoveryKeys", {
-    shouldDirty: true,
     keepAtLeastOne: true,
   });
   const maintenanceCommitmentsField = useStringListField(form, "maintenanceCommitments", {
-    shouldDirty: true,
     keepAtLeastOne: true,
   });
 

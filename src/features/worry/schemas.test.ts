@@ -60,9 +60,20 @@ describe("worryEntryFormSchema", () => {
     ).toBe(false);
   });
 
-  it("rejects empty entries inside evidence arrays", () => {
+  // Blank rows are legitimate while editing (the screen appends "" for a fresh
+  // row and filters blanks at save); requiring non-empty here made the whole
+  // submit fail silently the moment an empty row existed (#476).
+  it("accepts blank rows inside evidence arrays", () => {
     expect(worryEntryFormSchema.safeParse({ ...hypotheticalBase, evidenceFor: [""] }).success).toBe(
-      false,
+      true,
+    );
+  });
+
+  it("still requires a non-blank action step for a real problem", () => {
+    const result = worryEntryFormSchema.safeParse({ ...realBase, actionSteps: ["", "  "] });
+    expect(result.success).toBe(false);
+    expect(result.error!.issues.map((issue) => issue.message)).toContain(
+      "worry.validation.actionSteps",
     );
   });
 });
