@@ -3,7 +3,6 @@
     "label": "CBT"
   },
   "fullTitle": "Cognitive Behavioral Therapy",
-  "authorEyebrow": "Inspired by Seth Gillihan's CBT Toolbox · The Think CBT Workbook",
   "home": {
     "title": "CBT",
     "description": "A focused CBT section built around thought records, distortion awareness, and quiet review.",
@@ -639,7 +638,6 @@
       "tableRow3Condition": "Depression",
       "tableRow3Feature": "Negative Filter",
       "tableRow3Focus": "Behavioural activation and cognitive restructuring",
-      "attribution": "This section is inspired by Cognitive Behavioral Therapy Made Simple by Seth J. Gillihan PhD.",
       "continue": "Got it"
     }
   },
@@ -1213,7 +1211,6 @@
   "grounding": {
     "title": "Grounding",
     "description": "Quick techniques to anchor yourself in the present moment when anxiety or distress spikes.",
-    "authorEyebrow": "Inspired by DBT distress tolerance · Marsha Linehan",
     "hero": {
       "techniques_one": "{{count}} technique",
       "techniques_other": "{{count}} techniques",

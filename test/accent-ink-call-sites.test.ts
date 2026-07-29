@@ -27,12 +27,14 @@ import { sourceFiles, stripComments } from "@/test/source-scan";
 // 2. **Whether an area is a room decides which ink is even legal**, and the
 //    areas here answer that differently:
 //
-//    - `src/features/act` and `src/features/home` are not rooms. `act`'s room
-//      is `src/features/habits/` (see the header of test/chip-contrast.test.ts:
-//      "Every habit screen wears the act room"), and the home hub is not a room
-//      at all - it shows every module's hue side by side, so there is no single
-//      hue to pour. No file under either calls `useRoomStyle`, which the
-//      assertions below check rather than trust. So `--accent-ink` is never
+//    - `src/features/act` and `src/features/home` are not rooms - with one
+//      file-level exception since Wave C (#493): `act-home-screen.tsx` wears
+//      the act room. Beyond that screen, `act`'s room is `src/features/habits/`
+//      (see the header of test/chip-contrast.test.ts: "Every habit screen wears
+//      the act room"), and the home hub is not a room at all - it shows every
+//      module's hue side by side, so there is no single hue to pour. No *other*
+//      file under either calls `useRoomStyle`, which the assertions below check
+//      rather than trust. So outside ROOMED_HOMES `--accent-ink` is never
 //      poured and resolves to `--primary`: `text-accent-ink` in either area
 //      renders violet text on a green card, and the correct off-room class is
 //      `text-<hue>-ink`.
@@ -80,6 +82,20 @@ const CLASSIFIED_AREAS = [ACT_DIR, HOME_DIR, "src/components/app", "app"] as con
  * two breathing routes under `app/` are rooms. See rule 2 above.
  */
 const ROOMLESS_AREAS = [ACT_DIR, HOME_DIR] as const;
+
+/**
+ * The Wave-C exception (#493): the act and cbt module homes became rooms - the
+ * act home wears the act room, the cbt home wears think - so exactly these two
+ * files may call `useRoomStyle` and use room ink. Every *other* file in their
+ * directories stays off-room, which is why the room-less assertions exclude
+ * these files instead of dropping the directories wholesale: dropping the dirs
+ * would stop the suite seeing a `text-accent-ink` added to any of the twenty
+ * screens around them that still resolve it to `--primary`.
+ */
+const ROOMED_HOMES = [
+  "src/features/act/act-home-screen.tsx",
+  "src/features/cbt/cbt-home-screen.tsx",
+] as const;
 
 /**
  * A bare hue accent used as a color, in EITHER form the codebase writes it:
@@ -696,8 +712,12 @@ function findingsIn(pattern: RegExp, files: readonly string[]): Finding[] {
   });
 }
 
-function findings(pattern: RegExp, dirs: readonly string[]): Finding[] {
-  return findingsIn(pattern, sourceFiles(ROOT, { dirs: [...dirs] }));
+function findings(
+  pattern: RegExp,
+  dirs: readonly string[],
+  exclude: readonly string[] = [],
+): Finding[] {
+  return findingsIn(pattern, sourceFiles(ROOT, { dirs: [...dirs], exclude: [...exclude] }));
 }
 
 /**
@@ -740,19 +760,21 @@ describe("classified areas keep the raw hue accent only where it is evidenced", 
   });
 });
 
-describe("act and home are not rooms", () => {
-  it("never reaches for room ink, because neither area is a room", () => {
+describe("act and home are not rooms, apart from the act home itself", () => {
+  it("never reaches for room ink outside the roomed home", () => {
     // `text-accent-ink` resolves to `--primary` outside a room: violet text in a
     // green module. The off-room class is `text-<hue>-ink`. This is the single
     // assertion most likely to catch a well-meaning future sweep.
-    expect(findings(ROOM_INK, ROOMLESS_AREAS)).toEqual([]);
+    expect(findings(ROOM_INK, ROOMLESS_AREAS, ROOMED_HOMES)).toEqual([]);
   });
 
-  it("has no useRoomStyle call to justify room ink", () => {
-    // The premise of the assertion above, checked rather than trusted - if
-    // either area ever does become a room, that test needs to be revisited,
-    // not deleted.
-    const roomed = sourceFiles(ROOT, { dirs: [...ROOMLESS_AREAS] }).filter((file) =>
+  it("has no useRoomStyle call outside the roomed home to justify room ink", () => {
+    // The premise of the assertion above, checked rather than trusted - a new
+    // room in either area needs a ROOMED_HOMES entry, not a deleted test.
+    const roomed = sourceFiles(ROOT, {
+      dirs: [...ROOMLESS_AREAS],
+      exclude: [...ROOMED_HOMES],
+    }).filter((file) =>
       /\buseRoomStyle\b/.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
     );
     expect(roomed).toEqual([]);
@@ -819,10 +841,12 @@ const TAIL_DIRS = [
 ];
 
 /**
- * Tail areas where no file calls `useRoomStyle`, so `--accent-ink` is never
- * poured and `text-accent-ink` would resolve to `--primary` - violet text in a
- * module that is not violet. Same trap as rule 2 for the ACT module above; the
- * suite checks the premise rather than trusting it.
+ * Tail areas where no file calls `useRoomStyle` - `cbt` excepted at file level:
+ * its home screen wears the think room since Wave C (#493), see ROOMED_HOMES.
+ * Everywhere else in these areas `--accent-ink` is never poured and
+ * `text-accent-ink` would resolve to `--primary` - violet text in a module
+ * that is not violet. Same trap as rule 2 for the ACT module above; the suite
+ * checks the premise rather than trusting it.
  */
 const ROOMLESS_TAIL_DIRS = [
   "src/features/cbt",
@@ -1094,13 +1118,18 @@ describe("the module tail keeps the raw hue accent only where it is justified (#
   });
 
   it("never reaches for room ink in the areas that are not rooms", () => {
-    expect(findings(ROOM_INK, ROOMLESS_TAIL_DIRS)).toEqual([]);
+    // ROOMED_HOMES carves the cbt home out of the scan: it wears the think
+    // room since Wave C (#493), so room ink is legitimate in that one file.
+    expect(findings(ROOM_INK, ROOMLESS_TAIL_DIRS, ROOMED_HOMES)).toEqual([]);
   });
 
   it("has no useRoomStyle call in those areas to justify room ink", () => {
-    // The premise of the assertion above. If one of these areas becomes a room,
-    // revisit that test rather than deleting it.
-    const roomed = sourceFiles(ROOT, { dirs: ROOMLESS_TAIL_DIRS }).filter((file) =>
+    // The premise of the assertion above. A new room in one of these areas
+    // needs a ROOMED_HOMES entry, not a deleted test.
+    const roomed = sourceFiles(ROOT, {
+      dirs: ROOMLESS_TAIL_DIRS,
+      exclude: [...ROOMED_HOMES],
+    }).filter((file) =>
       /\buseRoomStyle\b/.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
     );
 

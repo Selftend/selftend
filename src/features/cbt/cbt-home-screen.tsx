@@ -1,11 +1,14 @@
 import { router } from "expo-router";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, View } from "react-native";
+import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ContentSheet } from "@/src/components/app/content-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { useRoomStyle } from "@/src/lib/use-room-style";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { useGoals } from "@/src/features/goals/queries";
@@ -28,6 +31,12 @@ import { RecentThoughtRecord } from "@/src/features/cbt/cbt-home/recent-thought-
 
 export default function CbtHomeScreen() {
   const { t } = useTranslation("cbt");
+  const roomStyle = useRoomStyle("think");
+  // Scroll position feeding the field parallax (#492).
+  const scrollY = useSharedValue(0);
+  const onFieldScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
   const { user } = useSession();
   const {
     program,
@@ -84,12 +93,25 @@ export default function CbtHomeScreen() {
         visible={forceOnboarding}
       />
       <AdvancedToolInfoModals active={activeToolInfo} onClose={() => setActiveToolInfo(null)} />
-      <SafeAreaView className="flex-1 bg-background">
-        <ScrollView contentContainerClassName="grow p-6">
-          <View className="gap-6">
+      <SafeAreaView
+        className="flex-1 bg-background"
+        edges={["bottom", "left", "right"]}
+        style={roomStyle}
+      >
+        <Animated.ScrollView
+          contentContainerClassName="grow p-4"
+          onScroll={onFieldScroll}
+          scrollEventThrottle={16}
+        >
+          {/* The field + sheet escape the scroll padding so the think field
+              runs edge to edge (Wave C homes-get-fields, #493); the sheet
+              re-adds the inset for its sections. */}
+          <View className="-mx-4 -mt-4">
             <ModuleHomeHeader
+              variant="field"
+              fieldParallax={scrollY}
               addWidgetCategory="cbt"
-              hue="act"
+              hue="think"
               icon="psychology"
               moduleLabel={t("common:beta")}
               title={t("fullTitle")}
@@ -109,51 +131,48 @@ export default function CbtHomeScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
             />
+            <ContentSheet className="px-4">
+              <View className="gap-6">
+                <CbtProgramSection
+                  program={program}
+                  isPending={isProgramUpdating}
+                  showProgramCard={showProgramCard}
+                  graduationDismissedAt={graduationDismissedAt}
+                  onStart={startProgram}
+                  onAdvance={advancePhase}
+                  onRequestAbandon={() => setAbandonConfirmVisible(true)}
+                  onDismissStart={dismissProgramPrompt}
+                  onDismissGraduation={dismissGraduation}
+                  onReplay={replayProgram}
+                />
 
-            <View className="mt-2.5">
-              <Text variant="eyebrow" tint="primary">
-                {t("authorEyebrow")}
-              </Text>
-            </View>
+                <PersonalSloganCard slogan={personalSlogan} />
 
-            <CbtProgramSection
-              program={program}
-              isPending={isProgramUpdating}
-              showProgramCard={showProgramCard}
-              graduationDismissedAt={graduationDismissedAt}
-              onStart={startProgram}
-              onAdvance={advancePhase}
-              onRequestAbandon={() => setAbandonConfirmVisible(true)}
-              onDismissStart={dismissProgramPrompt}
-              onDismissGraduation={dismissGraduation}
-              onReplay={replayProgram}
-            />
+                <ActiveGoalsSection goals={activeGoals} />
 
-            <PersonalSloganCard slogan={personalSlogan} />
+                <CbtInsightsSection cards={insightCards} />
 
-            <ActiveGoalsSection goals={activeGoals} />
+                <CbtPillarsSection onOpenInfo={setActiveToolInfo} />
 
-            <CbtInsightsSection cards={insightCards} />
+                <CbtReviewLinks />
 
-            <CbtPillarsSection onOpenInfo={setActiveToolInfo} />
+                <RecentThoughtRecord record={latestRecord} />
 
-            <CbtReviewLinks />
-
-            <RecentThoughtRecord record={latestRecord} />
-
-            <Pressable
-              accessibilityLabel={t("home.recordHistory")}
-              accessibilityRole="button"
-              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={() => router.push("/modules/cbt/history")}
-              className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
-              role="button"
-            >
-              <Text className="flex-1 text-sm font-medium">{t("home.recordHistory")}</Text>
-              <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
-            </Pressable>
+                <Pressable
+                  accessibilityLabel={t("home.recordHistory")}
+                  accessibilityRole="button"
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={() => router.push("/modules/cbt/history")}
+                  className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
+                  role="button"
+                >
+                  <Text className="flex-1 text-sm font-medium">{t("home.recordHistory")}</Text>
+                  <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
+                </Pressable>
+              </View>
+            </ContentSheet>
           </View>
-        </ScrollView>
+        </Animated.ScrollView>
       </SafeAreaView>
     </>
   );

@@ -219,7 +219,7 @@ describe("CbtHomeScreen onboarding", () => {
     expect(screen.getByText("Be")).toBeTruthy();
   });
 
-  it("renders full title and inspired-by eyebrow", () => {
+  it("renders full title on the think field with no book credit (#493, #494)", () => {
     mockUseUserPreferences.mockReturnValue({
       data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
       isLoading: false,
@@ -228,7 +228,8 @@ describe("CbtHomeScreen onboarding", () => {
     renderWithProviders(<CbtHomeScreen />);
 
     expect(screen.getByText("Cognitive Behavioral Therapy")).toBeTruthy();
-    expect(screen.getByText(/inspired by seth gillihan/i)).toBeTruthy();
+    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+    expect(screen.queryByText(/inspired by/i)).toBeNull();
   });
 
   it("renders shared-tool pills beneath each PillarCard", () => {

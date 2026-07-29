@@ -1,6 +1,11 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 
-import { ModuleHomeHeader } from "./module-home-header";
+import {
+  fieldParallaxTranslateY,
+  ModuleHomeHeader,
+  PARALLAX_FACTOR,
+  PARALLAX_OVERDRAW,
+} from "./module-home-header";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("react-native", () => {
@@ -256,5 +261,34 @@ describe("ModuleHomeHeader field variant", () => {
 
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
+  });
+});
+
+// The transform maths behind the field parallax (#492), tested as the pure
+// function the worklet delegates to - the reanimated jest mock can't drive a
+// shared value through useAnimatedStyle, so the maths lives where jest can
+// reach it.
+describe("fieldParallaxTranslateY", () => {
+  it("lags the scroll at the parallax factor", () => {
+    expect(fieldParallaxTranslateY(100, false)).toBe(100 * PARALLAX_FACTOR);
+    expect(fieldParallaxTranslateY(300, false)).toBe(120);
+  });
+
+  it("caps at the overdraw so the gradient's extended top edge is never outrun", () => {
+    // The cap engages exactly where factor * scroll reaches the overdraw.
+    expect(fieldParallaxTranslateY(PARALLAX_OVERDRAW / PARALLAX_FACTOR, false)).toBe(
+      PARALLAX_OVERDRAW,
+    );
+    expect(fieldParallaxTranslateY(10_000, false)).toBe(PARALLAX_OVERDRAW);
+  });
+
+  it("pins at zero for overscroll bounce (negative offsets)", () => {
+    expect(fieldParallaxTranslateY(-80, false)).toBe(0);
+    expect(fieldParallaxTranslateY(0, false)).toBe(0);
+  });
+
+  it("pins outright under a reduced-motion preference", () => {
+    expect(fieldParallaxTranslateY(300, true)).toBe(0);
+    expect(fieldParallaxTranslateY(-80, true)).toBe(0);
   });
 });
