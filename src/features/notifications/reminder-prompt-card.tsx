@@ -139,7 +139,7 @@ export function ReminderPromptCard() {
       className="absolute inset-x-0 z-[70] items-center px-4"
       style={{ bottom: insets.bottom + 16 }}
     >
-      <Card className="w-full max-w-xl shadow-md">
+      <Card className="w-full max-w-xl shadow-md dark:shadow-none">
         <CardHeader className="gap-1">
           <View className="flex-row items-center gap-3">
             <View className="size-9 items-center justify-center rounded-lg bg-muted">
