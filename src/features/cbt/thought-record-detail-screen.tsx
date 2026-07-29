@@ -14,6 +14,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { distortionLookup } from "@/src/constants/distortions";
+import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { ErrorState, LoadingState } from "@/src/components/app/screen-state";
 import { formatEmotionLabels } from "@/src/features/cbt/format-labels";
 import { useArchiveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
@@ -48,6 +49,7 @@ export default function ThoughtRecordDetailScreen() {
   const recordId = typeof id === "string" ? id : null;
   const { user } = useSession();
   const [archiveError, setArchiveError] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const { data, isLoading } = useThoughtRecord(user?.id ?? null, recordId);
   const archiveMutation = useArchiveThoughtRecord(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
@@ -60,6 +62,7 @@ export default function ThoughtRecordDetailScreen() {
     try {
       setArchiveError("");
       await archiveMutation.mutateAsync(recordId);
+      setConfirmOpen(false);
       showToast({
         title: t("common:feedback.archived"),
         tone: "success",
@@ -314,7 +317,7 @@ export default function ThoughtRecordDetailScreen() {
           <View className="flex-1">
             <Button
               disabled={archiveMutation.isPending}
-              onPress={() => void handleArchive()}
+              onPress={() => setConfirmOpen(true)}
               variant="destructive"
             >
               {archiveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
@@ -323,6 +326,24 @@ export default function ThoughtRecordDetailScreen() {
           </View>
         </View>
       </View>
+
+      {/* There is no unarchive flow or archived view yet, so one stray tap on a
+          full-width destructive button removed a record for good - gate it
+          behind the same confirm pattern the wizard's Discard draft uses (#474). */}
+      <ConfirmDialog
+        visible={confirmOpen}
+        isPending={archiveMutation.isPending}
+        error={archiveError}
+        title={t("detail.archiveConfirmTitle")}
+        message={t("detail.archiveConfirmMessage")}
+        confirmLabel={t("detail.archiveButton")}
+        cancelLabel={t("common:cancel")}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setArchiveError("");
+        }}
+        onConfirm={() => void handleArchive()}
+      />
     </SafeAreaView>
   );
 }
