@@ -103,6 +103,19 @@ jobs:
       environment: production
     secrets: inherit
 
+  # TestFlight, not the App Store — see ios-release.yml. No-ops until the Apple
+  # setup is done and IOS_RELEASE_ENABLED is flipped, so it cannot redden a
+  # release in the meantime.
+  deploy-ios:
+    name: Deploy ios
+    needs: migrate-prod
+    uses: ./.github/workflows/ios-release.yml
+    with:
+      ref: ${{ github.event.release.tag_name || inputs.tag }}
+      submit_to_testflight: true
+      environment: production
+    secrets: inherit
+
   deploy-functions-prod:
     name: Deploy edge functions
     needs: migrate-prod

@@ -8,6 +8,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { DeleteAccountButton } from "@/src/features/settings/components/delete-account-button";
 import { ExportDataButton } from "@/src/features/settings/components/export-data-button";
 import { SettingsSectionCard } from "@/src/features/settings/components/settings-section-card";
+import { getRunningVersion } from "@/src/lib/update-availability";
 
 interface AccountCardProps {
   user: User | null;
@@ -21,6 +22,8 @@ interface AccountCardProps {
 /** Account section: email, export, sign-out, delete. Extracted verbatim. */
 export function AccountCard({ user, onSignOut }: AccountCardProps) {
   const { t } = useTranslation("settings");
+
+  const appVersion = getRunningVersion();
 
   return (
     <SettingsSectionCard
@@ -38,6 +41,14 @@ export function AccountCard({ user, onSignOut }: AccountCardProps) {
         </Button>
         {/* Destructive action stays last - and stays the only red element. */}
         <DeleteAccountButton />
+        {/* The running app version - the one place it is shown in-app. Reads
+            the same value the update banner compares against, so a user can
+            check what they are on when an update is offered. */}
+        {appVersion ? (
+          <Text variant="muted" className="text-center text-xs">
+            {t("account.version", { version: appVersion })}
+          </Text>
+        ) : null}
       </View>
     </SettingsSectionCard>
   );

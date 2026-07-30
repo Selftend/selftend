@@ -9,6 +9,7 @@ import { TINT_ACCENT, TINT_TEXT, type TintToken } from "@/src/lib/design-tokens"
 import { cn } from "@/lib/utils";
 
 import { HowItWorksSection } from "./how-it-works-section";
+import { AndroidDownloadBar } from "@/src/components/app/android-download-bar";
 import { LandingFooter } from "./landing-footer";
 import { ModulesSection } from "./modules-section";
 import { PrivacySection } from "./privacy-section";
@@ -33,6 +34,8 @@ export default function LandingScreen() {
           <LandingFooter />
         </View>
       </ScrollView>
+      {/* Public-route Android offer (#388 section 4). */}
+      <AndroidDownloadBar />
     </SafeAreaView>
   );
 }

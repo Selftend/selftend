@@ -1,7 +1,5 @@
 import { router } from "expo-router";
-import { Pressable, View } from "react-native";
-import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
-import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,11 +29,6 @@ import { RecentThoughtRecord } from "@/src/features/cbt/cbt-home/recent-thought-
 
 export default function CbtHomeScreen() {
   const { t } = useTranslation("cbt");
-  // Scroll position feeding the field parallax (#492).
-  const scrollY = useSharedValue(0);
-  const onFieldScroll = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
-  });
   const { user } = useSession();
   const {
     program,
@@ -96,18 +89,13 @@ export default function CbtHomeScreen() {
           default violet surfaces - the default theme IS the violet room - and
           its field matches the sidebar's CBT accent via the primary pour. */}
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-        <AnimatedScrollView
-          contentContainerClassName="grow p-4"
-          onScroll={onFieldScroll}
-          scrollEventThrottle={16}
-        >
+        <ScrollView contentContainerClassName="grow p-4">
           {/* The field + sheet escape the scroll padding so the violet field
               runs edge to edge (Wave C homes-get-fields, #493/#500); the
               sheet re-adds the inset for its sections. */}
           <View className="-mx-4 -mt-4">
             <ModuleHomeHeader
               variant="field"
-              fieldParallax={scrollY}
               addWidgetCategory="cbt"
               hue="primary"
               icon="psychology"
@@ -170,7 +158,7 @@ export default function CbtHomeScreen() {
               </View>
             </ContentSheet>
           </View>
-        </AnimatedScrollView>
+        </ScrollView>
       </SafeAreaView>
     </>
   );

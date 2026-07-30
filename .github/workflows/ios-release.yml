@@ -1,0 +1,299 @@
+name: iOS TestFlight release
+
+# Reusable build+submit invoked by the release orchestrator (release.yml) after
+# migrate-prod, alongside deploy-android. workflow_dispatch is kept as a manual
+# fallback (builds main).
+#
+# Compiles on a GitHub-hosted macOS runner with `eas build --local`, mirroring
+# android-release.yml rather than delegating to EAS's builders. Decided in
+# wayfinder #524 on the facts researched in #520 and #521:
+#
+#   - `macos-26` carries seven Xcode 26.x installs (default 26.5, SDK iOS 26.5),
+#     so Apple's post-2026-04-28 "built with Xcode 26 or later using an SDK for
+#     iOS 26" upload rule is met by the default toolchain with no xcode-select.
+#     CocoaPods and fastlane are preinstalled; the Xcode licence is accepted at
+#     image-bake time.
+#   - Standard GitHub-hosted runners are, verbatim, "free and unlimited on
+#     public repositories" - and this repo is public. An earlier revision of
+#     this file routed the macOS work to EAS to avoid $0.062/min; that is
+#     PRIVATE-repo pricing and never applied to Selftend.
+#   - Local builds consume no EAS build quota, so the Expo free tier's 15 iOS
+#     builds/month, concurrency 1 and low-priority queue do not bind. GitHub
+#     allows 5 concurrent macOS jobs on the free plan.
+#   - Credentials still live on EAS: eas-cli gathers them BEFORE it branches on
+#     local build mode and hands them to the local builder in memory, so no
+#     distribution certificate and no App Store Connect .p8 is stored in
+#     GitHub, and EXPO_TOKEN remains the only secret this workflow needs.
+#
+# Pinned to `macos-26`, never `macos-latest`: that alias moved from macOS 15 to
+# macOS 26 during 2026 and will move again, which would silently change the
+# toolchain under a release. Never a `-large`/`-xlarge` label either - those are
+# billed even on public repositories. Belt and braces, the SDK check below fails
+# the job rather than letting an SDK-too-old archive reach Apple.
+#
+# Build and submit are separate steps because eas-cli explicitly refuses
+# auto-submit for local builds ("Auto-submits are not yet supported when
+# building locally"), which also moves --what-to-test onto `eas submit`.
+#
+# Where this lands: TestFlight, not the App Store. Going public stays a
+# deliberate, separate act in App Store Connect - unlike the Android side,
+# which releases straight to the production track with a capped rollout (#371).
+# iOS has no equivalent staged rollout, so there is nothing to cap; the gate is
+# that a human promotes the build. test/ios-release-config.test.ts pins the
+# properties that keep all of the above true.
+#
+# GATED on the IOS_RELEASE_ENABLED variable: until the one-time Apple setup in
+# docs/releasing.md is done, this no-ops with a notice rather than failing every
+# release. The distribution certificate in particular CANNOT be created by CI -
+# eas-cli only mints one in interactive mode.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build (release tag from the orchestrator)
+        type: string
+        required: true
+      submit_to_testflight:
+        description: Upload the finished build to TestFlight
+        type: boolean
+        default: true
+      environment:
+        description: GitHub Environment providing the app vars and Expo secrets
+        type: string
+        default: production
+  workflow_dispatch:
+    inputs:
+      submit_to_testflight:
+        description: Build the IPA and upload it to TestFlight
+        type: boolean
+        default: true
+      what_to_test:
+        description: TestFlight "What to Test" notes (optional)
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Check iOS release is enabled
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: ${{ inputs.environment || 'production' }}
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          IOS_RELEASE_ENABLED: ${{ vars.IOS_RELEASE_ENABLED }}
+          ASC_APP_ID: ${{ vars.ASC_APP_ID }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+        run: |
+          if [ "$IOS_RELEASE_ENABLED" != "true" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::iOS release skipped - set the IOS_RELEASE_ENABLED variable to 'true' once the Apple setup in docs/releasing.md is complete."
+            exit 0
+          fi
+
+          # Both are written into eas.json by the build job. eas.json cannot read
+          # them itself: eas-cli env-interpolates only ascApiKeyPath,
+          # ascApiKeyIssuerId and ascApiKeyId, so a committed "$ASC_APP_ID" would
+          # reach Joi as a literal and fail `ascAppId`'s /^\d+$/ validation - and
+          # it would fail AFTER the build, because the submit profile is resolved
+          # only once there is something to submit. Checking here costs five
+          # seconds instead of a whole macOS build.
+          missing=0
+          for name in ASC_APP_ID APPLE_TEAM_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name must be set as a GitHub variable when IOS_RELEASE_ENABLED is true (see docs/releasing.md)."
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build and release to TestFlight
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
+    # Pinned deliberately - see the header. Free on public repos; never -large.
+    runs-on: macos-26
+    # Measured 12-25 min on comparable Expo repos, and local builds get no
+    # cache, so this is headroom rather than an expectation.
+    timeout-minutes: 60
+    environment: ${{ inputs.environment || 'production' }}
+    # Scoped like the Android job so a manual dispatch cannot kill an in-flight
+    # release build. Not cancel-in-progress: an iOS release must not be halted
+    # midway, and a half-uploaded archive is worse than a slow one.
+    concurrency:
+      group: ios-release
+      cancel-in-progress: false
+
+    env:
+      ASC_APP_ID: ${{ vars.ASC_APP_ID }}
+      APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      IOS_OUTPUT_PATH: build-artifacts/selftend.ipa
+      EXPO_PUBLIC_APP_STORE_URL: ${{ vars.EXPO_PUBLIC_APP_STORE_URL }}
+      EXPO_PUBLIC_DISCORD_URL: ${{ vars.EXPO_PUBLIC_DISCORD_URL }}
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
+      EXPO_PUBLIC_GITHUB_REPO_URL: ${{ vars.EXPO_PUBLIC_GITHUB_REPO_URL }}
+      EXPO_PUBLIC_PLAY_STORE_URL: ${{ vars.EXPO_PUBLIC_PLAY_STORE_URL }}
+      EXPO_PUBLIC_PRIVACY_EMAIL: ${{ vars.EXPO_PUBLIC_PRIVACY_EMAIL }}
+      EXPO_PUBLIC_PUBLIC_APP_URL: ${{ vars.EXPO_PUBLIC_PUBLIC_APP_URL }}
+      EXPO_PUBLIC_SECURITY_EMAIL: ${{ vars.EXPO_PUBLIC_SECURITY_EMAIL }}
+      EXPO_PUBLIC_SENTRY_DSN: ${{ vars.EXPO_PUBLIC_SENTRY_DSN }}
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPPORT_EMAIL: ${{ vars.EXPO_PUBLIC_SUPPORT_EMAIL }}
+      # Org auth token (sntrys_, CI scopes only) so production crashes arrive
+      # symbolicated. Diagnosing #199 without maps meant hand-symbolicating
+      # Hermes bytecode - never again.
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      # Fail-safe: sentry-cli fails the build when invoked without a token, so
+      # if the secret is ever removed, disable the upload instead of breaking
+      # the release (empty string is falsy in GitHub expressions).
+      SENTRY_DISABLE_AUTO_UPLOAD: ${{ secrets.SENTRY_AUTH_TOKEN && 'false' || 'true' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # Build the exact release tag when called from the orchestrator -
+          # reproducible and immune to the branch advancing mid-build.
+          ref: ${{ inputs.ref || 'main' }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: npm
+
+      # The runner's own toolchain is what builds, NOT eas.json's `image` field -
+      # that field is ignored for local builds. So the SDK is verified rather
+      # than assumed: Apple rejects uploads built against an SDK older than
+      # iOS 26, and a runner-image change is exactly the drift that would
+      # otherwise surface as a mystery rejection after a 20-minute build and a
+      # consumed build number.
+      - name: Verify the iOS SDK is new enough for App Store Connect
+        run: |
+          echo "Xcode: $(xcodebuild -version | head -n 1)"
+          sdk="$(xcrun --sdk iphoneos --show-sdk-version)"
+          echo "iphoneos SDK: $sdk"
+          if [ "${sdk%%.*}" -lt 26 ]; then
+            echo "::error::Apple requires the iOS 26 SDK or later for App Store Connect uploads; this runner offers $sdk. Pin a newer runner image or select a newer Xcode."
+            exit 1
+          fi
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Check release environment
+        run: |
+          missing=0
+          for name in \
+            EXPO_PUBLIC_SUPABASE_URL \
+            EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
+            EXPO_PUBLIC_PUBLIC_APP_URL \
+            EXPO_PUBLIC_SUPPORT_EMAIL \
+            EXPO_PUBLIC_PRIVACY_EMAIL \
+            EXPO_PUBLIC_SECURITY_EMAIL
+          do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name must be set as a GitHub repository variable for release builds."
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      # Fail here rather than 20 minutes into a build.
+      - name: Verify EAS authentication
+        run: npm exec --yes eas-cli -- whoami
+
+      # eas.json ships WITHOUT ascAppId/appleTeamId on purpose: eas-cli does not
+      # env-interpolate those two fields (only the three ascApiKey* ones), so a
+      # committed "$ASC_APP_ID" is a literal that fails validation. Writing them
+      # here keeps Apple identifiers out of the repository while still handing
+      # `eas submit` real values. Neither is secret; they are variables only so
+      # the repo itself stays identifier-free.
+      - name: Write the Apple identifiers into the submit profile
+        if: ${{ inputs.submit_to_testflight }}
+        run: |
+          tmp="$(mktemp)"
+          jq --arg app "$ASC_APP_ID" --arg team "$APPLE_TEAM_ID" \
+            '.submit.production.ios = ((.submit.production.ios // {}) + {ascAppId: $app, appleTeamId: $team})' \
+            eas.json > "$tmp"
+          mv "$tmp" eas.json
+          jq '.submit.production.ios' eas.json
+
+      - name: Build the IPA locally
+        run: |
+          mkdir -p "$(dirname "$IOS_OUTPUT_PATH")"
+          npm exec --yes eas-cli -- build \
+            --platform ios \
+            --profile production \
+            --local \
+            --non-interactive \
+            --output "$IOS_OUTPUT_PATH"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: selftend-ios-ipa-${{ github.run_number }}
+          path: build-artifacts/*.ipa
+          if-no-files-found: error
+          retention-days: 14
+
+      # WHAT_TO_TEST arrives via env, never interpolated into the script body:
+      # `${{ }}` is substituted before the shell parses the line, so a dispatch
+      # input like `$(...)` would otherwise execute here with EXPO_TOKEN and
+      # SENTRY_AUTH_TOKEN in scope. Quoted array expansion keeps it one argv
+      # entry however it is punctuated. It rides `eas submit` rather than
+      # `eas build` because --what-to-test is gated on auto-submit, which local
+      # builds refuse.
+      - name: Release to TestFlight
+        if: ${{ inputs.submit_to_testflight }}
+        env:
+          WHAT_TO_TEST: ${{ inputs.what_to_test }}
+        run: |
+          args=(submit --platform ios --profile production
+                --path "$IOS_OUTPUT_PATH" --non-interactive)
+          if [ -n "$WHAT_TO_TEST" ]; then
+            args+=(--what-to-test "$WHAT_TO_TEST")
+          fi
+          npm exec --yes eas-cli -- "${args[@]}"
+
+      - name: Summarise the release
+        if: ${{ success() && inputs.submit_to_testflight }}
+        run: |
+          {
+            echo "### iOS uploaded to TestFlight"
+            echo
+            echo "Apple processes the build before it appears in TestFlight - usually"
+            echo "10-15 minutes, with an email when it lands. Production users on iOS"
+            echo "are unaffected: nothing reaches the App Store without a human"
+            echo "promoting this build, which is the deliberate difference from the"
+            echo "Android side (capped-rollout production release, #371)."
+            echo
+            echo "Internal testers need no Beta App Review. **External** testers do, on"
+            echo "the first build of each version - and external testing is out of"
+            echo "scope until Guideline 4.8 is resolved, because the app offers Google"
+            echo "sign-in."
+            echo
+            echo "TestFlight builds expire 90 days after upload."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -56,6 +56,11 @@ export default defineConfig({
       EXPO_PUBLIC_SUPABASE_URL: "http://localhost:54321",
       EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: LOCAL_ANON_KEY,
       EXPO_PUBLIC_PUBLIC_APP_URL: `http://localhost:${PORT}`,
+      // The Android download bar and the native update offer key off this
+      // being set (#388); e2e asserts the bar's UA gating, so give the build
+      // the real listing URL.
+      EXPO_PUBLIC_PLAY_STORE_URL:
+        "https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend",
     },
     url: `http://localhost:${PORT}`,
     reuseExistingServer: process.env.E2E_REUSE_EXISTING_SERVER === "1",

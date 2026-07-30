@@ -1,8 +1,6 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
-import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
-import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
@@ -39,12 +37,6 @@ import { formatAtOffset } from "@/src/utils/date";
 const THEME_TINTS: TintToken[] = ["be", "act", "think", "iris", "ink", "clay"];
 
 export default function GratitudeHomeScreen() {
-  // Scroll position feeding the field parallax (#492).
-  const scrollY = useSharedValue(0);
-  const onFieldScroll = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
-  });
-
   const { t } = useTranslation("gratitude");
   const roomStyle = useRoomStyle("think");
   const { user } = useSession();
@@ -130,17 +122,12 @@ export default function GratitudeHomeScreen() {
         edges={["bottom", "left", "right"]}
         style={roomStyle}
       >
-        <AnimatedScrollView
-          contentContainerClassName="grow p-4"
-          onScroll={onFieldScroll}
-          scrollEventThrottle={16}
-        >
+        <ScrollView contentContainerClassName="grow p-4">
           {/* The field + sheet escape the scroll padding so the gold field runs
               edge to edge; the sheet re-adds the inset for its sections. */}
           <View className="-mx-4 -mt-4">
             <ModuleHomeHeader
               variant="field"
-              fieldParallax={scrollY}
               addWidgetCategory="gratitude"
               hue="think"
               icon="favorite"
@@ -276,7 +263,7 @@ export default function GratitudeHomeScreen() {
               </View>
             </ContentSheet>
           </View>
-        </AnimatedScrollView>
+        </ScrollView>
       </SafeAreaView>
     </>
   );
