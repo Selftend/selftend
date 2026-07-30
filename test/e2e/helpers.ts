@@ -198,10 +198,12 @@ export async function fetchRecoveryLink(page: Page, email: string): Promise<stri
   return fetchAuthEmailLink(page, email, "recovery");
 }
 
-// Pulls the 6-digit verification code out of the verify-banner's OTP email
-// (supabase/templates/magic_link.html renders `{{ .Token }}` as a bare 6-digit
-// number). Polls like fetchAuthEmailLink: the email arrives a beat after the
-// banner's send.
+// Pulls the verification code out of the verify-banner's OTP email
+// (supabase/templates/magic_link.html renders `{{ .Token }}` as a bare number).
+// The length is the backend's to choose - `supabase/config.toml` pins it to 6
+// locally, but pinning 6 in a matcher is exactly the assumption that broke
+// hosted verification, so this accepts the same 6-10 range the banner does.
+// Polls like fetchAuthEmailLink: the email arrives a beat after the send.
 export async function fetchVerificationCodeViaMailpit(page: Page, email: string): Promise<string> {
   const target = email.toLowerCase();
   for (let attempt = 0; attempt < 20; attempt++) {
@@ -212,14 +214,14 @@ export async function fetchVerificationCodeViaMailpit(page: Page, email: string)
       if (match) {
         const msgRes = await page.request.get(`${MAILPIT_URL}/api/v1/message/${match.ID}`);
         const body = (await msgRes.json()) as { HTML?: string; Text?: string };
-        const code = `${body.Text ?? ""}\n${body.HTML ?? ""}`.match(/\b(\d{6})\b/);
+        const code = `${body.Text ?? ""}\n${body.HTML ?? ""}`.match(/\b(\d{6,10})\b/);
         if (code) return code[1];
       }
     }
     await page.waitForTimeout(500);
   }
   throw new Error(
-    `No Mailpit email with a 6-digit verification code found for ${email}. The local stack may` +
+    `No Mailpit email with a verification code found for ${email}. The local stack may` +
       ` be running templates from before supabase/templates/magic_link.html existed (restart` +
       ` with db:stop + db:start).`,
   );
