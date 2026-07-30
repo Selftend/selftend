@@ -37,7 +37,11 @@ jobs:
     name: ${{ matrix.label }}
     runs-on: macos-26
     timeout-minutes: 75
-    environment: production
+    # Deliberately NOT `environment: production`. Everything this job needs -
+    # EXPO_TOKEN and the EXPO_PUBLIC_* values - is repo-level. Naming the
+    # environment would additionally hand it the production deploy
+    # credentials (Cloudflare API token, production database password),
+    # which a simulator job has no business being near.
 
     strategy:
       fail-fast: false
