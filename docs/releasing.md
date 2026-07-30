@@ -80,6 +80,53 @@ Stated once, load-bearing twice (release latency and rollback both depend on it)
 
 Why: the database migrates **first** and unconditionally, Android trails by Google's review latency, and users trail further by auto-update lag — a halted rollout leaves people on the old client _indefinitely_. The old client talking to the new schema is therefore the normal state of the world after every release, not an edge case. (Precedent: `program_widget_task_status` kept its three-argument path callable, with an integration test per leg, while the four-argument replacement shipped.)
 
+## How iOS reaches users
+
+**It doesn't, automatically — and that is the design.** `deploy-ios` builds the IPA and uploads it to **TestFlight**; nothing reaches the App Store until a human promotes that build in App Store Connect.
+
+This is deliberately unlike Android. There is no iOS equivalent of Play's staged rollout, so there is no percentage to cap — the only available safety valve is the promotion step itself, so we keep it manual. Internal testers get the build with no Beta App Review; external testers need Beta App Review on the first build of each version. TestFlight builds expire **90 days** after upload.
+
+Apple's internal-tester ceiling is 100, but internal testers must be App Store Connect users and an **Individual** enrolment caps App Store Connect at 50 additional users — so on the current enrolment the real ceiling is about **51**, not 100. External testing (up to 10,000 via a public link) is out of scope for now: Beta App Review checks guidelines, and the app offers Google sign-in, which engages **Guideline 4.8** and would require offering a privacy-preserving equivalent such as Sign in with Apple.
+
+Consequence for [the migration forward-compatibility rule](#the-migration-forward-compatibility-rule): iOS is now a **second** trailing client, and a slower one than Android — a build sitting unpromoted in TestFlight means those users stay on the old client indefinitely. The rule doesn't change; it just binds harder.
+
+### Where the build happens
+
+`ios-release.yml` compiles on a GitHub-hosted **`macos-26`** runner with `eas build --local`, then uploads with `eas submit --path` — the same shape as the Android job, which also builds locally rather than on EAS's workers.
+
+This costs nothing. GitHub's docs are explicit that "use of the standard GitHub-hosted runners is free and unlimited on public repositories", and this repo is public. The `$0.062/min` macOS rate that an earlier revision of this pipeline was designed around is **private-repo pricing** and never applied here. Two rules keep it that way:
+
+- **Never a `-large` or `-xlarge` label.** Larger runners are billed even on public repositories.
+- **Pin the image; never `macos-latest`.** That alias moved from macOS 15 to macOS 26 during 2026 and will move again, which would change the compiler under a release without a diff. The job additionally checks `xcrun --sdk iphoneos --show-sdk-version` and fails fast below 26, because Apple rejects uploads built against an older SDK — and rejects them _after_ the build, having consumed a build number.
+
+Building locally also sidesteps Expo's free tier entirely: its **15 iOS builds/month**, 1 concurrency and low-priority queue only apply to builds run on EAS's infrastructure, and local builds are not submitted to it. GitHub allows 5 concurrent macOS jobs on the free plan.
+
+One consequence to know: **`eas.json`'s `ios.image`, `node`, `fastlane` and `cocoapods` fields are ignored for local builds.** The runner's toolchain is what ships. Setting them there looks like a pin and does nothing, which is why `ios.image` is absent and the SDK check exists instead.
+
+### One-time Apple setup (before flipping the switch)
+
+`deploy-ios` no-ops with a notice until the `IOS_RELEASE_ENABLED` variable is `true`, so it cannot redden a release while this is outstanding. All of the following needs payment, Apple 2FA, or an interactive Apple login, so none of it can be automated:
+
+1. **Apple Developer Program**, $99/year — <https://developer.apple.com/programs/enroll/>. **This is the spend and identity decision [`docs/internal-testing.md`](internal-testing.md#ios-testflight-note) defers**, so settle it there first: an Individual enrolment avoids the D-U-N-S requirement but publishes the maintainer's **legal name as the App Store seller**; an organization enrolment shows the organization name and may qualify for Apple's nonprofit fee waiver. On an Individual account only the Account Holder can mint signing credentials.
+2. **Register the App ID** at Certificates, Identifiers & Profiles → Identifiers → **+** → App IDs → App: explicit bundle ID `org.vasilyoshev.selftend`, with the **Push Notifications** capability enabled (the app uses APNs — see `src/lib/push-token.ts`). App Store Connect will not offer an unregistered bundle ID in the next step.
+3. **App Store Connect app record** for `org.vasilyoshev.selftend`. Its numeric identifier (App Information → General) becomes the `ASC_APP_ID` variable.
+
+   > Apple labels that number "**Apple ID**", which collides with the term for your account. They are unrelated: the account Apple ID is an **email address** and is a login; this one is a numeric app identifier and is never a login. Entering the number where eas-cli asks for an Apple ID yields `Invalid username and password combination`.
+
+4. **`npx eas-cli credentials --platform ios`**, run once interactively (`npx eas-cli login` first if needed). It needs an Apple ID **email**, password and 2FA. **CI cannot do this step**: eas-cli mints a distribution certificate only in interactive mode and throws `MissingCredentialsNonInteractiveError` otherwise. (Provisioning profiles _can_ regenerate non-interactively once the ASC key is on EAS; the certificate cannot.) Do all three of its menu items:
+   - **Build Credentials → All** — distribution certificate + provisioning profile.
+   - **App Store Connect: Manage your API Key** → "Set up your project to use an API Key for EAS Submit". When it asks for a role, choose **`APP_MANAGER`**, not the `ADMIN` default: App Manager can upload builds and manage TestFlight, which is all `eas submit` does, while Admin adds user, agreement and finance powers the pipeline never uses. The app record already exists by this point, which is the one thing App Manager cannot create. Escalating later is a few seconds' work; over-privileging a key used by automation on every release is not worth it.
+   - **Push Notifications: Manage your Apple Push Notifications Key** — without this, iOS push silently never arrives, even though the client already asks for an iOS token.
+
+   All three store on EAS, so **no `.p8` is ever downloaded or held anywhere.**
+
+5. Set variables `IOS_RELEASE_ENABLED=true`, `ASC_APP_ID`, `APPLE_TEAM_ID` on the `production` environment. `EXPO_TOKEN` already exists for Android, and stays the only secret involved.
+6. In TestFlight, create the internal tester group with **Enable automatic distribution** checked, and fill the test information. Builds then land in the group on arrival, EAS uploads included — Apple's carve-out is Xcode **Cloud** builds, not "anything not uploaded by Xcode". **That checkbox cannot be changed after the group is created**, so get it right at creation. Internal testers must be App Store Connect users, and you invite them from the group page.
+
+Note on step 5: `ASC_APP_ID` and `APPLE_TEAM_ID` are GitHub _variables_, not secrets (neither value is sensitive), and they are variables purely so no Apple identifier is committed to this repository. They cannot be referenced from `eas.json` as `"$ASC_APP_ID"` — eas-cli interpolates only `ascApiKeyPath`, `ascApiKeyIssuerId` and `ascApiKeyId`, so a placeholder there reaches validation as a literal string and fails `ascAppId`'s digits-only check, _after_ the build has been spent. The workflow therefore writes both values into `eas.json` with `jq` immediately before submitting.
+
+Two failure modes are already closed in config, both pinned by `test/ios-release-config.test.ts`: `ios.config.usesNonExemptEncryption: false` (absent, a build uploads and then sits as **Missing Compliance**, untestable, and `--non-interactive` only _warns_), and the runner SDK check (Apple has required the iOS 26 SDK for uploads since 2026-04-28).
+
 ## Hotfixes
 
 For an urgent production fix, branch `hotfix/*` off `main`, use a `fix:` Conventional Commit, and open a **merge-commit** PR straight into `main` through the normal checks. release-please cuts a patch release from it, and the full release pipeline (migrate → deploys) runs. A back-merge returns the fix and the version bump to `dev` after the release.
