@@ -118,6 +118,12 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
       // untestable, until someone answered the encryption question by hand.
       usesNonExemptEncryption: false,
     },
+    // Adds the com.apple.developer.applesignin entitlement. Required by App
+    // Store Guideline 4.8 because the app offers Google Sign-In (#540): an app
+    // using a third-party login must also offer one that lets users keep their
+    // email private, which email/password cannot do. Without this the button
+    // renders and then fails at runtime, which is the worst of both.
+    usesAppleSignIn: true,
     infoPlist: {
       // iOS resolves the app's language from the bundle's declared
       // localizations, not from whatever i18next happens to ship. Without this
@@ -208,6 +214,7 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
         photosPermission: "Selftend lets you choose a profile picture for your account.",
       },
     ],
+    "expo-apple-authentication",
     "expo-secure-store",
     [
       "react-native-android-widget",

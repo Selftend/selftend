@@ -19,6 +19,10 @@ jest.mock("@/src/features/auth/api", () => ({
   INVALID_CREDENTIALS_ERROR: "INVALID_CREDENTIALS",
   signInWithPassword: jest.fn(),
   signInWithGoogle: jest.fn(),
+  signInWithApple: jest.fn(),
+  // Off by default: the Apple button is iOS-only and these tests are about the
+  // email/password form, not the provider row.
+  isAppleSignInAvailable: jest.fn().mockResolvedValue(false),
   resendVerificationEmail: jest.fn().mockResolvedValue(undefined),
 }));
 
