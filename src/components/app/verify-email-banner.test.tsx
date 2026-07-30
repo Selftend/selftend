@@ -127,6 +127,25 @@ describe("VerifyEmailBanner", () => {
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ emailVerified: true }));
   });
 
+  it("accepts a code longer than six digits, which the backend may issue", async () => {
+    // The bug this guards: the input's maxLength was hardcoded to 6 while the
+    // hosted project issued 8-digit codes, so every code was truncated to its
+    // first six digits and verification failed silently. changeText bypasses
+    // maxLength (it is native behaviour, not JS), so asserting on the submitted
+    // value alone would not catch a regression - the prop has to be checked too.
+    renderWithProviders(<VerifyEmailBanner />);
+    await act(async () => fireEvent.press(screen.getByText("Send code")));
+
+    const input = screen.getByLabelText("Verification code");
+    expect(input.props.maxLength).toBeGreaterThanOrEqual(8);
+
+    fireEvent.changeText(input, "12345678");
+    await act(async () => fireEvent.press(screen.getByText("Verify")));
+
+    expect(mockVerifyEmailCode).toHaveBeenCalledWith("person@example.com", "12345678");
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ emailVerified: true }));
+  });
+
   it("surfaces an error when the flag write silently no-ops (#504)", async () => {
     // A database that predates the email_verified migration: the write's
     // missing-column retry drops the flag, the mutation resolves, and the row

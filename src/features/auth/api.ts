@@ -294,9 +294,10 @@ export async function resendVerificationEmail(email: string) {
 }
 
 // The verify-email banner's send half (#489): a signInWithOtp email carrying a
-// 6-digit code (and a token_hash link fallback - see supabase/templates/
-// magic_link.html). shouldCreateUser:false because the caller is already a
-// signed-in account holder; a typo'd address must bounce, not mint a user.
+// numeric code whose length the backend owns - see supabase/templates/
+// magic_link.html, which is code-only. shouldCreateUser:false because the
+// caller is already a signed-in account holder; a typo'd address must bounce,
+// not mint a user.
 export async function sendVerificationCode(email: string) {
   const client = requireSupabase();
   const { error } = await client.auth.signInWithOtp({
