@@ -80,6 +80,33 @@ Stated once, load-bearing twice (release latency and rollback both depend on it)
 
 Why: the database migrates **first** and unconditionally, Android trails by Google's review latency, and users trail further by auto-update lag — a halted rollout leaves people on the old client _indefinitely_. The old client talking to the new schema is therefore the normal state of the world after every release, not an edge case. (Precedent: `program_widget_task_status` kept its three-argument path callable, with an integration test per leg, while the four-argument replacement shipped.)
 
+## How iOS reaches users
+
+**It doesn't, automatically — and that is the design.** `deploy-ios` builds the IPA and uploads it to **TestFlight**; nothing reaches the App Store until a human promotes that build in App Store Connect.
+
+This is deliberately unlike Android. There is no iOS equivalent of Play's staged rollout, so there is no percentage to cap — the only available safety valve is the promotion step itself, so we keep it manual. Internal testers (up to 100) get the build with no Beta App Review; external testers need Beta App Review on the first build of each version. TestFlight builds expire **90 days** after upload.
+
+Consequence for [the migration forward-compatibility rule](#the-migration-forward-compatibility-rule): iOS is now a **second** trailing client, and a slower one than Android — a build sitting unpromoted in TestFlight means those users stay on the old client indefinitely. The rule doesn't change; it just binds harder.
+
+### Where the build happens, and why not on a runner
+
+`ios-release.yml` runs on `ubuntu-latest` and only _orchestrates_: EAS compiles on its own macOS workers. iOS needs macOS + Xcode, so `eas build --local` cannot run on ubuntu the way the Android build does, and GitHub's macOS runners bill at **$0.062/min** on a private repo — about **$1.86 per 30-minute build**, burning included minutes ~10× as fast as Linux. The ubuntu orchestrator costs ~$0.02 per release instead.
+
+The budget that matters is Expo's: the free tier allows **15 iOS builds/month**, 1 concurrency, a low-priority queue and a 45-minute build cap. **A failed build still spends one of the 15**, so debug build problems locally rather than by re-running CI.
+
+### One-time Apple setup (before flipping the switch)
+
+`deploy-ios` no-ops with a notice until the `IOS_RELEASE_ENABLED` variable is `true`, so it cannot redden a release while this is outstanding. All of the following needs payment, Apple 2FA, or an interactive Apple login, so none of it can be automated:
+
+1. **Apple Developer Program**, $99/year — <https://developer.apple.com/programs/enroll/>. An Individual account avoids the D-U-N-S requirement of an organization enrolment. On an Individual account only the Account Holder can mint signing credentials.
+2. **App Store Connect app record** for `org.vasilyoshev.selftend`. Its numeric **Apple ID** (App Information → General) becomes the `ASC_APP_ID` variable.
+3. **App Store Connect API key**: Users and Access → Integrations → **+**, role **Admin**, download the `.p8` (one-time download) and note the Key ID and Issuer ID.
+4. **`npx eas-cli credentials --platform ios`**, run once interactively, choosing the `production` profile → "All: Set up all the required credentials", and register the API key for submissions. **CI cannot do this step**: eas-cli mints a distribution certificate only in interactive mode and throws `MissingCredentialsNonInteractiveError` otherwise. (Provisioning profiles _can_ regenerate non-interactively once the ASC key is on EAS; the certificate cannot.)
+5. Set variables `IOS_RELEASE_ENABLED=true`, `ASC_APP_ID`, `APPLE_TEAM_ID` on the `production` environment. `EXPO_TOKEN` already exists for Android. **No `.p8` goes into GitHub** — the key lives on EAS, so `EXPO_TOKEN` stays the only secret involved.
+6. In TestFlight, create the internal tester group and fill the test information. To have releases land in a group automatically, add its name to `submit.production.ios.groups` in `eas.json`; otherwise builds are added to groups by hand, since Apple only auto-distributes builds uploaded by Xcode.
+
+Two failure modes are already closed in config, both pinned by `test/ios-release-config.test.ts`: `ios.config.usesNonExemptEncryption: false` (absent, a build uploads and then sits as **Missing Compliance**, untestable, and `--non-interactive` only _warns_), and the Xcode 26 build image (Apple has required the iOS 26 SDK for uploads since 2026-04-28).
+
 ## Hotfixes
 
 For an urgent production fix, branch `hotfix/*` off `main`, use a `fix:` Conventional Commit, and open a **merge-commit** PR straight into `main` through the normal checks. release-please cuts a patch release from it, and the full release pipeline (migrate → deploys) runs. A back-merge returns the fix and the version bump to `dev` after the release.

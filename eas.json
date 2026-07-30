@@ -18,6 +18,9 @@
       "environment": "production",
       "android": {
         "buildType": "app-bundle"
+      },
+      "ios": {
+        "image": "macos-sequoia-15.6-xcode-26.0"
       }
     }
   },
@@ -42,6 +45,10 @@
         "track": "production",
         "releaseStatus": "inProgress",
         "rollout": 0.2
+      },
+      "ios": {
+        "ascAppId": "$ASC_APP_ID",
+        "appleTeamId": "$APPLE_TEAM_ID"
       }
     }
   }

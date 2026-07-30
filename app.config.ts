@@ -94,8 +94,23 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
   userInterfaceStyle: "automatic",
   ios: {
     supportsTablet: true,
-    buildNumber: "1",
+    // No buildNumber: eas.json sets appVersionSource "remote", so EAS owns
+    // CFBundleVersion and a value here is ignored (the same reason
+    // android.versionCode is managed remotely). `eas build:version:set` seeds it.
     bundleIdentifier: iosBundleIdentifier,
+    config: {
+      // ITSAppUsesNonExemptEncryption=false. The binary links no non-exempt
+      // crypto: entry encryption is server-side (pgcrypto, see the *_encrypt
+      // migrations), and the only client-side crypto is OS-provided - the iOS
+      // Keychain via expo-secure-store, plus HTTPS to Supabase. Both are exempt
+      // categories. Re-check this if the app ever encrypts locally itself.
+      //
+      // Load-bearing, not cosmetic: Expo does not default this key, and
+      // `eas build --non-interactive` only warns when it is absent. A build
+      // would upload and then sit in App Store Connect as "Missing Compliance",
+      // untestable, until someone answered the encryption question by hand.
+      usesNonExemptEncryption: false,
+    },
   },
   android: {
     adaptiveIcon: {
