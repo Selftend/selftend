@@ -24,11 +24,6 @@ name: iOS simulator smoke test
 # screenshots at Apple's exact device sizes, and a simulator is the normal way
 # to produce them without owning the hardware.
 on:
-  # TEMPORARY, removed before merge: workflow_dispatch only becomes available
-  # once a workflow is on the default branch, so this is the only way to prove
-  # the job actually works before merging it.
-  push:
-    branches: [feat/ios-simulator-smoke]
   workflow_dispatch:
     inputs:
       device:
