@@ -18,11 +18,24 @@ export const SECURE_STORE_CHUNK_SIZE = 1800;
 // already-authenticated. That is the right trade here.
 //
 // iOS-only in effect - expo-secure-store applies `keychainAccessible` on iOS
-// and ignores it on Android, so Android behaviour is unchanged. Note also that
-// accessibility is fixed when an item is written: pre-existing items keep
-// whatever they had until the value is next rewritten. Supabase rewrites the
-// session on every token refresh, and iOS has never shipped, so there is no
-// migration to perform.
+// and ignores it on Android, so Android behaviour is unchanged.
+//
+// This option only ever applies to items created AFTER it, and rewriting does
+// NOT upgrade an existing item. expo-secure-store calls `SecItemAdd`, and on
+// `errSecDuplicateItem` falls back to `SecItemUpdate` with an update dictionary
+// of `[kSecValueData: ...]` only (see
+// node_modules/expo-secure-store/ios/SecureStoreModule.swift), so
+// `kSecAttrAccessible` is left exactly as first written. An item stored under
+// the old default therefore stays backup-migratable for the life of the
+// keychain entry - and keychain entries can outlive an app uninstall.
+//
+// Nothing needs migrating here for one reason only: iOS has never shipped, so
+// no item under this bundle identifier exists to be stuck. Do not read this as
+// "it heals on the next token refresh" - it does not.
+//
+// Consequence for any FUTURE change to accessibility: it must explicitly delete
+// and recreate every key, because a plain rewrite will silently keep the old
+// class. (Caught in review on PR #531.)
 export const SECURE_STORE_SET_OPTIONS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
 };
