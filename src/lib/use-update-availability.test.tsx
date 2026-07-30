@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { appEnv } from "@/src/lib/env";
-import { AppState, Platform } from "react-native";
+import { AppState, Linking, Platform } from "react-native";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 
 import { useUpdateAvailability } from "@/src/lib/use-update-availability";
@@ -179,6 +179,74 @@ describe("useUpdateAvailability (native)", () => {
     appEnv.playStoreUrl = "";
     renderHook(() => useUpdateAvailability());
     await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(mockFetchDocument).not.toHaveBeenCalled();
+  });
+
+  it("opens the Play Store on Android", () => {
+    const openSpy = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+    const { result } = renderHook(() => useUpdateAvailability());
+
+    act(() => result.current.act());
+
+    expect(openSpy).toHaveBeenCalledWith(appEnv.playStoreUrl);
+    openSpy.mockRestore();
+  });
+});
+
+// The bug this covers (#529): every native gate read `Platform.OS !== "web"`,
+// so iOS silently took the Android branch. An iPhone was offered an update
+// whose button read "Open Google Play" and which opened Safari on a Play
+// listing it could never install from - and the iOS release workflow bakes
+// EXPO_PUBLIC_PLAY_STORE_URL into the build, so it was armed, not theoretical.
+describe("useUpdateAvailability (iOS)", () => {
+  const HOUR = 60 * 60 * 1000;
+  let iosSpy: jest.ReplaceProperty<typeof Platform.OS> | undefined;
+  let playStoreUrl: string;
+  let appStoreUrl: string;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    await AsyncStorage.clear();
+    platformSpy?.restore();
+    iosSpy = jest.replaceProperty(Platform, "OS", "ios");
+    playStoreUrl = appEnv.playStoreUrl;
+    appStoreUrl = appEnv.appStoreUrl;
+    // Deliberately BOTH set, so a test passing by accident is impossible: the
+    // Play URL is present and must still never be used.
+    appEnv.playStoreUrl = "https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend";
+    appEnv.appStoreUrl = "https://apps.apple.com/app/id6796318929";
+    mockRunningVersion.mockReturnValue("0.8.0");
+    mockFetchDocument.mockResolvedValue({
+      version: "0.9.0",
+      publishedAt: new Date(Date.now() - 25 * HOUR).toISOString(),
+    });
+  });
+
+  afterEach(() => {
+    appEnv.playStoreUrl = playStoreUrl;
+    appEnv.appStoreUrl = appStoreUrl;
+    iosSpy?.restore();
+    platformSpy = jest.replaceProperty(Platform, "OS", "web");
+  });
+
+  it("opens the App Store, never Google Play", async () => {
+    const openSpy = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+    const { result } = renderHook(() => useUpdateAvailability());
+    await waitFor(() => expect(result.current.available).toBe(true));
+
+    act(() => result.current.act());
+
+    expect(openSpy).toHaveBeenCalledWith(appEnv.appStoreUrl);
+    expect(openSpy).not.toHaveBeenCalledWith(appEnv.playStoreUrl);
+    openSpy.mockRestore();
+  });
+
+  it("stays silent when no App Store URL is configured, rather than falling back to Play", async () => {
+    appEnv.appStoreUrl = "";
+    renderHook(() => useUpdateAvailability());
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    // A wrong store link is worse than no banner, so a missing iOS URL must
+    // suppress the offer outright even though playStoreUrl is still set.
     expect(mockFetchDocument).not.toHaveBeenCalled();
   });
 });

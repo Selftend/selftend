@@ -41,7 +41,8 @@
   "updateBanner": {
     "message": "A newer version of Selftend is available.",
     "actionWeb": "Refresh",
-    "actionNative": "Open Google Play",
+    "actionPlayStore": "Open Google Play",
+    "actionAppStore": "Open the App Store",
     "dismiss": "Dismiss"
   },
   "downloadBar": {

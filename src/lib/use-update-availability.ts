@@ -37,6 +37,24 @@ interface UpdateAvailability {
   dismiss: () => void;
 }
 
+/**
+ * The store this native build should send people to.
+ *
+ * `Platform.OS !== "web"` used to stand in for "Android", which was harmless
+ * while Android was the only native platform and became a bug the moment iOS
+ * existed: an iPhone was offered a **Google Play** link, opening Safari on a
+ * listing it cannot install from (#529).
+ *
+ * A platform with no URL configured offers no update at all rather than falling
+ * back to the other store - a wrong store link is worse than a missing banner,
+ * and it is the failure that shipped.
+ */
+function getNativeStoreUrl(): string {
+  if (Platform.OS === "ios") return appEnv.appStoreUrl.trim();
+  if (Platform.OS === "android") return appEnv.playStoreUrl.trim();
+  return "";
+}
+
 export function useUpdateAvailability(): UpdateAvailability {
   const [offeredVersion, setOfferedVersion] = useState<string | null>(null);
   const lastCheckedAt = useRef(0);
@@ -48,7 +66,7 @@ export function useUpdateAvailability(): UpdateAvailability {
 
     const running = getRunningVersion();
     if (!running) return;
-    if (Platform.OS !== "web" && !appEnv.playStoreUrl.trim()) return;
+    if (Platform.OS !== "web" && !getNativeStoreUrl()) return;
 
     const doc = await fetchVersionDocument();
     if (!doc) return;
@@ -102,7 +120,7 @@ export function useUpdateAvailability(): UpdateAvailability {
       if (typeof window !== "undefined") window.location.reload();
       return;
     }
-    const url = appEnv.playStoreUrl.trim();
+    const url = getNativeStoreUrl();
     if (url) void Linking.openURL(url).catch(() => {});
   }, []);
 

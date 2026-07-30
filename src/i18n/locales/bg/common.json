@@ -41,7 +41,8 @@
   "updateBanner": {
     "message": "Налична е по-нова версия на Selftend.",
     "actionWeb": "Обнови",
-    "actionNative": "Отвори Google Play",
+    "actionPlayStore": "Отвори Google Play",
+    "actionAppStore": "Отвори App Store",
     "dismiss": "Затвори"
   },
   "downloadBar": {
