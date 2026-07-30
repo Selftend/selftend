@@ -22,6 +22,11 @@ name: App Store screenshots
 # producing almost-right images would be discovered at submission time, which is
 # the worst moment to find out.
 on:
+  # TEMPORARY, removed before merge: workflow_dispatch is unavailable until a
+  # workflow reaches the default branch, so this is the only way to exercise
+  # the Maestro flow and find its selector problems before merging.
+  push:
+    branches: [feat/app-store-screenshots]
   workflow_dispatch:
     inputs:
       keep_going_on_flow_failure:
