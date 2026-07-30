@@ -15,7 +15,17 @@ import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/set
 import { useSession } from "@/src/providers/session-provider";
 
 const RESEND_COOLDOWN_MS = 60_000;
-const CODE_LENGTH = 6;
+// The backend owns the OTP length, not this component. It was hardcoded to 6
+// while the hosted project issued 8-digit codes, so `maxLength` truncated every
+// code to its first six digits and verification failed for everyone using it -
+// silently, because a truncated code is indistinguishable from a wrong one.
+//
+// `supabase/config.toml` now pins `otp_length`, so local and hosted agree in
+// version control. These bounds are the tolerance around that: wide enough that
+// a deliberate change to the setting cannot break verification again, narrow
+// enough to keep the input honest.
+const MIN_CODE_LENGTH = 6;
+const MAX_CODE_LENGTH = 10;
 
 /**
  * The persistent top banner of #489: shown to signed-in email+password users
@@ -128,7 +138,7 @@ export function VerifyEmailBanner() {
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="number-pad"
-              maxLength={CODE_LENGTH}
+              maxLength={MAX_CODE_LENGTH}
               onChangeText={setCode}
               onSubmitEditing={() => void onVerify()}
               placeholder={t("verifyBanner.codePlaceholder")}
@@ -137,7 +147,7 @@ export function VerifyEmailBanner() {
             />
             <Button
               size="sm"
-              disabled={busy !== null || code.trim().length < CODE_LENGTH}
+              disabled={busy !== null || code.trim().length < MIN_CODE_LENGTH}
               onPress={() => void onVerify()}
             >
               <Text className="text-sm">
