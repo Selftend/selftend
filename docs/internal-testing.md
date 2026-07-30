@@ -151,12 +151,14 @@ Before publishing a preview or production build to testers:
 
 ## iOS TestFlight note
 
-iOS TestFlight and App Store work is deferred. Do not spend on Apple Developer Program enrollment or submit an iOS build until one of these is true:
+**The spend decision is unchanged and still gates everything.** Do not enrol in the Apple Developer Program or submit an iOS build until one of these is true:
 
-- the annual Apple Developer Program fee is funded and the maintainer accepts the seller-name tradeoff, or
+- the annual Apple Developer Program fee is funded and the maintainer accepts the **seller-name tradeoff** — an Individual enrolment publishes the maintainer's legal name as the App Store seller, which is a real consideration for an app in this category, or
 - Selftend has a legal organization/nonprofit identity that can enroll under the organization name and, if eligible, apply for Apple's fee waiver.
 
-Release scripts and EAS submit config for iOS are intentionally omitted while this is deferred. Reintroduce them only when the Apple path is funded and ready.
+What changed: the release scripts and EAS submit config are **no longer omitted** — `ios-release.yml` and the `submit.production.ios` profile now exist, because writing them costs nothing and having them absent made the eventual Apple decision a bigger, riskier change. They are **inert**: the pipeline no-ops behind the `IOS_RELEASE_ENABLED` variable, so a release cannot reach Apple, and no Apple account is contacted, while that variable is unset.
+
+Enabling them is the act this deferral governs. When the funding decision above is made, follow the setup in [`docs/releasing.md`](releasing.md#one-time-apple-setup-before-flipping-the-switch) — enrolment, app record, ASC API key, one interactive `eas credentials` run — and only then set `IOS_RELEASE_ENABLED=true`.
 
 ## Store-readiness note
 

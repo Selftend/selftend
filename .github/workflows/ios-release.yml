@@ -190,14 +190,20 @@ jobs:
       # is needed in GitHub - the ASC API key lives on EAS.
       - name: Build IPA and release to TestFlight
         if: ${{ inputs.submit_to_testflight }}
-        run: >-
-          npm exec --yes eas-cli -- build
-          --platform ios
-          --profile production
-          --non-interactive
-          --wait
-          --auto-submit-with-profile production
-          ${{ inputs.what_to_test && format('--what-to-test "{0}"', inputs.what_to_test) || '' }}
+        # WHAT_TO_TEST arrives via env, never interpolated into the script body:
+        # `${{ }}` is substituted before the shell parses the line, so a dispatch
+        # input like `$(...)` would otherwise execute here with EXPO_TOKEN and
+        # SENTRY_AUTH_TOKEN in scope. Quoted array expansion keeps it one argv
+        # entry however it is punctuated.
+        env:
+          WHAT_TO_TEST: ${{ inputs.what_to_test }}
+        run: |
+          args=(build --platform ios --profile production --non-interactive --wait
+                --auto-submit-with-profile production)
+          if [ -n "$WHAT_TO_TEST" ]; then
+            args+=(--what-to-test "$WHAT_TO_TEST")
+          fi
+          npm exec --yes eas-cli -- "${args[@]}"
 
       - name: Build IPA without submitting
         if: ${{ !inputs.submit_to_testflight }}

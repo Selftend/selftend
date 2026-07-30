@@ -58,8 +58,16 @@ describe("iOS release lands on TestFlight, not the App Store", () => {
 
   it("is wired into the release orchestrator behind migrate-prod", () => {
     expect(releaseWorkflow).toContain("uses: ./.github/workflows/ios-release.yml");
-    const iosJob = releaseWorkflow.slice(releaseWorkflow.indexOf("  deploy-ios:"));
+    // Bounded to the deploy-ios block: sliced to end-of-file this would still
+    // pass on the `needs: migrate-prod` belonging to deploy-functions-prod, so
+    // the assertion would survive deploy-ios losing its dependency entirely.
+    const start = releaseWorkflow.indexOf("  deploy-ios:");
+    expect(start).toBeGreaterThan(-1);
+    const rest = releaseWorkflow.slice(start + "  deploy-ios:".length);
+    const nextJob = rest.search(/^ {2}\S/m);
+    const iosJob = nextJob === -1 ? rest : rest.slice(0, nextJob);
     expect(iosJob).toContain("needs: migrate-prod");
+    expect(iosJob).toContain("uses: ./.github/workflows/ios-release.yml");
   });
 });
 
@@ -84,6 +92,16 @@ describe("iOS release cost and correctness guards", () => {
 
   it("declares export compliance so builds are testable on arrival", () => {
     expect(appConfigSource).toMatch(/usesNonExemptEncryption:\s*false/);
+  });
+
+  it("never interpolates the dispatch input into a shell command", () => {
+    // `${{ }}` is substituted before the shell parses the line, so an input
+    // reaching the script body is arbitrary code execution with the production
+    // EXPO_TOKEN and SENTRY_AUTH_TOKEN in scope. It must travel via env only.
+    expect(iosWorkflow).not.toContain("${{ inputs.what_to_test }}\n          --");
+    expect(iosWorkflow).not.toMatch(/--what-to-test[^\n]*\$\{\{/);
+    expect(iosWorkflow).toMatch(/WHAT_TO_TEST:\s*\$\{\{\s*inputs\.what_to_test\s*\}\}/);
+    expect(iosWorkflow).toContain('--what-to-test "$WHAT_TO_TEST"');
   });
 });
 
