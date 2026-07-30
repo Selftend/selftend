@@ -63,10 +63,23 @@ env:
     id: "sign-in-password"
 - inputText: ${MAESTRO_DEMO_PASSWORD}
 
-- hideKeyboard
+# Submit with the return key rather than tapping the button. `hideKeyboard`
+# fails outright on this screen ("Couldn't hide the keyboard" - Maestro cannot
+# dismiss it for this input), and without dismissing it the Continue button can
+# sit underneath the keyboard on the phone. The password field is
+# `returnKeyType="go"` with `onSubmitEditing` wired to submit, so Enter runs the
+# same handler the button does and needs no keyboard geometry at all.
+- pressKey: Enter
 
-- tapOn:
-    id: "sign-in-submit"
+# Belt and braces: if the sign-in screen is somehow still up, press the button.
+# Harmless if the first submit already took - the wait below is the real gate.
+- runFlow:
+    when:
+      visible:
+        id: "sign-in-submit"
+    commands:
+      - tapOn:
+          id: "sign-in-submit"
 
 # Home can take a moment: the session restores and the first queries resolve.
 - extendedWaitUntil:

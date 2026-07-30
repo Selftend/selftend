@@ -181,7 +181,12 @@ jobs:
 
       - name: Drive the app and capture
         id: flow
-        continue-on-error: ${{ inputs.keep_going_on_flow_failure }}
+        # `|| false` is load-bearing. On any event that is not workflow_dispatch
+        # `inputs` is empty, the expression evaluates to '' and Actions rejects
+        # the whole job template with "Unexpected value ''" - but only AFTER the
+        # step has already failed, so the real error is buried under a template
+        # error that looks unrelated.
+        continue-on-error: ${{ inputs.keep_going_on_flow_failure || false }}
         env:
           UDID: ${{ steps.boot.outputs.udid }}
         run: |
