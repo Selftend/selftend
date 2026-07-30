@@ -58,6 +58,13 @@ content_path = "./supabase/templates/email_change.html"
 subject = "Your Selftend verification code"
 content_path = "./supabase/templates/magic_link.html"
 
+# The OTP length is pinned here because the client used to hardcode 6 while the
+# hosted project issued 8-digit codes, which truncated every code and broke
+# verification silently. Version-controlling it keeps local and hosted honest;
+# the client tolerates a range so changing this cannot break sign-in again.
+[auth.email]
+otp_length = 6
+
 [auth.email.template.invite]
 subject = "You're invited to Selftend"
 content_path = "./supabase/templates/invite.html"

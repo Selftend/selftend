@@ -110,7 +110,9 @@ describe("VerifyEmailBanner", () => {
     await act(async () => fireEvent.press(screen.getByText("Send code")));
 
     expect(mockSendVerificationCode).toHaveBeenCalledWith("person@example.com");
-    await waitFor(() => expect(screen.getByText("We emailed you a 6-digit code.")).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText("We emailed you a verification code.")).toBeTruthy(),
+    );
     expect(screen.getByLabelText("Verification code")).toBeTruthy();
   });
 

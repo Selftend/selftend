@@ -73,30 +73,7 @@
                 >
                   {{ .Token }}
                 </p>
-                <p style="margin: 0 0 24px; font-size: 15px; line-height: 22px; color: #67636f">
-                  Or open this link on the device you&rsquo;re signed in on:
-                </p>
-                <table role="presentation" cellpadding="0" cellspacing="0">
-                  <tr>
-                    <td style="border-radius: 6px; background-color: #7c49d4">
-                      <a
-                        href="{{ .SiteURL }}/auth-callback?token_hash={{ .TokenHash }}&amp;type=email"
-                        target="_blank"
-                        style="
-                          display: inline-block;
-                          padding: 12px 24px;
-                          font-size: 15px;
-                          font-weight: 600;
-                          line-height: 20px;
-                          color: #ffffff;
-                          text-decoration: none;
-                          border-radius: 6px;
-                        "
-                        >Verify email address</a
-                      >
-                    </td>
-                  </tr>
-                </table>
+
                 <p style="margin: 24px 0 0; font-size: 13px; line-height: 19px; color: #9d99a8">
                   The code and link work once and expire about an hour after they were sent. If you
                   didn&rsquo;t request this, you can safely ignore this email.
