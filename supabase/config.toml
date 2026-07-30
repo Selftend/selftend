@@ -69,6 +69,24 @@ secret = "env(GOOGLE_LOCAL_CLIENT_SECRET)"
 redirect_uri = "http://localhost:54321/auth/v1/callback"
 skip_nonce_check = true
 
+# Sign in with Apple, required by App Store Guideline 4.8 (the app offers Google
+# Sign-In, so it must also offer a login that keeps the user's email private).
+#
+# Disabled locally by default: the native flow needs a real Apple account and a
+# signed iOS build, neither of which exists against a local stack, so enabling
+# it would only produce confusing failures. Turn it on if you are working on the
+# Apple path against your own Supabase project.
+#
+# `client_id` is the iOS BUNDLE identifier for the native flow (not the Services
+# ID - that one is only for the web/OAuth flow). `secret` is unused by the
+# native path: signInWithIdToken validates the identity token's audience against
+# client_id and never performs an OAuth exchange.
+[auth.external.apple]
+enabled = false
+client_id = "env(APPLE_LOCAL_CLIENT_ID)"
+secret = "env(APPLE_LOCAL_CLIENT_SECRET)"
+redirect_uri = "http://localhost:54321/auth/v1/callback"
+
 # TOTP factor type enabled in config now so future MFA UI (Phase 2) can call
 # the enroll/verify endpoints without another config push. No UI ships in P1.
 [auth.mfa.totp]

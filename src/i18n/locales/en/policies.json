@@ -19,7 +19,7 @@
       {
         "title": "2. Data we collect",
         "body": [
-          "Account data: your email address and authentication identifiers, provided when you sign in with an email and password or with Google OAuth.",
+          "Account data: your email address and authentication identifiers, provided when you sign in with an email and password, with Google OAuth, or with Sign in with Apple. If you use Sign in with Apple and choose to hide your email, Apple gives us a private relay address instead of your real one.",
           "App data: user preferences (enabled modules, onboarding status, reminder settings) and private CBT thought records or other self-help entries you create. These entries may include wellness or mental-health reflection content if you choose to enter it.",
           "Device data: only when you explicitly enable reminders, we store the technical address needed to deliver them - a push token on native apps, or a browser push subscription (endpoint and keys) on web - along with your time zone and, on web, your browser's user-agent string. We do not perform device fingerprinting and do not collect hardware identifiers, advertising IDs, or your location.",
           "Session and local preference data: an authentication token stored in browser localStorage (web) or Expo SecureStore (mobile) to maintain your signed-in session, plus small local app preferences such as language, theme, and last timer session duration stored on your device."
@@ -57,6 +57,7 @@
         "body": [
           "Supabase (Supabase Inc., USA): provides authentication, database hosting, and backend infrastructure. Supabase processes your email and app data on our behalf under their Data Processing Agreement. See supabase.com/privacy.",
           "Google (Google LLC, USA): processes your email and account identifiers only if you choose Google OAuth sign-in. See policies.google.com/privacy.",
+          "Apple (Apple Inc., USA): processes your authentication request and account identifiers only if you choose Sign in with Apple. If you hide your email, Apple relays messages to you without sharing your address with us. See apple.com/legal/privacy.",
           "Cloudflare (Cloudflare, Inc., USA): serves the static web application via Cloudflare Workers. Cloudflare does not receive or process your personal data beyond standard edge server logs (IP address in access logs, subject to Cloudflare's privacy policy).",
           "Expo (Expo Inc., USA): used for mobile app builds and submission, and for delivering reminder notifications on mobile. When mobile reminders are on, Expo's push service relays your device push token and the generic reminder text; it does not receive your notes, entries, or other content you write in the app.",
           "Sentry (Functional Software, Inc., USA): receives crash reports and error diagnostics - stack traces, app version, device model and OS version, and your pseudonymous account identifier - so we can find and fix defects. Sentry never receives your notes, entries, or anything else you write in the app. See sentry.io/privacy.",
@@ -184,7 +185,7 @@
         "title": "4. User accounts",
         "body": [
           "An account is required to use the app so your records and preferences can sync across devices.",
-          "You sign in with your email address and a password, or with Google. Choose a strong, unique password and keep it confidential.",
+          "You sign in with your email address and a password, with Google, or with Sign in with Apple. Choose a strong, unique password and keep it confidential.",
           "You are responsible for maintaining access to the email address associated with your account.",
           "One account per person. Do not share account access or create multiple accounts."
         ]

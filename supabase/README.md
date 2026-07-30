@@ -317,6 +317,7 @@ Avoid parallel linked CLI queries against the production project; parallel reads
 
 - enable the Google provider and paste the Google OAuth client ID and secret
 - keep email auth enabled for email/password sign-in, sign-up confirmation, and password reset
+- enable the **Apple** provider if you build the iOS app. App Store Guideline 4.8 requires it: an app offering Google Sign-In must also offer a login that lets users keep their email private, which email/password cannot do. Set **Client IDs** to the iOS bundle identifier (`org.vasilyoshev.selftend` on the maintainer's build, or your own). Leave **Secret Key** empty for the native flow - `signInWithIdToken` validates the identity token's audience against Client IDs and never performs an OAuth exchange. A secret is only needed for Sign in with Apple on the **web**, and it is a signed ES256 JWT rather than the `.p8` file, which is why Supabase warns that it expires every six months. Skipping web Sign in with Apple avoids that rotation entirely, and Guideline 4.8 only obliges iOS.
 
 6. in Google Auth Platform, create a `Web application` OAuth client and configure:
 
