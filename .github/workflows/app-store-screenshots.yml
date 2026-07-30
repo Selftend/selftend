@@ -194,6 +194,23 @@ jobs:
             --debug-output maestro-debug \
             .maestro/app-store-screenshots.yaml
 
+      # `takeScreenshot` paths are documented as relative to Maestro's workspace
+      # directory, not to the job's working directory - so depending on how the
+      # workspace is inferred, the PNGs can land in `.maestro/screenshots/`
+      # rather than `./screenshots/`. Rather than bet on which, gather them.
+      - name: Gather the captured screenshots
+        if: always()
+        run: |
+          mkdir -p screenshots
+          while IFS= read -r found; do
+            case "$found" in
+              ./screenshots/*) continue ;;
+            esac
+            echo "found $found"
+            cp -f "$found" "screenshots/$(basename "$found")"
+          done < <(find . \( -path ./node_modules -o -path "./$ARTIFACT_DIR" \) -prune -o -name '0[0-9]-*.png' -print)
+          ls -la screenshots/ || true
+
       # The reason this job exists. Wrong-sized images are accepted by nothing
       # and would be discovered at submission - the worst possible moment.
       #

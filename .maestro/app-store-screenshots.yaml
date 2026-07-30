@@ -34,12 +34,23 @@ env:
 # stays where it is and the run would photograph the same screen twice; each
 # `extendedWaitUntil` below asserts the destination's own heading, so that
 # fails here instead of shipping duplicates to a listing.
+#
+# The `.*Open in.*` block after every `openLink` handles iOS's deep-link
+# confirmation sheet. It usually does not appear for an app opening its own
+# scheme, which is why it is conditional rather than an unconditional tap - but
+# when it does appear it swallows the navigation silently.
 
 - launchApp:
     clearState: true
 
-- assertVisible:
-    id: "sign-in-email"
+# NOT `assertVisible` with a timeout. `assertVisible` takes a selector and
+# nothing else - passing `timeout` makes Maestro reject the whole file with
+# "Unknown Property: timeout" before a single command runs, which is how the
+# first attempt at this flow died. Waiting longer than the built-in 7s is what
+# `extendedWaitUntil` is for, and a cold first launch needs longer than 7s.
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-email"
     timeout: 60000
 
 - takeScreenshot: screenshots/00-sign-in
@@ -83,6 +94,11 @@ env:
 
 - openLink:
     link: ${APP_LINK}modules/cbt
+- runFlow:
+    when:
+      visible: ".*Open in.*"
+    commands:
+      - tapOn: "Open"
 - extendedWaitUntil:
     visible:
       text: "Cognitive Behavioral Therapy"
@@ -93,6 +109,11 @@ env:
 
 - openLink:
     link: ${APP_LINK}tools/mood-tracker
+- runFlow:
+    when:
+      visible: ".*Open in.*"
+    commands:
+      - tapOn: "Open"
 - extendedWaitUntil:
     visible:
       text: "Check-in"
@@ -103,6 +124,11 @@ env:
 
 - openLink:
     link: ${APP_LINK}tools/journal
+- runFlow:
+    when:
+      visible: ".*Open in.*"
+    commands:
+      - tapOn: "Open"
 - extendedWaitUntil:
     visible:
       text: "Journal"
@@ -113,6 +139,11 @@ env:
 
 - openLink:
     link: ${APP_LINK}tools/breathing
+- runFlow:
+    when:
+      visible: ".*Open in.*"
+    commands:
+      - tapOn: "Open"
 - extendedWaitUntil:
     visible:
       text: "Breathing exercises"
@@ -123,6 +154,11 @@ env:
 
 - openLink:
     link: ${APP_LINK}progress
+- runFlow:
+    when:
+      visible: ".*Open in.*"
+    commands:
+      - tapOn: "Open"
 - extendedWaitUntil:
     visible:
       text: "Insights"
@@ -133,6 +169,11 @@ env:
 
 - openLink:
     link: ${APP_LINK}tools
+- runFlow:
+    when:
+      visible: ".*Open in.*"
+    commands:
+      - tapOn: "Open"
 - extendedWaitUntil:
     visible:
       text: "Standalone trackers any module can call into. Use them on their own, too."
