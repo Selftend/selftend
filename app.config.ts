@@ -94,6 +94,13 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
   userInterfaceStyle: "automatic",
   ios: {
     supportsTablet: true,
+    // iOS rejects an app icon with an alpha channel, and `assets/icon.png` is
+    // 42.5% fully transparent with clear corners. Expo flattens such an icon
+    // onto WHITE, which would put the mark on a white tile while every other
+    // surface uses the brand cream. This is the same artwork pre-composited
+    // over #f4efe5 with no alpha, so iOS gets the intended background rather
+    // than a default one.
+    icon: "./assets/icon-ios.png",
     // No buildNumber: eas.json sets appVersionSource "remote", so EAS owns
     // CFBundleVersion and a value here is ignored (the same reason
     // android.versionCode is managed remotely). `eas build:version:set` seeds it.
@@ -161,6 +168,17 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
         image: "./assets/splash-icon.png",
         resizeMode: "contain",
         backgroundColor: "#f4efe5",
+        // Without this, a dark-mode cold launch flashes the cream light-mode
+        // splash before the app paints its dark background. #15121c is the
+        // app's own dark background, converted from `.dark { --background: 260
+        // 20% 9% }` in global.css - keep the two in step if that token moves.
+        // The mark is a transparent PNG, so the same artwork composites over
+        // either background.
+        dark: {
+          image: "./assets/splash-icon.png",
+          resizeMode: "contain",
+          backgroundColor: "#15121c",
+        },
       },
     ],
     [
