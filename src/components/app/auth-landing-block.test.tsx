@@ -16,6 +16,8 @@ jest.mock("@/src/providers/session-provider", () => ({
 jest.mock("@/src/features/auth/api", () => ({
   signInWithPassword: jest.fn(),
   signInWithGoogle: jest.fn(),
+  signInWithApple: jest.fn(),
+  isAppleSignInAvailable: jest.fn().mockResolvedValue(false),
   resendVerificationEmail: jest.fn().mockResolvedValue(undefined),
 }));
 
