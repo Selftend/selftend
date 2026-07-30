@@ -151,12 +151,13 @@ Before publishing a preview or production build to testers:
 
 ## iOS TestFlight note
 
-iOS TestFlight and App Store work is deferred. Do not spend on Apple Developer Program enrollment or submit an iOS build until one of these is true:
+**The spend decision has been made: the Apple Developer Program enrolment is done** (2026-07-30). The deferral that previously governed this section is therefore resolved, and the **seller-name tradeoff** it named — an Individual enrolment publishes the maintainer's legal name as the App Store seller — is accepted rather than open. A later move to an organization or nonprofit enrolment remains possible; it is not a blocker.
 
-- the annual Apple Developer Program fee is funded and the maintainer accepts the seller-name tradeoff, or
-- Selftend has a legal organization/nonprofit identity that can enroll under the organization name and, if eligible, apply for Apple's fee waiver.
+The release scripts are no longer omitted: `ios-release.yml` exists and is wired into the release orchestrator. It stays **inert** behind the `IOS_RELEASE_ENABLED` variable, so no release reaches Apple and no Apple service is contacted while that variable is unset.
 
-Release scripts and EAS submit config for iOS are intentionally omitted while this is deferred. Reintroduce them only when the Apple path is funded and ready.
+What remains before iOS builds flow is the one-time Apple setup in [`docs/releasing.md`](releasing.md#one-time-apple-setup-before-flipping-the-switch) — App Store Connect app record, ASC API key, one **interactive** `eas credentials` run to mint the distribution certificate (CI cannot do this), then the variables. Note that the `submit.production.ios` profile is deliberately **absent** from `eas.json`: the workflow writes `ascAppId` and `appleTeamId` in at submit time, because eas-cli does not interpolate those two fields from the environment.
+
+TestFlight distribution here is **internal testers only**. External testing needs Beta App Review, which engages Guideline 4.8 against the app's Google sign-in, and is out of scope until that is resolved.
 
 ## Store-readiness note
 

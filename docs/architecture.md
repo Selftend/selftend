@@ -68,6 +68,10 @@ Public routes stay reachable without sign-in. The `(app)` group is gated by [src
 
 - **Platform storage:** web uses `localStorage`; native uses `expo-secure-store`.
 - **Chunked native auth storage:** `src/lib/secure-store-storage.ts` splits oversized session values across SecureStore keys.
+- **The session is pinned to the device it was written on.** Every SecureStore write passes `keychainAccessible: WHEN_UNLOCKED_THIS_DEVICE_ONLY`, because on iOS any Keychain item that is _not_ `*ThisDeviceOnly` travels in an encrypted iTunes/Finder backup **and restores onto a different device** — a backup plus its password would otherwise yield a live refresh token, and behind it the account and every entry the user has written.
+
+  **Expected consequence, not a bug:** an iOS user who restores a backup onto a new phone is **signed out and must sign in again**. Support should treat "I restored my iPhone and got logged out" as working-as-intended, not as data loss — nothing is lost, because entries live server-side. Android is unaffected: `keychainAccessible` applies on iOS and is ignored elsewhere.
+
 - **`detectSessionInUrl: false`.** The app handles callback URLs explicitly through `app/(auth)/auth-callback.tsx` and `src/features/auth/callback.ts` instead of letting Supabase auto-parse the URL. This makes Expo Router + deep linking + OAuth + recovery flows behave consistently across platforms.
 
 `requireSupabase()` is the call-site helper that throws if the client is `null` (i.e., env vars missing). All repository code uses it - no caller hand-rolls null checks.
@@ -254,7 +258,7 @@ The module is not real until export and deletion include its data.
 
 ## Platform Differences
 
-- **Storage:** localStorage on web, SecureStore on native (auth tokens, chunked when a session value is too large for one SecureStore entry).
+- **Storage:** localStorage on web, SecureStore on native (auth tokens, chunked when a session value is too large for one SecureStore entry). On **iOS** the session is device-bound, so restoring a backup onto a new phone requires signing in again — see [Authentication](#authentication).
 - **Reminders:** local OS notifications on native, Push API + edge function on web.
 - **Auth callback URLs:** different per environment, allow-listed in Supabase.
 - **Auto-refresh:** `AppState`-driven on native, browser-driven on web.
