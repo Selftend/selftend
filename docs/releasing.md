@@ -103,6 +103,20 @@ Building locally also sidesteps Expo's free tier entirely: its **15 iOS builds/m
 
 One consequence to know: **`eas.json`'s `ios.image`, `node`, `fastlane` and `cocoapods` fields are ignored for local builds.** The runner's toolchain is what ships. Setting them there looks like a pin and does nothing, which is why `ios.image` is absent and the SDK check exists instead.
 
+### Checking iOS without a device
+
+`iOS simulator smoke test` (`ios-simulator-check.yml`, **manual dispatch**) builds the app for the iOS Simulator on a `macos-26` runner, boots a simulator, installs, launches it, and fails if the app dies or leaves a crash report. A simulator build is **unsigned**, so it needs no certificate, no provisioning profile and no Apple account — and the runners are free on this public repo.
+
+It exists because the app shipped on Android and web for months without ever executing on an Apple platform, and the maintainer has no iPhone new enough for TestFlight (the app requires **iOS 16.4**, from the RN 0.86 / Expo SDK 57 podspecs). Without it, the first people to run the app on iOS would be Apple's reviewers.
+
+Dispatch it after any change that could plausibly break startup on iOS — a dependency bump, an SDK upgrade, a config-plugin change — and before an App Store submission.
+
+**What it proves:** the app builds for iOS, installs, launches, stays alive and renders. That covers the whole class of iOS-only startup crashes, the likeliest rejection for an app new to the platform.
+
+**What it does not prove, and must not be read as proving:** Sign in with Apple and push notifications. Both need real hardware and a signed build. A green run narrows what is unknown; **it is not device QA**.
+
+It needs the `production` environment for the app's public `EXPO_PUBLIC_*` config, and fails fast if any of it is missing — otherwise the app would boot to its "Supabase not configured" state and the test would pass without exercising anything. The run uploads a launch screenshot as an artifact, which doubles as a starting point for App Store listing images; note those must be captured at Apple's exact device sizes, so pin the device input rather than accepting the default newest-available iPhone.
+
 ### One-time Apple setup (before flipping the switch)
 
 `deploy-ios` no-ops with a notice until the `IOS_RELEASE_ENABLED` variable is `true`, so it cannot redden a release while this is outstanding. All of the following needs payment, Apple 2FA, or an interactive Apple login, so none of it can be automated:

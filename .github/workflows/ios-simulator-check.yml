@@ -87,6 +87,27 @@ jobs:
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
+      # Without this the job has a silent false-green mode: if a variable is unset
+      # or mis-scoped, GitHub substitutes an empty string, the app boots to its
+      # explicit "Supabase not configured" state, and the smoke test passes while
+      # having exercised none of the configured startup path it claims to cover.
+      # `validateReleaseBuildEnv()` in app.config.ts does not guard this profile,
+      # so the check has to live here.
+      - name: Check the app config is actually present
+        run: |
+          missing=0
+          for name in             EXPO_PUBLIC_SUPABASE_URL             EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY             EXPO_PUBLIC_PUBLIC_APP_URL             EXPO_PUBLIC_SUPPORT_EMAIL             EXPO_PUBLIC_PRIVACY_EMAIL             EXPO_PUBLIC_SECURITY_EMAIL
+          do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is empty - the smoke test would boot the unconfigured app and pass without testing anything."
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
       - name: Report the toolchain
         run: |
           echo "Xcode: $(xcodebuild -version | head -n 1)"
