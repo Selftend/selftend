@@ -16,9 +16,16 @@ import { resolve } from "node:path";
 //     somebody notices and answers the encryption question by hand.
 //   - `--non-interactive` on the build. Without it eas-cli prompts and the job
 //     hangs until the timeout.
-//   - the runner OS. The point of this pipeline is that macOS compute happens on
-//     EAS, not on a GitHub macOS runner at ~10x the included-minute burn; a
-//     `runs-on: macos-*` creeping in here is a silent cost regression.
+//   - the runner OS, and an SDK check on it. The build compiles locally on a
+//     GitHub macOS runner (free and unlimited on public repos), so the runner's
+//     own Xcode is what ships - eas.json's `image` field is IGNORED for local
+//     builds. Losing the pin or the SDK guard means an SDK-too-old archive is
+//     rejected by Apple only after a full build and a consumed build number.
+//   - no Apple identifiers hard-coded into eas.json as `$VAR` strings. eas-cli
+//     interpolates only ascApiKeyPath/ascApiKeyIssuerId/ascApiKeyId, so a
+//     literal "$ASC_APP_ID" fails `ascAppId`'s /^\d+$/ validation - and fails
+//     after the build, since the submit profile is resolved last. The workflow
+//     writes real values in with jq instead.
 //   - no `ios.buildNumber` in app config. Under appVersionSource "remote" a
 //     local value is ignored, so one reintroduced would read as authoritative
 //     while doing nothing.
@@ -32,28 +39,35 @@ const iosWorkflow = readFileSync(resolve(ROOT, ".github/workflows/ios-release.ym
 const releaseWorkflow = readFileSync(resolve(ROOT, ".github/workflows/release.yml"), "utf8");
 const appConfigSource = readFileSync(resolve(ROOT, "app.config.ts"), "utf8");
 
-const easJson = JSON.parse(readFileSync(resolve(ROOT, "eas.json"), "utf8")) as {
+const easJsonSource = readFileSync(resolve(ROOT, "eas.json"), "utf8");
+
+const easJson = JSON.parse(easJsonSource) as {
   cli?: { appVersionSource?: string };
   build?: Record<string, { autoIncrement?: boolean; ios?: { image?: string } }>;
   submit?: Record<string, { ios?: { ascAppId?: string; appleTeamId?: string } }>;
 };
 
 describe("iOS release lands on TestFlight, not the App Store", () => {
-  it("submits with the production submit profile", () => {
-    expect(iosWorkflow).toContain("--auto-submit-with-profile production");
+  it("submits the locally built IPA with the production submit profile", () => {
+    expect(iosWorkflow).toContain("submit --platform ios --profile production");
+    expect(iosWorkflow).toContain('--path "$IOS_OUTPUT_PATH"');
+    // Auto-submit is refused by eas-cli for local builds ("Auto-submits are not
+    // yet supported when building locally"), so a reintroduced --auto-submit
+    // would fail the release rather than shorten it.
+    expect(iosWorkflow).not.toContain("--auto-submit");
   });
 
-  it("keeps a submit profile for iOS carrying the app and team identifiers", () => {
-    const profile = easJson.submit?.production?.ios;
-    expect(profile).toBeDefined();
-    // Interpolated from GitHub variables so no Apple identifiers are committed;
-    // the workflow's gate job refuses to run when either is unset, because EAS
-    // would otherwise try to create an App Store Connect record from the
-    // literal string.
-    expect(profile?.ascAppId).toBe("$ASC_APP_ID");
-    expect(profile?.appleTeamId).toBe("$APPLE_TEAM_ID");
-    expect(iosWorkflow).toContain("ASC_APP_ID");
-    expect(iosWorkflow).toContain("APPLE_TEAM_ID");
+  it("never commits Apple identifiers as uninterpolated eas.json placeholders", () => {
+    // eas-cli interpolates only the three ascApiKey* fields. A "$ASC_APP_ID"
+    // here would reach Joi as a literal and fail /^\d+$/ - after the build has
+    // already been spent, because the submit profile is resolved last of all.
+    expect(easJsonSource).not.toContain("$ASC_APP_ID");
+    expect(easJsonSource).not.toContain("$APPLE_TEAM_ID");
+    expect(easJson.submit?.production?.ios?.ascAppId).toBeUndefined();
+    expect(easJson.submit?.production?.ios?.appleTeamId).toBeUndefined();
+    // ...and the workflow supplies them for real, from GitHub variables.
+    expect(iosWorkflow).toMatch(/jq --arg app "\$ASC_APP_ID" --arg team "\$APPLE_TEAM_ID"/);
+    expect(iosWorkflow).toContain("ascAppId: $app, appleTeamId: $team");
   });
 
   it("is wired into the release orchestrator behind migrate-prod", () => {
@@ -72,21 +86,34 @@ describe("iOS release lands on TestFlight, not the App Store", () => {
 });
 
 describe("iOS release cost and correctness guards", () => {
-  it("never builds on a GitHub macOS runner", () => {
-    expect(iosWorkflow).not.toMatch(/runs-on:\s*macos/);
-    expect(iosWorkflow).toMatch(/runs-on:\s*ubuntu-latest/);
-    // The macOS work belongs to EAS's builders, pinned to an Xcode 26 image
-    // because Apple requires the iOS 26 SDK for App Store Connect uploads.
-    expect(easJson.build?.production?.ios?.image).toBe("macos-sequoia-15.6-xcode-26.0");
+  it("builds on a pinned macOS runner, never a billed larger one", () => {
+    // Standard GitHub-hosted runners are free and unlimited on public repos, so
+    // compiling here (rather than on EAS) costs nothing and removes the Expo
+    // free tier's 15-builds/month ceiling entirely.
+    expect(iosWorkflow).toMatch(/runs-on:\s*macos-26\b/);
+    // `macos-latest` moved from macOS 15 to 26 during 2026 and will move again,
+    // silently changing the toolchain under a release.
+    expect(iosWorkflow).not.toMatch(/runs-on:\s*macos-latest/);
+    // -large/-xlarge are billed even on public repositories.
+    expect(iosWorkflow).not.toMatch(/runs-on:\s*macos[\w.-]*-x?large/);
   });
 
-  it("runs the build non-interactively and waits for the real outcome", () => {
+  it("verifies the runner's iOS SDK instead of trusting eas.json's image", () => {
+    // `image` is ignored for local builds, so pinning it there guarantees
+    // nothing. The runner's own Xcode ships, and Apple rejects anything built
+    // against an SDK older than iOS 26 - after the build, so check first.
+    expect(easJson.build?.production?.ios?.image).toBeUndefined();
+    expect(iosWorkflow).toContain("xcrun --sdk iphoneos --show-sdk-version");
+    expect(iosWorkflow).toMatch(/-lt 26\b/);
+  });
+
+  it("runs the build locally and non-interactively", () => {
     expect(iosWorkflow).toContain("--non-interactive");
-    expect(iosWorkflow).toContain("--wait");
-    // --no-wait would report success the moment the build is queued, so a
-    // compile failure would land after the workflow had already gone green.
-    // Matched as a flag on its own continuation line, so the prose above that
-    // explains this choice doesn't trip the assertion.
+    expect(iosWorkflow).toContain("--local");
+    // The IPA must land at a known path for `eas submit --path` to find it.
+    expect(iosWorkflow).toContain('--output "$IOS_OUTPUT_PATH"');
+    // --wait belongs to remote builds; a local build is synchronous by nature,
+    // and passing it would be a sign the job had drifted back to EAS builders.
     expect(iosWorkflow).not.toMatch(/^\s*--no-wait\s*$/m);
   });
 

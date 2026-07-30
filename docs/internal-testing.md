@@ -151,14 +151,13 @@ Before publishing a preview or production build to testers:
 
 ## iOS TestFlight note
 
-**The spend decision is unchanged and still gates everything.** Do not enrol in the Apple Developer Program or submit an iOS build until one of these is true:
+**The spend decision has been made: the Apple Developer Program enrolment is done** (2026-07-30). The deferral that previously governed this section is therefore resolved, and the **seller-name tradeoff** it named — an Individual enrolment publishes the maintainer's legal name as the App Store seller — is accepted rather than open. A later move to an organization or nonprofit enrolment remains possible; it is not a blocker.
 
-- the annual Apple Developer Program fee is funded and the maintainer accepts the **seller-name tradeoff** — an Individual enrolment publishes the maintainer's legal name as the App Store seller, which is a real consideration for an app in this category, or
-- Selftend has a legal organization/nonprofit identity that can enroll under the organization name and, if eligible, apply for Apple's fee waiver.
+The release scripts are no longer omitted: `ios-release.yml` exists and is wired into the release orchestrator. It stays **inert** behind the `IOS_RELEASE_ENABLED` variable, so no release reaches Apple and no Apple service is contacted while that variable is unset.
 
-What changed: the release scripts and EAS submit config are **no longer omitted** — `ios-release.yml` and the `submit.production.ios` profile now exist, because writing them costs nothing and having them absent made the eventual Apple decision a bigger, riskier change. They are **inert**: the pipeline no-ops behind the `IOS_RELEASE_ENABLED` variable, so a release cannot reach Apple, and no Apple account is contacted, while that variable is unset.
+What remains before iOS builds flow is the one-time Apple setup in [`docs/releasing.md`](releasing.md#one-time-apple-setup-before-flipping-the-switch) — App Store Connect app record, ASC API key, one **interactive** `eas credentials` run to mint the distribution certificate (CI cannot do this), then the variables. Note that the `submit.production.ios` profile is deliberately **absent** from `eas.json`: the workflow writes `ascAppId` and `appleTeamId` in at submit time, because eas-cli does not interpolate those two fields from the environment.
 
-Enabling them is the act this deferral governs. When the funding decision above is made, follow the setup in [`docs/releasing.md`](releasing.md#one-time-apple-setup-before-flipping-the-switch) — enrolment, app record, ASC API key, one interactive `eas credentials` run — and only then set `IOS_RELEASE_ENABLED=true`.
+TestFlight distribution here is **internal testers only**. External testing needs Beta App Review, which engages Guideline 4.8 against the app's Google sign-in, and is out of scope until that is resolved.
 
 ## Store-readiness note
 
