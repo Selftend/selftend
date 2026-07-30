@@ -185,24 +185,56 @@ jobs:
         env:
           UDID: ${{ steps.boot.outputs.udid }}
         run: |
-          mkdir -p screenshots
-          maestro --device "$UDID" test .maestro/app-store-screenshots.yaml
+          mkdir -p screenshots maestro-debug
+          # --debug-output keeps Maestro's own view-hierarchy dumps and per-command
+          # screenshots. Without them a selector failure on a runner nobody can
+          # attach a debugger to costs a whole 40-minute build to diagnose; with
+          # them, the exact accessibility tree is in the artifact.
+          maestro --device "$UDID" test \
+            --debug-output maestro-debug \
+            .maestro/app-store-screenshots.yaml
 
       # The reason this job exists. Wrong-sized images are accepted by nothing
       # and would be discovered at submission - the worst possible moment.
-      - name: Verify the screenshots are Apple's required size
+      #
+      # Three separate failure modes, because each one produces a plausible-
+      # looking artifact that would waste a submission attempt:
+      #   - a screen missing entirely (the flow stopped early),
+      #   - an image at the wrong size (Apple rejects the upload),
+      #   - two identical images (a deep link no-opped and the same screen was
+      #     photographed twice).
+      - name: Verify the screenshots are complete and Apple's required size
         env:
           EXPECT_W: ${{ matrix.expect_width }}
           EXPECT_H: ${{ matrix.expect_height }}
         run: |
+          # Keep in step with .maestro/app-store-screenshots.yaml.
+          required=(
+            00-sign-in
+            01-home
+            02-cbt
+            03-mood
+            04-journal
+            05-breathing
+            06-insights
+            07-tools
+          )
+
+          bad=0
+          for name in "${required[@]}"; do
+            if [ ! -f "screenshots/$name.png" ]; then
+              echo "::error::screenshots/$name.png is missing - the capture flow did not reach that screen."
+              bad=1
+            fi
+          done
+
           shopt -s nullglob
           files=(screenshots/*.png)
           if [ ${#files[@]} -eq 0 ]; then
-            echo "::error::No screenshots were captured."
+            echo "::error::No screenshots were captured at all."
             exit 1
           fi
 
-          bad=0
           for f in "${files[@]}"; do
             w="$(sips -g pixelWidth  "$f" | awk '/pixelWidth/  {print $2}')"
             h="$(sips -g pixelHeight "$f" | awk '/pixelHeight/ {print $2}')"
@@ -213,6 +245,17 @@ jobs:
               bad=1
             fi
           done
+
+          # The status bar is frozen to a fixed clock and battery above, so two
+          # captures of the same screen really are byte-identical. Anything that
+          # collides here is a navigation that silently did nothing.
+          dupes="$(md5 -q "${files[@]}" | sort | uniq -d)"
+          if [ -n "$dupes" ]; then
+            echo "::error::Two or more screenshots are identical - navigation did not happen between captures."
+            md5 -r "${files[@]}" | sort
+            bad=1
+          fi
+
           [ "$bad" -eq 0 ]
 
       - name: Upload screenshots
@@ -223,6 +266,15 @@ jobs:
           path: screenshots/
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Upload Maestro debug output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-debug-${{ matrix.slug }}-${{ github.run_number }}
+          path: maestro-debug/
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Summarise
         if: always()
