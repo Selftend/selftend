@@ -1,0 +1,78 @@
+appId: org.vasilyoshev.selftend
+---
+# Drives the app far enough to photograph it for the App Store.
+#
+# `simctl` can boot, install, launch and screenshot, but it cannot type or tap -
+# so automation alone reaches the sign-in screen and stops. A listing showing
+# only a login form is a poor advertisement for an app whose entire value is
+# behind it, hence Maestro.
+#
+# Signs in as the staged demo account (#514). Never a real person's account:
+# these images are published on a public store listing, and the app holds
+# private mental-health writing.
+#
+# Steps are deliberately tolerant. A store-screenshot run must not fail the job
+# because one optional screen moved - it should capture what it can and let the
+# resolution check downstream decide whether the output is usable.
+
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    text: "Sign in to your account"
+    timeout: 30000
+
+- takeScreenshot: screenshots/01-sign-in
+
+- tapOn:
+    text: "m@example.com"
+- inputText: ${MAESTRO_DEMO_EMAIL}
+
+# The password field has no placeholder text, so it is addressed by its label.
+- tapOn:
+    below:
+      text: "Password"
+- inputText: ${MAESTRO_DEMO_PASSWORD}
+
+- tapOn:
+    text: "Continue"
+
+# Home can take a moment: the session restores and the first queries resolve.
+- extendedWaitUntil:
+    visible:
+      text: "Today"
+    timeout: 45000
+
+- takeScreenshot: screenshots/02-home
+
+# Each tool below is optional. `optional: true` keeps a moved or renamed screen
+# from failing the whole capture run.
+- runFlow:
+    when:
+      visible:
+        text: "Tools"
+    commands:
+      - tapOn:
+          text: "Tools"
+          optional: true
+      - takeScreenshot: screenshots/03-tools
+
+- runFlow:
+    when:
+      visible:
+        text: "Mood"
+    commands:
+      - tapOn:
+          text: "Mood"
+          optional: true
+      - takeScreenshot: screenshots/04-mood
+
+- runFlow:
+    when:
+      visible:
+        text: "Journal"
+    commands:
+      - tapOn:
+          text: "Journal"
+          optional: true
+      - takeScreenshot: screenshots/05-journal

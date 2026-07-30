@@ -1,0 +1,234 @@
+name: App Store screenshots
+
+# Produces App Store listing screenshots at Apple's exact required sizes, on the
+# free `macos-26` runners, without owning any Apple hardware.
+#
+# Apple rejects a listing whose screenshots are the wrong dimensions, and because
+# app.config.ts sets `supportsTablet: true`, **iPad images are required as well
+# as iPhone**. Dropping iPad support would avoid that, but it is a product
+# decision rather than a shortcut, so it is not assumed here.
+#
+#   iPhone 6.9"  1320 x 2868   iPhone 16 Pro Max class
+#   iPad 13"     2064 x 2752   iPad Pro 13-inch class
+#
+# The build is a simulator build and therefore unsigned - no certificate, no
+# provisioning profile, no Apple account.
+#
+# Maestro drives the app because `simctl` cannot type or tap: without it the
+# capture stops at the sign-in screen, and a listing showing only a login form
+# advertises none of what the app actually does.
+#
+# The resolution check at the end is the point of the whole job. Silently
+# producing almost-right images would be discovered at submission time, which is
+# the worst moment to find out.
+on:
+  workflow_dispatch:
+    inputs:
+      keep_going_on_flow_failure:
+        description: Still upload whatever was captured if the Maestro flow fails
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: ${{ matrix.label }}
+    runs-on: macos-26
+    timeout-minutes: 75
+    environment: production
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: iPhone 6.9 inch
+            slug: iphone-6.9
+            device_pattern: "^iPhone 1[6-9] Pro Max$"
+            expect_width: 1320
+            expect_height: 2868
+          - label: iPad 13 inch
+            slug: ipad-13
+            device_pattern: "^iPad Pro 13-inch"
+            expect_width: 2064
+            expect_height: 2752
+
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      EXPO_PUBLIC_PUBLIC_APP_URL: ${{ vars.EXPO_PUBLIC_PUBLIC_APP_URL }}
+      EXPO_PUBLIC_SUPPORT_EMAIL: ${{ vars.EXPO_PUBLIC_SUPPORT_EMAIL }}
+      EXPO_PUBLIC_PRIVACY_EMAIL: ${{ vars.EXPO_PUBLIC_PRIVACY_EMAIL }}
+      EXPO_PUBLIC_SECURITY_EMAIL: ${{ vars.EXPO_PUBLIC_SECURITY_EMAIL }}
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
+      EXPO_PUBLIC_GITHUB_REPO_URL: ${{ vars.EXPO_PUBLIC_GITHUB_REPO_URL }}
+      EXPO_PUBLIC_SENTRY_DSN: ${{ vars.EXPO_PUBLIC_SENTRY_DSN }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      SENTRY_DISABLE_AUTO_UPLOAD: "true"
+      BUNDLE_ID: org.vasilyoshev.selftend
+      ARTIFACT_DIR: build-artifacts
+      # The staged demo account (#514). Never a real account: these images are
+      # published publicly and the app holds private mental-health writing.
+      MAESTRO_DEMO_EMAIL: ${{ secrets.DEMO_ACCOUNT_EMAIL }}
+      MAESTRO_DEMO_PASSWORD: ${{ secrets.DEMO_ACCOUNT_PASSWORD }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: npm
+
+      - name: Check required config and demo credentials
+        run: |
+          missing=0
+          for name in \
+            EXPO_PUBLIC_SUPABASE_URL \
+            EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
+            EXPO_PUBLIC_PUBLIC_APP_URL \
+            MAESTRO_DEMO_EMAIL \
+            MAESTRO_DEMO_PASSWORD
+          do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is empty. Without it the run captures an unconfigured app or stops at sign-in."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Build for the simulator
+        run: |
+          mkdir -p "$ARTIFACT_DIR"
+          npm exec --yes eas-cli -- build \
+            --platform ios \
+            --profile simulator \
+            --local \
+            --non-interactive \
+            --output "$ARTIFACT_DIR/selftend-simulator.tar.gz"
+
+      - name: Unpack the app bundle
+        id: unpack
+        run: |
+          cd "$ARTIFACT_DIR"
+          tar -xzf selftend-simulator.tar.gz
+          app_path="$(find . -maxdepth 2 -name '*.app' -print -quit)"
+          if [ -z "$app_path" ]; then
+            echo "::error::No .app bundle in the simulator build output."
+            exit 1
+          fi
+          echo "app_path=$ARTIFACT_DIR/${app_path#./}" >> "$GITHUB_OUTPUT"
+
+      - name: Boot the target device
+        id: boot
+        env:
+          PATTERN: ${{ matrix.device_pattern }}
+        run: |
+          # Matched by pattern rather than an exact name: simulator device names
+          # change between Xcode releases, and a pinned name would silently stop
+          # existing - producing a confusing failure unrelated to the app.
+          udid="$(xcrun simctl list devices available -j \
+            | jq -r --arg p "$PATTERN" '[.devices[][] | select(.name | test($p))] | last.udid // empty')"
+
+          if [ -z "$udid" ]; then
+            echo "::error::No available simulator matching /$PATTERN/. Apple's required screenshot size cannot be produced without it."
+            xcrun simctl list devices available | grep -E "iPhone|iPad" || true
+            exit 1
+          fi
+
+          name="$(xcrun simctl list devices available -j | jq -r --arg u "$udid" '[.devices[][] | select(.udid == $u)] | .[0].name')"
+          echo "Booting $name"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          # A clean status bar: no carrier noise, full battery, a fixed clock.
+          xcrun simctl status_bar "$udid" override --time "09:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Install the app
+        env:
+          UDID: ${{ steps.boot.outputs.udid }}
+          APP_PATH: ${{ steps.unpack.outputs.app_path }}
+        run: xcrun simctl install "$UDID" "$APP_PATH"
+
+      - name: Drive the app and capture
+        id: flow
+        continue-on-error: ${{ inputs.keep_going_on_flow_failure }}
+        env:
+          UDID: ${{ steps.boot.outputs.udid }}
+        run: |
+          mkdir -p screenshots
+          maestro --device "$UDID" test .maestro/app-store-screenshots.yaml
+
+      # The reason this job exists. Wrong-sized images are accepted by nothing
+      # and would be discovered at submission - the worst possible moment.
+      - name: Verify the screenshots are Apple's required size
+        env:
+          EXPECT_W: ${{ matrix.expect_width }}
+          EXPECT_H: ${{ matrix.expect_height }}
+        run: |
+          shopt -s nullglob
+          files=(screenshots/*.png)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No screenshots were captured."
+            exit 1
+          fi
+
+          bad=0
+          for f in "${files[@]}"; do
+            w="$(sips -g pixelWidth  "$f" | awk '/pixelWidth/  {print $2}')"
+            h="$(sips -g pixelHeight "$f" | awk '/pixelHeight/ {print $2}')"
+            if [ "$w" = "$EXPECT_W" ] && [ "$h" = "$EXPECT_H" ]; then
+              echo "ok   $(basename "$f")  ${w}x${h}"
+            else
+              echo "::error::$(basename "$f") is ${w}x${h}, Apple requires ${EXPECT_W}x${EXPECT_H}."
+              bad=1
+            fi
+          done
+          [ "$bad" -eq 0 ]
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots-${{ matrix.slug }}-${{ github.run_number }}
+          path: screenshots/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Summarise
+        if: always()
+        env:
+          DEVICE_NAME: ${{ steps.boot.outputs.name }}
+        run: |
+          {
+            echo "### ${{ matrix.label }} - ${DEVICE_NAME:-unknown}"
+            echo
+            echo "Target size: **${{ matrix.expect_width }} x ${{ matrix.expect_height }}**"
+            echo
+            echo "Captured with the staged demo account, never a real one - these"
+            echo "images go on a public listing and the app holds private writing."
+            echo
+            echo "Review them before uploading. Apple rejects screenshots that"
+            echo "misrepresent the app, and overlay text (if any is added later) is"
+            echo "user-facing copy in the owner's voice."
+          } >> "$GITHUB_STEP_SUMMARY"
