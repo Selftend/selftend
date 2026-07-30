@@ -118,6 +118,18 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
       // untestable, until someone answered the encryption question by hand.
       usesNonExemptEncryption: false,
     },
+    infoPlist: {
+      // iOS resolves the app's language from the bundle's declared
+      // localizations, not from whatever i18next happens to ship. Without this
+      // the bundle advertises English only, so a Bulgarian-locale device is
+      // handed en even though bg exists (src/i18n/locales/), and the App Store
+      // would list the app as English-only.
+      //
+      // Keep in step with src/i18n/locales/ - a locale added there and omitted
+      // here is invisible to iOS. `en` stays first as the development region,
+      // matching i18next's fallbackLng.
+      CFBundleLocalizations: ["en", "bg"],
+    },
   },
   android: {
     adaptiveIcon: {
