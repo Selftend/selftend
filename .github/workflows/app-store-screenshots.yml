@@ -206,7 +206,7 @@ jobs:
       - name: Gather the captured screenshots
         if: always()
         run: |
-          mkdir -p screenshots
+          mkdir -p screenshots diagnostics
           while IFS= read -r found; do
             case "$found" in
               ./screenshots/*) continue ;;
@@ -215,6 +215,16 @@ jobs:
             cp -f "$found" "screenshots/$(basename "$found")"
           done < <(find . \( -path ./node_modules -o -path "./$ARTIFACT_DIR" \) -prune -o -name '0[0-9]-*.png' -print)
           ls -la screenshots/ || true
+
+          # Diagnostic captures are gathered separately and never enter
+          # screenshots/, so they cannot trip the size or duplicate gates.
+          while IFS= read -r found; do
+            case "$found" in
+              ./diagnostics/*) continue ;;
+            esac
+            cp -f "$found" "diagnostics/$(basename "$found")"
+          done < <(find . \( -path ./node_modules -o -path "./$ARTIFACT_DIR" \) -prune -o -path '*/diagnostics/*.png' -print)
+          ls -la diagnostics/ || true
 
       # The reason this job exists. Wrong-sized images are accepted by nothing
       # and would be discovered at submission - the worst possible moment.
@@ -289,12 +299,27 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: Upload diagnostic captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-${{ matrix.slug }}-${{ github.run_number }}
+          path: diagnostics/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # `include-hidden-files` is required, not optional. Maestro writes its
+      # debug output to `maestro-debug/.maestro/tests/<timestamp>/`, and
+      # upload-artifact skips dot-paths by default - so the first run with
+      # --debug-output uploaded an empty artifact and the view hierarchy that
+      # would have explained the failure was silently dropped.
       - name: Upload Maestro debug output
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: maestro-debug-${{ matrix.slug }}-${{ github.run_number }}
           path: maestro-debug/
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7
 

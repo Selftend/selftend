@@ -81,6 +81,44 @@ env:
       - tapOn:
           id: "sign-in-submit"
 
+# Unconditional, and the only reason it exists is diagnosis. When the home wait
+# below fails there is otherwise nothing in the artifact showing WHY - the run
+# that added this had to guess between "sign-in failed" and "a gate is in the
+# way". `diagnostics/` is deliberately outside the `NN-name` pattern the gather
+# step collects, so it can never reach the size or duplicate gates.
+- takeScreenshot: diagnostics/after-submit
+
+# `protected-layout.tsx` can put two things between a fresh session and home,
+# both driven by server-side preferences rather than anything in this repo, so
+# whether they appear depends on the demo account's history:
+#
+#   1. ConsentGate, when `policyVersionAccepted` != the current `policyVersion`
+#   2. AppOnboardingWizard, when `appOnboardingCompleted` is false
+#
+# Both are dismissed conditionally. The consent tap accepts Selftend's own
+# in-app policy on Selftend's own staged demo account, which is what the e2e
+# suite's `dismissPostSignInModals` already does for seeded accounts - it is
+# test plumbing, not a decision. Flagged in the PR rather than done quietly.
+- runFlow:
+    when:
+      visible:
+        id: "consent-accept-checkbox"
+    commands:
+      - tapOn:
+          id: "consent-accept-checkbox"
+      - tapOn:
+          id: "consent-submit"
+      - waitForAnimationToEnd:
+          timeout: 10000
+
+- runFlow:
+    when:
+      visible: "Welcome to Selftend"
+    commands:
+      - tapOn: "Skip for now"
+      - waitForAnimationToEnd:
+          timeout: 10000
+
 # Home can take a moment: the session restores and the first queries resolve.
 - extendedWaitUntil:
     visible:
