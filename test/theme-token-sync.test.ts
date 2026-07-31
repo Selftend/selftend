@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { CARD_COLOR, POPOVER_COLOR, THEME } from "@/lib/theme";
+import { CARD_COLOR, POPOVER_COLOR, THEME, THEME_VAR_VALUES } from "@/lib/theme";
 import { exerciseHue, EXERCISE_HUES } from "@/src/features/mindfulness/exercise-hue";
 import {
   HUE_INK_LIGHTNESS,
@@ -102,38 +102,29 @@ const camelToToken = (key: string) =>
 describe("lib/theme.ts mirrors global.css", () => {
   it.each(["light", "dark"] as const)("THEME.%s matches the css tokens", (scheme) => {
     for (const [key, value] of Object.entries(THEME[scheme])) {
-      if (key === "radius") {
-        // .dark declares no --radius; the cascade inherits it from :root.
-        expect(value).toBe(css[scheme]["--radius"] ?? css.light["--radius"]);
-        continue;
-      }
       expect({ key, value }).toEqual({ key, value: `hsl(${css[scheme][camelToToken(key)]})` });
     }
   });
 
-  it.each(["light", "dark"] as const)("THEME_VARIABLES %s matches the css tokens", (scheme) => {
-    const source = readFileSync(join(ROOT, "lib", "theme.ts"), "utf8");
-    const variablesSection = source.slice(source.indexOf("THEME_VARIABLES"));
-    const blocks = [...variablesSection.matchAll(/vars\(\{([^}]*)\}\)/g)];
-    expect(blocks).toHaveLength(2);
-    const body = scheme === "light" ? blocks[0][1] : blocks[1][1];
-    const entries = [...body.matchAll(/"(--[a-z0-9-]+)":\s*"([^"]+)"/g)];
+  // The var record applied at the app root, checked by value rather than by
+  // reading lib/theme.ts's source: since #579 these are projections of the
+  // TypeScript contract, not literals a regex can scrape. The contract ↔ CSS
+  // direction is test/theme-contract.test.ts; this is the whole record,
+  // including the encoding palette and the legacy room pour.
+  it.each(["light", "dark"] as const)("THEME_VAR_VALUES %s matches the css tokens", (scheme) => {
+    const entries = Object.entries(THEME_VAR_VALUES[scheme]);
     expect(entries.length).toBeGreaterThan(0);
-    for (const [, token, value] of entries) {
+    for (const [token, value] of entries) {
       // --radius is only declared on :root; .dark inherits it via the cascade.
       expect({ token, value }).toEqual({ token, value: css[scheme][token] ?? css.light[token] });
     }
   });
 
-  it.each(["light", "dark"] as const)("THEME_VARIABLES %s carries every hue token", (scheme) => {
-    const source = readFileSync(join(ROOT, "lib", "theme.ts"), "utf8");
-    const variablesSection = source.slice(source.indexOf("THEME_VARIABLES"));
-    const blocks = [...variablesSection.matchAll(/vars\(\{([^}]*)\}\)/g)];
-    expect(blocks).toHaveLength(2);
-    const body = scheme === "light" ? blocks[0][1] : blocks[1][1];
+  it.each(["light", "dark"] as const)("THEME_VAR_VALUES %s carries every hue token", (scheme) => {
     for (const hue of HUE_NAMES) {
       // Hue values must come from the TS hue source, never a fresh literal.
-      expect(body).toContain(`"--${hue}": HUE_TRIPLES.${hue}.${scheme}`);
+      expect(THEME_VAR_VALUES[scheme][`--${hue}`]).toBe(HUE_TRIPLES[hue][scheme]);
+      expect(THEME_VAR_VALUES[scheme][`--${hue}-ink`]).toBe(HUE_INK_TRIPLES[hue][scheme]);
     }
   });
 
