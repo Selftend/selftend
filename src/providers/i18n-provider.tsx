@@ -80,18 +80,31 @@ export function I18nProvider({ children }: PropsWithChildren) {
         return;
       }
 
-      // No stored preference. Consider the device locale once, and only on a fresh
-      // install - the marker is written either way so this never runs twice.
+      // No stored preference. Consider the device locale once, and only on a fresh install.
       if (await AsyncStorage.getItem(LANGUAGE_DETECTED_KEY)) return;
-      const fresh = await isFreshInstall();
-      await AsyncStorage.setItem(LANGUAGE_DETECTED_KEY, "1");
-      if (!fresh) return;
+
+      if (!(await isFreshInstall())) {
+        // An existing user stays in English. Nothing is applied, so nothing can fail:
+        // settle the question permanently.
+        await AsyncStorage.setItem(LANGUAGE_DETECTED_KEY, "1");
+        return;
+      }
 
       const detected = detectDeviceLanguage();
-      if (detected === "en") return;
+      if (detected === "en") {
+        // Already the default - again, no work that could fail.
+        await AsyncStorage.setItem(LANGUAGE_DETECTED_KEY, "1");
+        return;
+      }
 
+      // Order matters. The marker is written only once the bundle has actually been
+      // applied and the choice persisted, because `apply` can reject on a failed lazy
+      // chunk load and the caller swallows that. Marking first would turn one transient
+      // network blip into a permanently English UI: every later launch would return at
+      // the marker check above and never try again (#568).
       await apply(detected);
       await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, detected);
+      await AsyncStorage.setItem(LANGUAGE_DETECTED_KEY, "1");
     };
 
     hydrate()
