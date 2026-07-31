@@ -104,18 +104,39 @@ Needs a **real device** and a **fresh install**: iOS caches association data
 per install, so an upgrade over an existing build may keep using stale data.
 This is why the ticket sat behind the first installable TestFlight build.
 
+> **Do not check the status code.** The web build is a client-rendered SPA, so
+> Cloudflare serves the HTML shell with **`200 OK`** for any path that does not
+> exist — including this one. Verified on 2026-07-31, before the file was
+> deployed: `200`, `Content-Type: text/html`, body `<!doctype html>`. A
+> `curl -sI ... | grep 200` check passes whether or not the file is there,
+> which is exactly the false green that would send someone hunting in the app.
+> Assert on the **content type and the body**.
+
 ```bash
-# 1. The origin serves it as JSON, uncached, with no redirect:
-curl -sI https://selftend.org/.well-known/apple-app-site-association | head -8
-#    -> 200, Content-Type: application/json, Cache-Control: no-cache
-#    A redirect here is fatal: Apple does not follow them.
+# 1. Content type must be application/json, NOT text/html.
+#    text/html means the file is missing and you are looking at the SPA shell.
+curl -s -o /dev/null -w '%{content_type}\n' \
+  https://selftend.org/.well-known/apple-app-site-association
+#    -> application/json
 
-# 2. Same for the www host, which is claimed separately:
-curl -sI https://www.selftend.org/.well-known/apple-app-site-association | head -8
+# 2. The body must parse as JSON and carry the team-prefixed app id.
+#    `jq -e` exits non-zero if the path is absent, so this fails loudly.
+curl -s https://selftend.org/.well-known/apple-app-site-association \
+  | jq -e '.applinks.details[0].appIDs[0] == "C5GVSW74D2.org.vasilyoshev.selftend"'
 
-# 3. The body parses and lists the team-prefixed app id:
-curl -s https://selftend.org/.well-known/apple-app-site-association | jq .
+# 3. Same two checks against the www host, which is claimed separately.
+curl -s -o /dev/null -w '%{content_type}\n' \
+  https://www.selftend.org/.well-known/apple-app-site-association
+
+# 4. No redirect: Apple does not follow them, and a 30x is fatal.
+curl -s -o /dev/null -w '%{num_redirects}\n' \
+  https://selftend.org/.well-known/apple-app-site-association
+#    -> 0
 ```
+
+The same trap applies to `/.well-known/assetlinks.json` above, though it bites
+less there: a missing file would still return the shell with `200`, so check
+`content_type` is `application/json` rather than trusting the status line.
 
 On device, after a fresh install: request a password reset, open the email on
 the phone, and **long-press** the link — the share sheet shows "Open in
