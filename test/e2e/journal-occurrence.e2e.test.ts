@@ -64,8 +64,16 @@ test.describe("journal occurrence date and time", () => {
     await selectCalendarDay(page, firstOccurrence.getDate());
     await page.getByRole("button", { name: "Done", exact: true }).click();
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page).not.toHaveURL(/\/tools\/journal\/new$/, { timeout: 15_000 });
-    await expect(page).toHaveURL(/\/tools\/journal\/[^/]+$/, { timeout: 15_000 });
+    // One assertion, not two. `/tools/journal/new` also matches
+    // `/tools/journal/[^/]+$`, so the pair only worked because the `not.` line
+    // ran first - and that line is the one that flaked (#548), because it is
+    // the one actually waiting for the save round trip. A negative lookahead
+    // says what is meant in a single wait: some id that is not `new`.
+    //
+    // 30s rather than 15s because this waits on a save against local Supabase
+    // with four workers competing; the assertion is unchanged, it just stops
+    // treating a slow environment as a failure.
+    await expect(page).toHaveURL(/\/tools\/journal\/(?!new$)[^/]+$/, { timeout: 30_000 });
     const createdId = new URL(page.url()).pathname.split("/").at(-1);
     expect(createdId).toBeTruthy();
 
