@@ -42,7 +42,11 @@ jobs:
     name: Build and launch on a simulator
     runs-on: macos-26
     timeout-minutes: 60
-    environment: production
+    # Deliberately NOT `environment: production`. Everything this job needs -
+    # EXPO_TOKEN and the EXPO_PUBLIC_* values - is repo-level. Naming the
+    # environment would additionally hand it the production deploy
+    # credentials (Cloudflare API token, production database password),
+    # which a simulator job has no business being near.
 
     env:
       # The app's public config. Without these the app boots to its
