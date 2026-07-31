@@ -59,16 +59,25 @@ env:
     id: "sign-in-email"
 - inputText: ${MAESTRO_DEMO_EMAIL}
 
-- tapOn:
-    id: "sign-in-password"
+# Move to the password field with the keyboard's Next key, NOT a second tapOn.
+#
+# This is the bug that cost two runs and leaked a credential. `tapOn` on the
+# password field reported COMPLETED, but the software keyboard was covering it,
+# so the tap landed on the keyboard, focus stayed on the email field, and the
+# next `inputText` appended the PASSWORD TO THE EMAIL - visible in plain text in
+# an unmasked field, which is how it reached a CI artifact.
+#
+# The email field is `returnKeyType="next"` with `onSubmitEditing` calling
+# `passwordRef.current?.focus()`, so Enter moves focus using the app's own
+# wiring and cannot miss. Do not reintroduce a coordinate tap here: a tap that
+# misses fails silently and types a secret into a plain-text field.
+- pressKey: Enter
 - inputText: ${MAESTRO_DEMO_PASSWORD}
 
-# Submit with the return key rather than tapping the button. `hideKeyboard`
-# fails outright on this screen ("Couldn't hide the keyboard" - Maestro cannot
-# dismiss it for this input), and without dismissing it the Continue button can
-# sit underneath the keyboard on the phone. The password field is
-# `returnKeyType="go"` with `onSubmitEditing` wired to submit, so Enter runs the
-# same handler the button does and needs no keyboard geometry at all.
+# Same trick to submit: the password field is `returnKeyType="go"` with
+# `onSubmitEditing` wired to the submit handler. `hideKeyboard` fails outright
+# on this screen ("Couldn't hide the keyboard"), and the Continue button can sit
+# under the keyboard on the phone, so Enter is both simpler and safer.
 - pressKey: Enter
 
 # Belt and braces: if the sign-in screen is somehow still up, press the button.

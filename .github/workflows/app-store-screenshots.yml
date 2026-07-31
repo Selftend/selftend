@@ -189,6 +189,12 @@ jobs:
         continue-on-error: ${{ inputs.keep_going_on_flow_failure || false }}
         env:
           UDID: ${{ steps.boot.outputs.udid }}
+          # Maestro's default wait for the XCUITest driver is far too short for
+          # a loaded free macOS runner - one run died with "iOS driver not ready
+          # in time" before executing a command, having already spent ~30
+          # minutes building. That is an infrastructure stall, not a flow fault,
+          # and it costs an entire run each time it happens.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: "300000"
         run: |
           mkdir -p screenshots maestro-debug
           # --debug-output keeps Maestro's own view-hierarchy dumps and per-command
