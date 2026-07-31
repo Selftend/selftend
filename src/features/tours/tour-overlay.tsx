@@ -134,6 +134,7 @@ export function TourOverlay({
         </Text>
         <View style={tooltipActionsStyle}>
           <Pressable
+            testID="tour-skip-all"
             accessibilityLabel={skipAllLabel}
             accessibilityRole="button"
             disabled={isPending}

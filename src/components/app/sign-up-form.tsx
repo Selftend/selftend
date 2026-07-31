@@ -23,6 +23,8 @@ import {
   signUpWithPassword,
 } from "@/src/features/auth/api";
 import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
+import { runAppleSignIn } from "@/src/features/auth/run-apple-sign-in";
+import { AppleSignInButton } from "@/src/components/app/apple-sign-in-button";
 import { signUpSchema, type SignUpSchema } from "@/src/features/auth/schemas";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
@@ -36,6 +38,7 @@ export function SignUpForm() {
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [isAppleSubmitting, setIsAppleSubmitting] = useState(false);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
@@ -55,6 +58,15 @@ export function SignUpForm() {
       recordSuccess,
       recordFailure,
       errorFallback: t("signUp.googleError"),
+    });
+
+  const onAppleSubmit = () =>
+    runAppleSignIn({
+      setSubmitError,
+      setIsAppleSubmitting,
+      recordSuccess,
+      recordFailure,
+      errorFallback: t("apple.error"),
     });
 
   const onSubmit = handleSubmit(async ({ name, email, password }) => {
@@ -106,6 +118,11 @@ export function SignUpForm() {
           )}
           <Text>{isGoogleSubmitting ? t("signUp.googleOpening") : t("signUp.googleButton")}</Text>
         </Button>
+
+        <AppleSignInButton
+          onPress={onAppleSubmit}
+          disabled={isSubmitting || isGoogleSubmitting || isAppleSubmitting}
+        />
 
         <View className="flex-row items-center gap-3">
           <View className="h-px flex-1 bg-border" />

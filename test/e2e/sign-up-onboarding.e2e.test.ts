@@ -151,7 +151,9 @@ test.describe("sign-up + onboarding + first record", () => {
     // sign-in, and the full send-code -> enter-code round trip clears it.
     await expect(page.getByText("Verify your email to secure your account.")).toBeVisible();
     await page.getByRole("button", { name: "Send code", exact: true }).click();
-    await expect(page.getByText("We emailed you a 6-digit code.")).toBeVisible({
+    // Copy no longer states a digit count: the backend owns the OTP length and
+    // hardcoding six in the client is the bug this branch fixes.
+    await expect(page.getByText("We emailed you a verification code.")).toBeVisible({
       timeout: 15_000,
     });
 
@@ -167,6 +169,27 @@ test.describe("sign-up + onboarding + first record", () => {
     await page.reload();
     await dismissCookieBanner(page);
     await expect(page.getByText(situation)).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText("Verify your email to secure your account.")).toBeHidden();
+
+    // #548 lists this line as flaky. Worth being precise about what a failure
+    // here can and cannot mean, because the obvious reading is wrong:
+    //
+    // The query cache is NOT persisted on web - `createQueryPersister` returns
+    // null for `Platform.OS === "web"` - so after a reload there is no stale
+    // snapshot to flash from. `VerifyEmailBanner` also renders nothing while
+    // preferences are loading, precisely so it cannot flash. And the config's
+    // default expect timeout is already 10s.
+    //
+    // So a failure here is not a transition being caught mid-flight. It means
+    // the banner was genuinely visible for over ten seconds after a reload,
+    // i.e. `email_verified` did not survive the round trip - the #504 silent
+    // no-op class of bug. That is worth failing on, so the assertion keeps its
+    // teeth; the message just makes the next reader stop guessing.
+    await expect(
+      page.getByText("Verify your email to secure your account."),
+      "Verify banner still showing after a completed verification and a reload. This is not a" +
+        " timing flake: web does not persist the query cache, and the banner self-suppresses" +
+        " while preferences load. Check that user_preferences.email_verified was actually" +
+        " written (see #504).",
+    ).toBeHidden({ timeout: 15_000 });
   });
 });

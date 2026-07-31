@@ -1,0 +1,280 @@
+name: iOS simulator smoke test
+
+# Answers a question nobody could answer before: does this app actually run on
+# iOS? It has shipped on Android and web for months and has never once executed
+# on an Apple platform - not a device, not a simulator. The maintainer has no
+# iPhone new enough to install a TestFlight build (the app requires iOS 16.4,
+# from the RN 0.86 / Expo SDK 57 podspecs), so without this there is no way to
+# learn about a launch crash before Apple's reviewers do.
+#
+# It runs on the same free `macos-26` runners as the release build (standard
+# GitHub-hosted runners are free and unlimited on public repositories), so this
+# costs nothing but wall-clock.
+#
+# What it CAN prove: the app builds for iOS, installs, launches, stays alive,
+# and renders something. That covers the whole class of "iOS-only crash on
+# startup", which is the single most likely App Store rejection for an app that
+# has never run on the platform.
+#
+# What it CANNOT prove, and must not be claimed to: Sign in with Apple and push
+# notifications both need real hardware and a signed build. A green run here is
+# not a substitute for device QA - it just narrows what is still unknown.
+#
+# The screenshots are a deliberate second purpose. App Store listings require
+# screenshots at Apple's exact device sizes, and a simulator is the normal way
+# to produce them without owning the hardware.
+on:
+  workflow_dispatch:
+    inputs:
+      device:
+        description: Simulator device name (blank = newest available iPhone)
+        type: string
+      seconds_to_settle:
+        description: Seconds to let the app settle before screenshotting
+        type: string
+        default: "20"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Build and launch on a simulator
+    runs-on: macos-26
+    timeout-minutes: 60
+    # Deliberately NOT `environment: production`. Everything this job needs -
+    # EXPO_TOKEN and the EXPO_PUBLIC_* values - is repo-level. Naming the
+    # environment would additionally hand it the production deploy
+    # credentials (Cloudflare API token, production database password),
+    # which a simulator job has no business being near.
+
+    env:
+      # The app's public config. Without these the app boots to its
+      # "Supabase not configured" state, which would still prove it launches but
+      # would make the screenshots useless and hide any crash past the splash.
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      EXPO_PUBLIC_PUBLIC_APP_URL: ${{ vars.EXPO_PUBLIC_PUBLIC_APP_URL }}
+      EXPO_PUBLIC_SUPPORT_EMAIL: ${{ vars.EXPO_PUBLIC_SUPPORT_EMAIL }}
+      EXPO_PUBLIC_PRIVACY_EMAIL: ${{ vars.EXPO_PUBLIC_PRIVACY_EMAIL }}
+      EXPO_PUBLIC_SECURITY_EMAIL: ${{ vars.EXPO_PUBLIC_SECURITY_EMAIL }}
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
+      EXPO_PUBLIC_GITHUB_REPO_URL: ${{ vars.EXPO_PUBLIC_GITHUB_REPO_URL }}
+      EXPO_PUBLIC_PLAY_STORE_URL: ${{ vars.EXPO_PUBLIC_PLAY_STORE_URL }}
+      EXPO_PUBLIC_APP_STORE_URL: ${{ vars.EXPO_PUBLIC_APP_STORE_URL }}
+      EXPO_PUBLIC_DISCORD_URL: ${{ vars.EXPO_PUBLIC_DISCORD_URL }}
+      EXPO_PUBLIC_SENTRY_DSN: ${{ vars.EXPO_PUBLIC_SENTRY_DSN }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      # No Sentry upload for a throwaway simulator build.
+      SENTRY_DISABLE_AUTO_UPLOAD: "true"
+      BUNDLE_ID: org.vasilyoshev.selftend
+      ARTIFACT_DIR: build-artifacts
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # Without this the job has a silent false-green mode: if a variable is unset
+      # or mis-scoped, GitHub substitutes an empty string, the app boots to its
+      # explicit "Supabase not configured" state, and the smoke test passes while
+      # having exercised none of the configured startup path it claims to cover.
+      # `validateReleaseBuildEnv()` in app.config.ts does not guard this profile,
+      # so the check has to live here.
+      - name: Check the app config is actually present
+        run: |
+          missing=0
+          for name in             EXPO_PUBLIC_SUPABASE_URL             EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY             EXPO_PUBLIC_PUBLIC_APP_URL             EXPO_PUBLIC_SUPPORT_EMAIL             EXPO_PUBLIC_PRIVACY_EMAIL             EXPO_PUBLIC_SECURITY_EMAIL
+          do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is empty - the smoke test would boot the unconfigured app and pass without testing anything."
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Report the toolchain
+        run: |
+          echo "Xcode: $(xcodebuild -version | head -n 1)"
+          echo "iphonesimulator SDK: $(xcrun --sdk iphonesimulator --show-sdk-version)"
+
+      # A simulator build is unsigned, so this needs no certificate, no
+      # provisioning profile and no Apple account - which is the whole reason it
+      # can run on every push if we ever want it to.
+      - name: Build for the simulator
+        run: |
+          mkdir -p "$ARTIFACT_DIR"
+          npm exec --yes eas-cli -- build \
+            --platform ios \
+            --profile simulator \
+            --local \
+            --non-interactive \
+            --output "$ARTIFACT_DIR/selftend-simulator.tar.gz"
+
+      - name: Unpack the app bundle
+        id: unpack
+        run: |
+          cd "$ARTIFACT_DIR"
+          tar -xzf selftend-simulator.tar.gz
+          app_path="$(find . -maxdepth 2 -name '*.app' -print -quit)"
+          if [ -z "$app_path" ]; then
+            echo "::error::No .app bundle found in the simulator build output."
+            ls -la
+            exit 1
+          fi
+          echo "app_path=$ARTIFACT_DIR/${app_path#./}" >> "$GITHUB_OUTPUT"
+          echo "Unpacked $app_path"
+
+      - name: Boot a simulator
+        id: boot
+        env:
+          REQUESTED_DEVICE: ${{ inputs.device }}
+        run: |
+          # Device-type names change between Xcode releases, so the newest
+          # available iPhone is chosen at runtime rather than pinned to a name
+          # that will silently stop existing.
+          if [ -n "$REQUESTED_DEVICE" ]; then
+            udid="$(xcrun simctl list devices available -j \
+              | jq -r --arg n "$REQUESTED_DEVICE" '[.devices[][] | select(.name == $n)] | .[0].udid // empty')"
+          else
+            udid="$(xcrun simctl list devices available -j \
+              | jq -r '[.devices[][] | select(.name | test("^iPhone"))] | last.udid // empty')"
+          fi
+
+          if [ -z "$udid" ]; then
+            echo "::error::No available iPhone simulator found."
+            xcrun simctl list devices available
+            exit 1
+          fi
+
+          name="$(xcrun simctl list devices available -j | jq -r --arg u "$udid" '[.devices[][] | select(.udid == $u)] | .[0].name')"
+          echo "Booting $name ($udid)"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Install and launch
+        id: launch
+        env:
+          APP_PATH: ${{ steps.unpack.outputs.app_path }}
+          UDID: ${{ steps.boot.outputs.udid }}
+          SETTLE: ${{ inputs.seconds_to_settle || '20' }}
+        run: |
+          set -o pipefail
+          xcrun simctl install "$UDID" "$APP_PATH"
+
+          # Capture the launch PID so liveness can be checked afterwards. A
+          # crash-on-launch is the failure this whole job exists to catch, and it
+          # is invisible from the exit status of `simctl launch` alone - that
+          # succeeds as soon as the process starts, even if it dies immediately.
+          launch_output="$(xcrun simctl launch "$UDID" "$BUNDLE_ID")"
+          echo "$launch_output"
+          pid="$(echo "$launch_output" | sed -E 's/.*: *([0-9]+)$/\1/')"
+          echo "pid=$pid" >> "$GITHUB_OUTPUT"
+
+          echo "Letting the app settle for ${SETTLE}s..."
+          sleep "$SETTLE"
+
+      - name: Check the app is still alive
+        env:
+          UDID: ${{ steps.boot.outputs.udid }}
+          PID: ${{ steps.launch.outputs.pid }}
+        run: |
+          # `ps` inside the booted simulator: if the pid is gone, the app died
+          # after launching, which is exactly the silent failure mode a green
+          # `simctl launch` would otherwise hide.
+          if xcrun simctl spawn "$UDID" launchctl list | grep -q "$BUNDLE_ID"; then
+            echo "App is registered with launchd."
+          fi
+
+          if ! ps -p "$PID" > /dev/null 2>&1; then
+            echo "::error::The app exited after launching (pid $PID is gone) - it crashed on startup."
+            exit 1
+          fi
+
+          echo "Still running as pid $PID."
+
+      - name: Screenshot
+        if: always()
+        env:
+          UDID: ${{ steps.boot.outputs.udid }}
+        run: |
+          mkdir -p screenshots
+          xcrun simctl io "$UDID" screenshot "screenshots/launch.png" || true
+          if [ -f screenshots/launch.png ]; then
+            sips -g pixelWidth -g pixelHeight screenshots/launch.png || true
+          fi
+
+      # Crash reports are the ground truth. A process can be replaced or a check
+      # can be wrong; a crash report on disk is not ambiguous.
+      - name: Collect crash reports
+        if: always()
+        run: |
+          mkdir -p crash-reports
+          found=0
+          for dir in "$HOME/Library/Logs/DiagnosticReports" "$HOME/Library/Logs/CoreSimulator"; do
+            [ -d "$dir" ] || continue
+            while IFS= read -r f; do
+              cp "$f" crash-reports/ 2>/dev/null || true
+              echo "::warning::Crash report found: $(basename "$f")"
+              found=1
+            done < <(find "$dir" -name "*Selftend*" -newermt '-30 minutes' 2>/dev/null)
+          done
+          if [ "$found" -eq 1 ]; then
+            echo "::error::Crash reports were produced while the app was running."
+            exit 1
+          fi
+          echo "No crash reports."
+
+      - name: Upload screenshot and any crash reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-smoke-${{ github.run_number }}
+          path: |
+            screenshots/
+            crash-reports/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Summarise
+        if: always()
+        env:
+          DEVICE_NAME: ${{ steps.boot.outputs.name }}
+        run: |
+          {
+            echo "### iOS simulator smoke test"
+            echo
+            echo "Device: **${DEVICE_NAME:-unknown}**"
+            echo
+            echo "Proves the app builds for iOS, installs, launches and stays alive —"
+            echo "the whole class of iOS-only startup crashes, which is the likeliest"
+            echo "rejection for an app that has never run on the platform."
+            echo
+            echo "**Does not** prove Sign in with Apple or push notifications work."
+            echo "Both need real hardware and a signed build. A green run here narrows"
+            echo "what is unknown; it is not device QA."
+            echo
+            echo "The screenshot artifact is a starting point for App Store listing"
+            echo "images, which must be captured at Apple's exact device sizes."
+          } >> "$GITHUB_STEP_SUMMARY"

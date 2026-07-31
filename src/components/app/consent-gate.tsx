@@ -61,6 +61,7 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
                 </Button>
               </View>
               <Pressable
+                testID="consent-accept-checkbox"
                 accessibilityLabel={t("consent.checkbox")}
                 accessibilityRole="checkbox"
                 aria-checked={accepted}
@@ -79,6 +80,7 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
                 <Text className="flex-1 text-sm">{t("consent.checkbox")}</Text>
               </Pressable>
               <Button
+                testID="consent-submit"
                 aria-busy={consentMutation.isPending}
                 disabled={!accepted || consentMutation.isPending}
                 onPress={() => void handleAccept()}

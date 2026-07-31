@@ -20,6 +20,11 @@ jest.mock("@/src/features/auth/api", () => {
     ...actual,
     signUpWithPassword: jest.fn(),
     signInWithGoogle: jest.fn(),
+    signInWithApple: jest.fn(),
+    // Pinned rather than inherited from requireActual: jest-expo runs this
+    // suite as iOS, so the real check would consult the native module and make
+    // these assertions depend on the host.
+    isAppleSignInAvailable: jest.fn().mockResolvedValue(false),
   };
 });
 

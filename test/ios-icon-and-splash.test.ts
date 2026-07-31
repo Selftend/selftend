@@ -1,9 +1,9 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-// Two iOS presentation defects found by the static audit (#523), both of which
-// fail silently: nothing errors, no test goes red, and the only symptom is that
-// the app looks wrong on a device nobody had yet.
+// iOS presentation defects found by the static audit (#523), all of which fail
+// silently: nothing errors, no test goes red, and the only symptom is that the
+// app looks or behaves wrong on a device nobody had yet.
 //
 //   - The app icon. iOS rejects an alpha channel, and `assets/icon.png` is
 //     42.5% fully transparent with clear corners. Expo does not fail on that -
@@ -73,5 +73,34 @@ describe("splash screen covers dark mode", () => {
     // the entire point, since a mismatch is invisible until someone cold-starts
     // the app in dark mode.
     expect(appConfigSource).toContain('backgroundColor: "#15121c"');
+  });
+});
+
+describe("iOS advertises every language the app actually ships", () => {
+  it("declares CFBundleLocalizations matching src/i18n/locales/", () => {
+    // iOS picks the app's language from the bundle's declared localizations,
+    // not from i18next's resources. A locale present in src/i18n/locales/ but
+    // missing here is invisible to iOS: the device falls back to English and
+    // the App Store lists the app as English-only. Derived from the directory
+    // rather than hard-coded, so adding a locale fails here until it is
+    // declared.
+    const locales = readdirSync(resolve(ROOT, "src/i18n/locales"), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+
+    expect(locales.length).toBeGreaterThan(1);
+
+    const declared = appConfigSource.match(/CFBundleLocalizations:\s*\[([^\]]*)\]/);
+    expect(declared).not.toBeNull();
+
+    const values = (declared?.[1] ?? "")
+      .split(",")
+      .map((part) => part.trim().replace(/^["']|["']$/g, ""))
+      .filter(Boolean);
+
+    expect(values.slice().sort()).toEqual(locales);
+    // Development region first, matching i18next's fallbackLng.
+    expect(values[0]).toBe("en");
   });
 });
