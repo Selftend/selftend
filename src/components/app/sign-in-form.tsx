@@ -152,6 +152,7 @@ export function SignInForm() {
             <View className="gap-2">
               <Label>{t("signIn.email")}</Label>
               <Input
+                testID="sign-in-email"
                 accessibilityLabel={t("signIn.email")}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -188,6 +189,7 @@ export function SignInForm() {
               </View>
               <Input
                 ref={passwordRef}
+                testID="sign-in-password"
                 accessibilityLabel={t("signIn.password")}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -235,6 +237,7 @@ export function SignInForm() {
         ) : null}
 
         <Button
+          testID="sign-in-submit"
           disabled={!hasSupabaseConfig || isSubmitting || isThrottled}
           onPress={() => void onSubmit()}
         >
