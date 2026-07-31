@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.10.0](https://github.com/Selftend/selftend/compare/v0.9.0...v0.10.0) (2026-07-31)
+
+
+### Features
+
+* **auth:** Sign in with Apple ([#544](https://github.com/Selftend/selftend/issues/544)) ([7e2586b](https://github.com/Selftend/selftend/commit/7e2586b83b48e66ef15a2eb66b4b83cdca1cceeb)), closes [#542](https://github.com/Selftend/selftend/issues/542)
+* **i18n:** follow the device language on first run ([#554](https://github.com/Selftend/selftend/issues/554)) ([bb62af8](https://github.com/Selftend/selftend/commit/bb62af8974119ca0670b5ea5f81e74fadc39d6d0))
+* **ios:** Universal Links for the email-auth callback ([#552](https://github.com/Selftend/selftend/issues/552)) ([8dee5e6](https://github.com/Selftend/selftend/commit/8dee5e6a44d9c25c3dc929876f674f6ff546d1dd))
+
+
+### Bug Fixes
+
+* **auth:** stop truncating verification codes, and drop the email link ([#550](https://github.com/Selftend/selftend/issues/550)) ([870a865](https://github.com/Selftend/selftend/commit/870a86517e2ce247a202e3ae921823ccec014965))
+* **ios:** declare Bulgarian in the bundle so iOS can select it ([#535](https://github.com/Selftend/selftend/issues/535)) ([04daea4](https://github.com/Selftend/selftend/commit/04daea49c7cdaa9474aaa09c4a75a868b7d4ab6e))
+* **policies:** bump the policy version for the Apple processor disclosure ([#575](https://github.com/Selftend/selftend/issues/575)) ([63fa614](https://github.com/Selftend/selftend/commit/63fa614f1791662213f23baa234533879ca0669a))
+
 ## [0.9.0](https://github.com/Selftend/selftend/compare/v0.8.0...v0.9.0) (2026-07-30)
 
 
