@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["C5GVSW74D2.org.vasilyoshev.selftend"],
+        "components": [
+          {
+            "/": "/auth-callback",
+            "comment": "Email auth callback only. Verification and password-reset links arrive from outside the app and should open it rather than Safari; every other path stays on the web."
+          }
+        ]
+      }
+    ]
+  }
+}

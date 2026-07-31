@@ -5,6 +5,9 @@
  * package with well-formed certificate fingerprints. Either side silently
  * drifting breaks the email-link handoff into the app.
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import assetlinks from "./public/.well-known/assetlinks.json";
 
 // expo/config-plugins is a Node-only package that fails to load under
@@ -59,5 +62,115 @@ describe("app.config android intent filters", () => {
     expect(authFilter?.data).toEqual([
       { scheme: "https", host: "selftend.org", pathPrefix: "/auth-callback" },
     ]);
+  });
+});
+
+/**
+ * The iOS half of the same handoff (issue #536). Same failure mode as Android:
+ * either side drifting sends email-auth links to Safari instead of the app,
+ * and nothing surfaces it until someone taps a link on a real device.
+ */
+describe("apple-app-site-association", () => {
+  // Read as text, not imported: the file is deliberately extensionless because
+  // Apple rejects `apple-app-site-association.json`, so there is nothing for
+  // the module resolver to key off. Parsing it here also guards the thing most
+  // likely to break it - a stray comment or trailing comma making it invalid
+  // JSON, which iOS would reject silently.
+  const raw = readFileSync(
+    join(__dirname, "public", ".well-known", "apple-app-site-association"),
+    "utf8",
+  );
+
+  it("is valid JSON", () => {
+    expect(() => JSON.parse(raw)).not.toThrow();
+  });
+
+  it("vouches for the production app id, team prefix included", () => {
+    const aasa = JSON.parse(raw) as {
+      applinks: { details: { appIDs: string[]; components: Record<string, string>[] }[] };
+    };
+    const details = aasa.applinks.details;
+
+    expect(details).toHaveLength(1);
+    // Team ID prefix is required - a bare bundle id never associates.
+    expect(details[0].appIDs).toEqual(["C5GVSW74D2.org.vasilyoshev.selftend"]);
+  });
+
+  it("scopes the association to /auth-callback and nothing wider", () => {
+    const aasa = JSON.parse(raw) as {
+      applinks: { details: { components: Record<string, string>[] }[] };
+    };
+    const paths = aasa.applinks.details[0].components.map((c) => c["/"]);
+
+    // Widening this would hand every selftend.org link to the app, including
+    // the policy pages that email and the store listing point at.
+    expect(paths).toEqual(["/auth-callback"]);
+  });
+});
+
+describe("app.config ios associated domains", () => {
+  it("claims both hosts that serve the app (production)", () => {
+    const config = (require("./app.config") as { default: { ios?: unknown } }).default;
+    const ios = config.ios as { associatedDomains?: string[] };
+
+    // `www` is included because it serves the app directly rather than
+    // redirecting to the apex - a link shared as www would otherwise miss.
+    expect(ios.associatedDomains).toEqual(["applinks:selftend.org", "applinks:www.selftend.org"]);
+  });
+
+  it("keeps the entitlement off the dev variant, which can never associate", () => {
+    jest.resetModules();
+    const previous = process.env.SELFTEND_APP_VARIANT;
+    process.env.SELFTEND_APP_VARIANT = "development";
+    try {
+      const config = (require("./app.config") as { default: { ios?: unknown } }).default;
+      const ios = config.ios as { associatedDomains?: string[] };
+      // The dev bundle id is org.vasilyoshev.selftend.dev, which the
+      // association file does not list, so the entitlement would buy nothing
+      // and still have to be carried by the dev provisioning profile.
+      expect(ios.associatedDomains).toBeUndefined();
+    } finally {
+      if (previous === undefined) delete process.env.SELFTEND_APP_VARIANT;
+      else process.env.SELFTEND_APP_VARIANT = previous;
+      jest.resetModules();
+    }
+  });
+});
+
+/**
+ * Codex review on #552. `npm run ios` is plain `expo run:ios`, so it sets
+ * neither EAS_BUILD_PROFILE nor SELFTEND_APP_VARIANT - `isDevelopmentBuild` is
+ * false - while `.env.local` points EXPO_PUBLIC_PUBLIC_APP_URL at
+ * http://localhost:8081. Guarding on the variant alone therefore emitted
+ * `applinks:localhost` and an autoVerify filter on `host: localhost`.
+ *
+ * Neither can ever associate. On iOS it is worse than useless: the Associated
+ * Domains capability may be absent from a local signing profile, which fails
+ * the build. The Android half of this pre-dates #536.
+ */
+describe("app links against a non-associable origin", () => {
+  const withLocalhostOrigin = (assert: (config: { ios: unknown; android: unknown }) => void) => {
+    jest.resetModules();
+    const previous = process.env.EXPO_PUBLIC_PUBLIC_APP_URL;
+    process.env.EXPO_PUBLIC_PUBLIC_APP_URL = "http://localhost:8081";
+    try {
+      assert((require("./app.config") as { default: { ios: unknown; android: unknown } }).default);
+    } finally {
+      if (previous === undefined) delete process.env.EXPO_PUBLIC_PUBLIC_APP_URL;
+      else process.env.EXPO_PUBLIC_PUBLIC_APP_URL = previous;
+      jest.resetModules();
+    }
+  };
+
+  it("emits no iOS entitlement for a localhost origin", () => {
+    withLocalhostOrigin((config) => {
+      expect((config.ios as { associatedDomains?: string[] }).associatedDomains).toBeUndefined();
+    });
+  });
+
+  it("emits no Android autoVerify filter for a localhost origin", () => {
+    withLocalhostOrigin((config) => {
+      expect((config.android as { intentFilters?: unknown[] }).intentFilters).toBeUndefined();
+    });
   });
 });
