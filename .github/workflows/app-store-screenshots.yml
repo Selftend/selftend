@@ -21,12 +21,21 @@ name: App Store screenshots
 # The resolution check at the end is the point of the whole job. Silently
 # producing almost-right images would be discovered at submission time, which is
 # the worst moment to find out.
+# STATUS: this workflow does NOT currently produce usable screenshots, and the
+# reason is not in this file. The app cannot complete a TLS handshake to
+# Supabase from inside the simulator on these runners - see the probe step
+# below and issue #547. Every flow-level fault has been fixed and the capture
+# reaches the sign-in submit; it stops there because the request never leaves
+# the app. The 0.9.0 listing was shot from the web build instead.
+#
+# Kept rather than deleted because the probe, the gates and the flow are the
+# expensive parts, and they are all correct. When the TLS question is answered
+# this should work as written.
+#
+# Note `workflow_dispatch` only becomes available once this file reaches the
+# DEFAULT branch (main), which happens at the next release - not on merge to
+# dev. Until then there is no way to trigger it.
 on:
-  # TEMPORARY, removed before merge: workflow_dispatch is unavailable until a
-  # workflow reaches the default branch, so this is the only way to exercise
-  # the Maestro flow and find its selector problems before merging.
-  push:
-    branches: [feat/app-store-screenshots]
   workflow_dispatch:
     inputs:
       keep_going_on_flow_failure:
