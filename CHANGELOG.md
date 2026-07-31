@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.0](https://github.com/Selftend/selftend/compare/v0.8.0...v0.9.0) (2026-07-30)
+
+
+### Features
+
+* **ci:** iOS TestFlight release pipeline ([#518](https://github.com/Selftend/selftend/issues/518)) ([b879a38](https://github.com/Selftend/selftend/commit/b879a384e78a199f73b61290b970e3d56cc559f9))
+* **nav+design:** structural breadcrumb back, remove the field parallax ([#509](https://github.com/Selftend/selftend/issues/509)) ([de2df9e](https://github.com/Selftend/selftend/commit/de2df9eb2d3cf3865ae9fce0b2379ef6392e4561))
+* **store:** version document, update banner, Android download bar, in-app version ([#517](https://github.com/Selftend/selftend/issues/517)) ([53b0edf](https://github.com/Selftend/selftend/commit/53b0edf851d824d5e0b0acb0e23007278a9223c4))
+
+
+### Bug Fixes
+
+* **auth:** keep the iOS session out of device backups ([#530](https://github.com/Selftend/selftend/issues/530)) ([20d5b04](https://github.com/Selftend/selftend/commit/20d5b04b7227a84a5c12ef3196d8e1684a191e2a)), closes [#528](https://github.com/Selftend/selftend/issues/528)
+* **ios:** honest update offers, opaque icon, dark splash ([#533](https://github.com/Selftend/selftend/issues/533)) ([1ac2381](https://github.com/Selftend/selftend/commit/1ac238106e08c79e0a8f4c17d6e2c1cdc4eeb38d))
+* **store:** send iOS update offers to the App Store, not Google Play ([#531](https://github.com/Selftend/selftend/issues/531)) ([f0c12da](https://github.com/Selftend/selftend/commit/f0c12da05055b39f64c21ba7f9e068ae4b4adfdb)), closes [#529](https://github.com/Selftend/selftend/issues/529)
+
 ## [0.8.0](https://github.com/Selftend/selftend/compare/v0.7.0...v0.8.0) (2026-07-29)
 
 
