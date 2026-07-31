@@ -10,9 +10,9 @@ import {
   PRIMARY_INK_TRIPLES,
   PRIMARY_TRIPLES,
 } from "@/src/lib/design-tokens";
-import { hslTripleToHex } from "@/src/lib/theme/color";
+import { hslTripleToHex, withLightness } from "@/src/lib/theme/color";
 import { COLOR_SCHEMES, RADIUS, THEME_VAR_NAMES } from "@/src/lib/theme/contract";
-import { DERIVED_INK_LIGHTNESS, deriveTokens } from "@/src/lib/theme/derive";
+import { deriveTokens } from "@/src/lib/theme/derive";
 import {
   navigationTheme,
   themeHex,
@@ -232,11 +232,16 @@ describe("the contract and the encoding palette agree on primary", () => {
     expect(PRIMARY_INK_TRIPLES[scheme]).toBe(themeTokens(scheme)["--primary-ink"]);
   });
 
-  // The derived-style ink recipe is the same one design-tokens.ts documents at
-  // length. #560 replaces it with a solver; until then neither copy may move
-  // alone.
-  it("the derived ink lightness is the documented recipe", () => {
-    expect(DERIVED_INK_LIGHTNESS).toEqual(PRIMARY_INK_LIGHTNESS);
+  // quiet-lilac's authored ink happens to sit at the lightness the old fixed
+  // recipe named (28 light / 80 dark), and that is not a coincidence worth
+  // deleting: it is the number #421 measured against this palette. Derived
+  // styles no longer use it — they solve (#580) — but while design-tokens.ts
+  // still spells the recipe for the pinned hue inks, the default style's
+  // authored values must agree with what it says.
+  it.each(COLOR_SCHEMES)("the %s authored ink sits at the documented lightness", (scheme) => {
+    expect(themeTokens(scheme)["--primary-ink"]).toBe(
+      withLightness(themeTokens(scheme)["--primary"], PRIMARY_INK_LIGHTNESS[scheme]),
+    );
   });
 });
 
