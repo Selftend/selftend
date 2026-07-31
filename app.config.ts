@@ -124,6 +124,24 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
     // email private, which email/password cannot do. Without this the button
     // renders and then fails at runtime, which is the worst of both.
     usesAppleSignIn: true,
+    // Universal Links (issue #536): the iOS half of what Android does with
+    // verified App Links below. Email-auth links are plain HTTPS on the web
+    // origin ({{ .SiteURL }}/auth-callback...), and without this entitlement
+    // iOS hands them to Safari instead of the installed app.
+    //
+    // Both hosts are declared because both serve the app directly - neither
+    // redirects to the other - so a link someone typed or shared as `www`
+    // would otherwise miss. Emails themselves only ever produce the apex,
+    // since Supabase's SiteURL has no `www`.
+    //
+    // Production only, matching the Android reasoning: the association file
+    // vouches for C5GVSW74D2.org.vasilyoshev.selftend, and the dev variant is
+    // a different bundle id (.dev), so iOS could never associate it. Declaring
+    // it anyway would add an entitlement the dev provisioning profile has to
+    // carry for a link handoff that cannot work.
+    associatedDomains: isDevelopmentBuild
+      ? undefined
+      : [`applinks:${publicAppHost}`, `applinks:www.${publicAppHost}`],
     infoPlist: {
       // iOS resolves the app's language from the bundle's declared
       // localizations, not from whatever i18next happens to ship. Without this

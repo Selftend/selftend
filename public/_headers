@@ -35,3 +35,20 @@
 
 /manifest.webmanifest
   Content-Type: application/manifest+json
+
+# Universal Links association file (#536). Two things make this rule
+# load-bearing rather than tidy-up:
+#
+#   1. Apple REQUIRES application/json here, and the file is deliberately
+#      extensionless - Apple will not accept apple-app-site-association.json -
+#      so there is no extension for the server to infer a type from. Without
+#      this rule it is served as something else and iOS rejects the
+#      association silently.
+#   2. It must not be cached stale. Apple fetches it out of band, and a wrong
+#      cached copy would keep breaking the handoff long after a fix shipped.
+#
+# The Android counterpart, /.well-known/assetlinks.json, needs no rule: it has
+# a .json extension and gets the right type for free.
+/.well-known/apple-app-site-association
+  Content-Type: application/json
+  Cache-Control: no-cache
