@@ -136,3 +136,41 @@ describe("app.config ios associated domains", () => {
     }
   });
 });
+
+/**
+ * Codex review on #552. `npm run ios` is plain `expo run:ios`, so it sets
+ * neither EAS_BUILD_PROFILE nor SELFTEND_APP_VARIANT - `isDevelopmentBuild` is
+ * false - while `.env.local` points EXPO_PUBLIC_PUBLIC_APP_URL at
+ * http://localhost:8081. Guarding on the variant alone therefore emitted
+ * `applinks:localhost` and an autoVerify filter on `host: localhost`.
+ *
+ * Neither can ever associate. On iOS it is worse than useless: the Associated
+ * Domains capability may be absent from a local signing profile, which fails
+ * the build. The Android half of this pre-dates #536.
+ */
+describe("app links against a non-associable origin", () => {
+  const withLocalhostOrigin = (assert: (config: { ios: unknown; android: unknown }) => void) => {
+    jest.resetModules();
+    const previous = process.env.EXPO_PUBLIC_PUBLIC_APP_URL;
+    process.env.EXPO_PUBLIC_PUBLIC_APP_URL = "http://localhost:8081";
+    try {
+      assert((require("./app.config") as { default: { ios: unknown; android: unknown } }).default);
+    } finally {
+      if (previous === undefined) delete process.env.EXPO_PUBLIC_PUBLIC_APP_URL;
+      else process.env.EXPO_PUBLIC_PUBLIC_APP_URL = previous;
+      jest.resetModules();
+    }
+  };
+
+  it("emits no iOS entitlement for a localhost origin", () => {
+    withLocalhostOrigin((config) => {
+      expect((config.ios as { associatedDomains?: string[] }).associatedDomains).toBeUndefined();
+    });
+  });
+
+  it("emits no Android autoVerify filter for a localhost origin", () => {
+    withLocalhostOrigin((config) => {
+      expect((config.android as { intentFilters?: unknown[] }).intentFilters).toBeUndefined();
+    });
+  });
+});

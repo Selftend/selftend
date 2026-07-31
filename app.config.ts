@@ -43,6 +43,22 @@ const easProjectId =
 // `npx expo prebuild` still produces the correct release manifest.
 const publicAppHost = new URL(process.env.EXPO_PUBLIC_PUBLIC_APP_URL ?? "https://selftend.org")
   .hostname;
+
+// App Links / Universal Links need a real public origin that can serve
+// /.well-known/. `isDevelopmentBuild` is NOT a sufficient guard on its own:
+// `npm run ios` is plain `expo run:ios`, so it sets neither EAS_BUILD_PROFILE
+// nor SELFTEND_APP_VARIANT, yet `.env.local` points EXPO_PUBLIC_PUBLIC_APP_URL
+// at http://localhost:8081. That combination produced `applinks:localhost` and
+// an `autoVerify` filter on `host: localhost` - domains that can never
+// associate, and on iOS an Associated Domains capability that local signing
+// profiles may not carry, which fails the build outright.
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1"]);
+const isIpLiteral = /^\d{1,3}(\.\d{1,3}){3}$/.test(publicAppHost);
+const canHostAppLinks =
+  !LOOPBACK_HOSTS.has(publicAppHost.toLowerCase()) && !isIpLiteral && publicAppHost.includes(".");
+// Production variant AND a host that could actually serve the association
+// files. Either alone is not enough.
+const appLinksEnabled = !isDevelopmentBuild && canHostAppLinks;
 const requiredReleaseEnv = [
   "EXPO_PUBLIC_SUPABASE_URL",
   "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
@@ -134,14 +150,14 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
     // would otherwise miss. Emails themselves only ever produce the apex,
     // since Supabase's SiteURL has no `www`.
     //
-    // Production only, matching the Android reasoning: the association file
-    // vouches for C5GVSW74D2.org.vasilyoshev.selftend, and the dev variant is
-    // a different bundle id (.dev), so iOS could never associate it. Declaring
-    // it anyway would add an entitlement the dev provisioning profile has to
-    // carry for a link handoff that cannot work.
-    associatedDomains: isDevelopmentBuild
-      ? undefined
-      : [`applinks:${publicAppHost}`, `applinks:www.${publicAppHost}`],
+    // Gated on `appLinksEnabled`, not just the variant: the association file
+    // vouches for C5GVSW74D2.org.vasilyoshev.selftend, so the .dev bundle id
+    // could never associate, and a localhost origin has nothing to associate
+    // with. Declaring it regardless would add an entitlement the provisioning
+    // profile has to carry for a handoff that cannot work.
+    associatedDomains: appLinksEnabled
+      ? [`applinks:${publicAppHost}`, `applinks:www.${publicAppHost}`]
+      : undefined,
     infoPlist: {
       // iOS resolves the app's language from the bundle's declared
       // localizations, not from whatever i18next happens to ship. Without this
@@ -177,7 +193,11 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
     // for this package (public/.well-known/assetlinks.json, served by the web
     // deploy). Production only: dev builds sign with throwaway debug keys that
     // assetlinks.json does not list, so verification could never succeed there.
-    intentFilters: isDevelopmentBuild
+    // Also gated on the host: a local `expo run:android` against
+    // .env.local's localhost origin previously emitted an autoVerify filter
+    // for `host: localhost`, which can never verify (pre-dates #536; fixed
+    // alongside the iOS side because it is the same expression).
+    intentFilters: !appLinksEnabled
       ? undefined
       : [
           {
