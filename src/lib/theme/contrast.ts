@@ -148,19 +148,24 @@ export function solveInk(
  * The rule this replaces — "light → surface, dark → background" — is what fails
  * `amber-noir`, whose gold accent cannot carry its own white label (4.43).
  * Measuring instead lifts it to 4.74 and changes nothing for the styles that
- * already passed. White and black are the fallbacks so a style whose own
- * neutrals are all mid-tone still has something legible to reach for.
+ * already passed.
+ *
+ * The style's OWN neutrals are preferred, and pure white/black are a fallback
+ * rather than a default. That ordering is load-bearing: maximising contrast
+ * outright would hand almost every dark palette a pure-black label, because
+ * black beats the style's own near-black on any light accent — legible, and off
+ * the palette on every button in the app. The floor is what has to be cleared;
+ * beyond it, staying in the palette wins. A style whose neutrals are all
+ * mid-tone still has white and black to reach for.
  */
 export function pickPrimaryForeground(accent: string, candidates: string[]): string {
   const accentRgb = tripleToRgb(accent);
-  const pool = [...candidates, "0 0% 100%", "0 0% 0%"];
+  const against = (triple: string) => contrastRatio(tripleToRgb(triple), accentRgb);
+  const best = (pool: string[]) =>
+    pool.reduce((winner, triple) => (against(triple) > against(winner) ? triple : winner));
 
-  let best = { triple: pool[0], ratio: -Infinity };
-  for (const triple of pool) {
-    const ratio = contrastRatio(tripleToRgb(triple), accentRgb);
-    if (ratio > best.ratio) best = { triple, ratio };
-  }
-  return best.triple;
+  const legible = candidates.filter((triple) => against(triple) >= AA_TEXT);
+  return legible.length > 0 ? best(legible) : best(["0 0% 100%", "0 0% 0%"]);
 }
 
 export interface ContrastFinding {

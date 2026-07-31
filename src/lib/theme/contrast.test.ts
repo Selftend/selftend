@@ -164,16 +164,31 @@ describe("pickPrimaryForeground", () => {
     expect(contrastRatio(tripleToRgb(chosen), tripleToRgb(accent))).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
-  it("picks the best of the candidates offered", () => {
+  it("picks the best of the legible candidates offered", () => {
     const accent = "0 0% 50%";
-    const chosen = pickPrimaryForeground(accent, ["0 0% 45%", "0 0% 60%"]);
+    const legible = ["0 0% 5%", "0 0% 12%"];
+    const chosen = pickPrimaryForeground(accent, [...legible, "0 0% 45%"]);
     const chosenRatio = contrastRatio(tripleToRgb(chosen), tripleToRgb(accent));
 
-    for (const candidate of ["0 0% 45%", "0 0% 60%"]) {
+    for (const candidate of legible) {
       expect(chosenRatio).toBeGreaterThanOrEqual(
         contrastRatio(tripleToRgb(candidate), tripleToRgb(accent)),
       );
     }
+  });
+
+  // The ordering that keeps buttons in-palette. Maximising contrast outright
+  // would hand every dark palette a pure-black label, because black beats the
+  // style's own near-black on any light accent — legible, and off the palette on
+  // every button in the app.
+  it("prefers the style's own neutral over pure black when both are legible", () => {
+    const ownNearBlack = "260 22% 12%";
+    const chosen = pickPrimaryForeground("264 72% 72%", [ownNearBlack]);
+
+    expect(chosen).toBe(ownNearBlack);
+    expect(contrastRatio(tripleToRgb("0 0% 0%"), tripleToRgb("264 72% 72%"))).toBeGreaterThan(
+      contrastRatio(tripleToRgb(ownNearBlack), tripleToRgb("264 72% 72%")),
+    );
   });
 
   // Black and white ride along as fallbacks so a style whose own neutrals are
