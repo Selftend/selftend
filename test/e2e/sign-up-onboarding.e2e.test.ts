@@ -151,7 +151,9 @@ test.describe("sign-up + onboarding + first record", () => {
     // sign-in, and the full send-code -> enter-code round trip clears it.
     await expect(page.getByText("Verify your email to secure your account.")).toBeVisible();
     await page.getByRole("button", { name: "Send code", exact: true }).click();
-    await expect(page.getByText("We emailed you a 6-digit code.")).toBeVisible({
+    // Copy no longer states a digit count: the backend owns the OTP length and
+    // hardcoding six in the client is the bug this branch fixes.
+    await expect(page.getByText("We emailed you a verification code.")).toBeVisible({
       timeout: 15_000,
     });
 
