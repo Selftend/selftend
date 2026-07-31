@@ -179,6 +179,28 @@ jobs:
           APP_PATH: ${{ steps.unpack.outputs.app_path }}
         run: xcrun simctl install "$UDID" "$APP_PATH"
 
+      # The app reported "A TLS error caused the secure connection to fail"
+      # against Supabase from inside the simulator, which is what actually kept
+      # every earlier run stuck on the sign-in screen. This probe separates the
+      # three things that error could mean - DNS, host reachability, or
+      # something specific to the app's own networking stack - so the next
+      # failure does not need another 40-minute build to narrow down.
+      - name: Probe Supabase reachability from host and simulator
+        if: always()
+        continue-on-error: true
+        env:
+          UDID: ${{ steps.boot.outputs.udid }}
+        run: |
+          host="${EXPO_PUBLIC_SUPABASE_URL#https://}"
+          echo "--- DNS (host) ---"
+          dig +short "$host" || true
+          echo "--- TLS handshake (host) ---"
+          curl -sS -o /dev/null -w 'http=%{http_code} tls=%{ssl_verify_result} time=%{time_total}\n' \
+            "$EXPO_PUBLIC_SUPABASE_URL/auth/v1/health" || echo "host curl FAILED"
+          echo "--- TLS handshake (inside the simulator runtime) ---"
+          xcrun simctl spawn "$UDID" curl -sS -o /dev/null -w 'http=%{http_code} tls=%{ssl_verify_result}\n' \
+            "$EXPO_PUBLIC_SUPABASE_URL/auth/v1/health" || echo "simulator curl FAILED"
+
       - name: Drive the app and capture
         id: flow
         # `|| false` is load-bearing. On any event that is not workflow_dispatch
@@ -190,20 +212,41 @@ jobs:
         env:
           UDID: ${{ steps.boot.outputs.udid }}
           # Maestro's default wait for the XCUITest driver is far too short for
-          # a loaded free macOS runner - one run died with "iOS driver not ready
-          # in time" before executing a command, having already spent ~30
-          # minutes building. That is an infrastructure stall, not a flow fault,
-          # and it costs an entire run each time it happens.
+          # a loaded free macOS runner. Raising it is necessary but NOT
+          # sufficient - see the retry below.
           MAESTRO_DRIVER_STARTUP_TIMEOUT: "300000"
         run: |
           mkdir -p screenshots maestro-debug
-          # --debug-output keeps Maestro's own view-hierarchy dumps and per-command
-          # screenshots. Without them a selector failure on a runner nobody can
-          # attach a debugger to costs a whole 40-minute build to diagnose; with
-          # them, the exact accessibility tree is in the artifact.
-          maestro --device "$UDID" test \
-            --debug-output maestro-debug \
-            .maestro/app-store-screenshots.yaml
+
+          # Maestro's XCUITest driver intermittently never comes up on these
+          # runners: "iOS driver not ready in time", after the job has already
+          # spent ~30 minutes building. It is not the flow - the driver has
+          # started fine on this same image and Xcode repeatedly - and it is not
+          # the timeout, because one failure sat there for the full 5m33s before
+          # giving up. So it is retried once, with the simulator restarted in
+          # between, which is the only lever that actually clears the stuck
+          # XCTest runner.
+          #
+          # --debug-output keeps Maestro's view-hierarchy dumps and per-command
+          # screenshots; each attempt writes to its own subdirectory so a retry
+          # cannot overwrite the evidence from the attempt that failed.
+          run_flow() {
+            maestro --device "$UDID" test \
+              --debug-output "maestro-debug/attempt-$1" \
+              .maestro/app-store-screenshots.yaml
+          }
+
+          if run_flow 1; then
+            exit 0
+          fi
+
+          echo "::warning::Maestro attempt 1 failed. Restarting the simulator and retrying once."
+          xcrun simctl shutdown "$UDID" || true
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "09:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
+
+          run_flow 2
 
       # `takeScreenshot` paths are documented as relative to Maestro's workspace
       # directory, not to the job's working directory - so depending on how the
