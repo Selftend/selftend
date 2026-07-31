@@ -56,7 +56,11 @@ export function parseHslTriple(triple: string): [number, number, number] {
 
 /** "H S% L%" → "#rrggbb", the inverse of hexToHslTriple. */
 export function hslTripleToHex(triple: string): string {
-  const [h, s, l] = parseHslTriple(triple);
+  const [degree, s, l] = parseHslTriple(triple);
+  // The sector table below assumes [0, 360). hexToHslTriple always normalises,
+  // but a hand-authored token block may spell red as "360" — which would fall
+  // through every branch into the magenta sector and paint the wrong colour.
+  const h = ((degree % 360) + 360) % 360;
   const sN = s / 100;
   const lN = l / 100;
   const c = (1 - Math.abs(2 * lN - 1)) * sN;

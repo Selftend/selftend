@@ -62,6 +62,12 @@ describe("triple <-> hex", () => {
     expect(hexToHslTriple("#808080")).toBe("0 0% 50%");
   });
 
+  // hexToHslTriple normalises to [0, 360), but a hand-authored block may spell
+  // red as "360" — untreated it falls past every sector into magenta.
+  it("wraps a 360-degree hue onto red rather than magenta", () => {
+    expect(hslTripleToHex("360 72% 48%")).toBe(hslTripleToHex("0 72% 48%"));
+  });
+
   it.each(["262 62 56%", "262 62% 56", "not a triple", ""])("rejects %s", (bad) => {
     expect(() => parseHslTriple(bad)).toThrow(/Unparseable HSL triple/);
   });

@@ -50,10 +50,11 @@ function varValues(scheme: ColorScheme): Record<string, string> {
     // Style-independent, so it is emitted from the constant rather than read off
     // a style: no palette may reshape the app's controls (#555 §2).
     "--radius": RADIUS,
-    // Legacy. Outside a module room there is no hue, so the room-poured accent
-    // ink falls back to the app accent; src/lib/module-room.ts re-pours it per
-    // hue. It has no home in the contract because once rooms go neutral (#558)
-    // it always equals --primary-ink. Deleted for real in #589.
+    // Legacy, and this is today's value, not the end state: outside a module
+    // room there is no hue, so the room-poured accent ink falls back to the app
+    // accent. src/lib/module-room.ts re-pours it per hue inside a room. It has
+    // no home in the contract because once rooms go neutral (#558) nothing
+    // pours it and it collapses onto --primary-ink. Deleted for real in #589.
     "--accent-ink": tokens["--primary"],
     ...encodingVars(scheme),
   };

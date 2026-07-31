@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { CARD_COLOR, POPOVER_COLOR, THEME, THEME_VAR_VALUES } from "@/lib/theme";
+import { CARD_COLOR, POPOVER_COLOR } from "@/lib/theme";
 import { exerciseHue, EXERCISE_HUES } from "@/src/features/mindfulness/exercise-hue";
 import {
   HUE_INK_LIGHTNESS,
@@ -19,14 +19,19 @@ import {
 import { roomTriples } from "@/src/lib/module-room";
 import { PALETTE, TINTS, type TintName } from "@/src/features/widgets/palette";
 
-// global.css is the single source of truth for the surface tokens, and
-// src/lib/design-tokens.ts is the single TS source for the hue triples (the
-// hand-written global.css mirrors them because NativeWind needs it at build
-// time). Several other TS modules mirror token values because LinearGradient /
-// reanimated / SVG / the Android widget renderer cannot read CSS variables.
-// This suite fails the build whenever any mirror drifts (e.g. a contrast
-// retune that forgets a copy), instead of shipping same-screen two-tone
-// accents.
+// Since #579 the surface tokens' single source of truth is the TypeScript
+// contract in src/lib/theme/, and global.css is the first-paint copy of it that
+// test/theme-contract.test.ts pins. src/lib/design-tokens.ts is the single TS
+// source for the hue triples, mirrored into global.css because NativeWind needs
+// the CSS at build time. Several other TS modules mirror token values because
+// LinearGradient / reanimated / SVG / the Android widget renderer cannot read
+// CSS variables at all.
+//
+// This suite reads the CSS — which the contract gate has already pinned to the
+// TypeScript — and holds the two things that pinning cannot: the measured
+// contrast floors, and the mirrors those unreachable modules carry. It fails the
+// build whenever a mirror drifts (e.g. a contrast retune that forgets a copy),
+// instead of shipping same-screen two-tone accents.
 
 const ROOT = join(__dirname, "..");
 const globalCss = readFileSync(join(ROOT, "global.css"), "utf8");
@@ -93,41 +98,21 @@ function expectHexMatchesHsl(hex: string, hslTriple: string, context: string) {
   }
 }
 
-const camelToToken = (key: string) =>
-  `--${key
-    .replace(/([A-Z])/g, "-$1")
-    .replace(/(\d)/g, "-$1")
-    .toLowerCase()}`;
-
+// The CSS ↔ TS parity that used to live here MOVED to
+// test/theme-contract.test.ts in #579 — it was not dropped, and it got stronger
+// on the way: the contract suite checks both directions (a var in the CSS that
+// is in no contract, and a contract name missing from the CSS), which the
+// assertions here could not see. It is a move rather than an addition because
+// the spec asked for a replacement: two suites asserting the same direction
+// would both have to be updated by every retune, which is how mirrors drift.
+//
+// What stays in this file is what the contract suite deliberately does not do:
+// the measured contrast floors, and the mirrors held by modules that cannot read
+// a CSS variable at all (the widget renderer, exercise-hue, the chart layer).
 describe("lib/theme.ts mirrors global.css", () => {
-  it.each(["light", "dark"] as const)("THEME.%s matches the css tokens", (scheme) => {
-    for (const [key, value] of Object.entries(THEME[scheme])) {
-      expect({ key, value }).toEqual({ key, value: `hsl(${css[scheme][camelToToken(key)]})` });
-    }
-  });
-
-  // The var record applied at the app root, checked by value rather than by
-  // reading lib/theme.ts's source: since #579 these are projections of the
-  // TypeScript contract, not literals a regex can scrape. The contract ↔ CSS
-  // direction is test/theme-contract.test.ts; this is the whole record,
-  // including the encoding palette and the legacy room pour.
-  it.each(["light", "dark"] as const)("THEME_VAR_VALUES %s matches the css tokens", (scheme) => {
-    const entries = Object.entries(THEME_VAR_VALUES[scheme]);
-    expect(entries.length).toBeGreaterThan(0);
-    for (const [token, value] of entries) {
-      // --radius is only declared on :root; .dark inherits it via the cascade.
-      expect({ token, value }).toEqual({ token, value: css[scheme][token] ?? css.light[token] });
-    }
-  });
-
-  it.each(["light", "dark"] as const)("THEME_VAR_VALUES %s carries every hue token", (scheme) => {
-    for (const hue of HUE_NAMES) {
-      // Hue values must come from the TS hue source, never a fresh literal.
-      expect(THEME_VAR_VALUES[scheme][`--${hue}`]).toBe(HUE_TRIPLES[hue][scheme]);
-      expect(THEME_VAR_VALUES[scheme][`--${hue}-ink`]).toBe(HUE_INK_TRIPLES[hue][scheme]);
-    }
-  });
-
+  // The one parity check that stays, because it is not a copy of the contract:
+  // these two are hex projections, so this fails if the triple → hex conversion
+  // is wrong even when every token value is right.
   it("CARD_COLOR and POPOVER_COLOR match --card / --popover", () => {
     expectHexMatchesHsl(CARD_COLOR.light, css.light["--card"], "CARD_COLOR.light");
     expectHexMatchesHsl(CARD_COLOR.dark, css.dark["--card"], "CARD_COLOR.dark");
