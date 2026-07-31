@@ -75,24 +75,38 @@ describe("policy content - metadata", () => {
 // user for a change to no disclosure at all.
 const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"] as const;
 
-const pinnedEnglishPolicyDigest =
-  "2909584855d9409afa4dd2d037efb27fac590ad202568994335470fcaf29906c";
+// Text and version are pinned as ONE tuple, not two independent constants. Pinning
+// the digest alone still lets the version be reverted to a superseded release with
+// the suite green - the text would be unchanged, so the digest would still match.
+// Coupling them means either half moving alone fails the build.
+const pinnedPolicyRelease = {
+  version: "2026-07-31-apple-sign-in",
+  englishDigest: "2909584855d9409afa4dd2d037efb27fac590ad202568994335470fcaf29906c",
+};
 
 describe("policy content - version pinning", () => {
-  it("pins the English policy text so a change forces a version bump", () => {
+  it("publishes the pinned English policy text under the pinned version", () => {
     const digest = createHash("sha256")
       .update(JSON.stringify(consentBearingSections.map((key) => enPolicies[key].sections)))
       .digest("hex");
 
-    if (digest !== pinnedEnglishPolicyDigest) {
+    if (
+      digest !== pinnedPolicyRelease.englishDigest ||
+      policyVersion !== pinnedPolicyRelease.version
+    ) {
       throw new Error(
         [
-          "The English policy text changed but its pinned digest did not.",
+          "The English policy text and policyVersion have drifted apart.",
           "",
-          "If the change is material, bump policyLastUpdated and policyVersion in",
-          "src/features/policies/policy-content.ts so the consent gate re-notifies",
-          "existing users. Then re-pin pinnedEnglishPolicyDigest to:",
-          `  ${digest}`,
+          `  expected version: ${pinnedPolicyRelease.version}`,
+          `    actual version: ${policyVersion}`,
+          `   expected digest: ${pinnedPolicyRelease.englishDigest}`,
+          `     actual digest: ${digest}`,
+          "",
+          "If the policy text changed materially, bump policyLastUpdated and",
+          "policyVersion in src/features/policies/policy-content.ts so the consent",
+          "gate re-notifies existing users - then update BOTH fields of",
+          "pinnedPolicyRelease together.",
         ].join("\n"),
       );
     }
