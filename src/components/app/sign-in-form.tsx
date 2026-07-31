@@ -23,6 +23,8 @@ import {
   signInWithPassword,
 } from "@/src/features/auth/api";
 import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
+import { runAppleSignIn } from "@/src/features/auth/run-apple-sign-in";
+import { AppleSignInButton } from "@/src/components/app/apple-sign-in-button";
 import { signInSchema, type SignInSchema } from "@/src/features/auth/schemas";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { COMPACT_CONTROL_HIT_SLOP } from "@/src/lib/accessibility";
@@ -39,6 +41,7 @@ export function SignInForm() {
   const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false);
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [isAppleSubmitting, setIsAppleSubmitting] = useState(false);
   const passwordRef = useRef<TextInput>(null);
   const {
     control,
@@ -57,6 +60,15 @@ export function SignInForm() {
       recordSuccess,
       recordFailure,
       errorFallback: t("signIn.googleError"),
+    });
+
+  const onAppleSubmit = () =>
+    runAppleSignIn({
+      setSubmitError,
+      setIsAppleSubmitting,
+      recordSuccess,
+      recordFailure,
+      errorFallback: t("apple.error"),
     });
 
   const onSubmit = handleSubmit(async ({ email, password }) => {
@@ -122,6 +134,11 @@ export function SignInForm() {
           <Text>{isGoogleSubmitting ? t("signIn.googleOpening") : t("signIn.googleButton")}</Text>
         </Button>
 
+        <AppleSignInButton
+          onPress={onAppleSubmit}
+          disabled={isSubmitting || isGoogleSubmitting || isAppleSubmitting}
+        />
+
         <View className="flex-row items-center gap-3">
           <View className="h-px flex-1 bg-border" />
           <Text className="text-xs text-muted-foreground">{t("common:orContinueWithEmail")}</Text>
@@ -135,6 +152,7 @@ export function SignInForm() {
             <View className="gap-2">
               <Label>{t("signIn.email")}</Label>
               <Input
+                testID="sign-in-email"
                 accessibilityLabel={t("signIn.email")}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -171,6 +189,7 @@ export function SignInForm() {
               </View>
               <Input
                 ref={passwordRef}
+                testID="sign-in-password"
                 accessibilityLabel={t("signIn.password")}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -218,6 +237,7 @@ export function SignInForm() {
         ) : null}
 
         <Button
+          testID="sign-in-submit"
           disabled={!hasSupabaseConfig || isSubmitting || isThrottled}
           onPress={() => void onSubmit()}
         >

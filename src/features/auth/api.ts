@@ -1,3 +1,4 @@
+import * as AppleAuthentication from "expo-apple-authentication";
 import * as Linking from "expo-linking";
 import { Platform } from "react-native";
 import * as WebBrowser from "expo-web-browser";
@@ -82,6 +83,95 @@ export async function signInWithGoogle() {
 
   await completeAuthRedirect(result.url);
   return true;
+}
+
+/**
+ * Whether this device can offer Sign in with Apple.
+ *
+ * Required by App Store Guideline 4.8: an app offering Google Sign-In must also
+ * offer a login option that lets users keep their email address private, and
+ * the existing email/password auth cannot do that by construction (see #540).
+ *
+ * Availability is asked of the OS rather than inferred from the platform -
+ * `isAvailableAsync` is false on iOS versions without the capability, and the
+ * module is iOS-only, so a bare `Platform.OS` check would render a button that
+ * cannot work.
+ */
+export async function isAppleSignInAvailable() {
+  if (Platform.OS !== "ios") {
+    return false;
+  }
+
+  try {
+    return await AppleAuthentication.isAvailableAsync();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Native Sign in with Apple.
+ *
+ * Unlike Google this never opens a browser: Apple returns an identity token
+ * straight from the system sheet, which Supabase exchanges via
+ * `signInWithIdToken`. So there is no redirect trip and no `completeAuthRedirect`.
+ *
+ * Account linking, decided in #540: when the user chooses **Share My Email**,
+ * Supabase auto-links to an existing confirmed account with that address and
+ * nothing extra is needed. When they choose **Hide My Email**, Apple issues a
+ * `@privaterelay.appleid.com` relay that matches nothing, so a separate account
+ * is created - deliberately, because silently merging accounts in a private
+ * journal is worse than an honest separate one. The sign-in screens carry a
+ * hint steering returning users to Share My Email, and Settings will offer
+ * explicit linking for anyone who hid it anyway.
+ *
+ * Returns false when the user dismisses the sheet, matching signInWithGoogle's
+ * contract so the callers can stay identical.
+ */
+export async function signInWithApple() {
+  const client = requireSupabase();
+
+  let credential: AppleAuthentication.AppleAuthenticationCredential;
+  try {
+    credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+    });
+  } catch (error) {
+    // Apple reports a cancelled sheet as a thrown error rather than a result,
+    // and a user backing out is not a failure worth surfacing.
+    if (isAppleCancellation(error)) {
+      return false;
+    }
+    throw error;
+  }
+
+  const identityToken = credential.identityToken;
+  if (!identityToken) {
+    throw new Error("Apple did not return an identity token.");
+  }
+
+  const { error } = await client.auth.signInWithIdToken({
+    provider: "apple",
+    token: identityToken,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
+}
+
+function isAppleCancellation(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "ERR_REQUEST_CANCELED"
+  );
 }
 
 export async function signInWithPassword(email: string, password: string) {
@@ -204,9 +294,10 @@ export async function resendVerificationEmail(email: string) {
 }
 
 // The verify-email banner's send half (#489): a signInWithOtp email carrying a
-// 6-digit code (and a token_hash link fallback - see supabase/templates/
-// magic_link.html). shouldCreateUser:false because the caller is already a
-// signed-in account holder; a typo'd address must bounce, not mint a user.
+// numeric code whose length the backend owns - see supabase/templates/
+// magic_link.html, which is code-only. shouldCreateUser:false because the
+// caller is already a signed-in account holder; a typo'd address must bounce,
+// not mint a user.
 export async function sendVerificationCode(email: string) {
   const client = requireSupabase();
   const { error } = await client.auth.signInWithOtp({

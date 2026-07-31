@@ -1,0 +1,400 @@
+name: App Store screenshots
+
+# Produces App Store listing screenshots at Apple's exact required sizes, on the
+# free `macos-26` runners, without owning any Apple hardware.
+#
+# Apple rejects a listing whose screenshots are the wrong dimensions, and because
+# app.config.ts sets `supportsTablet: true`, **iPad images are required as well
+# as iPhone**. Dropping iPad support would avoid that, but it is a product
+# decision rather than a shortcut, so it is not assumed here.
+#
+#   iPhone 6.9"  1320 x 2868   iPhone 16 Pro Max class
+#   iPad 13"     2064 x 2752   iPad Pro 13-inch class
+#
+# The build is a simulator build and therefore unsigned - no certificate, no
+# provisioning profile, no Apple account.
+#
+# Maestro drives the app because `simctl` cannot type or tap: without it the
+# capture stops at the sign-in screen, and a listing showing only a login form
+# advertises none of what the app actually does.
+#
+# The resolution check at the end is the point of the whole job. Silently
+# producing almost-right images would be discovered at submission time, which is
+# the worst moment to find out.
+# STATUS: this workflow does NOT currently produce usable screenshots, and the
+# reason is not in this file. The app cannot complete a TLS handshake to
+# Supabase from inside the simulator on these runners - see the probe step
+# below and issue #547. Every flow-level fault has been fixed and the capture
+# reaches the sign-in submit; it stops there because the request never leaves
+# the app. The 0.9.0 listing was shot from the web build instead.
+#
+# Kept rather than deleted because the probe, the gates and the flow are the
+# expensive parts, and they are all correct. When the TLS question is answered
+# this should work as written.
+#
+# Note `workflow_dispatch` only becomes available once this file reaches the
+# DEFAULT branch (main), which happens at the next release - not on merge to
+# dev. Until then there is no way to trigger it.
+on:
+  workflow_dispatch:
+    inputs:
+      keep_going_on_flow_failure:
+        description: Still upload whatever was captured if the Maestro flow fails
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: ${{ matrix.label }}
+    runs-on: macos-26
+    timeout-minutes: 75
+    # Deliberately NOT `environment: production`. Everything this job needs -
+    # EXPO_TOKEN and the EXPO_PUBLIC_* values - is repo-level. Naming the
+    # environment would additionally hand it the production deploy
+    # credentials (Cloudflare API token, production database password),
+    # which a simulator job has no business being near.
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: iPhone 6.9 inch
+            slug: iphone-6.9
+            device_pattern: "^iPhone 1[6-9] Pro Max$"
+            expect_width: 1320
+            expect_height: 2868
+          - label: iPad 13 inch
+            slug: ipad-13
+            device_pattern: "^iPad Pro 13-inch"
+            expect_width: 2064
+            expect_height: 2752
+
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      EXPO_PUBLIC_PUBLIC_APP_URL: ${{ vars.EXPO_PUBLIC_PUBLIC_APP_URL }}
+      EXPO_PUBLIC_SUPPORT_EMAIL: ${{ vars.EXPO_PUBLIC_SUPPORT_EMAIL }}
+      EXPO_PUBLIC_PRIVACY_EMAIL: ${{ vars.EXPO_PUBLIC_PRIVACY_EMAIL }}
+      EXPO_PUBLIC_SECURITY_EMAIL: ${{ vars.EXPO_PUBLIC_SECURITY_EMAIL }}
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
+      EXPO_PUBLIC_GITHUB_REPO_URL: ${{ vars.EXPO_PUBLIC_GITHUB_REPO_URL }}
+      EXPO_PUBLIC_SENTRY_DSN: ${{ vars.EXPO_PUBLIC_SENTRY_DSN }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      SENTRY_DISABLE_AUTO_UPLOAD: "true"
+      BUNDLE_ID: org.vasilyoshev.selftend
+      ARTIFACT_DIR: build-artifacts
+      # The staged demo account (#514). Never a real account: these images are
+      # published publicly and the app holds private mental-health writing.
+      MAESTRO_DEMO_EMAIL: ${{ secrets.DEMO_ACCOUNT_EMAIL }}
+      MAESTRO_DEMO_PASSWORD: ${{ secrets.DEMO_ACCOUNT_PASSWORD }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: npm
+
+      - name: Check required config and demo credentials
+        run: |
+          missing=0
+          for name in \
+            EXPO_PUBLIC_SUPABASE_URL \
+            EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
+            EXPO_PUBLIC_PUBLIC_APP_URL \
+            MAESTRO_DEMO_EMAIL \
+            MAESTRO_DEMO_PASSWORD
+          do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is empty. Without it the run captures an unconfigured app or stops at sign-in."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Build for the simulator
+        run: |
+          mkdir -p "$ARTIFACT_DIR"
+          npm exec --yes eas-cli -- build \
+            --platform ios \
+            --profile simulator \
+            --local \
+            --non-interactive \
+            --output "$ARTIFACT_DIR/selftend-simulator.tar.gz"
+
+      - name: Unpack the app bundle
+        id: unpack
+        run: |
+          cd "$ARTIFACT_DIR"
+          tar -xzf selftend-simulator.tar.gz
+          app_path="$(find . -maxdepth 2 -name '*.app' -print -quit)"
+          if [ -z "$app_path" ]; then
+            echo "::error::No .app bundle in the simulator build output."
+            exit 1
+          fi
+          echo "app_path=$ARTIFACT_DIR/${app_path#./}" >> "$GITHUB_OUTPUT"
+
+      - name: Boot the target device
+        id: boot
+        env:
+          PATTERN: ${{ matrix.device_pattern }}
+        run: |
+          # Matched by pattern rather than an exact name: simulator device names
+          # change between Xcode releases, and a pinned name would silently stop
+          # existing - producing a confusing failure unrelated to the app.
+          udid="$(xcrun simctl list devices available -j \
+            | jq -r --arg p "$PATTERN" '[.devices[][] | select(.name | test($p))] | last.udid // empty')"
+
+          if [ -z "$udid" ]; then
+            echo "::error::No available simulator matching /$PATTERN/. Apple's required screenshot size cannot be produced without it."
+            xcrun simctl list devices available | grep -E "iPhone|iPad" || true
+            exit 1
+          fi
+
+          name="$(xcrun simctl list devices available -j | jq -r --arg u "$udid" '[.devices[][] | select(.udid == $u)] | .[0].name')"
+          echo "Booting $name"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          # A clean status bar: no carrier noise, full battery, a fixed clock.
+          xcrun simctl status_bar "$udid" override --time "09:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Install the app
+        env:
+          UDID: ${{ steps.boot.outputs.udid }}
+          APP_PATH: ${{ steps.unpack.outputs.app_path }}
+        run: xcrun simctl install "$UDID" "$APP_PATH"
+
+      # The app reported "A TLS error caused the secure connection to fail"
+      # against Supabase from inside the simulator, which is what actually kept
+      # every earlier run stuck on the sign-in screen. This probe separates the
+      # three things that error could mean - DNS, host reachability, or
+      # something specific to the app's own networking stack - so the next
+      # failure does not need another 40-minute build to narrow down.
+      - name: Probe Supabase reachability from host and simulator
+        if: always()
+        continue-on-error: true
+        env:
+          UDID: ${{ steps.boot.outputs.udid }}
+        run: |
+          host="${EXPO_PUBLIC_SUPABASE_URL#https://}"
+          echo "--- DNS (host) ---"
+          dig +short "$host" || true
+          echo "--- TLS handshake (host) ---"
+          curl -sS -o /dev/null -w 'http=%{http_code} tls=%{ssl_verify_result} time=%{time_total}\n' \
+            "$EXPO_PUBLIC_SUPABASE_URL/auth/v1/health" || echo "host curl FAILED"
+          echo "--- TLS handshake (inside the simulator runtime) ---"
+          xcrun simctl spawn "$UDID" curl -sS -o /dev/null -w 'http=%{http_code} tls=%{ssl_verify_result}\n' \
+            "$EXPO_PUBLIC_SUPABASE_URL/auth/v1/health" || echo "simulator curl FAILED"
+
+      - name: Drive the app and capture
+        id: flow
+        # `|| false` is load-bearing. On any event that is not workflow_dispatch
+        # `inputs` is empty, the expression evaluates to '' and Actions rejects
+        # the whole job template with "Unexpected value ''" - but only AFTER the
+        # step has already failed, so the real error is buried under a template
+        # error that looks unrelated.
+        continue-on-error: ${{ inputs.keep_going_on_flow_failure || false }}
+        env:
+          UDID: ${{ steps.boot.outputs.udid }}
+          # Maestro's default wait for the XCUITest driver is far too short for
+          # a loaded free macOS runner. Raising it is necessary but NOT
+          # sufficient - see the retry below.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: "300000"
+        run: |
+          mkdir -p screenshots maestro-debug
+
+          # Maestro's XCUITest driver intermittently never comes up on these
+          # runners: "iOS driver not ready in time", after the job has already
+          # spent ~30 minutes building. It is not the flow - the driver has
+          # started fine on this same image and Xcode repeatedly - and it is not
+          # the timeout, because one failure sat there for the full 5m33s before
+          # giving up. So it is retried once, with the simulator restarted in
+          # between, which is the only lever that actually clears the stuck
+          # XCTest runner.
+          #
+          # --debug-output keeps Maestro's view-hierarchy dumps and per-command
+          # screenshots; each attempt writes to its own subdirectory so a retry
+          # cannot overwrite the evidence from the attempt that failed.
+          run_flow() {
+            maestro --device "$UDID" test \
+              --debug-output "maestro-debug/attempt-$1" \
+              .maestro/app-store-screenshots.yaml
+          }
+
+          if run_flow 1; then
+            exit 0
+          fi
+
+          echo "::warning::Maestro attempt 1 failed. Restarting the simulator and retrying once."
+          xcrun simctl shutdown "$UDID" || true
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "09:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
+
+          run_flow 2
+
+      # `takeScreenshot` paths are documented as relative to Maestro's workspace
+      # directory, not to the job's working directory - so depending on how the
+      # workspace is inferred, the PNGs can land in `.maestro/screenshots/`
+      # rather than `./screenshots/`. Rather than bet on which, gather them.
+      - name: Gather the captured screenshots
+        if: always()
+        run: |
+          mkdir -p screenshots diagnostics
+          while IFS= read -r found; do
+            case "$found" in
+              ./screenshots/*) continue ;;
+            esac
+            echo "found $found"
+            cp -f "$found" "screenshots/$(basename "$found")"
+          done < <(find . \( -path ./node_modules -o -path "./$ARTIFACT_DIR" \) -prune -o -name '0[0-9]-*.png' -print)
+          ls -la screenshots/ || true
+
+          # Diagnostic captures are gathered separately and never enter
+          # screenshots/, so they cannot trip the size or duplicate gates.
+          while IFS= read -r found; do
+            case "$found" in
+              ./diagnostics/*) continue ;;
+            esac
+            cp -f "$found" "diagnostics/$(basename "$found")"
+          done < <(find . \( -path ./node_modules -o -path "./$ARTIFACT_DIR" \) -prune -o -path '*/diagnostics/*.png' -print)
+          ls -la diagnostics/ || true
+
+      # The reason this job exists. Wrong-sized images are accepted by nothing
+      # and would be discovered at submission - the worst possible moment.
+      #
+      # Three separate failure modes, because each one produces a plausible-
+      # looking artifact that would waste a submission attempt:
+      #   - a screen missing entirely (the flow stopped early),
+      #   - an image at the wrong size (Apple rejects the upload),
+      #   - two identical images (a deep link no-opped and the same screen was
+      #     photographed twice).
+      - name: Verify the screenshots are complete and Apple's required size
+        env:
+          EXPECT_W: ${{ matrix.expect_width }}
+          EXPECT_H: ${{ matrix.expect_height }}
+        run: |
+          # Keep in step with .maestro/app-store-screenshots.yaml.
+          required=(
+            00-sign-in
+            01-home
+            02-cbt
+            03-mood
+            04-journal
+            05-breathing
+            06-insights
+            07-tools
+          )
+
+          bad=0
+          for name in "${required[@]}"; do
+            if [ ! -f "screenshots/$name.png" ]; then
+              echo "::error::screenshots/$name.png is missing - the capture flow did not reach that screen."
+              bad=1
+            fi
+          done
+
+          shopt -s nullglob
+          files=(screenshots/*.png)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No screenshots were captured at all."
+            exit 1
+          fi
+
+          for f in "${files[@]}"; do
+            w="$(sips -g pixelWidth  "$f" | awk '/pixelWidth/  {print $2}')"
+            h="$(sips -g pixelHeight "$f" | awk '/pixelHeight/ {print $2}')"
+            if [ "$w" = "$EXPECT_W" ] && [ "$h" = "$EXPECT_H" ]; then
+              echo "ok   $(basename "$f")  ${w}x${h}"
+            else
+              echo "::error::$(basename "$f") is ${w}x${h}, Apple requires ${EXPECT_W}x${EXPECT_H}."
+              bad=1
+            fi
+          done
+
+          # The status bar is frozen to a fixed clock and battery above, so two
+          # captures of the same screen really are byte-identical. Anything that
+          # collides here is a navigation that silently did nothing.
+          dupes="$(md5 -q "${files[@]}" | sort | uniq -d)"
+          if [ -n "$dupes" ]; then
+            echo "::error::Two or more screenshots are identical - navigation did not happen between captures."
+            md5 -r "${files[@]}" | sort
+            bad=1
+          fi
+
+          [ "$bad" -eq 0 ]
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots-${{ matrix.slug }}-${{ github.run_number }}
+          path: screenshots/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload diagnostic captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-${{ matrix.slug }}-${{ github.run_number }}
+          path: diagnostics/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # `include-hidden-files` is required, not optional. Maestro writes its
+      # debug output to `maestro-debug/.maestro/tests/<timestamp>/`, and
+      # upload-artifact skips dot-paths by default - so the first run with
+      # --debug-output uploaded an empty artifact and the view hierarchy that
+      # would have explained the failure was silently dropped.
+      - name: Upload Maestro debug output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-debug-${{ matrix.slug }}-${{ github.run_number }}
+          path: maestro-debug/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Summarise
+        if: always()
+        env:
+          DEVICE_NAME: ${{ steps.boot.outputs.name }}
+        run: |
+          {
+            echo "### ${{ matrix.label }} - ${DEVICE_NAME:-unknown}"
+            echo
+            echo "Target size: **${{ matrix.expect_width }} x ${{ matrix.expect_height }}**"
+            echo
+            echo "Captured with the staged demo account, never a real one - these"
+            echo "images go on a public listing and the app holds private writing."
+            echo
+            echo "Review them before uploading. Apple rejects screenshots that"
+            echo "misrepresent the app, and overlay text (if any is added later) is"
+            echo "user-facing copy in the owner's voice."
+          } >> "$GITHUB_STEP_SUMMARY"
