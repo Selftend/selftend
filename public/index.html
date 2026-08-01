@@ -4,10 +4,62 @@
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="theme-color" content="#5b6b52" />
+    <!-- quiet-lilac's light page. Overwritten below by the first-paint script
+         when a palette or a dark preference is stored; this static value is
+         what a first-ever visitor sees. Pinned to THEME_HEXES by
+         test/theme-web-surfaces.test.ts. -->
+    <meta name="theme-color" content="#f4f2f8" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/favicon-512.png" />
     <title>%WEB_TITLE%</title>
+    <script>
+      /*
+       * First paint follows the stored palette (#584).
+       *
+       * The bundle cannot do this: the browser paints this document before any
+       * JS module runs, so a returning user on `deep-field` would see a flash of
+       * quiet-lilac's lilac page before the app root applied its tokens. Inline
+       * and synchronous is the whole point - a deferred or external script is
+       * already too late.
+       *
+       * The page backgrounds are duplicated here as literals because this file
+       * has no build step that could inject them (`web.output = "single"`, and
+       * public/ is copied verbatim). test/theme-web-surfaces.test.ts pins every
+       * value to THEME_HEXES, so the copy cannot drift from the palettes.
+       *
+       * Reads the same two unprefixed localStorage keys AsyncStorage writes on
+       * web - see src/stores/style-store.ts.
+       */
+      (function () {
+        var PAGE = {
+          "quiet-lilac": ["#f4f2f8", "#15121c"],
+          "ink-ivory": ["#fafafa", "#121316"],
+          atlas: ["#f7f4ee", "#1f1b14"],
+          "deep-field": ["#eef1f6", "#0d1221"],
+          "sage-garden": ["#f2f5f0", "#202720"],
+          "plum-manuscript": ["#f7f5fa", "#221a2e"],
+          "amber-noir": ["#f7f5ed", "#131211"],
+          glacier: ["#f1f5f9", "#101a23"],
+        };
+        try {
+          var stored = window.localStorage.getItem("selftend:style");
+          var appearance = window.localStorage.getItem("selftend:theme");
+          var prefersDark =
+            window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          // "system" and anything unrecognised follow the device, matching the
+          // theme store's own resolution rule.
+          var dark = appearance === "dark" || (appearance !== "light" && prefersDark);
+          var page = (PAGE[stored] || PAGE["quiet-lilac"])[dark ? 1 : 0];
+          document.documentElement.style.backgroundColor = page;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", page);
+        } catch (error) {
+          /* Storage can throw outright (private mode, blocked cookies). The
+             static values above are already a correct default, so there is
+             nothing to recover - never let a palette stop the app booting. */
+        }
+      })();
+    </script>
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
       /* These styles make the body full-height */
