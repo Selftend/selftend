@@ -169,7 +169,7 @@ function Picker({ label, items, selectedId, onSelect }: PickerProps) {
             {/*
               Hue-keyed ink, not the accent (#412): the selected row is 14px
               text on `bg-aqua/10`, where the published accent reads 4.27:1.
-              `text-aqua-ink` rather than `text-accent-ink` because this sheet
+              `text-aqua-ink` rather than `text-primary-ink` because this sheet
               renders in a <Modal> - the aqua pour from the session route below
               it is not something to rely on reaching a portal, and inside the
               aqua room the two resolve to the same colour anyway (the room

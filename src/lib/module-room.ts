@@ -14,12 +14,7 @@
 
 import { vars } from "nativewind";
 
-import {
-  HUE_INK_TRIPLES,
-  HUE_TRIPLES,
-  PRIMARY_TRIPLES,
-  type HueName,
-} from "@/src/lib/design-tokens";
+import { HUE_TRIPLES, PRIMARY_TRIPLES, type HueName } from "@/src/lib/design-tokens";
 
 export type ColorSchemeName = "light" | "dark";
 
@@ -42,7 +37,7 @@ export function hueDegree(hue: HueName): number {
  *
  * `accent-ink` is the odd one out: it is not a surface but the room hue itself,
  * darkened until it can carry small text on the surfaces above
- * (`text-accent-ink` — see HUE_INK_TRIPLES). Do not read it as ink on `accent`;
+ * (`text-primary-ink` — see HUE_INK_TRIPLES). Do not read it as ink on `accent`;
  * that pairing is `accent-foreground`.
  */
 export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string, string>> {
@@ -59,7 +54,6 @@ export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string
       "muted-foreground": `${h} 8% 40%`,
       accent: `${h} 28% 92%`,
       "accent-foreground": `${h} 28% 25%`,
-      "accent-ink": HUE_INK_TRIPLES[hue].light,
       border: `${h} 15% 88%`,
       input: `${h} 15% 88%`,
     },
@@ -74,7 +68,6 @@ export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string
       "muted-foreground": `${h} 10% 68%`,
       accent: `${h} 14% 24%`,
       "accent-foreground": `${h} 24% 93%`,
-      "accent-ink": HUE_INK_TRIPLES[hue].dark,
       border: `${h} 10% 24%`,
       input: `${h} 10% 22%`,
     },

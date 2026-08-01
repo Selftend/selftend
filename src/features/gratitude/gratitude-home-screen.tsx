@@ -133,7 +133,7 @@ export default function GratitudeHomeScreen() {
               meta={
                 <ToolStats
                   tone="onField"
-                  accentClassName="text-accent-ink"
+                  accentClassName="text-primary-ink"
                   items={[
                     {
                       value: t("hero.entries", { count: totalEntries ?? allEntries.length }),
@@ -210,7 +210,7 @@ export default function GratitudeHomeScreen() {
                               is the one hue where the non-text exemption cannot
                               save it. 5.47:1 here, same hue.
                             */}
-                            <Icon name="star" size={20} className="text-accent-ink" />
+                            <Icon name="star" size={20} className="text-primary-ink" />
                           </View>
                           <View>
                             <Text className="text-sm font-semibold">{t("insights.favorites")}</Text>

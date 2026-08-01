@@ -39,12 +39,6 @@ module.exports = {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
-        // The room's hue as legible ink (#368) — `text-accent-ink` inside a
-        // module room re-resolves to that room's hue darkened to clear WCAG AA
-        // on the surfaces it pours (src/lib/module-room.ts). NOT ink on
-        // `--accent`; that is `accent-foreground`. Outside a room it falls back
-        // to the app accent, `--primary`.
-        "accent-ink": "hsl(var(--accent-ink))",
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
@@ -63,9 +57,9 @@ module.exports = {
         clay: "hsl(var(--clay))",
         // Each hue as small-text ink (#403) — `text-<hue>-ink` for a hue used
         // as text on the neutral app surface, where `text-<hue>` is below AA
-        // for four of the eight and `text-accent-ink` would resolve to the
-        // room-less fallback (violet) instead of the hue. Inside that hue's own
-        // room, `text-accent-ink` is the same colour and stays the right class.
+        // for four of the eight. Both forms now exist only for the encoding
+        // palette; the eslint rule in this repo fails a build that paints one
+        // as chrome (#589).
         // `text-<hue>` remains correct for icons, large numerals and anything
         // decorative. (`ink-ink` is the ink hue's ink — the one awkward name the
         // otherwise-mechanical `<hue>-ink` pattern produces.)

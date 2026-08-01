@@ -147,7 +147,7 @@ export default function HabitsHomeScreen() {
               meta={
                 <ToolStats
                   tone="onField"
-                  accentClassName="text-accent-ink"
+                  accentClassName="text-primary-ink"
                   items={[
                     { value: `${todayTicked}/${todayHabits.length}`, label: t("hero.today") },
                     { value: t("hero.habits", { count: allHabits.length }), label: "" },

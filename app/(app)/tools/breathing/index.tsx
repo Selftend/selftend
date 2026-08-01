@@ -102,7 +102,7 @@ export default function BreathingScreen() {
             meta={
               <ToolStats
                 tone="onField"
-                accentClassName="text-accent-ink"
+                accentClassName="text-primary-ink"
                 subline={subline}
                 sublineTone={lastWhen ? "accent" : "muted"}
                 items={[
@@ -153,7 +153,7 @@ export default function BreathingScreen() {
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                     onPress={() => router.push("/tools/breathing/new")}
                   >
-                    <Text className="text-sm font-semibold text-accent-ink">
+                    <Text className="text-sm font-semibold text-primary-ink">
                       {t("breathing.newExercise")}
                     </Text>
                   </Pressable>
@@ -230,7 +230,7 @@ export default function BreathingScreen() {
                         <Text className="flex-1 text-[15px] font-semibold tracking-tight">
                           {patternName(s.exerciseName)}
                         </Text>
-                        <Text className="text-sm font-semibold tabular-nums text-accent-ink">
+                        <Text className="text-sm font-semibold tabular-nums text-primary-ink">
                           {s.durationSeconds != null
                             ? formatClock(s.durationSeconds)
                             : t("breathing.minutes", { value: s.durationMinutes })}

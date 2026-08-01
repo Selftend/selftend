@@ -186,7 +186,7 @@ export default function MoodTrackerScreen() {
                 meta={
                   <ToolStats
                     tone="onField"
-                    accentClassName="text-accent-ink"
+                    accentClassName="text-primary-ink"
                     items={statItems}
                     subline={subline}
                     sublineTone={lastWhen ? "accent" : "muted"}

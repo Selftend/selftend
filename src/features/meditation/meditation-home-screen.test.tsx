@@ -189,8 +189,8 @@ describe("MeditationHomeScreen", () => {
     // small text as `accent-ink` - the room's own iris darkened until it clears
     // AA on the surfaces iris pours (#368). Published `text-iris` is 3.33:1
     // there, so asserting it here would pin an illegible pairing.
-    expect(screen.getByText("Stage 2").props.className).toContain("text-accent-ink");
-    expect(screen.getByText("All sessions").props.className).toContain("text-accent-ink");
+    expect(screen.getByText("Stage 2").props.className).toContain("text-primary-ink");
+    expect(screen.getByText("All sessions").props.className).toContain("text-primary-ink");
   });
 
   it("keeps the room poured on the loading return", () => {

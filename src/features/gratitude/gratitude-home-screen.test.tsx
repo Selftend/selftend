@@ -118,7 +118,7 @@ describe("GratitudeHomeScreen", () => {
     // room's accent ink is the same hue at 5.47:1 (#368, #403).
     const stars = screen.UNSAFE_getAllByType(Icon).filter((icon) => icon.props.name === "star");
     expect(stars).toHaveLength(1);
-    expect(String(stars[0]?.props.className).split(/\s+/)).toContain("text-accent-ink");
+    expect(String(stars[0]?.props.className).split(/\s+/)).toContain("text-primary-ink");
   });
 
   it("routes to the new entry screen from the CTA", () => {

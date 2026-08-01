@@ -7,8 +7,11 @@
 // deliberately NOT style tokens:
 //
 //   the 8 hues + hue inks  the pinned encoding palette (src/lib/design-tokens.ts)
-//   --accent-ink           the room-poured ink, kept alive only until the
-//                          call-site sweep retires it (#585-#589)
+//
+// `--accent-ink` used to be the second group. It was the room-poured ink, and it
+// is gone (#589): no room pours any more, so it always equalled --primary-ink,
+// and used outside a room it silently rendered violet - the trap #403 spent a
+// sweep on.
 
 import { type Theme } from "expo-router";
 import { vars } from "nativewind";
@@ -67,12 +70,6 @@ function varValues(scheme: ColorScheme, style: StyleName = DEFAULT_STYLE): Recor
     // Style-independent, so it is emitted from the constant rather than read off
     // a style: no palette may reshape the app's controls (#555 §2).
     "--radius": RADIUS,
-    // Legacy, and this is today's value, not the end state: outside a module
-    // room there is no hue, so the room-poured accent ink falls back to the app
-    // accent. src/lib/module-room.ts re-pours it per hue inside a room. It has
-    // no home in the contract because once rooms go neutral (#558) nothing
-    // pours it and it collapses onto --primary-ink. Deleted for real in #589.
-    "--accent-ink": tokens["--primary"],
     ...encodingVars(scheme),
   };
 }

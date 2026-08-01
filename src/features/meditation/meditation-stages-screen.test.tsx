@@ -71,7 +71,7 @@ describe("MeditationStagesScreen", () => {
     // for interactive control states. It is small uppercase text, so the hue
     // arrives as `accent-ink` (iris darkened to clear AA, #368) rather than the
     // published `text-iris`, which is 3.33:1 on the surfaces iris pours.
-    expect(screen.getByText("Where you are").props.className).toContain("text-accent-ink");
+    expect(screen.getByText("Where you are").props.className).toContain("text-primary-ink");
   });
 
   // INVERTED by #588. The milestone chip was `be` on an iris screen and this
@@ -86,6 +86,6 @@ describe("MeditationStagesScreen", () => {
     expect(milestone.props.className).toContain("text-foreground");
     expect(milestone.props.className).not.toContain("text-be");
     expect(milestone.props.className).not.toContain("text-iris");
-    expect(milestone.props.className).not.toContain("text-accent-ink");
+    expect(milestone.props.className).not.toContain("text-primary-ink");
   });
 });
