@@ -68,7 +68,7 @@ export function HabitsOnboarding({
 
       <View className="gap-3">
         <View className="flex-row items-center gap-2">
-          <Icon name="loop" className="size-5 text-be" />
+          <Icon name="loop" className="size-5 text-muted-foreground" />
           <Text className="text-base font-semibold">{t("onboarding.loop.title")}</Text>
         </View>
         <Text variant="muted">{t("onboarding.loop.subtitle")}</Text>
@@ -99,10 +99,10 @@ export function HabitsOnboarding({
         </Text>
       </View>
 
-      <Card className="border-act/30 bg-act/5">
+      <Card className="border-border bg-muted">
         <CardContent className="items-center gap-3 pt-6">
           <View className="flex-row items-center gap-2 self-stretch">
-            <Icon name="badge" className="size-5 text-act" />
+            <Icon name="badge" className="size-5 text-muted-foreground" />
             <CardTitle>{t("onboarding.identity.title")}</CardTitle>
           </View>
           <Text variant="muted" className="self-stretch">

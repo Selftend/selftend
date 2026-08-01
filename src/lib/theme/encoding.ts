@@ -48,9 +48,14 @@ export interface HueEncoding {
 /**
  * The complete list of surfaces that keep hue. Anything not here goes neutral.
  *
- * Four entries, and that is the point: the ruling is narrow. A fifth entry needs
- * an answer to "what does the user read off this colour that they could not read
- * off its icon and label?"
+ * Six entries. Four came from #558's table; #588 swept the whole tree and found
+ * two more that answer the same question - a colour the user picked for their own
+ * breathing exercise, and the sleep tracker's 5-step quality ramp. #558 never
+ * reviewed either surface, and its rule admits both.
+ *
+ * The list is still narrow and still exact: a seventh entry needs an answer to
+ * "what does the user read off this colour that they could not read off its icon
+ * and label?"
  */
 // `as const satisfies …`, NOT a `readonly HueEncoding[]` annotation. An
 // annotation is checked against the literal but also WIDENS it, so every `id`
@@ -78,6 +83,26 @@ export const HUE_ENCODINGS = [
     id: "breathing-pacer",
     kind: "categorical",
     reads: "which phase the pacer is in, live — inhale, hold, exhale",
+  },
+  // The two below were NOT in #558's table, and that is worth stating plainly
+  // rather than burying: the sweep found them, and the rule admits them.
+  //
+  // #558 gave a rule and then applied it to the sites it had reviewed. It never
+  // reviewed the custom-breathing builder or the sleep tracker, so neither
+  // appears in its list of four. Applying the rule as written admits both, and
+  // the alternative in each case is not "simpler chrome" but a deleted feature.
+  // Flagged on the PR for the owner; the conservative move is to keep a colour
+  // the rule protects, not to delete one because a list was written before the
+  // surface was looked at.
+  {
+    id: "breathing-exercise-colour",
+    kind: "categorical",
+    reads: "the colour the user chose for a custom breathing exercise",
+  },
+  {
+    id: "sleep-quality-ramp",
+    kind: "relative",
+    reads: "a 5-step scale — how the night scored, by depth of colour",
   },
 ] as const satisfies readonly HueEncoding[];
 

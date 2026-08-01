@@ -172,7 +172,7 @@ export default function MeditationSessionLogScreen() {
         }
       >
         <View className="gap-4">
-          <Card variant="soft" tint="iris">
+          <Card variant="soft">
             <CardContent className="gap-1 pt-6">
               <CardTitle>{t("complete.title")}</CardTitle>
               <Text variant="muted">{t("complete.subtitle", { count: durationMinutes })}</Text>

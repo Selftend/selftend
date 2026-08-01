@@ -171,10 +171,10 @@ export default function MoodTrackerScreen() {
             // its cards, and the rows below stay on the list's own padding.
             <View className="-mx-4 -mt-4">
               <ModuleHomeHeader
+                hue="be"
                 variant="field"
                 addWidgetCategory="mood"
                 title={t("title")}
-                hue="be"
                 icon="mood"
                 moduleLabel={null}
                 tourScope="mood"
@@ -240,14 +240,13 @@ export default function MoodTrackerScreen() {
                       minDateKey={firstLogDayKey ?? undefined}
                       maxDateKey={currentDateKey()}
                     />
-                    <Card variant="soft" tint="be">
+                    <Card variant="soft">
                       <CardContent className="pt-4">
                         <View onLayout={handleChartLayout}>
                           {chartData.length > 0 ? (
                             <LineChart
                               points={chartData}
                               domain={[1, 5]}
-                              hue="be"
                               width={chartContainerWidth}
                             />
                           ) : (
@@ -260,7 +259,7 @@ export default function MoodTrackerScreen() {
 
                   <View className="gap-3">
                     <Text variant="h3">{t("heatmap.title")}</Text>
-                    <Card variant="soft" tint="be">
+                    <Card variant="soft">
                       <CardContent className="pt-4">
                         <MoodHeatmap userId={userId} />
                       </CardContent>
@@ -296,7 +295,7 @@ function TodayCheckInCard({ summary, isToday, dayLabel }: TodayCheckInCardProps)
       : t("today.completeMany", { count: summary.count, average: summary.average });
 
   return (
-    <Card variant="soft" tint="be">
+    <Card variant="soft">
       <CardHeader>
         <View className="flex-row items-center gap-2">
           {logged ? <Icon name="check-circle" className="size-5 text-primary" /> : null}

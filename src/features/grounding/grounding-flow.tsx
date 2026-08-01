@@ -119,13 +119,7 @@ export function GroundingFlow({ slug }: { slug: string }) {
       );
     }
 
-    return (
-      <GroundingDone
-        hue={technique.hue}
-        saving={saveMutation.isPending}
-        onSave={() => void handleSave()}
-      />
-    );
+    return <GroundingDone saving={saveMutation.isPending} onSave={() => void handleSave()} />;
   };
 
   return (

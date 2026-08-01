@@ -209,7 +209,7 @@ interface StatTileProps {
 
 function StatTile({ label, value, sub }: StatTileProps) {
   return (
-    <Card variant="soft" tint="ink" className="min-w-[150px] flex-1 basis-[150px]">
+    <Card variant="soft" className="min-w-[150px] flex-1 basis-[150px]">
       <CardHeader>
         <Text variant="muted" className="text-xs uppercase tracking-wide">
           {label}

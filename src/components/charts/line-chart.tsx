@@ -11,9 +11,7 @@ import Svg, {
   Text as SvgText,
 } from "react-native-svg";
 
-import { useColorSchemeName } from "@/src/lib/color-scheme";
-import { useThemePalette } from "@/src/lib/theme-palette";
-import { hueGradient, hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
+import { useAccentGradient, useAccentHsl, useThemePalette } from "@/src/lib/theme-palette";
 
 export interface LineChartPoint {
   /** Horizontal position, 0..1 across the plot area. */
@@ -27,7 +25,6 @@ interface LineChartProps {
   points: LineChartPoint[];
   /** Inclusive y domain; gridlines and y labels sit at each integer step. */
   domain: [number, number];
-  hue: ExerciseHue;
   height?: number;
   width?: number;
 }
@@ -38,15 +35,16 @@ const PADDING = { top: 16, right: 16, bottom: 32, left: 24 };
 // first/last labelled points — the line and area stay legible at any density.
 const DENSE_POINT_LIMIT = 31;
 
-export function LineChart({ points, domain, hue, height = 160, width = 300 }: LineChartProps) {
-  const scheme = useColorSchemeName();
+export function LineChart({ points, domain, height = 160, width = 300 }: LineChartProps) {
+  const accent = useAccentHsl();
   const theme = useThemePalette();
+  // Above the early return: the empty-points guard sits below, and a hook after
+  // it would be called conditionally.
+  const [fadeFrom, fadeTo] = useAccentGradient();
   const gradientId = useId();
   if (points.length === 0) return null;
 
-  const isDark = scheme === "dark";
-  const lineColor = hueHsl(hue, isDark, 1);
-  const [fadeFrom, fadeTo] = hueGradient(hue, isDark);
+  const lineColor = accent(1);
   const gridColor = theme.border;
   const labelColor = theme.mutedForeground;
 

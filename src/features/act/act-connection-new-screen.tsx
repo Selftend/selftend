@@ -164,12 +164,12 @@ export default function ActConnectionNewScreen() {
                     onPress={() => setTechnique(tech)}
                     className={cn(
                       "rounded-xl border p-4 active:bg-accent/40",
-                      selected ? "border-act bg-act/5" : "border-border bg-card",
+                      selected ? "border-border bg-muted" : "border-border bg-card",
                     )}
                     {...techniqueRoving.getItemProps(index, () => setTechnique(tech))}
                   >
                     <View className="gap-1">
-                      <Text className={cn("font-semibold", selected && "text-act-ink")}>
+                      <Text className={cn("font-semibold", selected && "text-foreground")}>
                         {t(`act:connection.techniques.${tech}`)}
                       </Text>
                       <Text variant="muted" className="text-xs leading-snug">
@@ -187,9 +187,9 @@ export default function ActConnectionNewScreen() {
         {step === "exercise" ? (
           <View className="gap-4">
             {technique === "noticeFiveThings" ? (
-              <Card className="border-act/30 bg-act/5">
+              <Card className="border-border bg-muted">
                 <CardHeader>
-                  <CardTitle className="text-act-ink">
+                  <CardTitle className="text-foreground">
                     {t("act:connection.noticeFiveGuide.title")}
                   </CardTitle>
                 </CardHeader>
@@ -200,7 +200,7 @@ export default function ActConnectionNewScreen() {
                     </Text>
                     {(["see", "hear", "feel", "smell"] as const).map((sense) => (
                       <View key={sense} className="flex-row gap-2">
-                        <Text className="w-2 text-act">·</Text>
+                        <Text className="w-2 text-muted-foreground">·</Text>
                         <Text className="flex-1 text-sm font-medium">
                           {t(`act:connection.noticeFiveGuide.${sense}`)}
                         </Text>
@@ -233,9 +233,9 @@ export default function ActConnectionNewScreen() {
             ) : null}
 
             {technique === "tenDeepBreaths" ? (
-              <Card className="border-act/30 bg-act/5">
+              <Card className="border-border bg-muted">
                 <CardHeader>
-                  <CardTitle className="text-act-ink">
+                  <CardTitle className="text-foreground">
                     {t("act:observingSelf.tenBreathsGuide.title")}
                   </CardTitle>
                 </CardHeader>

@@ -88,12 +88,7 @@ export default function ProgressScreen() {
             <CardContent>
               <View onLayout={handleChartLayout} testID="mood-trend-layout">
                 {chartPoints.length > 0 ? (
-                  <LineChart
-                    points={chartPoints}
-                    domain={[1, 5]}
-                    hue="be"
-                    width={chartContainerWidth}
-                  />
+                  <LineChart points={chartPoints} domain={[1, 5]} width={chartContainerWidth} />
                 ) : (
                   <Text variant="muted">{t("progress.noMoodData")}</Text>
                 )}

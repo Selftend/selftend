@@ -1,13 +1,12 @@
 import { View } from "react-native";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
-import { exerciseHue, hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
+import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
+import { useAccentHsl } from "@/src/lib/theme-palette";
 import { cn } from "@/lib/utils";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 interface HueIconBadgeProps {
   icon: MaterialIconName;
-  hue: ExerciseHue;
   size: number;
   iconSize: number;
   shape?: "square" | "circle";
@@ -31,17 +30,17 @@ export function iconSizeClass(iconSize: number): string {
 // Decorative hue-tinted container holding a single centered icon. Used at four sizes:
 // home card (square 50/24), intro hero (square 64/32), session center (circle 108/48),
 // done (circle 96/46).
-export function HueIconBadge({ icon, hue, size, iconSize, shape = "square" }: HueIconBadgeProps) {
-  const isDark = useColorSchemeName() === "dark";
+export function HueIconBadge({ icon, size, iconSize, shape = "square" }: HueIconBadgeProps) {
+  const accent = useAccentHsl();
   return (
     <View
       style={{
         width: size,
         height: size,
         borderRadius: shape === "circle" ? size / 2 : size * 0.28,
-        backgroundColor: hueHsl(hue, isDark, 0.14),
+        backgroundColor: accent(0.14),
         borderWidth: 1,
-        borderColor: hueHsl(hue, isDark, 0.4),
+        borderColor: accent(0.4),
         alignItems: "center",
         justifyContent: "center",
       }}
@@ -49,7 +48,7 @@ export function HueIconBadge({ icon, hue, size, iconSize, shape = "square" }: Hu
       <Icon
         name={icon}
         size={iconSize}
-        className={cn(iconSizeClass(iconSize), exerciseHue(hue).classes.text)}
+        className={cn(iconSizeClass(iconSize), CHROME_ACCENT_MARK)}
       />
     </View>
   );

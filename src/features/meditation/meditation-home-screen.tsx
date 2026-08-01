@@ -191,7 +191,7 @@ export default function MeditationHomeScreen() {
 
             <ContentSheet className="px-4">
               <View className="gap-6">
-                <Card variant="soft" tint="iris">
+                <Card variant="soft">
                   <CardContent className="gap-3 pt-6">
                     <CardTitle aria-level={2}>{t("module.home.todayCard")}</CardTitle>
                     <TimerWidget initialDuration={suggestedDuration} />
@@ -253,7 +253,7 @@ export default function MeditationHomeScreen() {
                               {formatAtOffset(s.completedAt, s.completedOffsetMinutes)}
                             </Text>
                           </View>
-                          <View className="rounded-full bg-iris/10 px-2 py-0.5">
+                          <View className="rounded-full bg-muted px-2 py-0.5">
                             <Text className="text-xs font-semibold text-accent-ink">
                               {t("module.sessions.stageBadge", { stage: s.stageAtSession })}
                             </Text>
@@ -293,13 +293,9 @@ function NavCallout({ label, onPress }: { label: string; onPress: () => void }) 
       onPress={onPress}
       className="min-w-[160px] flex-1 active:opacity-80"
     >
-      <Card
-        variant="soft"
-        tint="iris"
-        className="flex-row items-center justify-between gap-3 px-4 py-4"
-      >
+      <Card variant="soft" className="flex-row items-center justify-between gap-3 px-4 py-4">
         <Text className="flex-1 text-sm font-semibold">{label}</Text>
-        <Icon name="chevron-right" size={20} className="text-iris" />
+        <Icon name="chevron-right" size={20} className="text-muted-foreground" />
       </Card>
     </Pressable>
   );

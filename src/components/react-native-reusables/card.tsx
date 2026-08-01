@@ -1,63 +1,33 @@
 import { Text, TextClassContext } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
-import type { TintToken } from "@/src/lib/design-tokens";
 import { View } from "react-native";
 
-const TINT_BG: Record<TintToken, string> = {
-  primary: "bg-primary/[0.06] border-primary/30",
-  act: "bg-[hsl(var(--act)/0.06)] border-[hsl(var(--act)/0.30)]",
-  be: "bg-[hsl(var(--be)/0.06)] border-[hsl(var(--be)/0.30)]",
-  think: "bg-[hsl(var(--think)/0.06)] border-[hsl(var(--think)/0.30)]",
-  aqua: "bg-[hsl(var(--aqua)/0.06)] border-[hsl(var(--aqua)/0.30)]",
-  iris: "bg-[hsl(var(--iris)/0.06)] border-[hsl(var(--iris)/0.30)]",
-  ink: "bg-[hsl(var(--ink)/0.06)] border-[hsl(var(--ink)/0.30)]",
-  clay: "bg-[hsl(var(--clay)/0.06)] border-[hsl(var(--clay)/0.30)]",
-  mist: "bg-[hsl(var(--mist)/0.06)] border-[hsl(var(--mist)/0.30)]",
-};
-
-// Hue-tinted elevation for the soft variant (Direction B rooms): shadow color
-// follows the module hue so cards read as lifted room surfaces, not gray boxes.
-// Named-color + slash opacity, the same utility shape as the default card's
-// shadow-black/5 (arbitrary shadow-[color:...] values are ambiguous to the
-// Tailwind/NativeWind pipeline).
-const SOFT_SHADOW: Record<TintToken, string> = {
-  primary: "shadow-primary/25",
-  act: "shadow-act/25",
-  be: "shadow-be/25",
-  think: "shadow-think/25",
-  aqua: "shadow-aqua/25",
-  iris: "shadow-iris/25",
-  ink: "shadow-ink/25",
-  clay: "shadow-clay/25",
-  mist: "shadow-mist/25",
-};
-
-const SPINE_BG: Record<TintToken, string> = {
-  primary: "bg-primary",
-  act: "bg-[hsl(var(--act))]",
-  be: "bg-[hsl(var(--be))]",
-  think: "bg-[hsl(var(--think))]",
-  aqua: "bg-[hsl(var(--aqua))]",
-  iris: "bg-[hsl(var(--iris))]",
-  ink: "bg-[hsl(var(--ink))]",
-  clay: "bg-[hsl(var(--clay))]",
-  mist: "bg-[hsl(var(--mist))]",
-};
-
+// A card is a surface, not an identity (#588).
+//
+// Three hue maps lived here. TINT_BG washed a default card in `bg-<hue>/0.06`
+// with a `/0.30` border, SOFT_SHADOW gave the soft variant a hue-tinted drop
+// shadow so cards "read as lifted room surfaces, not gray boxes", and SPINE_BG
+// painted a 3px left rule in the full accent.
+//
+// All three are the ruling's case (#558): they said which module you were
+// looking at, on a card whose heading already said it. The soft shadow was the
+// clearest of the three - a violet-tinted shadow under a violet-tinted card
+// inside a violet room, three statements of one fact.
+//
+// SPINE_BG went with no call sites at all. The `spine` prop had none left when
+// this batch found it, so its nine-entry map was pure carrying cost.
 type CardProps = React.ComponentProps<typeof View> &
   React.RefAttributes<View> & {
-    spine?: TintToken;
-    tint?: TintToken;
     /**
-     * "default" is the bordered card every surface renders today. "soft" is
-     * the Direction B room card: borderless, larger radius, hue-tinted soft
-     * elevation (pass `tint` for the hue; it colors the shadow instead of the
-     * background). Opt-in — the global default is unchanged.
+     * "default" is the bordered card every surface renders today. "soft" is the
+     * borderless room card: larger radius, soft elevation. It used to take a
+     * `tint` that coloured its shadow; the shadow is neutral now, so the two
+     * variants differ in shape alone.
      */
     variant?: "default" | "soft";
   };
 
-function Card({ className, spine, tint, variant = "default", children, ...props }: CardProps) {
+function Card({ className, variant = "default", children, ...props }: CardProps) {
   const soft = variant === "soft";
   return (
     <TextClassContext.Provider value="text-card-foreground">
@@ -67,25 +37,12 @@ function Card({ className, spine, tint, variant = "default", children, ...props 
           // Dark elevation comes from the surface color alone: drop shadows on
           // dark read as smudges against the near-black background (#488).
           soft
-            ? cn(
-                "rounded-3xl shadow-lg dark:shadow-none",
-                tint ? SOFT_SHADOW[tint] : "shadow-black/10",
-              )
-            : cn(
-                "border-border rounded-xl border shadow-sm shadow-black/5 dark:shadow-none",
-                tint && TINT_BG[tint],
-              ),
+            ? "rounded-3xl shadow-lg shadow-black/10 dark:shadow-none"
+            : "border-border rounded-xl border shadow-sm shadow-black/5 dark:shadow-none",
           className,
         )}
         {...props}
       >
-        {spine ? (
-          <View
-            accessibilityElementsHidden
-            importantForAccessibility="no"
-            className={cn("absolute left-0 top-0 bottom-0 w-[3px]", SPINE_BG[spine])}
-          />
-        ) : null}
         {children}
       </View>
     </TextClassContext.Provider>

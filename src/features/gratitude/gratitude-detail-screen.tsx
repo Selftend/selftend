@@ -168,7 +168,7 @@ export default function GratitudeDetailScreen() {
             ) : null}
           </View>
 
-          <Card variant="soft" tint="think">
+          <Card variant="soft">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.itemsTitle")}</CardTitle>
               <CardDescription>{t("detail.itemsDescription")}</CardDescription>
@@ -186,7 +186,7 @@ export default function GratitudeDetailScreen() {
           </Card>
 
           {lifeAnswers.length > 0 ? (
-            <Card variant="soft" tint="think">
+            <Card variant="soft">
               <CardHeader>
                 <CardTitle aria-level={2}>{t("detail.lifeItemsTitle")}</CardTitle>
               </CardHeader>
@@ -204,7 +204,7 @@ export default function GratitudeDetailScreen() {
           ) : null}
 
           {entry.note.trim().length > 0 ? (
-            <Card variant="soft" tint="think">
+            <Card variant="soft">
               <CardHeader>
                 <CardTitle aria-level={2}>{t("detail.noteTitle")}</CardTitle>
               </CardHeader>
@@ -214,7 +214,7 @@ export default function GratitudeDetailScreen() {
             </Card>
           ) : null}
 
-          <Card variant="soft" tint="think">
+          <Card variant="soft">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.loggedAt")}</CardTitle>
               <CardDescription>

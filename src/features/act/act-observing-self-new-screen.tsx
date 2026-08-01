@@ -173,12 +173,12 @@ export default function ActObservingSelfNewScreen() {
                     onPress={() => setTechniqueUsed(tech)}
                     className={cn(
                       "rounded-xl border p-4 active:bg-accent/40",
-                      selected ? "border-act bg-act/5" : "border-border bg-card",
+                      selected ? "border-border bg-muted" : "border-border bg-card",
                     )}
                     {...techniqueRoving.getItemProps(index, () => setTechniqueUsed(tech))}
                   >
                     <View className="gap-1">
-                      <Text className={cn("font-semibold", selected && "text-act-ink")}>
+                      <Text className={cn("font-semibold", selected && "text-foreground")}>
                         {t(`act:observingSelf.techniques.${tech}`)}
                       </Text>
                       <Text variant="muted" className="text-xs leading-snug">
@@ -194,9 +194,9 @@ export default function ActObservingSelfNewScreen() {
 
         {/* Step 2: Exercise guidance */}
         {step === "exercise" ? (
-          <Card className="border-act/30 bg-act/5">
+          <Card className="border-border bg-muted">
             <CardHeader>
-              <CardTitle className="text-act-ink">
+              <CardTitle className="text-foreground">
                 {t(`act:observingSelf.${guideKey}.title`)}
               </CardTitle>
             </CardHeader>

@@ -169,7 +169,7 @@ export default function GratitudeHomeScreen() {
                     <Text variant="eyebrow" className="mb-2.5">
                       {t("insights.title")}
                     </Text>
-                    <Card variant="soft" tint="think" className="gap-5 p-5">
+                    <Card variant="soft" className="gap-5 p-5">
                       {frequencyData ? (
                         <FrequencyBars
                           data={frequencyData}
@@ -197,7 +197,7 @@ export default function GratitudeHomeScreen() {
                           <View
                             accessibilityElementsHidden
                             importantForAccessibility="no"
-                            className="h-9 w-9 items-center justify-center rounded-[10px] bg-[hsl(var(--think)/0.12)]"
+                            className="h-9 w-9 items-center justify-center rounded-[10px] bg-muted"
                           >
                             {/*
                               A redundant affordance — the row's own title and
@@ -353,7 +353,7 @@ function BreakCard({ breakIndex, onDismiss }: BreakCardProps) {
       <Text variant="eyebrow" className="mb-2.5">
         {t("promptEyebrow")}
       </Text>
-      <Card variant="soft" tint="think" className="relative overflow-hidden px-5 py-4">
+      <Card variant="soft" className="relative overflow-hidden px-5 py-4">
         {/* Top-edge think→clay gradient stripe */}
         <LinearGradient
           colors={["hsl(43, 74%, 52%)", "hsl(20, 52%, 50%)"]}

@@ -154,7 +154,7 @@ export default function WeeklyReviewScreen() {
             </CardHeader>
             <CardContent>
               {chartPoints.length > 0 ? (
-                <LineChart points={chartPoints} domain={[1, 5]} hue="be" width={chartWidth} />
+                <LineChart points={chartPoints} domain={[1, 5]} width={chartWidth} />
               ) : (
                 <Text variant="muted">{t("weeklyReview.noMoodData")}</Text>
               )}

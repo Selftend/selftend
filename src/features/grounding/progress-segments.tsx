@@ -1,17 +1,15 @@
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { useAccentHsl } from "@/src/lib/theme-palette";
 
 interface ProgressSegmentsProps {
   total: number;
   current: number; // 0-based index of the active step
-  hue: ExerciseHue;
 }
 
-export function ProgressSegments({ total, current, hue }: ProgressSegmentsProps) {
-  const isDark = useColorSchemeName() === "dark";
+export function ProgressSegments({ total, current }: ProgressSegmentsProps) {
+  const accent = useAccentHsl();
   const { t } = useTranslation("cbt");
   return (
     <View
@@ -29,7 +27,7 @@ export function ProgressSegments({ total, current, hue }: ProgressSegmentsProps)
               flex: 1,
               height: 4,
               borderRadius: 2,
-              backgroundColor: hueHsl(hue, isDark, alpha),
+              backgroundColor: accent(alpha),
             }}
           />
         );

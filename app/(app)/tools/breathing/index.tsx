@@ -126,9 +126,9 @@ export default function BreathingScreen() {
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                 onPress={() => router.push("/tools/breathing/session")}
               >
-                <Card variant="soft" tint="aqua" className="flex-row items-center gap-4 px-5 py-4">
-                  <View className="size-12 items-center justify-center rounded-xl bg-aqua/10">
-                    <Icon name="air" className="size-6 text-aqua" />
+                <Card variant="soft" className="flex-row items-center gap-4 px-5 py-4">
+                  <View className="size-12 items-center justify-center rounded-xl bg-muted">
+                    <Icon name="air" className="size-6 text-muted-foreground" />
                   </View>
                   <View className="flex-1 min-w-0">
                     <Text className="text-[15px] font-semibold tracking-tight">
@@ -225,7 +225,7 @@ export default function BreathingScreen() {
                   </Text>
                 ) : (
                   sessions.map((s) => (
-                    <Card key={s.id} variant="soft" tint="aqua" className="px-5 py-4 gap-0">
+                    <Card key={s.id} variant="soft" className="px-5 py-4 gap-0">
                       <View className="flex-row items-center justify-between gap-2">
                         <Text className="flex-1 text-[15px] font-semibold tracking-tight">
                           {patternName(s.exerciseName)}

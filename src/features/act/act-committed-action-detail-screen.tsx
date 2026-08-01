@@ -161,7 +161,7 @@ export default function ActCommittedActionDetailScreen() {
                   name="add-circle"
                   className={cn(
                     "size-6",
-                    newStepText.trim() ? "text-act" : "text-muted-foreground",
+                    newStepText.trim() ? "text-primary" : "text-muted-foreground",
                   )}
                 />
               )}
@@ -279,7 +279,7 @@ export default function ActCommittedActionDetailScreen() {
                         name={step.isCompleted ? "check-circle" : "radio-button-unchecked"}
                         className={cn(
                           "size-5",
-                          step.isCompleted ? "text-act" : "text-muted-foreground",
+                          step.isCompleted ? "text-primary" : "text-muted-foreground",
                         )}
                       />
                     </Pressable>
@@ -332,7 +332,7 @@ function StatusPill({
   t: ReturnType<typeof useTranslation<"act">>["t"];
 }) {
   const classes: Record<ActionStatus, string> = {
-    active: "bg-act/15 text-act-ink",
+    active: "bg-muted text-foreground",
     completed: "bg-green-500/15 text-green-700 dark:text-green-400",
     abandoned: "bg-muted text-muted-foreground",
   };

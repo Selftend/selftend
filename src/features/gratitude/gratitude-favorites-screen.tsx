@@ -70,7 +70,7 @@ function FavoriteEntryRow({ entry }: { entry: GratitudeEntry }) {
           params: { id: entry.id },
         })
       }
-      className="gap-2 rounded-3xl bg-card p-4 shadow-lg shadow-think/25 dark:shadow-none active:bg-accent/40"
+      className="gap-2 rounded-3xl bg-card p-4 shadow-lg shadow-black/10 dark:shadow-none active:bg-accent/40"
       role="button"
     >
       <View className="flex-row items-center justify-between gap-3">

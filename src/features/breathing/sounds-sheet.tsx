@@ -163,7 +163,7 @@ function Picker({ label, items, selectedId, onSelect }: PickerProps) {
             {...roving.getItemProps(index, () => onSelect(item.id))}
             className={cn(
               "flex-row items-center justify-between rounded-lg px-3 py-2",
-              active ? "bg-aqua/10" : "bg-transparent",
+              active ? "bg-muted" : "bg-transparent",
             )}
           >
             {/*
@@ -175,10 +175,10 @@ function Picker({ label, items, selectedId, onSelect }: PickerProps) {
               aqua room the two resolve to the same colour anyway (the room
               re-pours --accent-ink from these very triples).
             */}
-            <Text className={cn("text-sm", active && "font-semibold text-aqua-ink")}>
+            <Text className={cn("text-sm", active && "font-semibold text-foreground")}>
               {item.label}
             </Text>
-            {active ? <Icon name="check" className="size-4 text-aqua" /> : null}
+            {active ? <Icon name="check" className="size-4 text-muted-foreground" /> : null}
           </Pressable>
         );
       })}

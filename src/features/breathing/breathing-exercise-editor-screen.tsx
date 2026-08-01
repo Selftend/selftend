@@ -246,7 +246,7 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() => stepPhase(f.key, PHASE_STEP)}
                 >
-                  <Text className="text-base text-aqua">▲</Text>
+                  <Text className="text-base text-muted-foreground">▲</Text>
                 </Pressable>
                 <Text className="tabular-nums text-sm font-semibold">
                   {input[f.key].toFixed(1)}s
@@ -257,7 +257,7 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() => stepPhase(f.key, -PHASE_STEP)}
                 >
-                  <Text className="text-base text-aqua">▼</Text>
+                  <Text className="text-base text-muted-foreground">▼</Text>
                 </Pressable>
               </View>
             ))}

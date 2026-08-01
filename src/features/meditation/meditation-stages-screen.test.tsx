@@ -74,16 +74,18 @@ describe("MeditationStagesScreen", () => {
     expect(screen.getByText("Where you are").props.className).toContain("text-accent-ink");
   });
 
-  it("keeps the `be` milestone chips as untouched guests", () => {
+  // INVERTED by #588. The milestone chip was `be` on an iris screen and this
+  // asserted it stayed that way - a "cross-module reference" the room must not
+  // repaint. Neither hue survives the ruling, so what it guards now is that the
+  // chip took the sweep rather than being missed. Fails on the old behaviour,
+  // which had `text-be` on this node.
+  it("carries no module hue on the milestone chips", () => {
     renderWithProviders(<MeditationStagesScreen />);
 
-    // A cross-module reference, exactly like grounding's per-technique hues:
-    // the room does not repaint it.
     const milestone = screen.getByText("Milestone One - Continuous attention to the breath");
-    expect(milestone.props.className).toContain("text-be");
+    expect(milestone.props.className).toContain("text-foreground");
+    expect(milestone.props.className).not.toContain("text-be");
     expect(milestone.props.className).not.toContain("text-iris");
-    // `accent-ink` is the room's hue, so sweeping the guest onto it would
-    // repaint `be` as iris just as surely as `text-iris` would (#368).
     expect(milestone.props.className).not.toContain("text-accent-ink");
   });
 });

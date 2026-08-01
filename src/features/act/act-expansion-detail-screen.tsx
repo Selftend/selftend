@@ -134,7 +134,7 @@ export default function ActExpansionDetailScreen() {
               </CardHeader>
               {log.intensityBefore !== null ? (
                 <CardContent>
-                  <Text className="font-semibold text-act-ink">
+                  <Text className="font-semibold text-foreground">
                     {log.intensityAfter < log.intensityBefore
                       ? t("expansion.intensityDrop", {
                           before: log.intensityBefore,

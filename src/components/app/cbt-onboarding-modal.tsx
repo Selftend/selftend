@@ -73,7 +73,7 @@ export function CbtOnboarding({
       </View>
 
       <View className="gap-4">
-        <Card className="border-think/30 bg-think/5">
+        <Card className="border-border bg-muted">
           <CardContent className="items-center gap-3 pt-6">
             <Image
               source={pillarThink}
@@ -81,7 +81,7 @@ export function CbtOnboarding({
               resizeMode="contain"
               accessibilityLabel={t("onboarding.intro.thinkTitle")}
             />
-            <CardTitle className="text-center text-think-ink">
+            <CardTitle className="text-center text-foreground">
               {t("onboarding.intro.thinkTitle")}
             </CardTitle>
             <Text variant="muted" className="text-center">
@@ -90,7 +90,7 @@ export function CbtOnboarding({
           </CardContent>
         </Card>
 
-        <Card className="border-act/30 bg-act/5">
+        <Card className="border-border bg-muted">
           <CardContent className="items-center gap-3 pt-6">
             <Image
               source={pillarAct}
@@ -98,7 +98,7 @@ export function CbtOnboarding({
               resizeMode="contain"
               accessibilityLabel={t("onboarding.intro.actTitle")}
             />
-            <CardTitle className="text-center text-act-ink">
+            <CardTitle className="text-center text-foreground">
               {t("onboarding.intro.actTitle")}
             </CardTitle>
             <Text variant="muted" className="text-center">
@@ -107,7 +107,7 @@ export function CbtOnboarding({
           </CardContent>
         </Card>
 
-        <Card className="border-be/30 bg-be/5">
+        <Card className="border-border bg-muted">
           <CardContent className="items-center gap-3 pt-6">
             <Image
               source={pillarBe}
@@ -115,7 +115,7 @@ export function CbtOnboarding({
               resizeMode="contain"
               accessibilityLabel={t("onboarding.intro.beTitle")}
             />
-            <CardTitle className="text-center text-be-ink">
+            <CardTitle className="text-center text-foreground">
               {t("onboarding.intro.beTitle")}
             </CardTitle>
             <Text variant="muted" className="text-center">

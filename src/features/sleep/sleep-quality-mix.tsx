@@ -12,7 +12,7 @@ export function SleepQualityMix({ distribution }: { distribution: number[] }) {
   const total = distribution.reduce((sum, c) => sum + c, 0);
 
   return (
-    <Card variant="soft" tint="ink">
+    <Card variant="soft">
       <CardContent className="gap-3 pt-4 pb-4">
         <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {t("chart.qualityMix")}

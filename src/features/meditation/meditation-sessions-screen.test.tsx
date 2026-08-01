@@ -134,23 +134,20 @@ describe("MeditationSessionsScreen", () => {
     expect(hostsBetween).toHaveLength(1);
   });
 
-  it("wears iris on the stage badge", () => {
+  // INVERTED by #588: the badge wore the module's iris; a stage badge is chrome.
+  it("wears no module hue on the stage badge", () => {
     setSessions([session()]);
 
     renderWithProviders(<MeditationSessionsScreen />);
 
-    // Room accents follow the module hue; `primary` stays reserved for
-    // interactive control states.
     const badge = screen.getByText("Stage 2");
-    // Small text, so the hue arrives as `accent-ink` (#368): the published
-    // `text-iris` is 3.72:1 on the room card this badge's wash sits over, and
-    // the wash only pulls it further under AA.
-    expect(badge.props.className).toContain("text-accent-ink");
-    // The fill converts with the ink - a half-reverted badge fails here.
+    // The fill converts with the ink - a half-reverted badge fails here, which
+    // is the same guard the hue version carried, pointed the other way.
     const ancestorClasses = [];
     for (let node = badge.parent; node; node = node.parent) {
       if (typeof node.props?.className === "string") ancestorClasses.push(node.props.className);
     }
-    expect(ancestorClasses.some((c) => c.includes("bg-iris/10"))).toBe(true);
+    expect(ancestorClasses.some((c) => c.includes("bg-iris/10"))).toBe(false);
+    expect(ancestorClasses.some((c) => c.includes("bg-muted"))).toBe(true);
   });
 });

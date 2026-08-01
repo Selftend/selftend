@@ -93,7 +93,7 @@ export default function ActValuesScreen() {
                       {rating !== null ? (
                         <View className="mt-1 flex-row items-center gap-1">
                           <AlignmentBar rating={rating} />
-                          <Text className="text-xs text-act-ink">
+                          <Text className="text-xs text-foreground">
                             {t("values.alignmentLabel", { rating })}
                           </Text>
                         </View>
@@ -101,7 +101,7 @@ export default function ActValuesScreen() {
                     </View>
                     <Icon
                       name={hasEntry ? "chevron-right" : "add"}
-                      className={cn("size-4", hasEntry ? "text-muted-foreground" : "text-act")}
+                      className={cn("size-4", hasEntry ? "text-muted-foreground" : "text-primary")}
                     />
                   </View>
                 </Pressable>
@@ -117,7 +117,10 @@ export default function ActValuesScreen() {
 function AlignmentBar({ rating }: { rating: number }) {
   return (
     <View className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
-      <View className="h-full rounded-full bg-act" style={{ width: `${(rating / 10) * 100}%` }} />
+      <View
+        className="h-full rounded-full bg-primary"
+        style={{ width: `${(rating / 10) * 100}%` }}
+      />
     </View>
   );
 }

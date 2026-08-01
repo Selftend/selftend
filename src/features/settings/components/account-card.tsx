@@ -28,8 +28,8 @@ export function AccountCard({ user, onSignOut }: AccountCardProps) {
   return (
     <SettingsSectionCard
       icon="manage-accounts"
-      iconClassName="text-clay"
-      badgeClassName="bg-[hsl(var(--clay)/0.10)]"
+      iconClassName="text-muted-foreground"
+      badgeClassName="bg-muted"
       title={t("account.title")}
       description={user?.email ?? t("account.signedIn")}
     >

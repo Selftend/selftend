@@ -274,7 +274,7 @@ export default function ActHomeScreen() {
                         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                         onPress={() => router.push("/modules/act/defusion")}
                       >
-                        <Text className="text-sm text-act-ink">{t("home.viewAllDefusion")}</Text>
+                        <Text className="text-sm text-foreground">{t("home.viewAllDefusion")}</Text>
                       </Pressable>
                     ) : null}
                   </View>

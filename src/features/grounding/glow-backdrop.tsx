@@ -1,12 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 
-import { hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
-
-interface GlowBackdropProps {
-  hue: ExerciseHue;
-}
+import { useAccentHsl } from "@/src/lib/theme-palette";
 
 const GLOW = 440;
 
@@ -15,10 +10,10 @@ const GLOW = 440;
 // left a gap below the screen, so this is a plain, out-of-flow, clipped backdrop that
 // cannot affect layout. Rendered as an SVG radial gradient for a soft falloff on web
 // and native.
-export function GlowBackdrop({ hue }: GlowBackdropProps) {
-  const isDark = useColorSchemeName() === "dark";
-  const color = hueHsl(hue, isDark, 1);
-  const gradientId = `grounding-glow-${hue}`;
+export function GlowBackdrop() {
+  const accent = useAccentHsl();
+  const color = accent(1);
+  const gradientId = "grounding-glow";
 
   return (
     <View
