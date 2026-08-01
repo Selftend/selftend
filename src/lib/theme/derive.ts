@@ -16,7 +16,7 @@
 
 import { hexToHslTriple, mixHex } from "./color";
 import type { ColorScheme, ThemeTokens } from "./contract";
-import { pickPrimaryForeground, solveInk } from "./contrast";
+import { pickPrimaryForeground, solveDestructive, solveInk } from "./contrast";
 
 /** The six hexes a derived style authors, per scheme. */
 export interface CoreHexes {
@@ -89,7 +89,12 @@ export function deriveTokens(core: CoreHexes, scheme: ColorScheme): ThemeTokens 
     "--muted-foreground": hexToHslTriple(core.muted),
     "--accent": hexToHslTriple(altSurface),
     "--accent-foreground": hexToHslTriple(core.ink),
-    "--destructive": DESTRUCTIVE[scheme].color,
+    // Solved against THIS style's neutrals, not taken verbatim. The red is
+    // shared across all eight, but the surfaces beneath it are authored per
+    // style - and measuring found sage-garden dark at 3.97 and
+    // plum-manuscript dark at 4.49 for inline error text on a card. A style
+    // that already clears gets the shared value back unchanged.
+    "--destructive": solveDestructive(DESTRUCTIVE[scheme].color, { background, card }, scheme),
     "--destructive-foreground": DESTRUCTIVE[scheme].foreground,
     "--border": hexToHslTriple(core.border),
     "--input": hexToHslTriple(input),

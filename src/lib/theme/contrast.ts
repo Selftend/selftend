@@ -40,6 +40,9 @@ export const INK_TARGET = 5;
 /** The alpha a tinted chip/badge paints its own accent at. */
 const CHIP_ALPHA = 0.15;
 
+/** The alpha a destructive button/badge paints its red at in dark mode. */
+const DESTRUCTIVE_BUTTON_ALPHA = 0.6;
+
 /** The alpha a decorative mark's wash is laid at (the densest of the three). */
 const MARK_ALPHA = 0.1;
 
@@ -168,6 +171,49 @@ export function pickPrimaryForeground(accent: string, candidates: string[]): str
   return legible.length > 0 ? best(legible) : best(["0 0% 100%", "0 0% 0%"]);
 }
 
+/**
+ * Solve a style's destructive red the way `solveInk` solves its accent: the
+ * smallest move in lightness that keeps it legible as small text on that style's
+ * own background and card.
+ *
+ * One shared red across eight palettes was the original ruling, and the reason
+ * given was that a per-style destructive would be "eight more pairs to gate for
+ * no legibility gain". Measuring shows the gain is real: the red is shared but
+ * the SURFACES under it are not, and on sage-garden dark it lands at 3.97 and on
+ * plum-manuscript dark at 4.49 — both below AA for inline save and validation
+ * errors. Same failure shape as the fixed ink recipe (#560) and the fixed field
+ * formula (#586).
+ *
+ * Degree and saturation are untouched, so it still reads as the danger red; only
+ * the lightness moves, and only for the styles that need it. A style that
+ * already clears gets its authored value back unchanged.
+ */
+export function solveDestructive(
+  destructive: string,
+  neutrals: { background: string; card: string },
+  scheme: ColorScheme,
+  target: number = AA_TEXT,
+): string {
+  const surfaces: Surface[] = [
+    { where: "background", rgb: tripleToRgb(neutrals.background) },
+    { where: "card", rgb: tripleToRgb(neutrals.card) },
+  ];
+  const [, , startLightness] = parseHslTriple(destructive);
+  // Darker against a light page, lighter against a dark one — the direction that
+  // moves away from the surface rather than toward it.
+  const step = scheme === "light" ? -1 : 1;
+  const limit = scheme === "light" ? 0 : 100;
+
+  for (let l = Math.round(startLightness); step < 0 ? l >= limit : l <= limit; l += step) {
+    const candidate = withLightness(destructive, l);
+    if (worstAgainst(tripleToRgb(candidate), surfaces).ratio >= target) return candidate;
+  }
+
+  throw new Error(
+    `No ${scheme} destructive off "${destructive}" clears ${target} on background and card`,
+  );
+}
+
 export interface ContrastFinding {
   check: string;
   where: string;
@@ -226,6 +272,36 @@ export function auditTokens(tokens: ThemeTokens, inkFloor: number = AA_TEXT): Co
     {
       ratio: contrastRatio(tripleToRgb(tokens["--primary-foreground"]), tripleToRgb(accent)),
       where: "primary",
+    },
+    AA_TEXT,
+  );
+
+  // The destructive pair, measured HERE rather than only in
+  // test/theme-token-sync.test.ts, which reads `global.css` — the DEFAULT
+  // palette's first-paint copy — and so certified exactly one style.
+  //
+  // `--destructive` is one shared red for all eight (derive.ts: a per-style
+  // destructive would be eight more pairs for no legibility gain), but the
+  // SURFACES under it are not shared: every derived style authors its own
+  // background and card. A fixed red on a moving surface is precisely the shape
+  // that failed for primary ink (#560) and again for the field (#586), so it is
+  // gated the same way rather than assumed.
+  const destructive = tripleToRgb(tokens["--destructive"]);
+  record("destructive ink", worstAgainst(destructive, neutralSurfaces), AA_TEXT);
+
+  // The label on a destructive button. Light paints the solid red; dark paints
+  // `bg-destructive/60` over the page, which is a lighter surface than the solid
+  // and therefore the harder one — measuring the solid in both would let the
+  // real dark surface through unmeasured.
+  const isDark = relativeLuminance(tripleToRgb(background)) < 0.5;
+  const destructiveSurface = isDark
+    ? compositeOver(destructive, DESTRUCTIVE_BUTTON_ALPHA, tripleToRgb(background))
+    : destructive;
+  record(
+    "destructive button label",
+    {
+      ratio: contrastRatio(tripleToRgb(tokens["--destructive-foreground"]), destructiveSurface),
+      where: isDark ? `destructive /${DESTRUCTIVE_BUTTON_ALPHA} over background` : "destructive",
     },
     AA_TEXT,
   );
