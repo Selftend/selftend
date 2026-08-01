@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
+import { CHROME_MARK, CHROME_WASH } from "@/src/lib/theme/chrome";
+import { cn } from "@/lib/utils";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useRoutinesToday } from "@/src/features/routines/use-routines-today";
 
@@ -29,8 +31,8 @@ export function RoutinesWidget({ userId }: { userId: string }) {
       <CardContent className="gap-3 pt-4 pb-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
-            <View className="size-8 items-center justify-center rounded-lg bg-iris/10">
-              <Icon name="repeat" className="size-5 text-iris" />
+            <View className={cn("size-8 items-center justify-center rounded-lg", CHROME_WASH)}>
+              <Icon name="repeat" className={cn("size-5", CHROME_MARK)} />
             </View>
             <Text className="text-sm font-semibold">{t("widget.title")}</Text>
           </View>

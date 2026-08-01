@@ -11,5 +11,5 @@ interface CbtProgramCardProps {
 }
 
 export function CbtProgramCard(props: CbtProgramCardProps) {
-  return <ProgramCard {...props} ns="cbt" tint="primary" helpKey="program" />;
+  return <ProgramCard {...props} ns="cbt" helpKey="program" />;
 }

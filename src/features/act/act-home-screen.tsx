@@ -240,7 +240,6 @@ export default function ActHomeScreen() {
                   {PILLARS.map((pillar) => (
                     <PillarCard
                       key={pillar.key}
-                      tint="act"
                       letter={t(`pillars.${pillar.key}.letter`)}
                       title={t(`pillars.${pillar.key}.title`)}
                       kicker={t(`pillars.${pillar.key}.sub`)}

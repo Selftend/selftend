@@ -11,5 +11,5 @@ interface ActProgramCardProps {
 }
 
 export function ActProgramCard(props: ActProgramCardProps) {
-  return <ProgramCard {...props} ns="act" tint="act" helpKey="actProgram" />;
+  return <ProgramCard {...props} ns="act" helpKey="actProgram" />;
 }

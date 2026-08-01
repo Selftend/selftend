@@ -27,14 +27,11 @@ import { useGratitudeEntries, useGratitudeEntryCount } from "@/src/features/grat
 import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
-import type { TintToken } from "@/src/lib/design-tokens";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 import { formatAtOffset } from "@/src/utils/date";
-
-const THEME_TINTS: TintToken[] = ["be", "act", "think", "iris", "ink", "clay"];
 
 export default function GratitudeHomeScreen() {
   const { t } = useTranslation("gratitude");
@@ -100,13 +97,7 @@ export default function GratitudeHomeScreen() {
     ? frequencyBuckets.map((b) => ({ label: b.label, count: b.count }))
     : null;
 
-  const themesWithTints =
-    rawThemes.length > 0
-      ? rawThemes.map((theme, i) => ({
-          ...theme,
-          tint: THEME_TINTS[i % THEME_TINTS.length] as TintToken,
-        }))
-      : null;
+  const topThemes = rawThemes.length > 0 ? rawThemes : null;
 
   const hasInsights = hasFrequency || rawThemes.length > 0 || favoriteCount > 0;
 
@@ -186,10 +177,10 @@ export default function GratitudeHomeScreen() {
                           title={t("insights.frequency")}
                         />
                       ) : null}
-                      {themesWithTints ? (
+                      {topThemes ? (
                         <View className={cn(frequencyData ? "border-t border-border pt-4" : "")}>
                           <Text className="text-sm font-semibold">{t("insights.themes")}</Text>
-                          <ThemeChips themes={themesWithTints} />
+                          <ThemeChips themes={topThemes} />
                         </View>
                       ) : null}
                       <Pressable
@@ -199,7 +190,7 @@ export default function GratitudeHomeScreen() {
                         onPress={() => router.push("/tools/gratitude-log/favorites")}
                         className={cn(
                           "flex-row items-center justify-between active:opacity-80",
-                          frequencyData || themesWithTints ? "border-t border-border pt-4" : "",
+                          frequencyData || topThemes ? "border-t border-border pt-4" : "",
                         )}
                       >
                         <View className="flex-row items-center gap-3">
@@ -307,17 +298,22 @@ function FrequencyBars({ data, weekLabel, title }: FrequencyBarsProps) {
 
 // ---------------------------------------------------------------------------
 // ThemeChips
+//
+// The chips used to rotate through six hues by index (#587). Nothing was read
+// off the colour - the third-most-common word was iris because it was third,
+// not because iris meant anything - which is the "distinguishes items in a set"
+// case the ruling calls insufficient. The word and its count carry it.
 // ---------------------------------------------------------------------------
 
 interface ThemeChipsProps {
-  themes: (GratitudeTheme & { tint: TintToken })[];
+  themes: GratitudeTheme[];
 }
 
 function ThemeChips({ themes }: ThemeChipsProps) {
   return (
     <View className="mt-2.5 flex-row flex-wrap gap-2">
-      {themes.map(({ word, count, tint }) => (
-        <Badge key={word} variant="tint" tint={tint}>
+      {themes.map(({ word, count }) => (
+        <Badge key={word} variant="secondary">
           <Text>
             {word} <Text className="opacity-60">· {count}</Text>
           </Text>

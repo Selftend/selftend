@@ -8,6 +8,13 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import {
+  CHROME_BADGE_SURFACE,
+  CHROME_BADGE_TEXT,
+  CHROME_RULE,
+  CHROME_TEXT,
+  CHROME_WASH,
+} from "@/src/lib/theme/chrome";
 
 type ModuleKey = "cbt" | "act" | "dbt";
 
@@ -19,17 +26,6 @@ interface ModuleTile {
   descriptionKey: string;
   badgeKey: "soon" | null;
   footerKey: "inDesign" | "onRoadmap" | null;
-  containerClass: string;
-  markClass: string;
-  /**
-   * Fill + text colour for the "soon" pill, which only renders when `badgeKey`
-   * is set. Carry the ink token rather than the published accent (#412): the
-   * pill is 10px text on a `bg-<hue>/15` tint of its own hue, where the accent
-   * reads 3.31:1. Two tiles below set this while leaving `badgeKey` null, so
-   * the colour is inert today - which is exactly why it has to be right before
-   * someone flips the badge on.
-   */
-  badgeClass: string;
 }
 
 const MODULES: ModuleTile[] = [
@@ -41,9 +37,6 @@ const MODULES: ModuleTile[] = [
     descriptionKey: "today.modules.cbtDescription",
     badgeKey: null,
     footerKey: null,
-    containerClass: "border-primary/30",
-    markClass: "bg-primary/15 border-primary/30",
-    badgeClass: "bg-act/15 text-act-ink",
   },
   {
     key: "act",
@@ -53,9 +46,6 @@ const MODULES: ModuleTile[] = [
     descriptionKey: "today.modules.actDescription",
     badgeKey: null,
     footerKey: null,
-    containerClass: "border-act/30",
-    markClass: "bg-act/15 border-act/30",
-    badgeClass: "bg-act/15 text-act-ink",
   },
   {
     key: "dbt",
@@ -65,25 +55,23 @@ const MODULES: ModuleTile[] = [
     descriptionKey: "today.modules.dbtDescription",
     badgeKey: "soon",
     footerKey: "onRoadmap",
-    containerClass: "border-be/30",
-    markClass: "bg-be/15 border-be/30",
-    badgeClass: "bg-muted text-muted-foreground",
   },
 ];
 
-// The abbreviation inside the mark is `text-sm font-bold` — 14px, under WCAG's
-// 18.66px bold large-text threshold — so it needs the small-text floor on the
-// `bg-<hue>/15` mark it sits in. This screen pours no room, so the room-less
-// `text-<hue>-ink` is the token that keeps each module its own colour (#403).
-const MARK_TEXT_CLASS: Record<ModuleKey, string> = {
-  // `cbt` was the one entry still on a raw accent, and only because `primary`
-  // had no ink to move to (#421 §3): "CBT" at 14px/700 on its `bg-primary/15`
-  // mark over `bg-card` reads 4.41:1, the same figure as the sidebar's Beta
-  // chip. It now takes `text-primary-ink` like the two hues beside it.
-  cbt: "text-primary-ink",
-  act: "text-act-ink",
-  dbt: "text-be-ink",
-};
+// Three cards, one treatment (#587). Each tile used to carry its own
+// `containerClass` / `markClass` / `MARK_TEXT_CLASS` triple - a violet-bordered
+// CBT card, a green ACT card, a blue DBT card - and this screen plus /tools were
+// the two #558's prototype found byte-identical after the rooms went neutral,
+// because none of that colour was ever poured. It sat right here, in the table.
+//
+// The abbreviation inside the mark is `text-sm font-bold` (14px, under WCAG's
+// 18.66px bold large-text threshold), so it owes the 4.5:1 small-text floor on
+// the wash behind it. That was the whole reason the old map existed: each hue
+// needed its own ink to clear it, and `cbt` had to wait for #421 to give
+// `primary` an ink at all. `text-foreground` on `bg-muted` is the pairing the
+// app holds to that floor everywhere else, so the per-module map has nothing
+// left to say.
+const MARK_CLASS = cn(CHROME_WASH, CHROME_RULE);
 
 export default function ModulesScreen() {
   const { t } = useTranslation("navigation");
@@ -124,29 +112,28 @@ function ModuleCard({ module }: { module: ModuleTile }) {
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() => router.push(module.href)}
-      className={cn(
-        "min-w-[280px] flex-1 basis-[280px] gap-4 rounded-2xl border bg-card p-5 active:bg-accent/40",
-        module.containerClass,
-      )}
+      className="min-w-[280px] flex-1 basis-[280px] gap-4 rounded-2xl border border-border bg-card p-5 active:bg-accent/40"
       role="button"
     >
       <View className="flex-row items-center gap-3">
-        <View
-          className={cn("size-12 items-center justify-center rounded-xl border", module.markClass)}
-        >
-          <Text className={cn("text-sm font-bold tracking-wider", MARK_TEXT_CLASS[module.key])}>
+        <View className={cn("size-12 items-center justify-center rounded-xl border", MARK_CLASS)}>
+          <Text className={cn("text-sm font-bold tracking-wider", CHROME_TEXT)}>
             {module.abbreviation}
           </Text>
         </View>
         <View className="flex-1">
           <Text className="text-base font-semibold">{t(module.nameKey)}</Text>
         </View>
+        {/* The badge pairing, not the muted one. `text-muted-foreground` on
+            `bg-muted` reads 4.27:1 on sage-garden light — under AA for 10px
+            text — while `--secondary-foreground` on `--secondary` never drops
+            below 9.65 in any of the eight palettes. */}
         {module.badgeKey ? (
-          <View className={cn("rounded-full px-2 py-0.5", module.badgeClass)}>
+          <View className={cn("rounded-full px-2 py-0.5", CHROME_BADGE_SURFACE)}>
             <Text
               className={cn(
                 "text-[10px] font-semibold uppercase tracking-wider",
-                module.badgeClass,
+                CHROME_BADGE_TEXT,
               )}
             >
               {t(`modulesPage.stats.${module.badgeKey}`)}

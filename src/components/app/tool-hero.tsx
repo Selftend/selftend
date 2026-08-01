@@ -4,9 +4,15 @@ import { View } from "react-native";
 import { Badge } from "@/src/components/react-native-reusables/badge";
 import { type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { hueToTint, type ToolHue } from "@/src/features/mindfulness/exercise-hue";
+import { type ToolHue } from "@/src/features/mindfulness/exercise-hue";
 
 interface ToolHeroProps {
+  /**
+   * No longer painted (#587): a tool's identity is its icon and its name, so
+   * the leading chip is neutral chrome on every screen. Kept as an accepted
+   * prop because ~20 tool screens pass it and because it still records which
+   * module a screen belongs to; safe to drop once nothing reads it.
+   */
   hue: ToolHue;
   icon: MaterialIconName;
   title: string;
@@ -18,12 +24,11 @@ interface ToolHeroProps {
   meta?: ReactNode;
 }
 
-export function ToolHero({ hue, icon, title, moduleLabel, tagline, meta }: ToolHeroProps) {
-  const tint = hueToTint(hue);
+export function ToolHero({ icon, title, moduleLabel, tagline, meta }: ToolHeroProps) {
   return (
     <View className="mt-2">
       <View className="flex-row items-center gap-2.5 mb-3">
-        <Badge variant="tint" tint={tint} icon={icon}>
+        <Badge variant="secondary" icon={icon}>
           <Text>{moduleLabel ?? title}</Text>
         </Badge>
         {meta ? (

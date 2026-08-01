@@ -10,7 +10,6 @@ import { useBreathingSessionCount } from "@/src/features/breathing/queries";
 import { useGratitudeEntryCount } from "@/src/features/gratitude/queries";
 import { useGroundingSessionCount } from "@/src/features/grounding/queries";
 import { useHabits } from "@/src/features/habits/queries";
-import { toolAccent } from "@/src/features/home/tool-accent";
 import { useJournalEntryCount } from "@/src/features/journal/queries";
 import { useMeditationSessionCount } from "@/src/features/meditation/queries";
 import { useMoodLogs, useMoodLogCount } from "@/src/features/mood/queries";
@@ -18,13 +17,14 @@ import { getMoodSummary } from "@/src/features/mood/summaries";
 import { useSleepLogCount } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { CHROME_MARK, CHROME_WASH } from "@/src/lib/theme/chrome";
 
 interface ToolTile {
   /**
-   * Doubles as the tool's id in src/features/home/tool-accent.ts, which is where
-   * this hub's hues come from. A key with no entry there falls back to violet
-   * and still renders, so tools-screen.test.tsx pins every one of these to a
-   * real entry (#421).
+   * Also the tool's id elsewhere in the app. It used to double as the lookup
+   * key into src/features/home/tool-accent.ts, which is where this hub's eight
+   * hues came from; that file is gone (#587) and a tool has no colour to look
+   * up, so the key now identifies the tool and nothing more.
    */
   key:
     | "mood"
@@ -181,7 +181,6 @@ function ToolCard({ tool, stat }: ToolCardProps) {
   const { t } = useTranslation("navigation");
   const name = t(tool.nameKey);
   const subtitle = t(tool.subKey);
-  const accent = toolAccent(tool.key);
   return (
     <Pressable
       accessibilityHint={subtitle}
@@ -193,26 +192,25 @@ function ToolCard({ tool, stat }: ToolCardProps) {
       role="button"
     >
       {/*
-        The accent, not the ink (#421): this glyph is static branding beside the
-        tool's own name, and it lands on the same `bg-<hue>/10` over `bg-card`
-        stack the sidebar paints — ink 4.62, be 4.55, act 3.52, clay 3.39 in
-        light, all clear of 1.4.11's 3:1, and higher in dark. `gratitude` already
-        carries `think-ink` in the map's `icon` field because raw `think` reads
-        1.90 here; darkening the rest to ink would buy no contrast and read as
-        disabled.
+        Eight tiles, one wash (#587). This hub and /modules were the two screens
+        #558's prototype found BYTE-IDENTICAL after the rooms were switched off,
+        because their colour was never poured — it was a per-tool `bg-<hue>/10`
+        chip with that hue's glyph inside, read straight out of tool-accent.ts.
+        It is the exact case the ruling names: eight tools in eight colours,
+        where the icon and the name already tell them apart.
+
+        The glyph takes the muted mark rather than the foreground because it sits
+        beside the tool's name; a full-strength glyph next to full-strength text
+        reads as two competing emphases. Contrast stops being a question here —
+        the old figures ran from `think` at 1.90 to `ink` at 4.62 and the map had
+        to carry per-hue exceptions to stay above 1.4.11's 3:1. One neutral pair,
+        already held to the app's floors, has no exceptions to carry.
       */}
-      <View className={cn("size-12 items-center justify-center rounded-xl", accent.chip)}>
-        <Icon name={tool.icon} className={cn("size-6", accent.icon)} />
+      <View className={cn("size-12 items-center justify-center rounded-xl", CHROME_WASH)}>
+        <Icon name={tool.icon} className={cn("size-6", CHROME_MARK)} />
       </View>
       <View className="flex-1 gap-0.5">
         <View className="flex-row items-center gap-2">
-          {/*
-            The tile name stays on the neutral foreground rather than taking
-            `accent.ink`. The sidebar inks its label only while a row is active,
-            where the tint carries state; a hub tile has no active state, so
-            hueing every name here would be decoration bought at the price of
-            six different text colours on one screen.
-          */}
           <Text className="text-base font-semibold">{name}</Text>
         </View>
         <Text variant="muted" className="text-xs">
