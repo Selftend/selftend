@@ -80,16 +80,14 @@ export function TechniqueCard({
           {technique.kind === "senses" ? (
             <SenseDots technique={technique} />
           ) : (
-            <HueIconBadge icon={technique.icon} hue={technique.hue} size={50} iconSize={24} />
+            <HueIconBadge icon={technique.icon} size={50} iconSize={24} />
           )}
           <View className="flex-1">
             <Text className="text-base font-semibold">{title}</Text>
             <Text variant="muted" className="mt-0.5">
               {description}
             </Text>
-            <Text tint={technique.hue} className="mt-2 text-xs font-semibold">
-              {meta}
-            </Text>
+            <Text className="mt-2 text-xs font-semibold">{meta}</Text>
           </View>
           <Icon name="chevron-right" size={22} className="text-muted-foreground" />
         </CardContent>

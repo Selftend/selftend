@@ -18,10 +18,10 @@ export function GroundingDone({ hue, onSave, saving }: GroundingDoneProps) {
   const { t } = useTranslation("cbt");
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <GlowBackdrop hue={hue} />
+      <GlowBackdrop />
       <ScrollView contentContainerClassName="grow" showsVerticalScrollIndicator={false}>
         <View className="flex-1 items-center justify-center gap-4 px-8 py-8">
-          <HueIconBadge icon="spa" hue={hue} size={96} iconSize={46} shape="circle" />
+          <HueIconBadge icon="spa" size={96} iconSize={46} shape="circle" />
           <Text variant="h1" className="text-center">
             {t("grounding.done")}
           </Text>
@@ -30,7 +30,7 @@ export function GroundingDone({ hue, onSave, saving }: GroundingDoneProps) {
           </Text>
         </View>
         <View className="px-6 pb-8">
-          <HueButton hue={hue} label={t("grounding.save")} loading={saving} onPress={onSave} />
+          <HueButton label={t("grounding.save")} loading={saving} onPress={onSave} />
         </View>
       </ScrollView>
     </SafeAreaView>

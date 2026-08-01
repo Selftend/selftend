@@ -465,7 +465,7 @@ export function MoodEntryEditorScreen({
             <Text className="text-sm font-medium">{t("mood.goDeeperTitle")}</Text>
           </Pressable>
           {showDeeper ? (
-            <View className="gap-4 rounded-2xl border border-be/20 bg-be/[0.06] p-4">
+            <View className="gap-4 rounded-2xl border border-border bg-muted p-4">
               <Text variant="muted" className="text-[13px]">
                 {t("mood.goDeeperIntro")}
               </Text>
@@ -525,7 +525,7 @@ export function MoodEntryEditorScreen({
                           onPress={() => setBodilySensations((prev) => toggleBodyChip(prev, label))}
                           className={cn(
                             "rounded-full border px-3 py-1.5",
-                            selected ? "border-be bg-be/10" : "border-border bg-card",
+                            selected ? "border-border bg-muted" : "border-border bg-card",
                           )}
                           {...spaceKeyActivationProps(() =>
                             setBodilySensations((prev) => toggleBodyChip(prev, label)),

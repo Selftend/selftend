@@ -73,16 +73,16 @@ export function StepPills<TStep extends string>({
                 className={cn(
                   "rounded-full border px-3 py-1",
                   isActive
-                    ? "border-act bg-act"
+                    ? "border-border bg-primary"
                     : isPast
-                      ? "border-act/40 bg-act/10"
+                      ? "border-border bg-muted"
                       : "border-border bg-card opacity-40",
                 )}
               >
                 <Text
                   className={cn(
                     "text-xs font-semibold",
-                    isActive ? "text-white" : isPast ? "text-act-ink" : "text-muted-foreground",
+                    isActive ? "text-white" : isPast ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   {index + 1}. {getLabel(s)}

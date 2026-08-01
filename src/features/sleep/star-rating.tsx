@@ -49,7 +49,7 @@ export function StarRating({
               <Icon
                 name={filled ? "star" : "star-outline"}
                 size={32}
-                className={filled ? "text-ink" : "text-muted-foreground"}
+                className={filled ? "text-muted-foreground" : "text-muted-foreground"}
               />
             </Pressable>
           );

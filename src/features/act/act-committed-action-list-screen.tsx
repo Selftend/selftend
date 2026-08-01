@@ -16,7 +16,7 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { cn } from "@/lib/utils";
 
 const STATUS_BADGE_CLASS: Record<ActionStatus, string> = {
-  active: "bg-act/15 text-act-ink",
+  active: "bg-muted text-foreground",
   completed: "bg-green-500/15 text-green-700 dark:text-green-400",
   abandoned: "bg-muted text-muted-foreground",
 };

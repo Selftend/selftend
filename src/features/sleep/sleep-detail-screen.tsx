@@ -113,7 +113,7 @@ export default function SleepDetailScreen() {
             </View>
           </View>
 
-          <Card variant="soft" tint="ink">
+          <Card variant="soft">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.duration")}</CardTitle>
             </CardHeader>
@@ -122,7 +122,7 @@ export default function SleepDetailScreen() {
             </CardContent>
           </Card>
 
-          <Card variant="soft" tint="ink">
+          <Card variant="soft">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.quality")}</CardTitle>
             </CardHeader>
@@ -154,7 +154,7 @@ export default function SleepDetailScreen() {
             </CardContent>
           </Card>
 
-          <Card variant="soft" tint="ink">
+          <Card variant="soft">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.loggedAt")}</CardTitle>
             </CardHeader>
@@ -163,7 +163,7 @@ export default function SleepDetailScreen() {
             </CardContent>
           </Card>
 
-          <Card variant="soft" tint="ink">
+          <Card variant="soft">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.notes")}</CardTitle>
             </CardHeader>

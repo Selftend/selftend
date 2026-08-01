@@ -101,13 +101,13 @@ export function VolumeSlider({
           style={{ width: TRACK, height: "100%", justifyContent: "flex-end" }}
         >
           <View
-            className="rounded-full bg-aqua"
+            className="rounded-full bg-primary"
             style={{ width: TRACK, height: `${pct * 100}%` }}
           />
         </View>
         {size > 0 ? (
           <View
-            className="rounded-full bg-aqua"
+            className="rounded-full bg-primary"
             style={{
               position: "absolute",
               top: Math.max(0, Math.min(size - THUMB, (1 - pct) * size - THUMB / 2)),
@@ -141,11 +141,14 @@ export function VolumeSlider({
       }}
     >
       <View className="rounded-full bg-muted" style={{ height: TRACK, width: "100%" }}>
-        <View className="rounded-full bg-aqua" style={{ height: TRACK, width: `${pct * 100}%` }} />
+        <View
+          className="rounded-full bg-primary"
+          style={{ height: TRACK, width: `${pct * 100}%` }}
+        />
       </View>
       {size > 0 ? (
         <View
-          className="rounded-full bg-aqua"
+          className="rounded-full bg-primary"
           style={{
             position: "absolute",
             left: Math.max(0, Math.min(size - THUMB, pct * size - THUMB / 2)),

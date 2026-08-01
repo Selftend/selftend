@@ -83,7 +83,7 @@ export function ActInfo({
         {t("onboarding.welcome.body")}
       </Text>
 
-      <Card className="border-act/30 bg-act/5">
+      <Card className="border-border bg-muted">
         <CardContent className="gap-2 pt-6">
           <CardTitle className="text-center">{t("onboarding.choicePoint.title")}</CardTitle>
           <Text variant="muted" className="text-center">
@@ -96,7 +96,7 @@ export function ActInfo({
         </CardContent>
       </Card>
 
-      <Card className="border-act/30 bg-act/5">
+      <Card className="border-border bg-muted">
         <CardContent className="items-center gap-2 pt-6">
           <Image
             source={actValuesHeart}

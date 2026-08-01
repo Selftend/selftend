@@ -2,24 +2,17 @@ import { ActivityIndicator, Pressable } from "react-native";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
+import { accentHsl } from "@/src/lib/theme/chrome";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 
-// Hues bright enough in light mode that white text fails contrast — use dark text.
-// In dark mode every hue is pastel, so dark text is always used.
-// "be" moved out when its light token darkened to 330 56% 47% (white 5.4:1, dark text 3.4:1).
-const LIGHT_MODE_DARK_TEXT = new Set<ExerciseHue>(["iris", "think"]);
+// The label sits on a solid accent fill, so it is one of two raw colours rather
+// than a class - `style={{ color }}` and `ActivityIndicator color=` cannot read a
+// CSS variable. Same two constants the hue version used.
 const DARK_TEXT = "#15121b";
 const LIGHT_TEXT = "#ffffff";
 
-function foreground(hue: ExerciseHue, isDark: boolean) {
-  if (isDark) return DARK_TEXT;
-  return LIGHT_MODE_DARK_TEXT.has(hue) ? DARK_TEXT : LIGHT_TEXT;
-}
-
 interface HueButtonProps {
-  hue: ExerciseHue;
   label: string;
   onPress: () => void;
   icon?: MaterialIconName;
@@ -27,10 +20,24 @@ interface HueButtonProps {
   loading?: boolean;
 }
 
-// Solid hue-filled primary CTA with theme-aware foreground for accessible contrast.
-export function HueButton({ hue, label, onPress, icon, disabled, loading }: HueButtonProps) {
+// The grounding CTA, filled in the app accent (#588).
+//
+// It used to be filled in the technique's own hue, and it carried a table for
+// the consequence: `iris` and `think` are bright enough in light mode that white
+// text fails on them, so those two flipped the label to dark while the other six
+// kept white. Five techniques are a menu rather than a scale (#558), so the fill
+// is the accent now and the label is the accent's own foreground - one pairing,
+// already held to AA by the palette gates, with no per-hue exceptions to keep
+// straight.
+export function HueButton({ label, onPress, icon, disabled, loading }: HueButtonProps) {
   const isDark = useColorSchemeName() === "dark";
-  const fg = foreground(hue, isDark);
+  // The scheme decides it, and only the scheme. The hue version needed a set of
+  // exceptions here - `iris` and `think` are bright enough in light mode that
+  // white fails on them - because it was filling with eight different colours.
+  // One accent has one answer: the light accent (262 62% 56%) is dark enough to
+  // carry white, and the dark accent (264 72% 72%) is a pastel that needs dark
+  // text, which is what the file already said about every hue in dark mode.
+  const fg = isDark ? DARK_TEXT : LIGHT_TEXT;
   const blocked = Boolean(disabled || loading);
   return (
     <Pressable
@@ -42,7 +49,7 @@ export function HueButton({ hue, label, onPress, icon, disabled, loading }: HueB
       onPress={onPress}
       role="button"
       style={{
-        backgroundColor: hueHsl(hue, isDark, 1),
+        backgroundColor: accentHsl(isDark, 1),
         borderRadius: 14,
         paddingVertical: 16,
         paddingHorizontal: 20,

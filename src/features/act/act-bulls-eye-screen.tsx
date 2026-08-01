@@ -162,8 +162,8 @@ export default function ActBullsEyeScreen() {
 
 function AlignmentPill({ rating }: { rating: number }) {
   return (
-    <View className="items-center justify-center rounded-full bg-act/15 px-3 py-1">
-      <Text className="text-sm font-bold text-act-ink">{rating}/10</Text>
+    <View className="items-center justify-center rounded-full bg-muted px-3 py-1">
+      <Text className="text-sm font-bold text-foreground">{rating}/10</Text>
     </View>
   );
 }

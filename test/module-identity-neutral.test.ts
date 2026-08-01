@@ -173,6 +173,18 @@ const KEEPS_HUE: Record<HueEncodingId, { file: string; pattern: RegExp; what: st
     pattern: /PACER_HUE[^=]*=\s*"aqua"/,
     what: "the live inhale/hold/exhale phase",
   },
+  // Added by #588, which found them mid-sweep. Neither is in #558's table; both
+  // are admitted by its rule. See the note in src/lib/theme/encoding.ts.
+  "breathing-exercise-colour": {
+    file: "src/features/breathing/exercise-colors.ts",
+    pattern: /case "aqua":/,
+    what: "the colour the user picked for their own exercise",
+  },
+  "sleep-quality-ramp": {
+    file: "src/features/sleep/quality-tint.ts",
+    pattern: /hueRampClass\("ink"/,
+    what: "the 5-step night-quality scale",
+  },
 };
 
 const read = (file: string): string => stripComments(readFileSync(join(ROOT, file), "utf8"));
@@ -213,6 +225,30 @@ describe("module and tool identity carries no hue (#587)", () => {
 describe("the four surfaces that keep hue are untouched (#558)", () => {
   it("covers every ruled encoding, so the ruling and the gate cannot drift", () => {
     expect(Object.keys(KEEPS_HUE).sort()).toEqual(HUE_ENCODINGS.map((e) => e.id).sort());
+  });
+
+  // #588's acceptance criterion, and the one failure in this area that is
+  // silent rather than loud: a CATEGORICAL encoding that follows the active
+  // style repaints the user's own data. A habit they painted green becomes
+  // something else because they tried amber-noir, with nothing on screen
+  // connecting the two.
+  //
+  // Asserted structurally rather than by rendering under eight palettes, because
+  // what makes these pinned is that they read the fixed hue palette and never
+  // reach the style axis at all. A `useStyleName` or `THEME_TOKENS` appearing in
+  // one of these files is the change that would break it.
+  it("keeps the categorical encodings off the style axis entirely", () => {
+    const pinned = HUE_ENCODINGS.filter((e) => e.kind === "categorical").map(
+      (e) => KEEPS_HUE[e.id].file,
+    );
+    expect(pinned.length).toBeGreaterThanOrEqual(3);
+
+    for (const file of pinned) {
+      const source = read(file);
+      expect(source).not.toMatch(/THEME_TOKENS/);
+      expect(source).not.toMatch(/useStyleName/);
+      expect(source).not.toMatch(/lib\/style/);
+    }
   });
 
   for (const [id, { file, pattern, what }] of Object.entries(KEEPS_HUE)) {

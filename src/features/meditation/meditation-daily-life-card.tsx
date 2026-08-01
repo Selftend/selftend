@@ -42,7 +42,7 @@ export function MeditationDailyLifeCard() {
   // `be` is a deliberate guest in the iris room: the daily-life practice is the
   // mood module's hue showing up here, and softening it keeps that guest status.
   return (
-    <Card variant="soft" tint="be">
+    <Card variant="soft">
       <CardContent className="gap-3 pt-6">
         <CardTitle aria-level={2}>{t("module.dailyLife.title")}</CardTitle>
         <Text variant="muted" className="text-sm">

@@ -119,7 +119,12 @@ describe("WeekHero week strip", () => {
     expect(screen.getByText("No emotions tagged yet")).toBeTruthy();
   });
 
-  it("paints a rising delta in act's own ink, not the published accent", () => {
+  // INVERTED by #588. The rising delta was `text-act-ink` - ACT's green, on a
+  // mood card, purely so that up and down read differently. The split is what
+  // matters and it survives: falling still takes `destructive`, rising now takes
+  // the neutral foreground. Fails on the old behaviour, which had `text-act-ink`
+  // on this node.
+  it("paints a rising delta with no module hue, keeping the up/down split", () => {
     renderWithProviders(
       <WeekHero
         delta={{ current: 3.4, previous: 3.0, delta: 0.4 }}
@@ -128,13 +133,11 @@ describe("WeekHero week strip", () => {
       />,
     );
 
-    // This card renders in the be room, so `accent-ink` would pour pink here and
-    // erase the up/down colour split; act's hue-explicit ink keeps the green and
-    // clears AA - 3.95:1 → 6.43:1 on the be room's card (#403).
-    const className = String(screen.getByText("▲ 0.4 vs last week").props.className);
-    expect(className.split(/\s+/)).toContain("text-act-ink");
+    const tokens = String(screen.getByText("▲ 0.4 vs last week").props.className).split(/\s+/);
+    expect(tokens).toContain("text-foreground");
     // Token-wise, not substring-wise: "text-act-ink" contains "text-act".
-    expect(className.split(/\s+/)).not.toContain("text-act");
+    expect(tokens).not.toContain("text-act-ink");
+    expect(tokens).not.toContain("text-act");
   });
 
   it("leaves a falling delta on the destructive token, which already clears AA", () => {

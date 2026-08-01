@@ -118,8 +118,8 @@ function LockedGate({ children }: AppLockGateProps) {
             importantForAccessibility="no"
             className="absolute inset-0 items-center justify-center bg-background"
           >
-            <View className="h-20 w-20 items-center justify-center rounded-3xl bg-[hsl(var(--iris)/0.12)]">
-              <Icon name="lock" size={36} className="text-iris" />
+            <View className="h-20 w-20 items-center justify-center rounded-3xl bg-muted">
+              <Icon name="lock" size={36} className="text-muted-foreground" />
             </View>
           </View>
         ) : null}
@@ -133,9 +133,9 @@ function LockedGate({ children }: AppLockGateProps) {
         <View
           accessibilityElementsHidden
           importantForAccessibility="no"
-          className="h-20 w-20 items-center justify-center rounded-3xl bg-[hsl(var(--iris)/0.12)]"
+          className="h-20 w-20 items-center justify-center rounded-3xl bg-muted"
         >
-          <Icon name="lock" size={36} className="text-iris" />
+          <Icon name="lock" size={36} className="text-muted-foreground" />
         </View>
         <View className="items-center gap-2">
           <Text variant="h1" className="text-center">

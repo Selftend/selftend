@@ -7,9 +7,7 @@ import { renderWithProviders } from "@/test/render-with-providers";
 describe("HueButton", () => {
   it("renders its label and fires onPress", () => {
     const onPress = jest.fn();
-    const { getByText } = renderWithProviders(
-      <HueButton hue="clay" label="Start" onPress={onPress} />,
-    );
+    const { getByText } = renderWithProviders(<HueButton label="Start" onPress={onPress} />);
     fireEvent.press(getByText("Start"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
@@ -17,7 +15,7 @@ describe("HueButton", () => {
   it("does not fire onPress while loading", () => {
     const onPress = jest.fn();
     const { getByLabelText } = renderWithProviders(
-      <HueButton hue="aqua" label="Save" loading onPress={onPress} />,
+      <HueButton label="Save" loading onPress={onPress} />,
     );
     fireEvent.press(getByLabelText("Save"));
     expect(onPress).not.toHaveBeenCalled();
@@ -26,11 +24,9 @@ describe("HueButton", () => {
 
 describe("HueIconBadge", () => {
   it("renders without throwing in both shapes", () => {
-    const square = renderWithProviders(
-      <HueIconBadge icon="spa" hue="iris" size={64} iconSize={32} />,
-    );
+    const square = renderWithProviders(<HueIconBadge icon="spa" size={64} iconSize={32} />);
     const circle = renderWithProviders(
-      <HueIconBadge icon="spa" hue="iris" size={96} iconSize={46} shape="circle" />,
+      <HueIconBadge icon="spa" size={96} iconSize={46} shape="circle" />,
     );
     expect(square.toJSON()).toBeTruthy();
     expect(circle.toJSON()).toBeTruthy();

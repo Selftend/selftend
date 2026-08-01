@@ -73,6 +73,26 @@ export const HUE_ENCODINGS: readonly HueEncoding[] = [
     kind: "categorical",
     reads: "which phase the pacer is in, live — inhale, hold, exhale",
   },
+  // The two below were NOT in #558's table, and that is worth stating plainly
+  // rather than burying: the sweep found them, and the rule admits them.
+  //
+  // #558 gave a rule and then applied it to the sites it had reviewed. It never
+  // reviewed the custom-breathing builder or the sleep tracker, so neither
+  // appears in its list of four. Applying the rule as written admits both, and
+  // the alternative in each case is not "simpler chrome" but a deleted feature.
+  // Flagged on the PR for the owner; the conservative move is to keep a colour
+  // the rule protects, not to delete one because a list was written before the
+  // surface was looked at.
+  {
+    id: "breathing-exercise-colour",
+    kind: "categorical",
+    reads: "the colour the user chose for a custom breathing exercise",
+  },
+  {
+    id: "sleep-quality-ramp",
+    kind: "relative",
+    reads: "a 5-step scale — how the night scored, by depth of colour",
+  },
 ] as const;
 
 export type HueEncodingId = (typeof HUE_ENCODINGS)[number]["id"];

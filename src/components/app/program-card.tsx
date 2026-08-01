@@ -212,7 +212,7 @@ export function ProgramCard({
             >
               <Icon name="route" size={22} className={ACCENT_CLASSES.routeIcon} />
             </View>
-            <Text variant="eyebrow" tint="primary" className="flex-1">
+            <Text variant="eyebrow" className="flex-1">
               {t("program.heroTitle")}
             </Text>
             {onAbandon ? (
@@ -297,7 +297,7 @@ export function ProgramCard({
         ) : null}
 
         {/* Advance button */}
-        <Button onPress={handleAdvancePress} disabled={isPending} variant="tinted" tint="primary">
+        <Button onPress={handleAdvancePress} disabled={isPending} variant="tinted">
           <Text>{advanceCta}</Text>
         </Button>
       </Card>

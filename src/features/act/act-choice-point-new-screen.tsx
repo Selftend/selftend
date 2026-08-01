@@ -89,7 +89,9 @@ function StringArrayEditor({
         >
           <Icon
             name="add-circle"
-            className={inputValue.trim() ? "size-6 text-act" : "size-6 text-muted-foreground"}
+            className={
+              inputValue.trim() ? "size-6 text-muted-foreground" : "size-6 text-muted-foreground"
+            }
           />
         </Pressable>
       </View>

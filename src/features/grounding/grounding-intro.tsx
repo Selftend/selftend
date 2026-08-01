@@ -32,9 +32,7 @@ function StepNumber({ n, hue }: { n: number; hue: ExerciseHue }) {
         justifyContent: "center",
       }}
     >
-      <Text tint={hue} className="text-[13px] font-bold">
-        {n}
-      </Text>
+      <Text className="text-[13px] font-bold">{n}</Text>
     </View>
   );
 }
@@ -51,7 +49,7 @@ export function GroundingIntro({
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView contentContainerClassName="grow p-6 gap-6">
         <ScreenBreadcrumb />
-        <HueIconBadge icon={technique.icon} hue={technique.hue} size={64} iconSize={32} />
+        <HueIconBadge icon={technique.icon} size={64} iconSize={32} />
         <View className="gap-2">
           <Text variant="h1">{title}</Text>
           <Text variant="muted">{description}</Text>
@@ -66,12 +64,7 @@ export function GroundingIntro({
             ))}
           </CardContent>
         </Card>
-        <HueButton
-          hue={technique.hue}
-          icon="play-arrow"
-          label={t("grounding.start")}
-          onPress={onStart}
-        />
+        <HueButton icon="play-arrow" label={t("grounding.start")} onPress={onStart} />
       </ScrollView>
     </SafeAreaView>
   );

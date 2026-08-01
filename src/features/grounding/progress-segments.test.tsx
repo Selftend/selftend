@@ -4,9 +4,7 @@ import { renderWithProviders } from "@/test/render-with-providers";
 
 describe("ProgressSegments", () => {
   it("exposes an accessible step label", () => {
-    const { getByLabelText } = renderWithProviders(
-      <ProgressSegments total={5} current={2} hue="iris" />,
-    );
+    const { getByLabelText } = renderWithProviders(<ProgressSegments total={5} current={2} />);
     // "Step 3 of 5" comes from grounding.step with current+1.
     expect(getByLabelText("Step 3 of 5")).toBeTruthy();
   });
@@ -14,7 +12,7 @@ describe("ProgressSegments", () => {
 
 describe("GlowBackdrop", () => {
   it("renders without throwing", () => {
-    const { toJSON } = renderWithProviders(<GlowBackdrop hue="aqua" />);
+    const { toJSON } = renderWithProviders(<GlowBackdrop />);
     expect(toJSON()).toBeTruthy();
   });
 });

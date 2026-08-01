@@ -26,7 +26,7 @@ function deltaCopy(delta: WeekDelta, t: TFunction) {
   // while act's own ink clears 6.43:1. The down case was never affected —
   // `text-destructive` is 5.10:1 on the same surface — so only the up arm moves.
   if (delta.delta > 0)
-    return { text: t("week.deltaUp", { delta: delta.delta.toFixed(1) }), tone: "text-act-ink" };
+    return { text: t("week.deltaUp", { delta: delta.delta.toFixed(1) }), tone: "text-foreground" };
   if (delta.delta < 0)
     return {
       text: t("week.deltaDown", { delta: Math.abs(delta.delta).toFixed(1) }),
@@ -42,7 +42,7 @@ export function WeekHero({ delta, byDay, topEmotions }: WeekHeroProps) {
   const todayKey = byDay[byDay.length - 1]?.dateKey;
 
   return (
-    <Card variant="soft" tint="be">
+    <Card variant="soft">
       <CardContent className="gap-5 pt-5 pb-5">
         <View className="flex-row items-end justify-between">
           <View>
@@ -93,7 +93,7 @@ export function WeekHero({ delta, byDay, topEmotions }: WeekHeroProps) {
                   testID={isToday ? "week-strip-today" : undefined}
                   className={cn(
                     "flex-1 items-center gap-1.5 rounded-xl py-1.5",
-                    isToday && "bg-be/10",
+                    isToday && "bg-muted",
                   )}
                 >
                   <View className="h-8 items-center justify-center">
@@ -108,7 +108,7 @@ export function WeekHero({ delta, byDay, topEmotions }: WeekHeroProps) {
                   </View>
                   <Text
                     variant="muted"
-                    className={cn("text-[11px] font-semibold", isToday && "text-be")}
+                    className={cn("text-[11px] font-semibold", isToday && "text-muted-foreground")}
                   >
                     {letter}
                   </Text>
@@ -131,8 +131,8 @@ export function WeekHero({ delta, byDay, topEmotions }: WeekHeroProps) {
               {topEmotions.map((e) => {
                 const display = resolveEmotion(e.id);
                 return (
-                  <View key={e.id} className="rounded-full bg-be/10 px-3 py-1.5">
-                    <Text className="text-[13px] text-be">
+                  <View key={e.id} className="rounded-full bg-muted px-3 py-1.5">
+                    <Text className="text-[13px] text-muted-foreground">
                       {display.emoji} {display.name} · {e.count}
                     </Text>
                   </View>

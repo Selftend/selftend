@@ -174,7 +174,7 @@ export function MeditationOnboarding({
                   <Text variant="muted">{t("onboarding.attention.attentionBody")}</Text>
                 </CardContent>
               </Card>
-              <Card className="border-be/30 bg-be/5">
+              <Card className="border-border bg-muted">
                 <CardContent className="gap-2 pt-6">
                   <CardTitle>{t("onboarding.attention.awarenessTitle")}</CardTitle>
                   <Text variant="muted">{t("onboarding.attention.awarenessBody")}</Text>

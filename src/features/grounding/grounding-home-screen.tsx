@@ -110,7 +110,7 @@ export default function GroundingHomeScreen() {
             <ContentSheet className="px-4">
               <View className="gap-6">
                 {sessions && sessions.length > 0 ? (
-                  <Card variant="soft" tint="clay">
+                  <Card variant="soft">
                     <CardHeader>
                       <CardTitle aria-level={2}>{t("grounding.streakTitle")}</CardTitle>
                       <CardDescription>

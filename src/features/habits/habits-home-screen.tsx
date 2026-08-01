@@ -160,7 +160,7 @@ export default function HabitsHomeScreen() {
             <ContentSheet className="px-4">
               <View className="gap-6">
                 {identities.length > 0 ? (
-                  <View className="rounded-2xl border border-act/30 bg-act/5 p-4">
+                  <View className="rounded-2xl border border-border bg-muted p-4">
                     <Text className="text-sm">
                       {t("home.identityBannerPrefix")}{" "}
                       <Text className="font-semibold">
@@ -182,7 +182,7 @@ export default function HabitsHomeScreen() {
                 </View>
 
                 {missTwiceRiskHabits.length > 0 ? (
-                  <View className="gap-2 rounded-2xl border border-think/40 bg-think/10 p-4">
+                  <View className="gap-2 rounded-2xl border border-border bg-muted p-4">
                     <Text className="font-semibold">{t("home.neverMissTwiceTitle")}</Text>
                     <Text variant="muted">{t("home.neverMissTwiceBody")}</Text>
                   </View>
@@ -415,7 +415,7 @@ function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: Insight
               }))}
               minBarHeight={6}
               zeroHeight={2}
-              tintClass="bg-act/70"
+              tintClass="bg-muted"
               barClassName="rounded-t-md"
               labelClassName="leading-3"
             />
@@ -454,7 +454,7 @@ function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: Insight
             <View className="gap-1.5">
               <View className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <View
-                  className="h-full rounded-full bg-act/70"
+                  className="h-full rounded-full bg-muted"
                   style={{ width: `${adoptionPct}%` }}
                 />
               </View>

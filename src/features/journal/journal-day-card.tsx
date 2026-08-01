@@ -40,7 +40,7 @@ export function JournalDayCard({ entries, selectedDate, isToday }: JournalDayCar
   const openEntry = useCallback((id: string) => router.push(`/tools/journal/${id}`), []);
 
   return (
-    <Card variant="soft" tint="ink">
+    <Card variant="soft">
       <CardContent className="gap-3">
         <View className="flex-row items-baseline justify-between gap-3">
           <Text className="text-base font-semibold">{title}</Text>

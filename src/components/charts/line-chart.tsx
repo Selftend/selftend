@@ -13,7 +13,7 @@ import Svg, {
 
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { useThemePalette } from "@/src/lib/theme-palette";
-import { hueGradient, hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
+import { accentGradient, accentHsl } from "@/src/lib/theme/chrome";
 
 export interface LineChartPoint {
   /** Horizontal position, 0..1 across the plot area. */
@@ -27,7 +27,6 @@ interface LineChartProps {
   points: LineChartPoint[];
   /** Inclusive y domain; gridlines and y labels sit at each integer step. */
   domain: [number, number];
-  hue: ExerciseHue;
   height?: number;
   width?: number;
 }
@@ -38,15 +37,15 @@ const PADDING = { top: 16, right: 16, bottom: 32, left: 24 };
 // first/last labelled points — the line and area stay legible at any density.
 const DENSE_POINT_LIMIT = 31;
 
-export function LineChart({ points, domain, hue, height = 160, width = 300 }: LineChartProps) {
+export function LineChart({ points, domain, height = 160, width = 300 }: LineChartProps) {
   const scheme = useColorSchemeName();
   const theme = useThemePalette();
   const gradientId = useId();
   if (points.length === 0) return null;
 
   const isDark = scheme === "dark";
-  const lineColor = hueHsl(hue, isDark, 1);
-  const [fadeFrom, fadeTo] = hueGradient(hue, isDark);
+  const lineColor = accentHsl(isDark, 1);
+  const [fadeFrom, fadeTo] = accentGradient(isDark);
   const gridColor = theme.border;
   const labelColor = theme.mutedForeground;
 

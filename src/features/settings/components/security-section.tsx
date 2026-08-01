@@ -21,8 +21,8 @@ export function SecuritySection() {
   return (
     <SettingsSectionCard
       icon="shield"
-      iconClassName="text-iris"
-      badgeClassName="bg-[hsl(var(--iris)/0.10)]"
+      iconClassName="text-muted-foreground"
+      badgeClassName="bg-muted"
       title={t("security.title")}
       description={t("security.description")}
     >

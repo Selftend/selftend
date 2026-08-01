@@ -4,16 +4,37 @@ import { CHROME_CLASSES, CHROME_MARK, CHROME_TEXT, neutralFieldGradient } from "
 import { HUE_ENCODINGS, hueEncoding, isPinnedEncoding, keepsHue } from "./encoding";
 
 describe("the surfaces that keep hue", () => {
-  // The four the spec names, and only those. This list is the whole ruling in
-  // executable form: a fifth entry has to answer "what does the user read off
-  // this colour that they could not read off its icon and label?"
-  it("are exactly the four the spec names", () => {
+  // This list is the ruling in executable form, and an entry has to answer
+  // "what does the user read off this colour that they could not read off its
+  // icon and label?"
+  //
+  // It was four when #585 wrote it, because #558's table named four. #588 swept
+  // the whole tree and found two more that answer the question - a colour the
+  // user picked for their own breathing exercise, and the sleep tracker's 5-step
+  // quality ramp. #558 never reviewed either surface; its rule admits both. The
+  // list is asserted exactly rather than as a floor, so a seventh cannot arrive
+  // without someone answering the question for it.
+  it("are exactly the six the rule admits", () => {
     expect(HUE_ENCODINGS.map((encoding) => encoding.id).sort()).toEqual([
+      "breathing-exercise-colour",
       "breathing-pacer",
       "habit-colour",
       "mood-heatmap-ramp",
       "mood-scale",
+      "sleep-quality-ramp",
     ]);
+  });
+
+  // The two #588 added are both cases where neutralising would have removed a
+  // feature rather than simplified chrome - the exact words #558 used to keep
+  // habit colours. Pinned by kind as well as by name, because getting the kind
+  // wrong is the quiet failure: a categorical encoding that re-tints repaints
+  // the user's own data.
+  it("classifies the two #588 found the way the rule classifies their twins", () => {
+    expect(isPinnedEncoding("breathing-exercise-colour")).toBe(true);
+    expect(isPinnedEncoding("habit-colour")).toBe(true);
+    expect(isPinnedEncoding("sleep-quality-ramp")).toBe(false);
+    expect(isPinnedEncoding("mood-heatmap-ramp")).toBe(false);
   });
 
   it.each(HUE_ENCODINGS)("$id says what the user reads off it", ({ reads, kind }) => {
