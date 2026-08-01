@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationStagesScreen from "@/src/features/meditation/meditation-stages-screen";
 import { useMeditationProgramState } from "@/src/features/meditation/queries";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -53,7 +53,7 @@ describe("MeditationStagesScreen", () => {
     renderWithProviders(<MeditationStagesScreen />);
 
     // The root carries the iris room re-pour; a wrong or missing room fails here.
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("renders the dark iris pour when the scheme is dark", () => {
@@ -61,7 +61,7 @@ describe("MeditationStagesScreen", () => {
 
     renderWithProviders(<MeditationStagesScreen />);
 
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris", "dark");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("wears iris on the current-stage badge", () => {

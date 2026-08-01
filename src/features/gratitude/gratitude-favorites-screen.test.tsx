@@ -8,7 +8,7 @@ import GratitudeFavoritesScreen from "@/src/features/gratitude/gratitude-favorit
 import { useFavoriteGratitudeEntries } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -73,7 +73,7 @@ describe("GratitudeFavoritesScreen", () => {
     expect(screen.getByRole("heading", { name: "Favorite moments" })).toBeTruthy();
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the think room re-pour; a wrong or missing room fails here.
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "think");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("routes to the entry detail when a favorite row is pressed", () => {

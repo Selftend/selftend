@@ -9,7 +9,7 @@ import { useHabit, useHabitLogs, useUpsertHabitLogNote } from "@/src/features/ha
 import { currentDateKey } from "@/src/features/habits/scheduling";
 import type { HabitLog } from "@/src/features/habits/types";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -89,7 +89,7 @@ describe("HabitLogNoteScreen", () => {
     expect(screen.getByText(`Read · ${currentDateKey()}`)).toBeTruthy();
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The wrapper carries the act room re-pour; a wrong or missing room fails here.
-    expectRoomPour(screen.getByTestId("habit-log-note-room"), "act");
+    expectNeutralRoom(screen.getByTestId("habit-log-note-room"));
   });
 
   it("hydrates the field from the saved note for the day", () => {

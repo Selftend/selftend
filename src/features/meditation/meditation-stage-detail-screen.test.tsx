@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationStageDetailScreen from "@/src/features/meditation/meditation-stage-detail-screen";
 import { useMeditationProgramState } from "@/src/features/meditation/queries";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -60,7 +60,7 @@ describe("MeditationStageDetailScreen", () => {
   it("renders the iris room pour on its root", () => {
     renderWithProviders(<MeditationStageDetailScreen />);
 
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("renders the dark iris pour when the scheme is dark", () => {
@@ -68,7 +68,7 @@ describe("MeditationStageDetailScreen", () => {
 
     renderWithProviders(<MeditationStageDetailScreen />);
 
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris", "dark");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("tints the mastery callout card with iris", () => {

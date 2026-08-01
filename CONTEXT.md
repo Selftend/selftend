@@ -57,13 +57,13 @@ _Avoid_: session, cycle
 
 The app-wide visual direction (decided on the design redesign map, first shipped by the mood workstream).
 
-**Room**:
-A module's screen environment: every neutral surface on that screen re-tinted toward the module's hue. One room per screen; rooms switch at navigation boundaries.
+**Room** (retired):
+A module's screen environment: every neutral surface on that screen re-tinted toward the module's hue, switching at navigation boundaries. **Rooms no longer exist** (#586). A module's screens wear the app's own surfaces, and module identity is carried by icon and label rather than by re-tinting the page. The term is kept here only so the phrase is recognisable in older code and docs — do not build new rooms.
 _Avoid_: theme, skin
 
 **Field**:
-The full-bleed pour of the module hue behind a screen's header, carrying white ink (title, description, stats).
-_Avoid_: banner, hero image
+The full-bleed pour behind a screen's header, carrying white ink (title, description, stats). It is poured from **the active palette's accent**, not from a module hue (#586) — so a header looks the same in every module and follows the palette the user picked. Its lightness is solved per palette so the white ink clears WCAG AA; see `neutralFieldGradient` in `src/lib/theme/chrome.ts` and `test/neutral-field-contrast.test.ts`.
+_Avoid_: banner, hero image, module hue
 
 **Sheet**:
 The content surface that rises over the field on a large top radius; the screen's cards sit on it.
