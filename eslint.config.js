@@ -109,8 +109,16 @@ const HUE_NAMES_FOR_LINT = ["think", "act", "be", "aqua", "mist", "iris", "ink",
 //
 // Kept identical to the prefix list in test/module-identity-neutral.test.ts. The
 // two gates guard the same thing and drifted here, which is its own small lesson.
+//
+// `border` carries an optional DIRECTION, and `ring` an optional `-offset`,
+// because Tailwind builds a colour utility for each: `border-t-act`,
+// `border-x-iris` and `ring-offset-be` are all real classes that paint a hue.
+// Without those groups the prefix had to be the whole word, so a neutral
+// component could reach a prohibited hue through any of them and lint stayed
+// green - the same shape as the arbitrary-value hole below, which hid ~78 sites
+// in #421.
 const HUE_CHROME_PATTERN =
-  String.raw`(?<![\w-])(text|bg|border|from|to|via|fill|stroke|ring|shadow|decoration|outline|accent|caret|divide)` +
+  String.raw`(?<![\w-])(text|bg|border(-[trblxyse])?|ring(-offset)?|from|to|via|fill|stroke|shadow|decoration|outline|accent|caret|divide)` +
   String.raw`-(${HUE_NAMES_FOR_LINT.join("|")})(-ink)?(?![\w-])`;
 
 // The OTHER spelling, and the one that hid ~78 sites from every gate in #421:
