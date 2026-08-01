@@ -235,7 +235,17 @@ Direct imports of `i18n.t(...)` are reserved for non-component code (utility fun
   - `useColorSchemeDriver()` owns the side effects (hydrating the stored preference, pushing it into NativeWind), returns `void`, and is called exactly once, in `app/_layout.tsx`.
 - `src/stores/theme-store.ts` persists the choice.
 
-NativeWind and React Navigation both receive the active scheme from the root layout.
+The theme has a **second, independent axis**: the _style_ (which palette), alongside the _scheme_ (light / dark). The two are chosen separately — any of the named styles in `styles.ts` in either scheme.
+
+- `src/lib/theme/styles.ts` names the styles; `DEFAULT_STYLE` is the one a fresh install gets, and it is hand-authored rather than derived so it stays pixel-identical to what shipped before the axis existed.
+- `src/stores/style-store.ts` persists the style. It is a **separate store** from `theme-store.ts`, not a second field on it, and deliberately so: the `hydrated` guard has to be per axis, because one shared flag would let a slow read on one axis settle the other — the read-then-overwrite race the guard exists to prevent. Two stores makes that structural instead of a rule to remember.
+- The style is **device-local**: no `user_preferences` column, no migration, no account sync.
+- On web the store seeds itself _synchronously_ from `localStorage` at module scope, which is what prevents a flash of the default palette on a cold load. Native has no synchronous equivalent and settles under the splash instead.
+- `useStyleDriver()` mirrors `useColorSchemeDriver()`: it owns the hydration side effects, returns `void`, and **must be called exactly once, at the root** (`app/_layout.tsx`). Calling either driver anywhere else re-runs hydration against an already-settled store.
+- Components read the resolved result, never the axes directly — `src/lib/theme-palette.ts` (`useThemePalette`, `useThemeHex`) is the style-aware path for the gradient stops, SVG fills and animated props a CSS class cannot reach. A module-scope constant cannot follow the style; a hook can, so imperative colour reads belong here rather than in a `const`.
+- On web, tokens are also mirrored onto `documentElement` so content rendered through a **portal** (popovers, dialogs, toasts) — which mounts outside the root `vars()` view — still paints the active palette.
+
+NativeWind and React Navigation both receive the active scheme from the root layout; the active style reaches them through the same root-applied token variables.
 
 ## Error handling
 
