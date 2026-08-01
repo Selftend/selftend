@@ -5,6 +5,8 @@
 // variables (LinearGradient, reanimated, SVG) reach these triples only through
 // hueHsl()/hueRamp() in src/features/mindfulness/exercise-hue.ts.
 
+import { withLightness } from "@/src/lib/theme/color";
+
 export const HUE_NAMES = ["mist", "iris", "be", "ink", "act", "clay", "think", "aqua"] as const;
 
 export type HueName = (typeof HUE_NAMES)[number];
@@ -26,13 +28,6 @@ export const HUE_TRIPLES: Record<HueName, SchemeTriples> = {
 };
 
 export const PRIMARY_TRIPLES: SchemeTriples = { light: "262 62% 56%", dark: "264 72% 72%" };
-
-/** "262 62% 56%" + 28 → "262 62% 28%". Degree and saturation are the hue's identity. */
-function withLightness(triple: string, lightness: number): string {
-  const match = triple.match(/^(\d+)\s+(\d+)%\s+\d+%$/);
-  if (!match) throw new Error(`Unparseable triple: "${triple}"`);
-  return `${match[1]} ${match[2]}% ${lightness}%`;
-}
 
 // The lightness a hue becomes legible *ink* at (#368, #403). A hue's published
 // accent above is tuned as a colour — it paints `bg-<hue>` fills, borders,

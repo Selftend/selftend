@@ -224,9 +224,12 @@ Direct imports of `i18n.t(...)` are reserved for non-component code (utility fun
 
 ## Theme And Color Scheme
 
-- `lib/theme.ts` exports `NAV_THEME` (React Navigation theme) and the brand tokens.
-- `lib/theme.ts` also exports `THEME_VARIABLES`, which applies the same token values through NativeWind `vars()` at the root layout so native builds can resolve classes like `bg-background` and `text-foreground`.
-- `tailwind.config.js` mirrors the same tokens for NativeWind classes.
+- [`src/lib/theme/`](../src/lib/theme/) is the single source of truth for the colour tokens. `contract.ts` lists the 20 variable names a palette fills per scheme; `styles.ts` holds the palettes themselves; `derive.ts` fills the contract from six core hexes for palettes that don't hand-author all twenty.
+- `global.css` carries a static copy of the default palette's light/dark pair. Its only job is the first paint, before any JS runs — `test/theme-contract.test.ts` fails the build if that copy drifts from the contract in either direction.
+- Three things sit outside the contract on purpose: `--radius` (one global constant — colour is the only thing a palette varies), `--accent-ink` (legacy, being retired), and the eight module hues, which are a pinned encoding palette in [`src/lib/design-tokens.ts`](../src/lib/design-tokens.ts) rather than theme tokens.
+- `lib/theme.ts` projects the contract for consumers a CSS class cannot reach: `NAV_THEME` (React Navigation), `THEME` (`hsl()` strings for gradients, SVG, `ActivityIndicator`), and `CARD_COLOR` / `POPOVER_COLOR` (raw hex).
+- `lib/theme.ts` also exports `THEME_VARIABLES`, which applies the token values through NativeWind `vars()` at the root layout so native builds can resolve classes like `bg-background` and `text-foreground`.
+- `tailwind.config.js` maps the same variable names to NativeWind classes.
 - `src/lib/color-scheme.ts` resolves the user's preference (light / dark / system) to an active scheme. It exports two hooks with distinct jobs:
   - `useColorSchemeName()` is the house reader — pure, always `"light"` or `"dark"`, no effects or storage access. Any component may call it, as often as it likes.
   - `useColorSchemeDriver()` owns the side effects (hydrating the stored preference, pushing it into NativeWind), returns `void`, and is called exactly once, in `app/_layout.tsx`.

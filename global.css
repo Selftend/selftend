@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* The `quiet-lilac` fallback pair. Since #579 the token contract's single source
+   of truth is TypeScript (src/lib/theme/) — these two blocks are a static copy of
+   the default style, kept because NativeWind needs the CSS at build time and
+   because the web's first paint happens before any JS runs. The app root applies
+   the same tokens through vars() (lib/theme.ts), so on every frame after the
+   first these values are overwritten by the contract.
+
+   Do not add a token here without adding it to the contract, and do not retune a
+   value here alone: test/theme-contract.test.ts fails the build if this pair
+   drifts from THEME_TOKENS, in either direction. Vars outside the contract are
+   the global --radius, the legacy --accent-ink room pour (#589 deletes it), and
+   the pinned encoding palette (the eight hues and their inks). */
 @layer base {
   :root {
     --background: 260 28% 96%;

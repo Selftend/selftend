@@ -1,168 +1,90 @@
-import { DarkTheme, DefaultTheme, type Theme } from "expo-router";
+// The app-facing theme surface. Every value here is now a projection of the
+// TypeScript token contract (src/lib/theme/) rather than a hand-written copy of
+// global.css — #579 inverted that duality, so global.css is the mirror and TS is
+// the source. test/theme-contract.test.ts fails the build if the two drift.
+//
+// What this file adds on top of the contract is the two var groups that are
+// deliberately NOT style tokens:
+//
+//   the 8 hues + hue inks  the pinned encoding palette (src/lib/design-tokens.ts)
+//   --accent-ink           the room-poured ink, kept alive only until the
+//                          call-site sweep retires it (#585-#589)
+
+import { type Theme } from "expo-router";
 import { vars } from "nativewind";
 
-import { HUE_INK_TRIPLES, HUE_TRIPLES, PRIMARY_INK_TRIPLES } from "@/src/lib/design-tokens";
+import { HUE_INK_TRIPLES, HUE_NAMES, HUE_TRIPLES } from "@/src/lib/design-tokens";
+import { RADIUS, type ColorScheme } from "@/src/lib/theme/contract";
+import { navigationTheme, themeHex, themePalette, themeTokens } from "@/src/lib/theme/projections";
 
+/** Contract tokens as `hsl(…)` strings for the call sites no class reaches. */
 export const THEME = {
-  light: {
-    background: "hsl(260 28% 96%)",
-    foreground: "hsl(260 18% 14%)",
-    card: "hsl(260 28% 99%)",
-    cardForeground: "hsl(258 22% 15%)",
-    popover: "hsl(260 28% 99%)",
-    popoverForeground: "hsl(258 22% 15%)",
-    primary: "hsl(262 62% 56%)",
-    primaryForeground: "hsl(0 0% 100%)",
-    secondary: "hsl(260 8% 92%)",
-    secondaryForeground: "hsl(260 12% 24%)",
-    muted: "hsl(260 14% 95%)",
-    mutedForeground: "hsl(260 8% 42%)",
-    accent: "hsl(260 28% 93%)",
-    accentForeground: "hsl(260 28% 25%)",
-    destructive: "hsl(0 72% 48%)",
-    destructiveForeground: "hsl(0 0% 100%)",
-    border: "hsl(260 14% 87%)",
-    input: "hsl(260 14% 87%)",
-    ring: "hsl(262 62% 64%)",
-    radius: "0.625rem",
-  },
-  dark: {
-    background: "hsl(260 20% 9%)",
-    foreground: "hsl(260 30% 96%)",
-    card: "hsl(260 16% 16%)",
-    cardForeground: "hsl(260 30% 96%)",
-    popover: "hsl(260 18% 13%)",
-    popoverForeground: "hsl(260 30% 96%)",
-    primary: "hsl(264 72% 72%)",
-    primaryForeground: "hsl(260 22% 12%)",
-    secondary: "hsl(260 8% 22%)",
-    secondaryForeground: "hsl(260 24% 92%)",
-    muted: "hsl(260 12% 18%)",
-    mutedForeground: "hsl(260 12% 72%)",
-    accent: "hsl(260 20% 24%)",
-    accentForeground: "hsl(260 32% 93%)",
-    destructive: "hsl(0 68% 64%)",
-    destructiveForeground: "hsl(0 0% 100%)",
-    border: "hsl(260 12% 24%)",
-    input: "hsl(260 12% 22%)",
-    ring: "hsl(264 72% 72%)",
-    radius: "0.625rem",
-  },
+  light: themePalette("light"),
+  dark: themePalette("dark"),
 };
 
-export const NAV_THEME: Record<"light" | "dark", Theme> = {
-  light: {
-    ...DefaultTheme,
-    colors: {
-      background: THEME.light.background,
-      border: THEME.light.border,
-      card: THEME.light.card,
-      notification: THEME.light.destructive,
-      primary: THEME.light.primary,
-      text: THEME.light.foreground,
-    },
-  },
-  dark: {
-    ...DarkTheme,
-    colors: {
-      background: THEME.dark.background,
-      border: THEME.dark.border,
-      card: THEME.dark.card,
-      notification: THEME.dark.destructive,
-      primary: THEME.dark.primary,
-      text: THEME.dark.foreground,
-    },
-  },
+export const NAV_THEME: Record<ColorScheme, Theme> = {
+  light: navigationTheme("light"),
+  dark: navigationTheme("dark"),
+};
+
+/**
+ * The encoding palette as vars — the 8 hues and their inks. These are not style
+ * tokens: they encode information the user reads off the colour (the mood ramp,
+ * habit colours, the breathing pacer), so they stay pinned across styles rather
+ * than re-tinting with the active palette (#558).
+ */
+function encodingVars(scheme: ColorScheme): Record<string, string> {
+  return Object.fromEntries(
+    HUE_NAMES.flatMap((hue) => [
+      [`--${hue}`, HUE_TRIPLES[hue][scheme]],
+      [`--${hue}-ink`, HUE_INK_TRIPLES[hue][scheme]],
+    ]),
+  );
+}
+
+function varValues(scheme: ColorScheme): Record<string, string> {
+  const tokens = themeTokens(scheme);
+  return {
+    ...tokens,
+    // Style-independent, so it is emitted from the constant rather than read off
+    // a style: no palette may reshape the app's controls (#555 §2).
+    "--radius": RADIUS,
+    // Legacy, and this is today's value, not the end state: outside a module
+    // room there is no hue, so the room-poured accent ink falls back to the app
+    // accent. src/lib/module-room.ts re-pours it per hue inside a room. It has
+    // no home in the contract because once rooms go neutral (#558) nothing
+    // pours it and it collapses onto --primary-ink. Deleted for real in #589.
+    "--accent-ink": tokens["--primary"],
+    ...encodingVars(scheme),
+  };
+}
+
+/**
+ * The plain var record applied at the app root, before nativewind's `vars()`
+ * wraps it into an opaque style object. Exported in this form because the
+ * wrapped object cannot be inspected — the parity gates read this.
+ */
+export const THEME_VAR_VALUES: Record<ColorScheme, Record<string, string>> = {
+  light: varValues("light"),
+  dark: varValues("dark"),
 };
 
 export const THEME_VARIABLES = {
-  light: vars({
-    "--background": "260 28% 96%",
-    "--foreground": "260 18% 14%",
-    "--card": "260 28% 99%",
-    "--card-foreground": "258 22% 15%",
-    "--popover": "260 28% 99%",
-    "--popover-foreground": "258 22% 15%",
-    "--primary": "262 62% 56%",
-    "--primary-foreground": "0 0% 100%",
-    "--primary-ink": PRIMARY_INK_TRIPLES.light,
-    "--accent-ink": "262 62% 56%",
-    "--secondary": "260 8% 92%",
-    "--secondary-foreground": "260 12% 24%",
-    "--muted": "260 14% 95%",
-    "--muted-foreground": "260 8% 42%",
-    "--accent": "260 28% 93%",
-    "--accent-foreground": "260 28% 25%",
-    "--destructive": "0 72% 48%",
-    "--destructive-foreground": "0 0% 100%",
-    "--border": "260 14% 87%",
-    "--input": "260 14% 87%",
-    "--ring": "262 62% 64%",
-    "--radius": "0.625rem",
-    "--think": HUE_TRIPLES.think.light,
-    "--act": HUE_TRIPLES.act.light,
-    "--be": HUE_TRIPLES.be.light,
-    "--aqua": HUE_TRIPLES.aqua.light,
-    "--mist": HUE_TRIPLES.mist.light,
-    "--iris": HUE_TRIPLES.iris.light,
-    "--ink": HUE_TRIPLES.ink.light,
-    "--clay": HUE_TRIPLES.clay.light,
-    "--think-ink": HUE_INK_TRIPLES.think.light,
-    "--act-ink": HUE_INK_TRIPLES.act.light,
-    "--be-ink": HUE_INK_TRIPLES.be.light,
-    "--aqua-ink": HUE_INK_TRIPLES.aqua.light,
-    "--mist-ink": HUE_INK_TRIPLES.mist.light,
-    "--iris-ink": HUE_INK_TRIPLES.iris.light,
-    "--ink-ink": HUE_INK_TRIPLES.ink.light,
-    "--clay-ink": HUE_INK_TRIPLES.clay.light,
-  }),
-  dark: vars({
-    "--background": "260 20% 9%",
-    "--foreground": "260 30% 96%",
-    "--card": "260 16% 16%",
-    "--card-foreground": "260 30% 96%",
-    "--popover": "260 18% 13%",
-    "--popover-foreground": "260 30% 96%",
-    "--primary": "264 72% 72%",
-    "--primary-foreground": "260 22% 12%",
-    "--primary-ink": PRIMARY_INK_TRIPLES.dark,
-    "--accent-ink": "264 72% 72%",
-    "--secondary": "260 8% 22%",
-    "--secondary-foreground": "260 24% 92%",
-    "--muted": "260 12% 18%",
-    "--muted-foreground": "260 12% 72%",
-    "--accent": "260 20% 24%",
-    "--accent-foreground": "260 32% 93%",
-    "--destructive": "0 68% 64%",
-    "--destructive-foreground": "0 0% 100%",
-    "--border": "260 12% 24%",
-    "--input": "260 12% 22%",
-    "--ring": "264 72% 72%",
-    "--radius": "0.625rem",
-    "--think": HUE_TRIPLES.think.dark,
-    "--act": HUE_TRIPLES.act.dark,
-    "--be": HUE_TRIPLES.be.dark,
-    "--aqua": HUE_TRIPLES.aqua.dark,
-    "--mist": HUE_TRIPLES.mist.dark,
-    "--iris": HUE_TRIPLES.iris.dark,
-    "--ink": HUE_TRIPLES.ink.dark,
-    "--clay": HUE_TRIPLES.clay.dark,
-    "--think-ink": HUE_INK_TRIPLES.think.dark,
-    "--act-ink": HUE_INK_TRIPLES.act.dark,
-    "--be-ink": HUE_INK_TRIPLES.be.dark,
-    "--aqua-ink": HUE_INK_TRIPLES.aqua.dark,
-    "--mist-ink": HUE_INK_TRIPLES.mist.dark,
-    "--iris-ink": HUE_INK_TRIPLES.iris.dark,
-    "--ink-ink": HUE_INK_TRIPLES.ink.dark,
-    "--clay-ink": HUE_INK_TRIPLES.clay.dark,
-  }),
+  light: vars(THEME_VAR_VALUES.light),
+  dark: vars(THEME_VAR_VALUES.dark),
 };
 
 // Concrete hex mirrors of the surface tokens for code that needs a literal
-// color (gradient fade targets, tooltip backgrounds). MUST be kept in sync
-// with global.css when the palette changes (test/theme-token-sync.test.ts
-// enforces this):
-//   CARD_COLOR    = --card:    light hsl(260 28% 99%), dark hsl(260 16% 16%)
-//   POPOVER_COLOR = --popover: light hsl(260 28% 99%), dark hsl(260 18% 13%)
-export const CARD_COLOR = { dark: "#27222f", light: "#fcfcfd" } as const;
-export const POPOVER_COLOR = { dark: "#1f1b27", light: "#fcfcfd" } as const;
+// colour (gradient fade targets, tooltip backgrounds). Read back off the
+// contract, so they cannot advertise a colour the app does not paint — the
+// hand-maintained copies they replaced needed their own parity test.
+export const CARD_COLOR = {
+  light: themeHex("--card", "light"),
+  dark: themeHex("--card", "dark"),
+};
+
+export const POPOVER_COLOR = {
+  light: themeHex("--popover", "light"),
+  dark: themeHex("--popover", "dark"),
+};
