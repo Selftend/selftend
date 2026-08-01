@@ -18,9 +18,16 @@ import { cn } from "@/lib/utils";
 // in a tile above the word "Think" is not made clearer by the tile being gold,
 // and the ruling is explicit that distinguishing items in a set is not enough.
 //
-// The 3px stripe survives as a stripe. It is a shape, not an encoding, and the
-// neutral form of a hue gradient is the app accent's gradient - the same call
-// `neutralFieldGradient` makes for module headers (#585).
+// The 3px stripe survives as a stripe. It is a shape, not an encoding, so its
+// neutral form is the same gradient drawn from the app accent instead of the
+// pillar's hue - the move `neutralFieldGradient` makes for module headers
+// (#585), though through `tintStripeColors` rather than that helper, because a
+// 3px rule and a full-bleed field are different gradients.
+//
+// `tintStripeColors` still accepts a hue, so nothing about calling it is
+// forbidden; passing it one here is. test/module-identity-neutral.test.ts reads
+// this argument, having found that flipping it back to "act" left every other
+// assertion green.
 const STRIPE_TINT = "primary";
 
 interface PillarCardProps {

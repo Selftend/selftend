@@ -48,7 +48,9 @@ describe("Badge", () => {
       </Badge>,
     );
 
-    const hue = new RegExp(`(?<![\\w-])(text|bg|border)-(${HUE_NAMES.join("|")})(-ink)?(?![\\w-])`);
+    const hue = new RegExp(
+      String.raw`(?<![\w-])(text|bg|border)-(${HUE_NAMES.join("|")})(-ink)?(?![\w-])`,
+    );
     const classNames = UNSAFE_root.findAll((node) => typeof node.props?.className === "string").map(
       (node) => node.props.className as string,
     );

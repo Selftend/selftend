@@ -60,6 +60,22 @@ const HUE_VAR = new RegExp(`--(${HUE_ALTERNATION})(-ink)?(?![\\w-])`, "g");
 const HUE_IMPORT = /\b(TINT_TEXT|TINT_ACCENT|hueToTint|toolAccent|exerciseHue|hueGradient)\b/g;
 
 /**
+ * A hue handed to a colour helper as a STRING — `tintStripeColors("act", isDark)`,
+ * `hueHsl("iris", …)`, `useRoomStyle("clay")`.
+ *
+ * Neither pattern above can see this: the argument is not a class name and not a
+ * CSS variable, it is a bare word inside quotes. The gap was real rather than
+ * theoretical — `pillar-card.tsx` paints its 3px stripe through
+ * `tintStripeColors`, and flipping that argument back from `"primary"` to
+ * `"act"` restored a green stripe with every other assertion in this file still
+ * green. The helper is not itself forbidden; passing it a hue is.
+ */
+const HUE_ARGUMENT = new RegExp(
+  String.raw`\b(tintStripeColors|hueHsl|hueRamp|hueGradient|useRoomStyle|hueRampClass)\(\s*"(${HUE_ALTERNATION})"`,
+  "g",
+);
+
+/**
  * Every surface this batch neutralises, grouped by the acceptance criterion it
  * answers. A file earns its place here by rendering module or tool IDENTITY -
  * "which module is this" - which the ruling says an icon and a label already
@@ -72,6 +88,16 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
     "src/components/app/module-home-header.tsx",
   ],
   "sidebar icons": ["src/components/app/sidebar-nav.tsx"],
+  // The programme cards were the loudest survivor of the first pass: the ACT
+  // card renders on the ACT home directly beside pillar cards this same batch
+  // made neutral. Its map held two entries that were the same eleven class
+  // strings with the hue swapped, so the `primary` row WAS already the neutral
+  // form and collapsing onto it added no classes.
+  "the programme cards": [
+    "src/components/app/program-card.tsx",
+    "src/components/app/act-program-card.tsx",
+    "src/components/app/cbt-program-card.tsx",
+  ],
   "the module and tool listings": [
     "src/features/modules/modules-screen.tsx",
     "src/features/tools/tools-screen.tsx",
@@ -168,6 +194,10 @@ describe("module and tool identity carries no hue (#587)", () => {
 
         it(`${file} reaches no hue map`, () => {
           expect(findings(read(file), HUE_IMPORT)).toEqual([]);
+        });
+
+        it(`${file} passes no hue to a colour helper`, () => {
+          expect(findings(read(file), HUE_ARGUMENT)).toEqual([]);
         });
       }
     });

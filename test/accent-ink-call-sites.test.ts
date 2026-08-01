@@ -339,56 +339,20 @@ const COMPONENTS_APP_SITES: AllowedSite[] = [
       "exemption. <Icon> is aria-hidden and the adjacent CardTitle carries the " +
       "meaning, so the hue is decoration on a labelled row.",
   },
-  {
-    file: "src/components/app/program-card.tsx",
-    snippet: `startTitle: "flex-1 text-act",`,
-    reason: "large-text",
-    evidence:
-      'Applied to <Text variant="h3"> (line 158) = text-2xl, 24px, with no ' +
-      "fontSize override in tailwind.config.js - 1.4.3's large-text floor of " +
-      "3:1 applies. On the bg-act/5 start container over the neutral " +
-      "background: 3.45 light / 8.66 dark. Off-room at both callers (act-home, " +
-      "cbt-home); only the `act` tint is a hue, `primary` is not.",
-  },
-  {
-    file: "src/components/app/program-card.tsx",
-    snippet: `dismissIcon: "size-5 text-act",`,
-    reason: "icon",
-    evidence:
-      "close glyph (20px) on the bg-act/5 start container over the neutral " +
-      "background: 3.45 light / 8.66 dark. The dismiss Pressable carries " +
-      "accessibilityLabel `program.dismissStartLabel`, so nothing is signalled " +
-      "by hue alone.",
-  },
-  {
-    file: "src/components/app/program-card.tsx",
-    snippet: `routeIcon: "text-act",`,
-    reason: "icon",
-    evidence:
-      "route glyph (size={22}) inside the eyebrow glyph box, bg-act/12 over the " +
-      "neutral card: 3.44 light / 6.15 dark - the lowest figure in this area, " +
-      "still clear of 3:1. The box itself is accessibilityElementsHidden + " +
-      'importantForAccessibility="no", and the eyebrow text beside it carries ' +
-      "the label, so it is decoration by construction.",
-  },
-  {
-    file: "src/components/app/program-card.tsx",
-    snippet: `phaseTitle: "text-act",`,
-    reason: "large-text",
-    evidence:
-      'Applied to <Text variant="h3"> (line 271) = text-2xl, 24px, so the 3:1 ' +
-      "large-text floor applies. On the neutral card: 3.95 light / 7.79 dark.",
-  },
-  {
-    file: "src/components/app/program-card.tsx",
-    snippet: `taskRowDoneIcon: "size-5 text-act",`,
-    reason: "icon",
-    evidence:
-      "check-circle (20px) on the completed task row's bg-act/10 over the " +
-      "neutral card: 3.52 light / 6.44 dark. Done/not-done is carried by the " +
-      "glyph as well as the hue (check-circle vs radio-button-unchecked, line " +
-      "111) and by the `current/target` count in the same row.",
-  },
+  // --- program-card.tsx: emptied by #587 -------------------------------------
+  // Five sites lived here, all `act`: the start-card title (3.45:1 as 24px
+  // large text on bg-act/5), its dismiss glyph (3.45), the eyebrow route glyph
+  // (3.44 - the lowest figure in the whole area), the phase title (3.95) and the
+  // completed task row's check (3.52).
+  //
+  // The map they came from held two entries, `act` and `primary`, and they were
+  // the same eleven class strings with the hue swapped. So the ACT programme
+  // card was the CBT programme card in green, which is module identity by colour
+  // and nothing else - and it rendered on the ACT home beside pillar cards this
+  // same batch made neutral. Collapsing onto the `primary` row cost no new
+  // classes and no new measurements: `primary` is not a hue, so none of its five
+  // counterparts was ever classified here.
+
   {
     file: "src/components/app/program-graduation.tsx",
     snippet: `<Text variant="h3" className="text-be">`,

@@ -114,7 +114,12 @@ describe("the tools hub paints no per-tool hue (#587)", () => {
   it("carries no module hue anywhere in the tile", () => {
     // The partial-sweep assertion. One tile still on `bg-clay/10` reads as a
     // deliberate accent rather than a miss, so nothing but a scan catches it.
-    const hue = new RegExp(`(?<![\w-])(text|bg|border)-(${HUE_NAMES.join("|")})(-ink)?(?![\w-])`);
+    // String.raw, not a plain template: in a plain one `\w` collapses to `w`,
+    // so the boundary guards would compile as `(?<![w-])` and match `text-actor`
+    // as readily as `text-act`.
+    const hue = new RegExp(
+      String.raw`(?<![\w-])(text|bg|border)-(${HUE_NAMES.join("|")})(-ink)?(?![\w-])`,
+    );
 
     for (const tile of tiles()) {
       expect(classNamesIn(tile).filter((name) => hue.test(name))).toEqual([]);

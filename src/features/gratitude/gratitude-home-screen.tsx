@@ -97,7 +97,7 @@ export default function GratitudeHomeScreen() {
     ? frequencyBuckets.map((b) => ({ label: b.label, count: b.count }))
     : null;
 
-  const themesWithTints = rawThemes.length > 0 ? rawThemes : null;
+  const topThemes = rawThemes.length > 0 ? rawThemes : null;
 
   const hasInsights = hasFrequency || rawThemes.length > 0 || favoriteCount > 0;
 
@@ -177,10 +177,10 @@ export default function GratitudeHomeScreen() {
                           title={t("insights.frequency")}
                         />
                       ) : null}
-                      {themesWithTints ? (
+                      {topThemes ? (
                         <View className={cn(frequencyData ? "border-t border-border pt-4" : "")}>
                           <Text className="text-sm font-semibold">{t("insights.themes")}</Text>
-                          <ThemeChips themes={themesWithTints} />
+                          <ThemeChips themes={topThemes} />
                         </View>
                       ) : null}
                       <Pressable
@@ -190,7 +190,7 @@ export default function GratitudeHomeScreen() {
                         onPress={() => router.push("/tools/gratitude-log/favorites")}
                         className={cn(
                           "flex-row items-center justify-between active:opacity-80",
-                          frequencyData || themesWithTints ? "border-t border-border pt-4" : "",
+                          frequencyData || topThemes ? "border-t border-border pt-4" : "",
                         )}
                       >
                         <View className="flex-row items-center gap-3">

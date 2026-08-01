@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
+import { CHROME_MARK, CHROME_WASH } from "@/src/lib/theme/chrome";
+import { cn } from "@/lib/utils";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useGratitudeEntries, useGratitudeEntryCount } from "@/src/features/gratitude/queries";
 import { answeredCount } from "@/src/features/gratitude/questions";
@@ -44,8 +46,8 @@ export function GratitudeWidget({ userId }: { userId: string }) {
                 decorative next to the title, and every other hue clears the 3:1
                 graphics floor on its own /10 chip. `think` reads 1.90:1 there,
                 so the glyph does not carry the hue it exists to carry (#403). */}
-            <View className="size-8 items-center justify-center rounded-lg bg-muted">
-              <Icon name="favorite" className="size-5 text-muted-foreground" />
+            <View className={cn("size-8 items-center justify-center rounded-lg", CHROME_WASH)}>
+              <Icon name="favorite" className={cn("size-5", CHROME_MARK)} />
             </View>
             <Text className="text-sm font-semibold">{t("plan.wizard.toolGratitude")}</Text>
           </View>
