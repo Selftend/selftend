@@ -84,6 +84,57 @@ function capturedFrameImportPaths(allow = []) {
   ];
 }
 
+// The hue gate (#589). The eight module hues survive ONLY as the pinned encoding
+// palette - the mood heatmap ramp, the mood scale, habit colours, the breathing
+// pacer, the user's custom-exercise colour, the sleep quality ramp. Everywhere
+// else, module identity is icon and label (#558).
+//
+// This is a lint rule rather than a test because of what the old gates could not
+// see. Three suites in this workstream were green while `think` shipped at
+// 1.80:1 as a rendered glyph, because all three checked spelling and none
+// checked the surface - and hue misuse is invisible at review time: the class
+// name looks deliberate, and the defect is a colour on a screen nobody
+// re-opened. A rule that fires in the editor catches it before it is written.
+//
+// Deliberately matched on the string LITERAL rather than on an import, because
+// that is the shape every one of the 470 swept call sites had: a class name
+// inside a className, a cva variant, or a lookup table - never an import a
+// no-restricted-imports rule could see.
+const HUE_NAMES_FOR_LINT = ["think", "act", "be", "aqua", "mist", "iris", "ink", "clay"];
+const HUE_CHROME_PATTERN =
+  `(?<![\w-])(text|bg|border|from|to|via|fill|stroke|ring|shadow|decoration|outline|caret|divide)` +
+  `-(${HUE_NAMES_FOR_LINT.join("|")})(-ink)?(?![\w-])`;
+
+const HUE_CHROME_MESSAGE =
+  "Module hues are the pinned encoding palette, not chrome (#558/#589). Module and tool " +
+  "identity is icon and label. Use the neutral roles in @/src/lib/theme/chrome " +
+  "(CHROME_TEXT / CHROME_MARK / CHROME_WASH / CHROME_RULE / CHROME_BADGE_*) or the app " +
+  "accent. If this really is an encoding the user reads off the colour, add it to " +
+  "HUE_ENCODINGS in src/lib/theme/encoding.ts and exempt the file in eslint.config.js.";
+
+const HUE_CHROME_RESTRICTIONS = [
+  { selector: `Literal[value=/${HUE_CHROME_PATTERN}/]`, message: HUE_CHROME_MESSAGE },
+  { selector: `TemplateElement[value.raw=/${HUE_CHROME_PATTERN}/]`, message: HUE_CHROME_MESSAGE },
+];
+
+// The files allowed to name a hue: the encoding palette's own source, and the
+// six surfaces HUE_ENCODINGS sanctions. Anything added here needs an entry in
+// HUE_ENCODINGS first - that is the whole point of keeping the two lists the
+// same length.
+const HUE_SANCTIONED_FILES = [
+  "src/lib/design-tokens.ts",
+  "src/lib/module-room.ts",
+  "src/lib/hue-chip.ts",
+  "src/features/mindfulness/exercise-hue.ts",
+  "src/features/habits/habit-color.ts",
+  "src/features/breathing/pacer-colors.ts",
+  "src/features/breathing/exercise-colors.ts",
+  "src/features/sleep/quality-tint.ts",
+  "src/features/sleep/star-rating.tsx",
+  "src/features/mood/score-tone.ts",
+  "src/components/app/mood-scale.tsx",
+];
+
 // Shared by every no-restricted-syntax block: the rule is last-wins per file,
 // so a captured-frame block that omitted this selector would quietly
 // un-restrict accessibilityState for the files it matches.
@@ -249,6 +300,23 @@ module.exports = [
     },
   },
   {
+    // The hue gate, tree-wide (#589). `.ts` as well as `.tsx`: the maps this
+    // workstream deleted - TINT_TEXT, TINT_ACCENT, tool-accent, widget-tint -
+    // were all plain modules, and a class table is where a hue comes back.
+    //
+    // Every no-restricted-syntax block BELOW this one re-states
+    // HUE_CHROME_RESTRICTIONS, because the rule is last-wins per file and a
+    // block that omitted them would quietly un-restrict hue for its files.
+    files: ["src/**/*.{ts,tsx}", "app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
+    // Tests name hues on purpose - they assert their ABSENCE ("not.toContain
+    // text-be"), which the rule cannot tell from painting one. Source is covered
+    // by the static gates in test/module-identity-neutral.test.ts as well.
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-syntax": ["error", ...HUE_CHROME_RESTRICTIONS],
+    },
+  },
+  {
     // react-native-web 0.21 silently drops the object-form accessibilityState prop,
     // so state set that way never reaches the browser's accessibility tree. The
     // aria-* props (aria-checked/selected/expanded/disabled/busy) map to
@@ -258,7 +326,13 @@ module.exports = [
     files: ["**/*.tsx"],
     ignores: ["src/components/react-native-reusables/**"],
     rules: {
-      "no-restricted-syntax": ["error", ACCESSIBILITY_STATE_RESTRICTION],
+      "no-restricted-syntax": [
+        "error",
+        ACCESSIBILITY_STATE_RESTRICTION,
+        // Re-stated because this block is last-wins for every .tsx it matches.
+        // Test files are exempt from the hue half via the trailing block below.
+        ...HUE_CHROME_RESTRICTIONS,
+      ],
     },
   },
   {
@@ -271,6 +345,7 @@ module.exports = [
       "no-restricted-syntax": [
         "error",
         ACCESSIBILITY_STATE_RESTRICTION,
+        ...HUE_CHROME_RESTRICTIONS,
         ...capturedFrameSyntaxRestrictions(),
       ],
     },
@@ -287,8 +362,26 @@ module.exports = [
       "no-restricted-syntax": [
         "error",
         ACCESSIBILITY_STATE_RESTRICTION,
+        ...HUE_CHROME_RESTRICTIONS,
         ...capturedFrameSyntaxRestrictions(["localeFormats"]),
       ],
+    },
+  },
+  {
+    // Tests, exempted from the hue half only (see the tree-wide block's note).
+    files: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-syntax": ["error", ACCESSIBILITY_STATE_RESTRICTION],
+    },
+  },
+  {
+    // LAST, and that is load-bearing: no-restricted-syntax is last-wins per
+    // file, so this is what actually exempts the encoding palette's own files
+    // from the hue rule every block above carries. `.tsx` entries keep the
+    // accessibilityState guard they would otherwise lose with it.
+    files: HUE_SANCTIONED_FILES,
+    rules: {
+      "no-restricted-syntax": ["error", ACCESSIBILITY_STATE_RESTRICTION],
     },
   },
   prettierConfig,

@@ -91,7 +91,7 @@ export function MeditationPracticesSection({ initialPractice }: MeditationPracti
                             on `chipBg`, a `bg-<hue>/15` tint of its own hue.
                             Practices carry guest hues (mist, be, ink) as well
                             as the room's iris, so this must be the hue-keyed
-                            ink — `text-accent-ink` would repaint all four as
+                            ink — `text-primary-ink` would repaint all four as
                             the room's accent.
                           */}
                           <Text className={cn("text-[10px] font-bold", CHROME_TEXT)}>

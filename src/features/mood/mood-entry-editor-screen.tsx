@@ -539,7 +539,7 @@ export function MoodEntryEditorScreen({
                               // background, and the published accent reads 3.81:1 through
                               // that stack - be clears AA on the bare room surfaces, not
                               // through two tints of itself.
-                              selected ? "text-accent-ink font-medium" : "text-foreground",
+                              selected ? "text-primary-ink font-medium" : "text-foreground",
                             )}
                           >
                             {label}

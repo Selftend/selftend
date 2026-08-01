@@ -168,7 +168,7 @@ export default function MeditationHomeScreen() {
               meta={
                 <ToolStats
                   tone="onField"
-                  accentClassName="text-accent-ink"
+                  accentClassName="text-primary-ink"
                   subline={subline}
                   sublineTone={lastWhen ? "accent" : "muted"}
                   items={[
@@ -223,7 +223,7 @@ export default function MeditationHomeScreen() {
                         accessibilityRole="link"
                         onPress={() => router.push("/tools/meditation/sessions")}
                       >
-                        <Text className="text-sm text-accent-ink">
+                        <Text className="text-sm text-primary-ink">
                           {t("module.home.viewHistory")}
                         </Text>
                       </Pressable>
@@ -254,7 +254,7 @@ export default function MeditationHomeScreen() {
                             </Text>
                           </View>
                           <View className="rounded-full bg-muted px-2 py-0.5">
-                            <Text className="text-xs font-semibold text-accent-ink">
+                            <Text className="text-xs font-semibold text-primary-ink">
                               {t("module.sessions.stageBadge", { stage: s.stageAtSession })}
                             </Text>
                           </View>

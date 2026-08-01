@@ -76,7 +76,7 @@ export function MeditationDailyLifeCard() {
                 accessibilityRole="link"
                 onPress={() => router.push("/tools/meditation/daily-life")}
               >
-                <Text className="text-sm text-accent-ink">{t("module.dailyLife.viewAll")}</Text>
+                <Text className="text-sm text-primary-ink">{t("module.dailyLife.viewAll")}</Text>
               </Pressable>
             ) : null}
           </View>

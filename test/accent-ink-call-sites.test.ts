@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { groundingTechniques } from "@/src/constants/grounding";
 import { exerciseHue, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 import { MEDITATION_PRACTICES } from "@/src/features/meditation/practices";
-import { HUE_NAMES, TINT_ACCENT, TINT_TEXT } from "@/src/lib/design-tokens";
+import { HUE_NAMES } from "@/src/lib/design-tokens";
 import { sourceFiles, stripComments } from "@/test/source-scan";
 
 // The call-site half of the accent-ink work (#368/#403/#412).
@@ -515,13 +515,18 @@ const ALLOWED_TAIL: AllowedSite[] = [
 
 /**
  * Every `accentClassName` literal in the app. `ToolStats` renders it at 13px
- * and 11px, so it must be an ink token: `text-accent-ink` inside a room of that
- * hue, `text-<hue>-ink` anywhere else. The prop's own doc says so, and seven
- * call sites disagreed with it in silence because `tone="onField"` ignores the
- * value entirely (#412).
+ * and 11px, so it must be an ink token. It used to be `text-accent-ink` inside a
+ * room of that hue and `text-<hue>-ink` anywhere else; the prop's own doc said
+ * so, and seven call sites disagreed with it in silence because `tone="onField"`
+ * ignores the value entirely (#412).
+ *
+ * `accent` left the alternation with `--accent-ink` itself (#589). The hue inks
+ * stay listed because the four keeps-hue surfaces may still legitimately reach
+ * one, and `primary` joins them as the neutral form every former room-less site
+ * now takes.
  */
 const ACCENT_PROP = /accentClassName=\{?"([^"]*)"/g;
-const INK_TOKEN = new RegExp(String.raw`^text-(accent|${HUE_NAMES.join("|")})-ink$`);
+const INK_TOKEN = new RegExp(String.raw`^text-(primary|${HUE_NAMES.join("|")})-ink$`);
 
 describe("the module tail keeps the raw hue accent only where it is justified (#412)", () => {
   it("has exactly the classified set of bare text-<hue> sites", () => {
@@ -595,9 +600,13 @@ describe("no bare accent survives outside a classified area", () => {
     // A floor rather than an exact count, because TINT_ACCENT's shape is asserted
     // directly below and pinning the number twice would just make one of them a
     // copy. What this has to catch is the scanner reading nothing at all.
-    const inTokens = findingsIn(BARE_HUE, [TOKENS_FILE]);
-
-    expect(inTokens.length).toBeGreaterThanOrEqual(7);
+    // A positive control rather than a count. design-tokens.ts held the last
+    // bare hue accents in the tree until #589 deleted TINT_ACCENT, so there is
+    // no file left to point at - and "nothing anywhere" is exactly what a broken
+    // scanner also returns. Running the pattern over a known-bad line proves it
+    // still matches.
+    expect(`text-act`.match(BARE_HUE)).not.toBeNull();
+    expect(`text-act-ink`.match(BARE_HUE)).toBeNull();
   });
 
   it("holds none anywhere else", () => {
@@ -614,85 +623,55 @@ describe("no bare accent survives outside a classified area", () => {
     expect(stray).toEqual([]);
   });
 
-  it("lets design-tokens.ts through for TINT_ACCENT's bare accents and nothing more", () => {
-    // The exclusion above is by FILE, which on its own is not a gate: a THIRD map
-    // in this file writing hue text - in either spelling - rides through it in
-    // silence, and the shape assertions below only ever look at the two maps that
-    // exist today. That is #421's hole re-opened one file over, so pin the whole
-    // set instead. A new bare-hue line here now has to be justified by editing
-    // this list, which is the point.
+  it("no longer needs to let design-tokens.ts through at all", () => {
+    // The file-level exclusion above is now belt with no braces needed. It was
+    // there because TINT_ACCENT necessarily named all eight hues as text, and
+    // excluding by FILE would have let a THIRD map ride through in silence -
+    // #421's hole re-opened one file over. With both maps deleted, the file
+    // writes no bare hue text at all, which is the stronger statement.
+    //
+    // The encoding palette it still holds is `bg-<hue>/[alpha]` ramp classes,
+    // which BARE_HUE does not match: it looks for hue TEXT.
     const inTokens = findingsIn(BARE_HUE, sourceFiles(ROOT, { dirs: ["app", "src"] }))
       .filter((finding) => finding.file === TOKENS_FILE)
       .map((finding) => finding.snippet.trim())
       .sort();
 
-    // This used to expect all eight hues. It no longer can: #433 measured
-    // `think`'s glyph at 1.80:1 as rendered, so TINT_ACCENT.think is
-    // `text-think-ink` and writes no bare hue here at all. The expectation is
-    // derived from the map rather than restated with `think` deleted, so the day
-    // a measurement moves a second hue to ink this keeps passing without an
-    // edit — while a THIRD map, or a hue moving back to a bare accent, still
-    // fails until it is justified. Which hues may hold a bare accent is decided
-    // by luminance in test/theme-token-sync.test.ts, never here.
-    const expected = HUE_NAMES.filter((hue) => TINT_ACCENT[hue] === `text-${hue}`)
-      .map((hue) => `${hue}: "text-${hue}",`)
-      .sort();
-
-    expect(inTokens).toEqual(expected);
+    expect(inTokens).toEqual([]);
   });
 });
 
-describe("the tint maps keep text and marks apart (#421)", () => {
-  // The blind spot that made this necessary: TINT_TEXT held the raw accents as
-  // arbitrary values, feeding ~78 sites through `Text`'s `tint` prop - the
-  // signed-out landing page among them, where nine of ten labels measured below
-  // AA. Excluding the defining file from the sweep above would re-open exactly
-  // that hole, so the two maps are asserted by shape here rather than trusted.
+// INVERTED by #589: there are no tint maps left to keep apart.
+//
+// This suite pinned the shape of TINT_TEXT and TINT_ACCENT - every hue to its
+// ink in the first, the published accent in the second except `think`, no
+// arbitrary values in either, and `primary` taking ink as text while keeping the
+// accent as a mark. It existed because excluding design-tokens.ts from the sweep
+// above would otherwise re-open #421's hole, where TINT_TEXT held raw accents as
+// arbitrary values and fed ~78 sites through Text's `tint` prop.
+//
+// Both maps are deleted. The hole they guarded is closed differently now: the
+// test above pins every bare-hue line in the file, and the eslint rule added by
+// this ticket fails a build that paints a hue as chrome anywhere in the tree.
+describe("the tint maps are gone", () => {
+  it("design-tokens.ts declares neither TINT_TEXT nor TINT_ACCENT", () => {
+    // Read from source rather than imported: a deleted export cannot be named in
+    // an import statement, so the assertion has to look at the file.
+    const source = stripComments(readFileSync(join(ROOT, TOKENS_FILE), "utf8"));
 
-  it("TINT_TEXT resolves every hue to its ink, never to the accent", () => {
-    for (const hue of HUE_NAMES) {
-      expect(TINT_TEXT[hue]).toBe(`text-${hue}-ink`);
-    }
+    expect(source).not.toMatch(/\bexport const TINT_TEXT\b/);
+    expect(source).not.toMatch(/\bexport const TINT_ACCENT\b/);
+    expect(source).not.toMatch(/\bexport const MARK_WASH_ALPHAS\b/);
   });
 
-  it("TINT_ACCENT holds the published accent for every hue that can carry it", () => {
-    // This asserted `text-<hue>` for all eight, on TINT_ACCENT's docstring claim
-    // that 1.4.11's 3:1 floor was met "which the published accents clear".
-    // Nothing computed that claim, and #433 measured it false as rendered:
-    // `think`'s glyph is 1.80:1 on the signed-out landing page and 1.88 on the
-    // bare app background, so it never had a surface to be a mark on.
-    //
-    // The assertion is not being relaxed to fit the code. The *decision* moved
-    // to test/theme-token-sync.test.ts, which recomputes each tint's worst mark
-    // surface from the tokens and derives accent-vs-ink there; this is a pin of
-    // today's answer, so a silent flip fails in two places rather than one.
-    for (const hue of HUE_NAMES) {
-      expect(TINT_ACCENT[hue]).toBe(hue === "think" ? "text-think-ink" : `text-${hue}`);
-    }
-  });
+  it("still declares the encoding palette the keeps-hue surfaces read", () => {
+    // The other direction, because deleting too much here is the failure that
+    // takes a scale away from a user rather than a decoration.
+    const source = stripComments(readFileSync(join(ROOT, TOKENS_FILE), "utf8"));
 
-  it("neither map writes a hue as an arbitrary value", () => {
-    // The spelling the gates could not see. Plain classes only, so a future
-    // reader of either map is also readable by the scan.
-    const written = [...Object.values(TINT_TEXT), ...Object.values(TINT_ACCENT)];
-
-    expect(written.filter((cls) => cls.includes("hsl(var("))).toEqual([]);
-  });
-
-  it("primary is not a hue, but it is still text, so it takes ink too", () => {
-    // This assertion used to read `TINT_TEXT.primary === "text-primary"`, with
-    // a note that primary was the only tint with no ink and was tracked
-    // separately. It has one now (#421 §3): `primary` is absent from HUE_NAMES
-    // and no room pours it, which is why every `text-<hue>` gate in this file
-    // passed straight over the Beta chip while it rendered at 4.41:1 light and
-    // 4.22:1 dark on all 20 captured screens. Not a hue is not the same as not
-    // text, so the text/mark split applies here exactly as it does to the eight.
-    expect(TINT_TEXT.primary).toBe("text-primary-ink");
-
-    // The accent half is unchanged and must stay so: `text-primary` is still
-    // right for icons and decoration, and darkening those would read as
-    // disabled. Only the text map moved.
-    expect(TINT_ACCENT.primary).toBe("text-primary");
+    expect(source).toMatch(/\bexport const HUE_RAMP_CLASSES\b/);
+    expect(source).toMatch(/\bexport const HUE_TRIPLES\b/);
+    expect(source).toMatch(/\bexport function hueRampClass\b/);
   });
 });
 
@@ -709,49 +688,11 @@ describe("the tint maps keep text and marks apart (#421)", () => {
 // paints has to be classified by what sits on it. A new wash fails until someone
 // says which — and if the answer is "a mark", MARK_WASH_ALPHAS has to grow and
 // the floor re-measures it.
-// INVERTED by #587.
-//
-// This suite used to police the washes TINT_ACCENT's consumers painted a mark
-// on. It classified six - the landing hero pill at /0.07, the landing module
-// card at /0.05, pillar-card's tool tile at /0.10 and its letter tile at /0.12,
-// and badge.tsx's tint fill at /0.10 plus its solid `default` hover at /0.9 -
-// and cross-checked them against MARK_WASH_ALPHAS so that a denser wash could
-// not silently invalidate the contrast floor derived from them.
-//
-// All four consumers were module identity surfaces and #587 migrated every one.
-// TINT_ACCENT now has no consumers at all, so the old assertions would pass by
-// finding nothing, which is the exact vacuity the suite's first test existed to
-// prevent. Rather than delete it, it asserts the emptiness directly - and that
-// is worth asserting, because "no caller remains" is the precondition #589
-// deletes the map on. A consumer reappearing would make it false again.
-//
-// It fails on the OLD behaviour: before this batch the scan found four
-// consumers, not zero.
-describe("TINT_ACCENT has no consumers left to paint a mark on any wash (#587)", () => {
-  const consumerFiles = (): string[] =>
-    sourceFiles(ROOT, { dirs: ["app", "src"] }).filter(
-      (file) =>
-        file !== TOKENS_FILE &&
-        /\bTINT_ACCENT\b/.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
-    );
-
-  it("still finds the map itself, so the scan is not vacuous", () => {
-    // The guard the old suite carried, kept: if the scan broke, "no consumers"
-    // would be true of a scanner that reads nothing. design-tokens.ts declares
-    // TINT_ACCENT and is excluded from the consumer list by name, so finding it
-    // separately proves the file read and the pattern both work.
-    const declaration = stripComments(readFileSync(join(ROOT, TOKENS_FILE), "utf8"));
-
-    expect(declaration).toMatch(/\bTINT_ACCENT\b/);
-  });
-
-  it("is reached by nothing outside design-tokens.ts", () => {
-    // Four files reached it before this batch: badge.tsx, pillar-card.tsx and
-    // the two landing surfaces. All four are module identity, all four are
-    // neutral now, and #589 deletes the map on the strength of this being true.
-    expect(consumerFiles()).toEqual([]);
-  });
-});
+// SUPERSEDED by #589. #587 inverted this suite to assert that TINT_ACCENT had
+// no consumers left - the precondition this ticket deletes the map on. The map
+// is deleted, so "no consumers" is now true by construction and there is nothing
+// for a scan to say. What replaces it is the assertion that the DECLARATION is
+// gone, in "the tint maps are gone" above.
 
 describe("the shared hue map is reached only by the hues it was measured against", () => {
   // The hue map is total over HUE_NAMES, but only some of those hues are ever

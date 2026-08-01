@@ -258,3 +258,56 @@ describe("the surfaces that keep hue are untouched (#558, extended by #588)", ()
     });
   }
 });
+
+// The lint gate #589 added, and the one way it can rot quietly: the rule is a
+// list of exempt FILES, the ruling is a list of ENCODINGS, and nothing connects
+// them. An encoding added without its file exempted fails loudly (the lint rule
+// fires); a file exempted without an encoding behind it fails silently, and is
+// exactly how a hue comes back as chrome wearing an exemption.
+describe("the lint gate's exemptions and the ruling agree (#589)", () => {
+  const config = readFileSync(join(ROOT, "eslint.config.js"), "utf8");
+
+  /** The literal entries of HUE_SANCTIONED_FILES in eslint.config.js. */
+  const sanctioned = (() => {
+    const block = config.slice(
+      config.indexOf("const HUE_SANCTIONED_FILES = ["),
+      config.indexOf("];", config.indexOf("const HUE_SANCTIONED_FILES = [")),
+    );
+    return [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  })();
+
+  it("declares the rule at all", () => {
+    // The cheap guard: everything below passes vacuously if the rule is gone.
+    expect(config).toMatch(/HUE_CHROME_RESTRICTIONS/);
+    expect(config).toMatch(/no-restricted-syntax/);
+    expect(sanctioned.length).toBeGreaterThan(0);
+  });
+
+  it("exempts every file a keeps-hue encoding actually lives in", () => {
+    const needed = Object.values(KEEPS_HUE).map((entry) => entry.file);
+    const missing = needed.filter((file) => !sanctioned.includes(file));
+
+    expect(missing).toEqual([]);
+  });
+
+  it("exempts nothing that is not either an encoding surface or the palette itself", () => {
+    // The palette's own plumbing: these define the hues rather than reading
+    // them, so they carry no encoding id of their own.
+    const palette = [
+      "src/lib/design-tokens.ts",
+      "src/lib/module-room.ts",
+      "src/lib/hue-chip.ts",
+      "src/features/mindfulness/exercise-hue.ts",
+      // The sleep quality ramp's input control, the twin of mood-scale.
+      "src/features/sleep/star-rating.tsx",
+      // The mood ramp's class helper. The encoding itself is keyed to
+      // design-tokens.ts (where HUE_RAMP_CLASSES lives); this is the one-line
+      // wrapper the mood surfaces call.
+      "src/features/mood/score-tone.ts",
+    ];
+    const allowed = new Set([...Object.values(KEEPS_HUE).map((e) => e.file), ...palette]);
+    const unjustified = sanctioned.filter((file) => !allowed.has(file));
+
+    expect(unjustified).toEqual([]);
+  });
+});

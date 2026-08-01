@@ -13,7 +13,7 @@ interface ToolStatsProps {
   items: ToolStatItem[];
   /**
    * Tailwind text-color class for the bold values. These are small text, so pass
-   * the ink token, not the published accent: `text-accent-ink` inside a room of
+   * the ink token, not the published accent: `text-primary-ink` inside a room of
    * that hue, `text-<hue>-ink` (e.g. "text-be-ink") anywhere else (#403). Must be
    * a literal used elsewhere. Ignored entirely when `tone="onField"`.
    */

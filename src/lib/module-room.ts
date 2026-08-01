@@ -42,7 +42,7 @@ export function hueDegree(hue: HueName): number {
  *
  * `accent-ink` is the odd one out: it is not a surface but the room hue itself,
  * darkened until it can carry small text on the surfaces above
- * (`text-accent-ink` — see HUE_INK_TRIPLES). Do not read it as ink on `accent`;
+ * (`text-primary-ink` — see HUE_INK_TRIPLES). Do not read it as ink on `accent`;
  * that pairing is `accent-foreground`.
  */
 export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string, string>> {

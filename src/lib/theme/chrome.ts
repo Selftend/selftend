@@ -20,7 +20,7 @@ import { fieldGradient } from "@/src/lib/module-room";
 /**
  * Body and heading text on any chrome surface.
  *
- * Replaces `text-<hue>-ink` / `text-accent-ink` wherever the text was coloured
+ * Replaces `text-<hue>-ink` / `text-primary-ink` wherever the text was coloured
  * to say which module you were in. That is exactly the "distinguishes items in a
  * set" case the ruling calls insufficient.
  */

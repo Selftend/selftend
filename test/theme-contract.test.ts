@@ -60,8 +60,6 @@ const css = { light: cssBlock("root"), dark: cssBlock("dark") };
 const NON_CONTRACT_VARS = [
   // Global constant: colours-only style axis (#555 §2).
   "--radius",
-  // Legacy room pour, deleted in #589.
-  "--accent-ink",
   // The pinned encoding palette (#558).
   ...HUE_NAMES.map((hue) => `--${hue}`),
   ...HUE_NAMES.map((hue) => `--${hue}-ink`),
@@ -122,11 +120,13 @@ describe("--accent-ink has no home in the contract", () => {
     expect(THEME_VAR_NAMES).not.toContain("--accent-ink");
   });
 
-  // It is still emitted, because the call sites are not swept yet (#585-#588)
-  // and the var is not deleted until #589. Outside a room it is the app accent —
-  // src/lib/module-room.ts re-pours it per hue inside one.
-  it.each(COLOR_SCHEMES)("is still emitted in %s as the app accent", (scheme) => {
-    expect(THEME_VAR_VALUES[scheme]["--accent-ink"]).toBe(themeTokens(scheme)["--primary"]);
+  // INVERTED by #589. It used to be emitted anyway - not a style token, but
+  // still written to :root as the app accent, because the call sites were not
+  // swept and the var was not deleted until this ticket. Both are true now, so
+  // it is emitted nowhere. Fails on the old behaviour, which emitted it in both
+  // schemes.
+  it.each(COLOR_SCHEMES)("is not emitted in %s either", (scheme) => {
+    expect(THEME_VAR_VALUES[scheme]).not.toHaveProperty("--accent-ink");
   });
 });
 

@@ -12,8 +12,8 @@
    Do not add a token here without adding it to the contract, and do not retune a
    value here alone: test/theme-contract.test.ts fails the build if this pair
    drifts from THEME_TOKENS, in either direction. Vars outside the contract are
-   the global --radius, the legacy --accent-ink room pour (#589 deletes it), and
-   the pinned encoding palette (the eight hues and their inks). */
+   the global --radius and the pinned encoding palette (the eight hues and their
+   inks). */
 @layer base {
   :root {
     --background: 260 28% 96%;
@@ -30,10 +30,6 @@
        shipped at 4.41:1. From PRIMARY_INK_TRIPLES in src/lib/design-tokens.ts;
        kept in sync and above AA by test/theme-token-sync.test.ts. */
     --primary-ink: 262 62% 28%;
-    /* Outside a module room there is no hue, so accent ink is the app accent.
-       A room re-pours this per hue (src/lib/module-room.ts). Kept equal to
-       --primary by test/theme-token-sync.test.ts. */
-    --accent-ink: 262 62% 56%;
     --secondary: 260 8% 92%;
     --secondary-foreground: 260 12% 24%;
     --muted: 260 14% 95%;
@@ -55,10 +51,9 @@
     --ink: 232 46% 54%;
     --clay: 20 52% 50%;
     /* Each hue as small-text ink on the neutral app surface (#403) — the
-       accent's own degree and saturation at lightness 28%. `--accent-ink`
-       above is the room-poured counterpart; both come from HUE_INK_TRIPLES in
-       src/lib/design-tokens.ts, mirrored here because NativeWind needs the CSS
-       at build time. Kept in sync and above AA by test/theme-token-sync.test.ts. */
+       accent's own degree and saturation at lightness 28%. From HUE_INK_TRIPLES
+       in src/lib/design-tokens.ts, mirrored here because NativeWind needs the
+       CSS at build time. Kept in sync and above AA by test/theme-token-sync.test.ts. */
     --think-ink: 43 74% 28%;
     --act-ink: 160 46% 28%;
     --be-ink: 330 56% 28%;
@@ -83,7 +78,6 @@
        not — the Beta chip reads 4.22:1 on `bg-primary/15` over the dark card —
        so this lifts lightness 72% → 80% instead. See PRIMARY_INK_LIGHTNESS. */
     --primary-ink: 264 72% 80%;
-    --accent-ink: 264 72% 72%;
     --secondary: 260 8% 22%;
     --secondary-foreground: 260 24% 92%;
     --muted: 260 12% 18%;
