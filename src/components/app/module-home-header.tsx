@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { neutralFieldGradient } from "@/src/lib/theme/chrome";
+import { useNeutralFieldGradient } from "@/src/lib/theme-palette";
 import { useTranslation } from "react-i18next";
 
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
@@ -14,7 +14,6 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { hueToTint, type ToolHue } from "@/src/features/mindfulness/exercise-hue";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 type TuneAction = { type: "tune"; onPress: () => void; accessibilityLabel?: string };
 type NotificationsAction = {
@@ -78,7 +77,10 @@ export function ModuleHomeHeader({
   variant = "hero",
 }: ModuleHomeHeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
-  const isDark = useColorSchemeName() === "dark";
+  // A hook, not a module-scope read: the stops are derived from the SELECTED
+  // palette's accent, and the constant path reads the DEFAULT palette - which
+  // is what left this header violet under all eight styles.
+  const fieldColors = useNeutralFieldGradient();
 
   const notificationsAction = actions.find(
     (a): a is NotificationsAction => a.type === "notifications",
@@ -130,7 +132,7 @@ export function ModuleHomeHeader({
         {notificationsModal}
         <LinearGradient
           testID="module-field-gradient"
-          colors={neutralFieldGradient(isDark)}
+          colors={fieldColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 0.08, y: 1 }}
           style={StyleSheet.absoluteFill}

@@ -15,7 +15,8 @@
 // a neutral room, it is no room - the app's own surfaces, which every screen
 // already has. #586 removes `useRoomStyle` calls rather than swapping them.
 
-import { fieldGradient } from "@/src/lib/module-room";
+import { fieldStopsForDegree } from "@/src/lib/module-room";
+import { THEME_TOKENS, type StyleName } from "@/src/lib/theme/styles";
 
 /**
  * Body and heading text on any chrome surface.
@@ -62,15 +63,30 @@ export const CHROME_WASH = "bg-muted";
 
 /**
  * The neutral field gradient: the full-bleed pour behind a module or tool
- * header, in the app accent rather than the module's hue.
+ * header, in the ACTIVE palette's accent rather than the module's hue.
  *
- * It delegates to the existing `fieldGradient("primary", …)` rather than
- * introducing a second formula. That path already exists and already ships - the
- * CBT home uses it (#500) - so the neutral field is a surface the app has been
- * painting and holding to its contrast floors for a while, not a new one.
+ * It reuses `fieldStopsForDegree` - the very formula the hue fields use - rather
+ * than introducing a second one, so the neutral field and the hue fields stay on
+ * one set of contrast floors instead of two that can drift.
+ *
+ * It takes the style explicitly. The obvious shorter spelling,
+ * `fieldGradient("primary", …)`, reads `PRIMARY_TRIPLES` - a module-scope
+ * constant holding the DEFAULT palette's violet - so every header migrated onto
+ * it would have stayed lilac under all eight palettes, and a test comparing the
+ * two would have agreed with itself while the app was visibly wrong. A hue
+ * degree cannot be read from a constant here; it has to come from the palette
+ * the user actually chose. `useNeutralFieldGradient` in src/lib/theme-palette.ts
+ * is the hook that supplies it.
  */
-export function neutralFieldGradient(isDark: boolean): [string, string] {
-  return fieldGradient("primary", isDark);
+export function neutralFieldGradient(style: StyleName, isDark: boolean): [string, string] {
+  // The LIGHT triple's degree in both schemes, matching what `fieldGradient`
+  // has always done for the primary field. A palette may nudge its accent hue a
+  // degree or two between schemes (quiet-lilac is 262 light, 264 dark) and
+  // following that would both re-tint today's shipping field in dark mode and
+  // give one palette two field hues. The scheme is already expressed by the
+  // saturation and lightness the formula picks.
+  const triple = THEME_TOKENS[style].light["--primary"];
+  return fieldStopsForDegree(Number.parseInt(triple, 10), isDark);
 }
 
 /**

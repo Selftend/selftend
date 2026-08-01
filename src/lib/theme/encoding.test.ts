@@ -1,7 +1,14 @@
 import { fieldGradient } from "@/src/lib/module-room";
 
 import { CHROME_CLASSES, CHROME_MARK, CHROME_TEXT, neutralFieldGradient } from "./chrome";
-import { HUE_ENCODINGS, hueEncoding, isPinnedEncoding, keepsHue } from "./encoding";
+import {
+  HUE_ENCODINGS,
+  hueEncoding,
+  isPinnedEncoding,
+  keepsHue,
+  type HueEncodingId,
+} from "./encoding";
+import { DEFAULT_STYLE, STYLE_NAMES, THEME_TOKENS } from "./styles";
 
 describe("the surfaces that keep hue", () => {
   // The four the spec names, and only those. This list is the whole ruling in
@@ -86,9 +93,60 @@ describe("the neutral chrome primitives", () => {
     expect(CHROME_TEXT).not.toBe(CHROME_MARK);
   });
 
-  // Delegation, not a second formula: the primary field already ships (#500) and
-  // is already held to the same contrast floors as every hue field.
-  it.each([true, false])("the neutral field is the primary field (isDark=%s)", (isDark) => {
-    expect(neutralFieldGradient(isDark)).toEqual(fieldGradient("primary", isDark));
+  // A COMPILE-time guard, which is the only kind that can catch this: whether
+  // the ids are the four-way union or plain `string`, the runtime behaviour is
+  // identical, so nothing observable fails when the type widens. Annotating
+  // HUE_ENCODINGS as `readonly HueEncoding[]` widens it (the annotation is
+  // checked against the literal but also erases it), and then every misspelled
+  // surface id in the migrate batches compiles and silently answers "not
+  // keeps-hue". If that regresses, `string extends HueEncodingId` becomes true
+  // and this file stops compiling.
+  it("keeps the id union narrow, so a misspelled surface id cannot compile", () => {
+    type IdUnionIsNarrow = string extends HueEncodingId ? "widened" : "narrow";
+    const narrow: IdUnionIsNarrow = "narrow";
+
+    expect(narrow).toBe("narrow");
+  });
+
+  // The property that matters, and the one a delegation test could not see:
+  // the neutral field follows the palette the user actually picked. Comparing
+  // it against fieldGradient("primary") instead would have compared the
+  // implementation with itself - both read the same fixed violet - and passed
+  // while every migrated header stayed lilac on all eight palettes.
+  it.each([true, false])("the neutral field pours the active accent (isDark=%s)", (isDark) => {
+    for (const style of STYLE_NAMES) {
+      const expected = Number.parseInt(THEME_TOKENS[style].light["--primary"], 10);
+      for (const stop of neutralFieldGradient(style, isDark)) {
+        expect(stop.startsWith(`hsl(${expected}, `)).toBe(true);
+      }
+    }
+  });
+
+  // Distinctness, not just "each is defined": if two palettes with different
+  // accents poured the same field, the bug above would still be present and the
+  // per-style assertion alone could not tell.
+  it.each([true, false])("different accents pour different fields (isDark=%s)", (isDark) => {
+    const byAccent = new Map<string, string>();
+
+    for (const style of STYLE_NAMES) {
+      const accent = THEME_TOKENS[style].light["--primary"].split(" ")[0];
+      const field = neutralFieldGradient(style, isDark).join("|");
+      const seen = byAccent.get(accent);
+      if (seen === undefined) {
+        byAccent.set(accent, field);
+      } else {
+        // Same accent hue must pour the same field...
+        expect(field).toBe(seen);
+      }
+    }
+
+    // ...and distinct accent hues must pour distinct fields.
+    expect(new Set(byAccent.values()).size).toBe(byAccent.size);
+  });
+
+  // The default palette must not shift: quiet-lilac's neutral field is still
+  // exactly the primary field that ships today (#500).
+  it.each([true, false])("quiet-lilac still pours today's field (isDark=%s)", (isDark) => {
+    expect(neutralFieldGradient(DEFAULT_STYLE, isDark)).toEqual(fieldGradient("primary", isDark));
   });
 });

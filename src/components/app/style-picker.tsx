@@ -7,6 +7,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSetStyle, useStyleName } from "@/src/lib/style";
 import { DEFAULT_STYLE, STYLE_LABELS, STYLE_NAMES } from "@/src/lib/theme/styles";
 
@@ -39,6 +40,19 @@ export function StylePicker() {
   const active = useStyleName();
   const setStyle = useSetStyle();
 
+  // A radiogroup is ONE tab stop, not eight: Tab enters the group, then
+  // Arrow/Home/End move focus and selection inside it. Without this each card
+  // was its own tab stop and the arrow keys did nothing - the same widget the
+  // language and appearance groups directly above already get right.
+  const activeIndex = STYLE_NAMES.indexOf(active);
+  const roving = useRovingFocus({
+    count: STYLE_NAMES.length,
+    // A style is always set, so -1 only happens if a stored name outlives its
+    // palette. Fall back to the first card so the group stays tab-reachable.
+    activeIndex: activeIndex < 0 ? 0 : activeIndex,
+    onActivate: (index) => setStyle(STYLE_NAMES[index]),
+  });
+
   return (
     <View
       accessibilityRole="radiogroup"
@@ -49,7 +63,7 @@ export function StylePicker() {
         {t("styleToggle.toggle")}
       </Text>
       <View className="flex-row flex-wrap">
-        {STYLE_NAMES.map((style) => {
+        {STYLE_NAMES.map((style, index) => {
           const selected = style === active;
           return (
             <View className="w-1/2 p-1" key={style}>
@@ -70,6 +84,7 @@ export function StylePicker() {
                 onPress={() => setStyle(style)}
                 role="radio"
                 testID={`style-card-${style}`}
+                {...roving.getItemProps(index, () => setStyle(style))}
               >
                 <View className="flex-row gap-1">
                   {swatchHexes(style, scheme).map((hex, index) => (

@@ -27,9 +27,10 @@ import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner"
 import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt-card";
 import { useColorSchemeDriver, useColorSchemeName } from "@/src/lib/color-scheme";
 import { useStyleDriver, useStyleName } from "@/src/lib/style";
+import { useDocumentThemeColor } from "@/src/lib/use-document-theme-color";
 import { useDocumentThemeVars } from "@/src/lib/use-document-theme-vars";
 import { AppProviders } from "@/src/providers/app-providers";
-import { NAV_THEME, THEME_VARIABLES, themeVarValues } from "@/lib/theme";
+import { NAV_THEME, THEME_HEXES, THEME_VARIABLES, themeVarValues } from "@/lib/theme";
 import { initSentry } from "@/src/lib/sentry";
 import * as Sentry from "@sentry/react-native";
 
@@ -54,6 +55,11 @@ export default Sentry.wrap(function RootLayout() {
   // root View - popovers, dialogs, selects, toasts - resolve the active palette
   // instead of the global.css fallback.
   useDocumentThemeVars(themeVarValues(colorScheme, style));
+  // Web only: keep the browser chrome's theme-color and the document background
+  // on the active palette. The first-paint script sets both once at load; this
+  // is what follows a palette switch, an appearance switch, or an OS scheme
+  // change afterwards instead of leaving the address bar on the load-time hue.
+  useDocumentThemeColor(THEME_HEXES[style][colorScheme]["--background"]);
   const [fontsLoaded, fontError] = useFonts({
     NotoSans_400Regular,
     NotoSans_500Medium,
