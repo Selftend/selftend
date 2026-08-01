@@ -186,3 +186,66 @@ describe("the two axes are independent", () => {
     ]);
   });
 });
+
+// The web seed runs at MODULE scope, so anything it throws is thrown while the
+// module is being imported — no caller can catch it, and on web it takes the
+// whole boot down rather than one palette with it. Both hostile shapes are
+// covered: a `localStorage` whose GETTER throws (opaque or sandboxed origin,
+// storage blocked by browser policy) and one that is simply absent. The first
+// is the reason the property access sits inside the try rather than in the
+// guard above it.
+describe.each([
+  [
+    "an origin where reading window.localStorage itself throws",
+    () => ({
+      get localStorage(): Storage {
+        throw new Error("SecurityError: access to storage is denied");
+      },
+    }),
+  ],
+  ["an environment with no localStorage at all", () => ({ localStorage: undefined })],
+])("the web seed survives %s", (_label, makeWindowStub) => {
+  let descriptor: PropertyDescriptor | undefined;
+
+  beforeEach(() => {
+    descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+    jest.resetModules();
+    // Spreading `requireActual("react-native")` to override Platform is not an
+    // option: its index exposes every export as a lazy getter, so the spread
+    // evaluates all of them and drags the whole native component surface into
+    // what should be a plain module-init test. Flip the single property on the
+    // real module instead — done AFTER resetModules, so the store required
+    // below resolves to this very instance.
+    const RN = require("react-native") as typeof import("react-native");
+    Object.defineProperty(RN.Platform, "OS", { configurable: true, get: () => "web" });
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      writable: true,
+      value: makeWindowStub(),
+    });
+  });
+
+  afterEach(() => {
+    if (descriptor) {
+      Object.defineProperty(globalThis, "window", descriptor);
+    } else {
+      delete (globalThis as { window?: unknown }).window;
+    }
+    // Resets the registry, so the patched Platform instance is discarded with
+    // it and nothing has to be un-patched by hand.
+    jest.resetModules();
+  });
+
+  it("imports without throwing and falls back to the default style", () => {
+    let imported: typeof import("@/src/stores/style-store") | undefined;
+
+    expect(() => {
+      imported = require("@/src/stores/style-store") as typeof import("@/src/stores/style-store");
+    }).not.toThrow();
+
+    expect(imported?.useStyleStore.getState().style).toBe(DEFAULT_STYLE);
+    // Still un-settled: the seed found nothing, so the async hydrate is the one
+    // that owes an answer. A crashed seed must not masquerade as a real read.
+    expect(imported?.useStyleStore.getState().hydrated).toBe(false);
+  });
+});
