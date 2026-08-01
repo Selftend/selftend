@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationLearnScreen from "@/src/features/meditation/meditation-learn-screen";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -41,7 +41,7 @@ describe("MeditationLearnScreen", () => {
   it("renders the iris room pour on its root", () => {
     renderWithProviders(<MeditationLearnScreen />);
 
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("renders the dark iris pour when the scheme is dark", () => {
@@ -49,7 +49,7 @@ describe("MeditationLearnScreen", () => {
 
     renderWithProviders(<MeditationLearnScreen />);
 
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris", "dark");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("tints the attention callout card with iris", () => {

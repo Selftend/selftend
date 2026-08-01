@@ -12,7 +12,7 @@ import {
   useSetGratitudeEntryStarred,
 } from "@/src/features/gratitude/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -100,7 +100,7 @@ describe("GratitudeDetailScreen", () => {
     const { UNSAFE_getByType } = renderWithProviders(<GratitudeDetailScreen />);
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the think room re-pour; a wrong or missing room fails here.
-    expectRoomPour(UNSAFE_getByType(SafeAreaView), "think");
+    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
   it("renders the 1st today question and its answer", () => {

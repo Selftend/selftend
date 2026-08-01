@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+
+import { neutralFieldGradient } from "@/src/lib/theme/chrome";
 import { useTranslation } from "react-i18next";
 
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
@@ -11,7 +13,6 @@ import { Badge } from "@/src/components/react-native-reusables/badge";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { hueToTint, type ToolHue } from "@/src/features/mindfulness/exercise-hue";
-import { fieldGradient } from "@/src/lib/module-room";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 
@@ -129,7 +130,7 @@ export function ModuleHomeHeader({
         {notificationsModal}
         <LinearGradient
           testID="module-field-gradient"
-          colors={fieldGradient(hue, isDark)}
+          colors={neutralFieldGradient(isDark)}
           start={{ x: 0, y: 0 }}
           end={{ x: 0.08, y: 1 }}
           style={StyleSheet.absoluteFill}

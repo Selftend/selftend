@@ -1,7 +1,4 @@
 import { render, screen, fireEvent } from "@testing-library/react-native";
-import { View } from "react-native";
-
-import { expectRoomPour, roomPour } from "@/test/room-pour";
 
 import { MeditationPracticesSection } from "./meditation-practices-section";
 
@@ -41,21 +38,20 @@ describe("MeditationPracticesSection", () => {
     expect(screen.queryByText("practices.body-scan.title")).toBeNull();
   });
 
-  it("re-pours with the iris room it renders inside on home", () => {
-    render(
-      <View testID="iris-room" style={roomPour("iris")}>
-        <MeditationPracticesSection initialPractice="body-scan" />
-      </View>,
-    );
+  it("keeps its surfaces on theme tokens rather than hardcoding one", () => {
+    render(<MeditationPracticesSection initialPractice="body-scan" />);
 
-    // The section has no pour of its own - it inherits the room the meditation
-    // home screen pours around it.
-    expectRoomPour(screen.getByTestId("iris-room"), "iris");
-    // And it re-pours for free only while its surfaces stay on the room's
-    // tokens; a hardcoded surface here would silently opt out of every room.
+    // This used to render the section inside a fixture `iris` room and assert
+    // it inherited the pour. Rooms are neutral now (#586), so there is no pour
+    // to inherit and the wrapper would only be testing the fixture.
+    //
+    // What the assertion was really protecting survives and still matters, now
+    // against the STYLE axis instead of the room: a surface hardcoded here
+    // would silently opt out of every palette, not just every room.
     const card = screen
       .UNSAFE_getAllByProps({ "aria-expanded": true })
       .find((node) => String(node.props.className ?? "").includes("rounded-2xl"));
+
     expect(card).toBeTruthy();
     expect(card?.props.className).toContain("bg-card");
   });

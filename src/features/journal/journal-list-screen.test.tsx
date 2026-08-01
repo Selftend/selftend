@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import JournalListScreen from "@/src/features/journal/journal-list-screen";
 import { useJournalEntries, useJournalWordTotal } from "@/src/features/journal/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -235,7 +235,7 @@ describe("JournalListScreen", () => {
     // Full-bleed ink field header (Direction B room), not the plain header.
     expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the ink room re-pour; a wrong or missing room fails here.
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "ink");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
     // The existing two stats + "Last ·" subline ride on-field unchanged. Counts
     // also appear in the history divider / entry cards, hence getAllByText.
     expect(screen.getAllByText("1 entry").length).toBeGreaterThanOrEqual(1);

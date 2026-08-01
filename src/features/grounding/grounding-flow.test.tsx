@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { GroundingFlow } from "@/src/features/grounding/grounding-flow";
 import { saveMindfulnessSession } from "@/src/features/mindfulness/repository";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: { replace: jest.fn() },
@@ -78,24 +78,24 @@ describe("GroundingFlow", () => {
       <GroundingFlow slug="cold-water" />,
     );
     // Intro: the room wrapper carries the pour; a wrong or missing room fails here.
-    expectRoomPour(getByTestId("grounding-flow-room"), "clay");
+    expectNeutralRoom(getByTestId("grounding-flow-room"));
     // Session screens take the pour only — the exercise is the hero (#301).
     expect(queryByTestId("module-field-gradient")).toBeNull();
 
     // The pour survives the phase swaps: intro -> session -> done.
     fireEvent.press(getByText("Start"));
-    expectRoomPour(getByTestId("grounding-flow-room"), "clay");
+    expectNeutralRoom(getByTestId("grounding-flow-room"));
 
     fireEvent.press(getByText("Next"));
     fireEvent.press(getByText("Next"));
     fireEvent.press(getByText("Next"));
     fireEvent.press(getByText("Finish"));
-    expectRoomPour(getByTestId("grounding-flow-room"), "clay");
+    expectNeutralRoom(getByTestId("grounding-flow-room"));
     expect(queryByTestId("module-field-gradient")).toBeNull();
   });
 
   it("pours the clay room on the not-found branch", () => {
     const { getByTestId } = renderWithProviders(<GroundingFlow slug="nope" />);
-    expectRoomPour(getByTestId("grounding-flow-room"), "clay");
+    expectNeutralRoom(getByTestId("grounding-flow-room"));
   });
 });

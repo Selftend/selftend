@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import BreathingExerciseScreen from "@/app/(app)/tools/breathing/session";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("@/src/lib/accessibility", () => ({
   ...jest.requireActual("@/src/lib/accessibility"),
@@ -110,7 +110,7 @@ describe("Breathing cycle runner", () => {
     renderWithProviders(<BreathingExerciseScreen />);
 
     // The root carries the aqua room re-pour; a wrong or missing room fails here.
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "aqua");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
     // Wave B direction (#301): session screens take the pour only — the
     // exercise is the hero, no full-bleed field header.
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
