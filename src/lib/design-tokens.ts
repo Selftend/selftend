@@ -43,8 +43,8 @@ export const PRIMARY_TRIPLES: SchemeTriples = { light: "262 62% 56%", dark: "264
 // 28% is the binding number, and it binds on both surfaces a hue's ink can land
 // on: `think` clears 5.45 on the app background and 5.51 on its own room's
 // background; at 32% both fall under 4.5. Floors live in
-// test/theme-token-sync.test.ts (the neutral app surface, `text-<hue>-ink`) and
-// test/room-contrast.test.ts (the room surfaces, `text-primary-ink`).
+// test/theme-token-sync.test.ts. (room-contrast.test.ts held the room surfaces
+// until #586 made rooms neutral and deleted it.)
 //
 // Dark mode keeps the published accent untouched: it already clears 5.81:1 at
 // worst there, so a dark-mode darkening would be a visual change buying nothing.

@@ -102,8 +102,15 @@ function capturedFrameImportPaths(allow = []) {
 // no-restricted-imports rule could see.
 const HUE_NAMES_FOR_LINT = ["think", "act", "be", "aqua", "mist", "iris", "ink", "clay"];
 const HUE_CHROME_PATTERN =
-  `(?<![\w-])(text|bg|border|from|to|via|fill|stroke|ring|shadow|decoration|outline|caret|divide)` +
-  `-(${HUE_NAMES_FOR_LINT.join("|")})(-ink)?(?![\w-])`;
+  String.raw`(?<![\w-])(text|bg|border|from|to|via|fill|stroke|ring|shadow|decoration|outline|caret|divide)` +
+  String.raw`-(${HUE_NAMES_FOR_LINT.join("|")})(-ink)?(?![\w-])`;
+
+// The OTHER spelling, and the one that hid ~78 sites from every gate in #421:
+// `bg-[hsl(var(--act)/0.10)]`. It is an arbitrary value, so the hue never
+// appears after a utility prefix and the pattern above cannot see it. Matching
+// the CSS variable directly catches both that form and any raw `var(--iris)`
+// reaching a style prop.
+const HUE_VAR_PATTERN = String.raw`--(${HUE_NAMES_FOR_LINT.join("|")})(-ink)?(?![\w-])`;
 
 const HUE_CHROME_MESSAGE =
   "Module hues are the pinned encoding palette, not chrome (#558/#589). Module and tool " +
@@ -115,6 +122,8 @@ const HUE_CHROME_MESSAGE =
 const HUE_CHROME_RESTRICTIONS = [
   { selector: `Literal[value=/${HUE_CHROME_PATTERN}/]`, message: HUE_CHROME_MESSAGE },
   { selector: `TemplateElement[value.raw=/${HUE_CHROME_PATTERN}/]`, message: HUE_CHROME_MESSAGE },
+  { selector: `Literal[value=/${HUE_VAR_PATTERN}/]`, message: HUE_CHROME_MESSAGE },
+  { selector: `TemplateElement[value.raw=/${HUE_VAR_PATTERN}/]`, message: HUE_CHROME_MESSAGE },
 ];
 
 // The files allowed to name a hue: the encoding palette's own source, and the
@@ -381,7 +390,17 @@ module.exports = [
     // accessibilityState guard they would otherwise lose with it.
     files: HUE_SANCTIONED_FILES,
     rules: {
-      "no-restricted-syntax": ["error", ACCESSIBILITY_STATE_RESTRICTION],
+      // The captured-frame selectors are re-stated because five of these files
+      // are ALSO in CAPTURED_FRAME_FILES - score-tone, star-rating,
+      // quality-tint, pacer-colors, exercise-colors - and last-wins would have
+      // exempted them from the day-key guard as a side effect of exempting them
+      // from the hue guard. Exactly the failure the comment on
+      // MODULE_ROOM_RESTRICTION warns about, one rule over.
+      "no-restricted-syntax": [
+        "error",
+        ACCESSIBILITY_STATE_RESTRICTION,
+        ...capturedFrameSyntaxRestrictions(),
+      ],
     },
   },
   prettierConfig,

@@ -234,11 +234,15 @@ describe("hue ink meets WCAG AA on the neutral app surface", () => {
     expect(HUE_INK_TRIPLES[hue].dark).toBe(HUE_TRIPLES[hue].dark);
   });
 
-  // The room pour and the room-less token are the same colour by construction
-  // (both read HUE_INK_TRIPLES), not by two recipes that happen to agree today.
-  it.each(HUE_NAMES)("%s ink is the value its room pours as --accent-ink", (hue) => {
-    expect(roomTriples(hue).light["accent-ink"]).toBe(HUE_INK_TRIPLES[hue].light);
-    expect(roomTriples(hue).dark["accent-ink"]).toBe(HUE_INK_TRIPLES[hue].dark);
+  // INVERTED by #589. This asserted the room pour and the room-less token were
+  // the same colour by construction, both reading HUE_INK_TRIPLES. No room pours
+  // anything now (#586) and `--accent-ink` is deleted, so a room emitting it
+  // would be reviving a var with no Tailwind utility left to resolve it - dead
+  // output that the lint gate cannot see, because module-room.ts is one of the
+  // files sanctioned to name hues.
+  it.each(HUE_NAMES)("%s room pours no --accent-ink", (hue) => {
+    expect(roomTriples(hue).light).not.toHaveProperty("accent-ink");
+    expect(roomTriples(hue).dark).not.toHaveProperty("accent-ink");
   });
 
   // The floor above measures the ink on *bare* neutral surfaces, which is the
@@ -386,6 +390,49 @@ describe("primary ink meets WCAG AA on the neutral app surface", () => {
 // rather than per hue. What survives is `think`'s ink swap, which is a fact
 // about the ENCODING palette rather than about chrome - the four keeps-hue
 // surfaces still read these tokens - so it is asserted directly below.
+// The mark floor the deleted suite used to provide, narrowed to what is left.
+//
+// The old derivation measured every tint on every wash a TINT_ACCENT glyph was
+// painted on. Those glyphs are gone, but the ENCODING surfaces still paint bare
+// accents as marks - mood-scale's selected border, the star rating's filled star
+// - and deleting the derivation without replacing it would have left the last
+// bare accents in the app unmeasured. That is the shape of #433's defect, which
+// is precisely why it is not left as "no consumers, no floor".
+describe("the encoding palette's bare accents still clear the mark floor", () => {
+  const MARK_FLOOR = 3;
+
+  // Only the hues an encoding surface actually paints bare. `think` is absent
+  // and must stay absent: it measures 1.88:1 on the bare background, which is
+  // why its own -ink token IS the mark everywhere it appears.
+  const ENCODING_MARK_HUES = ["act", "ink"] as const;
+
+  it.each(ENCODING_MARK_HUES)("--%s clears 3:1 on the app surfaces it marks", (hue) => {
+    for (const scheme of ["light", "dark"] as const) {
+      const mark = hslTripleToRgb(css[scheme][`--${hue}`]);
+      for (const surface of ["--background", "--card"] as const) {
+        expect({
+          hue,
+          scheme,
+          surface,
+          clears: contrastRatio(mark, hslTripleToRgb(css[scheme][surface])) >= MARK_FLOOR,
+        }).toEqual({ hue, scheme, surface, clears: true });
+      }
+    }
+  });
+
+  it("keeps think out of that list, because it has never had a surface", () => {
+    // Asserted rather than assumed: if a retune ever lifted think over 3:1 this
+    // fails and someone re-reads the list, instead of it staying wrong forever.
+    const ratio = contrastRatio(
+      hslTripleToRgb(css.light["--think"]),
+      hslTripleToRgb(css.light["--background"]),
+    );
+
+    expect(ratio).toBeLessThan(MARK_FLOOR);
+    expect([...ENCODING_MARK_HUES]).not.toContain("think");
+  });
+});
+
 describe("think's ink is the swap #433 forced, independent of any chrome map", () => {
   it("light think-ink is darker than the published accent it replaced", () => {
     const ink = hslTripleToRgb(css.light["--think-ink"]);
