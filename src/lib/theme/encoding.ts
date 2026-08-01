@@ -57,7 +57,13 @@ export interface HueEncoding {
  * "what does the user read off this colour that they could not read off its icon
  * and label?"
  */
-export const HUE_ENCODINGS: readonly HueEncoding[] = [
+// `as const satisfies …`, NOT a `readonly HueEncoding[]` annotation. An
+// annotation is checked against the literal but also WIDENS it, so every `id`
+// becomes `string` before `HueEncodingId` is derived from it below - leaving
+// that type as plain `string` and letting a misspelled surface id compile and
+// silently answer "not a keeps-hue surface". `satisfies` gets the same
+// checking without the widening.
+export const HUE_ENCODINGS = [
   {
     id: "mood-heatmap-ramp",
     kind: "relative",
@@ -98,11 +104,19 @@ export const HUE_ENCODINGS: readonly HueEncoding[] = [
     kind: "relative",
     reads: "a 5-step scale — how the night scored, by depth of colour",
   },
-] as const;
+] as const satisfies readonly HueEncoding[];
 
 export type HueEncodingId = (typeof HUE_ENCODINGS)[number]["id"];
 
-const BY_ID = new Map(HUE_ENCODINGS.map((encoding) => [encoding.id, encoding]));
+// Keyed by `string`, not by `HueEncodingId`, on purpose. `HueEncodingId` is the
+// narrow union so that code which MEANS a specific surface gets checked, but the
+// three lookups below are runtime questions asked about arbitrary ids - a lint
+// rule scanning files, a test asserting an unknown id answers "no". Narrowing
+// the key would make "is this a keeps-hue surface?" unaskable about anything
+// that might not be one, which is the only reason to ask.
+const BY_ID = new Map<string, HueEncoding>(
+  HUE_ENCODINGS.map((encoding) => [encoding.id, encoding]),
+);
 
 export function hueEncoding(id: string): HueEncoding | undefined {
   return BY_ID.get(id);
