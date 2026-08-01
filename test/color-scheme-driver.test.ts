@@ -18,34 +18,53 @@ import { sourceFiles, stripCommentsAndStrings } from "@/test/source-scan";
 
 const ROOT = join(__dirname, "..");
 
-/** Where the driver is defined - it necessarily names itself. */
-const DEFINITION = "src/lib/color-scheme.ts";
+/**
+ * Every root-only driver, and where each is defined - a module necessarily
+ * names its own driver, so it is excluded from its own scan.
+ *
+ * The style axis (#582) joins the appearance axis here rather than getting a
+ * suite of its own: it is the same hazard, and a second axis is exactly where a
+ * guard gets forgotten.
+ */
+const DRIVERS = [
+  { driver: "useColorSchemeDriver", definition: "src/lib/color-scheme.ts" },
+  { driver: "useStyleDriver", definition: "src/lib/style.ts" },
+] as const;
 
-/** The one file allowed to import it. */
+/** The one file allowed to import them. */
 const ROOT_LAYOUT = "app/_layout.tsx";
 
-// Tests legitimately import the driver to exercise it, so they are excluded
-// along with the defining module itself.
-const scanned = (): string[] => sourceFiles(ROOT, { dirs: ["app", "src"], exclude: [DEFINITION] });
+// Tests legitimately import a driver to exercise it, so they are excluded along
+// with the defining module itself.
+const scanned = (definition: string): string[] =>
+  sourceFiles(ROOT, { dirs: ["app", "src"], exclude: [definition] });
 
 /**
- * A named import of `useColorSchemeDriver`. Bounded by `[^}]` so it cannot span
- * past the closing brace into a neighbouring statement. The module specifier is
- * not matched: it is a string literal, and these patterns only ever run against
+ * A named import of the driver. Bounded by `[^}]` so it cannot span past the
+ * closing brace into a neighbouring statement. The module specifier is not
+ * matched: it is a string literal, and these patterns only ever run against
  * stripped code, where string contents are already blanked.
  */
-const NAMED_IMPORT = /import\s+(?:type\s+)?\{[^}]*\buseColorSchemeDriver\b[^}]*\}\s*from\b/;
+const namedImport = (driver: string) =>
+  new RegExp(String.raw`import\s+(?:type\s+)?\{[^}]*\b${driver}\b[^}]*\}\s*from\b`);
 
 /** A call of the driver, which catches a namespace import the pattern above would miss. */
-const CALL_SITE = /\buseColorSchemeDriver\s*\(/;
+const callSite = (driver: string) => new RegExp(String.raw`\b${driver}\s*\(`);
+
+// The appearance driver's own patterns, used by the self-checks at the bottom
+// that prove the stripper tells prose from code.
+const NAMED_IMPORT = namedImport("useColorSchemeDriver");
+const CALL_SITE = callSite("useColorSchemeDriver");
 
 /** File contents with prose removed - the only form the patterns above are applied to. */
 function code(file: string): string {
   return stripCommentsAndStrings(readFileSync(join(ROOT, file), "utf8"));
 }
 
-describe("useColorSchemeDriver stays root-only", () => {
-  const files = scanned();
+describe.each(DRIVERS)("$driver stays root-only", ({ driver, definition }) => {
+  const files = scanned(definition);
+  const namedImportOf = namedImport(driver);
+  const callSiteOf = callSite(driver);
 
   it("scans a plausible number of source files", () => {
     // Guards the suite itself: a broken walk would find nothing and pass vacuously.
@@ -53,13 +72,13 @@ describe("useColorSchemeDriver stays root-only", () => {
   });
 
   it("is imported by app/_layout.tsx and nothing else", () => {
-    const importers = files.filter((file) => NAMED_IMPORT.test(code(file)));
+    const importers = files.filter((file) => namedImportOf.test(code(file)));
 
     expect(importers).toEqual([ROOT_LAYOUT]);
   });
 
   it("is called from app/_layout.tsx and nowhere else", () => {
-    const callers = files.filter((file) => CALL_SITE.test(code(file)));
+    const callers = files.filter((file) => callSiteOf.test(code(file)));
 
     expect(callers).toEqual([ROOT_LAYOUT]);
   });

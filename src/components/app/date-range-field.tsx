@@ -7,9 +7,9 @@ import dayjs, { type Dayjs } from "dayjs";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { THEME } from "@/lib/theme";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { useThemePalette } from "@/src/lib/theme-palette";
 
 export interface DateRange {
   /** Local date key, YYYY-MM-DD, inclusive. */
@@ -44,14 +44,15 @@ export function DateRangeField({
 
   const scheme = useColorSchemeName();
   const defaultStyles = useDefaultStyles(scheme);
+  const theme = useThemePalette();
   const pickerStyles = useMemo(
     () => ({
       ...defaultStyles,
-      today: { borderColor: THEME[scheme].primary, borderWidth: 1 },
-      selected: { backgroundColor: THEME[scheme].primary },
-      selected_label: { color: THEME[scheme].primaryForeground },
+      today: { borderColor: theme.primary, borderWidth: 1 },
+      selected: { backgroundColor: theme.primary },
+      selected_label: { color: theme.primaryForeground },
     }),
-    [defaultStyles, scheme],
+    [defaultStyles, theme],
   );
 
   return (

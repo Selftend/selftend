@@ -261,7 +261,7 @@ describe("the projections read back off the contract", () => {
 
   it.each(COLOR_SCHEMES)("the %s navigation theme keeps react-navigation's own flags", (scheme) => {
     expect(navigationTheme(scheme).dark).toBe(scheme === "dark");
-    expect(NAV_THEME[scheme]).toEqual(navigationTheme(scheme));
+    expect(NAV_THEME[DEFAULT_STYLE][scheme]).toEqual(navigationTheme(scheme));
   });
 
   it.each(COLOR_SCHEMES)("the %s palette is every contract token as hsl()", (scheme) => {

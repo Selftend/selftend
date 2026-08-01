@@ -26,8 +26,10 @@ import { AppToast } from "@/src/components/app/app-toast";
 import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner";
 import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt-card";
 import { useColorSchemeDriver, useColorSchemeName } from "@/src/lib/color-scheme";
+import { useStyleDriver, useStyleName } from "@/src/lib/style";
+import { useDocumentThemeVars } from "@/src/lib/use-document-theme-vars";
 import { AppProviders } from "@/src/providers/app-providers";
-import { NAV_THEME, THEME_VARIABLES } from "@/lib/theme";
+import { NAV_THEME, THEME_VARIABLES, themeVarValues } from "@/lib/theme";
 import { initSentry } from "@/src/lib/sentry";
 import * as Sentry from "@sentry/react-native";
 
@@ -42,7 +44,16 @@ export default Sentry.wrap(function RootLayout() {
   // into NativeWind. It sits above the `if (!ready)` bail-out below so it keeps
   // running while the splash is up.
   useColorSchemeDriver();
+  // The style axis's driver, and its own hydrate. Two axes, two guards: a single
+  // shared flag would let a slow read on one settle the other, which is the
+  // read-then-overwrite shape of #304/#343.
+  useStyleDriver();
   const colorScheme = useColorSchemeName();
+  const style = useStyleName();
+  // Web only: mirror the tokens onto <html> so surfaces portalled outside this
+  // root View - popovers, dialogs, selects, toasts - resolve the active palette
+  // instead of the global.css fallback.
+  useDocumentThemeVars(themeVarValues(colorScheme, style));
   const [fontsLoaded, fontError] = useFonts({
     NotoSans_400Regular,
     NotoSans_500Medium,
@@ -72,8 +83,8 @@ export default Sentry.wrap(function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppProviders>
-        <ThemeProvider value={NAV_THEME[colorScheme]}>
-          <View className="flex-1 bg-background" style={THEME_VARIABLES[colorScheme]}>
+        <ThemeProvider value={NAV_THEME[style][colorScheme]}>
+          <View className="flex-1 bg-background" style={THEME_VARIABLES[style][colorScheme]}>
             <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
             <AppErrorBoundary>
               <AppShell />

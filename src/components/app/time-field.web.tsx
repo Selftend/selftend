@@ -1,8 +1,7 @@
 /** @jsxImportSource react */
 import type { ChangeEvent } from "react";
 
-import { THEME } from "@/lib/theme";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { useThemePalette } from "@/src/lib/theme-palette";
 import { formatHHmm, parseHHmm, type TimeOfDay } from "@/src/utils/time";
 
 export interface TimeFieldProps {
@@ -13,8 +12,7 @@ export interface TimeFieldProps {
 }
 
 export function TimeField({ value, onChange, accessibilityLabel, disabled }: TimeFieldProps) {
-  const scheme = useColorSchemeName();
-  const theme = THEME[scheme];
+  const theme = useThemePalette();
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const next = parseHHmm(event.target.value);
