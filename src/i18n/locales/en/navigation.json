@@ -517,5 +517,9 @@
     "stepSummary": "Step {{current}} of {{total}} · {{name}}",
     "showAllSteps": "Show all steps",
     "hideSteps": "Hide steps"
+  },
+  "styleToggle": {
+    "toggle": "Palette",
+    "default": "Default"
   }
 }

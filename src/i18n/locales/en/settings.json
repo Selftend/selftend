@@ -231,5 +231,9 @@
     "otherChannels": "Prefer other channels?",
     "reportOnGitHub": "Report on GitHub",
     "joinDiscord": "Join our Discord"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "description": "Choose a palette. It applies on this device only."
   }
 }

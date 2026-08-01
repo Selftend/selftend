@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { GetTheAppSection } from "@/src/components/app/get-the-app-section";
 import { ProfileAvatar } from "@/src/components/app/profile-avatar";
 import { SocialConnections } from "@/src/components/app/social-connections";
+import { StylePicker } from "@/src/components/app/style-picker";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import {
@@ -188,6 +189,8 @@ export function UserMenu() {
               </Pressable>
             ))}
           </View>
+
+          <StylePicker />
 
           <GetTheAppSection compact />
           {/* Community links. On mobile the header shows no Discord/GitHub

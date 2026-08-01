@@ -10,6 +10,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { AccountCard } from "@/src/features/settings/components/account-card";
 import { OnboardingCard } from "@/src/features/settings/components/onboarding-card";
 import { ProfilePictureCard } from "@/src/features/settings/components/profile-picture-card";
+import { AppearanceCard } from "@/src/features/settings/components/appearance-card";
 import { RemindersCard } from "@/src/features/settings/components/reminders-card";
 import { SecuritySection } from "@/src/features/settings/components/security-section";
 import { SettingsFeedbackBanner } from "@/src/features/settings/components/settings-feedback-banner";
@@ -54,6 +55,8 @@ export default function SettingsScreen() {
             ) : null}
 
             <ProfilePictureCard user={user} />
+
+            <AppearanceCard />
 
             <RemindersCard />
 
