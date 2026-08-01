@@ -16,6 +16,8 @@
 // already has. #586 removes `useRoomStyle` calls rather than swapping them.
 
 import { fieldStopsForDegree } from "@/src/lib/module-room";
+import { AA_TEXT, compositeOver, contrastRatio, tripleToRgb } from "@/src/lib/theme/contrast";
+import type { Rgb } from "@/src/lib/theme/color";
 import { THEME_TOKENS, type StyleName } from "@/src/lib/theme/styles";
 
 /**
@@ -61,6 +63,29 @@ export const CHROME_BADGE_TEXT = "text-secondary-foreground";
  */
 export const CHROME_WASH = "bg-muted";
 
+/** The weakest ink the field header paints: `text-white/[0.88]` body copy. */
+const FIELD_INK_ALPHA = 0.88;
+
+const WHITE: Rgb = [255, 255, 255];
+
+/** Both the solid and the 88% white ink clear AA on this field colour. */
+function inkClears(h: number, s: number, l: number): boolean {
+  const field = tripleToRgb(`${h} ${s}% ${l}%`);
+  if (contrastRatio(WHITE, field) < AA_TEXT) return false;
+  return contrastRatio(compositeOver(WHITE, FIELD_INK_ALPHA, field), field) >= AA_TEXT;
+}
+
+/**
+ * The darkest-but-least move off the formula's lightness that keeps white ink
+ * legible, or the formula's own value when it already clears.
+ */
+function solveFieldLightness(h: number, s: number, l: number): number {
+  for (let candidate = l; candidate >= 0; candidate -= 1) {
+    if (inkClears(h, s, candidate)) return candidate;
+  }
+  return 0;
+}
+
 /**
  * The neutral field gradient: the full-bleed pour behind a module or tool
  * header, in the ACTIVE palette's accent rather than the module's hue.
@@ -85,8 +110,38 @@ export function neutralFieldGradient(style: StyleName, isDark: boolean): [string
   // following that would both re-tint today's shipping field in dark mode and
   // give one palette two field hues. The scheme is already expressed by the
   // saturation and lightness the formula picks.
-  const triple = THEME_TOKENS[style].light["--primary"];
-  return fieldStopsForDegree(Number.parseInt(triple, 10), isDark);
+  const h = Number.parseInt(THEME_TOKENS[style].light["--primary"], 10);
+  const [top, bottom] = fieldStopsForDegree(h, isDark).map(parseStop) as [Stop, Stop];
+
+  // The field is SOLVED, not just recoloured — the same finding as #560, one
+  // layer up. The formula's 50%/42% was measured against violet, and lightness
+  // in HSL is not perceptual luminance, so pouring a green, gold or blue accent
+  // through the same numbers puts white ink at 3.1–3.9:1. Four of the eight
+  // palettes fail. Darkening until the ink clears is the smallest fix that keeps
+  // the field the palette's own colour; pinning it to violet would be the bug
+  // this whole primitive exists to remove, and lightening the ink would mean a
+  // different ink per palette.
+  //
+  // The move is applied to BOTH stops equally rather than solved twice, so the
+  // gradient keeps its shape instead of flattening when the two stops happen to
+  // solve to the same lightness. A palette that already clears (quiet-lilac,
+  // which is what shipped) gets a shift of 0 and is byte-identical.
+  const shift = top.l - solveFieldLightness(h, top.s, top.l);
+  return [
+    `hsl(${h}, ${top.s}%, ${Math.max(0, top.l - shift)}%)`,
+    `hsl(${h}, ${bottom.s}%, ${Math.max(0, bottom.l - shift)}%)`,
+  ];
+}
+
+interface Stop {
+  s: number;
+  l: number;
+}
+
+function parseStop(stop: string): Stop {
+  const match = stop.match(/^hsl\(\d+,\s*(\d+)%,\s*(\d+)%\)$/);
+  if (!match) throw new Error(`Unparseable field stop: "${stop}"`);
+  return { s: Number(match[1]), l: Number(match[2]) };
 }
 
 /**
