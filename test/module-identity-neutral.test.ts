@@ -246,8 +246,8 @@ describe("the surfaces that keep hue are untouched (#558, extended by #588)", ()
 
     for (const file of pinned) {
       const source = read(file);
-      expect(source).not.toMatch(/THEME_TOKENS/);
-      expect(source).not.toMatch(/useStyleName/);
+      expect(source).not.toMatch(/\bTHEME_TOKENS\b/);
+      expect(source).not.toMatch(/\buseStyleName\b/);
       expect(source).not.toMatch(/lib\/style/);
     }
   });

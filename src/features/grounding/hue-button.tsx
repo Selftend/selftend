@@ -2,15 +2,12 @@ import { ActivityIndicator, Pressable } from "react-native";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useAccentHsl } from "@/src/lib/theme-palette";
+import { useAccentHsl, useThemeHex } from "@/src/lib/theme-palette";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
 
-// The label sits on a solid accent fill, so it is one of two raw colours rather
-// than a class - `style={{ color }}` and `ActivityIndicator color=` cannot read a
-// CSS variable. Same two constants the hue version used.
-const DARK_TEXT = "#15121b";
-const LIGHT_TEXT = "#ffffff";
+// The label sits on a solid accent fill, so it needs a raw colour rather than a
+// class - `style={{ color }}` and `ActivityIndicator color=` cannot read a CSS
+// variable.
 
 interface HueButtonProps {
   label: string;
@@ -30,15 +27,16 @@ interface HueButtonProps {
 // already held to AA by the palette gates, with no per-hue exceptions to keep
 // straight.
 export function HueButton({ label, onPress, icon, disabled, loading }: HueButtonProps) {
-  const isDark = useColorSchemeName() === "dark";
   const accent = useAccentHsl();
-  // The scheme decides it, and only the scheme. The hue version needed a set of
-  // exceptions here - `iris` and `think` are bright enough in light mode that
-  // white fails on them - because it was filling with eight different colours.
-  // One accent has one answer: the light accent (262 62% 56%) is dark enough to
-  // carry white, and the dark accent (264 72% 72%) is a pastel that needs dark
-  // text, which is what the file already said about every hue in dark mode.
-  const fg = isDark ? DARK_TEXT : LIGHT_TEXT;
+  // The PALETTE decides it, not the scheme. Deciding by scheme was right while
+  // there was one accent - the default violet is dark enough in light mode to
+  // carry white - but it is wrong across eight: amber-noir's light accent is a
+  // gold, and white on it measures 4.43:1, below AA. That is precisely why the
+  // palette solves a `--primary-foreground` per style (#580, pickPrimaryForeground);
+  // reading it here means this button inherits the pairing the contrast gates
+  // already hold, instead of re-deciding it from a rule that only held for one
+  // palette.
+  const fg = useThemeHex("--primary-foreground");
   const blocked = Boolean(disabled || loading);
   return (
     <Pressable
