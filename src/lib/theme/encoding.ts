@@ -83,7 +83,15 @@ export const HUE_ENCODINGS = [
 
 export type HueEncodingId = (typeof HUE_ENCODINGS)[number]["id"];
 
-const BY_ID = new Map(HUE_ENCODINGS.map((encoding) => [encoding.id, encoding]));
+// Keyed by `string`, not by `HueEncodingId`, on purpose. `HueEncodingId` is the
+// narrow union so that code which MEANS a specific surface gets checked, but the
+// three lookups below are runtime questions asked about arbitrary ids - a lint
+// rule scanning files, a test asserting an unknown id answers "no". Narrowing
+// the key would make "is this a keeps-hue surface?" unaskable about anything
+// that might not be one, which is the only reason to ask.
+const BY_ID = new Map<string, HueEncoding>(
+  HUE_ENCODINGS.map((encoding) => [encoding.id, encoding]),
+);
 
 export function hueEncoding(id: string): HueEncoding | undefined {
   return BY_ID.get(id);

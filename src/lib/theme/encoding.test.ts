@@ -1,7 +1,13 @@
 import { fieldGradient } from "@/src/lib/module-room";
 
 import { CHROME_CLASSES, CHROME_MARK, CHROME_TEXT, neutralFieldGradient } from "./chrome";
-import { HUE_ENCODINGS, hueEncoding, isPinnedEncoding, keepsHue } from "./encoding";
+import {
+  HUE_ENCODINGS,
+  hueEncoding,
+  isPinnedEncoding,
+  keepsHue,
+  type HueEncodingId,
+} from "./encoding";
 import { DEFAULT_STYLE, STYLE_NAMES, THEME_TOKENS } from "./styles";
 
 describe("the surfaces that keep hue", () => {
@@ -85,6 +91,21 @@ describe("the neutral chrome primitives", () => {
 
   it("chrome text and chrome marks are not the same emphasis", () => {
     expect(CHROME_TEXT).not.toBe(CHROME_MARK);
+  });
+
+  // A COMPILE-time guard, which is the only kind that can catch this: whether
+  // the ids are the four-way union or plain `string`, the runtime behaviour is
+  // identical, so nothing observable fails when the type widens. Annotating
+  // HUE_ENCODINGS as `readonly HueEncoding[]` widens it (the annotation is
+  // checked against the literal but also erases it), and then every misspelled
+  // surface id in the migrate batches compiles and silently answers "not
+  // keeps-hue". If that regresses, `string extends HueEncodingId` becomes true
+  // and this file stops compiling.
+  it("keeps the id union narrow, so a misspelled surface id cannot compile", () => {
+    type IdUnionIsNarrow = string extends HueEncodingId ? "widened" : "narrow";
+    const narrow: IdUnionIsNarrow = "narrow";
+
+    expect(narrow).toBe("narrow");
   });
 
   // The property that matters, and the one a delegation test could not see:
