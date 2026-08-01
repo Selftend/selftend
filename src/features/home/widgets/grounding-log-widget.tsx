@@ -6,8 +6,8 @@ export function GroundingLogWidget({ userId }: { userId: string }) {
   return (
     <SessionLogWidget
       sessions={sessions}
-      accentBgClass="bg-clay/10"
-      accentTextClass="text-clay"
+      accentBgClass="bg-muted"
+      accentTextClass="text-muted-foreground"
       i18nPrefix="home.widgets.groundingLog"
       route="/tools/grounding"
     />

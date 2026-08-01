@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LinkButton } from "@/src/components/app/link-button";
-import { TINT_ACCENT, TINT_TEXT, type TintToken } from "@/src/lib/design-tokens";
+import { CHROME_MARK, CHROME_RULE, CHROME_TEXT } from "@/src/lib/theme/chrome";
 import { cn } from "@/lib/utils";
 
 import { HowItWorksSection } from "./how-it-works-section";
@@ -41,33 +41,29 @@ export default function LandingScreen() {
 }
 
 /**
- * The eight everyday tools, shown as tinted pills under the hero CTAs. Purely
- * illustrative (not links): the pills preview the app's breadth and its hue
- * system without turning the hero into a nav. Order and hues mirror the
- * signed-in dashboard so the landing page and app read as one product.
+ * The eight everyday tools, shown as pills under the hero CTAs. Purely
+ * illustrative (not links): the pills preview the app's breadth without turning
+ * the hero into a nav. Order mirrors the signed-in dashboard so the landing page
+ * and the app read as one product.
+ *
+ * They used to preview "the app's hue system" too - eight pills in seven
+ * colours, mirroring the dashboard's per-tool tints. That system is gone (#587),
+ * and this was one of the surfaces that made the strongest case for going: #421
+ * measured nine of the ten hue labels on this very page below 4.5:1, `think` at
+ * 1.80, because every label sat on a wash of its own hue. The hue was never
+ * carrying the meaning here - the icon and the word were - so the pills keep
+ * those and drop the tint.
  */
-const HERO_TOOLS: { key: string; icon: MaterialIconName; tint: TintToken }[] = [
-  { key: "checkIn", icon: "mood", tint: "be" },
-  { key: "journal", icon: "edit-note", tint: "ink" },
-  { key: "breathing", icon: "air", tint: "aqua" },
-  { key: "meditation", icon: "self-improvement", tint: "iris" },
-  { key: "grounding", icon: "anchor", tint: "clay" },
-  { key: "gratitude", icon: "favorite", tint: "think" },
-  { key: "sleep", icon: "bedtime", tint: "ink" },
-  { key: "habits", icon: "check-circle", tint: "act" },
+const HERO_TOOLS: { key: string; icon: MaterialIconName }[] = [
+  { key: "checkIn", icon: "mood" },
+  { key: "journal", icon: "edit-note" },
+  { key: "breathing", icon: "air" },
+  { key: "meditation", icon: "self-improvement" },
+  { key: "grounding", icon: "anchor" },
+  { key: "gratitude", icon: "favorite" },
+  { key: "sleep", icon: "bedtime" },
+  { key: "habits", icon: "check-circle" },
 ];
-
-const PILL_TINT: Record<TintToken, string> = {
-  primary: "border-primary/35 bg-primary/[0.07]",
-  act: "border-[hsl(var(--act)/0.35)] bg-[hsl(var(--act)/0.07)]",
-  be: "border-[hsl(var(--be)/0.35)] bg-[hsl(var(--be)/0.07)]",
-  think: "border-[hsl(var(--think)/0.35)] bg-[hsl(var(--think)/0.07)]",
-  aqua: "border-[hsl(var(--aqua)/0.35)] bg-[hsl(var(--aqua)/0.07)]",
-  iris: "border-[hsl(var(--iris)/0.35)] bg-[hsl(var(--iris)/0.07)]",
-  ink: "border-[hsl(var(--ink)/0.35)] bg-[hsl(var(--ink)/0.07)]",
-  clay: "border-[hsl(var(--clay)/0.35)] bg-[hsl(var(--clay)/0.07)]",
-  mist: "border-[hsl(var(--mist)/0.35)] bg-[hsl(var(--mist)/0.07)]",
-};
 
 function LandingHero() {
   const { t } = useTranslation("auth");
@@ -95,17 +91,16 @@ function LandingHero() {
         </LinkButton>
       </View>
       <View className="mt-11 max-w-2xl flex-row flex-wrap justify-center gap-2.5">
-        {HERO_TOOLS.map(({ key, icon, tint }) => (
+        {HERO_TOOLS.map(({ key, icon }) => (
           <View
             key={key}
             className={cn(
-              "flex-row items-center gap-2 rounded-full border px-4 py-2",
-              PILL_TINT[tint],
+              "flex-row items-center gap-2 rounded-full border bg-card px-4 py-2",
+              CHROME_RULE,
             )}
           >
-            {/* Glyph keeps the accent; the label beside it takes the ink. */}
-            <Icon name={icon} size={17} className={TINT_ACCENT[tint]} />
-            <Text className={cn("text-[13.5px] font-semibold", TINT_TEXT[tint])}>
+            <Icon name={icon} size={17} className={CHROME_MARK} />
+            <Text className={cn("text-[13.5px] font-semibold", CHROME_TEXT)}>
               {t(`landingPage.tools.${key}`)}
             </Text>
           </View>

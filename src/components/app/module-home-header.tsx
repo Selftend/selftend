@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { neutralFieldGradient } from "@/src/lib/theme/chrome";
+import { CHROME_ACCENT_MARK, neutralFieldGradient } from "@/src/lib/theme/chrome";
 import { useTranslation } from "react-i18next";
 
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
@@ -12,7 +12,7 @@ import { NotificationSettingsModal } from "@/src/components/app/notification-set
 import { Badge } from "@/src/components/react-native-reusables/badge";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { hueToTint, type ToolHue } from "@/src/features/mindfulness/exercise-hue";
+import { type ToolHue } from "@/src/features/mindfulness/exercise-hue";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 
@@ -188,7 +188,10 @@ export function ModuleHomeHeader({
           <View className="mt-2">
             {moduleLabel !== null ? (
               <View className="flex-row items-center gap-2 mb-3">
-                <Badge variant="tint" tint={hueToTint(hue)} icon={icon}>
+                {/* Icon and label, no hue (#587). The chip used to be a tint of
+                    the module's own colour with that hue's ink on top; the glyph
+                    and the words beside it already say which module this is. */}
+                <Badge variant="secondary" icon={icon}>
                   <Text>{moduleLabel ?? title}</Text>
                 </Badge>
               </View>
@@ -235,10 +238,13 @@ interface ActionButtonProps {
 function ActionButton({ action, onPress, onField }: ActionButtonProps) {
   const { t } = useTranslation("navigation");
   const label = action.accessibilityLabel ?? t(`headerButton.${action.type}`);
+  // The programme flag is the one action that wants to be noticed, so it keeps a
+  // stronger mark than its neighbours - the app accent now rather than the ACT
+  // module's green, which said "ACT" on a button that also appears on CBT (#587).
   const iconClass = onField
     ? "text-white/[0.88]"
     : action.type === "program"
-      ? "text-act"
+      ? CHROME_ACCENT_MARK
       : "text-muted-foreground";
   return (
     <Pressable

@@ -29,8 +29,8 @@ export function RoutinesWidget({ userId }: { userId: string }) {
       <CardContent className="gap-3 pt-4 pb-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
-            <View className="size-8 items-center justify-center rounded-lg bg-iris/10">
-              <Icon name="repeat" className="size-5 text-iris" />
+            <View className="size-8 items-center justify-center rounded-lg bg-muted">
+              <Icon name="repeat" className="size-5 text-muted-foreground" />
             </View>
             <Text className="text-sm font-semibold">{t("widget.title")}</Text>
           </View>

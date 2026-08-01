@@ -44,8 +44,8 @@ export function GratitudeWidget({ userId }: { userId: string }) {
                 decorative next to the title, and every other hue clears the 3:1
                 graphics floor on its own /10 chip. `think` reads 1.90:1 there,
                 so the glyph does not carry the hue it exists to carry (#403). */}
-            <View className="size-8 items-center justify-center rounded-lg bg-think/10">
-              <Icon name="favorite" className="size-5 text-think-ink" />
+            <View className="size-8 items-center justify-center rounded-lg bg-muted">
+              <Icon name="favorite" className="size-5 text-muted-foreground" />
             </View>
             <Text className="text-sm font-semibold">{t("plan.wizard.toolGratitude")}</Text>
           </View>

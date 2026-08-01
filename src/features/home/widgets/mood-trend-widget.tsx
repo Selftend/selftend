@@ -31,8 +31,8 @@ export function MoodTrendWidget({ userId }: { userId: string }) {
     <Card className="flex-1">
       <CardContent className="gap-3 pt-4 pb-4">
         <View className="flex-row items-center gap-2">
-          <View className="size-8 items-center justify-center rounded-lg bg-be/10">
-            <Icon name="show-chart" className="size-5 text-be" />
+          <View className="size-8 items-center justify-center rounded-lg bg-muted">
+            <Icon name="show-chart" className="size-5 text-muted-foreground" />
           </View>
           <Text className="text-sm font-semibold">{t("home.widgets.moodTrend.title")}</Text>
         </View>

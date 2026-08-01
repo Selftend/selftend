@@ -1,77 +1,80 @@
+import { CHROME_MARK, CHROME_TEXT, CHROME_WASH } from "@/src/lib/theme/chrome";
+
+// Widget identity is icon and label (#587).
+//
+// This map used to hold nine tints, one per module, each a `chip` / `icon` /
+// `ink` triple: a `bg-<hue>/10` chip with that module's glyph inside and that
+// module's ink on the label beside it. Seven consumers spread it - the widget
+// card header, the add-to-home popover, the add-widget modal, the config screen.
+//
+// The ruling on #558 is that a widget header chip is a badge like any other:
+// what it distinguishes is which module a card belongs to, and the glyph plus
+// the module's own name in the label beside it already do that. So the eight
+// hues go, and what is left is the neutral chrome every other identity surface
+// in the app now takes.
+//
+// What the collapse throws away, deliberately, is a large amount of per-hue
+// contrast bookkeeping. The comment here used to run to sixty lines because the
+// numbers were not uniform: the `icon` field measured 3.33-4.62 on a widget card
+// but 2.72-3.80 on the config screen's selected row (a chip stacked on
+// `bg-primary/10`) and in the add-widget modal's nested preview chip - so
+// `mist`, `iris`, `act` and `clay` fell under WCAG 1.4.11's 3:1 on two of the
+// five surfaces and had to be classified `decorative` rather than `icon`, i.e.
+// exempt rather than passing. `think` was swept to ink outright at 1.90 falling
+// to 1.56. The map also had to keep `icon` and `ink` apart, because a mark
+// darkened to ink reads as disabled while text at the accent fails AA.
+//
+// None of that survives the neutral pair, because none of it was ever about
+// widgets - it was about painting glyphs and small text in eight saturated
+// colours on washes of those same colours. `text-muted-foreground` on `bg-muted`
+// is a pairing the app holds to its floors everywhere.
+//
+// `destructive` stays, and it is why this module still exists rather than being
+// deleted the way tool-accent.ts was: it is a semantic role, not a module hue.
+// It means "this widget is about something going wrong", which is information
+// the user reads off the colour, so neutralising it would delete a signal
+// instead of a decoration.
+
 export type WidgetTint =
   "primary" | "act" | "be" | "aqua" | "mist" | "iris" | "ink" | "clay" | "think" | "destructive";
 
 interface TintClasses {
+  /** The wash behind an identity glyph or a label pill. */
   chip: string;
-  /**
-   * The published accent — icons and decorative marks. Not legible as small
-   * text.
-   *
-   * Every consumer of *this* field paints the same thing: a module identity
-   * glyph inside a `chip`, immediately beside that module's own name in text.
-   * (The two sites where the tint is the colour of text take `ink` instead -
-   * WidgetCardHeader's module label and add-widget-modal's add button.) None of
-   * them lets the tint carry state or information, and `<Icon>` is
-   * `aria-hidden`, so
-   * these are decorative graphics under WCAG 1.4.11 rather than graphics
-   * "required to understand the content". That is what the row below rests on —
-   * not the ratio, which varies a lot by consumer. Measured light-mode figures,
-   * accent on `bg-<tint>/10` (#412):
-   *
-   *   widget-card-header / add-to-home / modal category header  3.33 – 4.62
-   *   widget-config-screen, unselected row                      3.08 – 4.28
-   *   widget-config-screen, selected row (chip on `bg-primary/10`)  2.72 – 3.77
-   *   add-widget-modal PreviewBlock (chip nested in chip)       2.79 – 3.80
-   *
-   * So `mist`, `iris`, `act` and `clay` do drop under 3:1 on the last two
-   * surfaces. They stay because nothing is lost when the glyph is not seen, not
-   * because they clear a floor. **A consumer that makes this tint carry state
-   * or meaning invalidates the whole row** and has to re-measure against 3:1.
-   *
-   * `think` was swept to ink regardless: at 1.90 falling to 1.56 it is not
-   * legible as a mark at all, decorative or otherwise.
-   */
+  /** A non-text mark: the widget's module glyph. */
   icon: string;
-  /**
-   * The same tint as small-text ink (#403). Five of this map's seven consumer
-   * sites paint an `<Icon>` and keep `icon`; the two that are text take this -
-   * WidgetCardHeader's module label and the add-widget modal's add button. Both
-   * sit inside `chip`, so the ink they need is measured against `bg-<tint>/10`
-   * of their own hue, not the bare app surface.
-   *
-   * On that stack every hue fails AA, which is why passing hues take ink too:
-   * `ink` 4.28, `aqua` 4.27, `be` 4.22, down to `think` at 1.76.
-   *
-   * `primary` now has an ink of its own (#421 §3) and takes it here like the
-   * hues: it was the 4.39 near miss this comment used to defer, and the config
-   * screen's selected row is exactly that surface. `destructive` still keeps
-   * its accent — no `-ink` token, 4.03 on its own /10 tint, its own ticket.
-   */
+  /** Small text drawn on `chip` - the module label, the add button. */
   ink: string;
 }
 
-const TINT_CLASSES: Record<WidgetTint, TintClasses> = {
-  primary: { chip: "bg-primary/10", icon: "text-primary", ink: "text-primary-ink" },
-  act: { chip: "bg-act/10", icon: "text-act", ink: "text-act-ink" },
-  be: { chip: "bg-be/10", icon: "text-be", ink: "text-be-ink" },
-  aqua: { chip: "bg-aqua/10", icon: "text-aqua", ink: "text-aqua-ink" },
-  mist: { chip: "bg-mist/10", icon: "text-mist", ink: "text-mist-ink" },
-  iris: { chip: "bg-iris/10", icon: "text-iris", ink: "text-iris-ink" },
-  ink: { chip: "bg-ink/10", icon: "text-ink", ink: "text-ink-ink" },
-  clay: { chip: "bg-clay/10", icon: "text-clay", ink: "text-clay-ink" },
-  // `icon` is ink, not the accent (#412). The `gratitude-latest` widget ships on
-  // this tint by default, so its header glyph was a 1.90:1 mark on `bg-think/10`
-  // over the card, dropping to 1.56 on the config screen's selected row. The
-  // decorative exemption would technically permit it; a glyph nobody can make
-  // out is still a defect, so this row takes the ink both consumers can see.
-  think: { chip: "bg-think/10", icon: "text-think-ink", ink: "text-think-ink" },
-  destructive: {
-    chip: "bg-destructive/10",
-    icon: "text-destructive",
-    ink: "text-destructive",
-  },
+/**
+ * The one neutral triple every module tint resolves to. A constant rather than
+ * nine identical rows, so "widget chrome changed" stays a one-line diff.
+ *
+ * `ink` is the FULL foreground, not the muted one, and that is measured rather
+ * than chosen. `--muted-foreground` on `--muted` is the obvious pairing and it
+ * does not clear AA across the eight palettes: it bottoms out at 4.27:1 on
+ * sage-garden light, with amber-noir 4.52 and atlas 4.56 barely over. `ink` is
+ * 10px uppercase text, so it owes 4.5:1, and `--foreground` on `--muted` never
+ * drops below 9.57 in any palette or scheme. The glyph beside it keeps the muted
+ * mark because a mark owes 1.4.11's 3:1, which 4.27 clears comfortably.
+ */
+const CHROME: TintClasses = {
+  chip: CHROME_WASH,
+  icon: CHROME_MARK,
+  ink: CHROME_TEXT,
+};
+
+/**
+ * `destructive` has no `-ink` token of its own and reads 4.03:1 on its own /10
+ * tint. That is its own ticket, and this batch does not touch it.
+ */
+const DESTRUCTIVE: TintClasses = {
+  chip: "bg-destructive/10",
+  icon: "text-destructive",
+  ink: "text-destructive",
 };
 
 export function tintClasses(tint: WidgetTint): TintClasses {
-  return TINT_CLASSES[tint];
+  return tint === "destructive" ? DESTRUCTIVE : CHROME;
 }

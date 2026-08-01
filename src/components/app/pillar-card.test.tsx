@@ -11,7 +11,6 @@ describe("PillarCard", () => {
   it("renders header with letter + title + kicker + description", () => {
     const { getByText } = render(
       <PillarCard
-        tint="think"
         letter="T"
         title="Think"
         kicker="Cognitive"
@@ -28,7 +27,6 @@ describe("PillarCard", () => {
     const onToolPress = jest.fn();
     const { getByRole } = render(
       <PillarCard
-        tint="think"
         letter="T"
         title="Think"
         kicker="Cognitive"
@@ -42,9 +40,12 @@ describe("PillarCard", () => {
     expect(onToolPress).toHaveBeenCalledWith("thoughts");
   });
 
-  it("renders a top gradient stripe for the pillar color", () => {
+  // Still a stripe, no longer "for the pillar colour" (#587). The shape is
+  // what this asserts and the shape is unchanged; the colours inside it are the
+  // app accent's now rather than the pillar's hue.
+  it("renders a top gradient stripe", () => {
     const { UNSAFE_root } = render(
-      <PillarCard tint="act" letter="A" title="Act" kicker="Action" description="..." />,
+      <PillarCard letter="A" title="Act" kicker="Action" description="..." />,
     );
     // The LinearGradient (mocked as View) should have an absolute style with top:0 and height:3
     const tree = UNSAFE_root.findAll((node: { props: { style?: unknown } }) => {
