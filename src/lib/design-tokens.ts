@@ -48,6 +48,15 @@ export const PRIMARY_TRIPLES: SchemeTriples = { light: "262 62% 56%", dark: "264
 //
 // Dark mode keeps the published accent untouched: it already clears 5.81:1 at
 // worst there, so a dark-mode darkening would be a visual change buying nothing.
+//
+// #580 replaced the fixed-lightness recipe for the STYLE accent's ink with a
+// solver, because one constant cannot serve eight palettes. This constant
+// survives that change and is not an oversight: the eight hues are a pinned
+// encoding palette, not style tokens (#558/#559). They are one fixed set of
+// colours whose contrast was measured directly, on the surfaces below, and they
+// do not vary with the active style — so there is nothing here for a solver to
+// generalise over. The floors that certify them still run in
+// test/theme-token-sync.test.ts.
 export const HUE_INK_LIGHTNESS = 28;
 
 function inkTriples(hue: HueName): SchemeTriples {

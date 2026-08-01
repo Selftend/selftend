@@ -1,6 +1,7 @@
-import { hexToHslTriple, mixHex } from "./color";
+import { hexToHslTriple, mixHex, parseHslTriple } from "./color";
 import { THEME_VAR_NAMES } from "./contract";
-import { DERIVED_INK_LIGHTNESS, DESTRUCTIVE, deriveTokens, type CoreHexes } from "./derive";
+import { AA_TEXT, contrastRatio, solveInk, tripleToRgb } from "./contrast";
+import { DESTRUCTIVE, deriveTokens, type CoreHexes } from "./derive";
 
 // A throwaway core, deliberately not one of the shipping palettes (#581 owns
 // those): every channel differs so a rule that returned the wrong core hex
@@ -111,13 +112,20 @@ describe("the derivation rules", () => {
     );
   });
 
-  it("a filled button's label is the surface in light and the page in dark", () => {
-    expect(deriveTokens(CORE.light, "light")["--primary-foreground"]).toBe(
-      hexToHslTriple(CORE.light.surface),
-    );
-    expect(deriveTokens(CORE.dark, "dark")["--primary-foreground"]).toBe(
-      hexToHslTriple(CORE.dark.bg),
-    );
+  // Not "surface in light, background in dark" — that rule is what fails
+  // amber-noir's gold. The label is whichever candidate measures best on the
+  // accent, and it must clear AA.
+  it.each(["light", "dark"] as const)("%s picks the button label by measurement", (scheme) => {
+    const tokens = deriveTokens(CORE[scheme], scheme);
+    const accent = tripleToRgb(tokens["--primary"]);
+    const chosen = contrastRatio(tripleToRgb(tokens["--primary-foreground"]), accent);
+
+    for (const candidate of [CORE[scheme].ink, CORE[scheme].surface, CORE[scheme].bg]) {
+      expect(chosen).toBeGreaterThanOrEqual(
+        contrastRatio(tripleToRgb(hexToHslTriple(candidate)), accent),
+      );
+    }
+    expect(chosen).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
   it.each(["light", "dark"] as const)("%s shares the one destructive pair", (scheme) => {
@@ -128,14 +136,34 @@ describe("the derivation rules", () => {
   });
 
   // The ink keeps the accent's degree and saturation and moves only lightness,
-  // so it still reads as the style's accent rather than as near-black. Whether
-  // the two constants are *sufficient* for a given palette is #560's gate, not
-  // this rule.
-  it.each(["light", "dark"] as const)("%s ink is the accent at the recipe lightness", (scheme) => {
-    const [degree, saturation] = hexToHslTriple(CORE[scheme].accent).split(" ");
+  // so it still reads as the style's accent rather than as near-black. WHERE it
+  // stops is measured (see solveInk), not a constant — the fixed 28/80 recipe
+  // failed five of sixteen (style, scheme) pairs.
+  it.each(["light", "dark"] as const)("%s ink is the accent, moved only in L", (scheme) => {
+    const accent = hexToHslTriple(CORE[scheme].accent);
+    const [degree, saturation] = accent.split(" ");
 
     expect(deriveTokens(CORE[scheme], scheme)["--primary-ink"]).toBe(
-      `${degree} ${saturation} ${DERIVED_INK_LIGHTNESS[scheme]}%`,
+      `${degree} ${saturation} ${parseHslTriple(deriveTokens(CORE[scheme], scheme)["--primary-ink"])[2]}%`,
     );
+    expect(deriveTokens(CORE[scheme], scheme)["--primary-ink"]).toBe(
+      solveInk(
+        accent,
+        {
+          background: hexToHslTriple(CORE[scheme].bg),
+          card: hexToHslTriple(CORE[scheme].surface),
+        },
+        scheme,
+      ),
+    );
+  });
+
+  it.each(["light", "dark"] as const)("%s ink moves the right way off the accent", (scheme) => {
+    const accentL = parseHslTriple(hexToHslTriple(CORE[scheme].accent))[2];
+    const inkL = parseHslTriple(deriveTokens(CORE[scheme], scheme)["--primary-ink"])[2];
+
+    // Darker in light, lighter in dark — an ink that moved the other way would
+    // still clear the floor on some palettes and read as the wrong depth.
+    expect(scheme === "light" ? inkL <= accentL : inkL >= accentL).toBe(true);
   });
 });

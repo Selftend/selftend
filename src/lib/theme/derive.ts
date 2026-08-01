@@ -14,8 +14,9 @@
 // because of that collapse, the fix is to extend the formula or hand-author that
 // style — not to change lilac.
 
-import { hexToHslTriple, mixHex, withLightness } from "./color";
+import { hexToHslTriple, mixHex } from "./color";
 import type { ColorScheme, ThemeTokens } from "./contract";
+import { pickPrimaryForeground, solveInk } from "./contrast";
 
 /** The six hexes a derived style authors, per scheme. */
 export interface CoreHexes {
@@ -45,24 +46,6 @@ export const DESTRUCTIVE: Record<ColorScheme, { color: string; foreground: strin
 };
 
 /**
- * The lightness a derived style's accent becomes legible small-text ink at —
- * the recipe documented at length on PRIMARY_INK_LIGHTNESS in
- * src/lib/design-tokens.ts (28% light, 80% dark), applied here to whatever
- * accent the style authored.
- *
- * The recipe is palette-agnostic in *form*, so it applies to all eight styles
- * unchanged. Its *sufficiency* is not: 28 and 80 are numbers measured against
- * violet, and nothing guarantees they clear AA for a gold or a blue. #560 turns
- * that into a computed gate and replaces this constant with a solver for the
- * smallest move off the accent that clears the floor. Until then a derived style
- * that fails is fixed by hand-authoring *that style's* ink — never by moving
- * this constant, which would silently re-tint every style that was fine.
- * theme-contract.test.ts pins these two numbers to the design-tokens recipe so
- * the two copies cannot drift while both exist.
- */
-export const DERIVED_INK_LIGHTNESS: Record<ColorScheme, number> = { light: 28, dark: 80 };
-
-/**
  * Fill the contract from a style's six core hexes.
  *
  * - `altSurface = mix(bg, border, .5)` — one step off the page, for secondary,
@@ -72,26 +55,34 @@ export const DERIVED_INK_LIGHTNESS: Record<ColorScheme, number> = { light: 28, d
  * - `ring = mix(accent, bg | ink, .4)` — the focus ring is the accent softened
  *   toward the page in light (a tint) and toward the ink in dark (a lift), so it
  *   stays visible against the surface it is drawn on either way.
- * - `primary-foreground = surface | bg` — what a label on a filled accent button
- *   is painted in. Picked by scheme here; #560 picks it by measurement.
+ *
+ * The two colours that are NOT a formula are `--primary-ink` and
+ * `--primary-foreground`: both are measured, in contrast.ts. A fixed recipe for
+ * either fails on some palette in the set, and which palette it fails on cannot
+ * be predicted from the hexes — that is the whole finding of #560.
  */
 export function deriveTokens(core: CoreHexes, scheme: ColorScheme): ThemeTokens {
   const altSurface = mixHex(core.bg, core.border, 0.5);
   const input = mixHex(core.border, core.ink, 0.15);
   const ring = mixHex(core.accent, scheme === "light" ? core.bg : core.ink, 0.4);
-  const primaryForeground = scheme === "light" ? core.surface : core.bg;
   const accentTriple = hexToHslTriple(core.accent);
+  const background = hexToHslTriple(core.bg);
+  const card = hexToHslTriple(core.surface);
 
   return {
-    "--background": hexToHslTriple(core.bg),
+    "--background": background,
     "--foreground": hexToHslTriple(core.ink),
-    "--card": hexToHslTriple(core.surface),
+    "--card": card,
     "--card-foreground": hexToHslTriple(core.ink),
-    "--popover": hexToHslTriple(core.surface),
+    "--popover": card,
     "--popover-foreground": hexToHslTriple(core.ink),
     "--primary": accentTriple,
-    "--primary-foreground": hexToHslTriple(primaryForeground),
-    "--primary-ink": withLightness(accentTriple, DERIVED_INK_LIGHTNESS[scheme]),
+    "--primary-foreground": pickPrimaryForeground(accentTriple, [
+      hexToHslTriple(core.ink),
+      card,
+      background,
+    ]),
+    "--primary-ink": solveInk(accentTriple, { background, card }, scheme),
     "--secondary": hexToHslTriple(altSurface),
     "--secondary-foreground": hexToHslTriple(core.ink),
     "--muted": hexToHslTriple(altSurface),
