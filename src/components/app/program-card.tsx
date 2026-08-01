@@ -68,8 +68,11 @@ const ACCENT_CLASSES = {
   taskRowDoneIcon: "size-5 text-primary",
 };
 
-/** The stripe and the eyebrow take the app accent, not a module hue. */
-const ACCENT_TINT = "primary";
+/**
+ * The stripe and the eyebrow take the app accent, not a module hue. Spelled
+ * `"primary"` at each call site rather than hoisted to a constant, so the static
+ * gate can see the argument - see pillar-card.tsx for the miss that taught this.
+ */
 
 function TaskRow({ task, ns }: { task: ProgramTaskView; ns: string }) {
   const { t } = useTranslation(ns);
@@ -193,7 +196,7 @@ export function ProgramCard({
 
       <Card className="relative overflow-hidden gap-3 p-5">
         <LinearGradient
-          colors={tintStripeColors(ACCENT_TINT, isDark)}
+          colors={tintStripeColors("primary", isDark)}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3 }}
@@ -209,7 +212,7 @@ export function ProgramCard({
             >
               <Icon name="route" size={22} className={ACCENT_CLASSES.routeIcon} />
             </View>
-            <Text variant="eyebrow" tint={ACCENT_TINT} className="flex-1">
+            <Text variant="eyebrow" tint="primary" className="flex-1">
               {t("program.heroTitle")}
             </Text>
             {onAbandon ? (
@@ -294,12 +297,7 @@ export function ProgramCard({
         ) : null}
 
         {/* Advance button */}
-        <Button
-          onPress={handleAdvancePress}
-          disabled={isPending}
-          variant="tinted"
-          tint={ACCENT_TINT}
-        >
+        <Button onPress={handleAdvancePress} disabled={isPending} variant="tinted" tint="primary">
           <Text>{advanceCta}</Text>
         </Button>
       </Card>

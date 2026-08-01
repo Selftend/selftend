@@ -25,10 +25,10 @@ import { cn } from "@/lib/utils";
 // 3px rule and a full-bleed field are different gradients.
 //
 // `tintStripeColors` still accepts a hue, so nothing about calling it is
-// forbidden; passing it one here is. test/module-identity-neutral.test.ts reads
-// this argument, having found that flipping it back to "act" left every other
-// assertion green.
-const STRIPE_TINT = "primary";
+// forbidden; passing it one here is. The argument is written INLINE at the call
+// below rather than hoisted to a constant, because a hue bound to a constant and
+// then passed on is invisible to a static scan - which is how this stripe stayed
+// green with "act" in it while every other assertion passed.
 
 interface PillarCardProps {
   letter: string;
@@ -63,7 +63,7 @@ function PillarCardRoot({
     <PillarContext.Provider value={{ onToolPress }}>
       <Card className="relative overflow-hidden px-5 py-4">
         <LinearGradient
-          colors={tintStripeColors(STRIPE_TINT, isDark)}
+          colors={tintStripeColors("primary", isDark)}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3 }}
