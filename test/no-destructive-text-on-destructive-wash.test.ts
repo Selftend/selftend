@@ -7,18 +7,21 @@ import { sourceFiles, stripComments } from "./source-scan";
 //
 // Text on a translucent wash of its own colour is always tighter than the same
 // text on the bare surface, because the wash drags the surface toward the text.
-// Two panels shipped that way and both measured below AA on the default palette
-// — the ACT submit-error panel at 4.03:1 on `bg-destructive/10`, and the support
-// screen's CRISIS WARNING on `bg-destructive/5`. Neither was visible to any
-// existing gate: `--destructive` itself is held above 4.5 on the bare
-// background and card by the per-style audit, so the token was fine and only the
-// pairing was wrong.
+// Three surfaces shipped that way and all measured below AA on the default
+// palette — the ACT submit-error panel at 4.03:1 on `bg-destructive/10`, the
+// support screen's CRISIS WARNING on `bg-destructive/5`, and the home widget
+// picker's destructive tint, whose label was the raw red on its own /10 chip.
+// None was visible to any existing gate: `--destructive` itself is held above
+// 4.5 on the bare background and card by the per-style audit, so the token was
+// fine and only the pairing was wrong.
 //
 // The palette cannot fix this. Darkening the shared red to clear its own wash
 // would repaint every destructive button and badge in the app and break the
 // pixel-identical guarantee on the default style, to fix two panels. So the
 // pairing is banned instead, and this is what keeps it banned: put the red on a
-// neutral surface (`bg-card`) and keep the border and the text red.
+// neutral surface (`bg-card`) and keep the border and the text red, or - where
+// the tint itself is the point - keep the wash and move the LABEL to
+// `--foreground`, leaving only the glyph in red.
 
 const ROOT = join(__dirname, "..");
 
@@ -42,21 +45,54 @@ const ALLOWED: { file: string; evidence: string }[] = [
 const DESTRUCTIVE_WASH = /\bbg-destructive\/\d+/;
 
 /**
- * Only the states that are painted while the text is READ. `active:` and
- * `hover:` washes are momentary and sit under an icon rather than body copy —
- * an icon owes 1.4.11's 3:1, which those clear.
+ * One whole utility token ending in a destructive wash, variant prefixes and
+ * all — `bg-destructive/10`, `active:bg-destructive/10`,
+ * `dark:hover:bg-destructive/20`.
  */
-const TRANSIENT_STATE =
-  /(?:^|[\s"'`:])(?:active|hover|focus|group-hover|disabled):bg-destructive\//;
+const WASH_TOKEN = /[\w:-]*bg-destructive\/\d+/g;
 
-function washesOutsideTransientStates(source: string): boolean {
-  return source
-    .split("\n")
-    .some((line) => DESTRUCTIVE_WASH.test(line) && !TRANSIENT_STATE.test(line));
+/**
+ * The states painted only while the element is being pressed or pointed at, and
+ * never while the label is simply being READ. Those washes sit under an icon,
+ * which owes 1.4.11's weaker 3:1 rather than 4.5.
+ */
+const TRANSIENT_VARIANT =
+  /(?:^|:)(?:active|hover|focus|focus-visible|focus-within|group-hover|group-active|disabled|pressed):/;
+
+/**
+ * Tokens are inspected ONE AT A TIME, not line by line.
+ *
+ * Exempting a whole line the moment it mentions a transient wash is what a
+ * line-level check does, and it is wrong: `bg-destructive/10
+ * hover:bg-destructive/20` would then hide a persistent wash behind its own
+ * hover state, which is the exact pairing this gate exists to catch.
+ */
+function hasPersistentWash(source: string): boolean {
+  return (source.match(WASH_TOKEN) ?? []).some((token) => !TRANSIENT_VARIANT.test(token));
 }
 
 describe("no surface pairs destructive text with a wash of its own red", () => {
   const files = sourceFiles(ROOT, { dirs: ["src", "app"] });
+
+  // The classifier itself, because the whole gate rests on it and its failure
+  // mode is silent - it under-reports rather than erroring.
+  it.each([
+    ["bg-destructive/10", true],
+    ["bg-destructive/5", true],
+    ["rounded-lg border border-destructive bg-destructive/10 p-3", true],
+    ["active:bg-destructive/10", false],
+    ["hover:bg-destructive/10", false],
+    ["dark:hover:bg-destructive/20", false],
+    ["group-hover:bg-destructive/10 disabled:bg-destructive/5", false],
+    ["bg-card active:bg-destructive/10", false],
+    // The hole a line-level check leaves: a persistent wash standing next to
+    // its own hover state must still be caught.
+    ["bg-destructive/10 hover:bg-destructive/20", true],
+    ["hover:bg-destructive/20 bg-destructive/10", true],
+    ["bg-card text-destructive", false],
+  ])("classifies %p as persistent=%s", (source, expected) => {
+    expect(hasPersistentWash(source)).toBe(expected);
+  });
 
   it("scans a meaningful number of files, so it cannot pass vacuously", () => {
     expect(files.length).toBeGreaterThan(100);
@@ -74,7 +110,7 @@ describe("no surface pairs destructive text with a wash of its own red", () => {
       if (allowed.has(file)) return false;
       const source = stripComments(readFileSync(join(ROOT, file), "utf8"));
       if (!source.includes("text-destructive")) return false;
-      return washesOutsideTransientStates(source);
+      return hasPersistentWash(source);
     });
 
     expect(offenders).toEqual([]);
