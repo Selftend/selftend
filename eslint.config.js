@@ -101,8 +101,16 @@ function capturedFrameImportPaths(allow = []) {
 // inside a className, a cva variant, or a lookup table - never an import a
 // no-restricted-imports rule could see.
 const HUE_NAMES_FOR_LINT = ["think", "act", "be", "aqua", "mist", "iris", "ink", "clay"];
+// `accent` is in this list and it is not the `--accent` token: Tailwind builds an
+// `accent-<colour>` family for the CSS `accent-color` property, so `accent-ink`
+// paints a form control in the ink hue. It is an obscure way to reach a hue and
+// exactly the kind the sweep would miss - found by grepping a built bundle, not
+// by reading. `accent-foreground` is unaffected; `foreground` is not a hue name.
+//
+// Kept identical to the prefix list in test/module-identity-neutral.test.ts. The
+// two gates guard the same thing and drifted here, which is its own small lesson.
 const HUE_CHROME_PATTERN =
-  String.raw`(?<![\w-])(text|bg|border|from|to|via|fill|stroke|ring|shadow|decoration|outline|caret|divide)` +
+  String.raw`(?<![\w-])(text|bg|border|from|to|via|fill|stroke|ring|shadow|decoration|outline|accent|caret|divide)` +
   String.raw`-(${HUE_NAMES_FOR_LINT.join("|")})(-ink)?(?![\w-])`;
 
 // The OTHER spelling, and the one that hid ~78 sites from every gate in #421:
