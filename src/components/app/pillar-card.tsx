@@ -6,8 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Card } from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { useAccentHsl } from "@/src/lib/theme-palette";
 import { CHROME_MARK, CHROME_RULE, CHROME_TEXT, CHROME_WASH } from "@/src/lib/theme/chrome";
 import { cn } from "@/lib/utils";
 
@@ -20,15 +19,14 @@ import { cn } from "@/lib/utils";
 //
 // The 3px stripe survives as a stripe. It is a shape, not an encoding, so its
 // neutral form is the same gradient drawn from the app accent instead of the
-// pillar's hue - the move `neutralFieldGradient` makes for module headers
-// (#585), though through `tintStripeColors` rather than that helper, because a
-// 3px rule and a full-bleed field are different gradients.
+// pillar's hue.
 //
-// `tintStripeColors` still accepts a hue, so nothing about calling it is
-// forbidden; passing it one here is. The argument is written INLINE at the call
-// below rather than hoisted to a constant, because a hue bound to a constant and
-// then passed on is invisible to a static scan - which is how this stripe stayed
-// green with "act" in it while every other assertion passed.
+// It is built from `useAccentHsl` rather than `tintStripeColors("primary", …)`.
+// That helper resolves `PRIMARY_TRIPLES`, a module-scope constant holding the
+// DEFAULT palette's violet, so the stripe stayed lilac under all eight palettes
+// while the rest of the card followed the style - reported against the CBT and
+// ACT pillar cards. A colour that has to follow the selected palette cannot come
+// from a constant; it has to come from a hook.
 
 interface PillarCardProps {
   letter: string;
@@ -58,12 +56,16 @@ function PillarCardRoot({
   onToolPress,
   children,
 }: PillarCardProps) {
-  const isDark = useColorSchemeName() === "dark";
+  const accent = useAccentHsl();
+  // Full strength into half strength, the same two-stop shape the hue stripes
+  // used - only the colour now comes from the active palette.
+  const stripe: [string, string] = [accent(1), accent(0.5)];
   return (
     <PillarContext.Provider value={{ onToolPress }}>
       <Card className="relative overflow-hidden px-5 py-4">
         <LinearGradient
-          colors={tintStripeColors("primary", isDark)}
+          testID="pillar-stripe"
+          colors={stripe}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3 }}

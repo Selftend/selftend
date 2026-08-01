@@ -1,0 +1,81 @@
+import { render } from "@testing-library/react-native";
+import type { ReactTestInstance } from "react-test-renderer";
+
+import { ProfileIdentityRow } from "@/src/features/settings/components/profile-identity-row";
+import { STYLE_NAMES, THEME_TOKENS } from "@/src/lib/theme/styles";
+import { useStyleStore } from "@/src/stores/style-store";
+
+jest.mock("expo-linear-gradient", () => {
+  const { View } = require("react-native");
+  return { LinearGradient: View };
+});
+
+// The avatar circle behind the initial. It used to be two hand-written violet
+// literals - `hsla(262, 62%, 56%, 0.18)` and `hsla(280, 48%, 60%, 0.20)`, the
+// DEFAULT palette's accent copied out of PRIMARY_TRIPLES by hand - so the circle
+// stayed violet on every other palette while the initial inside it
+// (`text-primary`) followed the style. The two read as one element, which is
+// what made the mismatch obvious enough to report.
+//
+// A copied literal is invisible to every gate the theme work added: it is not a
+// class name, not a CSS variable, and not an argument to a known helper. Only a
+// rendered assertion catches it, which is why this file exists.
+describe("ProfileIdentityRow avatar wash", () => {
+  const props = {
+    avatarUri: undefined,
+    hasAvatar: false,
+    name: "Tester",
+    showEmail: true,
+    email: "tester@example.com",
+    initial: "T",
+  };
+
+  const washOf = (root: ReactTestInstance): string[] | undefined =>
+    root.findAll((node) => node.props?.testID === "profile-avatar-wash")[0]?.props?.colors;
+
+  it.each(STYLE_NAMES)("pours %s's own accent", (style) => {
+    useStyleStore.setState({ style, hydrated: true });
+    const view = render(<ProfileIdentityRow {...props} />);
+
+    // Scheme-agnostic: only that the wash carries THIS palette's accent hue.
+    const degrees = (["light", "dark"] as const).map(
+      (scheme) => THEME_TOKENS[style][scheme]["--primary"].split(" ")[0],
+    );
+
+    for (const stop of washOf(view.UNSAFE_root) ?? []) {
+      expect(degrees.some((d) => stop.startsWith(`hsla(${d},`))).toBe(true);
+    }
+    view.unmount();
+  });
+
+  // Discrimination: without this, a constant that merely happened to start with
+  // the right number would satisfy the assertion above for one palette.
+  it("pours a different wash for a different palette", () => {
+    // Unmounted before the style changes - a store update with the row still
+    // mounted is an un-acted React update.
+    useStyleStore.setState({ style: "quiet-lilac", hydrated: true });
+    const first = render(<ProfileIdentityRow {...props} />);
+    const lilac = washOf(first.UNSAFE_root);
+    first.unmount();
+
+    useStyleStore.setState({ style: "sage-garden", hydrated: true });
+    const second = render(<ProfileIdentityRow {...props} />);
+    const sage = washOf(second.UNSAFE_root);
+    second.unmount();
+
+    expect(sage).not.toEqual(lilac);
+  });
+
+  it("keeps the wash a wash, not a fill", () => {
+    useStyleStore.setState({ style: "quiet-lilac", hydrated: true });
+    const view = render(<ProfileIdentityRow {...props} />);
+
+    // The initial sits on top of this; an opaque circle would bury it.
+    for (const stop of washOf(view.UNSAFE_root) ?? []) {
+      const alpha = Number(stop.replace(/.*,\s*([\d.]+)\)$/, "$1"));
+      expect(alpha).toBeGreaterThan(0);
+      expect(alpha).toBeLessThan(0.5);
+    }
+    view.unmount();
+  });
+});

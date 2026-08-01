@@ -35,6 +35,7 @@ import { useUserPreferences } from "@/src/features/settings/queries";
 import { HomeTour } from "@/src/features/tours/home-tour";
 import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 import { cn } from "@/lib/utils";
+import { useAccentHsl } from "@/src/lib/theme-palette";
 
 const PADDING = 24;
 const WIDGET_HEIGHT = 200;
@@ -61,6 +62,12 @@ function firstWord(value: string) {
 }
 
 function BreathingDotEmpty() {
+  // The three rings are the app accent at three strengths. They were written as
+  // `hsla(262, 62%, 56%, …)` literals - the DEFAULT palette's accent, copied by
+  // hand - so they stayed violet on every other palette while the `+` glyph in
+  // the middle (`text-primary`) followed the style. An SVG prop cannot read a
+  // CSS variable, which is exactly what `useAccentHsl` is for.
+  const accent = useAccentHsl();
   return (
     <View
       accessibilityElementsHidden
@@ -68,23 +75,9 @@ function BreathingDotEmpty() {
       className="h-[72px] w-[72px] items-center justify-center"
     >
       <Svg width="72" height="72" viewBox="0 0 72 72">
-        <Circle
-          cx="36"
-          cy="36"
-          r="35"
-          stroke="hsla(262, 62%, 56%, 0.20)"
-          strokeWidth="1"
-          fill="none"
-        />
-        <Circle
-          cx="36"
-          cy="36"
-          r="25"
-          stroke="hsla(262, 62%, 56%, 0.30)"
-          strokeWidth="1"
-          fill="none"
-        />
-        <Circle cx="36" cy="36" r="20" fill="hsla(262, 62%, 56%, 0.10)" />
+        <Circle cx="36" cy="36" r="35" stroke={accent(0.2)} strokeWidth="1" fill="none" />
+        <Circle cx="36" cy="36" r="25" stroke={accent(0.3)} strokeWidth="1" fill="none" />
+        <Circle cx="36" cy="36" r="20" fill={accent(0.1)} />
       </Svg>
       <View className="absolute items-center justify-center">
         <Icon name="add" size={22} className="text-primary" />
