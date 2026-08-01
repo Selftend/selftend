@@ -41,15 +41,35 @@ const ALLOWED: { file: string; evidence: string }[] = [
   },
 ];
 
-/** `bg-destructive/10`, `bg-destructive/5`, and any other alpha spelling. */
-const DESTRUCTIVE_WASH = /\bbg-destructive\/\d+/;
+/**
+ * The opacity half of a wash: either the shorthand (`/10`, `/5`) or Tailwind's
+ * ARBITRARY value (`/[0.08]`).
+ *
+ * The bracketed form is not hypothetical here — the repo already uses it in
+ * thirteen places (`text-white/[0.88]` across the field headers), so a
+ * `bg-destructive/[0.08]` is the natural next spelling. Matching only `\d+`
+ * would let exactly the pairing this file bans walk straight through, which is
+ * the same blind spot the arbitrary-value syntax opened in #421 and hid ~78
+ * sites behind.
+ */
+const WASH_ALPHA = String.raw`\/(?:\d+|\[[^\]]*\])`;
+
+/** `bg-destructive/10`, `bg-destructive/5`, `bg-destructive/[0.08]`. */
+const DESTRUCTIVE_WASH = new RegExp(String.raw`\bbg-destructive${WASH_ALPHA}`);
 
 /**
  * One whole utility token ending in a destructive wash, variant prefixes and
  * all — `bg-destructive/10`, `active:bg-destructive/10`,
- * `dark:hover:bg-destructive/20`.
+ * `dark:hover:bg-destructive/20`, `bg-destructive/[0.08]`.
+ *
+ * `!` is part of the token, not a terminator. Tailwind's important modifier
+ * sits between the variants and the utility (`hover:!bg-destructive/[0.08]`),
+ * so a character class that stops at `!` captures only the bare utility and
+ * loses the `hover:` in front of it. The classifier would then read a
+ * hover-only wash as persistent and reject a file that is perfectly fine — the
+ * mirror image of the under-reporting bug, and just as wrong.
  */
-const WASH_TOKEN = /[\w:-]*bg-destructive\/\d+/g;
+const WASH_TOKEN = new RegExp(String.raw`[\w:!-]*bg-destructive${WASH_ALPHA}`, "g");
 
 /**
  * The states painted only while the element is being pressed or pointed at, and
@@ -90,6 +110,26 @@ describe("no surface pairs destructive text with a wash of its own red", () => {
     ["bg-destructive/10 hover:bg-destructive/20", true],
     ["hover:bg-destructive/20 bg-destructive/10", true],
     ["bg-card text-destructive", false],
+    // Tailwind's ARBITRARY opacity, which the repo already uses thirteen times
+    // as `text-white/[0.88]`. A matcher that only accepts `/\d+` lets the
+    // banned pairing through entirely - the #421 blind spot, repeated.
+    ["bg-destructive/[0.08]", true],
+    ["rounded-lg border border-destructive bg-destructive/[0.08] p-3", true],
+    ["hover:bg-destructive/[0.08]", false],
+    ["dark:active:bg-destructive/[0.12]", false],
+    // Mixed spellings must not let either form hide the other.
+    ["bg-destructive/[0.08] hover:bg-destructive/20", true],
+    ["hover:bg-destructive/[0.12] bg-destructive/10", true],
+    // Tailwind's important modifier sits between the variants and the utility.
+    // If `!` terminates the token the `hover:` is lost and a legitimate
+    // hover-only wash reads as persistent - a false REJECTION rather than a
+    // false pass, but a broken gate either way.
+    ["hover:!bg-destructive/[0.08]", false],
+    ["active:!bg-destructive/10", false],
+    ["dark:hover:!bg-destructive/20", false],
+    // ...while an important wash with no transient variant is still persistent.
+    ["!bg-destructive/10", true],
+    ["!bg-destructive/[0.08] text-destructive", true],
   ])("classifies %p as persistent=%s", (source, expected) => {
     expect(hasPersistentWash(source)).toBe(expected);
   });
