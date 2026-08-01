@@ -61,7 +61,14 @@ function firstWord(value: string) {
   return value.trim().split(/\s+/)[0];
 }
 
-function BreathingDotEmpty() {
+/**
+ * Exported for its own test. The colours are SVG props rather than classes, so
+ * the only way to assert they follow the selected palette is to render this and
+ * read them back - and a static scan cannot do it, because the regression this
+ * guards against is a VALUE (a default-palette constant like PRIMARY_TRIPLES),
+ * not a literal.
+ */
+export function BreathingDotEmpty() {
   // The three rings are the app accent at three strengths. They were written as
   // `hsla(262, 62%, 56%, …)` literals - the DEFAULT palette's accent, copied by
   // hand - so they stayed violet on every other palette while the `+` glyph in
