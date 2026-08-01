@@ -61,8 +61,15 @@ const DESTRUCTIVE_WASH = new RegExp(String.raw`\bbg-destructive${WASH_ALPHA}`);
  * One whole utility token ending in a destructive wash, variant prefixes and
  * all — `bg-destructive/10`, `active:bg-destructive/10`,
  * `dark:hover:bg-destructive/20`, `bg-destructive/[0.08]`.
+ *
+ * `!` is part of the token, not a terminator. Tailwind's important modifier
+ * sits between the variants and the utility (`hover:!bg-destructive/[0.08]`),
+ * so a character class that stops at `!` captures only the bare utility and
+ * loses the `hover:` in front of it. The classifier would then read a
+ * hover-only wash as persistent and reject a file that is perfectly fine — the
+ * mirror image of the under-reporting bug, and just as wrong.
  */
-const WASH_TOKEN = new RegExp(String.raw`[\w:-]*bg-destructive${WASH_ALPHA}`, "g");
+const WASH_TOKEN = new RegExp(String.raw`[\w:!-]*bg-destructive${WASH_ALPHA}`, "g");
 
 /**
  * The states painted only while the element is being pressed or pointed at, and
@@ -113,6 +120,16 @@ describe("no surface pairs destructive text with a wash of its own red", () => {
     // Mixed spellings must not let either form hide the other.
     ["bg-destructive/[0.08] hover:bg-destructive/20", true],
     ["hover:bg-destructive/[0.12] bg-destructive/10", true],
+    // Tailwind's important modifier sits between the variants and the utility.
+    // If `!` terminates the token the `hover:` is lost and a legitimate
+    // hover-only wash reads as persistent - a false REJECTION rather than a
+    // false pass, but a broken gate either way.
+    ["hover:!bg-destructive/[0.08]", false],
+    ["active:!bg-destructive/10", false],
+    ["dark:hover:!bg-destructive/20", false],
+    // ...while an important wash with no transient variant is still persistent.
+    ["!bg-destructive/10", true],
+    ["!bg-destructive/[0.08] text-destructive", true],
   ])("classifies %p as persistent=%s", (source, expected) => {
     expect(hasPersistentWash(source)).toBe(expected);
   });
