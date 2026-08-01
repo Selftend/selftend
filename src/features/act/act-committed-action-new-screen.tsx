@@ -162,11 +162,11 @@ export default function ActCommittedActionNewScreen() {
                     onPress={() => setLifeDomain(domain)}
                     className={cn(
                       "rounded-xl border p-4 active:bg-accent/40",
-                      selected ? "border-act bg-act/5" : "border-border bg-card",
+                      selected ? "border-border bg-muted" : "border-border bg-card",
                     )}
                     {...domainRoving.getItemProps(index, () => setLifeDomain(domain))}
                   >
-                    <Text className={cn("font-semibold", selected && "text-act-ink")}>
+                    <Text className={cn("font-semibold", selected && "text-foreground")}>
                       {t(`act:values.${domain}`)}
                     </Text>
                   </Pressable>

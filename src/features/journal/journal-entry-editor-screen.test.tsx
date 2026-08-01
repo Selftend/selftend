@@ -9,7 +9,7 @@ import {
   useSaveJournalEntry,
 } from "@/src/features/journal/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -84,7 +84,7 @@ describe("JournalEntryEditorScreen", () => {
     // Create mode gets the full-bleed ink field with the sheet lip.
     expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The room wrapper carries the ink re-pour; a wrong or missing room fails here.
-    expectRoomPour(screen.getByTestId("journal-editor-room"), "ink");
+    expectNeutralRoom(screen.getByTestId("journal-editor-room"));
   });
 
   it("keeps the compact header (no field) on the room pour in edit mode", () => {
@@ -111,7 +111,7 @@ describe("JournalEntryEditorScreen", () => {
 
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expect(screen.getByText("Edit journal entry")).toBeTruthy();
-    expectRoomPour(screen.getByTestId("journal-editor-room"), "ink");
+    expectNeutralRoom(screen.getByTestId("journal-editor-room"));
   });
 
   it("saves a new entry when body is provided", async () => {

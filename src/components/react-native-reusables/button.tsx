@@ -1,7 +1,6 @@
 import { TextClassContext } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import type { TintToken } from "@/src/lib/design-tokens";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Platform, Pressable } from "react-native";
 
@@ -40,7 +39,11 @@ const buttonVariants = cva(
           Platform.select({ web: "hover:bg-accent dark:hover:bg-accent/50" }),
         ),
         link: "",
-        tinted: "border",
+        // One tinted button remains in the app and it is the programme card's
+        // advance action. It used to take a module hue; the accent wash is what
+        // is left after #588, and it is the same pair the `primary` row always
+        // held - `bg-primary/[0.08]` behind `text-primary-ink`.
+        tinted: "border border-primary/30 bg-primary/[0.08]",
       },
       size: {
         default: cn("h-10 px-4 py-2 sm:h-9", Platform.select({ web: "has-[>svg]:px-3" })),
@@ -48,61 +51,7 @@ const buttonVariants = cva(
         lg: cn("h-11 rounded-md px-6 sm:h-10", Platform.select({ web: "has-[>svg]:px-4" })),
         icon: "h-10 w-10 sm:h-9 sm:w-9",
       },
-      tint: {
-        primary: "",
-        act: "",
-        be: "",
-        think: "",
-        aqua: "",
-        iris: "",
-        ink: "",
-        clay: "",
-        mist: "",
-      },
     },
-    compoundVariants: [
-      { variant: "tinted", tint: "primary", className: "bg-primary/[0.08] border-primary/30" },
-      {
-        variant: "tinted",
-        tint: "act",
-        className: "bg-[hsl(var(--act)/0.08)] border-[hsl(var(--act)/0.30)]",
-      },
-      {
-        variant: "tinted",
-        tint: "be",
-        className: "bg-[hsl(var(--be)/0.08)] border-[hsl(var(--be)/0.30)]",
-      },
-      {
-        variant: "tinted",
-        tint: "think",
-        className: "bg-[hsl(var(--think)/0.08)] border-[hsl(var(--think)/0.30)]",
-      },
-      {
-        variant: "tinted",
-        tint: "aqua",
-        className: "bg-[hsl(var(--aqua)/0.08)] border-[hsl(var(--aqua)/0.30)]",
-      },
-      {
-        variant: "tinted",
-        tint: "iris",
-        className: "bg-[hsl(var(--iris)/0.08)] border-[hsl(var(--iris)/0.30)]",
-      },
-      {
-        variant: "tinted",
-        tint: "ink",
-        className: "bg-[hsl(var(--ink)/0.08)] border-[hsl(var(--ink)/0.30)]",
-      },
-      {
-        variant: "tinted",
-        tint: "clay",
-        className: "bg-[hsl(var(--clay)/0.08)] border-[hsl(var(--clay)/0.30)]",
-      },
-      {
-        variant: "tinted",
-        tint: "mist",
-        className: "bg-[hsl(var(--mist)/0.08)] border-[hsl(var(--mist)/0.30)]",
-      },
-    ],
     defaultVariants: {
       variant: "default",
       size: "default",
@@ -130,7 +79,7 @@ const buttonTextVariants = cva(
           "text-primary group-active:underline",
           Platform.select({ web: "underline-offset-4 hover:underline group-hover:underline" }),
         ),
-        tinted: "",
+        tinted: "text-primary-ink",
       },
       size: {
         default: "",
@@ -138,29 +87,7 @@ const buttonTextVariants = cva(
         lg: "",
         icon: "",
       },
-      tint: {
-        primary: "",
-        act: "",
-        be: "",
-        think: "",
-        aqua: "",
-        iris: "",
-        ink: "",
-        clay: "",
-        mist: "",
-      },
     },
-    compoundVariants: [
-      { variant: "tinted", tint: "primary", className: "text-primary-ink" },
-      { variant: "tinted", tint: "act", className: "text-act-ink" },
-      { variant: "tinted", tint: "be", className: "text-be-ink" },
-      { variant: "tinted", tint: "think", className: "text-think-ink" },
-      { variant: "tinted", tint: "aqua", className: "text-aqua-ink" },
-      { variant: "tinted", tint: "iris", className: "text-iris-ink" },
-      { variant: "tinted", tint: "ink", className: "text-ink-ink" },
-      { variant: "tinted", tint: "clay", className: "text-clay-ink" },
-      { variant: "tinted", tint: "mist", className: "text-mist-ink" },
-    ],
     defaultVariants: {
       variant: "default",
       size: "default",
@@ -170,9 +97,7 @@ const buttonTextVariants = cva(
 
 type ButtonProps = React.ComponentProps<typeof Pressable> &
   React.RefAttributes<typeof Pressable> &
-  VariantProps<typeof buttonVariants> & {
-    tint?: TintToken;
-  };
+  VariantProps<typeof buttonVariants> & {};
 
 function Button({
   accessibilityRole = "button",
@@ -181,19 +106,14 @@ function Button({
   role = "button",
   variant,
   size,
-  tint,
   ...props
 }: ButtonProps) {
   return (
-    <TextClassContext.Provider value={buttonTextVariants({ variant, size, tint })}>
+    <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
       <Pressable
         accessibilityRole={accessibilityRole}
         aria-disabled={props.disabled ?? undefined}
-        className={cn(
-          props.disabled && "opacity-50",
-          buttonVariants({ variant, size, tint }),
-          className,
-        )}
+        className={cn(props.disabled && "opacity-50", buttonVariants({ variant, size }), className)}
         hitSlop={hitSlop}
         role={role}
         {...props}

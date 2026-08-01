@@ -13,14 +13,13 @@ describe("exercise-hue", () => {
     );
   });
 
-  it("exposes Tailwind classes for aqua", () => {
-    expect(exerciseHue("aqua").classes).toEqual({
-      text: "text-aqua",
-      ink: "text-aqua-ink",
-      chipBg: "bg-aqua/15",
-      border: "border-aqua/30",
-      fill: "bg-aqua",
-    });
+  // INVERTED by #588: `exerciseHue(hue).classes` no longer exists. It held five
+  // Tailwind class names per hue and its two consumers - grounding's icon badge
+  // and meditation's practice stripes - are both neutral now, so the map had no
+  // callers left. What the definition still carries is the raw HSL the four
+  // keeps-hue encodings read; that is asserted below.
+  it("exposes no Tailwind class map, only the raw hue", () => {
+    expect(Object.keys(exerciseHue("aqua"))).toEqual(["hsl"]);
   });
 
   it("returns light and dark gradient stops for think", () => {
@@ -37,18 +36,11 @@ describe("exercise-hue", () => {
   it("exposes a definition for every hue", () => {
     for (const hue of EXERCISE_HUES) {
       const def = exerciseHue(hue);
-      // `think` is the single exception, and deliberately so (#412): its accent
-      // reads 1.72:1 as a glyph on a bg-think/14 badge in light mode, and that
-      // badge is reachable - the 5-4-3-2-1 grounding technique's fourth step
-      // carries `hue: "think"` and grounding-session.tsx paints the step hue.
-      // So `text` holds the ink token there, which reads 4.97 on the same
-      // surface. Asserted as an exception rather than relaxed to a wildcard, so
-      // that a second hue joining it has to be argued for here.
-      expect(def.classes.text).toBe(hue === "think" ? "text-think-ink" : `text-${hue}`);
-      // Every hue carries its ink twin, so a text consumer never has to reach
-      // for `text` and land under AA (#403).
-      expect(def.classes.ink).toBe(`text-${hue}-ink`);
-      expect(def.classes.fill).toBe(`bg-${hue}`);
+      // The per-hue contrast exceptions that used to be asserted here are gone
+      // with the class map: `think`'s `text` held the ink token because its
+      // accent read 1.72:1 as a 48px glyph on a bg-think/14 badge, which the
+      // grounding session actually painted. No consumer paints a hue as chrome
+      // any more, so there is no such surface to except.
       expect(def.hsl.light).toMatch(/^\d+, \d+%, \d+%$/);
       expect(def.hsl.dark).toMatch(/^\d+, \d+%, \d+%$/);
     }

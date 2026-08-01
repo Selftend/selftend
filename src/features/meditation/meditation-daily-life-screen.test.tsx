@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react-native";
 
 import MeditationDailyLifeScreen from "@/src/features/meditation/meditation-daily-life-screen";
 import { useStagePracticeNotes } from "@/src/features/meditation/queries";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -73,7 +73,7 @@ describe("MeditationDailyLifeScreen", () => {
 
     // MobileFormScreen owns its own SafeAreaView, so the pour rides a wrapper
     // view around it - its bg-background surfaces re-resolve through the room.
-    expectRoomPour(screen.getByTestId("meditation-daily-life-room"), "iris");
+    expectNeutralRoom(screen.getByTestId("meditation-daily-life-room"));
   });
 
   it("renders the dark iris pour when the scheme is dark", () => {
@@ -81,7 +81,7 @@ describe("MeditationDailyLifeScreen", () => {
 
     renderWithProviders(<MeditationDailyLifeScreen />);
 
-    expectRoomPour(screen.getByTestId("meditation-daily-life-room"), "iris", "dark");
+    expectNeutralRoom(screen.getByTestId("meditation-daily-life-room"));
   });
 
   it("carries no field - meditation has no immersive surface here", () => {

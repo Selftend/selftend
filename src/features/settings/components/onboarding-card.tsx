@@ -23,8 +23,8 @@ export function OnboardingCard({ disabled, isPending, onReset }: OnboardingCardP
   return (
     <SettingsSectionCard
       icon="auto-stories"
-      iconClassName="text-iris"
-      badgeClassName="bg-[hsl(var(--iris)/0.10)]"
+      iconClassName="text-muted-foreground"
+      badgeClassName="bg-muted"
       title={t("onboardingSection.title")}
       description={t("onboardingSection.description")}
     >

@@ -61,7 +61,7 @@ export function GroundingOnboarding({
 
       <View className="gap-3">
         <View className="flex-row items-center gap-2">
-          <Icon name="anchor" className="size-5 text-be" />
+          <Icon name="anchor" className="size-5 text-muted-foreground" />
           <Text className="text-base font-semibold">
             {t("grounding.onboarding.techniques.title")}
           </Text>

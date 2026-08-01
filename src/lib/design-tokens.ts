@@ -5,6 +5,8 @@
 // variables (LinearGradient, reanimated, SVG) reach these triples only through
 // hueHsl()/hueRamp() in src/features/mindfulness/exercise-hue.ts.
 
+import { withLightness } from "@/src/lib/theme/color";
+
 export const HUE_NAMES = ["mist", "iris", "be", "ink", "act", "clay", "think", "aqua"] as const;
 
 export type HueName = (typeof HUE_NAMES)[number];
@@ -27,13 +29,6 @@ export const HUE_TRIPLES: Record<HueName, SchemeTriples> = {
 
 export const PRIMARY_TRIPLES: SchemeTriples = { light: "262 62% 56%", dark: "264 72% 72%" };
 
-/** "262 62% 56%" + 28 → "262 62% 28%". Degree and saturation are the hue's identity. */
-function withLightness(triple: string, lightness: number): string {
-  const match = triple.match(/^(\d+)\s+(\d+)%\s+\d+%$/);
-  if (!match) throw new Error(`Unparseable triple: "${triple}"`);
-  return `${match[1]} ${match[2]}% ${lightness}%`;
-}
-
 // The lightness a hue becomes legible *ink* at (#368, #403). A hue's published
 // accent above is tuned as a colour — it paints `bg-<hue>` fills, borders,
 // chips, field gradients, the pacer ring — not as text, and four of the eight
@@ -48,11 +43,20 @@ function withLightness(triple: string, lightness: number): string {
 // 28% is the binding number, and it binds on both surfaces a hue's ink can land
 // on: `think` clears 5.45 on the app background and 5.51 on its own room's
 // background; at 32% both fall under 4.5. Floors live in
-// test/theme-token-sync.test.ts (the neutral app surface, `text-<hue>-ink`) and
-// test/room-contrast.test.ts (the room surfaces, `text-accent-ink`).
+// test/theme-token-sync.test.ts. (room-contrast.test.ts held the room surfaces
+// until #586 made rooms neutral and deleted it.)
 //
 // Dark mode keeps the published accent untouched: it already clears 5.81:1 at
 // worst there, so a dark-mode darkening would be a visual change buying nothing.
+//
+// #580 replaced the fixed-lightness recipe for the STYLE accent's ink with a
+// solver, because one constant cannot serve eight palettes. This constant
+// survives that change and is not an oversight: the eight hues are a pinned
+// encoding palette, not style tokens (#558/#559). They are one fixed set of
+// colours whose contrast was measured directly, on the surfaces below, and they
+// do not vary with the active style — so there is nothing here for a solver to
+// generalise over. The floors that certify them still run in
+// test/theme-token-sync.test.ts.
 export const HUE_INK_LIGHTNESS = 28;
 
 function inkTriples(hue: HueName): SchemeTriples {
@@ -65,7 +69,7 @@ function inkTriples(hue: HueName): SchemeTriples {
 /**
  * Every hue as ink that clears WCAG AA for small text on the neutral app
  * surface — `text-<hue>-ink`, the room-less counterpart of the room-poured
- * `text-accent-ink`. A module room re-pours `--accent-ink` from these same
+ * `text-primary-ink`. A module room re-pours `--accent-ink` from these same
  * values (src/lib/module-room.ts), so inside a room the two are the same colour
  * by construction rather than by coincidence.
  *
@@ -118,7 +122,7 @@ export const PRIMARY_INK_LIGHTNESS: Record<keyof SchemeTriples, number> = {
  *
  * Not to be confused with `--accent-ink`, which is the *room-poured* ink and
  * falls back to the raw `--primary` outside a room (test/theme-token-sync.test.ts
- * pins that). Room-less `text-accent-ink` is a separate call-site question that
+ * pins that). Room-less `text-primary-ink` is a separate call-site question that
  * #403's gates already police; this token is for sites that name `primary`.
  */
 export const PRIMARY_INK_TRIPLES: SchemeTriples = {
@@ -178,96 +182,21 @@ export function hueRampClass(hue: HueName, step: number): string {
   return HUE_RAMP_CLASSES[hue][clamped - 1];
 }
 
-/**
- * A tint used as TEXT. Every hue resolves to its ink (#403), never the published
- * accent — this map feeds `Text`'s `tint` prop, and a `tint` on a text component
- * is by definition text.
- *
- * It used to hold the raw accents as arbitrary values (`text-[hsl(var(--act))]`),
- * which failed AA on ~78 sites including the signed-out landing page, where nine
- * of ten hue labels measured below 4.5:1 — `think` at 1.80. Every label sits on a
- * tint of its own hue, so even `be`, `aqua` and `ink`, which clear the floor on a
- * plain surface, failed there (4.40 / 4.44 / 4.45).
- *
- * The arbitrary-value form is also why nothing caught it: the static gates match
- * `text-<hue>`, and `text-[` is not that. Written as plain classes now, so the
- * gates can see this map at all (#421).
- *
- * `primary` is not a hue, but it does now have an ink of its own
- * (PRIMARY_INK_TRIPLES above, #421 §3). It was the last tint here still writing
- * a raw accent as text: 4.41:1 on the sidebar's Beta chip, 3.89 where that chip
- * sits on a primary-tinted card, and 4.22 / 3.54 for the same two in dark.
- */
-export const TINT_TEXT: Record<TintToken, string> = {
-  primary: "text-primary-ink",
-  act: "text-act-ink",
-  be: "text-be-ink",
-  think: "text-think-ink",
-  aqua: "text-aqua-ink",
-  iris: "text-iris-ink",
-  ink: "text-ink-ink",
-  clay: "text-clay-ink",
-  mist: "text-mist-ink",
-};
-
-/**
- * The washes a TINT_ACCENT mark is actually painted on, faintest → densest.
- * Every one is a tint of the mark's *own* hue, which is the pairing that costs a
- * mark its contrast: the wash pulls the surface toward the very colour the glyph
- * is drawn in. Each alpha is here because a consumer paints it —
- *
- *   0.05  src/components/app/landing/modules-section.tsx   CARD_TINT
- *   0.07  src/components/app/landing/landing-screen.tsx    PILL_TINT
- *   0.10  src/components/app/pillar-card.tsx               TOOL_ICON_BG
- *   0.10  src/components/react-native-reusables/badge.tsx  badgeVariants tint
- *
- * — and contrast falls monotonically as the wash thickens, so 0.10 is the
- * binding case of the three. A denser wash under a glyph would invalidate the
- * floor below without touching it, so test/accent-ink-call-sites.test.ts fails
- * the build if a TINT_ACCENT consumer paints one.
- */
-export const MARK_WASH_ALPHAS = [0.05, 0.07, 0.1] as const;
-
-/**
- * A tint used as a NON-TEXT mark: icons, rules, dots. WCAG 1.4.11's 3:1 floor
- * rather than 1.4.3's 4.5:1, because the accent is what carries the module's
- * identity — darkening a mark to ink reads as disabled.
- *
- * This map used to justify itself with "which the published accents clear". That
- * premise was asserted, never computed, and it is false. Rendered on the
- * signed-out landing page, `think`'s glyph measures 1.80:1 (#433). `think` is a
- * light gold whose accent is already 1.88 on the *bare* app background, before
- * any wash — there is no surface in the product where it reads as a mark, so it
- * is the one tint whose mark is its ink. Dark mode is unaffected either way:
- * `--think-ink` IS the published accent there, by construction.
- *
- * The premise is a derivation now rather than a claim. For every tint,
- * test/theme-token-sync.test.ts measures the accent on every MARK_WASH_ALPHAS
- * wash over both neutral surfaces and, for the hues, the room its own hue pours,
- * in both schemes — then asserts this map holds the accent exactly where that
- * worst case clears 3.0 and the ink where it does not. Light worst cases:
- *
- *   comfortable  primary 4.38 · aqua 4.27 · ink 4.17 · be 4.13
- *   thin         act 3.24 · clay 3.12 · mist 3.09 · iris 3.00
- *   below floor  think 1.76 → text-think-ink
- *
- * `iris` clears by 0.0023, on the iris room's own background at /0.10. That is a
- * pass and it is not a comfortable one; the derivation is what keeps it honest,
- * so a retune costing iris any luminance moves it to ink and fails the build
- * rather than shipping a mark nobody re-measured.
- *
- * Reach for this only where the mark carries no text. If it renders a glyph beside
- * a label, the label takes `TINT_TEXT` and the glyph takes this, which is the
- * split #411 established for the other shared colour maps.
- */
-export const TINT_ACCENT: Record<TintToken, string> = {
-  primary: "text-primary",
-  act: "text-act",
-  be: "text-be",
-  think: "text-think-ink",
-  aqua: "text-aqua",
-  iris: "text-iris",
-  ink: "text-ink",
-  clay: "text-clay",
-  mist: "text-mist",
-};
+// TINT_TEXT and TINT_ACCENT are gone (#589), and so is MARK_WASH_ALPHAS with
+// them.
+//
+// They were the chrome half of this file: TINT_TEXT resolved a tint to that
+// hue's ink for a `<Text>`, TINT_ACCENT to the published accent for a glyph, and
+// MARK_WASH_ALPHAS listed the three wash densities a TINT_ACCENT mark was ever
+// painted on so the floors could be derived against the worst of them.
+//
+// Every consumer was chrome and every one is neutral now: badge.tsx and
+// pillar-card.tsx and the two landing surfaces (#587), then Text's `tint` prop
+// and Card's tinted variants (#588). The maps carried a lot of hard-won
+// measurement - `think` at 1.80:1 as a rendered glyph on the signed-out landing
+// page, `iris` clearing 3.0 by 0.0023 on its own room's background - and none of
+// it survives the surfaces it was measured on.
+//
+// What remains here is the ENCODING palette: the eight hues, their inks, the
+// ramp classes and the triples the four keeps-hue surfaces read. The eslint rule
+// in eslint.config.js is what stops a new chrome consumer reaching them.

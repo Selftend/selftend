@@ -1,7 +1,6 @@
 import { TextClassContext } from "@/src/components/react-native-reusables/text";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { cn } from "@/lib/utils";
-import { TINT_ACCENT, type TintToken } from "@/src/lib/design-tokens";
 import { Slot } from "@rn-primitives/slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Platform, View } from "react-native";
@@ -32,31 +31,8 @@ const badgeVariants = cva(
           Platform.select({ web: "[a&]:hover:bg-destructive/90" }),
         ),
         outline: Platform.select({ web: "[a&]:hover:bg-accent [a&]:hover:text-accent-foreground" }),
-        tint: "border-transparent",
-      },
-      tint: {
-        primary: "",
-        act: "",
-        be: "",
-        think: "",
-        aqua: "",
-        iris: "",
-        ink: "",
-        clay: "",
-        mist: "",
       },
     },
-    compoundVariants: [
-      { variant: "tint", tint: "primary", className: "bg-primary/10" },
-      { variant: "tint", tint: "act", className: "bg-[hsl(var(--act)/0.10)]" },
-      { variant: "tint", tint: "be", className: "bg-[hsl(var(--be)/0.10)]" },
-      { variant: "tint", tint: "think", className: "bg-[hsl(var(--think)/0.10)]" },
-      { variant: "tint", tint: "aqua", className: "bg-[hsl(var(--aqua)/0.10)]" },
-      { variant: "tint", tint: "iris", className: "bg-[hsl(var(--iris)/0.10)]" },
-      { variant: "tint", tint: "ink", className: "bg-[hsl(var(--ink)/0.10)]" },
-      { variant: "tint", tint: "clay", className: "bg-[hsl(var(--clay)/0.10)]" },
-      { variant: "tint", tint: "mist", className: "bg-[hsl(var(--mist)/0.10)]" },
-    ],
     defaultVariants: {
       variant: "default",
     },
@@ -70,31 +46,8 @@ const badgeTextVariants = cva("text-xs font-medium", {
       secondary: "text-secondary-foreground",
       destructive: "text-white",
       outline: "text-foreground",
-      tint: "",
-    },
-    tint: {
-      primary: "",
-      act: "",
-      be: "",
-      think: "",
-      aqua: "",
-      iris: "",
-      ink: "",
-      clay: "",
-      mist: "",
     },
   },
-  compoundVariants: [
-    { variant: "tint", tint: "primary", className: "text-primary-ink" },
-    { variant: "tint", tint: "act", className: "text-act-ink" },
-    { variant: "tint", tint: "be", className: "text-be-ink" },
-    { variant: "tint", tint: "think", className: "text-think-ink" },
-    { variant: "tint", tint: "aqua", className: "text-aqua-ink" },
-    { variant: "tint", tint: "iris", className: "text-iris-ink" },
-    { variant: "tint", tint: "ink", className: "text-ink-ink" },
-    { variant: "tint", tint: "clay", className: "text-clay-ink" },
-    { variant: "tint", tint: "mist", className: "text-mist-ink" },
-  ],
   defaultVariants: {
     variant: "default",
   },
@@ -103,22 +56,21 @@ const badgeTextVariants = cva("text-xs font-medium", {
 type BadgeProps = React.ComponentProps<typeof View> &
   React.RefAttributes<View> & {
     asChild?: boolean;
-    tint?: TintToken;
     icon?: MaterialIconName;
   } & VariantProps<typeof badgeVariants>;
 
-function Badge({ className, variant, tint, icon, asChild, children, ...props }: BadgeProps) {
+function Badge({ className, variant, icon, asChild, children, ...props }: BadgeProps) {
   const Component = asChild ? Slot : View;
   return (
-    <TextClassContext.Provider value={badgeTextVariants({ variant, tint })}>
-      <Component className={cn(badgeVariants({ variant, tint }), className)} {...props}>
-        {/* The provider above carries the label's INK, and `Icon` reads the same
-            TextClassContext - so without this the glyph is darkened too, which
-            is the "enabled icon reading as disabled" that the text/mark split
-            exists to avoid. Marks keep the published accent (#421). */}
-        {icon ? (
-          <Icon name={icon} size={14} className={tint ? TINT_ACCENT[tint] : undefined} />
-        ) : null}
+    <TextClassContext.Provider value={badgeTextVariants({ variant })}>
+      <Component className={cn(badgeVariants({ variant }), className)} {...props}>
+        {/* The glyph inherits the badge's own text class through the provider
+            above, which is what every non-tint variant already did. The old
+            `tint` variant had to override it: its label took `text-<hue>-ink`
+            while its glyph kept the published accent, because inking a mark
+            reads as disabled (#421). With no hue on either, there are no longer
+            two colours to keep apart. */}
+        {icon ? <Icon name={icon} size={14} /> : null}
         {children}
       </Component>
     </TextClassContext.Provider>

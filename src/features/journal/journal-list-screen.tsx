@@ -108,7 +108,7 @@ export default function JournalListScreen() {
               meta={
                 <ToolStats
                   tone="onField"
-                  accentClassName="text-accent-ink"
+                  accentClassName="text-primary-ink"
                   subline={subline}
                   sublineTone={lastWhen ? "accent" : "muted"}
                   items={[

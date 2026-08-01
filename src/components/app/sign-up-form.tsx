@@ -27,14 +27,13 @@ import { runAppleSignIn } from "@/src/features/auth/run-apple-sign-in";
 import { AppleSignInButton } from "@/src/components/app/apple-sign-in-button";
 import { signUpSchema, type SignUpSchema } from "@/src/features/auth/schemas";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { useThemePalette } from "@/src/lib/theme-palette";
 import { useSession } from "@/src/providers/session-provider";
-import { THEME } from "@/lib/theme";
 
 export function SignUpForm() {
   const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
-  const colorScheme = useColorSchemeName();
+  const theme = useThemePalette();
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
@@ -108,7 +107,7 @@ export function SignUpForm() {
           variant="outline"
         >
           {isGoogleSubmitting ? (
-            <ActivityIndicator color={THEME[colorScheme].mutedForeground} />
+            <ActivityIndicator color={theme.mutedForeground} />
           ) : (
             <Image
               source={require("../../../assets/branding/google-logo.png")}

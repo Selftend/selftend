@@ -106,8 +106,8 @@ export default function MeditationStagesScreen() {
                           // `primary`: they are the selected-row control state,
                           // and a solid iris fill has no certified ink pairing
                           // (white on it is 3.8:1, under AA).
-                          <View className="rounded-full bg-iris/15 px-2 py-0.5">
-                            <Text className="text-[10px] font-semibold uppercase tracking-wider text-accent-ink">
+                          <View className="rounded-full bg-muted px-2 py-0.5">
+                            <Text className="text-[10px] font-semibold uppercase tracking-wider text-primary-ink">
                               {t("module.stages.currentStageBadge")}
                             </Text>
                           </View>
@@ -116,16 +116,18 @@ export default function MeditationStagesScreen() {
                     </Card>
                   </Pressable>
                   {milestoneKey ? (
-                    <View className="rounded-md border border-dashed border-be/40 bg-be/5 p-3">
+                    <View className="rounded-md border border-dashed border-border bg-muted p-3">
                       {/*
-                        Hue-keyed ink, not the accent and not `text-accent-ink`
+                        Hue-keyed ink, not the accent and not `text-primary-ink`
                         (#412): `be` is a guest hue in the iris room, so the
                         room's accent ink would repaint this milestone iris.
                         The published accent reads 4.41:1 as 12px text on
                         `bg-be/5` over the iris room background - be clears AA
                         on a plain surface, not through a tint of itself.
                       */}
-                      <Text className="text-xs font-semibold text-be-ink">{t(milestoneKey)}</Text>
+                      <Text className="text-xs font-semibold text-foreground">
+                        {t(milestoneKey)}
+                      </Text>
                     </View>
                   ) : null}
                 </View>

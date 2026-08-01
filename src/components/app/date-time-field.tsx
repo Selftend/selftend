@@ -7,9 +7,9 @@ import dayjs from "dayjs";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { THEME } from "@/lib/theme";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { useThemePalette } from "@/src/lib/theme-palette";
 import { formatAtOffset, shiftFromOffsetFrame, shiftToOffsetFrame } from "@/src/utils/date";
 
 interface DateTimeFieldProps {
@@ -39,14 +39,15 @@ export function DateTimeField({
 
   const scheme = useColorSchemeName();
   const defaultStyles = useDefaultStyles(scheme);
+  const theme = useThemePalette();
   const pickerStyles = useMemo(
     () => ({
       ...defaultStyles,
-      today: { borderColor: THEME[scheme].primary, borderWidth: 1 },
-      selected: { backgroundColor: THEME[scheme].primary },
-      selected_label: { color: THEME[scheme].primaryForeground },
+      today: { borderColor: theme.primary, borderWidth: 1 },
+      selected: { backgroundColor: theme.primary },
+      selected_label: { color: theme.primaryForeground },
     }),
-    [defaultStyles, scheme],
+    [defaultStyles, theme],
   );
 
   // The picker only speaks the device's frame, so a captured offset is applied by

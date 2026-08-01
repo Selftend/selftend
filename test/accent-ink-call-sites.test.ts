@@ -4,13 +4,7 @@ import { join } from "node:path";
 import { groundingTechniques } from "@/src/constants/grounding";
 import { exerciseHue, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 import { MEDITATION_PRACTICES } from "@/src/features/meditation/practices";
-import {
-  HUE_NAMES,
-  MARK_WASH_ALPHAS,
-  TINT_ACCENT,
-  TINT_TEXT,
-  TINT_TOKENS,
-} from "@/src/lib/design-tokens";
+import { HUE_NAMES } from "@/src/lib/design-tokens";
 import { sourceFiles, stripComments } from "@/test/source-scan";
 
 // The call-site half of the accent-ink work (#368/#403/#412).
@@ -184,54 +178,15 @@ interface AllowedSite {
 // Both clear 1.4.11's 3:1. Neither clears 1.4.3's 4.5:1 - which is why every
 // site below has to earn its exemption on grounds other than the number.
 // ---------------------------------------------------------------------------
-const ACT_SITES: AllowedSite[] = [
-  {
-    file: `${ACT_DIR}/act-choice-point-new-screen.tsx`,
-    snippet: `className={inputValue.trim() ? "size-6 text-act" : "size-6 text-muted-foreground"}`,
-    reason: "icon",
-    evidence:
-      "add-circle glyph on bg-card, 3.95:1. Enabled/disabled is not carried by " +
-      "color alone - the wrapping Pressable takes `disabled={!inputValue.trim()}`.",
-  },
-  {
-    file: `${ACT_DIR}/act-committed-action-detail-screen.tsx`,
-    snippet: `newStepText.trim() ? "text-act" : "text-muted-foreground",`,
-    reason: "icon",
-    evidence:
-      "add-circle glyph (size-6) on bg-card, 3.95:1. Disabled state is on the " +
-      "Pressable, not just the tint.",
-  },
-  {
-    file: `${ACT_DIR}/act-committed-action-detail-screen.tsx`,
-    snippet: `step.isCompleted ? "text-act" : "text-muted-foreground",`,
-    reason: "icon",
-    evidence:
-      "check-circle / radio-button-unchecked (size-5) on bg-card, 3.95:1. The " +
-      "checked state is exposed via accessibilityRole='checkbox' + aria-checked, " +
-      "and repeated visually as line-through + muted on the step label, so the " +
-      "hue is not the only channel.",
-  },
-  {
-    file: `${ACT_DIR}/act-values-screen.tsx`,
-    snippet: `className={cn("size-4", hasEntry ? "text-muted-foreground" : "text-act")}`,
-    reason: "icon",
-    evidence:
-      "add / chevron-right (size-4) on bg-card, 3.95:1. The two states differ by " +
-      "glyph, not only by color.",
-  },
-  {
-    file: `${ACT_DIR}/act-connection-new-screen.tsx`,
-    snippet: `<Text className="w-2 text-act">·</Text>`,
-    reason: "decorative",
-    evidence:
-      "Bullet marker for the notice-five sense list, on a bg-act/5 card: 3.45:1. " +
-      "The only site here that is a real <Text> rather than an <Icon>, and the " +
-      "only one whose exemption rests entirely on the decorative reading - it " +
-      "carries no information (the sense name sits beside it) and has no " +
-      "function. Unlike <Icon>, it is not aria-hidden, so assistive tech still " +
-      "reaches it; see the note in the suite below.",
-  },
-];
+// EMPTIED by #588.
+//
+// Thirteen classified sites lived here: the ACT screens' green glyphs and
+// separators, the onboarding modals' hue icons, program-graduation's heading.
+// Every one was decorative - a dot, a chevron, a check beside a label that
+// already said the thing - which is what "the remaining decorative hue" means.
+// The array stays so the area stays scanned: a hue returning to src/features/act
+// has to be classified rather than merely counted.
+const ACT_SITES: AllowedSite[] = [];
 
 // ---------------------------------------------------------------------------
 // src/components/app and app/ (#412)
@@ -302,163 +257,28 @@ const ACT_SITES: AllowedSite[] = [
 // every `accentClassName` literal *is* an ink token. That makes the value safe
 // whether or not the prop is ever read, instead of safe only while it is not,
 // so the exemption is gone rather than merely re-keyed.
-const COMPONENTS_APP_SITES: AllowedSite[] = [
-  {
-    file: "app/(app)/tools/breathing/index.tsx",
-    snippet: `<Icon name="air" className="size-6 text-aqua" />`,
-    reason: "icon",
-    evidence:
-      "air glyph (24px) on a bg-aqua/10 well over the aqua room's card " +
-      '(Card variant="soft" keeps bg-card; tint colours only its shadow): ' +
-      "4.63 light / 5.57 dark. This screen genuinely is the aqua room " +
-      '(useRoomStyle("aqua"), line 70), and it clears 4.5 even as text. ' +
-      "Paired with the 'Start session' label, and <Icon> is aria-hidden.",
-  },
-  {
-    file: "src/components/app/grounding-onboarding-modal.tsx",
-    snippet: `<Icon name="anchor" className="size-5 text-be" />`,
-    reason: "passing-hue",
-    evidence:
-      "be on the neutral `--background`: 4.86 light / 7.65 dark - full AA small " +
-      "text, so the exemption does not lean on the icon floor at all. The " +
-      "surface is neutral from both callers (grounding-home-screen, which is " +
-      "the clay room but mounts the modal outside it, and the room-less " +
-      "cbt-home); on the clay room's background it would still be 4.81.",
-  },
-  {
-    file: "src/components/app/habits-onboarding-modal.tsx",
-    snippet: `<Icon name="loop" className="size-5 text-be" />`,
-    reason: "passing-hue",
-    evidence:
-      "be on the neutral `--background`: 4.86 light / 7.65 dark. Callers are " +
-      "habits-home-screen (act room, modal mounted outside it), cbt-home and " +
-      "app/(app)/tools/habits/onboarding.tsx, both room-less. Worst surface of " +
-      "the three is the neutral one quoted; the act room's background is 4.91.",
-  },
-  {
-    file: "src/components/app/habits-onboarding-modal.tsx",
-    snippet: `<Icon name="badge" className="size-5 text-act" />`,
-    reason: "icon",
-    evidence:
-      "badge glyph (20px) on a bg-act/5 card over the neutral background: 3.45 " +
-      "light / 8.66 dark. Clears 1.4.11's 3:1, not 4.5 - it stays as an icon " +
-      "exemption. <Icon> is aria-hidden and the adjacent CardTitle carries the " +
-      "meaning, so the hue is decoration on a labelled row.",
-  },
-  {
-    file: "src/components/app/module-home-header.tsx",
-    snippet: `? "text-act"`,
-    reason: "icon",
-    evidence:
-      "The program header action's glyph (20px) on the neutral `--background`: " +
-      "3.64 light / 9.30 dark. Only act-home-screen.tsx:179 and " +
-      "cbt-home-screen.tsx:103 pass a `program` action, both on the non-field " +
-      "header and both room-less, so this is the only surface it renders on. " +
-      "The `onField` branch above it takes white ink instead, so the field " +
-      "header never reaches this line. Pressable carries accessibilityLabel.",
-  },
-  {
-    file: "src/components/app/program-card.tsx",
-    snippet: `startTitle: "flex-1 text-act",`,
-    reason: "large-text",
-    evidence:
-      'Applied to <Text variant="h3"> (line 158) = text-2xl, 24px, with no ' +
-      "fontSize override in tailwind.config.js - 1.4.3's large-text floor of " +
-      "3:1 applies. On the bg-act/5 start container over the neutral " +
-      "background: 3.45 light / 8.66 dark. Off-room at both callers (act-home, " +
-      "cbt-home); only the `act` tint is a hue, `primary` is not.",
-  },
-  {
-    file: "src/components/app/program-card.tsx",
-    snippet: `dismissIcon: "size-5 text-act",`,
-    reason: "icon",
-    evidence:
-      "close glyph (20px) on the bg-act/5 start container over the neutral " +
-      "background: 3.45 light / 8.66 dark. The dismiss Pressable carries " +
-      "accessibilityLabel `program.dismissStartLabel`, so nothing is signalled " +
-      "by hue alone.",
-  },
-  {
-    file: "src/components/app/program-card.tsx",
-    snippet: `routeIcon: "text-act",`,
-    reason: "icon",
-    evidence:
-      "route glyph (size={22}) inside the eyebrow glyph box, bg-act/12 over the " +
-      "neutral card: 3.44 light / 6.15 dark - the lowest figure in this area, " +
-      "still clear of 3:1. The box itself is accessibilityElementsHidden + " +
-      'importantForAccessibility="no", and the eyebrow text beside it carries ' +
-      "the label, so it is decoration by construction.",
-  },
-  {
-    file: "src/components/app/program-card.tsx",
-    snippet: `phaseTitle: "text-act",`,
-    reason: "large-text",
-    evidence:
-      'Applied to <Text variant="h3"> (line 271) = text-2xl, 24px, so the 3:1 ' +
-      "large-text floor applies. On the neutral card: 3.95 light / 7.79 dark.",
-  },
-  {
-    file: "src/components/app/program-card.tsx",
-    snippet: `taskRowDoneIcon: "size-5 text-act",`,
-    reason: "icon",
-    evidence:
-      "check-circle (20px) on the completed task row's bg-act/10 over the " +
-      "neutral card: 3.52 light / 6.44 dark. Done/not-done is carried by the " +
-      "glyph as well as the hue (check-circle vs radio-button-unchecked, line " +
-      "111) and by the `current/target` count in the same row.",
-  },
-  {
-    file: "src/components/app/program-graduation.tsx",
-    snippet: `<Text variant="h3" className="text-be">`,
-    reason: "large-text",
-    evidence:
-      "text-2xl, 24px, on the bg-be/5 panel over the neutral background: 4.54 " +
-      "light / 7.15 dark. Clears the 3:1 large-text floor with room to spare, " +
-      "and in fact clears 4.5 as well - but it is quoted as large-text because " +
-      "the 4.54 is a margin of 0.04 on a tint, not the flat `be` 4.86. " +
-      "Off-room at both callers (act-home-screen, cbt-program-section).",
-  },
-  {
-    file: "src/components/app/program-graduation.tsx",
-    snippet: `<Icon name="check-circle" className="size-4 text-be" />`,
-    reason: "icon",
-    evidence:
-      "check-circle (16px) on the same bg-be/5 panel: 4.54 light / 7.15 dark. " +
-      "Purely a bullet for the stat line beside it; <Icon> is aria-hidden.",
-  },
-  {
-    file: "src/components/app/rich-onboarding-shell.tsx",
-    snippet: `<Icon name={icon} className="size-4 text-be" />`,
-    reason: "icon",
-    evidence:
-      "OnboardingInfoRow's glyph (16px) on its bg-be/15 tile over the neutral " +
-      "background: 3.93 light / 6.00 dark. This is the trap in #412's note - be " +
-      "is 4.86 flat but only 3.93 on a /15 wash of itself, so it is an icon " +
-      "exemption, not a passing hue. Used by the grounding, habits, mood and " +
-      "sleep modals, all of which mount outside their caller's room, so the " +
-      "neutral base is the only one; the worst room base (ink) would be 3.80, " +
-      "still over 3:1. Each row pairs the glyph with a title and body.",
-  },
-  {
-    file: "src/components/app/sleep-onboarding-modal.tsx",
-    snippet: `<Icon name="bedtime" className="size-5 text-be" />`,
-    reason: "passing-hue",
-    evidence:
-      "be on the neutral `--background`: 4.86 light / 7.65 dark. Callers are " +
-      "sleep-tracker-screen (ink room, modal mounted outside it) and the " +
-      "room-less cbt-home; on the ink room's background it would be 4.70.",
-  },
-];
+// EMPTIED by #588, for the same reason as ACT_SITES above.
+const COMPONENTS_APP_SITES: AllowedSite[] = [];
 
 // ---------------------------------------------------------------------------
-// src/features/home (#412)
+// src/features/home (#412, emptied by #587)
 //
-// All 27 survivors here were the same shape: an `<Icon>` glyph inside a
-// `bg-<hue>/10` chip of its own hue. That surface is the trap #412 names -
-// tinting a surface with a hue costs that hue's own contrast on it, so "be
-// passes" is never a fact about `be`. Measured with the helper math in
-// test/room-contrast.test.ts (`compositeOver` then `contrastRatio`); light mode
-// binds everywhere, dark is 4.93:1 at worst.
+// This block held 27 classified sites and the three helpers that generated them
+// - SIDEBAR_ACCENT, WIDGET_TINT, WIDGET_HEADER - all of the same shape: an
+// `<Icon>` glyph inside a `bg-<hue>/10` chip of its own hue, in the sidebar, in
+// tool-accent.ts, in widget-tint.ts and in the nine widget headers.
+//
+// Every one of them was module identity, and module identity is icon and label
+// now (#558). tool-accent.ts is deleted, widget-tint.ts resolves every module
+// tint to one neutral triple, and the widget headers take `bg-muted` /
+// `text-muted-foreground`. There is nothing left in src/features/home for this
+// gate to classify, which is why the array below is empty rather than removed:
+// the directory stays in the scan, so a hue returning here has to be classified
+// rather than merely counted.
+//
+// The measurements are kept here because they are the argument for the change,
+// not merely a record of the old state. The accent on `bg-<hue>/10` was never
+// uniform - it depended on what the chip itself sat on:
 //
 //   accent on `bg-<hue>/10` over ...   worst      best
 //   `--card` (widget cards, sidebar)   iris 3.32  ink 4.62
@@ -467,221 +287,15 @@ const COMPONENTS_APP_SITES: AllowedSite[] = [
 //   `bg-primary/10` (selected row)     iris 2.72  ink 3.77
 //   chip nested in chip (preview)      iris 2.79  ink 3.80
 //
-// Two sites did not survive the measurement and were swept rather than
-// classified, so they are deliberately absent below:
-//
-//   tool-accent.ts  `gratitude` -> icon: "text-think-ink"   was 1.90:1
-//   widget-tint.ts  `think`     -> icon: "text-think-ink"   was 1.90:1
-//
-// `text-accent-ink` was never an option for either: the home hub is not a room
-// (asserted below), so it would have resolved to violet.
+// Two sites never survived the measurement at all and were swept rather than
+// classified: tool-accent.ts's `gratitude` and widget-tint.ts's `think`, both
+// 1.90:1, both moved to `text-think-ink`. Tinting a surface with a hue costs
+// that hue its own contrast on it, so "be passes" was never a fact about `be` -
+// and eight hues on eight washes of themselves is eight separate facts to keep
+// true. The neutral pair is one.
 // ---------------------------------------------------------------------------
 
-/**
- * The per-tool accents. Two consumers, and they reach the same surface:
- *
- *   src/components/app/sidebar-nav.tsx paints the glyph `accent.icon` when the
- *   row is active and `text-muted-foreground` when it is not - so unlike the
- *   widget-tint map below, this tint *is* a state indicator and owes 1.4.11's
- *   3:1. Active is also carried by the chip fill, by the ink label and by
- *   `aria-current="page"`, so colour is not the sole channel.
- *
- *   src/features/tools/tools-screen.tsx paints it unconditionally on the hub
- *   tile's glyph, beside the tool's name - static branding, no state, the
- *   weaker claim of the two.
- *
- * The figures below are the stricter reading, and one set covers both: each
- * stacks `chip` (`bg-<hue>/10`) over a `bg-card` surface - the sidebar's own
- * background, the hub tile's `bg-card`. The hub reached this map in #421,
- * having until then carried a hardcoded copy that painted six tools in two
- * colours; its tiles used to tint at /15, which is *lower* contrast (be 4.22,
- * act 3.31), so adopting the map's /10 chip raised every one of them.
- *
- * A third consumer on a darker surface would have to be re-measured.
- */
-const SIDEBAR_ACCENT = (hue: string, ratio: string): Omit<AllowedSite, "snippet"> => ({
-  file: `${HOME_DIR}/tool-accent.ts`,
-  reason: "icon",
-  evidence:
-    `Nav and tools-hub glyph (size-6), ${hue} accent on bg-${hue}/10 over ` +
-    `bg-card: ${ratio}:1 light, above 1.4.11's 3:1. Both consumers pair the ` +
-    `glyph with the tool's name in text, and the sidebar duplicates its active ` +
-    `state in the chip fill, the ink label and aria-current="page", so the ` +
-    `tint is never the only channel.`,
-});
-
-/**
- * The widget tints. The bare accent this row classifies is the map's `icon`
- * field, and its five consumers are all the same thing: a module identity glyph
- * sitting beside that module's own name in text. None of them lets the tint
- * carry state or information, and `<Icon>` is `aria-hidden` by default
- * (src/components/react-native-reusables/icon.tsx), so assistive tech never
- * reaches it either. That puts these outside 1.4.11, which exempts graphics
- * that are decorative rather than "required to understand the content".
- *
- * The map's other two consumers paint *text* in the tint - WidgetCardHeader's
- * module label and add-widget-modal's add button - and neither is covered by
- * this row. Both take the map's `ink` field instead, so neither reaches the
- * bare accent at all. That split is the point: a consumer that wants this tint
- * as text does not get to borrow the decorative exemption.
- *
- * The `icon` sites are classified `decorative` and not `icon` on purpose,
- * because on two of the five the number does *not* clear 3:1 - the config
- * screen's selected row stacks the chip on `bg-primary/10`, and the add-widget
- * preview block nests a chip inside a chip. Calling these `icon` would assert a
- * floor they do not meet.
- *
- * **The row is invalidated by any consumer that makes this tint mean
- * something, or that paints it as text.** That is the change this comment
- * exists to catch - and because the gate below only sees the literal class
- * names in widget-tint.ts, not the call sites that spread them, catching it is
- * a review job, not a regex one.
- */
-const WIDGET_TINT = (hue: string, best: string, worst: string): Omit<AllowedSite, "snippet"> => ({
-  file: `${HOME_DIR}/widget-tint.ts`,
-  reason: "decorative",
-  evidence:
-    `Module identity glyph in a bg-${hue}/10 chip, always beside that module's ` +
-    `name in text, and aria-hidden - a user who never sees it loses nothing. ` +
-    `${hue} accent on its own /10 chip measures ${best}:1 over bg-card and ` +
-    `${worst}:1 at worst (the config screen's selected row, chip over ` +
-    `bg-primary/10). The low end is below 1.4.11's 3:1, which is why this is ` +
-    `decorative rather than icon: it is exempt, not passing.`,
-});
-
-/**
- * A widget card's own header glyph. One surface each - the chip over the
- * `Card`'s `bg-card` - and every one of them clears 3:1 there, so these take
- * the stronger `icon` reading rather than leaning on decoration.
- */
-const WIDGET_HEADER = (
-  widget: string,
-  hue: string,
-  ratio: string,
-  glyph: string,
-): Omit<AllowedSite, "snippet"> => ({
-  file: `${HOME_DIR}/widgets/${widget}.tsx`,
-  reason: "icon",
-  evidence:
-    `${glyph} glyph (size-5) in a bg-${hue}/10 chip over bg-card: ${ratio}:1 ` +
-    `light, clear of 1.4.11's 3:1 (dark is higher). Static branding beside the ` +
-    `widget title - it encodes no state, and the title names the module, so ` +
-    `colour carries nothing on its own.`,
-});
-
-const HOME_SITES: AllowedSite[] = [
-  // --- tool-accent.ts: the sidebar's per-tool accents -----------------------
-  {
-    ...SIDEBAR_ACCENT("act", "3.52"),
-    snippet: `"module-act": { chip: "bg-act/10", icon: "text-act", ink: "text-act-ink" },`,
-  },
-  {
-    ...SIDEBAR_ACCENT("be", "4.55"),
-    snippet: `mood: { chip: "bg-be/10", icon: "text-be", ink: "text-be-ink" },`,
-  },
-  {
-    ...SIDEBAR_ACCENT("be", "4.55"),
-    snippet: `"self-care": { chip: "bg-be/10", icon: "text-be", ink: "text-be-ink" },`,
-  },
-  {
-    ...SIDEBAR_ACCENT("act", "3.52"),
-    snippet: `habits: { chip: "bg-act/10", icon: "text-act", ink: "text-act-ink" },`,
-  },
-  {
-    ...SIDEBAR_ACCENT("aqua", "4.61"),
-    snippet: `breathing: { chip: "bg-aqua/10", icon: "text-aqua", ink: "text-aqua-ink" },`,
-  },
-  {
-    ...SIDEBAR_ACCENT("iris", "3.32"),
-    snippet: `meditation: { chip: "bg-iris/10", icon: "text-iris", ink: "text-iris-ink" },`,
-  },
-  {
-    ...SIDEBAR_ACCENT("ink", "4.62"),
-    snippet: `journal: { chip: "bg-ink/10", icon: "text-ink", ink: "text-ink-ink" },`,
-  },
-  {
-    ...SIDEBAR_ACCENT("ink", "4.62"),
-    snippet: `sleep: { chip: "bg-ink/10", icon: "text-ink", ink: "text-ink-ink" },`,
-  },
-  {
-    ...SIDEBAR_ACCENT("clay", "3.39"),
-    snippet: `grounding: { chip: "bg-clay/10", icon: "text-clay", ink: "text-clay-ink" },`,
-  },
-
-  // --- widget-tint.ts: the widget identity tints ----------------------------
-  {
-    ...WIDGET_TINT("act", "3.52", "2.87"),
-    snippet: `act: { chip: "bg-act/10", icon: "text-act", ink: "text-act-ink" },`,
-  },
-  {
-    ...WIDGET_TINT("be", "4.55", "3.71"),
-    snippet: `be: { chip: "bg-be/10", icon: "text-be", ink: "text-be-ink" },`,
-  },
-  {
-    ...WIDGET_TINT("aqua", "4.61", "3.76"),
-    snippet: `aqua: { chip: "bg-aqua/10", icon: "text-aqua", ink: "text-aqua-ink" },`,
-  },
-  {
-    ...WIDGET_TINT("mist", "3.33", "2.72"),
-    snippet: `mist: { chip: "bg-mist/10", icon: "text-mist", ink: "text-mist-ink" },`,
-  },
-  {
-    ...WIDGET_TINT("iris", "3.32", "2.72"),
-    snippet: `iris: { chip: "bg-iris/10", icon: "text-iris", ink: "text-iris-ink" },`,
-  },
-  {
-    ...WIDGET_TINT("ink", "4.62", "3.77"),
-    snippet: `ink: { chip: "bg-ink/10", icon: "text-ink", ink: "text-ink-ink" },`,
-  },
-  {
-    ...WIDGET_TINT("clay", "3.39", "2.77"),
-    snippet: `clay: { chip: "bg-clay/10", icon: "text-clay", ink: "text-clay-ink" },`,
-  },
-
-  // --- widgets/: one header glyph each --------------------------------------
-  {
-    ...WIDGET_HEADER("breathing-widget", "aqua", "4.61", "air"),
-    snippet: `<Icon name="air" className="size-5 text-aqua" />`,
-  },
-  {
-    ...WIDGET_HEADER("grounding-log-widget", "clay", "3.39", "history"),
-    snippet: `accentTextClass="text-clay"`,
-    evidence:
-      "history glyph (size-5) in a bg-clay/10 chip over bg-card: 3.39:1 light, " +
-      "clear of 1.4.11's 3:1. The prop is named accentTextClass but its one use " +
-      "in session-log-widget.tsx is `<Icon className={`size-5 ${accentTextClass}`} />` " +
-      "- a glyph, not text. If it ever reaches a <Text>, 4.5:1 applies and clay " +
-      "misses it; the accompanying accentBgClass keeps the two in step.",
-  },
-  {
-    ...WIDGET_HEADER("activities-widget", "act", "3.52", "directions-run"),
-    snippet: `<Icon name="directions-run" className="size-5 text-act" />`,
-  },
-  {
-    ...WIDGET_HEADER("journal-week-widget", "ink", "4.62", "edit-note"),
-    snippet: `<Icon name="edit-note" className="size-5 text-ink" />`,
-  },
-  {
-    ...WIDGET_HEADER("meditation-widget", "iris", "3.32", "self-improvement"),
-    snippet: `<Icon name="self-improvement" className="size-5 text-iris" />`,
-  },
-  {
-    ...WIDGET_HEADER("mood-checkin-widget", "be", "4.55", "mood"),
-    snippet: `<Icon name="mood" className="size-5 text-be" />`,
-  },
-  {
-    ...WIDGET_HEADER("mood-trend-widget", "be", "4.55", "show-chart"),
-    snippet: `<Icon name="show-chart" className="size-5 text-be" />`,
-  },
-  {
-    ...WIDGET_HEADER("routines-widget", "iris", "3.32", "repeat"),
-    snippet: `<Icon name="repeat" className="size-5 text-iris" />`,
-  },
-  {
-    ...WIDGET_HEADER("sleep-widget", "ink", "4.62", "bedtime"),
-    snippet: `<Icon name="bedtime" className="size-5 text-ink" />`,
-  },
-];
+const HOME_SITES: AllowedSite[] = [];
 
 const ALLOWED: AllowedSite[] = [...ACT_SITES, ...HOME_SITES, ...COMPONENTS_APP_SITES];
 
@@ -855,10 +469,6 @@ const ROOMLESS_TAIL_DIRS = [
   "src/features/tools",
 ];
 
-const HUE_MAP = "src/features/mindfulness/exercise-hue.ts";
-const SETTINGS = "src/features/settings/components";
-const BREATHING = "src/features/breathing";
-
 /**
  * The shared hue map's `text` member, which every entry below shares. It is the
  * *accent* member of a record that also carries `ink` - and `ink` is what the
@@ -879,226 +489,44 @@ const BREATHING = "src/features/breathing";
  * text (technique title, step counter, done heading). That is the exemption -
  * not the number.
  */
-const HUE_MAP_ICON = "shared hue map, consumed only by aria-hidden <Icon> glyphs";
 
+// EMPTIED by #588: the module tail's last bare accents - breathing's stepper
+// arrows and sound checks, meditation's chevron, the settings cards' icons,
+// sleep's filled star, the mood week strip's today marker - are all neutral now.
 const ALLOWED_TAIL: AllowedSite[] = [
-  // --- src/features/mindfulness: the shared hue map -------------------------
-  {
-    file: HUE_MAP,
-    snippet: `text: "text-mist",`,
-    reason: "decorative",
-    evidence: `${HUE_MAP_ICON}. Reached by the breath-awareness practice (3.15:1 on bg-mist/15 over bg-card) and, as a practice hue, by the meditation badge (2.96:1 on bg-mist/14 over the app background). The badge figure is under 1.4.11's 3:1, so this is decorative rather than icon - exempt, not passing.`,
-  },
-  {
-    file: HUE_MAP,
-    snippet: `text: "text-iris",`,
-    reason: "decorative",
-    evidence: `${HUE_MAP_ICON}. The only hue reaching both consumers - body-scan practice (3.14:1 on bg-iris/15 over bg-card) and the 5-4-3-2-1 grounding technique (2.94:1 on bg-iris/14 over the app background). The badge figure is under 1.4.11's 3:1, so this is decorative rather than icon - exempt, not passing.`,
-  },
-  {
-    file: HUE_MAP,
-    snippet: `text: "text-be",`,
-    reason: "icon",
-    evidence: `${HUE_MAP_ICON}. Reached by the loving-kindness practice: 4.22:1 on bg-be/15 over bg-card.`,
-  },
-  {
-    file: HUE_MAP,
-    snippet: `text: "text-ink",`,
-    reason: "icon",
-    evidence: `${HUE_MAP_ICON}. Reached by the observing-thoughts practice: 4.31:1 on bg-ink/15 over bg-card.`,
-  },
-  {
-    file: HUE_MAP,
-    snippet: `text: "text-act",`,
-    reason: "icon",
-    evidence: `${HUE_MAP_ICON}. Unreachable today: act is neither a grounding technique hue (iris/aqua/clay) nor a practice hue (mist/iris/be/ink). Kept because the map is a total record over HUE_NAMES; it would read 3.12:1 on the badge.`,
-  },
-  {
-    file: HUE_MAP,
-    snippet: `text: "text-clay",`,
-    reason: "icon",
-    evidence: `${HUE_MAP_ICON}. Reached by the body-scan grounding technique: 3.01:1 on the badge.`,
-  },
-  // `think` has no row here any more: its `text` member is the ink token, so
-  // there is no bare accent left to classify. The entry that used to sit here
-  // called it "unreachable today, and the one entry that must stay that way",
-  // and that was wrong on the first half - the 5-4-3-2-1 technique's fourth
-  // step is `hue: "think"`, and grounding-session.tsx passes the step hue, not
-  // the technique's, into HueIconBadge. It was rendering at 1.72:1.
-  {
-    file: HUE_MAP,
-    snippet: `text: "text-aqua",`,
-    reason: "icon",
-    evidence: `${HUE_MAP_ICON}. Reached by the cold-water grounding technique: 4.05:1 on the badge.`,
-  },
-
-  // --- src/features/settings: section-card badges ---------------------------
-  {
-    file: `${SETTINGS}/account-card.tsx`,
-    snippet: `iconClassName="text-clay"`,
-    reason: "icon",
-    evidence:
-      "20px glyph in a 36px badge, bg-[hsl(var(--clay)/0.10)] over the bg-card section: 3.39:1. " +
-      "The badge wrapper is accessibilityElementsHidden and the section title sits beside it.",
-  },
-  {
-    file: `${SETTINGS}/onboarding-card.tsx`,
-    snippet: `iconClassName="text-iris"`,
-    reason: "icon",
-    evidence:
-      "20px glyph on bg-[hsl(var(--iris)/0.10)] over bg-card: 3.32:1. Badge is a11y-hidden.",
-  },
-  {
-    file: `${SETTINGS}/reminders-card.tsx`,
-    snippet: `iconClassName="text-be"`,
-    reason: "icon",
-    evidence: "20px glyph on bg-[hsl(var(--be)/0.10)] over bg-card: 4.55:1. Badge is a11y-hidden.",
-  },
-  {
-    file: `${SETTINGS}/security-section.tsx`,
-    snippet: `iconClassName="text-iris"`,
-    reason: "icon",
-    evidence:
-      "20px glyph on bg-[hsl(var(--iris)/0.10)] over bg-card: 3.32:1. Badge is a11y-hidden.",
-  },
-  {
-    file: `${SETTINGS}/support-card.tsx`,
-    snippet: `iconClassName="text-aqua"`,
-    reason: "icon",
-    evidence:
-      "20px glyph on bg-[hsl(var(--aqua)/0.10)] over bg-card: 4.61:1. Badge is a11y-hidden.",
-  },
-
-  // --- src/features/breathing ----------------------------------------------
-  {
-    file: `${BREATHING}/breathing-exercise-editor-screen.tsx`,
-    snippet: `<Text className="text-base text-aqua">▲</Text>`,
-    reason: "passing-hue",
-    evidence:
-      "16px stepper glyph on the aqua room background - the screen is useRoomStyle('aqua'), so " +
-      "its bg-background re-resolves to the room pour: 4.86:1, clearing 1.4.3 as text and not " +
-      "relying on the non-text floor. The wrapping Pressable carries its own accessibilityLabel " +
-      "('<phase> +'), so the glyph is not the accessible name.",
-  },
-  {
-    file: `${BREATHING}/breathing-exercise-editor-screen.tsx`,
-    snippet: `<Text className="text-base text-aqua">▼</Text>`,
-    reason: "passing-hue",
-    evidence: "Decrement twin of the site above: 4.86:1 on the aqua room background.",
-  },
-  {
-    file: `${BREATHING}/sounds-sheet.tsx`,
-    snippet: `{active ? <Icon name="check" className="size-4 text-aqua" /> : null}`,
-    reason: "icon",
-    evidence:
-      "16px check glyph on bg-aqua/10 over the sheet's bg-background: 4.27:1, clearing 1.4.11. " +
-      "Selection is carried by accessibilityRole='radio' + aria-checked and by the label's " +
-      "font-semibold, so the tint is not the only channel. The label beside it is real text and " +
-      "took the ink token instead (#412) - the same 4.27 that passes here fails 1.4.3 there.",
-  },
-
-  // --- src/features/mood ----------------------------------------------------
-  {
-    file: "src/features/mood/mood-week-hero.tsx",
-    snippet: `className={cn("text-[11px] font-semibold", isToday && "text-be")}`,
-    reason: "passing-hue",
-    evidence:
-      "11px weekday letter for today, on a bg-be/10 cell inside the hero card. WeekHero renders " +
-      "only from mood-tracker-screen, which is useRoomStyle('be'), and its Card is variant='soft' " +
-      "(the tint colours the shadow, not the fill) - so the backdrop is the be room's card: " +
-      "4.55:1. The same chip over the neutral app background would be 4.22 and would fail.",
-  },
-  {
-    file: "src/features/mood/mood-week-hero.tsx",
-    snippet: `<Text className="text-[13px] text-be">`,
-    reason: "passing-hue",
-    evidence:
-      "13px emotion chip label on bg-be/10 over the same be room card: 4.55:1. Measured through " +
-      "the tint, not assumed from be's 4.86 on a plain surface.",
-  },
-
-  // src/features/tools held three tiles here until #421 - `iconColor:
-  // "text-be"` three times over, from a hardcoded hue map that contradicted
-  // src/features/home/tool-accent.ts and painted the hub's six tools in two
-  // colours. The screen now reads that map, so it names no hue of its own and
-  // has nothing left to classify; its glyphs are covered by the SIDEBAR_ACCENT
-  // rows above, which is where the hues actually live. The directory stays in
-  // TAIL_DIRS so a new literal there has to be classified rather than merely
-  // counted.
-
-  // --- src/features/cbt: shared-tool pills ----------------------------------
-  {
-    file: "src/features/cbt/cbt-home/shared-tools-row.tsx",
-    snippet: `act: "text-act",`,
-    reason: "icon",
-    evidence:
-      "13px pill glyph on bg-card: 3.95:1. Decorative - the tool's name sits beside it. This map's " +
-      "third entry already takes the ink token because think reads 2.03:1 here.",
-  },
-  {
-    file: "src/features/cbt/cbt-home/shared-tools-row.tsx",
-    snippet: `be: "text-be",`,
-    reason: "icon",
-    evidence: "13px pill glyph on bg-card: 5.26:1, which would clear 1.4.3 too.",
-  },
-
-  // --- src/features/security: the lock gate ---------------------------------
-  {
-    file: "src/features/security/app-lock-gate.tsx",
-    snippet: `<Icon name="lock" size={36} className="text-iris" />`,
-    reason: "icon",
-    evidence:
-      "Privacy cover shown when the app leaves the foreground. 36px glyph on " +
-      "bg-[hsl(var(--iris)/0.12)] over bg-background: 3.01:1. The whole cover is " +
-      "accessibilityElementsHidden, so the glyph carries nothing to assistive tech.",
-  },
-  {
-    file: "src/features/security/app-lock-gate.tsx",
-    snippet: `<Icon name="lock" size={36} className="text-iris" />`,
-    reason: "icon",
-    evidence:
-      "The locked screen itself, same glyph and surface: 3.01:1. Its badge wrapper is " +
-      "accessibilityElementsHidden and lock.title/lock.description carry the meaning as text.",
-  },
-
-  // --- one-site areas -------------------------------------------------------
-  {
-    file: "src/features/meditation/meditation-home-screen.tsx",
-    snippet: `<Icon name="chevron-right" size={20} className="text-iris" />`,
-    reason: "icon",
-    evidence:
-      "20px affordance chevron on the iris room card - Card variant='soft' is a plain bg-card, " +
-      "the tint only colours its shadow: 3.72:1. The row's label and its Pressable role carry the " +
-      "meaning; the chevron repeats it.",
-  },
-  {
-    file: "src/features/modules/dbt-module-screen.tsx",
-    snippet: `<Icon name="anchor" className="size-7 text-be" />`,
-    reason: "icon",
-    evidence:
-      "28px glyph on bg-be/15 inside a bg-be/5 card over the app background: 3.95:1. " +
-      "dbt.statusTitle and dbt.statusBody sit beside it as text.",
-  },
+  // The single survivor, and it survives because it is not chrome. Sleep quality
+  // is an ordered 1-5 input control - the twin of the mood scale, which #558
+  // keeps by name ("the same 5-step scale on the input control") - and #588
+  // records it as the `sleep-quality-ramp` encoding. The mechanical sweep took
+  // it by accident and left `filled` and `empty` painting the identical class;
+  // this entry is here so the next sweep has to read the argument rather than
+  // rediscover it.
   {
     file: "src/features/sleep/star-rating.tsx",
     snippet: `className={filled ? "text-ink" : "text-muted-foreground"}`,
     reason: "icon",
     evidence:
-      "32px star on the ink room background (sleep-log-screen is useRoomStyle('ink')): 4.71:1. " +
-      "Filled and empty differ by glyph - star vs star-outline - and each Pressable carries " +
-      "accessibilityRole='radio' with aria-checked, so the fill colour is not the only channel.",
+      "32px star on the sleep log's background: 4.71:1. Filled and empty differ by " +
+      "glyph - star vs star-outline - and each Pressable carries " +
+      "accessibilityRole='radio' with aria-checked, so the fill colour is not the " +
+      "only channel.",
   },
 ];
 
 /**
  * Every `accentClassName` literal in the app. `ToolStats` renders it at 13px
- * and 11px, so it must be an ink token: `text-accent-ink` inside a room of that
- * hue, `text-<hue>-ink` anywhere else. The prop's own doc says so, and seven
- * call sites disagreed with it in silence because `tone="onField"` ignores the
- * value entirely (#412).
+ * and 11px, so it must be an ink token. It used to be `text-accent-ink` inside a
+ * room of that hue and `text-<hue>-ink` anywhere else; the prop's own doc said
+ * so, and seven call sites disagreed with it in silence because `tone="onField"`
+ * ignores the value entirely (#412).
+ *
+ * `accent` left the alternation with `--accent-ink` itself (#589). The hue inks
+ * stay listed because the four keeps-hue surfaces may still legitimately reach
+ * one, and `primary` joins them as the neutral form every former room-less site
+ * now takes.
  */
 const ACCENT_PROP = /accentClassName=\{?"([^"]*)"/g;
-const INK_TOKEN = new RegExp(String.raw`^text-(accent|${HUE_NAMES.join("|")})-ink$`);
+const INK_TOKEN = new RegExp(String.raw`^text-(primary|${HUE_NAMES.join("|")})-ink$`);
 
 describe("the module tail keeps the raw hue accent only where it is justified (#412)", () => {
   it("has exactly the classified set of bare text-<hue> sites", () => {
@@ -1162,11 +590,23 @@ describe("no bare accent survives outside a classified area", () => {
   const CLASSIFIED = [...CLASSIFIED_AREAS, ...TAIL_DIRS];
 
   it("finds bare accents where it expects them, so the filter is not vacuous", () => {
-    // If the scan itself broke, the assertion below would pass by finding
-    // nothing anywhere rather than nothing *outside* the classified areas.
-    expect(
-      findingsIn(BARE_HUE, sourceFiles(ROOT, { dirs: ["app", "src"] })).length,
-    ).toBeGreaterThan(30);
+    // INVERTED by #588. This used to demand more than 30 bare accents app-wide,
+    // because with a long allowlist "none outside the classified areas" would
+    // pass trivially if the scanner broke. There are no classified areas left -
+    // the sweep took all of them - so the vacuity guard has to point at the one
+    // file that still names hues by construction: design-tokens.ts, where
+    // TINT_ACCENT lives until #589 deletes it.
+    //
+    // A floor rather than an exact count, because TINT_ACCENT's shape is asserted
+    // directly below and pinning the number twice would just make one of them a
+    // copy. What this has to catch is the scanner reading nothing at all.
+    // A positive control rather than a count. design-tokens.ts held the last
+    // bare hue accents in the tree until #589 deleted TINT_ACCENT, so there is
+    // no file left to point at - and "nothing anywhere" is exactly what a broken
+    // scanner also returns. Running the pattern over a known-bad line proves it
+    // still matches.
+    expect(`text-act`.match(BARE_HUE)).not.toBeNull();
+    expect(`text-act-ink`.match(BARE_HUE)).toBeNull();
   });
 
   it("holds none anywhere else", () => {
@@ -1183,85 +623,55 @@ describe("no bare accent survives outside a classified area", () => {
     expect(stray).toEqual([]);
   });
 
-  it("lets design-tokens.ts through for TINT_ACCENT's bare accents and nothing more", () => {
-    // The exclusion above is by FILE, which on its own is not a gate: a THIRD map
-    // in this file writing hue text - in either spelling - rides through it in
-    // silence, and the shape assertions below only ever look at the two maps that
-    // exist today. That is #421's hole re-opened one file over, so pin the whole
-    // set instead. A new bare-hue line here now has to be justified by editing
-    // this list, which is the point.
+  it("no longer needs to let design-tokens.ts through at all", () => {
+    // The file-level exclusion above is now belt with no braces needed. It was
+    // there because TINT_ACCENT necessarily named all eight hues as text, and
+    // excluding by FILE would have let a THIRD map ride through in silence -
+    // #421's hole re-opened one file over. With both maps deleted, the file
+    // writes no bare hue text at all, which is the stronger statement.
+    //
+    // The encoding palette it still holds is `bg-<hue>/[alpha]` ramp classes,
+    // which BARE_HUE does not match: it looks for hue TEXT.
     const inTokens = findingsIn(BARE_HUE, sourceFiles(ROOT, { dirs: ["app", "src"] }))
       .filter((finding) => finding.file === TOKENS_FILE)
       .map((finding) => finding.snippet.trim())
       .sort();
 
-    // This used to expect all eight hues. It no longer can: #433 measured
-    // `think`'s glyph at 1.80:1 as rendered, so TINT_ACCENT.think is
-    // `text-think-ink` and writes no bare hue here at all. The expectation is
-    // derived from the map rather than restated with `think` deleted, so the day
-    // a measurement moves a second hue to ink this keeps passing without an
-    // edit — while a THIRD map, or a hue moving back to a bare accent, still
-    // fails until it is justified. Which hues may hold a bare accent is decided
-    // by luminance in test/theme-token-sync.test.ts, never here.
-    const expected = HUE_NAMES.filter((hue) => TINT_ACCENT[hue] === `text-${hue}`)
-      .map((hue) => `${hue}: "text-${hue}",`)
-      .sort();
-
-    expect(inTokens).toEqual(expected);
+    expect(inTokens).toEqual([]);
   });
 });
 
-describe("the tint maps keep text and marks apart (#421)", () => {
-  // The blind spot that made this necessary: TINT_TEXT held the raw accents as
-  // arbitrary values, feeding ~78 sites through `Text`'s `tint` prop - the
-  // signed-out landing page among them, where nine of ten labels measured below
-  // AA. Excluding the defining file from the sweep above would re-open exactly
-  // that hole, so the two maps are asserted by shape here rather than trusted.
+// INVERTED by #589: there are no tint maps left to keep apart.
+//
+// This suite pinned the shape of TINT_TEXT and TINT_ACCENT - every hue to its
+// ink in the first, the published accent in the second except `think`, no
+// arbitrary values in either, and `primary` taking ink as text while keeping the
+// accent as a mark. It existed because excluding design-tokens.ts from the sweep
+// above would otherwise re-open #421's hole, where TINT_TEXT held raw accents as
+// arbitrary values and fed ~78 sites through Text's `tint` prop.
+//
+// Both maps are deleted. The hole they guarded is closed differently now: the
+// test above pins every bare-hue line in the file, and the eslint rule added by
+// this ticket fails a build that paints a hue as chrome anywhere in the tree.
+describe("the tint maps are gone", () => {
+  it("design-tokens.ts declares neither TINT_TEXT nor TINT_ACCENT", () => {
+    // Read from source rather than imported: a deleted export cannot be named in
+    // an import statement, so the assertion has to look at the file.
+    const source = stripComments(readFileSync(join(ROOT, TOKENS_FILE), "utf8"));
 
-  it("TINT_TEXT resolves every hue to its ink, never to the accent", () => {
-    for (const hue of HUE_NAMES) {
-      expect(TINT_TEXT[hue]).toBe(`text-${hue}-ink`);
-    }
+    expect(source).not.toMatch(/\bexport const TINT_TEXT\b/);
+    expect(source).not.toMatch(/\bexport const TINT_ACCENT\b/);
+    expect(source).not.toMatch(/\bexport const MARK_WASH_ALPHAS\b/);
   });
 
-  it("TINT_ACCENT holds the published accent for every hue that can carry it", () => {
-    // This asserted `text-<hue>` for all eight, on TINT_ACCENT's docstring claim
-    // that 1.4.11's 3:1 floor was met "which the published accents clear".
-    // Nothing computed that claim, and #433 measured it false as rendered:
-    // `think`'s glyph is 1.80:1 on the signed-out landing page and 1.88 on the
-    // bare app background, so it never had a surface to be a mark on.
-    //
-    // The assertion is not being relaxed to fit the code. The *decision* moved
-    // to test/theme-token-sync.test.ts, which recomputes each tint's worst mark
-    // surface from the tokens and derives accent-vs-ink there; this is a pin of
-    // today's answer, so a silent flip fails in two places rather than one.
-    for (const hue of HUE_NAMES) {
-      expect(TINT_ACCENT[hue]).toBe(hue === "think" ? "text-think-ink" : `text-${hue}`);
-    }
-  });
+  it("still declares the encoding palette the keeps-hue surfaces read", () => {
+    // The other direction, because deleting too much here is the failure that
+    // takes a scale away from a user rather than a decoration.
+    const source = stripComments(readFileSync(join(ROOT, TOKENS_FILE), "utf8"));
 
-  it("neither map writes a hue as an arbitrary value", () => {
-    // The spelling the gates could not see. Plain classes only, so a future
-    // reader of either map is also readable by the scan.
-    const written = [...Object.values(TINT_TEXT), ...Object.values(TINT_ACCENT)];
-
-    expect(written.filter((cls) => cls.includes("hsl(var("))).toEqual([]);
-  });
-
-  it("primary is not a hue, but it is still text, so it takes ink too", () => {
-    // This assertion used to read `TINT_TEXT.primary === "text-primary"`, with
-    // a note that primary was the only tint with no ink and was tracked
-    // separately. It has one now (#421 §3): `primary` is absent from HUE_NAMES
-    // and no room pours it, which is why every `text-<hue>` gate in this file
-    // passed straight over the Beta chip while it rendered at 4.41:1 light and
-    // 4.22:1 dark on all 20 captured screens. Not a hue is not the same as not
-    // text, so the text/mark split applies here exactly as it does to the eight.
-    expect(TINT_TEXT.primary).toBe("text-primary-ink");
-
-    // The accent half is unchanged and must stay so: `text-primary` is still
-    // right for icons and decoration, and darkening those would read as
-    // disabled. Only the text map moved.
-    expect(TINT_ACCENT.primary).toBe("text-primary");
+    expect(source).toMatch(/\bexport const HUE_RAMP_CLASSES\b/);
+    expect(source).toMatch(/\bexport const HUE_TRIPLES\b/);
+    expect(source).toMatch(/\bexport function hueRampClass\b/);
   });
 });
 
@@ -1278,126 +688,11 @@ describe("the tint maps keep text and marks apart (#421)", () => {
 // paints has to be classified by what sits on it. A new wash fails until someone
 // says which — and if the answer is "a mark", MARK_WASH_ALPHAS has to grow and
 // the floor re-measures it.
-describe("no TINT_ACCENT consumer paints a mark on a wash the floor never measured", () => {
-  const TINT_ALT = TINT_TOKENS.join("|");
-
-  /**
-   * A `bg-` wash of a tint, in all three spellings the app writes:
-   * `bg-primary/10` (Tailwind percent), `bg-primary/[0.07]` (arbitrary alpha)
-   * and `bg-[hsl(var(--act)/0.07)]` (the hue form, which has no `bg-<hue>`
-   * utility). Deliberately `bg-` only: a glyph sits on the fill, not the border,
-   * and `border-<hue>/0.35` is not a surface anything is read against.
-   */
-  const TINT_WASH = new RegExp(
-    String.raw`bg-(?:(?:${TINT_ALT})/(?:\[([0-9.]+)\]|(\d+))|\[hsl\(var\(--(?:${TINT_ALT})\)/([0-9.]+)\)\])`,
-    "g",
-  );
-
-  const consumers = sourceFiles(ROOT, { dirs: ["app", "src"] }).filter(
-    (file) =>
-      file !== TOKENS_FILE &&
-      /\bTINT_ACCENT\b/.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
-  );
-
-  /** Distinct `file@alpha` washes, which is the granularity a map paints at. */
-  function scanWashes(): string[] {
-    const seen = new Set<string>();
-    for (const file of consumers) {
-      const source = stripComments(readFileSync(join(ROOT, file), "utf8"));
-      for (const [, bracket, percent, hue] of source.matchAll(TINT_WASH)) {
-        const alpha = bracket ? Number(bracket) : percent ? Number(percent) / 100 : Number(hue);
-        seen.add(`${file}@${alpha}`);
-      }
-    }
-    return [...seen].sort();
-  }
-
-  /**
-   * Every tint wash the consumers paint, and what is read against it. Only
-   * `mark` entries constrain MARK_WASH_ALPHAS — `text` washes are floored at
-   * 4.5:1 by the hue-ink suite's own (denser) wash set, and `fill` washes carry
-   * neither because no TINT_ACCENT glyph is painted on them.
-   */
-  const CLASSIFIED_WASHES: { file: string; alpha: number; carries: string; why: string }[] = [
-    {
-      file: "src/components/app/landing/landing-screen.tsx",
-      alpha: 0.07,
-      carries: "mark",
-      why: "PILL_TINT, the hero pill: a size-17 TINT_ACCENT glyph beside a TINT_TEXT label. The 1.80:1 #433 measured is this surface.",
-    },
-    {
-      file: "src/components/app/landing/modules-section.tsx",
-      alpha: 0.05,
-      carries: "mark",
-      why: "CARD_TINT, the module card: a size-22 TINT_ACCENT glyph beside a TINT_TEXT kicker.",
-    },
-    {
-      file: "src/components/app/pillar-card.tsx",
-      alpha: 0.1,
-      carries: "mark",
-      why: "TOOL_ICON_BG, the 8x8 tile a size-18 TINT_ACCENT glyph is centred in. Also LETTER_BG's primary row, which is text, and floored as such.",
-    },
-    {
-      file: "src/components/app/pillar-card.tsx",
-      alpha: 0.12,
-      carries: "text",
-      why: "LETTER_BG's eight hue rows, which carry a 26px letter in TINT_TEXT and no mark. Covered by the /0.15 wash case of the hue-ink floor.",
-    },
-    {
-      file: "src/components/react-native-reusables/badge.tsx",
-      alpha: 0.1,
-      carries: "mark",
-      why: "badgeVariants' tint fill: a size-14 TINT_ACCENT glyph beside the ink label.",
-    },
-    {
-      file: "src/components/react-native-reusables/badge.tsx",
-      alpha: 0.9,
-      carries: "fill",
-      why: "the `default` variant's solid primary hover fill. `tint` is undefined there, so badge.tsx paints no TINT_ACCENT glyph on it.",
-    },
-  ];
-
-  it("finds the washes it expects, so the scan is not vacuous", () => {
-    // If the regex broke, every assertion below would pass by finding nothing.
-    expect(consumers.length).toBeGreaterThanOrEqual(4);
-    expect(scanWashes()).toContain("src/components/app/landing/landing-screen.tsx@0.07");
-  });
-
-  it("classifies every tint wash its consumers paint", () => {
-    // A wash appearing here unclassified is the thing to fix by adding a row
-    // above with what reads against it - not by widening the regex past it.
-    expect(scanWashes()).toEqual(
-      [...CLASSIFIED_WASHES].map((wash) => `${wash.file}@${wash.alpha}`).sort(),
-    );
-  });
-
-  it("measures every wash that carries a mark", () => {
-    const unmeasured = CLASSIFIED_WASHES.filter(
-      (wash) => wash.carries === "mark" && !MARK_WASH_ALPHAS.includes(wash.alpha as never),
-    ).map((wash) => `${wash.file}@${wash.alpha}`);
-
-    expect(unmeasured).toEqual([]);
-  });
-
-  it("keeps MARK_WASH_ALPHAS to alphas a mark is actually painted on", () => {
-    // The other direction: an alpha nobody paints is a floor measuring fiction,
-    // and it hides that the real surfaces went unchecked.
-    const painted = new Set(
-      CLASSIFIED_WASHES.filter((wash) => wash.carries === "mark").map((wash) => wash.alpha),
-    );
-
-    expect([...MARK_WASH_ALPHAS].sort()).toEqual([...painted].sort());
-  });
-
-  it("gives every classified wash a reason naming what reads against it", () => {
-    for (const wash of CLASSIFIED_WASHES) {
-      expect({ at: `${wash.file}@${wash.alpha}`, explained: wash.why.length > 40 }).toEqual({
-        at: `${wash.file}@${wash.alpha}`,
-        explained: true,
-      });
-    }
-  });
-});
+// SUPERSEDED by #589. #587 inverted this suite to assert that TINT_ACCENT had
+// no consumers left - the precondition this ticket deletes the map on. The map
+// is deleted, so "no consumers" is now true by construction and there is nothing
+// for a scan to say. What replaces it is the assertion that the DECLARATION is
+// gone, in "the tint maps are gone" above.
 
 describe("the shared hue map is reached only by the hues it was measured against", () => {
   // The hue map is total over HUE_NAMES, but only some of those hues are ever
@@ -1424,17 +719,18 @@ describe("the shared hue map is reached only by the hues it was measured against
     expect([...reachable].sort()).toEqual(["aqua", "be", "clay", "ink", "iris", "mist", "think"]);
   });
 
-  it("never reaches a bare accent that fails the decorative reading outright", () => {
-    // Every reachable hue paints HueIconBadge, whose glyph is aria-hidden and
-    // sits beside the technique or practice name - decorative, so 1.4.11 does
-    // not bind. `think` is excluded anyway because a 1.72:1 mark is invisible
-    // rather than merely exempt, and it is the one hue whose `text` member is
-    // the ink token for that reason.
-    const bareAccent = [...reachable].filter(
-      (hue) => !exerciseHue(hue).classes.text.endsWith("-ink"),
-    );
-
-    expect(bareAccent).not.toContain("think");
+  // INVERTED by #588. This asked whether a reachable hue reached a bare accent
+  // that failed the decorative reading - `think` at 1.72:1 as a 48px glyph on
+  // HueIconBadge, which the 5-4-3-2-1 technique's fourth step really did paint.
+  //
+  // The badge takes the app accent now and `exerciseHue(hue).classes` is gone,
+  // so no configured hue reaches a class at all. That is the stronger statement
+  // and it is what this asserts. It fails on the old behaviour, where every
+  // definition carried a five-name class map.
+  it("reaches no chrome class at all, for any configured hue", () => {
+    for (const hue of reachable) {
+      expect(Object.keys(exerciseHue(hue))).toEqual(["hsl"]);
+    }
   });
 });
 

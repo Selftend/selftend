@@ -108,7 +108,7 @@ export default function MoodDetailScreen() {
         <View className="gap-6">
           <View className="gap-2">
             <ScreenBreadcrumb />
-            <Card variant="soft" tint="be">
+            <Card variant="soft">
               <CardContent className="flex-row items-center gap-4 pt-5 pb-5">
                 <View
                   className={cn(
@@ -144,7 +144,7 @@ export default function MoodDetailScreen() {
             </Card>
           </View>
 
-          <Card variant="soft" tint="be">
+          <Card variant="soft">
             <CardHeader>
               <CardTitle>{t("detail.loggedAt")}</CardTitle>
             </CardHeader>
@@ -153,7 +153,7 @@ export default function MoodDetailScreen() {
             </CardContent>
           </Card>
 
-          <Card variant="soft" tint="be">
+          <Card variant="soft">
             <CardHeader>
               <CardTitle>{t("detail.emotions")}</CardTitle>
             </CardHeader>
@@ -177,7 +177,7 @@ export default function MoodDetailScreen() {
             </CardContent>
           </Card>
 
-          <Card variant="soft" tint="be">
+          <Card variant="soft">
             <CardHeader>
               <CardTitle>{t("detail.notes")}</CardTitle>
             </CardHeader>
@@ -198,7 +198,7 @@ export default function MoodDetailScreen() {
           ]
             .filter((box) => box.value.length > 0)
             .map((box) => (
-              <Card key={box.title} variant="soft" tint="be">
+              <Card key={box.title} variant="soft">
                 <CardHeader>
                   <CardTitle>{box.title}</CardTitle>
                 </CardHeader>
@@ -209,7 +209,7 @@ export default function MoodDetailScreen() {
             ))}
 
           {entry.linkedStrategy ? (
-            <Card variant="soft" tint="be">
+            <Card variant="soft">
               <CardHeader>
                 <CardTitle>{t("detail.linkedStrategy")}</CardTitle>
               </CardHeader>

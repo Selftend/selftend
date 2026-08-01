@@ -147,7 +147,7 @@ export default function HabitsHomeScreen() {
               meta={
                 <ToolStats
                   tone="onField"
-                  accentClassName="text-accent-ink"
+                  accentClassName="text-primary-ink"
                   items={[
                     { value: `${todayTicked}/${todayHabits.length}`, label: t("hero.today") },
                     { value: t("hero.habits", { count: allHabits.length }), label: "" },
@@ -160,7 +160,7 @@ export default function HabitsHomeScreen() {
             <ContentSheet className="px-4">
               <View className="gap-6">
                 {identities.length > 0 ? (
-                  <View className="rounded-2xl border border-act/30 bg-act/5 p-4">
+                  <View className="rounded-2xl border border-border bg-muted p-4">
                     <Text className="text-sm">
                       {t("home.identityBannerPrefix")}{" "}
                       <Text className="font-semibold">
@@ -182,7 +182,7 @@ export default function HabitsHomeScreen() {
                 </View>
 
                 {missTwiceRiskHabits.length > 0 ? (
-                  <View className="gap-2 rounded-2xl border border-think/40 bg-think/10 p-4">
+                  <View className="gap-2 rounded-2xl border border-border bg-muted p-4">
                     <Text className="font-semibold">{t("home.neverMissTwiceTitle")}</Text>
                     <Text variant="muted">{t("home.neverMissTwiceBody")}</Text>
                   </View>
@@ -415,7 +415,7 @@ function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: Insight
               }))}
               minBarHeight={6}
               zeroHeight={2}
-              tintClass="bg-act/70"
+              tintClass="bg-muted"
               barClassName="rounded-t-md"
               labelClassName="leading-3"
             />
@@ -453,8 +453,12 @@ function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: Insight
           {hasTwoMinute ? (
             <View className="gap-1.5">
               <View className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                {/* The fill is the accent, not the wash. The sweep sent both the
+                    track and the fill to `bg-muted`, which renders the bar as a
+                    flat blank pill - the one case where a hue was carrying the
+                    only difference between two adjacent surfaces. */}
                 <View
-                  className="h-full rounded-full bg-act/70"
+                  className="h-full rounded-full bg-primary"
                   style={{ width: `${adoptionPct}%` }}
                 />
               </View>

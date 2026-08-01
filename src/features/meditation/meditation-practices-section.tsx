@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { MEDITATION_PRACTICES, practicesLookup } from "@/src/features/meditation/practices";
-import { exerciseHue } from "@/src/features/mindfulness/exercise-hue";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { CHROME_MARK, CHROME_RULE, CHROME_TEXT, CHROME_WASH } from "@/src/lib/theme/chrome";
 import { cn } from "@/lib/utils";
 
 interface MeditationPracticesSectionProps {
@@ -47,7 +47,6 @@ export function MeditationPracticesSection({ initialPractice }: MeditationPracti
       {sectionOpen
         ? MEDITATION_PRACTICES.map((p) => {
             const open = selected === p.slug;
-            const hue = exerciseHue(p.hue);
             const rawSteps = t(`practices.${p.slug}.instructions`, { returnObjects: true });
             const steps = Array.isArray(rawSteps) ? (rawSteps as string[]) : [];
             return (
@@ -57,16 +56,13 @@ export function MeditationPracticesSection({ initialPractice }: MeditationPracti
                 aria-expanded={open}
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                 onPress={() => setSelected(open ? null : p.slug)}
-                className={cn("overflow-hidden rounded-2xl border bg-card p-4", hue.classes.border)}
+                className={cn("overflow-hidden rounded-2xl border bg-card p-4", CHROME_RULE)}
               >
                 <View className="flex-row items-center gap-3">
                   <View
-                    className={cn(
-                      "size-9 items-center justify-center rounded-lg",
-                      hue.classes.chipBg,
-                    )}
+                    className={cn("size-9 items-center justify-center rounded-lg", CHROME_WASH)}
                   >
-                    <Icon name={p.icon} className={cn("size-5", hue.classes.text)} size={20} />
+                    <Icon name={p.icon} className={cn("size-5", CHROME_MARK)} size={20} />
                   </View>
                   <Text className="flex-1 text-sm font-semibold">
                     {t(`practices.${p.slug}.title`)}
@@ -87,7 +83,7 @@ export function MeditationPracticesSection({ initialPractice }: MeditationPracti
                         <View
                           className={cn(
                             "size-6 items-center justify-center rounded-full",
-                            hue.classes.chipBg,
+                            CHROME_WASH,
                           )}
                         >
                           {/*
@@ -95,10 +91,10 @@ export function MeditationPracticesSection({ initialPractice }: MeditationPracti
                             on `chipBg`, a `bg-<hue>/15` tint of its own hue.
                             Practices carry guest hues (mist, be, ink) as well
                             as the room's iris, so this must be the hue-keyed
-                            ink — `text-accent-ink` would repaint all four as
+                            ink — `text-primary-ink` would repaint all four as
                             the room's accent.
                           */}
-                          <Text className={cn("text-[10px] font-bold", hue.classes.ink)}>
+                          <Text className={cn("text-[10px] font-bold", CHROME_TEXT)}>
                             {String(i + 1).padStart(2, "0")}
                           </Text>
                         </View>

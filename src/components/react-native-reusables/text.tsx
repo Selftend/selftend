@@ -3,7 +3,6 @@ import { Slot } from "@rn-primitives/slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 import { Platform, Text as RNText, type Role, type TextStyle } from "react-native";
-import { TINT_TEXT, type TintToken } from "@/src/lib/design-tokens";
 
 const FONT_FAMILY = {
   regular: "NotoSans_400Regular",
@@ -123,29 +122,23 @@ function Text({
   className,
   asChild = false,
   variant = "default",
-  tint,
   style,
   ...props
 }: React.ComponentProps<typeof RNText> &
   React.RefAttributes<typeof RNText> &
   TextVariantProps & {
     asChild?: boolean;
-    tint?: TintToken;
   }) {
   const textClass = React.useContext(TextClassContext);
   const Component = asChild ? Slot : RNText;
   const resolvedVariant = variant ?? "default";
   const variantClassName = textVariants({ variant: resolvedVariant });
-  // For eyebrow: default to muted-foreground if no tint; honor tint if set.
-  // For other variants: apply tint only if explicitly set (no default color override).
-  const tintColor =
-    resolvedVariant === "eyebrow"
-      ? tint
-        ? TINT_TEXT[tint]
-        : "text-muted-foreground"
-      : tint
-        ? TINT_TEXT[tint]
-        : undefined;
+  // The `tint` prop is gone (#588). It resolved a module hue to that hue's ink,
+  // and its five remaining callers were all decorative - grounding's technique
+  // labels, the programme card's eyebrow. An eyebrow keeps its muted default,
+  // which is what every untinted one already rendered; anything wanting the app
+  // accent says so in `className`.
+  const tintColor = resolvedVariant === "eyebrow" ? "text-muted-foreground" : undefined;
   return (
     <Component
       className={cn(variantClassName, tintColor, textClass, className)}

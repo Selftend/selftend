@@ -22,7 +22,7 @@ export function SleepDurationChart({ nights }: { nights: SleepLog[] }) {
   const dateFmt = new Intl.DateTimeFormat(i18n.language, { month: "numeric", day: "numeric" });
 
   return (
-    <Card variant="soft" tint="ink">
+    <Card variant="soft">
       <CardContent className="gap-3 pt-4 pb-4">
         <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {t("chart.duration14")}

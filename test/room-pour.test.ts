@@ -2,7 +2,12 @@ import { vars } from "nativewind";
 
 import { roomVariables } from "@/src/lib/module-room";
 
-import { expectRoomPour, expectedRoomVariables, pouredVariables } from "./room-pour";
+import {
+  carriesNoPour,
+  expectNeutralRoom,
+  expectedRoomVariables,
+  pouredVariables,
+} from "./room-pour";
 
 // The guard on the guard (#389). Every room suite now leans on
 // expectRoomPour, so these tests pin the two properties that make that
@@ -43,23 +48,27 @@ describe("pouredVariables", () => {
   });
 });
 
-describe("expectRoomPour", () => {
-  it("passes on the right hue and FAILS on every other one", () => {
-    // The mutation test, made permanent: if this ever stops throwing, the
-    // room suites have gone vacuous again.
-    for (const hue of ROOM_HUES) {
-      const element = { props: { style: roomVariables(hue).light } };
-      expect(() => expectRoomPour(element, hue)).not.toThrow();
+describe("expectNeutralRoom", () => {
+  // The mutation test, made permanent, now pointing the other way: it must FAIL
+  // on a real pour. A neutral-room assertion that passed on a poured style would
+  // let a room come back without turning anything red — which is the same vacuum
+  // #389 found, inverted.
+  it("passes on no pour and FAILS on every hue's pour", () => {
+    expect(() => expectNeutralRoom({ props: { style: vars({}) } })).not.toThrow();
+    expect(() => expectNeutralRoom({ props: { style: {} } })).not.toThrow();
 
-      for (const other of ROOM_HUES.filter((h) => h !== hue)) {
-        expect(() => expectRoomPour(element, other)).toThrow();
-      }
+    for (const hue of ROOM_HUES) {
+      const poured = { props: { style: roomVariables(hue).light } };
+      expect(() => expectNeutralRoom(poured)).toThrow();
     }
   });
 
-  it("tells the schemes apart within one hue", () => {
-    const light = { props: { style: roomVariables("ink").light } };
-    expect(() => expectRoomPour(light, "ink", "light")).not.toThrow();
-    expect(() => expectRoomPour(light, "ink", "dark")).toThrow();
+  it("carriesNoPour agrees with it, in both directions", () => {
+    expect(carriesNoPour(vars({}))).toBe(true);
+    expect(carriesNoPour(roomVariables("iris").light)).toBe(false);
+    // Not a style at all: false rather than a throw, so a caller cannot read
+    // "no pour" out of a mistake.
+    expect(carriesNoPour(undefined)).toBe(false);
+    expect(carriesNoPour([vars({})])).toBe(false);
   });
 });

@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationStageDetailScreen from "@/src/features/meditation/meditation-stage-detail-screen";
 import { useMeditationProgramState } from "@/src/features/meditation/queries";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -60,7 +60,7 @@ describe("MeditationStageDetailScreen", () => {
   it("renders the iris room pour on its root", () => {
     renderWithProviders(<MeditationStageDetailScreen />);
 
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("renders the dark iris pour when the scheme is dark", () => {
@@ -68,21 +68,15 @@ describe("MeditationStageDetailScreen", () => {
 
     renderWithProviders(<MeditationStageDetailScreen />);
 
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris", "dark");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
-  it("tints the mastery callout card with iris", () => {
+  // INVERTED by #588: the mastery callout wore the room's iris because it is
+  // "decorative, not a control state" - and decorative is exactly what goes
+  // neutral. Fails on the old behaviour, which had one `var(--iris)` card here.
+  it("carries no module tint on the mastery callout", () => {
     renderWithProviders(<MeditationStageDetailScreen />);
 
-    // Exactly one card wears the iris tint - the mastery callout, converted
-    // from `primary` because it is decorative, not a control state. Matched on
-    // the hue variable rather than Card's exact alpha literals, so a tint
-    // retune doesn't break the assertion.
-    expect(viewClassNames().filter((c) => c.includes("var(--iris)"))).toHaveLength(1);
-    // The callout's former `primary` tint is gone. The switch button keeps its
-    // own `primary` fill - that is a control state, not a room accent.
-    expect(
-      viewClassNames().some((c) => c.includes("bg-primary/5") || c.includes("border-primary/30")),
-    ).toBe(false);
+    expect(viewClassNames().filter((c) => c.includes("var(--iris)"))).toEqual([]);
   });
 });

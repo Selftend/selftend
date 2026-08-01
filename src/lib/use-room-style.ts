@@ -1,48 +1,61 @@
-import type { HueName } from "@/src/lib/design-tokens";
+import { vars } from "nativewind";
+
+import { THEME_PALETTES } from "@/lib/theme";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
-import { roomCardHsl, roomVariables, type ColorSchemeName } from "@/src/lib/module-room";
+import type { HueName } from "@/src/lib/design-tokens";
+import type { roomVariables, ColorSchemeName } from "@/src/lib/module-room";
+import { useStyleName } from "@/src/lib/style";
 
-// The one sanctioned way for a screen to wear its module's room. The call
-// sites used to hold `const X_ROOM = roomVariables("x")` at module scope —
-// "static per-scheme styles, computed once". These hue-keyed caches keep that
-// identity guarantee, now shared app-wide instead of duplicated per file.
-// The cache lives here (not in module-room.ts) so the recipe module stays
-// React-free — the node-side test/room-contrast.test.ts imports it.
+// Rooms are neutral (#586).
 //
-// The scheme comes from useColorSchemeName, the house reader — never from the
-// driver, which is root-only and enforced as such by
-// test/color-scheme-driver.test.ts. (A chip is a one-swatch room, so the chip
-// palette in src/features/habits/habit-color.ts reads through the same reader.)
+// A "room" re-poured every neutral surface on a module's screen as a low-chroma
+// tint of that module's hue. It distinguished one module from another and
+// nothing else - which is precisely the case #558 rules insufficient: hue
+// survives only where colour carries information the user READS off it. Module
+// identity is icon and label now.
+//
+// The neutral form of a room is not a neutral room, it is NO room: the app's own
+// surfaces, which every screen already has. So this hook keeps its shape and
+// stops pouring. That is deliberate, and it is why this batch is three files
+// rather than thirty-four - the pour had exactly one definition, so neutralising
+// it here changes every one of the 69 call sites atomically, with no chance of
+// missing one and shipping a half-green screen. Removing the now-inert calls is
+// mechanical and belongs to the contract ticket (#589), which deletes the hook
+// and module-room.ts with them.
 
-const VARS = new Map<HueName, ReturnType<typeof roomVariables>>();
-const CARD = new Map<HueName, ReturnType<typeof roomCardHsl>>();
+// One empty override set, shared: identity-stable, so a screen wearing it never
+// invalidates a memoized subtree on re-render.
+const NO_ROOM = vars({});
 
 /**
- * The current scheme's room pour for a module hue — apply to the screen
- * root: `style={useRoomStyle(hue)}`. Identity-stable per (hue, scheme), so
- * memoized subtrees aren't invalidated by parent re-renders.
+ * Formerly the screen's room pour; now no overrides at all, so the screen keeps
+ * the app's own surfaces in the active palette.
+ *
+ * The `hue` parameter is retained on purpose rather than removed here: dropping
+ * it would touch all 69 call sites in a batch whose point is to change colour
+ * and nothing else. #589 deletes the calls.
  */
-export function useRoomStyle(hue: HueName): ReturnType<typeof roomVariables>[ColorSchemeName] {
-  const scheme = useColorSchemeName();
-  let vars = VARS.get(hue);
-  if (!vars) {
-    vars = roomVariables(hue);
-    VARS.set(hue, vars);
-  }
-  return vars[scheme];
+export function useRoomStyle(_hue: HueName): ReturnType<typeof roomVariables>[ColorSchemeName] {
+  return NO_ROOM;
 }
 
 /**
- * The current scheme's room card surface as a comma-form hsl() string, for
- * native components (LinearGradient fades) that can't read the CSS variable
- * bg-card resolves to inside the room.
+ * The card surface a LinearGradient fade has to end on, as a comma-form hsl()
+ * string - a gradient cannot read the CSS variable `bg-card` resolves to.
+ *
+ * With rooms gone this is simply the active palette's own card, which also
+ * makes it the first version of this helper that follows the style axis: the
+ * room pour it replaced was derived from a hue and would have stayed lilac-era
+ * violet under every other palette.
  */
-export function useRoomCardHsl(hue: HueName): string {
+export function useRoomCardHsl(_hue: HueName): string {
+  const style = useStyleName();
   const scheme = useColorSchemeName();
-  let card = CARD.get(hue);
-  if (!card) {
-    card = roomCardHsl(hue);
-    CARD.set(hue, card);
-  }
-  return card[scheme];
+  const card = THEME_PALETTES[style][scheme].card;
+  // `hsl(260 28% 99%)` -> `hsl(260, 28%, 99%)`: the comma form the gradient
+  // consumers already expect.
+  return card.replace(
+    /hsl\(([^)]*)\)/,
+    (_match, triple: string) => `hsl(${triple.split(/\s+/).join(", ")})`,
+  );
 }

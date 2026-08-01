@@ -14,12 +14,7 @@
 
 import { vars } from "nativewind";
 
-import {
-  HUE_INK_TRIPLES,
-  HUE_TRIPLES,
-  PRIMARY_TRIPLES,
-  type HueName,
-} from "@/src/lib/design-tokens";
+import { HUE_TRIPLES, PRIMARY_TRIPLES, type HueName } from "@/src/lib/design-tokens";
 
 export type ColorSchemeName = "light" | "dark";
 
@@ -42,7 +37,7 @@ export function hueDegree(hue: HueName): number {
  *
  * `accent-ink` is the odd one out: it is not a surface but the room hue itself,
  * darkened until it can carry small text on the surfaces above
- * (`text-accent-ink` — see HUE_INK_TRIPLES). Do not read it as ink on `accent`;
+ * (`text-primary-ink` — see HUE_INK_TRIPLES). Do not read it as ink on `accent`;
  * that pairing is `accent-foreground`.
  */
 export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string, string>> {
@@ -59,7 +54,6 @@ export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string
       "muted-foreground": `${h} 8% 40%`,
       accent: `${h} 28% 92%`,
       "accent-foreground": `${h} 28% 25%`,
-      "accent-ink": HUE_INK_TRIPLES[hue].light,
       border: `${h} 15% 88%`,
       input: `${h} 15% 88%`,
     },
@@ -74,7 +68,6 @@ export function roomTriples(hue: HueName): Record<ColorSchemeName, Record<string
       "muted-foreground": `${h} 10% 68%`,
       accent: `${h} 14% 24%`,
       "accent-foreground": `${h} 24% 93%`,
-      "accent-ink": HUE_INK_TRIPLES[hue].dark,
       border: `${h} 10% 24%`,
       input: `${h} 10% 22%`,
     },
@@ -166,21 +159,38 @@ export type FieldHue = HueName | "primary";
  * Comma-form hsl() strings because LinearGradient cannot read CSS variables
  * (same escape hatch as hueHsl in src/features/mindfulness/exercise-hue.ts).
  */
+/**
+ * The standard two-stop field formula for a given hue DEGREE, with no override
+ * applied. Saturation and lightness are fixed; only the degree varies.
+ *
+ * Exported so the neutral field in src/lib/theme/chrome.ts can pour the ACTIVE
+ * style's accent through the very same numbers instead of copying them. The
+ * degree is the only thing a palette changes here, so sharing the formula is
+ * what keeps the neutral field and the hue fields on one set of contrast
+ * floors rather than two that can drift apart.
+ */
+export function fieldStopsForDegree(h: number, isDark: boolean): [string, string] {
+  return isDark
+    ? [`hsl(${h}, 34%, 20%)`, `hsl(${h}, 40%, 12%)`]
+    : [`hsl(${h}, 50%, 42%)`, `hsl(${h}, 58%, 32%)`];
+}
+
 export function fieldGradient(hue: FieldHue, isDark: boolean): [string, string] {
   const h = hue === "primary" ? Number.parseInt(PRIMARY_TRIPLES.light, 10) : hueDegree(hue);
   if (hue === "primary") {
     // The standard formula, like iris (violet's neighbour) - no override
     // needed; test/room-contrast.test.ts holds the primary field to the same
     // AA floors as every hue field.
-    return isDark
-      ? [`hsl(${h}, 34%, 20%)`, `hsl(${h}, 40%, 12%)`]
-      : [`hsl(${h}, 50%, 42%)`, `hsl(${h}, 58%, 32%)`];
+    //
+    // NOTE: this branch is the DEFAULT style's violet, hard-coded. It stays
+    // that way on purpose - it is the CBT home's pinned field (#500). Anything
+    // that must follow the selected palette wants neutralFieldGradient in
+    // src/lib/theme/chrome.ts, which takes the style.
+    return fieldStopsForDegree(h, isDark);
   }
   const override = FIELD_STOP_OVERRIDES[hue]?.[isDark ? "dark" : "light"];
   if (override) {
     return override.map(([s, l]) => `hsl(${h}, ${s}%, ${l}%)`) as [string, string];
   }
-  return isDark
-    ? [`hsl(${h}, 34%, 20%)`, `hsl(${h}, 40%, 12%)`]
-    : [`hsl(${h}, 50%, 42%)`, `hsl(${h}, 58%, 32%)`];
+  return fieldStopsForDegree(h, isDark);
 }

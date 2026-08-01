@@ -3,14 +3,20 @@ import { useTranslation } from "react-i18next";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { TINT_ACCENT, TINT_TEXT } from "@/src/lib/design-tokens";
+import { CHROME_MARK, CHROME_MUTED_TEXT, CHROME_RULE } from "@/src/lib/theme/chrome";
 import { cn } from "@/lib/utils";
 
 /**
- * The two guided modules, each on its own hue-tinted card: CBT on the primary
- * hue, ACT on its module hue. Unlike the equal-weight neutral cards this
- * section replaced, the tint is the point here - it carries each module's
- * identity from the signed-in app onto the landing page.
+ * The two guided modules. They used to arrive on the landing page each in its
+ * own tinted card - CBT violet, ACT green - explicitly so that the signed-out
+ * page carried the same module identity the signed-in app did.
+ *
+ * It still does; the identity just stopped being a colour (#587). Both cards are
+ * the same neutral card now, and what tells CBT from ACT here is what tells them
+ * apart inside the app: a different glyph, a different kicker, a different name.
+ * Leaving the landing page hued would have been the loudest possible
+ * inconsistency - it is the first screen anyone sees, and every screen behind it
+ * is neutral.
  */
 export function ModulesSection() {
   const { t } = useTranslation("auth");
@@ -18,14 +24,12 @@ export function ModulesSection() {
   return (
     <View className="flex-col items-stretch gap-5 sm:flex-row">
       <ModuleCard
-        tint="primary"
         icon="psychology"
         kicker={t("landingPage.cbtKicker")}
         title={t("landingPage.cbtTitle")}
         body={t("landingPage.cbtBody")}
       />
       <ModuleCard
-        tint="act"
         icon="explore"
         kicker={t("landingPage.actKicker")}
         title={t("landingPage.actTitle")}
@@ -35,32 +39,26 @@ export function ModulesSection() {
   );
 }
 
-const CARD_TINT: Record<"primary" | "act", string> = {
-  primary: "border-primary/30 bg-primary/5",
-  act: "border-[hsl(var(--act)/0.30)] bg-[hsl(var(--act)/0.05)]",
-};
-
 function ModuleCard({
-  tint,
   icon,
   kicker,
   title,
   body,
 }: {
-  tint: "primary" | "act";
   icon: MaterialIconName;
   kicker: string;
   title: string;
   body: string;
 }) {
-  const tintText = TINT_TEXT[tint];
-
   return (
-    <View className={cn("flex-1 gap-3 rounded-2xl border p-7", CARD_TINT[tint])}>
+    <View className={cn("flex-1 gap-3 rounded-2xl border bg-card p-7", CHROME_RULE)}>
       <View className="flex-row items-center gap-2.5">
-        {/* Glyph keeps the accent; the kicker beside it takes the ink. */}
-        <Icon name={icon} size={22} className={TINT_ACCENT[tint]} />
-        <Text className={cn("text-xs font-bold uppercase tracking-[0.14em]", tintText)}>
+        {/* Glyph and kicker now share one colour. They used to be split - accent
+            on the mark, ink on the text - because a hue legible as 12px text was
+            too dark to read as a glyph, and vice versa. That tension was a
+            property of the hue, not of the pairing. */}
+        <Icon name={icon} size={22} className={CHROME_MARK} />
+        <Text className={cn("text-xs font-bold uppercase tracking-[0.14em]", CHROME_MUTED_TEXT)}>
           {kicker}
         </Text>
       </View>

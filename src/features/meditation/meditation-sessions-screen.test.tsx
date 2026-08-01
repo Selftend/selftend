@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import MeditationSessionsScreen from "@/src/features/meditation/meditation-sessions-screen";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 import { useThemeStore } from "@/src/stores/theme-store";
 
 jest.mock("expo-router", () => ({
@@ -101,7 +101,7 @@ describe("MeditationSessionsScreen", () => {
     renderWithProviders(<MeditationSessionsScreen />);
 
     // The root carries the iris room re-pour; a wrong or missing room fails here.
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("pours the dark iris room when the scheme is dark", () => {
@@ -112,7 +112,7 @@ describe("MeditationSessionsScreen", () => {
 
     // Asserting the dark triples by value is its own guard against a scheme read
     // that never moved: the light pour carries different values and fails here.
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris", "dark");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("keeps the FlatList as the scroll root", () => {
@@ -134,23 +134,20 @@ describe("MeditationSessionsScreen", () => {
     expect(hostsBetween).toHaveLength(1);
   });
 
-  it("wears iris on the stage badge", () => {
+  // INVERTED by #588: the badge wore the module's iris; a stage badge is chrome.
+  it("wears no module hue on the stage badge", () => {
     setSessions([session()]);
 
     renderWithProviders(<MeditationSessionsScreen />);
 
-    // Room accents follow the module hue; `primary` stays reserved for
-    // interactive control states.
     const badge = screen.getByText("Stage 2");
-    // Small text, so the hue arrives as `accent-ink` (#368): the published
-    // `text-iris` is 3.72:1 on the room card this badge's wash sits over, and
-    // the wash only pulls it further under AA.
-    expect(badge.props.className).toContain("text-accent-ink");
-    // The fill converts with the ink - a half-reverted badge fails here.
+    // The fill converts with the ink - a half-reverted badge fails here, which
+    // is the same guard the hue version carried, pointed the other way.
     const ancestorClasses = [];
     for (let node = badge.parent; node; node = node.parent) {
       if (typeof node.props?.className === "string") ancestorClasses.push(node.props.className);
     }
-    expect(ancestorClasses.some((c) => c.includes("bg-iris/10"))).toBe(true);
+    expect(ancestorClasses.some((c) => c.includes("bg-iris/10"))).toBe(false);
+    expect(ancestorClasses.some((c) => c.includes("bg-muted"))).toBe(true);
   });
 });

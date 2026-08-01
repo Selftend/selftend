@@ -242,11 +242,11 @@ export default function ActExpansionNewScreen() {
                       onPress={() => setStruggleSwitchOn(isOn)}
                       className={cn(
                         "rounded-xl border p-4 active:bg-accent/40",
-                        selected ? "border-act bg-act/5" : "border-border bg-card",
+                        selected ? "border-border bg-muted" : "border-border bg-card",
                       )}
                       {...struggleRoving.getItemProps(index, () => setStruggleSwitchOn(isOn))}
                     >
-                      <Text className={cn("font-semibold", selected && "text-act-ink")}>
+                      <Text className={cn("font-semibold", selected && "text-foreground")}>
                         {t(
                           isOn
                             ? "act:expansion.struggleSwitchOn"
@@ -284,11 +284,11 @@ export default function ActExpansionNewScreen() {
                         onPress={() => setDiscomfortType(type)}
                         className={cn(
                           "rounded-xl border p-4 active:bg-accent/40",
-                          selected ? "border-act bg-act/5" : "border-border bg-card",
+                          selected ? "border-border bg-muted" : "border-border bg-card",
                         )}
                         {...discomfortRoving.getItemProps(index, () => setDiscomfortType(type))}
                       >
-                        <Text className={cn("font-semibold", selected && "text-act-ink")}>
+                        <Text className={cn("font-semibold", selected && "text-foreground")}>
                           {t(`act:expansion.${type}`)}
                         </Text>
                       </Pressable>
@@ -326,12 +326,12 @@ export default function ActExpansionNewScreen() {
                     onPress={() => setTechniqueUsed(tech)}
                     className={cn(
                       "rounded-xl border p-4 active:bg-accent/40",
-                      selected ? "border-act bg-act/5" : "border-border bg-card",
+                      selected ? "border-border bg-muted" : "border-border bg-card",
                     )}
                     {...techniqueRoving.getItemProps(index, () => setTechniqueUsed(tech))}
                   >
                     <View className="gap-1">
-                      <Text className={cn("font-semibold", selected && "text-act-ink")}>
+                      <Text className={cn("font-semibold", selected && "text-foreground")}>
                         {t(`act:expansion.techniques.${tech}`)}
                       </Text>
                       <Text variant="muted" className="text-xs leading-snug">
@@ -345,9 +345,9 @@ export default function ActExpansionNewScreen() {
 
             {/* Inline 4-step guide when that technique is selected */}
             {techniqueUsed === "fourStepExpansion" ? (
-              <Card className="border-act/30 bg-act/5">
+              <Card className="border-border bg-muted">
                 <CardHeader>
-                  <CardTitle className="text-act-ink">
+                  <CardTitle className="text-foreground">
                     {t("act:expansion.fourStepGuide.title")}
                   </CardTitle>
                 </CardHeader>
@@ -355,7 +355,7 @@ export default function ActExpansionNewScreen() {
                   <View className="gap-4">
                     {(["step1", "step2", "step3", "step4"] as const).map((s) => (
                       <View key={s} className="gap-1">
-                        <Text className="font-semibold text-act-ink">
+                        <Text className="font-semibold text-foreground">
                           {t(`act:expansion.fourStepGuide.${s}Title`)}
                         </Text>
                         <Text variant="muted" className="text-sm leading-snug">
@@ -390,9 +390,9 @@ export default function ActExpansionNewScreen() {
             </View>
 
             {intensityBefore !== null && intensityAfter !== null ? (
-              <Card className="border-act/30 bg-act/5">
+              <Card className="border-border bg-muted">
                 <CardContent className="pt-4">
-                  <Text className="text-center font-semibold text-act-ink">
+                  <Text className="text-center font-semibold text-foreground">
                     {intensityAfter < intensityBefore
                       ? t("act:expansion.intensityDrop", {
                           before: intensityBefore,

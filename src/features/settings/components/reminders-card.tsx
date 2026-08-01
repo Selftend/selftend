@@ -13,8 +13,8 @@ export function RemindersCard() {
   return (
     <SettingsSectionCard
       icon="notifications-active"
-      iconClassName="text-be"
-      badgeClassName="bg-[hsl(var(--be)/0.10)]"
+      iconClassName="text-muted-foreground"
+      badgeClassName="bg-muted"
       title={t("reminders.title")}
       description={t("reminders.description")}
     >

@@ -124,13 +124,13 @@ export default function JournalDetailScreen() {
             </View>
           </View>
 
-          <Card variant="soft" tint="ink">
+          <Card variant="soft">
             <CardContent>
               <Text className="text-base leading-6">{entry.body}</Text>
             </CardContent>
           </Card>
 
-          <Card variant="soft" tint="ink">
+          <Card variant="soft">
             <CardHeader>
               <CardTitle aria-level={2}>{t("detail.createdAt")}</CardTitle>
               <CardDescription>{createdAtLabel}</CardDescription>

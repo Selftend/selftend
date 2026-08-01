@@ -6,13 +6,29 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Card } from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
-import { TINT_ACCENT, TINT_TEXT, type TintToken } from "@/src/lib/design-tokens";
+import { useAccentHsl } from "@/src/lib/theme-palette";
+import { CHROME_MARK, CHROME_RULE, CHROME_TEXT, CHROME_WASH } from "@/src/lib/theme/chrome";
 import { cn } from "@/lib/utils";
 
+// A pillar is identified by its letter, its name and its kicker (#587). It used
+// to be identified by a colour as well - CBT's three pillars each in the hue
+// they are NAMED after (think gold, act green, be blue), which is as close as
+// the app came to a hue that meant something. It still is not: the letter "T"
+// in a tile above the word "Think" is not made clearer by the tile being gold,
+// and the ruling is explicit that distinguishing items in a set is not enough.
+//
+// The 3px stripe survives as a stripe. It is a shape, not an encoding, so its
+// neutral form is the same gradient drawn from the app accent instead of the
+// pillar's hue.
+//
+// It is built from `useAccentHsl` rather than `tintStripeColors("primary", …)`.
+// That helper resolves `PRIMARY_TRIPLES`, a module-scope constant holding the
+// DEFAULT palette's violet, so the stripe stayed lilac under all eight palettes
+// while the rest of the card followed the style - reported against the CBT and
+// ACT pillar cards. A colour that has to follow the selected palette cannot come
+// from a constant; it has to come from a hook.
+
 interface PillarCardProps {
-  tint: TintToken;
   letter: string;
   title: string;
   kicker: string;
@@ -29,36 +45,10 @@ interface PillarToolProps {
 }
 
 const PillarContext = createContext<{
-  tint: TintToken;
   onToolPress?: (toolKey: string) => void;
 } | null>(null);
 
-const LETTER_BG: Record<TintToken, string> = {
-  primary: "bg-primary/10 border-primary/30",
-  act: "bg-[hsl(var(--act)/0.12)] border-[hsl(var(--act)/0.30)]",
-  be: "bg-[hsl(var(--be)/0.12)] border-[hsl(var(--be)/0.30)]",
-  think: "bg-[hsl(var(--think)/0.12)] border-[hsl(var(--think)/0.30)]",
-  aqua: "bg-[hsl(var(--aqua)/0.12)] border-[hsl(var(--aqua)/0.30)]",
-  iris: "bg-[hsl(var(--iris)/0.12)] border-[hsl(var(--iris)/0.30)]",
-  ink: "bg-[hsl(var(--ink)/0.12)] border-[hsl(var(--ink)/0.30)]",
-  clay: "bg-[hsl(var(--clay)/0.12)] border-[hsl(var(--clay)/0.30)]",
-  mist: "bg-[hsl(var(--mist)/0.12)] border-[hsl(var(--mist)/0.30)]",
-};
-
-const TOOL_ICON_BG: Record<TintToken, string> = {
-  primary: "bg-primary/10",
-  act: "bg-[hsl(var(--act)/0.10)]",
-  be: "bg-[hsl(var(--be)/0.10)]",
-  think: "bg-[hsl(var(--think)/0.10)]",
-  aqua: "bg-[hsl(var(--aqua)/0.10)]",
-  iris: "bg-[hsl(var(--iris)/0.10)]",
-  ink: "bg-[hsl(var(--ink)/0.10)]",
-  clay: "bg-[hsl(var(--clay)/0.10)]",
-  mist: "bg-[hsl(var(--mist)/0.10)]",
-};
-
 function PillarCardRoot({
-  tint,
   letter,
   title,
   kicker,
@@ -66,12 +56,16 @@ function PillarCardRoot({
   onToolPress,
   children,
 }: PillarCardProps) {
-  const isDark = useColorSchemeName() === "dark";
+  const accent = useAccentHsl();
+  // Full strength into half strength, the same two-stop shape the hue stripes
+  // used - only the colour now comes from the active palette.
+  const stripe: [string, string] = [accent(1), accent(0.5)];
   return (
-    <PillarContext.Provider value={{ tint, onToolPress }}>
+    <PillarContext.Provider value={{ onToolPress }}>
       <Card className="relative overflow-hidden px-5 py-4">
         <LinearGradient
-          colors={tintStripeColors(tint, isDark)}
+          testID="pillar-stripe"
+          colors={stripe}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3 }}
@@ -82,16 +76,17 @@ function PillarCardRoot({
             importantForAccessibility="no"
             className={cn(
               "h-14 w-14 items-center justify-center rounded-2xl border",
-              LETTER_BG[tint],
+              CHROME_WASH,
+              CHROME_RULE,
             )}
           >
-            <Text className={cn("text-[26px] font-extrabold tracking-tighter", TINT_TEXT[tint])}>
+            <Text className={cn("text-[26px] font-extrabold tracking-tighter", CHROME_TEXT)}>
               {letter}
             </Text>
           </View>
           <View className="flex-1 min-w-0">
             <View className="flex-row items-baseline gap-2 flex-wrap">
-              <Text className={cn("text-[22px] font-bold tracking-tight", TINT_TEXT[tint])}>
+              <Text className={cn("text-[22px] font-bold tracking-tight", CHROME_TEXT)}>
                 {title}
               </Text>
               <Text className="text-[12.5px] text-muted-foreground">· {kicker}</Text>
@@ -112,7 +107,7 @@ function PillarTool({ toolKey, icon, name, desc }: PillarToolProps) {
   if (!ctx) {
     throw new Error("PillarCard.Tool must be rendered inside <PillarCard>");
   }
-  const { tint, onToolPress } = ctx;
+  const { onToolPress } = ctx;
 
   return (
     <Pressable
@@ -122,12 +117,8 @@ function PillarTool({ toolKey, icon, name, desc }: PillarToolProps) {
       onPress={() => onToolPress?.(toolKey)}
       className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
     >
-      <View
-        className={cn("mb-1 h-8 w-8 items-center justify-center rounded-lg", TOOL_ICON_BG[tint])}
-      >
-        {/* Glyph, not text: keeps the published accent (1.4.11's 3:1), while the
-            tool name below it is neutral foreground. */}
-        <Icon name={icon} size={18} className={TINT_ACCENT[tint]} />
+      <View className={cn("mb-1 h-8 w-8 items-center justify-center rounded-lg", CHROME_WASH)}>
+        <Icon name={icon} size={18} className={CHROME_MARK} />
       </View>
       <Text className="text-[13.5px] font-semibold leading-tight">{name}</Text>
       <Text className="mt-1 text-[11.5px] leading-snug text-muted-foreground">{desc}</Text>

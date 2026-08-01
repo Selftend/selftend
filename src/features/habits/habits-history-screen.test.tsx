@@ -7,7 +7,7 @@ import HabitsHistoryScreen from "@/src/features/habits/habits-history-screen";
 import { useHabitLogs, useHabits } from "@/src/features/habits/queries";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -98,7 +98,7 @@ describe("HabitsHistoryScreen", () => {
     expect(screen.getByText("Ten pages")).toBeTruthy();
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the act room re-pour; a wrong or missing room fails here.
-    expectRoomPour(UNSAFE_getByType(SafeAreaView), "act");
+    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
   it("shows the calm empty state on the room pour when no ticks exist", () => {
@@ -106,7 +106,7 @@ describe("HabitsHistoryScreen", () => {
 
     expect(screen.getByText("Once you tick a habit, that day will appear here.")).toBeTruthy();
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
-    expectRoomPour(UNSAFE_getByType(SafeAreaView), "act");
+    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
   it("navigates to the habit detail when a row is pressed", () => {

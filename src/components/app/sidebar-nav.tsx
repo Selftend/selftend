@@ -7,7 +7,11 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { currentStateProps, DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { toolAccent } from "@/src/features/home/tool-accent";
+import {
+  CHROME_ACCENT_MARK,
+  CHROME_BADGE_SURFACE,
+  CHROME_BADGE_TEXT,
+} from "@/src/lib/theme/chrome";
 
 interface NavItemDef {
   labelKey: string;
@@ -16,7 +20,6 @@ interface NavItemDef {
   matchPrefix: string | null;
   activeWhen?: (pathname: string) => boolean;
   badgeKey?: "badgeLive" | "badgeSoon" | "badgeBeta";
-  accentKey?: string;
   a11yKey?: string;
 }
 
@@ -50,7 +53,6 @@ const MODULE_ITEMS: NavItemDef[] = [
     icon: "psychology",
     matchPrefix: "/modules/cbt",
     activeWhen: (pathname) => pathname === "/modules/cbt" || pathname.startsWith("/modules/cbt/"),
-    accentKey: "module-cbt",
     badgeKey: "badgeBeta",
     a11yKey: "sidebar.cbtA11y",
   },
@@ -59,7 +61,6 @@ const MODULE_ITEMS: NavItemDef[] = [
     href: "/modules/act",
     icon: "explore",
     matchPrefix: "/modules/act",
-    accentKey: "module-act",
     badgeKey: "badgeBeta",
     a11yKey: "sidebar.actA11y",
   },
@@ -79,56 +80,48 @@ const TOOL_ITEMS: NavItemDef[] = [
     href: "/tools/mood-tracker",
     icon: "mood",
     matchPrefix: "/tools/mood-tracker",
-    accentKey: "mood",
   },
   {
     labelKey: "sidebar.journal",
     href: "/tools/journal",
     icon: "edit-note",
     matchPrefix: "/tools/journal",
-    accentKey: "journal",
   },
   {
     labelKey: "sidebar.breathing",
     href: "/tools/breathing",
     icon: "air",
     matchPrefix: "/tools/breathing",
-    accentKey: "breathing",
   },
   {
     labelKey: "sidebar.grounding",
     href: "/tools/grounding",
     icon: "anchor",
     matchPrefix: "/tools/grounding",
-    accentKey: "grounding",
   },
   {
     labelKey: "sidebar.gratitudeLog",
     href: "/tools/gratitude-log",
     icon: "favorite",
     matchPrefix: "/tools/gratitude-log",
-    accentKey: "gratitude",
   },
   {
     labelKey: "sidebar.meditation",
     href: "/tools/meditation",
     icon: "self-improvement",
     matchPrefix: "/tools/meditation",
-    accentKey: "meditation",
   },
   {
     labelKey: "sidebar.sleep",
     href: "/tools/sleep",
     icon: "bedtime",
     matchPrefix: "/tools/sleep",
-    accentKey: "sleep",
   },
   {
     labelKey: "sidebar.habits",
     href: "/tools/habits",
     icon: "task-alt",
     matchPrefix: "/tools/habits",
-    accentKey: "habits",
   },
 ];
 
@@ -182,7 +175,6 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     const badgeLabel = item.badgeKey ? t(`sidebar.${item.badgeKey}`) : null;
     const isLive = item.badgeKey === "badgeLive";
     const isBeta = item.badgeKey === "badgeBeta";
-    const accent = toolAccent(item.accentKey ?? "");
 
     return (
       <Link href={item.href} key={item.labelKey} asChild>
@@ -197,45 +189,71 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
           role="link"
           className={cn(
             "flex-row items-center gap-3 rounded-md px-3 py-2.5",
-            active ? accent.chip : "active:bg-muted/50",
+            active ? "bg-primary/10" : "active:bg-muted/50",
           )}
         >
+          {/*
+            One accent for every row (#587). The nav used to paint each row in
+            its own module's hue — a green ACT row, a violet CBT row, a teal
+            breathing row — which is the clearest "distinguishes items in a set"
+            case in the app and the one the ruling names outright. What the
+            colour here has to carry is WHICH ROW IS ACTIVE, and that is one bit,
+            not eleven; it is the app accent's job.
+
+            The three channels stay as they were, because they were never about
+            the hue: the chip fill, this glyph and the ink label all move
+            together, alongside `aria-current="page"`, so colour is not the only
+            signal that a row is selected.
+          */}
           <Icon
             key={active ? "icon-active" : "icon-inactive"}
             name={item.icon}
-            className={cn("size-6", active ? accent.icon : "text-muted-foreground")}
+            className={cn("size-6", active ? CHROME_ACCENT_MARK : "text-muted-foreground")}
           />
           {/*
-            Accent ink, not the accent (#403): the label is 14px text, and an
-            active row paints `accent.chip` behind it, so this lands on
-            `bg-<hue>/10` of its own hue where all eight hues fail AA (`think`
-            1.76, `be` 4.22). The icon above keeps the accent — it is
-            decorative, duplicated by this label.
+            Primary ink, not the raw accent (#403/#421): the label is 14px text
+            and an active row paints `bg-primary/10` behind it, where the
+            published `--primary` reads 4.41:1 light and 4.22:1 dark. The icon
+            above keeps the accent — it is decorative, duplicated by this label.
           */}
           <Text
-            className={cn("flex-1 text-sm font-medium", active ? accent.ink : "text-foreground")}
+            className={cn(
+              "flex-1 text-sm font-medium",
+              active ? "text-primary-ink" : "text-foreground",
+            )}
           >
             {label}
           </Text>
+          {/*
+            LIVE was `bg-act/15` + `text-act-ink` — the ACT module's green on a
+            chip that says nothing about ACT. It is a status marker, and the
+            status is spelled out in the word inside it, so it takes the neutral
+            chip (#587). BETA keeps the accent: it is the one that asks the
+            reader to notice, and `primary` is the app's colour rather than a
+            module's.
+          */}
           {badgeLabel ? (
             <View
               className={cn(
                 "rounded-full px-2 py-0.5",
-                isLive ? "bg-act/15" : isBeta ? "bg-primary/15" : "bg-muted",
+                isBeta ? "bg-primary/15" : isLive ? CHROME_BADGE_SURFACE : "bg-muted",
               )}
             >
               {/*
                 The chip #421 §3 was filed about, and the widest-reach text site
                 in the app: the sidebar renders on all 20 captured screens. 10px
                 uppercase on `bg-primary/15` over the sidebar's card, where the
-                raw accent reads 4.41:1 light and 4.22:1 dark. `primary` has an
-                ink of its own now, so it takes it the way `badgeLive` beside it
-                already takes `text-act-ink`.
+                raw accent reads 4.41:1 light and 4.22:1 dark, so it takes
+                `primary`'s ink.
               */}
               <Text
                 className={cn(
                   "text-[10px] font-semibold uppercase tracking-wider",
-                  isLive ? "text-act-ink" : isBeta ? "text-primary-ink" : "text-muted-foreground",
+                  isBeta
+                    ? "text-primary-ink"
+                    : isLive
+                      ? CHROME_BADGE_TEXT
+                      : "text-muted-foreground",
                 )}
               >
                 {badgeLabel}

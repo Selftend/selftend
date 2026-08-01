@@ -54,7 +54,7 @@ export function SleepOnboarding({
 
       <View className="gap-3">
         <View className="flex-row items-center gap-2">
-          <Icon name="bedtime" className="size-5 text-be" />
+          <Icon name="bedtime" className="size-5 text-muted-foreground" />
           <Text className="text-base font-semibold">{t("onboarding.whatToLog.title")}</Text>
         </View>
         <View className="gap-2">

@@ -108,8 +108,8 @@ interface OnboardingInfoRowProps {
 export function OnboardingInfoRow({ icon, title, body }: OnboardingInfoRowProps) {
   return (
     <View className="flex-row items-start gap-3">
-      <View className="mt-0.5 size-8 items-center justify-center rounded-lg bg-be/15">
-        <Icon name={icon} className="size-4 text-be" />
+      <View className="mt-0.5 size-8 items-center justify-center rounded-lg bg-muted">
+        <Icon name={icon} className="size-4 text-muted-foreground" />
       </View>
       <View className="flex-1 gap-0.5">
         <Text className="text-sm font-semibold">{title}</Text>

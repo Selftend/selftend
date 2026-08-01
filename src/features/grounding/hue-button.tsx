@@ -2,24 +2,14 @@ import { ActivityIndicator, Pressable } from "react-native";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
+import { useAccentHsl, useThemeHex } from "@/src/lib/theme-palette";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
 
-// Hues bright enough in light mode that white text fails contrast — use dark text.
-// In dark mode every hue is pastel, so dark text is always used.
-// "be" moved out when its light token darkened to 330 56% 47% (white 5.4:1, dark text 3.4:1).
-const LIGHT_MODE_DARK_TEXT = new Set<ExerciseHue>(["iris", "think"]);
-const DARK_TEXT = "#15121b";
-const LIGHT_TEXT = "#ffffff";
-
-function foreground(hue: ExerciseHue, isDark: boolean) {
-  if (isDark) return DARK_TEXT;
-  return LIGHT_MODE_DARK_TEXT.has(hue) ? DARK_TEXT : LIGHT_TEXT;
-}
+// The label sits on a solid accent fill, so it needs a raw colour rather than a
+// class - `style={{ color }}` and `ActivityIndicator color=` cannot read a CSS
+// variable.
 
 interface HueButtonProps {
-  hue: ExerciseHue;
   label: string;
   onPress: () => void;
   icon?: MaterialIconName;
@@ -27,10 +17,26 @@ interface HueButtonProps {
   loading?: boolean;
 }
 
-// Solid hue-filled primary CTA with theme-aware foreground for accessible contrast.
-export function HueButton({ hue, label, onPress, icon, disabled, loading }: HueButtonProps) {
-  const isDark = useColorSchemeName() === "dark";
-  const fg = foreground(hue, isDark);
+// The grounding CTA, filled in the app accent (#588).
+//
+// It used to be filled in the technique's own hue, and it carried a table for
+// the consequence: `iris` and `think` are bright enough in light mode that white
+// text fails on them, so those two flipped the label to dark while the other six
+// kept white. Five techniques are a menu rather than a scale (#558), so the fill
+// is the accent now and the label is the accent's own foreground - one pairing,
+// already held to AA by the palette gates, with no per-hue exceptions to keep
+// straight.
+export function HueButton({ label, onPress, icon, disabled, loading }: HueButtonProps) {
+  const accent = useAccentHsl();
+  // The PALETTE decides it, not the scheme. Deciding by scheme was right while
+  // there was one accent - the default violet is dark enough in light mode to
+  // carry white - but it is wrong across eight: amber-noir's light accent is a
+  // gold, and white on it measures 4.43:1, below AA. That is precisely why the
+  // palette solves a `--primary-foreground` per style (#580, pickPrimaryForeground);
+  // reading it here means this button inherits the pairing the contrast gates
+  // already hold, instead of re-deciding it from a rule that only held for one
+  // palette.
+  const fg = useThemeHex("--primary-foreground");
   const blocked = Boolean(disabled || loading);
   return (
     <Pressable
@@ -42,7 +48,7 @@ export function HueButton({ hue, label, onPress, icon, disabled, loading }: HueB
       onPress={onPress}
       role="button"
       style={{
-        backgroundColor: hueHsl(hue, isDark, 1),
+        backgroundColor: accent(1),
         borderRadius: 14,
         paddingVertical: 16,
         paddingHorizontal: 20,

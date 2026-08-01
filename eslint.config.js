@@ -84,6 +84,82 @@ function capturedFrameImportPaths(allow = []) {
   ];
 }
 
+// The hue gate (#589). The eight module hues survive ONLY as the pinned encoding
+// palette - the mood heatmap ramp, the mood scale, habit colours, the breathing
+// pacer, the user's custom-exercise colour, the sleep quality ramp. Everywhere
+// else, module identity is icon and label (#558).
+//
+// This is a lint rule rather than a test because of what the old gates could not
+// see. Three suites in this workstream were green while `think` shipped at
+// 1.80:1 as a rendered glyph, because all three checked spelling and none
+// checked the surface - and hue misuse is invisible at review time: the class
+// name looks deliberate, and the defect is a colour on a screen nobody
+// re-opened. A rule that fires in the editor catches it before it is written.
+//
+// Deliberately matched on the string LITERAL rather than on an import, because
+// that is the shape every one of the 470 swept call sites had: a class name
+// inside a className, a cva variant, or a lookup table - never an import a
+// no-restricted-imports rule could see.
+const HUE_NAMES_FOR_LINT = ["think", "act", "be", "aqua", "mist", "iris", "ink", "clay"];
+// `accent` is in this list and it is not the `--accent` token: Tailwind builds an
+// `accent-<colour>` family for the CSS `accent-color` property, so `accent-ink`
+// paints a form control in the ink hue. It is an obscure way to reach a hue and
+// exactly the kind the sweep would miss - found by grepping a built bundle, not
+// by reading. `accent-foreground` is unaffected; `foreground` is not a hue name.
+//
+// Kept identical to the prefix list in test/module-identity-neutral.test.ts. The
+// two gates guard the same thing and drifted here, which is its own small lesson.
+//
+// `border` carries an optional DIRECTION, and `ring` an optional `-offset`,
+// because Tailwind builds a colour utility for each: `border-t-act`,
+// `border-x-iris` and `ring-offset-be` are all real classes that paint a hue.
+// Without those groups the prefix had to be the whole word, so a neutral
+// component could reach a prohibited hue through any of them and lint stayed
+// green - the same shape as the arbitrary-value hole below, which hid ~78 sites
+// in #421.
+const HUE_CHROME_PATTERN =
+  String.raw`(?<![\w-])(text|bg|border(-[trblxyse])?|ring(-offset)?|from|to|via|fill|stroke|shadow|decoration|outline|accent|caret|divide)` +
+  String.raw`-(${HUE_NAMES_FOR_LINT.join("|")})(-ink)?(?![\w-])`;
+
+// The OTHER spelling, and the one that hid ~78 sites from every gate in #421:
+// `bg-[hsl(var(--act)/0.10)]`. It is an arbitrary value, so the hue never
+// appears after a utility prefix and the pattern above cannot see it. Matching
+// the CSS variable directly catches both that form and any raw `var(--iris)`
+// reaching a style prop.
+const HUE_VAR_PATTERN = String.raw`--(${HUE_NAMES_FOR_LINT.join("|")})(-ink)?(?![\w-])`;
+
+const HUE_CHROME_MESSAGE =
+  "Module hues are the pinned encoding palette, not chrome (#558/#589). Module and tool " +
+  "identity is icon and label. Use the neutral roles in @/src/lib/theme/chrome " +
+  "(CHROME_TEXT / CHROME_MARK / CHROME_WASH / CHROME_RULE / CHROME_BADGE_*) or the app " +
+  "accent. If this really is an encoding the user reads off the colour, add it to " +
+  "HUE_ENCODINGS in src/lib/theme/encoding.ts and exempt the file in eslint.config.js.";
+
+const HUE_CHROME_RESTRICTIONS = [
+  { selector: `Literal[value=/${HUE_CHROME_PATTERN}/]`, message: HUE_CHROME_MESSAGE },
+  { selector: `TemplateElement[value.raw=/${HUE_CHROME_PATTERN}/]`, message: HUE_CHROME_MESSAGE },
+  { selector: `Literal[value=/${HUE_VAR_PATTERN}/]`, message: HUE_CHROME_MESSAGE },
+  { selector: `TemplateElement[value.raw=/${HUE_VAR_PATTERN}/]`, message: HUE_CHROME_MESSAGE },
+];
+
+// The files allowed to name a hue: the encoding palette's own source, and the
+// six surfaces HUE_ENCODINGS sanctions. Anything added here needs an entry in
+// HUE_ENCODINGS first - that is the whole point of keeping the two lists the
+// same length.
+const HUE_SANCTIONED_FILES = [
+  "src/lib/design-tokens.ts",
+  "src/lib/module-room.ts",
+  "src/lib/hue-chip.ts",
+  "src/features/mindfulness/exercise-hue.ts",
+  "src/features/habits/habit-color.ts",
+  "src/features/breathing/pacer-colors.ts",
+  "src/features/breathing/exercise-colors.ts",
+  "src/features/sleep/quality-tint.ts",
+  "src/features/sleep/star-rating.tsx",
+  "src/features/mood/score-tone.ts",
+  "src/components/app/mood-scale.tsx",
+];
+
 // Shared by every no-restricted-syntax block: the rule is last-wins per file,
 // so a captured-frame block that omitted this selector would quietly
 // un-restrict accessibilityState for the files it matches.
@@ -249,6 +325,23 @@ module.exports = [
     },
   },
   {
+    // The hue gate, tree-wide (#589). `.ts` as well as `.tsx`: the maps this
+    // workstream deleted - TINT_TEXT, TINT_ACCENT, tool-accent, widget-tint -
+    // were all plain modules, and a class table is where a hue comes back.
+    //
+    // Every no-restricted-syntax block BELOW this one re-states
+    // HUE_CHROME_RESTRICTIONS, because the rule is last-wins per file and a
+    // block that omitted them would quietly un-restrict hue for its files.
+    files: ["src/**/*.{ts,tsx}", "app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
+    // Tests name hues on purpose - they assert their ABSENCE ("not.toContain
+    // text-be"), which the rule cannot tell from painting one. Source is covered
+    // by the static gates in test/module-identity-neutral.test.ts as well.
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-syntax": ["error", ...HUE_CHROME_RESTRICTIONS],
+    },
+  },
+  {
     // react-native-web 0.21 silently drops the object-form accessibilityState prop,
     // so state set that way never reaches the browser's accessibility tree. The
     // aria-* props (aria-checked/selected/expanded/disabled/busy) map to
@@ -258,7 +351,13 @@ module.exports = [
     files: ["**/*.tsx"],
     ignores: ["src/components/react-native-reusables/**"],
     rules: {
-      "no-restricted-syntax": ["error", ACCESSIBILITY_STATE_RESTRICTION],
+      "no-restricted-syntax": [
+        "error",
+        ACCESSIBILITY_STATE_RESTRICTION,
+        // Re-stated because this block is last-wins for every .tsx it matches.
+        // Test files are exempt from the hue half via the trailing block below.
+        ...HUE_CHROME_RESTRICTIONS,
+      ],
     },
   },
   {
@@ -271,6 +370,7 @@ module.exports = [
       "no-restricted-syntax": [
         "error",
         ACCESSIBILITY_STATE_RESTRICTION,
+        ...HUE_CHROME_RESTRICTIONS,
         ...capturedFrameSyntaxRestrictions(),
       ],
     },
@@ -287,7 +387,35 @@ module.exports = [
       "no-restricted-syntax": [
         "error",
         ACCESSIBILITY_STATE_RESTRICTION,
+        ...HUE_CHROME_RESTRICTIONS,
         ...capturedFrameSyntaxRestrictions(["localeFormats"]),
+      ],
+    },
+  },
+  {
+    // Tests, exempted from the hue half only (see the tree-wide block's note).
+    files: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-syntax": ["error", ACCESSIBILITY_STATE_RESTRICTION],
+    },
+  },
+  {
+    // LAST, and that is load-bearing: no-restricted-syntax is last-wins per
+    // file, so this is what actually exempts the encoding palette's own files
+    // from the hue rule every block above carries. `.tsx` entries keep the
+    // accessibilityState guard they would otherwise lose with it.
+    files: HUE_SANCTIONED_FILES,
+    rules: {
+      // The captured-frame selectors are re-stated because five of these files
+      // are ALSO in CAPTURED_FRAME_FILES - score-tone, star-rating,
+      // quality-tint, pacer-colors, exercise-colors - and last-wins would have
+      // exempted them from the day-key guard as a side effect of exempting them
+      // from the hue guard. Exactly the failure the comment on
+      // MODULE_ROOM_RESTRICTION warns about, one rule over.
+      "no-restricted-syntax": [
+        "error",
+        ACCESSIBILITY_STATE_RESTRICTION,
+        ...capturedFrameSyntaxRestrictions(),
       ],
     },
   },

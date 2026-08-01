@@ -32,7 +32,6 @@ export function CbtPillarsSection({ onOpenInfo }: CbtPillarsSectionProps) {
       {(["think", "act", "be"] as const).map((pillar) => (
         <View key={pillar} className="gap-2">
           <PillarCard
-            tint={pillar}
             letter={t(`pillars.${pillar}.letter`)}
             title={t(`pillars.${pillar}.title`)}
             kicker={t(`pillars.${pillar}.sub`)}
@@ -54,11 +53,7 @@ export function CbtPillarsSection({ onOpenInfo }: CbtPillarsSectionProps) {
           </PillarCard>
           {SHARED_TOOLS_BY_PILLAR[pillar].length > 0 ? (
             <View className="ml-5 mr-2">
-              <SharedToolsRow
-                tools={SHARED_TOOLS_BY_PILLAR[pillar]}
-                tint={pillar}
-                onOpenInfo={onOpenInfo}
-              />
+              <SharedToolsRow tools={SHARED_TOOLS_BY_PILLAR[pillar]} onOpenInfo={onOpenInfo} />
             </View>
           ) : null}
         </View>

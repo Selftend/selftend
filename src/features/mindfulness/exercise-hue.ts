@@ -19,29 +19,19 @@ export type ToolHue = ExerciseHue;
 
 export const EXERCISE_HUES: ExerciseHue[] = [...HUE_NAMES];
 
-interface HueClasses {
-  /** The published accent as a foreground colour — icons and decorative glyphs. */
-  text: string;
-  /**
-   * The same hue as small-text ink (#403). `text` stays the accent because its
-   * main consumer, HueIconBadge, paints an icon; the one text consumer
-   * (meditation's practice step numerals) renders 10px inside `chipBg`, a
-   * `bg-<hue>/15` tint of the same hue, where every hue fails AA — 3.15 for
-   * `mist`, 3.14 for `iris`, 1.84 for `think`. Ink clears 5.33 at worst.
-   *
-   * This map is app-wide despite living under features/mindfulness, and it is
-   * hue-parameterised, so a practice can carry a guest hue into another
-   * module's room. `text-<hue>-ink` is the right token for exactly that:
-   * `text-accent-ink` would repaint a guest hue as the host room's accent.
-   */
-  ink: string;
-  chipBg: string;
-  border: string;
-  fill: string;
-}
-
+// The `classes` map is gone (#588).
+//
+// It held five class names per hue - `text`, `ink`, `chipBg`, `border`, `fill` -
+// and carried a long note about which of them a consumer owed AA on, because
+// meditation's 10px practice numerals rendered inside a `bg-<hue>/15` tint of
+// their own hue where every hue failed (3.15 mist, 3.14 iris, 1.84 think).
+//
+// Its consumers were the grounding icon badge and meditation's practice
+// stripes, both ruled decorative on #558, so both are neutral now and the map
+// has no callers. What survives here is the part that is NOT chrome: `hsl`, and
+// the ramp built on it, which the mood heatmap, the mood scale, the sleep
+// quality ramp and the breathing pacer all read.
 interface HueDef {
-  classes: HueClasses;
   hsl: HslPair;
 }
 
@@ -61,92 +51,27 @@ const HUE_HSL = Object.fromEntries(
 
 const HUES: Record<ExerciseHue, HueDef> = {
   mist: {
-    classes: {
-      text: "text-mist",
-      ink: "text-mist-ink",
-      chipBg: "bg-mist/15",
-      border: "border-mist/30",
-      fill: "bg-mist",
-    },
     hsl: HUE_HSL.mist,
   },
   iris: {
-    classes: {
-      text: "text-iris",
-      ink: "text-iris-ink",
-      chipBg: "bg-iris/15",
-      border: "border-iris/30",
-      fill: "bg-iris",
-    },
     hsl: HUE_HSL.iris,
   },
   be: {
-    classes: {
-      text: "text-be",
-      ink: "text-be-ink",
-      chipBg: "bg-be/15",
-      border: "border-be/30",
-      fill: "bg-be",
-    },
     hsl: HUE_HSL.be,
   },
   ink: {
-    classes: {
-      text: "text-ink",
-      ink: "text-ink-ink",
-      chipBg: "bg-ink/15",
-      border: "border-ink/30",
-      fill: "bg-ink",
-    },
     hsl: HUE_HSL.ink,
   },
   act: {
-    classes: {
-      text: "text-act",
-      ink: "text-act-ink",
-      chipBg: "bg-act/15",
-      border: "border-act/30",
-      fill: "bg-act",
-    },
     hsl: HUE_HSL.act,
   },
   clay: {
-    classes: {
-      text: "text-clay",
-      ink: "text-clay-ink",
-      chipBg: "bg-clay/15",
-      border: "border-clay/30",
-      fill: "bg-clay",
-    },
     hsl: HUE_HSL.clay,
   },
   think: {
-    classes: {
-      // `text` is ink, not the accent (#412), the same call widget-tint.ts made
-      // for its own think row. This one is not hypothetical: the 5-4-3-2-1
-      // grounding technique's fourth step carries `hue: "think"`
-      // (src/constants/grounding.ts), and grounding-session.tsx paints the
-      // *step* hue - not the technique's - into HueIconBadge. So the accent
-      // renders as a 48px glyph on a bg-think/14 badge at 1.72:1 in light mode,
-      // under 1.4.11's 3:1. The badge is decorative and aria-hidden, so it is
-      // technically exempt; a mark nobody can make out is still a defect. Ink
-      // reads 4.97 there and is identical to the accent in dark mode.
-      text: "text-think-ink",
-      ink: "text-think-ink",
-      chipBg: "bg-think/15",
-      border: "border-think/30",
-      fill: "bg-think",
-    },
     hsl: HUE_HSL.think,
   },
   aqua: {
-    classes: {
-      text: "text-aqua",
-      ink: "text-aqua-ink",
-      chipBg: "bg-aqua/15",
-      border: "border-aqua/30",
-      fill: "bg-aqua",
-    },
     hsl: HUE_HSL.aqua,
   },
 };

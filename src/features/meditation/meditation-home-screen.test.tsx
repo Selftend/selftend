@@ -10,7 +10,7 @@ import {
 } from "@/src/features/meditation/queries";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectRoomPour } from "@/test/room-pour";
+import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -176,7 +176,7 @@ describe("MeditationHomeScreen", () => {
     // Full-bleed iris field header (Direction B room), not the plain header.
     expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the iris room re-pour; a wrong or missing room fails here.
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("wears iris on the stage badge and the history link", () => {
@@ -189,8 +189,8 @@ describe("MeditationHomeScreen", () => {
     // small text as `accent-ink` - the room's own iris darkened until it clears
     // AA on the surfaces iris pours (#368). Published `text-iris` is 3.33:1
     // there, so asserting it here would pin an illegible pairing.
-    expect(screen.getByText("Stage 2").props.className).toContain("text-accent-ink");
-    expect(screen.getByText("All sessions").props.className).toContain("text-accent-ink");
+    expect(screen.getByText("Stage 2").props.className).toContain("text-primary-ink");
+    expect(screen.getByText("All sessions").props.className).toContain("text-primary-ink");
   });
 
   it("keeps the room poured on the loading return", () => {
@@ -203,7 +203,7 @@ describe("MeditationHomeScreen", () => {
 
     // Without this the iris room drops out while preferences resolve and snaps
     // in afterwards - the defect grounding shipped and had to fix.
-    expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
+    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
   });
 

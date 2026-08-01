@@ -16,8 +16,8 @@ export function SupportCard() {
   return (
     <SettingsSectionCard
       icon="help-outline"
-      iconClassName="text-aqua"
-      badgeClassName="bg-[hsl(var(--aqua)/0.10)]"
+      iconClassName="text-muted-foreground"
+      badgeClassName="bg-muted"
       title={t("support.title")}
     >
       <View className="gap-3">

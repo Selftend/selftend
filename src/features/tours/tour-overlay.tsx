@@ -11,9 +11,8 @@ import {
 import { Portal } from "@rn-primitives/portal";
 
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { useThemeHex } from "@/src/lib/theme-palette";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
-import { POPOVER_COLOR } from "@/lib/theme";
 
 const OVERLAY_COLOR = "rgba(0, 0, 0, 0.65)";
 const HIGHLIGHT_BORDER_COLOR = "rgba(255,255,255,0.75)";
@@ -53,10 +52,9 @@ export function TourOverlay({
   onDismiss,
   onDismissAll,
 }: TourOverlayProps): React.JSX.Element {
-  const colorScheme = useColorSchemeName();
   const reduceMotionEnabled = useReduceMotionEnabled();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const cardColor = POPOVER_COLOR[colorScheme];
+  const cardColor = useThemeHex("--popover");
 
   const spotLeft = targetRect.x - SPOTLIGHT_PADDING;
   const spotTop = targetRect.y - SPOTLIGHT_PADDING;

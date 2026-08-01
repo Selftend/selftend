@@ -517,5 +517,9 @@
     "stepSummary": "Стъпка {{current}} от {{total}} · {{name}}",
     "showAllSteps": "Покажи всички стъпки",
     "hideSteps": "Скрий стъпките"
+  },
+  "styleToggle": {
+    "toggle": "Палитра",
+    "default": "По подразбиране"
   }
 }

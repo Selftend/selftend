@@ -78,7 +78,7 @@ export default function ActDefusionListScreen() {
                     </View>
                     {log.fusionLevelBefore !== null && log.fusionLevelAfter !== null ? (
                       <View className="items-end gap-1">
-                        <Text className="text-sm font-bold text-act-ink">
+                        <Text className="text-sm font-bold text-foreground">
                           {log.fusionLevelBefore} → {log.fusionLevelAfter}
                         </Text>
                       </View>

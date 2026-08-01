@@ -111,7 +111,7 @@ export function EmojiPicker({ value, onSelect }: EmojiPickerProps) {
             role="radio"
             className={cn(
               "size-11 items-center justify-center rounded-xl border",
-              selected ? "border-be bg-be/10" : "border-transparent active:bg-accent/50",
+              selected ? "border-border bg-muted" : "border-transparent active:bg-accent/50",
             )}
             {...roving.getItemProps(index, () => onSelect(emoji))}
           >

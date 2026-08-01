@@ -16,7 +16,7 @@ export function SleepWeekdayChart({ averages }: { averages: (number | null)[] })
   );
 
   return (
-    <Card variant="soft" tint="ink">
+    <Card variant="soft">
       <CardContent className="gap-3 pt-4 pb-4">
         <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {t("chart.weekdayAvg")}
@@ -40,8 +40,8 @@ export function SleepWeekdayChart({ averages }: { averages: (number | null)[] })
             })}
             barAreaHeight={BAR_AREA}
             minBarHeight={BAR_AREA * 0.06}
-            tintClass="bg-ink/40"
-            highlightTintClass="bg-ink"
+            tintClass="bg-muted"
+            highlightTintClass="bg-primary"
             columnClassName="gap-1.5"
             labelClassName="font-semibold"
           />

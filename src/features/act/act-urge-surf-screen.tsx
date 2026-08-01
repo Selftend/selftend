@@ -249,9 +249,9 @@ export default function ActUrgeSurfScreen() {
         {/* Step 3: Observe (surfing guidance) */}
         {step === "observe" ? (
           <View className="gap-4">
-            <Card className="border-act/30 bg-act/5">
+            <Card className="border-border bg-muted">
               <CardHeader>
-                <CardTitle className="text-act-ink">
+                <CardTitle className="text-foreground">
                   {t("act:expansion.urgeSurf.observeTitle")}
                 </CardTitle>
               </CardHeader>
@@ -301,11 +301,13 @@ export default function ActUrgeSurfScreen() {
                       onPress={() => setUrgeActedOn(val)}
                       className={cn(
                         "flex-1 rounded-xl border p-4 active:bg-accent/40",
-                        selected ? "border-act bg-act/5" : "border-border bg-card",
+                        selected ? "border-border bg-muted" : "border-border bg-card",
                       )}
                       {...actedOnRoving.getItemProps(index, () => setUrgeActedOn(val))}
                     >
-                      <Text className={cn("text-center font-semibold", selected && "text-act-ink")}>
+                      <Text
+                        className={cn("text-center font-semibold", selected && "text-foreground")}
+                      >
                         {val
                           ? t("act:expansion.urgeSurf.actedOnYes")
                           : t("act:expansion.urgeSurf.actedOnNo")}

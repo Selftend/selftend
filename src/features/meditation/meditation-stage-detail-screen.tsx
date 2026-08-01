@@ -66,7 +66,7 @@ export default function MeditationStageDetailScreen() {
 
           {/* The one callout on the screen. Decorative emphasis, so it takes
               the room hue through the tint token layer rather than `primary`. */}
-          <Card tint="iris">
+          <Card>
             <CardContent className="gap-2 pt-6">
               <CardTitle>{t("module.stages.masteryLabel")}</CardTitle>
               <Text variant="muted">{t(stage.masteryKey)}</Text>

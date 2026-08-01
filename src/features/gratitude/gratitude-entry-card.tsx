@@ -77,7 +77,7 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
   };
 
   return (
-    <View className="overflow-hidden rounded-3xl bg-card shadow-lg shadow-think/25 dark:shadow-none">
+    <View className="overflow-hidden rounded-3xl bg-card shadow-lg shadow-black/10 dark:shadow-none">
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t(expanded ? "list.collapseEntry" : "list.expandEntry", { when })}
@@ -99,7 +99,7 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
             though icons normally keep the published accent (#368). think is the
             one hue where the non-text exemption cannot save it.
           */}
-          {entry.starred ? <Icon name="star" size={16} className="text-accent-ink" /> : null}
+          {entry.starred ? <Icon name="star" size={16} className="text-primary-ink" /> : null}
         </View>
 
         <View className="relative">

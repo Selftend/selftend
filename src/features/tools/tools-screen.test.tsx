@@ -1,5 +1,6 @@
-import { toolAccent } from "@/src/features/home/tool-accent";
 import ToolsScreen, { TOOLS } from "@/src/features/tools/tools-screen";
+import { HUE_NAMES } from "@/src/lib/design-tokens";
+import { CHROME_MARK, CHROME_WASH } from "@/src/lib/theme/chrome";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -47,79 +48,87 @@ jest.mock("@/src/features/sleep/queries", () => ({
 }));
 
 /**
- * The hub's tiles took their hues from a hardcoded map of their own until #421,
- * which had drifted from src/features/home/tool-accent.ts on five of its six
- * entries: journal, gratitude and habits were all violet and grounding and
- * sleep were all pink, so /tools rendered six tools in two colours while the
- * sidebar rendered the same six correctly. Gratitude was the clearest case -
- * gold in the nav, violet in the hub, in the same screenshot.
+ * INVERTED by #587. This suite used to assert the opposite of what it asserts
+ * now, and the history matters because it is what the inversion has to keep.
  *
- * These tests are about where the hues come from, not what they are. The values
- * belong to tool-accent.ts and are contrast-gated in
- * test/accent-ink-call-sites.test.ts; asserting them literally here would just
- * reproduce the duplication the fix removed.
+ * The hub's tiles carried a hardcoded hue map of their own until #421, which had
+ * drifted from tool-accent.ts on five of its six entries: journal, gratitude and
+ * habits were all violet, grounding and sleep were all pink, so /tools rendered
+ * six tools in two colours while the sidebar rendered the same six correctly.
+ * Gratitude was the clearest case - gold in the nav, violet in the hub, in the
+ * same screenshot. The fix was a single source of truth, and these tests pinned
+ * every tile to it: "resolves every tile to a real entry", "renders each tile's
+ * chip and glyph in that tool's own hue", "shows more than the two colours it
+ * used to".
+ *
+ * #558 then ruled that a tool has no colour at all - eight tools in eight hues
+ * is the "distinguishes items in a set" case, which an icon and a name already
+ * do - so tool-accent.ts is deleted and every tile takes the same neutral pair.
+ *
+ * The defect the old suite guarded is therefore not merely gone, it is
+ * unreachable: with no map there is nothing to drift from and no fallback to
+ * fall into. What replaces it is the mirror-image risk, which is a partial
+ * sweep - one tile left hued, or a later tile added with a hue - and the two
+ * assertions below fail on exactly that. They also fail on the OLD behaviour,
+ * which is the point of writing them this way round rather than deleting the
+ * suite: `bg-muted` was on none of the eight tiles before this change, and
+ * seven distinct chips is not one.
  */
-describe("the tools hub takes its hues from tool-accent.ts", () => {
-  /** What `toolAccent` hands back for an id it does not know: violet. */
-  const FALLBACK = toolAccent("no-such-tool");
+describe("the tools hub paints no per-tool hue (#587)", () => {
+  type Node = { props?: { className?: unknown }; type?: unknown };
 
-  it("resolves every tile to a real entry rather than the violet fallback", () => {
-    // A tile key that is not an id in the map is the silent failure mode: it
-    // still renders, in `primary`, and looks deliberate. This is the assertion
-    // that would have caught a rename.
-    const fellBack = TOOLS.filter((tool) => toolAccent(tool.key).chip === FALLBACK.chip).map(
-      (tool) => tool.key,
-    );
-
-    expect(fellBack).toEqual([]);
-  });
-
-  it("renders each tile's chip and glyph in that tool's own hue", () => {
+  /** Every tile's host element, one per TOOLS entry. */
+  function tiles() {
     const { UNSAFE_root } = renderWithProviders(<ToolsScreen />);
-
-    // Scoped to each TILE, not to the screen. A whole-tree search cannot fail
-    // for a tool whose hue another tool also carries: `journal` and `sleep` both
-    // take `ink`, so sending journal back to the violet fallback still finds
-    // `bg-ink/10` - on the sleep tile - and passes. Journal is one of the tools
-    // #421 actually reported wrong, so the assertion has to localise or it
-    // cannot see the defect it was written for.
     // `typeof node.type === "string"` keeps only the host element: a Pressable
     // renders through several composite layers that all carry the same props,
     // so without it each tile matches three times over.
-    const tiles = UNSAFE_root.findAll(
+    const found = UNSAFE_root.findAll(
       (node) =>
         typeof node.type === "string" &&
         node.props?.accessibilityRole === "button" &&
         typeof node.props?.className === "string" &&
         node.props.className.includes("basis-[260px]"),
     );
-    expect(tiles).toHaveLength(TOOLS.length);
+    expect(found).toHaveLength(TOOLS.length);
+    return found;
+  }
 
-    TOOLS.forEach((tool, index) => {
-      const accent = toolAccent(tool.key);
-      const classNames = tiles[index]
-        .findAll((node) => typeof node.props?.className === "string")
-        .map((node) => node.props.className as string);
+  /** Every className string rendered inside one tile. */
+  const classNamesIn = (tile: { findAll: (predicate: (node: Node) => boolean) => Node[] }) =>
+    tile
+      .findAll((node) => typeof node.props?.className === "string")
+      .map((node) => node.props?.className as string);
 
-      expect(classNames).toContainEqual(expect.stringContaining(accent.chip));
-      expect(classNames.some((name) => name.split(/\s+/).includes(accent.icon))).toBe(true);
-    });
+  it("gives every tile the same neutral wash and mark", () => {
+    // Scoped per TILE rather than to the screen, for the reason #421 found: a
+    // whole-tree search cannot localise a defect when tools share a class.
+    for (const tile of tiles()) {
+      const classNames = classNamesIn(tile);
+
+      expect(classNames).toContainEqual(expect.stringContaining(CHROME_WASH));
+      expect(classNames.some((name) => name.split(/\s+/).includes(CHROME_MARK))).toBe(true);
+    }
   });
 
-  it("shows more than the two colours it used to", () => {
-    // The defect stated as the user saw it. Journal and sleep legitimately
-    // share `ink`, so eight tools are seven hues - the point is that it is
-    // not two. (Breathing brought aqua and meditation iris when the hub
-    // caught up with the drawer's tool list.)
-    const hues = new Set(TOOLS.map((tool) => toolAccent(tool.key).chip));
+  it("carries no module hue anywhere in the tile", () => {
+    // The partial-sweep assertion. One tile still on `bg-clay/10` reads as a
+    // deliberate accent rather than a miss, so nothing but a scan catches it.
+    // String.raw, not a plain template: in a plain one `\w` collapses to `w`,
+    // so the boundary guards would compile as `(?<![w-])` and match `text-actor`
+    // as readily as `text-act`.
+    const hue = new RegExp(
+      String.raw`(?<![\w-])(text|bg|border)-(${HUE_NAMES.join("|")})(-ink)?(?![\w-])`,
+    );
 
-    expect(hues.size).toBe(7);
+    for (const tile of tiles()) {
+      expect(classNamesIn(tile).filter((name) => hue.test(name))).toEqual([]);
+    }
   });
 
   it("leaves the tile names on the neutral foreground", () => {
-    // The hub paints no hue text: `accent.ink` exists for the sidebar's active
-    // row, where the tint carries state. If a name ever does take a hue, it is
-    // 16px text and owes 4.5:1 on the tile, which the raw accent does not meet.
+    // Unchanged by the inversion: the hub never hued its tile names, and the
+    // reason it must not start is unchanged too - 16px text owes 4.5:1.
     const { getByText } = renderWithProviders(<ToolsScreen />);
     const name = getByText("Mood tracker");
 

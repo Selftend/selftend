@@ -37,10 +37,10 @@ export default function DbtModuleScreen() {
             </Text>
           </View>
 
-          <Card className="border-be/30 bg-be/5">
+          <Card className="border-border bg-muted">
             <CardHeader className="flex-row items-center gap-4">
-              <View className="size-14 items-center justify-center rounded-xl border border-be/30 bg-be/15">
-                <Icon name="anchor" className="size-7 text-be" />
+              <View className="size-14 items-center justify-center rounded-xl border border-border bg-muted">
+                <Icon name="anchor" className="size-7 text-muted-foreground" />
               </View>
               <View className="flex-1 gap-1">
                 <Text className="text-base font-semibold">{t("dbt.statusTitle")}</Text>

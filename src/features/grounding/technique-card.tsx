@@ -4,10 +4,9 @@ import { Card, CardContent } from "@/src/components/react-native-reusables/card"
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HueIconBadge } from "@/src/features/grounding/hue-icon-badge";
-import { hueHsl } from "@/src/features/mindfulness/exercise-hue";
+import { useAccentHsl } from "@/src/lib/theme-palette";
 import type { GroundingTechnique } from "@/src/constants/grounding";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 interface TechniqueCardProps {
   technique: GroundingTechnique;
@@ -17,19 +16,23 @@ interface TechniqueCardProps {
   onPress: () => void;
 }
 
-// Senses techniques show a multi-hue dot grid (matching the per-sense colours);
-// guided techniques show a single hue icon tile.
+// Senses techniques show a dot grid; guided techniques show a single icon tile.
+// The grid used to be multi-hue, one colour per sense. What the thumbnail says
+// is "this technique walks senses" versus "this one is guided", and the SHAPE
+// says that - five dots against one glyph. The colours said which senses, to a
+// user who has not opened the technique yet and has no key to read them by
+// (#558 rules the technique hues neutral).
 function SenseDots({ technique }: { technique: GroundingTechnique }) {
-  const isDark = useColorSchemeName() === "dark";
+  const accent = useAccentHsl();
   return (
     <View
       style={{
         width: 50,
         height: 50,
         borderRadius: 14,
-        backgroundColor: hueHsl(technique.hue, isDark, 0.07),
+        backgroundColor: accent(0.07),
         borderWidth: 1,
-        borderColor: hueHsl(technique.hue, isDark, 0.3),
+        borderColor: accent(0.3),
         alignItems: "center",
         justifyContent: "center",
       }}
@@ -50,7 +53,7 @@ function SenseDots({ technique }: { technique: GroundingTechnique }) {
               width: 7,
               height: 7,
               borderRadius: 3.5,
-              backgroundColor: hueHsl(step.hue, isDark, 1),
+              backgroundColor: accent(1),
             }}
           />
         ))}
@@ -80,16 +83,14 @@ export function TechniqueCard({
           {technique.kind === "senses" ? (
             <SenseDots technique={technique} />
           ) : (
-            <HueIconBadge icon={technique.icon} hue={technique.hue} size={50} iconSize={24} />
+            <HueIconBadge icon={technique.icon} size={50} iconSize={24} />
           )}
           <View className="flex-1">
             <Text className="text-base font-semibold">{title}</Text>
             <Text variant="muted" className="mt-0.5">
               {description}
             </Text>
-            <Text tint={technique.hue} className="mt-2 text-xs font-semibold">
-              {meta}
-            </Text>
+            <Text className="mt-2 text-xs font-semibold">{meta}</Text>
           </View>
           <Icon name="chevron-right" size={22} className="text-muted-foreground" />
         </CardContent>

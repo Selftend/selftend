@@ -240,7 +240,6 @@ export default function ActHomeScreen() {
                   {PILLARS.map((pillar) => (
                     <PillarCard
                       key={pillar.key}
-                      tint="act"
                       letter={t(`pillars.${pillar.key}.letter`)}
                       title={t(`pillars.${pillar.key}.title`)}
                       kicker={t(`pillars.${pillar.key}.sub`)}
@@ -275,7 +274,7 @@ export default function ActHomeScreen() {
                         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                         onPress={() => router.push("/modules/act/defusion")}
                       >
-                        <Text className="text-sm text-act-ink">{t("home.viewAllDefusion")}</Text>
+                        <Text className="text-sm text-foreground">{t("home.viewAllDefusion")}</Text>
                       </Pressable>
                     ) : null}
                   </View>

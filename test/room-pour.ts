@@ -73,6 +73,27 @@ export function pouredVariables(style: unknown): Record<string, string> {
   return Object.fromEntries(entries.map(([name, value]) => [name, String(value)]));
 }
 
+/**
+ * True when a style carries no theme variables at all — the neutral room (#586).
+ *
+ * The inverse of `pouredVariables`, and it needs its own function rather than a
+ * try/catch around that one: `pouredVariables` THROWS on a variable-less style
+ * on purpose, because a silent empty map is exactly the #389 vacuum it exists to
+ * prevent. Asserting "no pour" by catching that throw would pass just as
+ * happily if nativewind's internals moved, which is the failure it was written
+ * to make loud.
+ */
+export function carriesNoPour(style: unknown): boolean {
+  if (style === null || typeof style !== "object" || Array.isArray(style)) return false;
+  if (Object.keys(style).some((name) => name.startsWith("--"))) return false;
+
+  const ruleSet = opaqueStyles.get(style);
+  if (!ruleSet) return true;
+
+  const entries = ("n" in ruleSet ? (ruleSet.n ?? []) : []).flatMap((rule) => rule.variables ?? []);
+  return entries.length === 0;
+}
+
 /** The variables the room for `hue` is supposed to pour in `scheme`. */
 export function expectedRoomVariables(
   hue: HueName,
@@ -86,16 +107,21 @@ export function expectedRoomVariables(
 type StyledElement = { props: { style?: unknown } };
 
 /**
- * Assert that `element` wears the room pour for `hue` - by the variable values
- * it actually carries, so a wrong hue fails. Use this everywhere instead of
- * comparing against `roomVariables(hue)[scheme]`, which cannot fail (#389).
+ * Assert that `element` wears NO room pour — the app's own surfaces, in the
+ * active palette (#586).
  *
- *   expectRoomPour(screen.UNSAFE_getByType(SafeAreaView), "iris");
+ * It replaces `expectRoomPour(element, hue)`, which asserted the opposite. The
+ * rename is not cosmetic: a helper still called `expectRoomPour` while checking
+ * for the absence of one is how a later contributor "restores" a room believing
+ * they are fixing a test.
+ *
+ * The hue argument is gone rather than ignored, for the same reason — a call
+ * that still names a hue reads as though the hue still means something here.
  */
-export function expectRoomPour(
-  element: StyledElement,
-  hue: HueName,
-  scheme: ColorSchemeName = "light",
-): void {
-  expect(pouredVariables(element.props.style)).toEqual(expectedRoomVariables(hue, scheme));
+export function expectNeutralRoom(element: StyledElement): void {
+  const style = element.props.style;
+  if (!carriesNoPour(style)) {
+    expect(pouredVariables(style)).toEqual({});
+  }
+  expect(carriesNoPour(style)).toBe(true);
 }

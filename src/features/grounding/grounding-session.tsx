@@ -36,11 +36,10 @@ export function GroundingSession({
 }: GroundingSessionProps) {
   const { t } = useTranslation("cbt");
   const stepConfig = technique.steps[stepIndex];
-  const hue = stepConfig.hue;
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <GlowBackdrop hue={hue} />
+      <GlowBackdrop />
 
       <ScrollView contentContainerClassName="grow" showsVerticalScrollIndicator={false}>
         <View className="flex-row items-center justify-between px-4 pt-2">
@@ -53,19 +52,17 @@ export function GroundingSession({
           >
             <Icon name="close" size={22} className="text-foreground" />
           </Pressable>
-          <Text variant="eyebrow" tint={hue}>
-            {techniqueTitle}
-          </Text>
+          <Text variant="eyebrow">{techniqueTitle}</Text>
           <View style={{ width: 22 }} />
         </View>
 
         <View className="px-6 pt-4">
-          <ProgressSegments total={total} current={stepIndex} hue={hue} />
+          <ProgressSegments total={total} current={stepIndex} />
         </View>
 
         <View className="flex-1 items-center justify-center gap-3 px-8 py-8">
-          <HueIconBadge icon={stepConfig.icon} hue={hue} size={108} iconSize={48} shape="circle" />
-          <Text variant="eyebrow" tint={hue} className="mt-4">
+          <HueIconBadge icon={stepConfig.icon} size={108} iconSize={48} shape="circle" />
+          <Text variant="eyebrow" className="mt-4">
             {t("grounding.stepCounter", { label: stepLabel, current: stepIndex + 1, total })}
           </Text>
           <Text className="text-center text-2xl font-semibold leading-relaxed">{stepText}</Text>
@@ -73,7 +70,6 @@ export function GroundingSession({
 
         <View className="px-6 pb-8">
           <HueButton
-            hue={hue}
             label={isLast ? t("grounding.finish") : t("grounding.next")}
             onPress={onNext}
           />
