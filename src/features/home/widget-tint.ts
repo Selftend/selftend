@@ -66,13 +66,27 @@ const CHROME: TintClasses = {
 };
 
 /**
- * `destructive` has no `-ink` token of its own and reads 4.03:1 on its own /10
- * tint. That is its own ticket, and this batch does not touch it.
+ * The ticket the note above deferred to (#603), now closed.
+ *
+ * `destructive` has no `-ink` token of its own, so it was using the raw red for
+ * BOTH the glyph and the label — and on its own /10 chip that label read 4.03:1,
+ * below the 4.5 an 10px uppercase label owes.
+ *
+ * The fix is the split CHROME already makes, applied here: the LABEL takes
+ * `--foreground` (9.27:1 at worst on this chip, across all eight palettes) and
+ * the GLYPH keeps the red, because a mark owes 1.4.11's 3:1 and it measures 3.96
+ * at worst. The chip itself stays red, so the destructive tint still reads as
+ * destructive — only the text that has to be *read* moved off it.
+ *
+ * Note the surface matters: `bg-muted` is NOT an escape here. `text-destructive`
+ * on `--muted` fails on twelve of the sixteen palette/scheme pairs (atlas dark
+ * is 3.44), which is why the label moves to `--foreground` rather than the chip
+ * moving to the neutral wash.
  */
 const DESTRUCTIVE: TintClasses = {
   chip: "bg-destructive/10",
   icon: "text-destructive",
-  ink: "text-destructive",
+  ink: CHROME_TEXT,
 };
 
 export function tintClasses(tint: WidgetTint): TintClasses {
