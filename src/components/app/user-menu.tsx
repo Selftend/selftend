@@ -1,11 +1,12 @@
 import { router, usePathname } from "expo-router";
 import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import * as React from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { GetTheAppSection } from "@/src/components/app/get-the-app-section";
 import { ProfileAvatar } from "@/src/components/app/profile-avatar";
 import { SocialConnections } from "@/src/components/app/social-connections";
+import { StylePicker } from "@/src/components/app/style-picker";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import {
@@ -49,6 +50,16 @@ export function UserMenu() {
       popoverTriggerRef.current?.close();
     }
   }, [pathname]);
+  // The palette grid added four rows of cards to a menu that already carried
+  // identity, language, appearance, the app promo, socials and three actions.
+  // On a short or landscape phone that runs past the bottom of the screen, and
+  // a popover does not scroll on its own - so sign-out, Settings and the lower
+  // palettes simply became unreachable. Bounding the body to a fraction of the
+  // viewport and letting it scroll keeps every row reachable at any height,
+  // and costs nothing on a tall screen where the content already fits.
+  const { height: windowHeight } = useWindowDimensions();
+  const menuMaxHeight = Math.round(windowHeight * 0.7);
+
   const { session, user } = useSession();
   const isSignedIn = Boolean(session);
   const { data: profile } = useUserProfile(user);
@@ -103,7 +114,14 @@ export function UserMenu() {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" side="bottom" className="w-72 p-0">
-        <View className="gap-3 p-3">
+        <ScrollView
+          testID="user-menu-scroll"
+          style={{ maxHeight: menuMaxHeight }}
+          contentContainerClassName="gap-3 p-3"
+          // The menu is short on a tall screen; the bar should not imply the
+          // content is cut off when it is not.
+          showsVerticalScrollIndicator={false}
+        >
           {isSignedIn ? (
             <View className="flex-row items-center gap-3">
               <ProfileAvatar
@@ -189,6 +207,8 @@ export function UserMenu() {
             ))}
           </View>
 
+          <StylePicker />
+
           <GetTheAppSection compact />
           {/* Community links. On mobile the header shows no Discord/GitHub
               icons (#92), so this social row is the canonical Discord entry
@@ -251,7 +271,7 @@ export function UserMenu() {
               </Button>
             </View>
           ) : null}
-        </View>
+        </ScrollView>
       </PopoverContent>
     </Popover>
   );

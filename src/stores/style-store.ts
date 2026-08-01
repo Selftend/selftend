@@ -34,23 +34,14 @@ export function isStyleName(value: unknown): value is StyleName {
  * static export, where there is no window at all.
  */
 function seedFromLocalStorage(): StyleName | null {
-  if (Platform.OS !== "web" || typeof window === "undefined") {
+  if (Platform.OS !== "web" || typeof window === "undefined" || !window.localStorage) {
     return null;
   }
   try {
-    // `window.localStorage` is read INSIDE the try on purpose. On an opaque or
-    // sandboxed origin - and under storage-blocking browser policies - the
-    // property access itself throws, so testing it in the guard above would
-    // throw during module initialization and take the whole web boot with it,
-    // which is the one outcome this fallback exists to prevent.
-    const storage = window.localStorage;
-    if (!storage) {
-      return null;
-    }
-    const stored = storage.getItem(STORAGE_KEY);
+    const stored = window.localStorage.getItem(STORAGE_KEY);
     return isStyleName(stored) ? stored : null;
   } catch {
-    // Storage can also throw on read (Safari private mode, disabled cookies). A
+    // Storage can throw outright (Safari private mode, disabled cookies). A
     // palette is not worth failing a boot over.
     return null;
   }

@@ -1,6 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
-import { Platform } from "react-native";
+import { Dimensions, Platform, StyleSheet } from "react-native";
 
 import { UserMenu } from "./user-menu";
 import { appEnv } from "@/src/lib/env";
@@ -123,5 +123,34 @@ describe("UserMenu", () => {
     expect(screen.getByRole("radio", { name: "Bulgarian" })).not.toBeChecked();
     expect(screen.getByRole("radio", { name: "System" })).toBeChecked();
     expect(screen.getByRole("radio", { name: "Dark" })).not.toBeChecked();
+  });
+
+  // The palette grid made this menu tall enough to run off a short or
+  // landscape phone, and a popover does not scroll on its own - so the rows
+  // below the fold (lower palettes, Settings, feedback, sign out) became
+  // unreachable rather than merely awkward. Asserted as the property that
+  // matters - bounded strictly below the viewport, and scrollable - rather
+  // than against the exact fraction, so tuning the ratio does not fail this.
+  it("keeps the menu body scrollable and bounded inside the viewport", () => {
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    const body = screen.getByTestId("user-menu-scroll");
+    const { maxHeight } = StyleSheet.flatten(body.props.style) as { maxHeight?: number };
+    const viewport = Dimensions.get("window").height;
+
+    expect(typeof maxHeight).toBe("number");
+    expect(maxHeight).toBeGreaterThan(0);
+    expect(maxHeight).toBeLessThan(viewport);
+    // Reachable by scrolling, not just clipped by the bound above.
+    expect(body.props.scrollEnabled).not.toBe(false);
+  });
+
+  it("still renders the actions below the palette grid", () => {
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.getByText("Sign Out")).toBeTruthy();
+    expect(screen.getByText("Settings")).toBeTruthy();
   });
 });
