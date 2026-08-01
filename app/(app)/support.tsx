@@ -84,7 +84,14 @@ export default function SupportScreen() {
             </CardHeader>
             <CardContent>
               <View className="gap-4">
-                <Card className="border-destructive/50 bg-destructive/5">
+                {/*
+                  No `bg-destructive/5` here: this is crisis guidance, and red
+                  text on a wash of its own red measured below AA (#603). Card
+                  already paints `bg-card`, where `text-destructive` is gated at
+                  or above 4.5 on every palette, so the warning keeps its red
+                  border and red text and becomes legible rather than louder.
+                */}
+                <Card className="border-destructive/50">
                   <CardContent className="pt-4">
                     <Text className="text-sm font-medium text-destructive">
                       {t("feedback.crisisWarning")}

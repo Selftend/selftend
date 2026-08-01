@@ -154,8 +154,16 @@ export default function ActChoicePointNewScreen() {
 
         <CrisisSupportBar />
 
+        {/*
+          `bg-card`, not `bg-destructive/10`. Red text on a wash of its own red
+          is always tighter than the same text on the bare surface, and here it
+          measured 4.03:1 — below AA — on the default palette (#603). The border
+          and the text keep the error read; only the surface underneath them is
+          neutral, where `text-destructive` is held at or above 4.5 on all eight
+          palettes by the per-style audit.
+        */}
         {submitError ? (
-          <View className="rounded-lg border border-destructive bg-destructive/10 p-3">
+          <View className="rounded-lg border border-destructive bg-card p-3">
             <Text className="text-sm text-destructive">{submitError}</Text>
           </View>
         ) : null}
