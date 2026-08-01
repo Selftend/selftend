@@ -1,9 +1,8 @@
 import { useRef } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
-import { THEME } from "@/lib/theme";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { useThemePalette } from "@/src/lib/theme-palette";
 
 export interface HeatmapCellDatum {
   key: string;
@@ -37,12 +36,12 @@ const CELL_GAP = 3;
  * semantics come from the caller.
  */
 export function Heatmap({ columns, cellSize = 12, selectedKey, onCellPress }: HeatmapProps) {
-  const scheme = useColorSchemeName();
+  const theme = useThemePalette();
   const scrollRef = useRef<ScrollView>(null);
   if (columns.length === 0) return null;
 
-  const hairline = THEME[scheme].border;
-  const selectedBorder = THEME[scheme].foreground;
+  const hairline = theme.border;
+  const selectedBorder = theme.foreground;
   const columnSpan = cellSize + CELL_GAP;
 
   // A labelled column starts a segment that stretches to the next label, so month
