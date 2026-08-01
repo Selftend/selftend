@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.11.0](https://github.com/Selftend/selftend/compare/v0.10.0...v0.11.0) (2026-08-01)
+
+
+### Features
+
+* **theme:** add the neutral primitives the sweep will migrate onto ([#596](https://github.com/Selftend/selftend/issues/596)) ([a704e3f](https://github.com/Selftend/selftend/commit/a704e3fb518ad8b5da0433c31ec9ffdd47db92c1))
+* **theme:** add the palette control to the user menu and settings ([#594](https://github.com/Selftend/selftend/issues/594)) ([df864e1](https://github.com/Selftend/selftend/commit/df864e181a5006614da4bb477f2f7a21bde6129f))
+* **theme:** author the eight palettes as data ([#592](https://github.com/Selftend/selftend/issues/592)) ([1e3cdbe](https://github.com/Selftend/selftend/commit/1e3cdbe66dbd784cb97fe61932d9aa46e5ba7675))
+* **theme:** chrome, decorative hue and single-series charts go neutral ([#599](https://github.com/Selftend/selftend/issues/599)) ([5ee724b](https://github.com/Selftend/selftend/commit/5ee724ba9146be4c7b00da01d378f871aa7d1fd6))
+* **theme:** delete the hue surface and lock it with a lint gate ([#600](https://github.com/Selftend/selftend/issues/600)) ([5c2d9c0](https://github.com/Selftend/selftend/commit/5c2d9c0573518f1e75a5ec75448e1a1ec43ff72f))
+* **theme:** module and tool identity becomes icon and label ([#598](https://github.com/Selftend/selftend/issues/598)) ([f6e2195](https://github.com/Selftend/selftend/commit/f6e2195ee59a951cf2bb749140cc493691e61e22))
+* **theme:** move the token contract into TypeScript ([#590](https://github.com/Selftend/selftend/issues/590)) ([2f0e59a](https://github.com/Selftend/selftend/commit/2f0e59a106b278a3c0bc04ccb219922efecf929f))
+* **theme:** plumb the style axis through the provider ([#593](https://github.com/Selftend/selftend/issues/593)) ([e49b22a](https://github.com/Selftend/selftend/commit/e49b22afd9d065f99b74e1e47ad95bd311461d30))
+* **theme:** rooms and field gradients go neutral ([#597](https://github.com/Selftend/selftend/issues/597)) ([d6d0c24](https://github.com/Selftend/selftend/commit/d6d0c243ec95410920b96713d39261986b2fa553))
+* **theme:** solve ink contrast instead of pinning it ([#591](https://github.com/Selftend/selftend/issues/591)) ([ca62a52](https://github.com/Selftend/selftend/commit/ca62a5281b9efaeff22b7d5f1483e8a87f3453cf))
+* **theme:** web first paint and shell follow the selected palette ([#595](https://github.com/Selftend/selftend/issues/595)) ([db73abd](https://github.com/Selftend/selftend/commit/db73abd45b2251737b281175b46a53934f9842a2))
+
+
+### Bug Fixes
+
+* **theme:** solve the destructive red per palette, and gate it ([#602](https://github.com/Selftend/selftend/issues/602)) ([a053874](https://github.com/Selftend/selftend/commit/a0538747e271baa2a64cce74696e5f9fcf96a43e))
+* **theme:** the last three static purples follow the selected palette ([#601](https://github.com/Selftend/selftend/issues/601)) ([5874513](https://github.com/Selftend/selftend/commit/5874513f34c1d0c6ca113038192a3711849c7997))
+
 ## [0.10.0](https://github.com/Selftend/selftend/compare/v0.9.0...v0.10.0) (2026-07-31)
 
 
