@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.1](https://github.com/Selftend/selftend/compare/v0.11.0...v0.11.1) (2026-08-01)
+
+
+### Bug Fixes
+
+* **a11y:** match arbitrary destructive opacity in the wash gate ([#609](https://github.com/Selftend/selftend/issues/609)) ([aab0f3a](https://github.com/Selftend/selftend/commit/aab0f3af7ce4fd88a172466ec7b312f51a20612f))
+* **a11y:** stop pairing destructive text with a wash of its own red ([#607](https://github.com/Selftend/selftend/issues/607)) ([3ae382d](https://github.com/Selftend/selftend/commit/3ae382d96061b35d0a70922cb3ab26375e0775a9))
+
 ## [0.11.0](https://github.com/Selftend/selftend/compare/v0.10.0...v0.11.0) (2026-08-01)
 
 
