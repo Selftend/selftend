@@ -279,7 +279,7 @@ export default function ActDefusionNewScreen() {
                     <Text
                       className={cn(
                         "text-sm font-semibold",
-                        selected ? "text-white" : "text-foreground",
+                        selected ? "text-primary-foreground" : "text-foreground",
                       )}
                     >
                       {t(`act:defusion.categories.${cat}`)}

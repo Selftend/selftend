@@ -2,7 +2,7 @@ import { ActivityIndicator, Pressable } from "react-native";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { accentHsl } from "@/src/lib/theme/chrome";
+import { useAccentHsl } from "@/src/lib/theme-palette";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 
@@ -31,6 +31,7 @@ interface HueButtonProps {
 // straight.
 export function HueButton({ label, onPress, icon, disabled, loading }: HueButtonProps) {
   const isDark = useColorSchemeName() === "dark";
+  const accent = useAccentHsl();
   // The scheme decides it, and only the scheme. The hue version needed a set of
   // exceptions here - `iris` and `think` are bright enough in light mode that
   // white fails on them - because it was filling with eight different colours.
@@ -49,7 +50,7 @@ export function HueButton({ label, onPress, icon, disabled, loading }: HueButton
       onPress={onPress}
       role="button"
       style={{
-        backgroundColor: accentHsl(isDark, 1),
+        backgroundColor: accent(1),
         borderRadius: 14,
         paddingVertical: 16,
         paddingHorizontal: 20,

@@ -1,8 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 
-import { accentHsl } from "@/src/lib/theme/chrome";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { useAccentHsl } from "@/src/lib/theme-palette";
 
 const GLOW = 440;
 
@@ -12,8 +11,8 @@ const GLOW = 440;
 // cannot affect layout. Rendered as an SVG radial gradient for a soft falloff on web
 // and native.
 export function GlowBackdrop() {
-  const isDark = useColorSchemeName() === "dark";
-  const color = accentHsl(isDark, 1);
+  const accent = useAccentHsl();
+  const color = accent(1);
   const gradientId = "grounding-glow";
 
   return (

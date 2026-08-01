@@ -493,7 +493,25 @@ const ROOMLESS_TAIL_DIRS = [
 // EMPTIED by #588: the module tail's last bare accents - breathing's stepper
 // arrows and sound checks, meditation's chevron, the settings cards' icons,
 // sleep's filled star, the mood week strip's today marker - are all neutral now.
-const ALLOWED_TAIL: AllowedSite[] = [];
+const ALLOWED_TAIL: AllowedSite[] = [
+  // The single survivor, and it survives because it is not chrome. Sleep quality
+  // is an ordered 1-5 input control - the twin of the mood scale, which #558
+  // keeps by name ("the same 5-step scale on the input control") - and #588
+  // records it as the `sleep-quality-ramp` encoding. The mechanical sweep took
+  // it by accident and left `filled` and `empty` painting the identical class;
+  // this entry is here so the next sweep has to read the argument rather than
+  // rediscover it.
+  {
+    file: "src/features/sleep/star-rating.tsx",
+    snippet: `className={filled ? "text-ink" : "text-muted-foreground"}`,
+    reason: "icon",
+    evidence:
+      "32px star on the sleep log's background: 4.71:1. Filled and empty differ by " +
+      "glyph - star vs star-outline - and each Pressable carries " +
+      "accessibilityRole='radio' with aria-checked, so the fill colour is not the " +
+      "only channel.",
+  },
+];
 
 /**
  * Every `accentClassName` literal in the app. `ToolStats` renders it at 13px
@@ -574,8 +592,9 @@ describe("no bare accent survives outside a classified area", () => {
     // file that still names hues by construction: design-tokens.ts, where
     // TINT_ACCENT lives until #589 deletes it.
     //
-    // The number is exact rather than a floor. A floor would survive the scanner
-    // silently losing files, which is the failure this test exists for.
+    // A floor rather than an exact count, because TINT_ACCENT's shape is asserted
+    // directly below and pinning the number twice would just make one of them a
+    // copy. What this has to catch is the scanner reading nothing at all.
     const inTokens = findingsIn(BARE_HUE, [TOKENS_FILE]);
 
     expect(inTokens.length).toBeGreaterThanOrEqual(7);

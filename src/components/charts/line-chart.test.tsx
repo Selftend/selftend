@@ -3,7 +3,8 @@ import { Circle, Line, Polygon, Polyline, Text as SvgText } from "react-native-s
 
 import { LineChart, type LineChartPoint } from "@/src/components/charts/line-chart";
 import { THEME } from "@/lib/theme";
-import { accentHsl } from "@/src/lib/theme/chrome";
+import { DEFAULT_STYLE } from "@/src/lib/theme/styles";
+import { themeTokens } from "@/src/lib/theme/projections";
 import { hueHsl } from "@/src/features/mindfulness/exercise-hue";
 
 function evenPoints(count: number, label?: (i: number) => string | undefined): LineChartPoint[] {
@@ -69,7 +70,11 @@ describe("LineChart", () => {
     const points = evenPoints(5, (i) => `d${i}`);
     const { UNSAFE_getAllByType } = render(<LineChart points={points} domain={[1, 5]} />);
 
-    expect(UNSAFE_getAllByType(Polyline)[0].props.stroke).toBe(accentHsl(false, 1));
+    // Built from the contract rather than hard-coded, so a palette retune moves
+    // the expectation with the token. `useAccentHsl` resolves the ACTIVE style,
+    // which under test is the default.
+    const accent = themeTokens("light", DEFAULT_STYLE)["--primary"].split(/\s+/).join(", ");
+    expect(UNSAFE_getAllByType(Polyline)[0].props.stroke).toBe(`hsla(${accent}, 1)`);
     expect(UNSAFE_getAllByType(Polyline)[0].props.stroke).not.toBe(hueHsl("be", false, 1));
     expect(UNSAFE_getAllByType(Line)[0].props.stroke).toBe(THEME.light.border);
     const label = UNSAFE_getAllByType(SvgText)[0];

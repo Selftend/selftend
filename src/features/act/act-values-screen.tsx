@@ -101,10 +101,7 @@ export default function ActValuesScreen() {
                     </View>
                     <Icon
                       name={hasEntry ? "chevron-right" : "add"}
-                      className={cn(
-                        "size-4",
-                        hasEntry ? "text-muted-foreground" : "text-muted-foreground",
-                      )}
+                      className={cn("size-4", hasEntry ? "text-muted-foreground" : "text-primary")}
                     />
                   </View>
                 </Pressable>

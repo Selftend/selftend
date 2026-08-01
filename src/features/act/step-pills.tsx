@@ -82,7 +82,11 @@ export function StepPills<TStep extends string>({
                 <Text
                   className={cn(
                     "text-xs font-semibold",
-                    isActive ? "text-white" : isPast ? "text-foreground" : "text-muted-foreground",
+                    isActive
+                      ? "text-primary-foreground"
+                      : isPast
+                        ? "text-foreground"
+                        : "text-muted-foreground",
                   )}
                 >
                   {index + 1}. {getLabel(s)}

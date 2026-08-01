@@ -1,9 +1,9 @@
 import { View } from "react-native";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
-import { accentHsl, CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
+import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
+import { useAccentHsl } from "@/src/lib/theme-palette";
 import { cn } from "@/lib/utils";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 interface HueIconBadgeProps {
   icon: MaterialIconName;
@@ -31,16 +31,16 @@ export function iconSizeClass(iconSize: number): string {
 // home card (square 50/24), intro hero (square 64/32), session center (circle 108/48),
 // done (circle 96/46).
 export function HueIconBadge({ icon, size, iconSize, shape = "square" }: HueIconBadgeProps) {
-  const isDark = useColorSchemeName() === "dark";
+  const accent = useAccentHsl();
   return (
     <View
       style={{
         width: size,
         height: size,
         borderRadius: shape === "circle" ? size / 2 : size * 0.28,
-        backgroundColor: accentHsl(isDark, 0.14),
+        backgroundColor: accent(0.14),
         borderWidth: 1,
-        borderColor: accentHsl(isDark, 0.4),
+        borderColor: accent(0.4),
         alignItems: "center",
         justifyContent: "center",
       }}

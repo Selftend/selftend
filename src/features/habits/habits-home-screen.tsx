@@ -453,8 +453,12 @@ function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: Insight
           {hasTwoMinute ? (
             <View className="gap-1.5">
               <View className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                {/* The fill is the accent, not the wash. The sweep sent both the
+                    track and the fill to `bg-muted`, which renders the bar as a
+                    flat blank pill - the one case where a hue was carrying the
+                    only difference between two adjacent surfaces. */}
                 <View
-                  className="h-full rounded-full bg-muted"
+                  className="h-full rounded-full bg-primary"
                   style={{ width: `${adoptionPct}%` }}
                 />
               </View>

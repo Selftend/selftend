@@ -1,8 +1,7 @@
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { accentHsl } from "@/src/lib/theme/chrome";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { useAccentHsl } from "@/src/lib/theme-palette";
 
 interface ProgressSegmentsProps {
   total: number;
@@ -10,7 +9,7 @@ interface ProgressSegmentsProps {
 }
 
 export function ProgressSegments({ total, current }: ProgressSegmentsProps) {
-  const isDark = useColorSchemeName() === "dark";
+  const accent = useAccentHsl();
   const { t } = useTranslation("cbt");
   return (
     <View
@@ -28,7 +27,7 @@ export function ProgressSegments({ total, current }: ProgressSegmentsProps) {
               flex: 1,
               height: 4,
               borderRadius: 2,
-              backgroundColor: accentHsl(isDark, alpha),
+              backgroundColor: accent(alpha),
             }}
           />
         );

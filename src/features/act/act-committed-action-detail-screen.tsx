@@ -161,7 +161,7 @@ export default function ActCommittedActionDetailScreen() {
                   name="add-circle"
                   className={cn(
                     "size-6",
-                    newStepText.trim() ? "text-muted-foreground" : "text-muted-foreground",
+                    newStepText.trim() ? "text-primary" : "text-muted-foreground",
                   )}
                 />
               )}
@@ -279,7 +279,7 @@ export default function ActCommittedActionDetailScreen() {
                         name={step.isCompleted ? "check-circle" : "radio-button-unchecked"}
                         className={cn(
                           "size-5",
-                          step.isCompleted ? "text-muted-foreground" : "text-muted-foreground",
+                          step.isCompleted ? "text-primary" : "text-muted-foreground",
                         )}
                       />
                     </Pressable>

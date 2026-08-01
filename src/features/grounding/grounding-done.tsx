@@ -6,15 +6,13 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { GlowBackdrop } from "@/src/features/grounding/glow-backdrop";
 import { HueButton } from "@/src/features/grounding/hue-button";
 import { HueIconBadge } from "@/src/features/grounding/hue-icon-badge";
-import type { ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 
 interface GroundingDoneProps {
-  hue: ExerciseHue;
   onSave: () => void;
   saving: boolean;
 }
 
-export function GroundingDone({ hue, onSave, saving }: GroundingDoneProps) {
+export function GroundingDone({ onSave, saving }: GroundingDoneProps) {
   const { t } = useTranslation("cbt");
   return (
     <SafeAreaView className="flex-1 bg-background">

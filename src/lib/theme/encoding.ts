@@ -48,9 +48,14 @@ export interface HueEncoding {
 /**
  * The complete list of surfaces that keep hue. Anything not here goes neutral.
  *
- * Four entries, and that is the point: the ruling is narrow. A fifth entry needs
- * an answer to "what does the user read off this colour that they could not read
- * off its icon and label?"
+ * Six entries. Four came from #558's table; #588 swept the whole tree and found
+ * two more that answer the same question - a colour the user picked for their own
+ * breathing exercise, and the sleep tracker's 5-step quality ramp. #558 never
+ * reviewed either surface, and its rule admits both.
+ *
+ * The list is still narrow and still exact: a seventh entry needs an answer to
+ * "what does the user read off this colour that they could not read off its icon
+ * and label?"
  */
 export const HUE_ENCODINGS: readonly HueEncoding[] = [
   {

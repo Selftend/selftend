@@ -145,8 +145,9 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
 const RETIRED = ["src/features/home/tool-accent.ts"];
 
 /**
- * The other half of the gate. Each of the four surfaces that KEEPS hue, and the
- * literal that proves it still does.
+ * The other half of the gate. Each surface that KEEPS hue, and the literal that
+ * proves it still does. Six of them - see the note in src/lib/theme/encoding.ts
+ * for the two #588 added to #558's four.
  *
  * The pattern is the encoding itself, not merely "some hue appears here": the
  * failure being guarded against is a later sweep that neutralises the mood
@@ -222,7 +223,7 @@ describe("module and tool identity carries no hue (#587)", () => {
   }
 });
 
-describe("the four surfaces that keep hue are untouched (#558)", () => {
+describe("the surfaces that keep hue are untouched (#558, extended by #588)", () => {
   it("covers every ruled encoding, so the ruling and the gate cannot drift", () => {
     expect(Object.keys(KEEPS_HUE).sort()).toEqual(HUE_ENCODINGS.map((e) => e.id).sort());
   });

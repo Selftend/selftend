@@ -11,9 +11,7 @@ import Svg, {
   Text as SvgText,
 } from "react-native-svg";
 
-import { useColorSchemeName } from "@/src/lib/color-scheme";
-import { useThemePalette } from "@/src/lib/theme-palette";
-import { accentGradient, accentHsl } from "@/src/lib/theme/chrome";
+import { useAccentGradient, useAccentHsl, useThemePalette } from "@/src/lib/theme-palette";
 
 export interface LineChartPoint {
   /** Horizontal position, 0..1 across the plot area. */
@@ -38,14 +36,15 @@ const PADDING = { top: 16, right: 16, bottom: 32, left: 24 };
 const DENSE_POINT_LIMIT = 31;
 
 export function LineChart({ points, domain, height = 160, width = 300 }: LineChartProps) {
-  const scheme = useColorSchemeName();
+  const accent = useAccentHsl();
   const theme = useThemePalette();
+  // Above the early return: the empty-points guard sits below, and a hook after
+  // it would be called conditionally.
+  const [fadeFrom, fadeTo] = useAccentGradient();
   const gradientId = useId();
   if (points.length === 0) return null;
 
-  const isDark = scheme === "dark";
-  const lineColor = accentHsl(isDark, 1);
-  const [fadeFrom, fadeTo] = accentGradient(isDark);
+  const lineColor = accent(1);
   const gridColor = theme.border;
   const labelColor = theme.mutedForeground;
 

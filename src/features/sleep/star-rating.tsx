@@ -49,7 +49,12 @@ export function StarRating({
               <Icon
                 name={filled ? "star" : "star-outline"}
                 size={32}
-                className={filled ? "text-muted-foreground" : "text-muted-foreground"}
+                // Sleep quality is an ordered 1-5 input control - the twin of
+                // the mood scale, which the ruling keeps ("the same 5-step scale
+                // on the input control"). The sweep took it by accident and left
+                // both branches identical; `sleep-quality-ramp` is a keeps-hue
+                // encoding, and this is that encoding's input.
+                className={filled ? "text-ink" : "text-muted-foreground"}
               />
             </Pressable>
           );
