@@ -8,7 +8,7 @@ import {
   worstAgainst,
 } from "@/src/lib/theme/contrast";
 import { COLOR_SCHEMES } from "@/src/lib/theme/contract";
-import { deriveTokens } from "@/src/lib/theme/derive";
+import { DESTRUCTIVE, deriveTokens } from "@/src/lib/theme/derive";
 import { resolveStyle, STYLE_NAMES, STYLE_SOURCES, THEME_TOKENS } from "@/src/lib/theme/styles";
 
 // The computed contrast gate (#580, resolved on #560).
@@ -127,6 +127,37 @@ describe("a palette that would fail does fail", () => {
     expect(auditTokens(pinnedToTheOldRecipe).map((f) => f.check)).toEqual(["primary ink"]);
     // And the solver is what fixes it — same accent, same surfaces.
     expect(auditTokens(solved, INK_TARGET)).toEqual([]);
+  });
+
+  // The destructive pair, which the audit did not measure at all until now. The
+  // red is one shared value for all eight styles, but the surfaces under it are
+  // authored per style - so a shared red is only as legible as the darkest card
+  // it lands on. Pinning it back to the shared value reproduces the failure.
+  it.each([
+    ["sage-garden", "dark"],
+    ["plum-manuscript", "dark"],
+  ] as const)("%s %s fails on the raw shared destructive red", (style, scheme) => {
+    const solved = THEME_TOKENS[style][scheme];
+    const pinnedToTheSharedRed = { ...solved, "--destructive": DESTRUCTIVE[scheme].color };
+
+    expect(auditTokens(pinnedToTheSharedRed).map((f) => f.check)).toEqual(["destructive ink"]);
+    // And solving is what fixes it - same red, same surfaces, lightness only.
+    expect(auditTokens(solved)).toEqual([]);
+  });
+
+  // The solve must stay a nudge, not a repaint: a "danger red" that has been
+  // walked far enough to clear anything is no longer the danger red.
+  it("moves the destructive red by only a few points of lightness", () => {
+    for (const style of STYLE_NAMES) {
+      for (const scheme of COLOR_SCHEMES) {
+        const [h, s, l] = THEME_TOKENS[style][scheme]["--destructive"].split(" ");
+        const [sharedH, sharedS, sharedL] = DESTRUCTIVE[scheme].color.split(" ");
+
+        // Hue and saturation are untouched - only lightness may move.
+        expect([h, s]).toEqual([sharedH, sharedS]);
+        expect(Math.abs(parseInt(l, 10) - parseInt(sharedL, 10))).toBeLessThanOrEqual(6);
+      }
+    }
   });
 
   it("perturbing an accent until it cannot carry a label fails the gate", () => {
