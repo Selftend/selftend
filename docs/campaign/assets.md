@@ -13,9 +13,13 @@ date — per [#621](https://github.com/Selftend/selftend/issues/621). App captur
 
 ## Music / sound
 
-| Item                                                                                                                                                  | Source | License / terms | Date | Used in |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --------------- | ---- | ------- |
-| _pending — generated sound-bed per [#621](https://github.com/Selftend/selftend/issues/621) / [#620](https://github.com/Selftend/selftend/issues/620)_ |        |                 |      |         |
+| Item                                                                                                       | Source                                  | License / terms                                          | Date       | Used in                       |
+| ---------------------------------------------------------------------------------------------------------- | --------------------------------------- | -------------------------------------------------------- | ---------- | ----------------------------- |
+| Trailer bed candidates ×2 — "Aura Flow", "Gentle Unfolding" (60s WAV, ambient pad w/ rising pulse + swell) | ElevenLabs Music v2, text-prompted      | ⚠️ same pending commercial-use confirmation as the voice | 2026-08-04 | trailer (pick one in edit)    |
+| Walkthrough bed candidates ×2 — "Quiet Focus Pad", "Quiet Focus" (240s WAV, near-imperceptible pad)        | ElevenLabs Music v2, text-prompted      | ⚠️ same pending confirmation                             | 2026-08-04 | all 8 walkthroughs (pick one) |
+| UI tap ticks ×4 — `ui-tick-1..4` (2s WAV 48kHz, soft muted glass tap)                                      | ElevenLabs Sound Effects, text-prompted | ⚠️ same pending confirmation                             | 2026-08-04 | tap-sync moments, all videos  |
+
+Drive locations: `music/` and `sfx/` under the project folder, runbook naming.
 
 ## Graphics / fonts
 
