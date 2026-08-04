@@ -6,9 +6,9 @@ date — per [#621](https://github.com/Selftend/selftend/issues/621). App captur
 
 ## Voice
 
-| Item                                                                                    | Service / voice | Settings | License / terms | Date | Used in |
-| --------------------------------------------------------------------------------------- | --------------- | -------- | --------------- | ---- | ------- |
-| _pending — owner generates per [#639](https://github.com/Selftend/selftend/issues/639)_ |                 |          |                 |      |         |
+| Item                  | Service / voice                                                                                        | Settings                                                                 | License / terms                                                                                | Date       | Used in |
+| --------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ---------- | ------- |
+| Trailer VO (T01–T10b) | ElevenLabs — "Zara – The Warm, Real-World Conversationalist" (Professional Voice Clone, Voice Library) | Eleven Multilingual v2; speed 1.00, stability 90, similarity 80, style 0 | ⚠️ pending — confirm plan tier permits commercial use and record terms here before publication | 2026-08-04 | trailer |
 
 ## Music / sound
 
