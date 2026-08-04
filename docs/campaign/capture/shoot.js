@@ -3,6 +3,9 @@
  * Every shot: fresh context, morning clock (Date-shift only), human-paced, ≥2s hold at both ends.
  * Output: Drive captures/shared/<SHOT>-v01.webm + <SHOT>-frame.png review frame.
  */
+// The capture lib lives with the media in the owner-held Drive folder (see #621's
+// source-of-truth split); this runner executes on the owner's machine only.
+
 const lib = require("C:/Users/vasil/My Drive/Adobe Premiere Projects/Selftend/scripts/capture-lib.js");
 const path = require("path");
 const fs = require("fs");
