@@ -38,6 +38,16 @@ Storyboards map beats → screen ids. When a release changes a screen:
 
 No full rebuild, ever.
 
+## Trailer assembly draft
+
+`scripts/gen-trailer-xml.py` (Drive) writes `trailer-draft.xml` — a complete FCP7 draft of
+the ~35s trailer: V1 type-bookend cards + platform still, V2 phone captures scaled to the
+16:9 canvas, A1 the ten VO lines on their beats, A2 the bed at reduced level, one marker per
+beat. **Import by hand** in Premiere (File → Import; never the broken `xml-to-prproj.ps1`),
+then polish: crossfades between grounds, the bed swell under the brand card, tap-tick SFX,
+and taste-trims on the beat boundaries. Captures are pre-transcoded to H.264 in
+`captures/shared/mp4/` because Premiere does not read WebM.
+
 ## Scripts index
 
 | File                                        | Video                                               | Storyboard                                              |
