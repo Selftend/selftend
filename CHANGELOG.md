@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.2](https://github.com/Selftend/selftend/compare/v0.11.1...v0.11.2) (2026-08-05)
+
+
+### Bug Fixes
+
+* **deps:** bump brace-expansion override to 5.0.9 ([#641](https://github.com/Selftend/selftend/issues/641)) ([8df841f](https://github.com/Selftend/selftend/commit/8df841fea76396a38936d3147b5bf09052e4764d))
+* **ui:** compose the breathing session screen vertically ([#642](https://github.com/Selftend/selftend/issues/642)) ([c4a484b](https://github.com/Selftend/selftend/commit/c4a484b14042fbc6ba912e2f8c9c873c51e70687))
+* **ui:** remove field-to-sheet seam ([#637](https://github.com/Selftend/selftend/issues/637)) ([9eaf53a](https://github.com/Selftend/selftend/commit/9eaf53a95cfc078a7d4770e7fa5df5a7f7665d02))
+
 ## [0.11.1](https://github.com/Selftend/selftend/compare/v0.11.0...v0.11.1) (2026-08-01)
 
 
