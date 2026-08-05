@@ -13,7 +13,9 @@ export const CONTENT_SHEET_OVERLAP = 26;
  * The Direction B content sheet: a large-radius surface that rises over the
  * module-hue field header. Place directly after a `ModuleHomeHeader
  * variant="field"` inside a gap-less full-width wrapper — the sheet pulls
- * itself up over the field's bottom edge. Content below the sheet continues
+ * itself up over the field's bottom edge. Its minimum height matches the
+ * overlap so an empty sheet lip still covers the field completely. Content
+ * below the sheet continues
  * on `bg-background`, so on a room screen the sheet blends seamlessly into
  * the rest of the scroll.
  */
@@ -23,7 +25,10 @@ export function ContentSheet({
   ...props
 }: React.ComponentProps<typeof View> & React.RefAttributes<View>) {
   return (
-    <View className={cn("-mt-[26px] rounded-t-[28px] bg-background pt-6", className)} {...props}>
+    <View
+      className={cn("-mt-[26px] min-h-[26px] rounded-t-[28px] bg-background pt-6", className)}
+      {...props}
+    >
       {children}
     </View>
   );

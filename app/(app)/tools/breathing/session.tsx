@@ -394,7 +394,7 @@ export default function BreathingSessionScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
       <ScrollView contentContainerClassName="grow p-6">
-        <View className="gap-6">
+        <View className="grow gap-6">
           <View className="gap-2">
             <View className="flex-row items-center justify-between gap-2">
               <View className="flex-1">
@@ -417,6 +417,9 @@ export default function BreathingSessionScreen() {
 
           {screenPhase === "intro" ? (
             <>
+              {/* Pattern + info sit at the top; the spacer below pushes the
+                  cycle picker and Start to the bottom on tall viewports, so the
+                  screen reads composed instead of top-heavy (#612 capture QA). */}
               <View className="gap-2">
                 <Label>{t("breathing.choosePattern")}</Label>
                 <ScrollView
@@ -464,6 +467,8 @@ export default function BreathingSessionScreen() {
                 </CardContent>
               </Card>
 
+              <View className="grow" />
+
               <View className="gap-3">
                 <Label>{t("breathing.chooseCycles")}</Label>
                 <View className="flex-row items-center justify-center gap-6">
@@ -500,7 +505,9 @@ export default function BreathingSessionScreen() {
           ) : null}
 
           {screenPhase === "preroll" || screenPhase === "active" ? (
-            <View className="gap-6 items-center">
+            // grow + justify-center keeps the pacer vertically centered in the
+            // space under the header instead of hugging the top (#612 capture QA).
+            <View className="grow gap-6 items-center justify-center">
               <View className="w-full flex-row items-stretch justify-center gap-3">
                 <View className="items-center justify-center gap-2" style={{ width: 44 }}>
                   <View style={{ height: 180 }}>
