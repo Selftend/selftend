@@ -21,3 +21,7 @@ Delivery: one WAV per line id → Drive `vo/act/`.
 | AC-91 | measured       | Boundary (slow read)      | And a boundary worth naming: Selftend is guided self-help — not therapy, diagnosis, or crisis support.                |
 | AC-92 | measured       | Boundary (slow read)      | If things feel heavy, the app links crisis resources that can help.                                                   |
 | AC-99 | echo           | CTA                       | Explore this in Selftend — on Android, iOS, or the web.                                                               |
+
+Pronunciation note: **ACT is spoken as the word "act"** (unlike CBT, which is spelled
+out). When regenerating AC-02, write "act" in lowercase in the generation text so the
+TTS reads the word — captions and on-screen text keep "ACT".
